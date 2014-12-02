@@ -173,7 +173,6 @@ Colour ColourMap::getfast(float value)
    int c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
    if (c > SAMPLE_COUNT - 1) c = SAMPLE_COUNT - 1;
    if (c < 0) c = 0;
-   //printf("%f min %f max %f pos = %d colour: %d\n", value, minimum, maximum, c, precalc[c]);
    return precalc[c];
 }
 

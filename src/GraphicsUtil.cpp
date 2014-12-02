@@ -54,7 +54,6 @@
 FILE* infostream = NULL;
 
 Colour fontColour;
-TextureData tex;
 
 long FloatValues::membytes = 0;
 long FloatValues::mempeak = 0;
@@ -274,8 +273,6 @@ void DeleteFont()
    // Delete fonts
     if (charLists > 0) glDeleteLists(charLists, GLYPHS);
     charLists = 0;
-    if (tex.id) glDeleteTextures(1, &tex.id);
-    tex.id = 0;
 }
 
 //Bitmap font stuff

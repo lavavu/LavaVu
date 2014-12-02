@@ -485,7 +485,6 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    int ival;
    if (parsed.exists("rotation"))
    {
-      std::cerr << cmd << std::endl;
       float x = 0, y = 0, z = 0, w = 0;
       if (parsed.has(x, "rotation", 0) &&
           parsed.has(y, "rotation", 1) &&
