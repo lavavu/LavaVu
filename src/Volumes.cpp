@@ -235,6 +235,7 @@ void Volumes::render(int i)
    glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
    //Apply scaling to fit bounding box
    glPushMatrix();
+   glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
    glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);
    glPopMatrix();
@@ -253,14 +254,15 @@ void Volumes::render(int i)
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glDisable(GL_DEPTH_TEST);  //No depth testing to allow multi-pass blend!
-   glDisable(GL_CULL_FACE);
    //glDisable(GL_MULTISAMPLE);
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
  
    GL_Error_Check;
-
-   drawCuboid(pos, dims[0], dims[1], dims[2], true, 1);
-   GL_Error_Check;
+    //Draw two triangles to fill screen
+    glBegin(GL_TRIANGLES);
+        glVertex2f(-1, -1); glVertex2f(-1, 1); glVertex2f(1, -1);
+        glVertex2f(-1,  1); glVertex2f( 1, 1); glVertex2f(1, -1);
+    glEnd();
 
    //glDisable(GL_TEXTURE_2D);
    glEnable(GL_DEPTH_TEST);

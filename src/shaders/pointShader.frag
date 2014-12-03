@@ -28,7 +28,12 @@ void main(void)
    vec3 N;
    N.xy = gl_PointCoord * 2.0 - vec2(1.0);    
    float mag = dot(N.xy, N.xy);
-   if (alpha < 0.01 || mag > 1.0) discard;   // kill pixels outside circle radius and transparent pixels
+   // Fade pixels outside circle radius
+   if (pointType > 1) 
+     if (mag > 0.8) alpha = 30.0 * (1.1 - mag);
+   else
+     if (mag > 1.0) alpha = 0.0;
+   if (alpha < 0.01) discard;   // discard transparent pixels
 
    if (pointType < 2)
    {
