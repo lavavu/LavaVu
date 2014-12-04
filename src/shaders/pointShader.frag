@@ -3,6 +3,7 @@
 varying float vSmooth;
 varying vec3 vPosEye;
 varying float vPointType;
+varying float vPointSize;
 uniform int uPointType;
 uniform float uOpacity;
 uniform bool uTextured;
@@ -30,7 +31,7 @@ void main(void)
    float mag = dot(N.xy, N.xy);
    // Fade pixels outside circle radius
    if (pointType > 1) 
-     if (mag > 0.8) alpha = 30.0 * (1.1 - mag);
+     if (mag > 0.5) alpha = vPointSize * 0.25 * (1.0 - mag);
    else
      if (mag > 1.0) alpha = 0.0;
    if (alpha < 0.01) discard;   // discard transparent pixels

@@ -8,6 +8,7 @@ attribute float aPointType;
 varying float vSmooth;
 varying float vPointType;
 varying vec3 vPosEye;
+varying float vPointSize;
 
 void main(void)
 {
@@ -26,5 +27,6 @@ void main(void)
    gl_FrontColor = gl_Color;
    vPosEye = posEye;
    vPointType = aPointType;
+   vPointSize = gl_PointSize;
 }
 
