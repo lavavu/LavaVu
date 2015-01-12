@@ -64,6 +64,7 @@ void Lines::update()
 
       //Set draw state
       setState(i);
+      glPushAttrib(GL_ENABLE_BIT);
       glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
 
       glBegin(GL_LINES);
@@ -73,7 +74,7 @@ void Lines::update()
          glVertex3fv(geom[i]->vertices[j]);
       }
       glEnd();
-      glEnable(GL_DEPTH_TEST);
+      glPopAttrib();
       glEndList();
       GL_Error_Check;
    }

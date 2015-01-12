@@ -684,6 +684,7 @@ void View::zoomToFit(int margin)
 void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks)
 {
    // Draw rulers with optional tick marks
+   glPushAttrib(GL_ENABLE_BIT);
    glDisable(GL_LIGHTING);
    glDisable(GL_LINE_SMOOTH);
    glLineWidth(1.5f);
@@ -753,6 +754,7 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
 
    glPopMatrix();
    glLineWidth(1.0f);
+   glPopAttrib();
 }
 
 void View::drawRulers()
@@ -793,22 +795,32 @@ void View::drawBorder()
 void View::drawAxis() 
 {
    if (!axis) return;
-   float length = 1.5 * axislen;
+   float length = axislen;
    float headsize = 8.0;   //8 x radius (r = 0.01 * length)
    float LH = length * 0.1;
    float aspectRatio = width / (float)height;
 
-   //Switch to orthographic projection
+   glPushAttrib(GL_ENABLE_BIT);
+   glEnable(GL_LIGHTING);
+   //Clear depth buffer
+   glClear(GL_DEPTH_BUFFER_BIT);
+
+   //Setup the projection
    glMatrixMode(GL_PROJECTION);
    glPushMatrix();
    glLoadIdentity();
-   glOrtho(-aspectRatio, aspectRatio, -1, 1, 0.01, 10);
+   // Build the viewing frustum - fixed near/far
+   float near = 0.01, far = 10.0, left, right, top, bottom;
+   top = tan(0.5f * DEG2RAD * 45) * near;
+   right = aspectRatio * top;
+   glFrustum(-right, right, -top, top, near, far);
    //Modelview (rotation only)
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
    glLoadIdentity();
-   glTranslatef(-0.85 * aspectRatio, -0.85, -1);
-   //Rotation
+   //Position to the bottom left
+   glTranslatef(-0.3 * aspectRatio, -0.3, -1.0);
+   //Apply model rotation
    rotation_lag.apply();
    GL_Error_Check;
    // Switch coordinate system if applicable
@@ -839,13 +851,14 @@ void View::drawAxis()
 
    //Labels
    glDisable(GL_LIGHTING);
+   glDisable(GL_DEPTH_TEST);
 
    Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], length, "X");
    Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], length, "Y");
    if (is3d)
       Print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], length, "Z");
 
-   glEnable(GL_LIGHTING);
+   glPopAttrib();
 
    //Restore
    glMatrixMode(GL_PROJECTION);
