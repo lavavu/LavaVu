@@ -1,0 +1,22 @@
+# use glob syntax.
+syntax: glob
+
+bin/*
+cave/CMakeFiles/*
+cave/CMakeCache.txt
+cave/cmake_install.cmake
+cave/Makefile
+*.log
+*.eqc
+*.o
+*~
+*.pyc
+output/*
+log/*
+
+
+# switch to regexp syntax.
+syntax: regexp
+(^|/)\.svn($|/)
+(^|/)\.hg($|/)
+(^|/)\.hgtags($|/)
