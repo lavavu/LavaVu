@@ -41,7 +41,7 @@ install: $(PROGRAM)
 
 #Rebuild *.cpp
 $(OBJ): %.o : %.cpp $(INC)
-	$(CPP) $(CFLAGS) -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS -c $< -o $@
+	$(CPP) $(CFLAGS) -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS -DSHADER_PATH='"src/shaders/"' -c $< -o $@
 
 $(PROGRAM): $(OBJ) mongoose.o sqlite3.o
 	echo $(OBJ)
