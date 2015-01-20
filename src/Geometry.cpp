@@ -88,8 +88,9 @@ void GeomData::mapToColour(Colour& colour, float value)
    colour = draw->colourMaps[lucColourValueData]->getfast(value);
 
    //Set opacity to drawing object override level if set
-   if (draw->opacity > 0.0 && draw->opacity < 1.0)
-      colour.a = draw->opacity * 255;
+   float opacity = draw->properties["opacity"].ToFloat(1.0);
+   if (opacity > 0.0 && opacity < 1.0)
+      colour.a = opacity * 255;
 }
 
 //Sets the colour for specified vertex index, looks up all provided colourmaps
@@ -133,8 +134,9 @@ void GeomData::getColour(Colour& colour, int idx)
    }
 
    //Set opacity to drawing object override level if set
-   if (draw->opacity > 0.0 && draw->opacity < 1.0)
-      colour.a = draw->opacity * 255;
+   float opacity = draw->properties["opacity"].ToFloat(1.0);
+   if (opacity > 0.0 && opacity < 1.0)
+      colour.a = opacity * 255;
 }
 
 void GeomData::setColour(int idx)
@@ -323,10 +325,10 @@ void Geometry::setState(int index, Shader* prog)
    int texunit = -1;
    bool lighting = lit && !flat;
    if (index >= 0) draw = geom[index]->draw;
-   if (draw) lighting = lighting && (draw->lit && !draw->flat);
+   if (draw) lighting = lighting && (draw->properties["lit"].ToBool(true) && !draw->properties["flat"].ToBool(false));
 
    //Global/Local draw state
-   if (cullface || (draw && draw->cullface))
+   if (cullface || (draw && draw->properties["cullface"].ToBool(false)))
       glEnable(GL_CULL_FACE);
    else
       glDisable(GL_CULL_FACE);
@@ -337,7 +339,7 @@ void Geometry::setState(int index, Shader* prog)
       //Don't light surfaces in 3d models
       if (!view->is3d) lighting = false;
       //Disable lighting and polygon faces in wireframe mode
-      if (wireframe || (draw && draw->wireframe))
+      if (wireframe || (draw && draw->properties["wireframe"].ToBool(false)))
       {
          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
          lighting = false;
@@ -354,8 +356,9 @@ void Geometry::setState(int index, Shader* prog)
 
    if (draw)
    {
-      if (draw->lineWidth <= 0) draw->lineWidth = 1.0;
-      glLineWidth(draw->lineWidth);
+      float lineWidth = draw->properties["linewidth"].ToFloat(1.0);
+      if (lineWidth <= 0) lineWidth = 1.0;
+      glLineWidth(lineWidth);
       //Textured?
       texunit = draw->useTexture();
    }

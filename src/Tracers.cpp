@@ -73,8 +73,9 @@ void Tracers::update()
       int timesteps = (datasteps-1) * TimeStep::gap + 1; //Multiply by gap between recorded steps
 
       //Swarm limit
-      if (geom[i]->draw->steps > 0 && timesteps > geom[i]->draw->steps)
-         timesteps = geom[i]->draw->steps;
+      int drawSteps = geom[i]->draw->properties["steps"].ToInt(0);
+      if (drawSteps > 0 && timesteps > drawSteps)
+         timesteps = drawSteps;
       //Global limit
       if (steps > 0 && steps < timesteps)
          timesteps = steps;
@@ -118,7 +119,7 @@ void Tracers::update()
       //Iterate individual tracers
       for (unsigned int p=0; p < particles; p++) 
       {
-         float size = geom[i]->draw->scaling * 0.001;
+         float size = geom[i]->draw->properties["scaling"].ToFloat(1.0) * 0.001;
          if (size <= 0) size = 1.0;
 
          //Iterate timesteps
@@ -129,7 +130,7 @@ void Tracers::update()
             // Scale up line towards head of trajectory
             if (scaling && step > start)
             {
-               float factor = geom[i]->draw->scaling * scale * TimeStep::gap * 0.0005;
+               float factor = geom[i]->draw->properties["scaling"].ToFloat(1.0) * scale * TimeStep::gap * 0.0005;
                //if (p==0) debug_print("Scaling tracers from %f by %f to %f\n", size, factor, size+factor);
                size += factor;
             }
@@ -161,7 +162,7 @@ void Tracers::update()
                geom[i]->getColour(colour, TimeStep::gap * step * particles + pidx);
 
             // Draw section
-            if (flat || geom[i]->draw->flat)
+            if (flat || geom[i]->draw->properties["flat"].ToBool(false))
             {
                if (step > start)
                {
@@ -177,7 +178,7 @@ void Tracers::update()
             {
                //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
                float arrowHead = -1;
-               if (step == end) arrowHead = geom[i]->draw->arrowHead;
+               if (step == end) arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
                drawTrajectory(oldpos, pos, scale * size, arrowHead, 8, view->scale, &oldColour, &colour, view->model_size * 0.3);
             }
 

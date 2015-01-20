@@ -83,6 +83,9 @@ class GLuciferViewer : public ViewerApp
    Model* amodel; //Active model
    Win* awin;     //Active window
    View* aview;   //Active viewport
+   DrawingObject* aobject; //Selected object
+
+   json::Object globals;
 
    //Object geometry
    std::vector<Geometry*> geometry;
@@ -101,11 +104,15 @@ class GLuciferViewer : public ViewerApp
 
    void run(bool persist=false);
 
+   void parseProperties(std::string& properties);
+   void parseProperty(std::string& data);
+   void printProperties();
+
    void readScriptFile(FilePath& fn);
    void readHeightMap(FilePath& fn);
    void createDemoModel();
    void newModel(std::string name, int w, int h, int bg, float mmin[3], float mmax[3]);
-   DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, const char* properties="");
+   DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string properties="");
    void showById(unsigned int id, bool state);
    void setOpacity(unsigned int id, float opacity);
    void redraw(unsigned int id);

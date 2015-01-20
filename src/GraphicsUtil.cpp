@@ -63,6 +63,92 @@ float *_x_coords = NULL, *_y_coords = NULL;  // Saves arrays of x,y points on ci
 
 unsigned int fontbase = 0, fontcharset = FONT_DEFAULT, fonttexture;
 
+//Parse multi-line string
+void jsonParseProperties(std::string& properties, json::Object& object)
+{
+   //Process all lines
+   std::stringstream ss(properties);
+   std::string line;
+   while(std::getline(ss, line))
+      jsonParseProperty(line, object);
+}
+
+//Property containers now using json
+void jsonParseProperty(std::string& data, json::Object& object)
+{
+   //Parse a key=value property where value is a json object
+   std::string key, value;
+   std::istringstream iss(data);
+   std::getline(iss, key, '=');
+   std::getline(iss, value, '=');
+
+   if (value.length() > 0)
+   {
+      //Ignore case
+      std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+      //std::cerr << "Key " << key << " == " << value << std::endl;
+
+      try
+      {
+         if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
+         {
+            //This JSON parser only accepts objects or arrays as base element
+            value = "[" + value + "]";
+            object[key] = json::Deserialize(value).ToArray()[0];
+         }
+         else
+         {
+            object[key] = json::Deserialize(value);
+         }
+      }
+      catch (std::exception& e)
+      {
+         std::cerr << e.what();
+         object[key] = json::Value();
+      }
+   }
+}
+
+Colour Colour_FromJson(json::Object& object, std::string key, int red, int green, int blue, int alpha)
+{
+   Colour colour = {red, green, blue, alpha};
+   if (!object.HasKey(key)) return colour;
+
+   //Will accept integer colour or [r,g,b,a] array
+   if (object[key].GetType() == json::IntVal)
+   {
+      colour.value = object[key];
+   }
+   else if (object[key].GetType() == json::ArrayVal)
+   {
+      json::Array array = object[key].ToArray();
+      colour.r = array[0].ToInt(0)*255.0;
+      colour.g = array[1].ToInt(0)*255.0;
+      colour.b = array[2].ToInt(0)*255.0;
+
+      if (array.size() > 3)
+         colour.a = array[3].ToInt(0)/255.0;
+   }
+
+
+   return colour;
+}
+
+void Colour_SetUniform(GLint uniform, Colour colour)
+{
+   float array[4];
+   Colour_ToArray(colour, array);
+   glUniform4fv(uniform, 1, array);
+}
+
+void Colour_ToArray(Colour colour, float* array)
+{
+   array[0] = colour.r/255.0;
+   array[1] = colour.g/255.0;
+   array[2] = colour.b/255.0;
+   array[3] = colour.a/255.0;
+}
+
 void debug_print(const char *fmt, ...)
 {
    if (fmt == NULL || infostream == NULL) return;

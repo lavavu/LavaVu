@@ -397,7 +397,7 @@ void TriSurfaces::setTriangle(int index, bool hidden, float* v1, float* v2, floa
    tidx[tricount].hidden = hidden;
 
         //TODO: hack for now to get wireframe working, should detect/switch opacity
-        if (geom[index]->draw->wireframe) geom[index]->opaque = true;
+        if (geom[index]->draw->properties["wireframe"].ToBool(false)) geom[index]->opaque = true;
 
    //All opaque triangles at start
    if (geom[index]->opaque) 

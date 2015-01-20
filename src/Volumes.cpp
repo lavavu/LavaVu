@@ -133,9 +133,7 @@ void Volumes::update()
          }
           
          glActiveTexture(GL_TEXTURE1);
-         GL_Error_Check;
          glBindTexture(GL_TEXTURE_3D, current->texture->id);
-         GL_Error_Check;
 
          current->texture->width = geom[i]->width;
          current->texture->height = height;
@@ -147,7 +145,6 @@ void Volumes::update()
          glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
          glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
          glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         GL_Error_Check;
 
          glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, geom[i]->width, height, slices[current->id], 0, GL_LUMINANCE, GL_FLOAT, volume);
          GL_Error_Check;
@@ -174,35 +171,37 @@ void Volumes::render(int i)
    assert(prog);
    GL_Error_Check;
  
-    //Uniform variables
-    //TODO: Provide interface to set these parameters
-    float bbMin[3] = {0.01,0.01,0.01};
-    //float bbMax[3] = {dims[0], dims[1], dims[2]};
-    float bbMax[3] = {0.99, 0.99, 0.99};
-    float res[3] = {geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth};
-    float focalLength = 1.0 / tan(0.5 * view->fov * M_PI/180);
-    float wdims[4] = {view->width, view->height, view->xpos, view->ypos};
-    wdims[2] += view->eye_shift;
-    //printf("View shift: %f\n", wdims[2]);
-    float isocolour[4] = {0.922,0.886,0.823,1.0};
-    //printf("PLOTTING %d width %d height %d depth\n", geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth);
-    //printf("dims %f,%f,%f pos %f,%f,%f res %f,%f,%f\n", dims[0], dims[1], dims[2], pos[0], pos[1], pos[2], res[0], res[1], res[2]);
-    glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
-    glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
-    glUniform3fv(prog->uniforms["uResolution"], 1, res);
-    glUniform1i(prog->uniforms["uEnableColour"], 1);
-    glUniform1f(prog->uniforms["uBrightness"], 0);
-    glUniform1f(prog->uniforms["uContrast"], 1);
-    glUniform1f(prog->uniforms["uPower"], 1);
-    glUniform1f(prog->uniforms["uFocalLength"], focalLength);
-    glUniform4fv(prog->uniforms["uWindowSize"], 1, wdims);
-    glUniform1i(prog->uniforms["uSamples"], 256);
-    glUniform1f(prog->uniforms["uDensityFactor"], 5.0);
-    glUniform1f(prog->uniforms["uIsoValue"], 0.0);
-    glUniform4fv(prog->uniforms["uIsoColour"], 1, isocolour);
-    glUniform1f(prog->uniforms["uIsoSmooth"], 0.1);
-    glUniform1i(prog->uniforms["uIsoWalls"], 0);
-    glUniform1i(prog->uniforms["uFilter"], 0);
+   //Uniform variables
+   float res[3] = {geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth};
+   float focalLength = 1.0 / tan(0.5 * view->fov * M_PI/180);
+   float wdims[4] = {view->width, view->height, view->xpos, view->ypos};
+   wdims[2] += view->eye_shift;
+
+   glUniform3fv(prog->uniforms["uResolution"], 1, res);
+   glUniform1f(prog->uniforms["uFocalLength"], focalLength);
+   glUniform4fv(prog->uniforms["uWindowSize"], 1, wdims);
+
+   //User settings
+   json::Object props = geom[i]->draw->properties;
+   float bbMin[3] = {props["xmin"].ToFloat(0.01),
+                     props["ymin"].ToFloat(0.01),
+                     props["zmin"].ToFloat(0.01)};
+   float bbMax[3] = {props["xmax"].ToFloat(0.99),
+                     props["ymax"].ToFloat(0.99),
+                     props["zmax"].ToFloat(0.99)};
+   glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
+   glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
+   glUniform1i(prog->uniforms["uEnableColour"], props["colourmap"].ToInt(1));
+   glUniform1f(prog->uniforms["uBrightness"], props["brightness"].ToFloat(0.0));
+   glUniform1f(prog->uniforms["uContrast"], props["contrast"].ToFloat(1.0));
+   glUniform1f(prog->uniforms["uPower"], props["power"].ToFloat(1.0));
+   glUniform1i(prog->uniforms["uSamples"], props["samples"].ToInt(256));
+   glUniform1f(prog->uniforms["uDensityFactor"], props["density"].ToFloat(5.0));
+   glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"].ToFloat(0));
+   Colour_SetUniform(prog->uniforms["uIsoColour"], Colour_FromJson(props, "isocolour", 220, 220, 200, 255*props["isoalpha"].ToFloat(1)));
+   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"].ToFloat(0.1));
+   glUniform1i(prog->uniforms["uIsoWalls"], props["isowalls"].ToInt(0));
+   glUniform1i(prog->uniforms["uFilter"], props["tricubicfilter"].ToInt(0));
    GL_Error_Check;
    
    //Field data requires normalisation to [0,1]

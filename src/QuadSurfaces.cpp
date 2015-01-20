@@ -126,6 +126,8 @@ void QuadSurfaces::render(int i)
    //Set draw state
    setState(i, prog);
 
+   bool drawWireframe = geom[i]->draw->properties["wireframe"].ToBool(false);
+
    //Single normal
    if (!vertNormals)
       glNormal3fv(geom[i]->normals[0]);
@@ -137,7 +139,7 @@ void QuadSurfaces::render(int i)
    for (int j=0; j < geom[i]->height-1; j++)  //Iterate over geom[i]->height-1 strips
    {
       //Use quad strip if drawing a wireframe to show the grid lines correctly
-      if (!triangles || wireframe || geom[i]->draw->wireframe)
+      if (!triangles || wireframe || drawWireframe)
          glBegin(GL_QUAD_STRIP);
       else                    //Otherise: Triangle strips are faster & smoother looking
          glBegin(GL_TRIANGLE_STRIP);
@@ -158,7 +160,7 @@ void QuadSurfaces::render(int i)
 
          // Plot vertex 0
          geom[i]->setColour(offset0);
-         if (vertNormals && !geom[i]->draw->wireframe && !wireframe)
+         if (vertNormals && !drawWireframe && !wireframe)
             glNormal3fv(geom[i]->normals[offset0]);
 
          if (geom[i]->texCoords.size())
@@ -171,7 +173,7 @@ void QuadSurfaces::render(int i)
 
          // Plot vertex 1
          geom[i]->setColour(offset1);
-         if (vertNormals && !geom[i]->draw->wireframe && !wireframe)
+         if (vertNormals && !drawWireframe && !wireframe)
             glNormal3fv(geom[i]->normals[offset1]);
 
          if (geom[i]->texCoords.size())

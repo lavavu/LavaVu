@@ -40,6 +40,9 @@
 
 //Utils
 #include "jpeg/jpge.h"
+#include "json.h"
+
+//#define PDF_CAPTURE
 
 #ifndef _WIN32
 #include <sys/poll.h>
