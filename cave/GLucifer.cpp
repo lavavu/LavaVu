@@ -6,9 +6,9 @@
 #include <omega.h>
 #include <omegaGl.h>
 #include <omegaToolkit.h>
-#include "src/ViewerApp.h"
-#include "src/GLuciferViewer.h"
-#include "src/GLuciferServer.h"
+#include "../src/ViewerApp.h"
+#include "../src/GLuciferViewer.h"
+#include "../src/GLuciferServer.h"
 
 std::vector<std::string> args;
 
@@ -89,7 +89,8 @@ void GLuciferRenderPass::initialize()
 
   //Init fractal app
     DisplaySystem* ds = app->getEngine()->getDisplaySystem();
-    Vector2i resolution = ds->getCanvasSize();
+    DisplayConfig& dcfg = ds->getDisplayConfig();
+    //Vector2i resolution = ds->getCanvasSize();
   //Fake the arg list from vector of args
   int argc = args.size()+1;
   char* argv[argc];
@@ -106,7 +107,7 @@ void GLuciferRenderPass::initialize()
 #endif
 
   //Create the app
-  app->glapp = new GLuciferViewer(args, viewer, resolution[0], resolution[1]);
+  app->glapp = new GLuciferViewer(args, viewer, dcfg.displayResolution[0], dcfg.displayResolution[1]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,8 +124,9 @@ void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
          abort_program("Model file load error, no window data\n");
 
       DisplaySystem* ds = app->getEngine()->getDisplaySystem();
-      Vector2i resolution = ds->getCanvasSize();
-      viewer->open(resolution[0], resolution[1]);
+    DisplayConfig& dcfg = ds->getDisplayConfig();
+      //Vector2i resolution = ds->getCanvasSize();
+      viewer->open(dcfg.displayResolution[0], dcfg.displayResolution[1]);
       Colour& bg = viewer->background;
       ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
 
