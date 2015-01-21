@@ -163,6 +163,7 @@ typedef union {
    };
 } Colour;
 
+Colour parseRGBA(std::string value);
 
 class TextureData  //Texture TGA image data
 {

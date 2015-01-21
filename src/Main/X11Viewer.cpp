@@ -133,6 +133,7 @@ void X11Viewer::open(int width, int height)
 
 void X11Viewer::setsize(int width, int height)
 {
+   if (width == 0 || height == 0) return;
    XResizeWindow(Xdisplay, win, width, height);
    //Call base class setsize
    OpenGLViewer::setsize(width, height);

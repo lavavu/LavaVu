@@ -95,8 +95,10 @@ std::string Shader::read_file(const char *fname)
 
    std::ifstream ifs(filepath);
    std::stringstream buffer;
-   buffer << ifs.rdbuf();
-
+   if (ifs.is_open())
+      buffer << ifs.rdbuf();
+   else
+      std::cerr << "Error opening shader: " << filepath << std::endl;
    return buffer.str();
 }
 

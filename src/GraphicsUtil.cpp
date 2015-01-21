@@ -1070,6 +1070,22 @@ void Colour_SetXOR(bool switchOn)
       glDisable(GL_COLOR_LOGIC_OP);
 } 
 
+Colour parseRGBA(std::string value)
+{
+   //Parse rgba(r,g,b,a) values
+   Colour col;
+   int c;
+   std::stringstream ss(value.substr(5));
+   for (int i=0; i<4; i++)
+   {
+      ss >> c;
+      col.rgba[i] = c;
+      if (ss.peek() == ',')
+         ss.ignore();
+   }
+   return col; //rgba(c[0],c[1],c[2],c[3]);
+}
+
 
 // Loads TGA Image
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
