@@ -237,14 +237,15 @@ void* GLuciferServer::callback(enum mg_event event,
          std::replace(data.begin(), data.end(), ',', '\n');
          const size_t equals = data.find('=');
          const size_t amp = data.find('&');
-         if (std::string::npos != equals && std::string::npos != amp)
-         {
            //Push command onto queue to be processed in the viewer thread
            pthread_mutex_lock(&_self->viewer->cmd_mutex);
+	 if (amp != std::string::npos)
            OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
+	 else
+           OpenGLViewer::commands.push_back(data.substr(equals+1));
+           std::cerr << data.substr(equals+1) << std::endl;
            _self->viewer->postdisplay = true;
            pthread_mutex_unlock(&_self->viewer->cmd_mutex);
-         }
       }
       else if (strstr(request_info->uri, "/post") != NULL)
       {
