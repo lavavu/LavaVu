@@ -18,7 +18,7 @@ function load() {
 }
 
 function Viewer() {
-  this.server = "http://" + window.location.hostname + ":8080";
+  this.server = "http://" + window.location.host;
   this.canvas = document.getElementById('main');
   this.canvas.mouse = new Mouse(this.canvas, this);
 
