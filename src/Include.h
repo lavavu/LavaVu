@@ -89,6 +89,7 @@
 #if defined _WIN32 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
+extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 #define EXTENSION_POINTERS
 #endif
 
@@ -115,7 +116,6 @@ extern PFNGLMAPBUFFERPROC glMapBuffer;
 extern PFNGLBUFFERDATAPROC glBufferData;
 extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
-extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 
 extern PFNGLCREATESHADERPROC glCreateShader;
 extern PFNGLDELETESHADERPROC glDeleteShader;

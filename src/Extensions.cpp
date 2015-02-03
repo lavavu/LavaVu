@@ -5,6 +5,7 @@
 #define GetProcAddress(arg) wglGetProcAddress((LPCSTR)arg)
 PFNGLACTIVETEXTUREPROC glActiveTexture;
 PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
+PFNGLTEXIMAGE3DPROC glTexImage3D;
 #endif
 
 #ifdef EXTENSION_POINTERS
@@ -18,7 +19,6 @@ PFNGLMAPBUFFERPROC glMapBuffer;
 PFNGLBUFFERDATAPROC glBufferData;
 PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers;
-PFNGLTEXIMAGE3DPROC glTexImage3D;
 
 PFNGLCREATESHADERPROC glCreateShader;
 PFNGLDELETESHADERPROC glDeleteShader;
@@ -73,6 +73,7 @@ void OpenGL_Extensions_Init()
 #if defined _WIN32
    glActiveTexture = (PFNGLACTIVETEXTUREPROC) GetProcAddress("glActiveTexture");
    glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC)GetProcAddress("glDrawRangeElements");
+   glTexImage3D = (PFNGLTEXIMAGE3DPROC)GetProcAddress("glTexImage3D");
 #endif
    glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC) GetProcAddress("glBlendFuncSeparate");
    glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GetProcAddress("glPointParameterfv");
@@ -84,7 +85,6 @@ void OpenGL_Extensions_Init()
    glBufferData = (PFNGLBUFFERDATAPROC) GetProcAddress("glBufferData");
    glUnmapBuffer = (PFNGLUNMAPBUFFERPROC) GetProcAddress("glUnmapBuffer");
    glDeleteBuffers = (PFNGLDELETEBUFFERSPROC) GetProcAddress("glDeleteBuffers");
-   glTexImage3D = (PFNGLTEXIMAGE3DPROC)GetProcAddress("glTexImage3D");
 
    //Shader stuff, ARB?
    glCreateShader = (PFNGLCREATESHADERPROC) GetProcAddress("glCreateShader");
