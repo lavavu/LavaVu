@@ -366,9 +366,9 @@ void Model::loadLinks(DrawingObject* draw)
 
 int Model::loadTimeSteps()
 {
+   if (!db) return -1;
    timesteps.clear();
    TimeStep::gap = 0;
-   if (!db) return 0;
    int rows = 0;
    int last_step = 0;
    sqlite3_stmt* statement = select("SELECT * FROM timestep");
@@ -601,7 +601,7 @@ int Model::nearestTimeStep(int requested, int current)
    //Find closest matching timestep to requested but != current
    int idx;
    //if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
-   if (loadTimeSteps() == 0) return -1;
+   if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
    //if (timesteps.size() == 1 && current >= 0 && ) return -1;  //Single timestep
 
    for (idx=0; idx < timesteps.size(); idx++)
@@ -620,15 +620,21 @@ int Model::nearestTimeStep(int requested, int current)
       {
          //Select previous timestep in list (don't loop to end from start)
          if (idx > 0) idx--;
+         printf("1: %d -> %d\n", idx, timesteps[idx].step);
          return timesteps[idx].step;
       }
       //Select next timestep in list
       else if (requested > current && idx+1 < timesteps.size())
       {
          idx++;
+         printf("2: %d -> %d\n", idx, timesteps[idx].step);
          return timesteps[idx].step;
       }
    }
+
+   if (idx < 0) idx = 0;
+   if (idx >= timesteps.size()) idx = timesteps.size() - 1;
+         printf("3: (%d) %d -> %d\n", timesteps.size(), idx, timesteps[idx].step);
 
    return timesteps[idx].step;
 }

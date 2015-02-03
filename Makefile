@@ -22,13 +22,16 @@ endif
 vpath %.cpp src:src/Main:src:src/jpeg
 vpath %.h src/Main:src:src/jpeg:src/sqlite3
 vpath %.c src/mongoose:src/sqlite3/src
+vpath %.cc src
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cpp)
-#SRC := GLuciferViewer.cpp GLuciferServer.cpp InteractiveViewer.cpp OpenGLViewer.cpp base64.cpp ColourMap.cpp DrawingObject.cpp Extensions.cpp FontSans.cpp Geometry.cpp GraphicsUtil.cpp Lines.cpp Model.cpp Points.cpp QuadSurfaces.cpp Shaders.cpp Shapes.cpp Tracers.cpp TriSurfaces.cpp Vectors.cpp Volumes.cpp VideoEncoder.cpp View.cpp Win.cpp jpge.cpp X11Viewer.cpp GlutViewer.cpp SDLViewer.cpp main.cpp
 
 INC := $(wildcard src/*.h)
 #INC := $(SRC:%.cpp=%.h)
 OBJ := $(SRC:%.cpp=%.o)
+OBJS = $(notdir $(OBJ))
+#Only works if make invoked with makefile in cwd
+CWD = $(shell pwd)
 
 PROGRAM = gLucifer
 
@@ -40,12 +43,14 @@ install: $(PROGRAM)
 	cp src/shaders/*.* bin
 
 #Rebuild *.cpp
-$(OBJ): %.o : %.cpp $(INC)
-	$(CPP) $(CFLAGS) -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS -DSHADER_PATH='"src/shaders/"' -c $< -o $@
+$(OBJS): %.o : %.cpp $(INC)
+	$(CPP) $(CFLAGS) -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS -DSHADER_PATH='"${CWD}/src/shaders/"' -c $< -o $@
 
-$(PROGRAM): $(OBJ) mongoose.o sqlite3.o
-	echo $(OBJ)
-	$(CPP) -o $(PROGRAM) $(OBJ) mongoose.o sqlite3.o $(LIBS)
+$(PROGRAM): $(OBJS) tiny_obj_loader.o mongoose.o sqlite3.o
+	$(CPP) -o $(PROGRAM) $(OBJS) tiny_obj_loader.o mongoose.o sqlite3.o $(LIBS)
+
+tiny_obj_loader.o : tiny_obj_loader.cc
+	$(CPP) $(CFLAGS) -o $@ -c $^ 
 
 mongoose.o : mongoose.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 

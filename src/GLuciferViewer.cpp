@@ -18,7 +18,7 @@
 ** THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 ** PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
 ** BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-** CONSEQUENTIAL DAMAnGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+** CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 ** SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 ** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 ** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
@@ -39,6 +39,7 @@
 #include "Shaders.h"
 #include "VideoEncoder.h"
 #include <typeinfo>
+#include "tiny_obj_loader.h"
 
 //Include the decompression routines
 #ifdef USE_ZLIB
@@ -592,6 +593,442 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    debug_print("Z min %f max %f range %f\n", min[2], max[2], range[2]);
 }
 
+void GLuciferViewer::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
+{
+   level--;
+   float a_b[3], a_c[3], b_c[3];
+   vectorSubtract(a_b, a, b);
+   vectorSubtract(a_c, a, c);
+   vectorSubtract(b_c, b, c);
+   float max = 100000; //aview->model_size / 100.0;
+   //printf("%f\n", max); getchar();
+   
+   if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
+   {
+      //Read the triangle
+      triSurfaces->read(obj, 1, lucVertexData, a);
+      triSurfaces->read(obj, 1, lucVertexData, b);
+      triSurfaces->read(obj, 1, lucVertexData, c);
+   }
+   else
+   {
+      //Process a triangle into 4 sub-triangles
+      float ab[3] = {0.5*(a[0]+b[0]), 0.5*(a[1]+b[1]), 0.5*(a[2]+b[2])};
+      float ac[3] = {0.5*(a[0]+c[0]), 0.5*(a[1]+c[1]), 0.5*(a[2]+c[2])};
+      float bc[3] = {0.5*(b[0]+c[0]), 0.5*(b[1]+c[1]), 0.5*(b[2]+c[2])};
+
+      addTriangles(obj, a, ab, ac, level);
+      addTriangles(obj, ab, b, bc, level);
+      addTriangles(obj, ac, bc, c, level);
+      addTriangles(obj, ab, bc, ac, level);
+   }
+}
+
+void GLuciferViewer::readOBJ(FilePath& fn)
+{
+   //Use tiny_obj_loader to load a model
+   if (fn.ext != "obj" && fn.ext != "OBJ") return;
+   
+      //Create default window
+      if (!amodel) 
+      {
+         //Setup a default model
+         newModel("", 1200, 1000, LUC_WHITE);
+      }
+      else if (!aview)
+         aview = awin->views[0];
+
+   std::cout << "Loading " << fn.full << std::endl;
+
+   std::vector<tinyobj::shape_t> shapes;
+   std::vector<tinyobj::material_t> materials;
+   std::string err = tinyobj::LoadObj(shapes, materials, fn.full.c_str(), fn.path.c_str());
+
+   if (!err.empty()) {
+      std::cerr << err << std::endl;
+      return;
+   }
+
+  std::cout << "# of shapes    : " << shapes.size() << std::endl;
+  std::cout << "# of materials : " << materials.size() << std::endl;
+
+  for (size_t i = 0; i < shapes.size(); i++) {
+    //Strip path from name
+      size_t last_slash = shapes[i].name.find_last_of("\\/");
+      if (std::string::npos != last_slash)
+         shapes[i].name = shapes[i].name.substr(last_slash + 1);
+    printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
+    printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
+    
+    //Add triangles object
+    DrawingObject *tobj = newObject(shapes[i].name, true, 0xff888888, NULL, 1.0, "\n");
+    triSurfaces->add(tobj);
+       
+    assert((shapes[i].mesh.indices.size() % 3) == 0);
+    
+    if (shapes[i].mesh.material_ids.size() > 0)
+    {
+      //Just take the first id...
+      int id = shapes[i].mesh.material_ids[0];
+      if (id >= 0)
+      {
+        //Use the diffuse property as the colour
+        tobj->colour.r = materials[id].diffuse[0] * 255;
+        tobj->colour.g = materials[id].diffuse[1] * 255;
+        tobj->colour.b = materials[id].diffuse[2] * 255;
+        tobj->colour.a = materials[id].dissolve * 255;
+      }
+    }
+    
+    for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++) {
+      int ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};
+      
+      addTriangles(tobj, 
+                   &shapes[i].mesh.positions[ids[0]*3],
+                   &shapes[i].mesh.positions[ids[1]*3],
+                   &shapes[i].mesh.positions[ids[2]*3],
+                   0);
+
+        for (int coord=0; coord<3; coord++)
+        {
+          //triSurfaces->read(tobj, 1, lucVertexData, &shapes[i].mesh.positions[ids[coord]*3]);
+          Geometry::checkPointMinMax(&shapes[i].mesh.positions[ids[coord]*3]);
+        }
+    }
+
+    printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
+    assert((shapes[i].mesh.positions.size() % 3) == 0);
+    
+    /*for (size_t v = 0; v < shapes[i].mesh.positions.size() / 3; v++) {
+      printf("  v[%ld] = (%f, %f, %f)\n", v,
+        shapes[i].mesh.positions[3*v+0],
+        shapes[i].mesh.positions[3*v+1],
+        shapes[i].mesh.positions[3*v+2]);
+    }*/
+  }
+  return;
+
+  for (size_t i = 0; i < materials.size(); i++) {
+    printf("material[%ld].name = %s\n", i, materials[i].name.c_str());
+    printf("  material.Ka = (%f, %f ,%f)\n", materials[i].ambient[0], materials[i].ambient[1], materials[i].ambient[2]);
+    printf("  material.Kd = (%f, %f ,%f)\n", materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
+    printf("  material.Ks = (%f, %f ,%f)\n", materials[i].specular[0], materials[i].specular[1], materials[i].specular[2]);
+    printf("  material.Tr = (%f, %f ,%f)\n", materials[i].transmittance[0], materials[i].transmittance[1], materials[i].transmittance[2]);
+    printf("  material.Ke = (%f, %f ,%f)\n", materials[i].emission[0], materials[i].emission[1], materials[i].emission[2]);
+    printf("  material.Ns = %f\n", materials[i].shininess);
+    printf("  material.Ni = %f\n", materials[i].ior);
+    printf("  material.dissolve = %f\n", materials[i].dissolve);
+    printf("  material.illum = %d\n", materials[i].illum);
+    printf("  material.map_Ka = %s\n", materials[i].ambient_texname.c_str());
+    printf("  material.map_Kd = %s\n", materials[i].diffuse_texname.c_str());
+    printf("  material.map_Ks = %s\n", materials[i].specular_texname.c_str());
+    printf("  material.map_Ns = %s\n", materials[i].normal_texname.c_str());
+    std::map<std::string, std::string>::const_iterator it(materials[i].unknown_parameter.begin());
+    std::map<std::string, std::string>::const_iterator itEnd(materials[i].unknown_parameter.end());
+    for (; it != itEnd; it++) {
+      printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
+    }
+    printf("\n");
+  }
+}
+
+void GLuciferViewer::readTecplot(FilePath& fn)
+{
+   //Can only parse tecplot format type FEBRICK
+   //http://paulbourke.net/dataformats/tp/
+   if (fn.ext != "tec" && fn.ext != "dat") return;
+
+      //Create default window
+      if (!amodel) 
+      {
+         //Setup a default model
+         newModel("", 1200, 1000, LUC_WHITE);
+      }
+      else if (!aview)
+         aview = awin->views[0];
+
+      //Demo colourmap
+      ColourMap* colourMap = new ColourMap();
+      addColourMap(colourMap);
+
+      //Colours: hex, abgr
+      unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+      colourMap->add(colours, 7);
+
+      //Add colour bar display
+      newObject("colour-bar", false, 0, colourMap, 1.0, "colourbar=1\n");
+
+   std::ifstream file(fn.full.c_str(), std::ios::in);
+   if (file.is_open())
+   {
+      printMessage("Loading %s", fn.full.c_str());
+      std::string line;
+
+      int ELS, N;
+      int NTRI = 12;  //12 triangles per element
+      int NLN = 12;    //12 lines per element
+      float* xyz = NULL;
+      float* triverts = NULL;
+      float* trivals = NULL;
+      float* lineverts = NULL;
+      float* values = NULL;
+      float* particles = NULL;
+
+      float valuemin = HUGE_VAL;
+      float valuemax = -HUGE_VAL;
+      int count = 0;
+      int coord = 0;
+      int tcount = 0;
+      int lcount = 0;
+      int pcount = 0;
+      timestep = -1;
+      DrawingObject *pobj, *tobj, *lobj;
+      while(std::getline(file, line))
+      {
+         //std::cerr << line << std::endl;
+         //getchar();
+         if (line.find("ZONE") != std::string::npos)
+         {//ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
+            if (timestep >= 0) continue; //Only parse first zone for now
+            std::cerr << line << std::endl;
+            std::stringstream ss(line);
+            std::string token;
+            while (ss >> token)
+            {
+               if (token.substr(0, 2) == "N=")
+                  N = atoi(token.substr(2).c_str());
+               else if (token.substr(0, 2) == "E=")
+                  ELS = atoi(token.substr(2).c_str());
+            }
+            timestep = 0;
+
+            //FEBRICK
+            xyz = new float[N*3];
+            triverts = new float[ELS*NTRI*3*3]; //6 faces = 12 tris
+            trivals = new float[ELS*NTRI*3];
+            lineverts = new float[ELS*NLN*2*3]; //12 edges
+            values = new float[ELS];
+            particles = new float[ELS*3];  //Value of cell at centre
+
+            printf("N = %d, ELS = %d\n", N, ELS);
+
+
+            //Add points object
+            pobj = newObject("particles", true, 0, colourMap, 0.5, "lit=0\n");
+            points->add(pobj);
+            std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
+
+            //Add triangles object
+            tobj = newObject("triangles", true, 0xffffffff, colourMap, 1.0, "flat=1\n");
+            triSurfaces->add(tobj);
+
+
+            //Add lines object
+            lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
+            lines->add(lobj);
+
+
+         }
+         else if (line.substr(0, 4) == "TEXT")
+         {
+               count = tcount = lcount = pcount = 0;
+               coord = 6;
+            //End of a data step
+            amodel->timesteps.push_back(TimeStep(timestep, 0));
+               printf("READ TIMESTEP %d SIZE %d\n", timestep, amodel->timesteps.size());
+
+            points->read(pobj, ELS, lucVertexData, particles);
+            points->read(pobj, ELS, lucColourValueData, values);
+            points->setup(pobj, lucColourValueData, valuemin, valuemax);
+
+            triSurfaces->read(tobj, ELS*NTRI*3, lucVertexData, triverts);
+            triSurfaces->read(tobj, ELS*NTRI, lucColourValueData, trivals);
+            triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
+
+            lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
+
+            clearObjects(false); //Will cache...
+
+            timestep++;
+            //Load timesteps while cache slots available
+            if (GeomCache::size <= amodel->timesteps.size()) break;
+
+            valuemin = HUGE_VAL;
+            valuemax = -HUGE_VAL;
+         }
+         else if (timestep >= 0)
+         {
+            std::stringstream ss(line);
+
+            //First 3 coords X,Y,Z 8 per line
+            if (coord < 3)
+            {
+               float value[8];
+               particles[pcount*3+coord] = 0;
+
+               for (int e=0; e<8; e++)
+               {
+                 //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
+                  ss >> value[e];
+                  //if (coord ==2) value[e] *= 20; //HACK SCALE Z
+                  xyz[count*3+coord] = value[e];
+                  particles[pcount*3+coord] += value[e];
+
+                  count++;
+
+                  //if (value[e] < awin->min[coord]) awin->min[coord] = value[e];
+                  //if (value[e] > awin->max[coord]) awin->max[coord] = value[e];
+                  Geometry::checkPointMinMax(&value[e]);
+               }
+
+               for (int i=0; i<8; i++)
+                 assert(!isnan(value[i]));
+
+               //Two triangles per side
+               //Front
+               triverts[(tcount*3)    * 3 + coord] = value[0];
+               triverts[(tcount*3+1)  * 3 + coord] = value[2];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[2];
+               triverts[(tcount*3+1)  * 3 + coord] = value[3];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               //Back
+               triverts[(tcount*3)    * 3 + coord] = value[4];
+               triverts[(tcount*3+1)  * 3 + coord] = value[6];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[6];
+               triverts[(tcount*3+1)  * 3 + coord] = value[7];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               //Right
+               triverts[(tcount*3)    * 3 + coord] = value[1];
+               triverts[(tcount*3+1)  * 3 + coord] = value[3];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[3];
+               triverts[(tcount*3+1)  * 3 + coord] = value[7];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               //Left
+               triverts[(tcount*3)    * 3 + coord] = value[0];
+               triverts[(tcount*3+1)  * 3 + coord] = value[2];
+               triverts[(tcount*3+2)  * 3 + coord] = value[4];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[2];
+               triverts[(tcount*3+1)  * 3 + coord] = value[6];
+               triverts[(tcount*3+2)  * 3 + coord] = value[4];
+               tcount++;
+               //Top??
+               triverts[(tcount*3)    * 3 + coord] = value[2];
+               triverts[(tcount*3+1)  * 3 + coord] = value[6];
+               triverts[(tcount*3+2)  * 3 + coord] = value[7];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[7];
+               triverts[(tcount*3+1)  * 3 + coord] = value[3];
+               triverts[(tcount*3+2)  * 3 + coord] = value[2];
+               tcount++;
+               //Bottom??
+               triverts[(tcount*3)    * 3 + coord] = value[0];
+               triverts[(tcount*3+1)  * 3 + coord] = value[4];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[4];
+               triverts[(tcount*3+1)  * 3 + coord] = value[5];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               //std::cout << count << " : " << ptr[0] << "," << ptr[3] << "," << ptr[6] << std::endl;
+               //getchar();
+
+               //Edge lines
+               lineverts[(lcount*2)    * 3 + coord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[1];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[3];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[2];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[0];
+               lcount++;
+
+               lineverts[(lcount*2)    * 3 + coord] = value[4];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[5];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[7];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[6];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lcount++;
+
+               lineverts[(lcount*2)    * 3 + coord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
+               lcount++;
+
+               //Average value for particle
+               particles[pcount*3+coord] /= 8;
+               pcount++;
+            }
+            else if (coord > 5) //Skip I,J,K indices
+            {
+               //Load SG (1 per line)
+               //if (coord > 6) break; //No more values of interest
+
+              //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
+              float value;
+               ss >> value;
+               values[count] = value;
+               count++;
+
+               if (value < valuemin) valuemin = value;
+               if (value > valuemax) valuemax = value;
+
+               for (int n=0; n<NTRI; n++, tcount++)
+                  trivals[tcount] = value;
+            }
+            else
+            {
+               count++;
+            }
+
+            if (count >= N || coord > 2 && count >= ELS) 
+            {
+               count = tcount = lcount = pcount = 0;
+               coord++;
+            }
+         }
+      }
+      file.close();
+
+      if (xyz) delete[] xyz;
+      if (values) delete[] values;
+      if (triverts) delete[] triverts;
+      if (trivals) delete[] trivals;
+      if (lineverts) delete[] lineverts;
+
+      setTimeStep(0);
+   }
+   else
+      printMessage("Unable to open file: %s", fn.full.c_str());
+}
+
 void GLuciferViewer::createDemoModel()
 {
    int RANGE = 2;
@@ -657,7 +1094,7 @@ void GLuciferViewer::createDemoModel()
    }
    lines->setup(obj, lucColourValueData, 0, size);
 
-   //Add some quads
+   //Add some quads (using tri surface mode)
    {
       float verts[3][12] = {{-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
                             {-2,0,-2,  2,0,-2,  -2,0,2,  2,0,2},
@@ -1308,52 +1745,50 @@ bool GLuciferViewer::loadModel(std::string& f)
 //Load model window at specified timestep
 bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
-   if (windows.size() == 0)
+   if (windows.size() > 0)
    {
-      //Height maps can be loaded here...
-      if (files.size() > 0)
-      {
-         for (unsigned int m=0; m < files.size(); m++)
-            readHeightMap(files[m]);
-         files.clear();
-      }
-      else
-      {
-         //No model, show a demo
-         createDemoModel();
-      }
-   }
-   //else
       //Clear current model data
       //clearObjects();
 
-   if (window_idx >= (int)windows.size()) return false;
+      if (window_idx >= (int)windows.size()) return false;
 
-   //Resized from last window? close so will be re-opened at new size
-   if (awin && (awin->width != windows[window_idx]->width || awin->height != windows[window_idx]->height && viewer->isopen))
-      viewer->close();
+      //Resized from last window? close so will be re-opened at new size
+      if (awin && (awin->width != windows[window_idx]->width || awin->height != windows[window_idx]->height && viewer->isopen))
+         viewer->close();
 
-   //Save active window as selected
-   awin = windows[window_idx];
-   window = window_idx;
+      //Save active window as selected
+      awin = windows[window_idx];
+      window = window_idx;
 
-   // Ensure correct model is selected
-   for (unsigned int m=0; m < models.size(); m++)
-      for (unsigned int w=0; w < models[m]->windows.size(); w++)
-         if (models[m]->windows[w] == awin) amodel = models[m];
+      // Ensure correct model is selected
+      for (unsigned int m=0; m < models.size(); m++)
+         for (unsigned int w=0; w < models[m]->windows.size(); w++)
+            if (models[m]->windows[w] == awin) amodel = models[m];
 
-   if (amodel->objects.size() == 0) return false;
+      if (amodel->objects.size() == 0) return false;
 
-   //Set timestep and load geometry at that step
-   if (amodel->db)
-   {
-      setTimeStep(at_timestep);
-      debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), timestep);
+      //Set timestep and load geometry at that step
+      if (amodel->db)
+      {
+         setTimeStep(at_timestep);
+         debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), timestep);
+      }
    }
 
-   //Height maps can be loaded here...
+   //Height maps or other files can be loaded here...
    for (unsigned int m=0; m < files.size(); m++)
+   {
       readHeightMap(files[m]);
+      readOBJ(files[m]);
+      readTecplot(files[m]);
+   }
+
+   //Should have a window by now, if not args were invalid
+   if (windows.size() == 0)
+   {
+      printf("No valid model or files passed, showing demo test pattern\n");
+      createDemoModel();
+   }
 
    //Not yet opened or resized?
    if (!viewer->isopen)
@@ -1371,9 +1806,8 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
    for (unsigned int m=0; m < files.size(); m++)
       readScriptFile(files[m]);
 
-
    //Cache fill (if cache large enough for all data)
-   if (GeomCache::size >= amodel->timesteps.size())
+   if (amodel->db && GeomCache::size >= amodel->timesteps.size())
    {
       printf("Caching all geometry data...\n");
       for (int i=0; i<=amodel->timesteps.size(); i++)
@@ -1430,6 +1864,11 @@ int GLuciferViewer::loadGeometry(int object_id)
 
 int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers)
 {
+   if (!amodel->db)
+   {
+      std::cerr << "No database loaded!!\n";
+      return 0;
+   }
    clock_t t1 = clock();
    char* prefix = amodel->prefix;
    //Setup filters

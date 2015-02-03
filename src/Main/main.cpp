@@ -229,7 +229,8 @@ int main(int argc, char *argv[])
 #ifndef DISABLE_SERVER
    if (port)
    {
-      std::string htmlpath = std::string(Shader::path) + "html";
+      //Use executable path as base for html path
+      std::string htmlpath = path.path + std::string("./html");
       viewer->addOutput(GLuciferServer::Instance(viewer, htmlpath, port, quality, threads));
    }
 #endif

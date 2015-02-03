@@ -101,10 +101,13 @@ class GLuciferViewer : public ViewerApp
 
    void run(bool persist=false);
 
+   void addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level);
    void readScriptFile(FilePath& fn);
    void readHeightMap(FilePath& fn);
+   void readOBJ(FilePath& fn);
+   void readTecplot(FilePath& fn);
    void createDemoModel();
-   void newModel(std::string name, int w, int h, int bg, float mmin[3], float mmax[3]);
+   void newModel(std::string name, int w=800, int h=600, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
    DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, const char* properties="");
    void showById(unsigned int id, bool state);
    void setOpacity(unsigned int id, float opacity);

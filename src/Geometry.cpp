@@ -321,9 +321,9 @@ void Geometry::setState(int index, Shader* prog)
 {
    DrawingObject* draw = NULL;
    int texunit = -1;
-   bool lighting = lit && !flat;
+   bool lighting = lit;
    if (index >= 0) draw = geom[index]->draw;
-   if (draw) lighting = lighting && (draw->lit && !draw->flat);
+   if (draw) lighting = lighting && draw->lit;
 
    //Global/Local draw state
    if (cullface || (draw && draw->cullface))
@@ -332,9 +332,9 @@ void Geometry::setState(int index, Shader* prog)
       glDisable(GL_CULL_FACE);
 
    //Surface specific options
-   if (type == lucTriangleType || type == lucGridType)
+   if (type == lucTriangleType || type == lucGridType || type == lucShapeType)
    {
-      //Don't light surfaces in 3d models
+      //Don't light surfaces in 2d models
       if (!view->is3d) lighting = false;
       //Disable lighting and polygon faces in wireframe mode
       if (wireframe || (draw && draw->wireframe))
@@ -345,6 +345,16 @@ void Geometry::setState(int index, Shader* prog)
       }
       else
          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+      if (draw->flat || flat)
+         glShadeModel(GL_FLAT);
+      else
+         glShadeModel(GL_SMOOTH);
+   }
+   else
+   {
+      //Flat disables lighting for non surface types
+      if (flat || (draw && draw->flat)) lighting = false;
    }
 
    if (!lighting)
@@ -548,12 +558,12 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 //Track min/max coords
 void Geometry::checkPointMinMax(float *coord)
 {
-   if (coord[0] > max[0]) max[0] = coord[0];
-   if (coord[0] < min[0]) min[0] = coord[0];
-   if (coord[1] > max[1]) max[1] = coord[1];
-   if (coord[1] < min[1]) min[1] = coord[1];
-   if (coord[2] > max[2]) max[2] = coord[2];
-   if (coord[2] < min[2]) min[2] = coord[2];
+   //std::cerr << coord[0] << "," << coord[1] << "," << coord[2] << std::endl;
+   for (int i=0; i<3; i++)
+   {
+     if (coord[i] > max[i] && coord[i] < HUGE_VAL) max[i] = coord[i];
+     if (coord[i] < min[i] && coord[i] > -HUGE_VAL) min[i] = coord[i];
+   }
 }
 
 void Geometry::getMinMaxDistance(float modelView[16], float* mindist, float* maxdist)

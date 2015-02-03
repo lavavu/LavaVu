@@ -61,15 +61,21 @@ class Win
       max[0] = max[1] = max[2] = 0.0;
    }
 
-   Win(unsigned int id, std::string name, int w, int h, int bg, float mmin[3], float mmax[3])
+   Win(unsigned int id, std::string name, int w, int h, int bg, float mmin[3]=NULL, float mmax[3]=NULL)
        : name(name), id(id), width(w), height(h)
    {
       if (width < 200) width = 200;
       if (height < 200) height = 200;
       if (id == 0) this->id = ++Win::lastid;
       background.value = bg;
-      memcpy(min, mmin, 3 * sizeof(float));
-      memcpy(max, mmax, 3 * sizeof(float));
+      if (mmin)
+         memcpy(min, mmin, 3 * sizeof(float));
+      else
+         min[0] = min[1] = min[2] = HUGE_VAL;
+      if (mmax)
+         memcpy(max, mmax, 3 * sizeof(float));
+      else
+         max[0] = max[1] = max[2] = -HUGE_VAL;
    }
 
    View* addView(View* v);
