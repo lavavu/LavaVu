@@ -154,7 +154,7 @@ class View
    bool hasPixel(int x, int y);
 
    void projection(int eye);
-   void apply();
+   void apply(bool use_fp=true);
    void setCoordSystem(int orientation);
    int switchCoordSystem();
    void zoomToFit(int margin=-1);

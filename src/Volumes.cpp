@@ -235,6 +235,9 @@ void Volumes::render(int i)
    glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
    //Apply scaling to fit bounding box
    glPushMatrix();
+   glLoadIdentity();
+   view->apply(false); //Ignore focal point / rotation centre when applying modelview
+   //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
    glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);

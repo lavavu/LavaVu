@@ -450,7 +450,7 @@ void View::projection(int eye)
    GL_Error_Check;
 }
 
-void View::apply()
+void View::apply(bool use_fp)
 {
    if (!use_inertia) inertia(false);
    GL_Error_Check;
@@ -469,7 +469,7 @@ void View::apply()
    GL_Error_Check;
 
    // Adjust centre of rotation, default is same as focal point so this does nothing...
-   glTranslatef(-(focal_point[0]-rotate_centre[0]), -(focal_point[1]-rotate_centre[1]), -(focal_point[2]-rotate_centre[2]));
+   if (use_fp) glTranslatef(-(focal_point[0]-rotate_centre[0]), -(focal_point[1]-rotate_centre[1]), -(focal_point[2]-rotate_centre[2]));
    GL_Error_Check;
 
    // rotate model 
@@ -477,12 +477,12 @@ void View::apply()
    GL_Error_Check;
 
    // Adjust back for rotation centre
-   glTranslatef(focal_point[0]-rotate_centre[0], focal_point[1]-rotate_centre[1], (focal_point[2]-rotate_centre[2]));
+   if (use_fp) glTranslatef(focal_point[0]-rotate_centre[0], focal_point[1]-rotate_centre[1], (focal_point[2]-rotate_centre[2]));
    GL_Error_Check;
 
    // Translate to align eye with model centre - view focal point
    //glTranslatef(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
-   glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+   if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
    GL_Error_Check;
 
    // Switch coordinate system if applicable
