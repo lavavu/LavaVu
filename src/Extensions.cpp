@@ -18,6 +18,7 @@ PFNGLMAPBUFFERPROC glMapBuffer;
 PFNGLBUFFERDATAPROC glBufferData;
 PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers;
+PFNGLTEXIMAGE3DPROC glTexImage3D;
 
 PFNGLCREATESHADERPROC glCreateShader;
 PFNGLDELETESHADERPROC glDeleteShader;
@@ -83,6 +84,7 @@ void OpenGL_Extensions_Init()
    glBufferData = (PFNGLBUFFERDATAPROC) GetProcAddress("glBufferData");
    glUnmapBuffer = (PFNGLUNMAPBUFFERPROC) GetProcAddress("glUnmapBuffer");
    glDeleteBuffers = (PFNGLDELETEBUFFERSPROC) GetProcAddress("glDeleteBuffers");
+   glTexImage3D = (PFNGLTEXIMAGE3DPROC)GetProcAddress("glTexImage3D");
 
    //Shader stuff, ARB?
    glCreateShader = (PFNGLCREATESHADERPROC) GetProcAddress("glCreateShader");

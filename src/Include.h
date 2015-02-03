@@ -115,6 +115,7 @@ extern PFNGLMAPBUFFERPROC glMapBuffer;
 extern PFNGLBUFFERDATAPROC glBufferData;
 extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
+extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 
 extern PFNGLCREATESHADERPROC glCreateShader;
 extern PFNGLDELETESHADERPROC glDeleteShader;

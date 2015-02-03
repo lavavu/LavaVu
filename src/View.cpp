@@ -810,10 +810,10 @@ void View::drawAxis()
    glPushMatrix();
    glLoadIdentity();
    // Build the viewing frustum - fixed near/far
-   float near = 0.01, far = 10.0, left, right, top, bottom;
-   top = tan(0.5f * DEG2RAD * 45) * near;
+   float nearc = 0.01, farc = 10.0, left, right, top, bottom;
+   top = tan(0.5f * DEG2RAD * 45) * nearc;
    right = aspectRatio * top;
-   glFrustum(-right, right, -top, top, near, far);
+   glFrustum(-right, right, -top, top, nearc, farc);
    //Modelview (rotation only)
    glMatrixMode(GL_MODELVIEW);
    glPushMatrix();
