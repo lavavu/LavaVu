@@ -133,9 +133,9 @@ bool Shader::build()
    program = glCreateProgram();
    assert(glIsProgram(program));
 
-   if (glIsShader(shaders[0]));
+   if (glIsShader(shaders[0]))
       glAttachShader(program, shaders[0]);
-   if (glIsShader(shaders[1]));
+   if (glIsShader(shaders[1]))
       glAttachShader(program, shaders[1]);
 
    glLinkProgram(program);

@@ -61,6 +61,9 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
    output_path[0] = '\0';
 
    setBackground(0xff000000);
+
+   /* Init mutex */
+   pthread_mutex_init(&cmd_mutex, NULL);
 }
 
 OpenGLViewer::~OpenGLViewer()
