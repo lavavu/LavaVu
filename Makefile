@@ -1,4 +1,15 @@
+#Install path
+PREFIX = bin
+#Object files path
+OPATH = /tmp
+
+#Compilers
+CPP=g++
+CC=gcc
+
+#Default flags
 CFLAGS = -Isrc
+
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
 CFLAGS += -g -O0
@@ -6,16 +17,12 @@ else
 CFLAGS += -O3
 endif
 
-CPP=g++
-CC=gcc
-
+#Linux/Mac specific libraries/flags
 ifeq ($(MACHINE), Darwin)
    CFLAGS += -FGLUT -FOpenGL
    LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm 
 else
-   #LIBS=-ldl -lpthread -lm -lGL -lGLU -lglut
-   #LIBS=-ldl -lpthread -lm -lGL -lGLU -lX11
-   LIBS=-ldl -lpthread -lm -lGL -lGLU -lSDL -lX11 -lglut
+   LIBS=-ldl -lpthread -lm -lGL -lSDL -lX11 -lglut
 endif
 
 #Source search paths
@@ -29,35 +36,46 @@ SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cp
 INC := $(wildcard src/*.h)
 #INC := $(SRC:%.cpp=%.h)
 OBJ := $(SRC:%.cpp=%.o)
+#Strip paths (src) from sources
 OBJS = $(notdir $(OBJ))
-#Only works if make invoked with makefile in cwd
-CWD = $(shell pwd)
+#Add object path
+OBJS := $(OBJS:%.o=$(OPATH)/%.o)
+#Additional library objects (no cpp extension so not included above)
+OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
+
+#Additional flags for building gLucifer sources only
+DEFINES += -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS
 
 PROGRAM = gLucifer
 
-default: $(PROGRAM)
+default: install
 
 install: $(PROGRAM)
-	-mkdir bin
-	cp $(PROGRAM) bin
-	cp src/shaders/*.* bin
+	mkdir -p $(PREFIX)
+	cp $(PROGRAM) $(PREFIX)
+	cp src/shaders/*.* $(PREFIX)
+	cp -R src/html $(PREFIX)
 
 #Rebuild *.cpp
-$(OBJS): %.o : %.cpp $(INC)
-	$(CPP) $(CFLAGS) -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS -DSHADER_PATH='"${CWD}/src/shaders/"' -c $< -o $@
+$(OBJS): $(OPATH)/%.o : %.cpp $(INC)
+	$(CPP) $(CFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(OBJS) tiny_obj_loader.o mongoose.o sqlite3.o
-	$(CPP) -o $(PROGRAM) $(OBJS) tiny_obj_loader.o mongoose.o sqlite3.o $(LIBS)
+$(PROGRAM): $(OBJS) $(OBJ2)
+	$(CPP) -o $(PROGRAM) $(OBJS) $(OBJ2) $(LIBS)
 
-tiny_obj_loader.o : tiny_obj_loader.cc
+$(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
 	$(CPP) $(CFLAGS) -o $@ -c $^ 
 
-mongoose.o : mongoose.c
+$(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
 
-sqlite3.o : sqlite3.c
+$(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
 
 clean:
-	/bin/rm -f *~ *.o $(PROGRAM)
+	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM)
+	/bin/rm $(PREFIX)/html/*
+	/bin/rm $(PREFIX)/gLucifer
+	/bin/rm $(PREFIX)/*.vert
+	/bin/rm $(PREFIX)/*.frag
 
