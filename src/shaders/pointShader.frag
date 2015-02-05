@@ -1,5 +1,4 @@
 #version 120 //Required to use gl_PointCoord
-//uniform sampler2D texture;
 varying float vSmooth;
 varying vec3 vPosEye;
 varying float vPointType;
@@ -25,41 +24,41 @@ void main(void)
    if (pointType == 4 || vSmooth < 0.0) 
       return;
 
-   // calculate normal from point/tex coordinates
+   //Calculate normal from point/tex coordinates
    vec3 N;
    N.xy = gl_PointCoord * 2.0 - vec2(1.0);    
-   float mag = dot(N.xy, N.xy);
-   // Fade pixels outside circle radius
-   if (pointType > 1) 
-     if (mag > 0.5) alpha = vPointSize * 0.25 * (1.0 - mag);
-   else
-     if (mag > 1.0) alpha = 0.0;
-   if (alpha < 0.01) discard;   // discard transparent pixels
+   float R = dot(N.xy, N.xy);
+   //Anti-aliased edges for sphere types
+   if (pointType > 1 && R > 0.9) alpha *= 10.0 * (1.0 - R);
+   //Discard if outside circle or transparent
+   if (R > 1.0) alpha = 0.0;
+   if (alpha < 0.01) discard;
 
    if (pointType < 2)
    {
       if (pointType == 0)
-         gl_FragColor.a = alpha * 1.0-sqrt(mag);  //Gaussian
+         gl_FragColor.a = alpha * 1.0-sqrt(R);  //Gaussian
       else
-         gl_FragColor.a = alpha * 1.0-mag;      //Linear
+         gl_FragColor.a = alpha * 1.0-R;      //Linear
       return;
    }
-   N.z = sqrt(1.0-mag);
 
-   // calculate diffuse lighting
+   N.z = sqrt(1.0-R);
+
+   //Calculate diffuse lighting
    vec3 lightDir = normalize(vec3(0,0,0) - vPosEye);
    float diffuse = max(0.0, dot(lightDir, N));
 
-   // compute the specular term 
+   //Compute the specular term
    vec3 specular = vec3(0.0,0.0,0.0);
    if (pointType == 3 && diffuse > 0.0)
    {
       float shininess = 200; //Size of highlight
       vec3 specolour = vec3(1.0, 1.0, 1.0);   //Color of light
-      // normalize the half-vector, and then compute the 
-      // cosine (dot product) with the normal
+      //Normalize the half-vector
       //vec3 halfVector = normalize(vPosEye + lightDir);
       vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
+      //Compute cosine (dot product) with the normal
       float NdotHV = max(dot(N, halfVector), 0.0);
       specular = specolour * pow(NdotHV, shininess);
       //specular = vec3(1.0, 0.0, 0.0);
