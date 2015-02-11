@@ -55,8 +55,11 @@ OSMesaViewer::~OSMesaViewer()
    delete[] pixelBuffer;
 }
 
-void OSMesaViewer::open(int width, int height)
+void OSMesaViewer::open(int w, int h)
 {
+   //Call base class open to set width/height
+   OpenGLViewer::open(w, h);
+   
    if (osMesaContext)
       OSMesaDestroyContext(osMesaContext);
    if (pixelBuffer)
@@ -71,8 +74,8 @@ void OSMesaViewer::open(int width, int height)
    timer = 0;
    //const char* gl_version = (const char*)glGetString(GL_VERSION);
 
-   //Call base class open
-   OpenGLViewer::open(width, height);
+   //Call OpenGL init
+   OpenGLViewer::init();
 }
 
 void OSMesaViewer::setsize(int width, int height)

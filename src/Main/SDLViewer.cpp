@@ -107,11 +107,15 @@ SDLViewer::~SDLViewer()
    screen = NULL;
 }
 
-void SDLViewer::open(int width, int height)
+void SDLViewer::open(int w, int h)
 {
+   //Call base class open to set width/height
+   OpenGLViewer::open(w, h);
+   
    createWindow(width, height);
-   //Call base class open
-   OpenGLViewer::open(width, height);
+   
+   //Call OpenGL init
+   OpenGLViewer::init();
 }
 
 void SDLViewer::setsize(int width, int height)

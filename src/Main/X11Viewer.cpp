@@ -74,8 +74,11 @@ X11Viewer::~X11Viewer()
    XCloseDisplay(Xdisplay);
 }
 
-void X11Viewer::open(int width, int height)
+void X11Viewer::open(int w, int h)
 {
+   //Call base class open to set width/height
+   OpenGLViewer::open(w, h);
+   
    if (!Xdisplay)
    {
       //********************** Create Display *****************************
@@ -127,8 +130,8 @@ void X11Viewer::open(int width, int height)
       XSync(Xdisplay, false);  // Flush output buffer 
    }
 
-   //Call base class open
-   OpenGLViewer::open(width, height);
+   //Call OpenGL init
+   OpenGLViewer::init();
 }
 
 void X11Viewer::setsize(int width, int height)
