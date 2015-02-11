@@ -6,7 +6,9 @@
 PFNGLACTIVETEXTUREPROC glActiveTexture;
 PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 PFNGLTEXIMAGE3DPROC glTexImage3D;
-#endif
+#else
+getProcAddressFN GetProcAddress = NULL;
+#endif 
 
 #ifdef EXTENSION_POINTERS
 PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
@@ -61,10 +63,6 @@ PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
 PFNGLISPROGRAMPROC glIsProgram;
 #endif
-
-#if not defined _WIN32
-getProcAddressFN GetProcAddress = NULL;
-#endif 
 
 void OpenGL_Extensions_Init()
 {
