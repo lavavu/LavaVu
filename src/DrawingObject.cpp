@@ -127,3 +127,30 @@ int DrawingObject::useTexture()
    glDisable(GL_TEXTURE_2D);
    return -1;
 }
+
+void DrawingObject::load3DTexture(int width, int height, int depth, float* data)
+{
+  //Create the texture
+  if (!texture) texture = new TextureData();
+
+  glActiveTexture(GL_TEXTURE1);
+  GL_Error_Check;
+  glBindTexture(GL_TEXTURE_3D, texture->id);
+  GL_Error_Check;
+
+  texture->width = width;
+  texture->height = height;
+  texture->depth = depth;
+
+  // set the texture parameters
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  GL_Error_Check;
+
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+  //glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, array);
+  //glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, array);
+}
