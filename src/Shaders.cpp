@@ -1,9 +1,10 @@
 #include "Shaders.h"
 
 #ifndef SHADER_PATH
-#define SHADER_PATH ""
-#endif
+const char* Shader::path = NULL;
+#else
 const char* Shader::path = SHADER_PATH;
+#endif
 
 //Default shaders
 const char *vertexShader = STRINGIFY(
@@ -87,11 +88,12 @@ bool Shader::version()
 //Read a fragment or vertex shader from a file into a shader object
 std::string Shader::read_file(const char *fname)
 {
-   char filepath[512] = "";
+   char filepath[2048] = "";
    if (!fname) return std::string("");
 
    if (Shader::path) strcpy(filepath, Shader::path);
    strcat(filepath, fname);
+   debug_print("Shader loaded: %s\n", filepath);
 
    std::ifstream ifs(filepath);
    std::stringstream buffer;
