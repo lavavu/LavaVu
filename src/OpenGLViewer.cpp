@@ -160,7 +160,7 @@ void OpenGLViewer::init()
 
    //Call open on any output interfaces
    for (int o=0; o<outputs.size(); o++)
-     outputs[o]->open(w, h);
+     outputs[o]->open(width, height);
 }
 
 void OpenGLViewer::show()
