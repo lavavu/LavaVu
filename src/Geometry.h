@@ -81,6 +81,7 @@ class GeomData
    int count;  //Number of vertices
    int width;
    int height;
+   int depth;
    char* labelptr;
    bool opaque;   //Flag for opaque geometry, render first, don't depth sort
 
@@ -237,7 +238,7 @@ class Geometry
    void labels();  //Draw labels
    GeomData* add(DrawingObject* draw);
    void newData(DrawingObject* draw);
-   virtual void read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width=0, int height=0, int index=-1);
+   virtual void read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width=0, int height=0, int depth=1);
    void setup(DrawingObject* draw, lucGeometryDataType type, float minimum, float maximum, float dimFactor=1.0, const char* units="");
    void label(DrawingObject* draw, const char* labels);
    GeomData* getObjectStore(DrawingObject* draw);

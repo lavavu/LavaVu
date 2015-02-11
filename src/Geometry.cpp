@@ -499,21 +499,18 @@ void Geometry::move(Geometry* other)
 }
 
 //Read geometry data from storage
-void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width, int height, int index)
+void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width, int height, int depth)
 {
    draw->skip = false;  //Enable object (has data now)
    GeomData* geomdata;
-   if (index < 0)
-      //Get passed object's most recently added data store
-      geomdata = getObjectStore(draw);
-   else
-      geomdata = geom[index];
+   //Get passed object's most recently added data store
+   geomdata = getObjectStore(draw);
    
 
    //Objects with a specified width & height: detect new data store when required (full)
    if (!geomdata || (type == lucVertexData && 
        geomdata->width > 0 && geomdata->height > 0 && 
-       geomdata->width * geomdata->height == geomdata->count))
+       geomdata->width * geomdata->height * geomdata->depth == geomdata->count))
    {
       //No store yet or loading vertices and already have required amount, new object required...
       //Create new data store, save in drawing object and Geometry list
@@ -523,6 +520,7 @@ void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const 
    //Set width & height if provided
    if (width) geomdata->width = width;
    if (height) geomdata->height = height;
+   geomdata->depth = depth;
 
    //Read the data
    if (n > 0) geomdata->data[type]->read(n, data);

@@ -91,74 +91,75 @@ void Volumes::update()
    //Count slices in each volume
    printf("Total slices: %d\n", geom.size());
    if (!geom.size()) return;
-   slices.clear();
-   int id = geom[0]->draw->id;
-   int count = 0;
-   for (int i=0; i<=geom.size(); i++)
+   
+   //Single volume cube
+   if (geom.size() == 1)
    {
-      //Force reload
-      if (i<geom.size() && geom[i]->draw->texture)
-        geom[i]->draw->texture->width = 0;
-      if (i==geom.size() || id != geom[i]->draw->id)
-      {
-         slices[id] = count;
-         printf("%d slices in object %d\n", count, id);
-         count = 0;
-         if (i<geom.size()) id = geom[i]->draw->id;
-      }
-      count++;
-   }
-
-   for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id]) 
-   {
-      if (!drawable(i)) continue;
+      int i = 0;
+      if (!drawable(i)) return;
 
       DrawingObject* current = geom[i]->draw;
       if (!current->texture || current->texture->width == 0)
       {
-         //Create the texture
-         if (!current->texture) current->texture = new TextureData();
-         //Height needs calculating from values data
-         int height = geom[i]->colourValue.size() / geom[i]->width;
-         printf("current %d width %d height %d depth %d\n", current->id, geom[i]->width, height, slices[current->id]);
-         int sliceSize = geom[i]->width * height;
-         float* volume = new float[sliceSize * slices[current->id]];
+         printf("volume 0 width %d height %d depth %d\n", geom[i]->width, geom[i]->height, geom[i]->depth);
+         current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0]);
+      }
 
-         size_t offset = 0;
-         for (int j=i; j<i+slices[current->id]; j++)
-         {
-            size_t size = sliceSize * sizeof(float);
-            memcpy(volume + offset, &geom[j]->colourValue.value[0], size);
-            offset += sliceSize;
-         }
-          
-         glActiveTexture(GL_TEXTURE1);
-         GL_Error_Check;
-         glBindTexture(GL_TEXTURE_3D, current->texture->id);
-         GL_Error_Check;
+      //Setup gradient texture from colourmap
+      if (geom[i]->draw->colourMaps[lucColourValueData] && !geom[i]->draw->colourMaps[lucColourValueData]->texture)
+         geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
+   }
+   else
+   {
+      //Collection of 2D slices
+      slices.clear();
+      int id = geom[0]->draw->id;
+      int count = 0;
+      for (int i=0; i<=geom.size(); i++)
+      {
+          //Force reload
+          if (i<geom.size() && geom[i]->draw->texture)
+            geom[i]->draw->texture->width = 0;
+          if (i==geom.size() || id != geom[i]->draw->id)
+          {
+            slices[id] = count;
+            printf("%d slices in object %d\n", count, id);
+            count = 0;
+            if (i<geom.size()) id = geom[i]->draw->id;
+          }
+          count++;
+      }
 
-         current->texture->width = geom[i]->width;
-         current->texture->height = height;
-         current->texture->depth = slices[current->id];
-       
-         // set the texture parameters
-         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP);
-         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-         GL_Error_Check;
+      for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id]) 
+      {
+          if (!drawable(i)) continue;
 
-         glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, geom[i]->width, height, slices[current->id], 0, GL_LUMINANCE, GL_FLOAT, volume);
-         GL_Error_Check;
-         delete volume;
+          DrawingObject* current = geom[i]->draw;
+          if (!current->texture || current->texture->width == 0)
+          {
+            //Height needs calculating from values data
+            int height = geom[i]->colourValue.size() / geom[i]->width;
+            printf("current %d width %d height %d depth %d\n", current->id, geom[i]->width, height, slices[current->id]);
+            int sliceSize = geom[i]->width * height;
+            float* volume = new float[sliceSize * slices[current->id]];
 
-         //Setup gradient texture from colourmap
-         if (geom[i]->draw->colourMaps[lucColourValueData])
-           geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
+            size_t offset = 0;
+            for (int j=i; j<i+slices[current->id]; j++)
+            {
+                size_t size = sliceSize * sizeof(float);
+                memcpy(volume + offset, &geom[j]->colourValue.value[0], size);
+                offset += sliceSize;
+            }
+              
+            current->load3DTexture(geom[i]->width, height, slices[current->id], volume);
+            delete volume;
+          }
+
+          //Setup gradient texture from colourmap
+          if (geom[i]->draw->colourMaps[lucColourValueData] && !geom[i]->draw->colourMaps[lucColourValueData]->texture)
+            geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
       }
    }
-
    t2 = clock(); debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
@@ -190,7 +191,7 @@ void Volumes::render(int i)
     glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
     glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
     glUniform3fv(prog->uniforms["uResolution"], 1, res);
-    glUniform1i(prog->uniforms["uEnableColour"], 1);
+    glUniform1i(prog->uniforms["uEnableColour"], geom[i]->draw->colourMaps[lucColourValueData]->texture ? 1 : 0);
     glUniform1f(prog->uniforms["uBrightness"], 0);
     glUniform1f(prog->uniforms["uContrast"], 1);
     glUniform1f(prog->uniforms["uPower"], 1);
@@ -219,7 +220,7 @@ void Volumes::render(int i)
    //Gradient texture
    glActiveTexture(GL_TEXTURE0);
    glUniform1i(prog->uniforms["uTransferFunction"], 0);
-   if (geom[i]->draw->colourMaps[lucColourValueData])
+   if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->draw->colourMaps[lucColourValueData]->texture)
       glBindTexture(GL_TEXTURE_2D, geom[i]->draw->colourMaps[lucColourValueData]->texture->id);
  
    //Volume texture
