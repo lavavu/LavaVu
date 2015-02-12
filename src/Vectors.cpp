@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Vectors::Vectors(bool hidden) : Geometry(hidden)
+Vectors::Vectors() : Geometry()
 {
    glyphs = -1;
    type = lucVectorType;

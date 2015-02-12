@@ -40,7 +40,7 @@ unsigned int Points::subSample = 1;
 Shader* Points::prog = NULL;
 int Points::pointType = 0;
 
-Points::Points(bool hidden) : Geometry(hidden)
+Points::Points() : Geometry()
 {
    type = lucPointType;
    scale = 1.0f;

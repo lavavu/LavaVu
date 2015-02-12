@@ -39,6 +39,7 @@
 class TimeStep
 {
   public:
+   static std::vector<TimeStep> timesteps; //Active model timesteps
    static int gap;
    int step;
    float time;

@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Lines::Lines(bool hidden) : Geometry(hidden) // : type(lucLineType)
+Lines::Lines() : Geometry()
 {
    type = lucLineType;
 }

@@ -37,7 +37,7 @@
 
 Shader* Volumes::prog = NULL;
 
-Volumes::Volumes(bool hidden) : Geometry(hidden)
+Volumes::Volumes() : Geometry()
 {
    type = lucVolumeType;
 }

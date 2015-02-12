@@ -37,7 +37,7 @@
 
 Shader* QuadSurfaces::prog = NULL;
 
-QuadSurfaces::QuadSurfaces(bool hidden) : Geometry(hidden)
+QuadSurfaces::QuadSurfaces() : Geometry()
 {
    type = lucGridType;
    wireframe = false;

@@ -36,7 +36,7 @@
 #include "Geometry.h"
 #include "TimeStep.h"
 
-Tracers::Tracers(bool hidden) : Geometry(hidden)
+Tracers::Tracers() : Geometry()
 {
    type = lucTracerType;
    flat = false;
@@ -106,8 +106,8 @@ void Tracers::update()
       bool timecolour = false;
       if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->colourValue.size() == 0)
       {
-         float mintime = Geometry::timesteps[start].time;
-         float maxtime = Geometry::timesteps[end].time;
+         float mintime = TimeStep::timesteps[start].time;
+         float maxtime = TimeStep::timesteps[end].time;
          geom[i]->draw->colourMaps[lucColourValueData]->calibrate(mintime, maxtime);
          timecolour = true;
       }
@@ -154,7 +154,7 @@ void Tracers::update()
             //Get colour, either from colour values or time step
             if (timecolour)
             {
-               float time = Geometry::timesteps[step].time;
+               float time = TimeStep::timesteps[step].time;
                colour = geom[i]->draw->colourMaps[lucColourValueData]->getfast(time);
             }
             else

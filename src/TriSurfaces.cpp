@@ -37,7 +37,7 @@
 
 Shader* TriSurfaces::prog = NULL;
 
-TriSurfaces::TriSurfaces(bool hidden) : Geometry(hidden)
+TriSurfaces::TriSurfaces() : Geometry()
 {
    type = lucTriangleType;
    wireframe = false;

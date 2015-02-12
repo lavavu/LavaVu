@@ -63,7 +63,7 @@ class GeomCache
       //Copy all object types
       for (unsigned int i=0; i < data.size(); i++)
       {
-         store[i] = new Geometry(false);
+         store[i] = new Geometry();
          store[i]->move(data[i]);
       }
    }
@@ -122,7 +122,8 @@ class Model
    void loadColourMaps();
 
    Model() : readonly(true), file(FilePath(":memory")), attached(0), db(NULL) {prefix[0] = '\0';}
-   Model(FilePath& fn) : readonly(true), file(fn), attached(0), db(NULL) {prefix[0] = '\0';}
+   Model(FilePath& fn);
+   ~Model();
 
    void addObject(DrawingObject* draw)
    {
@@ -140,23 +141,6 @@ class Model
    {
      if (timesteps.size() == 0) return -1;
      return timesteps[timesteps.size()-1].step;
-   }
-
-   ~Model()
-   {
-      //Clear drawing objects
-      for(unsigned int i=0; i<objects.size(); i++)
-         if (objects[i]) delete objects[i]; 
-
-      //Clear views
-      for(unsigned int i=0; i<views.size(); i++)
-         if (views[i]) delete views[i]; 
-
-      //Clear colourmaps
-      for(unsigned int i=0; i<colourMaps.size(); i++)
-         if (colourMaps[i]) delete colourMaps[i]; 
-
-      if (db) sqlite3_close(db);
    }
 
    std::string timeStamp(int timestep);

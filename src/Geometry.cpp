@@ -38,7 +38,6 @@
 //Init static data
 float Geometry::min[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
 float Geometry::max[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
-std::vector<TimeStep> Geometry::timesteps; //Active model timesteps
 float GeomData::opacity = 0;
 
 void GeomData::label(std::string& labeltext)
@@ -149,7 +148,7 @@ void GeomData::setColour(int idx)
    glColor4ubv(colour.rgba);
 }
 
-Geometry::Geometry(bool hidden) : view(NULL), elements(-1), allhidden(hidden), total(0), scale(1.0f), redraw(true), wireframe(false), cullface(false), flat(false), lit(true)
+Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), total(0), scale(1.0f), redraw(true), wireframe(false), cullface(false), flat(false), lit(true)
 {
 }
 

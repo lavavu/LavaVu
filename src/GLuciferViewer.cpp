@@ -78,8 +78,6 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    awin = NULL;
    amodel = NULL;
 
-   filters[0] = filters[1] = filters[2] = filters[3] = filters[4] = filters[5] = filters[6] = filters[7] = filters[8] = true;
-
    //A set of default arguments can be stored in a file...
    std::ifstream argfile("gLucifer_args.cfg");
    if (argfile) //Found a config file, load arguments
@@ -107,35 +105,9 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
          ss >> x;
          switch (x)
          {
-         case 'B':
-            filters[lucLabelType] = false;
-            break;
          case 'P':
             if (args[i].length() > 2)
               ss >> subsample;
-            else
-              filters[lucPointType] = false;
-            break;
-         case 'S':
-            filters[lucGridType] = false;
-            break;
-         case 'U':
-            filters[lucTriangleType] = false;
-            break;
-         case 'V':
-            filters[lucVectorType] = false;
-            break;
-         case 'T':
-            filters[lucTracerType] = false;
-            break;
-         case 'L':
-            filters[lucLineType] = false;
-            break;
-         case 'H':
-            filters[lucShapeType] = false;
-            break;
-         case 'O':
-            filters[lucVolumeType] = false;
             break;
          case 'N':
             noload = true;
@@ -199,6 +171,7 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
             break;
          case 'l':
             //Use local shader files (set shader path to current working directory)
+            std::cerr << "Ignoring shader path, using current directory\n";
             Shader::path = NULL;
             break;
          default:
@@ -228,7 +201,7 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
       if (args[i].length() > 0)
       {
          //Load all objects in db
-         if (loadModel(args[i]) && !dbfile)
+         if (loadModel(args[i], hideall) && !dbfile)
             //Save path of first sucessfully loaded model
             dbfile = new FilePath(args[i]);
       }
@@ -236,15 +209,15 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
 
    //Create new geometry containers
    geometry.resize(lucMaxType);
-   geometry[lucLabelType] = labels = new Geometry(hideall);
-   geometry[lucPointType] = points = new Points(hideall);
-   geometry[lucVectorType] = vectors = new Vectors(hideall);
-   geometry[lucTracerType] = tracers = new Tracers(hideall);
-   geometry[lucGridType] = quadSurfaces = new QuadSurfaces(hideall);
-   geometry[lucVolumeType] = volumes = new Volumes(hideall);
-   geometry[lucTriangleType] = triSurfaces = new TriSurfaces(hideall);
-   geometry[lucLineType] = lines = new Lines(hideall);
-   geometry[lucShapeType] = shapes = new Shapes(hideall);
+   geometry[lucLabelType] = labels = new Geometry();
+   geometry[lucPointType] = points = new Points();
+   geometry[lucVectorType] = vectors = new Vectors();
+   geometry[lucTracerType] = tracers = new Tracers();
+   geometry[lucGridType] = quadSurfaces = new QuadSurfaces();
+   geometry[lucVolumeType] = volumes = new Volumes();
+   geometry[lucTriangleType] = triSurfaces = new TriSurfaces();
+   geometry[lucLineType] = lines = new Lines();
+   geometry[lucShapeType] = shapes = new Shapes();
 
    //Set script output flag
    this->output = output;
@@ -368,7 +341,6 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    float xmap, ymap, xdim, ydim;
    int geomtype = lucTriangleType, header = 0;
    float downscale = 1;
-   bool newView = false;
    std::string texfile;
 
    //Can only parse dem format wth ers or hdr header
@@ -444,7 +416,6 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    {
       //Setup a default model
       newModel("", 800, 600, 0xff000000, min, max);
-      newView = true;
       //Scale height * 10 to see features
       aview->setScale(1,10,1);
    }
@@ -1692,7 +1663,7 @@ void GLuciferViewer::drawScene()
 
 }
 
-bool GLuciferViewer::loadModel(std::string& f)
+bool GLuciferViewer::loadModel(std::string& f, bool hideall)
 {
    FilePath fn(f);
    if (fn.ext != "gldb" && fn.ext != "db")
@@ -1705,6 +1676,12 @@ bool GLuciferViewer::loadModel(std::string& f)
    //Open database file
    amodel = new Model(fn);
    models.push_back(amodel);
+
+   if (hideall)
+   {
+      for (unsigned int i=0; i < geometry.size(); i++)
+         geometry[i]->hideAll();
+   }
 
    if (!amodel->open()) abort_program("Model database open failed\n");
 
@@ -1871,9 +1848,6 @@ int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, b
    }
    clock_t t1 = clock();
    char* prefix = amodel->prefix;
-   //Setup filters
-   char filter[64] = "";
-   //if (rankfilter >= 0) sprintf(filter, "and rank=%d", rankfilter);
 
    //Load geometry
    char SQL[1024];
@@ -1882,7 +1856,7 @@ int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, b
    //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
    //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, 
    //minX, minY, minZ, maxX, maxY, maxZ, data)
-   sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d %s ORDER BY idx,rank", prefix, object_id, time_start, time_stop, filter);
+   sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
    sqlite3_stmt* statement = amodel->select(SQL, true);
 
    //Old database compatibility
@@ -1890,7 +1864,7 @@ int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, b
    {
       //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
       //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d %s ORDER BY idx,rank", prefix, object_id, time_start, time_stop, filter);
+      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
       sqlite3_stmt* statement = amodel->select(SQL, true);
       datacol = 14;
 
@@ -1908,7 +1882,7 @@ int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, b
    //Very old database compatibility
    if (statement == NULL)
    {
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d %s ORDER BY idx,rank", prefix, object_id, time_start, time_stop, filter);
+      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
       statement = amodel->select(SQL);
       datacol = 13;
    }
@@ -1929,7 +1903,6 @@ int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, b
          //int rank = sqlite3_column_int(statement, 2);  //unused
          //int index = sqlite3_column_int(statement, 3); //unused
          lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 4);
-         if (filters && !filters[type]) continue;   //Skip filtered
          lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 5);
          int size = sqlite3_column_int(statement, 6);
          int count = sqlite3_column_int(statement, 7);

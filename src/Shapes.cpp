@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Shapes::Shapes(bool hidden) : Geometry(hidden)
+Shapes::Shapes() : Geometry()
 {
    type = lucShapeType;
 }

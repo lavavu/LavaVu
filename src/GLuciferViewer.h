@@ -76,7 +76,6 @@ class GLuciferViewer : public ViewerApp
    bool recording;
    bool loop;
 
-   bool filters[lucMaxType];
    bool output;
    int view;
 
@@ -158,7 +157,7 @@ class GLuciferViewer : public ViewerApp
    void writeSteps(bool images, bool video, int start, int end, const char* filename);
 
    //db loading
-   bool loadModel(std::string& fn);
+   bool loadModel(std::string& fn, bool hideall=false);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);

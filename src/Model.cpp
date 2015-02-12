@@ -36,8 +36,31 @@
 //Model class
 #include "Model.h"
 
+std::vector<TimeStep> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int GeomCache::size = 0;
+
+Model::Model(FilePath& fn) : readonly(true), file(fn), attached(0), db(NULL)
+{
+   prefix[0] = '\0';
+}
+
+Model::~Model()
+{
+   //Clear drawing objects
+   for(unsigned int i=0; i<objects.size(); i++)
+      if (objects[i]) delete objects[i]; 
+
+   //Clear views
+   for(unsigned int i=0; i<views.size(); i++)
+      if (views[i]) delete views[i]; 
+
+   //Clear colourmaps
+   for(unsigned int i=0; i<colourMaps.size(); i++)
+      if (colourMaps[i]) delete colourMaps[i]; 
+
+   if (db) sqlite3_close(db);
+}
 
 bool Model::open(bool write)
 {
@@ -392,8 +415,8 @@ int Model::loadTimeSteps()
       rows++;
    }
    sqlite3_finalize(statement);
-   //Copy to geometry static for use in Tracers
-   Geometry::timesteps = timesteps;
+   //Copy to static for use in Tracers
+   TimeStep::timesteps = timesteps;
    return timesteps.size();
 }
 
@@ -620,21 +643,18 @@ int Model::nearestTimeStep(int requested, int current)
       {
          //Select previous timestep in list (don't loop to end from start)
          if (idx > 0) idx--;
-         printf("1: %d -> %d\n", idx, timesteps[idx].step);
          return timesteps[idx].step;
       }
       //Select next timestep in list
       else if (requested > current && idx+1 < timesteps.size())
       {
          idx++;
-         printf("2: %d -> %d\n", idx, timesteps[idx].step);
          return timesteps[idx].step;
       }
    }
 
    if (idx < 0) idx = 0;
    if (idx >= timesteps.size()) idx = timesteps.size() - 1;
-         printf("3: (%d) %d -> %d\n", timesteps.size(), idx, timesteps[idx].step);
 
    return timesteps[idx].step;
 }
