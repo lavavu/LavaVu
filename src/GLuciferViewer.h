@@ -60,6 +60,7 @@ class GLuciferViewer : public ViewerApp
    bool sort_on_rotate;
    int fixedwidth, fixedheight;
    bool writeimage, writemovie;
+   int volres[3];
 
    std::vector<Model*> models;
    std::vector<Win*> windows;
@@ -101,6 +102,7 @@ class GLuciferViewer : public ViewerApp
    void readHeightMap(FilePath& fn);
    void readOBJ(FilePath& fn);
    void readTecplot(FilePath& fn);
+   void readVolume(FilePath& fn);
    void createDemoModel();
    void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
    DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, const char* properties="");

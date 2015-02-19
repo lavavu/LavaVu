@@ -102,7 +102,10 @@ void Volumes::update()
       if (!current->texture || current->texture->width == 0)
       {
          printf("volume 0 width %d height %d depth %d\n", geom[i]->width, geom[i]->height, geom[i]->depth);
-         current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0]);
+         //Calculate bytes-per-voxel
+         int bpv = 4 * geom[i]->colourValue.size() / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+         //Load the texture
+         current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], bpv);
       }
 
       //Setup gradient texture from colourmap
@@ -175,31 +178,30 @@ void Volumes::render(int i)
    assert(prog);
    GL_Error_Check;
  
-    //Uniform variables
+   //Uniform variables
     //TODO: Provide interface to set these parameters
-    float bbMin[3] = {0.01,0.01,0.01};
+    float bbMin[3] = {0,0,0};
+    float bbMax[3] = {1,1,1};
+    //float bbMax[3] = {0.99, 0.99, 0.99};
+    //float bbMin[3] = {0.01,0.01,0.01};
     //float bbMax[3] = {dims[0], dims[1], dims[2]};
-    float bbMax[3] = {0.99, 0.99, 0.99};
+    float viewport[4];
+    glGetFloatv(GL_VIEWPORT, viewport);
     float res[3] = {geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth};
-    float focalLength = 1.0 / tan(0.5 * view->fov * M_PI/180);
-    float wdims[4] = {view->width, view->height, view->xpos, view->ypos};
-    wdims[2] += view->eye_shift;
-    //printf("View shift: %f\n", wdims[2]);
     float isocolour[4] = {0.922,0.886,0.823,1.0};
     //printf("PLOTTING %d width %d height %d depth\n", geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth);
     //printf("dims %f,%f,%f pos %f,%f,%f res %f,%f,%f\n", dims[0], dims[1], dims[2], pos[0], pos[1], pos[2], res[0], res[1], res[2]);
     glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
     glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
     glUniform3fv(prog->uniforms["uResolution"], 1, res);
-    glUniform1i(prog->uniforms["uEnableColour"], geom[i]->draw->colourMaps[lucColourValueData]->texture ? 1 : 0);
+    glUniform1i(prog->uniforms["uEnableColour"], geom[i]->draw->colourMaps[lucColourValueData] ? 1 : 0);
     glUniform1f(prog->uniforms["uBrightness"], 0);
     glUniform1f(prog->uniforms["uContrast"], 1);
     glUniform1f(prog->uniforms["uPower"], 1);
-    glUniform1f(prog->uniforms["uFocalLength"], focalLength);
-    glUniform4fv(prog->uniforms["uWindowSize"], 1, wdims);
+    glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
     glUniform1i(prog->uniforms["uSamples"], 256);
     glUniform1f(prog->uniforms["uDensityFactor"], 5.0);
-    glUniform1f(prog->uniforms["uIsoValue"], 0.0);
+    glUniform1f(prog->uniforms["uIsoValue"], 0.65);
     glUniform4fv(prog->uniforms["uIsoColour"], 1, isocolour);
     glUniform1f(prog->uniforms["uIsoSmooth"], 0.1);
     glUniform1i(prog->uniforms["uIsoWalls"], 0);
@@ -220,7 +222,7 @@ void Volumes::render(int i)
    //Gradient texture
    glActiveTexture(GL_TEXTURE0);
    glUniform1i(prog->uniforms["uTransferFunction"], 0);
-   if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->draw->colourMaps[lucColourValueData]->texture)
+   if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->draw->colourMaps[lucColourValueData])
       glBindTexture(GL_TEXTURE_2D, geom[i]->draw->colourMaps[lucColourValueData]->texture->id);
  
    //Volume texture
@@ -233,23 +235,23 @@ void Volumes::render(int i)
    float mvMatrix[16];
    float nMatrix[16];
    float pMatrix[16];
+   float invPMatrix[16];
    glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
-   //Apply scaling to fit bounding box
+   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
    glPushMatrix();
-   glLoadIdentity();
-   view->apply(false); //Ignore focal point / rotation centre when applying modelview
    //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
    glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);
    glPopMatrix();
    glGetFloatv(GL_PROJECTION_MATRIX, pMatrix);
+   if (!gluInvertMatrixf(pMatrix, invPMatrix)) abort_program("Uninvertable matrix!");
    GL_Error_Check;
 
    //Projection and modelview matrices
    glUniformMatrix4fv(prog->uniforms["uPMatrix"], 1, GL_FALSE, pMatrix);
+   glUniformMatrix4fv(prog->uniforms["uInvPMatrix"], 1, GL_FALSE, invPMatrix);
    glUniformMatrix4fv(prog->uniforms["uMVMatrix"], 1, GL_FALSE, mvMatrix);
-   //printMatrix(mvMatrix);
    nMatrix[12] = nMatrix[13] = nMatrix[14] = 0; //Removing translation works as long as no non-uniform scaling
    glUniformMatrix4fv(prog->uniforms["uNMatrix"], 1, GL_FALSE, nMatrix);
    GL_Error_Check;
@@ -258,18 +260,18 @@ void Volumes::render(int i)
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glDisable(GL_DEPTH_TEST);  //No depth testing to allow multi-pass blend!
-   //glDisable(GL_MULTISAMPLE);
+   glDisable(GL_MULTISAMPLE);
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
  
-   GL_Error_Check;
     //Draw two triangles to fill screen
     glBegin(GL_TRIANGLES);
-        glVertex2f(-1, -1); glVertex2f(-1, 1); glVertex2f(1, -1);
-        glVertex2f(-1,  1); glVertex2f( 1, 1); glVertex2f(1, -1);
+      glVertex2f(-1, -1); glVertex2f(-1, 1); glVertex2f(1, -1);
+      glVertex2f(-1,  1); glVertex2f( 1, 1); glVertex2f(1, -1);
     glEnd();
 
-   //glDisable(GL_TEXTURE_2D);
    glEnable(GL_DEPTH_TEST);
+   GL_Error_Check;
+   glUseProgram(0);
 }
 
 GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles)

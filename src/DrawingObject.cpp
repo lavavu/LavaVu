@@ -128,7 +128,7 @@ int DrawingObject::useTexture()
    return -1;
 }
 
-void DrawingObject::load3DTexture(int width, int height, int depth, float* data)
+void DrawingObject::load3DTexture(int width, int height, int depth, float* data, int bpv)
 {
   //Create the texture
   if (!texture) texture = new TextureData();
@@ -150,7 +150,10 @@ void DrawingObject::load3DTexture(int width, int height, int depth, float* data)
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   GL_Error_Check;
 
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
-  //glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, array);
-  //glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, array);
+  //Load based on bytes-per-voxel (default 4=float)
+  if (bpv == 4)
+    //glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+  else if (bpv == 1)
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_LUMINANCE, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
 }

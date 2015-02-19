@@ -892,6 +892,7 @@ class PropertyParser
 const char* glErrorString(GLenum errorCode);
 int gluProjectf(float objx, float objy, float objz, float *windowCoordinate);
 int gluProjectf(float objx, float objy, float objz, float* modelview, float*projection, int* viewport, float *windowCoordinate);
+bool gluInvertMatrixf(const float m[16], float invOut[16]);
 
 void Viewport2d(int width, int height);
 

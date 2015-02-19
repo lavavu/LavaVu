@@ -59,6 +59,7 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    writeimage = writemovie = false;
    sort_on_rotate = true;
    message[0] = '\0';
+   volres[0] = volres[1] = volres[2] = 256;
 
    fixedwidth = width;
    fixedheight = height;
@@ -168,6 +169,9 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
             //Use local shader files (set shader path to current working directory)
             std::cerr << "Ignoring shader path, using current directory\n";
             Shader::path = NULL;
+            break;
+         case 'V':
+            ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
             break;
          default:
             //Attempt to interpret as timestep
@@ -327,6 +331,50 @@ void GLuciferViewer::readScriptFile(FilePath& fn)
 {
    if (fn.ext == "script")
       parseCommands("script " + fn.full);
+}
+
+void GLuciferViewer::readVolume(FilePath& fn)
+{
+   float min[3] = {-1,-1,-1};
+   float max[3] = {1,1,1};
+
+   //Check for raw format volume data
+   if (fn.ext != "raw") return;
+
+   awin->background.value = 0xff000000;
+   
+   Geometry::checkPointMinMax(min);
+   Geometry::checkPointMinMax(max);
+      
+      ColourMap* colourMap = NULL;
+      /*/Demo colourmap
+      ColourMap* colourMap = new ColourMap();
+      addColourMap(colourMap);
+      //Colours: hex, abgr
+      unsigned int colours[] = {0x00000000, 0xffffffff};
+      colourMap->add(colours, 2);*/
+      
+   //Create volume object
+   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+     
+     std::cerr << "LOADING ... " << fn.full << std::endl;
+     std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
+     file.seekg(0, std::ios::end);
+     std::streamsize size = file.tellg();
+     file.seekg(0, std::ios::beg);
+     if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
+     std::vector<char> buffer(size);
+     //myFile.read((char*)array, sizeof(unsigned char) * size);
+     file.read(buffer.data(), size);
+     file.close();
+
+   //Define the bounding cube by corners
+   Model::volumes->add(vobj);
+   Model::volumes->read(vobj, 1, lucVertexData, min);
+   Model::volumes->read(vobj, 1, lucVertexData, max);
+   float floatcount = size / 4.0;
+   Model::volumes->read(vobj, floatcount, lucColourValueData, buffer.data(), volres[0], volres[1], volres[2]);
+   Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
 void GLuciferViewer::readHeightMap(FilePath& fn)
@@ -1097,7 +1145,7 @@ void GLuciferViewer::open(int width, int height)
 
    //Volume ray marching shaders
    Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
-   const char* vUniforms[22] = {"uPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uPower", "uFocalLength", "uWindowSize", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
+   const char* vUniforms[22] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
    Volumes::prog->loadUniforms(vUniforms, 22);
    const char* vAttribs[2] = {"aVertexPosition"};
    Volumes::prog->loadAttribs(pAttribs, 2);
@@ -1671,6 +1719,7 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
       readHeightMap(files[m]);
       readOBJ(files[m]);
       readTecplot(files[m]);
+      readVolume(files[m]);
    }
    
    //Should have some objects by now, if not args were invalid
