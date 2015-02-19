@@ -5,7 +5,10 @@
 #define GetProcAddress(arg) wglGetProcAddress((LPCSTR)arg)
 PFNGLACTIVETEXTUREPROC glActiveTexture;
 PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
-#endif
+PFNGLTEXIMAGE3DPROC glTexImage3D;
+#else
+getProcAddressFN GetProcAddress = NULL;
+#endif 
 
 #ifdef EXTENSION_POINTERS
 PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
@@ -61,10 +64,6 @@ PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
 PFNGLISPROGRAMPROC glIsProgram;
 #endif
 
-#if not defined _WIN32
-getProcAddressFN GetProcAddress = NULL;
-#endif 
-
 void OpenGL_Extensions_Init()
 {
 #ifdef EXTENSION_POINTERS
@@ -72,6 +71,7 @@ void OpenGL_Extensions_Init()
 #if defined _WIN32
    glActiveTexture = (PFNGLACTIVETEXTUREPROC) GetProcAddress("glActiveTexture");
    glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC)GetProcAddress("glDrawRangeElements");
+   glTexImage3D = (PFNGLTEXIMAGE3DPROC)GetProcAddress("glTexImage3D");
 #endif
    glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC) GetProcAddress("glBlendFuncSeparate");
    glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GetProcAddress("glPointParameterfv");

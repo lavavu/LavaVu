@@ -38,7 +38,9 @@ SET( srcs
         ../src/VideoEncoder.cpp
         ../src/View.cpp
         ../src/Win.cpp
+        ../src/tiny_obj_loader.cc
         ../src/jpeg/jpge.cpp
+        ../src/jpeg/jpgd.cpp
         ../src/mongoose/mongoose.c
         ../src/sqlite3/src/sqlite3.c
    )

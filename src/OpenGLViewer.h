@@ -98,7 +98,8 @@ class OpenGLViewer : public ApplicationInterface
    void fbo(int width, int height);
 
    //Window app management - called by derived classes, in turn call application interface virtuals
-   virtual void open(int width=800, int height=600);
+   virtual void open(int width=0, int height=0);
+   virtual void init();
    virtual void setsize(int width, int height);
    virtual void resize(int new_width, int new_height);
    virtual void display();

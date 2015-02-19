@@ -53,13 +53,13 @@ void Win::addObject(DrawingObject* obj)
    objects.push_back(obj);
 }
 
-void Win::initViewports()
+void Win::initViewports(int w, int h)
 {
    //Initialise all viewports to window size
    for (unsigned int v=0; v<views.size(); v++)
    {
       //Calculate actual size based on window size
-      views[v]->port(width, height);
+      views[v]->port(w, h);
       //debug_print("Viewport %d/%d at %d,%d %d x %d\n", v+1, views.size(), (int)(width * views[v]->x), (int)(height * views[v]->y), (int)(width * views[v]->w), (int)(height * views[v]->h));
    }
 }

@@ -69,7 +69,7 @@ class X11Viewer  : public OpenGLViewer
    ~X11Viewer();
    
    //Function implementations
-   void open(int width, int height);
+   void open(int w, int h);
    void setsize(int width, int height);
    void show();
    void display();

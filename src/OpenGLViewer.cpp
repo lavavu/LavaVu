@@ -61,6 +61,9 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
    output_path[0] = '\0';
 
    setBackground(0xff000000);
+
+   /* Init mutex */
+   pthread_mutex_init(&cmd_mutex, NULL);
 }
 
 OpenGLViewer::~OpenGLViewer()
@@ -76,7 +79,8 @@ OpenGLViewer::~OpenGLViewer()
 
 void OpenGLViewer::open(int w, int h)
 {
-   //OpenGLViewer window created
+   //Open window, called before window manager open
+   //Set width and height
 
    //Always use the output width when set for hidden window
    fbo_enabled = !visible; //Always use fbo for hidden window
@@ -85,9 +89,15 @@ void OpenGLViewer::open(int w, int h)
       h = outheight;
       w = outwidth;
    }
-   width = w;
-   height = h;
+   //Set width/height or use defaults
+   width = w > 0 ? w : 1024;
+   height = h > 0 ? h : 768;
+   debug_print("Window opened %d x %d\n", width, height);
+}
 
+void OpenGLViewer::init()
+{
+   //Init OpenGL (called after context creation)
    GLboolean b;
    GLint i, d, s, u, a, sb, ss;
 
@@ -150,7 +160,7 @@ void OpenGLViewer::open(int w, int h)
 
    //Call open on any output interfaces
    for (int o=0; o<outputs.size(); o++)
-     outputs[o]->open(w, h);
+     outputs[o]->open(width, height);
 }
 
 void OpenGLViewer::show()

@@ -63,6 +63,7 @@ class DrawingObject
 
    void addColourMap(ColourMap* map, lucGeometryDataType data_type);
    int useTexture();
+   void load3DTexture(int width, int height, int depth, float* data, int bpv=4);
 
    static unsigned int lastid;
 };

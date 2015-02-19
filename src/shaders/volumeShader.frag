@@ -25,11 +25,11 @@ uniform float uBrightness;
 uniform float uContrast;
 uniform float uPower;
 
-uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
+uniform mat4 uInvPMatrix;
+uniform mat4 uMVMatrix;
 uniform mat4 uNMatrix;
-uniform float uFocalLength;
-uniform vec4 uWindowSize;
+uniform vec4 uViewport;
 uniform int uSamples;
 uniform float uDensityFactor;
 uniform float uIsoValue;
@@ -113,14 +113,22 @@ vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
 
 void main()
 {
-    //Correct gl_FragCoord for aspect ratio
-    float aspect = uWindowSize.x / uWindowSize.y;
-    vec2 fragCoord = gl_FragCoord.xy - uWindowSize.zw; //Viewport offset stored in z/w
-    vec2 coord = vec2((fragCoord.x - (uWindowSize.x - uWindowSize.y) * 0.5) * aspect, fragCoord.y);
-    vec3 rayDirection = normalize((vec4(2.0 * coord / uWindowSize.xy - 1.0, -uFocalLength, 0) * uMVMatrix).xyz);
+    //Compute eye space coord from window space to get the ray direction
+    mat4 invMVMatrix = transpose(uMVMatrix);
+    //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
+    //Window ->[VP^]-> NDC ->[/w]-> Clip ->[P^]-> EyeSpace ->[MV^]-> ObjectSpace
+    vec4 ndcPos;
+    ndcPos.xy = ((2.0 * gl_FragCoord.xy) - (2.0 * uViewport.xy)) / (uViewport.zw) - 1;
+    ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
+               (gl_DepthRange.far - gl_DepthRange.near);
+    ndcPos.w = 1.0;
+    vec4 clipPos = ndcPos / gl_FragCoord.w;
+    //vec4 eyeSpacePos = uInvPMatrix * clipPos;
+    vec3 rayDirection = normalize((invMVMatrix * uInvPMatrix * clipPos).xyz);
 
+    //Ray origin from the camera position
     vec4 camPos = -vec4(uMVMatrix[3]);  //4th column of modelview
-    vec3 rayOrigin = (transpose(uMVMatrix) * camPos).xyz;
+    vec3 rayOrigin = (invMVMatrix * camPos).xyz;
 
     //Calc step
     float stepSize = 1.732 / float(uSamples); //diagonal of [0,1] normalised coord cube = sqrt(3)
@@ -232,21 +240,15 @@ void main()
     //Apply brightness & contrast
     colour = ((colour - 0.5) * max(uContrast, 0.0)) + 0.5;
     colour += uBrightness;
-    if (T == 1.0) discard;
+    if (T > 0.95) discard;
     gl_FragColor = vec4(colour, 1.0 - T);
 
 #ifdef WRITE_DEPTH
     /* Write the depth !Not supported in WebGL without extension */
-    if (writeDepth)
-    {
-      vec4 clip_space_pos = uPMatrix * pos;
-      float ndc_depth = clip_space_pos.z / clip_space_pos.w;
-      float depth = (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
+    vec4 clip_space_pos = uPMatrix * uMVMatrix * vec4(rayStart, 1.0);
+    float ndc_depth = clip_space_pos.z / clip_space_pos.w;
+    float depth = (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
                      gl_DepthRange.near + gl_DepthRange.far) / 2.0;
-      gl_FragDepth = depth;
-    }
-    else
-      gl_FragDepth = gl_DepthRange.far;
+    gl_FragDepth = depth;
 #endif
 }
-

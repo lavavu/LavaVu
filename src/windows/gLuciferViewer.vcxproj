@@ -20,10 +20,12 @@
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -48,7 +50,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;PNG_USE_DLL;PNG_NO_GLOBAL_ARRAYS;HAVE_SDL;HAVE_SQLITE3;HAVE_LIBPNG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SHADER_PATH="..\\shaders\\";WIN32;_DEBUG;_WINDOWS;PNG_USE_DLL;PNG_NO_GLOBAL_ARRAYS;HAVE_SDL;HAVE_SQLITE3;HAVE_LIBPNG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -114,6 +116,7 @@
     <ClInclude Include="..\OpenGLViewer.h" />
     <ClInclude Include="..\Shaders.h" />
     <ClInclude Include="..\TimeStep.h" />
+    <ClInclude Include="..\tiny_obj_loader.h" />
     <ClInclude Include="..\Types.h" />
     <ClInclude Include="..\VideoEncoder.h" />
     <ClInclude Include="..\View.h" />
@@ -142,11 +145,13 @@
     <ClCompile Include="..\QuadSurfaces.cpp" />
     <ClCompile Include="..\Shaders.cpp" />
     <ClCompile Include="..\Shapes.cpp" />
+    <ClCompile Include="..\tiny_obj_loader.cc" />
     <ClCompile Include="..\Tracers.cpp" />
     <ClCompile Include="..\TriSurfaces.cpp" />
     <ClCompile Include="..\Vectors.cpp" />
     <ClCompile Include="..\VideoEncoder.cpp" />
     <ClCompile Include="..\View.cpp" />
+    <ClCompile Include="..\Volumes.cpp" />
     <ClCompile Include="..\Win.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

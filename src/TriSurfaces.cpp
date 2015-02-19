@@ -37,7 +37,7 @@
 
 Shader* TriSurfaces::prog = NULL;
 
-TriSurfaces::TriSurfaces(bool hidden) : Geometry(hidden)
+TriSurfaces::TriSurfaces() : Geometry()
 {
    type = lucTriangleType;
    wireframe = false;
@@ -81,7 +81,7 @@ void TriSurfaces::update()
       else
       {
          tris = geom[t]->count / 3;
-         estimate += tris*1.1;   //Vertex count estimate
+         estimate += tris*1.5;   //Vertex count estimate
       }
       total += tris;
       hiddenflags[t] = !drawable(t); //Save flags
@@ -203,7 +203,8 @@ bool TriSurfaces::loadVertices(unsigned int filter, std::ostream* json)
       //Sort vertices vector with std::sort & custom compare sort( vec.begin(), vec.end() );
       //Iterate, for duplicates replace indices with index of first
       //Remove duplicate vertices Triangles stored as list of indices
-      bool avgColour = (geom[index]->colourValue.size() > 0);
+      bool avgColour = (geom[index]->colourValue.size() == geom[index]->vertices.size()/3);
+      bool hasColour = (geom[index]->colourValue.size() > 0);
       t1=tt=clock();
 
       //Add vertices to vector
@@ -253,7 +254,12 @@ bool TriSurfaces::loadVertices(unsigned int filter, std::ostream* json)
             if (avgColour && verts[v].vcount > 1)
                geom[index]->colourValue.value[verts[v].id] /= verts[v].vcount;
 
-            geom[index]->getColour(colour, verts[v].id);
+            int id = verts[v].id;
+            //Have colour values but not enough for per-vertex, assume per triangle
+            if (!avgColour && hasColour)
+               id /= 3; //Divide by 3 to map to triangles instead of vertices
+
+            geom[index]->getColour(colour, id);
 
             //Write vertex data to vbo
             if (ptr)
@@ -418,7 +424,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
    t1 = clock();
    debug_print("Calculating normals for triangle surface %d\n", index);
    bool hiddenflag = !drawable(index);
-   bool avgColour = (geom[index]->colourValue.size() > 0);
+   bool avgColour = (geom[index]->colourValue.size() == geom[index]->vertices.size()/3);
    //Calculate face normals for each triangle and copy to each face vertex
    for (unsigned int v=0; v<verts.size(); v += 3)
    {
@@ -692,17 +698,18 @@ void TriSurfaces::draw()
          }
       }
       //Draw remaining elements (transparent, depth sorted)
-      if (start > 0 && start < elements)
+      //if (start > 0 && start < elements)
+      if (start < elements)
       {
          //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", elements-start);
          glDrawRangeElements(GL_TRIANGLES, 0, elements, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
       }
-      else
+      /*else
       {
          //Render all triangles - elements is the number of indices. 3 indices needed to make a single triangle
          //(If there is no separate opaque/transparent geometry)
          glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, (GLvoid*)0);
-      }
+      }*/
 
       glDisableClientState(GL_VERTEX_ARRAY);
       glDisableClientState(GL_NORMAL_ARRAY);

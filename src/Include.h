@@ -40,9 +40,8 @@
 
 //Utils
 #include "jpeg/jpge.h"
+#include "jpeg/jpgd.h"
 #include "json.h"
-
-//#define PDF_CAPTURE
 
 #ifndef _WIN32
 #include <sys/poll.h>
@@ -92,6 +91,7 @@
 #if defined _WIN32 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
+extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 #define EXTENSION_POINTERS
 #endif
 

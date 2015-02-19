@@ -18,7 +18,7 @@
 ** THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 ** PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
 ** BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-** CONSEQUENTIAL DAMAnGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+** CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 ** SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 ** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 ** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
@@ -39,13 +39,7 @@
 #include "Shaders.h"
 #include "VideoEncoder.h"
 #include <typeinfo>
-
-//Include the decompression routines
-#ifdef USE_ZLIB
-#include <zlib.h>
-#else
-#include "miniz/tinfl.c"
-#endif
+#include "tiny_obj_loader.h"
 
 //Viewer class implementation...
 GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* viewer, int width, int height) : ViewerApp(viewer)
@@ -57,13 +51,15 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    //Defaults
    timestep = -1;
    endstep = -1;
-   dump = dumpid = 0;
+   dump = lucExportNone;
+   dumpid = 0;
    noload = false;
    viewAll = false;
    viewPorts = true;
    writeimage = writemovie = false;
    sort_on_rotate = true;
    message[0] = '\0';
+   volres[0] = volres[1] = volres[2] = 256;
 
    fixedwidth = width;
    fixedheight = height;
@@ -78,15 +74,14 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    amodel = NULL;
    aobject = NULL;
 
-   filters[0] = filters[1] = filters[2] = filters[3] = filters[4] = filters[5] = filters[6] = filters[7] = filters[8] = true;
-
    //A set of default arguments can be stored in a file...
    std::ifstream argfile("gLucifer_args.cfg");
    if (argfile) //Found a config file, load arguments
    {
       std::string line;
       while (std::getline(argfile, line))
-         args.push_back(line);
+         if (line.at(0) != '#')
+           args.push_back(line);
       argfile.close();
    }
 
@@ -107,35 +102,9 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
          ss >> x;
          switch (x)
          {
-         case 'B':
-            filters[lucLabelType] = false;
-            break;
          case 'P':
             if (args[i].length() > 2)
               ss >> subsample;
-            else
-              filters[lucPointType] = false;
-            break;
-         case 'S':
-            filters[lucGridType] = false;
-            break;
-         case 'U':
-            filters[lucTriangleType] = false;
-            break;
-         case 'V':
-            filters[lucVectorType] = false;
-            break;
-         case 'T':
-            filters[lucTracerType] = false;
-            break;
-         case 'L':
-            filters[lucLineType] = false;
-            break;
-         case 'H':
-            filters[lucShapeType] = false;
-            break;
-         case 'O':
-            filters[lucVolumeType] = false;
             break;
          case 'N':
             noload = true;
@@ -160,17 +129,17 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
             break;
          case 'd':
             if (args[i].length() > 2) ss >> dumpid;
-            dump = 1;
+            dump = lucExportCSV;
             viewer->visible = false;
             break;
          case 'J':
             if (args[i].length() > 2) ss >> dumpid;
-            dump = 3;
+            dump = lucExportJSONP;
             viewer->visible = false;
             break;
          case 'j':
             if (args[i].length() > 2) ss >> dumpid;
-            dump = 2;
+            dump = lucExportJSON;
             viewer->visible = false;
             break;
          case 'h':
@@ -199,7 +168,11 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
             break;
          case 'l':
             //Use local shader files (set shader path to current working directory)
+            std::cerr << "Ignoring shader path, using current directory\n";
             Shader::path = NULL;
+            break;
+         case 'V':
+            ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
             break;
          default:
             //Attempt to interpret as timestep
@@ -228,23 +201,25 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
       if (args[i].length() > 0)
       {
          //Load all objects in db
-         if (loadModel(args[i]) && !dbfile)
+         if (loadModel(args[i], hideall) && !dbfile)
             //Save path of first sucessfully loaded model
             dbfile = new FilePath(args[i]);
       }
    }
+   
+   if (!amodel)
+   {
+      //Adds a default model, window & viewport
+      FilePath fn = FilePath(":memory");
+      amodel = new Model(fn, hideall);
+      models.push_back(amodel);
 
-   //Create new geometry containers
-   geometry.resize(lucMaxType);
-   geometry[lucLabelType] = labels = new Geometry(hideall);
-   geometry[lucPointType] = points = new Points(hideall);
-   geometry[lucVectorType] = vectors = new Vectors(hideall);
-   geometry[lucTracerType] = tracers = new Tracers(hideall);
-   geometry[lucGridType] = quadSurfaces = new QuadSurfaces(hideall);
-   geometry[lucVolumeType] = volumes = new Volumes(hideall);
-   geometry[lucTriangleType] = triSurfaces = new TriSurfaces(hideall);
-   geometry[lucLineType] = lines = new Lines(hideall);
-   geometry[lucShapeType] = shapes = new Shapes(hideall);
+      //Set a default window, viewport & camera
+      awin = new Win("GLucifer");
+      aview = awin->addView(new View());
+      windows.push_back(awin);
+      amodel->windows.push_back(awin);
+   }
 
    //Set script output flag
    this->output = output;
@@ -265,11 +240,9 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
 
 GLuciferViewer::~GLuciferViewer()
 {
-   clearObjects(true);
-
-   //Kill all objects
-   for (unsigned int i=0; i < geometry.size(); i++)
-      delete geometry[i];
+   //Kill all models
+   for (unsigned int i=0; i < models.size(); i++)
+      delete models[i];
 
    //Clear windows
    for(unsigned int i=0; i<windows.size(); i++)
@@ -287,7 +260,7 @@ void GLuciferViewer::run(bool persist)
      viewPorts = false;
    }
 
-   if (writeimage || writemovie || dump > 1)
+   if (writeimage || writemovie || dump > lucExportCSV)
    {
       //Load vis data for each window and write image
       int win = 0;
@@ -324,9 +297,9 @@ void GLuciferViewer::run(bool persist)
          }
 
          //Dump json data if requested
-         if (dump == 2)
+         if (dump == lucExportJSON)
             jsonWriteFile(dumpid);
-         else if (dump == 3)
+         else if (dump == lucExportJSONP)
             jsonWriteFile(dumpid, true);
 
          win++;
@@ -341,7 +314,7 @@ void GLuciferViewer::run(bool persist)
    }
 
    //Dump csv data if requested
-   if (dump == 1)
+   if (dump == lucExportCSV)
       dumpById(dumpid);
 
    //Start event loop
@@ -403,6 +376,50 @@ void GLuciferViewer::readScriptFile(FilePath& fn)
       parseCommands("script " + fn.full);
 }
 
+void GLuciferViewer::readVolume(FilePath& fn)
+{
+   float min[3] = {-1,-1,-1};
+   float max[3] = {1,1,1};
+
+   //Check for raw format volume data
+   if (fn.ext != "raw") return;
+
+   awin->background.value = 0xff000000;
+   
+   Geometry::checkPointMinMax(min);
+   Geometry::checkPointMinMax(max);
+      
+      ColourMap* colourMap = NULL;
+      /*/Demo colourmap
+      ColourMap* colourMap = new ColourMap();
+      addColourMap(colourMap);
+      //Colours: hex, abgr
+      unsigned int colours[] = {0x00000000, 0xffffffff};
+      colourMap->add(colours, 2);*/
+      
+   //Create volume object
+   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+     
+     std::cerr << "LOADING ... " << fn.full << std::endl;
+     std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
+     file.seekg(0, std::ios::end);
+     std::streamsize size = file.tellg();
+     file.seekg(0, std::ios::beg);
+     if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
+     std::vector<char> buffer(size);
+     //myFile.read((char*)array, sizeof(unsigned char) * size);
+     file.read(buffer.data(), size);
+     file.close();
+
+   //Define the bounding cube by corners
+   Model::volumes->add(vobj);
+   Model::volumes->read(vobj, 1, lucVertexData, min);
+   Model::volumes->read(vobj, 1, lucVertexData, max);
+   float floatcount = size / 4.0;
+   Model::volumes->read(vobj, floatcount, lucColourValueData, buffer.data(), volres[0], volres[1], volres[2]);
+   Model::volumes->setup(vobj, lucColourValueData, 0, 1);
+}
+
 void GLuciferViewer::readHeightMap(FilePath& fn)
 {
    int rows, cols, size = 2, subsample;
@@ -410,7 +427,6 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    float xmap, ymap, xdim, ydim;
    int geomtype = lucTriangleType, header = 0;
    float downscale = 1;
-   bool newView = false;
    std::string texfile;
 
    //Can only parse dem format wth ers or hdr header
@@ -469,8 +485,9 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
       downscale = 100000;
    }
 
-   float min[3] = {0,0,0};
-   float max[3] = {0,0,0};
+   float* min = awin->min;
+   float* max = awin->max;
+   awin->background.value = 0xff000000;
    float range[3] = {0,0,0};
 
    min[0] = xmap;
@@ -480,19 +497,7 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    max[2] = ymap;
    range[0] = fabs(max[0] - min[0]);
    range[2] = fabs(max[2] - min[2]);
-
-   //Create default window
-   if (!amodel) 
-   {
-      //Setup a default model
-      newModel("", 800, 600, 0xff000000, min, max);
-      newView = true;
-      //Scale height * 10 to see features
-      aview->setScale(1,10,1);
-   }
-   else if (!aview)
-      aview = awin->views[0];
-   //   viewSelect(0);
+   
    strcpy(viewer->title, fn.base.c_str());
 
    //Demo colourmap
@@ -595,9 +600,9 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
          if (vertex[1] > max[1]) max[1] = vertex[1];
 
          //Add grid point
-         geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
+         Model::geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
          //Colour by height
-         geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+         Model::geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
 
          vertex[0] += xdim * subsample;
       }
@@ -605,22 +610,22 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
       vertex[2] -= ydim * subsample;
    }
    file.close();
-   geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
+   Model::geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
 
    //Sea grid points
    vertex[0] = min[0];
    vertex[1] = 0;
    vertex[2] = min[2];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
    vertex[0] = max[0];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
    vertex[0] = min[0];
    vertex[2] = max[2];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
    vertex[0] = max[0];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
 
-   quadSurfaces->setup(sea, lucColourValueData, min[1], max[1]);
+   Model::quadSurfaces->setup(sea, lucColourValueData, min[1], max[1]);
 
       Geometry::checkPointMinMax(min);
       Geometry::checkPointMinMax(max);
@@ -634,6 +639,427 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    debug_print("Z min %f max %f range %f\n", min[2], max[2], range[2]);
 }
 
+void GLuciferViewer::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
+{
+   level--;
+   float a_b[3], a_c[3], b_c[3];
+   vectorSubtract(a_b, a, b);
+   vectorSubtract(a_c, a, c);
+   vectorSubtract(b_c, b, c);
+   float max = 100000; //aview->model_size / 100.0;
+   //printf("%f\n", max); getchar();
+   
+   if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
+   {
+      //Read the triangle
+      Model::triSurfaces->read(obj, 1, lucVertexData, a);
+      Model::triSurfaces->read(obj, 1, lucVertexData, b);
+      Model::triSurfaces->read(obj, 1, lucVertexData, c);
+   }
+   else
+   {
+      //Process a triangle into 4 sub-triangles
+      float ab[3] = {0.5*(a[0]+b[0]), 0.5*(a[1]+b[1]), 0.5*(a[2]+b[2])};
+      float ac[3] = {0.5*(a[0]+c[0]), 0.5*(a[1]+c[1]), 0.5*(a[2]+c[2])};
+      float bc[3] = {0.5*(b[0]+c[0]), 0.5*(b[1]+c[1]), 0.5*(b[2]+c[2])};
+
+      addTriangles(obj, a, ab, ac, level);
+      addTriangles(obj, ab, b, bc, level);
+      addTriangles(obj, ac, bc, c, level);
+      addTriangles(obj, ab, bc, ac, level);
+   }
+}
+
+void GLuciferViewer::readOBJ(FilePath& fn)
+{
+   //Use tiny_obj_loader to load a model
+   if (fn.ext != "obj" && fn.ext != "OBJ") return;
+   
+   awin->background.value = LUC_WHITE;
+   std::cout << "Loading " << fn.full << std::endl;
+
+   std::vector<tinyobj::shape_t> shapes;
+   std::vector<tinyobj::material_t> materials;
+   std::string err = tinyobj::LoadObj(shapes, materials, fn.full.c_str(), fn.path.c_str());
+
+   if (!err.empty()) {
+      std::cerr << err << std::endl;
+      return;
+   }
+
+  std::cout << "# of shapes    : " << shapes.size() << std::endl;
+  std::cout << "# of materials : " << materials.size() << std::endl;
+
+  for (size_t i = 0; i < shapes.size(); i++) {
+    //Strip path from name
+      size_t last_slash = shapes[i].name.find_last_of("\\/");
+      if (std::string::npos != last_slash)
+         shapes[i].name = shapes[i].name.substr(last_slash + 1);
+    printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
+    printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
+    
+    //Add triangles object
+    DrawingObject *tobj = newObject(shapes[i].name, true, 0xff888888, NULL, 1.0, "\n");
+    Model::triSurfaces->add(tobj);
+       
+    assert((shapes[i].mesh.indices.size() % 3) == 0);
+    
+    if (shapes[i].mesh.material_ids.size() > 0)
+    {
+      //Just take the first id...
+      int id = shapes[i].mesh.material_ids[0];
+      if (id >= 0)
+      {
+        //Use the diffuse property as the colour
+        tobj->colour.r = materials[id].diffuse[0] * 255;
+        tobj->colour.g = materials[id].diffuse[1] * 255;
+        tobj->colour.b = materials[id].diffuse[2] * 255;
+        tobj->colour.a = materials[id].dissolve * 255;
+      }
+    }
+    
+    for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++) {
+      int ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};
+      
+      addTriangles(tobj, 
+                   &shapes[i].mesh.positions[ids[0]*3],
+                   &shapes[i].mesh.positions[ids[1]*3],
+                   &shapes[i].mesh.positions[ids[2]*3],
+                   0);
+
+        for (int coord=0; coord<3; coord++)
+        {
+          //Model::triSurfaces->read(tobj, 1, lucVertexData, &shapes[i].mesh.positions[ids[coord]*3]);
+          Geometry::checkPointMinMax(&shapes[i].mesh.positions[ids[coord]*3]);
+        }
+    }
+
+    printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
+    assert((shapes[i].mesh.positions.size() % 3) == 0);
+    
+    /*for (size_t v = 0; v < shapes[i].mesh.positions.size() / 3; v++) {
+      printf("  v[%ld] = (%f, %f, %f)\n", v,
+        shapes[i].mesh.positions[3*v+0],
+        shapes[i].mesh.positions[3*v+1],
+        shapes[i].mesh.positions[3*v+2]);
+    }*/
+  }
+  return;
+
+  for (size_t i = 0; i < materials.size(); i++) {
+    printf("material[%ld].name = %s\n", i, materials[i].name.c_str());
+    printf("  material.Ka = (%f, %f ,%f)\n", materials[i].ambient[0], materials[i].ambient[1], materials[i].ambient[2]);
+    printf("  material.Kd = (%f, %f ,%f)\n", materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
+    printf("  material.Ks = (%f, %f ,%f)\n", materials[i].specular[0], materials[i].specular[1], materials[i].specular[2]);
+    printf("  material.Tr = (%f, %f ,%f)\n", materials[i].transmittance[0], materials[i].transmittance[1], materials[i].transmittance[2]);
+    printf("  material.Ke = (%f, %f ,%f)\n", materials[i].emission[0], materials[i].emission[1], materials[i].emission[2]);
+    printf("  material.Ns = %f\n", materials[i].shininess);
+    printf("  material.Ni = %f\n", materials[i].ior);
+    printf("  material.dissolve = %f\n", materials[i].dissolve);
+    printf("  material.illum = %d\n", materials[i].illum);
+    printf("  material.map_Ka = %s\n", materials[i].ambient_texname.c_str());
+    printf("  material.map_Kd = %s\n", materials[i].diffuse_texname.c_str());
+    printf("  material.map_Ks = %s\n", materials[i].specular_texname.c_str());
+    printf("  material.map_Ns = %s\n", materials[i].normal_texname.c_str());
+    std::map<std::string, std::string>::const_iterator it(materials[i].unknown_parameter.begin());
+    std::map<std::string, std::string>::const_iterator itEnd(materials[i].unknown_parameter.end());
+    for (; it != itEnd; it++) {
+      printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
+    }
+    printf("\n");
+  }
+}
+
+void GLuciferViewer::readTecplot(FilePath& fn)
+{
+   //Can only parse tecplot format type FEBRICK
+   //http://paulbourke.net/dataformats/tp/
+   if (fn.ext != "tec" && fn.ext != "dat") return;
+
+   awin->background.value = LUC_WHITE;
+
+      //Demo colourmap
+      ColourMap* colourMap = new ColourMap();
+      addColourMap(colourMap);
+
+      //Colours: hex, abgr
+      unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+      colourMap->add(colours, 7);
+
+      //Add colour bar display
+      newObject("colour-bar", false, 0, colourMap, 1.0, "colourbar=1\n");
+
+   std::ifstream file(fn.full.c_str(), std::ios::in);
+   if (file.is_open())
+   {
+      printMessage("Loading %s", fn.full.c_str());
+      std::string line;
+
+      int ELS, N;
+      int NTRI = 12;  //12 triangles per element
+      int NLN = 12;    //12 lines per element
+      float* xyz = NULL;
+      float* triverts = NULL;
+      float* trivals = NULL;
+      float* lineverts = NULL;
+      float* values = NULL;
+      float* particles = NULL;
+
+      float valuemin = HUGE_VAL;
+      float valuemax = -HUGE_VAL;
+      int count = 0;
+      int coord = 0;
+      int tcount = 0;
+      int lcount = 0;
+      int pcount = 0;
+      timestep = -1;
+      DrawingObject *pobj, *tobj, *lobj;
+      while(std::getline(file, line))
+      {
+         //std::cerr << line << std::endl;
+         //getchar();
+         if (line.find("ZONE") != std::string::npos)
+         {//ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
+            if (timestep >= 0) continue; //Only parse first zone for now
+            std::cerr << line << std::endl;
+            std::stringstream ss(line);
+            std::string token;
+            while (ss >> token)
+            {
+               if (token.substr(0, 2) == "N=")
+                  N = atoi(token.substr(2).c_str());
+               else if (token.substr(0, 2) == "E=")
+                  ELS = atoi(token.substr(2).c_str());
+            }
+            timestep = 0;
+
+            //FEBRICK
+            xyz = new float[N*3];
+            triverts = new float[ELS*NTRI*3*3]; //6 faces = 12 tris
+            trivals = new float[ELS*NTRI*3];
+            lineverts = new float[ELS*NLN*2*3]; //12 edges
+            values = new float[ELS];
+            particles = new float[ELS*3];  //Value of cell at centre
+
+            printf("N = %d, ELS = %d\n", N, ELS);
+
+
+            //Add points object
+            pobj = newObject("particles", true, 0, colourMap, 0.5, "lit=0\n");
+            Model::points->add(pobj);
+            std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
+
+            //Add triangles object
+            tobj = newObject("triangles", true, 0xffffffff, colourMap, 1.0, "flat=1\n");
+            Model::triSurfaces->add(tobj);
+
+
+            //Add lines object
+            lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
+            Model::lines->add(lobj);
+
+
+         }
+         else if (line.substr(0, 4) == "TEXT")
+         {
+               count = tcount = lcount = pcount = 0;
+               coord = 6;
+            //End of a data step
+            amodel->timesteps.push_back(TimeStep(timestep, 0));
+               printf("READ TIMESTEP %d SIZE %d\n", timestep, amodel->timesteps.size());
+
+            Model::points->read(pobj, ELS, lucVertexData, particles);
+            Model::points->read(pobj, ELS, lucColourValueData, values);
+            Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+
+            Model::triSurfaces->read(tobj, ELS*NTRI*3, lucVertexData, triverts);
+            Model::triSurfaces->read(tobj, ELS*NTRI, lucColourValueData, trivals);
+            Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
+
+            Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
+
+            amodel->clearObjects(false); //Will cache...
+
+            timestep++;
+            //Load timesteps while cache slots available
+            if (GeomCache::size <= amodel->timesteps.size()) break;
+
+            valuemin = HUGE_VAL;
+            valuemax = -HUGE_VAL;
+         }
+         else if (timestep >= 0)
+         {
+            std::stringstream ss(line);
+
+            //First 3 coords X,Y,Z 8 per line
+            if (coord < 3)
+            {
+               float value[8];
+               particles[pcount*3+coord] = 0;
+
+               for (int e=0; e<8; e++)
+               {
+                 //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
+                  ss >> value[e];
+                  //if (coord ==2) value[e] *= 20; //HACK SCALE Z
+                  xyz[count*3+coord] = value[e];
+                  particles[pcount*3+coord] += value[e];
+
+                  count++;
+
+                  //if (value[e] < awin->min[coord]) awin->min[coord] = value[e];
+                  //if (value[e] > awin->max[coord]) awin->max[coord] = value[e];
+                  Geometry::checkPointMinMax(&value[e]);
+               }
+
+               for (int i=0; i<8; i++)
+                 assert(!isnan(value[i]));
+
+               //Two triangles per side
+               //Front
+               triverts[(tcount*3)    * 3 + coord] = value[0];
+               triverts[(tcount*3+1)  * 3 + coord] = value[2];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[2];
+               triverts[(tcount*3+1)  * 3 + coord] = value[3];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               //Back
+               triverts[(tcount*3)    * 3 + coord] = value[4];
+               triverts[(tcount*3+1)  * 3 + coord] = value[6];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[6];
+               triverts[(tcount*3+1)  * 3 + coord] = value[7];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               //Right
+               triverts[(tcount*3)    * 3 + coord] = value[1];
+               triverts[(tcount*3+1)  * 3 + coord] = value[3];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[3];
+               triverts[(tcount*3+1)  * 3 + coord] = value[7];
+               triverts[(tcount*3+2)  * 3 + coord] = value[5];
+               tcount++;
+               //Left
+               triverts[(tcount*3)    * 3 + coord] = value[0];
+               triverts[(tcount*3+1)  * 3 + coord] = value[2];
+               triverts[(tcount*3+2)  * 3 + coord] = value[4];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[2];
+               triverts[(tcount*3+1)  * 3 + coord] = value[6];
+               triverts[(tcount*3+2)  * 3 + coord] = value[4];
+               tcount++;
+               //Top??
+               triverts[(tcount*3)    * 3 + coord] = value[2];
+               triverts[(tcount*3+1)  * 3 + coord] = value[6];
+               triverts[(tcount*3+2)  * 3 + coord] = value[7];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[7];
+               triverts[(tcount*3+1)  * 3 + coord] = value[3];
+               triverts[(tcount*3+2)  * 3 + coord] = value[2];
+               tcount++;
+               //Bottom??
+               triverts[(tcount*3)    * 3 + coord] = value[0];
+               triverts[(tcount*3+1)  * 3 + coord] = value[4];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               triverts[(tcount*3)    * 3 + coord] = value[4];
+               triverts[(tcount*3+1)  * 3 + coord] = value[5];
+               triverts[(tcount*3+2)  * 3 + coord] = value[1];
+               tcount++;
+               //std::cout << count << " : " << ptr[0] << "," << ptr[3] << "," << ptr[6] << std::endl;
+               //getchar();
+
+               //Edge lines
+               lineverts[(lcount*2)    * 3 + coord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[1];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[3];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[2];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[0];
+               lcount++;
+
+               lineverts[(lcount*2)    * 3 + coord] = value[4];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[5];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[7];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[6];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lcount++;
+
+               lineverts[(lcount*2)    * 3 + coord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + coord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
+               lcount++;
+
+               //Average value for particle
+               particles[pcount*3+coord] /= 8;
+               pcount++;
+            }
+            else if (coord > 5) //Skip I,J,K indices
+            {
+               //Load SG (1 per line)
+               //if (coord > 6) break; //No more values of interest
+
+              //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
+              float value;
+               ss >> value;
+               values[count] = value;
+               count++;
+
+               if (value < valuemin) valuemin = value;
+               if (value > valuemax) valuemax = value;
+
+               for (int n=0; n<NTRI; n++, tcount++)
+                  trivals[tcount] = value;
+            }
+            else
+            {
+               count++;
+            }
+
+            if (count >= N || coord > 2 && count >= ELS) 
+            {
+               count = tcount = lcount = pcount = 0;
+               coord++;
+            }
+         }
+      }
+      file.close();
+
+      if (xyz) delete[] xyz;
+      if (values) delete[] values;
+      if (triverts) delete[] triverts;
+      if (trivals) delete[] trivals;
+      if (lineverts) delete[] lineverts;
+
+      setTimeStep(0);
+   }
+   else
+      printMessage("Unable to open file: %s", fn.full.c_str());
+}
+
 void GLuciferViewer::createDemoModel()
 {
    int RANGE = 2;
@@ -642,9 +1068,6 @@ void GLuciferViewer::createDemoModel()
    float dims[3] = {RANGE*2,RANGE*2,RANGE*2};
    float size = sqrt(dotProduct(dims,dims));
    strcpy(viewer->title, "Test Pattern\0");
-
-   //Setup a default model
-   newModel("GLucifer Viewer", 800, 600, 0xff000000, min, max);
 
    //Demo colourmap, distance from model origin
    ColourMap* colourMap = new ColourMap();
@@ -671,14 +1094,14 @@ void GLuciferViewer::createDemoModel()
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-      points->read(obj, 1, lucVertexData, ref);
-      points->read(obj, 1, lucColourValueData, &colour);
+      Model::points->read(obj, 1, lucVertexData, ref);
+      Model::points->read(obj, 1, lucColourValueData, &colour);
 
       if (i % NUMSWARM == NUMSWARM-1)
       {
-         points->setup(obj, lucColourValueData, 0, size);
+         Model::points->setup(obj, lucColourValueData, 0, size);
          if (i != NUMPOINTS-1)
-            points->add(obj);
+            Model::points->add(obj);
       }
    }
 
@@ -694,12 +1117,13 @@ void GLuciferViewer::createDemoModel()
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
  
-      lines->read(obj, 1, lucVertexData, ref);
-      lines->read(obj, 1, lucColourValueData, &colour);
+      Model::lines->read(obj, 1, lucVertexData, ref);
+      Model::lines->read(obj, 1, lucColourValueData, &colour);
    }
-   lines->setup(obj, lucColourValueData, 0, size);
+   
+   Model::lines->setup(obj, lucColourValueData, 0, size);
 
-   //Add some quads
+   //Add some quads (using tri surface mode)
    {
       float verts[3][12] = {{-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
                             {-2,0,-2,  2,0,-2,  -2,0,2,  2,0,2},
@@ -710,28 +1134,20 @@ void GLuciferViewer::createDemoModel()
          char label[64];
          sprintf(label, "%c-cross-section", axischar[i]);
          obj = newObject(label, false, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
-         triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
+         Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
       }
    }
-}
-
-//Adds a default model, window & viewport to the viewer
-void GLuciferViewer::newModel(std::string name, int w, int h, int bg, float mmin[3], float mmax[3])
-{
-   amodel = new Model();
-
-   //Set a default window, viewport & camera
-   awin = new Win(0, name, w, h, bg, mmin, mmax);
-   aview = awin->addView(new View(name));
-
-   //Add window to global window list
-   windows.push_back(awin);
-   amodel->windows.push_back(awin);
+   
+   //Set model bounds...
+   Geometry::checkPointMinMax(min);
+   Geometry::checkPointMinMax(max);
 }
 
 DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, std::string properties)
 {
    DrawingObject* obj = new DrawingObject(0, persistent, name, colour, map, opacity, properties);
+   if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
+   if (!aview) aview = awin->views[0];
    aview->addObject(obj);
    awin->addObject(obj);
    amodel->addObject(obj); //Add to model master list
@@ -741,12 +1157,12 @@ DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int 
 void GLuciferViewer::open(int width, int height)
 {
    //Init geometry containers
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->init();
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->init();
 
    //Initialise all viewports to window size
    for (unsigned int w=0; w<windows.size(); w++)
-      windows[w]->initViewports();
+      windows[w]->initViewports(width, height);
 
    // Load shaders
    Points::prog = new Shader("pointShader.vert", "pointShader.frag");
@@ -757,7 +1173,7 @@ void GLuciferViewer::open(int width, int height)
    if (strstr(typeid(*viewer).name(), "OSMesa"))
    {
      //Hack to speed up default point drawing size when using OSMesa
-     points->pointType = 4;
+     Model::points->pointType = 4;
      debug_print("OSMesa Detected: pointType default = 4\n");
    }
    else
@@ -771,7 +1187,7 @@ void GLuciferViewer::open(int width, int height)
 
    //Volume ray marching shaders
    Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
-   const char* vUniforms[22] = {"uPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uPower", "uFocalLength", "uWindowSize", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
+   const char* vUniforms[22] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
    Volumes::prog->loadUniforms(vUniforms, 22);
    const char* vAttribs[2] = {"aVertexPosition"};
    Volumes::prog->loadAttribs(pAttribs, 2);
@@ -788,9 +1204,9 @@ void GLuciferViewer::resize(int new_width, int new_height)
          float size1 = new_width * new_height;
          float r = sqrt(size1 / size0);
          // Adjust particle size by smallest of dimension changes
-         debug_print("Adjusting particle size scale %f to ", points->scale);
-         points->scale *= r; 
-         debug_print("%f ( * %f )\n", points->scale, r);
+         debug_print("Adjusting particle size scale %f to ", Model::points->scale);
+         Model::points->scale *= r; 
+         debug_print("%f ( * %f )\n", Model::points->scale, r);
          std::ostringstream ss;
          ss << "resize " << new_width << " " << new_height;
          record(true, ss.str());
@@ -802,22 +1218,22 @@ void GLuciferViewer::resize(int new_width, int new_height)
 
 void GLuciferViewer::close()
 {
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->close();
+   for (unsigned int i=0; i < models.size(); i++)
+      models[i]->close();
 }
 
 void GLuciferViewer::showById(unsigned int id, bool state)
 {
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->showById(id, state);
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->showById(id, state);
    //Setting here to allow hiding of objects without geometry (colourbars)
    amodel->objects[id-1]->visible = state;
 }
 
 void GLuciferViewer::redraw(unsigned int id)
 {
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->redrawObject(id);
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->redrawObject(id);
 }
 
 //Called when model loaded/changed, updates all views and window settings
@@ -851,8 +1267,8 @@ void GLuciferViewer::redrawViewports()
       awin->views[v]->redraw = true;
 
    //Flag redraw on objects??
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->redraw = true;
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->redraw = true;
 }
 
 //Called when view changed
@@ -865,8 +1281,8 @@ void GLuciferViewer::viewSelect(int idx)
 
    aview = awin->views[view];
 
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->setView(aview);
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->setView(aview);
 }
 
 //Called when timestep/window changed (new model data)
@@ -918,27 +1334,11 @@ void GLuciferViewer::addColourMap(ColourMap* cmap)
    amodel->colourMaps.push_back(colourMap);
 }
 
-void GLuciferViewer::clearObjects(bool all)
-{
-   //Cache currently loaded data before clearing
-   if (amodel->lastStep() < 0) return;
-   amodel->cacheStep(timestep, geometry);
-
-   if (FloatValues::membytes > 0)
-      debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", FloatValues::membytes/1000000.0f);
-   //Clear containers...
-   for (unsigned int i=0; i < geometry.size(); i++)
-   {
-      geometry[i]->redraw = true;
-      geometry[i]->clear(all);
-   }
-}
-
 void GLuciferViewer::redrawObjects()
 {
    //Flag redraw on all objects...
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->redraw = true;
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->redraw = true;
 }
 
 
@@ -1106,7 +1506,6 @@ void GLuciferViewer::displayCurrentView()
       drawSceneBlended();
       aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
    }
-   GL_Error_Check;
 
    //Clear the rotation flag
    if (aview->sort) aview->rotated = false;
@@ -1256,19 +1655,18 @@ void GLuciferViewer::drawScene()
    //(Drawing border last creates aliasing around transparent objects, moving back for now, is it only a GLUT problem?)
    aview->drawBorder();
 
-   triSurfaces->draw();
-   quadSurfaces->draw();
-   volumes->draw();
-   points->draw();
-   vectors->draw();
-   tracers->draw();
-   shapes->draw();
-   lines->draw();
-   labels->draw();
-
+   Model::triSurfaces->draw();
+   Model::quadSurfaces->draw();
+   Model::points->draw();
+   Model::vectors->draw();
+   Model::tracers->draw();
+   Model::shapes->draw();
+   Model::lines->draw();
+   Model::labels->draw();
+   Model::volumes->draw();
 }
 
-bool GLuciferViewer::loadModel(std::string& f)
+bool GLuciferViewer::loadModel(std::string& f, bool hideall)
 {
    FilePath fn(f);
    if (fn.ext != "gldb" && fn.ext != "db")
@@ -1279,7 +1677,7 @@ bool GLuciferViewer::loadModel(std::string& f)
    }
 
    //Open database file
-   amodel = new Model(fn);
+   amodel = new Model(fn, hideall);
    models.push_back(amodel);
 
    if (!amodel->open()) abort_program("Model database open failed\n");
@@ -1321,52 +1719,48 @@ bool GLuciferViewer::loadModel(std::string& f)
 //Load model window at specified timestep
 bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
-   if (windows.size() == 0)
+   //Have a database model loaded already?
+   if (amodel->objects.size() > 0)
    {
-      //Height maps can be loaded here...
-      if (files.size() > 0)
-      {
-         for (unsigned int m=0; m < files.size(); m++)
-            readHeightMap(files[m]);
-         files.clear();
-      }
-      else
-      {
-         //No model, show a demo
-         createDemoModel();
-      }
-   }
-   //else
       //Clear current model data
       //clearObjects();
 
-   if (window_idx >= (int)windows.size()) return false;
+      if (window_idx >= (int)windows.size()) return false;
 
-   //Resized from last window? close so will be re-opened at new size
-   if (awin && (awin->width != windows[window_idx]->width || awin->height != windows[window_idx]->height && viewer->isopen))
-      viewer->close();
+      //Save active window as selected
+      awin = windows[window_idx];
+      window = window_idx;
 
-   //Save active window as selected
-   awin = windows[window_idx];
-   window = window_idx;
+      // Ensure correct model is selected
+      for (unsigned int m=0; m < models.size(); m++)
+         for (unsigned int w=0; w < models[m]->windows.size(); w++)
+            if (models[m]->windows[w] == awin) amodel = models[m];
 
-   // Ensure correct model is selected
-   for (unsigned int m=0; m < models.size(); m++)
-      for (unsigned int w=0; w < models[m]->windows.size(); w++)
-         if (models[m]->windows[w] == awin) amodel = models[m];
+      //if (amodel->objects.size() == 0) return false;
 
-   if (amodel->objects.size() == 0) return false;
-
-   //Set timestep and load geometry at that step
-   if (amodel->db)
-   {
-      setTimeStep(at_timestep);
-      debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), timestep);
+      //Set timestep and load geometry at that step
+      if (amodel->db)
+      {
+         setTimeStep(at_timestep);
+         debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), timestep);
+      }
    }
 
-   //Height maps can be loaded here...
+   //Height maps or other files can be loaded here...
    for (unsigned int m=0; m < files.size(); m++)
+   {
       readHeightMap(files[m]);
+      readOBJ(files[m]);
+      readTecplot(files[m]);
+      readVolume(files[m]);
+   }
+   
+   //Should have some objects by now, if not args were invalid
+   if (amodel->objects.size() == 0)
+   {
+      printf("No valid model or files passed, showing demo test pattern\n");
+      createDemoModel();
+   }
 
    //Not yet opened or resized?
    if (!viewer->isopen)
@@ -1376,6 +1770,8 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
       else
          viewer->open(windows[window_idx]->width, windows[window_idx]->height);
    }
+   else
+      viewer->setsize(awin->width, awin->height);
 
    //Update the views
    resetViews(autozoom);
@@ -1384,9 +1780,8 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
    for (unsigned int m=0; m < files.size(); m++)
       readScriptFile(files[m]);
 
-
    //Cache fill (if cache large enough for all data)
-   if (GeomCache::size >= amodel->timesteps.size())
+   if (amodel->db && GeomCache::size >= amodel->timesteps.size())
    {
       printf("Caching all geometry data...\n");
       for (int i=0; i<=amodel->timesteps.size(); i++)
@@ -1410,7 +1805,7 @@ int GLuciferViewer::setTimeStep(int ts)
    int step = amodel->nearestTimeStep(ts, timestep);
    if (step < 0) return -1;
    //Clear currently loaded (also caches if enabled)
-   clearObjects();
+   amodel->clearObjects();
 
    //Closest matching timestep >= requested
    timestep = step;
@@ -1420,7 +1815,7 @@ int GLuciferViewer::setTimeStep(int ts)
    amodel->attach(timestep);
 
    //Attempt to load from cache first
-   if (amodel->restoreStep(timestep, geometry)) return 0; //Cache hit successful return value
+   if (amodel->restoreStep(timestep)) return 0; //Cache hit successful return value
 
    //clearObjects();
    //noload flag skips loading geometry until "load" commands issued
@@ -1438,293 +1833,7 @@ int GLuciferViewer::setTimeStep(int ts)
 int GLuciferViewer::loadGeometry(int object_id)
 {
    //Load at current timestep
-   return loadGeometry(object_id, timestep, timestep, true);
-}
-
-int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers)
-{
-   clock_t t1 = clock();
-   char* prefix = amodel->prefix;
-   //Setup filters
-   char filter[64] = "";
-   //if (rankfilter >= 0) sprintf(filter, "and rank=%d", rankfilter);
-
-   //Load geometry
-   char SQL[1024];
-
-   int datacol = 20;
-   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
-   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, 
-   //minX, minY, minZ, maxX, maxY, maxZ, data)
-   sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d %s ORDER BY idx,rank", prefix, object_id, time_start, time_stop, filter);
-   sqlite3_stmt* statement = amodel->select(SQL, true);
-
-   //Old database compatibility
-   if (statement == NULL)
-   {
-      //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
-      //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d %s ORDER BY idx,rank", prefix, object_id, time_start, time_stop, filter);
-      sqlite3_stmt* statement = amodel->select(SQL, true);
-      datacol = 14;
-
-      //Fix
-#ifdef ALTER_DB
-      amodel->reopen(true);  //Open writable
-      sprintf(SQL, "ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
-                   "ALTER TABLE %sgeometry ADD COLUMN maxX REAL; ALTER TABLE %sgeometry ADD COLUMN maxY REAL; ALTER TABLE %sgeometry ADD COLUMN maxZ REAL; ",
-                   prefix, prefix, prefix, prefix, prefix, prefix, prefix);
-      printf("%s\n", SQL);
-      amodel->issue(SQL);
-#endif
-   }
-
-   //Very old database compatibility
-   if (statement == NULL)
-   {
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d %s ORDER BY idx,rank", prefix, object_id, time_start, time_stop, filter);
-      statement = amodel->select(SQL);
-      datacol = 13;
-   }
-
-   if (!statement) return 0;
-   int rows = 0;
-   int tbytes = 0;
-   int ret;
-   Geometry* active = NULL;
-   do 
-   {  
-      ret = sqlite3_step(statement);
-      if (ret == SQLITE_ROW)
-      {
-         rows++;
-         int id = sqlite3_column_int(statement, 0);
-         int timestep = sqlite3_column_int(statement, 1);
-         //int rank = sqlite3_column_int(statement, 2);  //unused
-         //int index = sqlite3_column_int(statement, 3); //unused
-         lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 4);
-         if (filters && !filters[type]) continue;   //Skip filtered
-         lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 5);
-         int size = sqlite3_column_int(statement, 6);
-         int count = sqlite3_column_int(statement, 7);
-         int items = count / size;
-         int width = sqlite3_column_int(statement, 8);
-         int height = width > 0 ? items / width : 0;
-         float minimum = (float)sqlite3_column_double(statement, 9);
-         float maximum = (float)sqlite3_column_double(statement, 10);
-         //New fields for the scaling features, applied when drawing colour bars
-         float dimFactor = (float)sqlite3_column_double(statement, 11);
-         const char *units = (const char*)sqlite3_column_text(statement, 12);
-
-         const char *labels = datacol < 14 ? "" : (const char*)sqlite3_column_text(statement, 13);
-
-         const void *data = sqlite3_column_blob(statement, datacol);
-         unsigned int bytes = sqlite3_column_bytes(statement, datacol);
-
-         if (type == lucTracerType) height = 0;
-
-         //Create object and set parameters
-         active = geometry[type];
-
-         if (recurseTracers && type == lucTracerType)
-         {
-            //if (datacol == 13) continue;  //Don't bother supporting tracers from old dbs
-            //Only load tracer timesteps when on the vertex data object or will repeat for every type found
-            if (data_type != lucVertexData) continue;
-
-            //Tracers are loaded with a new select statement across multiple timesteps...
-            //objects[object_id]->steps = timestep+1;
-            tracers->timestep = timestep; //Set current timestep for tracers
-            int stepstart = 0; //timestep - objects[object_id]->steps;
-            //int stepstart = timestep - tracers->steps;
-
-            loadGeometry(object_id, stepstart, timestep, false);
-         }
-         else
-         {
-            unsigned char* buffer = NULL;
-            if (bytes != (unsigned int)(count * sizeof(float)))
-            {
-               //Decompress!
-               unsigned long dst_len = (unsigned long )(count * sizeof(float));
-               unsigned long uncomp_len = dst_len;
-               unsigned long cmp_len = bytes;
-               buffer = new unsigned char[dst_len];
-               if (!buffer)
-                  abort_program("Out of memory!\n");
-
-#ifdef USE_ZLIB
-               int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
-               if (res != Z_OK || dst_len != uncomp_len)
-#else
-               int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
-               if (!res)
-#endif
-               {
-                  abort_program("uncompress() failed! error code %d\n", res);
-                  //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
-               }
-               data = buffer; //Replace data pointer
-               bytes = uncomp_len;
-            }
-
-            tbytes += bytes;   //Byte counter
-
-            //Where min/max vertex provided, load
-            if (data_type == lucVertexData)
-            {
-               float min[3] = {0,0,0}, max[3] = {0,0,0};
-               if (datacol > 14 && sqlite3_column_type(statement, 14) != SQLITE_NULL)
-               {
-                  for (int i=0; i<3; i++)
-                  {
-                     min[i] = (float)sqlite3_column_double(statement, 14+i);
-                     max[i] = (float)sqlite3_column_double(statement, 17+i);
-                  }
-               }
-
-               //Detect null dims data due to bugs in dimension output
-               if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
-               {
-                  Geometry::checkPointMinMax(min);
-                  Geometry::checkPointMinMax(max);
-               }
-               else
-               {
-                  //Slow way, detects bounding box by checking each vertex
-                  for (int p=0; p < items*3; p += 3)
-                     Geometry::checkPointMinMax((float*)data + p);
-
-                  //Fix for future loads
-#ifdef ALTER_DB
-                  amodel->reopen(true);  //Open writable
-                  sprintf(SQL, "UPDATE %sgeometry SET minX = '%f', minY = '%f', minZ = '%f', maxX = '%f', maxY = '%f', maxZ = '%f' WHERE id==%d;", 
-                          prefix, id, Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
-                  printf("%s\n", SQL);
-                  amodel->issue(SQL);
-#endif
-               }
-            }
-
-            //Always add a new element for each new vertex geometry record, not suitable if writing db on multiple procs!
-            if (data_type == lucVertexData && recurseTracers) active->add(amodel->objects[object_id-1]);
-
-            //Read data block
-            active->read(amodel->objects[object_id-1], items, data_type, data, width, height);
-            active->setup(amodel->objects[object_id-1], data_type, minimum, maximum, dimFactor, units);
-            if (labels) active->label(amodel->objects[object_id-1], labels);
-
-            if (buffer) delete[] buffer;
-   #if 0
-            char* types[8] = {"", "POINTS", "GRID", "TRIANGLES", "VECTORS", "TRACERS", "LINES", "SHAPES"};
-            if (data_type == lucVertexData)
-               printf("[object %d time %d] Read %d vertices into %s object (idx %d) %d x %d\n", 
-                        object_id, timestep, items, types[type], active->size()-1, width, height);
-            else printf("[object %d time %d] Read %d values of dtype %d into %s object (idx %d) min %f max %f\n", 
-                        object_id, timestep, items, data_type, types[type], active->size()-1, minimum, maximum);
-            if (labels) printf(labels);
-   #endif
-         }
-      }
-      else if (ret != SQLITE_DONE)
-         printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
-   } while (ret == SQLITE_ROW);
-
-   sqlite3_finalize(statement);
-   debug_print("... loaded %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
-
-   return rows;
-}
-
-int GLuciferViewer::decompressGeometry(int object_id, int timestep)
-{
-   amodel->reopen(true);  //Open writable
-   clock_t t1 = clock();
-   //Load geometry
-   char SQL[1024];
-
-   sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE object_id=%d AND timestep=%d ORDER BY idx,rank", amodel->prefix, object_id, timestep);
-   sqlite3_stmt* statement = amodel->select(SQL, true);
-
-   if (!statement) return 0;
-   int rows = 0;
-   int tbytes = 0;
-   int ret;
-   Geometry* active = NULL;
-   do 
-   {  
-      ret = sqlite3_step(statement);
-      if (ret == SQLITE_ROW)
-      {
-         rows++;
-         int id = sqlite3_column_int(statement, 0);
-         int count = sqlite3_column_int(statement, 1);
-         const void *data = sqlite3_column_blob(statement, 2);
-         unsigned int bytes = sqlite3_column_bytes(statement, 2);
-
-         unsigned char* buffer = NULL;
-         if (bytes != (unsigned int)(count * sizeof(float)))
-         {
-            //Decompress!
-            unsigned long dst_len = (unsigned long )(count * sizeof(float));
-            unsigned long uncomp_len = dst_len;
-            unsigned long cmp_len = bytes;
-            buffer = new unsigned char[dst_len];
-            if (!buffer)
-               abort_program("Out of memory!\n");
-
-#ifdef USE_ZLIB
-            int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
-            if (res != Z_OK || dst_len != uncomp_len)
-#else
-            int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
-            if (!res)
-#endif
-            {
-               abort_program("uncompress() failed! error code %d\n", res);
-               //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
-            }
-            data = buffer; //Replace data pointer
-            bytes = uncomp_len;
-#ifdef ALTER_DB
-   //UNCOMPRESSED
-   sqlite3_stmt* statement2;
-   snprintf(SQL, 1024, "UPDATE %sgeometry SET data = ? WHERE id==%d;", amodel->prefix, id);
-   printf("%s\n", SQL);
-   /* Prepare statement... */
-   if (sqlite3_prepare_v2(amodel->db, SQL, -1, &statement2, NULL) != SQLITE_OK)
-   {
-      printf("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(amodel->db));
-      abort(); //Database errors fatal?
-      return 0;
-   }
-   /* Setup blob data for insert */
-   if (sqlite3_bind_blob(statement2, 1, buffer, bytes, SQLITE_STATIC) != SQLITE_OK)
-   {
-      printf("SQL bind error: %s\n", sqlite3_errmsg(amodel->db));
-      abort(); //Database errors fatal?
-   }
-   /* Execute statement */
-   if (sqlite3_step(statement2) != SQLITE_DONE )
-   {
-      printf("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(amodel->db));
-      abort(); //Database errors fatal?
-   }
-   sqlite3_finalize(statement2);
-#endif
-            }
-
-            if (buffer) delete[] buffer;
-
-      }
-      else if (ret != SQLITE_DONE)
-         printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
-   } while (ret == SQLITE_ROW);
-
-   sqlite3_finalize(statement);
-   debug_print("... modified %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
-
-   return rows;
+   return amodel->loadGeometry(object_id, timestep, timestep, true);
 }
 
 void GLuciferViewer::writeImages(int start, int end)
@@ -1792,7 +1901,7 @@ void GLuciferViewer::dumpById(unsigned int id)
          for (int type=lucMinType; type<lucMaxType; type++)
          {
             std::ostringstream ss;
-            geometry[type]->dumpById(ss, amodel->objects[i]->id);
+            Model::geometry[type]->dumpById(ss, amodel->objects[i]->id);
 
             std::string results = ss.str();
             if (results.size() > 0)
@@ -1837,8 +1946,8 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
    aview->getCamera(rotate, translate, focus);
 
    json << "{\n  \"options\" :\n  {\n"
-        << "    \"pointScale\" : " << points->scale << ",\n"
-        << "    \"pointType\" : " << points->pointType << ",\n"
+        << "    \"pointScale\" : " << Model::points->scale << ",\n"
+        << "    \"pointType\" : " << Model::points->pointType << ",\n"
         << "    \"border\" : " << (aview->properties["border"].ToInt(0) ? "true" : "false") << ",\n"
         << "    \"opacity\" : " << GeomData::opacity << ",\n"
         << "    \"rotate\" : ["  << rotate[0] << "," << rotate[1] << "," << rotate[2] << "," << rotate[3] << "],\n";
@@ -1896,8 +2005,8 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
             if (objdata)
             {
                //When extracting data, skip objects with no export available or no data returned...
-               if (geometry[type]->size() == 0 || names[type].length() == 0) continue;
-               geometry[type]->jsonWrite(amodel->objects[i]->id, &ss);
+               if (Model::geometry[type]->size() == 0 || names[type].length() == 0) continue;
+               Model::geometry[type]->jsonWrite(amodel->objects[i]->id, &ss);
                if (ss.tellp() == (std::streampos)0 || amodel->objects[i]->skip) continue;
             }
 

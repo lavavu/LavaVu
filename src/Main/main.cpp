@@ -44,6 +44,12 @@
 #include "OSMesaViewer.h"
 #include "AGLViewer.h"
 
+#define X11_WINDOW 0
+#define GLUT_WINDOW 1
+#define SDL_WINDOW 2
+#define OSMESA_WINDOW 3
+#define AGL_WINDOW 4
+
 // Main function
 int main(int argc, char *argv[]) 
 {
@@ -53,7 +59,7 @@ int main(int argc, char *argv[])
    bool stereo = false;
    bool fullscreen = false;
    int width = 0, height = 0;
-   bool AGL, X11, SDL, GLUT, OSMesa;
+   int window;
    std::vector<std::string> args;
 
 //Evil platform specific extension handling stuff
@@ -69,24 +75,23 @@ int main(int argc, char *argv[])
 #endif
 
    //Set default viewer
-   X11 = SDL = GLUT = OSMesa = AGL = false;
 #if defined HAVE_X11
-   X11 = true;
+   window = X11_WINDOW;
 #elif defined HAVE_GLUT
-   GLUT = true;
+   window = GLUT_WINDOW;
 #elif defined HAVE_SDL || defined _WIN32
-   SDL = true;
+   window = SDL_WINDOW;
 #elif defined HAVE_OSMESA
-   OSMesa = true;
+   window = OSMESA_WINDOW;
 #elif defined HAVE_AGL
-   AGL = true;
+   window = AGL_WINDOW;
 #else
-   abort_program("No windowing system configured (requires X11, GLUT, SDL or OSMesa)");
+   abort_program("No windowing system configured (requires X11, GLUT, SDL, AGL or OSMesa)");
 #endif
 
    //Shader path (default to program path if not set)
    FilePath path(argv[0]);
-   if (strlen(Shader::path) == 0)
+   if (!Shader::path)
    {
       //Strip program name (after final /)
       Shader::path = path.path.c_str();
@@ -104,15 +109,7 @@ int main(int argc, char *argv[])
          std::cout << "      Any following integer switch will be interpreted as the final timestep for output\n";
          std::cout << "      eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n";
          std::cout << " -c#: caching, set # of timesteps to cache data in memory for\n";
-         std::cout << "\nSkip loading geometry of particular types:\n";
-         std::cout << " -B : skip labels\n";
-         std::cout << " -P : skip points\n";
-         std::cout << " -S : skip grid/quad surfaces\n";
-         std::cout << " -U : skip triangle surfaces (isosurfaces)\n";
-         std::cout << " -V : skip vectors\n";
-         std::cout << " -T : skip tracers\n";
-         std::cout << " -H : skip shapes\n";
-         std::cout << " -L : skip lines\n\n";
+         std::cout << " -P#: subsample points\n";
          std::cout << " -A : All objects hidden initially, use 'show object' to display\n";
          std::cout << " -N : No load, deferred loading mode, use 'load object' to load & display from database\n";
          std::cout << "\nGeneral options\n";
@@ -135,6 +132,7 @@ int main(int argc, char *argv[])
          std::cout << "\nData export\n";
          std::cout << " -d#: export object id # to CSV vertices + values\n";
          std::cout << " -j#: export object id # to JSON, if # omitted will output all compatible objects\n";
+         std::cout << " -g#: export object id # to GLDB, if # omitted will output all compatible objects\n";
          std::cout << "\nWindow settings\n";
          std::cout << " -rWIDTH,HEIGHT: resize initial viewer window to width x height\n";
          std::cout << " -h: hidden window, will exit after running any provided input script and output options\n";
@@ -154,8 +152,7 @@ int main(int argc, char *argv[])
          if (strcmp(argv[i], "-SDL") == 0)
          {
 #if defined HAVE_SDL
-            //SDL window requested
-            SDL = true; OSMesa = AGL = X11 = GLUT = false;
+            window = SDL_WINDOW;
 #else
             std::cerr << "SDL support not available\n";
 #endif
@@ -164,8 +161,7 @@ int main(int argc, char *argv[])
          else if (strcmp(argv[i], "-GLUT") == 0)
          {
 #if defined HAVE_GLUT
-            //GLUT window requested
-            GLUT = true; OSMesa = AGL = X11 = SDL = false;
+            window = GLUT_WINDOW;
 #else
             std::cerr << "GLUT support not available\n";
 #endif
@@ -209,19 +205,19 @@ int main(int argc, char *argv[])
 
    //Create viewer window
 #if defined HAVE_X11
-   if (X11) viewer = new X11Viewer(stereo, fullscreen);
+   if (window == X11_WINDOW) viewer = new X11Viewer(stereo, fullscreen);
 #endif
 #if defined HAVE_GLUT
-   if (GLUT) viewer = new GlutViewer(stereo, fullscreen);
+   if (window == GLUT_WINDOW) viewer = new GlutViewer(stereo, fullscreen);
 #endif
 #if defined HAVE_SDL || defined _WIN32
-   if (SDL) viewer = new SDLViewer(stereo, fullscreen);
+   if (window == SDL_WINDOW) viewer = new SDLViewer(stereo, fullscreen);
 #endif
 #if defined HAVE_OSMESA
-   if (OSMesa) viewer = new OSMesaViewer();
+   if (window == OSMESA_WINDOW) viewer = new OSMesaViewer();
 #endif
 #if defined HAVE_AGL
-   if (AGL) viewer = new AGLViewer();
+   if (window == AGL_WINDOW) viewer = new AGLViewer();
 #endif
    if (!viewer) abort_program("No Viewer available\n");
 
@@ -229,7 +225,8 @@ int main(int argc, char *argv[])
 #ifndef DISABLE_SERVER
    if (port)
    {
-      std::string htmlpath = std::string(Shader::path) + "html";
+      //Use executable path as base for html path
+      std::string htmlpath = path.path + std::string("./html");
       viewer->addOutput(GLuciferServer::Instance(viewer, htmlpath, port, quality, threads));
    }
 #endif

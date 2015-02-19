@@ -63,7 +63,7 @@ class GeomCache
       //Copy all object types
       for (unsigned int i=0; i < data.size(); i++)
       {
-         store[i] = new Geometry(false);
+         store[i] = new Geometry();
          store[i]->move(data[i]);
       }
    }
@@ -92,6 +92,20 @@ class Model
    //Geometry cache
    std::deque<GeomCache*> cache;
   public:
+   int timestep;
+   //Current timestep geometry
+   static std::vector<Geometry*> geometry;
+   //Type specific geometry pointers
+   static Geometry* labels;
+   static Points* points;
+   static Vectors* vectors;
+   static Tracers* tracers;
+   static QuadSurfaces* quadSurfaces;
+   static TriSurfaces* triSurfaces;
+   static Lines* lines;
+   static Shapes* shapes;
+   static Volumes* volumes;
+
    std::vector<TimeStep> timesteps;
 
    bool readonly;
@@ -108,10 +122,12 @@ class Model
    sqlite3 *db;
 
    sqlite3_stmt* select(const char* SQL, bool silent=false);
-   bool issue(const char* SQL);
+   bool issue(const char* SQL, sqlite3* odb=NULL);
    bool open(bool write=false);
    void reopen(bool write=false);
    void attach(int timestep);
+   void close();
+   void clearObjects(bool all=false);
    void loadWindows();
    void loadLinks(Win* win);
    void loadLinks(DrawingObject* draw);
@@ -121,8 +137,8 @@ class Model
    void loadObjects();
    void loadColourMaps();
 
-   Model() : readonly(true), file(FilePath(":memory")), attached(0), db(NULL) {prefix[0] = '\0';}
-   Model(FilePath& fn) : readonly(true), file(fn), attached(0), db(NULL) {prefix[0] = '\0';}
+   Model(FilePath& fn, bool hideall=false);
+   ~Model();
 
    void addObject(DrawingObject* draw)
    {
@@ -133,8 +149,8 @@ class Model
 
    //Timestep caching
    void deleteCache();
-   void cacheStep(int timestep, std::vector<Geometry*> &geometry);
-   bool restoreStep(int timestep, std::vector<Geometry*> &geometry);
+   void cacheStep();
+   bool restoreStep(int step);
 
    int lastStep()
    {
@@ -142,26 +158,12 @@ class Model
      return timesteps[timesteps.size()-1].step;
    }
 
-   ~Model()
-   {
-      //Clear drawing objects
-      for(unsigned int i=0; i<objects.size(); i++)
-         if (objects[i]) delete objects[i]; 
-
-      //Clear views
-      for(unsigned int i=0; i<views.size(); i++)
-         if (views[i]) delete views[i]; 
-
-      //Clear colourmaps
-      for(unsigned int i=0; i<colourMaps.size(); i++)
-         if (colourMaps[i]) delete colourMaps[i]; 
-
-      if (db) sqlite3_close(db);
-   }
-
    std::string timeStamp(int timestep);
    bool hasTimeStep(int ts);
    int nearestTimeStep(int requested, int current);
+   
+   int loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers);
+   int decompressGeometry(int object_id, int timestep);
 };
 
 #endif //Model__

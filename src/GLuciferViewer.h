@@ -44,6 +44,14 @@
 #include "Model.h"
 #include "Win.h"
 
+typedef enum
+{
+   lucExportNone,
+   lucExportCSV,
+   lucExportJSON,
+   lucExportJSONP,
+} lucExportType;
+
 class GLuciferViewer : public ViewerApp
 {
   protected:
@@ -52,8 +60,7 @@ class GLuciferViewer : public ViewerApp
    bool sort_on_rotate;
    int fixedwidth, fixedheight;
    bool writeimage, writemovie;
-
-   char message[256];
+   int volres[3];
 
    std::vector<Model*> models;
    std::vector<Win*> windows;
@@ -61,7 +68,8 @@ class GLuciferViewer : public ViewerApp
 
    // Loaded model parameters
    int timestep, endstep;
-   int dump, dumpid;
+   lucExportType dump;
+   int dumpid;
    int window;
    int tracersteps;
    bool noload;
@@ -75,8 +83,8 @@ class GLuciferViewer : public ViewerApp
   public:
    bool recording;
    bool loop;
+   char message[256];
 
-   bool filters[lucMaxType];
    bool output;
    int view;
 
@@ -87,18 +95,6 @@ class GLuciferViewer : public ViewerApp
 
    json::Object globals;
 
-   //Object geometry
-   std::vector<Geometry*> geometry;
-   Geometry* labels;
-   Points* points;
-   Vectors* vectors;
-   Tracers* tracers;
-   QuadSurfaces* quadSurfaces;
-   TriSurfaces* triSurfaces;
-   Lines* lines;
-   Shapes* shapes;
-   Volumes* volumes;
-
    GLuciferViewer(std::vector<std::string> args, OpenGLViewer* viewer, int width=0, int height=0);
    virtual ~GLuciferViewer();
 
@@ -108,10 +104,14 @@ class GLuciferViewer : public ViewerApp
    void parseProperty(std::string& data);
    void printProperties();
 
+   void addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level);
    void readScriptFile(FilePath& fn);
    void readHeightMap(FilePath& fn);
+   void readOBJ(FilePath& fn);
+   void readTecplot(FilePath& fn);
+   void readVolume(FilePath& fn);
    void createDemoModel();
-   void newModel(std::string name, int w, int h, int bg, float mmin[3], float mmax[3]);
+   void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
    DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string properties="");
    void showById(unsigned int id, bool state);
    void setOpacity(unsigned int id, float opacity);
@@ -147,7 +147,6 @@ class GLuciferViewer : public ViewerApp
    void redrawViewports();
    int viewFromPixel(int x, int y);
 
-   void clearObjects(bool all=false);
    void redrawObjects();
    void displayObjectList(bool console=true);
    void printMessage(const char *fmt, ...);
@@ -162,14 +161,12 @@ class GLuciferViewer : public ViewerApp
    void writeSteps(bool images, bool video, int start, int end, const char* filename);
 
    //db loading
-   bool loadModel(std::string& fn);
+   bool loadModel(std::string& fn, bool hideall=false);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);
    int getTimeStep() {return timestep;}
    int loadGeometry(int object_id);
-   int loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers);
-   int decompressGeometry(int object_id, int timestep);
 
    //Interactive command & script processing
    bool parseChar(unsigned char key);

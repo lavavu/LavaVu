@@ -81,6 +81,7 @@ class GeomData
    int count;  //Number of vertices
    int width;
    int height;
+   int depth;
    char* labelptr;
    bool opaque;   //Flag for opaque geometry, render first, don't depth sort
 
@@ -206,11 +207,10 @@ class Geometry
    float scale;   //Scaling factor
    bool redraw;    //Redraw from scratch flag
    static float min[3], max[3];  //Track min/max coords
-   static std::vector<TimeStep> timesteps; //Active model timesteps
    bool wireframe, cullface;
    bool flat, lit;
 
-   Geometry(bool hidden=false);
+   Geometry();
    virtual ~Geometry();
 
    //For bounding box detection...
@@ -237,7 +237,7 @@ class Geometry
    void labels();  //Draw labels
    GeomData* add(DrawingObject* draw);
    void newData(DrawingObject* draw);
-   virtual void read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width=0, int height=0, int index=-1);
+   virtual void read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width=0, int height=0, int depth=1);
    void setup(DrawingObject* draw, lucGeometryDataType type, float minimum, float maximum, float dimFactor=1.0, const char* units="");
    void label(DrawingObject* draw, const char* labels);
    GeomData* getObjectStore(DrawingObject* draw);
@@ -252,7 +252,7 @@ class Vectors : public Geometry
 {
   public:
    int glyphs;
-   Vectors(bool hidden=false);
+   Vectors();
    ~Vectors();
    virtual void update();
    virtual void draw();
@@ -266,7 +266,7 @@ class Tracers : public Geometry
    bool scaling;
    int timestep;
 
-   Tracers(bool hidden=false);
+   Tracers();
    ~Tracers();
    virtual void update();
    virtual void draw();
@@ -278,7 +278,7 @@ class QuadSurfaces : public Geometry
    static Shader* prog;
    bool triangles;
 
-   QuadSurfaces(bool hidden=false);
+   QuadSurfaces();
    ~QuadSurfaces();
    virtual void update();
    virtual void draw();
@@ -295,7 +295,7 @@ class TriSurfaces : public Geometry
    static Shader* prog;
    GLuint indexvbo, vbo;
 
-   TriSurfaces(bool hidden=false);
+   TriSurfaces();
    ~TriSurfaces();
    virtual void update();
    bool loadVertices(unsigned int filter=0, std::ostream* json=NULL);
@@ -313,7 +313,7 @@ class TriSurfaces : public Geometry
 class Lines : public Geometry
 {
   public:
-   Lines(bool hidden=false);
+   Lines();
    ~Lines();
    virtual void update();
 };
@@ -321,7 +321,7 @@ class Lines : public Geometry
 class Shapes : public Geometry
 {
   public:
-   Shapes(bool hidden=false);
+   Shapes();
    ~Shapes();
    virtual void update();
    virtual void draw();
@@ -337,7 +337,7 @@ class Points : public Geometry
    bool attenuate;
    GLuint indexvbo, vbo;
 
-   Points(bool hidden=false);
+   Points();
    ~Points();
    virtual void init();
    virtual void close();
@@ -358,7 +358,7 @@ class Volumes : public Geometry
    GLuint colourTexture;
    std::map<int, int> slices;
 
-   Volumes(bool hidden=false);
+   Volumes();
    ~Volumes();
    virtual void close();
    virtual void update();

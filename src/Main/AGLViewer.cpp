@@ -55,8 +55,11 @@ AGLViewer::~AGLViewer()
    aglDestroyContext(graphicsContext );
 }
 
-void AGLViewer::open(int width, int height)
+void AGLViewer::open(int w, int h)
 {
+   //Call base class open to set width/height
+   OpenGLViewer::open(w, h);
+   
    if (PixelBuffer)
       aglDestroyPBuffer(PixelBuffer);
 
@@ -108,12 +111,13 @@ void AGLViewer::open(int width, int height)
 
    debug_print("AGL viewer created\n");
 
-   //Call base class open
-   OpenGLViewer::open(width, height);
+   //Call OpenGL init
+   OpenGLViewer::init();
 }
 
 void AGLViewer::setsize(int width, int height)
 {
+   if (width == 0 || height == 0) return;
    close();
    open(width, height);
 }

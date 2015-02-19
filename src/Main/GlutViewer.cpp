@@ -58,8 +58,11 @@ GlutViewer::GlutViewer(bool stereo, bool fullscreen) : OpenGLViewer(stereo, full
    debug_print("GLUT viewer created\n");
 }
 
-void GlutViewer::open(int width, int height)
+void GlutViewer::open(int w, int h)
 {
+   //Call base class open to set width/height
+   OpenGLViewer::open(w, h);
+   
    if (!GlutViewer::self)
    {
       GlutViewer::self = this;
@@ -81,12 +84,13 @@ void GlutViewer::open(int width, int height)
       glutMotionFunc(glut_mousemove);
    }
 
-   //Call base class open
-   OpenGLViewer::open(width, height);
+   //Call OpenGL init
+   OpenGLViewer::init();
 }
 
 void GlutViewer::setsize(int width, int height)
 {
+   if (width == 0 || height == 0) return;
    //Resize
    glutReshapeWindow(width, height);
 

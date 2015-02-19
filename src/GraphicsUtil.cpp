@@ -32,15 +32,14 @@
 *%  http://www.underworldproject.org/aboutus.html
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
-#include "GraphicsUtil.h"
-#include <string.h>
-#include <math.h>
-
 #if defined HAVE_LIBPNG or defined _WIN32
 #include <png.h>
 #include <zlib.h>
 #endif
+
+#include "GraphicsUtil.h"
+#include <string.h>
+#include <math.h>
 
 #ifdef USE_FONTS
 #include  "font.h"
@@ -224,6 +223,64 @@ int gluProjectf(float objx, float objy, float objz, float* modelview, float*proj
    //This is only correct when glDepthRange(0.0, 1.0)
    windowCoordinate[2]=(1.0+fTempo[6])*0.5;	//Between 0 and 1
    return 1;
+}
+
+/*
+** Modified from MESA GLU 9.0.0 src/libutil/project.c
+** (SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008))
+** License URL as required: http://oss.sgi.com/projects/FreeB/
+**
+** Invert 4x4 matrix.
+** Contributed by David Moore (See Mesa bug #6748)
+*/
+bool gluInvertMatrixf(const float m[16], float invOut[16])
+{
+    float inv[16], det;
+    int i;
+
+    inv[0] =   m[5]*m[10]*m[15] - m[5]*m[11]*m[14] - m[9]*m[6]*m[15]
+             + m[9]*m[7]*m[14] + m[13]*m[6]*m[11] - m[13]*m[7]*m[10];
+    inv[4] =  -m[4]*m[10]*m[15] + m[4]*m[11]*m[14] + m[8]*m[6]*m[15]
+             - m[8]*m[7]*m[14] - m[12]*m[6]*m[11] + m[12]*m[7]*m[10];
+    inv[8] =   m[4]*m[9]*m[15] - m[4]*m[11]*m[13] - m[8]*m[5]*m[15]
+             + m[8]*m[7]*m[13] + m[12]*m[5]*m[11] - m[12]*m[7]*m[9];
+    inv[12] = -m[4]*m[9]*m[14] + m[4]*m[10]*m[13] + m[8]*m[5]*m[14]
+             - m[8]*m[6]*m[13] - m[12]*m[5]*m[10] + m[12]*m[6]*m[9];
+    inv[1] =  -m[1]*m[10]*m[15] + m[1]*m[11]*m[14] + m[9]*m[2]*m[15]
+             - m[9]*m[3]*m[14] - m[13]*m[2]*m[11] + m[13]*m[3]*m[10];
+    inv[5] =   m[0]*m[10]*m[15] - m[0]*m[11]*m[14] - m[8]*m[2]*m[15]
+             + m[8]*m[3]*m[14] + m[12]*m[2]*m[11] - m[12]*m[3]*m[10];
+    inv[9] =  -m[0]*m[9]*m[15] + m[0]*m[11]*m[13] + m[8]*m[1]*m[15]
+             - m[8]*m[3]*m[13] - m[12]*m[1]*m[11] + m[12]*m[3]*m[9];
+    inv[13] =  m[0]*m[9]*m[14] - m[0]*m[10]*m[13] - m[8]*m[1]*m[14]
+             + m[8]*m[2]*m[13] + m[12]*m[1]*m[10] - m[12]*m[2]*m[9];
+    inv[2] =   m[1]*m[6]*m[15] - m[1]*m[7]*m[14] - m[5]*m[2]*m[15]
+             + m[5]*m[3]*m[14] + m[13]*m[2]*m[7] - m[13]*m[3]*m[6];
+    inv[6] =  -m[0]*m[6]*m[15] + m[0]*m[7]*m[14] + m[4]*m[2]*m[15]
+             - m[4]*m[3]*m[14] - m[12]*m[2]*m[7] + m[12]*m[3]*m[6];
+    inv[10] =  m[0]*m[5]*m[15] - m[0]*m[7]*m[13] - m[4]*m[1]*m[15]
+             + m[4]*m[3]*m[13] + m[12]*m[1]*m[7] - m[12]*m[3]*m[5];
+    inv[14] = -m[0]*m[5]*m[14] + m[0]*m[6]*m[13] + m[4]*m[1]*m[14]
+             - m[4]*m[2]*m[13] - m[12]*m[1]*m[6] + m[12]*m[2]*m[5];
+    inv[3] =  -m[1]*m[6]*m[11] + m[1]*m[7]*m[10] + m[5]*m[2]*m[11]
+             - m[5]*m[3]*m[10] - m[9]*m[2]*m[7] + m[9]*m[3]*m[6];
+    inv[7] =   m[0]*m[6]*m[11] - m[0]*m[7]*m[10] - m[4]*m[2]*m[11]
+             + m[4]*m[3]*m[10] + m[8]*m[2]*m[7] - m[8]*m[3]*m[6];
+    inv[11] = -m[0]*m[5]*m[11] + m[0]*m[7]*m[9] + m[4]*m[1]*m[11]
+             - m[4]*m[3]*m[9] - m[8]*m[1]*m[7] + m[8]*m[3]*m[5];
+    inv[15] =  m[0]*m[5]*m[10] - m[0]*m[6]*m[9] - m[4]*m[1]*m[10]
+             + m[4]*m[2]*m[9] + m[8]*m[1]*m[6] - m[8]*m[2]*m[5];
+
+    det = m[0]*inv[0] + m[1]*inv[4] + m[2]*inv[8] + m[3]*inv[12];
+    if (det == 0)
+        return false;
+
+    det = 1.0 / det;
+
+    for (i = 0; i < 16; i++)
+        invOut[i] = inv[i] * det;
+
+    return true;
 }
 
 void Viewport2d(int width, int height)
@@ -1156,6 +1213,22 @@ void Colour_SetXOR(bool switchOn)
       glDisable(GL_COLOR_LOGIC_OP);
 } 
 
+Colour parseRGBA(std::string value)
+{
+   //Parse rgba(r,g,b,a) values
+   Colour col;
+   int c;
+   std::stringstream ss(value.substr(5));
+   for (int i=0; i<4; i++)
+   {
+      ss >> c;
+      col.rgba[i] = c;
+      if (ss.peek() == ',')
+         ss.ignore();
+   }
+   return col; //rgba(c[0],c[1],c[2],c[3]);
+}
+
 
 // Loads TGA Image
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
@@ -1310,7 +1383,17 @@ int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLe
    return BuildTexture(texture, imageData, mipmaps, texture->bpp == 24 ? GL_RGB : GL_RGBA, mode);
 }
 
-
+int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+{
+   int width, height, bytesPerPixel;
+   GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(filename, &width, &height, &bytesPerPixel, 3);
+   
+   texture->width = width;
+   texture->height = height;
+   texture->bpp = 24;
+   
+   return BuildTexture(texture, imageData, mipmaps, GL_RGB, mode);
+}
 
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode)
 {

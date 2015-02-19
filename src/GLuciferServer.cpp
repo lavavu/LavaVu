@@ -4,6 +4,9 @@
 #include <stdlib.h>
 
 #include "GLuciferServer.h"
+#if defined _WIN32
+#include <SDL/SDL_syswm.h>
+#endif
 
 #include "base64.h"
 #include "jpeg/jpge.h"
@@ -232,19 +235,27 @@ void* GLuciferServer::callback(enum mg_event event,
       }
       else if (strstr(request_info->uri, "/command=") != NULL)
       {
+#if defined _WIN32
+         SDL_SysWMinfo info;
+         SDL_VERSION(&info.version); // this is important!
+         if (SDL_GetWMInfo(&info))
+         SetWindowPos(info.window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+         SetWindowPos(info.window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+#endif
          mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
          std::string data = request_info->uri+1;
          std::replace(data.begin(), data.end(), ',', '\n');
          const size_t equals = data.find('=');
          const size_t amp = data.find('&');
-         if (std::string::npos != equals && std::string::npos != amp)
-         {
            //Push command onto queue to be processed in the viewer thread
            pthread_mutex_lock(&_self->viewer->cmd_mutex);
+	 if (amp != std::string::npos)
            OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
+	 else
+           OpenGLViewer::commands.push_back(data.substr(equals+1));
+           std::cerr << data.substr(equals+1) << std::endl;
            _self->viewer->postdisplay = true;
            pthread_mutex_unlock(&_self->viewer->cmd_mutex);
-         }
       }
       else if (strstr(request_info->uri, "/post") != NULL)
       {

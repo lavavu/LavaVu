@@ -75,7 +75,7 @@ function initPage(src, fn) {
   }
 
   //Canvas event handling
-  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown));
+  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
   //Following two settings should probably be defaults?
   canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
   //canvas.mouse.setDefault();
@@ -229,6 +229,14 @@ function canvasMouseWheel(event, mouse) {
     viewer.zoomClip(factor);
   } else {
     var factor = event.spin * 0.05;
+    viewer.zoom(factor);
+  }
+  return false; //Prevent default
+}
+
+function canvasMousePinch(event, mouse) {
+  if (event.distance != 0) {
+    var factor = event.distance * 0.0001;
     viewer.zoom(factor);
   }
   return false; //Prevent default

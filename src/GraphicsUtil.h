@@ -163,6 +163,7 @@ typedef union {
    };
 } Colour;
 
+Colour parseRGBA(std::string value);
 
 class TextureData  //Texture TGA image data
 {
@@ -556,15 +557,21 @@ class Quaternion
    /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
    Vec3d operator* (const Vec3d &vec) const
    {
+      /*/https://molecularmusings.wordpress.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+      Vec3d q = Vec3d(x, y, z);
+      Vec3d t = q.cross(vec) * 2.0;
+      Vec3d r = vec + (t * w) + q.cross(t);
+      return r;*/
+
       Vec3d vn(vec);
       vn.normalise();
       float mag = vn.magnitude();
 
       Quaternion vecQuat(vn.x, vn.y, vn.z, 0.0f);
       Quaternion conj(-x, -y, -z, w);
-      /* result = q * v & q^ */
+      /* result = q * v * q^ */
       Quaternion result = vecQuat * conj;
-      result = *this * conj;
+      result = *this * result;
 
       /* Get transformed vector (which is normalised) and restore scale */
       return Vec3d(result.x*mag, result.y*mag, result.z*mag);
@@ -889,6 +896,7 @@ class PropertyParser
 const char* glErrorString(GLenum errorCode);
 int gluProjectf(float objx, float objy, float objz, float *windowCoordinate);
 int gluProjectf(float objx, float objy, float objz, float* modelview, float*projection, int* viewport, float *windowCoordinate);
+bool gluInvertMatrixf(const float m[16], float invOut[16]);
 
 void Viewport2d(int width, int height);
 
@@ -936,6 +944,7 @@ void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowH
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
+int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode);
 
 void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);

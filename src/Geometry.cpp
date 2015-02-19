@@ -38,7 +38,6 @@
 //Init static data
 float Geometry::min[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
 float Geometry::max[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
-std::vector<TimeStep> Geometry::timesteps; //Active model timesteps
 float GeomData::opacity = 0;
 
 void GeomData::label(std::string& labeltext)
@@ -151,7 +150,7 @@ void GeomData::setColour(int idx)
    glColor4ubv(colour.rgba);
 }
 
-Geometry::Geometry(bool hidden) : view(NULL), elements(-1), allhidden(hidden), total(0), scale(1.0f), redraw(true), wireframe(false), cullface(false), flat(false), lit(true)
+Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), total(0), scale(1.0f), redraw(true), wireframe(false), cullface(false), flat(false), lit(true)
 {
 }
 
@@ -323,9 +322,9 @@ void Geometry::setState(int index, Shader* prog)
 {
    DrawingObject* draw = NULL;
    int texunit = -1;
-   bool lighting = lit && !flat;
+   bool lighting = lit;
    if (index >= 0) draw = geom[index]->draw;
-   if (draw) lighting = lighting && (draw->properties["lit"].ToBool(true) && !draw->properties["flat"].ToBool(false));
+   if (draw) lighting = lighting && draw->properties["lit"].ToBool(true);
 
    //Global/Local draw state
    if (cullface || (draw && draw->properties["cullface"].ToBool(false)))
@@ -334,9 +333,9 @@ void Geometry::setState(int index, Shader* prog)
       glDisable(GL_CULL_FACE);
 
    //Surface specific options
-   if (type == lucTriangleType || type == lucGridType)
+   if (type == lucTriangleType || type == lucGridType || type == lucShapeType)
    {
-      //Don't light surfaces in 3d models
+      //Don't light surfaces in 2d models
       if (!view->is3d) lighting = false;
       //Disable lighting and polygon faces in wireframe mode
       if (wireframe || (draw && draw->properties["wireframe"].ToBool(false)))
@@ -347,6 +346,16 @@ void Geometry::setState(int index, Shader* prog)
       }
       else
          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+      if ((draw && draw->properties["flat"].ToBool(true)) || flat)
+         glShadeModel(GL_FLAT);
+      else
+         glShadeModel(GL_SMOOTH);
+   }
+   else
+   {
+      //Flat disables lighting for non surface types
+      if (flat || (draw && draw->properties["flat"].ToBool(true))) lighting = false;
    }
 
    if (!lighting)
@@ -492,21 +501,18 @@ void Geometry::move(Geometry* other)
 }
 
 //Read geometry data from storage
-void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width, int height, int index)
+void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width, int height, int depth)
 {
    draw->skip = false;  //Enable object (has data now)
    GeomData* geomdata;
-   if (index < 0)
-      //Get passed object's most recently added data store
-      geomdata = getObjectStore(draw);
-   else
-      geomdata = geom[index];
+   //Get passed object's most recently added data store
+   geomdata = getObjectStore(draw);
    
 
    //Objects with a specified width & height: detect new data store when required (full)
    if (!geomdata || (type == lucVertexData && 
        geomdata->width > 0 && geomdata->height > 0 && 
-       geomdata->width * geomdata->height == geomdata->count))
+       geomdata->width * geomdata->height * geomdata->depth == geomdata->count))
    {
       //No store yet or loading vertices and already have required amount, new object required...
       //Create new data store, save in drawing object and Geometry list
@@ -516,6 +522,7 @@ void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const 
    //Set width & height if provided
    if (width) geomdata->width = width;
    if (height) geomdata->height = height;
+   geomdata->depth = depth;
 
    //Read the data
    if (n > 0) geomdata->data[type]->read(n, data);
@@ -551,12 +558,12 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 //Track min/max coords
 void Geometry::checkPointMinMax(float *coord)
 {
-   if (coord[0] > max[0]) max[0] = coord[0];
-   if (coord[0] < min[0]) min[0] = coord[0];
-   if (coord[1] > max[1]) max[1] = coord[1];
-   if (coord[1] < min[1]) min[1] = coord[1];
-   if (coord[2] > max[2]) max[2] = coord[2];
-   if (coord[2] < min[2]) min[2] = coord[2];
+   //std::cerr << coord[0] << "," << coord[1] << "," << coord[2] << std::endl;
+   for (int i=0; i<3; i++)
+   {
+     if (coord[i] > max[i] && coord[i] < HUGE_VAL) max[i] = coord[i];
+     if (coord[i] < min[i] && coord[i] > -HUGE_VAL) min[i] = coord[i];
+   }
 }
 
 void Geometry::getMinMaxDistance(float modelView[16], float* mindist, float* maxdist)
