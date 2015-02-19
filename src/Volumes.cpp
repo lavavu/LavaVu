@@ -78,6 +78,7 @@ void Volumes::draw()
       }
    }
 
+   glUseProgram(0);
    //t2 = clock(); debug_print("  Draw %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
@@ -201,7 +202,7 @@ void Volumes::render(int i)
     glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
     glUniform1i(prog->uniforms["uSamples"], 256);
     glUniform1f(prog->uniforms["uDensityFactor"], 5.0);
-    glUniform1f(prog->uniforms["uIsoValue"], 0.65);
+    glUniform1f(prog->uniforms["uIsoValue"], 0.0);
     glUniform4fv(prog->uniforms["uIsoColour"], 1, isocolour);
     glUniform1f(prog->uniforms["uIsoSmooth"], 0.1);
     glUniform1i(prog->uniforms["uIsoWalls"], 0);
@@ -239,6 +240,11 @@ void Volumes::render(int i)
    glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
    //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
    glPushMatrix();
+#ifndef USE_OMEGALIB
+     //Get modelview without focal point / rotation centre adjustment
+     glLoadIdentity();
+     view->apply(false);
+#endif
    //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
    glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
@@ -271,7 +277,6 @@ void Volumes::render(int i)
 
    glEnable(GL_DEPTH_TEST);
    GL_Error_Check;
-   glUseProgram(0);
 }
 
 GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles)

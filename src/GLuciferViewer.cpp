@@ -1626,11 +1626,10 @@ void GLuciferViewer::drawScene()
    Model::points->draw();
    Model::vectors->draw();
    Model::tracers->draw();
-   amodel->shapes->draw();
+   Model::shapes->draw();
    Model::lines->draw();
    Model::labels->draw();
    Model::volumes->draw();
-
 }
 
 bool GLuciferViewer::loadModel(std::string& f, bool hideall)
