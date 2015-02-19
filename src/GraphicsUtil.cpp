@@ -32,15 +32,14 @@
 *%  http://www.underworldproject.org/aboutus.html
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-
-#include "GraphicsUtil.h"
-#include <string.h>
-#include <math.h>
-
 #if defined HAVE_LIBPNG or defined _WIN32
 #include <png.h>
 #include <zlib.h>
 #endif
+
+#include "GraphicsUtil.h"
+#include <string.h>
+#include <math.h>
 
 #ifdef USE_FONTS
 #include  "font.h"
