@@ -65,15 +65,40 @@ void Lines::update()
       //Set draw state
       setState(i);
       glPushAttrib(GL_ENABLE_BIT);
-      glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
-
-      glBegin(GL_LINES);
-      for (int j=0; j < geom[i]->count; j++) 
+      
+      //Default is to render 2d lines
+      if (geom[i]->draw->props.Bool("flat", true))
       {
-         geom[i]->setColour(j);
-         glVertex3fv(geom[i]->vertices[j]);
+         glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
+      
+         if (geom[i]->draw->props.Bool("link", false))
+            glBegin(GL_LINE_STRIP);
+         else
+            glBegin(GL_LINES);
+        
+         for (int j=0; j < geom[i]->count; j++) 
+         {
+            geom[i]->setColour(j);
+            glVertex3fv(geom[i]->vertices[j]);
+         }
+        
+         glEnd();
       }
-      glEnd();
+      else
+      {
+         float* oldpos = NULL;
+         for (int j=0; j < geom[i]->count; j++) 
+         {
+            if (j%2 == 0 && !geom[i]->draw->props.Bool("link", false)) oldpos = NULL;
+            Colour colour;
+            geom[i]->getColour(colour, j);
+            float* pos = geom[i]->vertices[j];
+            drawTrajectory(oldpos, pos, 0.15, -1, 8, view->scale, &colour, &colour, view->model_size);
+            oldpos = pos;
+         }
+
+      }
+
       glPopAttrib();
       glEndList();
       GL_Error_Check;
