@@ -53,19 +53,19 @@ class Win
    std::vector<View*> views;
    std::vector<DrawingObject*> objects;     // Contains these objects
 
-   Win(std::string name) : name(name), width(800), height(600)
+   Win(std::string name) : name(name), width(0), height(0)
    {
       this->id = ++Win::lastid;
       background.value = 0xff000000;
-      min[0] = min[1] = min[2] = 0.0;
-      max[0] = max[1] = max[2] = 0.0;
+      //min[0] = min[1] = min[2] = 0.0;
+      //max[0] = max[1] = max[2] = 0.0;
+      min[0] = min[1] = min[2] = HUGE_VAL;
+      max[0] = max[1] = max[2] = -HUGE_VAL;
    }
 
    Win(unsigned int id, std::string name, int w, int h, int bg, float mmin[3]=NULL, float mmax[3]=NULL)
        : name(name), id(id), width(w), height(h)
    {
-      if (width < 200) width = 200;
-      if (height < 200) height = 200;
       if (id == 0) this->id = ++Win::lastid;
       background.value = bg;
       if (mmin)
@@ -80,7 +80,7 @@ class Win
 
    View* addView(View* v);
    void addObject(DrawingObject* obj);
-   void initViewports();
+   void initViewports(int w, int h);
    void resizeViewports();
 
    static unsigned int lastid;

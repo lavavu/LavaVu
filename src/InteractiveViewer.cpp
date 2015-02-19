@@ -279,43 +279,43 @@ bool GLuciferViewer::parseChar(unsigned char key)
          switch (ck)
          {
             case 'p':   //Points
-               if (points->allhidden)
+               if (Model::points->allhidden)
                  response = parseCommands("show points");
                else
                  response = parseCommands("hide points");
                break;
             case 'v':   //Vectors
-               if (vectors->allhidden)
+               if (Model::vectors->allhidden)
                  response = parseCommands("show vectors");
                else
                  response = parseCommands("hide vectors");
                break;
             case 't':   //Tracers
-               if (tracers->allhidden)
+               if (Model::tracers->allhidden)
                  response = parseCommands("show tracers");
                else
                  response = parseCommands("hide tracers");
                break;
             case 'u':   //TriSurfaces
-               if (triSurfaces->allhidden)
+               if (Model::triSurfaces->allhidden)
                  response = parseCommands("show triangles");
                else
                  response = parseCommands("hide triangles");
                break;
             case 'q':   //QuadSurfaces
-               if (quadSurfaces->allhidden)
+               if (Model::quadSurfaces->allhidden)
                  response = parseCommands("show quads");
                else
                  response = parseCommands("hide quads");
                break;
             case 's':   //Shapes
-               if (shapes->allhidden)
+               if (Model::shapes->allhidden)
                  response = parseCommands("show shapes");
                else
                  response = parseCommands("hide shapes");
                break;
             case 'l':   //Lines
-               if (lines->allhidden)
+               if (Model::lines->allhidden)
                  response = parseCommands("show lines");
                else
                  response = parseCommands("hide lines");
@@ -421,21 +421,23 @@ bool GLuciferViewer::parseChar(unsigned char key)
 Geometry* GLuciferViewer::getGeometryType(std::string what)
 {
    if (what == "points")
-      return points;
+      return Model::points;
    if (what == "labels")
-      return labels;
+      return Model::labels;
    if (what == "vectors")
-      return vectors;
+      return Model::vectors;
    if (what == "tracers")
-      return tracers;
+      return Model::tracers;
    if (what == "triangles")
-      return triSurfaces;
+      return Model::triSurfaces;
    if (what == "quads")
-      return quadSurfaces;
+      return Model::quadSurfaces;
    if (what == "shapes")
-      return shapes;
+      return Model::shapes;
    if (what == "lines")
-      return lines;
+      return Model::lines;
+   if (what == "volumes")
+      return Model::volumes;
    return NULL;
 }
 
@@ -691,7 +693,6 @@ bool GLuciferViewer::parseCommands(std::string cmd)
                else
                {
                   showById(obj->id, action == "show");
-                  //printMessage("%s object %d", (amodel->objects[i]->visible ? "Show" : "Hide"), num);
                   printMessage("%s object %s", action.c_str(), obj->name.c_str());
                   redrawViewports();
                }
@@ -714,10 +715,10 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "tracersteps"))
    {
-      tracers->steps = ival;
-      if (tracers->steps > timestep) tracers->steps = timestep;
-      printMessage("Set tracer steps limit to %d", tracers->steps);
-      tracers->redraw = true;
+      Model::tracers->steps = ival;
+      if (Model::tracers->steps > timestep) Model::tracers->steps = timestep;
+      printMessage("Set tracer steps limit to %d", Model::tracers->steps);
+      Model::tracers->redraw = true;
    }
    else if (parsed.has(fval, "alpha"))
    {
@@ -726,8 +727,8 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       else
          GeomData::opacity = fval;
       printMessage("Set global alpha to %.2f", GeomData::opacity);
-      quadSurfaces->redraw = true;
-      triSurfaces->redraw = true;
+      Model::quadSurfaces->redraw = true;
+      Model::triSurfaces->redraw = true;
       redrawViewports();
    }
    else if (parsed.exists("opacity"))
@@ -825,33 +826,31 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    }
    else if (parsed.exists("cullface"))
    {
-      quadSurfaces->cullface = !quadSurfaces->cullface;
-      triSurfaces->cullface = !triSurfaces->cullface;
-      printMessage("Back face culling for surfaces is %s", quadSurfaces->cullface ? "ON":"OFF");
-      quadSurfaces->redraw = true;
-      triSurfaces->redraw = true;
+      Model::quadSurfaces->cullface = !Model::quadSurfaces->cullface;
+      Model::triSurfaces->cullface = !Model::triSurfaces->cullface;
+      printMessage("Back face culling for surfaces is %s", Model::quadSurfaces->cullface ? "ON":"OFF");
+      Model::quadSurfaces->redraw = true;
+      Model::triSurfaces->redraw = true;
    }
    else if (parsed.exists("wireframe"))
    {
       for (int type=lucMinType; type<lucMaxType; type++)
       {
-         geometry[type]->wireframe = !geometry[type]->wireframe;
-         geometry[type]->redraw = true;
+         Model::geometry[type]->wireframe = !Model::geometry[type]->wireframe;
+         Model::geometry[type]->redraw = true;
       }
-      printMessage("Wireframe %s", geometry[lucMinType]->wireframe ? "ON":"OFF");
+      printMessage("Wireframe %s", Model::geometry[lucMinType]->wireframe ? "ON":"OFF");
    }
    else if (parsed.exists("trianglestrips"))
    {
-      quadSurfaces->triangles = !quadSurfaces->triangles;
-      printMessage("Triangle strips for quad surfaces %s", quadSurfaces->triangles ? "ON":"OFF");
-      quadSurfaces->redraw = true;
+      Model::quadSurfaces->triangles = !Model::quadSurfaces->triangles;
+      printMessage("Triangle strips for quad surfaces %s", Model::quadSurfaces->triangles ? "ON":"OFF");
+      Model::quadSurfaces->redraw = true;
    }
    else if (parsed.exists("redraw"))
    {
       for (int type=lucMinType; type<lucMaxType; type++)
-      {
-         geometry[type]->redraw = true;
-      }
+         Model::geometry[type]->redraw = true;
       printMessage("Redrawing all objects");
    }
    else if (parsed.exists("fullscreen"))
@@ -963,11 +962,12 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    else if (parsed.exists("localise"))
    {
       //Find colour value min/max local to each geom element
-      points->localiseColourValues();
-      vectors->localiseColourValues();
-      tracers->localiseColourValues();
-      quadSurfaces->localiseColourValues();
-      triSurfaces->localiseColourValues();
+      Model::points->localiseColourValues();
+      Model::vectors->localiseColourValues();
+      Model::tracers->localiseColourValues();
+      Model::quadSurfaces->localiseColourValues();
+      Model::triSurfaces->localiseColourValues();
+      Model::volumes->localiseColourValues();
       printMessage("ColourMap scales localised");
       redrawObjects();
    }
@@ -1001,10 +1001,10 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       //Lighting ON/OFF
       for (int type=lucMinType; type<lucMaxType; type++)
       {
-         geometry[type]->lit = !geometry[type]->lit;
-         geometry[type]->redraw = true;
+         Model::geometry[type]->lit = !Model::geometry[type]->lit;
+         Model::geometry[type]->redraw = true;
       }
-      printMessage("Lighting is %s", geometry[lucMinType]->lit ? "ON":"OFF");
+      printMessage("Lighting is %s", Model::geometry[lucMinType]->lit ? "ON":"OFF");
    }
    else if (parsed.exists("list"))
    {
@@ -1016,8 +1016,8 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       if (parsed["list"] == "elements")
       {
          //Print available elements by id
-         for (unsigned int i=0; i < geometry.size(); i++)
-            geometry[i]->print();
+         for (unsigned int i=0; i < Model::geometry.size(); i++)
+            Model::geometry[i]->print();
       }
       if (parsed["list"] == "colourmaps")
       {
@@ -1146,7 +1146,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
             else if (parsed.get("pointtype", 1) == "down")
                obj->pointType = (obj->pointType+1) % 5;
             printMessage("%s point type set to %d", obj->name.c_str(), obj->pointType);
-            geometry[lucPointType]->redraw = true;
+            Model::geometry[lucPointType]->redraw = true;
             redraw(id);
             redrawViewports();
          }
@@ -1155,22 +1155,22 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    else if (parsed.has(ival, "vectorquality"))
    {
       if (ival <0 || ival > 10) return false;
-      vectors->redraw = true;
-      vectors->glyphs = ival;
-      if (ival == 0) vectors->flat = true;
-      printMessage("Vector quality set to %d", vectors->glyphs);
+      Model::vectors->redraw = true;
+      Model::vectors->glyphs = ival;
+      if (ival == 0) Model::vectors->flat = true;
+      printMessage("Vector quality set to %d", Model::vectors->glyphs);
    }
    else if (parsed.exists("tracerflat"))
    {
-      tracers->redraw = true;
-      tracers->flat = tracers->flat ? false : true;
-      printMessage("Flat tracer rendering is %s", tracers->flat ? "ON":"OFF");
+      Model::tracers->redraw = true;
+      Model::tracers->flat = Model::tracers->flat ? false : true;
+      printMessage("Flat tracer rendering is %s", Model::tracers->flat ? "ON":"OFF");
    }
    else if (parsed.exists("tracerscale"))
    {
-      tracers->redraw = true;
-      tracers->scaling = tracers->scaling ? false : true;
-      printMessage("Scaled tracer rendering is %s", tracers->scaling ? "ON":"OFF");
+      Model::tracers->redraw = true;
+      Model::tracers->scaling = Model::tracers->scaling ? false : true;
+      printMessage("Scaled tracer rendering is %s", Model::tracers->scaling ? "ON":"OFF");
    }
    else if (parsed.exists("pointsample"))
    {
@@ -1181,7 +1181,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       else if (parsed["pointsample"] == "down")
          Points::subSample *= 2;
       if (Points::subSample < 1) Points::subSample = 1;
-      points->redraw = true;
+      Model::points->redraw = true;
       printMessage("Point sampling %d", Points::subSample);
    }
    else if (parsed.exists("image"))
@@ -1290,7 +1290,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
                   obj->scaling /= 1.5;
                printMessage("%s scaling set to %f", obj->name.c_str(), obj->scaling);
                for (int type=lucMinType; type<lucMaxType; type++)
-                  geometry[type]->redraw = true;
+                  Model::geometry[type]->redraw = true;
                redraw(id);
                redrawViewports();
             }
@@ -1347,6 +1347,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       DrawingObject* obj = findObject(what, id);
       if (obj)
       {
+         //TODO: Move to Model::
          amodel->reopen(true);  //Open writable
          char SQL[256];
          sprintf(SQL, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", obj->id);

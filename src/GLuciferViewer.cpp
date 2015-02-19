@@ -41,13 +41,6 @@
 #include <typeinfo>
 #include "tiny_obj_loader.h"
 
-//Include the decompression routines
-#ifdef USE_ZLIB
-#include <zlib.h>
-#else
-#include "miniz/tinfl.c"
-#endif
-
 //Viewer class implementation...
 GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* viewer, int width, int height) : ViewerApp(viewer)
 {
@@ -58,7 +51,8 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    //Defaults
    timestep = -1;
    endstep = -1;
-   dump = dumpid = 0;
+   dump = lucExportNone;
+   dumpid = 0;
    noload = false;
    viewAll = false;
    viewPorts = true;
@@ -84,7 +78,8 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    {
       std::string line;
       while (std::getline(argfile, line))
-         args.push_back(line);
+         if (line.at(0) != '#')
+           args.push_back(line);
       argfile.close();
    }
 
@@ -132,17 +127,17 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
             break;
          case 'd':
             if (args[i].length() > 2) ss >> dumpid;
-            dump = 1;
+            dump = lucExportCSV;
             viewer->visible = false;
             break;
          case 'J':
             if (args[i].length() > 2) ss >> dumpid;
-            dump = 3;
+            dump = lucExportJSONP;
             viewer->visible = false;
             break;
          case 'j':
             if (args[i].length() > 2) ss >> dumpid;
-            dump = 2;
+            dump = lucExportJSON;
             viewer->visible = false;
             break;
          case 'h':
@@ -206,18 +201,20 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
             dbfile = new FilePath(args[i]);
       }
    }
+   
+   if (!amodel)
+   {
+      //Adds a default model, window & viewport
+      FilePath fn = FilePath(":memory");
+      amodel = new Model(fn, hideall);
+      models.push_back(amodel);
 
-   //Create new geometry containers
-   geometry.resize(lucMaxType);
-   geometry[lucLabelType] = labels = new Geometry();
-   geometry[lucPointType] = points = new Points();
-   geometry[lucVectorType] = vectors = new Vectors();
-   geometry[lucTracerType] = tracers = new Tracers();
-   geometry[lucGridType] = quadSurfaces = new QuadSurfaces();
-   geometry[lucVolumeType] = volumes = new Volumes();
-   geometry[lucTriangleType] = triSurfaces = new TriSurfaces();
-   geometry[lucLineType] = lines = new Lines();
-   geometry[lucShapeType] = shapes = new Shapes();
+      //Set a default window, viewport & camera
+      awin = new Win("GLucifer");
+      aview = awin->addView(new View());
+      windows.push_back(awin);
+      amodel->windows.push_back(awin);
+   }
 
    //Set script output flag
    this->output = output;
@@ -238,11 +235,9 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
 
 GLuciferViewer::~GLuciferViewer()
 {
-   clearObjects(true);
-
-   //Kill all objects
-   for (unsigned int i=0; i < geometry.size(); i++)
-      delete geometry[i];
+   //Kill all models
+   for (unsigned int i=0; i < models.size(); i++)
+      delete models[i];
 
    //Clear windows
    for(unsigned int i=0; i<windows.size(); i++)
@@ -260,7 +255,7 @@ void GLuciferViewer::run(bool persist)
      viewPorts = false;
    }
 
-   if (writeimage || writemovie || dump > 1)
+   if (writeimage || writemovie || dump > lucExportCSV)
    {
       //Load vis data for each window and write image
       int win = 0;
@@ -297,9 +292,9 @@ void GLuciferViewer::run(bool persist)
          }
 
          //Dump json data if requested
-         if (dump == 2)
+         if (dump == lucExportJSON)
             jsonWriteFile(dumpid);
-         else if (dump == 3)
+         else if (dump == lucExportJSONP)
             jsonWriteFile(dumpid, true);
 
          win++;
@@ -314,7 +309,7 @@ void GLuciferViewer::run(bool persist)
    }
 
    //Dump csv data if requested
-   if (dump == 1)
+   if (dump == lucExportCSV)
       dumpById(dumpid);
 
    //Start event loop
@@ -399,8 +394,9 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
       downscale = 100000;
    }
 
-   float min[3] = {0,0,0};
-   float max[3] = {0,0,0};
+   float* min = awin->min;
+   float* max = awin->max;
+   awin->background.value = 0xff000000;
    float range[3] = {0,0,0};
 
    min[0] = xmap;
@@ -410,18 +406,7 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    max[2] = ymap;
    range[0] = fabs(max[0] - min[0]);
    range[2] = fabs(max[2] - min[2]);
-
-   //Create default window
-   if (!amodel) 
-   {
-      //Setup a default model
-      newModel("", 800, 600, 0xff000000, min, max);
-      //Scale height * 10 to see features
-      aview->setScale(1,10,1);
-   }
-   else if (!aview)
-      aview = awin->views[0];
-   //   viewSelect(0);
+   
    strcpy(viewer->title, fn.base.c_str());
 
    //Demo colourmap
@@ -525,9 +510,9 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
          if (vertex[1] > max[1]) max[1] = vertex[1];
 
          //Add grid point
-         geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
+         Model::geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
          //Colour by height
-         geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+         Model::geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
 
          vertex[0] += xdim * subsample;
       }
@@ -535,22 +520,22 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
       vertex[2] -= ydim * subsample;
    }
    file.close();
-   geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
+   Model::geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
 
    //Sea grid points
    vertex[0] = min[0];
    vertex[1] = 0;
    vertex[2] = min[2];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
    vertex[0] = max[0];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
    vertex[0] = min[0];
    vertex[2] = max[2];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
    vertex[0] = max[0];
-   quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+   Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
 
-   quadSurfaces->setup(sea, lucColourValueData, min[1], max[1]);
+   Model::quadSurfaces->setup(sea, lucColourValueData, min[1], max[1]);
 
       Geometry::checkPointMinMax(min);
       Geometry::checkPointMinMax(max);
@@ -577,9 +562,9 @@ void GLuciferViewer::addTriangles(DrawingObject* obj, float* a, float* b, float*
    if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
    {
       //Read the triangle
-      triSurfaces->read(obj, 1, lucVertexData, a);
-      triSurfaces->read(obj, 1, lucVertexData, b);
-      triSurfaces->read(obj, 1, lucVertexData, c);
+      Model::triSurfaces->read(obj, 1, lucVertexData, a);
+      Model::triSurfaces->read(obj, 1, lucVertexData, b);
+      Model::triSurfaces->read(obj, 1, lucVertexData, c);
    }
    else
    {
@@ -600,15 +585,7 @@ void GLuciferViewer::readOBJ(FilePath& fn)
    //Use tiny_obj_loader to load a model
    if (fn.ext != "obj" && fn.ext != "OBJ") return;
    
-      //Create default window
-      if (!amodel) 
-      {
-         //Setup a default model
-         newModel("", 1200, 1000, LUC_WHITE);
-      }
-      else if (!aview)
-         aview = awin->views[0];
-
+   awin->background.value = LUC_WHITE;
    std::cout << "Loading " << fn.full << std::endl;
 
    std::vector<tinyobj::shape_t> shapes;
@@ -633,7 +610,7 @@ void GLuciferViewer::readOBJ(FilePath& fn)
     
     //Add triangles object
     DrawingObject *tobj = newObject(shapes[i].name, true, 0xff888888, NULL, 1.0, "\n");
-    triSurfaces->add(tobj);
+    Model::triSurfaces->add(tobj);
        
     assert((shapes[i].mesh.indices.size() % 3) == 0);
     
@@ -662,7 +639,7 @@ void GLuciferViewer::readOBJ(FilePath& fn)
 
         for (int coord=0; coord<3; coord++)
         {
-          //triSurfaces->read(tobj, 1, lucVertexData, &shapes[i].mesh.positions[ids[coord]*3]);
+          //Model::triSurfaces->read(tobj, 1, lucVertexData, &shapes[i].mesh.positions[ids[coord]*3]);
           Geometry::checkPointMinMax(&shapes[i].mesh.positions[ids[coord]*3]);
         }
     }
@@ -709,14 +686,7 @@ void GLuciferViewer::readTecplot(FilePath& fn)
    //http://paulbourke.net/dataformats/tp/
    if (fn.ext != "tec" && fn.ext != "dat") return;
 
-      //Create default window
-      if (!amodel) 
-      {
-         //Setup a default model
-         newModel("", 1200, 1000, LUC_WHITE);
-      }
-      else if (!aview)
-         aview = awin->views[0];
+   awin->background.value = LUC_WHITE;
 
       //Demo colourmap
       ColourMap* colourMap = new ColourMap();
@@ -786,17 +756,17 @@ void GLuciferViewer::readTecplot(FilePath& fn)
 
             //Add points object
             pobj = newObject("particles", true, 0, colourMap, 0.5, "lit=0\n");
-            points->add(pobj);
+            Model::points->add(pobj);
             std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
             //Add triangles object
             tobj = newObject("triangles", true, 0xffffffff, colourMap, 1.0, "flat=1\n");
-            triSurfaces->add(tobj);
+            Model::triSurfaces->add(tobj);
 
 
             //Add lines object
             lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
-            lines->add(lobj);
+            Model::lines->add(lobj);
 
 
          }
@@ -808,17 +778,17 @@ void GLuciferViewer::readTecplot(FilePath& fn)
             amodel->timesteps.push_back(TimeStep(timestep, 0));
                printf("READ TIMESTEP %d SIZE %d\n", timestep, amodel->timesteps.size());
 
-            points->read(pobj, ELS, lucVertexData, particles);
-            points->read(pobj, ELS, lucColourValueData, values);
-            points->setup(pobj, lucColourValueData, valuemin, valuemax);
+            Model::points->read(pobj, ELS, lucVertexData, particles);
+            Model::points->read(pobj, ELS, lucColourValueData, values);
+            Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
 
-            triSurfaces->read(tobj, ELS*NTRI*3, lucVertexData, triverts);
-            triSurfaces->read(tobj, ELS*NTRI, lucColourValueData, trivals);
-            triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
+            Model::triSurfaces->read(tobj, ELS*NTRI*3, lucVertexData, triverts);
+            Model::triSurfaces->read(tobj, ELS*NTRI, lucColourValueData, trivals);
+            Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
 
-            lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
+            Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
 
-            clearObjects(false); //Will cache...
+            amodel->clearObjects(false); //Will cache...
 
             timestep++;
             //Load timesteps while cache slots available
@@ -1009,9 +979,6 @@ void GLuciferViewer::createDemoModel()
    float size = sqrt(dotProduct(dims,dims));
    strcpy(viewer->title, "Test Pattern\0");
 
-   //Setup a default model
-   newModel("GLucifer Viewer", 800, 600, 0xff000000, min, max);
-
    //Demo colourmap, distance from model origin
    ColourMap* colourMap = new ColourMap();
    addColourMap(colourMap);
@@ -1037,14 +1004,14 @@ void GLuciferViewer::createDemoModel()
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-      points->read(obj, 1, lucVertexData, ref);
-      points->read(obj, 1, lucColourValueData, &colour);
+      Model::points->read(obj, 1, lucVertexData, ref);
+      Model::points->read(obj, 1, lucColourValueData, &colour);
 
       if (i % NUMSWARM == NUMSWARM-1)
       {
-         points->setup(obj, lucColourValueData, 0, size);
+         Model::points->setup(obj, lucColourValueData, 0, size);
          if (i != NUMPOINTS-1)
-            points->add(obj);
+            Model::points->add(obj);
       }
    }
 
@@ -1060,10 +1027,11 @@ void GLuciferViewer::createDemoModel()
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
  
-      lines->read(obj, 1, lucVertexData, ref);
-      lines->read(obj, 1, lucColourValueData, &colour);
+      Model::lines->read(obj, 1, lucVertexData, ref);
+      Model::lines->read(obj, 1, lucColourValueData, &colour);
    }
-   lines->setup(obj, lucColourValueData, 0, size);
+   
+   Model::lines->setup(obj, lucColourValueData, 0, size);
 
    //Add some quads (using tri surface mode)
    {
@@ -1076,28 +1044,20 @@ void GLuciferViewer::createDemoModel()
          char label[64];
          sprintf(label, "%c-cross-section", axischar[i]);
          obj = newObject(label, false, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
-         triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
+         Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
       }
    }
-}
-
-//Adds a default model, window & viewport to the viewer
-void GLuciferViewer::newModel(std::string name, int w, int h, int bg, float mmin[3], float mmax[3])
-{
-   amodel = new Model();
-
-   //Set a default window, viewport & camera
-   awin = new Win(0, name, w, h, bg, mmin, mmax);
-   aview = awin->addView(new View(name.c_str()));
-
-   //Add window to global window list
-   windows.push_back(awin);
-   amodel->windows.push_back(awin);
+   
+   //Set model bounds...
+   Geometry::checkPointMinMax(min);
+   Geometry::checkPointMinMax(max);
 }
 
 DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, const char* properties)
 {
    DrawingObject* obj = new DrawingObject(0, persistent, name, colour, map, opacity, properties);
+   if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
+   if (!aview) aview = awin->views[0];
    aview->addObject(obj);
    awin->addObject(obj);
    amodel->addObject(obj); //Add to model master list
@@ -1107,12 +1067,12 @@ DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int 
 void GLuciferViewer::open(int width, int height)
 {
    //Init geometry containers
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->init();
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->init();
 
    //Initialise all viewports to window size
    for (unsigned int w=0; w<windows.size(); w++)
-      windows[w]->initViewports();
+      windows[w]->initViewports(width, height);
 
    // Load shaders
    Points::prog = new Shader("pointShader.vert", "pointShader.frag");
@@ -1123,7 +1083,7 @@ void GLuciferViewer::open(int width, int height)
    if (strstr(typeid(*viewer).name(), "OSMesa"))
    {
      //Hack to speed up default point drawing size when using OSMesa
-     points->pointType = 4;
+     Model::points->pointType = 4;
      debug_print("OSMesa Detected: pointType default = 4\n");
    }
    else
@@ -1154,9 +1114,9 @@ void GLuciferViewer::resize(int new_width, int new_height)
          float size1 = new_width * new_height;
          float r = sqrt(size1 / size0);
          // Adjust particle size by smallest of dimension changes
-         debug_print("Adjusting particle size scale %f to ", points->scale);
-         points->scale *= r; 
-         debug_print("%f ( * %f )\n", points->scale, r);
+         debug_print("Adjusting particle size scale %f to ", Model::points->scale);
+         Model::points->scale *= r; 
+         debug_print("%f ( * %f )\n", Model::points->scale, r);
          std::ostringstream ss;
          ss << "resize " << new_width << " " << new_height;
          record(true, ss.str());
@@ -1168,14 +1128,14 @@ void GLuciferViewer::resize(int new_width, int new_height)
 
 void GLuciferViewer::close()
 {
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->close();
+   for (unsigned int i=0; i < models.size(); i++)
+      models[i]->close();
 }
 
 void GLuciferViewer::showById(unsigned int id, bool state)
 {
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->showById(id, state);
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->showById(id, state);
    //Setting here to allow hiding of objects without geometry (colourbars)
    amodel->objects[id-1]->visible = state;
 }
@@ -1189,8 +1149,8 @@ void GLuciferViewer::setOpacity(unsigned int id, float opacity)
 
 void GLuciferViewer::redraw(unsigned int id)
 {
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->redrawObject(id);
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->redrawObject(id);
 }
 
 //Called when model loaded/changed, updates all views and window settings
@@ -1224,8 +1184,8 @@ void GLuciferViewer::redrawViewports()
       awin->views[v]->redraw = true;
 
    //Flag redraw on objects??
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->redraw = true;
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->redraw = true;
 }
 
 //Called when view changed
@@ -1238,8 +1198,8 @@ void GLuciferViewer::viewSelect(int idx)
 
    aview = awin->views[view];
 
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->setView(aview);
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->setView(aview);
 }
 
 //Called when timestep/window changed (new model data)
@@ -1291,27 +1251,11 @@ void GLuciferViewer::addColourMap(ColourMap* cmap)
    amodel->colourMaps.push_back(colourMap);
 }
 
-void GLuciferViewer::clearObjects(bool all)
-{
-   //Cache currently loaded data before clearing
-   if (amodel->lastStep() < 0) return;
-   amodel->cacheStep(timestep, geometry);
-
-   if (FloatValues::membytes > 0)
-      debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", FloatValues::membytes/1000000.0f);
-   //Clear containers...
-   for (unsigned int i=0; i < geometry.size(); i++)
-   {
-      geometry[i]->redraw = true;
-      geometry[i]->clear(all);
-   }
-}
-
 void GLuciferViewer::redrawObjects()
 {
    //Flag redraw on all objects...
-   for (unsigned int i=0; i < geometry.size(); i++)
-      geometry[i]->redraw = true;
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      Model::geometry[i]->redraw = true;
 }
 
 
@@ -1422,20 +1366,6 @@ void GLuciferViewer::displayCurrentView()
       aview->apply();
    GL_Error_Check;
 
-   /*/ set up clip planes, x y & z, + and -
-   double eqn1[]={1.0,0.0,0.0,-0.5};
-   glClipPlane(GL_CLIP_PLANE1, eqn1);
-   glEnable(GL_CLIP_PLANE1);
-
-   double eqn2[]={0.0,-1.0,0.0,0.5};
-   glClipPlane(GL_CLIP_PLANE2, eqn2);
-   glEnable(GL_CLIP_PLANE2);
-
-   double eqn3[]={0.0,0.0,1.0,0.5};
-   glClipPlane(GL_CLIP_PLANE3, eqn3);
-   glEnable(GL_CLIP_PLANE3);
-   */
-
    if (aview->stereo)
    {
       if (viewer->stereoBuffer)
@@ -1491,18 +1421,10 @@ void GLuciferViewer::displayCurrentView()
    else
    {
       // Default non-stereo render
-   GL_Error_Check;
       aview->projection(EYE_CENTRE);
-   GL_Error_Check;
       drawSceneBlended();
-   GL_Error_Check;
       aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
-   GL_Error_Check;
    }
-
-   glDisable(GL_CLIP_PLANE1);
-   glDisable(GL_CLIP_PLANE2);
-   glDisable(GL_CLIP_PLANE3);
 
    //Clear the rotation flag
    if (aview->sort) aview->rotated = false;
@@ -1651,15 +1573,15 @@ void GLuciferViewer::drawScene()
    //(Drawing border last creates aliasing around transparent objects, moving back for now, is it only a GLUT problem?)
    aview->drawBorder();
 
-   triSurfaces->draw();
-   quadSurfaces->draw();
-   volumes->draw();
-   points->draw();
-   vectors->draw();
-   tracers->draw();
-   shapes->draw();
-   lines->draw();
-   labels->draw();
+   Model::triSurfaces->draw();
+   Model::quadSurfaces->draw();
+   Model::points->draw();
+   Model::vectors->draw();
+   Model::tracers->draw();
+   amodel->shapes->draw();
+   Model::lines->draw();
+   Model::labels->draw();
+   Model::volumes->draw();
 
 }
 
@@ -1674,14 +1596,8 @@ bool GLuciferViewer::loadModel(std::string& f, bool hideall)
    }
 
    //Open database file
-   amodel = new Model(fn);
+   amodel = new Model(fn, hideall);
    models.push_back(amodel);
-
-   if (hideall)
-   {
-      for (unsigned int i=0; i < geometry.size(); i++)
-         geometry[i]->hideAll();
-   }
 
    if (!amodel->open()) abort_program("Model database open failed\n");
 
@@ -1722,16 +1638,13 @@ bool GLuciferViewer::loadModel(std::string& f, bool hideall)
 //Load model window at specified timestep
 bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
-   if (windows.size() > 0)
+   //Have a database model loaded already?
+   if (amodel->objects.size() > 0)
    {
       //Clear current model data
       //clearObjects();
 
       if (window_idx >= (int)windows.size()) return false;
-
-      //Resized from last window? close so will be re-opened at new size
-      if (awin && (awin->width != windows[window_idx]->width || awin->height != windows[window_idx]->height && viewer->isopen))
-         viewer->close();
 
       //Save active window as selected
       awin = windows[window_idx];
@@ -1742,7 +1655,7 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
          for (unsigned int w=0; w < models[m]->windows.size(); w++)
             if (models[m]->windows[w] == awin) amodel = models[m];
 
-      if (amodel->objects.size() == 0) return false;
+      //if (amodel->objects.size() == 0) return false;
 
       //Set timestep and load geometry at that step
       if (amodel->db)
@@ -1759,9 +1672,9 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
       readOBJ(files[m]);
       readTecplot(files[m]);
    }
-
-   //Should have a window by now, if not args were invalid
-   if (windows.size() == 0)
+   
+   //Should have some objects by now, if not args were invalid
+   if (amodel->objects.size() == 0)
    {
       printf("No valid model or files passed, showing demo test pattern\n");
       createDemoModel();
@@ -1775,6 +1688,8 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
       else
          viewer->open(windows[window_idx]->width, windows[window_idx]->height);
    }
+   else
+      viewer->setsize(awin->width, awin->height);
 
    //Update the views
    resetViews(autozoom);
@@ -1808,7 +1723,7 @@ int GLuciferViewer::setTimeStep(int ts)
    int step = amodel->nearestTimeStep(ts, timestep);
    if (step < 0) return -1;
    //Clear currently loaded (also caches if enabled)
-   clearObjects();
+   amodel->clearObjects();
 
    //Closest matching timestep >= requested
    timestep = step;
@@ -1818,7 +1733,7 @@ int GLuciferViewer::setTimeStep(int ts)
    amodel->attach(timestep);
 
    //Attempt to load from cache first
-   if (amodel->restoreStep(timestep, geometry)) return 0; //Cache hit successful return value
+   if (amodel->restoreStep(timestep)) return 0; //Cache hit successful return value
 
    //clearObjects();
    //noload flag skips loading geometry until "load" commands issued
@@ -1836,294 +1751,7 @@ int GLuciferViewer::setTimeStep(int ts)
 int GLuciferViewer::loadGeometry(int object_id)
 {
    //Load at current timestep
-   return loadGeometry(object_id, timestep, timestep, true);
-}
-
-int GLuciferViewer::loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers)
-{
-   if (!amodel->db)
-   {
-      std::cerr << "No database loaded!!\n";
-      return 0;
-   }
-   clock_t t1 = clock();
-   char* prefix = amodel->prefix;
-
-   //Load geometry
-   char SQL[1024];
-
-   int datacol = 20;
-   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
-   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, 
-   //minX, minY, minZ, maxX, maxY, maxZ, data)
-   sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
-   sqlite3_stmt* statement = amodel->select(SQL, true);
-
-   //Old database compatibility
-   if (statement == NULL)
-   {
-      //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
-      //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
-      sqlite3_stmt* statement = amodel->select(SQL, true);
-      datacol = 14;
-
-      //Fix
-#ifdef ALTER_DB
-      amodel->reopen(true);  //Open writable
-      sprintf(SQL, "ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
-                   "ALTER TABLE %sgeometry ADD COLUMN maxX REAL; ALTER TABLE %sgeometry ADD COLUMN maxY REAL; ALTER TABLE %sgeometry ADD COLUMN maxZ REAL; ",
-                   prefix, prefix, prefix, prefix, prefix, prefix, prefix);
-      printf("%s\n", SQL);
-      amodel->issue(SQL);
-#endif
-   }
-
-   //Very old database compatibility
-   if (statement == NULL)
-   {
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
-      statement = amodel->select(SQL);
-      datacol = 13;
-   }
-
-   if (!statement) return 0;
-   int rows = 0;
-   int tbytes = 0;
-   int ret;
-   Geometry* active = NULL;
-   do 
-   {  
-      ret = sqlite3_step(statement);
-      if (ret == SQLITE_ROW)
-      {
-         rows++;
-         int id = sqlite3_column_int(statement, 0);
-         int timestep = sqlite3_column_int(statement, 1);
-         //int rank = sqlite3_column_int(statement, 2);  //unused
-         //int index = sqlite3_column_int(statement, 3); //unused
-         lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 4);
-         lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 5);
-         int size = sqlite3_column_int(statement, 6);
-         int count = sqlite3_column_int(statement, 7);
-         int items = count / size;
-         int width = sqlite3_column_int(statement, 8);
-         int height = width > 0 ? items / width : 0;
-         float minimum = (float)sqlite3_column_double(statement, 9);
-         float maximum = (float)sqlite3_column_double(statement, 10);
-         //New fields for the scaling features, applied when drawing colour bars
-         float dimFactor = (float)sqlite3_column_double(statement, 11);
-         const char *units = (const char*)sqlite3_column_text(statement, 12);
-
-         const char *labels = datacol < 14 ? "" : (const char*)sqlite3_column_text(statement, 13);
-
-         const void *data = sqlite3_column_blob(statement, datacol);
-         unsigned int bytes = sqlite3_column_bytes(statement, datacol);
-
-         if (type == lucTracerType) height = 0;
-
-         //Create object and set parameters
-         active = geometry[type];
-
-         if (recurseTracers && type == lucTracerType)
-         {
-            //if (datacol == 13) continue;  //Don't bother supporting tracers from old dbs
-            //Only load tracer timesteps when on the vertex data object or will repeat for every type found
-            if (data_type != lucVertexData) continue;
-
-            //Tracers are loaded with a new select statement across multiple timesteps...
-            //objects[object_id]->steps = timestep+1;
-            tracers->timestep = timestep; //Set current timestep for tracers
-            int stepstart = 0; //timestep - objects[object_id]->steps;
-            //int stepstart = timestep - tracers->steps;
-
-            loadGeometry(object_id, stepstart, timestep, false);
-         }
-         else
-         {
-            unsigned char* buffer = NULL;
-            if (bytes != (unsigned int)(count * sizeof(float)))
-            {
-               //Decompress!
-               unsigned long dst_len = (unsigned long )(count * sizeof(float));
-               unsigned long uncomp_len = dst_len;
-               unsigned long cmp_len = bytes;
-               buffer = new unsigned char[dst_len];
-               if (!buffer)
-                  abort_program("Out of memory!\n");
-
-#ifdef USE_ZLIB
-               int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
-               if (res != Z_OK || dst_len != uncomp_len)
-#else
-               int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
-               if (!res)
-#endif
-               {
-                  abort_program("uncompress() failed! error code %d\n", res);
-                  //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
-               }
-               data = buffer; //Replace data pointer
-               bytes = uncomp_len;
-            }
-
-            tbytes += bytes;   //Byte counter
-
-            //Where min/max vertex provided, load
-            if (data_type == lucVertexData)
-            {
-               float min[3] = {0,0,0}, max[3] = {0,0,0};
-               if (datacol > 14 && sqlite3_column_type(statement, 14) != SQLITE_NULL)
-               {
-                  for (int i=0; i<3; i++)
-                  {
-                     min[i] = (float)sqlite3_column_double(statement, 14+i);
-                     max[i] = (float)sqlite3_column_double(statement, 17+i);
-                  }
-               }
-
-               //Detect null dims data due to bugs in dimension output
-               if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
-               {
-                  Geometry::checkPointMinMax(min);
-                  Geometry::checkPointMinMax(max);
-               }
-               else
-               {
-                  //Slow way, detects bounding box by checking each vertex
-                  for (int p=0; p < items*3; p += 3)
-                     Geometry::checkPointMinMax((float*)data + p);
-
-                  //Fix for future loads
-#ifdef ALTER_DB
-                  amodel->reopen(true);  //Open writable
-                  sprintf(SQL, "UPDATE %sgeometry SET minX = '%f', minY = '%f', minZ = '%f', maxX = '%f', maxY = '%f', maxZ = '%f' WHERE id==%d;", 
-                          prefix, id, Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
-                  printf("%s\n", SQL);
-                  amodel->issue(SQL);
-#endif
-               }
-            }
-
-            //Always add a new element for each new vertex geometry record, not suitable if writing db on multiple procs!
-            if (data_type == lucVertexData && recurseTracers) active->add(amodel->objects[object_id-1]);
-
-            //Read data block
-            active->read(amodel->objects[object_id-1], items, data_type, data, width, height);
-            active->setup(amodel->objects[object_id-1], data_type, minimum, maximum, dimFactor, units);
-            if (labels) active->label(amodel->objects[object_id-1], labels);
-
-            if (buffer) delete[] buffer;
-   #if 0
-            char* types[8] = {"", "POINTS", "GRID", "TRIANGLES", "VECTORS", "TRACERS", "LINES", "SHAPES"};
-            if (data_type == lucVertexData)
-               printf("[object %d time %d] Read %d vertices into %s object (idx %d) %d x %d\n", 
-                        object_id, timestep, items, types[type], active->size()-1, width, height);
-            else printf("[object %d time %d] Read %d values of dtype %d into %s object (idx %d) min %f max %f\n", 
-                        object_id, timestep, items, data_type, types[type], active->size()-1, minimum, maximum);
-            if (labels) printf(labels);
-   #endif
-         }
-      }
-      else if (ret != SQLITE_DONE)
-         printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
-   } while (ret == SQLITE_ROW);
-
-   sqlite3_finalize(statement);
-   debug_print("... loaded %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
-
-   return rows;
-}
-
-int GLuciferViewer::decompressGeometry(int object_id, int timestep)
-{
-   amodel->reopen(true);  //Open writable
-   clock_t t1 = clock();
-   //Load geometry
-   char SQL[1024];
-
-   sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE object_id=%d AND timestep=%d ORDER BY idx,rank", amodel->prefix, object_id, timestep);
-   sqlite3_stmt* statement = amodel->select(SQL, true);
-
-   if (!statement) return 0;
-   int rows = 0;
-   int tbytes = 0;
-   int ret;
-   Geometry* active = NULL;
-   do 
-   {  
-      ret = sqlite3_step(statement);
-      if (ret == SQLITE_ROW)
-      {
-         rows++;
-         int id = sqlite3_column_int(statement, 0);
-         int count = sqlite3_column_int(statement, 1);
-         const void *data = sqlite3_column_blob(statement, 2);
-         unsigned int bytes = sqlite3_column_bytes(statement, 2);
-
-         unsigned char* buffer = NULL;
-         if (bytes != (unsigned int)(count * sizeof(float)))
-         {
-            //Decompress!
-            unsigned long dst_len = (unsigned long )(count * sizeof(float));
-            unsigned long uncomp_len = dst_len;
-            unsigned long cmp_len = bytes;
-            buffer = new unsigned char[dst_len];
-            if (!buffer)
-               abort_program("Out of memory!\n");
-
-#ifdef USE_ZLIB
-            int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
-            if (res != Z_OK || dst_len != uncomp_len)
-#else
-            int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
-            if (!res)
-#endif
-            {
-               abort_program("uncompress() failed! error code %d\n", res);
-               //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
-            }
-            data = buffer; //Replace data pointer
-            bytes = uncomp_len;
-#ifdef ALTER_DB
-   //UNCOMPRESSED
-   sqlite3_stmt* statement2;
-   snprintf(SQL, 1024, "UPDATE %sgeometry SET data = ? WHERE id==%d;", amodel->prefix, id);
-   printf("%s\n", SQL);
-   /* Prepare statement... */
-   if (sqlite3_prepare_v2(amodel->db, SQL, -1, &statement2, NULL) != SQLITE_OK)
-   {
-      printf("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(amodel->db));
-      abort(); //Database errors fatal?
-      return 0;
-   }
-   /* Setup blob data for insert */
-   if (sqlite3_bind_blob(statement2, 1, buffer, bytes, SQLITE_STATIC) != SQLITE_OK)
-   {
-      printf("SQL bind error: %s\n", sqlite3_errmsg(amodel->db));
-      abort(); //Database errors fatal?
-   }
-   /* Execute statement */
-   if (sqlite3_step(statement2) != SQLITE_DONE )
-   {
-      printf("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(amodel->db));
-      abort(); //Database errors fatal?
-   }
-   sqlite3_finalize(statement2);
-#endif
-            }
-
-            if (buffer) delete[] buffer;
-
-      }
-      else if (ret != SQLITE_DONE)
-         printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
-   } while (ret == SQLITE_ROW);
-
-   sqlite3_finalize(statement);
-   debug_print("... modified %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
-
-   return rows;
+   return amodel->loadGeometry(object_id, timestep, timestep, true);
 }
 
 void GLuciferViewer::writeImages(int start, int end)
@@ -2191,7 +1819,7 @@ void GLuciferViewer::dumpById(unsigned int id)
          for (int type=lucMinType; type<lucMaxType; type++)
          {
             std::ostringstream ss;
-            geometry[type]->dumpById(ss, amodel->objects[i]->id);
+            Model::geometry[type]->dumpById(ss, amodel->objects[i]->id);
 
             std::string results = ss.str();
             if (results.size() > 0)
@@ -2236,8 +1864,8 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
    aview->getCamera(rotate, translate, focus);
 
    json << "{\n  \"options\" :\n  {\n"
-        << "    \"pointScale\" : " << points->scale << ",\n"
-        << "    \"pointType\" : " << points->pointType << ",\n"
+        << "    \"pointScale\" : " << Model::points->scale << ",\n"
+        << "    \"pointType\" : " << Model::points->pointType << ",\n"
         << "    \"border\" : " << (aview->borderType ? "true" : "false") << ",\n"
         << "    \"opacity\" : " << GeomData::opacity << ",\n"
         << "    \"rotate\" : ["  << rotate[0] << "," << rotate[1] << "," << rotate[2] << "," << rotate[3] << "],\n";
@@ -2295,8 +1923,8 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
             if (objdata)
             {
                //When extracting data, skip objects with no export available or no data returned...
-               if (geometry[type]->size() == 0 || names[type].length() == 0) continue;
-               geometry[type]->jsonWrite(amodel->objects[i]->id, &ss);
+               if (Model::geometry[type]->size() == 0 || names[type].length() == 0) continue;
+               Model::geometry[type]->jsonWrite(amodel->objects[i]->id, &ss);
                if (ss.tellp() == (std::streampos)0 || amodel->objects[i]->skip) continue;
             }
 

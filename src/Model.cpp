@@ -36,17 +36,59 @@
 //Model class
 #include "Model.h"
 
+//Include the decompression routines
+#ifdef USE_ZLIB
+#include <zlib.h>
+#else
+#include "miniz/tinfl.c"
+#endif
+
 std::vector<TimeStep> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int GeomCache::size = 0;
 
-Model::Model(FilePath& fn) : readonly(true), file(fn), attached(0), db(NULL)
+//Static geometry containers, shared by all models for fast switching/drawing
+std::vector<Geometry*> Model::geometry;
+Geometry* Model::labels = NULL;
+Points* Model::points = NULL;
+Vectors* Model::vectors = NULL;
+Tracers* Model::tracers = NULL;
+QuadSurfaces* Model::quadSurfaces = NULL;
+TriSurfaces* Model::triSurfaces = NULL;
+Lines* Model::lines = NULL;
+Shapes* Model::shapes = NULL;
+Volumes* Model::volumes = NULL;
+
+Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0), db(NULL)
 {
+   timestep = -1;
    prefix[0] = '\0';
+   
+   //Create new geometry containers
+   geometry.resize(lucMaxType);
+   geometry[lucLabelType] = labels = new Geometry();
+   geometry[lucPointType] = points = new Points();
+   geometry[lucVectorType] = vectors = new Vectors();
+   geometry[lucTracerType] = tracers = new Tracers();
+   geometry[lucGridType] = quadSurfaces = new QuadSurfaces();
+   geometry[lucVolumeType] = volumes = new Volumes();
+   geometry[lucTriangleType] = triSurfaces = new TriSurfaces();
+   geometry[lucLineType] = lines = new Lines();
+   geometry[lucShapeType] = shapes = new Shapes();
+   
+   if (hideall)
+   {
+      for (unsigned int i=0; i < geometry.size(); i++)
+         geometry[i]->hideAll();
+   }
 }
 
 Model::~Model()
 {
+   //Kill all objects
+   for (unsigned int i=0; i < geometry.size(); i++)
+      delete geometry[i];
+  
    //Clear drawing objects
    for(unsigned int i=0; i<objects.size(); i++)
       if (objects[i]) delete objects[i]; 
@@ -151,6 +193,31 @@ void Model::attach(int timestep)
       //   debug_print("Model %s not found, loading from current db\n", path);
    }
 }
+
+void Model::close()
+{
+   for (unsigned int i=0; i < geometry.size(); i++)
+      geometry[i]->close();
+}
+
+void Model::clearObjects(bool all)
+{
+   if (lastStep() < 0) return;
+   
+   //Cache currently loaded data before clearing
+   cacheStep();
+
+   if (FloatValues::membytes > 0)
+      debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", FloatValues::membytes/1000000.0f);
+   
+   //Clear containers...
+   for (unsigned int i=0; i < geometry.size(); i++)
+   {
+      geometry[i]->redraw = true;
+      geometry[i]->clear(all);
+   }
+}
+
 
 void Model::loadWindows()
 {
@@ -520,8 +587,9 @@ sqlite3_stmt* Model::select(const char* SQL, bool silent)
    return statement;
 } 
 
-bool Model::issue(const char* SQL)
+bool Model::issue(const char* SQL, sqlite3* odb)
 {
+   if (!odb) odb = db; //Use default model database
    // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
    //debug_print("Issuing: %s\n", SQL);
    char* zErrMsg;
@@ -541,7 +609,7 @@ void Model::deleteCache()
    cache.clear();
 }
 
-void Model::cacheStep(int timestep, std::vector<Geometry*> &geometry)
+void Model::cacheStep()
 {
    if (GeomCache::size == 0) return;
    debug_print("~~~ Caching geometry @ %d, geom memory usage: %.3f mb\n", timestep, FloatValues::membytes/1000000.0f);
@@ -572,8 +640,10 @@ void Model::cacheStep(int timestep, std::vector<Geometry*> &geometry)
 }
 
 
-bool Model::restoreStep(int timestep, std::vector<Geometry*> &geometry)
+bool Model::restoreStep(int step)
 {
+   //Save current timestep
+   timestep = step;
    if (GeomCache::size == 0) return false;
    //Load new geometry data from active window object list
    for (int c=0; c<cache.size(); c++)
@@ -657,5 +727,291 @@ int Model::nearestTimeStep(int requested, int current)
    if (idx >= timesteps.size()) idx = timesteps.size() - 1;
 
    return timesteps[idx].step;
+}
+
+int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers)
+{
+   if (!db)
+   {
+      std::cerr << "No database loaded!!\n";
+      return 0;
+   }
+   clock_t t1 = clock();
+
+   //Load geometry
+   char SQL[1024];
+
+   int datacol = 20;
+   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
+   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, 
+   //minX, minY, minZ, maxX, maxY, maxZ, data)
+   sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
+   sqlite3_stmt* statement = select(SQL, true);
+
+   //Old database compatibility
+   if (statement == NULL)
+   {
+      //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
+      //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
+      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
+      sqlite3_stmt* statement = select(SQL, true);
+      datacol = 14;
+
+      //Fix
+#ifdef ALTER_DB
+      reopen(true);  //Open writable
+      sprintf(SQL, "ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
+                   "ALTER TABLE %sgeometry ADD COLUMN maxX REAL; ALTER TABLE %sgeometry ADD COLUMN maxY REAL; ALTER TABLE %sgeometry ADD COLUMN maxZ REAL; ",
+                   prefix, prefix, prefix, prefix, prefix, prefix, prefix);
+      printf("%s\n", SQL);
+      issue(SQL);
+#endif
+   }
+
+   //Very old database compatibility
+   if (statement == NULL)
+   {
+      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
+      statement = select(SQL);
+      datacol = 13;
+   }
+
+   if (!statement) return 0;
+   int rows = 0;
+   int tbytes = 0;
+   int ret;
+   Geometry* active = NULL;
+   do 
+   {  
+      ret = sqlite3_step(statement);
+      if (ret == SQLITE_ROW)
+      {
+         rows++;
+         int id = sqlite3_column_int(statement, 0);
+         int timestep = sqlite3_column_int(statement, 1);
+         //int rank = sqlite3_column_int(statement, 2);  //unused
+         //int index = sqlite3_column_int(statement, 3); //unused
+         lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 4);
+         lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 5);
+         int size = sqlite3_column_int(statement, 6);
+         int count = sqlite3_column_int(statement, 7);
+         int items = count / size;
+         int width = sqlite3_column_int(statement, 8);
+         int height = width > 0 ? items / width : 0;
+         float minimum = (float)sqlite3_column_double(statement, 9);
+         float maximum = (float)sqlite3_column_double(statement, 10);
+         //New fields for the scaling features, applied when drawing colour bars
+         float dimFactor = (float)sqlite3_column_double(statement, 11);
+         const char *units = (const char*)sqlite3_column_text(statement, 12);
+
+         const char *labels = datacol < 14 ? "" : (const char*)sqlite3_column_text(statement, 13);
+
+         const void *data = sqlite3_column_blob(statement, datacol);
+         unsigned int bytes = sqlite3_column_bytes(statement, datacol);
+
+         if (type == lucTracerType) height = 0;
+
+         //Create object and set parameters
+         active = geometry[type];
+
+         if (recurseTracers && type == lucTracerType)
+         {
+            //if (datacol == 13) continue;  //Don't bother supporting tracers from old dbs
+            //Only load tracer timesteps when on the vertex data object or will repeat for every type found
+            if (data_type != lucVertexData) continue;
+
+            //Tracers are loaded with a new select statement across multiple timesteps...
+            //objects[object_id]->steps = timestep+1;
+            Tracers* tracers = (Tracers*)active;
+            tracers->timestep = timestep; //Set current timestep for tracers
+            int stepstart = 0; //timestep - objects[object_id]->steps;
+            //int stepstart = timestep - tracers->steps;
+
+            loadGeometry(object_id, stepstart, timestep, false);
+         }
+         else
+         {
+            unsigned char* buffer = NULL;
+            if (bytes != (unsigned int)(count * sizeof(float)))
+            {
+               //Decompress!
+               unsigned long dst_len = (unsigned long)(count * sizeof(float));
+               unsigned long uncomp_len = dst_len;
+               unsigned long cmp_len = bytes;
+               buffer = new unsigned char[dst_len];
+               if (!buffer)
+                  abort_program("Out of memory!\n");
+
+#ifdef USE_ZLIB
+               int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
+               if (res != Z_OK || dst_len != uncomp_len)
+#else
+               int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
+               if (!res)
+#endif
+               {
+                  abort_program("uncompress() failed! error code %d\n", res);
+                  //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
+               }
+               data = buffer; //Replace data pointer
+               bytes = uncomp_len;
+            }
+
+            tbytes += bytes;   //Byte counter
+
+            //Where min/max vertex provided, load
+            if (data_type == lucVertexData)
+            {
+               float min[3] = {0,0,0}, max[3] = {0,0,0};
+               if (datacol > 14 && sqlite3_column_type(statement, 14) != SQLITE_NULL)
+               {
+                  for (int i=0; i<3; i++)
+                  {
+                     min[i] = (float)sqlite3_column_double(statement, 14+i);
+                     max[i] = (float)sqlite3_column_double(statement, 17+i);
+                  }
+               }
+
+               //Detect null dims data due to bugs in dimension output
+               if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
+               {
+                  Geometry::checkPointMinMax(min);
+                  Geometry::checkPointMinMax(max);
+               }
+               else
+               {
+                  //Slow way, detects bounding box by checking each vertex
+                  for (int p=0; p < items*3; p += 3)
+                     Geometry::checkPointMinMax((float*)data + p);
+
+                  //Fix for future loads
+#ifdef ALTER_DB
+                  reopen(true);  //Open writable
+                  sprintf(SQL, "UPDATE %sgeometry SET minX = '%f', minY = '%f', minZ = '%f', maxX = '%f', maxY = '%f', maxZ = '%f' WHERE id==%d;", 
+                          prefix, id, Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+                  printf("%s\n", SQL);
+                  issue(SQL);
+#endif
+               }
+            }
+
+            //Always add a new element for each new vertex geometry record, not suitable if writing db on multiple procs!
+            if (data_type == lucVertexData && recurseTracers) active->add(objects[object_id-1]);
+
+            //Read data block
+            active->read(objects[object_id-1], items, data_type, data, width, height);
+            active->setup(objects[object_id-1], data_type, minimum, maximum, dimFactor, units);
+            if (labels) active->label(objects[object_id-1], labels);
+
+            if (buffer) delete[] buffer;
+   #if 0
+            char* types[8] = {"", "POINTS", "GRID", "TRIANGLES", "VECTORS", "TRACERS", "LINES", "SHAPES"};
+            if (data_type == lucVertexData)
+               printf("[object %d time %d] Read %d vertices into %s object (idx %d) %d x %d\n", 
+                        object_id, timestep, items, types[type], active->size()-1, width, height);
+            else printf("[object %d time %d] Read %d values of dtype %d into %s object (idx %d) min %f max %f\n", 
+                        object_id, timestep, items, data_type, types[type], active->size()-1, minimum, maximum);
+            if (labels) printf(labels);
+   #endif
+         }
+      }
+      else if (ret != SQLITE_DONE)
+         printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
+   } while (ret == SQLITE_ROW);
+
+   sqlite3_finalize(statement);
+   debug_print("... loaded %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
+
+   return rows;
+}
+
+int Model::decompressGeometry(int object_id, int timestep)
+{
+   reopen(true);  //Open writable
+   clock_t t1 = clock();
+   //Load geometry
+   char SQL[1024];
+
+   sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE object_id=%d AND timestep=%d ORDER BY idx,rank", prefix, object_id, timestep);
+   sqlite3_stmt* statement = select(SQL, true);
+
+   if (!statement) return 0;
+   int rows = 0;
+   int tbytes = 0;
+   int ret;
+   do 
+   {  
+      ret = sqlite3_step(statement);
+      if (ret == SQLITE_ROW)
+      {
+         rows++;
+         int id = sqlite3_column_int(statement, 0);
+         int count = sqlite3_column_int(statement, 1);
+         const void *data = sqlite3_column_blob(statement, 2);
+         unsigned int bytes = sqlite3_column_bytes(statement, 2);
+
+         unsigned char* buffer = NULL;
+         if (bytes != (unsigned int)(count * sizeof(float)))
+         {
+            //Decompress!
+            unsigned long dst_len = (unsigned long )(count * sizeof(float));
+            unsigned long uncomp_len = dst_len;
+            unsigned long cmp_len = bytes;
+            buffer = new unsigned char[dst_len];
+            if (!buffer)
+               abort_program("Out of memory!\n");
+
+#ifdef USE_ZLIB
+            int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
+            if (res != Z_OK || dst_len != uncomp_len)
+#else
+            int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
+            if (!res)
+#endif
+            {
+               abort_program("uncompress() failed! error code %d\n", res);
+               //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
+            }
+            data = buffer; //Replace data pointer
+            bytes = uncomp_len;
+#ifdef ALTER_DB
+   //UNCOMPRESSED
+   sqlite3_stmt* statement2;
+   snprintf(SQL, 1024, "UPDATE %sgeometry SET data = ? WHERE id==%d;", prefix, id);
+   printf("%s\n", SQL);
+   /* Prepare statement... */
+   if (sqlite3_prepare_v2(db, SQL, -1, &statement2, NULL) != SQLITE_OK)
+   {
+      printf("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(db));
+      abort(); //Database errors fatal?
+      return 0;
+   }
+   /* Setup blob data for insert */
+   if (sqlite3_bind_blob(statement2, 1, buffer, bytes, SQLITE_STATIC) != SQLITE_OK)
+   {
+      printf("SQL bind error: %s\n", sqlite3_errmsg(db));
+      abort(); //Database errors fatal?
+   }
+   /* Execute statement */
+   if (sqlite3_step(statement2) != SQLITE_DONE )
+   {
+      printf("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(db));
+      abort(); //Database errors fatal?
+   }
+   sqlite3_finalize(statement2);
+#endif
+            }
+
+            if (buffer) delete[] buffer;
+
+      }
+      else if (ret != SQLITE_DONE)
+         printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
+   } while (ret == SQLITE_ROW);
+
+   sqlite3_finalize(statement);
+   debug_print("... modified %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
+
+   return rows;
 }
 

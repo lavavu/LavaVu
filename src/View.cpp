@@ -516,7 +516,7 @@ bool View::scaleSwitch()
       save_scale[1] = scale[1];
       save_scale[2] = scale[2];
       scale[0] = 1.0;
-      scale[1] = 2.0;
+      scale[1] = 1.0;
       scale[2] = 1.0;
       scaled = false;
    }
