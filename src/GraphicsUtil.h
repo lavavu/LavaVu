@@ -937,6 +937,7 @@ void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowH
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
+int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode);
 
 void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);

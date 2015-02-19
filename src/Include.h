@@ -40,6 +40,7 @@
 
 //Utils
 #include "jpeg/jpge.h"
+#include "jpeg/jpgd.h"
 
 #ifndef _WIN32
 #include <sys/poll.h>

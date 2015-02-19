@@ -98,6 +98,8 @@ int DrawingObject::useTexture()
       //Load textures
       std::string ext = texfn.substr(texfn.find_last_of(".") + 1);
       std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+      if (ext == "jpg" || ext == "jpeg")
+         LoadTextureJPEG(texture, texfn.c_str(), true, mode);
       if (ext == "png")
          LoadTexturePNG(texture, texfn.c_str(), true, mode);
       if (ext == "tga")

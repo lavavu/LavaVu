@@ -1298,7 +1298,17 @@ int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLe
    return BuildTexture(texture, imageData, mipmaps, texture->bpp == 24 ? GL_RGB : GL_RGBA, mode);
 }
 
-
+int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+{
+   int width, height, bytesPerPixel;
+   GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(filename, &width, &height, &bytesPerPixel, 3);
+   
+   texture->width = width;
+   texture->height = height;
+   texture->bpp = 24;
+   
+   return BuildTexture(texture, imageData, mipmaps, GL_RGB, mode);
+}
 
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode)
 {

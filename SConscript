@@ -51,6 +51,7 @@ env.Install('bin/html/', Glob(src_dir + '/html/*.*'))
 srcs = Glob(src_dir + '/*.cpp')
 srcs += [src_dir + '/mongoose/mongoose.c']
 srcs += [src_dir + '/jpeg/jpge.cpp']
+srcs += [src_dir + '/jpeg/jpgd.cpp']
 srcs += [src_dir + '/tiny_obj_loader.cc']
 objs = env.SharedObject(srcs)
 #build SQLite3 source (named object prevents clash)
