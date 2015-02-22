@@ -263,6 +263,7 @@ void Volumes::render(int i)
    GL_Error_Check;
  
    //State...
+   glPushAttrib(GL_ENABLE_BIT);
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glDisable(GL_DEPTH_TEST);  //No depth testing to allow multi-pass blend!
@@ -275,7 +276,7 @@ void Volumes::render(int i)
       glVertex2f(-1,  1); glVertex2f( 1, 1); glVertex2f(1, -1);
     glEnd();
 
-   glEnable(GL_DEPTH_TEST);
+   glPopAttrib();
    GL_Error_Check;
 }
 

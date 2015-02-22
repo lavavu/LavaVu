@@ -187,6 +187,7 @@ class FilePath
    std::string file;
    std::string base;
    std::string ext;
+   std::string type; //Same as ext but always lowercase
 
    FilePath(std::string fp) : full(fp)
    {
@@ -210,6 +211,8 @@ class FilePath
       {
          base = file.substr(0, period);
          ext = file.substr(period + 1);
+         type = ext;
+         std::transform(type.begin(), type.end(), type.begin(), ::tolower);
       }
       else
       {

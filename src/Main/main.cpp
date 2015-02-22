@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
          std::cout << "      useful for redirecting to a script file to recreate a visualisation setup.\n";
          std::cout << " -a#: set global alpha to # [0,255] where 255 is fully opaque\n";
          std::cout << " -p#: port, web server interface listen on port #\n";
-         std::cout << " -q#: quality, web server jpeg quality #\n";
+         std::cout << " -q#: quality, web server jpeg quality (0=don't serve images)\n";
          std::cout << " -n#: number of threads to launch for web server #\n";
          std::cout << " -l: use local shaders, locate in working directory not executable directory\n";
          std::cout << "\nImage/Video output\n";

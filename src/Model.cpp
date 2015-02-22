@@ -538,8 +538,15 @@ void Model::loadColourMaps()
    }
 
    sqlite3_finalize(statement);
+   
+   //Load default maps and calibrate all
+   initColourMaps();
+}
 
+void Model::initColourMaps()
+{
    //Load default colourmaps
+   ColourMap* colourMap = NULL;
    //Colours: hex, abgr
    colourMap = new ColourMap(0, "Greyscale");
    colourMaps.push_back(colourMap);

@@ -31,6 +31,7 @@ class GLuciferServer : public OutputInterface
    int quality;
    bool updated;
    std::map<int,bool> synched; //Client status
+   GLubyte *imageCache;
 
    OpenGLViewer* viewer; 
 
@@ -53,6 +54,8 @@ class GLuciferServer : public OutputInterface
    virtual void display();
    virtual void close();
    virtual void idle() {}
+
+   bool compare(GLubyte* image);
 };
 
 #endif //DISABLE_SERVER

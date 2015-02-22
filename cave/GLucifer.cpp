@@ -1,5 +1,5 @@
 /********************************************************************************************************************** 
- * Attempt to get gLucifer running in OmegaLib
+ * GLucifer + OmegaLib
  *********************************************************************************************************************/
 #ifdef USE_OMEGALIB
 
@@ -10,9 +10,11 @@
 #include "../src/GLuciferViewer.h"
 #include "../src/GLuciferServer.h"
 
-std::vector<std::string> args;
+std::vector<std::string> arglist;
 
 using namespace omega;
+using namespace omegaToolkit;
+using namespace omegaToolkit::ui;
 
 class GLuciferApplication;
 
@@ -41,12 +43,16 @@ class GLuciferApplication: public EngineModule
 public:
   OpenGLViewer* viewer;
   GLuciferViewer* glapp;
-  bool redisplay = true;
-  bool animate = false;
+  bool redisplay;
+  bool animate;
   int argc;
   char** argv;
+  //Copy of commands
+  std::deque<std::string> commands;
+  //Widgets
+  Ref<Label> statusLabel;
 
-  GLuciferApplication(): EngineModule("GLuciferApplication") { enableSharedData(); }
+  GLuciferApplication(): EngineModule("GLuciferApplication") { redisplay = true; animate = false; enableSharedData(); }
 
     virtual void initialize()
     {
@@ -60,6 +66,21 @@ public:
 
         // Call the function from the script that will setup the menu.
         pi->eval("_onAppStart()");
+
+        //Create a label for text info
+        DisplaySystem* ds = SystemManager::instance()->getDisplaySystem();
+        // Create and initialize the UI management module.
+        myUiModule = UiModule::createAndInitialize();
+        myUi = myUiModule->getUi();
+
+        statusLabel = Label::create(myUi);
+        statusLabel->setText("");
+        statusLabel->setColor(Color::Gray);
+        int sz = 100;
+        statusLabel->setFont(ostr("fonts/arial.ttf %1%", %sz));
+        statusLabel->setHorizontalAlign(Label::AlignLeft);
+        statusLabel->setPosition(Vector2f(100,100));
+
     }
 
   virtual void initializeRenderer(Renderer* r) 
@@ -70,16 +91,16 @@ public:
 
   float setArgs(int argc, char** argv) {this->argc = argc; this->argv = argv;}
 
-  float getYaw() { return myYaw; }
-  float getPitch() { return myPitch; }
-
   virtual void handleEvent(const Event& evt);
   virtual void commitSharedData(SharedOStream& out);
   virtual void updateSharedData(SharedIStream& in);
 
 private:
-  float myYaw;
-  float myPitch;
+  // The ui manager
+  Ref<UiModule> myUiModule;
+  // The root ui container
+  Ref<Container> myUi;  
+  std::string labelText;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,26 +109,30 @@ void GLuciferRenderPass::initialize()
   RenderPass::initialize();
 
   //Init fractal app
-    DisplaySystem* ds = app->getEngine()->getDisplaySystem();
-    DisplayConfig& dcfg = ds->getDisplayConfig();
-    //Vector2i resolution = ds->getCanvasSize();
   //Fake the arg list from vector of args
-  int argc = args.size()+1;
+  int argc = arglist.size()+1;
   char* argv[argc];
   argv[0] = (char*)malloc(20);
   strcpy(argv[0], "./gLucifer");
   for (int i=1; i<argc; i++)
-    argv[i] = (char*)args[i-1].c_str();
+  {
+    argv[i] = (char*)arglist[i-1].c_str();
+    std::cerr << argv[i] << "\n";
+  }
 
    //Add any output attachments to the viewer
 #ifndef DISABLE_SERVER
-   //Not currently working with omegalib...
-   std::string htmlpath = std::string("src/html");
-   //viewer->addOutput(GLuciferServer::Instance(viewer, htmlpath, 8080, 90, 1));
+   SystemManager* sys = SystemManager::instance();
+   if (sys->isMaster())
+   {
+      std::string htmlpath = std::string("./html");
+      //Quality = 0, don't serve images
+      viewer->addOutput(GLuciferServer::Instance(viewer, htmlpath, 8080, 0, 4));
+   }
 #endif
 
   //Create the app
-  app->glapp = new GLuciferViewer(args, viewer, dcfg.displayResolution[0], dcfg.displayResolution[1]);
+  app->glapp = new GLuciferViewer(arglist, viewer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -116,6 +141,7 @@ void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
   if(context.task == DrawContext::SceneDrawTask)
   {
     client->getRenderer()->beginDraw3D(context);
+    Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
 
     if (!viewer->isopen)
     {
@@ -124,19 +150,21 @@ void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
          abort_program("Model file load error, no window data\n");
 
       DisplaySystem* ds = app->getEngine()->getDisplaySystem();
-    DisplayConfig& dcfg = ds->getDisplayConfig();
-      //Vector2i resolution = ds->getCanvasSize();
-      viewer->open(dcfg.displayResolution[0], dcfg.displayResolution[1]);
       Colour& bg = viewer->background;
       ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
+      //Omegalib 5.1+
+      //cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
+
+      viewer->open(context.tile->pixelSize[0], context.tile->pixelSize[1]);
+      viewer->init();
 
       //Setup camera using omegalib functions
-      Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
       CameraController* cc = cam->getController();
 
-      //cam->setEyeSeparation(0.03); //TEST: setting eye separation
+      cam->setEyeSeparation(0.03); //TEST: reducing eye separation
 
          View* view = app->glapp->aview;
+         
          float rotate[4], translate[3], focus[3];
          view->getCamera(rotate, translate, focus);
 
@@ -148,18 +176,24 @@ void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
         cam->lookAt(Vector3f(focus[0], focus[1], focus[2] * view->orientation), Vector3f(0,1,0));
 
         //cam->setPitchYawRoll(Vector3f(0.0, 0.0, 0.0));
-        cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
+        //cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
+        //NOTE: Setting near clip too close is bad for eyes, too far kills negative parallax stereo
+        cam->setNearFarZ(view->near_clip*0.1, view->far_clip);
         //cam->setNearFarZ(cam->getNearZ(), view->far_clip);
          cc->setSpeed(view->model_size * 0.1);
-      viewer->display();
-
+         
     }
+
+    //Copy commands before consumed
+    app->commands = OpenGLViewer::commands;
+    //Fade out status label
+    app->statusLabel->setAlpha(app->statusLabel->getAlpha() * 0.995);
+     
     //if (app->redisplay)
     {
-   glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
        glMatrixMode(GL_MODELVIEW);
-         //View* view = app->glapp->aview;
          View* view = app->glapp->aview;
          if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
          {
@@ -169,10 +203,9 @@ void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
             glEnable(GL_NORMALIZE);
             GL_Error_Check;
          }
-
+         
       viewer->display();
       app->redisplay = false;
-      //printf("display\n");
       view->rotated = false;
     }
 
@@ -226,16 +259,6 @@ void GLuciferApplication::handleEvent(const Event& evt)
       default:
         printf("? %d\n", evt.getType());
     }
-
-
-
-    /*/ Normalize the mouse position using the total display resolution, 
-    // then multiply to get 180 degree rotations
-    DisplaySystem* ds = getEngine()->getDisplaySystem();
-    Vector2i resolution = ds->getCanvasSize();
-    myYaw = (evt.getPosition().x() / resolution[0]) * 180;
-    myPitch = (evt.getPosition().y() / resolution[1]) * 180;
-    */
   }
   else if(evt.getServiceType() == Service::Keyboard)
   {
@@ -256,7 +279,7 @@ void GLuciferApplication::handleEvent(const Event& evt)
         else if (key == 260) key = KEY_HOME;
         else if (key == 267) key = KEY_END;
       }
-      viewer->keyPress(key, x, y);
+      //viewer->keyPress(key, x, y);
     }
   }
   else if(evt.getServiceType() == Service::Wand)
@@ -337,14 +360,41 @@ void GLuciferApplication::handleEvent(const Event& evt)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void GLuciferApplication::commitSharedData(SharedOStream& out)
 {
-  out << myYaw << myPitch;
+   std::stringstream oss;
+   for (int i=0; i < commands.size(); i++)
+      oss << commands[i] << std::endl;
+   out << oss.str();
+   out << glapp->message;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void GLuciferApplication::updateSharedData(SharedIStream& in)
 {
-   in >> myYaw >> myPitch;
+   std::string commandstr;
+   in >> commandstr;
+   in >> glapp->message;
+
+   SystemManager* sys = SystemManager::instance();
+   if (!sys->isMaster())
+   {
+    OpenGLViewer::commands.clear();
+    std::stringstream iss(commandstr);
+    std::string line;
+    while(std::getline(iss, line))
+    {
+        OpenGLViewer::commands.push_back(line);
+        //glapp->parseCommands(line);
+    }
+   }
+
    if (animate) glapp->parseCommands("next");
+
+   //Update status label
+   if (statusLabel->getText() != glapp->message)
+   {
+      statusLabel->setAlpha(1.0);
+      statusLabel->setText(glapp->message);
+   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,7 +402,7 @@ void GLuciferApplication::updateSharedData(SharedIStream& in)
 int main(int argc, char** argv)
 {
   Application<GLuciferApplication> app("gLucifer");
-  oargs().setStringVector("gLucifer", "gLucifer Arguments", args);
+  oargs().setStringVector("gLucifer", "gLucifer Arguments", arglist);
   return omain(app, argc, argv);
 }
 

@@ -319,11 +319,6 @@ void OpenGLViewer::display(void)
       OpenGLViewer::commands.pop_front();
       pthread_mutex_unlock(&cmd_mutex);
 
-      //Skip parsing resize & fullscreen commands for now
-      //std::size_t found1 = cmd.find("resize");
-      //std::size_t found2 = cmd.find("fullscreen");
-      //if (found1 != std::string::npos ||found2 != std::string::npos) continue;
-
       //Idle posted?
       idling = cmd.find("idle") != std::string::npos;
 
