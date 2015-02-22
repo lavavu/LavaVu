@@ -329,7 +329,7 @@ void GLuciferViewer::run(bool persist)
 
 void GLuciferViewer::readScriptFile(FilePath& fn)
 {
-   if (fn.ext == "script")
+   if (fn.type == "script")
       parseCommands("script " + fn.full);
 }
 
@@ -339,7 +339,7 @@ void GLuciferViewer::readVolume(FilePath& fn)
    float max[3] = {1,1,1};
 
    //Check for raw format volume data
-   if (fn.ext != "raw") return;
+   if (fn.type != "raw") return;
 
    awin->background.value = 0xff000000;
    
@@ -357,16 +357,15 @@ void GLuciferViewer::readVolume(FilePath& fn)
    //Create volume object
    DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
      
-     std::cerr << "LOADING ... " << fn.full << std::endl;
-     std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
-     file.seekg(0, std::ios::end);
-     std::streamsize size = file.tellg();
-     file.seekg(0, std::ios::beg);
-     if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
-     std::vector<char> buffer(size);
-     //myFile.read((char*)array, sizeof(unsigned char) * size);
-     file.read(buffer.data(), size);
-     file.close();
+   std::cerr << "LOADING ... " << fn.full << std::endl;
+   std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
+   file.seekg(0, std::ios::end);
+   std::streamsize size = file.tellg();
+   file.seekg(0, std::ios::beg);
+   if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
+   std::vector<char> buffer(size);
+   file.read(buffer.data(), size);
+   file.close();
 
    //Define the bounding cube by corners
    Model::volumes->add(vobj);
@@ -387,7 +386,7 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    std::string texfile;
 
    //Can only parse dem format wth ers or hdr header
-   if (fn.ext != "dem") return;
+   if (fn.type != "dem") return;
 
    char ersfilename[256];
    char hdrfilename[256];
@@ -631,7 +630,7 @@ void GLuciferViewer::addTriangles(DrawingObject* obj, float* a, float* b, float*
 void GLuciferViewer::readOBJ(FilePath& fn)
 {
    //Use tiny_obj_loader to load a model
-   if (fn.ext != "obj" && fn.ext != "OBJ") return;
+   if (fn.type != "obj") return;
    
    awin->background.value = LUC_WHITE;
    std::cout << "Loading " << fn.full << std::endl;
@@ -732,7 +731,7 @@ void GLuciferViewer::readTecplot(FilePath& fn)
 {
    //Can only parse tecplot format type FEBRICK
    //http://paulbourke.net/dataformats/tp/
-   if (fn.ext != "tec" && fn.ext != "dat") return;
+   if (fn.type != "tec" && fn.type != "dat") return;
 
    awin->background.value = LUC_WHITE;
 
@@ -1635,7 +1634,7 @@ void GLuciferViewer::drawScene()
 bool GLuciferViewer::loadModel(std::string& f, bool hideall)
 {
    FilePath fn(f);
-   if (fn.ext != "gldb" && fn.ext != "db")
+   if (fn.type != "gldb" && fn.type != "db")
    {
       //Not a db file? Store other in files list - height maps etc
       files.push_back(fn);
