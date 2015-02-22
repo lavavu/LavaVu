@@ -15,6 +15,7 @@ void main(void)
    gl_FragColor = gl_Color;
    float pointType = uPointType;
    if (vPointType >= 0) pointType = vPointType;
+   pointType = floor(pointType + 0.5);
 
    //Textured?
    if (uTextured)
