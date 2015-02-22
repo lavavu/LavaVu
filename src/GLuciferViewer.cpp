@@ -1361,7 +1361,9 @@ void GLuciferViewer::display(void)
    }
 
    //Print current info message (displayed for one frame only)
+#ifndef USE_OMEGALIB
    displayMessage();
+#endif
 
    //Display object list if enabled
    if (objectlist)

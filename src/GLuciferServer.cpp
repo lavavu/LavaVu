@@ -24,6 +24,7 @@ GLuciferServer* GLuciferServer::Instance(OpenGLViewer* viewer, std::string htmlp
 GLuciferServer::GLuciferServer(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
  : viewer(viewer), quality(quality), port(port), threads(threads), path(htmlpath)
 {
+   imageCache = NULL;
    jpeg = NULL;
    updated = false;
    client_id = 0;
@@ -64,8 +65,32 @@ void GLuciferServer::resize(int new_width, int new_height)
 {
 }
 
+bool GLuciferServer::compare(GLubyte* image)
+{
+   bool match = false;
+   if (imageCache) 
+   {
+      match = true;
+      size_t size = viewer->width * viewer->height * 3;
+      for (int i=0; i<size; i++)
+      {
+         if (image[i] != imageCache[i])
+         {
+            match = false;
+            break;
+         }
+      }
+      delete[] imageCache;
+   }
+   imageCache = image;
+   return match;
+}
+
 void GLuciferServer::display()
 {
+   //Image serving can be disabled by setting quality to 0
+   if (quality == 0) return;
+
    //If not currently sending an image, update the image data
    if (pthread_mutex_trylock(&cs_mutex) == 0)
    {
@@ -75,36 +100,40 @@ void GLuciferServer::display()
       // Read the pixels (flipped)
       viewer->pixels(image, false, true);
 
-      // Writes JPEG image to memory buffer. 
-      // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes. 
-      // If return value is true, jpeg_bytes will be set to the size of the compressed data.
-      jpeg_bytes = viewer->width * viewer->height * 3;
-      if (jpeg) delete[] jpeg;
-      jpeg = new unsigned char[jpeg_bytes];
-
-      // Fill in the compression parameter structure.
-      jpge::params params;
-      params.m_quality = quality;
-      params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-
-      if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, viewer->width, viewer->height, 3, 
-                                                (const unsigned char *)image, params))
+      if (!compare(image))
       {
-         debug_print("JPEG compressed, size %d\n", jpeg_bytes);
-      }
-      else
-         debug_print("JPEG compress error\n");
+        // Writes JPEG image to memory buffer. 
+        // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes. 
+        // If return value is true, jpeg_bytes will be set to the size of the compressed data.
+        jpeg_bytes = viewer->width * viewer->height * 3;
+        if (jpeg) delete[] jpeg;
+        jpeg = new unsigned char[jpeg_bytes];
 
-      delete[] image;
+        // Fill in the compression parameter structure.
+        jpge::params params;
+        params.m_quality = quality;
+        params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
 
-      updated = true; //Set new frame rendered flag
-        std::map<int,bool>::iterator iter;
-        for (iter = synched.begin(); iter != synched.end(); ++iter)
+        if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, viewer->width, viewer->height, 3, 
+                                                  (const unsigned char *)image, params))
         {
-           iter->second = false; //Flag update waiting
+           debug_print("JPEG compressed, size %d\n", jpeg_bytes);
         }
-        pthread_cond_broadcast(&condition_var);  //Display complete signal to all waiting clients
-      //pthread_cond_signal(&condition_var);  //Display complete signal
+        else
+           debug_print("JPEG compress error\n");
+
+        //Deleted in compare
+        //delete[] image;
+
+        updated = true; //Set new frame rendered flag
+          std::map<int,bool>::iterator iter;
+          for (iter = synched.begin(); iter != synched.end(); ++iter)
+          {
+             iter->second = false; //Flag update waiting
+          }
+          pthread_cond_broadcast(&condition_var);  //Display complete signal to all waiting clients
+        //pthread_cond_signal(&condition_var);  //Display complete signal
+      }
       pthread_mutex_unlock(&cs_mutex); //END CRITICAL SECTION
    }
    else
@@ -247,15 +276,15 @@ void* GLuciferServer::callback(enum mg_event event,
          std::replace(data.begin(), data.end(), ',', '\n');
          const size_t equals = data.find('=');
          const size_t amp = data.find('&');
-           //Push command onto queue to be processed in the viewer thread
-           pthread_mutex_lock(&_self->viewer->cmd_mutex);
-	 if (amp != std::string::npos)
-           OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
-	 else
-           OpenGLViewer::commands.push_back(data.substr(equals+1));
-           std::cerr << data.substr(equals+1) << std::endl;
-           _self->viewer->postdisplay = true;
-           pthread_mutex_unlock(&_self->viewer->cmd_mutex);
+         //Push command onto queue to be processed in the viewer thread
+         pthread_mutex_lock(&_self->viewer->cmd_mutex);
+         if (amp != std::string::npos)
+            OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
+         else
+            OpenGLViewer::commands.push_back(data.substr(equals+1));
+         std::cerr << data.substr(equals+1) << std::endl;
+         _self->viewer->postdisplay = true;
+         pthread_mutex_unlock(&_self->viewer->cmd_mutex);
       }
       else if (strstr(request_info->uri, "/post") != NULL)
       {
