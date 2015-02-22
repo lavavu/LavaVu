@@ -181,11 +181,8 @@ void Volumes::render(int i)
  
    //Uniform variables
     //TODO: Provide interface to set these parameters
-    float bbMin[3] = {0,0,0};
-    float bbMax[3] = {1,1,1};
-    //float bbMax[3] = {0.99, 0.99, 0.99};
-    //float bbMin[3] = {0.01,0.01,0.01};
-    //float bbMax[3] = {dims[0], dims[1], dims[2]};
+    float bbMax[3] = {0.99, 0.99, 0.99};
+    float bbMin[3] = {0.01,0.01,0.01};
     float viewport[4];
     glGetFloatv(GL_VIEWPORT, viewport);
     float res[3] = {geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth};
@@ -200,12 +197,13 @@ void Volumes::render(int i)
     glUniform1f(prog->uniforms["uContrast"], 1);
     glUniform1f(prog->uniforms["uPower"], 1);
     glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
-    glUniform1i(prog->uniforms["uSamples"], 256);
+    glUniform1i(prog->uniforms["uSamples"], 512);
     glUniform1f(prog->uniforms["uDensityFactor"], 5.0);
     glUniform1f(prog->uniforms["uIsoValue"], 0.0);
     glUniform4fv(prog->uniforms["uIsoColour"], 1, isocolour);
     glUniform1f(prog->uniforms["uIsoSmooth"], 0.1);
     glUniform1i(prog->uniforms["uIsoWalls"], 0);
+    //TODO: Add filter back to shader
     glUniform1i(prog->uniforms["uFilter"], 0);
    GL_Error_Check;
    
@@ -263,6 +261,7 @@ void Volumes::render(int i)
    GL_Error_Check;
  
    //State...
+   glPushAttrib(GL_ENABLE_BIT);
    glEnable(GL_BLEND);
    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
    glDisable(GL_DEPTH_TEST);  //No depth testing to allow multi-pass blend!
@@ -275,7 +274,7 @@ void Volumes::render(int i)
       glVertex2f(-1,  1); glVertex2f( 1, 1); glVertex2f(1, -1);
     glEnd();
 
-   glEnable(GL_DEPTH_TEST);
+   glPopAttrib();
    GL_Error_Check;
 }
 

@@ -60,6 +60,8 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    sort_on_rotate = true;
    message[0] = '\0';
    volres[0] = volres[1] = volres[2] = 256;
+   volmin[0] = volmin[1] = volmin[2] = -1;
+   volmax[0] = volmax[1] = volmax[2] = 1;
 
    fixedwidth = width;
    fixedheight = height;
@@ -173,6 +175,10 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
          case 'V':
             ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
             break;
+         case 'D':
+            ss >> volmin[0] >> x >> volmin[1] >> x >> volmin[2];
+            ss >> x >> volmax[0] >> x >> volmax[1] >> x >> volmax[2];
+            break;
          default:
             //Attempt to interpret as timestep
             std::istringstream ss2(args[i]);
@@ -218,6 +224,9 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
       aview = awin->addView(new View());
       windows.push_back(awin);
       amodel->windows.push_back(awin);
+      
+      //Setup default colourmaps
+      amodel->initColourMaps();
    }
 
    //Set script output flag
@@ -335,16 +344,13 @@ void GLuciferViewer::readScriptFile(FilePath& fn)
 
 void GLuciferViewer::readVolume(FilePath& fn)
 {
-   float min[3] = {-1,-1,-1};
-   float max[3] = {1,1,1};
-
    //Check for raw format volume data
    if (fn.type != "raw") return;
 
    awin->background.value = 0xff000000;
    
-   Geometry::checkPointMinMax(min);
-   Geometry::checkPointMinMax(max);
+   Geometry::checkPointMinMax(volmin);
+   Geometry::checkPointMinMax(volmax);
       
       ColourMap* colourMap = NULL;
       /*/Demo colourmap
@@ -369,11 +375,76 @@ void GLuciferViewer::readVolume(FilePath& fn)
 
    //Define the bounding cube by corners
    Model::volumes->add(vobj);
-   Model::volumes->read(vobj, 1, lucVertexData, min);
-   Model::volumes->read(vobj, 1, lucVertexData, max);
+   Model::volumes->read(vobj, 1, lucVertexData, volmin);
+   Model::volumes->read(vobj, 1, lucVertexData, volmax);
    float floatcount = size / 4.0;
    Model::volumes->read(vobj, floatcount, lucColourValueData, buffer.data(), volres[0], volres[1], volres[2]);
    Model::volumes->setup(vobj, lucColourValueData, 0, 1);
+}
+
+void GLuciferViewer::readVolumeSlice(FilePath& fn)
+{
+   //Check for jpg data
+   if (fn.type != "jpg" && fn.type != "jpeg" && fn.type != "png") return;
+
+   awin->background.value = 0xff000000;
+   
+   ColourMap* colourMap = NULL;
+      
+   Geometry::checkPointMinMax(volmin);
+   Geometry::checkPointMinMax(volmax);
+      
+   //Create volume object
+   static DrawingObject *vobj = NULL;
+   static int count = 0;
+   if (!vobj)
+   {
+      vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+      //Define the bounding cube by corners
+      Model::volumes->add(vobj);
+      Model::volumes->read(vobj, 1, lucVertexData, volmin);
+      Model::volumes->read(vobj, 1, lucVertexData, volmax);    
+   }
+   
+   std::cerr << "LOADING ... " << fn.full << std::endl;
+   count++;
+
+   int width, height, bytesPerPixel, bpp;
+   GLubyte* imageData;
+   if (fn.type == "png")
+   {
+      GLuint uwidth, uheight, ubpp;
+      std::ifstream file(fn.full.c_str(), std::ios::binary);
+      if (!file) abort_program("Cannot open '%s'\n", fn.full.c_str());
+      imageData = (GLubyte*)read_png(file, ubpp, uwidth, uheight);
+      file.close();
+      bytesPerPixel = ubpp/8;
+      width = uwidth;
+      height = uheight;
+   }
+   else
+   {
+      imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
+      bytesPerPixel = 3;
+   }
+   
+   if (imageData)
+   {
+      //Convert to luminance (just using red channel now, other options in future)
+      GLubyte* luminance = new GLubyte[width*height];
+      for (int y=0; y<height; y++)
+          for (int x=0; x<width; x++)
+            luminance[y*width+x] = imageData[(y*width+x)*bytesPerPixel];
+      
+      int floatcount = (width * height) / sizeof(float);
+      Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height, count);
+      Model::volumes->setup(vobj, lucColourValueData, 0, 1);
+      
+      delete[] luminance;
+      delete[] imageData;
+   }
+   else
+     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
 void GLuciferViewer::readHeightMap(FilePath& fn)
@@ -1720,6 +1791,7 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
       readOBJ(files[m]);
       readTecplot(files[m]);
       readVolume(files[m]);
+      readVolumeSlice(files[m]);
    }
    
    //Should have some objects by now, if not args were invalid
