@@ -236,6 +236,8 @@ void OpenGLViewer::fbo(int width, int height)
       debug_print("FBO setup completed successfully %d x %d\n", width, height);
       fbo_enabled = true;
       renderBuffer = GL_COLOR_ATTACHMENT0_EXT;
+      //Reset the viewer size
+      resize(width, height);
    }
 #else
    // Framebuffer objects not supported
