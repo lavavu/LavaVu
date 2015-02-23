@@ -347,7 +347,7 @@ void Geometry::setState(int index, Shader* prog)
       else
          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-      if ((draw && draw->properties["flat"].ToBool(true)) || flat)
+      if ((draw && draw->properties["flat"].ToBool(false)) || flat)
          glShadeModel(GL_FLAT);
       else
          glShadeModel(GL_SMOOTH);
@@ -355,7 +355,7 @@ void Geometry::setState(int index, Shader* prog)
    else
    {
       //Flat disables lighting for non surface types
-      if (flat || (draw && draw->properties["flat"].ToBool(true))) lighting = false;
+      if (flat || (draw && draw->properties["flat"].ToBool(false))) lighting = false;
    }
 
    if (!lighting)

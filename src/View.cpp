@@ -91,7 +91,6 @@ void View::setProperties(std::string props)
 void View::addObject(DrawingObject* obj)
 {      
    objects.push_back(obj);
-   //std::cerr << "Object " << obj->id << " '" << obj->name << "' added to viewport '" << title << "' " << this << std::endl;
    debug_print("Object %d '%s' added to viewport '%s'\n", obj->id, obj->name.c_str(), properties["title"].ToString().c_str());
 }
 

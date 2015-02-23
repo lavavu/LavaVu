@@ -323,7 +323,7 @@ void Model::loadViewCamera(int viewport_id)
 
       if (adj == 0) v->focus(focus[0], focus[1], focus[2], aperture, true);
       v->translate(translate[0], translate[1], translate[2]);
-      //v->rotate(rotate[0], rotate[1], rotate[2]);
+      v->rotate(rotate[0], rotate[1], rotate[2]);
       v->setScale(scale[0], scale[1], scale[2]);
       v->setCoordSystem(orientation);
       v->setProperties(std::string(vprops));

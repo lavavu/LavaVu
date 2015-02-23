@@ -92,8 +92,8 @@ void jsonParseProperty(std::string& data, json::Object& object)
          if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
          {
             //This JSON parser only accepts objects or arrays as base element
-            value = "[" + value + "]";
-            object[key] = json::Deserialize(value).ToArray()[0];
+            std::string nvalue = "[" + value + "]";
+            object[key] = json::Deserialize(nvalue).ToArray()[0];
          }
          else
          {
@@ -102,8 +102,9 @@ void jsonParseProperty(std::string& data, json::Object& object)
       }
       catch (std::exception& e)
       {
-         std::cerr << e.what();
-         object[key] = json::Value();
+         //std::cerr << "[" << key << "] " << data << " : " << e.what();
+         //Treat as a string value
+         object[key] = json::Value(value);
       }
    }
 }
