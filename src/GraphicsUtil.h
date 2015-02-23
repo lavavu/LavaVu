@@ -726,6 +726,10 @@ class Quaternion
    }
 }; 
 
+//Property containers now using json
+void jsonParseProperties(std::string& properties, json::Object& object);
+void jsonParseProperty(std::string& data, json::Object& object);
+
 //Utility class for parsing property,value strings
 typedef std::vector<std::string> prop_values;
 typedef std::map<std::string, prop_values> prop_value_map;
@@ -930,6 +934,9 @@ float triAngle(float v0[3], float v1[3], float v2[3]);
 void Colour_SetColour(Colour* colour);
 void Colour_Invert(Colour& colour);
 void Colour_SetXOR(bool switchOn);
+Colour Colour_FromJson(json::Object& object, std::string key, int red=0, int green=0, int blue=0, int alpha=255);
+void Colour_ToArray(Colour colour, float* array);
+void Colour_SetUniform(GLint uniform, Colour colour);
 
 void calcCircleCoords(int segment_count);
 void drawSphere(float centre[3], float radius, int segment_count, Colour* colour);

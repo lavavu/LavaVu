@@ -59,14 +59,14 @@ void Shapes::update()
       //Set draw state
       setState(i);
 
-      float scaling = geom[i]->draw->scaling;
+      float scaling = geom[i]->draw->properties["scaling"].ToFloat(1.0);
 
       //Load constant scaling factors from properties
       float dims[3];
-      dims[0] = geom[i]->draw->props.Float("width", FLT_MIN);
-      dims[1] = geom[i]->draw->props.Float("height", FLT_MIN);
-      dims[2] = geom[i]->draw->props.Float("length", FLT_MIN);
-      int shape = geom[i]->draw->props.Int("shape");
+      dims[0] = geom[i]->draw->properties["width"].ToFloat(FLT_MIN);
+      dims[1] = geom[i]->draw->properties["height"].ToFloat(FLT_MIN);
+      dims[2] = geom[i]->draw->properties["length"].ToFloat(FLT_MIN);
+      int shape = geom[i]->draw->properties["shape"].ToInt(0);
 
       if (scaling <= 0) scaling = 1.0;
 

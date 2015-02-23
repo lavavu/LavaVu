@@ -680,8 +680,9 @@ bool GLuciferViewer::parseCommands(std::string cmd)
          //std::string which = parsed.get(action, 1);
          for (int c=0; c<10; c++) //Allow multiple id/name specs on line
          {
+            DrawingObject* obj = aobject;
             int id = parsed.Int(action, 0, c);
-            DrawingObject* obj = findObject(what, id);
+            if (!obj) obj = findObject(what, id);
             if (obj)
             {
                if (obj->skip)
@@ -705,7 +706,8 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       //Export drawing object by name/ID match 
       for (int c=0; c<10; c++) //Allow multiple id/name specs on line
       {
-         DrawingObject* obj = findObject(parsed["dump"], parsed.Int("dump", 0, c));
+         DrawingObject* obj = aobject;
+         if (!obj) obj = findObject(parsed["dump"], parsed.Int("dump", 0, c));
          if (obj)
          {
             dumpById(obj->id);
@@ -733,15 +735,22 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    }
    else if (parsed.exists("opacity"))
    {
-      std::string what = parsed["opacity"];
       //Alpha by name/ID match in all drawing objects
-      int id = parsed.Int("opacity", 0);
-      DrawingObject* obj = findObject(what, id);
-      if (obj)
+      DrawingObject* obj = aobject;
+      int next = 0;
+      if (!obj)
       {
-         if (parsed.has(fval, "opacity", 1))
-            setOpacity(obj->id, fval);
-         printMessage("%s opacity set to %f", obj->name.c_str(), obj->opacity);
+         std::string what = parsed["opacity"];
+         int id = parsed.Int("opacity", 0);
+         obj = findObject(what, id);
+         next++;
+      }
+      if (obj && parsed.has(fval, "opacity", next))
+      {
+         if (fval > 1.0) fval /= 255.0;
+         obj->properties["opacity"] = fval;
+         redraw(obj->id);
+         printMessage("%s opacity set to %f", obj->name.c_str(), fval);
          redrawViewports();
       }
    }
@@ -817,12 +826,12 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    {
       std::string axis = parsed["axis"];
       if (parsed["axis"] == "on")
-        aview->axis = true;
+         aview->properties["axis"] = true;
       else if (parsed["axis"] == "off")
-        aview->axis = false;
+         aview->properties["axis"] = false;
       else
-        aview->axis = !aview->axis;
-      printMessage("Axis %s", aview->axis ? "ON" : "OFF");
+         aview->properties["axis"] = !aview->properties["axis"].ToBool(true);
+      printMessage("Axis %s", aview->properties["axis"].ToBool() ? "ON" : "OFF");
    }
    else if (parsed.exists("cullface"))
    {
@@ -851,6 +860,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    {
       for (int type=lucMinType; type<lucMaxType; type++)
          Model::geometry[type]->redraw = true;
+      redrawViewports();
       printMessage("Redrawing all objects");
    }
    else if (parsed.exists("fullscreen"))
@@ -882,15 +892,14 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    }
    else if (parsed.exists("title"))
    {
-      //Show/hide title
-      aview->heading = !aview->heading;
-      printMessage("Title %s", aview->heading ? "ON" : "OFF");
+      //Hide title
+      aview->properties["title"] = "";
    }
    else if (parsed.exists("rulers"))
    {
       //Show/hide rulers
-      aview->rulers = !aview->rulers;
-      printMessage("Rulers %s", aview->rulers ? "ON" : "OFF");
+      aview->properties["rulers"] = !aview->properties["rulers"].ToBool(true);
+      printMessage("Rulers %s", aview->properties["rulers"].ToBool() ? "ON" : "OFF");
    }
    else if (parsed.exists("log"))
    {
@@ -938,7 +947,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
          std::cout << helpCommand("lighting") << helpCommand("colourmap") << helpCommand("pointtype");
          std::cout << helpCommand("vectorquality") << helpCommand("tracerflat");
          std::cout << helpCommand("tracerscale") << helpCommand("tracersteps") << helpCommand("pointsample");
-         std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale");
+         std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
       }
       else if (cmd.length() > 0)
       {
@@ -956,18 +965,14 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    }
    else if (parsed.exists("antialias"))
    {
-      aview->antialias = !aview->antialias;
-      printMessage("Anti-aliasing %s", aview->antialias ? "ON":"OFF");
+      aview->properties["antialias"] = !aview->properties["antialias"].ToBool(true);
+      printMessage("Anti-aliasing %s", aview->properties["antialias"].ToBool() ? "ON":"OFF");
    }
    else if (parsed.exists("localise"))
    {
       //Find colour value min/max local to each geom element
-      Model::points->localiseColourValues();
-      Model::vectors->localiseColourValues();
-      Model::tracers->localiseColourValues();
-      Model::quadSurfaces->localiseColourValues();
-      Model::triSurfaces->localiseColourValues();
-      Model::volumes->localiseColourValues();
+      for (int type=lucMinType; type<lucMaxType; type++)
+         Model::geometry[type]->localiseColourValues();
       printMessage("ColourMap scales localised");
       redrawObjects();
    }
@@ -976,7 +981,8 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       //Export drawing object by name/ID match 
       for (int c=0; c<10; c++) //Allow multiple id/name specs on line
       {
-         DrawingObject* obj = findObject(parsed["json"], parsed.Int("json", 0, c));
+         DrawingObject* obj = aobject;
+         if (!obj) obj = findObject(parsed["json"], parsed.Int("json", 0, c));
          if (obj)
          {
             jsonWriteFile(obj->id);
@@ -1055,16 +1061,21 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    }
    else if (parsed.exists("colourmap"))
    {
-      std::string what = parsed["colourmap"];
-
       //Set colourmap on object by name/ID match
-      int id = parsed.Int("colourmap", 0);
-      DrawingObject* obj = findObject(what, id);
+      DrawingObject* obj = aobject;
+      int next = 0;
+      if (!obj)
+      {
+         std::string what = parsed["colourmap"];
+         int id = parsed.Int("colourmap", 0);
+         obj = findObject(what, id);
+         next++;
+      }
       if (obj)
       {
-         std::string cname = parsed.get("colourmap", 1);
+         std::string cname = parsed.get("colourmap", next);
          //int cid = parsed.Int("colourmap", 2);
-         parsed.has(ival, "colourmap", 1);
+         parsed.has(ival, "colourmap", next);
          ColourMap* cmap = findColourMap(cname, ival);
          //Only able to set the value colourmap now
          obj->addColourMap(cmap, lucColourValueData);
@@ -1072,7 +1083,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
             printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), cmap->name.c_str(), cmap->id);
          else
             printMessage("%s colourmap set to none", obj->name.c_str());
-         redraw(id);
+         redraw(obj->id);
          redrawViewports();
       }
    }
@@ -1106,15 +1117,21 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    else if (parsed.exists("colour"))
    {
       //Set object colour by name/ID match in all drawing objects
-      std::string what = parsed["colour"];
-      int id = parsed.Int("colour", 0);
-      DrawingObject* obj = findObject(what, id);
+      DrawingObject* obj = aobject;
+      int next = 0;
+      if (!obj)
+      {
+         std::string what = parsed["colour"];
+         int id = parsed.Int("colour", 0);
+         obj = findObject(what, id);
+         next++;
+      }
       if (obj)
       {
-         unsigned int colour = parsed.Colour("colour", 1);
+         unsigned int colour = parsed.Colour("colour", next);
          obj->colour.value = colour;
          printMessage("%s colour set to %x", obj->name.c_str(), colour);
-         redraw(id);
+         redraw(obj->id);
          redrawViewports();
       }
    }
@@ -1135,19 +1152,25 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       else
       {
          //Point type by name/ID match in all drawing objects
-         int id = parsed.Int("pointtype", 0);
-         DrawingObject* obj = findObject(what, id);
+         DrawingObject* obj = aobject;
+         int next = 0;
+         if (!obj)
+         {
+            int id = parsed.Int("pointtype", 0);
+            obj = findObject(what, id);
+            next++;
+         }
          if (obj)
          {
-            if (parsed.has(ival, "pointtype", 1))
-               obj->pointType = ival;
-            else if (parsed.get("pointtype", 1) == "up")
-               obj->pointType = (obj->pointType-1) % 5;
-            else if (parsed.get("pointtype", 1) == "down")
-               obj->pointType = (obj->pointType+1) % 5;
-            printMessage("%s point type set to %d", obj->name.c_str(), obj->pointType);
+            if (parsed.has(ival, "pointtype", next))
+               obj->properties["pointType"] = ival;
+            else if (parsed.get("pointtype", next) == "up")
+               obj->properties["pointType"] = (obj->properties["pointType"].ToInt(-1)-1) % 5;
+            else if (parsed.get("pointtype", next) == "down")
+               obj->properties["pointType"] = (obj->properties["pointType"].ToInt(-1)+1) % 5;
+            printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointType"].ToInt(-1));
             Model::geometry[lucPointType]->redraw = true;
-            redraw(id);
+            redraw(obj->id);
             redrawViewports();
          }
       }
@@ -1226,16 +1249,27 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    else if (parsed.exists("border"))
    {
       //Frame off/on/filled
+      aview->properties["fillborder"] = false;
+      int state = aview->properties["border"].ToInt(1);
       if (parsed["border"] == "on")
-         aview->borderType = 1;
+         aview->properties["border"] = 1;
       else if (parsed["border"] == "off")
-         aview->borderType = 0;
+         aview->properties["border"] = 0;
       else if (parsed["border"] == "filled")
-         aview->borderType = 2;
-      else 
-         aview->borderType++;
-      aview->borderType = aview->borderType % 3;
-      printMessage("Frame set to %s", aview->borderType == 0 ? "OFF": (aview->borderType == 1 ? "ON" : "FILLED"));
+      {
+         aview->properties["fillborder"] = true;
+         aview->properties["border"] = 1;
+      }
+      else
+      {
+         if (parsed.has(ival, "border"))
+           aview->properties["border"] = ival;
+         else if (state > 0)
+           aview->properties["border"] = 0;
+         else
+           aview->properties["border"] = 1;
+      }
+      printMessage("Frame set to %d, filled=%d", aview->properties["border"].ToInt(), aview->properties["fillborder"].ToBool());
    }
    else if (parsed.exists("camera"))
    {
@@ -1278,20 +1312,26 @@ bool GLuciferViewer::parseCommands(std::string cmd)
          else
          {
             //Scale by name/ID match in all drawing objects
-            int id = parsed.Int("scale", 0);
-            DrawingObject* obj = findObject(what, id);
+            DrawingObject* obj = aobject;
+            int next = 0;
+            if (!obj)
+            {
+               int id = parsed.Int("scale", 0);
+               obj = findObject(what, id);
+               next++;
+            }
             if (obj)
             {
-               if (parsed.has(fval, "scale", 1))
-                  obj->scaling = fval;
-               else if (parsed.get("scale", 1) == "up")
-                  obj->scaling *= 1.5;
-               else if (parsed.get("scale", 1) == "down")
-                  obj->scaling /= 1.5;
-               printMessage("%s scaling set to %f", obj->name.c_str(), obj->scaling);
+               if (parsed.has(fval, "scale", next))
+                  obj->properties["scaling"] = fval;
+               else if (parsed.get("scale", next) == "up")
+                  obj->properties["scaling"] = obj->properties["scaling"].ToFloat(1.0) * 1.5;
+               else if (parsed.get("scale", next) == "down")
+                  obj->properties["scaling"] = obj->properties["scaling"].ToFloat(1.0) / 1.5;
+               printMessage("%s scaling set to %f", obj->name.c_str(), obj->properties["scaling"].ToFloat(1.0));
                for (int type=lucMinType; type<lucMaxType; type++)
                   Model::geometry[type]->redraw = true;
-               redraw(id);
+               redraw(obj->id);
                redrawViewports();
             }
          }
@@ -1344,7 +1384,8 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       //Delete drawing object by name/ID match 
       std::string what = parsed["delete"];
       int id = parsed.Int("delete", 0);
-      DrawingObject* obj = findObject(what, id);
+      DrawingObject* obj = aobject;
+      if (!obj) obj = findObject(what, id);
       if (obj)
       {
          //TODO: Move to Model::
@@ -1391,7 +1432,8 @@ bool GLuciferViewer::parseCommands(std::string cmd)
       for (int c=0; c<10; c++) //Allow multiple id/name specs on line
       {
          int id = parsed.Int("load", 0, c);
-         DrawingObject* obj = findObject(what, id);
+         DrawingObject* obj = aobject;
+         if (!obj) obj = findObject(what, id);
          if (obj)
          {
             loadGeometry(obj->id);
@@ -1508,6 +1550,20 @@ bool GLuciferViewer::parseCommands(std::string cmd)
 
       redisplay = keyPress(key, x, y);
    }
+   else if (parsed.exists("select"))
+   {
+      std::string what = parsed["select"];
+      int id = parsed.Int("select", 0);
+      aobject = findObject(what, id);
+      if (aobject)
+         std::cerr << "SELECTED OBJECT: " << aobject->name << std::endl;
+      else
+         std::cerr << "NO OBJECT SELECTED" << std::endl;
+   }
+   else if (parsed.exists("props"))
+   {
+      printProperties();
+   }
    else
    {
       //If value parses as integer and contains nothing else 
@@ -1520,8 +1576,25 @@ bool GLuciferViewer::parseCommands(std::string cmd)
          printMessage("Go to timestep %d", timestep);
          resetViews(); //Update the viewports
       }
+      else if (cmd.at(0) == '#')
+      {
+         parseCommands("select " + cmd.substr(1));
+      }
       else
-         return false;  //Invalid
+      {
+         std::size_t found = cmd.find("=");
+         json::Value jval;
+         if (found == std::string::npos)
+         {
+           std::cerr << "# Unrecognised command: \"" << cmd << "\"" << std::endl;
+           return false;  //Invalid
+         }
+         else
+         {
+            parseProperty(cmd);
+            if (aobject && aobject->id) redraw(aobject->id);
+         }
+      }
    }
 
    //Always redraw when using multiple viewports in window (urgh sooner this is gone the better)
@@ -1835,7 +1908,7 @@ std::string GLuciferViewer::helpCommand(std::string cmd)
    }
    else if (cmd == "title")
    {
-      help += "Enable/disable title heading\n";
+      help += "Clear title heading\n";
    }
    else if (cmd == "log")
    {
@@ -2024,6 +2097,15 @@ std::string GLuciferViewer::helpCommand(std::string cmd)
                   "Load a saved script of viewer commands from a file\n\n"
                   "Usage: script filename\n\n"
                   "filename (string) : path and name of the script file to load\n";
+   }
+   else if (cmd == "select")
+   {
+      help += "Select object as the active object\n"
+                  "Used for setting properties of objects\n\n"
+                  "Usage: select object_id/object_name\n\n"
+                  "object_id (integer) : the index of the object to select (see: \"list objects\")\n"
+                  "object_name (string) : the name of the object to select (see: \"list objects\")\n"
+                  "Leave object parameter empty to clear selection.\n";
    }
    else
       return std::string("");

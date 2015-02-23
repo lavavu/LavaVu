@@ -41,6 +41,7 @@
 //Utils
 #include "jpeg/jpge.h"
 #include "jpeg/jpgd.h"
+#include "json.h"
 
 #ifndef _WIN32
 #include <sys/poll.h>

@@ -228,7 +228,7 @@ void Model::loadWindows()
    while ( sqlite3_step(statement) == SQLITE_ROW)
    {
       int id = sqlite3_column_int(statement, 0);
-      const char *wtitle = (char*)sqlite3_column_text(statement, 1);
+      std::string wtitle = std::string((char*)sqlite3_column_text(statement, 1));
       int width = sqlite3_column_int(statement, 2);
       int height = sqlite3_column_int(statement, 3);
       int bg = sqlite3_column_int(statement, 4);
@@ -239,7 +239,7 @@ void Model::loadWindows()
          max[i] = (float)sqlite3_column_double(statement, 8+i);
       }
 
-      Win* win = new Win(id, std::string(wtitle), width, height, bg, min, max);
+      Win* win = new Win(id, wtitle, width, height, bg, min, max);
       windows.push_back(win);
 
       //Link the window viewports, objects & colourmaps
@@ -259,7 +259,7 @@ void Model::loadViewports()
    while (sqlite3_step(statement) == SQLITE_ROW)
    {
       unsigned int viewport_id = (unsigned int)sqlite3_column_int(statement, 0);
-      const char *vtitle = (char*)sqlite3_column_text(statement, 1);
+      std::string vtitle = std::string((char*)sqlite3_column_text(statement, 1));
       float x = (float)sqlite3_column_double(statement, 2);
       float y = (float)sqlite3_column_double(statement, 3);
       float nearc = (float)sqlite3_column_double(statement, 4);
@@ -270,7 +270,7 @@ void Model::loadViewports()
       //Add to list
       if (views.size() < viewport_id) views.resize(viewport_id);
       views[viewport_id-1] = v;
-      debug_print("Loaded viewport \"%s\" at %f,%f\n", vtitle, x, y);
+      debug_print("Loaded viewport \"%s\" at %f,%f\n", vtitle.c_str(), x, y);
    }
    sqlite3_finalize(statement);
 }
@@ -326,7 +326,7 @@ void Model::loadViewCamera(int viewport_id)
       v->rotate(rotate[0], rotate[1], rotate[2]);
       v->setScale(scale[0], scale[1], scale[2]);
       v->setCoordSystem(orientation);
-      v->setProperties(vprops);
+      v->setProperties(std::string(vprops));
       //debug_print("Loaded \"%s\" at %f,%f\n");
    }
    sqlite3_finalize(statement);
@@ -351,8 +351,8 @@ void Model::loadObjects()
       //Create drawing object and add to master list
       if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       {
-         const char *oprops = (char*)sqlite3_column_text(statement, 4);
-         addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity, oprops));
+         std::string props = std::string((char*)sqlite3_column_text(statement, 4));
+         addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity, props));
       }
       else
          addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity));

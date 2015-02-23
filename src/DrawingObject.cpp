@@ -37,7 +37,7 @@
 
 unsigned int DrawingObject::lastid = 0;
 
-DrawingObject::DrawingObject(unsigned int id, bool persistent, std::string name, int colour, ColourMap* map, float opacity, const char* properties) : id(id), persistent(persistent), name(name), skip(true), visible(true), opacity(opacity)
+DrawingObject::DrawingObject(unsigned int id, bool persistent, std::string name, int colour, ColourMap* map, float opacity, std::string props) : id(id), persistent(persistent), name(name), skip(true), visible(true)
 {
    if (id == 0) this->id = DrawingObject::lastid+1;
    DrawingObject::lastid = this->id;
@@ -46,21 +46,9 @@ DrawingObject::DrawingObject(unsigned int id, bool persistent, std::string name,
    //Sets the default colour map if provided, newer databases provide separately
    if (map) colourMaps[lucColourValueData] = map;
 
-   std::stringstream propss(properties);
-   props.parse(propss, '=');
-   lit = props.Bool("lit", true);
-   cullface = props.Bool("cullface", false);
-   wireframe = props.Bool("wireframe", false);
-   lineWidth = props.Float("lineWidth", 1.0);
-   pointSize = props.Float("pointSize", 1.0);
-   pointType = props.Int("pointType", -1);
-   pointSmooth = props.Bool("pointSmooth", true);
-   scaling = props.Float("scaling", 1.0);
-   arrowHead = props.Float("arrowHead", 2.0);
-   flat = props.Bool("flat", false);
-   steps = props.Int("steps", 0);
-   time = props.Float("time", 0);
-   colourbar = props.Bool("colourbar", false);
+   jsonParseProperties(props, properties);
+   //Store on properties to allow modification
+   if (!properties.HasKey("opacity")) properties["opacity"] = opacity;
 
    texture = NULL;
 }
@@ -81,7 +69,7 @@ void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
 
 int DrawingObject::useTexture()
 {
-   std::string texfn = props["texturefile"];
+   std::string texfn = properties["texturefile"].ToString("");
    if (texfn.length() && !texture)
    {
       texture = new TextureData();

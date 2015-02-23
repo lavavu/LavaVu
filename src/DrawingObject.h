@@ -52,29 +52,13 @@ class DrawingObject
 
    Colour colour;
    std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
-   float opacity;
 
-   //Specific data for some object types...
-   PropertyParser props;
-   bool lit;
-   bool cullface;
-   bool wireframe;
-   float lineWidth;
-   float pointSize;
-   int pointType;
-   bool pointSmooth;
-   float arrowHead;
-   float scaling; //Vectors/tracers
-   bool flat;  //Tracers only for now
-   //Tracers...
-   int steps;
-   float time;
-   //Colour Bars
-   bool colourbar;
+   //Object properties data...
+   json::Object properties;
    //Texture
    TextureData* texture;
 
-   DrawingObject(unsigned int id, bool persistent=false, std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, const char* properties="");
+   DrawingObject(unsigned int id, bool persistent=false, std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="");
    ~DrawingObject() {if (texture) delete texture;}
 
    void addColourMap(ColourMap* map, lucGeometryDataType data_type);

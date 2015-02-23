@@ -67,11 +67,11 @@ void Lines::update()
       glPushAttrib(GL_ENABLE_BIT);
       
       //Default is to render 2d lines
-      if (geom[i]->draw->props.Bool("flat", true))
+      if (geom[i]->draw->properties["flat"].ToBool(true))
       {
          glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
       
-         if (geom[i]->draw->props.Bool("link", false))
+         if (geom[i]->draw->properties["link"].ToBool(false))
             glBegin(GL_LINE_STRIP);
          else
             glBegin(GL_LINES);
@@ -89,7 +89,7 @@ void Lines::update()
          float* oldpos = NULL;
          for (int j=0; j < geom[i]->count; j++) 
          {
-            if (j%2 == 0 && !geom[i]->draw->props.Bool("link", false)) oldpos = NULL;
+            if (j%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
             Colour colour;
             geom[i]->getColour(colour, j);
             float* pos = geom[i]->vertices[j];

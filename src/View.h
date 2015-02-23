@@ -75,20 +75,9 @@ class View
    int width;        // Viewport height
    int height;       // Viewport width
 
-   bool axis;
-   float axislen;
-   bool rulers;
-   bool timestep;
-   bool heading;
-   int border;
-   int borderType;
-   Colour borderColour;
-   bool antialias; //Anti-aliasing flag
-   int zoomstep; //Zoom timestep
-   int margin; //Zoom margin
-
    std::string title;
-   PropertyParser props;
+   //View properties data...
+   json::Object properties;
 
    // Scene scaling
    float scale[3];
@@ -124,10 +113,10 @@ class View
    bool use_inertia;
    float eye_shift;           // Stereo eye shift factor
 
-   View(const char* titlestr = "", bool stereo_flag = false, 
+   View(std::string title = "(default)", bool stereo_flag = false, 
         float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
 
-   void setProperties(const char* properties);
+   void setProperties(std::string props);
    
    void addObject(DrawingObject* obj);
    bool hasObject(DrawingObject* obj);

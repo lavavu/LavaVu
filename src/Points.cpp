@@ -174,14 +174,16 @@ void Points::loadVertices()
       //Cache values if possible, getColour() is slow!
       GeomData* geo = geom[s];
       ColourMap* cmap = NULL;
-      float psize0 = geo->draw->pointSize * geo->draw->scaling;
+      float psize0 = geo->draw->properties["pointsize"].ToFloat(1.0) * geo->draw->properties["scaling"].ToFloat(1.0);
       if (geo->draw->colourMaps[lucColourValueData] && geo->colourValue.size() > 0)
          cmap = geo->draw->colourMaps[lucColourValueData];
       //Set opacity to drawing object/geometry override level if set
       int alpha = 255;
-      if (geo->draw->opacity > 0.0) alpha = geo->draw->opacity * 255;
+      float opacity = geo->draw->properties["opacity"].ToFloat(1.0);
+      if (opacity > 0.0) alpha = opacity * 255;
       if (GeomData::opacity > 0.0) alpha = GeomData::opacity;
-      float ptype = geo->draw->pointType;
+      float ptype = geo->draw->properties["pointtype"].ToInt(-1);
+      bool smooth = geo->draw->properties["pointsmooth"].ToBool(true);
 
       for (int i = 0; i < geom[s]->count; i ++) 
       {
@@ -212,7 +214,7 @@ void Points::loadVertices()
             //Copies settings (size + smooth)
             float psize = psize0;
             if (geo->sizes.size() > 0) psize *= geo->sizes[i];
-            if (!geo->draw->pointSmooth) psize = -psize;
+            if (!smooth) psize = -psize;
             memcpy(ptr, &psize, sizeof(float));
             ptr += sizeof(float);
             memcpy(ptr, &ptype, sizeof(float));

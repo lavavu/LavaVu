@@ -61,8 +61,10 @@ void Vectors::update()
       //Set draw state
       setState(i);
 
+      float arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
+
       //Dynamic range?
-      float scaling = scale * geom[i]->draw->scaling;
+      float scaling = scale * geom[i]->draw->properties["scaling"].ToFloat(1.0);
 
       if (geom[i]->vectors.maximum > 0) 
       {
@@ -74,11 +76,12 @@ void Vectors::update()
 
       //Load scaling factors from properties
       int quality = glyphs;
-      if (quality < 0) quality = geom[i]->draw->props.Int("glyphs", 2);
-      scaling = geom[i]->draw->props.Float("length", scaling);
-      float thickness = geom[i]->draw->lineWidth;
-      float radius = 0; 
-      if (thickness != 1.0) radius = thickness;
+      if (quality < 0) quality = geom[i]->draw->properties["glyphs"].ToInt(2);
+      scaling *= geom[i]->draw->properties["length"].ToFloat(1.0);
+      //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
+
+      //Default (0) = automatically calculated radius
+      float radius = scale * geom[i]->draw->properties["radius"].ToFloat(0.0);
 
       if (scaling <= 0) scaling = 1.0;
 
@@ -100,11 +103,8 @@ void Vectors::update()
             }
          }
 
-         if (quality == 0)
-            radius = 1.0e-4 / scale;    //Draw as lines
-
          //Combine model vector scale with user vector scale factor
-         drawVector3d(pos, vec, scaling * scale, radius * scale, geom[i]->draw->arrowHead, 4.0*quality, NULL, NULL );
+         drawVector3d(pos, vec, scaling, radius, arrowHead, 4.0*quality, NULL, NULL );
       }
       glEndList();
    }

@@ -35,7 +35,7 @@
 
 #include "View.h"
 
-View::View(const char* titlestr, bool stereo_flag, float xf, float yf, float nearc, float farc)
+View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc, float farc)
 {
    // default view params
    near_clip = nearc;       //Near clip plane
@@ -78,46 +78,20 @@ View::View(const char* titlestr, bool stereo_flag, float xf, float yf, float nea
    rotation_lag.identity();
    use_inertia = false;
 
-   title = std::string(titlestr);
-
-   borderType = 1;
-   border = 1;
-   axis = true;
-   axislen = 0.1;
-   rulers = false;
-   timestep = false;
-   heading = true;
-   antialias = true;
-   borderColour.value = 0xff888888;
-   zoomstep = -1;
-   margin = 32;
+   properties["title"] = title;
 
    is3d = true;
 }
 
-void View::setProperties(const char* properties)
+void View::setProperties(std::string props)
 {
-   //Parse property string...
-   std::stringstream propss(properties);
-   props.parse(propss, '=');
-   border = props.Int("border", border);
-   if (border == 0) borderType = 0;
-   borderColour.value = props.Int("bordercolour", borderColour.value);
-   axis = props.Bool("axis", axis);
-   axislen = props.Float("axislength", axislen);
-   rulers = props.Bool("rulers", rulers);
-   timestep = props.Bool("timestep", timestep);
-   antialias = props.Bool("antialias", antialias);
-   zoomstep = props.Int("zoomstep", zoomstep);
-   margin = props.Int("margin", margin);
-   heading = props.Bool("title", heading);
+   jsonParseProperties(props, properties);
 }
 
 void View::addObject(DrawingObject* obj)
 {      
    objects.push_back(obj);
-   //std::cerr << "Object " << obj->id << " '" << obj->name << "' added to viewport '" << title << "' " << this << std::endl;
-   debug_print("Object %d '%s' added to viewport '%s'\n", obj->id, obj->name.c_str(), title.c_str());
+   debug_print("Object %d '%s' added to viewport '%s'\n", obj->id, obj->name.c_str(), properties["title"].ToString().c_str());
 }
 
 bool View::hasObject(DrawingObject* obj)
@@ -183,7 +157,7 @@ bool View::init(bool force, float* newmin, float* newmax)
          model_trans[2] = model_trans_lag[2] = -model_size;
 
       // Initial zoom to fit
-      if (zoomstep == 0) zoomToFit();
+      if (properties["zoomstep"].ToInt(-1) == 0) zoomToFit();
 
       debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
       debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -574,7 +548,8 @@ void View::inertia(bool on)
 #define ADJUST 0.444444
 void View::zoomToFit(int margin)
 {
-   if (margin < 0) margin = this->margin;
+   if (margin < 0) margin = properties["margin"].ToInt(32);
+
    // The bounding box of model 
    GLfloat rect3d[8][3] = {{min[0], min[1], min[2]},
                            {min[0], min[1], max[2]},
@@ -759,6 +734,7 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
 
 void View::drawRulers()
 {
+   bool rulers = properties["rulers"].ToBool(false);
    if (!rulers) return;
    //Axis rulers
    float shift[3] = {0.01/scale[0] * model_size, 0.01/scale[1] * model_size, 0.01/scale[2] * model_size};
@@ -781,19 +757,26 @@ void View::drawRulers()
 
 void View::drawBorder()
 {
+   int border = properties["border"].ToInt(1);
+   if (border == 0) return;
+   bool filled = properties["fillborder"].ToBool(false);
+   Colour borderColour = Colour_FromJson(properties, "bordercolour", 127, 127, 127, 255);
+
    // Draw model bounding box with optional filled background surface
-   if (borderType == 0) return;
    float adj = 0.0001 * model_size;
    float minvert[3] = {min[0]-adj, min[1]-adj, min[2]-adj};
    float maxvert[3] = {max[0]+adj, max[1]+adj, max[2]+adj};
    glColor4ubv(borderColour.rgba);
    //Min/max swapped to draw inverted box, see through to back walls
-   drawCuboid(maxvert, minvert, borderType == 2, border);
+   drawCuboid(maxvert, minvert, filled, border);
    GL_Error_Check;
 }
 
 void View::drawAxis() 
 {
+   bool axis = properties["axis"].ToBool(true);
+   float axislen = properties["axislength"].ToFloat(0.1);
+
    if (!axis) return;
    float length = axislen;
    float headsize = 8.0;   //8 x radius (r = 0.01 * length)
@@ -890,15 +873,15 @@ void View::drawOverlay(Colour& colour, std::string timestamp)
    for (unsigned int i=0; i<objects.size(); i++)
    {
       //Only when flagged as colour bar
-      if (!objects[i] || !objects[i]->colourbar || !objects[i]->visible) continue;
+      if (!objects[i] || !objects[i]->properties["colourbar"].ToBool(false) || !objects[i]->visible) continue;
 
-      int length = w * objects[i]->props.Float("lengthfactor", 0.8); 
-      int bar_height = objects[i]->props.Int("height", 10);
+      int length = w * objects[i]->properties["lengthfactor"].ToFloat(0.8); 
+      int bar_height = objects[i]->properties["height"].ToInt(10);
       int startx = (w - length) / 2;  //Need an X pos / margin property
-      int starty = last_y + objects[i]->props.Int("margin", 16);
+      int starty = last_y + objects[i]->properties["margin"].ToInt(16);
       //last_y = starty;   //Auto-increase y margin?
 
-      objects[i]->colourMaps[lucColourValueData]->draw(objects[i]->props, startx, starty, length, bar_height, colour);
+      objects[i]->colourMaps[lucColourValueData]->draw(objects[i]->properties, startx, starty, length, bar_height, colour);
       GL_Error_Check;
    } 
 
@@ -906,14 +889,15 @@ void View::drawOverlay(Colour& colour, std::string timestamp)
    glEnable(GL_MULTISAMPLE);
 
    //Title
-   if (heading)
+   if (properties.HasKey("title"))
    {
+      const char* title = properties["title"].ToString().c_str();
       lucSetFontCharset(FONT_DEFAULT);  //Bitmap fonts
-      Print(0.5 * (w - PrintWidth(title.c_str(), 0.6)), h - 20, 0.6, title.c_str());
+      Print(0.5 * (w - PrintWidth(title, 0.6)), h - 20, 0.6, title);
    }
 
    //Timestep (with scaling applied)
-   if (timestep)
+   if (properties["timestep"].ToBool(false))
    {
       // Use scaling coeff and units to display time
       lucSetFontCharset(FONT_SMALL);

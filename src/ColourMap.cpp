@@ -173,6 +173,7 @@ Colour ColourMap::getfast(float value)
    int c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
    if (c > SAMPLE_COUNT - 1) c = SAMPLE_COUNT - 1;
    if (c < 0) c = 0;
+   //printf("%f min %f max %f pos = %d colour: %d\n", value, minimum, maximum, c, precalc[c]);
    return precalc[c];
 }
 
@@ -251,7 +252,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
    return c;
 }
 
-void ColourMap::draw(PropertyParser& props, int startx, int starty, int length, int height, Colour& printColour)
+void ColourMap::draw(json::Object& properties, int startx, int starty, int length, int height, Colour& printColour)
 {
    int pixel_I;
    Colour colour;
@@ -328,13 +329,13 @@ void ColourMap::draw(PropertyParser& props, int startx, int starty, int length, 
    //Labels / tick marks
    glColor4ubv(printColour.rgba);
    float tickValue;
-   int ticks = props.Int("ticks", 0);
-   bool printTicks = props.Bool("printticks");
-   bool printUnits = props.Bool("printunits");
-   bool scientific = props.Bool("scientific");
-   int precision = props.Int("precision", 2);
-   float scaleval = props.Float("scaleValue", 1.0);
-   float border = props.Float("border", 1.0);
+   int ticks = properties["ticks"].ToInt(0);
+   bool printTicks = properties["printticks"].ToBool(false);
+   bool printUnits = properties["printunits"].ToBool(false);
+   bool scientific = properties["scientific"].ToBool(false);
+   int precision = properties["precision"].ToInt(2);
+   float scaleval = properties["scaleValue"].ToFloat(1.0);
+   float border = properties["border"].ToFloat(1.0);
    if (border > 0) glLineWidth(border); else glLineWidth(1.0);
    // No ticks if no range
    if (minimum == maximum) ticks = 0;
@@ -360,7 +361,7 @@ void ColourMap::draw(PropertyParser& props, int startx, int starty, int length, 
       {
          char label[10];
          sprintf(label, "tick%d", i);
-         tickValue = props.Float(label, FLT_MIN);
+         tickValue = properties[label].ToFloat(FLT_MIN);
 
          /* Calculate tick position */
          if (tickValue == FLT_MIN)  /* No fixed value provided */

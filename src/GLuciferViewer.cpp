@@ -74,6 +74,7 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    aview = NULL;
    awin = NULL;
    amodel = NULL;
+   aobject = NULL;
 
    //A set of default arguments can be stored in a file...
    std::ifstream argfile("gLucifer_args.cfg");
@@ -336,6 +337,48 @@ void GLuciferViewer::run(bool persist)
    }
 }
 
+//Property containers now using json
+//Parse lines with delimiter, ie: key=value
+void GLuciferViewer::parseProperties(std::string& properties)
+{
+   //Process all lines
+   std::stringstream ss(properties);
+   std::string line;
+   while(std::getline(ss, line))
+      parseProperty(line);
+};
+
+void GLuciferViewer::parseProperty(std::string& data)
+{
+   //Set properties of selected object or view/globals
+   if (aobject)
+   {
+      jsonParseProperty(data, aobject->properties);
+      std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
+   }
+   else if (aview)
+   {
+      jsonParseProperty(data, aview->properties);
+      std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
+   }
+   else
+   {
+      jsonParseProperty(data, globals);
+      std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
+   }
+}
+
+void GLuciferViewer::printProperties()
+{
+   //Show properties of selected object or view/globals
+   if (aobject)
+      std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
+   else if (aview)
+      std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
+   else
+      std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
+}
+
 void GLuciferViewer::readScriptFile(FilePath& fn)
 {
    if (fn.type == "script")
@@ -549,8 +592,7 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
                                                                     //opacity [0,1]
    DrawingObject *obj, *sea;
-   char props[256];
-   sprintf(props, "cullface=0\ntexturefile=%s\n", texfile.c_str());
+   std::string props = "cullface=0\ntexturefile=%s\n" + texfile;
    obj = newObject(fn.base, true, 0, colourMap, 1.0, props);
    //Sea level surf
    //sea = newObject("Sea level", true, 0xffffff00, NULL, 0.5, "cullface=1\n");
@@ -1171,7 +1213,7 @@ void GLuciferViewer::createDemoModel()
    Geometry::checkPointMinMax(max);
 }
 
-DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, const char* properties)
+DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, std::string properties)
 {
    DrawingObject* obj = new DrawingObject(0, persistent, name, colour, map, opacity, properties);
    if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
@@ -1258,13 +1300,6 @@ void GLuciferViewer::showById(unsigned int id, bool state)
    amodel->objects[id-1]->visible = state;
 }
 
-void GLuciferViewer::setOpacity(unsigned int id, float opacity)
-{
-   if (opacity > 1.0) opacity /= 255.0;
-   amodel->objects[id-1]->opacity = opacity;
-   redraw(id);
-}
-
 void GLuciferViewer::redraw(unsigned int id)
 {
    for (unsigned int i=0; i < Model::geometry.size(); i++)
@@ -1334,7 +1369,7 @@ void GLuciferViewer::viewModel(int idx, bool autozoom)
       aview->port(0, 0, viewer->width, viewer->height);
 
    // Apply initial autozoom if set (only applied based on provided dimensions)
-   //if (autozoom && aview->zoomstep == 0)
+   //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
    //   aview->init(false, awin->min, awin->max);
 
    //Call check on window min/max coords
@@ -1348,7 +1383,7 @@ void GLuciferViewer::viewModel(int idx, bool autozoom)
    aview->init(false, Geometry::min, Geometry::max);
 
    // Apply step autozoom if set (applied based on detected bounding box)
-   if (autozoom && aview->zoomstep > 0 && timestep % aview->zoomstep == 0)
+   if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && timestep % aview->properties["zoomstep"].ToInt(-1) == 0)
        aview->zoomToFit();
 }
 
@@ -1473,14 +1508,12 @@ void GLuciferViewer::displayCurrentView()
    GL_Error_Check;
 
    // View transform
-   //   int v = view;
-   //debug_print("### Displaying viewport %s (%d) at %d,%d %d x %d\n", views[v]->title, v, (int)(width * views[v]->x), (int)(height * views[v]->y), (int)(width * views[v]->w), (int)(height * views[v]->h));
+   //debug_print("### Displaying viewport %s at %d,%d %d x %d\n", aview->title.c_str(), (int)(viewer->width * aview->x), (int)(viewer->height * aview->y), (int)(viewer->width * aview->w), (int)(viewer->height * aview->h));
+
    if (aview->autozoom)
    {
       aview->projection(EYE_CENTRE);
-   GL_Error_Check;
       aview->zoomToFit(0);
-   GL_Error_Check;
    }
    else
       aview->apply();
@@ -1561,6 +1594,7 @@ void GLuciferViewer::displayObjectList(bool console)
       {
          std::ostringstream ss;
          ss << std::setw(5) << amodel->objects[i]->id << " : " << amodel->objects[i]->name;
+         if (amodel->objects[i] == aobject) ss << "*";
          if (amodel->objects[i]->skip)
          {
             if (console) std::cerr << "[ no data  ]" << ss.str() << std::endl;
@@ -1677,7 +1711,7 @@ void GLuciferViewer::drawSceneBlended()
 
 void GLuciferViewer::drawScene()
 {
-   if (!aview->antialias)
+   if (!aview->properties["antialias"].ToBool(true))
       glDisable(GL_MULTISAMPLE);
    else
       glEnable(GL_MULTISAMPLE);
@@ -1730,8 +1764,8 @@ bool GLuciferViewer::loadModel(std::string& f, bool hideall)
    if (amodel->windows.size() == 0)
    {
       //Set a default window, viewport & camera
-      awin = new Win(fn.base.c_str());
-      aview = awin->addView(new View(fn.base.c_str()));
+      awin = new Win(fn.base);
+      aview = awin->addView(new View(fn.base));
       //Add objects to window & viewport
       for (unsigned int o=0; o<amodel->objects.size(); o++)
       {
@@ -1987,7 +2021,7 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
    json << "{\n  \"options\" :\n  {\n"
         << "    \"pointScale\" : " << Model::points->scale << ",\n"
         << "    \"pointType\" : " << Model::points->pointType << ",\n"
-        << "    \"border\" : " << (aview->borderType ? "true" : "false") << ",\n"
+        << "    \"border\" : " << (aview->properties["border"].ToInt(0) ? "true" : "false") << ",\n"
         << "    \"opacity\" : " << GeomData::opacity << ",\n"
         << "    \"rotate\" : ["  << rotate[0] << "," << rotate[1] << "," << rotate[2] << "," << rotate[3] << "],\n";
    json << "    \"translate\" : [" << translate[0] << "," << translate[1] << "," << translate[2] << "],\n";
@@ -2073,14 +2107,15 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
                   colourmap = (it - amodel->colourMaps.begin());
             }
 
-            if (amodel->objects[i]->wireframe)
-               json << "      \"wireframe\" : " << amodel->objects[i]->wireframe << "," << std::endl;
-            if (amodel->objects[i]->cullface)
-               json << "      \"cullface\" : " << amodel->objects[i]->cullface << "," << std::endl;
-            if (amodel->objects[i]->opacity > 0)
-               json << "      \"opacity\" : " << amodel->objects[i]->opacity << "," << std::endl;
-            if (amodel->objects[i]->pointSize > 0)
-               json << "      \"pointSize\" : " << amodel->objects[i]->pointSize << "," << std::endl;
+            //TODO: Export all json properties directly from object...!
+            if (amodel->objects[i]->properties.HasKey("wireframe"))
+               json << "      \"wireframe\" : " << amodel->objects[i]->properties["wireframe"].ToBool(false) << "," << std::endl;
+            if (amodel->objects[i]->properties.HasKey("cullface"))
+               json << "      \"cullface\" : " << amodel->objects[i]->properties["cullface"].ToBool(false)<< "," << std::endl;
+            if (amodel->objects[i]->properties.HasKey("opacity"))
+               json << "      \"opacity\" : " << amodel->objects[i]->properties["opacity"].ToFloat(1.0) << "," << std::endl;
+            if (amodel->objects[i]->properties.HasKey("pointsize"))
+               json << "      \"pointSize\" : " << amodel->objects[i]->properties["pointsize"].ToFloat(1.0) << "," << std::endl;
             if (colourmap >= 0)
                json << "      \"colourmap\" : " << colourmap << "," << std::endl;
             json << "      \"colour\" : " << amodel->objects[i]->colour.value;

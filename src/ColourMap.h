@@ -95,7 +95,7 @@ public:
    Colour get(float value);
    float scaleValue(float value);
    Colour getFromScaled(float scaledValue);
-   void draw(PropertyParser& props, int startx, int starty, int length, int height, Colour& printColour);
+   void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour);
    void setComponent(int component_index);
    void loadTexture();
 
