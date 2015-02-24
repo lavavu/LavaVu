@@ -85,7 +85,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -109,7 +109,9 @@
     <ClInclude Include="..\GLuciferViewer.h" />
     <ClInclude Include="..\GraphicsUtil.h" />
     <ClInclude Include="..\Include.h" />
+    <ClInclude Include="..\jpeg\jpgd.h" />
     <ClInclude Include="..\jpeg\jpge.h" />
+    <ClInclude Include="..\json.h" />
     <ClInclude Include="..\Main\SDLViewer.h" />
     <ClInclude Include="..\Model.h" />
     <ClInclude Include="..\mongoose\mongoose.h" />
@@ -134,7 +136,9 @@
     <ClCompile Include="..\GLuciferViewer.cpp" />
     <ClCompile Include="..\GraphicsUtil.cpp" />
     <ClCompile Include="..\InteractiveViewer.cpp" />
+    <ClCompile Include="..\jpeg\jpgd.cpp" />
     <ClCompile Include="..\jpeg\jpge.cpp" />
+    <ClCompile Include="..\json.cpp" />
     <ClCompile Include="..\Lines.cpp" />
     <ClCompile Include="..\Main\main.cpp" />
     <ClCompile Include="..\Main\SDLViewer.cpp" />

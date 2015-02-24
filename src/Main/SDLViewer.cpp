@@ -135,9 +135,9 @@ void SDLViewer::animate(int msec)
 void SDLViewer::createWindow(int width, int height)
 {
    int SDL_Flags;
-
    if (fullscreen)
-      SDL_Flags = SDL_OPENGL | SDL_FULLSCREEN;
+      //SDL_Flags = SDL_OPENGL | SDL_FULLSCREEN;
+      SDL_Flags = SDL_OPENGL | SDL_NOFRAME;
    else
       SDL_Flags = SDL_OPENGL | SDL_RESIZABLE;
 
