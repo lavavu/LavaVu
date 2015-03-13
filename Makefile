@@ -54,7 +54,7 @@ PROGRAM = $(PREFIX)/LavaVu
 
 default: install
 
-install: $(PROGRAM)
+install: paths $(PROGRAM)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html $(PREFIX)
 
@@ -63,7 +63,7 @@ paths:
 	mkdir -p $(PREFIX)
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(INC) paths
+$(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) paths
@@ -81,7 +81,6 @@ $(OPATH)/sqlite3.o : sqlite3.c
 clean:
 	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM)
 	/bin/rm $(PREFIX)/html/*
-	/bin/rm $(PREFIX)/LavaVu
 	/bin/rm $(PREFIX)/*.vert
 	/bin/rm $(PREFIX)/*.frag
 
