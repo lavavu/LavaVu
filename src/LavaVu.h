@@ -33,8 +33,8 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#ifndef GLuciferViewer__
-#define GLuciferViewer__
+#ifndef LavaVu__
+#define LavaVu__
 
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
@@ -52,7 +52,7 @@ typedef enum
    lucExportJSONP,
 } lucExportType;
 
-class GLuciferViewer : public ViewerApp
+class LavaVu : public ViewerApp
 {
   protected:
    bool viewAll;
@@ -96,8 +96,8 @@ class GLuciferViewer : public ViewerApp
 
    json::Object globals;
 
-   GLuciferViewer(std::vector<std::string> args, OpenGLViewer* viewer, int width=0, int height=0);
-   virtual ~GLuciferViewer();
+   LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width=0, int height=0);
+   virtual ~LavaVu();
 
    void run(bool persist=false);
 
@@ -254,4 +254,4 @@ help * [ENTER] where * is a command -- detailed help for a command\n\
 \n\
 "
 
-#endif //GLuciferViewer__
+#endif //LavaVu__

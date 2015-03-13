@@ -34,8 +34,8 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 #include "../GraphicsUtil.h"
-#include "../GLuciferViewer.h"
-#include "../GLuciferServer.h"
+#include "../LavaVu.h"
+#include "../Server.h"
 #include "../SageOutput.h"
 #include "../OpenGLViewer.h"
 #include "SDLViewer.h"
@@ -54,7 +54,7 @@
 int main(int argc, char *argv[]) 
 {
    OpenGLViewer* viewer = NULL;
-   GLuciferViewer* app;
+   LavaVu* app;
    int port = 0, quality = 90, threads = 4;
    bool stereo = false;
    bool fullscreen = false;
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
    {
       //Use executable path as base for html path
       std::string htmlpath = path.path + std::string("./html");
-      viewer->addOutput(GLuciferServer::Instance(viewer, htmlpath, port, quality, threads));
+      viewer->addOutput(Server::Instance(viewer, htmlpath, port, quality, threads));
    }
 #endif
 #ifdef HAVE_SAGE
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 #endif
 
    //Create & run application
-   app = new GLuciferViewer(args, viewer, width, height);
+   app = new LavaVu(args, viewer, width, height);
    app->run(port > 0); //If server running, always stay open (persist flag)
 
    delete viewer;

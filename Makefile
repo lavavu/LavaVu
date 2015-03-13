@@ -1,7 +1,8 @@
 #Install path
 PREFIX = bin
 #Object files path
-OPATH = /tmp
+#OPATH = /tmp
+OPATH = tmp
 
 #Compilers
 CPP=g++
@@ -20,9 +21,10 @@ endif
 #Linux/Mac specific libraries/flags
 ifeq ($(MACHINE), Darwin)
    CFLAGS += -FGLUT -FOpenGL
-   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm 
+   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
 else
-   LIBS=-ldl -lpthread -lm -lGL -lSDL -lX11 -lglut
+   LIBS=-ldl -lpthread -lm -lGL -lz -lX11 #-lglut -lSDL
+#   LIBS=-ldl -lpthread -lm -lGL -lOSMesa -lz
 endif
 
 #Source search paths
@@ -43,24 +45,28 @@ OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
-#Additional flags for building gLucifer sources only
-DEFINES += -DHAVE_SDL -DHAVE_X11 -DHAVE_GLUT -DUSE_FONTS
+#Additional flags for building non-library sources only
+DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11
+#DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11 #-DHAVE_GLUT -DHAVE_SDL
+#DEFINES += -DHAVE_OSMESA -DUSE_FONTS -DUSE_ZLIB
 
-PROGRAM = gLucifer
+PROGRAM = $(PREFIX)/LavaVu
 
 default: install
 
 install: $(PROGRAM)
-	mkdir -p $(PREFIX)
-	cp $(PROGRAM) $(PREFIX)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html $(PREFIX)
 
+paths:
+	mkdir -p $(OPATH)
+	mkdir -p $(PREFIX)
+
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(INC)
+$(OBJS): $(OPATH)/%.o : %.cpp $(INC) paths
 	$(CPP) $(CFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(OBJS) $(OBJ2)
+$(PROGRAM): $(OBJS) $(OBJ2) paths
 	$(CPP) -o $(PROGRAM) $(OBJS) $(OBJ2) $(LIBS)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
@@ -75,7 +81,7 @@ $(OPATH)/sqlite3.o : sqlite3.c
 clean:
 	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM)
 	/bin/rm $(PREFIX)/html/*
-	/bin/rm $(PREFIX)/gLucifer
+	/bin/rm $(PREFIX)/LavaVu
 	/bin/rm $(PREFIX)/*.vert
 	/bin/rm $(PREFIX)/*.frag
 

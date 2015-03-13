@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "GLuciferServer.h"
+#include "Server.h"
 #if defined _WIN32
 #include <SDL/SDL_syswm.h>
 #endif
@@ -11,17 +11,17 @@
 #include "base64.h"
 #include "jpeg/jpge.h"
 
-GLuciferServer* GLuciferServer::_self = NULL; //Static
+Server* Server::_self = NULL; //Static
 
-GLuciferServer* GLuciferServer::Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
+Server* Server::Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
 {
    if (!_self)   // Only allow one instance of class to be generated.
-      _self = new GLuciferServer(viewer, htmlpath, port, quality, threads);
+      _self = new Server(viewer, htmlpath, port, quality, threads);
 
    return _self;
 }
 
-GLuciferServer::GLuciferServer(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
+Server::Server(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
  : viewer(viewer), quality(quality), port(port), threads(threads), path(htmlpath)
 {
    imageCache = NULL;
@@ -34,7 +34,7 @@ GLuciferServer::GLuciferServer(OpenGLViewer* viewer, std::string htmlpath, int p
    pthread_cond_init (&condition_var, NULL);
 }
 
-GLuciferServer::~GLuciferServer()
+Server::~Server()
 {
    pthread_cond_broadcast(&condition_var);  //Display complete signal
    if (ctx)
@@ -42,7 +42,7 @@ GLuciferServer::~GLuciferServer()
 }
 
 // virtual functions for window management
-void GLuciferServer::open(int width, int height)
+void Server::open(int width, int height)
 {
    //Enable the animation timer
    //viewer->animate(250);   //1/4 sec timer
@@ -58,14 +58,14 @@ void GLuciferServer::open(int width, int height)
      NULL
    };
 
-   ctx = mg_start(&GLuciferServer::callback, NULL, options);
+   ctx = mg_start(&Server::callback, NULL, options);
 }
 
-void GLuciferServer::resize(int new_width, int new_height)
+void Server::resize(int new_width, int new_height)
 {
 }
 
-bool GLuciferServer::compare(GLubyte* image)
+bool Server::compare(GLubyte* image)
 {
    bool match = false;
    if (imageCache) 
@@ -86,7 +86,7 @@ bool GLuciferServer::compare(GLubyte* image)
    return match;
 }
 
-void GLuciferServer::display()
+void Server::display()
 {
    //Image serving can be disabled by setting quality to 0
    if (quality == 0) return;
@@ -143,7 +143,7 @@ void GLuciferServer::display()
    }
 }
 
-void GLuciferServer::close()
+void Server::close()
 {
 }
 
@@ -174,7 +174,7 @@ void send_string(std::string str, struct mg_connection *conn)
    mg_write(conn, encoded.c_str(), encoded.length());
 }
 
-void* GLuciferServer::callback(enum mg_event event,
+void* Server::callback(enum mg_event event,
                        struct mg_connection *conn,
                        const struct mg_request_info *request_info)
 {

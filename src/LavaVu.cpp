@@ -35,14 +35,14 @@
 
 //Viewer class
 #include "Include.h"
-#include "GLuciferViewer.h"
+#include "LavaVu.h"
 #include "Shaders.h"
 #include "VideoEncoder.h"
 #include <typeinfo>
 #include "tiny_obj_loader.h"
 
 //Viewer class implementation...
-GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* viewer, int width, int height) : ViewerApp(viewer)
+LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, int height) : ViewerApp(viewer)
 {
    bool output = false, verbose = false, hideall = false, dbpath = false;
    float alpha = 0, subsample = 0;
@@ -221,7 +221,7 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
       models.push_back(amodel);
 
       //Set a default window, viewport & camera
-      awin = new Win("GLucifer");
+      awin = new Win("LavaVu");
       aview = awin->addView(new View());
       windows.push_back(awin);
       amodel->windows.push_back(awin);
@@ -247,7 +247,7 @@ GLuciferViewer::GLuciferViewer(std::vector<std::string> args, OpenGLViewer* view
    debug_print("Output path set to %s\n", viewer->output_path);
 }
 
-GLuciferViewer::~GLuciferViewer()
+LavaVu::~LavaVu()
 {
    //Kill all models
    for (unsigned int i=0; i < models.size(); i++)
@@ -260,7 +260,7 @@ GLuciferViewer::~GLuciferViewer()
    debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
 }
 
-void GLuciferViewer::run(bool persist)
+void LavaVu::run(bool persist)
 {
    if (persist)
    {
@@ -339,7 +339,7 @@ void GLuciferViewer::run(bool persist)
 
 //Property containers now using json
 //Parse lines with delimiter, ie: key=value
-void GLuciferViewer::parseProperties(std::string& properties)
+void LavaVu::parseProperties(std::string& properties)
 {
    //Process all lines
    std::stringstream ss(properties);
@@ -348,7 +348,7 @@ void GLuciferViewer::parseProperties(std::string& properties)
       parseProperty(line);
 };
 
-void GLuciferViewer::parseProperty(std::string& data)
+void LavaVu::parseProperty(std::string& data)
 {
    //Set properties of selected object or view/globals
    if (aobject)
@@ -368,7 +368,7 @@ void GLuciferViewer::parseProperty(std::string& data)
    }
 }
 
-void GLuciferViewer::printProperties()
+void LavaVu::printProperties()
 {
    //Show properties of selected object or view/globals
    if (aobject)
@@ -379,13 +379,13 @@ void GLuciferViewer::printProperties()
       std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
 }
 
-void GLuciferViewer::readScriptFile(FilePath& fn)
+void LavaVu::readScriptFile(FilePath& fn)
 {
    if (fn.type == "script")
       parseCommands("script " + fn.full);
 }
 
-void GLuciferViewer::readVolume(FilePath& fn)
+void LavaVu::readVolume(FilePath& fn)
 {
    //Check for raw format volume data
    if (fn.type != "raw") return;
@@ -425,7 +425,7 @@ void GLuciferViewer::readVolume(FilePath& fn)
    Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
-void GLuciferViewer::readVolumeSlice(FilePath& fn)
+void LavaVu::readVolumeSlice(FilePath& fn)
 {
    //Check for jpg data
    if (fn.type != "jpg" && fn.type != "jpeg" && fn.type != "png") return;
@@ -490,7 +490,7 @@ void GLuciferViewer::readVolumeSlice(FilePath& fn)
      debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
-void GLuciferViewer::readHeightMap(FilePath& fn)
+void LavaVu::readHeightMap(FilePath& fn)
 {
    int rows, cols, size = 2, subsample;
    int byteorder = 0;   //Little endian default
@@ -709,7 +709,7 @@ void GLuciferViewer::readHeightMap(FilePath& fn)
    debug_print("Z min %f max %f range %f\n", min[2], max[2], range[2]);
 }
 
-void GLuciferViewer::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
+void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
 {
    level--;
    float a_b[3], a_c[3], b_c[3];
@@ -740,7 +740,7 @@ void GLuciferViewer::addTriangles(DrawingObject* obj, float* a, float* b, float*
    }
 }
 
-void GLuciferViewer::readOBJ(FilePath& fn)
+void LavaVu::readOBJ(FilePath& fn)
 {
    //Use tiny_obj_loader to load a model
    if (fn.type != "obj") return;
@@ -840,7 +840,7 @@ void GLuciferViewer::readOBJ(FilePath& fn)
   }
 }
 
-void GLuciferViewer::readTecplot(FilePath& fn)
+void LavaVu::readTecplot(FilePath& fn)
 {
    //Can only parse tecplot format type FEBRICK
    //http://paulbourke.net/dataformats/tp/
@@ -1130,7 +1130,7 @@ void GLuciferViewer::readTecplot(FilePath& fn)
       printMessage("Unable to open file: %s", fn.full.c_str());
 }
 
-void GLuciferViewer::createDemoModel()
+void LavaVu::createDemoModel()
 {
    int RANGE = 2;
    float min[3] = {-RANGE,-RANGE,-RANGE};
@@ -1213,7 +1213,7 @@ void GLuciferViewer::createDemoModel()
    Geometry::checkPointMinMax(max);
 }
 
-DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, std::string properties)
+DrawingObject* LavaVu::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, std::string properties)
 {
    DrawingObject* obj = new DrawingObject(0, persistent, name, colour, map, opacity, properties);
    if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
@@ -1224,7 +1224,7 @@ DrawingObject* GLuciferViewer::newObject(std::string name, bool persistent, int 
    return obj;
 }
 
-void GLuciferViewer::open(int width, int height)
+void LavaVu::open(int width, int height)
 {
    //Init geometry containers
    for (unsigned int i=0; i < Model::geometry.size(); i++)
@@ -1263,7 +1263,7 @@ void GLuciferViewer::open(int width, int height)
    Volumes::prog->loadAttribs(pAttribs, 2);
 }
 
-void GLuciferViewer::resize(int new_width, int new_height)
+void LavaVu::resize(int new_width, int new_height)
 {
    //On resizes after initial size set, adjust point scaling
    if (new_width > 0)
@@ -1286,13 +1286,13 @@ void GLuciferViewer::resize(int new_width, int new_height)
    redrawViewports();
 }
 
-void GLuciferViewer::close()
+void LavaVu::close()
 {
    for (unsigned int i=0; i < models.size(); i++)
       models[i]->close();
 }
 
-void GLuciferViewer::showById(unsigned int id, bool state)
+void LavaVu::showById(unsigned int id, bool state)
 {
    for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->showById(id, state);
@@ -1300,14 +1300,14 @@ void GLuciferViewer::showById(unsigned int id, bool state)
    amodel->objects[id-1]->visible = state;
 }
 
-void GLuciferViewer::redraw(unsigned int id)
+void LavaVu::redraw(unsigned int id)
 {
    for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->redrawObject(id);
 }
 
 //Called when model loaded/changed, updates all views and window settings
-void GLuciferViewer::resetViews(bool autozoom)
+void LavaVu::resetViews(bool autozoom)
 {
    //if (!aview) viewSelect(0);  //Switch to the first loaded viewport
    //viewSelect(view); //Re-select viewport - done in viewModel anyway
@@ -1331,7 +1331,7 @@ void GLuciferViewer::resetViews(bool autozoom)
 }
 
 //Called when all viewports need to update
-void GLuciferViewer::redrawViewports()
+void LavaVu::redrawViewports()
 {
    for (unsigned int v=0; v<awin->views.size(); v++)
       awin->views[v]->redraw = true;
@@ -1342,7 +1342,7 @@ void GLuciferViewer::redrawViewports()
 }
 
 //Called when view changed
-void GLuciferViewer::viewSelect(int idx)
+void LavaVu::viewSelect(int idx)
 {
    if (awin->views.size() == 0) abort_program("No views available!");
    view = idx;
@@ -1357,7 +1357,7 @@ void GLuciferViewer::viewSelect(int idx)
 
 //Called when timestep/window changed (new model data)
 //Set model size from geometry / bounding box and apply auto zoom
-void GLuciferViewer::viewModel(int idx, bool autozoom)
+void LavaVu::viewModel(int idx, bool autozoom)
 {
    //Ensure correct view is selected
    viewSelect(idx);
@@ -1387,7 +1387,7 @@ void GLuciferViewer::viewModel(int idx, bool autozoom)
        aview->zoomToFit();
 }
 
-int GLuciferViewer::viewFromPixel(int x, int y)
+int LavaVu::viewFromPixel(int x, int y)
 {
    // Select a viewport by mouse position, leave unchanged if pixel out of range
    for (unsigned int v=0; v<awin->views.size(); v++)
@@ -1397,14 +1397,14 @@ int GLuciferViewer::viewFromPixel(int x, int y)
 }
 
 //Adds colourmap to active model
-void GLuciferViewer::addColourMap(ColourMap* cmap)
+void LavaVu::addColourMap(ColourMap* cmap)
 {
    ColourMap* colourMap = cmap;
    //Save colour map in list
    amodel->colourMaps.push_back(colourMap);
 }
 
-void GLuciferViewer::redrawObjects()
+void LavaVu::redrawObjects()
 {
    //Flag redraw on all objects...
    for (unsigned int i=0; i < Model::geometry.size(); i++)
@@ -1413,7 +1413,7 @@ void GLuciferViewer::redrawObjects()
 
 
 // Render
-void GLuciferViewer::display(void)
+void LavaVu::display(void)
 {
    clock_t t1 = clock();
 
@@ -1482,7 +1482,7 @@ void GLuciferViewer::display(void)
    aview->sort = false;
 }
 
-void GLuciferViewer::displayCurrentView()
+void LavaVu::displayCurrentView()
 {
    GL_Error_Check;
    viewSelect(view);
@@ -1583,7 +1583,7 @@ void GLuciferViewer::displayCurrentView()
    if (aview->sort) aview->rotated = false;
 }
 
-void GLuciferViewer::displayObjectList(bool console)
+void LavaVu::displayObjectList(bool console)
 {
    //Print available objects by id to screen and stderr
    int offset = 0;
@@ -1619,7 +1619,7 @@ void GLuciferViewer::displayObjectList(bool console)
    if (console) std::cerr << "------------------------------------------" << std::endl;
 }
 
-void GLuciferViewer::printMessage(const char *fmt, ...)
+void LavaVu::printMessage(const char *fmt, ...)
 {
    if (fmt)
    {
@@ -1630,7 +1630,7 @@ void GLuciferViewer::printMessage(const char *fmt, ...)
    }
 }
 
-void GLuciferViewer::displayMessage()
+void LavaVu::displayMessage()
 {
    if (strlen(message))
    {
@@ -1654,7 +1654,7 @@ void GLuciferViewer::displayMessage()
    }
 }
 
-void GLuciferViewer::displayText(std::string text, int lineno, int colour)
+void LavaVu::displayText(std::string text, int lineno, int colour)
 {
    //Set viewport to entire window
    glViewport(0, 0, viewer->width, viewer->height);
@@ -1684,7 +1684,7 @@ void GLuciferViewer::displayText(std::string text, int lineno, int colour)
    Viewport2d(0, 0);
 }
 
-void GLuciferViewer::drawSceneBlended()
+void LavaVu::drawSceneBlended()
 {
    switch (viewer->blend_mode) {
    case BLEND_NORMAL:
@@ -1709,7 +1709,7 @@ void GLuciferViewer::drawSceneBlended()
    }
 }
 
-void GLuciferViewer::drawScene()
+void LavaVu::drawScene()
 {
    if (!aview->properties["antialias"].ToBool(true))
       glDisable(GL_MULTISAMPLE);
@@ -1738,7 +1738,7 @@ void GLuciferViewer::drawScene()
    Model::volumes->draw();
 }
 
-bool GLuciferViewer::loadModel(std::string& f, bool hideall)
+bool LavaVu::loadModel(std::string& f, bool hideall)
 {
    FilePath fn(f);
    if (fn.type != "gldb" && fn.type != "db")
@@ -1789,7 +1789,7 @@ bool GLuciferViewer::loadModel(std::string& f, bool hideall)
 }
 
 //Load model window at specified timestep
-bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
+bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
    //Have a database model loaded already?
    if (amodel->objects.size() > 0)
@@ -1869,7 +1869,7 @@ bool GLuciferViewer::loadWindow(int window_idx, int at_timestep, bool autozoom)
 }
 
 //Load data at specified timestep for selected model
-int GLuciferViewer::setTimeStep(int ts)
+int LavaVu::setTimeStep(int ts)
 {
    clock_t t1 = clock();
    unsigned int idx=0;
@@ -1903,23 +1903,23 @@ int GLuciferViewer::setTimeStep(int ts)
    return rows;
 }
 
-int GLuciferViewer::loadGeometry(int object_id)
+int LavaVu::loadGeometry(int object_id)
 {
    //Load at current timestep
    return amodel->loadGeometry(object_id, timestep, timestep, true);
 }
 
-void GLuciferViewer::writeImages(int start, int end)
+void LavaVu::writeImages(int start, int end)
 {
    writeSteps(true, false, start, end, NULL);
 }
 
-void GLuciferViewer::encodeVideo(const char* filename, int start, int end)
+void LavaVu::encodeVideo(const char* filename, int start, int end)
 {
    writeSteps(false, true, start, end, filename);
 }
 
-void GLuciferViewer::writeSteps(bool images, bool video, int start, int end, const char* filename)
+void LavaVu::writeSteps(bool images, bool video, int start, int end, const char* filename)
 {
    if (start > end)
    {
@@ -1964,7 +1964,7 @@ void GLuciferViewer::writeSteps(bool images, bool video, int start, int end, con
 #endif
 }
 
-void GLuciferViewer::dumpById(unsigned int id)
+void LavaVu::dumpById(unsigned int id)
 {
    for (unsigned int i=0; i < amodel->objects.size(); i++)
    {
@@ -1993,7 +1993,7 @@ void GLuciferViewer::dumpById(unsigned int id)
    }
 }
 
-void GLuciferViewer::jsonWriteFile(unsigned int id, bool jsonp)
+void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
 {
    //Write new JSON format objects
    char filename[512];
@@ -2012,7 +2012,7 @@ void GLuciferViewer::jsonWriteFile(unsigned int id, bool jsonp)
    json.close();
 }
 
-void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
+void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
 {
    //Write new JSON format objects
    float rotate[4], translate[3], focus[3], stereo[3];
@@ -2140,7 +2140,7 @@ void GLuciferViewer::jsonWrite(std::ostream& json, unsigned int id, bool objdata
 }
 
 //Data request from attached apps
-std::string GLuciferViewer::requestData(std::string key)
+std::string LavaVu::requestData(std::string key)
 {
    std::ostringstream result;
    if (key == "objects")

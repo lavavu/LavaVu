@@ -1,6 +1,6 @@
 //Server - web server
-#ifndef GLuciferServer__
-#define GLuciferServer__
+#ifndef Server__
+#define Server__
 
 #ifndef DISABLE_SERVER
 
@@ -8,16 +8,16 @@
 #include "OpenGLViewer.h"
 #include "mongoose/mongoose.h"
 
-class GLuciferServer : public OutputInterface
+class Server : public OutputInterface
 {
-   //Singleton class, construct with GLuciferServer::Instance()
+   //Singleton class, construct with Server::Instance()
   protected:
-   //GLuciferServer() {}   //Protected constructors
-   GLuciferServer(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads);
-   //GLuciferServer(GLuciferServer const&) {} // copy constructor is protected
-   //GLuciferServer& operator=(GLuciferServer const&) {} // assignment operator is protected
+   //Server() {}   //Protected constructors
+   Server(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads);
+   //Server(Server const&) {} // copy constructor is protected
+   //Server& operator=(Server const&) {} // assignment operator is protected
 
-   static GLuciferServer* _self;
+   static Server* _self;
 
    int port, threads;
    std::string path;
@@ -40,8 +40,8 @@ class GLuciferServer : public OutputInterface
    int jpeg_bytes;
 
    //Public instance constructor/getter
-   static GLuciferServer* Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality=90, int threads=4);
-   virtual ~GLuciferServer();
+   static Server* Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality=90, int threads=4);
+   virtual ~Server();
    struct mg_context* ctx;
    
    static void* callback(enum mg_event event,
@@ -59,4 +59,4 @@ class GLuciferServer : public OutputInterface
 };
 
 #endif //DISABLE_SERVER
-#endif //GLuciferServer__
+#endif //Server__

@@ -11,13 +11,13 @@ origenv = env
 env = env.Clone()
 
 #############################################
-# Switch env to gLucifer base!
+# Switch env to LavaVu base!
 values = {}
 execfile("output.cfg", globals(), values)
 env._dict.update(values)
 #############################################
 
-env['CURR_PROJECT'] = 'gLucifer'
+env['CURR_PROJECT'] = 'LavaVu'
 
 # Need the module name, which is just the directory.
 d = "."
@@ -35,7 +35,7 @@ env['CPPDEFINES'] += cpp_defs
 
 # Setup where to look for files.
 src_dir = 'src'
-inc_dir = 'include/gLucifer/Viewer/'
+inc_dir = 'include/LavaVu/Viewer/'
 
 # Install the headers
 hdrs = env.Install(inc_dir, Glob(src_dir + '/*.h'))
@@ -60,9 +60,9 @@ sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/src/sqlite3.c'])
 #Create renderer shared library
 #Add pthreads & dl (required for sqlite3)
 libs = ['pthread', 'dl'] + env.get('LIBS', [])
-l = env.SharedLibrary('lib/gLuciferRender', objs + sqlite3, LIBS=libs)
+l = env.SharedLibrary('lib/LavaVuRender', objs + sqlite3, LIBS=libs)
 
-# Build gLucifer viewer (interactive version)
+# Build LavaVu viewer (interactive version)
 env = origenv.Clone()
 values = {}
 execfile("viewer.cfg", globals(), values)
@@ -80,12 +80,12 @@ if build_lib[0] != "/":
    build_lib = "#" + build_lib
 env['LIBPATH'] += [build_lib]
 #Add the renderer library
-libs = ['gLuciferRender'] + env.get('LIBS', [])
+libs = ['LavaVuRender'] + env.get('LIBS', [])
 #Build the executable
-env.Program('bin/gLucifer', vobjs, LIBS=libs)
+env.Program('bin/LavaVu', vobjs, LIBS=libs)
 
 if FindFile('offscreen.cfg', '.'):
-   # Build gLucifer viewer (offscreen version)
+   # Build LavaVu viewer (offscreen version)
    env = origenv.Clone()
    values = {}
    execfile("offscreen.cfg", globals(), values)
@@ -99,9 +99,9 @@ if FindFile('offscreen.cfg', '.'):
    env['RPATH'] += rpath
    env['LIBPATH'] += [build_lib]
    #Add the renderer library
-   libs = ['gLuciferRender'] + env.get('LIBS', [])
+   libs = ['LavaVuRender'] + env.get('LIBS', [])
    #Build the executable
-   env.Program('bin/gLuciferOS', main + vobjs, LIBS=libs)
+   env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
 else:
-   env.Program('bin/gLuciferOS', vobjs, LIBS=libs)
+   env.Program('bin/LavaVuOS', vobjs, LIBS=libs)
 

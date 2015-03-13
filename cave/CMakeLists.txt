@@ -6,16 +6,16 @@
 #  Owen Kaluza							owen.kaluza@monash.edu
 #######################################################################################################################
 cmake_minimum_required(VERSION 2.8.1) 
-project(GLuciferViewer)
+project(LavaVR)
 
 find_package(Omegalib)
 
 
 # Source files
 SET( srcs
-        GLucifer.cpp
-        ../src/GLuciferViewer.cpp
-        ../src/GLuciferServer.cpp
+        LavaVR.cpp
+        ../src/LavaVu.cpp
+        ../src/Server.cpp
         ../src/InteractiveViewer.cpp
         ../src/OpenGLViewer.cpp
         ../src/base64.cpp
@@ -41,6 +41,7 @@ SET( srcs
         ../src/tiny_obj_loader.cc
         ../src/jpeg/jpge.cpp
         ../src/jpeg/jpgd.cpp
+        ../src/json.cpp
         ../src/mongoose/mongoose.c
         ../src/sqlite3/src/sqlite3.c
    )
@@ -63,13 +64,11 @@ add_definitions(-O3)
 
 include_directories(${OMEGA_INCLUDE_DIRS})
 
-#add_executable(gLucifer GLucifer.cpp ../src/GLuciferViewer.cpp ../src/InteractiveViewer.cpp ${headers} $<TARGET_OBJECTS:common>)
-add_executable(gLucifer ${srcs} ${headers})
+add_executable(LavaVR ${srcs} ${headers})
 
-set_target_properties(gLucifer PROPERTIES FOLDER examples)
-#target_link_libraries(gLucifer dl	omega)
+set_target_properties(LavaVR PROPERTIES FOLDER examples)
 
-target_link_libraries(gLucifer dl z png python2.7 ${OMEGA_LIB} ${OMEGA_TOOLKIT_LIB})
+target_link_libraries(LavaVR dl z png python2.7 ${OMEGA_LIB} ${OMEGA_TOOLKIT_LIB})
 
 
 

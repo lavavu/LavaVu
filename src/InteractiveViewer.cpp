@@ -33,13 +33,13 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#include "GLuciferViewer.h"
+#include "LavaVu.h"
 #include "ColourMap.h"
 
 /////////////////////////////////////////////////////////////////////////////////
 // Event handling
 /////////////////////////////////////////////////////////////////////////////////
-bool GLuciferViewer::mousePress(MouseButton btn, bool down, int x, int y) 
+bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y) 
 {
    //Only process on mouse release
    static bool translated = false;
@@ -95,7 +95,7 @@ bool GLuciferViewer::mousePress(MouseButton btn, bool down, int x, int y)
    return redraw;
 }
 
-bool GLuciferViewer::mouseMove(int x, int y)
+bool LavaVu::mouseMove(int x, int y)
 {
    float adjust;
    int dx = x - viewer->last_x;
@@ -141,7 +141,7 @@ bool GLuciferViewer::mouseMove(int x, int y)
    return true;
 }
 
-bool GLuciferViewer::mouseScroll(int scroll) 
+bool LavaVu::mouseScroll(int scroll) 
 {
    //Only process on mouse release
    //Process wheel scrolling
@@ -170,14 +170,14 @@ bool GLuciferViewer::mouseScroll(int scroll)
    return true;
 }
 
-bool GLuciferViewer::keyPress(unsigned char key, int x, int y)
+bool LavaVu::keyPress(unsigned char key, int x, int y)
 {
    viewer->notIdle(); //Reset idle timer
    if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
    return parseChar(key);
 }
 
-void GLuciferViewer::record(bool mouse, std::string command)
+void LavaVu::record(bool mouse, std::string command)
 {
    command.erase(command.find_last_not_of("\n\r")+1);
 
@@ -195,7 +195,7 @@ void GLuciferViewer::record(bool mouse, std::string command)
    }
 }
 
-bool GLuciferViewer::parseChar(unsigned char key)
+bool LavaVu::parseChar(unsigned char key)
 {
    static int historyline = -1;
    int hline = historyline;
@@ -418,7 +418,7 @@ bool GLuciferViewer::parseChar(unsigned char key)
    return response;
 }
 
-Geometry* GLuciferViewer::getGeometryType(std::string what)
+Geometry* LavaVu::getGeometryType(std::string what)
 {
    if (what == "points")
       return Model::points;
@@ -441,7 +441,7 @@ Geometry* GLuciferViewer::getGeometryType(std::string what)
    return NULL;
 }
 
-DrawingObject* GLuciferViewer::findObject(std::string what, int id)
+DrawingObject* LavaVu::findObject(std::string what, int id)
 {
    //Find by name/ID match in all drawing objects
    std::transform(what.begin(), what.end(), what.begin(), ::tolower);
@@ -458,7 +458,7 @@ DrawingObject* GLuciferViewer::findObject(std::string what, int id)
    return NULL;
 }
 
-ColourMap* GLuciferViewer::findColourMap(std::string what, int id)
+ColourMap* LavaVu::findColourMap(std::string what, int id)
 {
    //Find by name/ID match in all colour maps
    std::transform(what.begin(), what.end(), what.begin(), ::tolower);
@@ -475,7 +475,7 @@ ColourMap* GLuciferViewer::findColourMap(std::string what, int id)
    return NULL;
 }
 
-bool GLuciferViewer::parseCommands(std::string cmd)
+bool LavaVu::parseCommands(std::string cmd)
 {
    bool redisplay = true;
    static std::string last_cmd;
@@ -1605,7 +1605,7 @@ bool GLuciferViewer::parseCommands(std::string cmd)
    return redisplay;
 }
 
-std::string GLuciferViewer::helpCommand(std::string cmd)
+std::string LavaVu::helpCommand(std::string cmd)
 {
    //Verbose command help
    std::string help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";

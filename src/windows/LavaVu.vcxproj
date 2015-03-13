@@ -105,8 +105,8 @@
     <ClInclude Include="..\font.h" />
     <ClInclude Include="..\FontSans.h" />
     <ClInclude Include="..\Geometry.h" />
-    <ClInclude Include="..\GLuciferServer.h" />
-    <ClInclude Include="..\GLuciferViewer.h" />
+    <ClInclude Include="..\Server.h" />
+    <ClInclude Include="..\LavaVu.h" />
     <ClInclude Include="..\GraphicsUtil.h" />
     <ClInclude Include="..\Include.h" />
     <ClInclude Include="..\jpeg\jpgd.h" />
@@ -132,8 +132,8 @@
     <ClCompile Include="..\Extensions.cpp" />
     <ClCompile Include="..\FontSans.cpp" />
     <ClCompile Include="..\Geometry.cpp" />
-    <ClCompile Include="..\GLuciferServer.cpp" />
-    <ClCompile Include="..\GLuciferViewer.cpp" />
+    <ClCompile Include="..\Server.cpp" />
+    <ClCompile Include="..\LavaVu.cpp" />
     <ClCompile Include="..\GraphicsUtil.cpp" />
     <ClCompile Include="..\InteractiveViewer.cpp" />
     <ClCompile Include="..\jpeg\jpgd.cpp" />

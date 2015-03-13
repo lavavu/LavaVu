@@ -1,5 +1,5 @@
 /********************************************************************************************************************** 
- * GLucifer + OmegaLib
+ * LavaVu + OmegaLib
  *********************************************************************************************************************/
 #ifdef USE_OMEGALIB
 
@@ -7,8 +7,8 @@
 #include <omegaGl.h>
 #include <omegaToolkit.h>
 #include "../src/ViewerApp.h"
-#include "../src/GLuciferViewer.h"
-#include "../src/GLuciferServer.h"
+#include "../src/LavaVu.h"
+#include "../src/Server.h"
 
 std::vector<std::string> arglist;
 
@@ -16,13 +16,13 @@ using namespace omega;
 using namespace omegaToolkit;
 using namespace omegaToolkit::ui;
 
-class GLuciferApplication;
+class LavaVuApplication;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class GLuciferRenderPass: public RenderPass, ViewerApp
+class LavaVuRenderPass: public RenderPass, ViewerApp
 {
 public:
-  GLuciferRenderPass(Renderer* client, GLuciferApplication* app, OpenGLViewer* viewer): RenderPass(client, "GLuciferRenderPass"), app(app), ViewerApp(viewer) {}
+  LavaVuRenderPass(Renderer* client, LavaVuApplication* app, OpenGLViewer* viewer): RenderPass(client, "LavaVuRenderPass"), app(app), ViewerApp(viewer) {}
   virtual void initialize();
   virtual void render(Renderer* client, const DrawContext& context);
 
@@ -33,16 +33,16 @@ public:
    virtual bool keyPress(unsigned char key, int x, int y) {}
 
 private:
-  GLuciferApplication* app;
+  LavaVuApplication* app;
 
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class GLuciferApplication: public EngineModule
+class LavaVuApplication: public EngineModule
 {
 public:
   OpenGLViewer* viewer;
-  GLuciferViewer* glapp;
+  LavaVu* glapp;
   bool redisplay;
   bool animate;
   int argc;
@@ -52,7 +52,7 @@ public:
   //Widgets
   Ref<Label> statusLabel;
 
-  GLuciferApplication(): EngineModule("GLuciferApplication") { redisplay = true; animate = false; enableSharedData(); }
+  LavaVuApplication(): EngineModule("LavaVuApplication") { redisplay = true; animate = false; enableSharedData(); }
 
     virtual void initialize()
     {
@@ -86,7 +86,7 @@ public:
   virtual void initializeRenderer(Renderer* r) 
   { 
     viewer = new OpenGLViewer(false, false);
-    r->addRenderPass(new GLuciferRenderPass(r, this, viewer));
+    r->addRenderPass(new LavaVuRenderPass(r, this, viewer));
   }
 
   float setArgs(int argc, char** argv) {this->argc = argc; this->argv = argv;}
@@ -104,7 +104,7 @@ private:
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void GLuciferRenderPass::initialize()
+void LavaVuRenderPass::initialize()
 {
   RenderPass::initialize();
 
@@ -127,16 +127,16 @@ void GLuciferRenderPass::initialize()
    {
       std::string htmlpath = std::string("./html");
       //Quality = 0, don't serve images
-      viewer->addOutput(GLuciferServer::Instance(viewer, htmlpath, 8080, 0, 4));
+      viewer->addOutput(Server::Instance(viewer, htmlpath, 8080, 0, 4));
    }
 #endif
 
   //Create the app
-  app->glapp = new GLuciferViewer(arglist, viewer);
+  app->glapp = new LavaVu(arglist, viewer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
+void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
 {
   if(context.task == DrawContext::SceneDrawTask)
   {
@@ -218,7 +218,7 @@ void GLuciferRenderPass::render(Renderer* client, const DrawContext& context)
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void GLuciferApplication::handleEvent(const Event& evt)
+void LavaVuApplication::handleEvent(const Event& evt)
 {
   //printf(". %d %d %d\n", evt.getType(), evt.getServiceType(), evt.getFlags());
   if(evt.getServiceType() == Service::Pointer)
@@ -358,7 +358,7 @@ void GLuciferApplication::handleEvent(const Event& evt)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void GLuciferApplication::commitSharedData(SharedOStream& out)
+void LavaVuApplication::commitSharedData(SharedOStream& out)
 {
    std::stringstream oss;
    for (int i=0; i < commands.size(); i++)
@@ -368,7 +368,7 @@ void GLuciferApplication::commitSharedData(SharedOStream& out)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void GLuciferApplication::updateSharedData(SharedIStream& in)
+void LavaVuApplication::updateSharedData(SharedIStream& in)
 {
    std::string commandstr;
    in >> commandstr;
@@ -401,7 +401,7 @@ void GLuciferApplication::updateSharedData(SharedIStream& in)
 // ApplicationBase entry point
 int main(int argc, char** argv)
 {
-  Application<GLuciferApplication> app("gLucifer");
+  Application<LavaVuApplication> app("gLucifer");
   oargs().setStringVector("gLucifer", "gLucifer Arguments", arglist);
   return omain(app, argc, argv);
 }
