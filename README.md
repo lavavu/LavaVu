@@ -23,6 +23,7 @@ Currently I am the sole developer but contributions are welcome.
 ### How do I get set up? ###
 
 The simplest way to get started on a Unix based OS is clone this repository and build from source:
+(You will need to first install Mercurial http://mercurial.selenic.com/wiki/Download)
 
 ```
 #!shell script
@@ -38,7 +39,7 @@ If all goes well it should build the software and the viewer will be built and r
 
 TODO:
 
-Dependencies required - base build should not require any
+Dependencies required - Mercurial, otherwise base build should not require any
 
 Releases: prebuilt versions for Windows, Mac, Linux
 
