@@ -1457,7 +1457,8 @@ bool LavaVu::parseCommands(std::string cmd)
          printMessage("Running script: %s", scriptfile.c_str());
          std::string line;
          while(std::getline(file, line))
-            parseCommands(line);
+            if (line.length() > 0 && line.at(0) != '#')
+               parseCommands(line);
          file.close();
          aview->inertia(false); //Clear inertia
       }
@@ -1563,6 +1564,11 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("props"))
    {
       printProperties();
+   }
+   else if (parsed.exists("test"))
+   {
+      createDemoModel();
+      resetViews();
    }
    else
    {

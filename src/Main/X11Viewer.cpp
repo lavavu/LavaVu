@@ -60,18 +60,22 @@ X11Viewer::X11Viewer(bool stereo, bool fullscreen) : OpenGLViewer(stereo, fullsc
    XSetErrorHandler(X11_error);
    debug_print("X11 viewer created\n");
    Xdisplay = NULL;
+   sHints = NULL;
+   wmHints = NULL;
 }
 
 X11Viewer::~X11Viewer()
 {
-   if (sHints) XFree(sHints);
-   if (wmHints) XFree(wmHints);
-
-   XDestroyWindow(Xdisplay ,win);
-   XFree(vi);
-   if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
-   XSetCloseDownMode(Xdisplay, DestroyAll);
-   XCloseDisplay(Xdisplay);
+   if (Xdisplay)
+   {
+      if (sHints) XFree(sHints);
+      if (wmHints) XFree(wmHints);
+      XDestroyWindow(Xdisplay ,win);
+      XFree(vi);
+      if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
+      XSetCloseDownMode(Xdisplay, DestroyAll);
+      XCloseDisplay(Xdisplay);
+   }
 }
 
 void X11Viewer::open(int w, int h)
@@ -150,7 +154,8 @@ void X11Viewer::show()
 
    // Update title 
    XTextProperty Xtitle;
-   XStringListToTextProperty(&title, 1, &Xtitle);  //\/ argv, argc, normal_hints, wm_hints, class_hints 
+   char* titlestr = (char*)title.c_str();
+   XStringListToTextProperty(&titlestr, 1, &Xtitle);  //\/ argv, argc, normal_hints, wm_hints, class_hints 
    XSetWMProperties(Xdisplay, win, &Xtitle, &Xtitle, NULL, 0, sHints, wmHints, NULL);
 }
 
@@ -369,7 +374,7 @@ bool X11Viewer::createWindow(int width, int height)
    swa.background_pixel = 0;
    swa.event_mask = ExposureMask | StructureNotifyMask | ButtonReleaseMask | ButtonPressMask | ButtonMotionMask | KeyPressMask;
 
-   if ( sHints && wmHints)
+   if (sHints && wmHints)
    {
       sHints->min_width = 32;
       sHints->min_height = 32;

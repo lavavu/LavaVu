@@ -179,7 +179,7 @@ void SDLViewer::show()
 {
    OpenGLViewer::show();
    // Update title 
-   SDL_WM_SetCaption( title, NULL );
+   SDL_WM_SetCaption(title.c_str(), NULL);
 }
 
 void SDLViewer::display()

@@ -55,10 +55,8 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
    fbo_enabled = false;
    fbo_texture = fbo_depth = fbo_frame = 0;
 
-   title = new char[256];
-   strcpy(title, "gLucifer Viewer");
-   output_path = new char[1024];
-   output_path[0] = '\0';
+   title = "gLucifer Viewer";
+   output_path = "";
 
    setBackground(0xff000000);
 
@@ -69,9 +67,6 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
 OpenGLViewer::~OpenGLViewer()
 {
    animate(0);
-
-   delete[] title;
-   delete[] output_path;
 
    DeleteFont();
    lucDeleteFont();
@@ -434,7 +429,7 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
    pixels(image, false, true);
 #endif
    //Write PNG or JPEG
-   sprintf(path, "%s%s.%05d", output_path, name, number);
+   sprintf(path, "%s%s.%05d", output_path.c_str(), name, number);
    writeImage(image, width, height, path, transparent);
 
    delete[] image;

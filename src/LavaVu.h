@@ -163,8 +163,9 @@ class LavaVu : public ViewerApp
    void writeSteps(bool images, bool video, int start, int end, const char* filename);
 
    //db loading
-   bool loadModel(std::string& fn, bool hideall=false);
+   void loadModel(FilePath& fn, bool hideall=false);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
+   void runScripts();
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);
    int getTimeStep() {return timestep;}

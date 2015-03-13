@@ -112,7 +112,7 @@ void GlutViewer::show()
       glutReshapeWindow(width, height);
    }
    // Update title 
-   glutSetWindowTitle(title);
+   glutSetWindowTitle(title.c_str());
 }
 
 void GlutViewer::display()

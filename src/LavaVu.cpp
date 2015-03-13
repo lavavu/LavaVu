@@ -46,7 +46,6 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 {
    bool output = false, verbose = false, hideall = false, dbpath = false;
    float alpha = 0, subsample = 0;
-   FilePath* dbfile = NULL;
 
    //Defaults
    timestep = -1;
@@ -82,7 +81,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    {
       std::string line;
       while (std::getline(argfile, line))
-         if (line.at(0) != '#')
+         if (line.length() > 0 && line.at(0) != '#')
            args.push_back(line);
       argfile.close();
    }
@@ -206,10 +205,23 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    {
       if (args[i].length() > 0)
       {
-         //Load all objects in db
-         if (loadModel(args[i], hideall) && !dbfile)
+         FilePath fn(args[i]);
+         if (fn.type != "gldb" && fn.type != "db")
+         {
+            //Not a db file? Store other in files list - height maps etc
+            files.push_back(fn);
+         }
+         else
+         {
+            //Load all objects in db
+            loadModel(fn, hideall);
             //Save path of first sucessfully loaded model
-            dbfile = new FilePath(args[i]);
+            if (dbpath && viewer->output_path.length() == 0)
+            {
+               viewer->output_path = fn.path;
+               debug_print("Output path set to %s\n", viewer->output_path.c_str());
+            }
+         }
       }
    }
    
@@ -238,13 +250,6 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    //Points initial sub-sampling
    if (subsample) Points::subSample = subsample;
 
-   //Strip db path
-   if (dbpath && dbfile)
-   {
-      strncpy(viewer->output_path, dbfile->path.c_str(), 1023);
-      delete dbfile;
-   }
-   debug_print("Output path set to %s\n", viewer->output_path);
 }
 
 LavaVu::~LavaVu()
@@ -273,6 +278,7 @@ void LavaVu::run(bool persist)
    {
       //Load vis data for each window and write image
       int win = 0;
+      if (!writeimage && !writemovie) viewer->isopen = true; //Skip open
       while (loadWindow(win, timestep, true) > 0)
       {
          //Bounds checks
@@ -280,12 +286,12 @@ void LavaVu::run(bool persist)
          int final = amodel->lastStep();
          if (endstep < final) final = endstep;
 
-         setTimeStep(timestep);
-
          if (writeimage || writemovie)
          {
             resetViews(true);
             viewer->display();
+            //Script files?
+            runScripts();
             //Read input script from stdin on first timestep
             viewer->pollInput();
 
@@ -320,6 +326,7 @@ void LavaVu::run(bool persist)
       if (!loadWindow(0, timestep, true))
          abort_program("Model file load error, no window data\n");
 
+      runScripts();
    }
 
    //Dump csv data if requested
@@ -334,6 +341,17 @@ void LavaVu::run(bool persist)
       //Read input script from stdin on first timestep
       viewer->pollInput();
       viewer->display();
+   }
+}
+
+void LavaVu::runScripts()
+{
+   //Script files?
+   for (unsigned int m=0; m < files.size(); m++)
+   {
+      std::cerr << files[m].full << std::endl;
+      if (files[m].type == "script")
+         parseCommands("script " + files[m].full);
    }
 }
 
@@ -377,12 +395,6 @@ void LavaVu::printProperties()
       std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
    else
       std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
-}
-
-void LavaVu::readScriptFile(FilePath& fn)
-{
-   if (fn.type == "script")
-      parseCommands("script " + fn.full);
 }
 
 void LavaVu::readVolume(FilePath& fn)
@@ -568,7 +580,7 @@ void LavaVu::readHeightMap(FilePath& fn)
    range[0] = fabs(max[0] - min[0]);
    range[2] = fabs(max[2] - min[2]);
    
-   strcpy(viewer->title, fn.base.c_str());
+   viewer->title = fn.base;
 
    //Demo colourmap
    ColourMap* colourMap = new ColourMap();
@@ -745,7 +757,6 @@ void LavaVu::readOBJ(FilePath& fn)
    //Use tiny_obj_loader to load a model
    if (fn.type != "obj") return;
    
-   awin->background.value = LUC_WHITE;
    std::cout << "Loading " << fn.full << std::endl;
 
    std::vector<tinyobj::shape_t> shapes;
@@ -846,8 +857,6 @@ void LavaVu::readTecplot(FilePath& fn)
    //http://paulbourke.net/dataformats/tp/
    if (fn.type != "tec" && fn.type != "dat") return;
 
-   awin->background.value = LUC_WHITE;
-
       //Demo colourmap
       ColourMap* colourMap = new ColourMap();
       addColourMap(colourMap);
@@ -922,7 +931,6 @@ void LavaVu::readTecplot(FilePath& fn)
             //Add triangles object
             tobj = newObject("triangles", true, 0xffffffff, colourMap, 1.0, "flat=1\n");
             Model::triSurfaces->add(tobj);
-
 
             //Add lines object
             lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
@@ -1137,7 +1145,7 @@ void LavaVu::createDemoModel()
    float max[3] = {RANGE,RANGE,RANGE};
    float dims[3] = {RANGE*2,RANGE*2,RANGE*2};
    float size = sqrt(dotProduct(dims,dims));
-   strcpy(viewer->title, "Test Pattern\0");
+   viewer->title = "Test Pattern";
 
    //Demo colourmap, distance from model origin
    ColourMap* colourMap = new ColourMap();
@@ -1325,7 +1333,9 @@ void LavaVu::resetViews(bool autozoom)
    redrawViewports();
 
    //Copy window title
-   sprintf(viewer->title, "%s timestep %d", awin->name.c_str(), timestep);
+   std::stringstream title;
+   title << awin->name << " timestep " << timestep;
+   viewer->title = title.str();
    if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
    viewer->setBackground(awin->background.value); //Update background colour
 }
@@ -1738,16 +1748,8 @@ void LavaVu::drawScene()
    Model::volumes->draw();
 }
 
-bool LavaVu::loadModel(std::string& f, bool hideall)
+void LavaVu::loadModel(FilePath& fn, bool hideall)
 {
-   FilePath fn(f);
-   if (fn.type != "gldb" && fn.type != "db")
-   {
-      //Not a db file? Store other in files list - height maps etc
-      files.push_back(fn);
-      return false;
-   }
-
    //Open database file
    amodel = new Model(fn, hideall);
    models.push_back(amodel);
@@ -1785,7 +1787,6 @@ bool LavaVu::loadModel(std::string& f, bool hideall)
    //Use width of first window for now
    //viewer->width = windows[0]->width;
    //viewer->height = windows[0]->height;
-   return true;
 }
 
 //Load model window at specified timestep
@@ -1818,23 +1819,6 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
       }
    }
 
-   //Height maps or other files can be loaded here...
-   for (unsigned int m=0; m < files.size(); m++)
-   {
-      readHeightMap(files[m]);
-      readOBJ(files[m]);
-      readTecplot(files[m]);
-      readVolume(files[m]);
-      readVolumeSlice(files[m]);
-   }
-   
-   //Should have some objects by now, if not args were invalid
-   if (amodel->objects.size() == 0)
-   {
-      printf("No valid model or files passed, showing demo test pattern\n");
-      createDemoModel();
-   }
-
    //Not yet opened or resized?
    if (!viewer->isopen)
    {
@@ -1846,12 +1830,18 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
    else
       viewer->setsize(awin->width, awin->height);
 
+   //Height maps or other files can be loaded here...
+   for (unsigned int m=0; m < files.size(); m++)
+   {
+      readHeightMap(files[m]);
+      readOBJ(files[m]);
+      readTecplot(files[m]);
+      readVolume(files[m]);
+      readVolumeSlice(files[m]);
+   }
+   
    //Update the views
    resetViews(autozoom);
-
-   //Script files?
-   for (unsigned int m=0; m < files.size(); m++)
-      readScriptFile(files[m]);
 
    //Cache fill (if cache large enough for all data)
    if (amodel->db && GeomCache::size >= amodel->timesteps.size())
@@ -1980,7 +1970,7 @@ void LavaVu::dumpById(unsigned int id)
             if (results.size() > 0)
             {
                char filename[512];
-               sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path, amodel->objects[i]->name.c_str(),
+               sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
                                                 names[type].c_str(), timestep);
                std::ofstream csv;
                csv.open(filename, std::ios::out | std::ios::trunc);
@@ -2001,10 +1991,10 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
    strcpy(ext, "jsonp");
    if (!jsonp) ext[4] = '\0';
    if (id > 0)
-     sprintf(filename, "%s%s_%s.%05d.%s", viewer->output_path, awin->name.c_str(),
+     sprintf(filename, "%s%s_%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
                                             amodel->objects[id]->name.c_str(), timestep, ext);
    else
-     sprintf(filename, "%s%s.%05d.%s", viewer->output_path, awin->name.c_str(), timestep, ext);
+     sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), timestep, ext);
    std::ofstream json(filename);
    if (jsonp) json << "loadData(\n";
    jsonWrite(json, id, true);

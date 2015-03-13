@@ -87,8 +87,8 @@ class OpenGLViewer : public ApplicationInterface
    Colour inverse;
 
    int outwidth, outheight;
-   char* title;
-   char* output_path;
+   std::string title;
+   std::string output_path;
    int width;
    int height;
 
