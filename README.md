@@ -23,7 +23,7 @@ Currently I am the sole developer but contributions are welcome.
 ### How do I get set up? ###
 
 The simplest way to get started on a Unix based OS is clone this repository and build from source:
-(You will need to first install Mercurial http://mercurial.selenic.com/wiki/Download)
+(You will need to first install Mercurial http://mercurial.selenic.com/downloads)
 
 ```
 #!shell script
@@ -46,6 +46,8 @@ Releases: prebuilt versions for Windows, Mac, Linux
 ### Who do I talk to? ###
 
 * Owen Kaluza (at) monash.edu
+
+WIll be adding documentation to the Wiki https://bitbucket.org/underworldproject/lavavu/wiki/Home
 
 TODO: 
 License, include/update documentation
