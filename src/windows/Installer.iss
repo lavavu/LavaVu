@@ -1,20 +1,20 @@
-; Installer script for gLucifer VisViewer
+; Installer script for LavaVu
 
 [Setup]
-AppName=gLucifer Viewer
-AppVersion=0.7
-DefaultDirName={localappdata}\gLucifer Viewer
-DefaultGroupName=gLucifer Viewer
+AppName=LavaVu
+AppVersion=0.8
+DefaultDirName={localappdata}\LavaVu
+DefaultGroupName=LavaVu
 Compression=lzma2
 SolidCompression=yes
 PrivilegesRequired=none
 ChangesAssociations=yes
-OutputBaseFilename=gLuciferViewerSetup
+OutputBaseFilename=LavaVuSetup
 OutputDir=.
-SetupIconFile="gLuciferViewer.ico"
+SetupIconFile="LavaVu.ico"
 
 [Files]
-Source: "Release\gLuciferViewer.exe"; DestDir: "{app}"
+Source: "Release\LavaVu.exe"; DestDir: "{app}"
 Source: "SDL.dll"; DestDir: "{app}"
 Source: "sqlite3.dll"; DestDir: "{app}"
 Source: "libpng12.dll"; DestDir: "{app}"
@@ -26,15 +26,15 @@ Source: "\Windows\System32\msvcp100.dll"; DestDir: "{app}"
 Source: "\Windows\System32\msvcr100.dll"; DestDir: "{app}"
 
 [Registry]
-Root: HKCU; Subkey: "SOFTWARE\Classes\.gldb"; ValueType: string; ValueName: ""; ValueData: "gLuciferDatabase"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "SOFTWARE\Classes\gLuciferDatabase"; ValueType: string; ValueName: ""; ValueData: "gLucifer Database"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "SOFTWARE\Classes\gLuciferDatabase\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\gLuciferViewer.exe,0"
-Root: HKCU; Subkey: "SOFTWARE\Classes\gLuciferDatabase\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\gLuciferViewer.exe"" ""%1"""
+Root: HKCU; Subkey: "SOFTWARE\Classes\.gldb"; ValueType: string; ValueName: ""; ValueData: "GraphicsDatabase"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "SOFTWARE\Classes\GraphicsDatabase"; ValueType: string; ValueName: ""; ValueData: "GraphicsDatabase"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "SOFTWARE\Classes\GraphicsDatabase\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\LavaVu.exe,0"
+Root: HKCU; Subkey: "SOFTWARE\Classes\GraphicsDatabase\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\LavaVu.exe"" ""%1"""
 
 [Icons]
-Name: "{group}\gLucifer Viewer"; Filename: "{app}\gLuciferViewer.exe"
-Name: "{group}\Uninstall gLucifer Viewer"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\gLucifer Viewer"; Filename: "{app}\gLuciferViewer.exe"
+Name: "{group}\LavaVu"; Filename: "{app}\LavaVu.exe"
+Name: "{group}\Uninstall LavaVu"; Filename: "{uninstallexe}"
+Name: "{commondesktop}\LavaVu"; Filename: "{app}\LavaVu.exe"
 
 [UninstallDelete]
-Type: dirifempty; Name: "{localappdata}\gLucifer Viewer"
+Type: dirifempty; Name: "{localappdata}\LavaVu"
