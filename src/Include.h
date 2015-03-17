@@ -71,6 +71,7 @@
 #define isinf(x) (!_finite(x))
 #include <conio.h>
 #include "windows/inc/pthread.h"
+#include "windows/inc/zlib.h"
 #define PAUSE(msecs) Sleep(msecs);
 //Include the libraries -- */
 #pragma comment(lib, "sqlite3.lib")
@@ -79,6 +80,7 @@
 #pragma comment(lib, "OPENGL32.LIB")
 #pragma comment(lib, "glu32.lib")
 #pragma comment(lib, "libpng.lib")
+#pragma comment(lib, "zlib.lib")
 #pragma comment(lib, "wsock32.lib")
 #pragma comment(lib, "pthreadVCE2.lib")
 

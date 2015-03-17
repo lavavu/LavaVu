@@ -33,7 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#if defined HAVE_SDL || defined _WIN32
+#if defined HAVE_SDL
 
 #include <stdlib.h>
 #include <signal.h>
@@ -63,7 +63,7 @@ Uint32 sdl_timer(Uint32 interval, void* param)
 SDLViewer::SDLViewer(bool stereo, bool fullscreen) : OpenGLViewer(stereo, fullscreen), screen(NULL)
 {
    const SDL_VideoInfo *pSDLVideoInfo;
-
+putenv(strdup("SDL_VIDEO_WINDOW_POS=center"));
    // Initialise SDL Video subsystem 
    if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER ) < 0 ) 
       abort_program("Unable to initialize SDL: %s", SDL_GetError());

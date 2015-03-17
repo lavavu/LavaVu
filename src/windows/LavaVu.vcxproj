@@ -50,7 +50,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>SHADER_PATH="..\\shaders\\";WIN32;_DEBUG;_WINDOWS;PNG_USE_DLL;PNG_NO_GLOBAL_ARRAYS;HAVE_SDL;HAVE_SQLITE3;HAVE_LIBPNG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_FONTS;USE_ZLIB;SHADER_PATH="..\\shaders\\";WIN32;_DEBUG;_WINDOWS;PNG_USE_DLL;PNG_NO_GLOBAL_ARRAYS;HAVE_SDL;HAVE_SQLITE3;HAVE_LIBPNG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>

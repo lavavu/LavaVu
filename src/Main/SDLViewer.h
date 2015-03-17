@@ -33,7 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#if defined HAVE_SDL || defined _WIN32
+#if defined HAVE_SDL
 
 #ifndef SDLViewer__
 #define SDLViewer__

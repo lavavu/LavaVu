@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
    window = X11_WINDOW;
 #elif defined HAVE_GLUT
    window = GLUT_WINDOW;
-#elif defined HAVE_SDL || defined _WIN32
+#elif defined HAVE_SDL
    window = SDL_WINDOW;
 #elif defined HAVE_OSMESA
    window = OSMESA_WINDOW;
