@@ -13,23 +13,24 @@ CFLAGS = -Isrc
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
-CFLAGS += -g -O0
+  CFLAGS += -g -O0
 else
-CFLAGS += -O3
+  CFLAGS += -O3
 endif
 
 #Linux/Mac specific libraries/flags
-ifeq ($(MACHINE), Darwin)
-   #Additional flags for building non-library sources only
-   DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
+OS := $(shell uname)
+ifeq ($(OS), Darwin)
    CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
    LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
+   DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
+   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_AGL
 else
-   LIBS=-ldl -lpthread -lm -lGL -lz -lX11 #-lglut -lSDL
+  LIBS=-ldl -lpthread -lm -lGL -lz -lX11 #-lglut -lSDL
    #LIBS=-ldl -lpthread -lm -lGL -lOSMesa -lz
-   #Additional flags for building non-library sources only
    DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11
-   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11 #-DHAVE_GLUT -DHAVE_SDL
+   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
+   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_SDL
    #DEFINES += -DHAVE_OSMESA -DUSE_FONTS -DUSE_ZLIB
 endif
 
