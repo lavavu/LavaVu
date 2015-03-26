@@ -20,11 +20,17 @@ endif
 
 #Linux/Mac specific libraries/flags
 ifeq ($(MACHINE), Darwin)
-   CFLAGS += -FGLUT -FOpenGL
+   #Additional flags for building non-library sources only
+   DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
+   CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
    LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
 else
    LIBS=-ldl -lpthread -lm -lGL -lz -lX11 #-lglut -lSDL
-#   LIBS=-ldl -lpthread -lm -lGL -lOSMesa -lz
+   #LIBS=-ldl -lpthread -lm -lGL -lOSMesa -lz
+   #Additional flags for building non-library sources only
+   DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11
+   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11 #-DHAVE_GLUT -DHAVE_SDL
+   #DEFINES += -DHAVE_OSMESA -DUSE_FONTS -DUSE_ZLIB
 endif
 
 #Source search paths
@@ -44,11 +50,6 @@ OBJS = $(notdir $(OBJ))
 OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
-
-#Additional flags for building non-library sources only
-DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11
-#DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11 #-DHAVE_GLUT -DHAVE_SDL
-#DEFINES += -DHAVE_OSMESA -DUSE_FONTS -DUSE_ZLIB
 
 PROGRAM = $(PREFIX)/LavaVu
 
