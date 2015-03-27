@@ -445,7 +445,13 @@ void Geometry::labels()
             float* p = geom[i]->vertices[j];
             geom[i]->setColour(j);
             if (geom[i]->labels[j].size() > 0)
+            {
+#ifdef USE_OMEGALIB
+               Print3dBillboard(p[0], p[1], p[2], 1, geom[i]->labels[j].c_str());
+#else
                lucPrint3d(p[0], p[1], p[2], geom[i]->labels[j].c_str());
+#endif
+            }
          }
       }
    }
