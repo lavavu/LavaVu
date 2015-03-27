@@ -56,30 +56,19 @@ public:
 
     virtual void initialize()
     {
-        // Initialize the omegaToolkit python API
-        omegaToolkitPythonApiInit();
+      //Create a label for text info
+      DisplaySystem* ds = SystemManager::instance()->getDisplaySystem();
+      // Create and initialize the UI management module.
+      myUiModule = UiModule::createAndInitialize();
+      myUi = myUiModule->getUi();
 
-        PythonInterpreter* pi = SystemManager::instance()->getScriptInterpreter();
-
-        // Run the system menu script
-        pi->runFile("default_init.py", 0);
-
-        // Call the function from the script that will setup the menu.
-        pi->eval("_onAppStart()");
-
-        //Create a label for text info
-        DisplaySystem* ds = SystemManager::instance()->getDisplaySystem();
-        // Create and initialize the UI management module.
-        myUiModule = UiModule::createAndInitialize();
-        myUi = myUiModule->getUi();
-
-        statusLabel = Label::create(myUi);
-        statusLabel->setText("");
-        statusLabel->setColor(Color::Gray);
-        int sz = 100;
-        statusLabel->setFont(ostr("fonts/arial.ttf %1%", %sz));
-        statusLabel->setHorizontalAlign(Label::AlignLeft);
-        statusLabel->setPosition(Vector2f(100,100));
+      statusLabel = Label::create(myUi);
+      statusLabel->setText("");
+      statusLabel->setColor(Color::Gray);
+      int sz = 100;
+      statusLabel->setFont(ostr("fonts/arial.ttf %1%", %sz));
+      statusLabel->setHorizontalAlign(Label::AlignLeft);
+      statusLabel->setPosition(Vector2f(100,100));
 
     }
 
@@ -113,23 +102,55 @@ void LavaVuRenderPass::initialize()
   int argc = arglist.size()+1;
   char* argv[argc];
   argv[0] = (char*)malloc(20);
-  strcpy(argv[0], "./gLucifer");
+  strcpy(argv[0], "LavaVR");
   for (int i=1; i<argc; i++)
   {
     argv[i] = (char*)arglist[i-1].c_str();
     std::cerr << argv[i] << "\n";
   }
 
+  //Get the executable path
+  std::string expath = GetBinaryPath(argv[0], "LavaVR");
+
    //Add any output attachments to the viewer
 #ifndef DISABLE_SERVER
    SystemManager* sys = SystemManager::instance();
    if (sys->isMaster())
-   {
-      std::string htmlpath = std::string("./html");
       //Quality = 0, don't serve images
-      viewer->addOutput(Server::Instance(viewer, htmlpath, 8080, 0, 4));
-   }
+      viewer->addOutput(Server::Instance(viewer, expath + "../bin/html", 8080, 0, 4));
 #endif
+
+  // Initialize the omegaToolkit python API
+  omegaToolkitPythonApiInit();
+
+  //Attempt to run script in cwd then in executable path
+  bool found = false;
+  PythonInterpreter* pi = SystemManager::instance()->getScriptInterpreter();
+  std::string filename = "init.py";
+  std::ifstream infile(filename.c_str());
+  if (infile.good())
+  {
+     infile.close();
+     found = true;
+  }
+  else
+  {
+    filename = expath + filename;
+    std::ifstream infile(filename.c_str());
+    if (infile.good())
+    {
+      infile.close();
+      found = true;
+    }
+  } 
+
+  if (found)
+  {
+    // Run the system menu script
+    pi->runFile(filename, 0);
+    // Call the function from the script that will setup the menu.
+    pi->eval("_onAppStart('" + expath + "')");
+  }
 
   //Create the app
   app->glapp = new LavaVu(arglist, viewer);
@@ -138,7 +159,7 @@ void LavaVuRenderPass::initialize()
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
 {
-  if(context.task == DrawContext::SceneDrawTask)
+  if (context.task == DrawContext::SceneDrawTask)
   {
     client->getRenderer()->beginDraw3D(context);
     Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
@@ -146,14 +167,40 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
     if (!viewer->isopen)
     {
       //Load vis data for first window
-      if (!app->glapp->loadWindow(0, -1, true))
-         abort_program("Model file load error, no window data\n");
+      app->glapp->loadWindow(0, -1, true);
+      app->glapp->runScripts();
+      app->glapp->cacheLoad(-1);
+
+      //Add menu items to hide/show all objects
+      Model* amodel = app->glapp->amodel;
+      PythonInterpreter* pi = SystemManager::instance()->getScriptInterpreter();
+      for (unsigned int i=0; i < amodel->objects.size(); i++)
+      {
+         if (amodel->objects[i])
+         {
+            std::ostringstream ss;
+            ss << std::setw(5) << amodel->objects[i]->id << " : " << amodel->objects[i]->name;
+            if (!amodel->objects[i]->skip)
+            {
+               //pi->eval("_addMenuItem('" + amodel->objects[i]->name + "', 'toggle " + amodel->objects[i]->name + "')");
+               pi->eval("_addObjectMenuItem('" + amodel->objects[i]->name + (amodel->objects[i]->visible ? "', True)" : "', False)"));
+               std::cerr << "ADDING " << amodel->objects[i]->name << std::endl;
+            }
+         }
+      }
+
+      if (context.tile->isInGrid)
+      {
+        //app->master = glapp; //Copy to master ref
+        if (context.tile->gridX > 0 || context.tile->gridY > 0)
+           app->glapp->quiet = true;  //Disable text output
+      }
 
       DisplaySystem* ds = app->getEngine()->getDisplaySystem();
       Colour& bg = viewer->background;
-      ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
+      //ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
       //Omegalib 5.1+
-      //cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
+      cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
 
       viewer->open(context.tile->pixelSize[0], context.tile->pixelSize[1]);
       viewer->init();
@@ -169,9 +216,9 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
          view->getCamera(rotate, translate, focus);
 
         //At viewing distance
-        cam->setPosition(Vector3f(focus[0], focus[1], (focus[2] - view->model_size)) * view->orientation);
+        //cam->setPosition(Vector3f(focus[0], focus[1], (focus[2] - view->model_size)) * view->orientation);
         //At center
-        //cam->setPosition(Vector3f(focus[0], focus[1], focus[2] * view->orientation));
+        cam->setPosition(Vector3f(focus[0], focus[1], focus[2] * view->orientation));
 
         cam->lookAt(Vector3f(focus[0], focus[1], focus[2] * view->orientation), Vector3f(0,1,0));
 
@@ -187,7 +234,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
     //Copy commands before consumed
     app->commands = OpenGLViewer::commands;
     //Fade out status label
-    app->statusLabel->setAlpha(app->statusLabel->getAlpha() * 0.995);
+    app->statusLabel->setAlpha(app->statusLabel->getAlpha() * 0.95);
      
     //if (app->redisplay)
     {
@@ -215,7 +262,6 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
   //{
   //}
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void LavaVuApplication::handleEvent(const Event& evt)
@@ -293,7 +339,7 @@ void LavaVuApplication::handleEvent(const Event& evt)
     if (evt.isButtonDown(Event::Button3)) //Cross
     {
       //Change point type
-      glapp->parseCommands("pointtype all");
+      //glapp->parseCommands("pointtype all");
     }
     else if (evt.isButtonDown(Event::Button5))
     {
@@ -325,15 +371,17 @@ void LavaVuApplication::handleEvent(const Event& evt)
     {
         //These work when analogue stick disabled
         printf("Wand D-Pad left pressed\n");
-        //glapp->parseCommands("timestep up");
-        glapp->parseCommands("scale points down");
+        glapp->parseCommands("zoomclip -0.1");
+        Camera* cam = Engine::instance()->getDefaultCamera();
+        cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
     }
     else if (evt.isButtonDown( Event::ButtonRight ))
     {
         //These work when analogue stick disabled
         printf("Wand D-Pad right pressed\n");
-        //glapp->parseCommands("next");
-        glapp->parseCommands("scale points up");
+        glapp->parseCommands("zoomclip 0.1");
+        Camera* cam = Engine::instance()->getDefaultCamera();
+        cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
     }
     else
     {
@@ -377,21 +425,22 @@ void LavaVuApplication::updateSharedData(SharedIStream& in)
    SystemManager* sys = SystemManager::instance();
    if (!sys->isMaster())
    {
-    OpenGLViewer::commands.clear();
-    std::stringstream iss(commandstr);
-    std::string line;
-    while(std::getline(iss, line))
-    {
-        OpenGLViewer::commands.push_back(line);
-        //glapp->parseCommands(line);
-    }
+      OpenGLViewer::commands.clear();
+      std::stringstream iss(commandstr);
+      std::string line;
+      while(std::getline(iss, line))
+      {
+         OpenGLViewer::commands.push_back(line);
+         //glapp->parseCommands(line);
+      }
    }
 
-   if (animate) glapp->parseCommands("next");
+   //if (animate) glapp->parseCommands("next");
 
    //Update status label
    if (statusLabel->getText() != glapp->message)
    {
+             std::cerr << statusLabel->getText() << " != " << glapp->message << std::endl;
       statusLabel->setAlpha(1.0);
       statusLabel->setText(glapp->message);
    }
@@ -401,8 +450,8 @@ void LavaVuApplication::updateSharedData(SharedIStream& in)
 // ApplicationBase entry point
 int main(int argc, char** argv)
 {
-  Application<LavaVuApplication> app("gLucifer");
-  oargs().setStringVector("gLucifer", "gLucifer Arguments", arglist);
+  Application<LavaVuApplication> app("LavaVR");
+  oargs().setStringVector("LavaVR", "LavaVR", arglist);
   return omain(app, argc, argv);
 }
 

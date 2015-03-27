@@ -56,7 +56,7 @@ SET( headers
 #######################################################################################################################
 # Setup compile info
 
-add_definitions(-DUSE_OMEGALIB -DUSE_ZLIB -DHAVE_LIBPNG -DSHADER_PATH="${CMAKE_BINARY_DIR}/../src/shaders/")
+add_definitions(-DUSE_OMEGALIB -DUSE_ZLIB -DHAVE_LIBPNG -DUSE_FONTS -DSHADER_PATH="${CMAKE_BINARY_DIR}/../src/shaders/")
 #add_definitions(-DDEBUG -g)
 add_definitions(-O3)
 
@@ -65,8 +65,6 @@ add_definitions(-O3)
 include_directories(${OMEGA_INCLUDE_DIRS})
 
 add_executable(LavaVR ${srcs} ${headers})
-
-set_target_properties(LavaVR PROPERTIES FOLDER examples)
 
 target_link_libraries(LavaVR dl z png python2.7 ${OMEGA_LIB} ${OMEGA_TOOLKIT_LIB})
 
