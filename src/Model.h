@@ -128,6 +128,7 @@ class Model
    void attach(int timestep);
    void close();
    void clearObjects(bool all=false);
+   void reset();
    void loadWindows();
    void loadLinks(Win* win);
    void loadLinks(DrawingObject* draw);
@@ -165,6 +166,9 @@ class Model
    
    int loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers);
    int decompressGeometry(int object_id, int timestep);
+   void writeDatabase(const char* path, unsigned int id, bool compress=false);
+   void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compress);
+   void deleteObject(int id);
 };
 
 #endif //Model__

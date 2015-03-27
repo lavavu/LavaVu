@@ -36,13 +36,6 @@
 //Model class
 #include "Model.h"
 
-//Include the decompression routines
-#ifdef USE_ZLIB
-#include <zlib.h>
-#else
-#include "miniz/tinfl.c"
-#endif
-
 std::vector<TimeStep> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int GeomCache::size = 0;
@@ -96,6 +89,10 @@ Model::~Model()
    //Clear views
    for(unsigned int i=0; i<views.size(); i++)
       if (views[i]) delete views[i]; 
+
+   //Clear windows
+   for(unsigned int i=0; i<windows.size(); i++)
+      if (windows[i]) delete windows[i]; 
 
    //Clear colourmaps
    for(unsigned int i=0; i<colourMaps.size(); i++)
@@ -202,7 +199,7 @@ void Model::close()
 
 void Model::clearObjects(bool all)
 {
-   if (lastStep() < 0) return;
+   //if (lastStep() < 0) return; //WHY?!!!!!!!!!
    
    //Cache currently loaded data before clearing
    cacheStep();
@@ -218,6 +215,12 @@ void Model::clearObjects(bool all)
    }
 }
 
+void Model::reset()
+{
+   //Flag redraw and clear element count...
+   for (unsigned int i=0; i < geometry.size(); i++)
+      geometry[i]->reset();
+}
 
 void Model::loadWindows()
 {
@@ -443,8 +446,10 @@ void Model::loadLinks(DrawingObject* draw)
       }
 
       //Add colour maps to drawing objects...
-      if (colourmap_id)
+      if (colourmap_id > 0)
       {
+         if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
+           abort_program("Invalid colourmap id %d\n", colourmap_id);
          //Find colourmap by id
          ColourMap* cmap = colourMaps[colourmap_id-1];
          //Add colourmap to drawing object
@@ -596,7 +601,7 @@ sqlite3_stmt* Model::select(const char* SQL, bool silent)
 
 bool Model::issue(const char* SQL, sqlite3* odb)
 {
-   if (!odb) odb = db; //Use default model database
+   if (odb) db = odb; //Use provided database
    // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
    //debug_print("Issuing: %s\n", SQL);
    char* zErrMsg;
@@ -1020,5 +1025,196 @@ int Model::decompressGeometry(int object_id, int timestep)
    debug_print("... modified %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
 
    return rows;
+}
+
+void Model::writeDatabase(const char* path, unsigned int id, bool compress)
+{
+   //TODO: implement zlib compression
+   //Write objects to a new database
+   sqlite3 *outdb;
+   if (sqlite3_open_v2(path, &outdb, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL))
+   {
+      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(outdb));
+      return;
+   }
+   
+   // Remove existing data?
+   issue("drop table IF EXISTS geometry", outdb);
+   issue("drop table IF EXISTS timestep", outdb);
+   issue("drop table IF EXISTS object_colourmap", outdb);
+   issue("drop table IF EXISTS colourmap", outdb);
+   issue("drop table IF EXISTS colourvalue", outdb);
+   issue("drop table IF EXISTS object", outdb);
+
+   // Create new tables when not present
+   issue("create table IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
+
+   issue(
+      "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))", outdb);
+
+   issue(
+      "create table object_colourmap (id integer primary key asc, object_id integer, colourmap_id integer, data_type integer, foreign key (object_id) references object (id) on delete cascade on update cascade, foreign key (colourmap_id) references colourmap (id) on delete cascade on update cascade)", outdb);
+
+   issue(
+      "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048), FOREIGN KEY (colourmap_id) REFERENCES colourmap (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb); 
+
+   issue(
+      "create table colourvalue (id INTEGER PRIMARY KEY ASC, colourmap_id INTEGER, colour INTEGER, value REAL, FOREIGN KEY (colourmap_id) REFERENCES colourmap (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb); 
+
+   issue(
+      "create table colourmap (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), minimum REAL, maximum REAL, logscale INTEGER, discrete INTEGER, centreValue REAL, properties VARCHAR(2048))", outdb); 
+   
+   issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
+
+   char SQL[1024];
+   for (unsigned int i = 0; i < colourMaps.size(); i++)
+   {
+      ColourMap* cm = colourMaps[i];
+      //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
+      snprintf(SQL, 1024, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, centreValue) values (%d, '%s', %g, %g, %d, %d, %g)", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, 0.0 );
+      printf("%s\n", SQL);
+      if (!issue(SQL, outdb)) return;
+
+      /* Write colours and values */
+      for (int c=0; c< cm->colours.size(); c++)
+      {
+         snprintf(SQL, 1024, "insert into colourvalue (colourmap_id, colour, value) values (%d, %d, %g)", 
+                 cm->id, cm->colours[c].colour.value, cm->colours[c].position * (cm->maximum - cm->minimum) + cm->minimum);
+      printf("%s\n", SQL);
+         if (!issue(SQL, outdb)) return;
+      }
+   }
+
+   for (unsigned int i=0; i < objects.size(); i++)
+   {
+      if (objects[i] && (id == 0 || objects[i]->id == id))
+      {
+         std::string props = json::Serialize(objects[i]->properties);
+         Colour c = Colour_FromJson(objects[i]->properties, "colour"); //Write as seperate param too?
+         int cmap = 0;
+         if (objects[i]->colourMaps[lucColourValueData]) cmap = objects[i]->colourMaps[lucColourValueData]->id;
+         snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, colour, opacity, properties) values (%d, '%s', '%d', %d, %g, '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, c.value, objects[i]->properties["opacity"].ToFloat(1.0), props.c_str()); 
+         /*printf("%s\n", SQL);*/
+         if (!issue(SQL, outdb)) return; 
+ 
+         //Loop through all geometry classes (points/vectors etc)
+         for (int type=lucMinType; type<lucMaxType; type++)
+         {
+            writeGeometry(outdb, (lucGeometryType)type, objects[i]->id, compress);
+         }
+      }
+   }
+   
+   //Write colourmaps.. timesteps...
+   snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", 1, 0.0, 0.0, "", ""); 
+   if (!issue(SQL, outdb)) return; 
+   issue("COMMIT", outdb);
+}
+
+void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compressdata)
+{
+   std::vector<GeomData*> data = geometry[type]->getAllObjects(obj_id);
+   int timestep = 1; //No timesteps for now, will require current timestep info stored with model
+                     //and setTimestep() moved to Model class
+   //Loop through and write out all object data
+   char SQL[1024];
+   int i, data_type;
+   for (i=0; i<data.size(); i++)
+   {
+     for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
+     {
+        if (data[i]->data[data_type]->size() == 0) continue;
+        std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : " 
+                  << data_type <<  ") for object : " << obj_id << " => " << objects[obj_id-1]->name << std::endl;
+        //Get the data block
+        FloatValues* block = data[i]->data[data_type];
+
+        sqlite3_stmt* statement;
+        unsigned char* buffer = (unsigned char*)&block->value[0];
+        unsigned long src_len = block->size() * sizeof(float);
+        // Compress the data if enabled and > 1kb
+        unsigned long cmp_len = 0;
+        if (compressdata &&  src_len > 1000)
+        {
+           cmp_len = compressBound(src_len);
+           buffer = (unsigned char*)malloc((size_t)cmp_len);
+           if (buffer == NULL)
+              abort_program("Compress database: out of memory!\n");
+           if (compress(buffer, &cmp_len, (const unsigned char *)&block->value[0], src_len) != Z_OK) 
+              abort_program("Compress database buffer failed!\n");
+           if (cmp_len >= src_len)
+           {
+              free(buffer);
+              buffer = (unsigned char*)&block->value[0];
+              cmp_len = 0;
+           }
+           else
+              src_len = cmp_len;
+        }
+
+        if (block->minimum == HUGE_VAL) block->minimum = 0;
+        if (block->maximum == -HUGE_VAL) block->maximum = 0;
+        
+        float *min = Geometry::min;
+        float *max = Geometry::max;
+
+        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, timestep, 0, 0, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+
+        /* Prepare statement... */
+        if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
+        {
+           abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+        }
+
+        /* Setup text data for insert */
+        const char* labels = data[i]->getLabels();
+        if (labels)
+        {
+           if (sqlite3_bind_text(statement, 1, labels, strlen(labels), SQLITE_STATIC) != SQLITE_OK)
+              abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
+        }
+
+        /* Setup blob data for insert */
+        if (sqlite3_bind_blob(statement, 2, buffer, src_len, SQLITE_STATIC) != SQLITE_OK)
+           abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
+
+        /* Execute statement */
+        if (sqlite3_step(statement) != SQLITE_DONE )
+           abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+
+        sqlite3_finalize(statement);
+
+         /* Add colourmap reference for object */
+         for (unsigned int c = 0; c < objects[obj_id-1]->colourMaps.size(); c++)
+         {
+            if (!objects[obj_id-1]->colourMaps[c]) continue;
+            /* Link object & colour map */
+            snprintf(SQL, 1024, "insert into object_colourmap (object_id, colourmap_id, data_type) values (%d, %d, %d)", obj_id, objects[obj_id-1]->colourMaps[c]->id, c); 
+            printf("%s\n", SQL);
+            if (!issue(SQL, outdb)) return;
+         }
+
+         // Free compression buffer
+         if (cmp_len > 0) free(buffer);
+     }
+   }
+}
+
+void Model::deleteObject(int id)
+{
+   reopen(true);  //Open writable
+   char SQL[256];
+   sprintf(SQL, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
+   issue(SQL);
+   issue("vacuum");
+   for (unsigned int i=0; i<objects.size(); i++)
+   {
+      if (!objects[i]) continue;
+      if (id == objects[i]->id)
+      {
+         objects[i] = NULL; //Don't erase as objects referenced by id
+         break;
+      }
+   }
 }
 

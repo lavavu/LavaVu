@@ -56,12 +56,6 @@ void Tracers::update()
    //All tracers stored as single vertex/value block
    //Contains vertex/value for every tracer particle at each timestep
    //Number of particles is number of entries divided by number of timesteps
-   union
-   {
-      float val;
-      unsigned int idx;
-   } fidx;
-
    for (unsigned int i=0; i<geom.size(); i++) 
    {
       glNewList(displaylists[i], GL_COMPILE);
@@ -99,7 +93,7 @@ void Tracers::update()
       int end = datasteps-1;
       int start = end - max + 1;
       if (start < 0) start = 0;
-      debug_print("Tracing from step indices %d to %d (timesteps %d datasteps %d max %d)\n", start, end, timesteps, datasteps, max);
+      debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d max %d)\n", particles, start, end, timesteps, datasteps, max);
 
       //Calibrate colourMap
       geom[i]->colourCalibrate();
@@ -117,6 +111,7 @@ void Tracers::update()
       setState(i);
 
       //Iterate individual tracers
+      float limit = geom[i]->draw->properties["limit"].ToFloat(view->model_size * 0.3);
       for (unsigned int p=0; p < particles; p++) 
       {
          float size = geom[i]->draw->properties["scaling"].ToFloat(1.0) * 0.001;
@@ -139,6 +134,7 @@ void Tracers::update()
             int pidx = p;
             if (geom[i]->indices.size() > 0)
             {
+               floatidx fidx;
                for (unsigned int x=0; x<particles; x++)
                {
                   fidx.val = geom[i]->indices[step * particles + x];
@@ -179,7 +175,7 @@ void Tracers::update()
                //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
                float arrowHead = -1;
                if (step == end) arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-               drawTrajectory(oldpos, pos, scale * size, arrowHead, 8, view->scale, &oldColour, &colour, view->model_size * 0.3);
+               drawTrajectory(oldpos, pos, scale * size, arrowHead, 8, view->scale, &oldColour, &colour, limit);
             }
 
             oldColour = colour;

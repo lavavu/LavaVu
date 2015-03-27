@@ -38,6 +38,14 @@
 #include <ctype.h>
 #include <pthread.h>
 
+//Include the decompression routines
+#ifdef USE_ZLIB
+#include <zlib.h>
+#else
+#define MINIZ_HEADER_FILE_ONLY
+#include "miniz/miniz.c"
+#endif
+
 //Utils
 #include "jpeg/jpge.h"
 #include "jpeg/jpgd.h"

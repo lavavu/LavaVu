@@ -441,7 +441,7 @@ Geometry* LavaVu::getGeometryType(std::string what)
    return NULL;
 }
 
-DrawingObject* LavaVu::findObject(std::string what, int id)
+DrawingObject* LavaVu::findObject(std::string what, int id, bool nodefault)
 {
    //Find by name/ID match in all drawing objects
    std::transform(what.begin(), what.end(), what.begin(), ::tolower);
@@ -452,10 +452,13 @@ DrawingObject* LavaVu::findObject(std::string what, int id)
       std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
       if (namekey == what || id > 0 && id == amodel->objects[i]->id)
       {
+         //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
          return amodel->objects[i];
       }
    }
-   return NULL;
+   //std::cerr << "Not found, returning " << (nodefault ? "NULL" : "DEFAULT : ") << aobject << std::endl;
+   //Return selected object unless disabled with nodefault
+   return nodefault ? NULL : aobject;
 }
 
 ColourMap* LavaVu::findColourMap(std::string what, int id)
@@ -637,7 +640,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("hide") || parsed.exists("show"))
    {
-      std::string action = parsed.exists("hide") ? std::string("hide") : std::string("show");
+      std::string action = parsed.exists("hide") ? "hide" : "show";
       std::string what = parsed[action];
       Geometry* active = getGeometryType(what);
 
@@ -645,44 +648,50 @@ bool LavaVu::parseCommands(std::string cmd)
       if (active)
       {
          int id;
-         if (parsed.has(id, action, 1))
+         std::string range = parsed.get(action, 1);
+         if (range.find('-') != std::string::npos)
+         {
+            std::stringstream rangess(range);
+            int start, end;
+            char delim;
+            rangess >> start >> delim >> end;
+            for (int i=start; i<=end; i++)
+            {
+               if (action == "hide") active->hide(i); else active->show(i);
+               printMessage("%s %s range %s", action.c_str(), what.c_str(), range.c_str());
+            }
+         }
+         else if (parsed.has(id, action, 1))
          {
             parsed.has(id, action, 1);
             if (action == "hide")
             {
                if (!active->hide(id)) return false; //Invalid
-               printMessage("Hide %s %d", what.c_str(), id);
             }
             else
             {
                if (!active->show(id)) return false; //Invalid
-               printMessage("Show %s %d", what.c_str(), id);
             }
+            printMessage("%s %s %d", action.c_str(), what.c_str(), id);
          }
          else
          {
             if (action == "hide")
-            {
                active->hideAll();
-               printMessage("Hide all %s", what.c_str());
-            }
             else
-            {
                active->showAll();
-               printMessage("Show all %s", what.c_str());
-            }
+            printMessage("%s all %s %d", action.c_str(), what.c_str(), id);
          }
          redrawViewports();
       }
       else
       {
-         //Hide by name/ID match in all drawing objects
+         //Hide/show by name/ID match in all drawing objects
          //std::string which = parsed.get(action, 1);
          for (int c=0; c<10; c++) //Allow multiple id/name specs on line
          {
-            DrawingObject* obj = aobject;
             int id = parsed.Int(action, 0, c);
-            if (!obj) obj = findObject(what, id);
+            DrawingObject* obj = findObject(what, id);
             if (obj)
             {
                if (obj->skip)
@@ -693,25 +702,15 @@ bool LavaVu::parseCommands(std::string cmd)
                }
                else
                {
-                  showById(obj->id, action == "show");
+                  //Hide/show all data for this object
+                  bool state = (action == "show");
+                  for (unsigned int i=0; i < Model::geometry.size(); i++)
+                     Model::geometry[i]->showById(obj->id, state);
+                  obj->visible = state; //This allows hiding of objects without geometry (colourbars)
                   printMessage("%s object %s", action.c_str(), obj->name.c_str());
                   redrawViewports();
                }
             }
-         }
-      }
-   }
-   else if (parsed.has(ival, "dump"))
-   {
-      //Export drawing object by name/ID match 
-      for (int c=0; c<10; c++) //Allow multiple id/name specs on line
-      {
-         DrawingObject* obj = aobject;
-         if (!obj) obj = findObject(parsed["dump"], parsed.Int("dump", 0, c));
-         if (obj)
-         {
-            dumpById(obj->id);
-            printMessage("Dumped object %s to CSV", obj->name.c_str());
          }
       }
    }
@@ -892,13 +891,16 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("title"))
    {
-      //Hide title
-      aview->properties["title"] = "";
+      //Hide or set title
+      if (cmd.length() > 6)
+         aview->properties["title"] = cmd.substr(6);
+      else
+         aview->properties["title"] = "";
    }
    else if (parsed.exists("rulers"))
    {
       //Show/hide rulers
-      aview->properties["rulers"] = !aview->properties["rulers"].ToBool(true);
+      aview->properties["rulers"] = !aview->properties["rulers"].ToBool(false);
       printMessage("Rulers %s", aview->properties["rulers"].ToBool() ? "ON" : "OFF");
    }
    else if (parsed.exists("log"))
@@ -935,10 +937,10 @@ bool LavaVu::parseCommands(std::string cmd)
          std::cout << helpCommand("autozoom") << helpCommand("stereo") << helpCommand("coordsystem");
          std::cout << helpCommand("sort") << helpCommand("rotation") << helpCommand("translation");
          std::cout << "\nOutput commands:\n\n";
-         std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth");
+         std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
          std::cout << helpCommand("movie") << helpCommand("dump") << helpCommand("json");
          std::cout << "\nObject commands:\n\n";
-         std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load");
+         std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file");
          std::cout << "\nDisplay commands:\n\n";
          std::cout << helpCommand("background") << helpCommand("alpha") << helpCommand("opacity");
          std::cout << helpCommand("axis") << helpCommand("cullface") << helpCommand("wireframe");
@@ -976,22 +978,24 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("ColourMap scales localised");
       redrawObjects();
    }
-   else if (parsed.exists("json"))
+   else if (parsed.exists("export"))
    {
+      std::string what = parsed["export"];
+      lucExportType type = what == "json" ? lucExportJSON : (what == "csv" ? lucExportCSV : (what == "db" ? lucExportGLDB : lucExportGLDBZ));
       //Export drawing object by name/ID match 
       for (int c=0; c<10; c++) //Allow multiple id/name specs on line
       {
-         DrawingObject* obj = aobject;
-         if (!obj) obj = findObject(parsed["json"], parsed.Int("json", 0, c));
+         int id = parsed.Int("export", 0, c);
+         DrawingObject* obj = findObject(parsed.get("export", 1), id, true);
          if (obj)
          {
-            jsonWriteFile(obj->id);
-            printMessage("Dumped object %s to json", obj->name.c_str());
+            exportData(type, obj->id);
+            printMessage("Dumped object %s to %s", obj->name.c_str(), what.c_str());
          }
          else
          {
-            jsonWriteFile();
-            printMessage("Dumped all objects to json", ival);
+            exportData(type);
+            printMessage("Dumped all objects to %s", what.c_str());
             break;
          }
       }
@@ -1128,9 +1132,36 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       if (obj)
       {
-         unsigned int colour = parsed.Colour("colour", next);
-         obj->colour.value = colour;
-         printMessage("%s colour set to %x", obj->name.c_str(), colour);
+         bool append = (parsed.get("colour", next+1) == "append");
+         Colour c;
+         std::string str = parsed.get("colour", next);
+         if (str.find('[') != std::string::npos)
+         {
+            //Parse colour json array
+            json::Value j = json::Deserialize(str);
+            c = Colour_FromJson(j);
+         }
+         else
+         {
+            //Parse colour as RGB(A) hex, convert to ARGB int
+            c.value = parsed.Colour("colour", next);
+         }
+
+         if (append)
+         {
+            //Find the first available geometry container for this drawing object and append a colour
+            GeomData* geomdata = getGeometry(obj);
+            if (geomdata)
+            {
+               geomdata->data[lucRGBAData]->read(1, &c.value);
+               printMessage("%s colour appended %x", obj->name.c_str(), c.value);
+            }
+         }
+         else
+         {
+            obj->properties["colour"] = Colour_ToJson(c);
+            printMessage("%s colour set to %x", obj->name.c_str(), c.value);
+         }
          redraw(obj->id);
          redrawViewports();
       }
@@ -1221,8 +1252,15 @@ bool LavaVu::parseCommands(std::string cmd)
       viewer->outwidth = ival;
       printMessage("Output image width set to %d", viewer->outwidth);
    }
+   else if (parsed.has(ival, "outheight"))
+   {
+      if (ival < 10) return false;
+      viewer->outheight = ival;
+      printMessage("Output image height set to %d", viewer->outheight);
+   }
    else if (parsed.exists("background"))
    {
+      //TODO: fix this, should work as colour
       if (parsed["background"] == "white")
          awin->background.value = 0xffffffff;
       else if (parsed["background"] == "black")
@@ -1309,6 +1347,12 @@ bool LavaVu::parseCommands(std::string cmd)
             if (parsed.has(fval, "scale", 1))
                aview->setScale(1, 1, fval);
          }
+         else if (what == "all")
+         {
+            //Scale everything
+            //TODO: fix this, kills everything
+            aview->setScale(fval, fval, fval);
+         }
          else
          {
             //Scale by name/ID match in all drawing objects
@@ -1384,27 +1428,11 @@ bool LavaVu::parseCommands(std::string cmd)
       //Delete drawing object by name/ID match 
       std::string what = parsed["delete"];
       int id = parsed.Int("delete", 0);
-      DrawingObject* obj = aobject;
-      if (!obj) obj = findObject(what, id);
+      DrawingObject* obj = findObject(what, id);
       if (obj)
       {
-         //TODO: Move to Model::
-         amodel->reopen(true);  //Open writable
-         char SQL[256];
-         sprintf(SQL, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", obj->id);
-         amodel->issue(SQL);
+         amodel->deleteObject(obj->id);
          printMessage("%s deleted from database", obj->name.c_str());
-         loadWindow(window, timestep);
-         amodel->issue("vacuum");
-         for (unsigned int i=0; i<amodel->objects.size(); i++)
-         {
-            if (!amodel->objects[i]) continue;
-            if (obj == amodel->objects[i])
-            {
-               amodel->objects[i] = NULL; //Don't erase as objects referenced by id
-               break;
-            }
-         }
          for (unsigned int i=0; i<awin->objects.size(); i++)
          {
             if (!awin->objects[i]) continue;
@@ -1423,6 +1451,7 @@ bool LavaVu::parseCommands(std::string cmd)
                break;
             }
          }
+         loadWindow(window, timestep);
       }
    }
    else if (parsed.exists("load"))
@@ -1432,20 +1461,34 @@ bool LavaVu::parseCommands(std::string cmd)
       for (int c=0; c<10; c++) //Allow multiple id/name specs on line
       {
          int id = parsed.Int("load", 0, c);
-         DrawingObject* obj = aobject;
-         if (!obj) obj = findObject(what, id);
+         DrawingObject* obj = findObject(what, id);
          if (obj)
          {
             loadGeometry(obj->id);
-            //if (!loadWindow(window, timestep)) return false;
             //Update the views
             resetViews(false);
             redrawObjects();
-            //aview->init(true);
-            //resetViews(true);
             //Delete the cache as object list changed
             amodel->deleteCache();
          }
+      }
+   }
+   else if (parsed.exists("file"))
+   {
+      //Load drawing object by name/ID match 
+      std::string what = parsed["file"];
+      //Attempt to load external file
+      FilePath file = FilePath(what);
+      if (file.type == "gldb")
+      {
+         loadModel(file);
+         if (!loadWindow(windows.size()-1, timestep)) return false;
+      }
+      else
+      {
+         files.clear();
+         files.push_back(what);
+         loadFiles();
       }
    }
    else if (parsed.exists("script"))
@@ -1457,13 +1500,19 @@ bool LavaVu::parseCommands(std::string cmd)
          printMessage("Running script: %s", scriptfile.c_str());
          std::string line;
          while(std::getline(file, line))
+         {
             if (line.length() > 0 && line.at(0) != '#')
                parseCommands(line);
+         }
          file.close();
          aview->inertia(false); //Clear inertia
       }
       else
-         printMessage("Unable to open file: %s", scriptfile.c_str());
+      {
+         if (scriptfile != "init.script")
+            printMessage("Unable to open file: %s", scriptfile.c_str());
+         return false;
+      }
    }
    //TODO: NOT YET DOCUMENTED
    else if (parsed.exists("inertia"))
@@ -1555,12 +1604,13 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       std::string what = parsed["select"];
       int id = parsed.Int("select", 0);
-      aobject = findObject(what, id);
+      aobject = findObject(what, id, true); //Don't allow default to currently selected
       if (aobject)
          std::cerr << "SELECTED OBJECT: " << aobject->name << std::endl;
       else
          std::cerr << "NO OBJECT SELECTED" << std::endl;
    }
+   //TODO: NEW COMMANDS NOT YET DOCUMENTED...
    else if (parsed.exists("props"))
    {
       printProperties();
@@ -1569,6 +1619,103 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       createDemoModel();
       resetViews();
+   }
+   else if (parsed.has(ival, "cache"))
+   {
+      GeomCache::size = ival;
+      printMessage("Geometry cache set to %d timesteps", GeomCache::size);
+      return false;
+   }
+   else if (parsed.exists("noload"))
+   {
+      noload = !noload;
+      printMessage("Database object loading is %s", noload ? "ON":"OFF");
+   }
+   else if (parsed.exists("hideall"))
+   {
+      hideall = !hideall;
+      printMessage("Object load initial state is %s", hideall ? "VISIBLE":"HIDDEN");
+   }
+   else if (parsed.exists("verbose"))
+   {
+      std::string what = parsed["verbose"];
+      verbose = what != "off";
+      printMessage("Verbose output is %s", verbose ? "ON":"OFF");
+      //Set info/error stream
+      if (verbose && !output)
+         infostream = stderr;
+      else
+        infostream = NULL;
+   }
+   else if (parsed.exists("pngalpha"))
+   {
+      viewer->alphapng = !viewer->alphapng;
+      printMessage("Transparency in PNG output is %s", viewer->alphapng ? "ON":"OFF");
+   }
+   else if (parsed.exists("swapyz"))
+   {
+      swapY = !swapY;
+      printMessage("Y/Z axis swap on OBJ load is %s", swapY ? "ON":"OFF");
+   }
+   else if (parsed.has(ival, "trisplit"))
+   {
+      trisplit = ival;
+      printMessage("Triangle subdivision level set to %d", trisplit);
+   }
+   else if (parsed.exists("localshaders"))
+   {
+      Shader::path = NULL;
+      std::cerr << "Ignoring shader path, using current directory\n";
+      printMessage("Using local shaders");
+      reloadShaders();
+   }
+   else if (parsed.exists("shaders"))
+   {
+      printMessage("Reloading shaders");
+      reloadShaders();
+   }
+   else if (parsed.exists("volres"))
+   {
+      parsed.has(volres[0], "volres", 0);
+      parsed.has(volres[1], "volres", 1);
+      parsed.has(volres[2], "volres", 2);
+      printMessage("Volume voxel resolution set to %d x %d x %d", volres[0], volres[1], volres[2]);
+      return false;
+   }
+   else if (parsed.exists("volmin"))
+   {
+      parsed.has(volmin[0], "volmin", 0);
+      parsed.has(volmin[1], "volmin", 1);
+      parsed.has(volmin[2], "volmin", 2);
+      printMessage("Volume minimum bound set to %d x %d x %d", volmin[0], volmin[1], volmin[2]);
+   }
+   else if (parsed.exists("volmax"))
+   {
+      parsed.has(volmax[0], "volmax", 0);
+      parsed.has(volmax[1], "volmax", 1);
+      parsed.has(volmax[2], "volmax", 2);
+      printMessage("Volume maximum bound set to %d x %d x %d", volmax[0], volmax[1], volmax[2]);
+   }
+   else if (parsed.exists("name"))
+   {
+      DrawingObject* obj = aobject;
+      int next = 0;
+      if (!obj)
+      {
+         std::string what = parsed["name"];
+         int id = parsed.Int("name", 0);
+         obj = findObject(what, id);
+         next++;
+      }
+      if (obj)
+      {
+         std::string name = parsed.get("name", next);
+         if (name.length() > 0)
+         {
+           obj->name = name;
+           std::cerr << "RENAMED OBJECT: " << obj->id << " " << obj->name << std::endl;
+         }
+      }
    }
    else
    {
@@ -1604,7 +1751,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
 
    //Always redraw when using multiple viewports in window (urgh sooner this is gone the better)
-   if (awin->views.size() > 1 && viewPorts)
+   if (awin && awin->views.size() > 1 && viewPorts)
      redrawViewports();
    last_cmd = cmd;
    record(false, cmd);
@@ -1619,15 +1766,15 @@ std::string LavaVu::helpCommand(std::string cmd)
    {
       help += "Command help:\n\nUse:\nhelp * [ENTER]\nwhere * is a command, for detailed help\n"
                   "\nMiscellanious commands:\n\n"
-                  "quit, repeat, history, clearhistory, pause, list, timestep, jump, model, reload\n"
+                  "quit, repeat, history, clearhistory, pause, list, timestep, jump, model, reload, file, script\n"
                   "\nView/camera commands:\n\n"
                   "rotate, rotatex, rotatey, rotatez, rotation, translate, translatex, translatey, translatez\n"
                   "focus, aperture, focallength, eyeseparation, nearclip, farclip, zerocam, reset, camera\n"
                   "resize, fullscreen, fit, autozoom, stereo, coordsystem, sort, rotation, translation\n"
                   "\nOutput commands:\n\n"
-                  "image, images, outwidth, movie, play, dump, json\n"
+                  "image, images, outwidth, outheight, movie, play, dump, json\n"
                   "\nObject commands:\n\n"
-                  "hide, show, delete, load\n"
+                  "hide, show, delete, load, select\n"
                   "\nDisplay commands:\n\n"
                   "background, alpha, opacity, axis, cullface, wireframe, trianglestrips, scaling, rulers, log\n"
                   "antialias, localise, lockscale, lighting, colourmap, pointtype, vectorquality, tracerflat\n"
@@ -2019,6 +2166,12 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "Usage: outwidth value\n\n"
                   "value (integer) : width in pixels for output images\n";
    }
+   else if (cmd == "outheight")
+   {
+      help += "Set output image height\n\n"
+                  "Usage: outheight value\n\n"
+                  "value (integer) : height in pixels for output images\n";
+   }
    else if (cmd == "background")
    {
       help += "Set window background colour\n\n"
@@ -2096,6 +2249,12 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "Usage: load object_id/object_name\n\n"
                   "object_id (integer) : the index of the object to load (see: \"list objects\")\n"
                   "object_name (string) : the name of the object to load (see: \"list objects\")\n";
+   }
+   else if (cmd == "file")
+   {
+      help += "Load database or model file\n"
+                  "Usage: file \"filename\"\n\n"
+                  "filename (string) : the path to the file, quotes optional but necessary if path contains spaces\n";
    }
    else if (cmd == "script")
    {

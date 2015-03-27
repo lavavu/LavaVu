@@ -87,21 +87,12 @@ void Points::update()
    {
       loadVertices();
    }
-   else
-   {
-      std::vector<bool> hiddenflags(geom.size());
-      for (unsigned int i = 0; i < geom.size(); i++) 
-         hiddenflags[i] = !drawable(i); //Save flags
 
-      //Set flag in index array based on hidden/shown
-      t1=clock();
-      for (unsigned int t = 0; t < total; t++)
-         pidx[t].hidden = hiddenflags[pidx[t].geomid];
+   hiddencache.resize(geom.size());
+   for (unsigned int i = 0; i < geom.size(); i++) 
+      hiddencache[i] = !drawable(i); //Save flags
 
-      t2 = clock(); debug_print("  %.4lf seconds to update hidden flags\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-   }
    last_total = total;
-
 
    //Initial depth sort & render
    render();
@@ -166,7 +157,6 @@ void Points::loadVertices()
    for (unsigned int s = 0; s < geom.size(); s++) 
    {
       debug_print("Swarm %d, points %d hidden? %s\n", s, geom[s]->count, (hidden[s] ? "yes" : "no"));
-      bool hiddenflag = !drawable(s);
 
       //Calibrate colourMap
       geom[s]->colourCalibrate();
@@ -191,7 +181,6 @@ void Points::loadVertices()
          pidx[index].index = index;
          pidx[index].geomid = s;
          pidx[index].fdistance = 0; //eyeDistance(modelView, s, i);
-         pidx[index].hidden = hiddenflag;
 
          //Copy data to VBO entry
          Colour c;
@@ -322,7 +311,7 @@ void Points::render()
       elements = 0;
       for(int i=total-1; i>=0; i--) 
       {  
-         if (pidx[i].hidden) continue;
+         if (hiddencache[pidx[i].geomid]) continue;
          // If subSampling, use a pseudo random distribution to select which particles to draw
          // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
          if (subSample > 1 && SHR3 % subSample > 0) continue;

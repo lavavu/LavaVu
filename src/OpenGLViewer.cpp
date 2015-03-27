@@ -361,19 +361,7 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
 
    if (flip)
    {
-      int scanline = (alpha ? 4 : 3) * width;
-      GLubyte* ptr1 = (GLubyte*)buffer;
-      GLubyte* ptr2 = ptr1 + scanline * (height-1);
-      GLubyte* temp = new GLubyte[scanline];
-      for (int y=0; y<height/2; y++)
-      {
-         memcpy(temp, ptr1, scanline);
-         memcpy(ptr1, ptr2, scanline);
-         memcpy(ptr2, temp, scanline);
-         ptr1 += scanline;
-         ptr2 -= scanline;
-      }
-      delete[] temp;
+      RawImageFlip(buffer, width, height, alpha ? 4 : 3);
    }
 }
 

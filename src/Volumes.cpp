@@ -90,7 +90,7 @@ void Volumes::update()
    Geometry::update();
 
    //Count slices in each volume
-   printf("Total slices: %d\n", geom.size());
+   //printf("Total slices: %d\n", geom.size());
    if (!geom.size()) return;
    
    //Single volume cube
@@ -100,11 +100,16 @@ void Volumes::update()
       if (!drawable(i)) return;
 
       DrawingObject* current = geom[i]->draw;
-      if (!current->texture || current->texture->width == 0)
+      if (!current->defaultTexture || current->defaultTexture->width == 0)
       {
-         printf("volume 0 width %d height %d depth %d\n", geom[i]->width, geom[i]->height, geom[i]->depth);
          //Calculate bytes-per-voxel
-         int bpv = 4 * geom[i]->colourValue.size() / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+         unsigned int bytes = 4 * geom[i]->colourValue.size();
+         unsigned int voxels = (geom[i]->width * geom[i]->height * geom[i]->depth);
+         unsigned int bpv = bytes / voxels; //4 * geom[i]->colourValue.size() / (geom[i]->width * geom[i]->height * geom[i]->depth);
+         unsigned char* dp = (unsigned char*)(&geom[i]->colourValue.value[0]);
+         //for (int b=0; b<bytes; b+=100)
+         //  printf("BYTE @ %d == %d\n", b, dp[b]);
+         printf("volume 0 width %d height %d depth %d bpv %d\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
          //Load the texture
          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], bpv);
       }
@@ -122,8 +127,8 @@ void Volumes::update()
       for (int i=0; i<=geom.size(); i++)
       {
           //Force reload
-          if (i<geom.size() && geom[i]->draw->texture)
-            geom[i]->draw->texture->width = 0;
+          if (i<geom.size() && geom[i]->draw->defaultTexture)
+            geom[i]->draw->defaultTexture->width = 0;
           if (i==geom.size() || id != geom[i]->draw->id)
           {
             slices[id] = count;
@@ -139,7 +144,7 @@ void Volumes::update()
           if (!drawable(i)) continue;
 
           DrawingObject* current = geom[i]->draw;
-          if (!current->texture || current->texture->width == 0)
+          if (!current->defaultTexture || current->defaultTexture->width == 0)
           {
             //Height needs calculating from values data
             int height = geom[i]->colourValue.size() / geom[i]->width;
@@ -180,11 +185,11 @@ void Volumes::render(int i)
    GL_Error_Check;
  
    //Uniform variables
-    float viewport[4];
-    glGetFloatv(GL_VIEWPORT, viewport);
-   float res[3] = {geom[i]->draw->texture->width, geom[i]->draw->texture->height, geom[i]->draw->texture->depth};
+   float viewport[4];
+   glGetFloatv(GL_VIEWPORT, viewport);
+   float res[3] = {geom[i]->draw->defaultTexture->width, geom[i]->draw->defaultTexture->height, geom[i]->draw->defaultTexture->depth};
    glUniform3fv(prog->uniforms["uResolution"], 1, res);
-    glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
+   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
    //User settings
    json::Object props = geom[i]->draw->properties;
@@ -228,7 +233,7 @@ void Volumes::render(int i)
  
    //Volume texture
    glActiveTexture(GL_TEXTURE1);
-   glBindTexture(GL_TEXTURE_3D, geom[i]->draw->texture->id);
+   glBindTexture(GL_TEXTURE_3D, geom[i]->draw->defaultTexture->id);
    glUniform1i(prog->uniforms["uVolume"], 1);
    GL_Error_Check;
 
@@ -270,11 +275,11 @@ void Volumes::render(int i)
    glDisable(GL_MULTISAMPLE);
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
  
-    //Draw two triangles to fill screen
-    glBegin(GL_TRIANGLES);
+   //Draw two triangles to fill screen
+   glBegin(GL_TRIANGLES);
       glVertex2f(-1, -1); glVertex2f(-1, 1); glVertex2f(1, -1);
       glVertex2f(-1,  1); glVertex2f( 1, 1); glVertex2f(1, -1);
-    glEnd();
+   glEnd();
 
    glPopAttrib();
    GL_Error_Check;

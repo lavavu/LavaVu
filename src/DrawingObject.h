@@ -50,19 +50,18 @@ class DrawingObject
    bool skip;
    bool visible;
 
-   Colour colour;
    std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
 
    //Object properties data...
    json::Object properties;
-   //Texture
-   TextureData* texture;
+   TextureData* defaultTexture;
 
    DrawingObject(unsigned int id, bool persistent=false, std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="");
-   ~DrawingObject() {if (texture) delete texture;}
+   ~DrawingObject();
 
    void addColourMap(ColourMap* map, lucGeometryDataType data_type);
-   int useTexture();
+   TextureData* loadTexture(std::string texfn);
+   int useTexture(TextureData* texture);
    void load3DTexture(int width, int height, int depth, float* data, int bpv=4);
 
    static unsigned int lastid;

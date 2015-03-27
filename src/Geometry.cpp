@@ -107,7 +107,9 @@ void GeomData::getColour(Colour& colour, int idx)
       colour = colours.toColour(idx);
    }
    else
-      colour = draw->colour;
+   {
+      colour = Colour_FromJson(draw->properties, "colour");
+   }
 
    //Set components using component colourmaps...
    Colour cc;
@@ -194,6 +196,12 @@ void Geometry::clear(bool all)
    }
 }
 
+void Geometry::reset()
+{
+   elements = -1;
+   redraw = true;
+}
+
 void Geometry::dumpById(std::ostream& csv, unsigned int id)
 {
    for (unsigned int i = 0; i < geom.size(); i++) 
@@ -266,6 +274,7 @@ void Geometry::showById(unsigned int id, bool state)
 {
    for (unsigned int i = 0; i < geom.size(); i++)
    {
+      //std::cerr << i << " owned by object " << geom[i]->draw->id << std::endl;
       if (geom[i]->draw->id == id)
       {
          hidden[i] = !state;
@@ -320,14 +329,14 @@ void Geometry::init() //Called on GL init
 
 void Geometry::setState(int index, Shader* prog)
 {
-   DrawingObject* draw = NULL;
+   if (geom.size() <= index) return;
+   DrawingObject* draw = geom[index]->draw;
    int texunit = -1;
    bool lighting = lit;
-   if (index >= 0) draw = geom[index]->draw;
-   if (draw) lighting = lighting && draw->properties["lit"].ToBool(true);
+   lighting = lighting && draw->properties["lit"].ToBool(true);
 
    //Global/Local draw state
-   if (cullface || (draw && draw->properties["cullface"].ToBool(false)))
+   if (cullface || draw->properties["cullface"].ToBool(false))
       glEnable(GL_CULL_FACE);
    else
       glDisable(GL_CULL_FACE);
@@ -338,7 +347,7 @@ void Geometry::setState(int index, Shader* prog)
       //Don't light surfaces in 2d models
       if (!view->is3d) lighting = false;
       //Disable lighting and polygon faces in wireframe mode
-      if (wireframe || (draw && draw->properties["wireframe"].ToBool(false)))
+      if (wireframe || draw->properties["wireframe"].ToBool(false))
       {
          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
          lighting = false;
@@ -347,7 +356,7 @@ void Geometry::setState(int index, Shader* prog)
       else
          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-      if ((draw && draw->properties["flat"].ToBool(false)) || flat)
+      if (draw->properties["flat"].ToBool(false) || flat)
          glShadeModel(GL_FLAT);
       else
          glShadeModel(GL_SMOOTH);
@@ -355,7 +364,7 @@ void Geometry::setState(int index, Shader* prog)
    else
    {
       //Flat disables lighting for non surface types
-      if (flat || (draw && draw->properties["flat"].ToBool(false))) lighting = false;
+      if (flat || draw->properties["flat"].ToBool(false)) lighting = false;
    }
 
    if (!lighting)
@@ -363,14 +372,11 @@ void Geometry::setState(int index, Shader* prog)
    else
       glEnable(GL_LIGHTING);
 
-   if (draw)
-   {
-      float lineWidth = draw->properties["linewidth"].ToFloat(1.0);
-      if (lineWidth <= 0) lineWidth = 1.0;
-      glLineWidth(lineWidth);
-      //Textured?
-      texunit = draw->useTexture();
-   }
+   float lineWidth = draw->properties["linewidth"].ToFloat(1.0);
+   if (lineWidth <= 0) lineWidth = 1.0;
+   glLineWidth(lineWidth);
+   //Textured?
+   texunit = draw->useTexture(geom[index]->texture);
    GL_Error_Check;
 
    //Uniforms for shader programs
@@ -429,7 +435,6 @@ void Geometry::draw()  //Display saved geometry (default uses display list)
 void Geometry::labels()
 {
    //Print labels
-   glColor3f(0,0,0);
    lucSetFontCharset(FONT_SMALL); //Bitmap fonts
    for (unsigned int i=0; i < geom.size(); i++)
    {
@@ -438,6 +443,7 @@ void Geometry::labels()
          for (unsigned int j=0; j < geom[i]->labels.size(); j++)
          {
             float* p = geom[i]->vertices[j];
+            geom[i]->setColour(j);
             if (geom[i]->labels[j].size() > 0)
                lucPrint3d(p[0], p[1], p[2], geom[i]->labels[j].c_str());
          }
@@ -449,6 +455,7 @@ void Geometry::labels()
 //ie: has data, in range, not hidden and in viewport object list 
 bool Geometry::drawable(unsigned int idx)
 {
+   if (!geom[idx]->draw->visible) return false;
    //Within bounds and not hidden
    if (idx < geom.size() && geom[idx]->count > 0 && !hidden[idx])
    {
@@ -461,6 +468,16 @@ bool Geometry::drawable(unsigned int idx)
 
    }
    return false;
+}
+
+std::vector<GeomData*> Geometry::getAllObjects(int id)
+{
+   //Get passed object's data store
+   std::vector<GeomData*> geomlist;
+   for (int i=geom.size()-1; i>=0; i--)
+      if (geom[i]->draw->id == id)
+         geomlist.push_back(geom[i]);
+   return geomlist;
 }
 
 GeomData* Geometry::getObjectStore(DrawingObject* draw)
@@ -495,7 +512,7 @@ void Geometry::move(Geometry* other)
    geom = other->geom;  //Copies all elements
    //Copy required fields
    total = other->total;
-   elements = other->elements;
+   elements = -1; //Force recalc
    //Clear references from other (or will be deleted when objects cleared!)
    other->geom.clear();
 }
@@ -672,6 +689,14 @@ void Geometry::toImage(unsigned int idx)
    sprintf(path, "%s.%05d", geom[idx]->draw->name.c_str(), idx);
    writeImage(image, width, height, path, false);
    delete[] image;
+}
+
+void Geometry::setTexture(DrawingObject* draw, TextureData* texture)
+{
+   GeomData* geomdata = getObjectStore(draw);
+   geomdata->texture = texture;
+   //Must be opaque to draw with own texture
+   geomdata->opaque = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////////

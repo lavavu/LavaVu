@@ -44,10 +44,10 @@
 //Viewer class implementation...
 LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, int height) : ViewerApp(viewer)
 {
-   bool output = false, verbose = false, hideall = false, dbpath = false;
-   float alpha = 0, subsample = 0;
+   output = verbose = hideall = dbpath = false;
 
    //Defaults
+   defaultScript = "init.script";
    timestep = -1;
    endstep = -1;
    dump = lucExportNone;
@@ -68,6 +68,8 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    window = 0;
    tracersteps = 0;
    objectlist = noload;
+   swapY = false;
+   trisplit = 0;
 
    view = -1;
    aview = NULL;
@@ -75,21 +77,11 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    amodel = NULL;
    aobject = NULL;
 
-   //A set of default arguments can be stored in a file...
-   std::ifstream argfile("gLucifer_args.cfg");
-   if (argfile) //Found a config file, load arguments
-   {
-      std::string line;
-      while (std::getline(argfile, line))
-         if (line.length() > 0 && line.at(0) != '#')
-           args.push_back(line);
-      argfile.close();
-   }
-
    //Interaction command prompt
    entry = "";
    recording = true;
    loop = false;
+   quiet = false;
 
    //Read command line switches
    for (int i=0; i<args.size(); i++)
@@ -104,29 +96,56 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          switch (x)
          {
          case 'P':
+            //Points initial sub-sampling
             if (args[i].length() > 2)
-              ss >> subsample;
+              ss >> Points::subSample;
             break;
          case 'N':
-            noload = true;
+            parseCommands("noload");
             break;
          case 'A':
-            hideall = true;
+            parseCommands("hideall");
             break;
          case 'v':
-            verbose = true;
+            parseCommands("verbose on");
             break;
          case 'o':
+            //Set script output flag
             output = true;
             break;
          case 'x':
             ss >> viewer->outwidth >> x >> viewer->outheight;
             break;
          case 'a':
-            ss >> alpha;
+            //Opacity override: either [0,1] or (1,255]
+            ss >> GeomData::opacity;
+            if (GeomData::opacity > 1.0) GeomData::opacity /= 255.0;
             break;
          case 'c':
             ss >> GeomCache::size;
+            break;
+         case 't':
+            //Use alpha channel in png output
+            parseCommands("pngalpha");
+            break;
+         case 'y':
+            //Swap y & z axis on import
+            parseCommands("swapyz");
+            break;
+         case 'T':
+            //Split triangles
+            ss >> trisplit;
+            break;
+         case 'l':
+            //Use local shader files (set shader path to current working directory)
+            parseCommands("localshaders");
+            break;
+         case 'V':
+            ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
+            break;
+         case 'D':
+            ss >> volmin[0] >> x >> volmin[1] >> x >> volmin[2];
+            ss >> x >> volmax[0] >> x >> volmax[1] >> x >> volmax[2];
             break;
          case 'd':
             if (args[i].length() > 2) ss >> dumpid;
@@ -143,13 +162,23 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             dump = lucExportJSON;
             viewer->visible = false;
             break;
+         case 'g':
+            if (args[i].length() > 2) ss >> dumpid;
+            dump = lucExportGLDBZ;
+            viewer->visible = false;
+            break;
+         case 'G':
+            if (args[i].length() > 2) ss >> dumpid;
+            dump = lucExportGLDB;
+            viewer->visible = false;
+            break;
+         case 'S':
+            //Don't run default script
+            defaultScript = "";
+            break;
          case 'h':
             //Invisible window requested
             viewer->visible = false;
-            break;
-         case 't':
-            //Use alpha channel in png output
-            viewer->alphapng = true;
             break;
          case 'W':
          case 'I':
@@ -166,18 +195,6 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             //Movie write
             writemovie = true;
             viewer->visible = false;
-            break;
-         case 'l':
-            //Use local shader files (set shader path to current working directory)
-            std::cerr << "Ignoring shader path, using current directory\n";
-            Shader::path = NULL;
-            break;
-         case 'V':
-            ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
-            break;
-         case 'D':
-            ss >> volmin[0] >> x >> volmin[1] >> x >> volmin[2];
-            ss >> x >> volmax[0] >> x >> volmax[1] >> x >> volmax[2];
             break;
          default:
             //Attempt to interpret as timestep
@@ -196,10 +213,6 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    //Set default timestep if none specified
    if (timestep < 0) timestep = 0;
 
-   //Set info/error stream
-   if (verbose && !output)
-      infostream = stderr;
-
    //Load list of models passed on command line
    for (int i=0; i<args.size(); i++)
    {
@@ -215,12 +228,6 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          {
             //Load all objects in db
             loadModel(fn, hideall);
-            //Save path of first sucessfully loaded model
-            if (dbpath && viewer->output_path.length() == 0)
-            {
-               viewer->output_path = fn.path;
-               debug_print("Output path set to %s\n", viewer->output_path.c_str());
-            }
          }
       }
    }
@@ -239,17 +246,8 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
       amodel->windows.push_back(awin);
       
       //Setup default colourmaps
-      amodel->initColourMaps();
+      //amodel->initColourMaps();
    }
-
-   //Set script output flag
-   this->output = output;
-   //Opacity override: either [0,1] or (1,255]
-   if (alpha > 1.0) alpha /= 255.0;
-   GeomData::opacity = alpha;
-   //Points initial sub-sampling
-   if (subsample) Points::subSample = subsample;
-
 }
 
 LavaVu::~LavaVu()
@@ -258,10 +256,6 @@ LavaVu::~LavaVu()
    for (unsigned int i=0; i < models.size(); i++)
       delete models[i];
 
-   //Clear windows
-   for(unsigned int i=0; i<windows.size(); i++)
-      if (windows[i]) delete windows[i]; 
-
    debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
 }
 
@@ -269,18 +263,21 @@ void LavaVu::run(bool persist)
 {
    if (persist)
    {
-     //Server mode, disable viewports
-     viewAll = true;
-     viewPorts = false;
+      //Server mode, disable viewports
+      viewAll = true;
+      viewPorts = false;
    }
 
-   if (writeimage || writemovie || dump > lucExportCSV)
+   if (writeimage || writemovie || dump > lucExportNone)
    {
       //Load vis data for each window and write image
       int win = 0;
       if (!writeimage && !writemovie) viewer->isopen = true; //Skip open
-      while (loadWindow(win, timestep, true) > 0)
+      for (win=0; win < windows.size(); win++)
       {
+         //Load the window data
+         loadWindow(win, timestep, true);
+
          //Bounds checks
          if (endstep < timestep) endstep = timestep;
          int final = amodel->lastStep();
@@ -310,28 +307,25 @@ void LavaVu::run(bool persist)
             //Write output
             writeSteps(writeimage, writemovie, timestep, endstep, path);
          }
+         else
+            //Script files?
+            runScripts();
 
-         //Dump json data if requested
-         if (dump == lucExportJSON)
-            jsonWriteFile(dumpid);
-         else if (dump == lucExportJSONP)
-            jsonWriteFile(dumpid, true);
-
-         win++;
+         //Optimise triangle meshes
+         Model::triSurfaces->loadMesh();
+         //Export data
+         exportData(dump, dumpid);
       }
+      return;
    }
    else
    {
       //Load vis data for first window
-      if (!loadWindow(0, timestep, true))
-         abort_program("Model file load error, no window data\n");
+      loadWindow(0, timestep, true);
 
       runScripts();
+      cacheLoad(timestep);
    }
-
-   //Dump csv data if requested
-   if (dump == lucExportCSV)
-      dumpById(dumpid);
 
    //Start event loop
    if (persist || viewer->visible)
@@ -344,14 +338,57 @@ void LavaVu::run(bool persist)
    }
 }
 
+void LavaVu::exportData(lucExportType type, unsigned int id)
+{
+   //Export data
+   if (type == lucExportJSON)
+      jsonWriteFile(id);
+   else if (type == lucExportJSONP)
+      jsonWriteFile(id, true);
+   else if (type == lucExportGLDB)
+      amodel->writeDatabase("exported.gldb", id);
+   else if (type == lucExportGLDBZ)
+      amodel->writeDatabase("exported.gldb", id, true);
+   else if (type == lucExportCSV)
+   {
+      if (id > 0)
+         dumpById(dumpid);
+      else
+      {
+         for (unsigned int i=0; i < amodel->objects.size(); i++)
+            dumpById(amodel->objects[i]->id);
+      }
+   }
+}
+
 void LavaVu::runScripts()
 {
+   //Run default script if it exists
+   if (defaultScript.length())
+     parseCommands("script " + defaultScript);
    //Script files?
    for (unsigned int m=0; m < files.size(); m++)
    {
       std::cerr << files[m].full << std::endl;
       if (files[m].type == "script")
          parseCommands("script " + files[m].full);
+   }
+}
+
+void LavaVu::cacheLoad(int start_ts)
+{
+   //Cache fill (if cache large enough for all data)
+   timestep = start_ts;
+   if (amodel->db && GeomCache::size >= amodel->timesteps.size())
+   {
+      printf("Caching all geometry data...\n");
+      for (int i=0; i<=amodel->timesteps.size(); i++)
+      {
+         printf("%d...%d\n", i, timestep);
+         setTimeStep(timestep+1);
+      }
+      //Restore start position
+      setTimeStep(start_ts);
    }
 }
 
@@ -397,16 +434,13 @@ void LavaVu::printProperties()
       std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
 }
 
-void LavaVu::readVolume(FilePath& fn)
+void LavaVu::readRawVolume(FilePath& fn)
 {
    //Check for raw format volume data
    if (fn.type != "raw") return;
 
    awin->background.value = 0xff000000;
    
-   Geometry::checkPointMinMax(volmin);
-   Geometry::checkPointMinMax(volmax);
-      
       ColourMap* colourMap = NULL;
       /*/Demo colourmap
       ColourMap* colourMap = new ColourMap();
@@ -423,11 +457,72 @@ void LavaVu::readVolume(FilePath& fn)
    file.seekg(0, std::ios::end);
    std::streamsize size = file.tellg();
    file.seekg(0, std::ios::beg);
+
    if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
    std::vector<char> buffer(size);
-   file.read(buffer.data(), size);
+   file.read(&buffer[0], size);
    file.close();
 
+   Geometry::checkPointMinMax(volmin);
+   Geometry::checkPointMinMax(volmax);
+      
+   //Define the bounding cube by corners
+   Model::volumes->add(vobj);
+   Model::volumes->read(vobj, 1, lucVertexData, volmin);
+   Model::volumes->read(vobj, 1, lucVertexData, volmax);
+   float floatcount = size / 4.0;
+   Model::volumes->read(vobj, floatcount, lucColourValueData, buffer.data(), volres[0], volres[1], volres[2]);
+   Model::volumes->setup(vobj, lucColourValueData, 0, 1);
+}
+
+void LavaVu::readXrwVolume(FilePath& fn)
+{
+   //Check for raw format volume data
+   if (fn.type != "xrw" && fn.type != "xrwu") return;
+
+   awin->background.value = 0xff000000;
+   
+      ColourMap* colourMap = NULL;
+
+   //Create volume object
+   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+     
+   std::cerr << "LOADING ... " << fn.full << std::endl;
+
+   std::vector<char> buffer;
+   unsigned int size;
+#ifdef USE_ZLIB
+   if (fn.type != "xrwu")
+   {
+      gzFile f = gzopen(fn.full.c_str(), "rb");
+      gzread(f, (char*)volres, sizeof(int)*3);
+      gzread(f, (char*)volmax, sizeof(float)*3);
+      volmin[0] = volmin[1] = volmin[2] = 0;
+      size = volres[0]*volres[1]*volres[2];
+      buffer.resize(size);
+      gzread(f, &buffer[0], size);
+      gzclose(f);
+   }
+   else
+#endif
+   {
+      std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
+      file.seekg(0, std::ios::end);
+      size = file.tellg();
+      file.seekg(0, std::ios::beg);
+      file.read((char*)volres, sizeof(int)*3);
+      file.read((char*)volmax, sizeof(float)*3);
+      volmin[0] = volmin[1] = volmin[2] = 0;
+      size -= sizeof(int)*3 + sizeof(float)*3;
+      if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
+      buffer.resize(size);
+      file.read(&buffer[0], size);
+      file.close();
+   }
+
+   Geometry::checkPointMinMax(volmin);
+   Geometry::checkPointMinMax(volmax);
+      
    //Define the bounding cube by corners
    Model::volumes->add(vobj);
    Model::volumes->read(vobj, 1, lucVertexData, volmin);
@@ -444,7 +539,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
 
    awin->background.value = 0xff000000;
    
-   ColourMap* colourMap = NULL;
+   ColourMap* colourMap = NULL; 
       
    Geometry::checkPointMinMax(volmin);
    Geometry::checkPointMinMax(volmax);
@@ -574,6 +669,7 @@ void LavaVu::readHeightMap(FilePath& fn)
 
    min[0] = xmap;
    max[0] = xmap + (cols * xdim);
+   min[1] = 0;
    max[1] = 1000;
    min[2] = ymap - (rows * xdim); //Northing decreases with latitude
    max[2] = ymap;
@@ -668,7 +764,8 @@ void LavaVu::readHeightMap(FilePath& fn)
          float colourval = vertex[1];
          if (vertex[1] <= -9999)
          {
-            vertex[1] = -30; //Nodata
+            //vertex[1] = -30; //Nodata
+            vertex[1] = 0; //Nodata
             colourval = -20;
             if (min[1] < vertex[1])
             {
@@ -733,10 +830,24 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
    
    if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
    {
+      float A[3] = {a[0], a[2], a[1]};
+      float B[3] = {b[0], b[2], b[1]};
+      float C[3] = {c[0], c[2], c[1]};
+      if (swapY)
+      {
+        a = A;
+        b = B;
+        c = C;
+      }
+
       //Read the triangle
       Model::triSurfaces->read(obj, 1, lucVertexData, a);
       Model::triSurfaces->read(obj, 1, lucVertexData, b);
       Model::triSurfaces->read(obj, 1, lucVertexData, c);
+
+      Geometry::checkPointMinMax(a);
+      Geometry::checkPointMinMax(b);
+      Geometry::checkPointMinMax(c);
    }
    else
    {
@@ -763,92 +874,117 @@ void LavaVu::readOBJ(FilePath& fn)
    std::vector<tinyobj::material_t> materials;
    std::string err = tinyobj::LoadObj(shapes, materials, fn.full.c_str(), fn.path.c_str());
 
-   if (!err.empty()) {
+   if (!err.empty())
+   {
       std::cerr << err << std::endl;
       return;
    }
 
-  std::cout << "# of shapes    : " << shapes.size() << std::endl;
-  std::cout << "# of materials : " << materials.size() << std::endl;
+   std::cout << "# of shapes    : " << shapes.size() << std::endl;
+   std::cout << "# of materials : " << materials.size() << std::endl;
 
-  for (size_t i = 0; i < shapes.size(); i++) {
-    //Strip path from name
+   //Add single drawing object per file, if one is already active append to it
+   DrawingObject* tobj = aobject;
+   if (!tobj) tobj = newObject(fn.base, true, 0xff888888, NULL, 1.0, "\n");
+  
+   int index = -1;
+   for (size_t i = 0; i < shapes.size(); i++)
+   {
+      //Strip path from name
       size_t last_slash = shapes[i].name.find_last_of("\\/");
       if (std::string::npos != last_slash)
          shapes[i].name = shapes[i].name.substr(last_slash + 1);
-    printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
-    printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
-    
-    //Add triangles object
-    DrawingObject *tobj = newObject(shapes[i].name, true, 0xff888888, NULL, 1.0, "\n");
-    Model::triSurfaces->add(tobj);
-       
-    assert((shapes[i].mesh.indices.size() % 3) == 0);
-    
-    if (shapes[i].mesh.material_ids.size() > 0)
-    {
-      //Just take the first id...
-      int id = shapes[i].mesh.material_ids[0];
-      if (id >= 0)
+
+      printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
+      printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
+
+      //Add new triangles data store to object
+      Model::triSurfaces->add(tobj);
+         
+      if (shapes[i].mesh.material_ids.size() > 0)
       {
-        //Use the diffuse property as the colour
-        tobj->colour.r = materials[id].diffuse[0] * 255;
-        tobj->colour.g = materials[id].diffuse[1] * 255;
-        tobj->colour.b = materials[id].diffuse[2] * 255;
-        tobj->colour.a = materials[id].dissolve * 255;
-      }
-    }
-    
-    for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++) {
-      int ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};
-      
-      addTriangles(tobj, 
-                   &shapes[i].mesh.positions[ids[0]*3],
-                   &shapes[i].mesh.positions[ids[1]*3],
-                   &shapes[i].mesh.positions[ids[2]*3],
-                   0);
-
-        for (int coord=0; coord<3; coord++)
+        //Just take the first id...
+        int id = shapes[i].mesh.material_ids[0];
+        if (id >= 0)
         {
-          //Model::triSurfaces->read(tobj, 1, lucVertexData, &shapes[i].mesh.positions[ids[coord]*3]);
-          Geometry::checkPointMinMax(&shapes[i].mesh.positions[ids[coord]*3]);
+          //Use the diffuse property as the colour/texture
+          if (materials[id].diffuse_texname.length() > 0)
+          {
+             std::cerr << "APPLYING DIFFUSE TEXTURE: " << materials[id].diffuse_texname << std::endl;
+             if (fn.path.length() > 0)
+                Model::triSurfaces->setTexture(tobj, tobj->loadTexture(fn.path + "/" + materials[id].diffuse_texname));
+             else
+                Model::triSurfaces->setTexture(tobj, tobj->loadTexture(materials[id].diffuse_texname));
+          }
+          else
+          {
+             Colour c;
+             c.r = materials[id].diffuse[0] * 255;
+             c.g = materials[id].diffuse[1] * 255;
+             c.b = materials[id].diffuse[2] * 255;
+             c.a = materials[id].dissolve * 255;
+             if (c.a == 0.0) c.a = 255;
+             Model::triSurfaces->read(tobj, 1, lucRGBAData, &c.value);
+          }
         }
-    }
+      }
 
-    printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
-    assert((shapes[i].mesh.positions.size() % 3) == 0);
-    
-    /*for (size_t v = 0; v < shapes[i].mesh.positions.size() / 3; v++) {
-      printf("  v[%ld] = (%f, %f, %f)\n", v,
-        shapes[i].mesh.positions[3*v+0],
-        shapes[i].mesh.positions[3*v+1],
-        shapes[i].mesh.positions[3*v+2]);
-    }*/
-  }
-  return;
+      //Default is to load the indexed triangles and provided normals
+      //Can be overridden by setting trisplit (-T#)
+      //Setting to 1 will calculate our own normals and optimise mesh
+      //Setting > 1 also divides triangles into smaller pieces first
+      if (trisplit == 0 && shapes[i].mesh.normals.size() > 0)
+      {
+         Model::triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
+         Model::triSurfaces->read(tobj, shapes[i].mesh.normals.size()/3, lucNormalData, &shapes[i].mesh.normals[0]);
+         Model::triSurfaces->read(tobj, shapes[i].mesh.indices.size(), lucIndexData, &shapes[i].mesh.indices[0]);
+         for (size_t f = 0; f < shapes[i].mesh.positions.size(); f += 3)
+            Geometry::checkPointMinMax(&shapes[i].mesh.positions[f]);
+      }
+      else
+      {
+         for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++)
+         {
+            int ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};
+            addTriangles(tobj, 
+                       &shapes[i].mesh.positions[ids[0]*3],
+                       &shapes[i].mesh.positions[ids[1]*3],
+                       &shapes[i].mesh.positions[ids[2]*3],
+                       trisplit);
+         }
+      }
 
-  for (size_t i = 0; i < materials.size(); i++) {
-    printf("material[%ld].name = %s\n", i, materials[i].name.c_str());
-    printf("  material.Ka = (%f, %f ,%f)\n", materials[i].ambient[0], materials[i].ambient[1], materials[i].ambient[2]);
-    printf("  material.Kd = (%f, %f ,%f)\n", materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
-    printf("  material.Ks = (%f, %f ,%f)\n", materials[i].specular[0], materials[i].specular[1], materials[i].specular[2]);
-    printf("  material.Tr = (%f, %f ,%f)\n", materials[i].transmittance[0], materials[i].transmittance[1], materials[i].transmittance[2]);
-    printf("  material.Ke = (%f, %f ,%f)\n", materials[i].emission[0], materials[i].emission[1], materials[i].emission[2]);
-    printf("  material.Ns = %f\n", materials[i].shininess);
-    printf("  material.Ni = %f\n", materials[i].ior);
-    printf("  material.dissolve = %f\n", materials[i].dissolve);
-    printf("  material.illum = %d\n", materials[i].illum);
-    printf("  material.map_Ka = %s\n", materials[i].ambient_texname.c_str());
-    printf("  material.map_Kd = %s\n", materials[i].diffuse_texname.c_str());
-    printf("  material.map_Ks = %s\n", materials[i].specular_texname.c_str());
-    printf("  material.map_Ns = %s\n", materials[i].normal_texname.c_str());
-    std::map<std::string, std::string>::const_iterator it(materials[i].unknown_parameter.begin());
-    std::map<std::string, std::string>::const_iterator itEnd(materials[i].unknown_parameter.end());
-    for (; it != itEnd; it++) {
-      printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
-    }
-    printf("\n");
-  }
+      if (shapes[i].mesh.texcoords.size())
+         Model::triSurfaces->read(tobj, shapes[i].mesh.texcoords.size()/2, lucTexCoordData, &shapes[i].mesh.texcoords[0]);
+
+      printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
+      printf("shape[%ld].texcoords: %ld\n", i, shapes[i].mesh.texcoords.size());
+      printf("shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
+   }
+   return;
+
+   for (size_t i = 0; i < materials.size(); i++)
+   {
+      printf("material[%ld].name = %s\n", i, materials[i].name.c_str());
+      printf("  material.Ka = (%f, %f ,%f)\n", materials[i].ambient[0], materials[i].ambient[1], materials[i].ambient[2]);
+      printf("  material.Kd = (%f, %f ,%f)\n", materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
+      printf("  material.Ks = (%f, %f ,%f)\n", materials[i].specular[0], materials[i].specular[1], materials[i].specular[2]);
+      printf("  material.Tr = (%f, %f ,%f)\n", materials[i].transmittance[0], materials[i].transmittance[1], materials[i].transmittance[2]);
+      printf("  material.Ke = (%f, %f ,%f)\n", materials[i].emission[0], materials[i].emission[1], materials[i].emission[2]);
+      printf("  material.Ns = %f\n", materials[i].shininess);
+      printf("  material.Ni = %f\n", materials[i].ior);
+      printf("  material.dissolve = %f\n", materials[i].dissolve);
+      printf("  material.illum = %d\n", materials[i].illum);
+      printf("  material.map_Ka = %s\n", materials[i].ambient_texname.c_str());
+      printf("  material.map_Kd = %s\n", materials[i].diffuse_texname.c_str());
+      printf("  material.map_Ks = %s\n", materials[i].specular_texname.c_str());
+      printf("  material.map_Ns = %s\n", materials[i].normal_texname.c_str());
+      std::map<std::string, std::string>::const_iterator it(materials[i].unknown_parameter.begin());
+      std::map<std::string, std::string>::const_iterator itEnd(materials[i].unknown_parameter.end());
+      for (; it != itEnd; it++)
+         printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
+      printf("\n");
+   }
 }
 
 void LavaVu::readTecplot(FilePath& fn)
@@ -956,7 +1092,8 @@ void LavaVu::readTecplot(FilePath& fn)
 
             Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
 
-            amodel->clearObjects(false); //Will cache...
+            //amodel->clearObjects(false); //Will cache...
+            amodel->cacheStep();
 
             timestep++;
             //Load timesteps while cache slots available
@@ -1242,7 +1379,13 @@ void LavaVu::open(int width, int height)
    for (unsigned int w=0; w<windows.size(); w++)
       windows[w]->initViewports(width, height);
 
+   reloadShaders();
+}
+
+void LavaVu::reloadShaders()
+{
    // Load shaders
+   if (Points::prog) delete Points::prog;
    Points::prog = new Shader("pointShader.vert", "pointShader.frag");
    const char* pUniforms[6] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", "uTextured", "uTexture"};
    Points::prog->loadUniforms(pUniforms, 6);
@@ -1257,6 +1400,7 @@ void LavaVu::open(int width, int height)
    else
    {
       //Triangle shaders too slow with OSMesa
+      if (TriSurfaces::prog) delete TriSurfaces::prog;
       TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
       const char* tUniforms[4] = {"uOpacity", "uLighting", "uTextured", "uTexture"};
       TriSurfaces::prog->loadUniforms(tUniforms, 4);
@@ -1264,6 +1408,7 @@ void LavaVu::open(int width, int height)
    }
 
    //Volume ray marching shaders
+   if (Volumes::prog) delete Volumes::prog;
    Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
    const char* vUniforms[22] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
    Volumes::prog->loadUniforms(vUniforms, 22);
@@ -1298,14 +1443,6 @@ void LavaVu::close()
 {
    for (unsigned int i=0; i < models.size(); i++)
       models[i]->close();
-}
-
-void LavaVu::showById(unsigned int id, bool state)
-{
-   for (unsigned int i=0; i < Model::geometry.size(); i++)
-      Model::geometry[i]->showById(id, state);
-   //Setting here to allow hiding of objects without geometry (colourbars)
-   amodel->objects[id-1]->visible = state;
 }
 
 void LavaVu::redraw(unsigned int id)
@@ -1593,9 +1730,24 @@ void LavaVu::displayCurrentView()
    if (aview->sort) aview->rotated = false;
 }
 
+GeomData* LavaVu::getGeometry(DrawingObject* obj)
+{
+   //Find the first available geometry container for this drawing object
+   //Used to append colour values and to get a representative colour for objects
+   //Only works if we know object has a single geometry type
+   GeomData* geomdata = NULL;
+   for (int type=lucMinType; type<lucMaxType; type++)
+   {
+      geomdata = Model::geometry[type]->getObjectStore(obj);
+      if (geomdata) break;
+   }
+   return geomdata;
+}
+
 void LavaVu::displayObjectList(bool console)
 {
    //Print available objects by id to screen and stderr
+   if (quiet) return;
    int offset = 0;
    if (console) std::cerr << "------------------------------------------" << std::endl;
    for (unsigned int i=0; i < amodel->objects.size(); i++)
@@ -1615,8 +1767,15 @@ void LavaVu::displayObjectList(bool console)
             if (console) std::cerr << "[          ]" << ss.str() << std::endl;
             //Use object colour if provided, unless matches background
             int colour = 0;
-            if (amodel->objects[i]->colour.value != viewer->background.value)
-               colour = amodel->objects[i]->colour.value;
+            Colour c;
+            GeomData* geomdata = getGeometry(amodel->objects[i]);
+            if (geomdata)
+               geomdata->getColour(c, 0);
+            else
+               c = Colour_FromJson(amodel->objects[i]->properties, "colour");
+            c.a = 255;
+            if (c.value != viewer->background.value)
+               colour = c.value;
             displayText(ss.str(), ++offset, colour);
          }
          else
@@ -1671,21 +1830,28 @@ void LavaVu::displayText(std::string text, int lineno, int colour)
    glScissor(0, 0, viewer->width, viewer->height);
    Viewport2d(viewer->width, viewer->height);
 
+   float size = 0.0008 * viewer->height;
+   if (size < 0.4) size = 0.4;
+   float lineht = 27 * size;
+
     std::stringstream ss(text);
     std::string line;
     while(std::getline(ss, line))
     {
        //Shadow
        PrintSetColour(viewer->background.value);
-       Print(11, viewer->height - 15*lineno - 1, 0.6, line.c_str());
+       Print(11, viewer->height - lineht*lineno - 1, size, line.c_str());
 
        if (colour == 0)
           PrintSetColour(viewer->inverse.value);
        else
           PrintSetColour(colour | 0xff000000);
 
-       Print(10, viewer->height - 15*lineno, 0.6, line.c_str());
+       Print(10, viewer->height - lineht*lineno, size, line.c_str());
        lineno++;
+
+       //Break if we run out of viewport for more lines
+       if ((lineht+1) * lineno > viewer->height) break;
     }
 
    //Revert to normal colour
@@ -1750,11 +1916,26 @@ void LavaVu::drawScene()
 
 void LavaVu::loadModel(FilePath& fn, bool hideall)
 {
-   //Open database file
-   amodel = new Model(fn, hideall);
-   models.push_back(amodel);
+   if (models.size() == 1 && amodel->file.full == ":memory")
+   {
+      //Default model/window? Delete and replace when loading the first database model
+      //delete awin;
+      delete aview;
+      delete amodel;
+      windows.clear();
+      models.clear();
+   }
 
-   if (!amodel->open()) abort_program("Model database open failed\n");
+   //Open database file
+   Model* newmodel = new Model(fn, hideall);
+   if (!newmodel->open())
+   {
+      std::cerr << "Model database open failed\n";
+      return;
+   }
+
+   amodel = newmodel;
+   models.push_back(amodel);
 
    //amodel->loadTimeSteps();
    amodel->loadColourMaps();
@@ -1768,6 +1949,9 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
       //Set a default window, viewport & camera
       awin = new Win(fn.base);
       aview = awin->addView(new View(fn.base));
+      //Add window to model window list
+      amodel->windows.push_back(awin);
+
       //Add objects to window & viewport
       for (unsigned int o=0; o<amodel->objects.size(); o++)
       {
@@ -1777,16 +1961,22 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
          awin->addObject(amodel->objects[o]);
          amodel->loadLinks(amodel->objects[o]);
       }
-      //Add window to global window list
-      amodel->windows.push_back(awin);
    }
 
    //Add all windows to global window list
    for (unsigned int w=0; w<amodel->windows.size(); w++)
       windows.push_back(amodel->windows[w]);
+
    //Use width of first window for now
    //viewer->width = windows[0]->width;
    //viewer->height = windows[0]->height;
+
+   //Save path of first sucessfully loaded model
+   if (dbpath && viewer->output_path.length() == 0)
+   {
+      viewer->output_path = fn.path;
+      debug_print("Output path set to %s\n", viewer->output_path.c_str());
+   }
 }
 
 //Load model window at specified timestep
@@ -1795,9 +1985,6 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
    //Have a database model loaded already?
    if (amodel->objects.size() > 0)
    {
-      //Clear current model data
-      //clearObjects();
-
       if (window_idx >= (int)windows.size()) return false;
 
       //Save active window as selected
@@ -1809,6 +1996,8 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
          for (unsigned int w=0; w < models[m]->windows.size(); w++)
             if (models[m]->windows[w] == awin) amodel = models[m];
 
+      //Reset new model data
+      amodel->reset();
       //if (amodel->objects.size() == 0) return false;
 
       //Set timestep and load geometry at that step
@@ -1830,32 +2019,26 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
    else
       viewer->setsize(awin->width, awin->height);
 
+   loadFiles(autozoom);
+
+   return true;
+}
+
+void LavaVu::loadFiles(bool autozoom)
+{
    //Height maps or other files can be loaded here...
    for (unsigned int m=0; m < files.size(); m++)
    {
       readHeightMap(files[m]);
       readOBJ(files[m]);
       readTecplot(files[m]);
-      readVolume(files[m]);
+      readRawVolume(files[m]);
+      readXrwVolume(files[m]);
       readVolumeSlice(files[m]);
    }
    
    //Update the views
    resetViews(autozoom);
-
-   //Cache fill (if cache large enough for all data)
-   if (amodel->db && GeomCache::size >= amodel->timesteps.size())
-   {
-      printf("Caching all geometry data...\n");
-      for (int i=0; i<=amodel->timesteps.size(); i++)
-      {
-         printf("%d...%d\n", i, timestep);
-         setTimeStep(timestep+1);
-      }
-      setTimeStep(at_timestep);
-   }
-
-   return true;
 }
 
 //Load data at specified timestep for selected model
@@ -1992,7 +2175,7 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
    if (!jsonp) ext[4] = '\0';
    if (id > 0)
      sprintf(filename, "%s%s_%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
-                                            amodel->objects[id]->name.c_str(), timestep, ext);
+                                          amodel->objects[id]->name.c_str(), timestep, ext);
    else
      sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), timestep, ext);
    std::ofstream json(filename);
@@ -2097,18 +2280,11 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
                   colourmap = (it - amodel->colourMaps.begin());
             }
 
-            //TODO: Export all json properties directly from object...!
-            if (amodel->objects[i]->properties.HasKey("wireframe"))
-               json << "      \"wireframe\" : " << amodel->objects[i]->properties["wireframe"].ToBool(false) << "," << std::endl;
-            if (amodel->objects[i]->properties.HasKey("cullface"))
-               json << "      \"cullface\" : " << amodel->objects[i]->properties["cullface"].ToBool(false)<< "," << std::endl;
-            if (amodel->objects[i]->properties.HasKey("opacity"))
-               json << "      \"opacity\" : " << amodel->objects[i]->properties["opacity"].ToFloat(1.0) << "," << std::endl;
-            if (amodel->objects[i]->properties.HasKey("pointsize"))
-               json << "      \"pointSize\" : " << amodel->objects[i]->properties["pointsize"].ToFloat(1.0) << "," << std::endl;
-            if (colourmap >= 0)
-               json << "      \"colourmap\" : " << colourmap << "," << std::endl;
-            json << "      \"colour\" : " << amodel->objects[i]->colour.value;
+            //Export all json properties from object
+            std::string props = json::Serialize(amodel->objects[i]->properties);
+            //Strip enclosing {} as we merge props with object data
+            props = props.substr(1, props.length() - 2);
+            json << "      " << props;
 
             if (objdata) 
             {

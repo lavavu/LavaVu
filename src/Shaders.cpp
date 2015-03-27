@@ -93,7 +93,7 @@ std::string Shader::read_file(const char *fname)
 
    if (Shader::path) strcpy(filepath, Shader::path);
    strcat(filepath, fname);
-   debug_print("Shader loaded: %s\n", filepath);
+   debug_print("Shader loading: %s\n", filepath);
 
    std::ifstream ifs(filepath);
    std::stringstream buffer;

@@ -62,13 +62,41 @@ float *_x_coords = NULL, *_y_coords = NULL;  // Saves arrays of x,y points on ci
 
 unsigned int fontbase = 0, fontcharset = FONT_DEFAULT, fonttexture;
 
+std::string GetBinaryPath(const char* argv0, const char* progname)
+{
+   //Try the PATH env var if argv0 contains no path info
+   FilePath xpath;
+   if (!argv0 || strlen(argv0) == 0 || strcmp(argv0, progname) == 0)
+   {
+      std::stringstream path(getenv("PATH"));
+      std::string line;
+      while (std::getline(path, line, ':'))
+      {
+         std::stringstream pathentry;
+         pathentry << line << "/" << argv0;
+         std::string pstr = pathentry.str();
+         const char* pathstr = pstr.c_str();
+         if (access(pathstr, X_OK) == 0)
+         {
+            xpath.parse(pathstr);
+            break;
+         }
+      }
+   }
+   else
+   {
+      xpath.parse(argv0);
+   }
+   return xpath.path;
+}
+
 //Parse multi-line string
 void jsonParseProperties(std::string& properties, json::Object& object)
 {
    //Process all lines
    std::stringstream ss(properties);
    std::string line;
-   while(std::getline(ss, line))
+   while (std::getline(ss, line))
       jsonParseProperty(line, object);
 }
 
@@ -113,25 +141,48 @@ Colour Colour_FromJson(json::Object& object, std::string key, int red, int green
 {
    Colour colour = {red, green, blue, alpha};
    if (!object.HasKey(key)) return colour;
+   return Colour_FromJson(object[key], red, green, blue, alpha);
+}
 
+Colour Colour_FromJson(json::Value& value, int red, int green, int blue, int alpha)
+{
+   Colour colour = {red, green, blue, alpha};
    //Will accept integer colour or [r,g,b,a] array
-   if (object[key].GetType() == json::IntVal)
+   if (value.GetType() == json::IntVal)
    {
-      colour.value = object[key];
+      colour.value = value.ToInt();
    }
-   else if (object[key].GetType() == json::ArrayVal)
+   else if (value.GetType() == json::ArrayVal)
    {
-      json::Array array = object[key].ToArray();
-      colour.r = array[0].ToInt(0)*255.0;
-      colour.g = array[1].ToInt(0)*255.0;
-      colour.b = array[2].ToInt(0)*255.0;
+      json::Array array = value.ToArray();
+      if (array[0].ToFloat(0) > 1.0)
+         colour.r = array[0].ToInt(0);
+      else
+         colour.r = array[0].ToFloat(0)*255.0;
+      if (array[1].ToFloat(0) > 1.0)
+         colour.g = array[1].ToInt(0);
+      else
+         colour.g = array[1].ToFloat(0)*255.0;
+      if (array[2].ToFloat(0) > 1.0)
+         colour.b = array[2].ToInt(0);
+      else
+         colour.b = array[2].ToFloat(0)*255.0;
 
       if (array.size() > 3)
-         colour.a = array[3].ToInt(0)/255.0;
+         colour.a = array[3].ToFloat(0)*255.0;
    }
 
-
    return colour;
+}
+
+json::Value Colour_ToJson(Colour& colour)
+{
+   json::Array array;
+   array.push_back(colour.r/255.0); 
+   array.push_back(colour.g/255.0); 
+   array.push_back(colour.b/255.0); 
+   array.push_back(colour.a/255.0); 
+   return array;
 }
 
 void Colour_SetUniform(GLint uniform, Colour colour)
@@ -1230,6 +1281,22 @@ Colour parseRGBA(std::string value)
    return col; //rgba(c[0],c[1],c[2],c[3]);
 }
 
+void RawImageFlip(void* image, int width, int height, int bpp)
+{
+   int scanline = bpp * width;
+   GLubyte* ptr1 = (GLubyte*)image;
+   GLubyte* ptr2 = ptr1 + scanline * (height-1);
+   GLubyte* temp = new GLubyte[scanline];
+   for (int y=0; y<height/2; y++)
+   {
+      memcpy(temp, ptr1, scanline);
+      memcpy(ptr1, ptr2, scanline);
+      memcpy(ptr2, temp, scanline);
+      ptr1 += scanline;
+      ptr2 -= scanline;
+   }
+   delete[] temp;
+}
 
 // Loads TGA Image
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
@@ -1388,6 +1455,8 @@ int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GL
 {
    int width, height, bytesPerPixel;
    GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(filename, &width, &height, &bytesPerPixel, 3);
+
+   RawImageFlip(imageData, width, height, 3);
    
    texture->width = width;
    texture->height = height;

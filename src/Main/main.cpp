@@ -90,12 +90,8 @@ int main(int argc, char *argv[])
 #endif
 
    //Shader path (default to program path if not set)
-   FilePath path(argv[0]);
-   if (!Shader::path)
-   {
-      //Strip program name (after final /)
-      Shader::path = path.path.c_str();
-   }
+   std::string xpath = GetBinaryPath(argv[0], "LavaVu");
+   if (!Shader::path) Shader::path = xpath.c_str();
 
    //Read command line
    for (int i=1; i<argc; i++)
@@ -128,7 +124,7 @@ int main(int argc, char *argv[])
          std::cout << " -I: as above\n";
          std::cout << " -t: write transparent background png images (if supported)\n";
          std::cout << " -m: write movies of all loaded timesteps/windows then exit (if supported)\n";
-         std::cout << " -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if ommitted)\n";
+         std::cout << " -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if omitted)\n";
          std::cout << "\nData export\n";
          std::cout << " -d#: export object id # to CSV vertices + values\n";
          std::cout << " -j#: export object id # to JSON, if # omitted will output all compatible objects\n";
@@ -226,7 +222,7 @@ int main(int argc, char *argv[])
    if (port)
    {
       //Use executable path as base for html path
-      std::string htmlpath = path.path + std::string("./html");
+      std::string htmlpath = xpath + "html";
       viewer->addOutput(Server::Instance(viewer, htmlpath, port, quality, threads));
    }
 #endif

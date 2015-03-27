@@ -42,16 +42,20 @@ DrawingObject::DrawingObject(unsigned int id, bool persistent, std::string name,
    if (id == 0) this->id = DrawingObject::lastid+1;
    DrawingObject::lastid = this->id;
    colourMaps.resize(lucMaxDataType);
-   this->colour.value = colour;
    //Sets the default colour map if provided, newer databases provide separately
    if (map) colourMaps[lucColourValueData] = map;
 
    jsonParseProperties(props, properties);
    //Store on properties to allow modification
    if (!properties.HasKey("opacity")) properties["opacity"] = opacity;
-
-   texture = NULL;
+   if (!properties.HasKey("colour")) properties["colour"] = colour;
+   defaultTexture = NULL;
 }
+
+DrawingObject::~DrawingObject()
+{
+   if (defaultTexture) delete defaultTexture;
+}  
 
 void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
 {
@@ -67,34 +71,46 @@ void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
 */
 }
 
-int DrawingObject::useTexture()
+TextureData* DrawingObject::loadTexture(std::string texfn)
 {
-   std::string texfn = properties["texturefile"].ToString("");
-   if (texfn.length() && !texture)
+   if (texfn.length() == 0) return NULL;
+
+   FilePath fn(texfn);
+   TextureData* texture = new TextureData();
+
+   GLenum mode = GL_REPLACE;
+   //Combined with colourmap?
+   int data_type;
+   for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
    {
-      texture = new TextureData();
-      GLenum mode = GL_REPLACE;
-      int data_type;
-      for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
+      if (colourMaps[data_type])
       {
-         if (colourMaps[data_type])
-         {
-            mode = GL_MODULATE;
-            break;
-         }
+         mode = GL_MODULATE;
+         break;
       }
-      //Load textures
-      std::string ext = texfn.substr(texfn.find_last_of(".") + 1);
-      std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-      if (ext == "jpg" || ext == "jpeg")
-         LoadTextureJPEG(texture, texfn.c_str(), true, mode);
-      if (ext == "png")
-         LoadTexturePNG(texture, texfn.c_str(), true, mode);
-      if (ext == "tga")
-         LoadTextureTGA(texture, texfn.c_str(), true, mode);
-      if (ext == "ppm")
-         LoadTexturePPM(texture, texfn.c_str(), true, mode);
    }
+
+   //Load textures
+   if (fn.type == "jpg" || fn.type == "jpeg")
+      LoadTextureJPEG(texture, fn.full.c_str(), true, mode);
+   if (fn.type == "png")
+      LoadTexturePNG(texture, fn.full.c_str(), true, mode);
+   if (fn.type == "tga")
+      LoadTextureTGA(texture, fn.full.c_str(), true, mode);
+   if (fn.type == "ppm")
+      LoadTexturePPM(texture, fn.full.c_str(), true, mode);
+
+   defaultTexture = texture;
+   return texture;
+}
+
+int DrawingObject::useTexture(TextureData* texture)
+{
+   if (!texture) texture = defaultTexture;
+
+   if (!texture)
+      //Use default texture from properties if none loaded
+      loadTexture(properties["texturefile"].ToString(""));
 
    if (texture && texture->width)
    {
@@ -120,8 +136,11 @@ int DrawingObject::useTexture()
 
 void DrawingObject::load3DTexture(int width, int height, int depth, float* data, int bpv)
 {
+  GL_Error_Check;
   //Create the texture
-  if (!texture) texture = new TextureData();
+  if (!defaultTexture) defaultTexture = new TextureData();
+  TextureData* texture = defaultTexture;
+  GL_Error_Check;
 
   glActiveTexture(GL_TEXTURE1);
   GL_Error_Check;

@@ -149,6 +149,7 @@ static vertex_index parseTriple(
     
     // i/j/k or i/j
     vi.vt_idx = fixIndex(atoi(token), vtsize);
+    if (vnsize > 0 && vnsize == vsize) vi.vn_idx = vi.v_idx; //OK: Normal has same index as vertex if none provided
     token += strcspn(token, "/ \t\r");
     if (token[0] != '/') {
       return vi;
@@ -615,6 +616,12 @@ std::string LoadObj(
 
     // use mtl
     if ((0 == strncmp(token, "usemtl", 6)) && isSpace((token[6]))) {
+      // flush previous face group.
+      bool ret = exportFaceGroupToShape(shape, vertexCache, v, vn, vt, faceGroup, material, name, true);
+      if (ret) {
+        shapes.push_back(shape);
+      }
+      shape = shape_t();
 
       char namebuf[4096];
       token += 7;

@@ -50,11 +50,16 @@ typedef enum
    lucExportCSV,
    lucExportJSON,
    lucExportJSONP,
+   lucExportGLDB,
+   lucExportGLDBZ,
 } lucExportType;
 
 class LavaVu : public ViewerApp
 {
   protected:
+   bool output, verbose, hideall, dbpath;
+   std::string defaultScript;
+
    bool viewAll;
    bool viewPorts;
    bool sort_on_rotate;
@@ -75,6 +80,8 @@ class LavaVu : public ViewerApp
    int tracersteps;
    bool noload;
    bool objectlist;
+   bool swapY;
+   int trisplit;
 
    //Interaction: Key command entry 
    std::string entry;
@@ -82,11 +89,11 @@ class LavaVu : public ViewerApp
    std::vector<std::string> linehistory;
 
   public:
+   bool quiet;
    bool recording;
    bool loop;
    char message[256];
 
-   bool output;
    int view;
 
    Model* amodel; //Active model
@@ -100,22 +107,24 @@ class LavaVu : public ViewerApp
    virtual ~LavaVu();
 
    void run(bool persist=false);
+   void exportData(lucExportType type, unsigned int id=0);
 
    void parseProperties(std::string& properties);
    void parseProperty(std::string& data);
    void printProperties();
 
+   void reloadShaders();
+
    void addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level);
-   void readScriptFile(FilePath& fn);
    void readHeightMap(FilePath& fn);
    void readOBJ(FilePath& fn);
    void readTecplot(FilePath& fn);
-   void readVolume(FilePath& fn);
+   void readRawVolume(FilePath& fn);
+   void readXrwVolume(FilePath& fn);
    void readVolumeSlice(FilePath& fn);
    void createDemoModel();
    void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
    DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string properties="");
-   void showById(unsigned int id, bool state);
    void setOpacity(unsigned int id, float opacity);
    void redraw(unsigned int id);
 
@@ -150,6 +159,7 @@ class LavaVu : public ViewerApp
    int viewFromPixel(int x, int y);
 
    void redrawObjects();
+   GeomData* getGeometry(DrawingObject* obj);
    void displayObjectList(bool console=true);
    void printMessage(const char *fmt, ...);
    void displayText(std::string text, int lineno=1, int colour=0);
@@ -165,7 +175,9 @@ class LavaVu : public ViewerApp
    //db loading
    void loadModel(FilePath& fn, bool hideall=false);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
+   void loadFiles(bool autozoom=false);
    void runScripts();
+   void cacheLoad(int start_ts);
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);
    int getTimeStep() {return timestep;}
@@ -174,7 +186,7 @@ class LavaVu : public ViewerApp
    //Interactive command & script processing
    bool parseChar(unsigned char key);
    Geometry* getGeometryType(std::string what);
-   DrawingObject* findObject(std::string what, int id);
+   DrawingObject* findObject(std::string what, int id, bool nodefault=false);
    ColourMap* findColourMap(std::string what, int id);
    std::string helpCommand(std::string cmd);
    void record(bool mouse, std::string command);

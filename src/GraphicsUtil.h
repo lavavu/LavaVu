@@ -189,8 +189,12 @@ class FilePath
    std::string ext;
    std::string type; //Same as ext but always lowercase
 
-   FilePath(std::string fp) : full(fp)
+   FilePath() {};
+   FilePath(std::string fp) {parse(fp);}
+
+   void parse(std::string fp)
    {
+      full = fp;
       //From: http://stackoverflow.com/a/8520815/866759
       // Remove directory if present.
       // Do this before extension removal incase directory has a period character.
@@ -221,7 +225,15 @@ class FilePath
    }
 };
 
+std::string GetBinaryPath(const char* argv0, const char* progname);
+
 //General purpose geometry data store types...
+typedef union
+{
+   float val;
+   unsigned int idx;
+} floatidx; /* For index values stored in float container */
+
 class FloatValues
 {
   public:
@@ -733,6 +745,7 @@ void jsonParseProperty(std::string& data, json::Object& object);
 //Utility class for parsing property,value strings
 typedef std::vector<std::string> prop_values;
 typedef std::map<std::string, prop_values> prop_value_map;
+typedef std::map<std::string, prop_values>::iterator prop_iterator_type;
 class PropertyParser
 {
    prop_value_map props;
@@ -743,6 +756,12 @@ class PropertyParser
 
    PropertyParser(std::istream& is, char delim, bool ic=true) : ignoreCase(ic) {parse(is, delim);}
    PropertyParser(std::istream& is, bool ic=true) : ignoreCase(ic) {parse(is);}
+   
+   void stringify(std::ostream& os, char delim='=')
+   {
+      for (prop_iterator_type iterator = props.begin(); iterator != props.end(); iterator++)
+         os << iterator->first << delim << get(iterator->first) << std::endl;
+   } 
 
    //Parse lines with delimiter, ie: key=value
    void parse(std::istream& is, char delim)
@@ -763,11 +782,13 @@ class PropertyParser
          do
          {
             std::getline(iss, temp, delim);
+
             std::istringstream issval(temp);
             issval >> value;
 
             if (ignoreCase)
                std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+
             props[key].push_back(value);
             //std::cerr << "Key " << key << " == " << value << std::endl;
          } while (iss.good());
@@ -793,7 +814,16 @@ class PropertyParser
          while (iss.good())
          {
             iss >> value;
+            //Detect quotes
+            if (value.length() > 2 && value.at(0) == '"')
+            {
+               size_t start = line.find('"');
+               size_t end = line.find('"', start+1);
+               iss.seekg(end+2, std::ios_base::beg);
+               value = line.substr(start+1, end-start-1);
+            }
             props[key].push_back(value);
+            //std::cerr << key << " => " << value << std::endl;
          }
 
       }
@@ -935,6 +965,8 @@ void Colour_SetColour(Colour* colour);
 void Colour_Invert(Colour& colour);
 void Colour_SetXOR(bool switchOn);
 Colour Colour_FromJson(json::Object& object, std::string key, int red=0, int green=0, int blue=0, int alpha=255);
+Colour Colour_FromJson(json::Value& value, int red=0, int green=0, int blue=0, int alpha=255);
+json::Value Colour_ToJson(Colour& colour);
 void Colour_ToArray(Colour colour, float* array);
 void Colour_SetUniform(GLint uniform, Colour colour);
 
@@ -944,6 +976,7 @@ void drawEllipsoid(float centre[3], float radiusX, float radiusY, float radiusZ,
 void drawVector3d( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);
 void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
+void RawImageFlip(void* image, int width, int height, int bpp);
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);

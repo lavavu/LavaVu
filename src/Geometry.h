@@ -55,8 +55,7 @@ typedef struct
    };
    GLuint index; //global index
    int id; //id in geom element
-   unsigned char geomid;
-   bool hidden;
+   unsigned short geomid; //WARNING: Limits max elements to 65535
 } PIndex;
 
 typedef struct 
@@ -68,8 +67,7 @@ typedef struct
    };
    GLuint index[3]; //global indices
    float centroid[3];
-   unsigned char geomid;
-   bool hidden;
+   unsigned short geomid; //WARNING: Limits max elements to 65535
 } TIndex;
 
 //Geometry object data store
@@ -84,6 +82,7 @@ class GeomData
    int depth;
    char* labelptr;
    bool opaque;   //Flag for opaque geometry, render first, don't depth sort
+   TextureData* texture;
 
    float distance;
 
@@ -126,12 +125,15 @@ class GeomData
       data[lucRGBAData] = &colours;
       data[lucTexCoordData] = &texCoords;
       data[lucSizeData] = &sizes;
+
+      texture = NULL;
    }
 
    ~GeomData()
    {
       if (labelptr) free(labelptr);
       labelptr = NULL;
+      if (texture) delete texture;
    }
 
    void label(std::string& labeltext);
@@ -197,6 +199,8 @@ class Geometry
    View* view;
    std::vector<GeomData*> geom;
    std::vector<bool> hidden;
+   //Cached hidden states (including object/viewport setting)
+   std::vector<bool> hiddencache;
    std::vector<GLuint> displaylists;
    int elements;
 
@@ -217,8 +221,9 @@ class Geometry
    static void checkPointMinMax(float* coord);
    static void getMinMaxDistance(float modelView[16], float* mindist, float* maxdist);
 
-   virtual void clear(bool all=false); //Called before new data loaded 
-   virtual void close(); //Called on quit & before gl context recreated 
+   void clear(bool all=false); //Called before new data loaded 
+   void reset(); //Called before new data loaded when caching previous data
+   void close(); //Called on quit & before gl context recreated 
 
    void dumpById(std::ostream& csv, unsigned int id);
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
@@ -231,21 +236,23 @@ class Geometry
    void localiseColourValues();
    bool drawable(unsigned int idx);
    virtual void init(); //Called on GL init
-   void setState(int index=-1, Shader* prog=NULL);
+   void setState(int index, Shader* prog=NULL);
    virtual void update();  //Implementation should create geometry here...
    virtual void draw();  //Display saved geometry (default uses display list)
    void labels();  //Draw labels
+   std::vector<GeomData*> getAllObjects(int id);
+   GeomData* getObjectStore(DrawingObject* draw);
    GeomData* add(DrawingObject* draw);
    void newData(DrawingObject* draw);
    virtual void read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width=0, int height=0, int depth=1);
    void setup(DrawingObject* draw, lucGeometryDataType type, float minimum, float maximum, float dimFactor=1.0, const char* units="");
    void label(DrawingObject* draw, const char* labels);
-   GeomData* getObjectStore(DrawingObject* draw);
    void print();
    int size() {return geom.size();}
    void setView(View* vp) {view = vp;}
    void move(Geometry* other);
    void toImage(unsigned int idx);
+   void setTexture(DrawingObject* draw, TextureData* texture);
 };
 
 class Vectors : public Geometry
@@ -291,6 +298,7 @@ class TriSurfaces : public Geometry
 {
    TIndex *tidx;
    int tricount, ioffset, estimate;
+   bool loaded;
   public:
    static Shader* prog;
    GLuint indexvbo, vbo;
@@ -298,9 +306,10 @@ class TriSurfaces : public Geometry
    TriSurfaces();
    ~TriSurfaces();
    virtual void update();
-   bool loadVertices(unsigned int filter=0, std::ostream* json=NULL);
-   void setTriangle(int index, bool hidden, float* v1, float* v2, float* v3);
-   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool skipList=false);
+   void loadMesh();
+   void loadBuffers();
+   void setTriangle(int index, float* v1, float* v2, float* v3, int idx1=0, int idx2=0, int idx3=0);
+   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
    void calcGridNormalsAndIndices(int i, std::vector<Vec3d> &normals, std::vector<GLuint> &indices);
    void depthSort();
    void render();
