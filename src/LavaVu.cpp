@@ -81,6 +81,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    entry = "";
    recording = true;
    loop = false;
+   animate = false;
    quiet = false;
 
    //Read command line switches
@@ -1885,7 +1886,8 @@ void LavaVu::drawSceneBlended()
       break;
    case BLEND_ADD:
       // Additive blending 
-      glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA);
+      //glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE);
       //Render!
       drawScene();
       break;

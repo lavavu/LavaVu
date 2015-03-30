@@ -208,7 +208,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
       //Setup camera using omegalib functions
       CameraController* cc = cam->getController();
 
-      cam->setEyeSeparation(0.03); //TEST: reducing eye separation
+      //cam->setEyeSeparation(0.03); //TEST: reducing eye separation
 
          View* view = app->glapp->aview;
          
@@ -227,7 +227,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
         //NOTE: Setting near clip too close is bad for eyes, too far kills negative parallax stereo
         cam->setNearFarZ(view->near_clip*0.1, view->far_clip);
         //cam->setNearFarZ(cam->getNearZ(), view->far_clip);
-         cc->setSpeed(view->model_size * 0.1);
+         cc->setSpeed(view->model_size * 0.01);
          
     }
 
@@ -238,7 +238,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
      
     //if (app->redisplay)
     {
-      glEnable(GL_BLEND); glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glEnable(GL_BLEND);
 
        glMatrixMode(GL_MODELVIEW);
          View* view = app->glapp->aview;
@@ -371,7 +371,7 @@ void LavaVuApplication::handleEvent(const Event& evt)
     {
         //These work when analogue stick disabled
         printf("Wand D-Pad left pressed\n");
-        glapp->parseCommands("zoomclip -0.1");
+        glapp->parseCommands("zoomclip -0.01");
         Camera* cam = Engine::instance()->getDefaultCamera();
         cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
     }
@@ -379,7 +379,7 @@ void LavaVuApplication::handleEvent(const Event& evt)
     {
         //These work when analogue stick disabled
         printf("Wand D-Pad right pressed\n");
-        glapp->parseCommands("zoomclip 0.1");
+        glapp->parseCommands("zoomclip 0.01");
         Camera* cam = Engine::instance()->getDefaultCamera();
         cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
     }
