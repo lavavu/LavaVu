@@ -52,6 +52,7 @@
 
 #define BLEND_NORMAL 0
 #define BLEND_PNG 1
+#define BLEND_ADD 2
 
 #define FONT_FIXED    0
 #define FONT_SMALL    1

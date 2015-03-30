@@ -1524,6 +1524,7 @@ void LavaVu::viewModel(int idx, bool autozoom)
    {
       Geometry::checkPointMinMax(awin->min);
       Geometry::checkPointMinMax(awin->max);
+      debug_print("Applying Model Bounds from Window data %f,%f,%f - %f,%f,%f\n", awin->min[0], awin->min[1], awin->min[2], awin->max[0], awin->max[1], awin->max[2]);
    }
 
    //Set the model bounding box
@@ -1882,6 +1883,12 @@ void LavaVu::drawSceneBlended()
       drawScene();
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       break;
+   case BLEND_ADD:
+      // Additive blending 
+      glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA);
+      //Render!
+      drawScene();
+      break;
    }
 }
 
@@ -1944,13 +1951,19 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
    amodel->loadWindows();
 
    //No windows?
-   if (amodel->windows.size() == 0)
+   if (amodel->windows.size() == 0 || amodel->views.size() == 0)
    {
-      //Set a default window, viewport & camera
-      awin = new Win(fn.base);
+      //Set a default window & viewport
+      if (amodel->windows.size()) 
+         awin = amodel->windows[0];
+      else
+      {
+         awin = new Win(fn.base);
+         //Add window to model window list
+         amodel->windows.push_back(awin);
+      }
+      //Default view
       aview = awin->addView(new View(fn.base));
-      //Add window to model window list
-      amodel->windows.push_back(awin);
 
       //Add objects to window & viewport
       for (unsigned int o=0; o<amodel->objects.size(); o++)

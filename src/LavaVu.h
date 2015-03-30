@@ -92,6 +92,7 @@ class LavaVu : public ViewerApp
    bool quiet;
    bool recording;
    bool loop;
+   bool animate;
    char message[256];
 
    int view;

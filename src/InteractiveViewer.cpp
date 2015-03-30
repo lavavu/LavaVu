@@ -786,18 +786,21 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       writeImages(timestep, ival);
    }
+   else if (parsed.exists("animate"))
+   {
+      animate = !animate;
+      printMessage("Animate mode is %s", animate ? "ON":"OFF");
+   }
    else if (parsed.exists("repeat"))
    {
       bool state = recording;
       if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
       {
          recording = false;
-         bool animate = (parsed.get("repeat", 2) == "animate");
          for (int r=0; r<ival; r++)
          {
             for (unsigned int l=0; l<history.size(); l++)
                parseCommands(history[l]);
-            if (animate) viewer->display();
          }
          recording = state;
          return true; //Skip record
@@ -805,12 +808,8 @@ bool LavaVu::parseCommands(std::string cmd)
       else if (parsed.has(ival, "repeat"))
       {
          recording = false;
-         bool animate = (parsed.get("repeat", 1) == "animate");
          for (int r=0; r<ival; r++)
-         {
             parseCommands(last_cmd);
-            if (animate) viewer->display();
-         }
          recording = state;
          return true;  //Skip record
       }
@@ -1611,6 +1610,16 @@ bool LavaVu::parseCommands(std::string cmd)
          std::cerr << "NO OBJECT SELECTED" << std::endl;
    }
    //TODO: NEW COMMANDS NOT YET DOCUMENTED...
+   else if (parsed.exists("blend"))
+   {
+      std::string what = parsed["blend"];
+      if (what == "png")
+        viewer->blend_mode = BLEND_PNG;
+      else if (what == "add")
+        viewer->blend_mode = BLEND_ADD;
+      else
+        viewer->blend_mode = BLEND_NORMAL;
+   }
    else if (parsed.exists("props"))
    {
       printProperties();
@@ -1755,6 +1764,7 @@ bool LavaVu::parseCommands(std::string cmd)
      redrawViewports();
    last_cmd = cmd;
    record(false, cmd);
+   if (animate && redisplay) viewer->display();
    return redisplay;
 }
 
@@ -1766,7 +1776,7 @@ std::string LavaVu::helpCommand(std::string cmd)
    {
       help += "Command help:\n\nUse:\nhelp * [ENTER]\nwhere * is a command, for detailed help\n"
                   "\nMiscellanious commands:\n\n"
-                  "quit, repeat, history, clearhistory, pause, list, timestep, jump, model, reload, file, script\n"
+                  "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, file, script\n"
                   "\nView/camera commands:\n\n"
                   "rotate, rotatex, rotatey, rotatez, rotation, translate, translatex, translatey, translatez\n"
                   "focus, aperture, focallength, eyeseparation, nearclip, farclip, zerocam, reset, camera\n"
@@ -1994,12 +2004,20 @@ std::string LavaVu::helpCommand(std::string cmd)
    else if (cmd == "repeat")
    {
       help += "Repeat commands from history\n\n"
-                  "Usage: repeat count (animate)\n\n"
+                  "Usage: repeat count\n\n"
                   "count (integer) : repeat the last entered command count times\n"
                   "animate (optional) : update display after each command\n"
                   "\nUsage: repeat history count (animate)\n\n"
                   "count (integer) : repeat every command in history buffer count times\n"
                   "animate (optional) : update display after each command\n";
+   }
+   else if (cmd == "animate")
+   {
+      help += "Update display between each command\n\n"
+                  "Usage: animate\n\n"
+                  "Toggles the animate mode\n"
+                  "When on if multiple commands are issued the frame will be re-rendered after each one\n"
+                  "When off all commands will be processed before the display is updated\n";
    }
    else if (cmd == "quit")
    {
