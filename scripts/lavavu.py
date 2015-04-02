@@ -87,13 +87,6 @@ class Database(object):
     self.cursor = self.db.cursor()
 
   def close(self):
-    #Write global bounding box to all entries
-    #if fixBB:
-    #  query = ("update geometry set minX=%g, minY=%g, minZ=%g, maxX=%g, maxY=%g, maxZ=%g where data_type = %d"
-    #            % (bmin[0], bmin[1], bmin[2], bmax[0], bmax[1], bmax[2], Data.Vertex)
-    #  print query
-    #  db.execute(query);
-
     self.db.commit()
     self.db.close()
 
@@ -127,32 +120,37 @@ class Database(object):
     #print query
     self.db.execute(query, [buffer(data)]);
 
-class RandomColourMap(object):
-  def __init__(self, colours, seed):
-    random.seed(seed) #fixed seed for repeatable random colours
+class ColourMap(object):
+  def __init__(self, colours):
     self.colours = colours
 
   def write(self, db):
     query = ("insert into colourmap (name, minimum, maximum, logscale, discrete, centreValue) "
-             "values ('random', 1, %d, 0, 0, 0)" % self.colours)
+             "values ('random', 1, %d, 0, 0, 0)" % len(self.colours))
     db.cursor.execute(query)
     self.id = db.cursor.lastrowid
 
-    for i in range(1, self.colours):
+    for i in range(len(self.colours)):
       db.cursor.execute(("insert into colourvalue (colourmap_id, colour, value) values (%d, %d, %g)"
-                         % (self.id, self.colourToInt(self.randomColour()), float(i))))
-
-  @staticmethod
-  def randomColour():
-    return [random.randint(0,255), random.randint(0,255), random.randint(0,255), 255]
+                         % (self.id, self.colourToInt(self.colours[i]), float(i+1))))
 
   @staticmethod
   def colourToInt(c):
-    #ABGR Int
-    #return c[0] << 16 | c[1] << 8 | c[2] | c[3] << 24
     #ARGB int
-    return c[3] << 24 | c[2] << 16 | c[1] << 8 | c[0]
+    if len(c) < 4: c.append(1.0)
+    return int(c[3]*255) << 24 | int(c[2]*255) << 16 | int(c[1]*255) << 8 | int(c[0]*255)
 
+class RandomColourMap(ColourMap):
+  def __init__(self, count, seed):
+    random.seed(seed) #fixed seed for repeatable random colours
+    colours = []
+    for i in range(1, count):
+      colours.append(self.randomColour())
+    super(RandomColourMap, self).__init__(colours)
+
+  @staticmethod
+  def randomColour():
+    return [random.randint(0,255)/255.0, random.randint(0,255)/255.0, random.randint(0,255)/255.0, 1.0]
 
 class DrawingObject(object):
   #Abstract class for drawing objects
@@ -189,6 +187,15 @@ class DrawingObject(object):
     colour = rgba[0] | rgba[1] << 8 | rgba[2] << 16 | rgba[3] << 24
     self.colours.append(colour)
 
+  def addWidth(self, v):
+    self.widths.append(v)
+
+  def addHeight(self, v):
+    self.heights.append(v)
+
+  def addLength(self, v):
+    self.lengths.append(v)
+
   def write(self, db):
     if not self.id:
       cmapid = 0
@@ -220,6 +227,16 @@ class DrawingObject(object):
         cvdata = struct.pack('f'*len(self.values), *self.values)
         db.insertGeometry(self, Data.ColourValue, 1, len(self.values), 0, self.vmin, self.vmax, None, None, cvdata)
 
+    if len(self.widths):
+        data = struct.pack('f'*len(self.widths), *self.widths)
+        db.insertGeometry(self, Data.XWidth, 1, len(self.widths), 0, 0, 0, None, None, data)
+    if len(self.heights):
+        data = struct.pack('f'*len(self.heights), *self.heights)
+        db.insertGeometry(self, Data.YHeight, 1, len(self.heights), 0, 0, 0, None, None, data)
+    if len(self.lengths):
+        data = struct.pack('f'*len(self.lengths), *self.lengths)
+        db.insertGeometry(self, Data.ZLength, 1, len(self.lengths), 0, 0, 0, None, None, data)
+
     #Reset
     self.clear()
 
@@ -228,6 +245,7 @@ class DrawingObject(object):
     self.vertices = []
     self.colours = []
     self.values = []
+    self.widths = self.heights = self.lengths = []
 
     self.bmin = [float("inf"),float("inf"),float("inf")]
     self.bmax = [float("-inf"),float("-inf"),float("-inf")]
@@ -255,4 +273,31 @@ class Lines(DrawingObject):
     props = 'lineWidth=%d\nlink=%d\nflat=%d' % (width, link, flat) + props
     super(Lines, self).__init__(name, cmap, props)
 
+class Tracers(DrawingObject):
+  otype = Type.Tracer
+
+  def __init__(self, name, cmap, flat=False, scaling=1.0, props=""):
+    props = 'flat=%d\nlinewidth=1\nlit=1\nscaling=%d\narrowhead=2\nsteps=0\ntime=0\n' % (flat, scaling) + props
+    super(Tracers, self).__init__(name, cmap, props)
+
+class Shapes(DrawingObject):
+  Sphere = 0
+  Cube = 1
+
+  otype = Type.Shape
+
+  def __init__(self, name, cmap, size=0.1, shape=Sphere, props=""):
+    self.size = size
+    props = 'shape=%d\n' % (shape) + props
+    super(Shapes, self).__init__(name, cmap, props)
+
+  def write(self, db):
+    #Some default width/height/depth values if none provided
+    if len(self.widths) == 0:
+      self.widths = [self.size] * len(self.vertices)
+    if len(self.heights) == 0:
+      self.heights = [self.size] * len(self.vertices)
+    if len(self.lengths) == 0:
+      self.lengths = [self.size] * len(self.vertices)
+    super(Shapes, self).write(db)
 

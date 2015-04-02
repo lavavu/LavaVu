@@ -20,9 +20,13 @@ if len(sys.argv) > 3:
     fixBB = sys.argv[3]
 
 #Create a colourmap with 15 random colours
-colours = lavavu.RandomColourMap(colours=15, seed=34)
+colours = lavavu.RandomColourMap(count=15, seed=34)
+#User defined colour map (R,G,B [0,1])
+#colours = lavavu.ColourMap([[1,0,0], [1,1,0], [0,1,0], [0,1,1], [0,0,1], [1,0,1], [1,1,1]])
 #Create vis object, points and lines
-points = lavavu.Points('molecules', colours, size=10, pointtype=lavavu.Points.ShinySphere)
+#points = lavavu.Points('molecules', colours, size=10, pointtype=lavavu.Points.ShinySphere)
+points = lavavu.Shapes('molecules', colours, size=1.0, shape=lavavu.Shapes.Sphere)
+#points = lavavu.Points('molecules', None, size=10, pointtype=lavavu.Points.ShinySphere, props="colour=[1,0,0]")
 links = lavavu.Lines('links', colours, width=1, link=True, flat=True)
 #Create vis database for output
 db = lavavu.Database(dbPath)
@@ -85,7 +89,7 @@ with open(filePath, 'r') as file:
       if len(data) >= 6:
         rgba = [int(data[4]), int(data[5]), int(data[6]), 255]
         points.addColour(rgba)
-        lines.addColour(rgba)
+        links.addColour(rgba)
 
       #Write chain id as value for colouring
       #if lastnum != num:
