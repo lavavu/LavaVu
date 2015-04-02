@@ -37,7 +37,6 @@
 #include "Include.h"
 #include "LavaVu.h"
 #include "Shaders.h"
-#include "VideoEncoder.h"
 #include <typeinfo>
 #include "tiny_obj_loader.h"
 
@@ -83,6 +82,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    loop = false;
    animate = false;
    quiet = false;
+   repeat = 0;
+#ifdef HAVE_LIBAVCODEC
+   encoder = NULL;
+#endif
 
    //Read command line switches
    for (int i=0; i<args.size(); i++)
@@ -253,9 +256,17 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
 LavaVu::~LavaVu()
 {
+#ifdef HAVE_LIBAVCODEC
+   if (encoder) delete encoder;
+#endif
+
    //Kill all models
    for (unsigned int i=0; i < models.size(); i++)
       delete models[i];
+
+   //Kill all objects
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      delete Model::geometry[i];
 
    debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
 }
@@ -1629,6 +1640,15 @@ void LavaVu::display(void)
      debug_print("%.4lf seconds to render scene\n", time);
 
    aview->sort = false;
+
+#ifdef HAVE_LIBAVCODEC
+   if (encoder)
+   {
+      viewer->pixels(encoder->buffer, false, true);
+      //bitrate settings?
+      encoder->frame();
+   }
+#endif
 }
 
 void LavaVu::displayCurrentView()
@@ -2116,10 +2136,8 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
       end = temp;
    }
 #ifdef HAVE_LIBAVCODEC
-   VideoEncoder* encoder = NULL;
    if (video) 
-      encoder = new VideoEncoder(filename, viewer->width, viewer->height);
-   unsigned char* buffer = new unsigned char[viewer->width * viewer->height * 3];
+      encoder = new VideoEncoder(filename, viewer->width, viewer->height, 30);
 #else
    if (video)
       std::cout << "Video output disabled, libavcodec not found!" << std::endl;
@@ -2139,16 +2157,19 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
 #ifdef HAVE_LIBAVCODEC
          if (video)
          {
-            viewer->pixels(buffer, false, true);
+            viewer->pixels(encoder->buffer, false, true);
             //bitrate settings?
-            encoder->frame(buffer);
+            encoder->frame();
          }
 #endif
       }
    }
 #ifdef HAVE_LIBAVCODEC
-   delete[] buffer;
-   if (encoder) delete encoder;
+   if (encoder) 
+   {
+      delete encoder;
+      encoder = NULL;
+   }
 #endif
 }
 

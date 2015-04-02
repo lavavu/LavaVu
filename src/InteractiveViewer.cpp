@@ -755,7 +755,24 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "movie"))
    {
-      encodeVideo("gLucifer.mp4", timestep, ival);
+      std::string fn = awin->name + ".mp4";
+      encodeVideo(fn.c_str(), timestep, ival);
+   }
+   else if (parsed.exists("record"))
+   {
+#ifdef HAVE_LIBAVCODEC
+      if (!parsed.has(ival, "record")) ival = 30;
+      if (!encoder)
+      {
+         std::string fn = awin->name + ".mp4";
+         encoder = new VideoEncoder(fn.c_str(), viewer->width, viewer->height, ival);
+      }
+      else
+      {
+         delete encoder;
+         encoder = NULL;
+      }
+#endif
    }
    else if (parsed.has(ival, "play"))
    {
@@ -788,8 +805,21 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("animate"))
    {
-      animate = !animate;
-      printMessage("Animate mode is %s", animate ? "ON":"OFF");
+      if (parsed.has(ival, "animate"))
+      {
+         animate = ival;
+         viewer->notIdle(animate); //Start idle redisplay timer
+      }
+      else if (animate > 0)
+      {
+         animate = 0;
+      }
+      else
+      {
+         animate = 50;
+      }
+      printMessage("Animate mode %d millseconds", animate);
+      return true; //No record
    }
    else if (parsed.exists("repeat"))
    {
@@ -797,10 +827,18 @@ bool LavaVu::parseCommands(std::string cmd)
       if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
       {
          recording = false;
-         for (int r=0; r<ival; r++)
+         if (animate > 0 && repeat == 0)
          {
-            for (unsigned int l=0; l<history.size(); l++)
-               parseCommands(history[l]);
+            repeat = ival;
+            replay = history;
+         }
+         else
+         {
+            for (int r=0; r<ival; r++)
+            {
+               for (unsigned int l=0; l<history.size(); l++)
+                  parseCommands(history[l]);
+            }
          }
          recording = state;
          return true; //Skip record
@@ -808,9 +846,16 @@ bool LavaVu::parseCommands(std::string cmd)
       else if (parsed.has(ival, "repeat"))
       {
          recording = false;
-         for (int r=0; r<ival; r++)
-            parseCommands(last_cmd);
-         recording = state;
+         if (animate > 0)
+         {
+            repeat = ival;
+            replay.push_back(last_cmd);
+         }
+         else
+         {
+            for (int r=0; r<ival; r++)
+               parseCommands(last_cmd);
+         }
          return true;  //Skip record
       }
       else
@@ -1400,6 +1445,7 @@ bool LavaVu::parseCommands(std::string cmd)
          for (unsigned int l=0; l<history.size(); l++)
             std::cout << history[l] << std::endl;
       }
+      return true; //No record
    }
    else if (parsed.exists("clearhistory"))
    {
@@ -1531,6 +1577,22 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       if (!sort_on_rotate && aview->rotated)
          aview->sort = true;
+      //Command playback
+      if (repeat != 0)
+      {
+         bool state = recording;
+         recording = false;
+         //Playback
+         for (unsigned int l=0; l<replay.size(); l++)
+            parseCommands(replay[l]);
+         repeat--;
+         if (repeat == 0) 
+         {
+            viewer->notIdle(0); //Disable idle redisplay timer
+            replay.clear();
+         }
+         recording = state;
+      }
       return true; //Skip record
    }
    //Special commands for passing keyboard/mouse actions directly (web server mode)
@@ -1980,6 +2042,13 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "Usage: movie endstep\n\n"
                   "endstep (integer) : last frame timestep\n";
    }
+   else if (cmd == "record")
+   {
+      help += "Encode video of all frames displayed at specified framerate\n"
+                  "(Requires libavcodec)\n\n"
+                  "Usage: record (framerate)\n\n"
+                  "framerate (integer): frames per second (default 30)\n";
+   }
    else if (cmd == "play")
    {
       help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
@@ -2006,17 +2075,15 @@ std::string LavaVu::helpCommand(std::string cmd)
       help += "Repeat commands from history\n\n"
                   "Usage: repeat count\n\n"
                   "count (integer) : repeat the last entered command count times\n"
-                  "animate (optional) : update display after each command\n"
                   "\nUsage: repeat history count (animate)\n\n"
-                  "count (integer) : repeat every command in history buffer count times\n"
-                  "animate (optional) : update display after each command\n";
+                  "count (integer) : repeat every command in history buffer count times\n";
    }
    else if (cmd == "animate")
    {
       help += "Update display between each command\n\n"
-                  "Usage: animate\n\n"
-                  "Toggles the animate mode\n"
-                  "When on if multiple commands are issued the frame will be re-rendered after each one\n"
+                  "Usage: animate rate\n\n"
+                  "rate (integer) : animation timer to fire every (rate) msec, default 50\n"
+                  "When on if multiple commands are issued the frame is re-rendered at set framerate\n"
                   "When off all commands will be processed before the display is updated\n";
    }
    else if (cmd == "quit")

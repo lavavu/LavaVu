@@ -257,6 +257,9 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
     }
 
     client->getRenderer()->endDraw();
+
+    //Process timer based commands
+    OpenGLViewer::pollInput();
   }
   //else if(context.task == DrawContext::OverlayDrawTask)
   //{

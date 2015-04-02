@@ -1,4 +1,7 @@
-/* Based on...
+/* LavaVu VideoEncoder
+ * Owen Kaluza 2015, (c) Monash University
+ * Based on code from libavformat/output-example.c
+ ****************************************************
  * Libavformat API example: Output a media file in any supported
  * libavformat format. The default codecs are used.
  *
@@ -26,39 +29,11 @@
 
 #include "VideoEncoder.h"
 
-//Compatibility hacks for old versions of avcodec
-#if LIBAVCODEC_VERSION_MAJOR < 52 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR < 64)
-#define AVMEDIA_TYPE_VIDEO CODEC_TYPE_VIDEO
-#define AVMEDIA_TYPE_AUDIO CODEC_TYPE_AUDIO
-#endif
-
-#if LIBAVFORMAT_VERSION_MAJOR < 52 || (LIBAVFORMAT_VERSION_MAJOR == 52 && LIBAVFORMAT_VERSION_MINOR < 45)
-#define av_guess_format guess_format
-#endif
-
-#if LIBAVFORMAT_VERSION_MAJOR < 52 || (LIBAVFORMAT_VERSION_MAJOR == 52 && LIBAVFORMAT_VERSION_MINOR < 101)
-#define av_dump_format dump_format
-#endif
-
-#if LIBAVFORMAT_VERSION_MAJOR < 52 || (LIBAVFORMAT_VERSION_MAJOR == 52 && LIBAVFORMAT_VERSION_MINOR < 105)
- #define avio_open url_fopen
- #define avio_tell url_ftell
- #define avio_close url_fclose
-#endif
-
-#ifndef AVIO_FLAG_WRITE
- #define AVIO_FLAG_WRITE URL_WRONLY
-#endif
-
-#ifndef AV_PKT_FLAG_KEY
-#define AV_PKT_FLAG_KEY PKT_FLAG_KEY
-#endif
-
 /**************************************************************/
 /* video output */
 
 /* add a video output stream */
-AVStream* VideoEncoder::add_video_stream(enum CodecID codec_id)
+AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 {
    AVCodecContext *c;
    AVStream *st;
@@ -81,7 +56,7 @@ AVStream* VideoEncoder::add_video_stream(enum CodecID codec_id)
    c->width = width;
    c->height = height;
 
-   if (codec_id == CODEC_ID_H264)
+   if (codec_id == AV_CODEC_ID_H264)
    {
       /* h264 settings */
       c->profile = FF_PROFILE_H264_MAIN; //BASELINE;
@@ -115,12 +90,12 @@ AVStream* VideoEncoder::add_video_stream(enum CodecID codec_id)
    }
    else
    {
-      if (c->codec_id == CODEC_ID_MPEG2VIDEO)
+      if (c->codec_id == AV_CODEC_ID_MPEG2VIDEO)
       {
          /* just for testing, we also add B frames */
          c->max_b_frames = 2;
       }
-      if (c->codec_id == CODEC_ID_MPEG1VIDEO)
+      if (c->codec_id == AV_CODEC_ID_MPEG1VIDEO)
       {
          /* Needed to avoid using macroblocks in which some coeffs overflow.
             This does not happen with normal video, it just happens here as
@@ -142,7 +117,7 @@ AVStream* VideoEncoder::add_video_stream(enum CodecID codec_id)
     timebase should be 1/framerate and timestamp increments should be
     identically 1. */
    c->time_base.num = 1;
-   c->time_base.den = 30; /* 30 frames per second */
+   c->time_base.den = fps; /* frames per second */
    c->pix_fmt = PIX_FMT_YUV420P;
    c->gop_size = 4; /* Maximum distance between key-frames, low setting allows fine granularity seeking */
    //c->keyint_min = 4; /*Minimum distance between keyframes */
@@ -292,7 +267,7 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
    fmt = av_guess_format(NULL, filename, NULL);
    if (!fmt)
    {
-      printf("Could not deduce output format from file extension: using MPEG.\n");
+      fprintf(stderr, "Could not deduce output format from file extension: using MPEG.\n");
       fmt = av_guess_format("mpeg", NULL, NULL);
    }
    if (!fmt)
@@ -303,9 +278,12 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
    return fmt;
 }
 
-VideoEncoder::VideoEncoder(const char *filename, int width, int height) : width(width), height(height)
+VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps) : width(width), height(height), fps(fps)
 {
    fprintf(stderr, "Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
+   //Create the frame buffer
+   buffer = new unsigned char[width * height * 3];
+
    /* initialize libavcodec, and register all codecs and formats */
    av_register_all();
 
@@ -320,16 +298,16 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height) : width(
    snprintf(oc->filename, sizeof(oc->filename), "%s", filename);
 
    /* Codec override, use h264 for mp4 if available */
-   if (strstr(filename, ".mp4") && avcodec_find_encoder(CODEC_ID_H264))
-      oc->oformat->video_codec = CODEC_ID_H264; //h.264
+   if (strstr(filename, ".mp4") && avcodec_find_encoder(AV_CODEC_ID_H264))
+      oc->oformat->video_codec = AV_CODEC_ID_H264; //h.264
 
    /* add the audio and video streams using the default format codecs
       and initialize the codecs */
    video_st = NULL;
-   if (oc->oformat->video_codec != CODEC_ID_NONE)
+   if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
       video_st = add_video_stream(oc->oformat->video_codec);
 
-   oc->oformat->audio_codec = CODEC_ID_NONE;
+   oc->oformat->audio_codec = AV_CODEC_ID_NONE;
 
 #if LIBAVFORMAT_VERSION_MAJOR <= 52
    av_set_parameters(oc, NULL);
@@ -358,7 +336,7 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height) : width(
 #endif
 }
 
-void VideoEncoder::frame(unsigned char* pixels, int channels)
+void VideoEncoder::frame(int channels)
 {
    /* YUV420P encoded frame */
    int            pixel_I;
@@ -377,9 +355,9 @@ void VideoEncoder::frame(unsigned char* pixels, int channels)
       {
          pixel_I = yPixel_I * width + xPixel_I;
 
-         red   = (float) pixels[channels*pixel_I];
-         green = (float) pixels[channels*pixel_I+1];
-         blue  = (float) pixels[channels*pixel_I+2];
+         red   = (float) buffer[channels*pixel_I];
+         green = (float) buffer[channels*pixel_I+1];
+         blue  = (float) buffer[channels*pixel_I+2];
 
          picture->data[0][yPixel_I * picture->linesize[0] + xPixel_I] =
             (unsigned char)((0.257 * red) + (0.504 * green) + (0.098 * blue) + 16);
@@ -395,10 +373,10 @@ void VideoEncoder::frame(unsigned char* pixels, int channels)
          /* Find four pixels in this macro pixel */
          int idx0 = channels*(yPixel_I*2) * width + xPixel_I * 2*channels;
          int idx1 = channels*(yPixel_I*2+1) * width + xPixel_I * 2*channels;
-         macroPixel0 = pixels + idx0;
-         macroPixel1 = pixels + idx0 + channels;
-         macroPixel2 = pixels + idx1;
-         macroPixel3 = pixels + idx1 + channels;
+         macroPixel0 = buffer + idx0;
+         macroPixel1 = buffer + idx0 + channels;
+         macroPixel2 = buffer + idx1;
+         macroPixel3 = buffer + idx1 + channels;
 
          /* Average red, green and blue for four pixels around point */
          red   = 0.25 * ((float) (macroPixel0[0] + macroPixel1[0] + macroPixel2[0] + macroPixel3[0] ));
@@ -457,6 +435,9 @@ VideoEncoder::~VideoEncoder()
 
    /* free the stream */
    av_free(oc);
+
+   //Free framebuffer
+   delete[] buffer;
 }
 
 #endif //HAVE_LIBAVCODEC

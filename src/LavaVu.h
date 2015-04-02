@@ -43,6 +43,7 @@
 #include "ViewerApp.h"
 #include "Model.h"
 #include "Win.h"
+#include "VideoEncoder.h"
 
 typedef enum
 {
@@ -67,6 +68,10 @@ class LavaVu : public ViewerApp
    bool writeimage, writemovie;
    int volres[3];
    float volmin[3], volmax[3];
+   int repeat;
+#ifdef HAVE_LIBAVCODEC
+   VideoEncoder* encoder;
+#endif
 
    std::vector<Model*> models;
    std::vector<Win*> windows;
@@ -87,12 +92,13 @@ class LavaVu : public ViewerApp
    std::string entry;
    std::vector<std::string> history;
    std::vector<std::string> linehistory;
+   std::vector<std::string> replay;
 
   public:
    bool quiet;
    bool recording;
    bool loop;
-   bool animate;
+   int animate;
    char message[256];
 
    int view;
