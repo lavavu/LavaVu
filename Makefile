@@ -31,7 +31,17 @@ else
    DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11
    #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
    #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_SDL
-   #DEFINES += -DHAVE_OSMESA -DUSE_FONTS -DUSE_ZLIB
+   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_OSMESA
+endif
+
+#Optional components
+ifeq ($(VIDEO), 1)
+  CFLAGS += -DHAVE_LIBAVCODEC
+  LIBS += -lavcodec -lavutil -lavformat
+endif
+ifeq ($(PNG), 1)
+  CFLAGS += -DHAVE_LIBPNG
+  LIBS += -lpng
 endif
 
 #Source search paths
