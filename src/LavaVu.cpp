@@ -244,7 +244,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
       models.push_back(amodel);
 
       //Set a default window, viewport & camera
-      awin = new Win("LavaVu");
+      awin = new Win("");
       aview = awin->addView(new View());
       windows.push_back(awin);
       amodel->windows.push_back(awin);
