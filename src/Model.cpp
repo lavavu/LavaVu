@@ -78,10 +78,6 @@ Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0)
 
 Model::~Model()
 {
-   //Kill all objects
-   for (unsigned int i=0; i < geometry.size(); i++)
-      delete geometry[i];
-  
    //Clear drawing objects
    for(unsigned int i=0; i<objects.size(); i++)
       if (objects[i]) delete objects[i]; 

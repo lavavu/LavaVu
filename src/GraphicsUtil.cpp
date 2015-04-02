@@ -380,12 +380,11 @@ void PrintString(const char* str)
    if (charLists == 0 || !glIsList(charLists+1))   // Load font if not yet done
       GenerateFontCharacters();
    
+   fontColour.rgba[3] = 255;
    glColor4ubv(fontColour.rgba);
-//   glEnable(GL_TEXTURE_2D);                            // Enable Texture Mapping
    glDisable(GL_CULL_FACE);
    glListBase(charLists - 32);      // Set font display list base (space)
    glCallLists(strlen(str),GL_UNSIGNED_BYTE, str);      // Display
-//   glDisable(GL_TEXTURE_2D);                           // Disable Texture Mapping
 }
 
 void Printf(int x, int y, float scale, const char *fmt, ...)
