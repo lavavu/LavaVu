@@ -39,6 +39,10 @@
 #include <pthread.h>
 
 //Include the decompression routines
+#if defined HAVE_LIBPNG
+#define USE_ZLIB
+#endif
+
 #ifdef USE_ZLIB
 #include <zlib.h>
 #else

@@ -84,6 +84,10 @@ void TriSurfaces::update()
       total += tris;
       hiddencache[t] = !drawable(t); //Save flags
       debug_print("Surface %d, triangles %d hidden? %s\n", t, tris, (hiddencache[t] ? "yes" : "no"));
+
+      //TODO: hack for now to get wireframe working, should detect/switch opacity
+      if (geom[t]->draw->properties["wireframe"].ToBool(false))
+        geom[t]->opaque = true;
    }
    if (total == 0) return;
 
@@ -197,6 +201,7 @@ void TriSurfaces::loadMesh()
       GeomData* replace = new GeomData(geom[index]->draw);
       replace->width = old->width;
       replace->height = old->height;
+      replace->opaque = old->opaque;
       geom[index] = replace; //Swap
       int i = 0;
       for (unsigned int v=0; v<verts.size(); v++)
@@ -245,6 +250,7 @@ void TriSurfaces::loadMesh()
             indices[verts[v].id] = indices[verts[v].ref];
          }
       }
+
       //Remove old data store
       delete old;
       t2 = clock(); debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
@@ -330,7 +336,7 @@ void TriSurfaces::loadBuffers()
          //vectorNormalise(&geom[index]->normals[v][0]);
 
           //Write vertex data to vbo
-         if ((int)(ptr-p) >= bsize) return;
+         assert((int)(ptr-p) < bsize);
          //Copies vertex bytes
          memcpy(ptr, &geom[index]->vertices[v][0], sizeof(float) * 3);
          ptr += sizeof(float) * 3;
@@ -370,7 +376,6 @@ void TriSurfaces::loadBuffers()
       debug_print("  IBO creation failed\n");
    GL_Error_Check;
 
-
 }
 
 #define MAX3(a,b,c) ( a>b ? (a>c ? a : c) : (b>c ? b : c) )
@@ -391,12 +396,9 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
    }
 #endif
 
-        //TODO: hack for now to get wireframe working, should detect/switch opacity
-        if (geom[index]->draw->properties["wireframe"].ToBool(false)) geom[index]->opaque = true;
-
    //All opaque triangles at start
-   if (geom[index]->opaque) 
-      tidx[tricount].distance = 65535; //0
+   if (geom[index]->opaque)
+      tidx[tricount].distance = 65535;
    else
    {
       //Triangle centroid for depth sorting
@@ -585,6 +587,7 @@ void TriSurfaces::depthSort()
    Geometry::getMinMaxDistance(modelView, &mindist, &maxdist);
    //printMatrix(modelView);
    //printf("MINDIST %f MAXDIST %f\n", mindist, maxdist);
+   int shift = view->properties["shift"].ToInt(0);
 
    //Update eye distances, clamping int distance to integer between 1 and 65534
    float multiplier = 65534.0 / (maxdist - mindist);
@@ -599,8 +602,8 @@ void TriSurfaces::depthSort()
          tidx[i].fdistance = eyeDistance(modelView, tidx[i].centroid);
          tidx[i].distance = (int)(multiplier * (tidx[i].fdistance - mindist));
          assert(tidx[i].distance >= 0 && tidx[i].distance <= 65534);
-             //Shift by id hack
-             tidx[i].distance += tidx[i].geomid;
+         //Shift by id hack
+         if (shift) tidx[i].distance += tidx[i].geomid * shift;
          //Reverse as radix sort is ascending and we want to draw by distance descending
          //tidx[i].distance = 65535 - (int)(multiplier * (tidx[i].fdistance - mindist));
          //assert(tidx[i].distance >= 1 && tidx[i].distance <= 65535);
@@ -708,6 +711,7 @@ void TriSurfaces::draw()
       setState(tridx, prog);
 
       //Draw remaining elements (transparent, depth sorted)
+      //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
       if (start > 0 && start < elements)
       //if (start < elements)
       {
