@@ -37,9 +37,6 @@ env['CPPDEFINES'] += cpp_defs
 src_dir = 'src'
 inc_dir = 'include/LavaVu/Viewer/'
 
-# Install the headers
-hdrs = env.Install(inc_dir, Glob(src_dir + '/*.h'))
-
 # Install the shaders
 env.Install('bin/', Glob(src_dir + '/shaders/*.vert'))
 env.Install('bin/', Glob(src_dir + '/shaders/*.frag'))
