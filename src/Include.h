@@ -63,8 +63,8 @@
 
 #if defined __APPLE__ //Don't use function pointers!
 #define GL_GLEXT_PROTOTYPES
-#elif defined NO_EXTENSION_POINTERS
-//Added to allow disabling of extension pointer retrieval
+#elif not defined EXTENSION_POINTERS
+//Extension pointer retrieval on Linux now only if explicity enabled
 #define GL_GLEXT_PROTOTYPES
 #define GL_GLXEXT_PROTOTYPES
 #endif
@@ -106,12 +106,6 @@
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 extern PFNGLTEXIMAGE3DPROC glTexImage3D;
-#define EXTENSION_POINTERS
-#endif
-
-//Messy but allow disabling until tested on various Linux setups and with OSMesa 
-//Known to fix problems in parallels vm, use by adding -DNO_EXTENSION_POINTERS to the build config
-#if not defined __APPLE__ and not defined USE_OMEGALIB and not defined NO_EXTENSION_POINTERS
 #define EXTENSION_POINTERS
 #endif
 

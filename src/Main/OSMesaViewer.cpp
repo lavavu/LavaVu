@@ -59,6 +59,7 @@ void OSMesaViewer::open(int w, int h)
 {
    //Call base class open to set width/height
    OpenGLViewer::open(w, h);
+   fbo_enabled = false; //Force fbo disabled
    
    if (osMesaContext)
       OSMesaDestroyContext(osMesaContext);
