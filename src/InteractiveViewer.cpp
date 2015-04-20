@@ -1733,6 +1733,11 @@ bool LavaVu::parseCommands(std::string cmd)
       trisplit = ival;
       printMessage("Triangle subdivision level set to %d", trisplit);
    }
+   else if (parsed.exists("globalcam"))
+   {
+      globalCam = !globalCam;
+      printMessage("Global camera is %s", globalCam ? "ON":"OFF");
+   }
    else if (parsed.exists("localshaders"))
    {
       Shader::path = NULL;

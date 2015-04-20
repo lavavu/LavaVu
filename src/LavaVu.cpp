@@ -54,6 +54,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    noload = false;
    viewAll = false;
    viewPorts = true;
+   globalCam = false;
    writeimage = writemovie = false;
    sort_on_rotate = true;
    message[0] = '\0';
@@ -139,6 +140,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          case 'T':
             //Split triangles
             ss >> trisplit;
+            break;
+         case 'C':
+            //Global camera
+            globalCam = true;
             break;
          case 'l':
             //Use local shader files (set shader path to current working directory)
@@ -1985,7 +1990,10 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
          amodel->windows.push_back(awin);
       }
       //Default view
-      aview = awin->addView(new View(fn.base));
+      if (globalCam && aview)
+        awin->addView(aview);
+      else
+        aview = awin->addView(new View(fn.base));
 
       //Add objects to window & viewport
       for (unsigned int o=0; o<amodel->objects.size(); o++)

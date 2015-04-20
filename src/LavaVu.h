@@ -63,6 +63,7 @@ class LavaVu : public ViewerApp
 
    bool viewAll;
    bool viewPorts;
+   bool globalCam;
    bool sort_on_rotate;
    int fixedwidth, fixedheight;
    bool writeimage, writemovie;
