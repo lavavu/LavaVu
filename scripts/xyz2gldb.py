@@ -21,17 +21,23 @@ if len(sys.argv) > 3:
 
 #Create a colourmap with 15 random colours
 colours = lavavu.RandomColourMap(count=15, seed=34)
+colours2 = lavavu.RandomColourMap(count=15, seed=1)
+#Print the colour list, this can be used as the starting point for a custom colour map
+print colours.colours
 #User defined colour map (R,G,B [0,1])
 #colours = lavavu.ColourMap([[1,0,0], [1,1,0], [0,1,0], [0,1,1], [0,0,1], [1,0,1], [1,1,1]])
 #Create vis object, points and lines
-#points = lavavu.Points('molecules', colours, size=10, pointtype=lavavu.Points.ShinySphere)
-points = lavavu.Shapes('molecules', colours, size=1.0, shape=lavavu.Shapes.Sphere)
+points = lavavu.Points('molecules', colours, size=10, pointtype=lavavu.Points.ShinySphere)
+endpoints = lavavu.Points('molecule-ends', colours2, size=11, pointtype=lavavu.Points.ShinySphere)
+#points = lavavu.Shapes('molecules', colours, size=1.0, shape=lavavu.Shapes.Sphere)
+#endpoints = lavavu.Shapes('molecule-ends', colours2, size=1.1, shape=lavavu.Shapes.Sphere)
 #points = lavavu.Points('molecules', None, size=10, pointtype=lavavu.Points.ShinySphere, props="colour=[1,0,0]")
 links = lavavu.Lines('links', colours, width=1, link=True, flat=True)
 #Create vis database for output
 db = lavavu.Database(dbPath)
-#Write the colourmap to the database
+#Write the colourmaps to the database
 colours.write(db)
+colours2.write(db)
 
 #For storing bounding box over full simulation
 bbmin = [float("inf"),float("inf"),float("inf")]
@@ -39,17 +45,28 @@ bbmax = [float("-inf"),float("-inf"),float("-inf")]
 
 #Function to write a stored chain of molecules to database
 def writeChain():
-  global db, points, links, bbmin, bbmax
+  global db, points, endpoints, links, bbmin, bbmax
   #Set value min/max to number of chains
-  points.vmin = links.vmin = 0
-  points.vmax = links.vmax = 15
+  points.vmin = links.vmin = endpoints.vmin = 0
+  points.vmax = links.vmax = endpoints.vmax = 15
   #Save min/max bounding box dims
   if fixBB:
     for i in range(3):
       if bbmin[i] > points.bmin[i]: bbmin[i] = points.bmin[i]
       if bbmax[i] < points.bmax[i]: bbmax[i] = points.bmax[i]
+
+  #Write end-points using first and last vertices of chain
+  endpoints.addVertex(points.vertices[0], points.vertices[1], points.vertices[2])
+  endpoints.addValue(points.values[0])
+  last = len(points.vertices)-1
+  endpoints.addVertex(points.vertices[last-2], points.vertices[last-1], points.vertices[last])
+  endpoints.addValue(points.values[len(points.values)-1])
+  #Trim end points from main chain
+  points.vertices = points.vertices[3:last-3]
+
   points.write(db)
   links.write(db)
+  endpoints.write(db)
 
 #Loop over lines in input file
 with open(filePath, 'r') as file:
