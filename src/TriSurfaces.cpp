@@ -148,7 +148,8 @@ void TriSurfaces::loadMesh()
                                     i1.idx + voffset, i2.idx + voffset, i3.idx + voffset
                                     );
         }
-        //Increment by vertex count (all vertices are unique as mesh is optimised)
+
+        //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
         unique += geom[index]->vertices.size() / 3;
         continue;
       }
@@ -319,18 +320,17 @@ void TriSurfaces::loadBuffers()
       //Calibrate colour maps on range for this surface
       geom[index]->colourCalibrate();
       bool hasColour = (geom[index]->colourValue.size() > 0);
-      bool vertColour = hasColour && (geom[index]->colourValue.size() == geom[index]->vertices.size()/3);
+      int colrange = hasColour ? geom[index]->count / geom[index]->colourValue.size() : 1;
+      bool vertColour = hasColour && colrange > 1;
+      debug_print("Using 1 colour value(s) per %d vertices\n", colrange);
 
       int i = 0;
       Colour colour;
+      bool normals = geom[index]->normals.size() > 0;
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
-         //Have colour values but not enough for per-vertex, assume per triangle
-         int id = v;
-         if (!vertColour)
-            id /= 3; //Divide by 3 to map to triangles instead of vertices
-
-         geom[index]->getColour(colour, id);
+         //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
+         geom[index]->getColour(colour, v / colrange);
 
          //Ensure normalised...
          //vectorNormalise(&geom[index]->normals[v][0]);
@@ -341,7 +341,8 @@ void TriSurfaces::loadBuffers()
          memcpy(ptr, &geom[index]->vertices[v][0], sizeof(float) * 3);
          ptr += sizeof(float) * 3;
          //Copies normal bytes
-         memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
+         if (normals)
+            memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
          ptr += sizeof(float) * 3;
          //Copies texCoord bytes
          if (geom[index]->texCoords.size() > 0)
@@ -428,7 +429,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
    for (unsigned int v=0; v<verts.size(); v += 3)
    {
       //Copies for each vertex
-      normals[v] = Vec3d(vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert));
+      normals[v] = vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
       normals[v+1] = Vec3d(normals[v]);
       normals[v+2] = Vec3d(normals[v]);
 

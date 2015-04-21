@@ -388,6 +388,8 @@ void Geometry::setState(int index, Shader* prog)
       prog->setUniform("uTextured", texunit >= 0);
       if (texunit >= 0)
          prog->setUniform("uTexture", texunit);
+      if (type == lucTriangleType && geom[index]->normals.size() == 0)
+         prog->setUniform("uCalcNormal", 1);
    }
    GL_Error_Check;
 }
