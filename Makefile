@@ -18,23 +18,36 @@ else
   CFLAGS += -O3
 endif
 
-#Linux/Mac specific libraries/flags
+#Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
+#Offscreen build
+ifeq ($(OFFSCREEN), 1)
 ifeq ($(OS), Darwin)
-   CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
-   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
-   DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
-   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_AGL
+  #AGL offscreen config:
+  CFLAGS += -FAGL -FOpenGL -I/usr/include/malloc
+  LIBS=-ldl -lpthread -framework AGL -framework OpenGL -lobjc -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_AGL
 else
+  #OSMesa offscreen config:
+  LIBS=-ldl -lpthread -lm -lOSMesa -lz
+  DEFINES += -DUSE_FONTS -DHAVE_OSMESA
+endif
+else
+#Interactive build
+ifeq ($(OS), Darwin)
+  #Mac OS X interactive with GLUT
+  CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
+  LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_GLUT
+else
+  #Linux interactive with X11 (or GLUT / SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11 #-lglut -lSDL
-   #LIBS=-ldl -lpthread -lm -lGL -lOSMesa -lz
-   DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_X11
-   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_GLUT
-   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_SDL
-   #DEFINES += -DUSE_FONTS -DUSE_ZLIB -DHAVE_OSMESA
+  #LIBS=-ldl -lpthread -lm -lGL -lz -lX11 -lglut -lSDL
+  DEFINES += -DUSE_FONTS -DHAVE_X11 #-DHAVE_GLUT -DHAVE_SDL
+endif
 endif
 
-#Optional components
+#Other optional components
 ifeq ($(VIDEO), 1)
   CFLAGS += -DHAVE_LIBAVCODEC
   LIBS += -lavcodec -lavutil -lavformat
@@ -42,6 +55,8 @@ endif
 ifeq ($(PNG), 1)
   CFLAGS += -DHAVE_LIBPNG
   LIBS += -lpng
+else
+  CFLAGS += -DUSE_ZLIB
 endif
 
 #Source search paths
