@@ -91,8 +91,10 @@ class Model
 {
    //Geometry cache
    std::deque<GeomCache*> cache;
+   int cachestep;
   public:
-   int timestep;
+   static bool noload;
+   static int now;
    //Current timestep geometry
    static std::vector<Geometry*> geometry;
    //Type specific geometry pointers
@@ -160,11 +162,16 @@ class Model
      return timesteps[timesteps.size()-1].step;
    }
 
-   std::string timeStamp(int timestep);
+   std::string timeStamp();
    bool hasTimeStep(int ts);
-   int nearestTimeStep(int requested, int current);
+   int nearestTimeStep(int requested);
+   void addTimeStep(int step, double time=0.0, double dimCoeff=0.0, std::string units="")
+   {
+      timesteps.push_back(TimeStep(step, time, dimCoeff, units));
+   }
    
-   int loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers);
+   int setTimeStep(int ts, Win* window);
+   int loadGeometry(int object_id, int time_start=now, int time_stop=now, bool recurseTracers=false);
    int decompressGeometry(int object_id, int timestep);
    void writeDatabase(const char* path, unsigned int id, bool compress=false);
    void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compress);

@@ -79,12 +79,11 @@ class LavaVu : public ViewerApp
    std::vector<FilePath> files;
 
    // Loaded model parameters
-   int timestep, endstep;
+   int startstep, endstep;
    lucExportType dump;
    int dumpid;
    int window;
    int tracersteps;
-   bool noload;
    bool objectlist;
    bool swapY;
    int trisplit;
@@ -188,8 +187,6 @@ class LavaVu : public ViewerApp
    void cacheLoad(int start_ts);
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);
-   int getTimeStep() {return timestep;}
-   int loadGeometry(int object_id);
 
    //Interactive command & script processing
    bool parseChar(unsigned char key);

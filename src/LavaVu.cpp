@@ -47,11 +47,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
    //Defaults
    defaultScript = "init.script";
-   timestep = -1;
+   startstep = -1;
    endstep = -1;
    dump = lucExportNone;
    dumpid = 0;
-   noload = false;
    viewAll = false;
    viewPorts = true;
    globalCam = false;
@@ -67,7 +66,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
    window = 0;
    tracersteps = 0;
-   objectlist = noload;
+   objectlist = false;
    swapY = false;
    trisplit = 0;
 
@@ -143,7 +142,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             break;
          case 'C':
             //Global camera
-            globalCam = true;
+            parseCommands("globalcam");
             break;
          case 'l':
             //Use local shader files (set shader path to current working directory)
@@ -209,8 +208,8 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             //Attempt to interpret as timestep
             std::istringstream ss2(args[i]);
             ss2 >> x;
-            if (timestep < 0)
-               ss2 >> timestep;
+            if (startstep < 0)
+               ss2 >> startstep;
             else
                ss2 >> endstep;
          }
@@ -220,7 +219,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    }
 
    //Set default timestep if none specified
-   if (timestep < 0) timestep = 0;
+   if (startstep < 0) startstep = 0;
 
    //Load list of models passed on command line
    for (int i=0; i<args.size(); i++)
@@ -293,10 +292,10 @@ void LavaVu::run(bool persist)
       for (win=0; win < windows.size(); win++)
       {
          //Load the window data
-         loadWindow(win, timestep, true);
+         loadWindow(win, startstep, true);
 
          //Bounds checks
-         if (endstep < timestep) endstep = timestep;
+         if (endstep < startstep) endstep = startstep;
          int final = amodel->lastStep();
          if (endstep < final) final = endstep;
 
@@ -312,17 +311,17 @@ void LavaVu::run(bool persist)
             char path[256];
             if (writeimage)
             {
-               std::cout << "... Writing image(s) for window " << awin->name << " Timesteps: " << timestep << " to " << endstep << std::endl;
+               std::cout << "... Writing image(s) for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
             }
             if (writemovie)
             {
-               std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << timestep << " to " << endstep << std::endl;
+               std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
                //Other formats?? avi/mpeg4?
                sprintf(path, "%s.mp4", awin->name.c_str());
             }
 
             //Write output
-            writeSteps(writeimage, writemovie, timestep, endstep, path);
+            writeSteps(writeimage, writemovie, startstep, endstep, path);
          }
          else
             //Script files?
@@ -338,10 +337,10 @@ void LavaVu::run(bool persist)
    else
    {
       //Load vis data for first window
-      loadWindow(0, timestep, true);
+      loadWindow(0, startstep, true);
 
       runScripts();
-      cacheLoad(timestep);
+      cacheLoad(startstep);
    }
 
    //Start event loop
@@ -395,7 +394,7 @@ void LavaVu::runScripts()
 void LavaVu::cacheLoad(int start_ts)
 {
    //Cache fill (if cache large enough for all data)
-   timestep = start_ts;
+   int timestep = start_ts;
    if (amodel->db && GeomCache::size >= amodel->timesteps.size())
    {
       printf("Caching all geometry data...\n");
@@ -1049,7 +1048,6 @@ void LavaVu::readTecplot(FilePath& fn)
       while(std::getline(file, line))
       {
          //std::cerr << line << std::endl;
-         //getchar();
          if (line.find("ZONE") != std::string::npos)
          {//ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
             if (timestep >= 0) continue; //Only parse first zone for now
@@ -1488,7 +1486,7 @@ void LavaVu::resetViews(bool autozoom)
 
    //Copy window title
    std::stringstream title;
-   title << awin->name << " timestep " << timestep;
+   title << awin->name << " timestep " << amodel->now;
    viewer->title = title.str();
    if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
    viewer->setBackground(awin->background.value); //Update background colour
@@ -1548,7 +1546,7 @@ void LavaVu::viewModel(int idx, bool autozoom)
    aview->init(false, Geometry::min, Geometry::max);
 
    // Apply step autozoom if set (applied based on detected bounding box)
-   if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && timestep % aview->properties["zoomstep"].ToInt(-1) == 0)
+   if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->now % aview->properties["zoomstep"].ToInt(-1) == 0)
        aview->zoomToFit();
 }
 
@@ -1716,7 +1714,7 @@ void LavaVu::displayCurrentView()
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
+      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
 
       if (viewer->stereoBuffer)
       {
@@ -1740,7 +1738,7 @@ void LavaVu::displayCurrentView()
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
+      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
 
       // Restore full-colour 
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
@@ -1750,7 +1748,7 @@ void LavaVu::displayCurrentView()
       // Default non-stereo render
       aview->projection(EYE_CENTRE);
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
+      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
    }
 
    //Clear the rotation flag
@@ -2047,7 +2045,7 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
       if (amodel->db)
       {
          setTimeStep(at_timestep);
-         debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), timestep);
+         debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), amodel->now);
       }
    }
 
@@ -2084,45 +2082,11 @@ void LavaVu::loadFiles(bool autozoom)
    resetViews(autozoom);
 }
 
-//Load data at specified timestep for selected model
+//Load data at specified timestep for selected model & window
 int LavaVu::setTimeStep(int ts)
 {
-   clock_t t1 = clock();
-   unsigned int idx=0;
    if (windows.size() == 0) return -1;
-
-   int step = amodel->nearestTimeStep(ts, timestep);
-   if (step < 0) return -1;
-   //Clear currently loaded (also caches if enabled)
-   amodel->clearObjects();
-
-   //Closest matching timestep >= requested
-   timestep = step;
-   debug_print("TimeStep set to: %d\n", timestep);
-
-   //Detach any attached db file and attach n'th timestep database if available
-   amodel->attach(timestep);
-
-   //Attempt to load from cache first
-   if (amodel->restoreStep(timestep)) return 0; //Cache hit successful return value
-
-   //clearObjects();
-   //noload flag skips loading geometry until "load" commands issued
-   int rows = 0;
-   for (unsigned int i=0; i<awin->objects.size(); i++)
-   {
-      if (awin->objects[i] && (!noload || !awin->objects[i]->skip))
-         rows += loadGeometry(awin->objects[i]->id);
-   } 
-
-   debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
-   return rows;
-}
-
-int LavaVu::loadGeometry(int object_id)
-{
-   //Load at current timestep
-   return amodel->loadGeometry(object_id, timestep, timestep, true);
+   return amodel->setTimeStep(ts, awin);
 }
 
 void LavaVu::writeImages(int start, int end)
@@ -2156,12 +2120,12 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
       if (amodel->hasTimeStep(i))
       {
          setTimeStep(i);
-         std::cout << "... Writing timestep: " << timestep << std::endl;
+         std::cout << "... Writing timestep: " << amodel->now << std::endl;
          //Update the views
          resetViews(true);
          viewer->display();
          if (images)
-            viewer->snapshot(awin->name.c_str(), timestep);
+            viewer->snapshot(awin->name.c_str(), amodel->now);
 #ifdef HAVE_LIBAVCODEC
          if (video)
          {
@@ -2198,7 +2162,7 @@ void LavaVu::dumpById(unsigned int id)
             {
                char filename[512];
                sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
-                                                names[type].c_str(), timestep);
+                                                names[type].c_str(), amodel->now);
                std::ofstream csv;
                csv.open(filename, std::ios::out | std::ios::trunc);
                std::cout << " * Writing object " << amodel->objects[i]->id << " to " << filename << std::endl;
@@ -2219,9 +2183,9 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
    if (!jsonp) ext[4] = '\0';
    if (id > 0)
      sprintf(filename, "%s%s_%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
-                                          amodel->objects[id]->name.c_str(), timestep, ext);
+                                          amodel->objects[id]->name.c_str(), amodel->now, ext);
    else
-     sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), timestep, ext);
+     sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->now, ext);
    std::ofstream json(filename);
    if (jsonp) json << "loadData(\n";
    jsonWrite(json, id, true);
