@@ -165,13 +165,13 @@ void Points::loadVertices()
       GeomData* geo = geom[s];
       ColourMap* cmap = NULL;
       float psize0 = geo->draw->properties["pointsize"].ToFloat(1.0) * geo->draw->properties["scaling"].ToFloat(1.0);
+      //TODO: this duplicates code in getColour, 
+      // try to optimise getColour better instead
       if (geo->draw->colourMaps[lucColourValueData] && geo->colourValue.size() > 0)
          cmap = geo->draw->colourMaps[lucColourValueData];
       //Set opacity to drawing object/geometry override level if set
-      int alpha = 255;
-      float opacity = geo->draw->properties["opacity"].ToFloat(1.0);
-      if (opacity > 0.0) alpha = opacity * 255;
-      if (GeomData::opacity > 0.0) alpha = GeomData::opacity;
+      float alpha = geo->draw->properties["opacity"].ToFloat(0.0);
+      if (GeomData::opacity > 0.0 && GeomData::opacity < 1.0) alpha = GeomData::opacity;
       float ptype = geo->draw->properties["pointtype"].ToInt(-1);
       bool smooth = geo->draw->properties["pointsmooth"].ToBool(true);
 
@@ -194,7 +194,7 @@ void Points::loadVertices()
             if (cmap)
             {
                c = cmap->getfast(geo->colourValue[i]);
-               if (alpha) c.a = alpha;
+               if (alpha > 0.0) c.a *= alpha;
             }
             else
                geo->getColour(c, i);
