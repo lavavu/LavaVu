@@ -1014,24 +1014,27 @@ void LavaVu::readTecplot(FilePath& fn)
       addColourMap(colourMap);
 
       //Colours: hex, abgr
-      unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
-      colourMap->add(colours, 7);
+      unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+                                //0xffff00ff,0xffff0088,0xffff4444,0xffff8844,0xffffff22,0xffffffff,0xff888888};
+      colourMap->add(colours, 8);
+      //unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+      //colourMap->add(colours, 7);
 
       //Add colour bar display
-      newObject("colour-bar", false, 0, colourMap, 1.0, "colourbar=1\n");
+      newObject("colour-bar", true, 0, colourMap, 1.0, "colourbar=1\n");
 
    std::ifstream file(fn.full.c_str(), std::ios::in);
    if (file.is_open())
    {
       printMessage("Loading %s", fn.full.c_str());
       std::string line;
+      bool zoneparsed = false;
 
       int ELS, N;
       int NTRI = 12;  //12 triangles per element
       int NLN = 12;    //12 lines per element
       float* xyz = NULL;
-      float* triverts = NULL;
-      float* trivals = NULL;
+      int* triverts = NULL;
       float* lineverts = NULL;
       float* values = NULL;
       float* particles = NULL;
@@ -1040,17 +1043,20 @@ void LavaVu::readTecplot(FilePath& fn)
       float valuemax = -HUGE_VAL;
       int count = 0;
       int coord = 0;
+      int outcoord = 0;
       int tcount = 0;
       int lcount = 0;
       int pcount = 0;
-      timestep = -1;
+      int timestep = -1;
       DrawingObject *pobj, *tobj, *lobj;
       while(std::getline(file, line))
       {
          //std::cerr << line << std::endl;
          if (line.find("ZONE") != std::string::npos)
          {//ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
-            if (timestep >= 0) continue; //Only parse first zone for now
+            if (zoneparsed) continue; //Only parse first zone for now
+            zoneparsed = true;
+
             std::cerr << line << std::endl;
             std::stringstream ss(line);
             std::string token;
@@ -1061,12 +1067,10 @@ void LavaVu::readTecplot(FilePath& fn)
                else if (token.substr(0, 2) == "E=")
                   ELS = atoi(token.substr(2).c_str());
             }
-            timestep = 0;
 
             //FEBRICK
             xyz = new float[N*3];
-            triverts = new float[ELS*NTRI*3*3]; //6 faces = 12 tris
-            trivals = new float[ELS*NTRI*3];
+            triverts = new int[ELS*NTRI*3]; //6 faces = 12 tris * 3
             lineverts = new float[ELS*NLN*2*3]; //12 edges
             values = new float[ELS];
             particles = new float[ELS*3];  //Value of cell at centre
@@ -1075,176 +1079,191 @@ void LavaVu::readTecplot(FilePath& fn)
 
 
             //Add points object
-            pobj = newObject("particles", true, 0, colourMap, 0.5, "lit=0\n");
-            Model::points->add(pobj);
-            std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
+            //pobj = newObject("particles", true, 0, colourMap, 1.0, "lit=0\n");
+            //Model::points->add(pobj);
+            //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
             //Add triangles object
-            tobj = newObject("triangles", true, 0xffffffff, colourMap, 1.0, "flat=1\n");
+            tobj = newObject("triangles", true, 0, colourMap, 1.0, "flat=1\n");
             Model::triSurfaces->add(tobj);
 
             //Add lines object
-            lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
-            Model::lines->add(lobj);
+            //lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
+            //Model::lines->add(lobj);
 
 
          }
          else if (line.substr(0, 4) == "TEXT")
          {
-               count = tcount = lcount = pcount = 0;
-               coord = 6;
-            //End of a data step
-            amodel->timesteps.push_back(TimeStep(timestep, 0));
-               printf("READ TIMESTEP %d SIZE %d\n", timestep, amodel->timesteps.size());
+            //Create the timestep
+            if (GeomCache::size <= timestep) GeomCache::size++;
+            amodel->addTimeStep(timestep+1);
+            setTimeStep(timestep+1);
+            timestep = amodel->now;
 
-            Model::points->read(pobj, ELS, lucVertexData, particles);
-            Model::points->read(pobj, ELS, lucColourValueData, values);
-            Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+            //Bounds check
+            for (int t=0; t<N*3; t += 3)
+            {
+               Geometry::checkPointMinMax(&xyz[t]);
+            }
 
-            Model::triSurfaces->read(tobj, ELS*NTRI*3, lucVertexData, triverts);
-            Model::triSurfaces->read(tobj, ELS*NTRI, lucColourValueData, trivals);
+            //Model::points->read(pobj, ELS, lucVertexData, particles);
+            //Model::points->read(pobj, ELS, lucColourValueData, values);
+            //Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+
+            Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
+            Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
+            Model::triSurfaces->read(tobj, ELS, lucColourValueData, values);
             Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
 
-            Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
-
-            //amodel->clearObjects(false); //Will cache...
-            amodel->cacheStep();
-
-            timestep++;
-            //Load timesteps while cache slots available
-            if (GeomCache::size <= amodel->timesteps.size()) break;
+            //Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
 
             valuemin = HUGE_VAL;
             valuemax = -HUGE_VAL;
+
+            count = tcount = lcount = pcount = 0;
+            coord = 6;
+
+            /*/Cache and add timestep
+            if (GeomCache::size <= timestep) GeomCache::size++;
+            amodel->addTimeStep(timestep+1);
+            setTimeStep(timestep+1);
+            timestep = amodel->now;*/
+            printf("READ TIMESTEP %d TRIS %d\n", timestep, ELS*NTRI);
          }
-         else if (timestep >= 0)
+         else if (zoneparsed)
          {
             std::stringstream ss(line);
 
-            //First 3 coords X,Y,Z 8 per line
+            //Blocks of 8 values per line
+            //First blocks is X coords, Y, Z, then values
             if (coord < 3)
             {
                float value[8];
-               particles[pcount*3+coord] = 0;
+               particles[pcount*3+outcoord] = 0;
 
+               //8 vertices per element(brick)
+               int offset = count;
                for (int e=0; e<8; e++)
                {
                  //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
                   ss >> value[e];
-                  //if (coord ==2) value[e] *= 20; //HACK SCALE Z
-                  xyz[count*3+coord] = value[e];
-                  particles[pcount*3+coord] += value[e];
+                     if (outcoord == 1) value[e] *= 3; //HACK SCALE Y for vertical exageration
+                  xyz[count*3+outcoord] = value[e];
+                  particles[pcount*3+outcoord] += value[e];
 
                   count++;
 
                   //if (value[e] < awin->min[coord]) awin->min[coord] = value[e];
                   //if (value[e] > awin->max[coord]) awin->max[coord] = value[e];
-                  Geometry::checkPointMinMax(&value[e]);
                }
 
                for (int i=0; i<8; i++)
                  assert(!isnan(value[i]));
 
-               //Two triangles per side
-               //Front
-               triverts[(tcount*3)    * 3 + coord] = value[0];
-               triverts[(tcount*3+1)  * 3 + coord] = value[2];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[2];
-               triverts[(tcount*3+1)  * 3 + coord] = value[3];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               //Back
-               triverts[(tcount*3)    * 3 + coord] = value[4];
-               triverts[(tcount*3+1)  * 3 + coord] = value[6];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[6];
-               triverts[(tcount*3+1)  * 3 + coord] = value[7];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               //Right
-               triverts[(tcount*3)    * 3 + coord] = value[1];
-               triverts[(tcount*3+1)  * 3 + coord] = value[3];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[3];
-               triverts[(tcount*3+1)  * 3 + coord] = value[7];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               //Left
-               triverts[(tcount*3)    * 3 + coord] = value[0];
-               triverts[(tcount*3+1)  * 3 + coord] = value[2];
-               triverts[(tcount*3+2)  * 3 + coord] = value[4];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[2];
-               triverts[(tcount*3+1)  * 3 + coord] = value[6];
-               triverts[(tcount*3+2)  * 3 + coord] = value[4];
-               tcount++;
-               //Top??
-               triverts[(tcount*3)    * 3 + coord] = value[2];
-               triverts[(tcount*3+1)  * 3 + coord] = value[6];
-               triverts[(tcount*3+2)  * 3 + coord] = value[7];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[7];
-               triverts[(tcount*3+1)  * 3 + coord] = value[3];
-               triverts[(tcount*3+2)  * 3 + coord] = value[2];
-               tcount++;
-               //Bottom??
-               triverts[(tcount*3)    * 3 + coord] = value[0];
-               triverts[(tcount*3+1)  * 3 + coord] = value[4];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[4];
-               triverts[(tcount*3+1)  * 3 + coord] = value[5];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               //std::cout << count << " : " << ptr[0] << "," << ptr[3] << "," << ptr[6] << std::endl;
-               //getchar();
+               //Two triangles per side (set indices only when x,y,z all read)
+               if (coord == 2)
+               {
+                  //Front
+                  triverts[(tcount*3)  ] = offset + 0;
+                  triverts[(tcount*3+1)] = offset + 2;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 2;
+                  triverts[(tcount*3+1)] = offset + 3;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+
+                  //Back
+                  triverts[(tcount*3)  ] = offset + 4;
+                  triverts[(tcount*3+1)] = offset + 6;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 6;
+                  triverts[(tcount*3+1)] = offset + 7;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  //Right
+                  triverts[(tcount*3)  ] = offset + 1;
+                  triverts[(tcount*3+1)] = offset + 3;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 3;
+                  triverts[(tcount*3+1)] = offset + 7;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  //Left
+                  triverts[(tcount*3)  ] = offset + 0;
+                  triverts[(tcount*3+1)] = offset + 2;
+                  triverts[(tcount*3+2)] = offset + 4;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 2;
+                  triverts[(tcount*3+1)] = offset + 6;
+                  triverts[(tcount*3+2)] = offset + 4;
+                  tcount++;
+                  //Top??
+                  triverts[(tcount*3)  ] = offset + 2;
+                  triverts[(tcount*3+1)] = offset + 6;
+                  triverts[(tcount*3+2)] = offset + 7;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 7;
+                  triverts[(tcount*3+1)] = offset + 3;
+                  triverts[(tcount*3+2)] = offset + 2;
+                  tcount++;
+                  //Bottom??
+                  triverts[(tcount*3)  ] = offset + 0;
+                  triverts[(tcount*3+1)] = offset + 4;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 4;
+                  triverts[(tcount*3+1)] = offset + 5;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+                  //std::cout << count << " : " << ptr[0] << "," << ptr[3] << "," << ptr[6] << std::endl;
+               }
 
                //Edge lines
-               lineverts[(lcount*2)    * 3 + coord] = value[0];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[1];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[1];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[1];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[3];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[3];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[3];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[2];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[2];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[2];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[0];
-               lcount++;
-
-               lineverts[(lcount*2)    * 3 + coord] = value[4];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
-               lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[5];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
-               lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[7];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
-               lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[6];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[0];
                lcount++;
 
-               lineverts[(lcount*2)    * 3 + coord] = value[2];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[4];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[5];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[0];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[5];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[7];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[3];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[7];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[6];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[1];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[6];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[4];
+               lcount++;
+
+               lineverts[(lcount*2)    * 3 + outcoord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[6];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + outcoord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[4];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + outcoord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[7];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + outcoord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[5];
                lcount++;
 
                //Average value for particle
-               particles[pcount*3+coord] /= 8;
+               particles[pcount*3+outcoord] /= 8;
                pcount++;
             }
             else if (coord > 5) //Skip I,J,K indices
@@ -1252,17 +1271,14 @@ void LavaVu::readTecplot(FilePath& fn)
                //Load SG (1 per line)
                //if (coord > 6) break; //No more values of interest
 
-              //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
-              float value;
+               //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
+               float value;
                ss >> value;
                values[count] = value;
                count++;
 
                if (value < valuemin) valuemin = value;
                if (value > valuemax) valuemax = value;
-
-               for (int n=0; n<NTRI; n++, tcount++)
-                  trivals[tcount] = value;
             }
             else
             {
@@ -1273,6 +1289,15 @@ void LavaVu::readTecplot(FilePath& fn)
             {
                count = tcount = lcount = pcount = 0;
                coord++;
+               outcoord = coord;
+               if (swapY)
+               {
+                  if (coord == 2)
+                    outcoord = 1;
+                  if (coord == 1)
+                    outcoord = 2;
+               }
+               //std::cerr << " NEW BLOCK: " << tcount << " C " << coord << " OC " << outcoord << std::endl;
             }
          }
       }
@@ -1281,9 +1306,10 @@ void LavaVu::readTecplot(FilePath& fn)
       if (xyz) delete[] xyz;
       if (values) delete[] values;
       if (triverts) delete[] triverts;
-      if (trivals) delete[] trivals;
       if (lineverts) delete[] lineverts;
 
+      //Always cache
+      GeomCache::size++;
       setTimeStep(0);
    }
    else
