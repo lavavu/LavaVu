@@ -1417,8 +1417,8 @@ void LavaVu::reloadShaders()
       //Triangle shaders too slow with OSMesa
       if (TriSurfaces::prog) delete TriSurfaces::prog;
       TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
-      const char* tUniforms[4] = {"uOpacity", "uLighting", "uTextured", "uTexture"};
-      TriSurfaces::prog->loadUniforms(tUniforms, 4);
+      const char* tUniforms[5] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal"};
+      TriSurfaces::prog->loadUniforms(tUniforms, 5);
       QuadSurfaces::prog = TriSurfaces::prog;
    }
 
