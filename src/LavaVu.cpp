@@ -1148,7 +1148,6 @@ void LavaVu::readTecplot(FilePath& fn)
                {
                  //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
                   ss >> value[e];
-                     if (outcoord == 1) value[e] *= 3; //HACK SCALE Y for vertical exageration
                   xyz[count*3+outcoord] = value[e];
                   particles[pcount*3+outcoord] += value[e];
 

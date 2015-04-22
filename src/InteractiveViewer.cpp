@@ -1391,10 +1391,9 @@ bool LavaVu::parseCommands(std::string cmd)
             if (parsed.has(fval, "scale", 1))
                aview->setScale(1, 1, fval);
          }
-         else if (what == "all")
+         else if (what == "all" && parsed.has(fval, "scale", 1))
          {
             //Scale everything
-            //TODO: fix this, kills everything
             aview->setScale(fval, fval, fval);
          }
          else
