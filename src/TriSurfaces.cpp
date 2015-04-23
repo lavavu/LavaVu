@@ -327,6 +327,7 @@ void TriSurfaces::loadBuffers()
       int i = 0;
       Colour colour;
       bool normals = geom[index]->normals.size() > 0;
+      float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
          //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
@@ -343,6 +344,8 @@ void TriSurfaces::loadBuffers()
          //Copies normal bytes
          if (normals)
             memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
+         else
+            memcpy(ptr, zero, sizeof(float) * 3);
          ptr += sizeof(float) * 3;
          //Copies texCoord bytes
          if (geom[index]->texCoords.size() > 0)
