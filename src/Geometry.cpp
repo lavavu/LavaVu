@@ -181,7 +181,7 @@ void Geometry::clear(bool all)
    for (int i = geom.size()-1; i>=0; i--) 
    {
       unsigned int idx = i;
-      if (all || !geom[idx]->draw->persistent)
+      if (all || !geom[i]->draw->properties["static"].ToBool(false))
       {
          delete geom[idx]; 
          if (!all) geom.erase(geom.begin()+idx);
@@ -342,6 +342,7 @@ void Geometry::setState(int index, Shader* prog)
       glDisable(GL_CULL_FACE);
 
    //Surface specific options
+   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    if (type == lucTriangleType || type == lucGridType || type == lucShapeType)
    {
       //Don't light surfaces in 2d models
@@ -353,8 +354,6 @@ void Geometry::setState(int index, Shader* prog)
          lighting = false;
          glDisable(GL_CULL_FACE);
       }
-      else
-         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
       if (draw->properties["flat"].ToBool(false) || flat)
          glShadeModel(GL_FLAT);

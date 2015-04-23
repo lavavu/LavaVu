@@ -353,10 +353,10 @@ void Model::loadObjects()
       if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       {
          std::string props = std::string((char*)sqlite3_column_text(statement, 4));
-         addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity, props));
+         addObject(new DrawingObject(object_id, otitle, colour, NULL, opacity, props));
       }
       else
-         addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity));
+         addObject(new DrawingObject(object_id, otitle, colour, NULL, opacity));
    }
    sqlite3_finalize(statement);
 }

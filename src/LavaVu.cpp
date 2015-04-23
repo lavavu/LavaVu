@@ -263,14 +263,13 @@ LavaVu::~LavaVu()
 #ifdef HAVE_LIBAVCODEC
    if (encoder) delete encoder;
 #endif
+   //Kill all geom data
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      delete Model::geometry[i];
 
    //Kill all models
    for (unsigned int i=0; i < models.size(); i++)
       delete models[i];
-
-   //Kill all objects
-   for (unsigned int i=0; i < Model::geometry.size(); i++)
-      delete Model::geometry[i];
 
    debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
 }
@@ -466,7 +465,7 @@ void LavaVu::readRawVolume(FilePath& fn)
       colourMap->add(colours, 2);*/
       
    //Create volume object
-   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+   DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
      
    std::cerr << "LOADING ... " << fn.full << std::endl;
    std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
@@ -501,7 +500,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
       ColourMap* colourMap = NULL;
 
    //Create volume object
-   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+   DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
      
    std::cerr << "LOADING ... " << fn.full << std::endl;
 
@@ -565,7 +564,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
    static int count = 0;
    if (!vobj)
    {
-      vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+      vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
       //Define the bounding cube by corners
       Model::volumes->add(vobj);
       Model::volumes->read(vobj, 1, lucVertexData, volmin);
@@ -709,18 +708,18 @@ void LavaVu::readHeightMap(FilePath& fn)
    colourMap->add(0xff000000, 1.0);
 
    //Add colour bar display
-   //newObject("colourbar", true, 0, colourMap, 1.0, "colourbar=1\n");
+   //newObject("colourbar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n");
 
    //Create a height map grid
    int sx=cols, sz=rows;
    debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
                                                                     //opacity [0,1]
    DrawingObject *obj, *sea;
-   std::string props = "cullface=0\ntexturefile=%s\n" + texfile;
-   obj = newObject(fn.base, true, 0, colourMap, 1.0, props);
+   std::string props = "static=1\ncullface=0\ntexturefile=%s\n" + texfile;
+   obj = newObject(fn.base, 0, colourMap, 1.0, props);
    //Sea level surf
    //sea = newObject("Sea level", true, 0xffffff00, NULL, 0.5, "cullface=1\n");
-   sea = newObject("Sea level", true, 0xffffcc00, NULL, 0.5, "cullface=0\n");
+   sea = newObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n");
 
    int gridx = ceil(sx / (float)subsample);
    int gridz = ceil(sz / (float)subsample);
@@ -901,7 +900,7 @@ void LavaVu::readOBJ(FilePath& fn)
 
    //Add single drawing object per file, if one is already active append to it
    DrawingObject* tobj = aobject;
-   if (!tobj) tobj = newObject(fn.base, true, 0xff888888, NULL, 1.0, "\n");
+   if (!tobj) tobj = newObject(fn.base, 0xff888888, NULL, 1.0, "static=1\n");
   
    int index = -1;
    for (size_t i = 0; i < shapes.size(); i++)
@@ -1021,7 +1020,7 @@ void LavaVu::readTecplot(FilePath& fn)
       //colourMap->add(colours, 7);
 
       //Add colour bar display
-      newObject("colour-bar", true, 0, colourMap, 1.0, "colourbar=1\n");
+      newObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\nstatic=1\n");
 
    std::ifstream file(fn.full.c_str(), std::ios::in);
    if (file.is_open())
@@ -1079,16 +1078,16 @@ void LavaVu::readTecplot(FilePath& fn)
 
 
             //Add points object
-            //pobj = newObject("particles", true, 0, colourMap, 1.0, "lit=0\n");
+            //pobj = newObject("particles", 0, colourMap, 1.0, "static=1\nlit=0\n");
             //Model::points->add(pobj);
             //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
             //Add triangles object
-            tobj = newObject("triangles", true, 0, colourMap, 1.0, "flat=1\n");
+            tobj = newObject("triangles", 0, colourMap, 1.0, "static=1\nflat=1\n");
             Model::triSurfaces->add(tobj);
 
             //Add lines object
-            //lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
+            //lobj = newObject("lines", 0xff000000, NULL, 1.0, "static=1\nlit=0\n");
             //Model::lines->add(lobj);
 
 
@@ -1114,6 +1113,7 @@ void LavaVu::readTecplot(FilePath& fn)
             Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
             Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
             Model::triSurfaces->read(tobj, ELS, lucColourValueData, values);
+            //printf("VALUES min %f max %f\n", valuemin, valuemax); getchar();
             Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
 
             //Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
@@ -1265,14 +1265,12 @@ void LavaVu::readTecplot(FilePath& fn)
                particles[pcount*3+outcoord] /= 8;
                pcount++;
             }
-            else if (coord > 5) //Skip I,J,K indices
+            else if (coord == 6) //Skip I,J,K indices
             {
                //Load SG (1 per line)
-               //if (coord > 6) break; //No more values of interest
-
-               //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
                float value;
                ss >> value;
+               //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << " " << value << std::endl;
                values[count] = value;
                count++;
 
@@ -1333,10 +1331,10 @@ void LavaVu::createDemoModel()
    colourMap->calibrate(0, size);
 
    //Add colour bar display
-   newObject("colour-bar", false, 0, colourMap, 1.0, "colourbar=1\n");
+   newObject("colour-bar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n");
 
    //Add points object
-   DrawingObject* obj = newObject("particles", false, 0, colourMap, 0.75, "lit=0\n");
+   DrawingObject* obj = newObject("particles", 0, colourMap, 0.75, "static=1\nlit=0\n");
    int NUMPOINTS = 200000;
    int NUMSWARM = NUMPOINTS/4;
    for (int i=0; i < NUMPOINTS; i++) 
@@ -1361,7 +1359,7 @@ void LavaVu::createDemoModel()
    }
 
    //Add lines
-   obj = newObject("line-segments", false, 0, colourMap, 1.0, "lit=0\n");
+   obj = newObject("line-segments", 0, colourMap, 1.0, "static=1\nlit=0\n");
    for (int i=0; i < 50; i++) 
    {
       float colour, ref[3];
@@ -1388,7 +1386,7 @@ void LavaVu::createDemoModel()
       {
          char label[64];
          sprintf(label, "%c-cross-section", axischar[i]);
-         obj = newObject(label, false, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
+         obj = newObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
          Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
       }
    }
@@ -1398,9 +1396,9 @@ void LavaVu::createDemoModel()
    Geometry::checkPointMinMax(max);
 }
 
-DrawingObject* LavaVu::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, std::string properties)
+DrawingObject* LavaVu::newObject(std::string name, int colour, ColourMap* map, float opacity, std::string properties)
 {
-   DrawingObject* obj = new DrawingObject(0, persistent, name, colour, map, opacity, properties);
+   DrawingObject* obj = new DrawingObject(0, name, colour, map, opacity, properties);
    if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
    if (!aview) aview = awin->views[0];
    aview->addObject(obj);
@@ -1949,11 +1947,13 @@ void LavaVu::drawScene()
    else
       glEnable(GL_MULTISAMPLE);
 
-   // Restore default state
+   // Setup default state
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    glEnable(GL_LIGHTING);
    glDisable(GL_CULL_FACE);
    glDisable(GL_TEXTURE_2D);
+   glShadeModel(GL_SMOOTH);
+   glPushAttrib(GL_ENABLE_BIT);
 
    //For some bizarre reason, drawing the border box first on Mac OpenGL breaks the lighting
    //I hereby dedicate this comment as a monument to the 10 hours I lost tracking down this bug...
@@ -1969,6 +1969,11 @@ void LavaVu::drawScene()
    Model::lines->draw();
    Model::labels->draw();
    Model::volumes->draw();
+
+   //Restore default state
+   glPopAttrib();
+   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+   if (glUseProgram) glUseProgram(0);
 }
 
 void LavaVu::loadModel(FilePath& fn, bool hideall)
