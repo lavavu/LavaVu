@@ -1379,22 +1379,32 @@ bool LavaVu::parseCommands(std::string cmd)
          if (what == "x")
          {
             if (parsed.has(fval, "scale", 1))
+            {
                aview->setScale(fval, 1, 1);
+               redrawViewports();
+            }
          }
          else if (what == "y")
          {
             if (parsed.has(fval, "scale", 1))
+            {
                aview->setScale(1, fval, 1);
+               redrawViewports();
+            }
          }
          else if (what == "z")
          {
             if (parsed.has(fval, "scale", 1))
+            {
                aview->setScale(1, 1, fval);
+               redrawViewports();
+            }
          }
          else if (what == "all" && parsed.has(fval, "scale", 1))
          {
             //Scale everything
             aview->setScale(fval, fval, fval);
+            redrawViewports();
          }
          else
          {

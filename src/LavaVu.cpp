@@ -1960,13 +1960,13 @@ void LavaVu::drawScene()
    //(Drawing border last creates aliasing around transparent objects, moving back for now, is it only a GLUT problem?)
    aview->drawBorder();
 
+   Model::lines->draw();
    Model::triSurfaces->draw();
    Model::quadSurfaces->draw();
    Model::points->draw();
    Model::vectors->draw();
    Model::tracers->draw();
    Model::shapes->draw();
-   Model::lines->draw();
    Model::labels->draw();
    Model::volumes->draw();
 

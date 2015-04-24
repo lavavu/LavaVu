@@ -45,6 +45,10 @@
 #ifndef Geometry__
 #define Geometry__
 
+//Types based on triangle renderer - TODO: apply to quadsurface/vector/tracer data
+//#define TriangleBased(type) (type == lucTracerType || type == lucShapeType || type == lucVectorType)
+#define TriangleBased(type) (type == lucShapeType)
+
 // Point indices + distance for sorting
 typedef struct 
 {
@@ -90,6 +94,7 @@ class GeomData
 
    //Geometry data
    Coord3DValues vertices;
+   Coord3DValues positions;
    Coord3DValues vectors;
    Coord3DValues normals;
    FloatValues colourValue;
@@ -125,6 +130,7 @@ class GeomData
       data[lucRGBAData] = &colours;
       data[lucTexCoordData] = &texCoords;
       data[lucSizeData] = &sizes;
+      data[lucPositionData] = &positions;
 
       texture = NULL;
    }
@@ -244,8 +250,9 @@ class Geometry
    GeomData* getObjectStore(DrawingObject* draw);
    GeomData* add(DrawingObject* draw);
    void newData(DrawingObject* draw);
-   virtual void read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width=0, int height=0, int depth=1);
-   void setup(DrawingObject* draw, lucGeometryDataType type, float minimum, float maximum, float dimFactor=1.0, const char* units="");
+   void read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
+   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
+   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, float dimFactor=1.0, const char* units="");
    void label(DrawingObject* draw, const char* labels);
    void print();
    int size() {return geom.size();}
@@ -297,8 +304,7 @@ class QuadSurfaces : public Geometry
 class TriSurfaces : public Geometry
 {
    TIndex *tidx;
-   int tricount, ioffset, estimate;
-   bool loaded;
+   int tricount;
   public:
    static Shader* prog;
    GLuint indexvbo, vbo;
@@ -327,13 +333,15 @@ class Lines : public Geometry
    virtual void update();
 };
 
-class Shapes : public Geometry
+class Shapes : public TriSurfaces
 {
+   int idx;
   public:
    Shapes();
    ~Shapes();
+   void drawCuboid(GeomData* geom, float pos[3], float width, float height, float depth, Quaternion& rot);
+   void drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, int segment_count, Quaternion& rot);
    virtual void update();
-   virtual void draw();
 };
 
 class Points : public Geometry

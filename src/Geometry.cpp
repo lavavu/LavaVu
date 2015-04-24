@@ -343,7 +343,7 @@ void Geometry::setState(int index, Shader* prog)
 
    //Surface specific options
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-   if (type == lucTriangleType || type == lucGridType || type == lucShapeType)
+   if (type == lucTriangleType || type == lucGridType || TriangleBased(type))
    {
       //Don't light surfaces in 2d models
       if (!view->is3d) lighting = false;
@@ -387,7 +387,7 @@ void Geometry::setState(int index, Shader* prog)
       prog->setUniform("uTextured", texunit >= 0);
       if (texunit >= 0)
          prog->setUniform("uTexture", texunit);
-      if (type == lucTriangleType && geom[index]->normals.size() == 0)
+      if (geom[index]->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
          prog->setUniform("uCalcNormal", 1);
    }
    GL_Error_Check;
@@ -525,16 +525,15 @@ void Geometry::move(Geometry* other)
 }
 
 //Read geometry data from storage
-void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const void* data, int width, int height, int depth)
+void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
    draw->skip = false;  //Enable object (has data now)
    GeomData* geomdata;
    //Get passed object's most recently added data store
    geomdata = getObjectStore(draw);
-   
 
    //Objects with a specified width & height: detect new data store when required (full)
-   if (!geomdata || (type == lucVertexData && 
+   if (!geomdata || (dtype == lucVertexData && 
        geomdata->width > 0 && geomdata->height > 0 && 
        geomdata->width * geomdata->height * geomdata->depth == geomdata->count))
    {
@@ -543,27 +542,36 @@ void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType type, const 
       geomdata = add(draw);
    }
 
+   //Interpret shape/vector/tracer vertices as position data, actual vertices will be created for triangles
+   if (dtype == lucVertexData && TriangleBased(type))
+      read(geomdata, n, lucPositionData, data, width, height, depth);
+   else
+      read(geomdata, n, dtype, data, width, height, depth);
+}
+
+void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
+{
    //Set width & height if provided
    if (width) geomdata->width = width;
    if (height) geomdata->height = height;
    geomdata->depth = depth;
 
    //Read the data
-   if (n > 0) geomdata->data[type]->read(n, data);
+   if (n > 0) geomdata->data[dtype]->read(n, data);
 
-   if (type == lucVertexData)
+   if (dtype == lucVertexData)
    {
       geomdata->count += n;
       total += n;
    }
 }
 
-void Geometry::setup(DrawingObject* draw, lucGeometryDataType type, float minimum, float maximum, float dimFactor, const char* units)
+void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, float dimFactor, const char* units)
 {
    //Get passed object's most recently added data store and setup draw data
    GeomData* geomdata = getObjectStore(draw);
    if (!geomdata) return;
-   geomdata->data[type]->setup(minimum, maximum, dimFactor, units);
+   geomdata->data[dtype]->setup(minimum, maximum, dimFactor, units);
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)

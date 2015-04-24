@@ -45,7 +45,6 @@ TriSurfaces::TriSurfaces() : Geometry()
    vbo = 0;
    indexvbo = 0;
    tidx = NULL;
-   loaded = false;
    tricount = 0;
 }
 
@@ -332,9 +331,7 @@ void TriSurfaces::loadBuffers()
       {
          //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
          geom[index]->getColour(colour, v / colrange);
-
-         //Ensure normalised...
-         //vectorNormalise(&geom[index]->normals[v][0]);
+         //if (v%1000==0) printf("v %d colrange %d v/colrange %d colour %d,%d,%d,%d\n", v, colrange, v/colrange, colour.r, colour.g, colour.b, colour.a);
 
           //Write vertex data to vbo
          assert((int)(ptr-p) < bsize);
@@ -413,7 +410,9 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
       //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);
       if (centroid[2] < Geometry::min[2] || centroid[2] > Geometry::max[2])
       {
-        abort_program("centroid %f,%f,%f min %f,%f,%f max %f,%f,%f\n", centroid[0], centroid[1], centroid[2], Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+         checkPointMinMax(centroid);
+         //abort_program
+         printf("Warning: centroid %f,%f,%f min %f,%f,%f max %f,%f,%f\n", centroid[0], centroid[1], centroid[2], Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
       }
       //assert(centroid[2] >= Geometry::min[2] && centroid[2] <= Geometry::max[2]);
       memcpy(tidx[tricount].centroid, centroid, sizeof(float)*3);
