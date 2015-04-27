@@ -347,11 +347,6 @@ void Points::draw()
    glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
    GL_Error_Check;
 
-   //Avoid writing transparent pixels, also cleans up texture edges of round particles
-   glAlphaFunc(GL_GREATER, 0.1); 
-   glEnable(GL_ALPHA_TEST);
-   GL_Error_Check;
-
    //Draw, calls display list when available
    Geometry::draw();
    GL_Error_Check;
