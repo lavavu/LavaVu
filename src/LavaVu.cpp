@@ -55,7 +55,11 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    viewPorts = true;
    globalCam = false;
    writeimage = writemovie = false;
+#ifdef USE_OMEGALIB
+   sort_on_rotate = false;
+#else
    sort_on_rotate = true;
+#endif
    message[0] = '\0';
    volres[0] = volres[1] = volres[2] = 256;
    volmin[0] = volmin[1] = volmin[2] = -1;
@@ -1509,8 +1513,13 @@ void LavaVu::resetViews(bool autozoom)
 
    //Copy window title
    std::stringstream title;
-   title << awin->name << " timestep " << amodel->now;
+   title << aview->properties["title"].ToString();
+   title << " (" << awin->name << ")";
+   if (amodel->timesteps.size() > 1)
+      title << " : timestep " << amodel->now;
+
    viewer->title = title.str();
+
    if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
    viewer->setBackground(awin->background.value); //Update background colour
 }
@@ -2033,6 +2042,9 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
          amodel->loadLinks(amodel->objects[o]);
       }
    }
+
+   //Set window name to model name
+   awin->name = amodel->file.base;
 
    //Add all windows to global window list
    for (unsigned int w=0; w<amodel->windows.size(); w++)

@@ -787,10 +787,12 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("next"))
    {
       int old = amodel->now;
+      if (amodel->timesteps.size() < 2) return false;
       setTimeStep(amodel->now+1);
       //Allow loop back to start when using next command
       if (amodel->now > 0 && amodel->now == old)
          setTimeStep(0);
+      resetViews(); //Update the viewports
 
       if (loop)
          OpenGLViewer::commands.push_back(std::string("next"));
@@ -1355,7 +1357,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("camera"))
    {
-      //Output camera view xml
+      //Output camera view xml and translation/rotation commands
       aview->print();
    }
    else if (parsed.exists("scale"))

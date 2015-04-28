@@ -329,6 +329,10 @@ void View::print()
    printf("   <param name=\"aperture\">%.1f</param>\n", fov);
    printf("   <param name=\"CoordinateSystem\">%s</param>\n", (orientation == RIGHT_HANDED ? "RightHanded" : "LeftHanded"));
    printf("</struct>\n");
+   printf("------------------------------\n");
+   printf("%s\n", translateString().c_str());
+   printf("%s\n", rotateString().c_str());
+   printf("------------------------------\n");
 }
 
 //Absolute viewport
@@ -430,6 +434,7 @@ void View::apply(bool use_fp)
    GL_Error_Check;
    // Setup view transforms
    glMatrixMode(GL_MODELVIEW);
+#ifndef USE_OMEGALIB
    glLoadIdentity();
    GL_Error_Check;
 
@@ -441,6 +446,7 @@ void View::apply(bool use_fp)
    //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
    glTranslatef(model_trans_lag[0]*scale[0], model_trans_lag[1]*scale[0], model_trans_lag[2]*scale[0]);
    GL_Error_Check;
+#endif
 
    // Adjust centre of rotation, default is same as focal point so this does nothing...
    float adjust[3] = {(focal_point[0]-rotate_centre[0])*scale[0], (focal_point[1]-rotate_centre[1])*scale[1], (focal_point[2]-rotate_centre[2])*scale[2]};
