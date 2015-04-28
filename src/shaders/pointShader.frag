@@ -29,10 +29,16 @@ void main(void)
    vec3 N;
    N.xy = gl_PointCoord * 2.0 - vec2(1.0);    
    float R = dot(N.xy, N.xy);
+   //Discard if outside circle
+   if (R > 1.0) discard;
    //Anti-aliased edges for sphere types
-   if (pointType > 1 && R > 0.9) alpha *= 10.0 * (1.0 - R);
-   //Discard if outside circle or transparent
-   if (R > 1.0) alpha = 0.0;
+   if (pointType > 1)
+   {
+     float edge = vPointSize - R * vPointSize;
+     if (edge <= 4.0) 
+        alpha *= (0.25 * edge);
+   }
+   //Discard if transparent
    if (alpha < 0.01) discard;
 
    if (pointType < 2)
