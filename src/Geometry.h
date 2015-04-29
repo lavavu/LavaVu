@@ -37,7 +37,7 @@
 #include "DrawingObject.h"
 #include "ColourMap.h"
 #include "View.h"
-#include "Types.h"
+#include "ViewerTypes.h"
 #include "Shaders.h"
 #include "TimeStep.h"
 #include "base64.h"

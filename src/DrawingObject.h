@@ -35,7 +35,7 @@
 
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
-#include "Types.h"
+#include "ViewerTypes.h"
 
 #ifndef DrawingObject__
 #define DrawingObject__
