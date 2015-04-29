@@ -147,6 +147,7 @@
 #define LUC_BRICK          0xffB22222
 #define LUC_DARKRED        0xff8B0000
 
+extern float *x_coords_, *y_coords_;  // Saves arrays of x,y points on circle for set segment count
 extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);
@@ -378,6 +379,11 @@ class Vec3d
       return z;
    }
 
+   Vec3d operator-() const
+   {
+      return Vec3d(-x, -y, -z);
+   }
+
    Vec3d operator+(const Vec3d& rhs) const
    {
       return Vec3d(x + rhs.x, y + rhs.y, z + rhs.z);
@@ -580,8 +586,8 @@ class Quaternion
       return r;*/
 
       Vec3d vn(vec);
-      vn.normalise();
       float mag = vn.magnitude();
+      vn.normalise();
 
       Quaternion vecQuat(vn.x, vn.y, vn.z, 0.0f);
       Quaternion conj(-x, -y, -z, w);

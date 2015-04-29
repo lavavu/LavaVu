@@ -58,7 +58,7 @@ long FloatValues::membytes = 0;
 long FloatValues::mempeak = 0;
 
 int __segments = 0;    // Saves segment count for circle based objects
-float *_x_coords = NULL, *_y_coords = NULL;  // Saves arrays of x,y points on circle for set segment count
+float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 
 unsigned int fontbase = 0, fontcharset = FONT_DEFAULT, fonttexture;
 
@@ -899,11 +899,11 @@ void calcCircleCoords(int segment_count)
    // and store in static variable to re-use every time a vector with the
    // same segment count is drawn
    __segments = segment_count;
-   if (_x_coords != NULL) delete[] _x_coords;
-   if (_y_coords != NULL) delete[] _y_coords;
+   if (x_coords_ != NULL) delete[] x_coords_;
+   if (y_coords_ != NULL) delete[] y_coords_;
 
-   _x_coords = new float[segment_count + 1];
-   _y_coords = new float[segment_count + 1];
+   x_coords_ = new float[segment_count + 1];
+   y_coords_ = new float[segment_count + 1];
 
    // Loop around in a circle and specify even points along the circle
    // as the vertices for the triangle fan cone, cone base and arrow shaft
@@ -911,8 +911,8 @@ void calcCircleCoords(int segment_count)
    {
       angle = angle_inc * (float)idx;
       // Calculate x and y position of the next vertex and cylinder normals (unit circle coords)
-      _x_coords[idx] = sin(angle);
-      _y_coords[idx] = cos(angle);
+      x_coords_[idx] = sin(angle);
+      y_coords_[idx] = cos(angle);
    }
 }
 
@@ -945,9 +945,9 @@ void drawEllipsoid(float centre[3], float radiusX, float radiusY, float radiusZ,
       {
          // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
          int idx = ((int)(1 + j + 0.75 * segment_count) % segment_count);
-         edge[0] = _y_coords[idx] * _y_coords[i];
-         edge[1] = _x_coords[idx];
-         edge[2] = _y_coords[idx] * _x_coords[i];
+         edge[0] = y_coords_[idx] * y_coords_[i];
+         edge[1] = x_coords_[idx];
+         edge[2] = y_coords_[idx] * x_coords_[i];
          pos[0] = centre[0] + radiusX * edge[0];
          pos[1] = centre[1] + radiusY * edge[1];
          pos[2] = centre[2] + radiusZ * edge[2];
@@ -963,9 +963,9 @@ void drawEllipsoid(float centre[3], float radiusX, float radiusY, float radiusZ,
 
          // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
          idx = ((int)(j + 0.75 * segment_count) % segment_count);
-         edge[0] = _y_coords[idx] * _y_coords[i];
-         edge[1] = _x_coords[idx];
-         edge[2] = _y_coords[idx] * _x_coords[i];
+         edge[0] = y_coords_[idx] * y_coords_[i];
+         edge[1] = x_coords_[idx];
+         edge[2] = y_coords_[idx] * x_coords_[i];
          pos[0] = centre[0] + radiusX * edge[0];
          pos[1] = centre[1] + radiusY * edge[1];
          pos[2] = centre[2] + radiusZ * edge[2];
@@ -1164,11 +1164,11 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       glBegin(GL_QUAD_STRIP);
       for (v=0; v <= __segments; v++)
       {
-         glNormal3f(_x_coords[v], _y_coords[v], 0);
+         glNormal3f(x_coords_[v], y_coords_[v], 0);
 
          // Base of shaft 
-         shaft_vertex[0] = radius * _x_coords[v];
-         shaft_vertex[1] = radius * _y_coords[v];
+         shaft_vertex[0] = radius * x_coords_[v];
+         shaft_vertex[1] = radius * y_coords_[v];
          shaft_vertex[2] = -length + head_radius*2; // Shaft length to base of head 
          if (colour0) Colour_SetColour(colour0);   // Set tail colour if provided 
          glVertex3fv(shaft_vertex);
@@ -1192,7 +1192,7 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       // First pair of vertices on circle define a triangle when combined with pinnacle 
       // First normal is between first and last triangle normals 1/|\seg-1 
       float vertex1[3] = {0.0, 0.0, 0.0};
-      float vertex0[3] = {head_radius * _x_coords[1], head_radius * _y_coords[1], 0.0};
+      float vertex0[3] = {head_radius * x_coords_[1], head_radius * y_coords_[1], 0.0};
 
       if (colour1) Colour_SetColour(colour1);   // Set head colour if provided 
 
@@ -1205,8 +1205,8 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       for (v=__segments; v >= 0; v--)
       {
          // Calc next vertex from unit circle coords
-         vertex1[0] = head_radius * _x_coords[v];
-         vertex1[1] = head_radius * _y_coords[v];
+         vertex1[0] = head_radius * x_coords_[v];
+         vertex1[1] = head_radius * y_coords_[v];
          //Calculate normal
          Vec3d normal = vectorNormalToPlane(pinnacle, vertex0, vertex1);
          normal.normalise();
@@ -1228,8 +1228,8 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       for (v=0; v<=__segments; v++)
       {
          // Calc next vertex from unit circle coords
-         vertex1[0] = head_radius * _x_coords[v];
-         vertex1[1] = head_radius * _y_coords[v];
+         vertex1[0] = head_radius * x_coords_[v];
+         vertex1[1] = head_radius * y_coords_[v];
          // Draw vertex 
          glVertex2fv(vertex1);
       }

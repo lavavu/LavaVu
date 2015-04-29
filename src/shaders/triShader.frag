@@ -1,16 +1,26 @@
+//flat varying vec4 vColour;
 varying vec4 vColour;
 varying vec3 vNormal;
 varying vec3 vPosEye;
+varying vec3 vVertex;
 uniform float uOpacity;
 uniform bool uLighting;
 uniform bool uTextured;
+uniform bool uCalcNormal;
 uniform sampler2D uTexture;
+
+#define HUGEVAL 1e20
 
 void main(void)
 {
+  //Clip planes in X/Y/Z
+  vec3 clipMin = vec3(-HUGEVAL,-HUGEVAL,-HUGEVAL);
+  vec3 clipMax = vec3(HUGEVAL,HUGEVAL,HUGEVAL);
+  if (any(lessThan(vVertex, clipMin)) || any(greaterThan(vVertex, clipMax))) discard;
+
   vec4 fColour = vColour;
   if (uTextured) 
-    fColour = texture2D(uTexture, gl_TexCoord[0]);
+    fColour = texture2D(uTexture, gl_TexCoord[0].xy);
 
   if (!uLighting) 
   {
@@ -22,7 +32,7 @@ void main(void)
   const float ambient = 0.4;
   const float diffuseIntensity = 0.8;
   const float specIntensity = 0.0;
-  const float shininess = 100; //Size of highlight (higher is smaller)
+  const float shininess = 100.0; //Size of highlight (higher is smaller)
   const vec3 light = vec3(1.0, 1.0, 1.0);  //Colour of light
 
   //Head light, lightPos=(0,0,0) - vPosEye
@@ -30,6 +40,15 @@ void main(void)
 
   //Calculate diffuse lighting
   vec3 N = normalize(vNormal);
+
+  //Default normal...
+  if (length(N) < 0.9 || uCalcNormal)
+  {
+    vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
+    vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
+    N = normalize(cross(fdx,fdy)); 
+  }
+
   float diffuse = abs(dot(N, lightDir));
 
    //Compute the specular term

@@ -47,15 +47,19 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
    //Defaults
    defaultScript = "init.script";
-   timestep = -1;
+   startstep = -1;
    endstep = -1;
    dump = lucExportNone;
    dumpid = 0;
-   noload = false;
    viewAll = false;
    viewPorts = true;
+   globalCam = false;
    writeimage = writemovie = false;
+#ifdef USE_OMEGALIB
+   sort_on_rotate = false;
+#else
    sort_on_rotate = true;
+#endif
    message[0] = '\0';
    volres[0] = volres[1] = volres[2] = 256;
    volmin[0] = volmin[1] = volmin[2] = -1;
@@ -66,7 +70,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
    window = 0;
    tracersteps = 0;
-   objectlist = noload;
+   objectlist = false;
    swapY = false;
    trisplit = 0;
 
@@ -140,6 +144,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             //Split triangles
             ss >> trisplit;
             break;
+         case 'C':
+            //Global camera
+            parseCommands("globalcam");
+            break;
          case 'l':
             //Use local shader files (set shader path to current working directory)
             parseCommands("localshaders");
@@ -204,8 +212,8 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             //Attempt to interpret as timestep
             std::istringstream ss2(args[i]);
             ss2 >> x;
-            if (timestep < 0)
-               ss2 >> timestep;
+            if (startstep < 0)
+               ss2 >> startstep;
             else
                ss2 >> endstep;
          }
@@ -215,7 +223,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    }
 
    //Set default timestep if none specified
-   if (timestep < 0) timestep = 0;
+   if (startstep < 0) startstep = 0;
 
    //Load list of models passed on command line
    for (int i=0; i<args.size(); i++)
@@ -259,14 +267,13 @@ LavaVu::~LavaVu()
 #ifdef HAVE_LIBAVCODEC
    if (encoder) delete encoder;
 #endif
+   //Kill all geom data
+   for (unsigned int i=0; i < Model::geometry.size(); i++)
+      delete Model::geometry[i];
 
    //Kill all models
    for (unsigned int i=0; i < models.size(); i++)
       delete models[i];
-
-   //Kill all objects
-   for (unsigned int i=0; i < Model::geometry.size(); i++)
-      delete Model::geometry[i];
 
    debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
 }
@@ -288,10 +295,10 @@ void LavaVu::run(bool persist)
       for (win=0; win < windows.size(); win++)
       {
          //Load the window data
-         loadWindow(win, timestep, true);
+         loadWindow(win, startstep, true);
 
          //Bounds checks
-         if (endstep < timestep) endstep = timestep;
+         if (endstep < startstep) endstep = startstep;
          int final = amodel->lastStep();
          if (endstep < final) final = endstep;
 
@@ -307,17 +314,17 @@ void LavaVu::run(bool persist)
             char path[256];
             if (writeimage)
             {
-               std::cout << "... Writing image(s) for window " << awin->name << " Timesteps: " << timestep << " to " << endstep << std::endl;
+               std::cout << "... Writing image(s) for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
             }
             if (writemovie)
             {
-               std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << timestep << " to " << endstep << std::endl;
+               std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
                //Other formats?? avi/mpeg4?
                sprintf(path, "%s.mp4", awin->name.c_str());
             }
 
             //Write output
-            writeSteps(writeimage, writemovie, timestep, endstep, path);
+            writeSteps(writeimage, writemovie, startstep, endstep, path);
          }
          else
             //Script files?
@@ -333,10 +340,10 @@ void LavaVu::run(bool persist)
    else
    {
       //Load vis data for first window
-      loadWindow(0, timestep, true);
+      loadWindow(0, startstep, true);
 
       runScripts();
-      cacheLoad(timestep);
+      cacheLoad(startstep);
    }
 
    //Start event loop
@@ -390,7 +397,7 @@ void LavaVu::runScripts()
 void LavaVu::cacheLoad(int start_ts)
 {
    //Cache fill (if cache large enough for all data)
-   timestep = start_ts;
+   int timestep = start_ts;
    if (amodel->db && GeomCache::size >= amodel->timesteps.size())
    {
       printf("Caching all geometry data...\n");
@@ -462,7 +469,7 @@ void LavaVu::readRawVolume(FilePath& fn)
       colourMap->add(colours, 2);*/
       
    //Create volume object
-   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+   DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
      
    std::cerr << "LOADING ... " << fn.full << std::endl;
    std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
@@ -497,7 +504,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
       ColourMap* colourMap = NULL;
 
    //Create volume object
-   DrawingObject *vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+   DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
      
    std::cerr << "LOADING ... " << fn.full << std::endl;
 
@@ -561,7 +568,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
    static int count = 0;
    if (!vobj)
    {
-      vobj = newObject(fn.base, true, 0xff000000, colourMap, 1.0, "");
+      vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
       //Define the bounding cube by corners
       Model::volumes->add(vobj);
       Model::volumes->read(vobj, 1, lucVertexData, volmin);
@@ -705,18 +712,18 @@ void LavaVu::readHeightMap(FilePath& fn)
    colourMap->add(0xff000000, 1.0);
 
    //Add colour bar display
-   //newObject("colourbar", true, 0, colourMap, 1.0, "colourbar=1\n");
+   //newObject("colourbar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n");
 
    //Create a height map grid
    int sx=cols, sz=rows;
    debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
                                                                     //opacity [0,1]
    DrawingObject *obj, *sea;
-   std::string props = "cullface=0\ntexturefile=%s\n" + texfile;
-   obj = newObject(fn.base, true, 0, colourMap, 1.0, props);
+   std::string props = "static=1\ncullface=0\ntexturefile=%s\n" + texfile;
+   obj = newObject(fn.base, 0, colourMap, 1.0, props);
    //Sea level surf
    //sea = newObject("Sea level", true, 0xffffff00, NULL, 0.5, "cullface=1\n");
-   sea = newObject("Sea level", true, 0xffffcc00, NULL, 0.5, "cullface=0\n");
+   sea = newObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n");
 
    int gridx = ceil(sx / (float)subsample);
    int gridz = ceil(sz / (float)subsample);
@@ -897,7 +904,7 @@ void LavaVu::readOBJ(FilePath& fn)
 
    //Add single drawing object per file, if one is already active append to it
    DrawingObject* tobj = aobject;
-   if (!tobj) tobj = newObject(fn.base, true, 0xff888888, NULL, 1.0, "\n");
+   if (!tobj) tobj = newObject(fn.base, 0xff888888, NULL, 1.0, "static=1\n");
   
    int index = -1;
    for (size_t i = 0; i < shapes.size(); i++)
@@ -1010,24 +1017,27 @@ void LavaVu::readTecplot(FilePath& fn)
       addColourMap(colourMap);
 
       //Colours: hex, abgr
-      unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
-      colourMap->add(colours, 7);
+      unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+                                //0xffff00ff,0xffff0088,0xffff4444,0xffff8844,0xffffff22,0xffffffff,0xff888888};
+      colourMap->add(colours, 8);
+      //unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+      //colourMap->add(colours, 7);
 
       //Add colour bar display
-      newObject("colour-bar", false, 0, colourMap, 1.0, "colourbar=1\n");
+      newObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\nstatic=1\n");
 
    std::ifstream file(fn.full.c_str(), std::ios::in);
    if (file.is_open())
    {
       printMessage("Loading %s", fn.full.c_str());
       std::string line;
+      bool zoneparsed = false;
 
       int ELS, N;
       int NTRI = 12;  //12 triangles per element
       int NLN = 12;    //12 lines per element
       float* xyz = NULL;
-      float* triverts = NULL;
-      float* trivals = NULL;
+      int* triverts = NULL;
       float* lineverts = NULL;
       float* values = NULL;
       float* particles = NULL;
@@ -1036,18 +1046,20 @@ void LavaVu::readTecplot(FilePath& fn)
       float valuemax = -HUGE_VAL;
       int count = 0;
       int coord = 0;
+      int outcoord = 0;
       int tcount = 0;
       int lcount = 0;
       int pcount = 0;
-      timestep = -1;
+      int timestep = -1;
       DrawingObject *pobj, *tobj, *lobj;
       while(std::getline(file, line))
       {
          //std::cerr << line << std::endl;
-         //getchar();
          if (line.find("ZONE") != std::string::npos)
          {//ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
-            if (timestep >= 0) continue; //Only parse first zone for now
+            if (zoneparsed) continue; //Only parse first zone for now
+            zoneparsed = true;
+
             std::cerr << line << std::endl;
             std::stringstream ss(line);
             std::string token;
@@ -1058,12 +1070,10 @@ void LavaVu::readTecplot(FilePath& fn)
                else if (token.substr(0, 2) == "E=")
                   ELS = atoi(token.substr(2).c_str());
             }
-            timestep = 0;
 
             //FEBRICK
             xyz = new float[N*3];
-            triverts = new float[ELS*NTRI*3*3]; //6 faces = 12 tris
-            trivals = new float[ELS*NTRI*3];
+            triverts = new int[ELS*NTRI*3]; //6 faces = 12 tris * 3
             lineverts = new float[ELS*NLN*2*3]; //12 edges
             values = new float[ELS];
             particles = new float[ELS*3];  //Value of cell at centre
@@ -1072,194 +1082,204 @@ void LavaVu::readTecplot(FilePath& fn)
 
 
             //Add points object
-            pobj = newObject("particles", true, 0, colourMap, 0.5, "lit=0\n");
-            Model::points->add(pobj);
-            std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
+            //pobj = newObject("particles", 0, colourMap, 1.0, "static=1\nlit=0\n");
+            //Model::points->add(pobj);
+            //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
             //Add triangles object
-            tobj = newObject("triangles", true, 0xffffffff, colourMap, 1.0, "flat=1\n");
+            tobj = newObject("triangles", 0, colourMap, 1.0, "static=1\nflat=1\n");
             Model::triSurfaces->add(tobj);
 
             //Add lines object
-            lobj = newObject("lines", true, 0xff000000, NULL, 1.0, "lit=0\n");
-            Model::lines->add(lobj);
+            //lobj = newObject("lines", 0xff000000, NULL, 1.0, "static=1\nlit=0\n");
+            //Model::lines->add(lobj);
 
 
          }
          else if (line.substr(0, 4) == "TEXT")
          {
-               count = tcount = lcount = pcount = 0;
-               coord = 6;
-            //End of a data step
-            amodel->timesteps.push_back(TimeStep(timestep, 0));
-               printf("READ TIMESTEP %d SIZE %d\n", timestep, amodel->timesteps.size());
+            //Create the timestep
+            if (GeomCache::size <= timestep) GeomCache::size++;
+            amodel->addTimeStep(timestep+1);
+            setTimeStep(timestep+1);
+            timestep = amodel->now;
 
-            Model::points->read(pobj, ELS, lucVertexData, particles);
-            Model::points->read(pobj, ELS, lucColourValueData, values);
-            Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+            //Bounds check
+            for (int t=0; t<N*3; t += 3)
+            {
+               Geometry::checkPointMinMax(&xyz[t]);
+            }
 
-            Model::triSurfaces->read(tobj, ELS*NTRI*3, lucVertexData, triverts);
-            Model::triSurfaces->read(tobj, ELS*NTRI, lucColourValueData, trivals);
+            //Model::points->read(pobj, ELS, lucVertexData, particles);
+            //Model::points->read(pobj, ELS, lucColourValueData, values);
+            //Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+
+            Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
+            Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
+            Model::triSurfaces->read(tobj, ELS, lucColourValueData, values);
+            //printf("VALUES min %f max %f\n", valuemin, valuemax); getchar();
             Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
 
-            Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
-
-            //amodel->clearObjects(false); //Will cache...
-            amodel->cacheStep();
-
-            timestep++;
-            //Load timesteps while cache slots available
-            if (GeomCache::size <= amodel->timesteps.size()) break;
+            //Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
 
             valuemin = HUGE_VAL;
             valuemax = -HUGE_VAL;
+
+            count = tcount = lcount = pcount = 0;
+            coord = 6;
+
+            /*/Cache and add timestep
+            if (GeomCache::size <= timestep) GeomCache::size++;
+            amodel->addTimeStep(timestep+1);
+            setTimeStep(timestep+1);
+            timestep = amodel->now;*/
+            printf("READ TIMESTEP %d TRIS %d\n", timestep, ELS*NTRI);
          }
-         else if (timestep >= 0)
+         else if (zoneparsed)
          {
             std::stringstream ss(line);
 
-            //First 3 coords X,Y,Z 8 per line
+            //Blocks of 8 values per line
+            //First blocks is X coords, Y, Z, then values
             if (coord < 3)
             {
                float value[8];
-               particles[pcount*3+coord] = 0;
+               particles[pcount*3+outcoord] = 0;
 
+               //8 vertices per element(brick)
+               int offset = count;
                for (int e=0; e<8; e++)
                {
                  //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
                   ss >> value[e];
-                  //if (coord ==2) value[e] *= 20; //HACK SCALE Z
-                  xyz[count*3+coord] = value[e];
-                  particles[pcount*3+coord] += value[e];
+                  xyz[count*3+outcoord] = value[e];
+                  particles[pcount*3+outcoord] += value[e];
 
                   count++;
 
                   //if (value[e] < awin->min[coord]) awin->min[coord] = value[e];
                   //if (value[e] > awin->max[coord]) awin->max[coord] = value[e];
-                  Geometry::checkPointMinMax(&value[e]);
                }
 
                for (int i=0; i<8; i++)
                  assert(!isnan(value[i]));
 
-               //Two triangles per side
-               //Front
-               triverts[(tcount*3)    * 3 + coord] = value[0];
-               triverts[(tcount*3+1)  * 3 + coord] = value[2];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[2];
-               triverts[(tcount*3+1)  * 3 + coord] = value[3];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               //Back
-               triverts[(tcount*3)    * 3 + coord] = value[4];
-               triverts[(tcount*3+1)  * 3 + coord] = value[6];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[6];
-               triverts[(tcount*3+1)  * 3 + coord] = value[7];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               //Right
-               triverts[(tcount*3)    * 3 + coord] = value[1];
-               triverts[(tcount*3+1)  * 3 + coord] = value[3];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[3];
-               triverts[(tcount*3+1)  * 3 + coord] = value[7];
-               triverts[(tcount*3+2)  * 3 + coord] = value[5];
-               tcount++;
-               //Left
-               triverts[(tcount*3)    * 3 + coord] = value[0];
-               triverts[(tcount*3+1)  * 3 + coord] = value[2];
-               triverts[(tcount*3+2)  * 3 + coord] = value[4];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[2];
-               triverts[(tcount*3+1)  * 3 + coord] = value[6];
-               triverts[(tcount*3+2)  * 3 + coord] = value[4];
-               tcount++;
-               //Top??
-               triverts[(tcount*3)    * 3 + coord] = value[2];
-               triverts[(tcount*3+1)  * 3 + coord] = value[6];
-               triverts[(tcount*3+2)  * 3 + coord] = value[7];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[7];
-               triverts[(tcount*3+1)  * 3 + coord] = value[3];
-               triverts[(tcount*3+2)  * 3 + coord] = value[2];
-               tcount++;
-               //Bottom??
-               triverts[(tcount*3)    * 3 + coord] = value[0];
-               triverts[(tcount*3+1)  * 3 + coord] = value[4];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               triverts[(tcount*3)    * 3 + coord] = value[4];
-               triverts[(tcount*3+1)  * 3 + coord] = value[5];
-               triverts[(tcount*3+2)  * 3 + coord] = value[1];
-               tcount++;
-               //std::cout << count << " : " << ptr[0] << "," << ptr[3] << "," << ptr[6] << std::endl;
-               //getchar();
+               //Two triangles per side (set indices only when x,y,z all read)
+               if (coord == 2)
+               {
+                  //Front
+                  triverts[(tcount*3)  ] = offset + 0;
+                  triverts[(tcount*3+1)] = offset + 2;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 2;
+                  triverts[(tcount*3+1)] = offset + 3;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+
+                  //Back
+                  triverts[(tcount*3)  ] = offset + 4;
+                  triverts[(tcount*3+1)] = offset + 6;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 6;
+                  triverts[(tcount*3+1)] = offset + 7;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  //Right
+                  triverts[(tcount*3)  ] = offset + 1;
+                  triverts[(tcount*3+1)] = offset + 3;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 3;
+                  triverts[(tcount*3+1)] = offset + 7;
+                  triverts[(tcount*3+2)] = offset + 5;
+                  tcount++;
+                  //Left
+                  triverts[(tcount*3)  ] = offset + 0;
+                  triverts[(tcount*3+1)] = offset + 2;
+                  triverts[(tcount*3+2)] = offset + 4;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 2;
+                  triverts[(tcount*3+1)] = offset + 6;
+                  triverts[(tcount*3+2)] = offset + 4;
+                  tcount++;
+                  //Top??
+                  triverts[(tcount*3)  ] = offset + 2;
+                  triverts[(tcount*3+1)] = offset + 6;
+                  triverts[(tcount*3+2)] = offset + 7;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 7;
+                  triverts[(tcount*3+1)] = offset + 3;
+                  triverts[(tcount*3+2)] = offset + 2;
+                  tcount++;
+                  //Bottom??
+                  triverts[(tcount*3)  ] = offset + 0;
+                  triverts[(tcount*3+1)] = offset + 4;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+                  triverts[(tcount*3)  ] = offset + 4;
+                  triverts[(tcount*3+1)] = offset + 5;
+                  triverts[(tcount*3+2)] = offset + 1;
+                  tcount++;
+                  //std::cout << count << " : " << ptr[0] << "," << ptr[3] << "," << ptr[6] << std::endl;
+               }
 
                //Edge lines
-               lineverts[(lcount*2)    * 3 + coord] = value[0];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[1];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[1];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[1];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[3];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[3];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[3];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[2];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[2];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[2];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[0];
-               lcount++;
-
-               lineverts[(lcount*2)    * 3 + coord] = value[4];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
-               lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[5];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
-               lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[7];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
-               lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[6];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[0];
                lcount++;
 
-               lineverts[(lcount*2)    * 3 + coord] = value[2];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[6];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[4];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[5];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[0];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[4];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[5];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[7];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[3];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[7];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[7];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[6];
                lcount++;
-               lineverts[(lcount*2)    * 3 + coord] = value[1];
-               lineverts[(lcount*2+1)  * 3 + coord] = value[5];
+               lineverts[(lcount*2)    * 3 + outcoord] = value[6];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[4];
+               lcount++;
+
+               lineverts[(lcount*2)    * 3 + outcoord] = value[2];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[6];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + outcoord] = value[0];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[4];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + outcoord] = value[3];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[7];
+               lcount++;
+               lineverts[(lcount*2)    * 3 + outcoord] = value[1];
+               lineverts[(lcount*2+1)  * 3 + outcoord] = value[5];
                lcount++;
 
                //Average value for particle
-               particles[pcount*3+coord] /= 8;
+               particles[pcount*3+outcoord] /= 8;
                pcount++;
             }
-            else if (coord > 5) //Skip I,J,K indices
+            else if (coord == 6) //Skip I,J,K indices
             {
                //Load SG (1 per line)
-               //if (coord > 6) break; //No more values of interest
-
-              //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << std::endl;
-              float value;
+               float value;
                ss >> value;
+               //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << " " << value << std::endl;
                values[count] = value;
                count++;
 
                if (value < valuemin) valuemin = value;
                if (value > valuemax) valuemax = value;
-
-               for (int n=0; n<NTRI; n++, tcount++)
-                  trivals[tcount] = value;
             }
             else
             {
@@ -1270,6 +1290,15 @@ void LavaVu::readTecplot(FilePath& fn)
             {
                count = tcount = lcount = pcount = 0;
                coord++;
+               outcoord = coord;
+               if (swapY)
+               {
+                  if (coord == 2)
+                    outcoord = 1;
+                  if (coord == 1)
+                    outcoord = 2;
+               }
+               //std::cerr << " NEW BLOCK: " << tcount << " C " << coord << " OC " << outcoord << std::endl;
             }
          }
       }
@@ -1278,9 +1307,10 @@ void LavaVu::readTecplot(FilePath& fn)
       if (xyz) delete[] xyz;
       if (values) delete[] values;
       if (triverts) delete[] triverts;
-      if (trivals) delete[] trivals;
       if (lineverts) delete[] lineverts;
 
+      //Always cache
+      GeomCache::size++;
       setTimeStep(0);
    }
    else
@@ -1305,10 +1335,10 @@ void LavaVu::createDemoModel()
    colourMap->calibrate(0, size);
 
    //Add colour bar display
-   newObject("colour-bar", false, 0, colourMap, 1.0, "colourbar=1\n");
+   newObject("colour-bar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n");
 
    //Add points object
-   DrawingObject* obj = newObject("particles", false, 0, colourMap, 0.75, "lit=0\n");
+   DrawingObject* obj = newObject("particles", 0, colourMap, 0.75, "static=1\nlit=0\n");
    int NUMPOINTS = 200000;
    int NUMSWARM = NUMPOINTS/4;
    for (int i=0; i < NUMPOINTS; i++) 
@@ -1333,7 +1363,7 @@ void LavaVu::createDemoModel()
    }
 
    //Add lines
-   obj = newObject("line-segments", false, 0, colourMap, 1.0, "lit=0\n");
+   obj = newObject("line-segments", 0, colourMap, 1.0, "static=1\nlit=0\n");
    for (int i=0; i < 50; i++) 
    {
       float colour, ref[3];
@@ -1360,7 +1390,7 @@ void LavaVu::createDemoModel()
       {
          char label[64];
          sprintf(label, "%c-cross-section", axischar[i]);
-         obj = newObject(label, false, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
+         obj = newObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
          Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
       }
    }
@@ -1370,9 +1400,9 @@ void LavaVu::createDemoModel()
    Geometry::checkPointMinMax(max);
 }
 
-DrawingObject* LavaVu::newObject(std::string name, bool persistent, int colour, ColourMap* map, float opacity, std::string properties)
+DrawingObject* LavaVu::newObject(std::string name, int colour, ColourMap* map, float opacity, std::string properties)
 {
-   DrawingObject* obj = new DrawingObject(0, persistent, name, colour, map, opacity, properties);
+   DrawingObject* obj = new DrawingObject(0, name, colour, map, opacity, properties);
    if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
    if (!aview) aview = awin->views[0];
    aview->addObject(obj);
@@ -1414,8 +1444,8 @@ void LavaVu::reloadShaders()
       //Triangle shaders too slow with OSMesa
       if (TriSurfaces::prog) delete TriSurfaces::prog;
       TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
-      const char* tUniforms[4] = {"uOpacity", "uLighting", "uTextured", "uTexture"};
-      TriSurfaces::prog->loadUniforms(tUniforms, 4);
+      const char* tUniforms[5] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal"};
+      TriSurfaces::prog->loadUniforms(tUniforms, 5);
       QuadSurfaces::prog = TriSurfaces::prog;
    }
 
@@ -1483,8 +1513,13 @@ void LavaVu::resetViews(bool autozoom)
 
    //Copy window title
    std::stringstream title;
-   title << awin->name << " timestep " << timestep;
+   title << aview->properties["title"].ToString();
+   title << " (" << awin->name << ")";
+   if (amodel->timesteps.size() > 1)
+      title << " : timestep " << amodel->now;
+
    viewer->title = title.str();
+
    if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
    viewer->setBackground(awin->background.value); //Update background colour
 }
@@ -1543,7 +1578,7 @@ void LavaVu::viewModel(int idx, bool autozoom)
    aview->init(false, Geometry::min, Geometry::max);
 
    // Apply step autozoom if set (applied based on detected bounding box)
-   if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && timestep % aview->properties["zoomstep"].ToInt(-1) == 0)
+   if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->now % aview->properties["zoomstep"].ToInt(-1) == 0)
        aview->zoomToFit();
 }
 
@@ -1690,6 +1725,7 @@ void LavaVu::displayCurrentView()
 
    if (aview->stereo)
    {
+      bool sideBySide = false;
       if (viewer->stereoBuffer)
       {
          // Draw to the left buffer
@@ -1698,20 +1734,24 @@ void LavaVu::displayCurrentView()
       }
       else
       {
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
          // Apply red filter for left eye 
          if (viewer->background.value < viewer->inverse.value)
             glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
          else  //Use opposite mask for light backgrounds
             glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+            */
+        sideBySide = true;
       }
 
       // Render the left-eye view 
+      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height*0.5);
       aview->projection(EYE_LEFT);
+      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height);
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
+      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
 
       if (viewer->stereoBuffer)
       {
@@ -1721,31 +1761,34 @@ void LavaVu::displayCurrentView()
       }
       else
       {
-         // Clear the depth buffer so red/cyan components are blended 
+         /*/ Clear the depth buffer so red/cyan components are blended 
          glClear(GL_DEPTH_BUFFER_BIT);
          // Apply cyan filter for right eye 
          if (viewer->background.value < viewer->inverse.value)
             glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
          else  //Use opposite mask for light backgrounds
             glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+         */
       }
 
       // Render the right-eye view 
+      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height*0.5);
       aview->projection(EYE_RIGHT);
+      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
+      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
 
       // Restore full-colour 
-      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
+      //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
    }
    else
    {
       // Default non-stereo render
       aview->projection(EYE_CENTRE);
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp(timestep));
+      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
    }
 
    //Clear the rotation flag
@@ -1921,26 +1964,33 @@ void LavaVu::drawScene()
    else
       glEnable(GL_MULTISAMPLE);
 
-   // Restore default state
+   // Setup default state
    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    glEnable(GL_LIGHTING);
    glDisable(GL_CULL_FACE);
    glDisable(GL_TEXTURE_2D);
+   glShadeModel(GL_SMOOTH);
+   glPushAttrib(GL_ENABLE_BIT);
 
    //For some bizarre reason, drawing the border box first on Mac OpenGL breaks the lighting
    //I hereby dedicate this comment as a monument to the 10 hours I lost tracking down this bug...
    //(Drawing border last creates aliasing around transparent objects, moving back for now, is it only a GLUT problem?)
    aview->drawBorder();
 
+   Model::lines->draw();
    Model::triSurfaces->draw();
    Model::quadSurfaces->draw();
    Model::points->draw();
    Model::vectors->draw();
    Model::tracers->draw();
    Model::shapes->draw();
-   Model::lines->draw();
    Model::labels->draw();
    Model::volumes->draw();
+
+   //Restore default state
+   glPopAttrib();
+   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+   if (glUseProgram) glUseProgram(0);
 }
 
 void LavaVu::loadModel(FilePath& fn, bool hideall)
@@ -1985,7 +2035,10 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
          amodel->windows.push_back(awin);
       }
       //Default view
-      aview = awin->addView(new View(fn.base));
+      if (globalCam && aview)
+        awin->addView(aview);
+      else
+        aview = awin->addView(new View(fn.base));
 
       //Add objects to window & viewport
       for (unsigned int o=0; o<amodel->objects.size(); o++)
@@ -1997,6 +2050,9 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
          amodel->loadLinks(amodel->objects[o]);
       }
    }
+
+   //Set window name to model name
+   awin->name = amodel->file.base;
 
    //Add all windows to global window list
    for (unsigned int w=0; w<amodel->windows.size(); w++)
@@ -2039,7 +2095,7 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
       if (amodel->db)
       {
          setTimeStep(at_timestep);
-         debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), timestep);
+         debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), amodel->now);
       }
    }
 
@@ -2076,45 +2132,11 @@ void LavaVu::loadFiles(bool autozoom)
    resetViews(autozoom);
 }
 
-//Load data at specified timestep for selected model
+//Load data at specified timestep for selected model & window
 int LavaVu::setTimeStep(int ts)
 {
-   clock_t t1 = clock();
-   unsigned int idx=0;
    if (windows.size() == 0) return -1;
-
-   int step = amodel->nearestTimeStep(ts, timestep);
-   if (step < 0) return -1;
-   //Clear currently loaded (also caches if enabled)
-   amodel->clearObjects();
-
-   //Closest matching timestep >= requested
-   timestep = step;
-   debug_print("TimeStep set to: %d\n", timestep);
-
-   //Detach any attached db file and attach n'th timestep database if available
-   amodel->attach(timestep);
-
-   //Attempt to load from cache first
-   if (amodel->restoreStep(timestep)) return 0; //Cache hit successful return value
-
-   //clearObjects();
-   //noload flag skips loading geometry until "load" commands issued
-   int rows = 0;
-   for (unsigned int i=0; i<awin->objects.size(); i++)
-   {
-      if (awin->objects[i] && (!noload || !awin->objects[i]->skip))
-         rows += loadGeometry(awin->objects[i]->id);
-   } 
-
-   debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
-   return rows;
-}
-
-int LavaVu::loadGeometry(int object_id)
-{
-   //Load at current timestep
-   return amodel->loadGeometry(object_id, timestep, timestep, true);
+   return amodel->setTimeStep(ts, awin);
 }
 
 void LavaVu::writeImages(int start, int end)
@@ -2148,12 +2170,12 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
       if (amodel->hasTimeStep(i))
       {
          setTimeStep(i);
-         std::cout << "... Writing timestep: " << timestep << std::endl;
+         std::cout << "... Writing timestep: " << amodel->now << std::endl;
          //Update the views
          resetViews(true);
          viewer->display();
          if (images)
-            viewer->snapshot(awin->name.c_str(), timestep);
+            viewer->snapshot(awin->name.c_str(), amodel->now);
 #ifdef HAVE_LIBAVCODEC
          if (video)
          {
@@ -2190,7 +2212,7 @@ void LavaVu::dumpById(unsigned int id)
             {
                char filename[512];
                sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
-                                                names[type].c_str(), timestep);
+                                                names[type].c_str(), amodel->now);
                std::ofstream csv;
                csv.open(filename, std::ios::out | std::ios::trunc);
                std::cout << " * Writing object " << amodel->objects[i]->id << " to " << filename << std::endl;
@@ -2211,9 +2233,9 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
    if (!jsonp) ext[4] = '\0';
    if (id > 0)
      sprintf(filename, "%s%s_%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
-                                          amodel->objects[id]->name.c_str(), timestep, ext);
+                                          amodel->objects[id]->name.c_str(), amodel->now, ext);
    else
-     sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), timestep, ext);
+     sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->now, ext);
    std::ofstream json(filename);
    if (jsonp) json << "loadData(\n";
    jsonWrite(json, id, true);

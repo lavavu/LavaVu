@@ -45,7 +45,6 @@ TriSurfaces::TriSurfaces() : Geometry()
    vbo = 0;
    indexvbo = 0;
    tidx = NULL;
-   loaded = false;
    tricount = 0;
 }
 
@@ -148,7 +147,8 @@ void TriSurfaces::loadMesh()
                                     i1.idx + voffset, i2.idx + voffset, i3.idx + voffset
                                     );
         }
-        //Increment by vertex count (all vertices are unique as mesh is optimised)
+
+        //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
         unique += geom[index]->vertices.size() / 3;
         continue;
       }
@@ -319,21 +319,19 @@ void TriSurfaces::loadBuffers()
       //Calibrate colour maps on range for this surface
       geom[index]->colourCalibrate();
       bool hasColour = (geom[index]->colourValue.size() > 0);
-      bool vertColour = hasColour && (geom[index]->colourValue.size() == geom[index]->vertices.size()/3);
+      int colrange = hasColour ? geom[index]->count / geom[index]->colourValue.size() : 1;
+      bool vertColour = hasColour && colrange > 1;
+      debug_print("Using 1 colour value(s) per %d vertices\n", colrange);
 
       int i = 0;
       Colour colour;
+      bool normals = geom[index]->normals.size() > 0;
+      float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
-         //Have colour values but not enough for per-vertex, assume per triangle
-         int id = v;
-         if (!vertColour)
-            id /= 3; //Divide by 3 to map to triangles instead of vertices
-
-         geom[index]->getColour(colour, id);
-
-         //Ensure normalised...
-         //vectorNormalise(&geom[index]->normals[v][0]);
+         //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
+         geom[index]->getColour(colour, v / colrange);
+         //if (v%1000==0) printf("v %d colrange %d v/colrange %d colour %d,%d,%d,%d\n", v, colrange, v/colrange, colour.r, colour.g, colour.b, colour.a);
 
           //Write vertex data to vbo
          assert((int)(ptr-p) < bsize);
@@ -341,7 +339,10 @@ void TriSurfaces::loadBuffers()
          memcpy(ptr, &geom[index]->vertices[v][0], sizeof(float) * 3);
          ptr += sizeof(float) * 3;
          //Copies normal bytes
-         memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
+         if (normals)
+            memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
+         else
+            memcpy(ptr, zero, sizeof(float) * 3);
          ptr += sizeof(float) * 3;
          //Copies texCoord bytes
          if (geom[index]->texCoords.size() > 0)
@@ -409,7 +410,9 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
       //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);
       if (centroid[2] < Geometry::min[2] || centroid[2] > Geometry::max[2])
       {
-        abort_program("centroid %f,%f,%f min %f,%f,%f max %f,%f,%f\n", centroid[0], centroid[1], centroid[2], Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+         checkPointMinMax(centroid);
+         //abort_program
+         printf("Warning: centroid %f,%f,%f min %f,%f,%f max %f,%f,%f\n", centroid[0], centroid[1], centroid[2], Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
       }
       //assert(centroid[2] >= Geometry::min[2] && centroid[2] <= Geometry::max[2]);
       memcpy(tidx[tricount].centroid, centroid, sizeof(float)*3);
@@ -428,7 +431,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
    for (unsigned int v=0; v<verts.size(); v += 3)
    {
       //Copies for each vertex
-      normals[v] = Vec3d(vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert));
+      normals[v] = vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
       normals[v+1] = Vec3d(normals[v]);
       normals[v+2] = Vec3d(normals[v]);
 

@@ -10,8 +10,6 @@
 #include "../src/LavaVu.h"
 #include "../src/Server.h"
 
-std::vector<std::string> arglist;
-
 using namespace omega;
 using namespace omegaToolkit;
 using namespace omegaToolkit::ui;
@@ -44,15 +42,15 @@ public:
   OpenGLViewer* viewer;
   LavaVu* glapp;
   bool redisplay;
-  bool animate;
   int argc;
   char** argv;
   //Copy of commands
   std::deque<std::string> commands;
   //Widgets
   Ref<Label> statusLabel;
+  Ref<Label> titleLabel;
 
-  LavaVuApplication(): EngineModule("LavaVuApplication") { redisplay = true; animate = false; enableSharedData(); }
+  LavaVuApplication(): EngineModule("LavaVuApplication") { redisplay = true; enableSharedData(); }
 
     virtual void initialize()
     {
@@ -62,13 +60,21 @@ public:
       myUiModule = UiModule::createAndInitialize();
       myUi = myUiModule->getUi();
 
+      int sz = 100;
       statusLabel = Label::create(myUi);
       statusLabel->setText("");
       statusLabel->setColor(Color::Gray);
-      int sz = 100;
       statusLabel->setFont(ostr("fonts/arial.ttf %1%", %sz));
       statusLabel->setHorizontalAlign(Label::AlignLeft);
-      statusLabel->setPosition(Vector2f(100,100));
+      statusLabel->setPosition(Vector2f(100,300));
+
+      sz = 150;
+      titleLabel = Label::create(myUi);
+      titleLabel->setText("");
+      titleLabel->setColor(Color::Gray);
+      titleLabel->setFont(ostr("fonts/arial.ttf %1%", %sz));
+      titleLabel->setHorizontalAlign(Label::AlignLeft);
+      titleLabel->setPosition(Vector2f(100,100));
 
     }
 
@@ -81,6 +87,7 @@ public:
   float setArgs(int argc, char** argv) {this->argc = argc; this->argv = argv;}
 
   virtual void handleEvent(const Event& evt);
+  virtual void cameraSetup();
   virtual void commitSharedData(SharedOStream& out);
   virtual void updateSharedData(SharedIStream& in);
 
@@ -90,6 +97,7 @@ private:
   // The root ui container
   Ref<Container> myUi;  
   std::string labelText;
+  bool menuOpen;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,19 +106,10 @@ void LavaVuRenderPass::initialize()
   RenderPass::initialize();
 
   //Init fractal app
-  //Fake the arg list from vector of args
-  int argc = arglist.size()+1;
-  char* argv[argc];
-  argv[0] = (char*)malloc(20);
-  strcpy(argv[0], "LavaVR");
-  for (int i=1; i<argc; i++)
-  {
-    argv[i] = (char*)arglist[i-1].c_str();
-    std::cerr << argv[i] << "\n";
-  }
+  std::vector<std::string> arglist;
 
   //Get the executable path
-  std::string expath = GetBinaryPath(argv[0], "LavaVR");
+  std::string expath = GetBinaryPath("LavaVR", "LavaVR");
 
    //Add any output attachments to the viewer
 #ifndef DISABLE_SERVER
@@ -162,7 +161,6 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
   if (context.task == DrawContext::SceneDrawTask)
   {
     client->getRenderer()->beginDraw3D(context);
-    Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
 
     if (!viewer->isopen)
     {
@@ -198,62 +196,53 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
 
       DisplaySystem* ds = app->getEngine()->getDisplaySystem();
       Colour& bg = viewer->background;
-      //ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
+      ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
       //Omegalib 5.1+
-      cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
+      //Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
+      //cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
 
       viewer->open(context.tile->pixelSize[0], context.tile->pixelSize[1]);
       viewer->init();
 
-      //Setup camera using omegalib functions
-      CameraController* cc = cam->getController();
-
-      //cam->setEyeSeparation(0.03); //TEST: reducing eye separation
-
-         View* view = app->glapp->aview;
-         
-         float rotate[4], translate[3], focus[3];
-         view->getCamera(rotate, translate, focus);
-
-        //At viewing distance
-        //cam->setPosition(Vector3f(focus[0], focus[1], (focus[2] - view->model_size)) * view->orientation);
-        //At center
-        cam->setPosition(Vector3f(focus[0], focus[1], focus[2] * view->orientation));
-
-        cam->lookAt(Vector3f(focus[0], focus[1], focus[2] * view->orientation), Vector3f(0,1,0));
-
-        //cam->setPitchYawRoll(Vector3f(0.0, 0.0, 0.0));
-        //cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
-        //NOTE: Setting near clip too close is bad for eyes, too far kills negative parallax stereo
-        cam->setNearFarZ(view->near_clip*0.1, view->far_clip);
-        //cam->setNearFarZ(cam->getNearZ(), view->far_clip);
-         cc->setSpeed(view->model_size * 0.01);
-         
+      //Transfer LavaVu camera settings to Omegalib
+      app->cameraSetup();
     }
 
     //Copy commands before consumed
     app->commands = OpenGLViewer::commands;
-    //Fade out status label
-    app->statusLabel->setAlpha(app->statusLabel->getAlpha() * 0.95);
+
+    //Update status label
+    if (app->statusLabel->getText() != app->glapp->message)
+    {
+       //std::cerr << statusLabel->getText() << " != " << glapp->message << std::endl;
+       app->statusLabel->setAlpha(0.5);
+       app->statusLabel->setText(app->glapp->message);
+    }
+    //Update title label
+    if (app->titleLabel->getText() != app->glapp->viewer->title)
+    {
+       app->titleLabel->setText(app->glapp->viewer->title);
+    }
+
+    //Fade out status label (doesn't seem to work in cave)
+    float alpha = app->statusLabel->getAlpha();
+    if (alpha < 0.01)
+    {
+       app->statusLabel->setText("");
+       app->glapp->message[0] = '\0';
+    }
+    else
+       app->statusLabel->setAlpha(alpha * 0.95);
      
     //if (app->redisplay)
     {
-      glEnable(GL_BLEND);
-
-       glMatrixMode(GL_MODELVIEW);
-         View* view = app->glapp->aview;
-         if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
-         {
-            glScalef(view->scale[0], view->scale[1], view->scale[2] * view->orientation);
-            // Enable automatic rescaling of normal vectors when scaling is turned on
-            //glEnable(GL_RESCALE_NORMAL);
-            glEnable(GL_NORMALIZE);
-            GL_Error_Check;
-         }
+      //Apply the model rotation/scaling
+      View* view = app->glapp->aview;   
+      view->apply();
          
+      glEnable(GL_BLEND);
       viewer->display();
-      app->redisplay = false;
-      view->rotated = false;
+      //app->redisplay = false;
     }
 
     client->getRenderer()->endDraw();
@@ -261,12 +250,51 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
     //Process timer based commands
     OpenGLViewer::pollInput();
   }
-  //else if(context.task == DrawContext::OverlayDrawTask)
-  //{
-  //}
+  else if(context.task == DrawContext::OverlayDrawTask)
+  {
+     //cam->setNearFarZ(defaultNear, cam->getFarZ());
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void LavaVuApplication::cameraSetup()
+{
+   //Setup camera using omegalib functions
+   Camera* cam = Engine::instance()->getDefaultCamera();
+   View* view = glapp->aview;
+   float rotate[4], translate[3], focus[3];
+   view->getCamera(rotate, translate, focus);
+
+   //Set position from translate
+   cam->setPosition(Vector3f(translate[0], translate[1], -translate[2]));
+   //From viewing distance
+   //cam->setPosition(Vector3f(focus[0], focus[1], (focus[2] - view->model_size)) * view->orientation);
+   //At center
+   //cam->setPosition(Vector3f(focus[0], focus[1], focus[2] * view->orientation));
+
+   //Default eye separation, TODO: set this via LavaVu property controllable via init.script
+   cam->setEyeSeparation(0.05);
+
+   ///Setting clip planes can kill menu! Need to check using MenuManager::getDefaultMenuDistance()
+   //MenuManager* mm = MenuManager::createAndInitialize();
+   //float menuDist = mm->getDefaultMenuDistance();
+   //Menu* main = mm->getMainMenu(); //float menuDist = mm->getDefaultMenuDistance();
+   //main->addButton("SetCamera", "getDefaultCamera().setPosition(Vector3(0, 0, 0))"));
+
+   //cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
+   //NOTE: Setting near clip too close is bad for eyes, too far kills negative parallax stereo
+   //cam->setNearFarZ(view->near_clip*0.1, view->far_clip);
+   cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
+   //cam->setNearFarZ(cam->getNearZ(), view->far_clip);
+
+   //Default nav speed
+   CameraController* cc = cam->getController();
+   cc->setSpeed(view->model_size * 0.05);
+
+   cam->lookAt(Vector3f(focus[0], focus[1], focus[2] * view->orientation), Vector3f(0,1,0));
+   cam->setPitchYawRoll(Vector3f(0, 0, 0));
+}
+
 void LavaVuApplication::handleEvent(const Event& evt)
 {
   //printf(". %d %d %d\n", evt.getType(), evt.getServiceType(), evt.getFlags());
@@ -338,64 +366,131 @@ void LavaVuApplication::handleEvent(const Event& evt)
     int key = evt.getSourceId();
     if (evt.isButtonDown(Event::Button2)) //Circle
     {
+       menuOpen = true;
+       printf("Menu opened\n");
     }
-    if (evt.isButtonDown(Event::Button3)) //Cross
+    else if (evt.isButtonDown(Event::Button3)) //Cross
     {
-      //Change point type
-      //glapp->parseCommands("pointtype all");
+       if (menuOpen)
+       {
+           menuOpen = false;
+           printf("Menu closed\n");
+       }
+       else
+       {
+           //Restore camera
+           cameraSetup();
+       }
+    }
+    else if (evt.isButtonDown(Event::Button7))
+    {
+       //L2 Trigger (large)
+      // std::cout << "L2 Trigger " << std::endl;
+      if (evt.isButtonDown(Event::ButtonLeft ))
+      {
+        glapp->parseCommands("zoomclip -0.01");
+        Camera* cam = Engine::instance()->getDefaultCamera();
+        cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
+        evt.setProcessed();
+      }
+      else if (evt.isButtonDown(Event::ButtonRight ))
+      {
+
+        glapp->parseCommands("zoomclip 0.01");
+        Camera* cam = Engine::instance()->getDefaultCamera();
+        cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
+        evt.setProcessed();
+      }
+      else if (evt.isButtonDown(Event::ButtonUp))
+      {
+         //evt.setProcessed();
+      }
+      else if (evt.isButtonDown(Event::ButtonDown))
+      {
+         //evt.setProcessed();
+      }
     }
     else if (evt.isButtonDown(Event::Button5))
     {
-      //printf("Key %d %d\n", key, evt.getFlags());
-     //viewer->keyPress(key, x, y);
-
-      //glapp->parseCommands("sort");
-            printf("Wand  Analog trigger L1");
-      glapp->aview->rotated = true;
-
+      //L1 Trigger (small) - Multi-press to fine tune
+      if (evt.isButtonDown(Event::ButtonLeft ))
+      {
+         glapp->parseCommands("scale all 0.95");
+         evt.setProcessed();
+      }
+      else if (evt.isButtonDown(Event::ButtonRight ))
+      {
+         glapp->parseCommands("scale all 1.05");
+         evt.setProcessed();
+      }
+      else if (evt.isButtonDown(Event::ButtonUp))
+      {
+         //Reduce eye separation
+         Camera* cam = Engine::instance()->getDefaultCamera();
+         cam->setEyeSeparation(cam->getEyeSeparation()-0.01);
+         printf("Eye-separation set to %f\n", cam->getEyeSeparation());
+         evt.setProcessed();
+      }
+      else if (evt.isButtonDown(Event::ButtonDown))
+      {
+         //Increase eye separation
+         Camera* cam = Engine::instance()->getDefaultCamera();
+         cam->setEyeSeparation(cam->getEyeSeparation()+0.01);
+         printf("Eye-separation set to %f\n", cam->getEyeSeparation());
+         evt.setProcessed();
+      }
+      else
+      {
+         //Depth sort geometry
+         glapp->aview->sort = true;
+      }
     }
     else if (evt.isButtonDown(Event::ButtonUp ))
     {
-        printf("Wand D-Pad up pressed\n");
-        //glapp->parseCommands("stop");
-        animate = false;
         //if (GeomData::opacity > 0.0) GeomData::opacity -= 0.05;
         //glapp->redrawViewports();
     }
     else if (evt.isButtonDown(Event::ButtonDown ))
     {
-        printf("Wand D-Pad down pressed\n");
-        //glapp->parseCommands("play");
-        animate = true;
         //if (GeomData::opacity < 1.0) GeomData::opacity += 0.05;
         //glapp->redrawViewports();
     }
     else if (evt.isButtonDown(Event::ButtonLeft ))
     {
-        //These work when analogue stick disabled
-        printf("Wand D-Pad left pressed\n");
-        glapp->parseCommands("zoomclip -0.01");
-        Camera* cam = Engine::instance()->getDefaultCamera();
-        cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
+        glapp->parseCommands("model up");
     }
     else if (evt.isButtonDown( Event::ButtonRight ))
     {
-        //These work when analogue stick disabled
-        printf("Wand D-Pad right pressed\n");
-        glapp->parseCommands("zoomclip 0.01");
-        Camera* cam = Engine::instance()->getDefaultCamera();
-        cam->setNearFarZ(glapp->aview->near_clip*0.1, glapp->aview->far_clip);
+        glapp->parseCommands("model down");
     }
-    else
+    //else
     {
         //Grab the analog stick horizontal axis
         float analogLR = evt.getAxis(0);
         //Grab the analog stick vertical axis
         float analogUD = evt.getAxis(1);
-
         if (abs(analogUD) + abs(analogLR) > 0.001)
         {
-            if (abs(analogUD) > abs(analogLR))
+            //TODO: default is model rotate, enable timestep sweep mode via menu option
+           bool rotateStick = true;
+           if (rotateStick)
+           {
+               //L2 Trigger (large)
+               if (abs(analogUD) > 0.01)
+               {
+                  std::stringstream rcmd;
+                  rcmd << "rotate x " << analogUD;
+                  glapp->parseCommands(rcmd.str());
+               }
+               if (abs(analogLR) > 0.01)
+               {
+                  std::stringstream rcmd;
+                  rcmd << "rotate y " << analogLR;
+                  glapp->parseCommands(rcmd.str());
+               }
+               evt.setProcessed();
+            }
+            else if (abs(analogUD) > abs(analogLR))
             {
                if (analogUD > 0.01)
                  glapp->parseCommands("timestep down");
@@ -415,7 +510,6 @@ void LavaVuApplication::commitSharedData(SharedOStream& out)
    for (int i=0; i < commands.size(); i++)
       oss << commands[i] << std::endl;
    out << oss.str();
-   out << glapp->message;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -423,7 +517,6 @@ void LavaVuApplication::updateSharedData(SharedIStream& in)
 {
    std::string commandstr;
    in >> commandstr;
-   in >> glapp->message;
 
    SystemManager* sys = SystemManager::instance();
    if (!sys->isMaster())
@@ -437,16 +530,6 @@ void LavaVuApplication::updateSharedData(SharedIStream& in)
          //glapp->parseCommands(line);
       }
    }
-
-   //if (animate) glapp->parseCommands("next");
-
-   //Update status label
-   if (statusLabel->getText() != glapp->message)
-   {
-             std::cerr << statusLabel->getText() << " != " << glapp->message << std::endl;
-      statusLabel->setAlpha(1.0);
-      statusLabel->setText(glapp->message);
-   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -454,7 +537,6 @@ void LavaVuApplication::updateSharedData(SharedIStream& in)
 int main(int argc, char** argv)
 {
   Application<LavaVuApplication> app("LavaVR");
-  oargs().setStringVector("LavaVR", "LavaVR", arglist);
   return omain(app, argc, argv);
 }
 

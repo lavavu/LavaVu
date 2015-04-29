@@ -37,7 +37,7 @@
 
 unsigned int DrawingObject::lastid = 0;
 
-DrawingObject::DrawingObject(unsigned int id, bool persistent, std::string name, int colour, ColourMap* map, float opacity, std::string props) : id(id), persistent(persistent), name(name), skip(true), visible(true)
+DrawingObject::DrawingObject(unsigned int id, std::string name, int colour, ColourMap* map, float opacity, std::string props) : id(id), name(name), skip(true), visible(true)
 {
    if (id == 0) this->id = DrawingObject::lastid+1;
    DrawingObject::lastid = this->id;

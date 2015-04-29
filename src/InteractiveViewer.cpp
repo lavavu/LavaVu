@@ -597,15 +597,15 @@ bool LavaVu::parseCommands(std::string cmd)
       if (!parsed.has(ival, "timestep"))
       {
          if (parsed["timestep"] == "up")
-            ival = timestep-1;
+            ival = amodel->now-1;
          else if (parsed["timestep"] == "down")
-            ival = timestep+1;
+            ival = amodel->now+1;
          else
-            ival = timestep;
+            ival = amodel->now;
       }
       if (setTimeStep(ival) >= 0)
       {
-         printMessage("Go to timestep %d", timestep);
+         printMessage("Go to timestep %d", amodel->now);
          resetViews(); //Update the viewports
       }
       else
@@ -614,9 +614,9 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.has(ival, "jump"))      //Relative
    {
       //Relative jump
-      if (setTimeStep(timestep+ival) >= 0)
+      if (setTimeStep(amodel->now+ival) >= 0)
       {
-         printMessage("Jump to timestep %d", timestep);
+         printMessage("Jump to timestep %d", amodel->now);
          resetViews(); //Update the viewports
       }
       else
@@ -635,7 +635,7 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       if (ival < 0) ival = windows.size()-1;
       if (ival >= (int)windows.size()) ival = 0;
-      if (!loadWindow(ival, timestep)) return false;  //Invalid
+      if (!loadWindow(ival, amodel->now)) return false;  //Invalid
       printMessage("Load model %d", window);
    }
    else if (parsed.exists("hide") || parsed.exists("show"))
@@ -717,7 +717,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.has(ival, "tracersteps"))
    {
       Model::tracers->steps = ival;
-      if (Model::tracers->steps > timestep) Model::tracers->steps = timestep;
+      if (Model::tracers->steps > amodel->now) Model::tracers->steps = amodel->now;
       printMessage("Set tracer steps limit to %d", Model::tracers->steps);
       Model::tracers->redraw = true;
    }
@@ -756,7 +756,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.has(ival, "movie"))
    {
       std::string fn = awin->name + ".mp4";
-      encodeVideo(fn.c_str(), timestep, ival);
+      encodeVideo(fn.c_str(), amodel->now, ival);
    }
    else if (parsed.exists("record"))
    {
@@ -776,7 +776,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "play"))
    {
-      writeSteps(false, false, timestep, ival, NULL);
+      writeSteps(false, false, amodel->now, ival, NULL);
    }
    else if (parsed.exists("play"))
    {
@@ -786,11 +786,13 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("next"))
    {
-      int old = timestep;
-      setTimeStep(timestep+1);
+      int old = amodel->now;
+      if (amodel->timesteps.size() < 2) return false;
+      setTimeStep(amodel->now+1);
       //Allow loop back to start when using next command
-      if (timestep > 0 && timestep == old)
+      if (amodel->now > 0 && amodel->now == old)
          setTimeStep(0);
+      resetViews(); //Update the viewports
 
       if (loop)
          OpenGLViewer::commands.push_back(std::string("next"));
@@ -801,14 +803,13 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "images"))
    {
-      writeImages(timestep, ival);
+      writeImages(amodel->now, ival);
    }
    else if (parsed.exists("animate"))
    {
       if (parsed.has(ival, "animate"))
       {
          animate = ival;
-         viewer->notIdle(animate); //Start idle redisplay timer
       }
       else if (animate > 0)
       {
@@ -818,6 +819,7 @@ bool LavaVu::parseCommands(std::string cmd)
       {
          animate = 50;
       }
+      viewer->notIdle(animate); //Start idle redisplay timer
       printMessage("Animate mode %d millseconds", animate);
       return true; //No record
    }
@@ -1101,7 +1103,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("reload"))
    {
       //Restore original window data
-      if (!loadWindow(window, timestep)) return false;
+      if (!loadWindow(window, amodel->now)) return false;
    }
    else if (parsed.exists("zerocam"))
    {
@@ -1355,7 +1357,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("camera"))
    {
-      //Output camera view xml
+      //Output camera view xml and translation/rotation commands
       aview->print();
    }
    else if (parsed.exists("scale"))
@@ -1379,23 +1381,32 @@ bool LavaVu::parseCommands(std::string cmd)
          if (what == "x")
          {
             if (parsed.has(fval, "scale", 1))
+            {
                aview->setScale(fval, 1, 1);
+               redrawViewports();
+            }
          }
          else if (what == "y")
          {
             if (parsed.has(fval, "scale", 1))
+            {
                aview->setScale(1, fval, 1);
+               redrawViewports();
+            }
          }
          else if (what == "z")
          {
             if (parsed.has(fval, "scale", 1))
+            {
                aview->setScale(1, 1, fval);
+               redrawViewports();
+            }
          }
-         else if (what == "all")
+         else if (what == "all" && parsed.has(fval, "scale", 1))
          {
             //Scale everything
-            //TODO: fix this, kills everything
             aview->setScale(fval, fval, fval);
+            redrawViewports();
          }
          else
          {
@@ -1496,7 +1507,7 @@ bool LavaVu::parseCommands(std::string cmd)
                break;
             }
          }
-         loadWindow(window, timestep);
+         loadWindow(window, amodel->now);
       }
    }
    else if (parsed.exists("load"))
@@ -1509,7 +1520,7 @@ bool LavaVu::parseCommands(std::string cmd)
          DrawingObject* obj = findObject(what, id);
          if (obj)
          {
-            loadGeometry(obj->id);
+            amodel->loadGeometry(obj->id);
             //Update the views
             resetViews(false);
             redrawObjects();
@@ -1527,7 +1538,7 @@ bool LavaVu::parseCommands(std::string cmd)
       if (file.type == "gldb")
       {
          loadModel(file);
-         if (!loadWindow(windows.size()-1, timestep)) return false;
+         if (!loadWindow(windows.size()-1, amodel->now)) return false;
       }
       else
       {
@@ -1699,8 +1710,8 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("noload"))
    {
-      noload = !noload;
-      printMessage("Database object loading is %s", noload ? "ON":"OFF");
+      Model::noload = !Model::noload;
+      printMessage("Database object loading is %s", Model::noload ? "ON":"OFF");
    }
    else if (parsed.exists("hideall"))
    {
@@ -1732,6 +1743,11 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       trisplit = ival;
       printMessage("Triangle subdivision level set to %d", trisplit);
+   }
+   else if (parsed.exists("globalcam"))
+   {
+      globalCam = !globalCam;
+      printMessage("Global camera is %s", globalCam ? "ON":"OFF");
    }
    else if (parsed.exists("localshaders"))
    {
@@ -1797,7 +1813,7 @@ bool LavaVu::parseCommands(std::string cmd)
       oss << ival;
       if (oss.str() == cmd && setTimeStep(ival) >= 0)
       {
-         printMessage("Go to timestep %d", timestep);
+         printMessage("Go to timestep %d", amodel->now);
          resetViews(); //Update the viewports
       }
       else if (cmd.at(0) == '#')

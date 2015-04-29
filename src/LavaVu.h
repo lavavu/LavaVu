@@ -63,6 +63,7 @@ class LavaVu : public ViewerApp
 
    bool viewAll;
    bool viewPorts;
+   bool globalCam;
    bool sort_on_rotate;
    int fixedwidth, fixedheight;
    bool writeimage, writemovie;
@@ -78,12 +79,11 @@ class LavaVu : public ViewerApp
    std::vector<FilePath> files;
 
    // Loaded model parameters
-   int timestep, endstep;
+   int startstep, endstep;
    lucExportType dump;
    int dumpid;
    int window;
    int tracersteps;
-   bool noload;
    bool objectlist;
    bool swapY;
    int trisplit;
@@ -131,7 +131,7 @@ class LavaVu : public ViewerApp
    void readVolumeSlice(FilePath& fn);
    void createDemoModel();
    void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
-   DrawingObject* newObject(std::string name="", bool persistent=false, int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string properties="");
+   DrawingObject* newObject(std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string properties="");
    void setOpacity(unsigned int id, float opacity);
    void redraw(unsigned int id);
 
@@ -187,8 +187,6 @@ class LavaVu : public ViewerApp
    void cacheLoad(int start_ts);
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);
-   int getTimeStep() {return timestep;}
-   int loadGeometry(int object_id);
 
    //Interactive command & script processing
    bool parseChar(unsigned char key);

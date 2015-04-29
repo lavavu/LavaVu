@@ -9,7 +9,7 @@ import os
 cmds = []
 labels = dict()
 objmnu = None
-animate = False
+animate = 0
 
 # add the current path to the data search paths.
 addDataPath(os.getcwd())
@@ -81,6 +81,15 @@ def _setTransparency(val):
     labels["Transparency"].setText("Transparency: " + str(trans))
     transp = trans
 
+def _setFrameRate(val):
+  global animate
+  animate = val
+
+def _setPosition():
+  #TEST: TODO: allow saving/restoring positions
+  getDefaultCamera().setPosition(Vector3(389.07, -5763.38, 725.44))
+  print getDefaultCamera().getPosition()
+
 def _onAppStart(binpath):
   global objmnu
   mm = MenuManager.createAndInitialize()
@@ -107,7 +116,7 @@ def _onAppStart(binpath):
     serverVolume = soundEnv.getServerVolume();
     _addSlider(sysmnu, "Global Volume", "_setSoundServerVolume(%value%)", 39, serverVolume + 30)
     
-  #_addMenuItem(sysmnu, "Enable Stereo", "toggleStereo()", isStereoEnabled())
+  _addMenuItem(sysmnu, "Enable Stereo", "toggleStereo()", True)
   _addMenuItem(sysmnu, "Toggle Console", ":c")
   _addMenuItem(sysmnu, "List Active Modules", "printModules()")
   _addMenuItem(sysmnu, "Exit omegalib", "oexit()")
@@ -121,7 +130,9 @@ def _onAppStart(binpath):
   _addSlider(mainmnu, "Transparency", "_setTransparency(%value%)", 10, 0)
   _addCommandMenuItem(mainmnu, "Point Type", "pointtype all")
   _addCommandMenuItem(mainmnu, "Next Model", "model down")
-  _addMenuItem(mainmnu, "Animate", "animate = %value%", False)
+  _addSlider(mainmnu, "Animate", "_setFrameRate(%value%)", 10, 1)
+  _setFrameRate(0)
+  #_addMenuItem(mainmnu, "Restore Position", "_setPosition()")
 
 def _addMenuItem(menu, label, call, checked=None):
   #Adds menu item, checkable optional
@@ -152,18 +163,19 @@ def _addObjectMenuItem(name, state):
   objectMenu[name] = mitem
 
 def onUpdate(frame, t, dt):
-  global animate, cmds
-  if animate:
-    if frame % 2 == 0:
-      _sendCommand("next")
-    animate += 1
+  global animate, cmds, labels
+  #print getDefaultCamera().getPosition()
+  if animate > 0 and frame % animate == 0:
+    _sendCommand("next")
+    labels["Animate"].setText("Animate: " + str(int(round(1.0 / (animate * dt)))) + "fps")
 
   if frame % 10 == 0:
     while len(cmds):
       _sendCommand(cmds.pop())
 
+saveAnimate = 1
 def onEvent():
-  global animate
+  global animate, saveAnimate
   if not isMaster():
     return
 
@@ -181,48 +193,31 @@ def onEvent():
 
   # Check to make sure the event we're checking is a Wand event
   if type == ServiceType.Wand:
+    #Turn animate on/off
+    if(e.isButtonDown( EventFlags.ButtonUp )): # D-Pad up
+      if animate:
+        saveAnimate = animate
+        animate = 0
+      else:
+        animate = saveAnimate
 
+    return
+
+    """
     # If a button is pressed down do something
     if(e.isButtonDown( EventFlags.Button3 )): # Cross
-      print("Wand ", sourceID, "Left button pressed")
     if(e.isButtonDown( EventFlags.Button2 )): # Circle
-      print("Wand ", sourceID, "Right button pressed")
-    ##NOTE: D-pad buttons or analog stick can be switched between
-    ##    using controller but can't be mapped to separate functions
-    if(e.isButtonDown( EventFlags.ButtonUp )): # D-Pad up
-      #print("Wand ", sourceID, "D-Pad up pressed")
-      animate = False
     if(e.isButtonDown( EventFlags.ButtonDown )): # D-Pad down
-      #print("Wand ", sourceID, "D-Pad down pressed")
-      animate = True
     if(e.isButtonDown( EventFlags.ButtonLeft )): # D-Pad left
-      print("Wand ", sourceID, "D-Pad left pressed")
     if(e.isButtonDown( EventFlags.ButtonRight )): # D-Pad right
-      print("Wand ", sourceID, "D-Pad right pressed")
     if(e.isButtonDown( EventFlags.Button6 )): # Analog stick button (L3)
-      print("Wand ", sourceID, "L3 button pressed")
-
-    # Check if some buttons are also released
     if(e.isButtonUp( EventFlags.Button3 )): # Cross
-      print("Wand ", sourceID, "Left button released")
     if(e.isButtonUp( EventFlags.Button2 )): # Circle
-      print("Wand ", sourceID, "Right button released")
-
-    # If L1 is pressed print mocap data
     if(e.isButtonDown( EventFlags.Button5 )): # L1 button
-      #print("Wand ", sourceID, " position: ", e.getPosition() )
-      #print("Wand ", sourceID, " orientation: ", e.getOrientation() )
-      print("Wand ", sourceID, "L1 button pressed")
-
-    # Button7 is a special case, L2 is an analog trigger whose values
-    # are accessed below.
-    # As a shortcut Button7 will be triggered if L2 has a value greater than 0.5
     if(e.isButtonDown( EventFlags.Button7 )): # Analog Trigger (L2)
-      print("Wand ", sourceID, "L2 button pressed")
 
     # Grab the analog stick horizontal axis
     analogLR = e.getAxis(0)
-
     # Grab the analog stick vertical axis
     analogUD = e.getAxis(1)
 
@@ -247,7 +242,7 @@ def onEvent():
     #elif(e.getServiceType() == ServiceType.Mocap):
     #  print("Trackable ", sourceID, " position: ", e.getPosition() )
     #  print("Trackable ", sourceID, " orientation: ", e.getOrientation() )
-
+    """
 
 setEventFunction(onEvent)
 setUpdateFunction(onUpdate)

@@ -39,6 +39,8 @@
 std::vector<TimeStep> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int GeomCache::size = 0;
+bool Model::noload = false;
+int Model::now = -1;
 
 //Static geometry containers, shared by all models for fast switching/drawing
 std::vector<Geometry*> Model::geometry;
@@ -54,7 +56,7 @@ Volumes* Model::volumes = NULL;
 
 Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0), db(NULL)
 {
-   timestep = -1;
+   cachestep = 0;
    prefix[0] = '\0';
    
    //Create new geometry containers
@@ -351,10 +353,10 @@ void Model::loadObjects()
       if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       {
          std::string props = std::string((char*)sqlite3_column_text(statement, 4));
-         addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity, props));
+         addObject(new DrawingObject(object_id, otitle, colour, NULL, opacity, props));
       }
       else
-         addObject(new DrawingObject(object_id, false, otitle, colour, NULL, opacity));
+         addObject(new DrawingObject(object_id, otitle, colour, NULL, opacity));
    }
    sqlite3_finalize(statement);
 }
@@ -457,7 +459,7 @@ void Model::loadLinks(DrawingObject* draw)
 
 int Model::loadTimeSteps()
 {
-   if (!db) return -1;
+   if (!db) return timesteps.size();
    timesteps.clear();
    TimeStep::gap = 0;
    int rows = 0;
@@ -597,11 +599,11 @@ sqlite3_stmt* Model::select(const char* SQL, bool silent)
 
 bool Model::issue(const char* SQL, sqlite3* odb)
 {
-   if (odb) db = odb; //Use provided database
+   if (!odb) odb = db; //Use existing database
    // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
    //debug_print("Issuing: %s\n", SQL);
    char* zErrMsg;
-   if (sqlite3_exec(db, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
+   if (sqlite3_exec(odb, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
    {
       debug_print("SQLite error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);
@@ -620,13 +622,14 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
    if (GeomCache::size == 0) return;
-   debug_print("~~~ Caching geometry @ %d, geom memory usage: %.3f mb\n", timestep, FloatValues::membytes/1000000.0f);
+   debug_print("~~~ Caching geometry @ %d, geom memory usage: %.3f mb\n", cachestep, FloatValues::membytes/1000000.0f);
 
    //Copy all elements
    if (FloatValues::membytes > 0)
    {
-      GeomCache* cached = new GeomCache(timestep, geometry);
+      GeomCache* cached = new GeomCache(cachestep, geometry);
       cache.push_back(cached);
+      debug_print("~~~ Cached step %f,%f,%f - %f,%f,%f\n", cached->min[0], cached->min[1], cached->min[2], cached->max[0], cached->max[1], cached->max[2]);
    }
    else
       debug_print("~~~ Nothing to cache\n");
@@ -651,14 +654,14 @@ void Model::cacheStep()
 bool Model::restoreStep(int step)
 {
    //Save current timestep
-   timestep = step;
+   cachestep = step;
    if (GeomCache::size == 0) return false;
    //Load new geometry data from active window object list
    for (int c=0; c<cache.size(); c++)
    {
-      if (cache[c]->step == timestep && cache[c]->store.size() > 0)
+      if (cache[c]->step == cachestep && cache[c]->store.size() > 0)
       {
-         debug_print("~~~ Cache hit at ts %d, loading!\n", timestep);
+         debug_print("~~~ Cache hit at ts %d, loading! %f,%f,%f - %f,%f,%f\n", cachestep, cache[c]->min[0], cache[c]->min[1], cache[c]->min[2], cache[c]->max[0], cache[c]->max[1], cache[c]->max[2]);
          cache[c]->load(geometry);
          //Delete cache entry
          cache.erase(cache.begin() + c);
@@ -668,13 +671,13 @@ bool Model::restoreStep(int step)
    return false;
 }
 
-std::string Model::timeStamp(int timestep)
+std::string Model::timeStamp()
 {
    // Timestep (with scaling applied)
    if (timesteps.size() == 0) return std::string("");
    unsigned int t;
    for (t=0; t<timesteps.size(); t++)
-      if (timesteps[t].step == timestep) break;
+      if (timesteps[t].step == now) break;
 
    if (t == timesteps.size()) return std::string("");
 
@@ -697,13 +700,13 @@ bool Model::hasTimeStep(int ts)
    return false;
 }
 
-int Model::nearestTimeStep(int requested, int current)
+int Model::nearestTimeStep(int requested)
 {
-   //Find closest matching timestep to requested but != current
+   //Find closest matching timestep to requested but != now
    int idx;
    //if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
    if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
-   //if (timesteps.size() == 1 && current >= 0 && ) return -1;  //Single timestep
+   //if (timesteps.size() == 1 && now >= 0 && ) return -1;  //Single timestep
 
    for (idx=0; idx < timesteps.size(); idx++)
       if (timesteps[idx].step >= requested) break;
@@ -712,19 +715,19 @@ int Model::nearestTimeStep(int requested, int current)
    if (idx == timesteps.size()) idx--;
 
    //Unchanged...
-   //if (requested >= current && timesteps[idx].step == current) return 0;
+   //if (requested >= now && timesteps[idx].step == now) return 0;
 
    //Ensure same timestep not selected if others available
-   if (current == timesteps[idx].step && timesteps.size() > 1)
+   if (now == timesteps[idx].step && timesteps.size() > 1)
    {
-      if (requested < current)
+      if (requested < now)
       {
          //Select previous timestep in list (don't loop to end from start)
          if (idx > 0) idx--;
          return timesteps[idx].step;
       }
       //Select next timestep in list
-      else if (requested > current && idx+1 < timesteps.size())
+      else if (requested > now && idx+1 < timesteps.size())
       {
          idx++;
          return timesteps[idx].step;
@@ -735,6 +738,40 @@ int Model::nearestTimeStep(int requested, int current)
    if (idx >= timesteps.size()) idx = timesteps.size() - 1;
 
    return timesteps[idx].step;
+}
+
+//Load data at specified timestep
+int Model::setTimeStep(int ts, Win* window)
+{
+   clock_t t1 = clock();
+   unsigned int idx=0;
+
+   int step = nearestTimeStep(ts);
+   if (step < 0) return -1;
+   //Clear currently loaded (also caches if enabled)
+   clearObjects();
+
+   //Closest matching timestep >= requested
+   now = step;
+   debug_print("TimeStep set to: %d\n", now);
+
+   //Detach any attached db file and attach n'th timestep database if available
+   attach(now);
+
+   //Attempt to load from cache first
+   if (restoreStep(now)) return 0; //Cache hit successful return value
+   if (!db) return 0;
+
+   //noload flag skips loading geometry until "load" commands issued
+   int rows = 0;
+   for (unsigned int i=0; i<window->objects.size(); i++)
+   {
+      if (window->objects[i] && (!noload || !window->objects[i]->skip))
+         rows += loadGeometry(window->objects[i]->id, now, now, true);
+   } 
+
+   debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
+   return rows;
 }
 
 int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers)
@@ -1063,6 +1100,8 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
    issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
 
    char SQL[1024];
+
+   //Write colour maps
    for (unsigned int i = 0; i < colourMaps.size(); i++)
    {
       ColourMap* cm = colourMaps[i];
@@ -1081,6 +1120,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       }
    }
 
+   //Write objects
    for (unsigned int i=0; i < objects.size(); i++)
    {
       if (objects[i] && (id == 0 || objects[i]->id == id))
@@ -1092,26 +1132,50 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
          snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, colour, opacity, properties) values (%d, '%s', '%d', %d, %g, '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, c.value, objects[i]->properties["opacity"].ToFloat(1.0), props.c_str()); 
          /*printf("%s\n", SQL);*/
          if (!issue(SQL, outdb)) return; 
- 
-         //Loop through all geometry classes (points/vectors etc)
-         for (int type=lucMinType; type<lucMaxType; type++)
+
+         /* Add colourmap reference for object */
+         for (unsigned int c = 0; c < objects[i]->colourMaps.size(); c++)
          {
-            writeGeometry(outdb, (lucGeometryType)type, objects[i]->id, compress);
+            if (!objects[i]->colourMaps[c]) continue;
+            /* Link object & colour map */
+            snprintf(SQL, 1024, "insert into object_colourmap (object_id, colourmap_id, data_type) values (%d, %d, %d)", objects[i]->id, objects[i]->colourMaps[c]->id, c); 
+            printf("%s\n", SQL);
+            if (!issue(SQL, outdb)) return;
+         }
+      }
+   }
+
+
+
+   //Write timesteps...
+   for (unsigned int i = 0; i < timesteps.size(); i++)
+   {
+      snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", timesteps[i].step, timesteps[i].time, timesteps[i].dimCoeff, timesteps[i].units.c_str(), ""); 
+      if (!issue(SQL, outdb)) return; 
+
+      //Get data at this timestep
+      setTimeStep(timesteps[i].step, windows[0]);
+
+      //Write object data
+      for (unsigned int i=0; i < objects.size(); i++)
+      {
+         if (objects[i] && (id == 0 || objects[i]->id == id))
+         {
+            //Loop through all geometry classes (points/vectors etc)
+            for (int type=lucMinType; type<lucMaxType; type++)
+            {
+               writeGeometry(outdb, (lucGeometryType)type, objects[i]->id, compress);
+            }
          }
       }
    }
    
-   //Write colourmaps.. timesteps...
-   snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", 1, 0.0, 0.0, "", ""); 
-   if (!issue(SQL, outdb)) return; 
    issue("COMMIT", outdb);
 }
 
 void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compressdata)
 {
    std::vector<GeomData*> data = geometry[type]->getAllObjects(obj_id);
-   int timestep = 1; //No timesteps for now, will require current timestep info stored with model
-                     //and setTimestep() moved to Model class
    //Loop through and write out all object data
    char SQL[1024];
    int i, data_type;
@@ -1154,7 +1218,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool
         float *min = Geometry::min;
         float *max = Geometry::max;
 
-        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, timestep, 0, 0, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, now, 0, 0, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 
         /* Prepare statement... */
         if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1180,18 +1244,8 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool
 
         sqlite3_finalize(statement);
 
-         /* Add colourmap reference for object */
-         for (unsigned int c = 0; c < objects[obj_id-1]->colourMaps.size(); c++)
-         {
-            if (!objects[obj_id-1]->colourMaps[c]) continue;
-            /* Link object & colour map */
-            snprintf(SQL, 1024, "insert into object_colourmap (object_id, colourmap_id, data_type) values (%d, %d, %d)", obj_id, objects[obj_id-1]->colourMaps[c]->id, c); 
-            printf("%s\n", SQL);
-            if (!issue(SQL, outdb)) return;
-         }
-
-         // Free compression buffer
-         if (cmp_len > 0) free(buffer);
+        // Free compression buffer
+        if (cmp_len > 0) free(buffer);
      }
    }
 }

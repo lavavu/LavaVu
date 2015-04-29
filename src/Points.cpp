@@ -165,13 +165,13 @@ void Points::loadVertices()
       GeomData* geo = geom[s];
       ColourMap* cmap = NULL;
       float psize0 = geo->draw->properties["pointsize"].ToFloat(1.0) * geo->draw->properties["scaling"].ToFloat(1.0);
+      //TODO: this duplicates code in getColour, 
+      // try to optimise getColour better instead
       if (geo->draw->colourMaps[lucColourValueData] && geo->colourValue.size() > 0)
          cmap = geo->draw->colourMaps[lucColourValueData];
       //Set opacity to drawing object/geometry override level if set
-      int alpha = 255;
-      float opacity = geo->draw->properties["opacity"].ToFloat(1.0);
-      if (opacity > 0.0) alpha = opacity * 255;
-      if (GeomData::opacity > 0.0) alpha = GeomData::opacity;
+      float alpha = geo->draw->properties["opacity"].ToFloat(0.0);
+      if (GeomData::opacity > 0.0 && GeomData::opacity < 1.0) alpha = GeomData::opacity;
       float ptype = geo->draw->properties["pointtype"].ToInt(-1);
       bool smooth = geo->draw->properties["pointsmooth"].ToBool(true);
 
@@ -194,7 +194,7 @@ void Points::loadVertices()
             if (cmap)
             {
                c = cmap->getfast(geo->colourValue[i]);
-               if (alpha) c.a = alpha;
+               if (alpha > 0.0) c.a *= alpha;
             }
             else
                geo->getColour(c, i);
@@ -345,11 +345,6 @@ void Points::draw()
 
    //Gen TexCoords for point sprites (for GLSL < 1.3 where gl_PointCoord not available)
    glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-   GL_Error_Check;
-
-   //Avoid writing transparent pixels, also cleans up texture edges of round particles
-   glAlphaFunc(GL_GREATER, 0.1); 
-   glEnable(GL_ALPHA_TEST);
    GL_Error_Check;
 
    //Draw, calls display list when available
