@@ -1725,6 +1725,7 @@ void LavaVu::displayCurrentView()
 
    if (aview->stereo)
    {
+      bool sideBySide = false;
       if (viewer->stereoBuffer)
       {
          // Draw to the left buffer
@@ -1733,16 +1734,20 @@ void LavaVu::displayCurrentView()
       }
       else
       {
-         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+         /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
          // Apply red filter for left eye 
          if (viewer->background.value < viewer->inverse.value)
             glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
          else  //Use opposite mask for light backgrounds
             glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+            */
+        sideBySide = true;
       }
 
       // Render the left-eye view 
+      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height*0.5);
       aview->projection(EYE_LEFT);
+      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height);
       aview->apply();
       // Draw scene
       drawSceneBlended();
@@ -1756,24 +1761,27 @@ void LavaVu::displayCurrentView()
       }
       else
       {
-         // Clear the depth buffer so red/cyan components are blended 
+         /*/ Clear the depth buffer so red/cyan components are blended 
          glClear(GL_DEPTH_BUFFER_BIT);
          // Apply cyan filter for right eye 
          if (viewer->background.value < viewer->inverse.value)
             glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
          else  //Use opposite mask for light backgrounds
             glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+         */
       }
 
       // Render the right-eye view 
+      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height*0.5);
       aview->projection(EYE_RIGHT);
+      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
       aview->apply();
       // Draw scene
       drawSceneBlended();
       aview->drawOverlay(viewer->inverse, amodel->timeStamp());
 
       // Restore full-colour 
-      glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
+      //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
    }
    else
    {
