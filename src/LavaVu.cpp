@@ -2052,6 +2052,7 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
    }
 
    //Set window name to model name
+   if (!awin) awin = amodel->windows[0];
    awin->name = amodel->file.base;
 
    //Add all windows to global window list
