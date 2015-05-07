@@ -31,6 +31,7 @@ else:
    rpath = [os.path.join(env['prefix'], "lib")]
 
 cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('SHADER_PATH', '"\\"' + bin_dir + '/\\""')] + [('USE_FONTS')]
+#cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('SHADER_PATH', '"\\"' + bin_dir + '/\\""')] + [('USE_FONTS')] + [('USE_ZLIB')]
 env['CPPDEFINES'] += cpp_defs
 
 # Setup where to look for files.
@@ -47,6 +48,7 @@ env.Install('bin/html/', Glob(src_dir + '/html/*.*'))
 # C++ sources
 srcs = Glob(src_dir + '/*.cpp')
 srcs += [src_dir + '/mongoose/mongoose.c']
+srcs += [src_dir + '/miniz/miniz.c']
 srcs += [src_dir + '/jpeg/jpge.cpp']
 srcs += [src_dir + '/jpeg/jpgd.cpp']
 srcs += [src_dir + '/tiny_obj_loader.cc']
@@ -57,6 +59,7 @@ sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/src/sqlite3.c'])
 #Create renderer shared library
 #Add pthreads & dl (required for sqlite3)
 libs = ['pthread', 'dl'] + env.get('LIBS', [])
+#libs = ['pthread', 'dl', 'z'] + env.get('LIBS', [])
 l = env.SharedLibrary('lib/LavaVuRender', objs + sqlite3, LIBS=libs)
 
 # Build LavaVu viewer (interactive version)
