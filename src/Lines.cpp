@@ -69,6 +69,8 @@ void Lines::update()
       //Default is to render 2d lines
       if (geom[i]->draw->properties["flat"].ToBool(true))
       {
+         glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
+      
          if (geom[i]->draw->properties["link"].ToBool(false))
             glBegin(GL_LINE_STRIP);
          else
