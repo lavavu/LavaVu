@@ -38,6 +38,8 @@
 
 #include "GraphicsUtil.h"
 
+#define PALETTE_TEX_SIZE 4096
+
 class ColourVal
 {
  public:
@@ -45,6 +47,7 @@ class ColourVal
    float value;
    float position;
 
+   ColourVal() : value(0), position(0) {colour.value = 0xff000000;}
    ColourVal(Colour& colour, float pvalue) : colour(colour), value(pvalue), position(0) {}
    ColourVal(Colour& colour) : colour(colour), value(HUGE_VAL), position(0) {}
 };
@@ -57,6 +60,7 @@ class ColourMap
 
 public:
    std::vector<ColourVal> colours;
+   Colour background;
    unsigned int id;
    std::string name;
    float minimum;
@@ -79,6 +83,7 @@ public:
          ColourMap::lastid = id;
       this->name = std::string(name);
       texture = NULL;
+      background.value = 0xff000000;
    }
 
    ~ColourMap() {if (texture) delete texture;}
@@ -97,7 +102,9 @@ public:
    Colour getFromScaled(float scaledValue);
    void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour);
    void setComponent(int component_index);
-   void loadTexture();
+   void loadTexture(bool repeat=false);
+   void loadPalette(std::string data);
+   void print();
 
    static bool lock;
    static int logscales;

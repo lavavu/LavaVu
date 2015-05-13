@@ -776,32 +776,9 @@ class PropertyParser
       std::string line;
       while(std::getline(is, line))
       {
-         std::istringstream iss(line);
-         std::string temp, key, value;
-
-         std::getline(iss, temp, delim);
-         
-         std::istringstream isskey(temp);
-         isskey >> key;
-
-         //Read values into vector until stream empty
-         props[key] = prop_values();
-         do
-         {
-            std::getline(iss, temp, delim);
-
-            std::istringstream issval(temp);
-            issval >> value;
-
-            if (ignoreCase)
-               std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-
-            props[key].push_back(value);
-            //std::cerr << "Key " << key << " == " << value << std::endl;
-         } while (iss.good());
-         //std::cerr << props[key].size() << " values added to key: " << key << " [0] = " << props[key][0] << std::endl;
+         parseLine(line, delim);
       }
-   };
+   }
 
    //Parse lines as whitespace separated eg: " key   value"
    void parse(std::istream& is)
@@ -809,32 +786,66 @@ class PropertyParser
       std::string line;
       while(std::getline(is, line))
       {
-         std::istringstream iss(line);
-         std::string key, value;
+         parseLine(line);
+      }
+   }
 
-         iss >> key;
+   //Parse lines with delimiter, ie: key=value
+   void parseLine(std::string& line, char delim)
+   {
+      std::istringstream iss(line);
+      std::string temp, key, value;
+
+      std::getline(iss, temp, delim);
+      
+      std::istringstream isskey(temp);
+      isskey >> key;
+
+      //Read values into vector until stream empty
+      props[key] = prop_values();
+      do
+      {
+         std::getline(iss, temp, delim);
+
+         std::istringstream issval(temp);
+         issval >> value;
+
          if (ignoreCase)
             std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-         props[key] = prop_values();
 
-         //Read values into vector until stream empty
-         while (iss.good())
+         props[key].push_back(value);
+         //std::cerr << "Key " << key << " == " << value << std::endl;
+      } while (iss.good());
+      //std::cerr << props[key].size() << " values added to key: " << key << " [0] = " << props[key][0] << std::endl;
+   }
+
+   //Parse lines as whitespace separated eg: " key   value"
+   void parseLine(std::string& line)
+   {
+      std::istringstream iss(line);
+      std::string key, value;
+
+      iss >> key;
+      if (ignoreCase)
+         std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+      props[key] = prop_values();
+
+      //Read values into vector until stream empty
+      while (iss.good())
+      {
+         iss >> value;
+         //Detect quotes
+         if (value.length() > 0 && value.at(0) == '"')
          {
-            iss >> value;
-            //Detect quotes
-            if (value.length() > 2 && value.at(0) == '"')
-            {
-               size_t start = line.find('"');
-               size_t end = line.find('"', start+1);
-               iss.seekg(end+2, std::ios_base::beg);
-               value = line.substr(start+1, end-start-1);
-            }
-            props[key].push_back(value);
-            //std::cerr << key << " => " << value << std::endl;
+            size_t start = line.find('"');
+            size_t end = line.find('"', start+1);
+            iss.seekg(end+2, std::ios_base::beg);
+            value = line.substr(start+1, end-start-1);
          }
-
+         props[key].push_back(value);
+         //std::cerr << key << " => " << value << std::endl;
       }
-   };
+   }
 
    std::string get(std::string key, unsigned int idx=0)
    {

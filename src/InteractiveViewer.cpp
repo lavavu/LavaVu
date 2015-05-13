@@ -327,7 +327,17 @@ bool LavaVu::parseChar(unsigned char key)
          }
       }
       else
+      {
+        //If the command contains only one double-quote, wait until another received before parsing
+        size_t n = std::count(entry.begin(), entry.end(), '"');
+        if (n == 1)
+        {
+           entry += '\n';
+           msg = true;
+           break;
+        }
         response = parseCommands(entry);
+      }
       entry = "";
       break;
    case KEY_DELETE:
@@ -406,8 +416,8 @@ bool LavaVu::parseChar(unsigned char key)
       msg = true;
       break;
    }
-   //if (entry.length() > 0) printMessage(": %s", entry.c_str());
-   if (entry.length() > 0 || msg)
+
+   if (entry.length() > 0 && msg)
    {
      printMessage(": %s", entry.c_str());
      response = false;
@@ -482,8 +492,8 @@ bool LavaVu::parseCommands(std::string cmd)
 {
    bool redisplay = true;
    static std::string last_cmd;
-   std::stringstream ss(cmd);
-   PropertyParser parsed = PropertyParser(ss);
+   PropertyParser parsed = PropertyParser();
+   parsed.parseLine(cmd);
 
    //Verbose command processor
    float fval;
@@ -1123,46 +1133,29 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       if (obj)
       {
-         std::string cname = parsed.get("colourmap", next);
+         std::string what = parsed.get("colourmap", next);
          //int cid = parsed.Int("colourmap", 2);
          parsed.has(ival, "colourmap", next);
-         ColourMap* cmap = findColourMap(cname, ival);
+         ColourMap* cmap = findColourMap(what, ival);
          //Only able to set the value colourmap now
-         obj->addColourMap(cmap, lucColourValueData);
          if (cmap)
+         {
+            obj->addColourMap(cmap, lucColourValueData);
             printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), cmap->name.c_str(), cmap->id);
-         else
+         }
+         else if (what.length() == 0)
             printMessage("%s colourmap set to none", obj->name.c_str());
+         else
+         {
+            //No cmap id, parse a colourmap string (must be single line or enclosed in "")
+            if (!obj->colourMaps[lucColourValueData]) obj->colourMaps[lucColourValueData] = addColourMap();
+            obj->colourMaps[lucColourValueData]->print();
+            obj->colourMaps[lucColourValueData]->loadPalette(what);
+            obj->colourMaps[lucColourValueData]->print();
+         }
          redraw(obj->id);
          redrawViewports();
       }
-   }
-   //TODO: document colourvalue,colourset,colour
-   else if (parsed.exists("colourvalue"))
-   {
-      std::string what = parsed["colourvalue"];
-      //Set value on colourmap (id idx val)
-      int id = parsed.Int("colourvalue", 1);
-      int idx = parsed.Int("colourvalue", 2);
-      float val = parsed.Float("colourvalue", 3);
-      ColourMap* cmap = findColourMap(what, id);
-      cmap->colours[idx].value = val;
-      cmap->calibrate();
-            printMessage("%s colourmap idx (%d) value set to (%f)", cmap->name.c_str(), idx, val);
-      //Will need to redraw all objects using this colourmap...
-   }
-   else if (parsed.exists("colourset"))
-   {
-      std::string what = parsed["colourset"];
-      //Set colourmap colour (id idx val-hex-rgba)
-      int id = parsed.Int("colourset", 1);
-      int idx = parsed.Int("colourset", 2);
-      unsigned int colour = parsed.Colour("colourset", 3);
-      ColourMap* cmap = findColourMap(what, id);
-      cmap->colours[idx].colour.value = colour;
-      cmap->calibrate();
-            printMessage("%s colourmap idx (%d) colour set to (%x)", cmap->name.c_str(), idx, colour);
-      //Will need to redraw all objects using this colourmap...
    }
    else if (parsed.exists("colour"))
    {
@@ -1555,11 +1548,17 @@ bool LavaVu::parseCommands(std::string cmd)
       {
          printMessage("Running script: %s", scriptfile.c_str());
          std::string line;
+         entry = "";
          while(std::getline(file, line))
          {
             if (line.length() > 0 && line.at(0) != '#')
-               parseCommands(line);
+            {
+               entry += line;
+               parseChar(KEY_ENTER);
+               //parseCommands(line);
+            }
          }
+         entry = "";
          file.close();
          aview->inertia(false); //Clear inertia
       }
@@ -1803,6 +1802,12 @@ bool LavaVu::parseCommands(std::string cmd)
            std::cerr << "RENAMED OBJECT: " << obj->id << " " << obj->name << std::endl;
          }
       }
+   }
+   else if (parsed.exists("newstep"))
+   {
+      amodel->addTimeStep(amodel->now+1);
+      setTimeStep(amodel->now+1);
+      resetViews(); //Update the viewports
    }
    else
    {
@@ -2220,11 +2225,12 @@ std::string LavaVu::helpCommand(std::string cmd)
    else if (cmd == "colourmap")
    {
       help += "Set colourmap on object\n\n"
-                  "Usage: colourmap object_id/object_name colourmap_id/colourmap_name\n\n"
+                  "Usage: colourmap object_id/object_name [colourmap_id/colourmap_name | \"data\"]\n\n"
                   "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
                   "object_name (string) : the name of the object to set (see: \"list objects\")\n"
                   "colourmap_id (integer) : the index of the colourmap to apply (see: \"list colourmaps\")\n"
-                  "colourmap_name (string) : the name of the colourmap to apply (see: \"list colourmaps\")\n";
+                  "colourmap_name (string) : the name of the colourmap to apply (see: \"list colourmaps\")\n"
+                  "data (string) : data to load into selected object's colourmap\n";
    }
    else if (cmd == "pointtype")
    {

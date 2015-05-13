@@ -436,6 +436,7 @@ void LavaVu::parseProperty(std::string& data)
    }
    else
    {
+      //Not actually used... aview is always set
       jsonParseProperty(data, globals);
       std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
    }
@@ -1591,11 +1592,18 @@ int LavaVu::viewFromPixel(int x, int y)
 }
 
 //Adds colourmap to active model
-void LavaVu::addColourMap(ColourMap* cmap)
+ColourMap* LavaVu::addColourMap(ColourMap* cmap)
 {
-   ColourMap* colourMap = cmap;
+   if (!cmap)
+   {
+      //Create a default greyscale map
+      cmap = new ColourMap();
+      unsigned int colours[] = {0x00000000, 0xffffffff};
+      cmap->add(colours, 2);
+   }
    //Save colour map in list
-   amodel->colourMaps.push_back(colourMap);
+   amodel->colourMaps.push_back(cmap);
+   return cmap;
 }
 
 void LavaVu::redrawObjects()
@@ -1858,7 +1866,7 @@ void LavaVu::printMessage(const char *fmt, ...)
    {
       va_list ap;                 // Pointer to arguments list
       va_start(ap, fmt);          // Parse format string for variables
-      vsprintf(message, fmt, ap);    // Convert symbols
+      vsnprintf(message, MAX_MSG, fmt, ap);    // Convert symbols
       va_end(ap);
    }
 }

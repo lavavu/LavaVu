@@ -45,6 +45,8 @@
 #include "Win.h"
 #include "VideoEncoder.h"
 
+#define MAX_MSG 256
+
 typedef enum
 {
    lucExportNone,
@@ -99,7 +101,7 @@ class LavaVu : public ViewerApp
    bool recording;
    bool loop;
    int animate;
-   char message[256];
+   char message[MAX_MSG];
 
    int view;
 
@@ -155,7 +157,7 @@ class LavaVu : public ViewerApp
 
 
    void addWindow(Win* win);
-   void addColourMap(ColourMap* cmap);
+   ColourMap* addColourMap(ColourMap* cmap=NULL);
 
    void displayCurrentView();
 

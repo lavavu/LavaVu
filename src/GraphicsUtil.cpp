@@ -1269,14 +1269,20 @@ Colour parseRGBA(std::string value)
    //Parse rgba(r,g,b,a) values
    Colour col;
    int c;
+   float alpha;
    std::stringstream ss(value.substr(5));
-   for (int i=0; i<4; i++)
+   for (int i=0; i<3; i++)
    {
       ss >> c;
       col.rgba[i] = c;
       if (ss.peek() == ',')
          ss.ignore();
    }
+   ss >> alpha;
+   if (alpha > 1.)
+      col.a = alpha;
+   else
+     col.a = 255 * alpha;
    return col; //rgba(c[0],c[1],c[2],c[3]);
 }
 

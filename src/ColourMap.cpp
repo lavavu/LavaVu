@@ -460,17 +460,16 @@ void ColourMap::setComponent(int component_index)
          if (c != component_index) colours[i].colour.rgba[c] = 0;
 }
 
-void ColourMap::loadTexture()
+void ColourMap::loadTexture(bool repeat)
 {
    if (!texture) texture = new TextureData();
-   #define PALSIZE 4096
-   calibrate(0, PALSIZE);
-   unsigned char paletteData[4*PALSIZE];
+   calibrate(0, 1);
+   unsigned char paletteData[4*PALETTE_TEX_SIZE];
    Colour col;
-   for (int i=0; i<PALSIZE; i++)
+   for (int i=0; i<PALETTE_TEX_SIZE; i++)
    {
-      col = get(i);
-      //printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
+      col = get(i / (float)(PALETTE_TEX_SIZE-1));
+      //if (i%64=0) printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
       paletteData[i*4] = col.r;
       paletteData[i*4+1] = col.g;
       paletteData[i*4+2] = col.b;
@@ -479,12 +478,77 @@ void ColourMap::loadTexture()
 
    glActiveTexture(GL_TEXTURE0);
    glBindTexture(GL_TEXTURE_2D, texture->id);
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, PALSIZE, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, paletteData);
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, PALETTE_TEX_SIZE, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, paletteData);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   if (repeat)
+   {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+   }
+   else
+   {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+   }
    glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+void ColourMap::loadPalette(std::string data)
+{
+   //Parse palette string into key/value pairs
+   std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
+   std::stringstream is(data);
+   colours.clear();
+   std::string line;
+   while(std::getline(is, line))
+   {
+      std::istringstream iss(line);
+      float pos;
+      char delim;
+      std::string value;
+      if (iss >> pos && pos >= 0.0 && pos <= 1.0)
+      {
+         iss >> delim;
+         iss >> value;
+         Colour colour = parseRGBA(value);
+         //Add to colourmap
+         add(colour.value, pos);
+         //Use as positions not values!
+         colours[colours.size()-1].value = HUGE_VAL;
+         colours[colours.size()-1].position = pos;
+      }
+      else
+      {
+         //Background?
+         std::size_t pos = line.find("=") + 1;
+         if (pos == 11)
+         {
+            Colour c = parseRGBA(line.substr(pos));
+            background.r = c.rgba[0] / 255.0;
+            background.g = c.rgba[1] / 255.0;
+            background.b = c.rgba[2] / 255.0;
+            background.a = c.rgba[3];
+         }
+      }
+   }
+
+   if (texture)
+   {
+      loadTexture();
+      //delete texture;
+      //texture = NULL;
+   }
+}
+
+void ColourMap::print()
+{
+   for (int idx = 0; idx < colours.size(); idx++)
+   {
+      Colour colour = getFromScaled(colours[idx].position);
+      std::cout << colours[idx].position << "=rgba(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << (int)colour.a << ")\n";
+   }
+}
+
