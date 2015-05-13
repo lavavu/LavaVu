@@ -1491,10 +1491,17 @@ void LavaVu::resetViews(bool autozoom)
    //Flag redraw required
    redrawViewports();
 
-   //Copy window title
+   //Set viewer title
    std::stringstream title;
-   title << aview->properties["title"].ToString();
-   title << " (" << awin->name << ")";
+   std::string vpt = aview->properties["title"].ToString();
+   if (vpt.length() > 0)
+   {
+      title << aview->properties["title"].ToString();
+      title << " (" << awin->name << ")";
+   }
+   else
+      title << awin->name;
+
    if (amodel->timesteps.size() > 1)
       title << " : timestep " << amodel->now;
 
@@ -2084,9 +2091,9 @@ void LavaVu::loadModel(FilePath& fn)
       }
    }
 
-   //Set window name to model name
+   //Select first window, default window name to model name
    if (!awin) awin = amodel->windows[0];
-   awin->name = amodel->file.base;
+   if (awin->name.length() == 0) awin->name = amodel->file.base;
 
    //Add all windows to global window list
    for (unsigned int w=0; w<amodel->windows.size(); w++)

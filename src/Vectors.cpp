@@ -68,7 +68,7 @@ void Vectors::update()
 
       if (geom[i]->vectors.maximum > 0) 
       {
-         debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ] ", 
+         debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n", 
                scaling, 1/geom[i]->vectors.maximum, scaling/geom[i]->vectors.maximum);
          scaling *= 1.0/geom[i]->vectors.maximum;
       }
