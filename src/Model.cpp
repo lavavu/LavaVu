@@ -746,6 +746,11 @@ int Model::setTimeStep(int ts, Win* window)
    clock_t t1 = clock();
    unsigned int idx=0;
 
+   if (timesteps.size() == 1) 
+   {
+     now = timesteps[0].step;
+     return 0;
+   }
    int step = nearestTimeStep(ts);
    if (step < 0) return -1;
    //Clear currently loaded (also caches if enabled)
@@ -834,15 +839,15 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
          rows++;
          int id = sqlite3_column_int(statement, 0);
          int timestep = sqlite3_column_int(statement, 1);
-         //int rank = sqlite3_column_int(statement, 2);  //unused
-         //int index = sqlite3_column_int(statement, 3); //unused
+         int height = sqlite3_column_int(statement, 2);  //unused - was rank, now height
+         int depth = sqlite3_column_int(statement, 3); //unused - was idx, now depth
          lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 4);
          lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 5);
          int size = sqlite3_column_int(statement, 6);
          int count = sqlite3_column_int(statement, 7);
          int items = count / size;
          int width = sqlite3_column_int(statement, 8);
-         int height = width > 0 ? items / width : 0;
+         if (height == 0) height = width > 0 ? items / width : 0;
          float minimum = (float)sqlite3_column_double(statement, 9);
          float maximum = (float)sqlite3_column_double(statement, 10);
          //New fields for the scaling features, applied when drawing colour bars
@@ -944,7 +949,7 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
             if (data_type == lucVertexData && recurseTracers) active->add(objects[object_id-1]);
 
             //Read data block
-            active->read(objects[object_id-1], items, data_type, data, width, height);
+            active->read(objects[object_id-1], items, data_type, data, width, height, depth);
             active->setup(objects[object_id-1], data_type, minimum, maximum, dimFactor, units);
             if (labels) active->label(objects[object_id-1], labels);
 
@@ -1107,7 +1112,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       ColourMap* cm = colourMaps[i];
       //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
       snprintf(SQL, 1024, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, centreValue) values (%d, '%s', %g, %g, %d, %d, %g)", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, 0.0 );
-      printf("%s\n", SQL);
+      //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
 
       /* Write colours and values */
@@ -1115,7 +1120,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       {
          snprintf(SQL, 1024, "insert into colourvalue (colourmap_id, colour, value) values (%d, %d, %g)", 
                  cm->id, cm->colours[c].colour.value, cm->colours[c].position * (cm->maximum - cm->minimum) + cm->minimum);
-      printf("%s\n", SQL);
+         //printf("%s\n", SQL);
          if (!issue(SQL, outdb)) return;
       }
    }
@@ -1130,7 +1135,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
          int cmap = 0;
          if (objects[i]->colourMaps[lucColourValueData]) cmap = objects[i]->colourMaps[lucColourValueData]->id;
          snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, colour, opacity, properties) values (%d, '%s', '%d', %d, %g, '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, c.value, objects[i]->properties["opacity"].ToFloat(1.0), props.c_str()); 
-         /*printf("%s\n", SQL);*/
+         //printf("%s\n", SQL);
          if (!issue(SQL, outdb)) return; 
 
          /* Add colourmap reference for object */
@@ -1145,12 +1150,12 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       }
    }
 
-
-
    //Write timesteps...
+   if (timesteps.size() == 0) addTimeStep(0);
    for (unsigned int i = 0; i < timesteps.size(); i++)
    {
       snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", timesteps[i].step, timesteps[i].time, timesteps[i].dimCoeff, timesteps[i].units.c_str(), ""); 
+      //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return; 
 
       //Get data at this timestep
@@ -1218,7 +1223,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool
         float *min = Geometry::min;
         float *max = Geometry::max;
 
-        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, now, 0, 0, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, now, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 
         /* Prepare statement... */
         if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)

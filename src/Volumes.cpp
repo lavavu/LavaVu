@@ -54,7 +54,7 @@ void Volumes::close()
 
 void Volumes::draw()
 {
-   //Draw, calls display list when available
+   //Draw
    Geometry::draw();
 
    //Use shaders if available
@@ -93,6 +93,10 @@ void Volumes::update()
    //printf("Total slices: %d\n", geom.size());
    if (!geom.size()) return;
    
+   //Padding!
+   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
    //Single volume cube
    if (geom.size() == 1)
    {
@@ -100,18 +104,29 @@ void Volumes::update()
       if (!drawable(i)) return;
 
       DrawingObject* current = geom[i]->draw;
-      if (!current->defaultTexture || current->defaultTexture->width == 0)
+      if (!geom[i]->texture || geom[i]->texture->width == 0)
       {
+#if 0
+         //Dump raw
+         FILE* pFile;
+         pFile = fopen("volume.raw", "wb");
+         fwrite(&geom[i]->colourValue.value[0], 1, sizeof(float) * geom[i]->colourValue.size(), pFile);
+         fclose(pFile);
+         std::cerr << "Wrote raw volume\n";
+#endif
          //Calculate bytes-per-voxel
          unsigned int bytes = 4 * geom[i]->colourValue.size();
          unsigned int voxels = (geom[i]->width * geom[i]->height * geom[i]->depth);
          unsigned int bpv = bytes / voxels; //4 * geom[i]->colourValue.size() / (geom[i]->width * geom[i]->height * geom[i]->depth);
-         unsigned char* dp = (unsigned char*)(&geom[i]->colourValue.value[0]);
-         //for (int b=0; b<bytes; b+=100)
-         //  printf("BYTE @ %d == %d\n", b, dp[b]);
-         printf("volume 0 width %d height %d depth %d bpv %d\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
+#define SUBSAMPLE 1.0
+         debug_print("volume 0 width %d height %d depth %d bpv %d\n", geom[i]->width, (geom[i]->height*SUBSAMPLE), (geom[i]->depth*SUBSAMPLE), bpv);
+
+geom[i]->depth *= SUBSAMPLE;
          //Load the texture
+         unsigned char* volume = (unsigned char*)&geom[i]->colourValue.value[0];
          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], bpv);
+         geom[i]->texture = current->defaultTexture;
+         current->defaultTexture = NULL; ////
       }
 
       //Setup gradient texture from colourmap
@@ -127,12 +142,14 @@ void Volumes::update()
       for (int i=0; i<=geom.size(); i++)
       {
           //Force reload
+          //if (i<geom.size() && geom[i]->texture)
+          //  geom[i]->texture->width = 0;
           if (i<geom.size() && geom[i]->draw->defaultTexture)
             geom[i]->draw->defaultTexture->width = 0;
           if (i==geom.size() || id != geom[i]->draw->id)
           {
             slices[id] = count;
-            printf("%d slices in object %d\n", count, id);
+            debug_print("Reloading: %d slices in object %d\n", count, id);
             count = 0;
             if (i<geom.size()) id = geom[i]->draw->id;
           }
@@ -146,22 +163,29 @@ void Volumes::update()
           DrawingObject* current = geom[i]->draw;
           if (!current->defaultTexture || current->defaultTexture->width == 0)
           {
-            //Height needs calculating from values data
-            int height = geom[i]->colourValue.size() / geom[i]->width;
-            printf("current %d width %d height %d depth %d\n", current->id, geom[i]->width, height, slices[current->id]);
-            int sliceSize = geom[i]->width * height;
-            float* volume = new float[sliceSize * slices[current->id]];
+            int height = geom[i]->height;
+            if (!height)
+            {
+               //No height? Calculate from values data (assumes float data (4 bpv))
+               height = geom[i]->height = geom[i]->colourValue.size() / geom[i]->width; // * 4;
+            }
+               unsigned int bytes = 4 * geom[i]->colourValue.size();
+               unsigned int bpv = round(bytes / (float)(geom[i]->width * height));
+            debug_print("current %d width %d height %d depth %d (bpv %d)\n", current->id, geom[i]->width, height, slices[current->id], bpv);
+            size_t sliceSize = geom[i]->width * height * bpv;
+            //unsigned char* volume = new unsigned char[sliceSize * slices[current->id]];
 
-            size_t offset = 0;
+            //Init/allocate/bind texture
+            current->load3DTexture(geom[i]->width, height, slices[current->id], NULL, bpv);
+            geom[i]->texture = current->defaultTexture;
             for (int j=i; j<i+slices[current->id]; j++)
             {
-                size_t size = sliceSize * sizeof(float);
-                memcpy(volume + offset, &geom[j]->colourValue.value[0], size);
-                offset += sliceSize;
+               if (bpv == 1)
+                  glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, &geom[j]->colourValue.value[0]);
+               else if (bpv == 4)
+                  glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
             }
-              
-            current->load3DTexture(geom[i]->width, height, slices[current->id], volume);
-            delete volume;
+            GL_Error_Check;
           }
 
           //Setup gradient texture from colourmap
@@ -169,6 +193,9 @@ void Volumes::update()
             geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
       }
    }
+   //Restore padding
+   glPopClientAttrib();
+   GL_Error_Check;
    t2 = clock(); debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
@@ -187,7 +214,9 @@ void Volumes::render(int i)
    //Uniform variables
    float viewport[4];
    glGetFloatv(GL_VIEWPORT, viewport);
-   float res[3] = {geom[i]->draw->defaultTexture->width, geom[i]->draw->defaultTexture->height, geom[i]->draw->defaultTexture->depth};
+   TextureData* voltexture = geom[i]->texture;
+   if (!voltexture) voltexture = geom[i]->draw->defaultTexture;
+   float res[3] = {voltexture->width, voltexture->height, voltexture->depth};
    glUniform3fv(prog->uniforms["uResolution"], 1, res);
    glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
@@ -233,7 +262,7 @@ void Volumes::render(int i)
  
    //Volume texture
    glActiveTexture(GL_TEXTURE1);
-   glBindTexture(GL_TEXTURE_3D, geom[i]->draw->defaultTexture->id);
+   glBindTexture(GL_TEXTURE_3D, voltexture->id);
    glUniform1i(prog->uniforms["uVolume"], 1);
    GL_Error_Check;
 
@@ -283,6 +312,8 @@ void Volumes::render(int i)
 
    glPopAttrib();
    GL_Error_Check;
+   glBindTexture(GL_TEXTURE_3D, 0);
+   glActiveTexture(GL_TEXTURE0);
 }
 
 GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles)

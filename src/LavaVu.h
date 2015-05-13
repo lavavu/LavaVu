@@ -71,6 +71,7 @@ class LavaVu : public ViewerApp
    bool writeimage, writemovie;
    int volres[3];
    float volmin[3], volmax[3];
+   DrawingObject *volume;
    int repeat;
 #ifdef HAVE_LIBAVCODEC
    VideoEncoder* encoder;

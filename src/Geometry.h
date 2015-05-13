@@ -110,11 +110,12 @@ class GeomData
    Coord2DValues texCoords;
    FloatValues sizes;
 
-   std::map<int,FloatValues*> data;
+   std::vector<FloatValues*> data;
 
    GeomData(DrawingObject* draw, int width=0, int height=0) : draw(draw), count(0), width(width), height(height), labelptr(NULL), opaque(false) 
    {
       //opaque = false; //true; //Always true for now (need to check colourmap, opacity and global opacity)
+      data.resize(lucMaxDataType+1);
       data[lucVertexData] = &vertices;
       data[lucVectorData] = &vectors;
       data[lucNormalData] = &normals;
@@ -139,7 +140,7 @@ class GeomData
    {
       if (labelptr) free(labelptr);
       labelptr = NULL;
-      if (texture) delete texture;
+      if (texture && texture != draw->defaultTexture) delete texture;
    }
 
    void label(std::string& labeltext);

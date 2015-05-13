@@ -134,7 +134,7 @@ int DrawingObject::useTexture(TextureData* texture)
    return -1;
 }
 
-void DrawingObject::load3DTexture(int width, int height, int depth, float* data, int bpv)
+void DrawingObject::load3DTexture(int width, int height, int depth, void* data, int bpv)
 {
   GL_Error_Check;
   //Create the texture

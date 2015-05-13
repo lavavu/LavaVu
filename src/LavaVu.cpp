@@ -64,6 +64,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    volres[0] = volres[1] = volres[2] = 256;
    volmin[0] = volmin[1] = volmin[2] = -1;
    volmax[0] = volmax[1] = volmax[2] = 1;
+   volume = NULL;
 
    fixedwidth = width;
    fixedheight = height;
@@ -418,8 +419,10 @@ void LavaVu::printProperties()
 void LavaVu::readRawVolume(FilePath& fn)
 {
    //raw format volume data
-   //Create volume object
-   DrawingObject *vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "static=1");
+
+   //Create volume object, or if static volume object exists, use it
+   DrawingObject *vobj = volume;
+   if (!vobj) vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "");
      
    std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
    file.seekg(0, std::ios::end);
@@ -439,20 +442,21 @@ void LavaVu::readRawVolume(FilePath& fn)
    Model::volumes->read(vobj, 1, lucVertexData, volmin);
    Model::volumes->read(vobj, 1, lucVertexData, volmax);
    float floatcount = size / 4.0;
-   Model::volumes->read(vobj, floatcount, lucColourValueData, buffer.data(), volres[0], volres[1], volres[2]);
+   Model::volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
    Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
 void LavaVu::readXrwVolume(FilePath& fn)
 {
    //Xrw format volume data
-      ColourMap* colourMap = NULL;
 
-   //Create volume object
-   DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
+   //Create volume object, or if static volume object exists, use it
+   DrawingObject *vobj = volume;
+   if (!vobj) vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "");
      
    std::vector<char> buffer;
    unsigned int size;
+   unsigned int floatcount;
 #ifdef USE_ZLIB
    if (fn.type != "xrwu")
    {
@@ -461,8 +465,28 @@ void LavaVu::readXrwVolume(FilePath& fn)
       gzread(f, (char*)volmax, sizeof(float)*3);
       volmin[0] = volmin[1] = volmin[2] = 0;
       size = volres[0]*volres[1]*volres[2];
+        //Ensure a multiple of 4 bytes
+        floatcount = ceil(size / 4.0);
+        size = floatcount * 4;
       buffer.resize(size);
-      gzread(f, &buffer[0], size);
+        std::cout << "SIZE " << size << " Bytes, " << floatcount << " Floats, rounded up: " << (floatcount*4) << " Bytes, Actual: " << buffer.size() << "\n";
+      int chunk = 100000000; //Read in 100MB chunks
+      int len, err;
+      unsigned int offset = 0;
+      do
+      {
+         if (chunk+offset > size) chunk = size - offset; //Last chunk?
+         printf("Offset %ld Chunk %ld\n", offset, chunk);
+         len = gzread(f, &buffer[offset], chunk);
+         if (len != chunk)
+         {
+           fprintf(stderr, "gzread err: %s\n", gzerror(f, &err));
+           exit(1);
+         }
+
+         offset += chunk;
+      }
+      while (offset < size);
       gzclose(f);
    }
    else
@@ -476,6 +500,10 @@ void LavaVu::readXrwVolume(FilePath& fn)
       file.read((char*)volmax, sizeof(float)*3);
       volmin[0] = volmin[1] = volmin[2] = 0;
       size -= sizeof(int)*3 + sizeof(float)*3;
+        //Ensure a multiple of 4 bytes
+        floatcount = ceil(size / 4.0);
+        //std::cout << "SIZE " << size << " Bytes, " << floatcount << " Floats, rounded up: " << (floatcount*4) << " Bytes\n";
+        size = floatcount * 4;
       if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
       buffer.resize(size);
       file.read(&buffer[0], size);
@@ -484,35 +512,57 @@ void LavaVu::readXrwVolume(FilePath& fn)
 
    Geometry::checkPointMinMax(volmin);
    Geometry::checkPointMinMax(volmax);
+
+#if 0
+         //Dump slices
+         size_t offset = 0;
+         char path[256];
+         for (int slice=0; slice<volres[2]; slice++)
+         {
+             //Write data to image file
+             sprintf(path, "slice-%03da.png", slice);
+             std::ofstream file(path, std::ios::binary);
+             write_png(file, 1, volres[0], volres[1], &buffer[offset]);
+             file.close();
+             offset += volres[0] * volres[1];
+             printf("offset %ld\n", offset);
+         }
+         exit(0);
+#endif
       
    //Define the bounding cube by corners
    Model::volumes->add(vobj);
    Model::volumes->read(vobj, 1, lucVertexData, volmin);
    Model::volumes->read(vobj, 1, lucVertexData, volmax);
-   float floatcount = size / 4.0;
-   Model::volumes->read(vobj, floatcount, lucColourValueData, buffer.data(), volres[0], volres[1], volres[2]);
+
+   Model::volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
    Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
 void LavaVu::readVolumeSlice(FilePath& fn)
 {
    //png/jpg data
-   ColourMap* colourMap = NULL;
    Geometry::checkPointMinMax(volmin);
    Geometry::checkPointMinMax(volmax);
       
-   //Create volume object
-   static DrawingObject *vobj = NULL;
+   //Create volume object, or if static volume object exists, use it
    static int count = 0;
-   if (!vobj)
+   static std::string path = "";
+   DrawingObject *vobj = volume;
+   if (!vobj || path != fn.path)
    {
-      vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
+      path = fn.path; //Store the path, multiple volumes can be loaded if slices in different folders
+      vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "static=1");
       //Define the bounding cube by corners
       Model::volumes->add(vobj);
       Model::volumes->read(vobj, 1, lucVertexData, volmin);
       Model::volumes->read(vobj, 1, lucVertexData, volmax);    
    }
+   else
+      Model::volumes->add(vobj);
    
+   //Save static volume for loading multiple slices
+   volume = vobj;
    count++;
 
    int width, height, bytesPerPixel, bpp;
@@ -545,6 +595,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
       int floatcount = (width * height) / sizeof(float);
       Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height, count);
       Model::volumes->setup(vobj, lucColourValueData, 0, 1);
+      //std::cout << "SLICE LOAD: " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
       
       delete[] luminance;
       delete[] imageData;

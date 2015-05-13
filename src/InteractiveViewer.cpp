@@ -627,6 +627,13 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("Volume maximum bound set to %d x %d x %d", volmax[0], volmax[1], volmax[2]);
       return false;
    }
+   else if (parsed.exists("createvolume"))
+   {
+      //Use this to load multiple volumes as timesteps into the same object
+      volume = newObject("volume");
+      printMessage("Created static volume object");
+      return false;
+   }
    else if (parsed.has(ival, "tracersteps"))
    {
       Model::tracers->steps = ival;
