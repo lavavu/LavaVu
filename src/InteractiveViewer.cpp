@@ -498,6 +498,161 @@ bool LavaVu::parseCommands(std::string cmd)
    //Verbose command processor
    float fval;
    int ival;
+
+   //******************************************************************************
+   //First check for settings commands that don't require a model to be loaded yet!
+   if (parsed.exists("file"))
+   {
+      std::string what = parsed["file"];
+      //Attempt to load external file
+      FilePath file = FilePath(what);
+      loadFile(file);
+      if (file.type == "gldb")
+      {
+         //Set loaded gldb as active model/window
+         if (amodel && !loadWindow(windows.size()-1, amodel->now)) return false;
+      }
+      return false;
+   }
+   else if (parsed.exists("script"))
+   {
+      std::string scriptfile = parsed["script"];
+      std::ifstream file(scriptfile.c_str(), std::ios::in);
+      if (file.is_open())
+      {
+         printMessage("Running script: %s", scriptfile.c_str());
+         std::string line;
+         entry = "";
+         while(std::getline(file, line))
+         {
+            if (line.length() > 0 && line.at(0) != '#')
+            {
+               entry += line;
+               parseChar(KEY_ENTER);
+               //parseCommands(line);
+            }
+         }
+         entry = "";
+         file.close();
+      }
+      else
+      {
+         if (scriptfile != "init.script")
+            printMessage("Unable to open file: %s", scriptfile.c_str());
+      }
+      return false;
+   }
+   else if (parsed.has(ival, "cache"))
+   {
+      GeomCache::size = ival;
+      printMessage("Geometry cache set to %d timesteps", GeomCache::size);
+      return false;
+   }
+   else if (parsed.exists("noload"))
+   {
+      Model::noload = !Model::noload;
+      printMessage("Database object loading is %s", Model::noload ? "ON":"OFF");
+      return false;
+   }
+   else if (parsed.exists("hideall"))
+   {
+      hideall = !hideall;
+      printMessage("Object load initial state is %s", hideall ? "VISIBLE":"HIDDEN");
+      return false;
+   }
+   else if (parsed.exists("verbose"))
+   {
+      std::string what = parsed["verbose"];
+      verbose = what != "off";
+      printMessage("Verbose output is %s", verbose ? "ON":"OFF");
+      //Set info/error stream
+      if (verbose && !output)
+         infostream = stderr;
+      else
+        infostream = NULL;
+      return false;
+   }
+   else if (parsed.exists("pngalpha"))
+   {
+      viewer->alphapng = !viewer->alphapng;
+      printMessage("Transparency in PNG output is %s", viewer->alphapng ? "ON":"OFF");
+      return false;
+   }
+   else if (parsed.exists("swapyz"))
+   {
+      swapY = !swapY;
+      printMessage("Y/Z axis swap on OBJ load is %s", swapY ? "ON":"OFF");
+      return false;
+   }
+   else if (parsed.has(ival, "trisplit"))
+   {
+      trisplit = ival;
+      printMessage("Triangle subdivision level set to %d", trisplit);
+      return false;
+   }
+   else if (parsed.exists("globalcam"))
+   {
+      globalCam = !globalCam;
+      printMessage("Global camera is %s", globalCam ? "ON":"OFF");
+      return false;
+   }
+   else if (parsed.exists("localshaders"))
+   {
+      Shader::path = NULL;
+      std::cerr << "Ignoring shader path, using current directory\n";
+      printMessage("Using local shaders");
+      return false;
+   }
+   else if (parsed.exists("volres"))
+   {
+      parsed.has(volres[0], "volres", 0);
+      parsed.has(volres[1], "volres", 1);
+      parsed.has(volres[2], "volres", 2);
+      printMessage("Volume voxel resolution set to %d x %d x %d", volres[0], volres[1], volres[2]);
+      return false;
+   }
+   else if (parsed.exists("volmin"))
+   {
+      parsed.has(volmin[0], "volmin", 0);
+      parsed.has(volmin[1], "volmin", 1);
+      parsed.has(volmin[2], "volmin", 2);
+      printMessage("Volume minimum bound set to %d x %d x %d", volmin[0], volmin[1], volmin[2]);
+      return false;
+   }
+   else if (parsed.exists("volmax"))
+   {
+      parsed.has(volmax[0], "volmax", 0);
+      parsed.has(volmax[1], "volmax", 1);
+      parsed.has(volmax[2], "volmax", 2);
+      printMessage("Volume maximum bound set to %d x %d x %d", volmax[0], volmax[1], volmax[2]);
+      return false;
+   }
+   else if (parsed.has(ival, "tracersteps"))
+   {
+      Model::tracers->steps = ival;
+      if (Model::tracers->steps > amodel->now) Model::tracers->steps = amodel->now;
+      printMessage("Set tracer steps limit to %d", Model::tracers->steps);
+      Model::tracers->redraw = true;
+   }
+   else if (parsed.has(fval, "alpha"))
+   {
+      if (fval > 1.0)
+         GeomData::opacity = fval / 255.0;
+      else
+         GeomData::opacity = fval;
+      printMessage("Set global alpha to %.2f", GeomData::opacity);
+      if (amodel)
+      {
+         Model::quadSurfaces->redraw = true;
+         Model::triSurfaces->redraw = true;
+         redrawViewports();
+      }
+      return false;
+   }
+
+   //******************************************************************************
+   //Following commands require a model!
+   if (!amodel || !aview || !awin) return false;
    if (parsed.exists("rotation"))
    {
       float x = 0, y = 0, z = 0, w = 0;
@@ -634,6 +789,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("model"))      //Model switch
    {
+      if (window < 0) window = 0; //No window selection yet...
       if (!parsed.has(ival, "model"))
       {
          if (parsed["model"] == "up")
@@ -723,24 +879,6 @@ bool LavaVu::parseCommands(std::string cmd)
             }
          }
       }
-   }
-   else if (parsed.has(ival, "tracersteps"))
-   {
-      Model::tracers->steps = ival;
-      if (Model::tracers->steps > amodel->now) Model::tracers->steps = amodel->now;
-      printMessage("Set tracer steps limit to %d", Model::tracers->steps);
-      Model::tracers->redraw = true;
-   }
-   else if (parsed.has(fval, "alpha"))
-   {
-      if (fval > 1.0)
-         GeomData::opacity = fval / 255.0;
-      else
-         GeomData::opacity = fval;
-      printMessage("Set global alpha to %.2f", GeomData::opacity);
-      Model::quadSurfaces->redraw = true;
-      Model::triSurfaces->redraw = true;
-      redrawViewports();
    }
    else if (parsed.exists("opacity"))
    {
@@ -1522,53 +1660,6 @@ bool LavaVu::parseCommands(std::string cmd)
          }
       }
    }
-   else if (parsed.exists("file"))
-   {
-      //Load drawing object by name/ID match 
-      std::string what = parsed["file"];
-      //Attempt to load external file
-      FilePath file = FilePath(what);
-      if (file.type == "gldb")
-      {
-         loadModel(file);
-         if (!loadWindow(windows.size()-1, amodel->now)) return false;
-      }
-      else
-      {
-         files.clear();
-         files.push_back(what);
-         loadFiles();
-      }
-   }
-   else if (parsed.exists("script"))
-   {
-      std::string scriptfile = parsed["script"];
-      std::ifstream file(scriptfile.c_str(), std::ios::in);
-      if (file.is_open())
-      {
-         printMessage("Running script: %s", scriptfile.c_str());
-         std::string line;
-         entry = "";
-         while(std::getline(file, line))
-         {
-            if (line.length() > 0 && line.at(0) != '#')
-            {
-               entry += line;
-               parseChar(KEY_ENTER);
-               //parseCommands(line);
-            }
-         }
-         entry = "";
-         file.close();
-         aview->inertia(false); //Clear inertia
-      }
-      else
-      {
-         if (scriptfile != "init.script")
-            printMessage("Unable to open file: %s", scriptfile.c_str());
-         return false;
-      }
-   }
    //TODO: NOT YET DOCUMENTED
    else if (parsed.exists("inertia"))
    {
@@ -1681,7 +1772,12 @@ bool LavaVu::parseCommands(std::string cmd)
       else
          std::cerr << "NO OBJECT SELECTED" << std::endl;
    }
-   //TODO: NEW COMMANDS NOT YET DOCUMENTED...
+   else if (parsed.exists("shaders"))
+   {
+      printMessage("Reloading shaders");
+      reloadShaders();
+      return false;
+   }
    else if (parsed.exists("blend"))
    {
       std::string what = parsed["blend"];
@@ -1700,87 +1796,6 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       createDemoModel();
       resetViews();
-   }
-   else if (parsed.has(ival, "cache"))
-   {
-      GeomCache::size = ival;
-      printMessage("Geometry cache set to %d timesteps", GeomCache::size);
-      return false;
-   }
-   else if (parsed.exists("noload"))
-   {
-      Model::noload = !Model::noload;
-      printMessage("Database object loading is %s", Model::noload ? "ON":"OFF");
-   }
-   else if (parsed.exists("hideall"))
-   {
-      hideall = !hideall;
-      printMessage("Object load initial state is %s", hideall ? "VISIBLE":"HIDDEN");
-   }
-   else if (parsed.exists("verbose"))
-   {
-      std::string what = parsed["verbose"];
-      verbose = what != "off";
-      printMessage("Verbose output is %s", verbose ? "ON":"OFF");
-      //Set info/error stream
-      if (verbose && !output)
-         infostream = stderr;
-      else
-        infostream = NULL;
-   }
-   else if (parsed.exists("pngalpha"))
-   {
-      viewer->alphapng = !viewer->alphapng;
-      printMessage("Transparency in PNG output is %s", viewer->alphapng ? "ON":"OFF");
-   }
-   else if (parsed.exists("swapyz"))
-   {
-      swapY = !swapY;
-      printMessage("Y/Z axis swap on OBJ load is %s", swapY ? "ON":"OFF");
-   }
-   else if (parsed.has(ival, "trisplit"))
-   {
-      trisplit = ival;
-      printMessage("Triangle subdivision level set to %d", trisplit);
-   }
-   else if (parsed.exists("globalcam"))
-   {
-      globalCam = !globalCam;
-      printMessage("Global camera is %s", globalCam ? "ON":"OFF");
-   }
-   else if (parsed.exists("localshaders"))
-   {
-      Shader::path = NULL;
-      std::cerr << "Ignoring shader path, using current directory\n";
-      printMessage("Using local shaders");
-      reloadShaders();
-   }
-   else if (parsed.exists("shaders"))
-   {
-      printMessage("Reloading shaders");
-      reloadShaders();
-   }
-   else if (parsed.exists("volres"))
-   {
-      parsed.has(volres[0], "volres", 0);
-      parsed.has(volres[1], "volres", 1);
-      parsed.has(volres[2], "volres", 2);
-      printMessage("Volume voxel resolution set to %d x %d x %d", volres[0], volres[1], volres[2]);
-      return false;
-   }
-   else if (parsed.exists("volmin"))
-   {
-      parsed.has(volmin[0], "volmin", 0);
-      parsed.has(volmin[1], "volmin", 1);
-      parsed.has(volmin[2], "volmin", 2);
-      printMessage("Volume minimum bound set to %d x %d x %d", volmin[0], volmin[1], volmin[2]);
-   }
-   else if (parsed.exists("volmax"))
-   {
-      parsed.has(volmax[0], "volmax", 0);
-      parsed.has(volmax[1], "volmax", 1);
-      parsed.has(volmax[2], "volmax", 2);
-      printMessage("Volume maximum bound set to %d x %d x %d", volmax[0], volmax[1], volmax[2]);
    }
    else if (parsed.exists("name"))
    {

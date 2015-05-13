@@ -181,11 +181,10 @@ class LavaVu : public ViewerApp
    void encodeVideo(const char* filename, int start, int end);
    void writeSteps(bool images, bool video, int start, int end, const char* filename);
 
-   //db loading
-   void loadModel(FilePath& fn, bool hideall=false);
+   //data loading
+   void loadFile(FilePath& fn);
+   void loadModel(FilePath& fn);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
-   void loadFiles(bool autozoom=false);
-   void runScripts();
    void cacheLoad(int start_ts);
    bool tryTimeStep(int ts);
    int setTimeStep(int ts);

@@ -68,7 +68,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    fixedwidth = width;
    fixedheight = height;
 
-   window = 0;
+   window = -1;
    tracersteps = 0;
    objectlist = false;
    swapY = false;
@@ -220,46 +220,19 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          //Clear non file arguments
          args[i].clear();
       }
+      else
+      {
+         //Model data file
+         files.push_back(args[i]);
+      }
    }
 
    //Set default timestep if none specified
    if (startstep < 0) startstep = 0;
 
-   //Load list of models passed on command line
-   for (int i=0; i<args.size(); i++)
-   {
-      if (args[i].length() > 0)
-      {
-         FilePath fn(args[i]);
-         if (fn.type != "gldb" && fn.type != "db")
-         {
-            //Not a db file? Store other in files list - height maps etc
-            files.push_back(fn);
-         }
-         else
-         {
-            //Load all objects in db
-            loadModel(fn, hideall);
-         }
-      }
-   }
-   
-   if (!amodel)
-   {
-      //Adds a default model, window & viewport
-      FilePath fn = FilePath(":memory");
-      amodel = new Model(fn, hideall);
-      models.push_back(amodel);
-
-      //Set a default window, viewport & camera
-      awin = new Win("");
-      aview = awin->addView(new View());
-      windows.push_back(awin);
-      amodel->windows.push_back(awin);
-      
-      //Setup default colourmaps
-      //amodel->initColourMaps();
-   }
+   //Add default script
+   if (defaultScript.length())
+      files.push_back(defaultScript);
 }
 
 LavaVu::~LavaVu()
@@ -287,6 +260,13 @@ void LavaVu::run(bool persist)
       viewPorts = false;
    }
 
+   //Loads files, runs scripts
+   for (unsigned int m=0; m < files.size(); m++)
+   {
+      std::cerr << files[m].full << std::endl;
+      loadFile(files[m]);
+   }
+
    if (writeimage || writemovie || dump > lucExportNone)
    {
       //Load vis data for each window and write image
@@ -306,8 +286,6 @@ void LavaVu::run(bool persist)
          {
             resetViews(true);
             viewer->display();
-            //Script files?
-            runScripts();
             //Read input script from stdin on first timestep
             viewer->pollInput();
 
@@ -326,9 +304,6 @@ void LavaVu::run(bool persist)
             //Write output
             writeSteps(writeimage, writemovie, startstep, endstep, path);
          }
-         else
-            //Script files?
-            runScripts();
 
          //Optimise triangle meshes
          Model::triSurfaces->loadMesh();
@@ -339,10 +314,11 @@ void LavaVu::run(bool persist)
    }
    else
    {
-      //Load vis data for first window
-      loadWindow(0, startstep, true);
+      //Load first window if not yet loaded
+      if (window < 0)
+         loadWindow(0, startstep, true);
 
-      runScripts();
+      //Cache data if enabled
       cacheLoad(startstep);
    }
 
@@ -377,20 +353,6 @@ void LavaVu::exportData(lucExportType type, unsigned int id)
          for (unsigned int i=0; i < amodel->objects.size(); i++)
             dumpById(amodel->objects[i]->id);
       }
-   }
-}
-
-void LavaVu::runScripts()
-{
-   //Run default script if it exists
-   if (defaultScript.length())
-     parseCommands("script " + defaultScript);
-   //Script files?
-   for (unsigned int m=0; m < files.size(); m++)
-   {
-      std::cerr << files[m].full << std::endl;
-      if (files[m].type == "script")
-         parseCommands("script " + files[m].full);
    }
 }
 
@@ -455,23 +417,10 @@ void LavaVu::printProperties()
 
 void LavaVu::readRawVolume(FilePath& fn)
 {
-   //Check for raw format volume data
-   if (fn.type != "raw") return;
-
-   awin->background.value = 0xff000000;
-   
-      ColourMap* colourMap = NULL;
-      /*/Demo colourmap
-      ColourMap* colourMap = new ColourMap();
-      addColourMap(colourMap);
-      //Colours: hex, abgr
-      unsigned int colours[] = {0x00000000, 0xffffffff};
-      colourMap->add(colours, 2);*/
-      
+   //raw format volume data
    //Create volume object
-   DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
+   DrawingObject *vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "static=1");
      
-   std::cerr << "LOADING ... " << fn.full << std::endl;
    std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
    file.seekg(0, std::ios::end);
    std::streamsize size = file.tellg();
@@ -496,18 +445,12 @@ void LavaVu::readRawVolume(FilePath& fn)
 
 void LavaVu::readXrwVolume(FilePath& fn)
 {
-   //Check for raw format volume data
-   if (fn.type != "xrw" && fn.type != "xrwu") return;
-
-   awin->background.value = 0xff000000;
-   
+   //Xrw format volume data
       ColourMap* colourMap = NULL;
 
    //Create volume object
    DrawingObject *vobj = newObject(fn.base, 0xff000000, colourMap, 1.0, "static=1");
      
-   std::cerr << "LOADING ... " << fn.full << std::endl;
-
    std::vector<char> buffer;
    unsigned int size;
 #ifdef USE_ZLIB
@@ -553,13 +496,8 @@ void LavaVu::readXrwVolume(FilePath& fn)
 
 void LavaVu::readVolumeSlice(FilePath& fn)
 {
-   //Check for jpg data
-   if (fn.type != "jpg" && fn.type != "jpeg" && fn.type != "png") return;
-
-   awin->background.value = 0xff000000;
-   
-   ColourMap* colourMap = NULL; 
-      
+   //png/jpg data
+   ColourMap* colourMap = NULL;
    Geometry::checkPointMinMax(volmin);
    Geometry::checkPointMinMax(volmax);
       
@@ -575,7 +513,6 @@ void LavaVu::readVolumeSlice(FilePath& fn)
       Model::volumes->read(vobj, 1, lucVertexData, volmax);    
    }
    
-   std::cerr << "LOADING ... " << fn.full << std::endl;
    count++;
 
    int width, height, bytesPerPixel, bpp;
@@ -626,7 +563,6 @@ void LavaVu::readHeightMap(FilePath& fn)
    std::string texfile;
 
    //Can only parse dem format wth ers or hdr header
-   if (fn.type != "dem") return;
 
    char ersfilename[256];
    char hdrfilename[256];
@@ -683,7 +619,6 @@ void LavaVu::readHeightMap(FilePath& fn)
 
    float* min = awin->min;
    float* max = awin->max;
-   awin->background.value = 0xff000000;
    float range[3] = {0,0,0};
 
    min[0] = xmap;
@@ -885,10 +820,6 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
 void LavaVu::readOBJ(FilePath& fn)
 {
    //Use tiny_obj_loader to load a model
-   if (fn.type != "obj") return;
-   
-   std::cout << "Loading " << fn.full << std::endl;
-
    std::vector<tinyobj::shape_t> shapes;
    std::vector<tinyobj::material_t> materials;
    std::string err = tinyobj::LoadObj(shapes, materials, fn.full.c_str(), fn.path.c_str());
@@ -1010,7 +941,6 @@ void LavaVu::readTecplot(FilePath& fn)
 {
    //Can only parse tecplot format type FEBRICK
    //http://paulbourke.net/dataformats/tp/
-   if (fn.type != "tec" && fn.type != "dat") return;
 
       //Demo colourmap
       ColourMap* colourMap = new ColourMap();
@@ -1029,7 +959,6 @@ void LavaVu::readTecplot(FilePath& fn)
    std::ifstream file(fn.full.c_str(), std::ios::in);
    if (file.is_open())
    {
-      printMessage("Loading %s", fn.full.c_str());
       std::string line;
       bool zoneparsed = false;
 
@@ -2000,18 +1929,64 @@ void LavaVu::drawScene()
    if (glUseProgram) glUseProgram(0);
 }
 
-void LavaVu::loadModel(FilePath& fn, bool hideall)
+void LavaVu::loadFile(FilePath& fn)
 {
-   if (models.size() == 1 && amodel->file.full == ":memory")
+   //All files on command line plus init.script added to files list
+   // - gldb files represent a Model
+   // - Non gldb data will be loaded into active Model
+   // - If none exists, a default will be created
+   // - Sequence matters! To display non-gldb data with model, load the gldb first
+
+   //Load a file based on extension
+   std::cerr << "Loading: " << fn.full << std::endl;
+
+   //Database files always create their own Model object
+   if (fn.type == "gldb" || fn.type == "db")
    {
-      //Default model/window? Delete and replace when loading the first database model
-      //delete awin;
-      delete aview;
-      delete amodel;
-      windows.clear();
-      models.clear();
+      loadModel(fn);
+      return;
+   }
+   //Script files, can contain other files to load
+   else if (fn.type == "script")
+   {
+      parseCommands("script " + fn.full);
    }
 
+   //Other files require an existing model
+   if (!amodel)
+   {
+      //Adds a default model, window & viewport
+      FilePath fm = FilePath(":memory");
+      amodel = new Model(fm);
+      models.push_back(amodel);
+
+      //Set a default window, viewport & camera
+      awin = new Win("");
+      aview = awin->addView(new View());
+      windows.push_back(awin);
+      amodel->windows.push_back(awin);
+      
+      //Setup default colourmaps
+      //amodel->initColourMaps();
+   }
+
+   //Load other data by type
+   if (fn.type == "dem")
+      readHeightMap(fn);
+   else if (fn.type == "obj")
+      readOBJ(fn);
+   else if (fn.type == "tec" || fn.type == "dat")
+      readTecplot(fn);
+   else if (fn.type == "raw")
+      readRawVolume(fn);
+   else if (fn.type == "xrw" || fn.type == "xrwu")
+      readXrwVolume(fn);
+   else if (fn.type == "jpg" || fn.type == "jpeg" || fn.type == "png")
+      readVolumeSlice(fn);
+}
+
+void LavaVu::loadModel(FilePath& fn)
+{
    //Open database file
    Model* newmodel = new Model(fn, hideall);
    if (!newmodel->open())
@@ -2081,6 +2056,8 @@ void LavaVu::loadModel(FilePath& fn, bool hideall)
 //Load model window at specified timestep
 bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
+   if (window_idx == window) return false; //No change
+
    //Have a database model loaded already?
    if (amodel->objects.size() > 0)
    {
@@ -2118,26 +2095,10 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
    else
       viewer->setsize(awin->width, awin->height);
 
-   loadFiles(autozoom);
-
-   return true;
-}
-
-void LavaVu::loadFiles(bool autozoom)
-{
-   //Height maps or other files can be loaded here...
-   for (unsigned int m=0; m < files.size(); m++)
-   {
-      readHeightMap(files[m]);
-      readOBJ(files[m]);
-      readTecplot(files[m]);
-      readRawVolume(files[m]);
-      readXrwVolume(files[m]);
-      readVolumeSlice(files[m]);
-   }
-   
    //Update the views
    resetViews(autozoom);
+
+   return true;
 }
 
 //Load data at specified timestep for selected model & window
