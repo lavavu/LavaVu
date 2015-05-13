@@ -397,14 +397,13 @@ void LavaVu::runScripts()
 void LavaVu::cacheLoad(int start_ts)
 {
    //Cache fill (if cache large enough for all data)
-   int timestep = start_ts;
    if (amodel->db && GeomCache::size >= amodel->timesteps.size())
    {
-      printf("Caching all geometry data...\n");
+      debug_print("Caching all geometry data...\n");
       for (int i=0; i<=amodel->timesteps.size(); i++)
       {
-         printf("%d...%d\n", i, timestep);
-         setTimeStep(timestep+1);
+         debug_print("CACHE %d...%d\n", i, amodel->now);
+         setTimeStep(amodel->now+1);
       }
       //Restore start position
       setTimeStep(start_ts);
@@ -1571,7 +1570,7 @@ void LavaVu::viewModel(int idx, bool autozoom)
    {
       Geometry::checkPointMinMax(awin->min);
       Geometry::checkPointMinMax(awin->max);
-      debug_print("Applying Model Bounds from Window data %f,%f,%f - %f,%f,%f\n", awin->min[0], awin->min[1], awin->min[2], awin->max[0], awin->max[1], awin->max[2]);
+      debug_print("Applied Model Bounds from Window data %f,%f,%f - %f,%f,%f\n", Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
    }
 
    //Set the model bounding box
