@@ -321,11 +321,11 @@ void TriSurfaces::loadBuffers()
       int hasColours = geom[index]->colourCount();
       int colrange = hasColours ? geom[index]->count / hasColours : 1;
       bool vertColour = hasColours && colrange > 1;
-      debug_print("Using 1 colour value(s) per %d vertices (%d : %d)\n", colrange, geom[index]->count, geom[index]->colourValue.size());
+      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count, hasColours);
 
       int i = 0;
       Colour colour;
-      bool normals = geom[index]->normals.size() > 0;
+      bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
       float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
@@ -595,6 +595,7 @@ void TriSurfaces::depthSort()
    //Update eye distances, clamping int distance to integer between 1 and 65534
    float multiplier = 65534.0 / (maxdist - mindist);
    if (tricount == 0) return;
+   int opaqueCount = 0;
    for (unsigned int i = 0; i < tricount; i++)
    {
       //Distance from viewing plane is -eyeZ
@@ -611,8 +612,13 @@ void TriSurfaces::depthSort()
          //tidx[i].distance = 65535 - (int)(multiplier * (tidx[i].fdistance - mindist));
          //assert(tidx[i].distance >= 1 && tidx[i].distance <= 65535);
       }
+      else
+        opaqueCount++;
    }
    t2 = clock(); debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
+
+   //Skip sort if all opaque
+   if (opaqueCount == tricount) return;
 
    //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
    radix_sort<TIndex>(tidx, swap, tricount, 2);
@@ -624,7 +630,6 @@ void TriSurfaces::render()
 {
    clock_t t1,t2;
    if (tricount == 0) return;
-
 
    //First, depth sort the triangles
    if (view->is3d)
@@ -694,9 +699,9 @@ void TriSurfaces::draw()
       for (int index = geom.size()-1; index >= 0; index--) 
       {
          if (hiddencache[index]) continue;
-         setState(index, prog); //Set draw state settings for this object
          if (geom[index]->opaque)
          {
+            setState(index, prog); //Set draw state settings for this object
             //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, geom[index]->indices.size()/3, start/3, (start+geom[index]->indices.size())/3);
             glDrawRangeElements(GL_TRIANGLES, 0, elements, geom[index]->indices.size(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
             start += geom[index]->indices.size();
