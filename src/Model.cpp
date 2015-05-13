@@ -746,11 +746,13 @@ int Model::setTimeStep(int ts, Win* window)
    clock_t t1 = clock();
    unsigned int idx=0;
 
-   if (timesteps.size() == 1) 
+   //Default timestep only and no db? Skip load
+   if (timesteps.size() == 0 && !db) 
    {
      now = timesteps[0].step;
      return 0;
    }
+
    int step = nearestTimeStep(ts);
    if (step < 0) return -1;
    //Clear currently loaded (also caches if enabled)
