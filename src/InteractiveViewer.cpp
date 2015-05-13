@@ -506,7 +506,7 @@ bool LavaVu::parseCommands(std::string cmd)
           parsed.has(z, "rotation", 2) &&
           parsed.has(w, "rotation", 3))
       {
-        aview->setRotation(Quaternion(x, y, z, w));
+        aview->setRotation(x, y, z, w);
         aview->rotated = true;  //Flag rotation finished
       }
    }

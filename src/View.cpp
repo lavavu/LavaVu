@@ -244,9 +244,9 @@ void View::translate(float x, float y, float z)
    inertia();
 }
 
-void View::setRotation(Quaternion rot)
+void View::setRotation(float x, float y, float z, float w)
 {
-   rotation = rot;
+   rotation = Quaternion(x, y, z, w);
 }
 
 void View::rotate(float degrees, Vec3d axis)
@@ -315,6 +315,8 @@ void View::print()
    printf("Clip planes: near %f far %f\n", near_clip, far_clip);
    printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n", 
            model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
+   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
+#ifndef USE_OMEGALIB
    printf("<struct name=\"Camera\">\n");
    printf("   <param name=\"Type\">lucCamera</param>\n");
    printf("   <param name=\"focalPointX\">%f</param>\n", focal_point[0]);
@@ -330,6 +332,7 @@ void View::print()
    printf("   <param name=\"CoordinateSystem\">%s</param>\n", (orientation == RIGHT_HANDED ? "RightHanded" : "LeftHanded"));
    printf("</struct>\n");
    printf("------------------------------\n");
+#endif
    printf("%s\n", translateString().c_str());
    printf("%s\n", rotateString().c_str());
    printf("------------------------------\n");

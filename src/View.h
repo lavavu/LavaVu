@@ -100,7 +100,6 @@ class View
    Quaternion rotation_lag;
 
    float focal_length;        // Stereo zero parallex distance
-   float eye_sep_ratio;       // Eye separation ratio to focal length
    float scene_shift;         // Stereo projection shift (calculated from eye sep)
    bool  auto_stereo;         // Auto-adjust focal-len & eye-separation?
    float focal_length_adj;    // User adjust to focal length
@@ -112,6 +111,7 @@ class View
    bool is3d;
    bool use_inertia;
    float eye_shift;           // Stereo eye shift factor
+   float eye_sep_ratio;       // Eye separation ratio to focal length
 
    View(std::string title = "", bool stereo_flag = false, 
         float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
@@ -129,7 +129,7 @@ class View
    void focus(float x, float y, float z, float aperture=0, bool setdefault=false);
    void translate(float x, float y, float z);
    void setTranslation(float x, float y, float z);
-   void setRotation(Quaternion rot);
+   void setRotation(float x, float y, float z, float w);
    void rotate(float degrees, Vec3d axis);
    void rotate(float degreesX, float degreesY, float degreesZ);
    void setScale(float x, float y, float z);

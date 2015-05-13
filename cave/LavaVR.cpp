@@ -50,7 +50,7 @@ public:
   Ref<Label> statusLabel;
   Ref<Label> titleLabel;
 
-  LavaVuApplication(): EngineModule("LavaVuApplication") { redisplay = true; enableSharedData(); }
+  LavaVuApplication(): EngineModule("LavaVuApplication") { redisplay = true; enableSharedData(); menuOpen = false;}
 
     virtual void initialize()
     {
@@ -87,7 +87,7 @@ public:
   float setArgs(int argc, char** argv) {this->argc = argc; this->argv = argv;}
 
   virtual void handleEvent(const Event& evt);
-  virtual void cameraSetup();
+  virtual void cameraSetup(bool init=false);
   virtual void commitSharedData(SharedOStream& out);
   virtual void updateSharedData(SharedIStream& in);
 
@@ -98,6 +98,8 @@ private:
   Ref<Container> myUi;  
   std::string labelText;
   bool menuOpen;
+  Vector3f lastpos;
+  Vector4f lastrot;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +184,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
             {
                //pi->eval("_addMenuItem('" + amodel->objects[i]->name + "', 'toggle " + amodel->objects[i]->name + "')");
                pi->eval("_addObjectMenuItem('" + amodel->objects[i]->name + (amodel->objects[i]->visible ? "', True)" : "', False)"));
-               std::cerr << "ADDING " << amodel->objects[i]->name << std::endl;
+               //std::cerr << "ADDING " << amodel->objects[i]->name << std::endl;
             }
          }
       }
@@ -198,14 +200,20 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
       Colour& bg = viewer->background;
       ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
       //Omegalib 5.1+
-      //Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
+      Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
       //cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
 
       viewer->open(context.tile->pixelSize[0], context.tile->pixelSize[1]);
       viewer->init();
 
       //Transfer LavaVu camera settings to Omegalib
-      app->cameraSetup();
+      app->cameraSetup(true);
+
+      //Default nav speed
+      CameraController* cc = cam->getController();
+      View* view = app->glapp->aview;
+      cc->setSpeed(view->model_size * 0.03);
+
     }
 
     //Copy commands before consumed
@@ -219,9 +227,11 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
        app->statusLabel->setText(app->glapp->message);
     }
     //Update title label
-    if (app->titleLabel->getText() != app->glapp->viewer->title)
+    if (app->glapp->aview->title.length() > 0)
     {
-       app->titleLabel->setText(app->glapp->viewer->title);
+       std::string titleText = app->glapp->viewer->title + " " + app->glapp->aview->title;
+       if (app->titleLabel->getText() != titleText)
+          app->titleLabel->setText(app->glapp->viewer->title);
     }
 
     //Fade out status label (doesn't seem to work in cave)
@@ -238,7 +248,8 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
     {
       //Apply the model rotation/scaling
       View* view = app->glapp->aview;   
-      view->apply();
+      //view->apply();
+      view->apply(false); //Fixes vol-rend rotate origin issue but breaks connectome initial pos
          
       glEnable(GL_BLEND);
       viewer->display();
@@ -257,23 +268,43 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void LavaVuApplication::cameraSetup()
+void LavaVuApplication::cameraSetup(bool init)
 {
    //Setup camera using omegalib functions
    Camera* cam = Engine::instance()->getDefaultCamera();
    View* view = glapp->aview;
    float rotate[4], translate[3], focus[3];
+   Vector3f oldpos = cam->getPosition();
    view->getCamera(rotate, translate, focus);
 
    //Set position from translate
-   cam->setPosition(Vector3f(translate[0], translate[1], -translate[2]));
+   Vector3f newpos = Vector3f(translate[0], translate[1], -translate[2]);
+      if (!init && newpos == oldpos)
+      {
+         newpos = lastpos; //cam->setPosition(lastpos);
+         //view->setTranslation(lastpos[0], lastpos[1], -lastpos[2]);
+         view->setRotation(lastrot[0], lastrot[1], lastrot[2], lastrot[3]);
+         view->print();
+         //return;
+      }
+      else
+      {
+         if (!init) view->setRotation(0, 0, 0, 1);
+         lastpos = oldpos;
+         lastrot = Vector4f(rotate[0], rotate[1], rotate[2], rotate[3]);
+      }
+
+   //view->reset();
+   //view->setRotation(0, 0, 0, 1);
+
+   cam->setPosition(newpos);
    //From viewing distance
    //cam->setPosition(Vector3f(focus[0], focus[1], (focus[2] - view->model_size)) * view->orientation);
    //At center
    //cam->setPosition(Vector3f(focus[0], focus[1], focus[2] * view->orientation));
 
    //Default eye separation, TODO: set this via LavaVu property controllable via init.script
-   cam->setEyeSeparation(0.05);
+   cam->setEyeSeparation(view->eye_sep_ratio);
 
    ///Setting clip planes can kill menu! Need to check using MenuManager::getDefaultMenuDistance()
    //MenuManager* mm = MenuManager::createAndInitialize();
@@ -286,10 +317,6 @@ void LavaVuApplication::cameraSetup()
    //cam->setNearFarZ(view->near_clip*0.1, view->far_clip);
    cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
    //cam->setNearFarZ(cam->getNearZ(), view->far_clip);
-
-   //Default nav speed
-   CameraController* cc = cam->getController();
-   cc->setSpeed(view->model_size * 0.05);
 
    cam->lookAt(Vector3f(focus[0], focus[1], focus[2] * view->orientation), Vector3f(0,1,0));
    cam->setPitchYawRoll(Vector3f(0, 0, 0));
@@ -409,6 +436,12 @@ void LavaVuApplication::handleEvent(const Event& evt)
       {
          //evt.setProcessed();
       }
+      if (evt.isButtonDown(Event::Button5))
+      {
+         //Depth sort geometry
+         glapp->aview->sort = true;
+      }
+
     }
     else if (evt.isButtonDown(Event::Button5))
     {
@@ -442,7 +475,7 @@ void LavaVuApplication::handleEvent(const Event& evt)
       else
       {
          //Depth sort geometry
-         glapp->aview->sort = true;
+         //glapp->aview->sort = true;
       }
     }
     else if (evt.isButtonDown(Event::ButtonUp ))
@@ -541,3 +574,4 @@ int main(int argc, char** argv)
 }
 
 #endif
+
