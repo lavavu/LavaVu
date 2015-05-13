@@ -92,6 +92,15 @@ void GeomData::mapToColour(Colour& colour, float value)
       colour.a = opacity * 255;
 }
 
+
+int GeomData::colourCount()
+{
+   //Return number of colour values or RGBA colours
+   int hasColours = colourValue.size();
+   if (hasColours == 0) hasColours = colours.size();
+   return hasColours;
+}
+
 //Sets the colour for specified vertex index, looks up all provided colourmaps
 void GeomData::getColour(Colour& colour, int idx)
 {

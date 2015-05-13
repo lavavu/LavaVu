@@ -159,8 +159,8 @@ void TriSurfaces::loadMesh()
       //Sort vertices vector with std::sort & custom compare sort( vec.begin(), vec.end() );
       //Iterate, for duplicates replace indices with index of first
       //Remove duplicate vertices Triangles stored as list of indices
-      bool hasColour = (geom[index]->colourValue.size() > 0);
-      bool vertColour = hasColour && (geom[index]->colourValue.size() == geom[index]->vertices.size()/3);
+      int hasColours = geom[index]->colourCount();
+      bool vertColour = hasColours && (hasColours == geom[index]->vertices.size()/3);
       t1=tt=clock();
 
       //Add vertices to vector
@@ -318,10 +318,10 @@ void TriSurfaces::loadBuffers()
 
       //Calibrate colour maps on range for this surface
       geom[index]->colourCalibrate();
-      bool hasColour = (geom[index]->colourValue.size() > 0);
-      int colrange = hasColour ? geom[index]->count / geom[index]->colourValue.size() : 1;
-      bool vertColour = hasColour && colrange > 1;
-      debug_print("Using 1 colour value(s) per %d vertices\n", colrange);
+      int hasColours = geom[index]->colourCount();
+      int colrange = hasColours ? geom[index]->count / hasColours : 1;
+      bool vertColour = hasColours && colrange > 1;
+      debug_print("Using 1 colour value(s) per %d vertices (%d : %d)\n", colrange, geom[index]->count, geom[index]->colourValue.size());
 
       int i = 0;
       Colour colour;
@@ -425,8 +425,8 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
    clock_t t1,t2;
    t1 = clock();
    debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->vertices.size()/3);
-   bool hasColour = (geom[index]->colourValue.size() > 0);
-   bool vertColour = (hasColour && geom[index]->colourValue.size() == geom[index]->vertices.size()/3);
+   int hasColours = geom[index]->colourCount();
+   bool vertColour = (hasColours && hasColours == geom[index]->vertices.size()/3);
    //Calculate face normals for each triangle and copy to each face vertex
    for (unsigned int v=0; v<verts.size(); v += 3)
    {

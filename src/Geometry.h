@@ -146,6 +146,7 @@ class GeomData
    const char* getLabels();
    void colourCalibrate();
    void mapToColour(Colour& colour, float value);
+   int colourCount();
    void getColour(Colour& colour, int idx);
    void setColour(int idx=0);
 };
