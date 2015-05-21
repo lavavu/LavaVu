@@ -656,6 +656,13 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       return false;
    }
+   //TODO: not yet documented
+   else if (parsed.exists("pointspheres"))
+   {
+      Model::pointspheres = !Model::pointspheres;
+      printMessage("Points rendered as spheres is %s", Model::pointspheres ? "ON":"OFF");
+      return false;
+   }
 
    //******************************************************************************
    //Following commands require a model!

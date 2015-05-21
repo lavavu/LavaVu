@@ -182,6 +182,13 @@ void Shapes::update()
       dims[1] = geom[i]->draw->properties["height"].ToFloat(FLT_MIN);
       dims[2] = geom[i]->draw->properties["length"].ToFloat(FLT_MIN);
       int shape = geom[i]->draw->properties["shape"].ToInt(0);
+      int quality = geom[i]->draw->properties["glyphs"].ToInt(24);
+      //Points drawn as shapes?
+      if (geom[i]->draw->properties.HasKey("pointsize"))
+      {
+         dims[0] = dims[1] = dims[2] = geom[i]->draw->properties["pointsize"].ToFloat(1.0) / 8.0;
+         quality = 16;
+      }
 
       if (scaling <= 0) scaling = 1.0;
 
@@ -225,7 +232,7 @@ void Shapes::update()
          if (shape == 1)
             drawCuboid(geom[i], geom[i]->positions[v], sdims[0], sdims[1], sdims[2], qrot);
          else
-            drawEllipsoid(geom[i], posv, radii, 24, qrot);
+            drawEllipsoid(geom[i], posv, radii, quality, qrot);
          idx = geom[i]->count; //Reset current index hack for spheres
       }
       //printf("%d Shapes: %d Vertices: %d Indices: %d\n", i, geom[i]->positions.size()/3, geom[i]->count, geom[i]->indices.size());

@@ -40,6 +40,7 @@ std::vector<TimeStep> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int GeomCache::size = 0;
 bool Model::noload = false;
+bool Model::pointspheres = false;
 int Model::now = -1;
 
 //Static geometry containers, shared by all models for fast switching/drawing
@@ -864,6 +865,7 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
          if (type == lucTracerType) height = 0;
 
          //Create object and set parameters
+         if (type == lucPointType && pointspheres) type = lucShapeType;
          active = geometry[type];
 
          if (recurseTracers && type == lucTracerType)

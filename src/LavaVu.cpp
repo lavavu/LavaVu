@@ -107,7 +107,9 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          case 'P':
             //Points initial sub-sampling
             if (args[i].length() > 2)
-              ss >> Points::subSample;
+               ss >> Points::subSample;
+            else
+               parseCommands("pointspheres");
             break;
          case 'N':
             parseCommands("noload");
@@ -2014,7 +2016,7 @@ void LavaVu::loadFile(FilePath& fn)
    if (!amodel)
    {
       //Adds a default model, window & viewport
-      FilePath fm = FilePath(":memory");
+      FilePath fm = FilePath(":memory:");
       amodel = new Model(fm);
       models.push_back(amodel);
 
