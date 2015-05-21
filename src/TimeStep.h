@@ -36,10 +36,12 @@
 #ifndef TimeStep__
 #define TimeStep__
 
+#include "Geometry.h"
+
 class TimeStep
 {
   public:
-   static std::vector<TimeStep> timesteps; //Active model timesteps
+   static std::vector<TimeStep> *timesteps; //Active model timesteps
    static int gap;
    int step;
    float time;
@@ -50,6 +52,56 @@ class TimeStep
    TimeStep(int step, float time, float dimCoeff, std::string units) : step(step), time(time), dimCoeff(dimCoeff), units(units) {}
    TimeStep(int step, float time) : step(step), time(time), dimCoeff(1.0), units("") {}
    TimeStep() : step(0), time(0), dimCoeff(1.0), units("") {}
+
+   ~TimeStep()
+   {
+      //Free cached geometry
+      for (unsigned int i=0; i < cache.size(); i++)
+         delete cache[i];
+   }
+
+   //Cached data
+   static int cachesize;
+   std::vector<Geometry*> cache;
+   float min[3], max[3];  //Track min/max coords
+
+   void write(std::vector<Geometry*> &data)
+   {
+      //for (unsigned int i=0; i < data.size(); i++)
+      //   //Release any graphics memory
+      //   data[i]->close();
+
+      cache = data;
+      //Save previous bounds
+      copy3(Geometry::min, min);
+      copy3(Geometry::max, max);
+   }
+
+   void read(std::vector<Geometry*> &data)
+   {
+      //Preserve global properties when switching
+      for (unsigned int i=0; i < data.size(); i++)
+      {
+         cache[i]->scale = data[i]->scale;
+         cache[i]->wireframe = data[i]->wireframe;
+         cache[i]->cullface = data[i]->cullface;
+         cache[i]->flat = data[i]->flat;
+         cache[i]->lit = data[i]->lit;
+         //Release any graphics memory
+         data[i]->close();
+      }
+
+      data = cache;
+      //Restore previous bounds
+      copy3(min, Geometry::min);
+      copy3(max, Geometry::max);
+   }
+
+   void copy3(float src[3], float dst[3])
+   {
+      for (unsigned int i=0; i < 3; i++)
+        dst[i] = src[i];
+   }
 };
 
 #endif

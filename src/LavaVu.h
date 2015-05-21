@@ -188,7 +188,6 @@ class LavaVu : public ViewerApp
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
    void cacheLoad(int start_ts);
    bool tryTimeStep(int ts);
-   int setTimeStep(int ts);
 
    //Interactive command & script processing
    bool parseChar(unsigned char key);

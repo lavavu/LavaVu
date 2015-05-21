@@ -45,53 +45,9 @@
 #include "Geometry.h"
 #include "TimeStep.h"
 
-class GeomCache
-{
-  public:
-   static int size;
-   int step;
-   std::vector<Geometry*> store;
-   float min[3], max[3];  //Track min/max coords
-
-   GeomCache(int step, std::vector<Geometry*> &data) : step(step)
-   {
-      //Save previous bounds
-      copy3(Geometry::min, min);
-      copy3(Geometry::max, max);
-      //Ensure store correct size
-      store.resize(lucMaxType);
-      //Copy all object types
-      for (unsigned int i=0; i < data.size(); i++)
-      {
-         store[i] = new Geometry();
-         store[i]->move(data[i]);
-      }
-   }
-
-   void load(std::vector<Geometry*> &data)
-   {
-      //Replace geometry data with cached store
-      for (unsigned int i=0; i < store.size(); i++)
-      {
-         data[i]->move(store[i]);
-      }
-      //Restore previous bounds
-      copy3(min, Geometry::min);
-      copy3(max, Geometry::max);
-   }
-
-   void copy3(float src[3], float dst[3])
-   {
-      for (unsigned int i=0; i < 3; i++)
-        dst[i] = src[i];
-   }
-};
-
 class Model
 {
-   //Geometry cache
-   std::deque<GeomCache*> cache;
-   int cachestep;
+   int cachestep; //Currently loaded step from cache
   public:
    static bool noload;
    static bool pointspheres;
@@ -143,6 +99,7 @@ class Model
    void initColourMaps();
 
    Model(FilePath& fn, bool hideall=false);
+   void init();
    ~Model();
 
    void addObject(DrawingObject* draw)
@@ -155,7 +112,9 @@ class Model
    //Timestep caching
    void deleteCache();
    void cacheStep();
-   bool restoreStep(int step);
+   bool restoreStep();
+
+   int step() {return now < 0 ? -1 : timesteps[now].step;} //Current actual step
 
    int lastStep()
    {
@@ -170,13 +129,15 @@ class Model
    {
       timesteps.push_back(TimeStep(step, time, dimCoeff, units));
    }
-   
-   int setTimeStep(int ts, Win* window);
-   int loadGeometry(int object_id, int time_start=now, int time_stop=now, bool recurseTracers=false);
-   int decompressGeometry(int object_id, int timestep);
+
+   int setTimeStep(int stepidx=now,  bool cacheAll=false);
+   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
+   void mergeDatabases();
+   int decompressGeometry(int timestep);
    void writeDatabase(const char* path, unsigned int id, bool compress=false);
    void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compress);
    void deleteObject(int id);
+   void backup(sqlite3 *fromDb, sqlite3* toDb);
 };
 
 #endif //Model__

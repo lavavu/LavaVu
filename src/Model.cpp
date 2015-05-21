@@ -36,9 +36,9 @@
 //Model class
 #include "Model.h"
 
-std::vector<TimeStep> TimeStep::timesteps; //Active model timesteps
+std::vector<TimeStep> *TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
-int GeomCache::size = 0;
+int TimeStep::cachesize = 0;
 bool Model::noload = false;
 bool Model::pointspheres = false;
 int Model::now = -1;
@@ -57,9 +57,21 @@ Volumes* Model::volumes = NULL;
 
 Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0), db(NULL)
 {
-   cachestep = 0;
+   cachestep = -1;
    prefix[0] = '\0';
    
+   //Create new geometry containers
+   init();
+   
+   if (hideall)
+   {
+      for (unsigned int i=0; i < geometry.size(); i++)
+         geometry[i]->hideAll();
+   }
+}
+
+void Model::init()
+{
    //Create new geometry containers
    geometry.resize(lucMaxType);
    geometry[lucLabelType] = labels = new Geometry();
@@ -71,16 +83,12 @@ Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0)
    geometry[lucTriangleType] = triSurfaces = new TriSurfaces();
    geometry[lucLineType] = lines = new Lines();
    geometry[lucShapeType] = shapes = new Shapes();
-   
-   if (hideall)
-   {
-      for (unsigned int i=0; i < geometry.size(); i++)
-         geometry[i]->hideAll();
-   }
 }
 
 Model::~Model()
 {
+   timesteps.clear();
+
    //Clear drawing objects
    for(unsigned int i=0; i<objects.size(); i++)
       if (objects[i]) delete objects[i]; 
@@ -121,9 +129,6 @@ bool Model::open(bool write)
    //rc = sqlite3_busy_handler(db, busy_handler, void*);
    sqlite3_busy_timeout(db, 10000); //10 seconds
 
-   //Workaround slow query (auto indexing) bug in SQLite3 3.7.5 > version < 3.7.8
-   //Not necessary now as we are bundling v3.7.8
-   //issue("PRAGMA automatic_index = false;");
 
    if (write) readonly = false;
 
@@ -198,12 +203,7 @@ void Model::close()
 
 void Model::clearObjects(bool all)
 {
-   //if (lastStep() < 0) return; //WHY?!!!!!!!!!
-   
-   //Cache currently loaded data before clearing
-   cacheStep();
-
-   if (FloatValues::membytes > 0)
+   if (FloatValues::membytes > 0 && geometry.size() > 0)
       debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", FloatValues::membytes/1000000.0f);
    
    //Clear containers...
@@ -369,7 +369,7 @@ void Model::loadLinks(Win* win)
    char SQL[1024];
    //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
    sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE window_viewport.window_id=%d AND viewport.id=window_viewport.viewport_id AND viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id", win->id);
-   sqlite3_stmt* statement = select(SQL);
+   sqlite3_stmt* statement = select(SQL, true); //Don't report errors as these tables are allowed to not exist
 
    int last_viewport = 0, last_object = 0;
    DrawingObject* draw = NULL;
@@ -461,6 +461,8 @@ void Model::loadLinks(DrawingObject* draw)
 int Model::loadTimeSteps()
 {
    if (!db) return timesteps.size();
+   //Don't reload timesteps when data has been cached
+   if (TimeStep::cachesize > 0 && timesteps.size() > 0) return timesteps.size();
    timesteps.clear();
    TimeStep::gap = 0;
    int rows = 0;
@@ -486,8 +488,8 @@ int Model::loadTimeSteps()
       rows++;
    }
    sqlite3_finalize(statement);
-   //Copy to static for use in Tracers
-   TimeStep::timesteps = timesteps;
+   //Copy to static for use in Tracers etc
+   TimeStep::timesteps = &timesteps;
    return timesteps.size();
 }
 
@@ -615,27 +617,31 @@ bool Model::issue(const char* SQL, sqlite3* odb)
 
 void Model::deleteCache()
 {
-   if (GeomCache::size == 0) return;
+   if (TimeStep::cachesize == 0) return;
    debug_print("~~~ Cache emptied\n");
-   cache.clear();
+   //cache.clear();
 }
 
 void Model::cacheStep()
 {
-   if (GeomCache::size == 0) return;
-   debug_print("~~~ Caching geometry @ %d, geom memory usage: %.3f mb\n", cachestep, FloatValues::membytes/1000000.0f);
+   //Don't cache if we already loaded from cache!
+   if (TimeStep::cachesize == 0 || now < 0) return;
+   if (timesteps[now].cache.size() > 0) return; //Already cached this step
+
+   debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), FloatValues::membytes/1000000.0f);
 
    //Copy all elements
    if (FloatValues::membytes > 0)
    {
-      GeomCache* cached = new GeomCache(cachestep, geometry);
-      cache.push_back(cached);
-      debug_print("~~~ Cached step %f,%f,%f - %f,%f,%f\n", cached->min[0], cached->min[1], cached->min[2], cached->max[0], cached->max[1], cached->max[2]);
+      timesteps[now].write(geometry);
+      debug_print("~~~ Cached step, at: %d\n", step());
+      geometry.clear();
    }
    else
       debug_print("~~~ Nothing to cache\n");
 
-   //Remove if over limit
+   //TODO: fix support for partial caching?
+   /*/Remove if over limit
    if (cache.size() > GeomCache::size)
    {
       GeomCache* cached = cache.front();
@@ -648,42 +654,47 @@ void Model::cacheStep()
       }
       debug_print("~~~ Deleted oldest cached step (%d)\n", cached->step);
       delete cached;
-   }
+   }*/
 }
 
 
-bool Model::restoreStep(int step)
+bool Model::restoreStep()
 {
-   //Save current timestep
-   cachestep = step;
-   if (GeomCache::size == 0) return false;
-   //Load new geometry data from active window object list
-   for (int c=0; c<cache.size(); c++)
-   {
-      if (cache[c]->step == cachestep && cache[c]->store.size() > 0)
-      {
-         debug_print("~~~ Cache hit at ts %d, loading! %f,%f,%f - %f,%f,%f\n", cachestep, cache[c]->min[0], cache[c]->min[1], cache[c]->min[2], cache[c]->max[0], cache[c]->max[1], cache[c]->max[2]);
-         cache[c]->load(geometry);
-         //Delete cache entry
-         cache.erase(cache.begin() + c);
-         return true;
-      }
-   }
-   return false;
+   //Requested = current?
+   if (cachestep == now || now < 0) return false;
+   if (TimeStep::cachesize == 0) return false;
+   if (timesteps[now].cache.size() == 0) 
+      return false; //Nothing cached this step
+
+   //Load the cache and save loaded timestep
+   timesteps[now].read(geometry);
+   cachestep = now;
+   debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), now, file.base.c_str());
+
+   //Switch geometry containers
+   labels = geometry[lucLabelType];
+   points = (Points*)geometry[lucPointType];
+   vectors = (Vectors*)geometry[lucVectorType];
+   tracers = (Tracers*)geometry[lucTracerType];
+   quadSurfaces = (QuadSurfaces*)geometry[lucGridType];
+   volumes = (Volumes*)geometry[lucVolumeType];
+   triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
+   lines = (Lines*)geometry[lucLineType];
+   shapes = (Shapes*)geometry[lucShapeType];
+
+   debug_print("~~~ Geom memory usage after load: %.3f mb\n", FloatValues::membytes/1000000.0f);
+   reset();  //Force reload
+   return true;
 }
 
 std::string Model::timeStamp()
 {
    // Timestep (with scaling applied)
    if (timesteps.size() == 0) return std::string("");
-   unsigned int t;
-   for (t=0; t<timesteps.size(); t++)
-      if (timesteps[t].step == now) break;
-
-   if (t == timesteps.size()) return std::string("");
+   if (now < 0) return std::string("");
 
    // Use scaling coeff and units to get display time
-   TimeStep* ts = &timesteps[t];
+   TimeStep* ts = &timesteps[now];
    char displayString[32];
    sprintf(displayString, "Time %g%s", ts->time * ts->dimCoeff, ts->units.c_str());
 
@@ -693,7 +704,6 @@ std::string Model::timeStamp()
 //Set time step if available, otherwise return false and leave unchanged
 bool Model::hasTimeStep(int ts)
 {
-   //Load timestep data
    if (timesteps.size() == 0 && loadTimeSteps() == 0) return false;
    for (int idx=0; idx < timesteps.size(); idx++)
       if (ts == timesteps[idx].step)
@@ -703,7 +713,7 @@ bool Model::hasTimeStep(int ts)
 
 int Model::nearestTimeStep(int requested)
 {
-   //Find closest matching timestep to requested but != now
+   //Find closest matching timestep to requested, returns index
    int idx;
    //if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
    if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
@@ -718,71 +728,66 @@ int Model::nearestTimeStep(int requested)
    //Unchanged...
    //if (requested >= now && timesteps[idx].step == now) return 0;
 
-   //Ensure same timestep not selected if others available
-   if (now == timesteps[idx].step && timesteps.size() > 1)
-   {
-      if (requested < now)
-      {
-         //Select previous timestep in list (don't loop to end from start)
-         if (idx > 0) idx--;
-         return timesteps[idx].step;
-      }
-      //Select next timestep in list
-      else if (requested > now && idx+1 < timesteps.size())
-      {
-         idx++;
-         return timesteps[idx].step;
-      }
-   }
-
    if (idx < 0) idx = 0;
    if (idx >= timesteps.size()) idx = timesteps.size() - 1;
 
-   return timesteps[idx].step;
+   return idx;
 }
 
 //Load data at specified timestep
-int Model::setTimeStep(int ts, Win* window)
+int Model::setTimeStep(int stepidx, bool cacheAll)
 {
+   TimeStep::timesteps = &timesteps; //Set to current model timestep vector
    clock_t t1 = clock();
    unsigned int idx=0;
 
    //Default timestep only and no db? Skip load
    if (timesteps.size() == 0 && !db) 
    {
-     now = timesteps[0].step;
+     now = -1;
      return 0;
    }
 
-   int step = nearestTimeStep(ts);
-   if (step < 0) return -1;
-   //Clear currently loaded (also caches if enabled)
+   if (stepidx < 0) return -1;
+   if (stepidx >= timesteps.size())
+   {
+     stepidx = timesteps.size()-1;
+     cachestep = -1;
+   }
+
+   //Cache currently loaded data
+   if (cacheAll) cacheStep();
+
+   //Set the new timestep index
+   now = stepidx;
+   debug_print("TimeStep set to: %d\n", step());
+
+   if (restoreStep())
+      return 0; //Cache hit successful return value
+
+   //Clear any existing geometry
    clearObjects();
 
-   //Closest matching timestep >= requested
-   now = step;
-   debug_print("TimeStep set to: %d\n", now);
-
-   //Detach any attached db file and attach n'th timestep database if available
-   attach(now);
-
    //Attempt to load from cache first
-   if (restoreStep(now)) return 0; //Cache hit successful return value
+   //if (restoreStep(now)) return 0; //Cache hit successful return value
    if (!db) return 0;
 
-   //noload flag skips loading geometry until "load" commands issued
+   //Detach any attached db file and attach n'th timestep database if available
+   attach(step());
+
    int rows = 0;
-   for (unsigned int i=0; i<window->objects.size(); i++)
-   {
-      if (window->objects[i] && (!noload || !window->objects[i]->skip))
-         rows += loadGeometry(window->objects[i]->id, now, now, true);
-   } 
+   if (cacheAll)
+      //Caching all geometry from database at start
+      rows += loadGeometry(0, 0, timesteps[timesteps.size()-1].step, true);
+   else
+      //noload flag skips loading geometry until "load" commands issued
+      rows += noload ? 0 : loadGeometry();
 
    debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
    return rows;
 }
 
-int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recurseTracers)
+int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseTracers)
 {
    if (!db)
    {
@@ -791,14 +796,25 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
    }
    clock_t t1 = clock();
 
+   //Default to current timestep
+   if (time_start < 0) time_start = step();
+   if (time_stop < 0) time_stop = step();
+
    //Load geometry
    char SQL[1024];
+   char filter[256];
 
-   int datacol = 20;
+   //Setup filter
+   if (obj_id <= 0)
+      filter[0] = '\0';
+   else
+      sprintf(filter, "object_id=%d AND ", obj_id);
+
+   int datacol = 21;
    //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
    //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, 
    //minX, minY, minZ, maxX, maxY, maxZ, data)
-   sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
+   sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE %stimestep BETWEEN %d AND %d ORDER BY timestep,object_id,idx,rank", prefix, filter, time_start, time_stop);
    sqlite3_stmt* statement = select(SQL, true);
 
    //Old database compatibility
@@ -806,9 +822,9 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
    {
       //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
       //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
+      sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE %s timestep BETWEEN %d AND %d ORDER BY timestep,object_id,idx,rank", prefix, filter, time_start, time_stop);
       sqlite3_stmt* statement = select(SQL, true);
-      datacol = 14;
+      datacol = 15;
 
       //Fix
 #ifdef ALTER_DB
@@ -816,7 +832,7 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
       sprintf(SQL, "ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
                    "ALTER TABLE %sgeometry ADD COLUMN maxX REAL; ALTER TABLE %sgeometry ADD COLUMN maxY REAL; ALTER TABLE %sgeometry ADD COLUMN maxZ REAL; ",
                    prefix, prefix, prefix, prefix, prefix, prefix, prefix);
-      printf("%s\n", SQL);
+      debug_print("%s\n", SQL);
       issue(SQL);
 #endif
    }
@@ -824,9 +840,9 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
    //Very old database compatibility
    if (statement == NULL)
    {
-      sprintf(SQL, "SELECT id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE object_id=%d AND timestep BETWEEN %d AND %d ORDER BY idx,rank", prefix, object_id, time_start, time_stop);
+      sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE %s timestep BETWEEN %d AND %d ORDER BY timestep,object_id,idx,rank", prefix, filter, time_start, time_stop);
       statement = select(SQL);
-      datacol = 13;
+      datacol = 14;
    }
 
    if (!statement) return 0;
@@ -841,26 +857,40 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
       {
          rows++;
          int id = sqlite3_column_int(statement, 0);
-         int timestep = sqlite3_column_int(statement, 1);
-         int height = sqlite3_column_int(statement, 2);  //unused - was rank, now height
-         int depth = sqlite3_column_int(statement, 3); //unused - was idx, now depth
-         lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 4);
-         lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 5);
-         int size = sqlite3_column_int(statement, 6);
-         int count = sqlite3_column_int(statement, 7);
+         int object_id = sqlite3_column_int(statement, 1);
+         int timestep = sqlite3_column_int(statement, 2);
+         int height = sqlite3_column_int(statement, 3);  //unused - was rank, now height
+         int depth = sqlite3_column_int(statement, 4); //unused - was idx, now depth
+         lucGeometryType type = (lucGeometryType)sqlite3_column_int(statement, 5);
+         lucGeometryDataType data_type = (lucGeometryDataType)sqlite3_column_int(statement, 6);
+         int size = sqlite3_column_int(statement, 7);
+         int count = sqlite3_column_int(statement, 8);
          int items = count / size;
-         int width = sqlite3_column_int(statement, 8);
+         int width = sqlite3_column_int(statement, 9);
          if (height == 0) height = width > 0 ? items / width : 0;
-         float minimum = (float)sqlite3_column_double(statement, 9);
-         float maximum = (float)sqlite3_column_double(statement, 10);
+         float minimum = (float)sqlite3_column_double(statement, 10);
+         float maximum = (float)sqlite3_column_double(statement, 11);
          //New fields for the scaling features, applied when drawing colour bars
-         float dimFactor = (float)sqlite3_column_double(statement, 11);
-         const char *units = (const char*)sqlite3_column_text(statement, 12);
-
-         const char *labels = datacol < 14 ? "" : (const char*)sqlite3_column_text(statement, 13);
+         float dimFactor = (float)sqlite3_column_double(statement, 12);
+         const char *units = (const char*)sqlite3_column_text(statement, 13);
+         const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
 
          const void *data = sqlite3_column_blob(statement, datacol);
          unsigned int bytes = sqlite3_column_bytes(statement, datacol);
+
+         //Skip object? TODO: FIX
+         //if (objects[object_id-1]->skip) continue;
+
+         //Bulk load: switch timestep and cache if timestep changes!
+         if (step() != timestep)
+         {
+            cacheStep();
+            now = nearestTimeStep(timestep);
+            debug_print("TimeStep set to: %d, rows %d\n", step(), rows);
+         }
+
+         //Create new geometry containers if required
+         if (geometry.size() == 0) init();
 
          if (type == lucTracerType) height = 0;
 
@@ -917,12 +947,12 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
             if (data_type == lucVertexData)
             {
                float min[3] = {0,0,0}, max[3] = {0,0,0};
-               if (datacol > 14 && sqlite3_column_type(statement, 14) != SQLITE_NULL)
+               if (datacol > 15 && sqlite3_column_type(statement, 15) != SQLITE_NULL)
                {
                   for (int i=0; i<3; i++)
                   {
-                     min[i] = (float)sqlite3_column_double(statement, 14+i);
-                     max[i] = (float)sqlite3_column_double(statement, 17+i);
+                     min[i] = (float)sqlite3_column_double(statement, 15+i);
+                     max[i] = (float)sqlite3_column_double(statement, 18+i);
                   }
                }
 
@@ -979,14 +1009,30 @@ int Model::loadGeometry(int object_id, int time_start, int time_stop, bool recur
    return rows;
 }
 
-int Model::decompressGeometry(int object_id, int timestep)
+void Model::mergeDatabases()
+{
+   char SQL[512];
+   reopen(true);  //Open writable
+   for (int i=0; i<=timesteps.size(); i++)
+   {
+      debug_print("MERGE %d/%d...%d\n", i, timesteps.size(), step());
+      setTimeStep(i);
+      if (attached == step())
+      {
+         sprintf(SQL, "insert into geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ from %sgeometry", prefix);
+         issue(SQL);
+      }
+   }
+}
+
+int Model::decompressGeometry(int timestep)
 {
    reopen(true);  //Open writable
    clock_t t1 = clock();
    //Load geometry
    char SQL[1024];
 
-   sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE object_id=%d AND timestep=%d ORDER BY idx,rank", prefix, object_id, timestep);
+   sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE timestep=%d ORDER BY idx,rank", prefix, timestep);
    sqlite3_stmt* statement = select(SQL, true);
 
    if (!statement) return 0;
@@ -1163,7 +1209,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       if (!issue(SQL, outdb)) return; 
 
       //Get data at this timestep
-      setTimeStep(timesteps[i].step, windows[0]);
+      setTimeStep(i);
 
       //Write object data
       for (unsigned int i=0; i < objects.size(); i++)
@@ -1227,7 +1273,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool
         float *min = Geometry::min;
         float *max = Geometry::max;
 
-        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, now, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step(), data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 
         /* Prepare statement... */
         if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1277,3 +1323,13 @@ void Model::deleteObject(int id)
    }
 }
 
+void Model::backup(sqlite3 *fromDb, sqlite3* toDb)
+{
+   sqlite3_backup *pBackup;  // Backup object used to copy data
+   pBackup = sqlite3_backup_init(toDb, "main", fromDb, "main");
+   if (pBackup)
+   {
+      (void)sqlite3_backup_step(pBackup, -1);
+      (void)sqlite3_backup_finish(pBackup);
+   }
+}

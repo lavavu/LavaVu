@@ -490,6 +490,7 @@ ColourMap* LavaVu::findColourMap(std::string what, int id)
 
 bool LavaVu::parseCommands(std::string cmd)
 {
+   if (cmd.length() == 0) return false;
    bool redisplay = true;
    static std::string last_cmd;
    PropertyParser parsed = PropertyParser();
@@ -507,11 +508,6 @@ bool LavaVu::parseCommands(std::string cmd)
       //Attempt to load external file
       FilePath file = FilePath(what);
       loadFile(file);
-      if (file.type == "gldb")
-      {
-         //Set loaded gldb as active model/window
-         if (amodel && !loadWindow(windows.size()-1, amodel->now)) return false;
-      }
       return false;
    }
    else if (parsed.exists("script"))
@@ -544,8 +540,8 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "cache"))
    {
-      GeomCache::size = ival;
-      printMessage("Geometry cache set to %d timesteps", GeomCache::size);
+      TimeStep::cachesize = ival;
+      printMessage("Geometry cache set to %d timesteps", TimeStep::cachesize);
       return false;
    }
    else if (parsed.exists("noload"))
@@ -637,7 +633,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.has(ival, "tracersteps"))
    {
       Model::tracers->steps = ival;
-      if (Model::tracers->steps > amodel->now) Model::tracers->steps = amodel->now;
+      if (Model::tracers->steps > amodel->step()) Model::tracers->steps = amodel->step();
       printMessage("Set tracer steps limit to %d", Model::tracers->steps);
       Model::tracers->redraw = true;
    }
@@ -782,9 +778,12 @@ bool LavaVu::parseCommands(std::string cmd)
          else
             ival = amodel->now;
       }
-      if (setTimeStep(ival) >= 0)
+      else //Convert to step idx
+         ival = amodel->nearestTimeStep(ival);
+
+      if (amodel->setTimeStep(ival) >= 0)
       {
-         printMessage("Go to timestep %d", amodel->now);
+         printMessage("Go to timestep %d", amodel->step());
          resetViews(); //Update the viewports
       }
       else
@@ -793,9 +792,9 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.has(ival, "jump"))      //Relative
    {
       //Relative jump
-      if (setTimeStep(amodel->now+ival) >= 0)
+      if (amodel->setTimeStep(amodel->now+ival) >= 0)
       {
-         printMessage("Jump to timestep %d", amodel->now);
+         printMessage("Jump to timestep %d", amodel->step());
          resetViews(); //Update the viewports
       }
       else
@@ -815,7 +814,7 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       if (ival < 0) ival = windows.size()-1;
       if (ival >= (int)windows.size()) ival = 0;
-      if (!loadWindow(ival, amodel->now)) return false;  //Invalid
+      if (!loadWindow(ival)) return false;  //Invalid
       printMessage("Load model %d", window);
    }
    else if (parsed.exists("hide") || parsed.exists("show"))
@@ -918,7 +917,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.has(ival, "movie"))
    {
       std::string fn = awin->name + ".mp4";
-      encodeVideo(fn.c_str(), amodel->now, ival);
+      encodeVideo(fn.c_str(), amodel->step(), ival);
    }
    else if (parsed.exists("record"))
    {
@@ -938,7 +937,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "play"))
    {
-      writeSteps(false, false, amodel->now, ival, NULL);
+      writeSteps(false, false, amodel->step(), ival, NULL);
    }
    else if (parsed.exists("play"))
    {
@@ -950,10 +949,10 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       int old = amodel->now;
       if (amodel->timesteps.size() < 2) return false;
-      setTimeStep(amodel->now+1);
+      amodel->setTimeStep(amodel->now+1);
       //Allow loop back to start when using next command
       if (amodel->now > 0 && amodel->now == old)
-         setTimeStep(0);
+         amodel->setTimeStep(0);
       resetViews(); //Update the viewports
 
       if (loop)
@@ -965,7 +964,7 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(ival, "images"))
    {
-      writeImages(amodel->now, ival);
+      writeImages(amodel->step(), ival);
    }
    else if (parsed.exists("animate"))
    {
@@ -1265,7 +1264,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("reload"))
    {
       //Restore original window data
-      if (!loadWindow(window, amodel->now)) return false;
+      if (!loadWindow(window)) return false;
    }
    else if (parsed.exists("zerocam"))
    {
@@ -1652,8 +1651,13 @@ bool LavaVu::parseCommands(std::string cmd)
                break;
             }
          }
-         loadWindow(window, amodel->now);
+         loadWindow(window);
       }
+   }
+   else if (parsed.exists("merge"))
+   {
+      amodel->mergeDatabases();
+      parseCommands("quit");
    }
    else if (parsed.exists("load"))
    {
@@ -1834,8 +1838,8 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("newstep"))
    {
-      amodel->addTimeStep(amodel->now+1);
-      setTimeStep(amodel->now+1);
+      amodel->addTimeStep(amodel->step()+1);
+      amodel->setTimeStep(amodel->now+1);
       resetViews(); //Update the viewports
    }
    else
@@ -1845,9 +1849,9 @@ bool LavaVu::parseCommands(std::string cmd)
       ival = atoi(cmd.c_str());
       std::ostringstream oss;
       oss << ival;
-      if (oss.str() == cmd && setTimeStep(ival) >= 0)
+      if (oss.str() == cmd && amodel->setTimeStep(amodel->nearestTimeStep(ival)) >= 0)
       {
-         printMessage("Go to timestep %d", amodel->now);
+         printMessage("Go to timestep %d", amodel->step());
          resetViews(); //Update the viewports
       }
       else if (cmd.at(0) == '#')

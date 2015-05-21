@@ -52,6 +52,7 @@ Tracers::~Tracers()
 void Tracers::update()
 {
    Geometry::update();
+   std::vector<TimeStep> &tsteps = *TimeStep::timesteps; //Create a reference
 
    //All tracers stored as single vertex/value block
    //Contains vertex/value for every tracer particle at each timestep
@@ -101,8 +102,8 @@ void Tracers::update()
       bool timecolour = false;
       if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->colourValue.size() == 0)
       {
-         float mintime = TimeStep::timesteps[start].time;
-         float maxtime = TimeStep::timesteps[end].time;
+         float mintime = tsteps[start].time;
+         float maxtime = tsteps[end].time;
          geom[i]->draw->colourMaps[lucColourValueData]->calibrate(mintime, maxtime);
          timecolour = true;
       }
@@ -151,7 +152,7 @@ void Tracers::update()
             //Get colour, either from colour values or time step
             if (timecolour)
             {
-               float time = TimeStep::timesteps[step].time;
+               float time = tsteps[step].time;
                colour = geom[i]->draw->colourMaps[lucColourValueData]->getfast(time);
             }
             else
