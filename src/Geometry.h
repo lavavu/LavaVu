@@ -45,6 +45,8 @@
 #ifndef Geometry__
 #define Geometry__
 
+#define SORT_DIST_MAX 65535
+
 //Types based on triangle renderer - TODO: apply to quadsurface/vector/tracer data
 //#define TriangleBased(type) (type == lucTracerType || type == lucShapeType || type == lucVectorType)
 #define TriangleBased(type) (type == lucShapeType)
@@ -231,7 +233,7 @@ class Geometry
 
    void clear(bool all=false); //Called before new data loaded 
    void reset(); //Called before new data loaded when caching previous data
-   void close(); //Called on quit & before gl context recreated 
+   virtual void close(); //Called on quit & before gl context recreated 
 
    void dumpById(std::ostream& csv, unsigned int id);
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
@@ -305,14 +307,15 @@ class QuadSurfaces : public Geometry
 
 class TriSurfaces : public Geometry
 {
-   TIndex *tidx;
+   static TIndex *tidx;
    int tricount;
   public:
    static Shader* prog;
-   GLuint indexvbo, vbo;
+   static GLuint indexvbo, vbo;
 
    TriSurfaces();
    ~TriSurfaces();
+   virtual void close();
    virtual void update();
    void loadMesh();
    void loadBuffers();
@@ -348,13 +351,13 @@ class Shapes : public TriSurfaces
 
 class Points : public Geometry
 {
-   PIndex *pidx;
+   static PIndex *pidx;
   public:
    static Shader* prog;
    static unsigned int subSample;
    static int pointType;
    bool attenuate;
-   GLuint indexvbo, vbo;
+   static GLuint indexvbo, vbo;
 
    Points();
    ~Points();

@@ -79,6 +79,8 @@ void GeomData::colourCalibrate()
       draw->colourMaps[lucGreenValueData]->calibrate(greenValue);
    if (draw->colourMaps[lucBlueValueData])
       draw->colourMaps[lucBlueValueData]->calibrate(blueValue);
+   //Cache colour lookups
+   draw->cache();
 }
 
 //Get colour using specified colourValue
@@ -92,6 +94,13 @@ void GeomData::mapToColour(Colour& colour, float value)
       colour.a = opacity * 255;
 }
 
+struct ValCache
+{
+   //Cached values for faster lookup
+   float opacity;
+   Colour colour;
+   DrawingObject* draw;
+} valcache;
 
 int GeomData::colourCount()
 {
@@ -108,16 +117,18 @@ void GeomData::getColour(Colour& colour, int idx)
    if (draw->colourMaps[lucColourValueData] && colourValue.size() > 0)
    {
       if (colourValue.size() == 1) idx = 0;  //Single colour value only provided
+      assert(idx < colourValue.size());
       colour = draw->colourMaps[lucColourValueData]->getfast(colourValue[idx]);
    }
    else if (colours.size() > 0)
    {
       if (colours.size() == 1) idx = 0;  //Single colour only provided
+      assert(idx < colours.size());
       colour = colours.toColour(idx);
    }
    else
    {
-      colour = Colour_FromJson(draw->properties, "colour");
+      colour = draw->colour;
    }
 
    //Set components using component colourmaps...
@@ -144,9 +155,8 @@ void GeomData::getColour(Colour& colour, int idx)
    }
 
    //Set opacity to drawing object override level if set
-   float opacity = draw->properties["opacity"].ToFloat(1.0);
-   if (opacity > 0.0 && opacity < 1.0)
-      colour.a = opacity * 255;
+   if (draw->opacity > 0.0 && draw->opacity < 1.0)
+      colour.a = draw->opacity * 255;
 }
 
 void GeomData::setColour(int idx)
@@ -167,7 +177,8 @@ Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), total(0), sca
 
 Geometry::~Geometry()
 {
-   clear();
+   clear(true);
+   close();
 }
 
 //Virtuals to implement
@@ -374,6 +385,11 @@ void Geometry::setState(int index, Shader* prog)
       //Flat disables lighting for non surface types
       if (flat || draw->properties["flat"].ToBool(false)) lighting = false;
    }
+
+   if (draw->properties["depthtest"].ToBool(true))
+      glEnable(GL_DEPTH_TEST);
+   else
+      glDisable(GL_DEPTH_TEST);
 
    if (!lighting)
       glDisable(GL_LIGHTING);
@@ -692,7 +708,8 @@ void Geometry::toImage(unsigned int idx)
    geom[idx]->colourCalibrate();
    int width = geom[idx]->width;
    if (width == 0) width = 256;
-   int height = geom[idx]->colourValue.size() / width;
+   int height = geom[idx]->height;
+   if (height == 0) height = geom[idx]->colourValue.size() / width;
    char path[256];
    int pixel = 3;
    GLubyte *image = new GLubyte[width * height * pixel];

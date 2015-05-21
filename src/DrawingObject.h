@@ -48,6 +48,9 @@ class DrawingObject
    unsigned int id;
    bool skip;
    bool visible;
+   //Cached values for faster lookup
+   float opacity;
+   Colour colour;
 
    std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
 
@@ -62,6 +65,12 @@ class DrawingObject
    TextureData* loadTexture(std::string texfn);
    int useTexture(TextureData* texture);
    void load3DTexture(int width, int height, int depth, void* data, int bpv=4);
+   void cache()
+   {
+      //Cache values for faster lookups during draw calls
+      opacity = properties["opacity"].ToFloat(1.0);
+      colour = Colour_FromJson(properties, "colour");
+   }
 
    static unsigned int lastid;
 };

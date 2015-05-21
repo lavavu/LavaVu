@@ -39,13 +39,14 @@
 unsigned int Points::subSample = 1;
 Shader* Points::prog = NULL;
 int Points::pointType = 0;
+PIndex *Points::pidx = NULL;
+GLuint Points::indexvbo = 0;
+GLuint Points::vbo = 0;
 
 Points::Points() : Geometry()
 {
    type = lucPointType;
    scale = 1.0f;
-   vbo = 0;
-   indexvbo = 0;
    attenuate = true;
    lit = false;   //Lighting override: always disabled
    pidx = NULL;
@@ -53,13 +54,14 @@ Points::Points() : Geometry()
 
 Points::~Points()
 {
-   delete[] pidx;
    close();
 }
 
 void Points::close()
 {
    if (vbo) glDeleteBuffers(1, &vbo);
+   if (pidx) delete[] pidx;
+   pidx = NULL;
    vbo = 0;
    Geometry::close();
 }
@@ -246,8 +248,8 @@ void Points::depthSort()
    glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
    Geometry::getMinMaxDistance(modelView, &mindist, &maxdist);
 
-   //Update eye distances, clamping int distance to integer between 0 and 65535
-   float multiplier = 65535.0 / (maxdist - mindist);
+   //Update eye distances, clamping int distance to integer between 0 and SORT_DIST_MAX
+   float multiplier = (float)SORT_DIST_MAX / (maxdist - mindist);
    for (unsigned int i = 0; i < total; i++)
    {
       //Distance from viewing plane is -eyeZ

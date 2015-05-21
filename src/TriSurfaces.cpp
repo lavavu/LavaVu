@@ -36,25 +36,32 @@
 #include "Geometry.h"
 
 Shader* TriSurfaces::prog = NULL;
+TIndex *TriSurfaces::tidx = NULL;
+GLuint TriSurfaces::indexvbo = 0;
+GLuint TriSurfaces::vbo = 0;
 
 TriSurfaces::TriSurfaces() : Geometry()
 {
    type = lucTriangleType;
    wireframe = false;
    cullface = false;
-   vbo = 0;
-   indexvbo = 0;
    tidx = NULL;
    tricount = 0;
 }
 
 TriSurfaces::~TriSurfaces()
 {
+   close();
+}
+
+void TriSurfaces::close()
+{
    if (vbo) glDeleteBuffers(1, &vbo);
    if (indexvbo) glDeleteBuffers(1, &indexvbo);
    vbo = 0;
    indexvbo = 0;
-   if (tidx) delete[] tidx;
+
+   Geometry::close();
 }
 
 void TriSurfaces::update()
@@ -330,7 +337,9 @@ void TriSurfaces::loadBuffers()
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
          //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
-         geom[index]->getColour(colour, v / colrange);
+         int cidx = v / colrange;
+         if (cidx >= hasColours) cidx = hasColours - 1;
+         geom[index]->getColour(colour, cidx);
          //if (v%1000==0) printf("v %d colrange %d v/colrange %d colour %d,%d,%d,%d\n", v, colrange, v/colrange, colour.r, colour.g, colour.b, colour.a);
 
           //Write vertex data to vbo
@@ -399,7 +408,7 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
 
    //All opaque triangles at start
    if (geom[index]->opaque)
-      tidx[tricount].distance = 65535;
+      tidx[tricount].distance = SORT_DIST_MAX;
    else
    {
       //Triangle centroid for depth sorting
@@ -570,6 +579,7 @@ void TriSurfaces::depthSort()
 {
    clock_t t1,t2;
    t1 = clock();
+   if (!tidx) {printf("NO TRIANGLE INDEX FOUND\n"); return;}
 
    //Sort is much faster without allocate, so keep buffer until size changes
    static long last_size = 0;
@@ -593,24 +603,24 @@ void TriSurfaces::depthSort()
    int shift = view->properties["shift"].ToInt(0);
 
    //Update eye distances, clamping int distance to integer between 1 and 65534
-   float multiplier = 65534.0 / (maxdist - mindist);
+   float multiplier = (SORT_DIST_MAX-1.0) / (maxdist - mindist);
    if (tricount == 0) return;
    int opaqueCount = 0;
    for (unsigned int i = 0; i < tricount; i++)
    {
       //Distance from viewing plane is -eyeZ
       //Max dist 65535 reserved for opaque triangles
-      if (tidx[i].distance < 65535) 
+      if (tidx[i].distance < SORT_DIST_MAX) 
       //if (tidx[i].distance > 0) 
       {
          tidx[i].fdistance = eyeDistance(modelView, tidx[i].centroid);
          tidx[i].distance = (int)(multiplier * (tidx[i].fdistance - mindist));
-         assert(tidx[i].distance >= 0 && tidx[i].distance <= 65534);
+         assert(tidx[i].distance >= 0 && tidx[i].distance <= SORT_DIST_MAX);
          //Shift by id hack
          if (shift) tidx[i].distance += tidx[i].geomid * shift;
          //Reverse as radix sort is ascending and we want to draw by distance descending
-         //tidx[i].distance = 65535 - (int)(multiplier * (tidx[i].fdistance - mindist));
-         //assert(tidx[i].distance >= 1 && tidx[i].distance <= 65535);
+         //tidx[i].distance = SORT_DIST_MAX - (int)(multiplier * (tidx[i].fdistance - mindist));
+         //assert(tidx[i].distance >= 1 && tidx[i].distance <= SORT_DIST_MAX);
       }
       else
         opaqueCount++;
@@ -629,6 +639,7 @@ void TriSurfaces::depthSort()
 void TriSurfaces::render()
 {
    clock_t t1,t2;
+   if (!tidx) {printf("NO TRIANGLE INDEX FOUND\n"); return;}
    if (tricount == 0) return;
 
    //First, depth sort the triangles
