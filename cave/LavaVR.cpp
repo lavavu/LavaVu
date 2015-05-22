@@ -167,9 +167,10 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
     if (!viewer->isopen)
     {
       //Load vis data for first window
+      FilePath init("init.script");
+      app->glapp->loadFile(init);
+      app->glapp->cacheLoad();
       app->glapp->loadWindow(0, -1, true);
-      app->glapp->runScripts();
-      app->glapp->cacheLoad(-1);
 
       //Add menu items to hide/show all objects
       Model* amodel = app->glapp->amodel;
@@ -200,7 +201,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
       Colour& bg = viewer->background;
       ds->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
       //Omegalib 5.1+
-      Camera* cam = Engine::instance()->getDefaultCamera(); // equivalent to the getDefaultCamera python call.
+      Camera* cam = Engine::instance()->getDefaultCamera();
       //cam->setBackgroundColor(Color(bg.rgba[0]/255.0, bg.rgba[1]/255.0, bg.rgba[2]/255.0, 0));
 
       viewer->open(context.tile->pixelSize[0], context.tile->pixelSize[1]);
@@ -227,7 +228,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
        app->statusLabel->setText(app->glapp->message);
     }
     //Update title label
-    if (app->glapp->aview->title.length() > 0)
+    if (app->glapp->viewer->title.length() > 0)
     {
        std::string titleText = app->glapp->viewer->title + " " + app->glapp->aview->title;
        if (app->titleLabel->getText() != titleText)
@@ -314,8 +315,10 @@ void LavaVuApplication::cameraSetup(bool init)
 
    //cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
    //NOTE: Setting near clip too close is bad for eyes, too far kills negative parallax stereo
+   //TODO: Make sure this can be controlled via script
+   cam->setNearFarZ(view->near_clip, view->far_clip);
    //cam->setNearFarZ(view->near_clip*0.1, view->far_clip);
-   cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
+   //cam->setNearFarZ(view->near_clip*0.01, view->far_clip);
    //cam->setNearFarZ(cam->getNearZ(), view->far_clip);
 
    cam->lookAt(Vector3f(focus[0], focus[1], focus[2] * view->orientation), Vector3f(0,1,0));
@@ -487,6 +490,7 @@ void LavaVuApplication::handleEvent(const Event& evt)
     {
         //if (GeomData::opacity < 1.0) GeomData::opacity += 0.05;
         //glapp->redrawViewports();
+        glapp->parseCommands("timestep 0");
     }
     else if (evt.isButtonDown(Event::ButtonLeft ))
     {

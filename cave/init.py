@@ -10,6 +10,8 @@ cmds = []
 labels = dict()
 objmnu = None
 animate = 0
+saveAnimate = 4 # 16 fps
+time = 0
 
 # add the current path to the data search paths.
 addDataPath(os.getcwd())
@@ -20,7 +22,7 @@ def _resetCamera():
   getDefaultCamera().setPitchYawRoll(Vector3(0, 0, 0))
 
 def _setCamSpeed(speedLevel):
-  global speedLabel
+  global labels
   s = 10 ** (speedLevel - 4)
   labels["Navigation Speed"].setText("Navigation Speed: " + str(s) + "x")
   cc = getDefaultCamera().getController()
@@ -107,7 +109,7 @@ def _onAppStart(binpath):
   _addMenuItem(sysmnu, "Reset", "_resetCamera()")
   _addMenuItem(sysmnu, "Auto Near / Far", "queueCommand(':autonearfar ' + ('on' if %value% else 'off'))", False)
   #_addMenuItem(sysmnu, "Display Wand", "_displayWand(%value%)", False) #Not working, getSceneManager not found
-  _addSlider(sysmnu, "Navigation Speed", "_setCamSpeed(%value%)", 10, 4)
+  _addSlider(sysmnu, "Navigation Speed", "_setCamSpeed(%value%)", 10, 0)
   
   if( isSoundEnabled() ):
     global soundEnv
@@ -130,7 +132,7 @@ def _onAppStart(binpath):
   _addSlider(mainmnu, "Transparency", "_setTransparency(%value%)", 10, 0)
   _addCommandMenuItem(mainmnu, "Point Type", "pointtype all")
   _addCommandMenuItem(mainmnu, "Next Model", "model down")
-  _addSlider(mainmnu, "Animate", "_setFrameRate(%value%)", 10, 1)
+  _addSlider(mainmnu, "Animate", "_setFrameRate(%value%)", 10, 0)
   _setFrameRate(0)
   #_addMenuItem(mainmnu, "Restore Position", "_setPosition()")
 
@@ -163,17 +165,22 @@ def _addObjectMenuItem(name, state):
   objectMenu[name] = mitem
 
 def onUpdate(frame, t, dt):
-  global animate, cmds, labels
+  global animate, cmds, labels, time
   #print getDefaultCamera().getPosition()
-  if animate > 0 and frame % animate == 0:
-    _sendCommand("next")
-    labels["Animate"].setText("Animate: " + str(int(round(1.0 / (animate * dt)))) + "fps")
+  if animate > 0:
+    elapsed = t - time
+    fps = (10.0 - animate) * 4.0
+    spf = 1.0 / fps
+    #print "fps %f spf %f elapsed %f" % (fps, spf, elapsed)
+    if elapsed > spf:
+      _sendCommand("next")
+      labels["Animate"].setText("Animate: " + str(int(round(1.0 / elapsed))) + "fps")
+      time = t
 
   if frame % 10 == 0:
     while len(cmds):
       _sendCommand(cmds.pop())
 
-saveAnimate = 1
 def onEvent():
   global animate, saveAnimate
   if not isMaster():
@@ -197,9 +204,9 @@ def onEvent():
     if(e.isButtonDown( EventFlags.ButtonUp )): # D-Pad up
       if animate:
         saveAnimate = animate
-        animate = 0
+        _setFrameRate(0)
       else:
-        animate = saveAnimate
+        _setFrameRate(saveAnimate)
 
     return
 

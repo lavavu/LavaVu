@@ -186,7 +186,7 @@ class LavaVu : public ViewerApp
    void loadFile(FilePath& fn);
    void loadModel(FilePath& fn);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
-   void cacheLoad(int start_ts);
+   void cacheLoad();
    bool tryTimeStep(int ts);
 
    //Interactive command & script processing

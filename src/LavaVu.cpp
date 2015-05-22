@@ -320,7 +320,7 @@ void LavaVu::run(bool persist)
    else
    {
       //Cache data if enabled
-      cacheLoad(startstep);
+      cacheLoad();
 
       //Load first window if not yet loaded
       if (window < 0)
@@ -361,7 +361,7 @@ void LavaVu::exportData(lucExportType type, unsigned int id)
    }
 }
 
-void LavaVu::cacheLoad(int start_ts)
+void LavaVu::cacheLoad()
 {
    if (amodel->db && TimeStep::cachesize >= amodel->timesteps.size())
    {

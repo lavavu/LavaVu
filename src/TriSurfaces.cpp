@@ -579,7 +579,7 @@ void TriSurfaces::depthSort()
 {
    clock_t t1,t2;
    t1 = clock();
-   if (!tidx) {printf("NO TRIANGLE INDEX FOUND\n"); return;}
+   assert(tidx);
 
    //Sort is much faster without allocate, so keep buffer until size changes
    static long last_size = 0;
@@ -639,8 +639,8 @@ void TriSurfaces::depthSort()
 void TriSurfaces::render()
 {
    clock_t t1,t2;
-   if (!tidx) {printf("NO TRIANGLE INDEX FOUND\n"); return;}
    if (tricount == 0) return;
+   assert(tidx);
 
    //First, depth sort the triangles
    if (view->is3d)

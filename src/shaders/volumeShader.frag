@@ -10,7 +10,7 @@
 //precision highp float;
 
 //Defined dynamically before compile...
-const int maxSamples = 256;
+const int maxSamples = 2048;
 
 uniform sampler3D uVolume;
 uniform sampler2D uTransferFunction;

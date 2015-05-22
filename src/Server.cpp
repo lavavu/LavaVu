@@ -282,7 +282,7 @@ void* Server::callback(enum mg_event event,
             OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
          else
             OpenGLViewer::commands.push_back(data.substr(equals+1));
-         std::cerr << data.substr(equals+1) << std::endl;
+         debug_print("%s\n", data.substr(equals+1).c_str());
          _self->viewer->postdisplay = true;
          pthread_mutex_unlock(&_self->viewer->cmd_mutex);
       }
