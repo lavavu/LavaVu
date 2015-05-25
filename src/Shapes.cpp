@@ -184,7 +184,7 @@ void Shapes::update()
       int shape = geom[i]->draw->properties["shape"].ToInt(0);
       int quality = geom[i]->draw->properties["glyphs"].ToInt(24);
       //Points drawn as shapes?
-      if (geom[i]->draw->properties.HasKey("pointsize"))
+      if (!geom[i]->draw->properties.HasKey("shape"))
       {
          dims[0] = dims[1] = dims[2] = geom[i]->draw->properties["pointsize"].ToFloat(1.0) / 8.0;
          quality = 16;
