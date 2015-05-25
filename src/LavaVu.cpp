@@ -1633,7 +1633,7 @@ void LavaVu::display(void)
    }
 
    //Turn filtering of objects on/off
-   if (awin->views.size() > 1) // || windows.size() > 1)
+   if (awin->views.size() > 1 || windows.size() > 1)
    {
       for (unsigned int v=0; v<awin->views.size(); v++)
          awin->views[v]->filtered = !viewAll;
