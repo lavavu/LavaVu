@@ -10,7 +10,7 @@ cmds = []
 labels = dict()
 objmnu = None
 animate = 0
-saveAnimate = 4 # 16 fps
+saveAnimate = 7 # 10 fps
 time = 0
 
 # add the current path to the data search paths.
@@ -133,7 +133,7 @@ def _onAppStart(binpath):
   _addCommandMenuItem(mainmnu, "Point Type", "pointtype all")
   _addCommandMenuItem(mainmnu, "Next Model", "model down")
   _addSlider(mainmnu, "Animate", "_setFrameRate(%value%)", 10, 0)
-  _setFrameRate(0)
+  _setFrameRate(8)
   #_addMenuItem(mainmnu, "Restore Position", "_setPosition()")
 
 def _addMenuItem(menu, label, call, checked=None):

@@ -213,7 +213,10 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
       //Default nav speed
       CameraController* cc = cam->getController();
       View* view = app->glapp->aview;
-      cc->setSpeed(view->model_size * 0.03);
+      //cc->setSpeed(view->model_size * 0.03);
+      float rotate[4], translate[3], focus[3];
+      view->getCamera(rotate, translate, focus);
+      cc->setSpeed(-translate[2] * 0.1);
 
     }
 
@@ -264,7 +267,6 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
   }
   else if(context.task == DrawContext::OverlayDrawTask)
   {
-     //cam->setNearFarZ(defaultNear, cam->getFarZ());
   }
 }
 
