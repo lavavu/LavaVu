@@ -51,7 +51,6 @@ class Win
    float max[3];
    //List of viewports in this window
    std::vector<View*> views;
-   std::vector<DrawingObject*> objects;     // Contains these objects
 
    Win(std::string name) : width(0), height(0)
    {
@@ -83,7 +82,6 @@ class Win
    }
 
    View* addView(View* v);
-   void addObject(DrawingObject* obj);
    void initViewports(int w, int h);
    void resizeViewports();
 

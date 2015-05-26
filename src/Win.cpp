@@ -48,11 +48,6 @@ View* Win::addView(View* v)
    return v;
 }
 
-void Win::addObject(DrawingObject* obj)
-{      
-   objects.push_back(obj);
-}
-
 void Win::initViewports(int w, int h)
 {
    //Initialise all viewports to window size

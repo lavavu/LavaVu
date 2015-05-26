@@ -134,7 +134,7 @@ class LavaVu : public ViewerApp
    void readVolumeSlice(FilePath& fn);
    void createDemoModel();
    void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
-   DrawingObject* newObject(std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string properties="");
+   DrawingObject* addObject(DrawingObject* obj);
    void setOpacity(unsigned int id, float opacity);
    void redraw(unsigned int id);
 

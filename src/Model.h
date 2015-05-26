@@ -65,7 +65,7 @@ class Model
    static Shapes* shapes;
    static Volumes* volumes;
 
-   std::vector<TimeStep> timesteps;
+   std::vector<TimeStep*> timesteps;
 
    bool readonly;
    FilePath file;
@@ -91,6 +91,7 @@ class Model
    void loadWindows();
    void loadLinks(Win* win);
    void loadLinks(DrawingObject* draw);
+   void clearTimeSteps();
    int loadTimeSteps();
    void loadViewports();
    void loadViewCamera(int viewport_id);
@@ -113,13 +114,14 @@ class Model
    void deleteCache();
    void cacheStep();
    bool restoreStep();
+   void printCache();
 
-   int step() {return now < 0 ? -1 : timesteps[now].step;} //Current actual step
+   int step() {return now < 0 ? -1 : timesteps[now]->step;} //Current actual step
 
    int lastStep()
    {
      if (timesteps.size() == 0) return -1;
-     return timesteps[timesteps.size()-1].step;
+     return timesteps[timesteps.size()-1]->step;
    }
 
    std::string timeStamp();
@@ -127,10 +129,10 @@ class Model
    int nearestTimeStep(int requested);
    void addTimeStep(int step, double time=0.0, double dimCoeff=0.0, std::string units="")
    {
-      timesteps.push_back(TimeStep(step, time, dimCoeff, units));
+      timesteps.push_back(new TimeStep(step, time, dimCoeff, units));
    }
 
-   int setTimeStep(int stepidx=now,  bool cacheAll=false);
+   int setTimeStep(int stepidx=now);
    int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
    void mergeDatabases();
    int decompressGeometry(int timestep);

@@ -58,7 +58,7 @@ class DrawingObject
    json::Object properties;
    TextureData* defaultTexture;
 
-   DrawingObject(unsigned int id, std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="");
+   DrawingObject(std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="", unsigned int id=0);
    ~DrawingObject();
 
    void addColourMap(ColourMap* map, lucGeometryDataType data_type);

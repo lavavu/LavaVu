@@ -1275,7 +1275,8 @@ Colour parseRGBA(std::string value)
    {
       ss >> c;
       col.rgba[i] = c;
-      if (ss.peek() == ',')
+      char next = ss.peek();
+      if (next == ',' || next == ' ')
          ss.ignore();
    }
    ss >> alpha;

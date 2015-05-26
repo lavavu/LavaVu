@@ -626,7 +626,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("createvolume"))
    {
       //Use this to load multiple volumes as timesteps into the same object
-      volume = newObject("volume");
+      volume = new DrawingObject("volume");
       printMessage("Created static volume object");
       return false;
    }
@@ -1633,15 +1633,6 @@ bool LavaVu::parseCommands(std::string cmd)
       {
          amodel->deleteObject(obj->id);
          printMessage("%s deleted from database", obj->name.c_str());
-         for (unsigned int i=0; i<awin->objects.size(); i++)
-         {
-            if (!awin->objects[i]) continue;
-            if (obj == awin->objects[i])
-            {
-               awin->objects.erase(awin->objects.begin()+i);
-               break;
-            }
-         }
          for (unsigned int i=0; i<aview->objects.size(); i++)
          {
             if (!aview->objects[i]) continue;
@@ -1840,7 +1831,11 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       amodel->addTimeStep(amodel->step()+1);
       amodel->setTimeStep(amodel->now+1);
-      resetViews(); //Update the viewports
+      //resetViews(); //Update the viewports
+   }
+   else if (parsed.exists("open"))
+   {
+      loadWindow(0, 0, true);
    }
    else
    {

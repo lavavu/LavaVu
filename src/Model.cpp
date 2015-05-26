@@ -36,7 +36,7 @@
 //Model class
 #include "Model.h"
 
-std::vector<TimeStep> *TimeStep::timesteps; //Active model timesteps
+std::vector<TimeStep*> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int TimeStep::cachesize = 0;
 bool Model::noload = false;
@@ -87,7 +87,7 @@ void Model::init()
 
 Model::~Model()
 {
-   timesteps.clear();
+   clearTimeSteps();
 
    //Clear drawing objects
    for(unsigned int i=0; i<objects.size(); i++)
@@ -354,10 +354,10 @@ void Model::loadObjects()
       if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       {
          std::string props = std::string((char*)sqlite3_column_text(statement, 4));
-         addObject(new DrawingObject(object_id, otitle, colour, NULL, opacity, props));
+         addObject(new DrawingObject(otitle, colour, NULL, opacity, props, object_id));
       }
       else
-         addObject(new DrawingObject(object_id, otitle, colour, NULL, opacity));
+         addObject(new DrawingObject(otitle, colour, NULL, opacity, "", object_id));
    }
    sqlite3_finalize(statement);
 }
@@ -405,7 +405,6 @@ void Model::loadLinks(Win* win)
       if (last_object != object_id)
       {
          view->addObject(draw);
-         win->addObject(draw);
          last_object = object_id;
       }
 
@@ -458,12 +457,19 @@ void Model::loadLinks(DrawingObject* draw)
    sqlite3_finalize(statement);
 }
 
+void Model::clearTimeSteps()
+{
+   for (int idx=0; idx < timesteps.size(); idx++)
+      delete timesteps[idx];
+   timesteps.clear();
+}
+
 int Model::loadTimeSteps()
 {
    if (!db) return timesteps.size();
    //Don't reload timesteps when data has been cached
    if (TimeStep::cachesize > 0 && timesteps.size() > 0) return timesteps.size();
-   timesteps.clear();
+   clearTimeSteps();
    TimeStep::gap = 0;
    int rows = 0;
    int last_step = 0;
@@ -478,10 +484,10 @@ int Model::loadTimeSteps()
       {
          double dimCoeff = sqlite3_column_double(statement, 2);
          const char* units = (const char*)sqlite3_column_text(statement, 3);
-         timesteps.push_back(TimeStep(step, time, dimCoeff, std::string(units)));
+         timesteps.push_back(new TimeStep(step, time, dimCoeff, std::string(units)));
       }
       else
-         timesteps.push_back(TimeStep(step, time));
+         timesteps.push_back(new TimeStep(step, time));
       //Save gap
       if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
       last_step = step;
@@ -489,7 +495,7 @@ int Model::loadTimeSteps()
    }
    sqlite3_finalize(statement);
    //Copy to static for use in Tracers etc
-   TimeStep::timesteps = &timesteps;
+   TimeStep::timesteps = timesteps;
    return timesteps.size();
 }
 
@@ -626,14 +632,14 @@ void Model::cacheStep()
 {
    //Don't cache if we already loaded from cache!
    if (TimeStep::cachesize == 0 || now < 0) return;
-   if (timesteps[now].cache.size() > 0) return; //Already cached this step
+   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
    debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), FloatValues::membytes/1000000.0f);
 
    //Copy all elements
    if (FloatValues::membytes > 0)
    {
-      timesteps[now].write(geometry);
+      timesteps[now]->write(geometry);
       debug_print("~~~ Cached step, at: %d\n", step());
       geometry.clear();
    }
@@ -657,17 +663,16 @@ void Model::cacheStep()
    }*/
 }
 
-
 bool Model::restoreStep()
 {
    //Requested = current?
    if (cachestep == now || now < 0) return false;
    if (TimeStep::cachesize == 0) return false;
-   if (timesteps[now].cache.size() == 0) 
+   if (timesteps[now]->cache.size() == 0) 
       return false; //Nothing cached this step
 
    //Load the cache and save loaded timestep
-   timesteps[now].read(geometry);
+   timesteps[now]->read(geometry);
    cachestep = now;
    debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), now, file.base.c_str());
 
@@ -687,6 +692,13 @@ bool Model::restoreStep()
    return true;
 }
 
+void Model::printCache()
+{
+  printf("-----------CACHE %d steps\n", timesteps.size());
+   for (int idx=0; idx < timesteps.size(); idx++)
+      printf(" %d: has %d records\n", idx, timesteps[idx]->cache.size());
+}
+
 std::string Model::timeStamp()
 {
    // Timestep (with scaling applied)
@@ -694,7 +706,7 @@ std::string Model::timeStamp()
    if (now < 0) return std::string("");
 
    // Use scaling coeff and units to get display time
-   TimeStep* ts = &timesteps[now];
+   TimeStep* ts = timesteps[now];
    char displayString[32];
    sprintf(displayString, "Time %g%s", ts->time * ts->dimCoeff, ts->units.c_str());
 
@@ -706,7 +718,7 @@ bool Model::hasTimeStep(int ts)
 {
    if (timesteps.size() == 0 && loadTimeSteps() == 0) return false;
    for (int idx=0; idx < timesteps.size(); idx++)
-      if (ts == timesteps[idx].step)
+      if (ts == timesteps[idx]->step)
          return true;
    return false;
 }
@@ -720,13 +732,13 @@ int Model::nearestTimeStep(int requested)
    //if (timesteps.size() == 1 && now >= 0 && ) return -1;  //Single timestep
 
    for (idx=0; idx < timesteps.size(); idx++)
-      if (timesteps[idx].step >= requested) break;
+      if (timesteps[idx]->step >= requested) break;
 
    //Reached end of list? 
    if (idx == timesteps.size()) idx--;
 
    //Unchanged...
-   //if (requested >= now && timesteps[idx].step == now) return 0;
+   //if (requested >= now && timesteps[idx]->step == now) return 0;
 
    if (idx < 0) idx = 0;
    if (idx >= timesteps.size()) idx = timesteps.size() - 1;
@@ -735,9 +747,8 @@ int Model::nearestTimeStep(int requested)
 }
 
 //Load data at specified timestep
-int Model::setTimeStep(int stepidx, bool cacheAll)
+int Model::setTimeStep(int stepidx)
 {
-   TimeStep::timesteps = &timesteps; //Set to current model timestep vector
    clock_t t1 = clock();
    unsigned int idx=0;
 
@@ -756,17 +767,22 @@ int Model::setTimeStep(int stepidx, bool cacheAll)
    }
 
    //Cache currently loaded data
-   if (cacheAll) cacheStep();
+   if (TimeStep::cachesize > 0) cacheStep();
 
    //Set the new timestep index
+   TimeStep::timesteps = timesteps; //Set to current model timestep vector
    now = stepidx;
    debug_print("TimeStep set to: %d\n", step());
 
    if (restoreStep())
       return 0; //Cache hit successful return value
 
+   //Create new geometry containers if required
+   if (geometry.size() == 0) init();
+
    //Clear any existing geometry
    clearObjects();
+
 
    //Attempt to load from cache first
    //if (restoreStep(now)) return 0; //Cache hit successful return value
@@ -776,9 +792,9 @@ int Model::setTimeStep(int stepidx, bool cacheAll)
    attach(step());
 
    int rows = 0;
-   if (cacheAll)
-      //Caching all geometry from database at start
-      rows += loadGeometry(0, 0, timesteps[timesteps.size()-1].step, true);
+   if (TimeStep::cachesize > 0)
+      //Attempt caching all geometry from database at start
+      rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
    else
       //noload flag skips loading geometry until "load" commands issued
       rows += noload ? 0 : loadGeometry();
@@ -1204,7 +1220,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
    if (timesteps.size() == 0) addTimeStep(0);
    for (unsigned int i = 0; i < timesteps.size(); i++)
    {
-      snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", timesteps[i].step, timesteps[i].time, timesteps[i].dimCoeff, timesteps[i].units.c_str(), ""); 
+      snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", timesteps[i]->step, timesteps[i]->time, timesteps[i]->dimCoeff, timesteps[i]->units.c_str(), ""); 
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return; 
 

@@ -512,7 +512,7 @@ void ColourMap::loadPalette(std::string data)
       if (iss >> pos && pos >= 0.0 && pos <= 1.0)
       {
          iss >> delim;
-         iss >> value;
+         std::getline(iss, value); //Read rest of stream into value
          Colour colour = parseRGBA(value);
          //Add to colourmap
          add(colour.value, pos);

@@ -374,7 +374,7 @@ void LavaVu::cacheLoad()
          amodel->now = -1;
          for (int i=0; i<amodel->timesteps.size(); i++)
          {
-            amodel->setTimeStep(i, true);
+            amodel->setTimeStep(i);
             if (amodel->now != i) break; //Finished early using loadGeometry caching
             printf("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
          }
@@ -434,7 +434,8 @@ void LavaVu::readRawVolume(FilePath& fn)
 
    //Create volume object, or if static volume object exists, use it
    DrawingObject *vobj = volume;
-   if (!vobj) vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "");
+   if (!vobj) vobj = new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "");
+   addObject(vobj);
      
    std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
    file.seekg(0, std::ios::end);
@@ -464,7 +465,8 @@ void LavaVu::readXrwVolume(FilePath& fn)
 
    //Create volume object, or if static volume object exists, use it
    DrawingObject *vobj = volume;
-   if (!vobj) vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "");
+   if (!vobj) vobj = new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "");
+   addObject(vobj);
      
    std::vector<char> buffer;
    unsigned int size;
@@ -564,7 +566,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
    if (!vobj || path != fn.path)
    {
       path = fn.path; //Store the path, multiple volumes can be loaded if slices in different folders
-      vobj = newObject(fn.base, 0xff000000, NULL, 1.0, "static=1");
+      vobj = addObject(new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "static=1"));
       //Define the bounding cube by corners
       Model::volumes->add(vobj);
       Model::volumes->read(vobj, 1, lucVertexData, volmin);
@@ -710,7 +712,7 @@ void LavaVu::readHeightMap(FilePath& fn)
    colourMap->add(0xff000000, 1.0);
 
    //Add colour bar display
-   //newObject("colourbar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n");
+   //addObject(new DrawingObject("colourbar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n"));
 
    //Create a height map grid
    int sx=cols, sz=rows;
@@ -718,10 +720,10 @@ void LavaVu::readHeightMap(FilePath& fn)
                                                                     //opacity [0,1]
    DrawingObject *obj, *sea;
    std::string props = "static=1\ncullface=0\ntexturefile=%s\n" + texfile;
-   obj = newObject(fn.base, 0, colourMap, 1.0, props);
+   obj = addObject(new DrawingObject(fn.base, 0, colourMap, 1.0, props));
    //Sea level surf
-   //sea = newObject("Sea level", true, 0xffffff00, NULL, 0.5, "cullface=1\n");
-   sea = newObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n");
+   //sea = addObject(new DrawingObject("Sea level", true, 0xffffff00, NULL, 0.5, "cullface=1\n"));
+   sea = addObject(new DrawingObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n"));
 
    int gridx = ceil(sx / (float)subsample);
    int gridz = ceil(sz / (float)subsample);
@@ -898,7 +900,7 @@ void LavaVu::readOBJ(FilePath& fn)
 
    //Add single drawing object per file, if one is already active append to it
    DrawingObject* tobj = aobject;
-   if (!tobj) tobj = newObject(fn.base, 0xff888888, NULL, 1.0, "static=1\n");
+   if (!tobj) tobj = addObject(new DrawingObject(fn.base, 0xff888888, NULL, 1.0, "static=1\n"));
   
    int index = -1;
    for (size_t i = 0; i < shapes.size(); i++)
@@ -1017,7 +1019,7 @@ void LavaVu::readTecplot(FilePath& fn)
       //colourMap->add(colours, 7);
 
       //Add colour bar display
-      newObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\nstatic=1\n");
+      addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\nstatic=1\n"));
 
    std::ifstream file(fn.full.c_str(), std::ios::in);
    if (file.is_open())
@@ -1074,16 +1076,16 @@ void LavaVu::readTecplot(FilePath& fn)
 
 
             //Add points object
-            //pobj = newObject("particles", 0, colourMap, 1.0, "static=1\nlit=0\n");
+            //pobj = addObject(new DrawingObject("particles", 0, colourMap, 1.0, "static=1\nlit=0\n"));
             //Model::points->add(pobj);
             //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
             //Add triangles object
-            tobj = newObject("triangles", 0, colourMap, 1.0, "static=1\nflat=1\n");
+            tobj = addObject(new DrawingObject("triangles", 0, colourMap, 1.0, "static=1\nflat=1\n"));
             Model::triSurfaces->add(tobj);
 
             //Add lines object
-            //lobj = newObject("lines", 0xff000000, NULL, 1.0, "static=1\nlit=0\n");
+            //lobj = addObject(new DrawingObject("lines", 0xff000000, NULL, 1.0, "static=1\nlit=0\n"));
             //Model::lines->add(lobj);
 
 
@@ -1327,10 +1329,10 @@ void LavaVu::createDemoModel()
    colourMap->calibrate(0, size);
 
    //Add colour bar display
-   newObject("colour-bar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n");
+   addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n"));
 
    //Add points object
-   DrawingObject* obj = newObject("particles", 0, colourMap, 0.75, "static=1\nlit=0\n");
+   DrawingObject* obj = addObject(new DrawingObject("particles", 0, colourMap, 0.75, "static=1\nlit=0\n"));
    int NUMPOINTS = 200000;
    int NUMSWARM = NUMPOINTS/4;
    for (int i=0; i < NUMPOINTS; i++) 
@@ -1355,7 +1357,7 @@ void LavaVu::createDemoModel()
    }
 
    //Add lines
-   obj = newObject("line-segments", 0, colourMap, 1.0, "static=1\nlit=0\n");
+   obj = addObject(new DrawingObject("line-segments", 0, colourMap, 1.0, "static=1\nlit=0\n"));
    for (int i=0; i < 50; i++) 
    {
       float colour, ref[3];
@@ -1382,7 +1384,7 @@ void LavaVu::createDemoModel()
       {
          char label[64];
          sprintf(label, "%c-cross-section", axischar[i]);
-         obj = newObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5);
+         obj = addObject(new DrawingObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5));
          Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
       }
    }
@@ -1392,14 +1394,19 @@ void LavaVu::createDemoModel()
    Geometry::checkPointMinMax(max);
 }
 
-DrawingObject* LavaVu::newObject(std::string name, int colour, ColourMap* map, float opacity, std::string properties)
+DrawingObject* LavaVu::addObject(DrawingObject* obj)
 {
-   DrawingObject* obj = new DrawingObject(0, name, colour, map, opacity, properties);
    if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
    if (!aview) aview = awin->views[0];
-   aview->addObject(obj);
-   awin->addObject(obj);
-   amodel->addObject(obj); //Add to model master list
+
+   //Add to the active viewport if not already present
+   if (!aview->hasObject(obj))
+      aview->addObject(obj);
+
+   //Add to model master list if not already present
+   if (amodel->objects.size() >= obj->id && amodel->objects[obj->id-1] != obj);
+      amodel->addObject(obj);
+
    return obj;
 }
 
@@ -2100,7 +2107,6 @@ void LavaVu::loadModel(FilePath& fn)
          //Model objects stored by object ID so can have gaps...
          if (!amodel->objects[o]) continue;
          aview->addObject(amodel->objects[o]);
-         awin->addObject(amodel->objects[o]);
          amodel->loadLinks(amodel->objects[o]);
       }
    }
@@ -2130,7 +2136,12 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
    if (window_idx == window && at_timestep >= 0 && at_timestep == amodel->now) return false; //No change
 
-   if (at_timestep >= 0) amodel->now = -1;
+   if (at_timestep >= 0)
+   {
+     //Cache selected step, then force new timestep set when window changes
+     if (TimeStep::cachesize > 0) amodel->cacheStep();
+     amodel->now = -1;
+   }
 
    //Have a database model loaded already?
    if (amodel->objects.size() > 0)
