@@ -54,11 +54,7 @@
 // Point indices + distance for sorting
 typedef struct 
 {
-   union 
-   {
-      int distance;
-      float fdistance;
-   };
+   int distance;
    GLuint index; //global index
    int id; //id in geom element
    unsigned short geomid; //WARNING: Limits max elements to 65535
@@ -66,11 +62,7 @@ typedef struct
 
 typedef struct 
 {
-   union 
-   {
-      int distance;
-      float fdistance;
-   };
+   int distance;
    GLuint index[3]; //global indices
    float centroid[3];
    unsigned short geomid; //WARNING: Limits max elements to 65535
@@ -91,6 +83,10 @@ class GeomData
    TextureData* texture;
 
    float distance;
+
+   //Bounding box of content
+   float min[3];
+   float max[3];
 
    std::vector<std::string> labels;      //Optional vertex labels
 
@@ -136,6 +132,12 @@ class GeomData
       data[lucPositionData] = &positions;
 
       texture = NULL;
+
+      for (int i=0; i<3; i++)
+      {
+         min[i] = HUGE_VAL;
+         max[i] = -HUGE_VAL;
+      }
    }
 
    ~GeomData()
@@ -144,6 +146,8 @@ class GeomData
       labelptr = NULL;
       if (texture && texture != draw->defaultTexture) delete texture;
    }
+
+   void checkPointMinMax(float *coord);
 
    void label(std::string& labeltext);
    const char* getLabels();
@@ -220,7 +224,6 @@ class Geometry
    unsigned int total;     //Total entries of all objects in container
    float scale;   //Scaling factor
    bool redraw;    //Redraw from scratch flag
-   static float min[3], max[3];  //Track min/max coords
    bool wireframe, cullface;
    bool flat, lit;
 
@@ -254,13 +257,13 @@ class Geometry
    GeomData* getObjectStore(DrawingObject* draw);
    GeomData* add(DrawingObject* draw);
    void newData(DrawingObject* draw);
-   void read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
+   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
    void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
    void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, float dimFactor=1.0, const char* units="");
    void label(DrawingObject* draw, const char* labels);
    void print();
    int size() {return geom.size();}
-   void setView(View* vp) {view = vp;}
+   void setView(View* vp, float* min=NULL, float* max=NULL);
    void move(Geometry* other);
    void toImage(unsigned int idx);
    void setTexture(DrawingObject* draw, TextureData* texture);
@@ -307,11 +310,13 @@ class QuadSurfaces : public Geometry
 
 class TriSurfaces : public Geometry
 {
-   static TIndex *tidx;
+   TIndex *tidx;
+   //static TIndex *tidx;
    int tricount;
   public:
    static Shader* prog;
-   static GLuint indexvbo, vbo;
+   //static GLuint indexvbo, vbo;
+   GLuint indexvbo, vbo;
 
    TriSurfaces();
    ~TriSurfaces();
@@ -351,7 +356,8 @@ class Shapes : public TriSurfaces
 
 class Points : public Geometry
 {
-   static PIndex *pidx;
+//   static PIndex *pidx;
+   PIndex *pidx;
   public:
    static Shader* prog;
    static unsigned int subSample;

@@ -63,7 +63,6 @@ class TimeStep
    //Cached data
    static int cachesize;
    std::vector<Geometry*> cache;
-   float min[3], max[3];  //Track min/max coords
 
    void write(std::vector<Geometry*> &data)
    {
@@ -72,9 +71,6 @@ class TimeStep
       //   data[i]->close();
 
       cache = data;
-      //Save previous bounds
-      copy3(Geometry::min, min);
-      copy3(Geometry::max, max);
    }
 
    void read(std::vector<Geometry*> &data)
@@ -92,15 +88,6 @@ class TimeStep
       }
 
       data = cache;
-      //Restore previous bounds
-      copy3(min, Geometry::min);
-      copy3(max, Geometry::max);
-   }
-
-   void copy3(float src[3], float dst[3])
-   {
-      for (unsigned int i=0; i < 3; i++)
-        dst[i] = src[i];
    }
 };
 

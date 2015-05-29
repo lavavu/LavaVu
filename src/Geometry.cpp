@@ -36,9 +36,18 @@
 #include "Geometry.h"
 
 //Init static data
-float Geometry::min[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
-float Geometry::max[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 float GeomData::opacity = 0;
+
+//Track min/max coords
+void GeomData::checkPointMinMax(float *coord)
+{
+   //std::cerr << coord[0] << "," << coord[1] << "," << coord[2] << std::endl;
+   for (int i=0; i<3; i++)
+   {
+     if (coord[i] > max[i] && coord[i] < HUGE_VAL) max[i] = coord[i];
+     if (coord[i] < min[i] && coord[i] > -HUGE_VAL) min[i] = coord[i];
+   }
+}
 
 void GeomData::label(std::string& labeltext)
 {
@@ -208,12 +217,6 @@ void Geometry::clear(bool all)
       }
    }
    if (all) geom.clear();
-
-   for (int i=0; i<3; i++)
-   {
-      Geometry::min[i] = HUGE_VAL;
-      Geometry::max[i] = -HUGE_VAL;
-   }
 }
 
 void Geometry::reset()
@@ -506,7 +509,7 @@ std::vector<GeomData*> Geometry::getAllObjects(int id)
 {
    //Get passed object's data store
    std::vector<GeomData*> geomlist;
-   for (int i=geom.size()-1; i>=0; i--)
+   for (int i=0; i<geom.size(); i++)
       if (geom[i]->draw->id == id)
          geomlist.push_back(geom[i]);
    return geomlist;
@@ -537,6 +540,32 @@ GeomData* Geometry::add(DrawingObject* draw)
    return geomdata;
 }
 
+void Geometry::setView(View* vp, float* min, float* max)
+{
+   view = vp;
+
+   if (!min || !max) return;
+
+   //Iterate the selected viewport's drawing objects
+   //Apply geometry bounds from all object data within this viewport
+   for (unsigned int o=0; o<view->objects.size(); o++)
+   {
+      //Skip invisible
+      if (!view->objects[o] || !view->objects[o]->visible) continue;
+      for (int g=0; g<geom.size(); g++)
+      {
+         if (geom[g]->draw->id == o+1)
+         {
+            for (unsigned int j=0; j<3; j++)
+            {
+               if (geom[g]->min[j] < min[j]) min[j] = geom[g]->min[j];
+               if (geom[g]->max[j] > max[j]) max[j] = geom[g]->max[j];
+            }
+         }
+      }
+   }
+}
+
 void Geometry::move(Geometry* other)
 {
    //Copy GeomData objects
@@ -550,7 +579,7 @@ void Geometry::move(Geometry* other)
 }
 
 //Read geometry data from storage
-void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
+GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
    draw->skip = false;  //Enable object (has data now)
    GeomData* geomdata;
@@ -572,6 +601,8 @@ void Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const
       read(geomdata, n, lucPositionData, data, width, height, depth);
    else
       read(geomdata, n, dtype, data, width, height, depth);
+
+   return geomdata; //Return data store pointer
 }
 
 void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
@@ -588,6 +619,9 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
    {
       geomdata->count += n;
       total += n;
+
+      //Update bounds on single vertex reads
+      if (n == 1) geomdata->checkPointMinMax((float*)data);
    }
 }
 
@@ -610,42 +644,6 @@ void Geometry::label(DrawingObject* draw, const char* labels)
    std::string line;
    while(std::getline(iss, line))
       geomdata->label(line);
-}
-
-//Track min/max coords
-void Geometry::checkPointMinMax(float *coord)
-{
-   //std::cerr << coord[0] << "," << coord[1] << "," << coord[2] << std::endl;
-   for (int i=0; i<3; i++)
-   {
-     if (coord[i] > max[i] && coord[i] < HUGE_VAL) max[i] = coord[i];
-     if (coord[i] < min[i] && coord[i] > -HUGE_VAL) min[i] = coord[i];
-   }
-}
-
-void Geometry::getMinMaxDistance(float modelView[16], float* mindist, float* maxdist)
-{
-   //Save min/max distance
-   float vert[3], dist;
-   *maxdist = -HUGE_VAL;
-   *mindist = HUGE_VAL; 
-   for (int i=0; i<2; i++)
-   {
-      vert[0] = i==0 ? min[0] : max[0];
-      for (int j=0; j<2; j++)
-      {
-         vert[1] = j==0 ? min[1] : max[1];
-         for (int k=0; k<2; k++)
-         {
-            vert[2] = k==0 ? min[2] : max[2];
-            dist = eyeDistance(modelView, vert);
-            if (dist < *mindist) *mindist = dist;
-            if (dist > *maxdist) *maxdist = dist;
-         }
-      }
-   }
-   if (*maxdist == *mindist) *maxdist += 0.0000001;
-   //printf("DISTANCE MIN %f MAX %f\n", *mindist, *maxdist);
 }
 
 void Geometry::print()

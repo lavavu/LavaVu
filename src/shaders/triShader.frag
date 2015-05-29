@@ -69,6 +69,8 @@ void main(void)
   if (uOpacity > 0.0) alpha *= uOpacity;
   vec4 colour = vec4(fColour.rgb * lightWeighting, alpha);
 
+  if (alpha < 0.01) discard;
+
   gl_FragColor = colour;
 }
 

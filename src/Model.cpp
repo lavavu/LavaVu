@@ -57,16 +57,17 @@ Volumes* Model::volumes = NULL;
 
 Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0), db(NULL)
 {
-   cachestep = -1;
    prefix[0] = '\0';
    
    //Create new geometry containers
    init();
    
-   if (hideall)
+   for (unsigned int i=0; i < geometry.size(); i++)
    {
-      for (unsigned int i=0; i < geometry.size(); i++)
+      if (hideall)
          geometry[i]->hideAll();
+      //Reset static data
+      geometry[i]->close();
    }
 }
 
@@ -630,8 +631,8 @@ void Model::deleteCache()
 
 void Model::cacheStep()
 {
-   //Don't cache if we already loaded from cache!
-   if (TimeStep::cachesize == 0 || now < 0) return;
+   //Don't cache if we already loaded from cache or out of range!
+   if (TimeStep::cachesize == 0 || now < 0 || now >= timesteps.size()) return;
    if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
    debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), FloatValues::membytes/1000000.0f);
@@ -665,15 +666,12 @@ void Model::cacheStep()
 
 bool Model::restoreStep()
 {
-   //Requested = current?
-   if (cachestep == now || now < 0) return false;
-   if (TimeStep::cachesize == 0) return false;
+   if (now < 0 || TimeStep::cachesize == 0) return false;
    if (timesteps[now]->cache.size() == 0) 
       return false; //Nothing cached this step
 
    //Load the cache and save loaded timestep
    timesteps[now]->read(geometry);
-   cachestep = now;
    debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), now, file.base.c_str());
 
    //Switch geometry containers
@@ -761,10 +759,7 @@ int Model::setTimeStep(int stepidx)
 
    if (stepidx < 0) return -1;
    if (stepidx >= timesteps.size())
-   {
      stepidx = timesteps.size()-1;
-     cachestep = -1;
-   }
 
    //Cache currently loaded data
    if (TimeStep::cachesize > 0) cacheStep();
@@ -894,8 +889,10 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
          const void *data = sqlite3_column_blob(statement, datacol);
          unsigned int bytes = sqlite3_column_bytes(statement, datacol);
 
+         DrawingObject* obj = objects[object_id-1];
+
          //Skip object? TODO: FIX
-         //if (objects[object_id-1]->skip) continue;
+         //if (obj->skip) continue;
 
          //Bulk load: switch timestep and cache if timestep changes!
          if (step() != timestep)
@@ -959,6 +956,14 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
             tbytes += bytes;   //Byte counter
 
+            //Always add a new element for each new vertex geometry record, not suitable if writing db on multiple procs!
+            if (data_type == lucVertexData && recurseTracers) active->add(obj);
+
+            //Read data block
+            GeomData* g = active->read(obj, items, data_type, data, width, height, depth);
+            active->setup(obj, data_type, minimum, maximum, dimFactor, units);
+            if (labels) active->label(obj, labels);
+
             //Where min/max vertex provided, load
             if (data_type == lucVertexData)
             {
@@ -975,33 +980,27 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
                //Detect null dims data due to bugs in dimension output
                if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
                {
-                  Geometry::checkPointMinMax(min);
-                  Geometry::checkPointMinMax(max);
+                  g->checkPointMinMax(min);
+                  g->checkPointMinMax(max);
                }
                else
                {
                   //Slow way, detects bounding box by checking each vertex
                   for (int p=0; p < items*3; p += 3)
-                     Geometry::checkPointMinMax((float*)data + p);
+                     g->checkPointMinMax((float*)data + p);
 
                   //Fix for future loads
 #ifdef ALTER_DB
                   reopen(true);  //Open writable
                   sprintf(SQL, "UPDATE %sgeometry SET minX = '%f', minY = '%f', minZ = '%f', maxX = '%f', maxY = '%f', maxZ = '%f' WHERE id==%d;", 
-                          prefix, id, Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+                          prefix, id, obj->min[0], obj->min[1], obj->min[2], obj->max[0], obj->max[1], obj->max[2]);
                   printf("%s\n", SQL);
                   issue(SQL);
 #endif
                }
             }
 
-            //Always add a new element for each new vertex geometry record, not suitable if writing db on multiple procs!
-            if (data_type == lucVertexData && recurseTracers) active->add(objects[object_id-1]);
 
-            //Read data block
-            active->read(objects[object_id-1], items, data_type, data, width, height, depth);
-            active->setup(objects[object_id-1], data_type, minimum, maximum, dimFactor, units);
-            if (labels) active->label(objects[object_id-1], labels);
 
             if (buffer) delete[] buffer;
    #if 0
@@ -1286,8 +1285,8 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool
         if (block->minimum == HUGE_VAL) block->minimum = 0;
         if (block->maximum == -HUGE_VAL) block->maximum = 0;
         
-        float *min = Geometry::min;
-        float *max = Geometry::max;
+        float *min = data[i]->min;
+        float *max = data[i]->max;
 
         snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step(), data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 

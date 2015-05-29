@@ -87,9 +87,9 @@ class View
    // Dimensions
    float dims[3];
    int orientation;           // Right-handed (GL default) or Left-handed
+   float min[3], max[3];
  private:
    bool initialised;
-   float min[3], max[3];
    float rotate_centre[3];    // Centre of rotation
    float focal_point[3];      // Focal point
    float default_focus[3];    // Default Focal point
@@ -112,6 +112,7 @@ class View
    bool use_inertia;
    float eye_shift;           // Stereo eye shift factor
    float eye_sep_ratio;       // Eye separation ratio to focal length
+   float modelView[16];
 
    View(std::string title = "", bool stereo_flag = false, 
         float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
@@ -122,6 +123,7 @@ class View
    bool hasObject(DrawingObject* obj);
 
    bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
+   void getMinMaxDistance(float* mindist, float* maxdist);
    std::string rotateString();
    std::string translateString();
    void getCamera(float rotate[4], float translate[3], float focus[3]);

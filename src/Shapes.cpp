@@ -67,7 +67,7 @@ void Shapes::drawCuboid(GeomData* geom, float pos[3], float width, float height,
       /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
       verts[i] = rot * verts[i];
       verts[i] += Vec3d(pos);
-      checkPointMinMax(verts[i].ref());
+      geom->checkPointMinMax(verts[i].ref());
    }
 
    //Triangle indices
@@ -121,7 +121,7 @@ void Shapes::drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, int segm
          read(geom, 1, lucVertexData, pos.ref());
          read(geom, 1, lucNormalData, edge.ref());
          read(geom, 1, lucTexCoordData, tex);
-         checkPointMinMax(pos.ref());
+         geom->checkPointMinMax(pos.ref());
 
          // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
          cidx = ((int)(j + 0.75 * segment_count) % segment_count);
@@ -138,7 +138,7 @@ void Shapes::drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, int segm
          read(geom, 1, lucVertexData, pos.ref());
          read(geom, 1, lucNormalData, edge.ref());
          read(geom, 1, lucTexCoordData, tex);
-         checkPointMinMax(pos.ref());
+         geom->checkPointMinMax(pos.ref());
 
          //Triangle strip indices
          if (i > 0)
@@ -189,6 +189,7 @@ void Shapes::update()
          dims[0] = dims[1] = dims[2] = geom[i]->draw->properties["pointsize"].ToFloat(1.0) / 8.0;
          quality = 16;
       }
+      if (quality % 2 == 1) quality++; //Odd quality not allowed
 
       if (scaling <= 0) scaling = 1.0;
 

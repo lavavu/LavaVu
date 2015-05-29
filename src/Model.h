@@ -47,7 +47,6 @@
 
 class Model
 {
-   int cachestep; //Currently loaded step from cache
   public:
    static bool noload;
    static bool pointspheres;

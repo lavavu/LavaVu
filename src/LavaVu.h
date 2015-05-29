@@ -163,8 +163,7 @@ class LavaVu : public ViewerApp
    void displayCurrentView();
 
    void resetViews(bool autozoom=false);
-   void viewSelect(int idx);
-   void viewModel(int idx, bool autozoom=false);
+   void viewSelect(int idx, bool setBounds=false, bool autozoom=false);
    void redrawViewports();
    int viewFromPixel(int x, int y);
 

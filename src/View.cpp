@@ -175,6 +175,32 @@ bool View::init(bool force, float* newmin, float* newmax)
    return true;
 }
 
+void View::getMinMaxDistance(float* mindist, float* maxdist)
+{
+   //Save min/max distance
+   float vert[3], dist;
+   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
+   *maxdist = -HUGE_VAL;
+   *mindist = HUGE_VAL; 
+   for (int i=0; i<2; i++)
+   {
+      vert[0] = i==0 ? min[0] : max[0];
+      for (int j=0; j<2; j++)
+      {
+         vert[1] = j==0 ? min[1] : max[1];
+         for (int k=0; k<2; k++)
+         {
+            vert[2] = k==0 ? min[2] : max[2];
+            dist = eyeDistance(modelView, vert);
+            if (dist < *mindist) *mindist = dist;
+            if (dist > *maxdist) *maxdist = dist;
+         }
+      }
+   }
+   if (*maxdist == *mindist) *maxdist += 0.0000001;
+   //printf("DISTANCE MIN %f MAX %f\n", *mindist, *maxdist);
+}
+
 std::string View::rotateString()
 {
    //Convert rotation to command string...

@@ -447,9 +447,6 @@ void LavaVu::readRawVolume(FilePath& fn)
    file.read(&buffer[0], size);
    file.close();
 
-   Geometry::checkPointMinMax(volmin);
-   Geometry::checkPointMinMax(volmax);
-      
    //Define the bounding cube by corners
    Model::volumes->add(vobj);
    Model::volumes->read(vobj, 1, lucVertexData, volmin);
@@ -524,9 +521,6 @@ void LavaVu::readXrwVolume(FilePath& fn)
       file.close();
    }
 
-   Geometry::checkPointMinMax(volmin);
-   Geometry::checkPointMinMax(volmax);
-
 #if 0
          //Dump slices
          size_t offset = 0;
@@ -556,8 +550,6 @@ void LavaVu::readXrwVolume(FilePath& fn)
 void LavaVu::readVolumeSlice(FilePath& fn)
 {
    //png/jpg data
-   Geometry::checkPointMinMax(volmin);
-   Geometry::checkPointMinMax(volmax);
       
    //Create volume object, or if static volume object exists, use it
    static int count = 0;
@@ -825,9 +817,6 @@ void LavaVu::readHeightMap(FilePath& fn)
 
    Model::quadSurfaces->setup(sea, lucColourValueData, min[1], max[1]);
 
-      Geometry::checkPointMinMax(min);
-      Geometry::checkPointMinMax(max);
-
    range[1] = max[1] - min[1];
    debug_print("Sampled %d values, min height %f max height %f\n", (sx / subsample) * (sz / subsample), min[1], max[1]);
    //debug_print("Range %f,%f,%f to %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
@@ -863,10 +852,6 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
       Model::triSurfaces->read(obj, 1, lucVertexData, a);
       Model::triSurfaces->read(obj, 1, lucVertexData, b);
       Model::triSurfaces->read(obj, 1, lucVertexData, c);
-
-      Geometry::checkPointMinMax(a);
-      Geometry::checkPointMinMax(b);
-      Geometry::checkPointMinMax(c);
    }
    else
    {
@@ -950,11 +935,11 @@ void LavaVu::readOBJ(FilePath& fn)
       //Setting > 1 also divides triangles into smaller pieces first
       if (trisplit == 0 && shapes[i].mesh.normals.size() > 0)
       {
-         Model::triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
+         GeomData* g = Model::triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
          Model::triSurfaces->read(tobj, shapes[i].mesh.normals.size()/3, lucNormalData, &shapes[i].mesh.normals[0]);
          Model::triSurfaces->read(tobj, shapes[i].mesh.indices.size(), lucIndexData, &shapes[i].mesh.indices[0]);
          for (size_t f = 0; f < shapes[i].mesh.positions.size(); f += 3)
-            Geometry::checkPointMinMax(&shapes[i].mesh.positions[f]);
+            g->checkPointMinMax(&shapes[i].mesh.positions[f]);
       }
       else
       {
@@ -1098,21 +1083,20 @@ void LavaVu::readTecplot(FilePath& fn)
             amodel->setTimeStep(timestep+1);
             timestep = amodel->now;
 
-            //Bounds check
-            for (int t=0; t<N*3; t += 3)
-            {
-               Geometry::checkPointMinMax(&xyz[t]);
-            }
 
             //Model::points->read(pobj, ELS, lucVertexData, particles);
             //Model::points->read(pobj, ELS, lucColourValueData, values);
             //Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
 
-            Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
+            GeomData* g = Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
             Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
             Model::triSurfaces->read(tobj, ELS, lucColourValueData, values);
             //printf("VALUES min %f max %f\n", valuemin, valuemax); getchar();
             Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
+
+            //Bounds check
+            for (int t=0; t<N*3; t += 3)
+               g->checkPointMinMax(&xyz[t]);
 
             //Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
 
@@ -1390,8 +1374,8 @@ void LavaVu::createDemoModel()
    }
    
    //Set model bounds...
-   Geometry::checkPointMinMax(min);
-   Geometry::checkPointMinMax(max);
+   //Geometry::checkPointMinMax(min);
+   //Geometry::checkPointMinMax(max);
 }
 
 DrawingObject* LavaVu::addObject(DrawingObject* obj)
@@ -1495,17 +1479,14 @@ void LavaVu::redraw(unsigned int id)
 //Called when model loaded/changed, updates all views and window settings
 void LavaVu::resetViews(bool autozoom)
 {
-   //if (!aview) viewSelect(0);  //Switch to the first loaded viewport
-   //viewSelect(view); //Re-select viewport - done in viewModel anyway
-
    //Setup view(s) for new model dimensions
    if (!viewPorts || awin->views.size() == 1)
       //Current view only
-      viewModel(view, autozoom);
+      viewSelect(view, true, autozoom);
    else
       //All viewports...
       for (unsigned int v=0; v < awin->views.size(); v++)
-         viewModel(v, autozoom);
+         viewSelect(v, true, autozoom);
 
    //Flag redraw required
    redrawViewports();
@@ -1542,7 +1523,7 @@ void LavaVu::redrawViewports()
 }
 
 //Called when view changed
-void LavaVu::viewSelect(int idx)
+void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
    if (awin->views.size() == 0) abort_program("No views available!");
    view = idx;
@@ -1551,41 +1532,47 @@ void LavaVu::viewSelect(int idx)
 
    aview = awin->views[view];
 
-   for (unsigned int i=0; i < Model::geometry.size(); i++)
-      Model::geometry[i]->setView(aview);
-}
-
-//Called when timestep/window changed (new model data)
-//Set model size from geometry / bounding box and apply auto zoom
-void LavaVu::viewModel(int idx, bool autozoom)
-{
-   //Ensure correct view is selected
-   viewSelect(idx);
-   if (viewPorts)
-      //Set viewport based on window size
-      aview->port(viewer->width, viewer->height);
-   else
-      //Set viewport to entire window
-      aview->port(0, 0, viewer->width, viewer->height);
-
-   // Apply initial autozoom if set (only applied based on provided dimensions)
-   //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
-   //   aview->init(false, awin->min, awin->max);
-
-   //Call check on window min/max coords
-   if (awin->min[0] != awin->max[0] || awin->min[1] != awin->max[1] || awin->min[2] != awin->max[2])
+   //Called when timestep/window changed (new model data)
+   //Set model size from geometry / bounding box and apply auto zoom
+   if (setBounds)
    {
-      Geometry::checkPointMinMax(awin->min);
-      Geometry::checkPointMinMax(awin->max);
-      debug_print("Applied Model Bounds from Window data %f,%f,%f - %f,%f,%f\n", Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+      float omin[3] = {awin->min[0], awin->min[1], awin->min[2]};
+      float omax[3] = {awin->max[0], awin->max[1], awin->max[2]};
+
+      for (unsigned int i=0; i < Model::geometry.size(); i++)
+         Model::geometry[i]->setView(aview, omin, omax);
+
+      if (viewPorts)
+         //Set viewport based on window size
+         aview->port(viewer->width, viewer->height);
+      else
+         //Set viewport to entire window
+         aview->port(0, 0, viewer->width, viewer->height);
+
+      // Apply initial autozoom if set (only applied based on provided dimensions)
+      //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
+      //   aview->init(false, awin->min, awin->max);
+
+      //Update the model bounding box - use window bounds if provided
+      if (awin->min[0] < awin->max[0])
+         aview->init(false, awin->min, awin->max);
+      else
+         aview->init(false, omin, omax);
+
+      debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f\n", 
+                  aview->min[0], aview->min[1], aview->min[2], 
+                  aview->max[0], aview->max[1], aview->max[2]);
+
+      // Apply step autozoom if set (applied based on detected bounding box)
+      if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->step() % aview->properties["zoomstep"].ToInt(-1) == 0)
+          aview->zoomToFit();
    }
-
-   //Set the model bounding box
-   aview->init(false, Geometry::min, Geometry::max);
-
-   // Apply step autozoom if set (applied based on detected bounding box)
-   if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->step() % aview->properties["zoomstep"].ToInt(-1) == 0)
-       aview->zoomToFit();
+   else
+   {
+      //Set view on geometry objects only, no boundary check
+      for (unsigned int i=0; i < Model::geometry.size(); i++)
+         Model::geometry[i]->setView(aview);
+   }
 }
 
 int LavaVu::viewFromPixel(int x, int y)
@@ -2022,7 +2009,7 @@ void LavaVu::loadFile(FilePath& fn)
    {
       loadModel(fn);
       //Set loaded gldb as active model/window if there was already an active window
-      if (window) loadWindow(windows.size()-1);
+      //if (window) loadWindow(windows.size()-1);
       return;
    }
    //Script files, can contain other files to load
@@ -2135,7 +2122,6 @@ void LavaVu::loadModel(FilePath& fn)
 bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
    if (window_idx == window && at_timestep >= 0 && at_timestep == amodel->now) return false; //No change
-
    if (at_timestep >= 0)
    {
      //Cache selected step, then force new timestep set when window changes
@@ -2308,10 +2294,10 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
    json << "    \"translate\" : [" << translate[0] << "," << translate[1] << "," << translate[2] << "],\n";
    json << "    \"focus\" : [" << focus[0] << "," << focus[1] << "," << focus[2] << "],\n";
    json << "    \"scale\" : [" << aview->scale[0] << "," << aview->scale[1] << "," << aview->scale[2] << "],\n";
-   if (Geometry::min[0] < HUGE_VAL && Geometry::min[1] < HUGE_VAL && Geometry::min[2] < HUGE_VAL)
-      json << "    \"min\" : [" << Geometry::min[0] << "," << Geometry::min[1] << "," << Geometry::min[2] << "],\n";
-   if (Geometry::max[0] > -HUGE_VAL && Geometry::max[1] > -HUGE_VAL && Geometry::max[2] > -HUGE_VAL)
-      json << "    \"max\" : [" << Geometry::max[0] << "," << Geometry::max[1] << "," << Geometry::max[2] << "],\n";
+   if (aview->min[0] < HUGE_VAL && aview->min[1] < HUGE_VAL && aview->min[2] < HUGE_VAL)
+      json << "    \"min\" : [" << aview->min[0] << "," << aview->min[1] << "," << aview->min[2] << "],\n";
+   if (aview->max[0] > -HUGE_VAL && aview->max[1] > -HUGE_VAL && aview->max[2] > -HUGE_VAL)
+      json << "    \"max\" : [" << aview->max[0] << "," << aview->max[1] << "," << aview->max[2] << "],\n";
    json << "    \"near\" : " << aview->near_clip << ",\n";
    json << "    \"far\" : " << aview->far_clip << ",\n";
    json << "    \"orientation\" : " << aview->orientation << ",\n";

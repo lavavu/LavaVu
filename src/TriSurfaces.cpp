@@ -36,9 +36,9 @@
 #include "Geometry.h"
 
 Shader* TriSurfaces::prog = NULL;
-TIndex *TriSurfaces::tidx = NULL;
-GLuint TriSurfaces::indexvbo = 0;
-GLuint TriSurfaces::vbo = 0;
+//TIndex *TriSurfaces::tidx = NULL;
+//GLuint TriSurfaces::indexvbo = 0;
+//GLuint TriSurfaces::vbo = 0;
 
 TriSurfaces::TriSurfaces() : Geometry()
 {
@@ -47,6 +47,7 @@ TriSurfaces::TriSurfaces() : Geometry()
    cullface = false;
    tidx = NULL;
    tricount = 0;
+   close();
 }
 
 TriSurfaces::~TriSurfaces()
@@ -60,6 +61,9 @@ void TriSurfaces::close()
    if (indexvbo) glDeleteBuffers(1, &indexvbo);
    vbo = 0;
    indexvbo = 0;
+
+   if (tidx) delete[] tidx;
+   tidx = NULL;
 
    Geometry::close();
 }
@@ -417,13 +421,22 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
       //Max values in each axis instead of centroid TODO: allow switching sort vertex calc type
       //float centroid[3] = {MAX3(v1[0], v2[0], v3[0]), MAX3(v1[1], v2[1], v3[1]), MAX3(v1[2], v2[2], v3[2])};
       //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);
-      if (centroid[2] < Geometry::min[2] || centroid[2] > Geometry::max[2])
+
+      //Limit to defined bounding box
+      //Possibly should store calculated bounding box separately for goemetry outside border
+      for (int i=0; i<3; i++)
       {
-         checkPointMinMax(centroid);
-         //abort_program
-         printf("Warning: centroid %f,%f,%f min %f,%f,%f max %f,%f,%f\n", centroid[0], centroid[1], centroid[2], Geometry::min[0], Geometry::min[1], Geometry::min[2], Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+         centroid[i] = max(centroid[i], view->min[i]);
+         centroid[i] = min(centroid[i], view->max[i]);
       }
-      //assert(centroid[2] >= Geometry::min[2] && centroid[2] <= Geometry::max[2]);
+
+      /*if (centroid[2] < view->min[2] || centroid[2] > view->max[2])
+      {
+         //abort_program
+         printf("Warning: centroid out of bounds %f,%f,%f min %f,%f,%f max %f,%f,%f\n", centroid[0], centroid[1], centroid[2], view->min[0], view->min[1], view->min[2], view->max[0], view->max[1], view->max[2]);
+         view->checkPointMinMax(centroid);
+      }*/
+      //assert(centroid[2] >= view->min[2] && centroid[2] <= view->max[2]);
       memcpy(tidx[tricount].centroid, centroid, sizeof(float)*3);
    }
    tricount++;
@@ -595,9 +608,7 @@ void TriSurfaces::depthSort()
 
    //Calculate min/max distances from view plane
    float maxdist, mindist; 
-   float modelView[16];
-   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
-   Geometry::getMinMaxDistance(modelView, &mindist, &maxdist);
+   view->getMinMaxDistance(&mindist, &maxdist);
    //printMatrix(modelView);
    //printf("MINDIST %f MAXDIST %f\n", mindist, maxdist);
    int shift = view->properties["shift"].ToInt(0);
@@ -613,8 +624,8 @@ void TriSurfaces::depthSort()
       if (tidx[i].distance < SORT_DIST_MAX) 
       //if (tidx[i].distance > 0) 
       {
-         tidx[i].fdistance = eyeDistance(modelView, tidx[i].centroid);
-         tidx[i].distance = (int)(multiplier * (tidx[i].fdistance - mindist));
+         float distance = eyeDistance(view->modelView, tidx[i].centroid);
+         tidx[i].distance = (int)(multiplier * (distance - mindist));
          assert(tidx[i].distance >= 0 && tidx[i].distance <= SORT_DIST_MAX);
          //Shift by id hack
          if (shift) tidx[i].distance += tidx[i].geomid * shift;

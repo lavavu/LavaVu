@@ -39,7 +39,7 @@
 unsigned int Points::subSample = 1;
 Shader* Points::prog = NULL;
 int Points::pointType = 0;
-PIndex *Points::pidx = NULL;
+//PIndex *Points::pidx = NULL;
 GLuint Points::indexvbo = 0;
 GLuint Points::vbo = 0;
 
@@ -182,7 +182,7 @@ void Points::loadVertices()
          pidx[index].id = i;
          pidx[index].index = index;
          pidx[index].geomid = s;
-         pidx[index].fdistance = 0; //eyeDistance(modelView, s, i);
+         pidx[index].distance = 0;
 
          //Copy data to VBO entry
          Colour c;
@@ -244,17 +244,15 @@ void Points::depthSort()
 
    //Calculate min/max distances from view plane
    float maxdist, mindist; 
-   float modelView[16];
-   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
-   Geometry::getMinMaxDistance(modelView, &mindist, &maxdist);
+   view->getMinMaxDistance(&mindist, &maxdist);
 
    //Update eye distances, clamping int distance to integer between 0 and SORT_DIST_MAX
    float multiplier = (float)SORT_DIST_MAX / (maxdist - mindist);
    for (unsigned int i = 0; i < total; i++)
    {
       //Distance from viewing plane is -eyeZ
-      pidx[i].fdistance = eyeDistance(modelView, geom[pidx[i].geomid]->vertices[pidx[i].id]);
-      pidx[i].distance = (int)(multiplier * (pidx[i].fdistance - mindist));
+      float distance = eyeDistance(view->modelView, geom[pidx[i].geomid]->vertices[pidx[i].id]);
+      pidx[i].distance = (int)(multiplier * (distance - mindist));
    }
    t2 = clock(); debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
