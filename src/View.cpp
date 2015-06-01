@@ -134,7 +134,9 @@ bool View::init(bool force, float* newmin, float* newmax)
       //NOTE: Too much clip plane range can lead to depth buffer precision problems
       //Near clip should be as far away as possible as greater precision reserved for near
       float min_dist = model_size / 10.0;  //Estimate of min dist between viewer and geometry
-      float aspectRatio = width / (float)height;
+      float aspectRatio = 1.33;
+      if (width && height)
+         aspectRatio = width / (float)height;
       near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
       //near_clip = model_size / 5.0;   
       far_clip = model_size * 20.0;
