@@ -792,7 +792,7 @@ int Model::setTimeStep(int stepidx)
       rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
    else
       //noload flag skips loading geometry until "load" commands issued
-      rows += noload ? 0 : loadGeometry();
+      rows += loadGeometry();
 
    debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
    return rows;
@@ -813,19 +813,33 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
    //Load geometry
    char SQL[1024];
-   char filter[256];
+   char filter[256] = {'\0'};
+   char objfilter[32] = {'\0'};
 
-   //Setup filter
-   if (obj_id <= 0)
-      filter[0] = '\0';
+   //Setup filters, object...
+   if (obj_id > 0)
+   {
+      sprintf(objfilter, "WHERE object_id=%d", obj_id);
+      //Remove the skip flag now we have explicitly loaded object
+      objects[obj_id-1]->skip = false;
+   }
+
+   //...timestep...
+   if (time_start >= 0 && time_stop >= 0)
+   {
+      if (strlen(objfilter) > 0)
+         sprintf(filter, "%s AND timestep BETWEEN %d AND %d", objfilter, time_start, time_stop);
+      else
+         sprintf(filter, " WHERE timestep BETWEEN %d AND %d", time_start, time_stop);
+   }
    else
-      sprintf(filter, "object_id=%d AND ", obj_id);
+      strcpy(filter, objfilter);
 
    int datacol = 21;
    //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
    //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, 
    //minX, minY, minZ, maxX, maxY, maxZ, data)
-   sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry WHERE %stimestep BETWEEN %d AND %d ORDER BY timestep,object_id,idx,rank", prefix, filter, time_start, time_stop);
+   sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
    sqlite3_stmt* statement = select(SQL, true);
 
    //Old database compatibility
@@ -833,7 +847,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
    {
       //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
       //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-      sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry WHERE %s timestep BETWEEN %d AND %d ORDER BY timestep,object_id,idx,rank", prefix, filter, time_start, time_stop);
+      sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
       sqlite3_stmt* statement = select(SQL, true);
       datacol = 15;
 
@@ -851,7 +865,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
    //Very old database compatibility
    if (statement == NULL)
    {
-      sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry WHERE %s timestep BETWEEN %d AND %d ORDER BY timestep,object_id,idx,rank", prefix, filter, time_start, time_stop);
+      sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
       statement = select(SQL);
       datacol = 14;
    }
@@ -891,8 +905,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
          DrawingObject* obj = objects[object_id-1];
 
-         //Skip object? TODO: FIX
-         //if (obj->skip) continue;
+         //Skip object? (When noload enabled)
+         if (obj->skip) continue;
 
          //Bulk load: switch timestep and cache if timestep changes!
          if (step() != timestep)
@@ -988,6 +1002,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
                   //Slow way, detects bounding box by checking each vertex
                   for (int p=0; p < items*3; p += 3)
                      g->checkPointMinMax((float*)data + p);
+
+                  debug_print("No bounding dims provided for object %d, calculated for %d vertices...%f,%f,%f - %f,%f,%f\n", obj->id, items, g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
 
                   //Fix for future loads
 #ifdef ALTER_DB
