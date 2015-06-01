@@ -363,7 +363,7 @@ void LavaVu::exportData(lucExportType type, unsigned int id)
 
 void LavaVu::cacheLoad()
 {
-   if (amodel->db && TimeStep::cachesize >= amodel->timesteps.size())
+   if (amodel->db && TimeStep::cachesize > 0) //>= amodel->timesteps.size())
    {
       debug_print("Caching all geometry data...\n");
       for (unsigned int m=0; m < models.size(); m++)
