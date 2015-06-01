@@ -554,13 +554,14 @@ void Geometry::setView(View* vp, float* min, float* max)
       if (!view->objects[o] || !view->objects[o]->visible) continue;
       for (int g=0; g<geom.size(); g++)
       {
-         if (geom[g]->draw->id == o+1)
+         if (geom[g]->draw == view->objects[o])
          {
             for (unsigned int j=0; j<3; j++)
             {
                if (geom[g]->min[j] < min[j]) min[j] = geom[g]->min[j];
                if (geom[g]->max[j] > max[j]) max[j] = geom[g]->max[j];
             }
+            //printf("Applied bounding dims from object %d...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->id, geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
          }
       }
    }
