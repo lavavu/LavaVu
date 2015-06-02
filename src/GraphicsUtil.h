@@ -240,6 +240,7 @@ class FloatValues
 {
   public:
    std::vector<float> value;
+   int next;
    float minimum;
    float maximum;
    int datasize;
@@ -250,18 +251,24 @@ class FloatValues
    static long membytes;  //Track memory usage
    static long mempeak;
 
-   FloatValues() : minimum(0), maximum(0), datasize(1), dimCoeff(1.0), offset(0), generated(false) {}
+   FloatValues() : next(0), minimum(0), maximum(0), datasize(1), dimCoeff(1.0), offset(0), generated(false) {}
    ~FloatValues() { if (value.size()) clear(); }
 
    virtual void read(unsigned int n, const void* data)
    {
-      int start = value.size();
-      int size = start + n;
-      value.resize(size);
-      memcpy(&value[start], data, n * sizeof(float));
-      FloatValues::membytes += 4*n;
-      if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
-      //if (n) printf("============== MEMORY total %.3f mb, added %d ==============\n", FloatValues::membytes/1000000.0f, n);
+      int size = next + n;
+      if (value.size() < size)
+      {
+         int grow = n;
+         //Always at least double size for efficiency
+         if (grow < n) grow = n;
+         value.resize(value.size() + grow);
+         FloatValues::membytes += 4*grow;
+         if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
+         //printf("============== MEMORY total %.3f mb, added %d ==============\n", FloatValues::membytes/1000000.0f, grow);
+      }
+      memcpy(&value[next], data, n * sizeof(float));
+      next += n;
    }
 
    void setup(float min, float max, float dimFactor, const char* units)
@@ -297,13 +304,14 @@ class FloatValues
       if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
       //printf("============== MEMORY resized: %.3f mb, change %d ==============\n", FloatValues::membytes/1000000.0f, size - bytes);
    }
-   int size() { return value.size(); }
+   int size() { return next; }
    void clear()
    {
       int count = value.size();
       if (count == 0) return;
       value.clear(); offset = 0;
       FloatValues::membytes -= 4*count;
+      next = 0;
       //if (bytes) printf("============== MEMORY total %.3f mb, removed %d ==============\n", FloatValues::membytes/1000000.0f, bytes);
    }
 
