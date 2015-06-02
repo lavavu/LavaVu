@@ -56,6 +56,7 @@ void Volumes::draw()
 {
    //Draw
    Geometry::draw();
+   if (drawcount == 0) return;
 
    //Use shaders if available
    if (prog) prog->use();

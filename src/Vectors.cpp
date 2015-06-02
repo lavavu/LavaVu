@@ -47,6 +47,7 @@ Vectors::~Vectors()
 
 void Vectors::update()
 {
+   if (drawcount == 0) return;
    Geometry::update();
 
    int tot = 0;
@@ -104,7 +105,7 @@ void Vectors::update()
          }
 
          //Combine model vector scale with user vector scale factor
-         drawVector3d(pos, vec, scaling, radius, arrowHead, 4.0*quality, NULL, NULL );
+         drawVector3d_(pos, vec, scaling, radius, arrowHead, 4.0*quality, NULL, NULL );
       }
       glEndList();
    }

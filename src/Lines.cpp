@@ -46,6 +46,7 @@ Lines::~Lines()
 
 void Lines::update()
 {
+   if (drawcount == 0) return;
    Geometry::update();
 
    for (unsigned int i=0; i<geom.size(); i++) 
@@ -93,7 +94,7 @@ void Lines::update()
             Colour colour;
             geom[i]->getColour(colour, j);
             float* pos = geom[i]->vertices[j];
-            drawTrajectory(oldpos, pos, 0.15, -1, 8, view->scale, &colour, &colour, view->model_size);
+            drawTrajectory_(oldpos, pos, 0.15, -1, 8, view->scale, &colour, &colour, view->model_size);
             oldpos = pos;
          }
 

@@ -57,7 +57,7 @@ Colour fontColour;
 long FloatValues::membytes = 0;
 long FloatValues::mempeak = 0;
 
-int __segments = 0;    // Saves segment count for circle based objects
+int segments__ = 0;    // Saves segment count for circle based objects
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 
 unsigned int fontbase = 0, fontcharset = FONT_DEFAULT, fonttexture;
@@ -885,7 +885,7 @@ void drawNormalVector( float pos[3], float vector[3], float scale)
    glPopAttrib();
 }
 
-// Calculates a set of points on a unit circle for a given number of __segments
+// Calculates a set of points on a unit circle for a given number of segments__
 // Used to optimised rendering circular objects when segment count isn't changed
 void calcCircleCoords(int segment_count)
 {
@@ -893,12 +893,12 @@ void calcCircleCoords(int segment_count)
    GLfloat angle;
    float angle_inc = 2*M_PI / (float)segment_count;
    int idx;
-   if (__segments == segment_count) return;
+   if (segments__ == segment_count) return;
 
-   // Calculate unit circle points when divided into specified __segments
+   // Calculate unit circle points when divided into specified segments__
    // and store in static variable to re-use every time a vector with the
    // same segment count is drawn
-   __segments = segment_count;
+   segments__ = segment_count;
    if (x_coords_ != NULL) delete[] x_coords_;
    if (y_coords_ != NULL) delete[] y_coords_;
 
@@ -907,7 +907,7 @@ void calcCircleCoords(int segment_count)
 
    // Loop around in a circle and specify even points along the circle
    // as the vertices for the triangle fan cone, cone base and arrow shaft
-   for (idx = 0; idx <= __segments; idx++)
+   for (idx = 0; idx <= segments__; idx++)
    {
       angle = angle_inc * (float)idx;
       // Calculate x and y position of the next vertex and cylinder normals (unit circle coords)
@@ -916,17 +916,17 @@ void calcCircleCoords(int segment_count)
    }
 }
 
-void drawSphere(float centre[3], float radius, int segment_count, Colour* colour)
+void drawSphere_(float centre[3], float radius, int segment_count, Colour* colour)
 {
    //Case of ellipsoid where all 3 radii are equal
-   drawEllipsoid(centre, radius, radius, radius, segment_count, colour);
+   drawEllipsoid_(centre, radius, radius, radius, segment_count, colour);
 }
 
 // Create a 3d ellipsoid given centre point, 3 radii and number of triangle segments to use
 // Based on algorithm and equations from:
 // http://local.wasp.uwa.edu.au/~pbourke/texture_colour/texturemap/index.html
 // http://paulbourke.net/geometry/sphere/
-void drawEllipsoid(float centre[3], float radiusX, float radiusY, float radiusZ, int segment_count, Colour* colour)
+void drawEllipsoid_(float centre[3], float radiusX, float radiusY, float radiusZ, int segment_count, Colour* colour)
 {
    int i,j;
    float edge[3],pos[3];
@@ -993,7 +993,7 @@ void drawEllipsoid(float centre[3], float radiusX, float radiusY, float radiusZ,
 // colour0: colour at coord0, if NULL then current OpenGL colour is not changed
 // colour1: colour at coord1, if NULL then current OpenGL colour is not changed
 // maxLength: length limit, sections exceeding this will be skipped
-void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength)
+void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength)
 {
    float length = 0;
    float vector[3];
@@ -1033,7 +1033,7 @@ void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowH
    //Exceeds max length? Draw endpoint only
    if (length > maxLength)
    {
-      drawSphere(coord1, radius, segment_count, colour1);
+      drawSphere_(coord1, radius, segment_count, colour1);
       return;
    }
 
@@ -1056,7 +1056,7 @@ void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowH
          pos[2] = coord0[2] + vector[2] * 0.5;
       }
       // Draw the vector arrow
-      drawVector3d(pos, vector, 1.0, radius, arrowHeadSize, segment_count, colour0, colour1);
+      drawVector3d_(pos, vector, 1.0, radius, arrowHeadSize, segment_count, colour0, colour1);
 
    }
    else
@@ -1066,13 +1066,13 @@ void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowH
       if (length > radius * 0.30)
       {
          // Join last set of points with this set
-         drawVector3d(pos, vector, 1.0, radius, 0.0, segment_count, colour0, colour1);
+         drawVector3d_(pos, vector, 1.0, radius, 0.0, segment_count, colour0, colour1);
          if (segment_count < 3 || radius < 1.0e-3 ) return; //Too small for spheres
-         drawSphere(pos, radius, segment_count, colour1);
+         drawSphere_(pos, radius, segment_count, colour1);
       }
       // Finish with sphere, closes gaps in angled joins
       if (length > radius * 0.10)
-         drawSphere(coord1, radius, segment_count, colour1);
+         drawSphere_(coord1, radius, segment_count, colour1);
    }
 }
 
@@ -1086,7 +1086,7 @@ void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowH
 // colour0: colour at tail, if NULL then current OpenGL colour is not changed
 // colour1: colour at head, if NULL then current OpenGL colour is not changed
 #define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
-void drawVector3d(float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1)
+void drawVector3d_(float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1)
 {
    Vec3d vec(vector);
 
@@ -1162,7 +1162,7 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       int v;
       float shaft_vertex[3];
       glBegin(GL_QUAD_STRIP);
-      for (v=0; v <= __segments; v++)
+      for (v=0; v <= segments__; v++)
       {
          glNormal3f(x_coords_[v], y_coords_[v], 0);
 
@@ -1202,7 +1202,7 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       glVertex3fv(pinnacle);
 
       // Subsequent vertices describe outer edges of cone base 
-      for (v=__segments; v >= 0; v--)
+      for (v=segments__; v >= 0; v--)
       {
          // Calc next vertex from unit circle coords
          vertex1[0] = head_radius * x_coords_[v];
@@ -1225,7 +1225,7 @@ void drawVector3d(float pos[3], float vector[3], float scale, float radius, floa
       glVertex3f(0.0f, 0.0f, 0.0f);
 
       // Repeat vertices for outer edges of cone base 
-      for (v=0; v<=__segments; v++)
+      for (v=0; v<=segments__; v++)
       {
          // Calc next vertex from unit circle coords
          vertex1[0] = head_radius * x_coords_[v];

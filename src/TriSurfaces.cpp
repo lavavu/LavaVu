@@ -36,18 +36,16 @@
 #include "Geometry.h"
 
 Shader* TriSurfaces::prog = NULL;
-//TIndex *TriSurfaces::tidx = NULL;
-//GLuint TriSurfaces::indexvbo = 0;
-//GLuint TriSurfaces::vbo = 0;
 
 TriSurfaces::TriSurfaces() : Geometry()
 {
    type = lucTriangleType;
    wireframe = false;
    cullface = false;
-   tidx = NULL;
    tricount = 0;
-   close();
+   vbo = 0;
+   indexvbo = 0;
+   tidx = NULL;
 }
 
 TriSurfaces::~TriSurfaces()
@@ -57,12 +55,15 @@ TriSurfaces::~TriSurfaces()
 
 void TriSurfaces::close()
 {
-   if (vbo) glDeleteBuffers(1, &vbo);
-   if (indexvbo) glDeleteBuffers(1, &indexvbo);
+   if (vbo)
+      glDeleteBuffers(1, &vbo);
+   if (indexvbo)
+      glDeleteBuffers(1, &indexvbo);
+   if (tidx)
+      delete[] tidx;
+
    vbo = 0;
    indexvbo = 0;
-
-   if (tidx) delete[] tidx;
    tidx = NULL;
 
    Geometry::close();
@@ -106,6 +107,8 @@ void TriSurfaces::update()
    //To force, use Geometry->reset() which sets elements to -1 
    if (elements < 0 || !tidx || tricount != total)
    {
+      //Clear buffers
+      close();
       //Load & optimise the mesh data
       loadMesh();
       //Send the data to the GPU via VBO
@@ -299,9 +302,6 @@ void TriSurfaces::loadBuffers()
    debug_print("Reloading %d triangles...\n", tricount);
 
    // VBO - copy normals/colours/positions to buffer object 
-   if (vbo) glDeleteBuffers(1, &vbo);
-   vbo = 0;
-
    unsigned char *p, *ptr;
    ptr = p = NULL;
    int datasize = sizeof(float) * 8 + sizeof(Colour);   //Vertex(3), normal(3), texCoord(2) and 32-bit colour
@@ -375,9 +375,6 @@ void TriSurfaces::loadBuffers()
    debug_print("  Total %.4lf seconds to update triangle buffers\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 
    //Prepare the Index buffer object - filled in render() after depth sort
-   if (indexvbo)
-      glDeleteBuffers(1, &indexvbo);
-   indexvbo = 0;
    glGenBuffers(1, &indexvbo);
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
    GL_Error_Check;
@@ -617,6 +614,7 @@ void TriSurfaces::depthSort()
    float multiplier = (SORT_DIST_MAX-1.0) / (maxdist - mindist);
    if (tricount == 0) return;
    int opaqueCount = 0;
+   float fdistance;
    for (unsigned int i = 0; i < tricount; i++)
    {
       //Distance from viewing plane is -eyeZ
@@ -624,13 +622,14 @@ void TriSurfaces::depthSort()
       if (tidx[i].distance < SORT_DIST_MAX) 
       //if (tidx[i].distance > 0) 
       {
-         float distance = eyeDistance(view->modelView, tidx[i].centroid);
-         tidx[i].distance = (int)(multiplier * (distance - mindist));
+         //if (i%6==0)printf("! %d centroid %f,%f,%f\n", i, tidx[i].centroid[0], tidx[i].centroid[1], tidx[i].centroid[2]);
+         fdistance = eyeDistance(view->modelView, tidx[i].centroid);
+         tidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
          assert(tidx[i].distance >= 0 && tidx[i].distance <= SORT_DIST_MAX);
          //Shift by id hack
          if (shift) tidx[i].distance += tidx[i].geomid * shift;
          //Reverse as radix sort is ascending and we want to draw by distance descending
-         //tidx[i].distance = SORT_DIST_MAX - (int)(multiplier * (tidx[i].fdistance - mindist));
+         //tidx[i].distance = SORT_DIST_MAX - (unsigned short)(multiplier * (fdistance - mindist));
          //assert(tidx[i].distance >= 1 && tidx[i].distance <= SORT_DIST_MAX);
       }
       else
@@ -693,6 +692,7 @@ void TriSurfaces::draw()
 {
    //Draw, calls display list when available
    Geometry::draw();
+   if (drawcount == 0) return;
 
    //Re-render the triangles if view has rotated
    if (view->sort) render();

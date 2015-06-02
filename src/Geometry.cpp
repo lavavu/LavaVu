@@ -180,7 +180,7 @@ void GeomData::setColour(int idx)
    glColor4ubv(colour.rgba);
 }
 
-Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), total(0), scale(1.0f), redraw(true), wireframe(false), cullface(false), flat(false), lit(true)
+Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), type(lucMinType), total(0), scale(1.0f), redraw(true), wireframe(false), cullface(false), flat(false), lit(true)
 {
 }
 
@@ -439,11 +439,23 @@ void Geometry::draw()  //Display saved geometry (default uses display list)
    //Default to no shaders
    if (glUseProgram) glUseProgram(0);
 
-   if (geom.size())
+   //Anything to draw?
+   drawcount = 0;
+   for (unsigned int i=0; i < geom.size(); i++)
    {
-      if (redraw) update();
-         GL_Error_Check;
-      redraw = false;
+      if (drawable(i))
+      {
+         drawcount++;
+         break;
+      }
+   }
+
+   //Have something to update?
+   if (drawcount)
+   {
+      if (redraw)
+         update();
+
       //Draw using display lists if available
       for (unsigned int i=0; i<geom.size(); i++)
       {
@@ -455,10 +467,13 @@ void Geometry::draw()  //Display saved geometry (default uses display list)
             glCallList(displaylists[i]);
          GL_Error_Check;
       }
+
+      labels();
    }
+
+   redraw = false;
    GL_Error_Check;
 
-   labels();
 }
 
 void Geometry::labels()
@@ -567,18 +582,6 @@ void Geometry::setView(View* vp, float* min, float* max)
    }
 }
 
-void Geometry::move(Geometry* other)
-{
-   //Copy GeomData objects
-   clear(true); //Clear all existing entries
-   geom = other->geom;  //Copies all elements
-   //Copy required fields
-   total = other->total;
-   elements = -1; //Force recalc
-   //Clear references from other (or will be deleted when objects cleared!)
-   other->geom.clear();
-}
-
 //Read geometry data from storage
 GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
@@ -616,7 +619,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
    //Read the data
    if (n > 0) geomdata->data[dtype]->read(n, data);
 
-   if (dtype == lucVertexData)
+   if (dtype == lucVertexData || dtype == lucPositionData)
    {
       geomdata->count += n;
       total += n;
@@ -790,4 +793,408 @@ void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *des
 
 
 //////////////////////////////////
+// Draws a 3d vector
+// pos: centre position at which to draw vector
+// scale: scaling factor for entire vector
+// radius: radius of cylinder sections to draw,
+//         if zero a default value is automatically calculated based on length & scale
+// head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
+// segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
+#define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
+void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count)
+{
+   std::vector<int> indices;
+   Vec3d vec(vector);
+
+     //Setup orientation using alignment vector
+     Quaternion rot;
+     // Rotate to orient the shape
+     //...Want to align our z-axis to point along arrow vector:
+     // axis of rotation = (z x vec)
+     // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec| *
+     Vec3d rvector(vec);
+     rvector.normalise();
+     float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
+     //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
+     Vec3d rvec = Vec3d(-rvector.y, rvector.x, 0);
+     rot.fromAxisAngle(rvec, rangle);
+
+   // Negative scale? Flip vector
+   if (scale < 0)
+   {
+      scale = 0 - scale;
+      vec = Vec3d() - vec;
+   }
+
+   // Previous implementation was head_scale as a ratio of length [0,1], 
+   // now uses ratio to radius (> 1), so adjust if < 1
+   if (head_scale > 0 && head_scale < 1.0) 
+      head_scale = 0.5 * head_scale / RADIUS_DEFAULT_RATIO; // Convert from fraction of length to multiple of radius
+
+   // Get circle coords
+   calcCircleCoords(segment_count);
+
+   // Render a 3d arrow, cone with base for head, cylinder for shaft
+
+   // Length of the drawn vector = vector magnitude * scaling factor
+   float length = scale * vec.magnitude();
+
+   // Default shaft radius based on length of vector (2%)
+   if (radius1 == 0) radius1 = length * RADIUS_DEFAULT_RATIO;
+   if (radius0 == 0) radius0 = radius1;
+   // Head radius based on shaft radius
+   float head_radius = head_scale * radius1;
+
+   // Vector is centered on pos[x,y,z]
+   // Translate to the point of arrow -> position + vector/2
+   Vec3d translate = Vec3d(pos[0] + scale * 0.5f * vec[0],
+                           pos[1] + scale * 0.5f * vec[1],
+                           pos[2] + scale * 0.5f * vec[2]);
+
+   float headD = head_radius*2;
+   if (length > headD)
+   {
+      int v;
+      float shaft_vertex[3];
+      for (v=0; v <= segment_count; v++)
+      {
+         // Base of shaft 
+         Vec3d vertex0 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -length); // z = Shaft length to base of head 
+         Vec3d vertex = translate + rot * vertex0;
+
+         //Read triangle vertex, normal
+         read(geom, 1, lucVertexData, vertex.ref());
+         Vec3d normal = rot * Vec3d(x_coords_[v], y_coords_[v], 0);
+         //normal.normalise();
+         read(geom, 1, lucNormalData, normal.ref());
+
+         // Top of shaft 
+         Vec3d vertex1 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -headD);
+         vertex = translate + rot * vertex1;
+
+         //Read triangle vertex, normal
+         read(geom, 1, lucVertexData, vertex.ref());
+         read(geom, 1, lucNormalData, normal.ref());
+
+         //Triangle strip indices
+         if (v > 0)
+         {
+            //First tri
+            indices.push_back(vertex_index);
+            indices.push_back(vertex_index+1);
+            indices.push_back(vertex_index+2);
+            //Second tri
+            indices.push_back(vertex_index+1);
+            indices.push_back(vertex_index+3);
+            indices.push_back(vertex_index+2);
+            vertex_index += 2;
+         }
+      }
+   }
+   else
+   {
+      headD = length; //Limit max arrow head diameter
+      head_radius = length * 0.5;
+   }
+
+   vertex_index = geom->count; //Reset current index
+
+   // Render the arrowhead cone and base with two triangle fans 
+   // Don't bother drawing head for tiny vectors 
+   if (segment_count >= 3 && head_scale > 0 && head_radius >= 1.0e-10 )
+   {
+      int v;
+      // Pinnacle vertex is at point of arrow 
+      Vec3d pinnacle = Vec3d(0, 0, 0);
+
+      // First pair of vertices on circle define a triangle when combined with pinnacle 
+      // First normal is between first and last triangle normals 1/|\seg-1 
+
+      //Read triangle vertex, normal
+      Vec3d vertex = translate + pinnacle;;
+      read(geom, 1, lucVertexData, vertex.ref());
+      
+      Vec3d normal = rot * Vec3d(0.0f, 0.0f, 1.0f);
+      normal.normalise();
+      read(geom, 1, lucNormalData, normal.ref());
+
+      // Subsequent vertices describe outer edges of cone base 
+      int pt = vertex_index;
+      Vec3d vertex0 = rot * Vec3d(head_radius * x_coords_[1], head_radius * y_coords_[1], -headD);
+      for (v=segment_count; v >= 0; v--)
+      {
+         // Calc next vertex from unit circle coords
+         Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
+
+         //Calculate normal
+         Vec3d normal = vectorNormalToPlane(pinnacle.ref(), vertex0.ref(), vertex1.ref());
+         vertex0 = vertex1;
+         normal.normalise();
+
+         vertex1 = translate + vertex1;
+
+         //Read triangle vertex, normal
+         read(geom, 1, lucVertexData, vertex1.ref());
+         read(geom, 1, lucNormalData, normal.ref());
+
+         //Triangle fan indices
+         indices.push_back(pt);
+         indices.push_back(vertex_index);
+         indices.push_back(vertex_index+1);
+         vertex_index ++;
+      }
+
+      vertex_index = geom->count; //Reset current index
+
+      // Flatten cone for circle base -> set common point to share z-coord 
+      // Centre of base circle, normal facing back along arrow 
+      pinnacle = rot * Vec3d(0,0,-headD);
+      vertex = translate + pinnacle;
+      normal = rot * Vec3d(0.0f, 0.0f, -1.0f);
+      //Read triangle vertex, normal
+      read(geom, 1, lucVertexData, vertex.ref());
+      read(geom, 1, lucNormalData, normal.ref());
+
+      // Repeat vertices for outer edges of cone base 
+      pt = vertex_index;
+      for (v=0; v<=segment_count; v++)
+      {
+         // Calc next vertex from unit circle coords
+         Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
+
+         vertex1 = translate + vertex1;
+
+         //Read triangle vertex, normal
+         read(geom, 1, lucVertexData, vertex1.ref());
+         read(geom, 1, lucNormalData, normal.ref());
+
+         //Triangle fan indices
+         indices.push_back(pt);
+         indices.push_back(vertex_index);
+         indices.push_back(vertex_index+1);
+         vertex_index ++;
+      }
+   }
+
+   //Read the triangle indices
+   read(geom, indices.size(), lucIndexData, &indices[0]);
+}
+
+// Draws a trajectory vector between two coordinates,
+// uses spheres and cylinder sections.
+// coord0: start coord1: end
+// radius: radius of cylinder/sphere sections to draw
+// arrowHeadSize: if > 0 then finishes with arrowhead in vector direction at coord1
+// segment_count: number of primitives to draw circular geometry with, 16 is usally a good default
+// scale: scaling factor for each direction
+// maxLength: length limit, sections exceeding this will be skipped
+void Geometry::drawTrajectory(GeomData* geom, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count)
+{
+   float length = 0;
+   float vector[3];
+   float pos[3];
+
+   if (coord1 == NULL) return;
+
+   //Scale end coord
+   coord1[0] *= scale[0];
+   coord1[1] *= scale[1];
+   coord1[2] *= scale[2];
+
+   if (coord0 == NULL)
+   {
+      // Initial position, no vector yet
+      arrowHeadSize = 0;
+   }
+   else
+   {
+      //Scale start coord
+      coord0[0] *= scale[0];
+      coord0[1] *= scale[1];
+      coord0[2] *= scale[2];
+
+      // Obtain a vector between the two points
+      vectorSubtract(vector, coord1, coord0);
+
+      // Get centre position on vector between two coords
+      pos[0] = coord0[0] + vector[0] * 0.5;
+      pos[1] = coord0[1] + vector[1] * 0.5;
+      pos[2] = coord0[2] + vector[2] * 0.5;
+
+      // Get length
+      length = sqrt(dotProduct(vector,vector));
+   }
+
+   //Exceeds max length? Draw endpoint only
+   if (length > maxLength)
+   {
+      Vec3d centre(coord1);
+      drawSphere(geom, centre, radius0, segment_count);
+      return;
+   }
+
+   // Draw
+   if (arrowHeadSize > 0)
+   {
+      // Draw final section as arrow head
+      // Position so centred on end of tube adjusted for arrowhead radius (tube radius * head size)
+      // Too small a section to fit arrowhead? expand so length is at least 2*r ...
+      if (length < 2.0 * radius1 * arrowHeadSize)
+      {
+         // Adjust length
+         float length_adj = arrowHeadSize * radius1 * 2.0 / length;
+         vector[0] *= length_adj;
+         vector[1] *= length_adj;
+         vector[2] *= length_adj;
+         // Adjust to centre position
+         pos[0] = coord0[0] + vector[0] * 0.5;
+         pos[1] = coord0[1] + vector[1] * 0.5;
+         pos[2] = coord0[2] + vector[2] * 0.5;
+      }
+      // Draw the vector arrow
+      drawVector(geom, pos, vector, 1.0, radius0, radius1, arrowHeadSize, segment_count);
+
+   }
+   else
+   {
+      // Check segment length large enough to warrant joining points with cylinder section ...
+      // Skip any section smaller than 0.3 * radius, draw sphere only for continuity
+      if (length > radius1 * 0.30)
+      {
+         // Join last set of points with this set
+         drawVector(geom, pos, vector, 1.0, radius0, radius1, 0.0, segment_count);
+         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
+          Vec3d centre(pos);
+//         drawSphere(geom, centre, radius, segment_count);
+      }
+      // Finish with sphere, closes gaps in angled joins
+          Vec3d centre(coord1);
+//      if (length > radius * 0.10)
+//         drawSphere(geom, centre, radius, segment_count);
+   }
+
+}
+
+void Geometry::drawCuboid(GeomData* geom, float pos[3], float width, float height, float depth, Quaternion& rot)
+{
+   float min[3] = {-0.5 * width, -0.5 * height, -0.5 * depth};
+   float max[3] = {min[0] + width, min[1] + height, min[2] + depth};
+
+   //Corner vertices
+   Vec3d verts[8] = 
+   {
+      Vec3d(min[0], min[1], max[2]),
+      Vec3d(max[0], min[1], max[2]),
+      Vec3d(max[0], max[1], max[2]),
+      Vec3d(min[0], max[1], max[2]),
+      Vec3d(min[0], min[1], min[2]),
+      Vec3d(max[0], min[1], min[2]),
+      Vec3d(max[0], max[1], min[2]),
+      Vec3d(min[0], max[1], min[2])
+   };
+
+   for (int i=0; i<8; i++)
+   {
+      /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
+      verts[i] = rot * verts[i];
+      verts[i] += Vec3d(pos);
+      geom->checkPointMinMax(verts[i].ref());
+   }
+
+   //Triangle indices
+   int indices[36] = {
+				0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index, 
+				3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index, 
+				7+vertex_index, 6+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 7+vertex_index, 
+				4+vertex_index, 0+vertex_index, 3+vertex_index, 3+vertex_index, 7+vertex_index, 4+vertex_index, 
+				0+vertex_index, 1+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 0+vertex_index,
+				1+vertex_index, 5+vertex_index, 6+vertex_index, 6+vertex_index, 2+vertex_index, 1+vertex_index 
+			};
+
+   read(geom, 8, lucVertexData, verts[0].ref());
+   read(geom, 36, lucIndexData, indices);
+}
+
+void Geometry::drawSphere(GeomData* geom, Vec3d& centre, float radius, int segment_count)
+{
+   //Case of ellipsoid where all 3 radii are equal
+   Vec3d radii = Vec3d(radius, radius, radius);
+   Quaternion qrot;
+   drawEllipsoid(geom, centre, radii, qrot, segment_count);
+}
+
+// Create a 3d ellipsoid given centre point, 3 radii and number of triangle segments to use
+// Based on algorithm and equations from:
+// http://local.wasp.uwa.edu.au/~pbourke/texture_colour/texturemap/index.html
+// http://paulbourke.net/geometry/sphere/
+void Geometry::drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count)
+{
+   int i,j;
+   Vec3d edge, pos;
+   float tex[2];
+
+   if (radii.x < 0) radii.x = -radii.x;
+   if (radii.y < 0) radii.y = -radii.y;
+   if (radii.z < 0) radii.z = -radii.z;
+   if (segment_count < 0) segment_count = -segment_count;
+   calcCircleCoords(segment_count);
+
+   std::vector<int> indices;
+   for (j=0; j<=segment_count/2; j++)
+   {
+      //Triangle strip vertices
+      for (i=0; i<=segment_count; i++)
+      {
+         // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
+         int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
+         edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
+         pos = rot * (centre + radii * edge);
+
+         // Flip for normal
+         edge = -edge;
+
+         tex[0] = i/(float)segment_count;
+         tex[1] = 2*(j+1)/(float)segment_count;
+      
+         //Read triangle vertex, normal, texcoord
+         read(geom, 1, lucVertexData, pos.ref());
+         read(geom, 1, lucNormalData, edge.ref());
+         read(geom, 1, lucTexCoordData, tex);
+
+         // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
+         circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
+         edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
+         pos = rot * (centre + radii * edge);
+
+         // Flip for normal
+         edge = -edge;
+
+         tex[0] = i/(float)segment_count;
+         tex[1] = 2*j/(float)segment_count;
+
+         //Read triangle vertex, normal, texcoord
+         read(geom, 1, lucVertexData, pos.ref());
+         read(geom, 1, lucNormalData, edge.ref());
+         read(geom, 1, lucTexCoordData, tex);
+
+         //Triangle strip indices
+         if (i > 0)
+         {
+            //First tri
+            indices.push_back(vertex_index);
+            indices.push_back(vertex_index+1);
+            indices.push_back(vertex_index+2);
+            //Second tri
+            indices.push_back(vertex_index+1);
+            indices.push_back(vertex_index+3);
+            indices.push_back(vertex_index+2);
+            vertex_index += 2;
+         }
+      }
+   }
+
+   //Read the triangle indices
+   read(geom, indices.size(), lucIndexData, &indices[0]);
+}
+
 

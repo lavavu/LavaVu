@@ -63,6 +63,7 @@ void QuadSurfaces::draw()
 
 void QuadSurfaces::update()
 {
+   if (drawcount == 0) return;
    clock_t t1,t2,tt;
    t1 = tt = clock();
    // Update and depth sort surfaces..

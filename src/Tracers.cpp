@@ -51,6 +51,7 @@ Tracers::~Tracers()
 
 void Tracers::update()
 {
+   if (drawcount == 0) return;
    Geometry::update();
 
    //All tracers stored as single vertex/value block
@@ -175,7 +176,7 @@ void Tracers::update()
                //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
                float arrowHead = -1;
                if (step == end) arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-               drawTrajectory(oldpos, pos, scale * size, arrowHead, 8, view->scale, &oldColour, &colour, limit);
+               drawTrajectory_(oldpos, pos, scale * size, arrowHead, 8, view->scale, &oldColour, &colour, limit);
             }
 
             oldColour = colour;

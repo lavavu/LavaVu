@@ -854,20 +854,20 @@ void View::drawAxis()
    glColor3f(1,0,0);
    {
       float vector[3] = {1.0, 0.0, 0.0};
-      drawVector3d( Xpos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
+      drawVector3d_( Xpos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
    }
       
    glColor3f(0,1,0);
    {
       float vector[3] = {0.0, 1.0, 0.0};
-      drawVector3d( Ypos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
+      drawVector3d_( Ypos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
    }
 
    glColor3f(0,0,1);
    if (is3d)
    {
       float vector[3] = {0.0, 0.0, 1.0};
-      drawVector3d( Zpos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
+      drawVector3d_( Zpos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
    }
 
    //Labels

@@ -997,10 +997,10 @@ void Colour_ToArray(Colour colour, float* array);
 void Colour_SetUniform(GLint uniform, Colour colour);
 
 void calcCircleCoords(int segment_count);
-void drawSphere(float centre[3], float radius, int segment_count, Colour* colour);
-void drawEllipsoid(float centre[3], float radiusX, float radiusY, float radiusZ, int segment_count, Colour* colour);
-void drawVector3d( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);
-void drawTrajectory(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
+void drawSphere_(float centre[3], float radius, int segment_count, Colour* colour);
+void drawEllipsoid_(float centre[3], float radiusX, float radiusY, float radiusZ, int segment_count, Colour* colour);
+void drawVector3d_( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);
+void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
 void RawImageFlip(void* image, int width, int height, int bpp);
 int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);

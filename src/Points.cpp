@@ -39,7 +39,6 @@
 unsigned int Points::subSample = 1;
 Shader* Points::prog = NULL;
 int Points::pointType = 0;
-//PIndex *Points::pidx = NULL;
 GLuint Points::indexvbo = 0;
 GLuint Points::vbo = 0;
 
@@ -59,10 +58,17 @@ Points::~Points()
 
 void Points::close()
 {
-   if (vbo) glDeleteBuffers(1, &vbo);
-   if (pidx) delete[] pidx;
-   pidx = NULL;
+   if (vbo)
+      glDeleteBuffers(1, &vbo);
+   if (indexvbo)
+      glDeleteBuffers(1, &indexvbo);
+   if (pidx)
+      delete[] pidx;
+
    vbo = 0;
+   indexvbo = 0;
+   pidx = NULL;
+
    Geometry::close();
 }
 
@@ -105,14 +111,11 @@ void Points::loadVertices()
    debug_print("Reloading %d particles...\n", total);
    // Update points...
    clock_t t1,t2;
-   if (vbo)
-      glDeleteBuffers(1, &vbo);
-   if (indexvbo)
-      glDeleteBuffers(1, &indexvbo);
-   vbo = 0;
-   indexvbo = 0;
+
+   //Reset data structures
+   close();
+
    //Create sorting array
-   if (pidx) delete[] pidx;
    pidx = new PIndex[total];
    if (pidx == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
    if (geom.size() == 0) return;
@@ -248,11 +251,12 @@ void Points::depthSort()
 
    //Update eye distances, clamping int distance to integer between 0 and SORT_DIST_MAX
    float multiplier = (float)SORT_DIST_MAX / (maxdist - mindist);
+   float fdistance;
    for (unsigned int i = 0; i < total; i++)
    {
       //Distance from viewing plane is -eyeZ
-      float distance = eyeDistance(view->modelView, geom[pidx[i].geomid]->vertices[pidx[i].id]);
-      pidx[i].distance = (int)(multiplier * (distance - mindist));
+      fdistance = eyeDistance(view->modelView, geom[pidx[i].geomid]->vertices[pidx[i].id]);
+      pidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
    }
    t2 = clock(); debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
@@ -330,11 +334,12 @@ void Points::render()
 
 void Points::draw()
 {
-   if (geom.size() == 0) return;
-   setState(0, prog); //Set global draw state (using first object)
+   //Draw, update
+   Geometry::draw();
+   if (drawcount == 0) return;
+   GL_Error_Check;
 
-   //Do redraw update here.. usually called in Geometry::draw but required before render()
-   if (redraw) {update(); redraw = false;}
+   setState(0, prog); //Set global draw state (using first object)
 
    //Re-render the particles if view has rotated
    if (view->sort) render();
@@ -347,9 +352,6 @@ void Points::draw()
    glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
    GL_Error_Check;
 
-   //Draw, calls display list when available
-   Geometry::draw();
-   GL_Error_Check;
 
    glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
    if (!view->is3d) glDisable(GL_DEPTH_TEST);

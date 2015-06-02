@@ -54,7 +54,7 @@
 // Point indices + distance for sorting
 typedef struct 
 {
-   int distance;
+   unsigned short distance;
    GLuint index; //global index
    int id; //id in geom element
    unsigned short geomid; //WARNING: Limits max elements to 65535
@@ -62,7 +62,7 @@ typedef struct
 
 typedef struct 
 {
-   int distance;
+   unsigned short distance;
    GLuint index[3]; //global indices
    float centroid[3];
    unsigned short geomid; //WARNING: Limits max elements to 65535
@@ -217,6 +217,7 @@ class Geometry
    std::vector<bool> hiddencache;
    std::vector<GLuint> displaylists;
    int elements;
+   int drawcount;
 
   public:
    bool allhidden;
@@ -226,6 +227,7 @@ class Geometry
    bool redraw;    //Redraw from scratch flag
    bool wireframe, cullface;
    bool flat, lit;
+   int vertex_index;
 
    Geometry();
    virtual ~Geometry();
@@ -267,6 +269,37 @@ class Geometry
    void move(Geometry* other);
    void toImage(unsigned int idx);
    void setTexture(DrawingObject* draw, TextureData* texture);
+
+   void drawVector(GeomData* geom, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
+   void drawTrajectory(GeomData* geom, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count=24);
+   void drawCuboid(GeomData* geom, float pos[3], float width, float height, float depth, Quaternion& rot);
+   void drawSphere(GeomData* geom, Vec3d& centre, float radius, int segment_count=24);
+   void drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
+};
+
+class TriSurfaces : public Geometry
+{
+   TIndex *tidx;
+   int tricount;
+  public:
+   static Shader* prog;
+   GLuint indexvbo, vbo;
+
+   TriSurfaces();
+   ~TriSurfaces();
+   virtual void close();
+   virtual void update();
+   void loadMesh();
+   void loadBuffers();
+   void setTriangle(int index, float* v1, float* v2, float* v3, int idx1=0, int idx2=0, int idx3=0);
+   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
+   void calcGridNormalsAndIndices(int i, std::vector<Vec3d> &normals, std::vector<GLuint> &indices);
+   void depthSort();
+   void render();
+   virtual void draw();
+   virtual void jsonWrite(unsigned int id, std::ostream* osp);
+
+   void dumpJSON();
 };
 
 class Vectors : public Geometry
@@ -308,33 +341,6 @@ class QuadSurfaces : public Geometry
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
 };
 
-class TriSurfaces : public Geometry
-{
-   TIndex *tidx;
-   //static TIndex *tidx;
-   int tricount;
-  public:
-   static Shader* prog;
-   //static GLuint indexvbo, vbo;
-   GLuint indexvbo, vbo;
-
-   TriSurfaces();
-   ~TriSurfaces();
-   virtual void close();
-   virtual void update();
-   void loadMesh();
-   void loadBuffers();
-   void setTriangle(int index, float* v1, float* v2, float* v3, int idx1=0, int idx2=0, int idx3=0);
-   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
-   void calcGridNormalsAndIndices(int i, std::vector<Vec3d> &normals, std::vector<GLuint> &indices);
-   void depthSort();
-   void render();
-   virtual void draw();
-   virtual void jsonWrite(unsigned int id, std::ostream* osp);
-
-   void dumpJSON();
-};
-
 class Lines : public Geometry
 {
   public:
@@ -345,18 +351,14 @@ class Lines : public Geometry
 
 class Shapes : public TriSurfaces
 {
-   int idx;
   public:
    Shapes();
    ~Shapes();
-   void drawCuboid(GeomData* geom, float pos[3], float width, float height, float depth, Quaternion& rot);
-   void drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, int segment_count, Quaternion& rot);
    virtual void update();
 };
 
 class Points : public Geometry
 {
-//   static PIndex *pidx;
    PIndex *pidx;
   public:
    static Shader* prog;
