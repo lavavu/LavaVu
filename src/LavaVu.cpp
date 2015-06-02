@@ -273,6 +273,9 @@ void LavaVu::run(bool persist)
       loadFile(files[m]);
    }
 
+   //Require a model from here on, set a default
+   if (!amodel) defaultModel();
+
    if (writeimage || writemovie || dump > lucExportNone)
    {
       //Load vis data for each window and write image
@@ -2019,22 +2022,7 @@ void LavaVu::loadFile(FilePath& fn)
    }
 
    //Other files require an existing model
-   if (!amodel)
-   {
-      //Adds a default model, window & viewport
-      FilePath fm = FilePath(":memory:");
-      amodel = new Model(fm);
-      models.push_back(amodel);
-
-      //Set a default window, viewport & camera
-      awin = new Win("");
-      aview = awin->addView(new View());
-      windows.push_back(awin);
-      amodel->windows.push_back(awin);
-      
-      //Setup default colourmaps
-      //amodel->initColourMaps();
-   }
+   if (!amodel) defaultModel();
 
    //Load other data by type
    if (fn.type == "dem")
@@ -2049,6 +2037,23 @@ void LavaVu::loadFile(FilePath& fn)
       readXrwVolume(fn);
    else if (fn.type == "jpg" || fn.type == "jpeg" || fn.type == "png")
       readVolumeSlice(fn);
+}
+
+void LavaVu::defaultModel()
+{
+   //Adds a default model, window & viewport
+   FilePath fm = FilePath(":memory:");
+   amodel = new Model(fm);
+   models.push_back(amodel);
+
+   //Set a default window, viewport & camera
+   awin = new Win("");
+   aview = awin->addView(new View());
+   windows.push_back(awin);
+   amodel->windows.push_back(awin);
+   
+   //Setup default colourmaps
+   //amodel->initColourMaps();
 }
 
 void LavaVu::loadModel(FilePath& fn)

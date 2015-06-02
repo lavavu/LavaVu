@@ -183,6 +183,7 @@ class LavaVu : public ViewerApp
 
    //data loading
    void loadFile(FilePath& fn);
+   void defaultModel();
    void loadModel(FilePath& fn);
    bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
    void cacheLoad();
