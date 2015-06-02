@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Vectors::Vectors() : Geometry()
+Vectors::Vectors() : TriSurfaces()
 {
    glyphs = -1;
    type = lucVectorType;
@@ -47,20 +47,24 @@ Vectors::~Vectors()
 
 void Vectors::update()
 {
-   if (drawcount == 0) return;
-   Geometry::update();
-
+   //Convert vectors to triangles
+   clock_t t1,t2,tt;
+   tt=clock();
    int tot = 0;
    for (unsigned int i=0; i<geom.size(); i++) 
    {
-      glNewList(displaylists[i], GL_COMPILE);
-      if (!drawable(i)) {glEndList(); continue;}   ////
+      //Clear existing vertex related data
+      tot += geom[i]->positions.size()/3;
+      geom[i]->count = 0;
+      geom[i]->data[lucVertexData]->clear();
+      geom[i]->data[lucIndexData]->clear();
+      geom[i]->data[lucTexCoordData]->clear();
+      geom[i]->data[lucNormalData]->clear();
+
+      vertex_index = 0; //Reset current index
 
       //Calibrate colour map
       geom[i]->colourCalibrate();
-
-      //Set draw state
-      setState(i);
 
       float arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
 
@@ -73,7 +77,6 @@ void Vectors::update()
                scaling, 1/geom[i]->vectors.maximum, scaling/geom[i]->vectors.maximum);
          scaling *= 1.0/geom[i]->vectors.maximum;
       }
-      tot += geom[i]->count;
 
       //Load scaling factors from properties
       int quality = glyphs;
@@ -86,30 +89,31 @@ void Vectors::update()
 
       if (scaling <= 0) scaling = 1.0;
 
-      for (int v=0; v < geom[i]->count; v++) 
+      //for (int v=0; v < geom[i]->count; v++) 
+      for (int v=0; v < geom[i]->positions.size()/3; v++) 
       {
          //Calculate colour
-         geom[i]->setColour(v);
+         //geom[i]->setColour(v);
 
          //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
-         float pos[3], vec[3];
-         memcpy(pos, geom[i]->vertices[v], 3 * sizeof(float));
-         memcpy(vec, geom[i]->vectors[v], 3 * sizeof(float));
+         Vec3d pos(geom[i]->positions[v]);
+         Vec3d vec(geom[i]->vectors[v]);
          if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
          {
-            for (int d=0; d<3; d++)
-            {
-               pos[d] *= view->scale[d];
-               vec[d] *= view->scale[d];
-            }
+            Vec3d scale(view->scale);
+            pos *= scale;
+            vec *= scale;
          }
 
          //Combine model vector scale with user vector scale factor
-         drawVector3d_(pos, vec, scaling, radius, arrowHead, 4.0*quality, NULL, NULL );
+         //drawVector3d(pos, vec, scaling, radius, arrowHead, 4.0*quality, NULL, NULL );
+         drawVector(geom[i], pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, (int)4.0*quality);
+         vertex_index = geom[i]->count; //Reset current index to match vertex count
       }
-      glEndList();
    }
-   debug_print("Plotted %d vector arrows\n", tot);
+   t1 = clock(); debug_print("Plotted %d vector arrows in %.4lf seconds\n", tot, (t1-tt)/(double)CLOCKS_PER_SEC);
+   elements = -1;
+   TriSurfaces::update();
 }
 
 void Vectors::draw()
@@ -119,7 +123,7 @@ void Vectors::draw()
    if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
       glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
 
-   Geometry::draw();
+   TriSurfaces::draw();
 
    // Re-Apply scaling factors
    glPopMatrix();

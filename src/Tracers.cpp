@@ -36,7 +36,7 @@
 #include "Geometry.h"
 #include "TimeStep.h"
 
-Tracers::Tracers() : Geometry()
+Tracers::Tracers() : TriSurfaces()
 {
    type = lucTracerType;
    flat = false;
@@ -51,21 +51,32 @@ Tracers::~Tracers()
 
 void Tracers::update()
 {
-   if (drawcount == 0) return;
-   Geometry::update();
-
+   //Convert tracers to triangles
+   clock_t t1,t2,tt;
+   tt=clock();
    //All tracers stored as single vertex/value block
    //Contains vertex/value for every tracer particle at each timestep
    //Number of particles is number of entries divided by number of timesteps
    for (unsigned int i=0; i<geom.size(); i++) 
    {
-      glNewList(displaylists[i], GL_COMPILE);
-      if (!drawable(i)) {glEndList(); continue;}   ////
-
       //Calculate particle count using data count / data steps
       unsigned int particles = geom[i]->width;
-      int datasteps = particles > 0 ? geom[i]->count / particles : geom[i]->count;
+      int count = geom[i]->positions.size() / 3;
+      int datasteps = particles > 0 ? count / particles : count;
       int timesteps = (datasteps-1) * TimeStep::gap + 1; //Multiply by gap between recorded steps
+
+      //Clear existing vertex related data
+      geom[i]->count = 0;
+      geom[i]->data[lucVertexData]->clear();
+         //TODO: test/fix
+          geom[i]->ids.read(geom[i]->indices.size(), &geom[i]->indices.value[0]);
+      geom[i]->data[lucIndexData]->clear();
+      geom[i]->data[lucTexCoordData]->clear();
+      geom[i]->data[lucNormalData]->clear();
+      //Clear colour values for now, TODO: support supplied colour values as well as auto-calc
+      geom[i]->data[lucColourValueData]->clear();
+
+      vertex_index = 0; //Reset current index
 
       //Swarm limit
       int drawSteps = geom[i]->draw->properties["steps"].ToInt(0);
@@ -74,18 +85,6 @@ void Tracers::update()
       //Global limit
       if (steps > 0 && steps < timesteps)
          timesteps = steps;
-
-      /*/Erase data no longer required
-      if (timesteps < timestep + 1)
-      {
-         int start = timestep + 1 - timesteps;
-         int data_type;
-         for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
-         {
-            int size = geom[i]->data[data_type]->datasize;
-            geom[i]->data[data_type]->erase(0, start*size);
-         }
-      }*/
 
       //Get start and end indices
       int max = timesteps;
@@ -100,16 +99,15 @@ void Tracers::update()
       geom[i]->colourCalibrate();
       //Calibrate colour maps on timestep if no value data
       bool timecolour = false;
-      if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->colourValue.size() == 0)
+                                              //Force until supplied colour values supported
+      if (geom[i]->draw->colourMaps[lucColourValueData])// && geom[i]->colourValue.size() == 0)
       {
          float mintime = TimeStep::timesteps[start]->time;
          float maxtime = TimeStep::timesteps[end]->time;
+         //printf("Mintime %f Maxtime %f\n", mintime, maxtime);
          geom[i]->draw->colourMaps[lucColourValueData]->calibrate(mintime, maxtime);
          timecolour = true;
       }
-
-      //Set draw state
-      setState(i);
 
       //Iterate individual tracers
       float limit = geom[i]->draw->properties["limit"].ToFloat(view->model_size * 0.3);
@@ -121,24 +119,26 @@ void Tracers::update()
          //Iterate timesteps
          Colour colour, oldColour;
          float* oldpos = NULL;
+         float time, oldtime = TimeStep::timesteps[start]->time;
+         float radius, oldRadius = 0;
          for (int step=start; step <= end; step++) 
          {
             // Scale up line towards head of trajectory
             if (scaling && step > start)
             {
                float factor = geom[i]->draw->properties["scaling"].ToFloat(1.0) * scale * TimeStep::gap * 0.0005;
-               //if (p==0) debug_print("Scaling tracers from %f by %f to %f\n", size, factor, size+factor);
+               if (p==0) debug_print("Scaling tracers from %f by %f to %f\n", size, factor, size+factor);
                size += factor;
             }
 
             //Lookup by provided particle index?
             int pidx = p;
-            if (geom[i]->indices.size() > 0)
+            if (geom[i]->ids.size() > 0)
             {
                floatidx fidx;
                for (unsigned int x=0; x<particles; x++)
                {
-                  fidx.val = geom[i]->indices[step * particles + x];
+                  fidx.val = geom[i]->ids[step * particles + x];
                   if (fidx.idx == p)
                   {
                      pidx = x;
@@ -147,18 +147,21 @@ void Tracers::update()
                }
             }
 
-            float* pos = geom[i]->vertices[step * particles + pidx];
+            //float* pos = geom[i]->vertices[step * particles + pidx];
+            float* pos = geom[i]->positions[step * particles + pidx];
+            //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);
 
             //Get colour, either from colour values or time step
             if (timecolour)
             {
-               float time = TimeStep::timesteps[step]->time;
+               time = TimeStep::timesteps[step]->time;
                colour = geom[i]->draw->colourMaps[lucColourValueData]->getfast(time);
             }
             else
                geom[i]->getColour(colour, TimeStep::gap * step * particles + pidx);
+            //printf("COLOUR %d,%d,%d TIME %f OLD %f\n", colour.r, colour.g, colour.b, time, oldtime);
 
-            // Draw section
+            /*/ Draw section
             if (flat || geom[i]->draw->properties["flat"].ToBool(false))
             {
                if (step > start)
@@ -171,21 +174,41 @@ void Tracers::update()
                   glEnd();
                }
             }
-            else
+            else*/
             {
                //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
                float arrowHead = -1;
                if (step == end) arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-               drawTrajectory_(oldpos, pos, scale * size, arrowHead, 8, view->scale, &oldColour, &colour, limit);
+               radius = scale * size;
+               int diff = geom[i]->count;
+               drawTrajectory(geom[i], oldpos, pos, radius, oldRadius, arrowHead, view->scale, limit, 8);
+               diff = geom[i]->count - diff;
+               vertex_index = geom[i]->count; //Reset current index to match vertex count
+               //Per triangle colours
+               //for (int c=0; c<diff/3; c++) read(geom[i], 1, lucColourValueData, &time);
+               //Per vertex colours
+               for (int c=0; c<diff; c++) read(geom[i], 1, lucColourValueData, &time);
             }
 
             oldColour = colour;
+            oldtime = time;
             oldpos = pos;
+            oldRadius = radius;
          }
       }
-      glEndList();
+      if (geom[i]->draw->colourMaps[lucColourValueData])// && geom[i]->colourValue.size() == 0)
+      {
+         //printf("MINtime %f MAXtime %f\n", geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
+         geom[i]->colourValue.minimum = TimeStep::timesteps[start]->time;
+         geom[i]->colourValue.maximum = TimeStep::timesteps[end]->time;
+         //printf("MINtime %f MAXtime %f\n", geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
+         //geom[i]->draw->colourMaps[lucColourValueData]->calibrate(mintime, maxtime);
+         //timecolour = true;
+      }
    }
    GL_Error_Check;
+   elements = -1;
+   TriSurfaces::update();
 }
 
 void Tracers::draw()
@@ -195,7 +218,7 @@ void Tracers::draw()
    if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
       glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
 
-   Geometry::draw();
+   TriSurfaces::draw();
 
    // Re-Apply scaling factors
    glPopMatrix();

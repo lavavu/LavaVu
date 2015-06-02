@@ -369,7 +369,7 @@ void Geometry::setState(int index, Shader* prog)
    if (type == lucTriangleType || type == lucGridType || TriangleBased(type))
    {
       //Don't light surfaces in 2d models
-      if (!view->is3d) lighting = false;
+      if (!view->is3d && (type == lucTriangleType || type == lucGridType)) lighting = false;
       //Disable lighting and polygon faces in wireframe mode
       if (wireframe || draw->properties["wireframe"].ToBool(false))
       {

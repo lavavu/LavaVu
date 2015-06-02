@@ -47,9 +47,8 @@
 
 #define SORT_DIST_MAX 65535
 
-//Types based on triangle renderer - TODO: apply to quadsurface/vector/tracer data
-//#define TriangleBased(type) (type == lucTracerType || type == lucShapeType || type == lucVectorType)
-#define TriangleBased(type) (type == lucShapeType)
+//Types based on triangle renderer - TODO: apply to quadsurface data
+#define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
 // Point indices + distance for sorting
 typedef struct 
@@ -101,6 +100,7 @@ class GeomData
    FloatValues greenValue;
    FloatValues blueValue;
    FloatValues indices;
+   FloatValues ids;
    FloatValues xWidths;
    FloatValues yHeights;
    FloatValues zLengths;
@@ -123,6 +123,7 @@ class GeomData
       data[lucGreenValueData] = &greenValue;
       data[lucBlueValueData] = &blueValue;
       data[lucIndexData] = &indices;
+      data[lucIdData] = &ids;
       data[lucXWidthData] = &xWidths;
       data[lucYHeightData] = &yHeights;
       data[lucZLengthData] = &zLengths;
@@ -302,7 +303,7 @@ class TriSurfaces : public Geometry
    void dumpJSON();
 };
 
-class Vectors : public Geometry
+class Vectors : public TriSurfaces
 {
   public:
    int glyphs;
@@ -312,7 +313,7 @@ class Vectors : public Geometry
    virtual void draw();
 };
 
-class Tracers : public Geometry
+class Tracers : public TriSurfaces
 {
   public:
    //Tracer specific data
