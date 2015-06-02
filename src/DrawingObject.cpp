@@ -34,10 +34,11 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 #include "DrawingObject.h"
+#include "Model.h"
 
 unsigned int DrawingObject::lastid = 0;
 
-DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float opacity, std::string props, unsigned int id) : id(id), name(name), skip(true), visible(true)
+DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float opacity, std::string props, unsigned int id) : id(id), name(name), skip(Model::noload), visible(true)
 {
    if (id == 0) this->id = DrawingObject::lastid+1;
    DrawingObject::lastid = this->id;

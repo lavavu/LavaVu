@@ -791,7 +791,6 @@ int Model::setTimeStep(int stepidx)
       //Attempt caching all geometry from database at start
       rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
    else
-      //noload flag skips loading geometry until "load" commands issued
       rows += loadGeometry();
 
    debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
