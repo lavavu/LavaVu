@@ -1556,15 +1556,22 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
       //   aview->init(false, awin->min, awin->max);
 
-      //Update the model bounding box - use window bounds if provided
-      if (awin->min[0] < awin->max[0])
+      //Update the model bounding box - use window bounds if provided and sane
+      if (awin->max[0]-awin->min[0] > EPSILON)
+      {
+         debug_print("Applied WINDOW bounds %f,%f,%f - %f,%f,%f\n", 
+                     awin->min[0], awin->min[1], awin->min[2], 
+                     awin->max[0], awin->max[1], awin->max[2]);
          aview->init(false, awin->min, awin->max);
+      }
       else
+      {
+         debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f\n", 
+                     omin[0], omin[1], omin[2], 
+                     omax[0], omax[1], omax[2]);
          aview->init(false, omin, omax);
+      }
 
-      debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f\n", 
-                  aview->min[0], aview->min[1], aview->min[2], 
-                  aview->max[0], aview->max[1], aview->max[2]);
 
       // Apply step autozoom if set (applied based on detected bounding box)
       if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->step() % aview->properties["zoomstep"].ToInt(-1) == 0)
