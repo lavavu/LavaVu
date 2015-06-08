@@ -1496,7 +1496,7 @@ void LavaVu::resetViews(bool autozoom)
 
    //Set viewer title
    std::stringstream title;
-   std::string vpt = aview->properties["title"].ToString();
+   std::string vpt = aview->properties["title"].ToString("");
    if (vpt.length() > 0)
    {
       title << aview->properties["title"].ToString();
