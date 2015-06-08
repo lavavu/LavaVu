@@ -171,7 +171,7 @@ geom[i]->depth *= SUBSAMPLE;
                height = geom[i]->height = geom[i]->colourValue.size() / geom[i]->width; // * 4;
             }
                unsigned int bytes = 4 * geom[i]->colourValue.size();
-               unsigned int bpv = round(bytes / (float)(geom[i]->width * height));
+               unsigned int bpv = bytes / (float)(geom[i]->width * height);
             debug_print("current %d width %d height %d depth %d (bpv %d)\n", current->id, geom[i]->width, height, slices[current->id], bpv);
             size_t sliceSize = geom[i]->width * height * bpv;
             //unsigned char* volume = new unsigned char[sliceSize * slices[current->id]];

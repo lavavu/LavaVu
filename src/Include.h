@@ -79,6 +79,7 @@
 #else
 
 /* WINDOWS */
+#define snprintf sprintf_s
 #define isnan(x) _isnan(x)
 #define isinf(x) (!_finite(x))
 #include <conio.h>
@@ -103,9 +104,6 @@
 
 //Define pointers to required gl 2.0 functions
 #if defined _WIN32 
-extern PFNGLACTIVETEXTUREPROC glActiveTexture;
-extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
-extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 #define EXTENSION_POINTERS
 #endif
 

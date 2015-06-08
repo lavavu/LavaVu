@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=LavaVu
-AppVersion=0.8
+AppVersion=0.9
 DefaultDirName={localappdata}\LavaVu
 DefaultGroupName=LavaVu
 Compression=lzma2
@@ -14,7 +14,7 @@ OutputDir=.
 SetupIconFile="LavaVu.ico"
 
 [Files]
-Source: "Release\LavaVu.exe"; DestDir: "{app}"
+Source: "LavaVu.exe"; DestDir: "{app}"
 Source: "SDL.dll"; DestDir: "{app}"
 Source: "sqlite3.dll"; DestDir: "{app}"
 Source: "libpng12.dll"; DestDir: "{app}"
@@ -22,6 +22,7 @@ Source: "zlib1.dll"; DestDir: "{app}"
 Source: "pthreadVCE2.dll"; DestDir: "{app}"
 Source: "..\shaders\*.frag"; DestDir: "{app}"
 Source: "..\shaders\*.vert"; DestDir: "{app}"
+Source: "..\html\*.*"; DestDir: "{app}\html"
 Source: "\Windows\System32\msvcrt.dll"; DestDir: "{app}"
 Source: "\Windows\System32\msvcp100.dll"; DestDir: "{app}"
 Source: "\Windows\System32\msvcr100.dll"; DestDir: "{app}"

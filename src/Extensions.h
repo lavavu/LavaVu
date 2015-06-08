@@ -7,6 +7,7 @@
 typedef void* (*getProcAddressFN)(const char* procName);
 
 #if defined _WIN32
+#include <SDL/SDL_opengl.h>
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 extern PFNGLTEXIMAGE3DPROC glTexImage3D;
