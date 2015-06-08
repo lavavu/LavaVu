@@ -8,6 +8,7 @@
 PFNGLACTIVETEXTUREPROC glActiveTexture;
 PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 PFNGLTEXIMAGE3DPROC glTexImage3D;
+PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
 #else
 getProcAddressFN GetProcAddress;
 #endif
@@ -70,6 +71,7 @@ void OpenGL_Extensions_Init()
    glActiveTexture = (PFNGLACTIVETEXTUREPROC) GetProcAddress("glActiveTexture");
    glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC) GetProcAddress("glDrawRangeElements");
    glTexImage3D = (PFNGLTEXIMAGE3DPROC) GetProcAddress("glTexImage3D");
+   glTexSubImage3D = (PFNGLTEXSUBIMAGE3DPROC) GetProcAddress("glTexSubImage3D");
 #endif
    glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC) GetProcAddress("glBlendFuncSeparate");
    glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GetProcAddress("glPointParameterfv");

@@ -55,7 +55,7 @@ functions = [
 "glIsProgram",
   ]
 
-win_functions = ["glActiveTexture", "glDrawRangeElements", "glTexImage3D"]
+win_functions = ["glActiveTexture", "glDrawRangeElements", "glTexImage3D", "glTexSubImage3D"]
 
 #Write the header
 header = open("src/Extensions.h", "w")
