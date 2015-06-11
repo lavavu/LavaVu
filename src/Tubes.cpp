@@ -51,7 +51,6 @@ void Tubes::update()
    tt=clock();
    total = 0;
    int tot = 0;
-   float minR = view->model_size * 0.0001; //Minimum radius for visibility
    for (unsigned int i=0; i<geom.size(); i++) 
    {
       geom[i]->draw->properties["lit"] = true; //Override lit
@@ -69,7 +68,6 @@ void Tubes::update()
       //Draw as 3d cylinder sections
       int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
       float radius = scale*0.01;
-      if (radius < minR) radius = minR;
       float* oldpos = NULL;
       for (int v=0; v < geom[i]->positions.size()/3; v++) 
       {

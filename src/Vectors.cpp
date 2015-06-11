@@ -50,7 +50,6 @@ void Vectors::update()
    clock_t t1,t2,tt;
    tt=clock();
    int tot = 0;
-   float minR = view->model_size * 0.0001; //Minimum radius for visibility
    for (unsigned int i=0; i<geom.size(); i++) 
    {
       //Clear existing vertex related data
@@ -82,16 +81,12 @@ void Vectors::update()
 
       //Default (0) = automatically calculated radius
       float radius = scale * geom[i]->draw->properties["radius"].ToFloat(0.0);
-      if (radius < minR) radius = minR;
 
       if (scaling <= 0) scaling = 1.0;
 
       //for (int v=0; v < geom[i]->count; v++) 
       for (int v=0; v < geom[i]->positions.size()/3; v++) 
       {
-         //Calculate colour
-         //geom[i]->setColour(v);
-
          //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
          Vec3d pos(geom[i]->positions[v]);
          Vec3d vec(geom[i]->vectors[v]);
@@ -103,7 +98,6 @@ void Vectors::update()
          }
 
          //Combine model vector scale with user vector scale factor
-         //drawVector3d(pos, vec, scaling, radius, arrowHead, quality, NULL, NULL );
          drawVector(geom[i], pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
          vertex_index = geom[i]->count; //Reset current index to match vertex count
       }

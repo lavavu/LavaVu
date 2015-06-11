@@ -782,6 +782,7 @@ void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *des
 #define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
 void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count)
 {
+   float minR = view->model_size * 0.0005; //Minimum radius for visibility
    std::vector<unsigned int> indices;
    Vec3d vec(vector);
 
@@ -821,6 +822,8 @@ void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float s
    // Default shaft radius based on length of vector (2%)
    if (radius0 == 0) radius0 = length * RADIUS_DEFAULT_RATIO;
    if (radius1 == 0) radius1 = radius0;
+   if (radius0 < minR) radius0 = minR;
+   if (radius1 < minR) radius1 = minR;
    // Head radius based on shaft radius
    float head_radius = head_scale * radius1;
 

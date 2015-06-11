@@ -117,7 +117,6 @@ void Tracers::update()
       float limit = geom[i]->draw->properties["limit"].ToFloat(view->model_size * 0.3);
       float factor = geom[i]->draw->properties["scaling"].ToFloat(1.0) * scale * TimeStep::gap * 0.0005;
       float arrowSize = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-      float minR = view->model_size * 0.0001; //Minimum radius for visibility
       //Iterate individual tracers
       for (unsigned int p=0; p < particles; p++) 
       {
@@ -179,7 +178,6 @@ void Tracers::update()
             float arrowHead = -1;
             if (step == end) arrowHead = arrowSize; //geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
             radius = scale * size;
-            if (radius < minR) radius = minR;
             int diff = geom[i]->count;
             drawTrajectory(geom[i], oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
             diff = geom[i]->count - diff;
