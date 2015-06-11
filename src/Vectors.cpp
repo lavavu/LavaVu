@@ -37,7 +37,6 @@
 
 Vectors::Vectors() : TriSurfaces()
 {
-   glyphs = -1;
    type = lucVectorType;
 }
 
@@ -51,6 +50,7 @@ void Vectors::update()
    clock_t t1,t2,tt;
    tt=clock();
    int tot = 0;
+   float minR = view->model_size * 0.0001; //Minimum radius for visibility
    for (unsigned int i=0; i<geom.size(); i++) 
    {
       //Clear existing vertex related data
@@ -62,9 +62,6 @@ void Vectors::update()
       geom[i]->data[lucNormalData]->clear();
 
       vertex_index = 0; //Reset current index
-
-      //Calibrate colour map
-      geom[i]->colourCalibrate();
 
       float arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
 
@@ -79,13 +76,13 @@ void Vectors::update()
       }
 
       //Load scaling factors from properties
-      int quality = glyphs;
-      if (quality < 0) quality = geom[i]->draw->properties["glyphs"].ToInt(2);
+      int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
       scaling *= geom[i]->draw->properties["length"].ToFloat(1.0);
       //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
 
       //Default (0) = automatically calculated radius
       float radius = scale * geom[i]->draw->properties["radius"].ToFloat(0.0);
+      if (radius < minR) radius = minR;
 
       if (scaling <= 0) scaling = 1.0;
 
@@ -106,8 +103,8 @@ void Vectors::update()
          }
 
          //Combine model vector scale with user vector scale factor
-         //drawVector3d(pos, vec, scaling, radius, arrowHead, 4.0*quality, NULL, NULL );
-         drawVector(geom[i], pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, (int)4.0*quality);
+         //drawVector3d(pos, vec, scaling, radius, arrowHead, quality, NULL, NULL );
+         drawVector(geom[i], pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
          vertex_index = geom[i]->count; //Reset current index to match vertex count
       }
    }

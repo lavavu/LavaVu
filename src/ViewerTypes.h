@@ -14,6 +14,7 @@ typedef enum
    lucLineType,
    lucShapeType,
    lucVolumeType,
+   lucTubeType,
    lucMaxType
 } lucGeometryType;
 

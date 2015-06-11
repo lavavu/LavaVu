@@ -618,7 +618,9 @@ void LavaVu::readHeightMap(FilePath& fn)
    int rows, cols, size = 2, subsample;
    int byteorder = 0;   //Little endian default
    float xmap, ymap, xdim, ydim;
-   int geomtype = lucTriangleType, header = 0;
+   int geomtype = lucTriangleType;
+   //int geomtype = lucGridType;
+   int header = 0;
    float downscale = 1;
    std::string texfile;
 
@@ -1982,9 +1984,6 @@ void LavaVu::drawScene()
    glShadeModel(GL_SMOOTH);
    glPushAttrib(GL_ENABLE_BIT);
 
-   //For some bizarre reason, drawing the border box first on Mac OpenGL breaks the lighting
-   //I hereby dedicate this comment as a monument to the 10 hours I lost tracking down this bug...
-   //(Drawing border last creates aliasing around transparent objects, moving back for now, is it only a GLUT problem?)
    aview->drawBorder();
 
    Model::lines->draw();
@@ -1994,6 +1993,7 @@ void LavaVu::drawScene()
    Model::vectors->draw();
    Model::tracers->draw();
    Model::shapes->draw();
+   Model::tubes->draw();
    Model::labels->draw();
    Model::volumes->draw();
 
@@ -2018,6 +2018,8 @@ void LavaVu::loadFile(FilePath& fn)
    if (fn.type == "gldb" || fn.type == "db")
    {
       loadModel(fn);
+      //Load a window when first database loaded
+      if (!amodel || !aview || !awin) loadWindow(0, 0, true);
       //Set loaded gldb as active model/window if there was already an active window
       //if (window) loadWindow(windows.size()-1);
       return;
@@ -2170,15 +2172,16 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
       }
    }
 
+   //Fixed width & height always override window settings
+   if (fixedwidth > 0) windows[window_idx]->width = fixedwidth;
+   if (fixedheight > 0) windows[window_idx]->height = fixedheight;
+
    //Not yet opened or resized?
    if (!viewer->isopen)
-   {
-      if (fixedwidth > 0 && fixedheight > 0)
-         viewer->open(fixedwidth, fixedheight);
-      else
-         viewer->open(windows[window_idx]->width, windows[window_idx]->height);
-   }
+      //Open window at required size
+      viewer->open(windows[window_idx]->width, windows[window_idx]->height);
    else
+      //Resize if necessary
       viewer->setsize(awin->width, awin->height);
 
    //Update the views

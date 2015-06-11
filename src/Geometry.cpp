@@ -37,6 +37,7 @@
 
 //Init static data
 float GeomData::opacity = 0;
+int GeomData::glyphs = -1; //Glyph quality (-1 = use default per type)
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -194,11 +195,6 @@ Geometry::~Geometry()
 void Geometry::close() //Called on quit or gl context destroy
 {
    elements = -1;
-   for (unsigned int i=0; i<displaylists.size(); i++)
-   {
-      if (displaylists[i]) glDeleteLists(displaylists[i], 1);
-      displaylists[i] = 0;
-   }
 }
 
 void Geometry::clear(bool all)
@@ -341,12 +337,6 @@ void Geometry::redrawObject(unsigned int id)
 
 void Geometry::init() //Called on GL init
 {
-   for (unsigned int i = 0; i<displaylists.size(); i++)
-   {
-      if (displaylists[i]) glDeleteLists(displaylists[i], 1);
-      displaylists[i] = 0;
-      //displaylists[i] = glGenLists(1);
-   }
    redraw = true;
 }
 
@@ -415,24 +405,20 @@ void Geometry::setState(int index, Shader* prog)
       prog->setUniform("uTextured", texunit >= 0);
       if (texunit >= 0)
          prog->setUniform("uTexture", texunit);
+
       if (geom[index]->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
          prog->setUniform("uCalcNormal", 1);
+      else
+         prog->setUniform("uCalcNormal", 0);
    }
    GL_Error_Check;
 }
 
 void Geometry::update()
 {
-   //Default implementation, ensures display lists are generated
-   for (unsigned int i = 0; i<geom.size(); i++)
-   {
-      if (i == displaylists.size()) displaylists.push_back(0);
-      if (displaylists[i]) glDeleteLists(displaylists[i], 1);
-      displaylists[i] = glGenLists(1);
-   }
 }
 
-void Geometry::draw()  //Display saved geometry (default uses display list)
+void Geometry::draw()  //Display saved geometry
 {
    GL_Error_Check;
 
@@ -450,25 +436,15 @@ void Geometry::draw()  //Display saved geometry (default uses display list)
       }
    }
 
+   GL_Error_Check;
    //Have something to update?
    if (drawcount)
    {
       if (redraw)
          update();
-
-      //Draw using display lists if available
-      for (unsigned int i=0; i<geom.size(); i++)
-      {
-         //Because of quad surface sorting, have to check drawable when creating lists
-         //When quads moved to triangle renderer can re-enable this and won't have to
-         //recreate display lists when hiding/showing/switching viewports
-         //if (drawable(i) && displaylists[i] && glIsList(displaylists[i]))
-         if (displaylists[i] && glIsList(displaylists[i]))
-            glCallList(displaylists[i]);
-         GL_Error_Check;
-      }
-
+   GL_Error_Check;
       labels();
+   GL_Error_Check;
    }
 
    redraw = false;
@@ -680,6 +656,9 @@ void Geometry::print()
       case lucShapeType:
          std::cout << "Shapes";
          break;
+      case lucTubeType:
+         std::cout << "Tubes";
+         break;
       default:
          std::cout << "UNKNOWN";
       }
@@ -803,7 +782,7 @@ void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *des
 #define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
 void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count)
 {
-   std::vector<int> indices;
+   std::vector<unsigned int> indices;
    Vec3d vec(vector);
 
      //Setup orientation using alignment vector
@@ -840,8 +819,8 @@ void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float s
    float length = scale * vec.magnitude();
 
    // Default shaft radius based on length of vector (2%)
-   if (radius1 == 0) radius1 = length * RADIUS_DEFAULT_RATIO;
-   if (radius0 == 0) radius0 = radius1;
+   if (radius0 == 0) radius0 = length * RADIUS_DEFAULT_RATIO;
+   if (radius1 == 0) radius1 = radius0;
    // Head radius based on shaft radius
    float head_radius = head_scale * radius1;
 
@@ -859,7 +838,7 @@ void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float s
       for (v=0; v <= segment_count; v++)
       {
          // Base of shaft 
-         Vec3d vertex0 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -length); // z = Shaft length to base of head 
+         Vec3d vertex0 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -length); // z = Shaft length to base of head 
          Vec3d vertex = translate + rot * vertex0;
 
          //Read triangle vertex, normal
@@ -869,7 +848,7 @@ void Geometry::drawVector(GeomData* geom, float pos[3], float vector[3], float s
          read(geom, 1, lucNormalData, normal.ref());
 
          // Top of shaft 
-         Vec3d vertex1 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -headD);
+         Vec3d vertex1 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -headD);
          vertex = translate + rot * vertex1;
 
          //Read triangle vertex, normal
@@ -1068,7 +1047,7 @@ void Geometry::drawTrajectory(GeomData* geom, float coord0[3], float coord1[3], 
 //         drawSphere(geom, centre, radius, segment_count);
       }
       // Finish with sphere, closes gaps in angled joins
-          Vec3d centre(coord1);
+//          Vec3d centre(coord1);
 //      if (length > radius * 0.10)
 //         drawSphere(geom, centre, radius, segment_count);
    }
@@ -1102,7 +1081,7 @@ void Geometry::drawCuboid(GeomData* geom, float pos[3], float width, float heigh
    }
 
    //Triangle indices
-   int indices[36] = {
+   unsigned int indices[36] = {
 				0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index, 
 				3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index, 
 				7+vertex_index, 6+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 7+vertex_index, 
@@ -1139,7 +1118,7 @@ void Geometry::drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, Quater
    if (segment_count < 0) segment_count = -segment_count;
    calcCircleCoords(segment_count);
 
-   std::vector<int> indices;
+   std::vector<unsigned int> indices;
    for (j=0; j<=segment_count/2; j++)
    {
       //Triangle strip vertices
@@ -1197,4 +1176,11 @@ void Geometry::drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, Quater
    read(geom, indices.size(), lucIndexData, &indices[0]);
 }
 
-
+int Geometry::glyphSegments(int def)
+{
+   //Use global if set, otherwise use passed default
+   int quality = GeomData::glyphs;
+   if (quality < 0) quality = def;
+   //Segment count = quality * 4
+   return quality*4;
+}

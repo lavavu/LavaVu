@@ -50,6 +50,7 @@ class Model
   public:
    static bool noload;
    static bool pointspheres;
+   static bool linetubes;
    static int now;
    //Current timestep geometry
    static std::vector<Geometry*> geometry;
@@ -63,6 +64,7 @@ class Model
    static Lines* lines;
    static Shapes* shapes;
    static Volumes* volumes;
+   static Tubes* tubes;
 
    std::vector<TimeStep*> timesteps;
 
@@ -115,7 +117,11 @@ class Model
    bool restoreStep();
    void printCache();
 
-   int step() {return now < 0 ? -1 : timesteps[now]->step;} //Current actual step
+   int step()
+   {
+      //Current actual step
+      return now < 0 || timesteps.size() == 0 ? -1 : timesteps[now]->step;
+   }
 
    int lastStep()
    {

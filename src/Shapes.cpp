@@ -66,14 +66,13 @@ void Shapes::update()
       dims[1] = geom[i]->draw->properties["height"].ToFloat(FLT_MIN);
       dims[2] = geom[i]->draw->properties["length"].ToFloat(FLT_MIN);
       int shape = geom[i]->draw->properties["shape"].ToInt(0);
-      int quality = geom[i]->draw->properties["glyphs"].ToInt(24);
+      int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(6));
       //Points drawn as shapes?
       if (!geom[i]->draw->properties.HasKey("shape"))
       {
          dims[0] = dims[1] = dims[2] = geom[i]->draw->properties["pointsize"].ToFloat(1.0) / 8.0;
-         quality = 16;
+         quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(4));
       }
-      if (quality % 2 == 1) quality++; //Odd quality not allowed
 
       if (scaling <= 0) scaling = 1.0;
 

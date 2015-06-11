@@ -139,6 +139,7 @@ void TriSurfaces::loadMesh()
    //Index data for all vertices
    GLuint unique = 0;
    tricount = 0;
+   elements = 0;
    for (unsigned int index = 0; index < geom.size(); index++) 
    {
       //Save initial offset
@@ -163,6 +164,7 @@ void TriSurfaces::loadMesh()
         }
 
         //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
+        elements += geom[index]->indices.size();
         unique += geom[index]->vertices.size() / 3;
         continue;
       }
@@ -192,10 +194,12 @@ void TriSurfaces::loadMesh()
       if (grid)
       {
          //Structured mesh grid, 2 triangles per element, 3 indices per tri 
-         int elements = (geom[index]->width-1) * (geom[index]->height-1);
-         triverts = elements * 6;
+         int els = (geom[index]->width-1) * (geom[index]->height-1);
+         triverts = els * 6;
          indices.resize(triverts);
-         calcGridNormalsAndIndices(index, normals, indices);
+         calcGridNormals(index, normals);
+         calcGridIndices(index, indices);
+         elements += triverts;
       }
       else
       {
@@ -203,6 +207,7 @@ void TriSurfaces::loadMesh()
          triverts = geom[index]->count;
          indices.resize(triverts);
          calcTriangleNormals(index, verts, normals);
+         elements += triverts;
       }
 
       //Now have list of vertices sorted by vertex pos with summed normals and references of duplicates replaced
@@ -337,6 +342,7 @@ void TriSurfaces::loadBuffers()
       int i = 0;
       Colour colour;
       bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
+      debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
       float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
@@ -373,20 +379,6 @@ void TriSurfaces::loadBuffers()
    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
    debug_print("  Total %.4lf seconds to update triangle buffers\n", (t2-tt)/(double)CLOCKS_PER_SEC);
-
-   //Prepare the Index buffer object - filled in render() after depth sort
-   glGenBuffers(1, &indexvbo);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-   GL_Error_Check;
-   if (glIsBuffer(indexvbo))
-   {
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * tricount * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-      debug_print("  %d byte IBO created for %d indices\n", 3 * tricount * sizeof(GLuint), tricount * 3);
-   }
-   else 
-      debug_print("  IBO creation failed\n");
-   GL_Error_Check;
-
 }
 
 #define MAX3(a,b,c) ( a>b ? (a>c ? a : c) : (b>c ? b : c) )
@@ -506,15 +498,15 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
    t2 = clock(); debug_print("  %.4lf seconds to replace duplicates\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 }
 
-void TriSurfaces::calcGridNormalsAndIndices(int i, std::vector<Vec3d> &normals, std::vector<GLuint> &indices)
+void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
 {
    //Normals: calculate from surface geometry
    clock_t t1,t2;
    t1=clock();
-   debug_print("Calculating normals/indices for grid tri surface %d... ", i);
+   debug_print("Calculating normals for grid surface %d... ", i);
 
    // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
-   int n = 0, o = 0;
+   int n = 0;
    for (int j = 0 ; j < geom[i]->height; j++ )
    {
       for (int k = 0 ; k < geom[i]->width; k++ )
@@ -554,31 +546,45 @@ void TriSurfaces::calcGridNormalsAndIndices(int i, std::vector<Vec3d> &normals, 
             }
          }
 
-         //Normalise to average (done later now)
-         //normals[n].normalise();
+         //Normalise to average
+         normals[n].normalise();
          //Copy directly into normal block
          //memcpy(geom[i]->normals[j * geom[i]->width + k], normal.ref(), sizeof(float) * 3);
-
-         //Add indices for two triangles per grid element
-         if (j < geom[i]->height-1 && k < geom[i]->width-1)
-         {
-            int offset0 = j * geom[i]->width + k;
-            int offset1 = (j+1) * geom[i]->width + k;
-            int offset2 = j * geom[i]->width + k + 1;
-            int offset3 = (j+1) * geom[i]->width + k + 1;
-
-            //Tri 1
-            setTriangle(i, geom[i]->vertices[offset0], geom[i]->vertices[offset1], geom[i]->vertices[offset2]);
-            indices[o++] = offset0;
-            indices[o++] = offset1;
-            indices[o++] = offset2;
-            //Tri 2
-            setTriangle(i, geom[i]->vertices[offset1], geom[i]->vertices[offset3], geom[i]->vertices[offset2]);
-            indices[o++] = offset1;
-            indices[o++] = offset3;
-            indices[o++] = offset2;
-         }
          n++;
+      }
+   }
+   t2 = clock(); debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
+}
+
+void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
+{
+   //Normals: calculate from surface geometry
+   clock_t t1,t2;
+   t1=clock();
+   debug_print("Calculating indices for grid tri surface %d... ", i);
+
+   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
+   int o = 0;
+   for (int j = 0 ; j < geom[i]->height-1; j++ )
+   {
+      for (int k = 0 ; k < geom[i]->width-1; k++ )
+      {
+         //Add indices for two triangles per grid element
+         int offset0 = j * geom[i]->width + k;
+         int offset1 = (j+1) * geom[i]->width + k;
+         int offset2 = j * geom[i]->width + k + 1;
+         int offset3 = (j+1) * geom[i]->width + k + 1;
+         assert(o <= indices.size()-6);
+         //Tri 1
+         setTriangle(i, geom[i]->vertices[offset0], geom[i]->vertices[offset1], geom[i]->vertices[offset2]);
+         indices[o++] = offset0;
+         indices[o++] = offset1;
+         indices[o++] = offset2;
+         //Tri 2
+         setTriangle(i, geom[i]->vertices[offset1], geom[i]->vertices[offset3], geom[i]->vertices[offset2]);
+         indices[o++] = offset1;
+         indices[o++] = offset3;
+         indices[o++] = offset2;
       }
    }
    t2 = clock(); debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
@@ -645,7 +651,7 @@ void TriSurfaces::depthSort()
    t2 = clock(); debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 }
 
-//Reloads triangles into display list, required after data update and depth sort
+//Reloads triangle indices, required after data update and depth sort
 void TriSurfaces::render()
 {
    clock_t t1,t2;
@@ -660,6 +666,23 @@ void TriSurfaces::render()
    }
 
    t1 = clock();
+
+   //Prepare the Index buffer
+   if (!indexvbo)
+   {
+      assert(elements);
+      glGenBuffers(1, &indexvbo);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+      GL_Error_Check;
+      if (glIsBuffer(indexvbo))
+      {
+         glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+         debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
+      }
+      else 
+         debug_print("  IBO creation failed\n");
+      GL_Error_Check;
+   }
 
    //Re-map vertex indices in sorted order
    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
@@ -684,14 +707,15 @@ void TriSurfaces::render()
       }
       glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
       GL_Error_Check;
-      t2 = clock(); debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount, elements); t1 = clock();
+      t2 = clock(); debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, tricount); t1 = clock();
    }
 }
 
 void TriSurfaces::draw()
 {
-   //Draw, calls display list when available
+   //Draw, calls update when required
    Geometry::draw();
+   GL_Error_Check;
    if (drawcount == 0) return;
 
    //Re-render the triangles if view has rotated
@@ -742,17 +766,19 @@ void TriSurfaces::draw()
 
       //Draw remaining elements (transparent, depth sorted)
       //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
-      if (start > 0 && start < elements)
-      //if (start < elements)
+      if (start < elements)
       {
-         //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", elements-start);
-         glDrawRangeElements(GL_TRIANGLES, 0, elements, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-      }
-      else
-      {
-         //Render all triangles - elements is the number of indices. 3 indices needed to make a single triangle
-         //(If there is no separate opaque/transparent geometry)
-         glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+         if (start > 0)
+         {
+            //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", elements-start);
+            glDrawRangeElements(GL_TRIANGLES, 0, elements, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+         }
+         else
+         {
+            //Render all triangles - elements is the number of indices. 3 indices needed to make a single triangle
+            //(If there is no separate opaque/transparent geometry)
+            glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+         }
       }
 
       time = ((clock()-t1)/(double)CLOCKS_PER_SEC);

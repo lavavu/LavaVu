@@ -47,8 +47,8 @@
 
 #define SORT_DIST_MAX 65535
 
-//Types based on triangle renderer - TODO: apply to quadsurface data
-#define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
+//Types based on triangle renderer
+#define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType || type == lucTubeType)
 
 // Point indices + distance for sorting
 typedef struct 
@@ -72,6 +72,7 @@ class GeomData
 {
   public:
    static float opacity;  //Global opacity
+   static int glyphs;
    DrawingObject* draw; //Parent drawing object
    int count;  //Number of vertices
    int width;
@@ -216,7 +217,6 @@ class Geometry
    std::vector<bool> hidden;
    //Cached hidden states (including object/viewport setting)
    std::vector<bool> hiddencache;
-   std::vector<GLuint> displaylists;
    int elements;
    int drawcount;
 
@@ -232,10 +232,6 @@ class Geometry
 
    Geometry();
    virtual ~Geometry();
-
-   //For bounding box detection...
-   static void checkPointMinMax(float* coord);
-   static void getMinMaxDistance(float modelView[16], float* mindist, float* maxdist);
 
    void clear(bool all=false); //Called before new data loaded 
    void reset(); //Called before new data loaded when caching previous data
@@ -254,7 +250,7 @@ class Geometry
    virtual void init(); //Called on GL init
    void setState(int index, Shader* prog=NULL);
    virtual void update();  //Implementation should create geometry here...
-   virtual void draw();  //Display saved geometry (default uses display list)
+   virtual void draw();  //Display saved geometry
    void labels();  //Draw labels
    std::vector<GeomData*> getAllObjects(int id);
    GeomData* getObjectStore(DrawingObject* draw);
@@ -276,12 +272,15 @@ class Geometry
    void drawCuboid(GeomData* geom, float pos[3], float width, float height, float depth, Quaternion& rot);
    void drawSphere(GeomData* geom, Vec3d& centre, float radius, int segment_count=24);
    void drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
+   int glyphSegments(int def=2);
 };
 
 class TriSurfaces : public Geometry
 {
    TIndex *tidx;
    int tricount;
+  protected:
+   std::vector<Distance> surf_sort;
   public:
    static Shader* prog;
    GLuint indexvbo, vbo;
@@ -294,9 +293,10 @@ class TriSurfaces : public Geometry
    void loadBuffers();
    void setTriangle(int index, float* v1, float* v2, float* v3, int idx1=0, int idx2=0, int idx3=0);
    void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
-   void calcGridNormalsAndIndices(int i, std::vector<Vec3d> &normals, std::vector<GLuint> &indices);
+   void calcGridNormals(int i, std::vector<Vec3d> &normals);
+   void calcGridIndices(int i, std::vector<GLuint> &indices);
    void depthSort();
-   void render();
+   virtual void render();
    virtual void draw();
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
 
@@ -306,7 +306,6 @@ class TriSurfaces : public Geometry
 class Vectors : public TriSurfaces
 {
   public:
-   int glyphs;
    Vectors();
    ~Vectors();
    virtual void update();
@@ -327,27 +326,28 @@ class Tracers : public TriSurfaces
    virtual void draw();
 };
 
-class QuadSurfaces : public Geometry
+class QuadSurfaces : public TriSurfaces
 {
   public:
-   static Shader* prog;
    bool triangles;
 
    QuadSurfaces();
    ~QuadSurfaces();
    virtual void update();
+   virtual void render();
+   void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
    virtual void draw();
-   void render(int i);
-   void calcNormals(int i);
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
 };
 
 class Lines : public Geometry
 {
+   GLuint vbo;
   public:
    Lines();
    ~Lines();
    virtual void update();
+   virtual void draw();
 };
 
 class Shapes : public TriSurfaces
@@ -355,6 +355,14 @@ class Shapes : public TriSurfaces
   public:
    Shapes();
    ~Shapes();
+   virtual void update();
+};
+
+class Tubes : public TriSurfaces
+{
+  public:
+   Tubes();
+   ~Tubes();
    virtual void update();
 };
 

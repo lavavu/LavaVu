@@ -659,6 +659,37 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("Points rendered as spheres is %s", Model::pointspheres ? "ON":"OFF");
       return false;
    }
+   else if (parsed.exists("linetubes"))
+   {
+      Model::linetubes = !Model::linetubes;
+      printMessage("Lines rendered as tubes is %s", Model::linetubes ? "ON":"OFF");
+      return false;
+   }
+   else if (parsed.exists("open"))
+   {
+      loadWindow(0, 0, true);
+   }
+   else if (parsed.exists("resize"))
+   {
+      float w = 0, h = 0;
+      if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
+      {
+         if (w != viewer->width && h != viewer->height)
+         {
+            if (viewer->isopen)
+            {
+               viewer->setsize(w, h);
+               resetViews(true);
+            }
+            else
+            {
+               //Window not yet open, can simply set the fixed size vars
+               fixedwidth = w;
+               fixedheight = h;
+            }
+         }
+      }
+   }
 
    //******************************************************************************
    //Following commands require a model!
@@ -814,7 +845,7 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       if (ival < 0) ival = windows.size()-1;
       if (ival >= (int)windows.size()) ival = 0;
-      if (!loadWindow(ival)) return false;  //Invalid
+      if (!loadWindow(ival, amodel->step())) return false;  //Invalid
       printMessage("Load model %d", window);
    }
    else if (parsed.exists("hide") || parsed.exists("show"))
@@ -1154,7 +1185,7 @@ bool LavaVu::parseCommands(std::string cmd)
          std::cout << helpCommand("trianglestrips") << helpCommand("redraw") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
          std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
          std::cout << helpCommand("lighting") << helpCommand("colourmap") << helpCommand("pointtype");
-         std::cout << helpCommand("vectorquality") << helpCommand("tracerflat");
+         std::cout << helpCommand("glyphquality");
          std::cout << helpCommand("tracerscale") << helpCommand("tracersteps") << helpCommand("pointsample");
          std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
       }
@@ -1396,19 +1427,15 @@ bool LavaVu::parseCommands(std::string cmd)
          }
       }
    }
-   else if (parsed.has(ival, "vectorquality"))
+   else if (parsed.has(ival, "glyphquality"))
    {
-      if (ival <0 || ival > 10) return false;
+      if (ival < 0 || ival > 10) return false;
       Model::vectors->redraw = true;
-      Model::vectors->glyphs = ival;
-      if (ival == 0) Model::vectors->flat = true;
-      printMessage("Vector quality set to %d", Model::vectors->glyphs);
-   }
-   else if (parsed.exists("tracerflat"))
-   {
       Model::tracers->redraw = true;
-      Model::tracers->flat = Model::tracers->flat ? false : true;
-      printMessage("Flat tracer rendering is %s", Model::tracers->flat ? "ON":"OFF");
+      Model::tubes->redraw = true;
+      Model::shapes->redraw = true;
+      GeomData::glyphs = ival;
+      printMessage("Glyph quality set to %d", GeomData::glyphs);
    }
    else if (parsed.exists("tracerscale"))
    {
@@ -1606,18 +1633,6 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       history.clear();
       return false; //Skip record
-   }
-   else if (parsed.exists("resize"))
-   {
-      float w = 0, h = 0;
-      if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
-      {
-         if (w != viewer->width && h != viewer->height)
-         {
-            viewer->setsize(w, h);
-            resetViews(true);
-         }
-      }
    }
    else if (parsed.has(ival, "pause"))
    {
@@ -1833,10 +1848,6 @@ bool LavaVu::parseCommands(std::string cmd)
       amodel->setTimeStep(amodel->now+1);
       //resetViews(); //Update the viewports
    }
-   else if (parsed.exists("open"))
-   {
-      loadWindow(0, 0, true);
-   }
    else
    {
       //If value parses as integer and contains nothing else 
@@ -1898,7 +1909,7 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "hide, show, delete, load, select\n"
                   "\nDisplay commands:\n\n"
                   "background, alpha, opacity, axis, cullface, wireframe, trianglestrips, scaling, rulers, log\n"
-                  "antialias, localise, lockscale, lighting, colourmap, pointtype, vectorquality, tracerflat\n"
+                  "antialias, localise, lockscale, lighting, colourmap, pointtype, glyphquality\n"
                   "tracerscale, tracersteps, pointsample, border, title, scale\n";
    }
    else if (cmd == "rotation")
@@ -2270,15 +2281,11 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)\n"
                   "up/down : use 'up' or 'down' to switch to the previous/next type in list\n";
    }
-   else if (cmd == "vectorquality")
+   else if (cmd == "glyphquality")
    {
-      help += "Set vector rendering quality\n\n"
-                  "Usage: vectorquality value\n\n"
-                  "value (integer) : 0=flat lines, [1-10] increasing quality 3d arrows (default 2)\n";
-   }
-   else if (cmd == "tracerflat")
-   {
-      help += "Enable/disable flat tracer rendering (tracers drawn as simple lines)\n";
+      help += "Set vector/tracer/shape rendering quality\n\n"
+                  "Usage: glyphquality value\n\n"
+                  "value (integer) : 0=flat, [1-10] increasing quality of 3d glyphs (default 2)\n";
    }
    else if (cmd == "tracerscale")
    {
