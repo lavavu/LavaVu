@@ -35,29 +35,30 @@
 
 #include "Geometry.h"
 
-Shapes::Shapes() : TriSurfaces()
+Shapes::Shapes() : Geometry()
 {
    type = lucShapeType;
+   //Create sub-renderers
+   tris = new TriSurfaces();
 }
 
 Shapes::~Shapes()
 {
+   delete tris;
+}
+
+void Shapes::close() 
+{
+   tris->close();
 }
 
 void Shapes::update()
 {
    //Convert shapes to triangles
+   tris->clear();
+   tris->setView(view);
    for (unsigned int i=0; i<geom.size(); i++) 
    {
-      //Clear existing vertex related data
-      geom[i]->count = 0;
-      geom[i]->data[lucVertexData]->clear();
-      geom[i]->data[lucIndexData]->clear();
-      geom[i]->data[lucTexCoordData]->clear();
-      geom[i]->data[lucNormalData]->clear();
-
-      vertex_index = 0; //Reset current index
-
       float scaling = geom[i]->draw->properties["scaling"].ToFloat(1.0);
 
       //Load constant scaling factors from properties
@@ -76,7 +77,7 @@ void Shapes::update()
 
       if (scaling <= 0) scaling = 1.0;
 
-      for (int v=0; v < geom[i]->positions.size()/3; v++) 
+      for (int v=0; v < geom[i]->count; v++) 
       {
          //Scale the dimensions by variables (dynamic range options? by setting max/min?)
          float sdims[3] = {dims[0], dims[1], dims[2]};
@@ -111,19 +112,38 @@ void Shapes::update()
          }
 
          //Create shape
-         Vec3d posv = Vec3d(geom[i]->positions[v]);
+         Vec3d posv = Vec3d(geom[i]->vertices[v]);
          Vec3d radii = Vec3d(sdims);
          if (shape == 1)
-            drawCuboid(geom[i], geom[i]->positions[v], sdims[0], sdims[1], sdims[2], qrot);
+            tris->drawCuboid(geom[i]->draw, geom[i]->vertices[v], sdims[0], sdims[1], sdims[2], qrot);
          else
-            drawEllipsoid(geom[i], posv, radii, qrot, quality);
-
-         vertex_index = geom[i]->count; //Reset current index to match vertex count
+            tris->drawEllipsoid(geom[i]->draw, posv, radii, qrot, quality);
+         //Read a colour value
+         tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
       }
+      //Setup colour range on tris data
+      tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
       //printf("%d Shapes: %d Vertices: %d Indices: %d\n", i, geom[i]->positions.size()/3, geom[i]->count, geom[i]->indices.size());
    }
 
-   elements = -1;
-   TriSurfaces::update();
+   tris->update();
 }
 
+void Shapes::draw()
+{
+   GL_Error_Check;
+   Geometry::draw();
+   if (drawcount == 0) return;
+
+   GL_Error_Check;
+   // Undo any scaling factor for arrow drawing...
+   glPushMatrix();
+   if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
+      glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+
+   tris->draw();
+
+   // Re-Apply scaling factors
+   glPopMatrix();
+   GL_Error_Check;
+}

@@ -48,7 +48,7 @@
 #define SORT_DIST_MAX 65535
 
 //Types based on triangle renderer
-#define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType || type == lucTubeType)
+#define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
 // Point indices + distance for sorting
 typedef struct 
@@ -73,6 +73,7 @@ class GeomData
   public:
    static float opacity;  //Global opacity
    static int glyphs;
+   static bool wireframe, cullface, lit;
    DrawingObject* draw; //Parent drawing object
    int count;  //Number of vertices
    int width;
@@ -101,7 +102,6 @@ class GeomData
    FloatValues greenValue;
    FloatValues blueValue;
    FloatValues indices;
-   FloatValues ids;
    FloatValues xWidths;
    FloatValues yHeights;
    FloatValues zLengths;
@@ -111,7 +111,7 @@ class GeomData
 
    std::vector<FloatValues*> data;
 
-   GeomData(DrawingObject* draw, int width=0, int height=0) : draw(draw), count(0), width(width), height(height), labelptr(NULL), opaque(false) 
+   GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), labelptr(NULL), opaque(false) 
    {
       //opaque = false; //true; //Always true for now (need to check colourmap, opacity and global opacity)
       data.resize(lucMaxDataType+1);
@@ -124,14 +124,12 @@ class GeomData
       data[lucGreenValueData] = &greenValue;
       data[lucBlueValueData] = &blueValue;
       data[lucIndexData] = &indices;
-      data[lucIdData] = &ids;
       data[lucXWidthData] = &xWidths;
       data[lucYHeightData] = &yHeights;
       data[lucZLengthData] = &zLengths;
       data[lucRGBAData] = &colours;
       data[lucTexCoordData] = &texCoords;
       data[lucSizeData] = &sizes;
-      data[lucPositionData] = &positions;
 
       texture = NULL;
 
@@ -226,9 +224,6 @@ class Geometry
    unsigned int total;     //Total entries of all objects in container
    float scale;   //Scaling factor
    bool redraw;    //Redraw from scratch flag
-   bool wireframe, cullface;
-   bool flat, lit;
-   int vertex_index;
 
    Geometry();
    virtual ~Geometry();
@@ -267,12 +262,19 @@ class Geometry
    void toImage(unsigned int idx);
    void setTexture(DrawingObject* draw, TextureData* texture);
 
-   void drawVector(GeomData* geom, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
-   void drawTrajectory(GeomData* geom, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count=24);
-   void drawCuboid(GeomData* geom, float pos[3], float width, float height, float depth, Quaternion& rot);
-   void drawSphere(GeomData* geom, Vec3d& centre, float radius, int segment_count=24);
-   void drawEllipsoid(GeomData* geom, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
+   void drawVector(DrawingObject *draw, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
+   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count=24);
+   void drawCuboid(DrawingObject *draw, float pos[3], float width, float height, float depth, Quaternion& rot);
+   void drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count=24);
+   void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
    int glyphSegments(int def=2);
+
+   int getCount(DrawingObject* draw)
+   {
+      GeomData* geom = getObjectStore(draw);
+      if (geom) return geom->count;
+      return 0;
+   }
 };
 
 class TriSurfaces : public Geometry
@@ -299,21 +301,38 @@ class TriSurfaces : public Geometry
    virtual void render();
    virtual void draw();
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
-
-   void dumpJSON();
 };
 
-class Vectors : public TriSurfaces
+class Lines : public Geometry
 {
+   TriSurfaces* tris;
+   GLuint vbo;
+   int linetotal;
   public:
-   Vectors();
-   ~Vectors();
+   bool tubes;
+   Lines();
+   ~Lines();
+   virtual void close();
    virtual void update();
    virtual void draw();
 };
 
-class Tracers : public TriSurfaces
+class Vectors : public Geometry
 {
+   Lines* lines;
+   TriSurfaces* tris;
+  public:
+   Vectors();
+   ~Vectors();
+   virtual void close();
+   virtual void update();
+   virtual void draw();
+};
+
+class Tracers : public Geometry
+{
+   Lines* lines;
+   TriSurfaces* tris;
   public:
    //Tracer specific data
    int steps;
@@ -322,6 +341,7 @@ class Tracers : public TriSurfaces
 
    Tracers();
    ~Tracers();
+   virtual void close();
    virtual void update();
    virtual void draw();
 };
@@ -340,30 +360,15 @@ class QuadSurfaces : public TriSurfaces
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
 };
 
-class Lines : public Geometry
+class Shapes : public Geometry
 {
-   GLuint vbo;
-  public:
-   Lines();
-   ~Lines();
-   virtual void update();
-   virtual void draw();
-};
-
-class Shapes : public TriSurfaces
-{
+   TriSurfaces* tris;
   public:
    Shapes();
    ~Shapes();
+   virtual void close();
    virtual void update();
-};
-
-class Tubes : public TriSurfaces
-{
-  public:
-   Tubes();
-   ~Tubes();
-   virtual void update();
+   virtual void draw();
 };
 
 class Points : public Geometry

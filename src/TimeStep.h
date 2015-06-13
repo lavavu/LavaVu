@@ -79,10 +79,6 @@ class TimeStep
       for (unsigned int i=0; i < data.size(); i++)
       {
          cache[i]->scale = data[i]->scale;
-         cache[i]->wireframe = data[i]->wireframe;
-         cache[i]->cullface = data[i]->cullface;
-         cache[i]->flat = data[i]->flat;
-         cache[i]->lit = data[i]->lit;
          //Release any graphics memory
          data[i]->close();
       }

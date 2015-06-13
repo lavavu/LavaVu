@@ -35,13 +35,24 @@
 
 #include "Geometry.h"
 
-Vectors::Vectors() : TriSurfaces()
+Vectors::Vectors() : Geometry()
 {
    type = lucVectorType;
+   //Create sub-renderers
+   lines = new Lines();
+   tris = new TriSurfaces();
 }
 
 Vectors::~Vectors()
 {
+   delete lines;
+   delete tris;
+}
+
+void Vectors::close() 
+{
+   lines->close();
+   tris->close();
 }
 
 void Vectors::update()
@@ -49,18 +60,14 @@ void Vectors::update()
    //Convert vectors to triangles
    clock_t t1,t2,tt;
    tt=clock();
+   lines->clear();
+   lines->setView(view);
+   tris->clear();
+   tris->setView(view);
    int tot = 0;
    for (unsigned int i=0; i<geom.size(); i++) 
    {
-      //Clear existing vertex related data
-      tot += geom[i]->positions.size()/3;
-      geom[i]->count = 0;
-      geom[i]->data[lucVertexData]->clear();
-      geom[i]->data[lucIndexData]->clear();
-      geom[i]->data[lucTexCoordData]->clear();
-      geom[i]->data[lucNormalData]->clear();
-
-      vertex_index = 0; //Reset current index
+      tot += geom[i]->count;
 
       float arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
 
@@ -84,11 +91,12 @@ void Vectors::update()
 
       if (scaling <= 0) scaling = 1.0;
 
-      //for (int v=0; v < geom[i]->count; v++) 
-      for (int v=0; v < geom[i]->positions.size()/3; v++) 
+      float minL = view->model_size * 0.01; //Minimum length for visibility
+
+      for (int v=0; v < geom[i]->count; v++) 
       {
          //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
-         Vec3d pos(geom[i]->positions[v]);
+         Vec3d pos(geom[i]->vertices[v]);
          Vec3d vec(geom[i]->vectors[v]);
          if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
          {
@@ -97,25 +105,49 @@ void Vectors::update()
             vec *= scale;
          }
 
-         //Combine model vector scale with user vector scale factor
-         drawVector(geom[i], pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
-         vertex_index = geom[i]->count; //Reset current index to match vertex count
+         if (vec.magnitude() * scaling >= minL)
+         {
+            int diff = tris->getCount(geom[i]->draw);
+            tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
+            //Per vertex colours
+            diff = tris->getCount(geom[i]->draw) - diff;
+            for (int c=0; c<diff; c++) 
+               tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+         }
+         else
+         {
+            int diff = lines->getCount(geom[i]->draw);
+            lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
+            //Per vertex colours
+            diff = lines->getCount(geom[i]->draw) - diff;
+            for (int c=0; c<diff; c++) 
+               lines->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+         }
       }
+      //Setup colour range on lines/tris data
+      lines->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
+      tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
    }
    t1 = clock(); debug_print("Plotted %d vector arrows in %.4lf seconds\n", tot, (t1-tt)/(double)CLOCKS_PER_SEC);
-   elements = -1;
-   TriSurfaces::update();
+
+   tris->update();
+   lines->update();
 }
 
 void Vectors::draw()
 {
+   Geometry::draw();
+   if (drawcount == 0) return;
+
    // Undo any scaling factor for arrow drawing...
    glPushMatrix();
    if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
       glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
 
-   TriSurfaces::draw();
+   tris->draw();
 
    // Re-Apply scaling factors
    glPopMatrix();
+
+   lines->draw();
 }

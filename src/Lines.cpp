@@ -39,79 +39,129 @@ Lines::Lines()
 {
    type = lucLineType;
    vbo = 0;
+   linetotal = 0;
+   tubes = false;
+   //Create sub-renderers
+   tris = new TriSurfaces();
 }
 
 Lines::~Lines()
 {
+   delete tris;
+}
+
+void Lines::close() 
+{
+   tris->close();
 }
 
 void Lines::update()
 {
    //Skip update if count hasn't changed
-   if (elements > 0 && total == elements) return;
+   if (elements > 0 && linetotal == elements || total == 0) return;
+
+   tris->clear();
+   tris->setView(view);
+
+   //Count 2d lines
+   linetotal = 0;
+   for (unsigned int i=0; i<geom.size(); i++) 
+   {
+      if (geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+         linetotal += geom[i]->count;
+   }
 
    //Copy data to Vertex Buffer Object
    // VBO - copy normals/colours/positions to buffer object 
    unsigned char *p, *ptr;
    ptr = p = NULL;
    int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
-   int bsize = total * datasize;
+   int bsize = linetotal * datasize;
 
    //Initialise vertex buffer
    if (vbo) glDeleteBuffers(1, &vbo);
    
    glGenBuffers(1, &vbo);
    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-   if (glIsBuffer(vbo))
+   if (linetotal > 0 && glIsBuffer(vbo))
    {
       glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
       debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
       ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
       GL_Error_Check;
+      if (!p) abort_program("VBO setup failed");
    }
-   if (!p) abort_program("VBO setup failed");
 
    clock_t t1,t2,tt;
    tt=clock();
    for (unsigned int i=0; i<geom.size(); i++) 
    {
-      vertex_index = 0; //Reset current index
+      t1=tt=clock();
 
-       t1=tt=clock();
+      if (geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+      {
+         //Calibrate colour maps on range for this surface
+         geom[i]->colourCalibrate();
+         int hasColours = geom[i]->colourCount();
+         int colrange = hasColours ? geom[i]->count / hasColours : 1;
+         bool vertColour = hasColours && colrange > 1;
+         debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
-       //Calibrate colour maps on range for this surface
-       geom[i]->colourCalibrate();
-       int hasColours = geom[i]->colourCount();
-       int colrange = hasColours ? geom[i]->count / hasColours : 1;
-       bool vertColour = hasColours && colrange > 1;
-       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
-
-       Colour colour;
-       float zero[3] = {0,0,0};
-       for (unsigned int v=0; v < geom[i]->count; v++)
-       {
-          //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
-          int cidx = v / colrange;
-          if (cidx >= hasColours) cidx = hasColours - 1;
-          geom[i]->getColour(colour, cidx);
-          //Write vertex data to vbo
-          assert((int)(ptr-p) < bsize);
-          //Copies vertex bytes
-          memcpy(ptr, &geom[i]->vertices[v][0], sizeof(float) * 3);
-          ptr += sizeof(float) * 3;
-          //Copies colour bytes
-          memcpy(ptr, &colour, sizeof(Colour));
-          ptr += sizeof(Colour);
-       }
-       t2 = clock(); debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[i]->count); t1 = clock();
-       elements += geom[i]->count; 
+         Colour colour;
+         float zero[3] = {0,0,0};
+         for (unsigned int v=0; v < geom[i]->count; v++)
+         {
+            //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
+            int cidx = v / colrange;
+            if (cidx >= hasColours) cidx = hasColours - 1;
+            geom[i]->getColour(colour, cidx);
+            //if (cidx%100 ==0) printf("COLOUR %d => %d,%d,%d\n", cidx, colour.r, colour.g, colour.b);
+            //Write vertex data to vbo
+            assert((int)(ptr-p) < bsize);
+            //Copies vertex bytes
+            memcpy(ptr, &geom[i]->vertices[v][0], sizeof(float) * 3);
+            ptr += sizeof(float) * 3;
+            //Copies colour bytes
+            memcpy(ptr, &colour, sizeof(Colour));
+            ptr += sizeof(Colour);
+         }
+         t2 = clock(); debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[i]->count); t1 = clock();
+         elements += geom[i]->count; 
+      }
+      else
+      {
+         //3d lines - using triangle sub-renderer
+         geom[i]->draw->properties["lit"] = true; //Override lit
+         //Draw as 3d cylinder sections
+         int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
+         float radius = scale*0.1;
+         float* oldpos = NULL;
+         for (int v=0; v < geom[i]->count; v++) 
+         {
+            if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
+            Colour colour;
+            geom[i]->getColour(colour, v);
+            float* pos = geom[i]->vertices[v];
+            int diff = tris->getCount(geom[i]->draw);
+            tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
+            diff = tris->getCount(geom[i]->draw) - diff;
+            //Per vertex colours
+            for (int c=0; c<diff; c++) 
+               tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+            oldpos = pos;
+         }
+         //Setup colour range on tris data
+         tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
+      }
    }
 
    glUnmapBuffer(GL_ARRAY_BUFFER);
    GL_Error_Check;
    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-   t1 = clock(); debug_print("Plotted %d lines in %.4lf seconds\n", total, (t1-tt)/(double)CLOCKS_PER_SEC);
+   t1 = clock(); debug_print("Plotted %d lines in %.4lf seconds\n", linetotal, (t1-tt)/(double)CLOCKS_PER_SEC);
+
+   tris->update();
 }
 
 void Lines::draw()
@@ -120,8 +170,19 @@ void Lines::draw()
    Geometry::draw();
    if (drawcount == 0) return;
 
-   GL_Error_Check;
+   // Undo any scaling factor for arrow drawing...
+   glPushMatrix();
+   if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
+      glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+
+   //Draw any 3d rendered tubes
+   tris->draw();
+
+   // Re-Apply scaling factors
+   glPopMatrix();
+
    // Draw using vertex buffer object
+   glPushAttrib(GL_ENABLE_BIT);
    clock_t t0 = clock();
    double time;
    int stride = 3 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
@@ -142,7 +203,7 @@ void Lines::draw()
       int offset = 0;
       for (unsigned int i=0; i<geom.size(); i++) 
       {
-         if (drawable(i))
+         if (drawable(i) && geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
          {
             //Set draw state
             setState(i);
@@ -154,6 +215,8 @@ void Lines::draw()
                glDrawArrays(GL_LINE_STRIP, offset, geom[i]->count);
             else
                glDrawArrays(GL_LINES, offset, geom[i]->count);
+
+            glPopAttrib();
          }
 
          offset += geom[i]->count;
@@ -167,9 +230,6 @@ void Lines::draw()
 
    //Restore state
    glPopAttrib();
-   //glEnable(GL_LIGHTING);
-   //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-   //glDisable(GL_CULL_FACE);
    glBindTexture(GL_TEXTURE_2D, 0);
 
    time = ((clock()-t0)/(double)CLOCKS_PER_SEC);

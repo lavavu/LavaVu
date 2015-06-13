@@ -47,7 +47,6 @@ Points::Points() : Geometry()
    type = lucPointType;
    scale = 1.0f;
    attenuate = true;
-   lit = false;   //Lighting override: always disabled
    pidx = NULL;
 }
 

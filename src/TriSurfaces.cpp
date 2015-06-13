@@ -40,8 +40,6 @@ Shader* TriSurfaces::prog = NULL;
 TriSurfaces::TriSurfaces() : Geometry()
 {
    type = lucTriangleType;
-   wireframe = false;
-   cullface = false;
    tricount = 0;
    vbo = 0;
    indexvbo = 0;
@@ -97,7 +95,7 @@ void TriSurfaces::update()
       debug_print("Surface %d, triangles %d hidden? %s\n", t, tris, (hiddencache[t] ? "yes" : "no"));
 
       //TODO: hack for now to get wireframe working, should detect/switch opacity
-      if (geom[t]->draw->properties["wireframe"].ToBool(false))
+      if (GeomData::wireframe || geom[t]->draw->properties["wireframe"].ToBool(false))
         geom[t]->opaque = true;
    }
    if (total == 0) return;

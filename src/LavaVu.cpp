@@ -1522,7 +1522,7 @@ void LavaVu::redrawViewports()
    for (unsigned int v=0; v<awin->views.size(); v++)
       awin->views[v]->redraw = true;
 
-   //Flag redraw on objects??
+   //Flag redraw on all objects
    for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->redraw = true;
 }
@@ -1558,17 +1558,17 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
       //   aview->init(false, awin->min, awin->max);
 
-      //Update the model bounding box - use window bounds if provided and sane
-      if (awin->max[0]-awin->min[0] > EPSILON)
+      //Update the model bounding box - use window bounds if provided and sane in at least 2 dimensions
+      if (awin->max[0]-awin->min[0] > EPSILON && awin->max[1]-awin->min[1] > EPSILON)
       {
-         debug_print("Applied WINDOW bounds %f,%f,%f - %f,%f,%f\n", 
+         debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from window\n", 
                      awin->min[0], awin->min[1], awin->min[2], 
                      awin->max[0], awin->max[1], awin->max[2]);
          aview->init(false, awin->min, awin->max);
       }
       else
       {
-         debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f\n", 
+         debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from geometry\n", 
                      omin[0], omin[1], omin[2], 
                      omax[0], omax[1], omax[2]);
          aview->init(false, omin, omax);
@@ -1993,7 +1993,6 @@ void LavaVu::drawScene()
    Model::vectors->draw();
    Model::tracers->draw();
    Model::shapes->draw();
-   Model::tubes->draw();
    Model::labels->draw();
    Model::volumes->draw();
 
@@ -2019,7 +2018,7 @@ void LavaVu::loadFile(FilePath& fn)
    {
       loadModel(fn);
       //Load a window when first database loaded
-      if (!amodel || !aview || !awin) loadWindow(0, 0, true);
+      if (!amodel || !aview || !awin) loadWindow(0, startstep, true);
       //Set loaded gldb as active model/window if there was already an active window
       //if (window) loadWindow(windows.size()-1);
       return;

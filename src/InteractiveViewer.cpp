@@ -645,11 +645,7 @@ bool LavaVu::parseCommands(std::string cmd)
          GeomData::opacity = fval;
       printMessage("Set global alpha to %.2f", GeomData::opacity);
       if (amodel)
-      {
-         Model::quadSurfaces->redraw = true;
-         Model::triSurfaces->redraw = true;
          redrawViewports();
-      }
       return false;
    }
    //TODO: not yet documented
@@ -661,9 +657,10 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("linetubes"))
    {
-      Model::linetubes = !Model::linetubes;
-      printMessage("Lines rendered as tubes is %s", Model::linetubes ? "ON":"OFF");
-      return false;
+      Model::lines->tubes = !Model::lines->tubes;
+      printMessage("Lines rendered as tubes is %s", Model::lines->tubes ? "ON":"OFF");
+      redrawViewports();
+      return true;
    }
    else if (parsed.exists("open"))
    {
@@ -1072,20 +1069,21 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("cullface"))
    {
-      Model::quadSurfaces->cullface = !Model::quadSurfaces->cullface;
-      Model::triSurfaces->cullface = !Model::triSurfaces->cullface;
-      printMessage("Back face culling for surfaces is %s", Model::quadSurfaces->cullface ? "ON":"OFF");
-      Model::quadSurfaces->redraw = true;
-      Model::triSurfaces->redraw = true;
+      GeomData::cullface = !GeomData::cullface;
+      redrawViewports();
+      printMessage("Back face culling for surfaces is %s", GeomData::cullface ? "ON":"OFF");
    }
    else if (parsed.exists("wireframe"))
    {
-      for (int type=lucMinType; type<lucMaxType; type++)
-      {
-         Model::geometry[type]->wireframe = !Model::geometry[type]->wireframe;
-         Model::geometry[type]->redraw = true;
-      }
-      printMessage("Wireframe %s", Model::geometry[lucMinType]->wireframe ? "ON":"OFF");
+      GeomData::wireframe = !GeomData::wireframe;
+      redrawViewports();
+      printMessage("Wireframe %s", GeomData::wireframe ? "ON":"OFF");
+   }
+   else if (parsed.exists("lighting"))
+   {
+      //Lighting ON/OFF
+      GeomData::lit = !GeomData::lit;
+      printMessage("Lighting is %s", GeomData::lit ? "ON":"OFF");
    }
    else if (parsed.exists("trianglestrips"))
    {
@@ -1095,8 +1093,8 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("redraw"))
    {
-      for (int type=lucMinType; type<lucMaxType; type++)
-         Model::geometry[type]->redraw = true;
+      //for (int type=lucMinType; type<lucMaxType; type++)
+      //   Model::geometry[type]->redraw = true;
       redrawViewports();
       printMessage("Redrawing all objects");
    }
@@ -1243,16 +1241,6 @@ bool LavaVu::parseCommands(std::string cmd)
       ColourMap::lock = !ColourMap::lock;
       printMessage("ColourMap scale locking %s", ColourMap::lock ? "ON":"OFF");
       redrawObjects();
-   }
-   else if (parsed.exists("lighting"))
-   {
-      //Lighting ON/OFF
-      for (int type=lucMinType; type<lucMaxType; type++)
-      {
-         Model::geometry[type]->lit = !Model::geometry[type]->lit;
-         Model::geometry[type]->redraw = true;
-      }
-      printMessage("Lighting is %s", Model::geometry[lucMinType]->lit ? "ON":"OFF");
    }
    else if (parsed.exists("list"))
    {
@@ -1432,7 +1420,6 @@ bool LavaVu::parseCommands(std::string cmd)
       if (ival < 0 || ival > 10) return false;
       Model::vectors->redraw = true;
       Model::tracers->redraw = true;
-      Model::tubes->redraw = true;
       Model::shapes->redraw = true;
       GeomData::glyphs = ival;
       printMessage("Glyph quality set to %d", GeomData::glyphs);
@@ -1883,7 +1870,7 @@ bool LavaVu::parseCommands(std::string cmd)
 
    //Always redraw when using multiple viewports in window (urgh sooner this is gone the better)
    if (awin && awin->views.size() > 1 && viewPorts)
-     redrawViewports();
+       redrawViewports();
    last_cmd = cmd;
    record(false, cmd);
    if (animate && redisplay) viewer->display();

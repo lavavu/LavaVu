@@ -38,8 +38,6 @@
 QuadSurfaces::QuadSurfaces() : TriSurfaces()
 {
    type = lucGridType;
-   wireframe = false;
-   cullface = false;
    triangles = true;
 }
 

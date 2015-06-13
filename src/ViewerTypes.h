@@ -14,7 +14,6 @@ typedef enum
    lucLineType,
    lucShapeType,
    lucVolumeType,
-   lucTubeType,
    lucMaxType
 } lucGeometryType;
 
@@ -38,7 +37,6 @@ typedef enum
    lucTexCoordData,
    lucSizeData,
    lucPositionData,
-   lucIdData,
    lucMaxDataType
 } lucGeometryDataType;
 

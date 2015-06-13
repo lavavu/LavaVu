@@ -50,7 +50,6 @@ class Model
   public:
    static bool noload;
    static bool pointspheres;
-   static bool linetubes;
    static int now;
    //Current timestep geometry
    static std::vector<Geometry*> geometry;
@@ -64,7 +63,6 @@ class Model
    static Lines* lines;
    static Shapes* shapes;
    static Volumes* volumes;
-   static Tubes* tubes;
 
    std::vector<TimeStep*> timesteps;
 

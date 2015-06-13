@@ -41,7 +41,6 @@ int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.
 int TimeStep::cachesize = 0;
 bool Model::noload = false;
 bool Model::pointspheres = false;
-bool Model::linetubes = false;
 int Model::now = -1;
 
 //Static geometry containers, shared by all models for fast switching/drawing
@@ -55,7 +54,6 @@ TriSurfaces* Model::triSurfaces = NULL;
 Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
-Tubes* Model::tubes = NULL;
 
 Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0), db(NULL)
 {
@@ -86,7 +84,6 @@ void Model::init()
    geometry[lucTriangleType] = triSurfaces = new TriSurfaces();
    geometry[lucLineType] = lines = new Lines();
    geometry[lucShapeType] = shapes = new Shapes();
-   geometry[lucTubeType] = tubes = new Tubes();
 }
 
 Model::~Model()
@@ -687,7 +684,6 @@ bool Model::restoreStep()
    triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
    lines = (Lines*)geometry[lucLineType];
    shapes = (Shapes*)geometry[lucShapeType];
-   tubes = (Tubes*)geometry[lucTubeType];
 
    debug_print("~~~ Geom memory usage after load: %.3f mb\n", FloatValues::membytes/1000000.0f);
    reset();  //Force reload
@@ -926,7 +922,6 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
          //Create object and set parameters
          if (type == lucPointType && pointspheres) type = lucShapeType;
-         if (type == lucLineType && linetubes) type = lucTubeType;
          //if (type == lucGridType) type = lucTriangleType;
          active = geometry[type];
 
