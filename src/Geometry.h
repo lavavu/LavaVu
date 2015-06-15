@@ -217,6 +217,7 @@ class Geometry
    std::vector<bool> hiddencache;
    int elements;
    int drawcount;
+   bool flat2d; //Flag for flat surfaces in 2d
 
   public:
    bool allhidden;
@@ -287,7 +288,7 @@ class TriSurfaces : public Geometry
    static Shader* prog;
    GLuint indexvbo, vbo;
 
-   TriSurfaces();
+   TriSurfaces(bool flat2Dflag=false);
    ~TriSurfaces();
    virtual void close();
    virtual void update();
@@ -351,7 +352,7 @@ class QuadSurfaces : public TriSurfaces
   public:
    bool triangles;
 
-   QuadSurfaces();
+   QuadSurfaces(bool flat2Dflag=false);
    ~QuadSurfaces();
    virtual void update();
    virtual void render();

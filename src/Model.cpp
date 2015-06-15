@@ -79,9 +79,9 @@ void Model::init()
    geometry[lucPointType] = points = new Points();
    geometry[lucVectorType] = vectors = new Vectors();
    geometry[lucTracerType] = tracers = new Tracers();
-   geometry[lucGridType] = quadSurfaces = new QuadSurfaces();
+   geometry[lucGridType] = quadSurfaces = new QuadSurfaces(true);
    geometry[lucVolumeType] = volumes = new Volumes();
-   geometry[lucTriangleType] = triSurfaces = new TriSurfaces();
+   geometry[lucTriangleType] = triSurfaces = new TriSurfaces(true);
    geometry[lucLineType] = lines = new Lines();
    geometry[lucShapeType] = shapes = new Shapes();
 }

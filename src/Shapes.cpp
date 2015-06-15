@@ -119,7 +119,8 @@ void Shapes::update()
          else
             tris->drawEllipsoid(geom[i]->draw, posv, radii, qrot, quality);
          //Read a colour value
-         tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+         if (geom[i]->colourValue.size() > v)
+            tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
       }
       //Setup colour range on tris data
       tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);

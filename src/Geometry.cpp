@@ -363,7 +363,7 @@ void Geometry::setState(int index, Shader* prog)
    if (type == lucTriangleType || type == lucGridType || TriangleBased(type))
    {
       //Don't light surfaces in 2d models
-      if (!view->is3d && (type == lucTriangleType || type == lucGridType)) lighting = false;
+      if (!view->is3d && flat2d) lighting = false;
       //Disable lighting and polygon faces in wireframe mode
       if (GeomData::wireframe || draw->properties["wireframe"].ToBool(false))
       {
@@ -595,7 +595,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
    //Read the data
    if (n > 0) geomdata->data[dtype]->read(n, data);
 
-   if (dtype == lucVertexData || dtype == lucPositionData)
+   if (dtype == lucVertexData)
    {
       geomdata->count += n;
       total += n;
@@ -859,8 +859,8 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
          read(draw, 1, lucNormalData, normal.ref());
 
          // Top of shaft 
-         vertex0.z = -headD;
-         vertex = translate + rot * vertex0;
+         Vec3d vertex1 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -headD);
+         vertex = translate + rot * vertex1;
 
          //Read triangle vertex, normal
          read(draw, 1, lucVertexData, vertex.ref());
@@ -887,7 +887,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
    }
 
    // Render the arrowhead cone and base with two triangle fans 
-   // Don't bother drawing head for tiny vectors 
+   // Don't bother drawing head very low quality settings 
    if (segment_count >= 3 && head_scale > 0 && head_radius > 1.0e-7 )
    {
       int v;

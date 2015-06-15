@@ -35,10 +35,11 @@
 
 #include "Geometry.h"
 
-QuadSurfaces::QuadSurfaces() : TriSurfaces()
+QuadSurfaces::QuadSurfaces(bool flat2Dflag) : TriSurfaces()
 {
    type = lucGridType;
    triangles = true;
+   flat2d = flat2Dflag;
 }
 
 QuadSurfaces::~QuadSurfaces()

@@ -77,18 +77,19 @@ void Lines::update()
    ptr = p = NULL;
    int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
    int bsize = linetotal * datasize;
-
-   //Initialise vertex buffer
-   if (vbo) glDeleteBuffers(1, &vbo);
-   
-   glGenBuffers(1, &vbo);
-   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-   if (linetotal > 0 && glIsBuffer(vbo))
+   if (linetotal > 0)
    {
-      glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
-      debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
-      ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-      GL_Error_Check;
+      //Initialise vertex buffer
+      if (vbo) glDeleteBuffers(1, &vbo);
+      glGenBuffers(1, &vbo);
+      glBindBuffer(GL_ARRAY_BUFFER, vbo);
+      if (glIsBuffer(vbo))
+      {
+         glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
+         debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
+         ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+         GL_Error_Check;
+      }
       if (!p) abort_program("VBO setup failed");
    }
 
@@ -98,10 +99,11 @@ void Lines::update()
    {
       t1=tt=clock();
 
+      //Calibrate colour maps on range for this object
+      geom[i]->colourCalibrate();
+
       if (geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
       {
-         //Calibrate colour maps on range for this surface
-         geom[i]->colourCalibrate();
          int hasColours = geom[i]->colourCount();
          int colrange = hasColours ? geom[i]->count / hasColours : 1;
          bool vertColour = hasColours && colrange > 1;
@@ -136,6 +138,7 @@ void Lines::update()
          int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
          float radius = scale*0.1;
          float* oldpos = NULL;
+         Colour colour;
          for (int v=0; v < geom[i]->count; v++) 
          {
             if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
@@ -144,20 +147,20 @@ void Lines::update()
             float* pos = geom[i]->vertices[v];
             int diff = tris->getCount(geom[i]->draw);
             tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
-            diff = tris->getCount(geom[i]->draw) - diff;
-            //Per vertex colours
-            for (int c=0; c<diff; c++) 
-               tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+            //Per line colours (can do this as long as sub-renderer always outputs same tri count)
+            geom[i]->getColour(colour, v);
+            tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
             oldpos = pos;
          }
-         //Setup colour range on tris data
-         tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
       }
    }
 
-   glUnmapBuffer(GL_ARRAY_BUFFER);
+   if (linetotal > 0)
+   {
+      glUnmapBuffer(GL_ARRAY_BUFFER);
+      glBindBuffer(GL_ARRAY_BUFFER, 0);
+   }
    GL_Error_Check;
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
    t1 = clock(); debug_print("Plotted %d lines in %.4lf seconds\n", linetotal, (t1-tt)/(double)CLOCKS_PER_SEC);
 

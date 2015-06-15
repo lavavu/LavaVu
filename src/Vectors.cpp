@@ -93,6 +93,9 @@ void Vectors::update()
 
       float minL = view->model_size * 0.01; //Minimum length for visibility
 
+      Colour colour;
+      geom[i]->colourCalibrate();
+
       for (int v=0; v < geom[i]->count; v++) 
       {
          //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
@@ -111,22 +114,22 @@ void Vectors::update()
             tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
             //Per vertex colours
             diff = tris->getCount(geom[i]->draw) - diff;
+            assert(diff > 0);
+            geom[i]->getColour(colour, v);
             for (int c=0; c<diff; c++) 
-               tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+               tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
          }
-         else
-         {
-            int diff = lines->getCount(geom[i]->draw);
-            lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
-            //Per vertex colours
-            diff = lines->getCount(geom[i]->draw) - diff;
-            for (int c=0; c<diff; c++) 
-               lines->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
-         }
+
+         //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
+         int diff = lines->getCount(geom[i]->draw);
+         lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
+         //Per vertex colours
+         diff = lines->getCount(geom[i]->draw) - diff;
+         geom[i]->getColour(colour, v);
+         for (int c=0; c<diff; c++) 
+            lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+
       }
-      //Setup colour range on lines/tris data
-      lines->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
-      tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
    }
    t1 = clock(); debug_print("Plotted %d vector arrows in %.4lf seconds\n", tot, (t1-tt)/(double)CLOCKS_PER_SEC);
 

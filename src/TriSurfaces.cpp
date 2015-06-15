@@ -37,13 +37,14 @@
 
 Shader* TriSurfaces::prog = NULL;
 
-TriSurfaces::TriSurfaces() : Geometry()
+TriSurfaces::TriSurfaces(bool flat2Dflag) : Geometry()
 {
    type = lucTriangleType;
    tricount = 0;
    vbo = 0;
    indexvbo = 0;
    tidx = NULL;
+   flat2d = flat2Dflag;
 }
 
 TriSurfaces::~TriSurfaces()
