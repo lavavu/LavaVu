@@ -77,6 +77,9 @@ void Shapes::update()
 
       if (scaling <= 0) scaling = 1.0;
 
+      Colour colour;
+      geom[i]->colourCalibrate();
+
       for (int v=0; v < geom[i]->count; v++) 
       {
          //Scale the dimensions by variables (dynamic range options? by setting max/min?)
@@ -118,12 +121,10 @@ void Shapes::update()
             tris->drawCuboid(geom[i]->draw, geom[i]->vertices[v], sdims[0], sdims[1], sdims[2], qrot);
          else
             tris->drawEllipsoid(geom[i]->draw, posv, radii, qrot, quality);
-         //Read a colour value
-         if (geom[i]->colourValue.size() > v)
-            tris->read(geom[i]->draw, 1, lucColourValueData, &geom[i]->colourValue.value[v]);
+         //Per shape colours (can do this as long as sub-renderer always outputs same tri count)
+         geom[i]->getColour(colour, v);
+         tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
       }
-      //Setup colour range on tris data
-      tris->setup(geom[i]->draw, lucColourValueData, geom[i]->colourValue.minimum, geom[i]->colourValue.maximum);
       //printf("%d Shapes: %d Vertices: %d Indices: %d\n", i, geom[i]->positions.size()/3, geom[i]->count, geom[i]->indices.size());
    }
 

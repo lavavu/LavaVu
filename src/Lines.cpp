@@ -142,8 +142,6 @@ void Lines::update()
          for (int v=0; v < geom[i]->count; v++) 
          {
             if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
-            Colour colour;
-            geom[i]->getColour(colour, v);
             float* pos = geom[i]->vertices[v];
             int diff = tris->getCount(geom[i]->draw);
             tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
