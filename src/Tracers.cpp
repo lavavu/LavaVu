@@ -43,7 +43,7 @@ Tracers::Tracers() : Geometry()
    steps = 0;
    timestep = 0;
    //Create sub-renderers
-   lines = new Lines();
+   lines = new Lines(true); //Only used for 2d lines
    tris = new TriSurfaces();
 }
 

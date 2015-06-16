@@ -35,11 +35,12 @@
 
 #include "Geometry.h"
 
-Lines::Lines()
+Lines::Lines(bool all2Dflag)
 {
    type = lucLineType;
    vbo = 0;
    linetotal = 0;
+   all2d = all2Dflag;
    //Create sub-renderers
    tris = new TriSurfaces();
 }
@@ -66,7 +67,7 @@ void Lines::update()
    linetotal = 0;
    for (unsigned int i=0; i<geom.size(); i++) 
    {
-      if (geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+      if (all2d || geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
          linetotal += geom[i]->count;
    }
 
@@ -101,7 +102,7 @@ void Lines::update()
       //Calibrate colour maps on range for this object
       geom[i]->colourCalibrate();
 
-      if (geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+      if (all2d || geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
       {
          int hasColours = geom[i]->colourCount();
          int colrange = hasColours ? geom[i]->count / hasColours : 1;
@@ -145,10 +146,10 @@ void Lines::update()
          {
             if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
             float* pos = geom[i]->vertices[v];
-            tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
-            //Per line colours (can do this as long as sub-renderer always outputs same tri count)
             if (oldpos)
             {
+               tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
+               //Per line colours (can do this as long as sub-renderer always outputs same tri count)
                geom[i]->getColour(colour, v);
                tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
             }

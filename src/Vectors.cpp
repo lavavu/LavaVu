@@ -39,7 +39,7 @@ Vectors::Vectors() : Geometry()
 {
    type = lucVectorType;
    //Create sub-renderers
-   lines = new Lines();
+   lines = new Lines(true); //Only used for 2d lines
    tris = new TriSurfaces();
 }
 

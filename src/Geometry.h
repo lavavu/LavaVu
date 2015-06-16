@@ -307,9 +307,10 @@ class Lines : public Geometry
    TriSurfaces* tris;
    GLuint vbo;
    int linetotal;
+   bool all2d;
   public:
    static bool tubes;
-   Lines();
+   Lines(bool all2Dflag=false);
    ~Lines();
    virtual void close();
    virtual void update();
