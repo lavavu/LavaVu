@@ -959,36 +959,28 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
    float vector[3];
    float pos[3];
 
-   if (coord1 == NULL) return;
+   assert(coord0 && coord1);
 
    //Scale end coord
    coord1[0] *= scale[0];
    coord1[1] *= scale[1];
    coord1[2] *= scale[2];
 
-   if (coord0 == NULL)
-   {
-      // Initial position, no vector yet
-      arrowHeadSize = 0;
-   }
-   else
-   {
-      //Scale start coord
-      coord0[0] *= scale[0];
-      coord0[1] *= scale[1];
-      coord0[2] *= scale[2];
+   //Scale start coord
+   coord0[0] *= scale[0];
+   coord0[1] *= scale[1];
+   coord0[2] *= scale[2];
 
-      // Obtain a vector between the two points
-      vectorSubtract(vector, coord1, coord0);
+   // Obtain a vector between the two points
+   vectorSubtract(vector, coord1, coord0);
 
-      // Get centre position on vector between two coords
-      pos[0] = coord0[0] + vector[0] * 0.5;
-      pos[1] = coord0[1] + vector[1] * 0.5;
-      pos[2] = coord0[2] + vector[2] * 0.5;
+   // Get centre position on vector between two coords
+   pos[0] = coord0[0] + vector[0] * 0.5;
+   pos[1] = coord0[1] + vector[1] * 0.5;
+   pos[2] = coord0[2] + vector[2] * 0.5;
 
-      // Get length
-      length = sqrt(dotProduct(vector,vector));
-   }
+   // Get length
+   length = sqrt(dotProduct(vector,vector));
 
    //Exceeds max length? Draw endpoint only
    if (length > maxLength)

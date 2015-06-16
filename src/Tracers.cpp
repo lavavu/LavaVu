@@ -156,33 +156,33 @@ void Tracers::update()
             //geom[i]->getColour(colour, TimeStep::gap * step * particles + pidx);
 
             // Draw section
-            if (geom[i]->draw->properties["flat"].ToBool(false) || quality < 1)
+            if (step > start)
             {
-               if (step > start)
+               if (geom[i]->draw->properties["flat"].ToBool(false) || quality < 1)
                {
                   lines->read(geom[i]->draw, 1, lucVertexData, oldpos);
                   lines->read(geom[i]->draw, 1, lucVertexData, pos);
                   lines->read(geom[i]->draw, 1, lucColourValueData, &oldtime);
                   lines->read(geom[i]->draw, 1, lucColourValueData, &time);
                }
-            }
-            else
-            {
-               //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
-               float arrowHead = -1;
-               if (step == end) arrowHead = arrowSize; //geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-               radius = scale * size;
-               int diff = tris->getCount(geom[i]->draw);
-               tris->drawTrajectory(geom[i]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
-               diff = tris->getCount(geom[i]->draw) - diff;
-               //Per vertex colours
-               for (int c=0; c<diff; c++) 
+               else
                {
-                  float t = oldtime;
-                  //Top of shaft and arrowhead use current colour value, others (base) use previous
-                  //(Every second vertex is at top of shaft, first quality*2 are shaft verts)
-                  if (c%2==1 || c > quality*2) t = time;
-                  tris->read(geom[i]->draw, 1, lucColourValueData, &t);
+                  //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
+                  float arrowHead = -1;
+                  if (step == end) arrowHead = arrowSize; //geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
+                  radius = scale * size;
+                  int diff = tris->getCount(geom[i]->draw);
+                  tris->drawTrajectory(geom[i]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
+                  diff = tris->getCount(geom[i]->draw) - diff;
+                  //Per vertex colours
+                  for (int c=0; c<diff; c++) 
+                  {
+                     float t = oldtime;
+                     //Top of shaft and arrowhead use current colour value, others (base) use previous
+                     //(Every second vertex is at top of shaft, first quality*2 are shaft verts)
+                     if (c%2==1 || c > quality*2) t = time;
+                     tris->read(geom[i]->draw, 1, lucColourValueData, &t);
+                  }
                }
             }
 
