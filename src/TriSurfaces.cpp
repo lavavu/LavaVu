@@ -335,6 +335,9 @@ void TriSurfaces::loadBuffers()
       geom[index]->colourCalibrate();
       int hasColours = geom[index]->colourCount();
       int colrange = hasColours ? geom[index]->count / hasColours : 1;
+      if (hasColours) assert(colrange * hasColours == geom[index]->count);
+      //if (hasColours && colrange * hasColours != geom[index]->count)
+      //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count, hasColours);
       bool vertColour = hasColours && colrange > 1;
       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count, hasColours);
 
@@ -345,11 +348,15 @@ void TriSurfaces::loadBuffers()
       float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
-         //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
-         int cidx = v / colrange;
-         if (cidx >= hasColours) cidx = hasColours - 1;
-         geom[index]->getColour(colour, cidx);
-         //if (v%1000==0) printf("v %d colrange %d v/colrange %d colour %d,%d,%d,%d\n", v, colrange, v/colrange, colour.r, colour.g, colour.b, colour.a);
+         if (colrange == 1)
+            geom[index]->getColour(colour, v);
+         else
+         {
+            //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
+            int cidx = v / colrange;
+            if (cidx * colrange == v)
+               geom[index]->getColour(colour, cidx);
+         }
 
           //Write vertex data to vbo
          assert((int)(ptr-p) < bsize);

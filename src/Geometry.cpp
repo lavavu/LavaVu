@@ -41,6 +41,7 @@ int GeomData::glyphs = -1; //Glyph quality (-1 = use default per type)
 bool GeomData::wireframe = false;
 bool GeomData::cullface = false;
 bool GeomData::lit = true;
+bool Lines::tubes = false;
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -170,18 +171,6 @@ void GeomData::getColour(Colour& colour, int idx)
    //Set opacity to drawing object override level if set
    if (draw->opacity > 0.0 && draw->opacity < 1.0)
       colour.a = draw->opacity * 255;
-}
-
-void GeomData::setColour(int idx)
-{
-   Colour colour;
-   getColour(colour, idx);
-   //Multiply opacity by global override level if set
-   //(We don't do this in getColour because it is used by shader drawn objects,
-   // which do this in their shader code instead)
-   if (GeomData::opacity > 0.0)
-      colour.a *= GeomData::opacity;
-   glColor4ubv(colour.rgba);
 }
 
 Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), type(lucMinType), total(0), scale(1.0f), redraw(true)
@@ -462,12 +451,17 @@ void Geometry::labels()
    lucSetFontCharset(FONT_SMALL); //Bitmap fonts
    for (unsigned int i=0; i < geom.size(); i++)
    {
+      Colour colour;
       if (drawable(i) && geom[i]->labels.size() > 0) 
       {
          for (unsigned int j=0; j < geom[i]->labels.size(); j++)
          {
             float* p = geom[i]->vertices[j];
-            geom[i]->setColour(j);
+            geom[i]->getColour(colour, j);
+            //Multiply opacity by global override level if set
+            if (GeomData::opacity > 0.0)
+               colour.a *= GeomData::opacity;
+            glColor4ubv(colour.rgba);
             if (geom[i]->labels[j].size() > 0)
             {
 #ifdef USE_OMEGALIB
@@ -662,21 +656,6 @@ void Geometry::print()
 
       std::cout << i << " - " << std::endl;
       //std::cout << i << " - " << (drawable(i) ? "shown" : "hidden") << std::endl;
-   }
-}
-
-void Geometry::newData(DrawingObject* draw)
-{
-   //Prepare for new data appended to current objects by setting offsets
-   //(Used by tracers so they can collate data rather than creating new objects every time)
-   for (unsigned int i = 0; i < geom.size(); i++) 
-   {
-      int data_type;
-      for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
-      {
-         if (geom[i]->draw == draw)
-            geom[i]->data[data_type]->setOffset();
-      }
    }
 }
 
@@ -1045,12 +1024,12 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
    {
       // Check segment length large enough to warrant joining points with cylinder section ...
       // Skip any section smaller than 0.3 * radius, draw sphere only for continuity
-      if (length > radius1 * 0.30)
+      //if (length > radius1 * 0.30)
       {
          // Join last set of points with this set
          drawVector(draw, pos, vector, 1.0, radius0, radius1, 0.0, segment_count);
-         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
-          Vec3d centre(pos);
+//         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
+//          Vec3d centre(pos);
 //         drawSphere(geom, centre, radius, segment_count);
       }
       // Finish with sphere, closes gaps in angled joins

@@ -155,7 +155,6 @@ class GeomData
    void mapToColour(Colour& colour, float value);
    int colourCount();
    void getColour(Colour& colour, int idx);
-   void setColour(int idx=0);
 };
 
 
@@ -251,7 +250,6 @@ class Geometry
    std::vector<GeomData*> getAllObjects(int id);
    GeomData* getObjectStore(DrawingObject* draw);
    GeomData* add(DrawingObject* draw);
-   void newData(DrawingObject* draw);
    GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
    void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
    void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, float dimFactor=1.0, const char* units="");
@@ -310,7 +308,7 @@ class Lines : public Geometry
    GLuint vbo;
    int linetotal;
   public:
-   bool tubes;
+   static bool tubes;
    Lines();
    ~Lines();
    virtual void close();

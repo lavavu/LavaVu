@@ -59,6 +59,9 @@ void Shapes::update()
    tris->setView(view);
    for (unsigned int i=0; i<geom.size(); i++) 
    {
+      //Create a new data store for output geometry
+      tris->add(geom[i]->draw);
+
       float scaling = geom[i]->draw->properties["scaling"].ToFloat(1.0);
 
       //Load constant scaling factors from properties

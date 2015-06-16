@@ -258,15 +258,12 @@ class FloatValues
    virtual void read(unsigned int n, const void* data)
    {
       int size = next + n;
-      if (value.size() < size)
+      int oldsize = value.size();
+      if (oldsize < size)
       {
-         int grow = n;
          //Always at least double size for efficiency
-         if (grow < n) grow = n;
-         value.resize(value.size() + grow);
-         FloatValues::membytes += 4*grow;
-         if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
-         //printf("============== MEMORY total %.3f mb, added %d ==============\n", FloatValues::membytes/1000000.0f, grow);
+         if (size < oldsize*2) size = oldsize*2;
+         resize(size);
       }
       memcpy(&value[next], data, n * sizeof(float));
       next += n;
@@ -299,12 +296,16 @@ class FloatValues
 
    void resize(unsigned long size)
    {
-      int count = value.size();
-      value.resize(size);
-      FloatValues::membytes += 4*(size - count);
-      if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
-      //printf("============== MEMORY resized: %.3f mb, change %d ==============\n", FloatValues::membytes/1000000.0f, size - bytes);
+      int oldsize = value.size();
+      if (oldsize < size)
+      {
+         value.resize(size);
+         FloatValues::membytes += 4*(size-oldsize);
+         if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
+         //printf("============== MEMORY total %.3f mb, added %d ==============\n", FloatValues::membytes/1000000.0f, 4*(size-oldsize));
+      }
    }
+
    int size() { return next; }
    void clear()
    {

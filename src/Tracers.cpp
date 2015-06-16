@@ -73,6 +73,10 @@ void Tracers::update()
    tris->setView(view);
    for (unsigned int i=0; i<geom.size(); i++) 
    {
+      //Create a new data stores for output geometry
+      tris->add(geom[i]->draw);
+      lines->add(geom[i]->draw);
+
       //Calculate particle count using data count / data steps
       unsigned int particles = geom[i]->width;
       int count = geom[i]->count;

@@ -67,6 +67,10 @@ void Vectors::update()
    int tot = 0;
    for (unsigned int i=0; i<geom.size(); i++) 
    {
+      //Create new data stores for output geometry
+      tris->add(geom[i]->draw);
+      lines->add(geom[i]->draw);
+
       tot += geom[i]->count;
 
       float arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
@@ -108,26 +112,18 @@ void Vectors::update()
             vec *= scale;
          }
 
+         geom[i]->getColour(colour, v);
+
          if (vec.magnitude() * scaling >= minL)
          {
-            int diff = tris->getCount(geom[i]->draw);
             tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
-            //Per vertex colours
-            diff = tris->getCount(geom[i]->draw) - diff;
-            assert(diff > 0);
-            geom[i]->getColour(colour, v);
-            for (int c=0; c<diff; c++) 
-               tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+            //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
+            tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
          }
-
          //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
-         int diff = lines->getCount(geom[i]->draw);
          lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
-         //Per vertex colours
-         diff = lines->getCount(geom[i]->draw) - diff;
-         geom[i]->getColour(colour, v);
-         for (int c=0; c<diff; c++) 
-            lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
+         lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
 
       }
    }

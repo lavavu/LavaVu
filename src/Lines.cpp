@@ -40,7 +40,6 @@ Lines::Lines()
    type = lucLineType;
    vbo = 0;
    linetotal = 0;
-   tubes = false;
    //Create sub-renderers
    tris = new TriSurfaces();
 }
@@ -132,6 +131,9 @@ void Lines::update()
       }
       else
       {
+         //Create a new data store for output geometry
+         tris->add(geom[i]->draw);
+
          //3d lines - using triangle sub-renderer
          geom[i]->draw->properties["lit"] = true; //Override lit
          //Draw as 3d cylinder sections
@@ -143,11 +145,13 @@ void Lines::update()
          {
             if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
             float* pos = geom[i]->vertices[v];
-            int diff = tris->getCount(geom[i]->draw);
             tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
             //Per line colours (can do this as long as sub-renderer always outputs same tri count)
-            geom[i]->getColour(colour, v);
-            tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+            if (oldpos)
+            {
+               geom[i]->getColour(colour, v);
+               tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+            }
             oldpos = pos;
          }
       }

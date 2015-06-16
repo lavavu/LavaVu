@@ -657,8 +657,8 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.exists("linetubes"))
    {
-      Model::lines->tubes = !Model::lines->tubes;
-      printMessage("Lines rendered as tubes is %s", Model::lines->tubes ? "ON":"OFF");
+      Lines::tubes = !Lines::tubes;
+      printMessage("Lines rendered as tubes is %s", Lines::tubes ? "ON":"OFF");
       redrawViewports();
       return true;
    }
