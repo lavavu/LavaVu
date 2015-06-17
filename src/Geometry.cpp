@@ -1059,7 +1059,7 @@ void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float 
    }
 
    //Triangle indices
-   int vertex_index = getCount(draw);
+   unsigned vertex_index = (unsigned)getCount(draw);
    unsigned int indices[36] = {
 				0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index, 
 				3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index, 
