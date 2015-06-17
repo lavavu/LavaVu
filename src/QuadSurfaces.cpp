@@ -78,9 +78,9 @@ void QuadSurfaces::update()
       //Get corners of strip
       float* posmin = geom[i]->vertices[0];
       float* posmax = geom[i]->vertices[geom[i]->count - 1];
-      float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5, 
-                      posmin[1] + (posmax[1] - posmin[1]) * 0.5, 
-                      posmin[2] + (posmax[2] - posmin[2]) * 0.5};
+      float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
+                      posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
+                      posmin[2] + (posmax[2] - posmin[2]) * 0.5f};
 
       //Calculate distance from viewing plane
       geom[i]->distance = eyeDistance(view->modelView, pos); 

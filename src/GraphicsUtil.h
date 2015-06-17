@@ -935,19 +935,22 @@ class PropertyParser
    bool has(int& val, std::string key, unsigned int idx=0)
    {
       std::stringstream parsess(get(key, idx));
-      return (parsess >> val);
+      parsess >> val;
+      return parsess.fail();
    }
 
    bool has(float& val, std::string key, unsigned int idx=0)
    {
       std::stringstream parsess(get(key, idx));
-      return (parsess >> val);
+      parsess >> val;
+      return parsess.fail();
    }
 
    bool has(bool& val, std::string key, unsigned int idx=0)
    {
       std::stringstream parsess(get(key, idx));
-      return (parsess >> val);
+      parsess >> val;
+      return parsess.fail();
       //return (parsess >> std::boolalpha >> val);
    }
 
@@ -992,8 +995,8 @@ float triAngle(float v0[3], float v1[3], float v2[3]);
 void Colour_SetColour(Colour* colour);
 void Colour_Invert(Colour& colour);
 void Colour_SetXOR(bool switchOn);
-Colour Colour_FromJson(json::Object& object, std::string key, int red=0, int green=0, int blue=0, int alpha=255);
-Colour Colour_FromJson(json::Value& value, int red=0, int green=0, int blue=0, int alpha=255);
+Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
+Colour Colour_FromJson(json::Value& value, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
 json::Value Colour_ToJson(Colour& colour);
 void Colour_ToArray(Colour colour, float* array);
 void Colour_SetUniform(GLint uniform, Colour colour);

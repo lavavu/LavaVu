@@ -141,14 +141,14 @@ void jsonParseProperty(std::string& data, json::Object& object)
    }
 }
 
-Colour Colour_FromJson(json::Object& object, std::string key, int red, int green, int blue, int alpha)
+Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
    Colour colour = {red, green, blue, alpha};
    if (!object.HasKey(key)) return colour;
    return Colour_FromJson(object[key], red, green, blue, alpha);
 }
 
-Colour Colour_FromJson(json::Value& value, int red, int green, int blue, int alpha)
+Colour Colour_FromJson(json::Value& value, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
    Colour colour = {red, green, blue, alpha};
    //Will accept integer colour or [r,g,b,a] array
@@ -743,7 +743,7 @@ float triAngle(float v0[3], float v1[3], float v2[3])
 // Draw box, optionally filled and coloured
 void drawCuboid(float pos[3], float width, float height, float depth, bool filled, float linewidth)
 {
-   float min[3] = {pos[0] - 0.5 * width, pos[1] - 0.5 * height, pos[2] - 0.5 * depth};
+   float min[3] = {pos[0] - 0.5f * width, pos[1] - 0.5f * height, pos[2] - 0.5f * depth};
    float max[3] = {min[0] + width, min[1] + height, min[2] + depth};
    drawCuboid(min, max, filled, linewidth);
 }

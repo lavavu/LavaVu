@@ -1034,7 +1034,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
 
 void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float height, float depth, Quaternion& rot)
 {
-   float min[3] = {-0.5 * width, -0.5 * height, -0.5 * depth};
+   float min[3] = {-0.5f * width, -0.5f * height, -0.5f * depth};
    float max[3] = {min[0] + width, min[1] + height, min[2] + depth};
 
    //Corner vertices
