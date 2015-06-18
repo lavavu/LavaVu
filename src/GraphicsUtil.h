@@ -936,21 +936,21 @@ class PropertyParser
    {
       std::stringstream parsess(get(key, idx));
       parsess >> val;
-      return parsess.fail();
+      return !parsess.fail();
    }
 
    bool has(float& val, std::string key, unsigned int idx=0)
    {
       std::stringstream parsess(get(key, idx));
       parsess >> val;
-      return parsess.fail();
+      return !parsess.fail();
    }
 
    bool has(bool& val, std::string key, unsigned int idx=0)
    {
       std::stringstream parsess(get(key, idx));
       parsess >> val;
-      return parsess.fail();
+      return !parsess.fail();
       //return (parsess >> std::boolalpha >> val);
    }
 
