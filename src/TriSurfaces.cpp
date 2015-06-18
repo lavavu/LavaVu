@@ -412,7 +412,7 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
    {
       //Triangle centroid for depth sorting
       //Actual centroid
-      float centroid[3] = {(v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, view->is3d ? (v1[2]+v2[2]+v3[2])/3 : 0.0};
+      float centroid[3] = {(v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, view->is3d ? (v1[2]+v2[2]+v3[2])/3 : 0.0f};
       //Max values in each axis instead of centroid TODO: allow switching sort vertex calc type
       //float centroid[3] = {MAX3(v1[0], v2[0], v3[0]), MAX3(v1[1], v2[1], v3[1]), MAX3(v1[2], v2[2], v3[2])};
       //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);

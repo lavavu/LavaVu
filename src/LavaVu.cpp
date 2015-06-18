@@ -861,9 +861,9 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
    else
    {
       //Process a triangle into 4 sub-triangles
-      float ab[3] = {0.5*(a[0]+b[0]), 0.5*(a[1]+b[1]), 0.5*(a[2]+b[2])};
-      float ac[3] = {0.5*(a[0]+c[0]), 0.5*(a[1]+c[1]), 0.5*(a[2]+c[2])};
-      float bc[3] = {0.5*(b[0]+c[0]), 0.5*(b[1]+c[1]), 0.5*(b[2]+c[2])};
+      float ab[3] = {0.5f*(a[0]+b[0]), 0.5f*(a[1]+b[1]), 0.5f*(a[2]+b[2])};
+      float ac[3] = {0.5f*(a[0]+c[0]), 0.5f*(a[1]+c[1]), 0.5f*(a[2]+c[2])};
+      float bc[3] = {0.5f*(b[0]+c[0]), 0.5f*(b[1]+c[1]), 0.5f*(b[2]+c[2])};
 
       addTriangles(obj, a, ab, ac, level);
       addTriangles(obj, ab, b, bc, level);
@@ -950,7 +950,7 @@ void LavaVu::readOBJ(FilePath& fn)
       {
          for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++)
          {
-            int ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};
+            unsigned ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};
             addTriangles(tobj, 
                        &shapes[i].mesh.positions[ids[0]*3],
                        &shapes[i].mesh.positions[ids[1]*3],
@@ -1302,10 +1302,10 @@ void LavaVu::readTecplot(FilePath& fn)
 
 void LavaVu::createDemoModel()
 {
-   int RANGE = 2;
+   float RANGE = 2.f;
    float min[3] = {-RANGE,-RANGE,-RANGE};
    float max[3] = {RANGE,RANGE,RANGE};
-   float dims[3] = {RANGE*2,RANGE*2,RANGE*2};
+   float dims[3] = {RANGE*2.f,RANGE*2.f,RANGE*2.f};
    float size = sqrt(dotProduct(dims,dims));
    viewer->title = "Test Pattern";
 

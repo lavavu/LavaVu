@@ -775,7 +775,7 @@ void View::drawRulers()
    bool rulers = properties["rulers"].ToBool(false);
    if (!rulers) return;
    //Axis rulers
-   float shift[3] = {0.01/scale[0] * model_size, 0.01/scale[1] * model_size, 0.01/scale[2] * model_size};
+   float shift[3] = {0.01f/scale[0] * model_size, 0.01f/scale[1] * model_size, 0.01f/scale[2] * model_size};
    {
       float sta[3] = {min[0], min[1]-shift[1], max[2]+shift[2]};
       float end[3] = {max[0], min[1]-shift[1], max[2]+shift[2]};

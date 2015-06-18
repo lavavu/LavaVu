@@ -205,9 +205,9 @@ void Volumes::render(int i)
    float dims[3] = {geom[i]->vertices[1][0] - geom[i]->vertices[0][0],
                     geom[i]->vertices[1][1] - geom[i]->vertices[0][1],
                     geom[i]->vertices[1][2] - geom[i]->vertices[0][2]};
-   float pos[3] =  {geom[i]->vertices[0][0] + 0.5 * dims[0],
-                    geom[i]->vertices[0][1] + 0.5 * dims[1],
-                    geom[i]->vertices[0][2] + 0.5 * dims[2]};
+   float pos[3] =  {geom[i]->vertices[0][0] + 0.5f * dims[0],
+                    geom[i]->vertices[0][1] + 0.5f * dims[1],
+                    geom[i]->vertices[0][2] + 0.5f * dims[2]};
 
    assert(prog);
    GL_Error_Check;
@@ -217,7 +217,7 @@ void Volumes::render(int i)
    glGetFloatv(GL_VIEWPORT, viewport);
    TextureData* voltexture = geom[i]->texture;
    if (!voltexture) voltexture = geom[i]->draw->defaultTexture;
-   float res[3] = {voltexture->width, voltexture->height, voltexture->depth};
+   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};
    glUniform3fv(prog->uniforms["uResolution"], 1, res);
    glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
