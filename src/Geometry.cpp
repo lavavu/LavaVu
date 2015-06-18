@@ -131,13 +131,15 @@ void GeomData::getColour(Colour& colour, int idx)
    if (draw->colourMaps[lucColourValueData] && colourValue.size() > 0)
    {
       if (colourValue.size() == 1) idx = 0;  //Single colour value only provided
-      assert(idx < colourValue.size());
+      //assert(idx < colourValue.size());
+      if (idx >= colourValue.size()) idx = colourValue.size() - 1;
       colour = draw->colourMaps[lucColourValueData]->getfast(colourValue[idx]);
    }
    else if (colours.size() > 0)
    {
       if (colours.size() == 1) idx = 0;  //Single colour only provided
-      assert(idx < colours.size());
+      if (idx >= colours.size()) idx = colours.size() - 1;
+      //assert(idx < colours.size());
       colour = colours.toColour(idx);
    }
    else

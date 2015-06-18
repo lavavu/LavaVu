@@ -335,7 +335,7 @@ void TriSurfaces::loadBuffers()
       geom[index]->colourCalibrate();
       int hasColours = geom[index]->colourCount();
       int colrange = hasColours ? geom[index]->count / hasColours : 1;
-      if (hasColours) assert(colrange * hasColours == geom[index]->count);
+      //if (hasColours) assert(colrange * hasColours == geom[index]->count);
       //if (hasColours && colrange * hasColours != geom[index]->count)
       //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count, hasColours);
       bool vertColour = hasColours && colrange > 1;
