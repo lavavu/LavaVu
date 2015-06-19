@@ -1658,7 +1658,7 @@ void LavaVu::display(void)
       int selview = view;
       for (unsigned int v=0; v < awin->views.size(); v++)
       {
-         if (!awin->views[v]->redraw) continue;
+         //if (!awin->views[v]->redraw) continue;
          //All objects need redrawing if the viewport changed
          if (lastdraw != v) redrawObjects();
          awin->views[v]->redraw = false;
