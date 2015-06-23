@@ -153,9 +153,9 @@ void send_file(const char *fname, struct mg_connection *conn)
    std::streambuf* raw_buffer = file.rdbuf();
 
    //size_t len = raw_buffer->pubseekoff(0, std::ios::end, std::ios::in);;
-        file.seekg(0,std::ios::end);
-        size_t len = file.tellg();
-        file.seekg(0,std::ios::beg);
+   file.seekg(0,std::ios::end);
+   size_t len = file.tellg();
+   file.seekg(0,std::ios::beg);
 
    char* src = new char[len];
    raw_buffer->sgetn(src, len);
@@ -196,7 +196,7 @@ void* Server::callback(enum mg_event event,
          //Load timestep
          //Write image for each window
          int ts = atoi(request_info->uri+10);
-         printf("TIMESTEP REQUEST %d\n", ts);
+         debug_print("TIMESTEP REQUEST %d\n", ts);
       }
       else if (strstr(request_info->uri, "/connect") != NULL)
       {
@@ -242,7 +242,8 @@ void* Server::callback(enum mg_event event,
          while (_self->synched[id] && !_self->viewer->quitProgram)
          {
             debug_print("CLIENT %d THREAD ID %u WAITING\n", id, tid);
-            _self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
+            //This doesn't seem to be needed, causes constant display updates even when no changes
+            //_self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
             pthread_cond_wait(&_self->condition_var, &_self->cs_mutex);
          }
          debug_print("CLIENT %d THREAD ID %u RESUMED, quit? %d\n", id, tid, _self->viewer->quitProgram);
@@ -273,7 +274,8 @@ void* Server::callback(enum mg_event event,
 #endif
          mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
          std::string data = request_info->uri+1;
-         std::replace(data.begin(), data.end(), ',', '\n');
+         //Replace semi-colon with newlines, multiple line commands
+         std::replace(data.begin(), data.end(), ';', '\n');
          const size_t equals = data.find('=');
          const size_t amp = data.find('&');
          //Push command onto queue to be processed in the viewer thread
@@ -282,7 +284,7 @@ void* Server::callback(enum mg_event event,
             OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
          else
             OpenGLViewer::commands.push_back(data.substr(equals+1));
-         debug_print("%s\n", data.substr(equals+1).c_str());
+         debug_print("CMD: %s\n", data.substr(equals+1).c_str());
          _self->viewer->postdisplay = true;
          pthread_mutex_unlock(&_self->viewer->cmd_mutex);
       }

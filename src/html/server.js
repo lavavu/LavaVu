@@ -129,7 +129,8 @@ var count = 0;
 function requestData(data, callback, sync) {
   var http = new XMLHttpRequest();
   // the url of the script where we send the asynchronous call
-  var url = data;
+  var url = data.replace(/\n/g, ';'); //Replace newlines with semi-colon
+  //console.log(url);
   //Add count to url to prevent caching
   if (data) {
     url += "&" + count;
