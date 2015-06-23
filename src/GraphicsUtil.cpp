@@ -1485,9 +1485,6 @@ int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum
 
    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, mode);  //GL_MODULATE/BLEND/REPLACE/DECAL
 
-      //glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
-      //glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
-
    // use linear filtering
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
    if (mipmaps)
