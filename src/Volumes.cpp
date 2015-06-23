@@ -187,6 +187,9 @@ geom[i]->depth *= SUBSAMPLE;
                   glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
             }
             GL_Error_Check;
+
+            //Calibrate on data now so if colour bar drawn it will have correct range
+            geom[i]->colourCalibrate();
           }
 
           //Setup gradient texture from colourmap
@@ -205,9 +208,6 @@ void Volumes::render(int i)
    float dims[3] = {geom[i]->vertices[1][0] - geom[i]->vertices[0][0],
                     geom[i]->vertices[1][1] - geom[i]->vertices[0][1],
                     geom[i]->vertices[1][2] - geom[i]->vertices[0][2]};
-   float pos[3] =  {geom[i]->vertices[0][0] + 0.5f * dims[0],
-                    geom[i]->vertices[0][1] + 0.5f * dims[1],
-                    geom[i]->vertices[0][2] + 0.5f * dims[2]};
 
    assert(prog);
    GL_Error_Check;
@@ -282,7 +282,9 @@ void Volumes::render(int i)
 #endif
    //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
    glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
-   glScalef(1.0/dims[0]*view->scale[0], 1.0/dims[1]*view->scale[1], 1.0/dims[2]*view->scale[2]);
+   glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
+   //glScalef(1.0/dims[0]*view->scale[0], 1.0/dims[1]*view->scale[1], 1.0/dims[2]*view->scale[2]);
+   glScalef(1.0/(view->scale[0]*view->scale[0]), 1.0/(view->scale[1]*view->scale[1]), 1.0/(view->scale[2]*view->scale[2]));
    glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);
    glPopMatrix();
    glGetFloatv(GL_PROJECTION_MATRIX, pMatrix);
