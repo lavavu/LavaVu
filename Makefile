@@ -40,10 +40,17 @@ ifeq ($(OS), Darwin)
   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_GLUT
 else
-  #Linux interactive with X11 (or GLUT / SDL)
-  LIBS=-ldl -lpthread -lm -lGL -lz -lX11 #-lglut -lSDL
-  #LIBS=-ldl -lpthread -lm -lGL -lz -lX11 -lglut -lSDL
-  DEFINES += -DUSE_FONTS -DHAVE_X11 #-DHAVE_GLUT -DHAVE_SDL
+  #Linux interactive with X11 (and optional GLUT, SDL)
+  LIBS=-ldl -lpthread -lm -lGL -lz -lX11
+  DEFINES += -DUSE_FONTS -DHAVE_X11
+ifeq ($(GLUT), 1)
+  LIBS+= -lglut
+  DEFINES += -DHAVE_GLUT
+endif
+ifeq ($(SDL), 1)
+  LIBS+= -lSDL
+  DEFINES += -DHAVE_SDL
+endif
 endif
 endif
 
