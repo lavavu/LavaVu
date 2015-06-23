@@ -469,7 +469,7 @@ void ColourMap::loadTexture(bool repeat)
    for (int i=0; i<PALETTE_TEX_SIZE; i++)
    {
       col = get(i / (float)(PALETTE_TEX_SIZE-1));
-      //if (i%64=0) printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
+      //if (i%64==0) printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
       paletteData[i*4] = col.r;
       paletteData[i*4+1] = col.g;
       paletteData[i*4+2] = col.b;

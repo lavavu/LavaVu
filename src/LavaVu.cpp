@@ -2251,7 +2251,6 @@ void LavaVu::dumpById(unsigned int id)
    {
       if (amodel->objects[i] && !amodel->objects[i]->skip && (id == 0 || amodel->objects[i]->id == id))
       {
-         std::string names[] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes"};
          for (int type=lucMinType; type<lucMaxType; type++)
          {
             std::ostringstream ss;
@@ -2262,7 +2261,7 @@ void LavaVu::dumpById(unsigned int id)
             {
                char filename[512];
                sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
-                                                names[type].c_str(), amodel->step());
+                                                     GeomData::names[type].c_str(), amodel->step());
                std::ofstream csv;
                csv.open(filename, std::ios::out | std::ios::trunc);
                std::cout << " * Writing object " << amodel->objects[i]->id << " to " << filename << std::endl;
@@ -2348,8 +2347,9 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
    {
       if (amodel->objects[i] && (id == 0 || amodel->objects[i]->id == id))
       {
-         //std::string names[] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes"};
          //Only able to dump point/triangle based objects currently:
+         //TODO: fix to use sub-renderer output for others
+         //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
          std::string names[] = {"", "points", "triangles", "triangles", "", "", "", "", "volume"};
          bool first = true;
          for (int type=lucMinType; type<lucMaxType; type++)
@@ -2421,6 +2421,6 @@ std::string LavaVu::requestData(std::string key)
    {
       jsonWrite(result);
    }
-   printf("%d\n", result.str().length());
+   debug_print("Sending object list (%d bytes)\n", result.str().length());
    return result.str();
 }

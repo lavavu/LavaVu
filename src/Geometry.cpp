@@ -36,6 +36,7 @@
 #include "Geometry.h"
 
 //Init static data
+std::string GeomData::names[lucMaxType] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volume"};
 float GeomData::opacity = 0;
 int GeomData::glyphs = -1; //Glyph quality (-1 = use default per type)
 bool GeomData::wireframe = false;
@@ -221,16 +222,29 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
    {
       if (geom[i]->draw->id == id)
       {
-         std::cout << "Collected " << geom[i]->count << " vertices/values (" << i << ")" << std::endl;
-         //Only supports dump of vertex and colourValue at present
-         for (int v=0; v < geom[i]->count; v++)
+         if (type == lucVolumeType)
          {
-            csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
+            //Dump colourValue data only
+            std::cout << "Collected " << geom[i]->colourValue.size() << " values (" << i << ")" << std::endl;
+            for (int c=0; c < geom[i]->colourValue.size(); c++)
+            {
+               csv << geom[i]->colourValue[c] << std::endl;
+            }
+ 
+         }
+         else
+         {
+            std::cout << "Collected " << geom[i]->count << " vertices/values (" << i << ")" << std::endl;
+            //Only supports dump of vertex and colourValue at present
+            for (int v=0; v < geom[i]->count; v++)
+            {
+               csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
 
-            if (geom[i]->colourValue.size() == geom[i]->count)
-               csv << ',' << geom[i]->colourValue[v];
+               if (geom[i]->colourValue.size() == geom[i]->count)
+                  csv << ',' << geom[i]->colourValue[v];
 
-            csv << std::endl;
+               csv << std::endl;
+            }
          }
       }
    }

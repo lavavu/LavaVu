@@ -71,6 +71,7 @@ typedef struct
 class GeomData
 {
   public:
+   static std::string names[lucMaxType];
    static float opacity;  //Global opacity
    static int glyphs;
    static bool wireframe, cullface, lit;
