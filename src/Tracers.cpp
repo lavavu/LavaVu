@@ -155,6 +155,8 @@ void Tracers::update()
             time = TimeStep::timesteps[step]->time;
             //geom[i]->getColour(colour, TimeStep::gap * step * particles + pidx);
 
+            radius = scale * size;
+
             // Draw section
             if (step > start)
             {
@@ -170,7 +172,6 @@ void Tracers::update()
                   //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
                   float arrowHead = -1;
                   if (step == end) arrowHead = arrowSize; //geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-                  radius = scale * size;
                   int diff = tris->getCount(geom[i]->draw);
                   tris->drawTrajectory(geom[i]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
                   diff = tris->getCount(geom[i]->draw) - diff;
