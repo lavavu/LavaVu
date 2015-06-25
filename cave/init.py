@@ -133,6 +133,7 @@ def _onAppStart(binpath):
   _addCommandMenuItem(mainmnu, "Point Type", "pointtype all")
   _addCommandMenuItem(mainmnu, "Next Model", "model down")
   _addSlider(mainmnu, "Animate", "_setFrameRate(%value%)", 10, 0)
+  #_addCommandMenuItem(mainmnu, "Toggle Model Rotate", "")
   _setFrameRate(8)
   #_addMenuItem(mainmnu, "Restore Position", "_setPosition()")
 

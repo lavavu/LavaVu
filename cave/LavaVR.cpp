@@ -510,8 +510,9 @@ void LavaVuApplication::handleEvent(const Event& evt)
         float analogUD = evt.getAxis(1);
         if (abs(analogUD) + abs(analogLR) > 0.001)
         {
-            //TODO: default is model rotate, enable timestep sweep mode via menu option
-           bool rotateStick = true;
+           //TODO: default is model rotate, enable timestep sweep mode via menu option
+           View* view = glapp->aview;
+           bool rotateStick = view->properties["sweep"].ToInt(0) == 0;
            if (rotateStick)
            {
                //L2 Trigger (large)

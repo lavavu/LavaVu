@@ -636,6 +636,7 @@ bool LavaVu::parseCommands(std::string cmd)
       if (Model::tracers->steps > amodel->step()) Model::tracers->steps = amodel->step();
       printMessage("Set tracer steps limit to %d", Model::tracers->steps);
       Model::tracers->redraw = true;
+      return true;
    }
    else if (parsed.has(fval, "alpha"))
    {
@@ -665,6 +666,7 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("open"))
    {
       loadWindow(0, 0, true);
+      return false;
    }
    else if (parsed.exists("resize"))
    {
@@ -686,6 +688,7 @@ bool LavaVu::parseCommands(std::string cmd)
             }
          }
       }
+      return true;
    }
 
    //******************************************************************************
