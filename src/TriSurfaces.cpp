@@ -215,12 +215,56 @@ void TriSurfaces::loadMesh()
       //Calibrate colour maps on range for this surface
       geom[index]->colourCalibrate();
 
+      //Switch out the optimised vertices and normals with the old data stores
+#if 0
+      //This should work but strangely doesn't
+      geom[index]->vertices.clear();
+      geom[index]->normals.clear();
+      geom[index]->indices.clear();
+      geom[index]->vertices.resize(0);
+      geom[index]->normals.resize(0);
+      geom[index]->indices.resize(0);
+      int i = 0;
+      geom[index]->count = 0;
+      for (unsigned int v=0; v<verts.size(); v++)
+      {
+         //Re-write optimised data with unique vertices only
+         if (verts[v].id == verts[v].ref)
+         {
+            //Reference id == self, not a duplicate
+            //Normalise final vector
+            normals[verts[v].id].normalise();
+
+            //Average final colour
+            if (vertColour && verts[v].vcount > 1)
+               geom[index]->colourValue.value[verts[v].id] /= verts[v].vcount;
+
+            int id = verts[v].id;
+
+            //Replace verts & normals
+            read(geom[index], 1, lucVertexData, verts[v].vert);
+            read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
+
+            //Save an index lookup entry (Grid indices loaded in previous step)
+            if (!grid) indices[verts[v].id] = i++;
+            unique++;
+         }
+         else
+         {
+            //Duplicate vertex, use index reference
+            indices[verts[v].id] = indices[verts[v].ref];
+         }
+      }
+#else
       GeomData* old = geom[index];
       GeomData* replace = new GeomData(geom[index]->draw);
       replace->width = old->width;
       replace->height = old->height;
       replace->opaque = old->opaque;
+      memcpy(replace->min, old->min, sizeof(float)*3);
+      memcpy(replace->max, old->max, sizeof(float)*3);
       geom[index] = replace; //Swap
+      total -= old->count;
       int i = 0;
       for (unsigned int v=0; v<verts.size(); v++)
       {
@@ -238,10 +282,9 @@ void TriSurfaces::loadMesh()
             int id = verts[v].id;
 
             //Replace verts & normals
-            replace->count++;
-            replace->vertices.read(1, verts[v].vert);
-            replace->normals.read(1, normals[verts[v].id].ref());
-            //Replace all other data types
+            read(replace, 1, lucVertexData, verts[v].vert);
+            read(replace, 1, lucNormalData, normals[verts[v].id].ref());
+            //Replace all other data types with exact copies
             int data_type;
             for (data_type=lucVectorData; data_type<lucMaxDataType; data_type++)
             {
@@ -271,6 +314,7 @@ void TriSurfaces::loadMesh()
 
       //Remove old data store
       delete old;
+#endif
       t2 = clock(); debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
       t1 = clock();
