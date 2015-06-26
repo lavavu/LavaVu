@@ -84,6 +84,7 @@ void Model::init()
    geometry[lucTriangleType] = triSurfaces = new TriSurfaces(true);
    geometry[lucLineType] = lines = new Lines();
    geometry[lucShapeType] = shapes = new Shapes();
+   debug_print("Created %d new geometry containers\n", geometry.size());
 }
 
 Model::~Model()

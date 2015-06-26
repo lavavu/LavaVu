@@ -242,7 +242,7 @@ void TriSurfaces::loadMesh()
             int id = verts[v].id;
 
             //Replace verts & normals
-            read(geom[index], 1, lucVertexData, verts[v].vert);
+            vertices.push_back(Vec3d(verts[v].vert));
             read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
 
             //Save an index lookup entry (Grid indices loaded in previous step)
@@ -255,66 +255,9 @@ void TriSurfaces::loadMesh()
             indices[verts[v].id] = indices[verts[v].ref];
          }
       }
-#else
-      GeomData* old = geom[index];
-      GeomData* replace = new GeomData(geom[index]->draw);
-      replace->width = old->width;
-      replace->height = old->height;
-      replace->opaque = old->opaque;
-      memcpy(replace->min, old->min, sizeof(float)*3);
-      memcpy(replace->max, old->max, sizeof(float)*3);
-      geom[index] = replace; //Swap
-      total -= old->count;
-      int i = 0;
-      for (unsigned int v=0; v<verts.size(); v++)
-      {
-         //Re-write optimised data with unique vertices only
-         if (verts[v].id == verts[v].ref)
-         {
-            //Reference id == self, not a duplicate
-            //Normalise final vector
-            normals[verts[v].id].normalise();
+      //Read replacement vertices
+      read(geom[index], i, lucVertexData, &vertices[0]);
 
-            //Average final colour
-            if (vertColour && verts[v].vcount > 1)
-               old->colourValue.value[verts[v].id] /= verts[v].vcount;
-
-            int id = verts[v].id;
-
-            //Replace verts & normals
-            read(replace, 1, lucVertexData, verts[v].vert);
-            read(replace, 1, lucNormalData, normals[verts[v].id].ref());
-            //Replace all other data types with exact copies
-            int data_type;
-            for (data_type=lucVectorData; data_type<lucMaxDataType; data_type++)
-            {
-               if (data_type == lucTexCoordData) continue; //This must be loaded as indexed
-               if (old->data[data_type]->size() == 0) continue;
-               if (old->data[data_type]->size() == old->count)
-                 replace->data[data_type]->read(1, &old->data[data_type]->value[verts[v].id]);
-               else if (replace->data[data_type]->size() == 0) //Read entire block (once only)
-                 replace->data[data_type]->read(old->data[data_type]->size(), &old->data[data_type]->value[0]);
-
-               replace->data[data_type]->minimum = old->data[data_type]->minimum;
-               replace->data[data_type]->maximum = old->data[data_type]->maximum;
-               replace->data[data_type]->dimCoeff = old->data[data_type]->dimCoeff;
-               replace->data[data_type]->units = old->data[data_type]->units;
-            }
-
-            //Save an index lookup entry (Grid indices loaded in previous step)
-            if (!grid) indices[verts[v].id] = i++;
-            unique++;
-         }
-         else
-         {
-            //Duplicate vertex, use index reference
-            indices[verts[v].id] = indices[verts[v].ref];
-         }
-      }
-
-      //Remove old data store
-      delete old;
-#endif
       t2 = clock(); debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
       t1 = clock();
