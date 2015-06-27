@@ -216,14 +216,10 @@ void TriSurfaces::loadMesh()
       geom[index]->colourCalibrate();
 
       //Switch out the optimised vertices and normals with the old data stores
-#if 0
-      //This should work but strangely doesn't
-      geom[index]->vertices.clear();
-      geom[index]->normals.clear();
-      geom[index]->indices.clear();
-      geom[index]->vertices.resize(0);
-      geom[index]->normals.resize(0);
-      geom[index]->indices.resize(0);
+      std::vector<Vec3d> vertices;
+      geom[index]->vertices = Coord3DValues();
+      geom[index]->normals = Coord3DValues();
+      geom[index]->indices = FloatValues();
       int i = 0;
       geom[index]->count = 0;
       for (unsigned int v=0; v<verts.size(); v++)
