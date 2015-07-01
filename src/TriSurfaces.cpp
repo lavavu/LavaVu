@@ -175,7 +175,7 @@ void TriSurfaces::loadMesh()
       //Iterate, for duplicates replace indices with index of first
       //Remove duplicate vertices Triangles stored as list of indices
       int hasColours = geom[index]->colourCount();
-      bool vertColour = hasColours && (hasColours == geom[index]->vertices.size()/3);
+      bool vertColour = hasColours && (hasColours == geom[index]->count);
       t1=tt=clock();
 
       //Add vertices to vector
@@ -215,44 +215,53 @@ void TriSurfaces::loadMesh()
       //Calibrate colour maps on range for this surface
       geom[index]->colourCalibrate();
 
-      //Switch out the optimised vertices and normals with the old data stores
-      std::vector<Vec3d> vertices;
-      geom[index]->vertices = Coord3DValues();
-      geom[index]->normals = Coord3DValues();
-      geom[index]->indices = FloatValues();
-      int i = 0;
-      geom[index]->count = 0;
-      for (unsigned int v=0; v<verts.size(); v++)
+      if (grid) 
       {
-         //Re-write optimised data with unique vertices only
-         if (verts[v].id == verts[v].ref)
-         {
-            //Reference id == self, not a duplicate
-            //Normalise final vector
-            normals[verts[v].id].normalise();
-
-            //Average final colour
-            if (vertColour && verts[v].vcount > 1)
-               geom[index]->colourValue.value[verts[v].id] /= verts[v].vcount;
-
-            int id = verts[v].id;
-
-            //Replace verts & normals
-            vertices.push_back(Vec3d(verts[v].vert));
-            read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
-
-            //Save an index lookup entry (Grid indices loaded in previous step)
-            if (!grid) indices[verts[v].id] = i++;
-            unique++;
-         }
-         else
-         {
-            //Duplicate vertex, use index reference
-            indices[verts[v].id] = indices[verts[v].ref];
-         }
+         //Replace normals
+         geom[index]->normals = Coord3DValues();
+         read(geom[index], normals.size(), lucNormalData, &normals[0]);
       }
-      //Read replacement vertices
-      read(geom[index], i, lucVertexData, &vertices[0]);
+      else
+      {
+         //Switch out the optimised vertices and normals with the old data stores
+         std::vector<Vec3d> vertices;
+         geom[index]->vertices = Coord3DValues();
+         geom[index]->normals = Coord3DValues();
+         geom[index]->indices = FloatValues();
+         int i = 0;
+         geom[index]->count = 0;
+         for (unsigned int v=0; v<verts.size(); v++)
+         {
+            //Re-write optimised data with unique vertices only
+            if (verts[v].id == verts[v].ref)
+            {
+               //Reference id == self, not a duplicate
+               //Normalise final vector
+               normals[verts[v].id].normalise();
+
+               //Average final colour
+               if (vertColour && verts[v].vcount > 1)
+                  geom[index]->colourValue.value[verts[v].id] /= verts[v].vcount;
+
+               int id = verts[v].id;
+
+               //Replace verts & normals
+               vertices.push_back(Vec3d(verts[v].vert));
+               read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
+
+               //Save an index lookup entry (Grid indices loaded in previous step)
+               indices[verts[v].id] = i++;
+               unique++;
+            }
+            else
+            {
+               //Duplicate vertex, use index reference
+               indices[verts[v].id] = indices[verts[v].ref];
+            }
+         }
+         //Read replacement vertices
+         read(geom[index], i, lucVertexData, &vertices[0]);
+      }
 
       t2 = clock(); debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
@@ -331,7 +340,7 @@ void TriSurfaces::loadBuffers()
       float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[index]->count; v++)
       {
-         if (colrange == 1)
+         if (colrange <= 1)
             geom[index]->getColour(colour, v);
          else
          {
