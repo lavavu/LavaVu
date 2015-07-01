@@ -36,6 +36,7 @@
 #include "Geometry.h"
 
 //Init static data
+json::Object Geometry::properties;
 std::string GeomData::names[lucMaxType] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volume"};
 float GeomData::opacity = 0;
 int GeomData::glyphs = -1; //Glyph quality (-1 = use default per type)

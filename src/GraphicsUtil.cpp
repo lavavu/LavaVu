@@ -179,6 +179,13 @@ Colour Colour_FromJson(json::Value& value, GLubyte red, GLubyte green, GLubyte b
    return colour;
 }
 
+json::Value Colour_ToJson(int colourval)
+{
+   Colour colour;
+   colour.value = colourval;
+   return Colour_ToJson(colour);
+}
+
 json::Value Colour_ToJson(Colour& colour)
 {
    json::Array array;

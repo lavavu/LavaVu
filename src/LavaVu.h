@@ -111,8 +111,6 @@ class LavaVu : public ViewerApp
    View* aview;   //Active viewport
    DrawingObject* aobject; //Selected object
 
-   json::Object globals;
-
    LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width=0, int height=0);
    virtual ~LavaVu();
 

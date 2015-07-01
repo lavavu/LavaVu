@@ -153,7 +153,11 @@ extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);
 
-//Defines a 32bit colour accessible as rgba byte array, integer and r,g,b,a component struct
+//Defines a 32bit colour accessible in multiple ways:
+// - rgba 4-byte array
+// - r,g,b,a component struct
+// - integer (hex AABBGGRR little endian)
+// - float for storing in a float data block
 typedef union {
    GLubyte rgba[4];
    int value;
@@ -997,6 +1001,7 @@ void Colour_Invert(Colour& colour);
 void Colour_SetXOR(bool switchOn);
 Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
 Colour Colour_FromJson(json::Value& value, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
+json::Value Colour_ToJson(int colourval);
 json::Value Colour_ToJson(Colour& colour);
 void Colour_ToArray(Colour colour, float* array);
 void Colour_SetUniform(GLint uniform, Colour colour);

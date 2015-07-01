@@ -78,7 +78,19 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
    rotation_lag.identity();
    use_inertia = false;
 
+   //View properties can only be set if exist, so set all defaults
    properties["title"] = title;
+   properties["zoomstep"] = -1;
+   properties["margin"] = 32;
+   properties["rulers"] = false;
+   properties["border"] = 1;
+   properties["fillborder"] = false;
+   properties["bordercolour"] = Colour_ToJson(LUC_GREY);
+   properties["axis"] = true;
+   properties["axislength"] = 0.1;
+   properties["timestep"] = false;
+   properties["antialias"] = true; //Should be global
+   properties["shift"] = 0;
 
    is3d = true;
 }

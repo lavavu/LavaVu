@@ -220,6 +220,8 @@ class Geometry
    bool flat2d; //Flag for flat surfaces in 2d
 
   public:
+   //TODO: Move globals from GeomData and elsewhere to this properties object...
+   static json::Object properties; //Global properties
    bool allhidden;
    lucGeometryType type;   //Holds the object type
    unsigned int total;     //Total entries of all objects in container

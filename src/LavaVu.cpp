@@ -407,16 +407,16 @@ void LavaVu::parseProperty(std::string& data)
       jsonParseProperty(data, aobject->properties);
       std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
    }
-   else if (aview)
+   else if (aview && aview->properties.HasKey(data))
    {
       jsonParseProperty(data, aview->properties);
       std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
    }
    else
    {
-      //Not actually used... aview is always set
-      jsonParseProperty(data, globals);
-      std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
+      //Properties not found on view are set globally
+      jsonParseProperty(data, Geometry::properties);
+      std::cerr << "GLOBAL: " << json::Serialize(Geometry::properties) << std::endl;
    }
 }
 
@@ -425,10 +425,11 @@ void LavaVu::printProperties()
    //Show properties of selected object or view/globals
    if (aobject)
       std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
-   else if (aview)
-      std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
    else
-      std::cerr << "DATA: " << json::Serialize(globals) << std::endl;
+   {
+      std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
+      std::cerr << "GLOBAL: " << json::Serialize(Geometry::properties) << std::endl;
+   }
 }
 
 void LavaVu::readRawVolume(FilePath& fn)
