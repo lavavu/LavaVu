@@ -69,13 +69,14 @@ public:
    bool log, discrete;
    float centre;
    bool calibrated;
+   bool noValues; //Use position data only
    TextureData* texture;
 
    float dimCoeff;
    std::string units;
 
    ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1)
-       : id(id), minimum(min), maximum(max), log(log), discrete(discrete), centre(centre), calibrated(false), dimCoeff(1.0), units("")
+       : id(id), minimum(min), maximum(max), log(log), discrete(discrete), centre(centre), calibrated(false), noValues(false), dimCoeff(1.0), units("")
    {
       if (id == 0)
          this->id = ++ColourMap::lastid;

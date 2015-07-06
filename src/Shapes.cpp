@@ -129,6 +129,9 @@ void Shapes::update()
          tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
       }
       //printf("%d Shapes: %d Vertices: %d Indices: %d\n", i, geom[i]->positions.size()/3, geom[i]->count, geom[i]->indices.size());
+
+      //Adjust bounding box
+      tris->compareMinMax(geom[i]->min, geom[i]->max);
    }
 
    tris->update();

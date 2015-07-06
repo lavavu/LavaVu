@@ -1,15 +1,27 @@
 #version 120 //Required to use gl_PointCoord
 varying float vSmooth;
 varying vec3 vPosEye;
+varying vec3 vVertex;
 varying float vPointType;
 varying float vPointSize;
 uniform int uPointType;
 uniform float uOpacity;
+uniform float uBrightness;
+uniform float uContrast;
+uniform float uSaturation;
+uniform float uAmbient;
+uniform float uDiffuse;
+uniform float uSpecular;
 uniform bool uTextured;
 uniform sampler2D uTexture;
+uniform vec3 uClipMin;
+uniform vec3 uClipMax;
 
 void main(void)
 {
+   //Clip planes in X/Y/Z
+   if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
+
    float alpha = gl_Color.a;
    if (uOpacity > 0.0) alpha *= uOpacity;
    gl_FragColor = gl_Color;
@@ -71,5 +83,17 @@ void main(void)
       //specular = vec3(1.0, 0.0, 0.0);
    }
 
-   gl_FragColor = vec4(gl_FragColor.rgb * diffuse + specular, alpha);
+  vec4 colour = vec4(gl_FragColor.rgb * diffuse + specular, alpha);
+
+  //Brightness adjust
+  colour += uBrightness;
+  //Saturation & Contrast adjust
+  const vec4 LumCoeff = vec4(0.2125, 0.7154, 0.0721, 0.0);
+  vec4 AvgLumin = vec4(0.5, 0.5, 0.5, 0.0);
+  vec4 intensity = vec4(dot(colour, LumCoeff));
+  colour = mix(intensity, colour, uSaturation);
+  colour = mix(AvgLumin, colour, uContrast);
+  colour.a = alpha;
+
+   gl_FragColor = colour;
 }

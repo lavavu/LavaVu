@@ -62,6 +62,40 @@ float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on ci
 
 unsigned int fontbase = 0, fontcharset = FONT_DEFAULT, fonttexture;
 
+void compareCoordMinMax(float* min, float* max, float *coord)
+{
+   for (int i=0; i<3; i++)
+   {
+      if (coord[i] > max[i] && coord[i] < HUGE_VAL) 
+      {
+         max[i] = coord[i];
+         //std::cerr << Vec3d(max) << std::endl;
+      }
+      if (coord[i] < min[i] && coord[i] > -HUGE_VAL) 
+      {
+         min[i] = coord[i];
+         //std::cerr << Vec3d(min) << std::endl;
+      }
+   }
+}
+
+void clearMinMax(float* min, float* max)
+{
+   for (int i=0; i<3; i++)
+   {
+      min[i] = HUGE_VAL;
+      max[i] = -HUGE_VAL;
+   }
+}
+
+void getCoordRange(float* min, float* max, float* dims)
+{
+   for (int i=0; i<3; i++)
+   {
+      dims[i] = max[i] - min[i];
+   }
+}
+
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {
    //Try the PATH env var if argv0 contains no path info
@@ -700,6 +734,15 @@ void vectorNormalise(float vector[3]) {
    vector[0] = vector[0]/mag;
 }
 
+std::ostream & operator<<(std::ostream &os, const Colour& colour)
+{
+    return os << "(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << (int)colour.a << ")";
+}
+
+std::ostream & operator<<(std::ostream &os, const Vec3d& vec)
+{
+    return os << "[" << vec.x << "," << vec.y << "," << vec.z << "]";
+}
 
 // Given three points which define a plane, returns a vector which is normal to that plane
 Vec3d vectorNormalToPlane(float pos0[3], float pos1[3], float pos2[3])

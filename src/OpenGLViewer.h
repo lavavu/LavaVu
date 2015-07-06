@@ -131,7 +131,7 @@ class OpenGLViewer : public ApplicationInterface
       if (isopen)
       {
          //Set clear colour
-         glClearColor(background.rgba[0]/255.0, background.rgba[1]/255.0, background.rgba[2]/255.0, 0);
+         glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
       }
    }
 

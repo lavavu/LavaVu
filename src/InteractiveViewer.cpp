@@ -270,7 +270,7 @@ bool LavaVu::parseChar(unsigned char key)
       {
          char ck = entry.at(0);
          //Digit? (9 == ascii 57)
-         if (ck < 57)
+         if (ck > 47 && ck < 58)
          {
            response = parseCommands(entry);
            entry = "";
@@ -328,14 +328,6 @@ bool LavaVu::parseChar(unsigned char key)
       }
       else
       {
-        //If the command contains only one double-quote, wait until another received before parsing
-        size_t n = std::count(entry.begin(), entry.end(), '"');
-        if (n == 1)
-        {
-           entry += '\n';
-           msg = true;
-           break;
-        }
         response = parseCommands(entry);
       }
       entry = "";
@@ -409,6 +401,19 @@ bool LavaVu::parseChar(unsigned char key)
    case '`':    return parseCommands("fullscreen");
    case KEY_F1: return parseCommands("help");
    case KEY_F2: return parseCommands("antialias");
+   case KEY_TAB:
+      //Tab-completion from history
+      for (int l=history.size()-1; l>=0; l--)
+      {
+         std::cout << entry << " ==? " << history[l].substr(0, entry.length()) << std::endl;
+         if (entry == history[l].substr(0, entry.length()))
+         {
+            entry = history[l];
+            msg = true;
+            break;
+         }
+      }
+      break;
    default:
       //Only add printable characters
       if (key > 31 && key < 127)
@@ -421,8 +426,7 @@ bool LavaVu::parseChar(unsigned char key)
    {
      printMessage(": %s", entry.c_str());
      response = false;
-     if (!response) 
-        viewer->postdisplay = true;
+     viewer->postdisplay = true;
    }
 
    return response;
@@ -492,8 +496,38 @@ bool LavaVu::parseCommands(std::string cmd)
 {
    if (cmd.length() == 0) return false;
    bool redisplay = true;
-   static std::string last_cmd;
+   bool norecord = false;
    PropertyParser parsed = PropertyParser();
+   static std::string last_cmd = "";
+   static std::string multiline = "";
+
+   //Skip comments or empty lines
+   if (cmd.length() == 0 || cmd.at(0) == '#') return false;
+   //Disable recording for command beginning with @
+   if (cmd.at(0) == '@')
+   {
+      norecord = true;
+      cmd = cmd.substr(1);
+   }
+ 
+   //If the command contains only one double-quote, append until another received before parsing as a single string
+   size_t n = std::count(cmd.begin(), cmd.end(), '"');
+   size_t len = multiline.length();
+   if (len > 0 || n == 1)
+   {
+      //Append
+      multiline += cmd + "\n";
+      //Finished appending?
+      if (len > 0 && n == 1)
+      {
+         cmd = multiline;
+         multiline = "";
+      }
+      else
+         return false;
+   }
+
+   //Parse the line
    parsed.parseLine(cmd);
 
    //Verbose command processor
@@ -520,14 +554,7 @@ bool LavaVu::parseCommands(std::string cmd)
          std::string line;
          entry = "";
          while(std::getline(file, line))
-         {
-            if (line.length() > 0 && line.at(0) != '#')
-            {
-               entry += line;
-               parseChar(KEY_ENTER);
-               //parseCommands(line);
-            }
-         }
+            parseCommands(line);
          entry = "";
          file.close();
       }
@@ -623,6 +650,12 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("Volume maximum bound set to %d x %d x %d", volmax[0], volmax[1], volmax[2]);
       return false;
    }
+   else if (parsed.has(fval, "inscale"))
+   {
+      inscale = fval;
+      printMessage("Geometry input scaling set to %f", inscale);
+      return false;
+   }
    else if (parsed.exists("createvolume"))
    {
       //Use this to load multiple volumes as timesteps into the same object
@@ -693,7 +726,13 @@ bool LavaVu::parseCommands(std::string cmd)
 
    //******************************************************************************
    //Following commands require a model!
-   if (!amodel || !aview || !awin) return false;
+   if (!amodel || !aview || !awin)
+   {
+      //Attempt to parse as property=value first
+      parsePropertySet(cmd);
+      return false;
+   }
+
    if (parsed.exists("rotation"))
    {
       float x = 0, y = 0, z = 0, w = 0;
@@ -1132,7 +1171,7 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       //Hide or set title
       if (cmd.length() > 6)
-         aview->properties["title"] = cmd.substr(6);
+         aview->properties["title"] = parsed["title"];
       else
          aview->properties["title"] = "";
    }
@@ -1273,7 +1312,6 @@ bool LavaVu::parseCommands(std::string cmd)
             }
          }
          viewer->swap();  //Immediate display
-         record(false, cmd);
          return false;
       }
    }
@@ -1316,15 +1354,16 @@ bool LavaVu::parseCommands(std::string cmd)
             obj->addColourMap(cmap, lucColourValueData);
             printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), cmap->name.c_str(), cmap->id);
          }
-         else if (what.length() == 0)
+         else if (ival < 0 || what.length() == 0)
             printMessage("%s colourmap set to none", obj->name.c_str());
          else
          {
             //No cmap id, parse a colourmap string (must be single line or enclosed in "")
-            if (!obj->colourMaps[lucColourValueData]) obj->colourMaps[lucColourValueData] = addColourMap();
-            obj->colourMaps[lucColourValueData]->print();
+            if (what == "add" || !obj->colourMaps[lucColourValueData]) obj->colourMaps[lucColourValueData] = addColourMap();
             obj->colourMaps[lucColourValueData]->loadPalette(what);
-            obj->colourMaps[lucColourValueData]->print();
+            //obj->colourMaps[lucColourValueData]->print();
+            obj->colourMaps[lucColourValueData]->calibrate(); //Recalibrate
+            obj->colourMaps[lucColourValueData]->calc(); //Recalculate cached colours
          }
          redraw(obj->id);
          redrawViewports();
@@ -1406,12 +1445,12 @@ bool LavaVu::parseCommands(std::string cmd)
          if (obj)
          {
             if (parsed.has(ival, "pointtype", next))
-               obj->properties["pointType"] = ival;
+               obj->properties["pointtype"] = ival;
             else if (parsed.get("pointtype", next) == "up")
-               obj->properties["pointType"] = (obj->properties["pointType"].ToInt(-1)-1) % 5;
+               obj->properties["pointtype"] = (obj->properties["pointtype"].ToInt(-1)-1) % 5;
             else if (parsed.get("pointtype", next) == "down")
-               obj->properties["pointType"] = (obj->properties["pointType"].ToInt(-1)+1) % 5;
-            printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointType"].ToInt(-1));
+               obj->properties["pointtype"] = (obj->properties["pointtype"].ToInt(-1)+1) % 5;
+            printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointtype"].ToInt(-1));
             Model::geometry[lucPointType]->redraw = true;
             redraw(obj->id);
             redrawViewports();
@@ -1479,7 +1518,8 @@ bool LavaVu::parseCommands(std::string cmd)
       else if (parsed.has(fval, "background"))
       {
          awin->background.a = 255;
-         awin->background.r = awin->background.g = awin->background.b = fval * 255;
+         if (fval <= 1.0) fval *= 255;
+         awin->background.r = awin->background.g = awin->background.b = fval;
       }
       else
       {
@@ -1836,7 +1876,8 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       amodel->addTimeStep(amodel->step()+1);
       amodel->setTimeStep(amodel->now+1);
-      //resetViews(); //Update the viewports
+      //Don't record
+      return false;
    }
    else
    {
@@ -1854,20 +1895,14 @@ bool LavaVu::parseCommands(std::string cmd)
       {
          parseCommands("select " + cmd.substr(1));
       }
+      else if (parsePropertySet(cmd))
+      {
+         return false;
+      }
       else
       {
-         std::size_t found = cmd.find("=");
-         json::Value jval;
-         if (found == std::string::npos)
-         {
-           std::cerr << "# Unrecognised command: \"" << cmd << "\"" << std::endl;
-           return false;  //Invalid
-         }
-         else
-         {
-            parseProperty(cmd);
-            if (aobject && aobject->id) redraw(aobject->id);
-         }
+         std::cerr << "# Unrecognised command: \"" << cmd << "\"" << std::endl;
+         return false;  //Invalid
       }
    }
 
@@ -1875,9 +1910,19 @@ bool LavaVu::parseCommands(std::string cmd)
    if (awin && awin->views.size() > 1 && viewPorts)
        redrawViewports();
    last_cmd = cmd;
-   record(false, cmd);
+   if (!norecord) record(false, cmd);
    if (animate && redisplay) viewer->display();
    return redisplay;
+}
+
+bool LavaVu::parsePropertySet(std::string cmd)
+{
+   std::size_t found = cmd.find("=");
+   json::Value jval;
+   if (found == std::string::npos) return false;
+   parseProperty(cmd);
+   if (aobject && aobject->id) redraw(aobject->id);
+   return true;
 }
 
 std::string LavaVu::helpCommand(std::string cmd)

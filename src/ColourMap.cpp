@@ -86,7 +86,7 @@ void ColourMap::calc()
 void ColourMap::calibrate(float min, float max)
 {
    //Skip calibration if min/max unchanged
-   if (calibrated && min == minimum && max == maximum) return;
+   if (!noValues && calibrated && min == minimum && max == maximum) return;
    //No colours?
    if (colours.size() == 0) return;
    //Skip calibration when locked
@@ -103,55 +103,57 @@ void ColourMap::calibrate(float min, float max)
    }
    range = maximum - minimum;
 
-   colours[0].position = 0;
-   colours.back().position = 1;
-   colours[0].value = minimum;
-   colours.back().value = maximum;
-
-   // Get scaled positions for colours - Scale the values to find colour bar positions [0,1]
-   float inc;
-   for (unsigned int i=1; i < colours.size()-1; i++)
+   //Calculates positions based on field values over range
+   if (!noValues)
    {
-      // Found an empty value
-      if (colours[i].value == HUGE_VAL)
-      {
-         // Search for next provided value
-         //printf("Empty value at %d ", i);
-         unsigned int j;
-         for (j=i+1; j < colours.size(); j++)
-         {
-            if (colours[j].value != HUGE_VAL) 
-            {
-               // Scale to get new position, unless at max pos
-               if (j < colours.size()-1)
-                  colours[j].position = scaleValue(colours[j].value);
+      colours[0].position = 0;
+      colours.back().position = 1;
+      colours[0].value = minimum;
+      colours.back().value = maximum;
 
-               //printf(", next value found at %d, ", j);
-               inc = (colours[j].position - colours[i - 1].position) / (j - i + 1);
-               for (unsigned int k = i; k < j; k++)
+      // Get scaled positions for colours - Scale the values to find colour bar positions [0,1]
+      float inc;
+      for (unsigned int i=1; i < colours.size()-1; i++)
+      {
+         // Found an empty value
+         if (colours[i].value == HUGE_VAL)
+         {
+            // Search for next provided value
+            //printf("Empty value at %d ", i);
+            unsigned int j;
+            for (j=i+1; j < colours.size(); j++)
+            {
+               if (colours[j].value != HUGE_VAL) 
                {
-                  colours[k].position = colours[k-1].position + inc;
-                  //printf("Interpolating at %d from %f by %f to %f\n", k, colours[k-1].position, inc, colours[k].position);
+                  // Scale to get new position, unless at max pos
+                  if (j < colours.size()-1)
+                     colours[j].position = scaleValue(colours[j].value);
+
+                  //printf(", next value found at %d, ", j);
+                  inc = (colours[j].position - colours[i - 1].position) / (j - i + 1);
+                  for (unsigned int k = i; k < j; k++)
+                  {
+                     colours[k].position = colours[k-1].position + inc;
+                     //printf("Interpolating at %d from %f by %f to %f\n", k, colours[k-1].position, inc, colours[k].position);
+                  }
+                  break;
                }
-               break;
             }
+            // Continue search from j
+            i = j;
          }
-         // Continue search from j
-         i = j;
+         else
+            // Value found, scale to get position
+            colours[i].position = scaleValue(colours[i].value);
       }
-      else
-         // Value found, scale to get position
-         colours[i].position = scaleValue(colours[i].value);
    }
 
    //Calc values now colours have been added
    calc();
-   /*
-   debug_print("ColourMap calibrated min %f, max %f, range %f ==> %d colours\n", minimum, maximum, range, colours.size());
-   for (int i=0; i < colours.size(); i++)
-   {
-      debug_print(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
-   }*/
+   
+   //debug_print("ColourMap calibrated min %f, max %f, range %f ==> %d colours\n", minimum, maximum, range, colours.size());
+   //for (int i=0; i < colours.size(); i++)
+   //   debug_print(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
    calibrated = true;
 } 
 
@@ -498,6 +500,8 @@ void ColourMap::loadTexture(bool repeat)
 
 void ColourMap::loadPalette(std::string data)
 {
+   //Currently only support loading palettes with literal position data, not values to scale
+   noValues = true;
    //Parse palette string into key/value pairs
    std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
    std::stringstream is(data);
@@ -516,7 +520,7 @@ void ColourMap::loadPalette(std::string data)
          Colour colour = parseRGBA(value);
          //Add to colourmap
          add(colour.value, pos);
-         //Use as positions not values!
+         //Use positions, values will be calculated
          colours[colours.size()-1].value = HUGE_VAL;
          colours[colours.size()-1].position = pos;
       }

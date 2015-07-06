@@ -65,6 +65,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    volmin[0] = volmin[1] = volmin[2] = -1;
    volmax[0] = volmax[1] = volmax[2] = 1;
    volume = NULL;
+   inscale = 1.0;
 
    fixedwidth = width;
    fixedheight = height;
@@ -211,6 +212,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             writemovie = true;
             viewer->visible = false;
             break;
+         case 'e':
+            //Add new timesteps after loading files
+            Geometry::properties["filestep"] = true;
+            break;
          default:
             //Attempt to interpret as timestep
             std::istringstream ss2(args[i]);
@@ -275,6 +280,9 @@ void LavaVu::run(bool persist)
 
    //Require a model from here on, set a default
    if (!amodel) defaultModel();
+
+   //Reselect the active view after loading all data
+   viewSelect(view, true, true);
 
    if (writeimage || writemovie || dump > lucExportNone)
    {
@@ -405,18 +413,21 @@ void LavaVu::parseProperty(std::string& data)
    if (aobject)
    {
       jsonParseProperty(data, aobject->properties);
-      std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
+      if (infostream != NULL)
+         std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
    }
    else if (aview && aview->properties.HasKey(data))
    {
       jsonParseProperty(data, aview->properties);
-      std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
+      if (infostream != NULL)
+         std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
    }
    else
    {
       //Properties not found on view are set globally
       jsonParseProperty(data, Geometry::properties);
-      std::cerr << "GLOBAL: " << json::Serialize(Geometry::properties) << std::endl;
+      if (infostream != NULL)
+         std::cerr << "GLOBAL: " << json::Serialize(Geometry::properties) << std::endl;
    }
 }
 
@@ -541,6 +552,13 @@ void LavaVu::readXrwVolume(FilePath& fn)
          }
          exit(0);
 #endif
+
+   //Scale geometry by input scaling factor
+   for (int i=0; i<3; i++)
+   {
+      volmin[i] *= inscale;
+      volmax[i] *= inscale;
+   }
       
    //Define the bounding cube by corners
    Model::volumes->add(vobj);
@@ -1406,6 +1424,20 @@ void LavaVu::open(int width, int height)
    for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->init();
 
+   //Some default global properties
+   if (!Geometry::properties.HasKey("brightness")) Geometry::properties["brightness"] = 0.0;
+   if (!Geometry::properties.HasKey("contrast")) Geometry::properties["contrast"] = 1.0;
+   if (!Geometry::properties.HasKey("saturation")) Geometry::properties["saturation"] = 1.0;
+   if (!Geometry::properties.HasKey("ambient")) Geometry::properties["ambient"] = 0.4;
+   if (!Geometry::properties.HasKey("diffuse")) Geometry::properties["diffuse"] = 0.8;
+   if (!Geometry::properties.HasKey("specular")) Geometry::properties["specular"] = 0.0;
+   if (!Geometry::properties.HasKey("xmin")) Geometry::properties["xmin"] = 0.0;
+   if (!Geometry::properties.HasKey("xmax")) Geometry::properties["xmax"] = 1.0;
+   if (!Geometry::properties.HasKey("ymin")) Geometry::properties["ymin"] = 0.0;
+   if (!Geometry::properties.HasKey("ymax")) Geometry::properties["ymax"] = 1.0;
+   if (!Geometry::properties.HasKey("zmin")) Geometry::properties["zmin"] = 0.0;
+   if (!Geometry::properties.HasKey("zmax")) Geometry::properties["zmax"] = 1.0;
+
    //Initialise all viewports to window size
    for (unsigned int w=0; w<windows.size(); w++)
       windows[w]->initViewports(width, height);
@@ -1418,8 +1450,8 @@ void LavaVu::reloadShaders()
    // Load shaders
    if (Points::prog) delete Points::prog;
    Points::prog = new Shader("pointShader.vert", "pointShader.frag");
-   const char* pUniforms[6] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", "uTextured", "uTexture"};
-   Points::prog->loadUniforms(pUniforms, 6);
+   const char* pUniforms[14] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", "uTextured", "uTexture", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
+   Points::prog->loadUniforms(pUniforms, 14);
    const char* pAttribs[2] = {"aSize", "aPointType"};
    Points::prog->loadAttribs(pAttribs, 2);
    if (strstr(typeid(*viewer).name(), "OSMesa"))
@@ -1433,16 +1465,16 @@ void LavaVu::reloadShaders()
       //Triangle shaders too slow with OSMesa
       if (TriSurfaces::prog) delete TriSurfaces::prog;
       TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
-      const char* tUniforms[5] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal"};
-      TriSurfaces::prog->loadUniforms(tUniforms, 5);
+      const char* tUniforms[13] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
+      TriSurfaces::prog->loadUniforms(tUniforms, 13);
       QuadSurfaces::prog = TriSurfaces::prog;
    }
 
    //Volume ray marching shaders
    if (Volumes::prog) delete Volumes::prog;
    Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
-   const char* vUniforms[22] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
-   Volumes::prog->loadUniforms(vUniforms, 22);
+   const char* vUniforms[23] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
+   Volumes::prog->loadUniforms(vUniforms, 23);
    const char* vAttribs[2] = {"aVertexPosition"};
    Volumes::prog->loadAttribs(pAttribs, 2);
 }
@@ -1575,6 +1607,16 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
          aview->init(false, omin, omax);
       }
 
+      //Save actual bounding box max/min/range - it is possible for the view box to be smaller
+      clearMinMax(Geometry::min, Geometry::max);
+      compareCoordMinMax(Geometry::min, Geometry::max, omin);
+      compareCoordMinMax(Geometry::min, Geometry::max, omax);
+      compareCoordMinMax(Geometry::min, Geometry::max, awin->min);
+      compareCoordMinMax(Geometry::min, Geometry::max, awin->max);
+      getCoordRange(Geometry::min, Geometry::max, Geometry::dims);
+      debug_print("Calculated Actual bounds %f,%f,%f - %f,%f,%f \n", 
+                  Geometry::min[0], Geometry::min[1], Geometry::min[2], 
+                  Geometry::max[0], Geometry::max[1], Geometry::max[2]);
 
       // Apply step autozoom if set (applied based on detected bounding box)
       if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->step() % aview->properties["zoomstep"].ToInt(-1) == 0)
@@ -2011,6 +2053,9 @@ void LavaVu::loadFile(FilePath& fn)
    // - If none exists, a default will be created
    // - Sequence matters! To display non-gldb data with model, load the gldb first
 
+   //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
+   if (Geometry::properties["filestep"].ToBool(false)) parseCommands("newstep");
+
    //Load a file based on extension
    std::cerr << "Loading: " << fn.full << std::endl;
 
@@ -2299,6 +2344,7 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
    float rotate[4], translate[3], focus[3], stereo[3];
    aview->getCamera(rotate, translate, focus);
 
+   //TODO: Everything global should be on global Geometry::properties
    json << "{\n  \"options\" :\n  {\n"
         << "    \"pointScale\" : " << Model::points->scale << ",\n"
         << "    \"pointType\" : " << Model::points->pointType << ",\n"
@@ -2316,7 +2362,8 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
    json << "    \"far\" : " << aview->far_clip << ",\n";
    json << "    \"orientation\" : " << aview->orientation << ",\n";
    json << "    \"background\" : " << awin->background.value << "\n";
-   json << "  },\n  \"colourmaps\" :\n  [\n" << std::endl;
+   json << "  },\n  \"properties\" : " << json::Serialize(Geometry::properties) << ",\n";
+   json << "\n  \"colourmaps\" :\n  [\n" << std::endl;
 
    for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
    {
@@ -2331,7 +2378,8 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
       for (unsigned int c=0; c < amodel->colourMaps[i]->colours.size(); c++)
       {
          json << "        {\"position\" : " << amodel->colourMaps[i]->colours[c].position << ",";
-         json << " \"colour\" : " << amodel->colourMaps[i]->colours[c].colour.value << "}";
+         Colour& col = amodel->colourMaps[i]->colours[c].colour;
+         json << " \"colour\" : \"rgba(" << (int)col.r << "," << (int)col.g << "," << (int)col.b << "," << (col.a/255.0) << ")\"}";
          if (c < amodel->colourMaps[i]->colours.size()-1) json << ",";
          json << std::endl;
       }
@@ -2351,7 +2399,20 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
          //Only able to dump point/triangle based objects currently:
          //TODO: fix to use sub-renderer output for others
          //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
-         std::string names[] = {"", "points", "triangles", "triangles", "", "", "", "", "volume"};
+         std::string names[] = {"", "points", "triangles", "triangles", "triangles", "triangles", "triangles", "lines", "triangles", "volume"};
+         bool points = false;
+         bool triangles = false;
+         bool lines = false;
+         bool volumes = false;
+         if (Model::geometry[lucPointType]->getCount(amodel->objects[i]) > 0) points = true;
+         if (Model::geometry[lucGridType]->getCount(amodel->objects[i]) > 0 ||
+             Model::geometry[lucTriangleType]->getCount(amodel->objects[i]) > 0 ||
+             Model::geometry[lucVectorType]->getCount(amodel->objects[i]) > 0 ||
+             Model::geometry[lucTracerType]->getCount(amodel->objects[i]) > 0 ||
+             Model::geometry[lucShapeType]->getCount(amodel->objects[i]) > 0) triangles = true;
+         if (Model::geometry[lucLineType]->getCount(amodel->objects[i]) > 0) lines = true;
+         if (Model::geometry[lucVolumeType]->getCount(amodel->objects[i]) > 0) volumes = true;
+
          bool first = true;
          for (int type=lucMinType; type<lucMaxType; type++)
          {
@@ -2359,41 +2420,48 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
             std::ostringstream ss;
             if (objdata)
             {
-               //When extracting data, skip objects with no export available or no data returned...
-               if (Model::geometry[type]->size() == 0 || names[type].length() == 0) continue;
+               //When extracting data, skip objects with no data returned...
+               if (Model::geometry[type]->size() == 0) continue;
                Model::geometry[type]->jsonWrite(amodel->objects[i]->id, &ss);
                if (ss.tellp() == (std::streampos)0 || amodel->objects[i]->skip) continue;
-            }
-
-            if (!first && !objdata) continue;  //Only output object props
-            if (first)
-            {
-              if (!firstobj) json << ",\n";
-              json << "    {" << std::endl;
-              json << "      \"id\" : " << amodel->objects[i]->id << "," << std::endl;
-              json << "      \"name\" : \"" << amodel->objects[i]->name << "\"," << std::endl;
-              json << "      \"visible\": " << (!amodel->objects[i]->skip && amodel->objects[i]->visible ? "true" : "false") << "," << std::endl;
-            }
-            else
-            {
-              json << ",";
             }
 
             int colourmap = -1;
             ColourMap* cmap = amodel->objects[i]->colourMaps[lucColourValueData];
             if (cmap)
             {
-               //Search vector
+               //Search vector to find index of selected map
                std::vector<ColourMap*>::iterator it = find(amodel->colourMaps.begin(), amodel->colourMaps.end(), cmap);
                if (it != amodel->colourMaps.end())
                   colourmap = (it - amodel->colourMaps.begin());
             }
 
-            //Export all json properties from object
-            std::string props = json::Serialize(amodel->objects[i]->properties);
-            //Strip enclosing {} as we merge props with object data
-            props = props.substr(1, props.length() - 2);
-            json << "      " << props;
+            if (!first && !objdata) continue;  //Only output object props
+            if (first)
+            {
+               if (!firstobj) json << ",\n";
+               json << "    {" << std::endl;
+               json << "      \"id\" : " << amodel->objects[i]->id << "," << std::endl;
+               json << "      \"name\" : \"" << amodel->objects[i]->name << "\"," << std::endl;
+               json << "      \"visible\": " << (!amodel->objects[i]->skip && amodel->objects[i]->visible ? "true" : "false") << "," << std::endl;
+               json << "      \"colourmap\" : " << colourmap << "," << std::endl;
+               if (!objdata)
+               {
+                  if (points) json << "      \"points\" : true," << std::endl;
+                  if (triangles) json << "      \"triangles\" : true," << std::endl;
+                  if (lines) json << "      \"lines\" : true," << std::endl;
+                  if (volumes) json << "      \"volumes\" : true," << std::endl;
+               }
+               //Export all json properties from object
+               std::string props = json::Serialize(amodel->objects[i]->properties);
+               //Strip enclosing {} as we merge props with object data
+               props = props.substr(1, props.length() - 2);
+               json << "      " << props;
+            }
+            else
+            {
+               json << ",";
+            }
 
             if (objdata) 
             {
@@ -2402,9 +2470,9 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
                json << "      [" << std::endl;
                json << ss.str();
                json << "\n      ]" << std::endl;
-            } else {
-               json << std::endl;
             }
+            else
+               json << std::endl;
 
             json << "    }";
             firstobj = first = false;
@@ -2421,7 +2489,14 @@ std::string LavaVu::requestData(std::string key)
    if (key == "objects")
    {
       jsonWrite(result);
+      debug_print("Sending object list (%d bytes)\n", result.str().length());
    }
-   debug_print("Sending object list (%d bytes)\n", result.str().length());
+   else if (key == "history")
+   {
+      for (unsigned int l=0; l<history.size(); l++)
+         result << history[l] << std::endl;
+      debug_print("Sending history (%d bytes)\n", result.str().length());
+   }
+   //std::cerr << result.str();
    return result.str();
 }

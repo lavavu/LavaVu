@@ -758,7 +758,7 @@ int Model::setTimeStep(int stepidx)
      return 0;
    }
 
-   if (stepidx < 0) return -1;
+   if (stepidx < 0) stepidx = 0; //return -1;
    if (stepidx >= timesteps.size())
      stepidx = timesteps.size()-1;
 

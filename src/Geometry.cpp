@@ -37,6 +37,9 @@
 
 //Init static data
 json::Object Geometry::properties;
+float Geometry::min[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
+float Geometry::max[3] = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
+float Geometry::dims[3];
 std::string GeomData::names[lucMaxType] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volume"};
 float GeomData::opacity = 0;
 int GeomData::glyphs = -1; //Glyph quality (-1 = use default per type)
@@ -49,11 +52,7 @@ bool Lines::tubes = false;
 void GeomData::checkPointMinMax(float *coord)
 {
    //std::cerr << coord[0] << "," << coord[1] << "," << coord[2] << std::endl;
-   for (int i=0; i<3; i++)
-   {
-     if (coord[i] > max[i] && coord[i] < HUGE_VAL) max[i] = coord[i];
-     if (coord[i] < min[i] && coord[i] > -HUGE_VAL) min[i] = coord[i];
-   }
+   compareCoordMinMax(min, max, coord);
 }
 
 void GeomData::label(std::string& labeltext)
@@ -215,6 +214,22 @@ void Geometry::reset()
 {
    elements = -1;
    redraw = true;
+}
+
+void Geometry::compareMinMax(float* min, float* max)
+{
+   //Compare passed min/max with min/max of all geometry
+   //(Used by parent to get bounds of sub-renderer objects)
+   for (unsigned int i = 0; i < geom.size(); i++) 
+   {
+      compareCoordMinMax(min, max, geom[i]->min);
+      compareCoordMinMax(min, max, geom[i]->max);
+      //Also update global min/max
+      compareCoordMinMax(Geometry::min, Geometry::max, geom[i]->min);
+      compareCoordMinMax(Geometry::min, Geometry::max, geom[i]->max);
+   }
+   //Update global bounding box size
+   getCoordRange(Geometry::min, Geometry::max, Geometry::dims);
 }
 
 void Geometry::dumpById(std::ostream& csv, unsigned int id)
@@ -412,7 +427,14 @@ void Geometry::setState(int index, Shader* prog)
       prog->use();
       prog->setUniform("uOpacity", GeomData::opacity);
       prog->setUniform("uLighting", lighting);
+      prog->setUniform("uBrightness", Geometry::properties["brightness"].ToFloat(0.0));
+      prog->setUniform("uContrast", Geometry::properties["contrast"].ToFloat(1.0));
+      prog->setUniform("uSaturation", Geometry::properties["saturation"].ToFloat(1.0));
+      prog->setUniform("uAmbient", Geometry::properties["ambient"].ToFloat(0.4));
+      prog->setUniform("uDiffuse", Geometry::properties["diffuse"].ToFloat(0.8));
+      prog->setUniform("uSpecular", Geometry::properties["specular"].ToFloat(0.0));
       prog->setUniform("uTextured", texunit >= 0);
+
       if (texunit >= 0)
          prog->setUniform("uTexture", texunit);
 
@@ -420,6 +442,21 @@ void Geometry::setState(int index, Shader* prog)
          prog->setUniform("uCalcNormal", 1);
       else
          prog->setUniform("uCalcNormal", 0);
+
+      if (type == lucPointType || type == lucTriangleType || type == lucGridType || TriangleBased(type))
+      {
+         //TODO: Also enable clip for lines (will require line shader)
+         float clipMin[3] = {Geometry::properties["xmin"].ToFloat(0.0) * Geometry::dims[0] + Geometry::min[0],
+                             Geometry::properties["ymin"].ToFloat(0.0) * Geometry::dims[1] + Geometry::min[1],
+                             Geometry::properties["zmin"].ToFloat(0.0) * Geometry::dims[2] + Geometry::min[2]};
+         float clipMax[3] = {Geometry::properties["xmax"].ToFloat(1.0) * Geometry::dims[0] + Geometry::min[0],
+                             Geometry::properties["ymax"].ToFloat(1.0) * Geometry::dims[1] + Geometry::min[1],
+                             Geometry::properties["zmax"].ToFloat(1.0) * Geometry::dims[2] + Geometry::min[2]};
+         
+         //std::cout << "CLIP MIN " << Vec3d(clipMin) << " CLIP MAX " << Vec3d(clipMax) << std::endl;
+         glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
+         glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax);
+      }
    }
    GL_Error_Check;
 }

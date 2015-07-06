@@ -9,6 +9,7 @@ varying float vSmooth;
 varying float vPointType;
 varying vec3 vPosEye;
 varying float vPointSize;
+varying vec3 vVertex;
 
 void main(void)
 {
@@ -28,5 +29,6 @@ void main(void)
    vPosEye = posEye;
    vPointType = aPointType;
    vPointSize = gl_PointSize;
+   vVertex = gl_Vertex.xyz;
 }
 

@@ -23,6 +23,7 @@ uniform bool uEnableColour;
 
 uniform float uBrightness;
 uniform float uContrast;
+uniform float uSaturation;
 uniform float uPower;
 
 uniform mat4 uPMatrix;
@@ -237,9 +238,14 @@ void main()
       pos += step;
     }
 
-    //Apply brightness & contrast
-    colour = ((colour - 0.5) * max(uContrast, 0.0)) + 0.5;
+    //Apply brightness, saturation & contrast
     colour += uBrightness;
+    const vec3 LumCoeff = vec3(0.2125, 0.7154, 0.0721);
+    vec3 AvgLumin = vec3(0.5, 0.5, 0.5);
+    vec3 intensity = vec3(dot(colour, LumCoeff));
+    colour = mix(intensity, colour, uSaturation);
+    colour = mix(AvgLumin, colour, uContrast);
+
     if (T > 0.95) discard;
     gl_FragColor = vec4(colour, 1.0 - T);
 

@@ -48,8 +48,11 @@ DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float
 
    jsonParseProperties(props, properties);
    //Store on properties to allow modification
-   if (!properties.HasKey("opacity")) properties["opacity"] = opacity;
+   if (!properties.HasKey("opacity") && opacity >= 0.0) properties["opacity"] = opacity;
    if (!properties.HasKey("colour")) properties["colour"] = colour;
+   //All props now lowercase, fix a couple of legacy camelcase values
+   if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
+   if (properties.HasKey("pointSmooth")) properties["pointsmooth"] = properties["pointSmooth"];
    defaultTexture = NULL;
 }
 

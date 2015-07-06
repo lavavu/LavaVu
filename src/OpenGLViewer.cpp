@@ -377,6 +377,8 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
       number = counter;
       counter++;
    }
+   //Make sure any status message cleared
+   display();
 
    //Redraw blended for output as transparent PNG
    if (transparent)
@@ -407,6 +409,7 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
       setsize(outwidth, outheight);
 #endif
    }
+
    display();
 
    // Read the pixels

@@ -50,6 +50,18 @@ Volumes::~Volumes()
 void Volumes::close()
 {
    Geometry::close();
+   //Iterate geom and delete textures
+   //"cachevolumes" property allows switching this behaviour off for faster switching
+   //requries enough GPU ram to store all volumes
+   if (Geometry::properties["cachevolumes"].ToBool(false)) return;
+   for (int i=0; i<geom.size(); i++) 
+   {
+      if (geom[i]->texture)
+      {
+         delete geom[i]->texture;
+         geom[i]->texture = NULL;
+      }
+   }
 }
 
 void Volumes::draw()
@@ -73,6 +85,7 @@ void Volumes::draw()
       {
          current = geom[i]->draw;
 
+         setState(i, prog); //Set draw state settings for this object
          render(i);
 
          GL_Error_Check;
@@ -223,22 +236,23 @@ void Volumes::render(int i)
 
    //User settings
    json::Object props = geom[i]->draw->properties;
-   float bbMin[3] = {props["xmin"].ToFloat(0.01),
-                     props["ymin"].ToFloat(0.01),
-                     props["zmin"].ToFloat(0.01)};
-   float bbMax[3] = {props["xmax"].ToFloat(0.99),
-                     props["ymax"].ToFloat(0.99),
-                     props["zmax"].ToFloat(0.99)};
+   //Use per-object clip box if set, otherwise use global clip
+   float bbMin[3] = {props["xmin"].ToFloat(Geometry::properties["xmin"].ToFloat(0.01)),
+                     props["ymin"].ToFloat(Geometry::properties["ymin"].ToFloat(0.01)),
+                     props["zmin"].ToFloat(Geometry::properties["zmin"].ToFloat(0.01))};
+   float bbMax[3] = {props["xmax"].ToFloat(Geometry::properties["xmax"].ToFloat(0.99)),
+                     props["ymax"].ToFloat(Geometry::properties["ymax"].ToFloat(0.99)),
+                     props["zmax"].ToFloat(Geometry::properties["zmax"].ToFloat(0.99))};
    glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
    glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
    glUniform1i(prog->uniforms["uEnableColour"], geom[i]->draw->colourMaps[lucColourValueData] ? props["colourmap"].ToInt(1) : 0);
-   glUniform1f(prog->uniforms["uBrightness"], props["brightness"].ToFloat(0.0));
-   glUniform1f(prog->uniforms["uContrast"], props["contrast"].ToFloat(1.0));
    glUniform1f(prog->uniforms["uPower"], props["power"].ToFloat(1.0));
    glUniform1i(prog->uniforms["uSamples"], props["samples"].ToInt(256));
-   glUniform1f(prog->uniforms["uDensityFactor"], props["density"].ToFloat(5.0));
+   glUniform1f(prog->uniforms["uDensityFactor"], props["density"].ToFloat(5.0) * props["opacity"].ToFloat(1.0));
    glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"].ToFloat(0));
-   Colour_SetUniform(prog->uniforms["uIsoColour"], Colour_FromJson(props, "isocolour", 220, 220, 200, 255*props["isoalpha"].ToFloat(1)));
+   Colour colour = Colour_FromJson(props, "colour", 220, 220, 200, 255);
+   float isoalpha = 255.0 * props["isoalpha"].ToFloat(colour.a/255.0);
+   Colour_SetUniform(prog->uniforms["uIsoColour"], colour);
    glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"].ToFloat(0.1));
    glUniform1i(prog->uniforms["uIsoWalls"], props["isowalls"].ToInt(0));
    glUniform1i(prog->uniforms["uFilter"], props["tricubicfilter"].ToInt(0));

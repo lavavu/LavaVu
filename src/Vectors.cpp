@@ -126,6 +126,10 @@ void Vectors::update()
          lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
 
       }
+
+      //Adjust bounding box
+      tris->compareMinMax(geom[i]->min, geom[i]->max);
+      lines->compareMinMax(geom[i]->min, geom[i]->max);
    }
    t1 = clock(); debug_print("Plotted %d vector arrows in %.4lf seconds\n", tot, (t1-tt)/(double)CLOCKS_PER_SEC);
 

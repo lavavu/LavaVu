@@ -203,6 +203,9 @@ void Tracers::update()
          timecolour = true;
       }
 
+      //Adjust bounding box
+      tris->compareMinMax(geom[i]->min, geom[i]->max);
+      lines->compareMinMax(geom[i]->min, geom[i]->max);
    }
    GL_Error_Check;
    

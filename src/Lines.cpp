@@ -155,6 +155,9 @@ void Lines::update()
             }
             oldpos = pos;
          }
+
+         //Adjust bounding box
+         tris->compareMinMax(geom[i]->min, geom[i]->max);
       }
    }
 

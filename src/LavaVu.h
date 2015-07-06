@@ -71,6 +71,7 @@ class LavaVu : public ViewerApp
    bool writeimage, writemovie;
    int volres[3];
    float volmin[3], volmax[3];
+   float inscale; //Scaling as data loaded, only for volumes currently
    DrawingObject *volume;
    int repeat;
 #ifdef HAVE_LIBAVCODEC
@@ -151,6 +152,7 @@ class LavaVu : public ViewerApp
    virtual bool keyPress(unsigned char key, int x, int y);
 
    virtual bool parseCommands(std::string cmd);
+   bool parsePropertySet(std::string cmd);
    virtual std::string requestData(std::string key);
    //***
 

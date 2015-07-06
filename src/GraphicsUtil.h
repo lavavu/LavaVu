@@ -185,6 +185,10 @@ class TextureData  //Texture TGA image data
   ~TextureData() {glDeleteTextures(1, &id);}
 };   
 
+void compareCoordMinMax(float* min, float* max, float *coord);
+void clearMinMax(float* min, float* max);
+void getCoordRange(float* min, float* max, float* dims);
+
 //Class for handling filenames/paths
 class FilePath
 {
@@ -505,7 +509,12 @@ class Vec3d
       if (y != rhs.y) return y < rhs.y;
       return z < rhs.z;
    }
+
+   friend std::ostream& operator<<(std::ostream& stream, const Vec3d& vec);
 };
+
+std::ostream & operator<<(std::ostream &os, const Colour& colour);
+std::ostream & operator<<(std::ostream &os, const Vec3d& vec);
 
 Vec3d vectorNormalToPlane(float pos0[3], float pos1[3], float pos2[3]);
 
@@ -848,11 +857,12 @@ class PropertyParser
       while (iss.good())
       {
          iss >> value;
-         //Detect quotes
+         //Detect quotes, if found read until end quote if any
          if (value.length() > 0 && value.at(0) == '"')
          {
             size_t start = line.find('"');
             size_t end = line.find('"', start+1);
+            if (end <= start) continue;
             iss.seekg(end+2, std::ios_base::beg);
             value = line.substr(start+1, end-start-1);
          }
@@ -905,15 +915,23 @@ class PropertyParser
 
    unsigned int Colour(std::string key, unsigned int idx=0)
    {
-      //Parse colour as RGB(A) hex, convert to ARGB int
+      //Parse colour as RRGGBBAA hex string:
+      //reverse order to get (AA)RRGGBB little endian hex, convert to ARGB int
       std::string str = get(key, idx);
+      int len = str.length();
+      if (len != 6 && len != 8) return LUC_BLACK;
+      if (str.length() == 6) str += "ff";
+
+      //Reverse components but preserve order of each 2 letter code
       if (str.length() == 6) //Alpha optional
         str = "ff" + str.substr(4,2) + str.substr(2,2) + str.substr(0,2);
       else
         str = str.substr(6,2) + str.substr(4,2) + str.substr(2,2) + str.substr(0,2);
+
       std::stringstream parsess(str);
       unsigned int val;
       parsess >> std::hex >> val;
+
       return val;
    }
 

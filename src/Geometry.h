@@ -222,6 +222,8 @@ class Geometry
   public:
    //TODO: Move globals from GeomData and elsewhere to this properties object...
    static json::Object properties; //Global properties
+   //Store the actual maximum bounding box
+   static float min[3], max[3], dims[3];
    bool allhidden;
    lucGeometryType type;   //Holds the object type
    unsigned int total;     //Total entries of all objects in container
@@ -235,6 +237,7 @@ class Geometry
    void reset(); //Called before new data loaded when caching previous data
    virtual void close(); //Called on quit & before gl context recreated 
 
+   void compareMinMax(float* min, float* max);
    void dumpById(std::ostream& csv, unsigned int id);
    virtual void jsonWrite(unsigned int id, std::ostream* osp);
    bool hide(unsigned int idx);
@@ -277,6 +280,7 @@ class Geometry
       if (geom) return geom->count;
       return 0;
    }
+
 };
 
 class TriSurfaces : public Geometry

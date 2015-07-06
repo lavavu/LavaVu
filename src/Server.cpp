@@ -221,13 +221,15 @@ void* Server::callback(enum mg_event event,
       }
       else if (strstr(request_info->uri, "/objects") != NULL)
       {
-
-         mg_printf(conn, "HTTP/1.1 200 OK\r\n"
-              //"Content-Type: application/x-javascript\r\n\r\n"
-              //"parseObjects('[");
-              "Content-Type: text/plain\r\n\r\n");
+         mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
          std::string objects = _self->viewer->app->requestData("objects");
          mg_write(conn, objects.c_str(), objects.length());
+      }
+      else if (strstr(request_info->uri, "/history") != NULL)
+      {
+         mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+         std::string history = _self->viewer->app->requestData("history");
+         mg_write(conn, history.c_str(), history.length());
       }
       else if (strstr(request_info->uri, "/image=") != NULL)
       {
