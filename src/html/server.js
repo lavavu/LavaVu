@@ -7,7 +7,7 @@ function keyPressCommand(event, el) {
     //OK.debug("PRESS Code: " + event.keyCode + " Char: " + charc);
     var cmd = el.value.trim();
     if (cmd.length == 0) cmd = "repeat";
-    requestData('/command=' + cmd);
+    sendCommand('' + cmd);
     el.value = "";
   }
 }
@@ -125,6 +125,14 @@ function mouseCall(request) {
 }
 
 ///////////////////////////////////////////////////////
+var cmdlog = null;
+function sendCommand(cmd) {
+  //Shortcut to send commands (and optionally log)
+  requestData('/command=' + cmd);
+  if (cmdlog != null)
+    cmdlog += cmd + "\n";
+}
+
 var count = 0;
 function requestData(data, callback, sync) {
   var http = new XMLHttpRequest();

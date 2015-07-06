@@ -1,8 +1,7 @@
 //WebGL particle/surface viewer, Owen Kaluza (c) Monash University 2012-14
 //TODO: 
+//Replace all control creation, update and set with automated routines from list of defined property controls
 // License: LGPLv3 for now
-// Release & include source to lib.js
-// vis.options / viewer duplication of property fields unnecessary
 var vis = {};
 var viewer;
 var params, messages, properties, objectlist;
@@ -53,7 +52,7 @@ function initPage(src, fn) {
     server = true;
 
     //if (!viewer.gl) {
-      //img = document.getElementById('frame');
+      //img = $('frame');
       //Image canvas event handling
       //img.mouse = new Mouse(img, new MouseEventHandler(serverMouseClick, serverMouseWheel, serverMouseMove, serverMouseDown));
     //}
@@ -62,7 +61,8 @@ function initPage(src, fn) {
     requestData('/connect', parseRequest);
     //requestData('/objects', parseObjects);
 
-    document.onkeypress = keyPress;
+    //Enable to forward key presses to server directly
+    //document.onkeypress = keyPress;
     window.onbeforeunload = function() {if (client_id >= 0) requestData("/disconnect=" + client_id, null, true); client_id = -1;};
 
     //Set viewer window to match ours?
@@ -85,11 +85,12 @@ function initPage(src, fn) {
 
   //Create tool windows
   params =     new Toolbox("params", 20, 20);
-  objectlist = new Toolbox("objectlist", 500, 20);
+  objectlist = new Toolbox("objectlist", 390, 20);
   messages =   new Toolbox("messages", 400, 300);
-  properties = new Toolbox("properties", 400, 200);
+  properties = new Toolbox("properties", 740, 20);
 
   params.show();
+  objectlist.show();
 
   if (src) {
     viewer.loadFile(src);
@@ -136,9 +137,9 @@ function autoResize() {
 function canvasMouseClick(event, mouse) {
   if (server) {
     if (viewer.rotating)
-      requestData('/command=' + viewer.getRotationString());
+      sendCommand('' + viewer.getRotationString());
     else
-      requestData('/command=' + viewer.getTranslationString());
+      sendCommand('' + viewer.getTranslationString());
   }
 
   //if (server) serverMouseClick(event, mouse); //Pass to server handler
@@ -169,7 +170,7 @@ function sortTimer(ifexists) {
     //No existing timer? Don't start a new one
     return;
   }
-  var element = document.getElementById("sort");
+  var element = $("sort");
   element.style.display = 'block';
   viewer.timer = setTimeout(function() {viewer.rotated = true; element.onclick.apply(element);}, 2000);
 }
@@ -284,7 +285,8 @@ function getImageDataURL(img) {
 function loadColourMaps() {
   //Load colourmaps
   if (!vis.colourmaps) return;
-  var list = $('colourmaps');
+  var list = $('colourmap-presets');
+  var sel = list.value;
   var canvas = $('palette');
   list.options.length = 1; //Remove all except "None"
   for (var i=0; i<vis.colourmaps.length; i++) {
@@ -293,7 +295,8 @@ function loadColourMaps() {
 
     //palette.colours = vis.colourmaps[i].colours;
     for (var j=0; j<vis.colourmaps[i].colours.length; j++)
-      palette.colours.push(new ColourPos(parseInt(vis.colourmaps[i].colours[j].colour), vis.colourmaps[i].colours[j].position));
+      //palette.colours.push(new ColourPos(parseInt(vis.colourmaps[i].colours[j].colour), vis.colourmaps[i].colours[j].position));
+      palette.colours.push(new ColourPos(vis.colourmaps[i].colours[j].colour, vis.colourmaps[i].colours[j].position));
 
     var option = new Option(vis.colourmaps[i].name || ("ColourMap " + i), i);
     list.options[list.options.length] = option;
@@ -307,12 +310,18 @@ function loadColourMaps() {
     var pixels = context.getImageData(0, 0, 512, 1).data;
     palette.cache = [];
     for (var c=0; c<512; c++) {
-      //var cstr = "rgba(" + pixels[c*4] + "," + pixels[c*4+1] + "," + pixels[c*4+2] + "," + pixels[c*4+3] + ")";
-      //OK.debug(c + " == " + cstr);
+      var cstr = "rgba(" + pixels[c*4] + "," + pixels[c*4+1] + "," + pixels[c*4+2] + "," + pixels[c*4+3] + ")";
+      OK.debug(c + " == " + cstr);
       //var colour = new Colour(cstr);
       palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
     }
+
+    //Redraw UI
+    palette.draw(canvas, true);
   }
+  //Restore selection
+  list.value = sel;
+  viewer.setColourMap(sel);
 }
 
 /*function checkPointMinMax(x, y, z) {
@@ -754,6 +763,7 @@ Toolbox.prototype.move = function(e, mouse) {
 
 Toolbox.prototype.wheel = function(e, mouse) {
 }
+
 //This object encapsulates a vertex buffer and shader set
 function Renderer(gl, type, colour, border) {
   this.border = border;
@@ -807,12 +817,9 @@ Renderer.prototype.init = function() {
   //Compile the shaders
   this.program = new WebGLProgram(this.gl, vs, fs);
   if (this.program.errors) OK.debug(this.program.errors);
-  //Setup attribs/uniforms
-  this.program.setup(this.attributes, this.uniforms);
+  //Setup attribs/uniforms (flag set to skip enabling attribs)
+  this.program.setup(this.attributes, this.uniforms, true);
 
-  //Disable attrib arrays initially (enabled in setup, can conflict)
-  //for (var key in this.attributes)
-  //  this.gl.disableVertexAttribArray(this.program.attributes[key]);
   return true;
 }
 
@@ -993,8 +1000,8 @@ VertexBuffer.prototype.loadParticles = function(object) {
       this.floats[this.offset+1] = vert[1];
       this.floats[this.offset+2] = vert[2];
       this.ints[this.offset+3] = objVertexColour(object, dat.values, i);
-      this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * object.pointSize : object.pointSize;
-      this.floats[this.offset+5] = object.pointType > 0 ? object.pointType-1 : -1;
+      this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * object.pointsize : object.pointsize;
+      this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype-1 : -1;
       this.offset += this.vertexSizeInFloats;
     }
   }
@@ -1193,6 +1200,7 @@ Renderer.prototype.box = function(min, max) {
 Renderer.prototype.draw = function() {
   if (!vis.objects || !vis.objects.length) return;
   var start = new Date();
+  //console.log(" ----- " + this.type + " --------------------------------------------------------------------");
 
   //Create buffer if not yet allocated
   if (this.vertexBuffer == undefined) {
@@ -1205,6 +1213,8 @@ Renderer.prototype.draw = function() {
     this.indexBuffer = this.gl.createBuffer();
     //viewer.reload = true;
   }
+
+  if (this.program.attributes["aVertexPosition"] == undefined) return; //Require vertex buffer
 
   viewer.webgl.use(this.program);
   viewer.webgl.setMatrices();
@@ -1223,7 +1233,7 @@ Renderer.prototype.draw = function() {
   if (this.elements == 0) return;
 
   //Enable attributes
-  for (var key in this.attributes)
+  for (var key in this.program.attributes)
     this.gl.enableVertexAttribArray(this.program.attributes[key]);
 
   //Update palette
@@ -1235,7 +1245,7 @@ Renderer.prototype.draw = function() {
   //this.gl.uniform1i(this.program.uniforms["palette"], 0);
 
   //Options
-  //var cmap = document.getElementById("colourmap").checked == true ? 1 : 0;
+  //var cmap = $("colourmap").checked == true ? 1 : 0;
   //this.gl.uniform1i(this.program.uniforms["colourmap"], cmap);
 
   /*/Image texture
@@ -1292,7 +1302,6 @@ Renderer.prototype.draw = function() {
     var desc = (this.elements / 3) + " triangles";
 
   } else if (this.border) {
-
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, 0, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
     this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_SHORT, 0);
@@ -1308,9 +1317,10 @@ Renderer.prototype.draw = function() {
     var desc = (this.elements / 2) + " lines";
   }
 
-  //Disable attrib arrays
-  for (var key in this.attributes)
+  //Disable attribs
+  for (var key in this.program.attributes)
     this.gl.disableVertexAttribArray(this.program.attributes[key]);
+
   this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
   this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, null);
   this.gl.useProgram(null);
@@ -1382,8 +1392,8 @@ function Viewer(canvas) {
   this.orientation = 1.0; //1.0 for RH, -1.0 for LH
   this.background = new Colour(0xff404040);
   document.body.style.background = this.background.html();
-  document.getElementById("bgColour").value = '';
-  this.showBorder = document.getElementById("border").checked;
+  $("bgColour").value = '';
+  this.showBorder = $("border").checked;
   this.pointScale = 1.0;
   this.pointType = 0;
   this.opacity = 1.0;
@@ -1412,13 +1422,28 @@ Viewer.prototype.loadFile = function(source) {
   var updated = true;
   try {
     if (typeof source != 'object') {
-      if (source.substr(8) == "loadData") {
+      if (source.indexOf("{") < 0) {
+        if (server) {
+          //Not a json string, assume a command script
+          //TODO: this doesn't seem to work in LavaVR?
+          var lines = source.split("\n");
+          for (var line in lines) {
+            sendCommand('' + lines[line]);
+          }
+          return;
+        } else {
+          console.log(source);
+          alert("Invalid data");
+          return;
+        }
+      } else if (source.substr(8) == "loadData") {
         //jsonp, strip function call when loaded from FileReader
         source = source.substring(10, source.lastIndexOf("\n"));
       }
       source = JSON.parse(source);
     }
   } catch(e) {
+    console.log(source);
     alert(e);
   }
   var time = (new Date() - start) / 1000.0;
@@ -1459,18 +1484,30 @@ Viewer.prototype.loadFile = function(source) {
     this.applyBackground(vis.options.background);
 
     //Copy global options to controls where applicable..
-    document.getElementById("bgColour").value = this.background.r;
-    document.getElementById("pointScale").value = (this.pointScale || 1.0) * 50.0;
-    document.getElementById("globalAlpha").value = (this.opacity || 1.0) * 255.0;
-    document.getElementById("border").checked = this.showBorder;
-    document.getElementById("pointType").value = this.pointType;
+    $("bgColour").value = this.background.r;
+    $("pointScale-out").value = (this.pointScale || 1.0);
+    $("pointScale").value = $("pointScale-out").value * 10.0;
+    $("globalAlpha").value = $("globalAlpha-out").value = (this.opacity || 1.0);
+    $("border").checked = this.showBorder;
+    $("globalPointType").value = this.pointType;
+
+    $('brightness').value = $("brightness-out").value = vis.properties.brightness;
+    $('contrast').value = $("contrast-out").value = vis.properties.contrast;
+    $('saturation').value = $("saturation-out").value = vis.properties.saturation;
+
+    $('xmin').value = $("xmin-out").value = vis.properties.xmin;
+    $('xmax').value = $("xmax-out").value = vis.properties.xmax;
+    $('ymin').value = $("ymin-out").value = vis.properties.ymin;
+    $('ymax').value = $("ymax-out").value = vis.properties.ymax;
+    $('zmin').value = $("zmin-out").value = vis.properties.zmin;
+    $('zmax').value = $("zmax-out").value = vis.properties.zmax;
   }
 
   this.updateDims(vis.options);
   //boundingBox(vis.options.min, vis.options.max);
 
   //Load objects and add to form
-  var objdiv = document.getElementById("objects");
+  var objdiv = $("objects");
   removeChildren(objdiv);
 
   //Decode into Float buffers and replace original base64 data
@@ -1619,6 +1656,7 @@ Viewer.prototype.toString = function() {
 
   exp.options = vis.options;
   exp.shaders = vis.shaders;
+  exp.properties = vis.properties;
   exp.objects = [];
   exp.colourmaps = [];
   exp.options.background = this.background.toString();
@@ -1650,73 +1688,168 @@ Viewer.prototype.toString = function() {
 }
 
 Viewer.prototype.exportFile = function() {
-  //Export using data URL
-  window.open('data:' + content + ';base64,' + window.btoa(this.toString()));
+  if (server) {
+     //Dump history to script
+     //sendCommand('history history.script');
+     //window.open('/history');
+     cmdlog = '';
+     this.setProperties();
+     cmdlog += '\n#Object properties...\n';
+     for (var id in vis.objects) {
+       this.properties(id);
+       this.setObjectProperties();
+       cmdlog += '\n';
+     }
+
+     window.open('data:text/plain;base64,' + window.btoa(cmdlog));
+     cmdlog = null;
+
+  } else {
+    //Export using data URL
+    window.open('data:text/plain;base64,' + window.btoa(this.toString()));
+  }
 }
 
 Viewer.prototype.properties = function(id) {
   //Properties button clicked... Copy to controls
   properties.id = id;
   $('obj_name').innerHTML = vis.objects[id].name;
-  setColourMap(vis.objects[id].colourmap, true);
+  this.setColourMap(vis.objects[id].colourmap);
 
-  $('opacity').value = 255 * (vis.objects[id].opacity ? vis.objects[id].opacity : 1.0);
-  $('pointsize').value = vis.objects[id].pointSize ? 10 * vis.objects[id].pointSize : 10.0;
-  $('pointtype').value = vis.objects[id].pointType ? vis.objects[id].pointType : -1;
+  function loadProp(name, def) {$(name + '-out').value = $(name).value = vis.objects[id][name] ? vis.objects[id][name] : def;}
+
+  loadProp('opacity', 1.0);
+  $('pointSize').value = vis.objects[id].pointsize ? vis.objects[id].pointsize : 10.0;
+  $('pointType').value = vis.objects[id].pointtype ? vis.objects[id].pointtype : -1;
 
   $('wireframe').checked = vis.objects[id].wireframe;
   $('cullface').checked = vis.objects[id].cullface;
+
+  loadProp('density');
+  loadProp('power');
+  loadProp('samples');
+  loadProp('isovalue');
+  loadProp('isosmooth');
+  loadProp('isoalpha');
+  $('isowalls').checked = vis.objects[id].isowalls;
+  $('isofilter').checked = vis.objects[id].isofilter;
 
   var c = new Colour(vis.objects[id].colour);
   $S('colour_set').backgroundColor = c.html();
 
   //Type specific options
-  if (!server) {
-    setAll(vis.objects[id].points ? 'block' : 'none', 'points');
-  }
-  setAll(vis.objects[id].triangles ? 'block' : 'none', 'triangles');
+  setAll(vis.objects[id].points ? 'block' : 'none', 'point-obj');
+  setAll(vis.objects[id].triangles ? 'block' : 'none', 'surface-obj');
+  setAll(vis.objects[id].volumes ? 'block' : 'none', 'volume-obj');
+  setAll(vis.objects[id].lines ? 'block' : 'none', 'line-obj');
 
   properties.show();
 }
 
-function setOpacity(val) {
-  if (server)
-    requestData("/command=opacity " + vis.objects[properties.id].id + " " + (val / 255.0));
-}
-
-function setPointSize(val) {
-  if (server)
-    requestData("/command=scale " + vis.objects[properties.id].id + " " + (val / 10.0));
-}
-
-function setObjPointType(val) {
-  if (server)
-    requestData("/command=pointtype " + vis.objects[properties.id].id + " " + val);
-}
-
-function setColour() {
-  var el = $('colour_set');
-  if (server) {
-    el.onchange = function() { 
-      var col = new Colour(this.style.backgroundColor);
-      requestData("/command=colour " + vis.objects[properties.id].id + " " + col.hex());
-    }
+//Global property set
+Viewer.prototype.setProperties = function() {
+  function setProp(name, fieldname) {
+    if (fieldname == undefined) fieldname = name;
+    vis.properties[name] = $(fieldname + '-out').value = $(fieldname).value;
   }
-  viewer.gradient.edit(el);
+
+  viewer.pointScale = $('pointScale-out').value = $('pointScale').value / 10.0;
+  viewer.opacity = $('globalAlpha-out').value = $('globalAlpha').value;
+  viewer.pointType = $('globalPointType').value;
+  viewer.showBorder = $("border").checked;
+  viewer.axes = $("axes").checked;
+  var c = $("bgColour").value;
+  var cc = Math.round(255*c);
+  vis.options.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+  setProp('brightness');
+  setProp('contrast');
+  setProp('saturation');
+  setProp('xmin');
+  setProp('xmax');
+  setProp('ymin');
+  setProp('ymax');
+  setProp('zmin');
+  setProp('zmax');
+
+  //Set the local/server props
+  if (server) {
+    //Issue server commands
+    sendCommand('select'); //Ensure no object selected
+    sendCommand('scale points ' + viewer.pointScale);
+    sendCommand('alpha ' + (viewer.opacity*255));
+    sendCommand('pointtype all ' + viewer.pointType);
+    sendCommand('border ' + (this.showBorder ? "on" : "off"));
+    sendCommand('axis ' + (this.axes ? "on" : "off"));
+    if (c != "") sendCommand('background ' + c);
+
+    sendCommand('brightness=' + vis.properties.brightness);
+    sendCommand('contrast=' + vis.properties.contrast);
+    sendCommand('saturation=' + vis.properties.saturation);
+
+    sendCommand('xmin=' + vis.properties.xmin);
+    sendCommand('xmax=' + vis.properties.xmax);
+    sendCommand('ymin=' + vis.properties.ymin);
+    sendCommand('ymax=' + vis.properties.ymax);
+    sendCommand('zmin=' + vis.properties.zmin);
+    sendCommand('zmax=' + vis.properties.zmax);
+  } else {
+    viewer.applyBackground(vis.options.background);
+    viewer.draw();
+  }
 }
 
-function setColourMap(id, noserver) {
+Viewer.prototype.setTimeStep = function() {
+  //TODO: To implement this accurately, need to get timestep range from server
+  //For now just do a jump and reset slider to middle
+  var timejump = $("timestep").value - 50.0;
+  $("timestep").value = 50;
+  if (server) {
+    //Issue server commands
+    sendCommand('jump ' + timejump);
+  } else {
+    //No timesteps supported in WebGL viewer yet
+  }
+}
+
+Viewer.prototype.applyBackground = function(bg) {
+  if (!bg) return;
+  this.background = new Colour(bg);
+  var hsv = this.background.HSV();
+  if (this.border) this.border.colour = hsv.V > 50 ? new Colour(0xff444444) : new Colour(0xffbbbbbb);
+  document.body.style.background = this.background.html();
+}
+
+Viewer.prototype.addColourMap = function() {
+  if (properties.id == undefined) return;
+  //New colourmap on active object
+  if (server)
+    sendCommand("colourmap " + vis.objects[properties.id].id + " add");
+  else {
+    //TODO: Not tested...
+    var id = 1;
+    if (view.colourmaps.length > 0) id = view.colourmaps[view.colourmaps.length-1] + 1;
+    var newmap = {
+      "id": id,
+      "name": "ColourMap " + id,
+      "minimum": 0,
+      "maximum": 1,
+      "log": 0,
+      "colours": [{"position": 0, "colour": "rgba(0,0,0,0)"},{"position": 1,"colour": "rgba(255,255,255,1)"}
+      ]
+    }
+    vis.colourmaps.push_back(newmap);
+  }
+}
+
+Viewer.prototype.setColourMap = function(id) {
+  if (properties.id == undefined) return;
   vis.objects[properties.id].colourmap = id;
   if (id === undefined) id = -1;
   //Set new colourmap on active object
-  $('colourmaps').value = id;
+  $('colourmap-presets').value = id;
   if (id < 0) {
     $('palette').style.display = 'none';
     $('log').style.display = 'none';
-
-    if (!noserver && server)
-      requestData("/command=colourmap " + vis.objects[properties.id].id + " -1");
-
   } else {
     //Draw palette UI
     $('logscale').checked = vis.colourmaps[id].log;
@@ -1725,22 +1858,28 @@ function setColourMap(id, noserver) {
     viewer.gradient.palette = vis.colourmaps[id].palette;
     viewer.gradient.mapid = id; //Save the id
     viewer.gradient.update();
-
-    if (!noserver && server)
-      requestData("/command=colourmap " + vis.objects[properties.id].id + " " + vis.colourmaps[id].id);
   }
 }
 
-Viewer.prototype.updateProperties = function() {
+Viewer.prototype.setObjectProperties = function() {
   //Copy from controls
   var id = properties.id;
-  vis.objects[id].opacity = $('opacity').value / 255.0;
-  vis.objects[id].pointSize = $('pointsize').value / 10.0;
-  vis.objects[id].pointType = $('pointtype').value;
+  function setProp(name) {vis.objects[id][name] = $(name + '-out').value = $(name).value;}
+  setProp('opacity');
+  vis.objects[id].pointsize = $('pointSize-out').value = $('pointSize').value / 10.0;
+  vis.objects[id].pointtype = $('pointType').value;
   vis.objects[id].wireframe = $('wireframe').checked;
   vis.objects[id].cullface = $('cullface').checked;
-  vis.objects[id].colour = new Colour($S('colour_set').backgroundColor).toInt();
-
+  setProp('density');
+  setProp('power');
+  setProp('samples');
+  setProp('isovalue');
+  setProp('isosmooth');
+  setProp('isoalpha');
+  vis.objects[id].isowalls = $('isowalls').checked;
+  vis.objects[id].isofilter = $('isofilter').checked;
+  var colour = new Colour($('colour_set').style.backgroundColor);
+  vis.objects[id].colour = colour.toInt();
   if (vis.objects[id].colourmap >= 0)
     vis.colourmaps[vis.objects[id].colourmap].log = $('logscale').checked;
 
@@ -1749,6 +1888,54 @@ Viewer.prototype.updateProperties = function() {
       this[type].sort = this[type].reload = true;
   }
   viewer.draw();
+
+  //Server side...
+  if (server) {
+    sendCommand("select " + vis.objects[properties.id].id);
+    sendCommand("colour " + colour.hex());
+    sendCommand("opacity " + vis.objects[id].opacity);
+    //sendCommand('brightness=' + vis.objects[id].brightness);
+    //sendCommand('contrast=' + vis.objects[id].contrast);
+    //sendCommand('saturation=' + vis.objects[id].saturation);
+    if (vis.objects[id].points) {
+      sendCommand("scale " + vis.objects[id].pointsize);
+      sendCommand("pointtype " + vis.objects[id].pointtype);
+    }
+    if (vis.objects[id].triangles) {
+      sendCommand("wireframe=" + (vis.objects[id].wireframe ? "1" : "0"));
+      sendCommand('cullface=' + (vis.objects[id].cullface ? "1" : "0"));
+    }
+    if (vis.objects[id].volumes) {
+      //TODO: volume settings here, create volume options in dialog
+      sendCommand('density=' + vis.objects[id].density);
+      sendCommand('power=' + vis.objects[id].power);
+      sendCommand('samples=' + vis.objects[id].samples);
+      sendCommand('isosmooth=' + vis.objects[id].isosmooth);
+      sendCommand('isoalpha=' + vis.objects[id].isoalpha);
+      sendCommand('isowalls=' + (vis.objects[id].isowalls ? "1" : "0"));
+      sendCommand('tricubicfilter=' + (vis.objects[id].isofilter ? "1" : "0"));
+      sendCommand('isovalue=' + vis.objects[id].isovalue);
+    }
+    /*sendCommand('xmin=' + vis.objects[id].xmin);
+    sendCommand('xmax=' + vis.objects[id].xmax);
+    sendCommand('ymin=' + vis.objects[id].ymin);
+    sendCommand('ymax=' + vis.objects[id].ymax);
+    sendCommand('zmin=' + vis.objects[id].zmin);
+    sendCommand('zmax=' + vis.objects[id].zmax);*/
+
+    //Get colourmap
+    //console.log(JSON.stringify(vis.colourmaps));
+    var cmid = vis.objects[properties.id].colourmap;
+    if (cmid == undefined || cmid < 0) {
+      sendCommand("colourmap -1");
+    } else {
+      sendCommand("colourmap " + vis.colourmaps[cmid].id);
+      //Update full colourmap...
+      sendCommand("colourmap \"\n" + vis.colourmaps[cmid].palette + "\n\"\n");
+    }
+
+    sendCommand("select");
+  }
 }
 
 Viewer.prototype.action = function(id, reload, sort, el) {
@@ -1756,9 +1943,9 @@ Viewer.prototype.action = function(id, reload, sort, el) {
   if (server) {
     var show = el.checked;
     if (show)
-      requestData("/command=show " + vis.objects[id].id);
+      sendCommand("show " + vis.objects[id].id);
     else
-      requestData("/command=hide " + vis.objects[id].id);
+      sendCommand("hide " + vis.objects[id].id);
     return;
   }
 
@@ -1831,15 +2018,16 @@ function removeChildren(element) {
   }
 }
 
-
 paletteUpdate = function(obj) {
   //Load colourmap change
-  if (!vis.colourmaps || !viewer.gradient.mapid) return;
+  if (!vis.colourmaps || viewer.gradient.mapid >= 0) return;
   var canvas = $('palette');
   var context = canvas.getContext('2d');  
   if (!context) alert("getContext failed");
 
   var cmap = vis.colourmaps[viewer.gradient.mapid];
+  if (!cmap) return;
+
   //Get colour data and store in array
   //Redraw without UI elements
   cmap.palette.draw(canvas, false);
@@ -1878,7 +2066,7 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   //if (server || borderOnly)
   if (server) {
     $("frame").style.display = 'block';
-    var frame = document.getElementById('frame');
+    var frame = $('frame');
     this.width = frame.offsetWidth;
     this.height = frame.offsetHeight;
     this.canvas.style.width = this.width + "px";
@@ -1951,6 +2139,7 @@ Viewer.prototype.drawFrame = function(borderOnly) {
 
   //Render objects
   if (!borderOnly) {
+  //if (!borderOnly && !server) {
     //Draw all
     for (var type in types) {
       //if (!document.mouse.isdown && !this.showBorder && type == 'border') continue;
@@ -2015,9 +2204,9 @@ Viewer.prototype.reset = function() {
   }
 
   if (server) {
-    //requestData('/command=' + this.getRotationString());
-    //requestData('/command=' + this.getTranslationString());
-    requestData('/command=reset');
+    //sendCommand('' + this.getRotationString());
+    //sendCommand('' + this.getTranslationString());
+    sendCommand('reset');
   }
 }
 
@@ -2028,8 +2217,8 @@ Viewer.prototype.zoom = function(factor) {
   }
 
   if (server)
-    requestData('/command=' + this.getTranslationString());
-    //requestData('/command=zoom ' + factor);
+    sendCommand('' + this.getTranslationString());
+    //sendCommand('zoom ' + factor);
 }
 
 Viewer.prototype.zoomClip = function(factor) {
@@ -2040,7 +2229,7 @@ Viewer.prototype.zoomClip = function(factor) {
     this.draw();
   }
   if (server)
-    requestData('/command=zoomclip ' + factor);
+    sendCommand('zoomclip ' + factor);
 }
 
 Viewer.prototype.updateDims = function(options) {
@@ -2101,72 +2290,11 @@ Viewer.prototype.updateDims = function(options) {
   OK.debug("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
 }
 
-Viewer.prototype.setPointScale = function() {
-  viewer.pointScale = document.getElementById("pointScale").value / 50.0;
-  if (server) {
-    requestData('/command=scale points ' + viewer.pointScale);
-  } else {
-    viewer.draw();
-  }
-}
-
-Viewer.prototype.setAlpha = function() {
-  var a = document.getElementById("globalAlpha").value;
-  viewer.opacity = a/255.0;
-
-  if (server) {
-    //Sets global alpha
-    requestData('/command=alpha ' + a);
-  } else {
-    viewer.draw();
-  }
-}
-
-Viewer.prototype.setPointType = function() {
-  viewer.pointType = document.getElementById("pointType").value;
-  if (server) {
-    var c = viewer.pointType;
-    if (c < 0) c = 4;
-    requestData('/command=pointtype all ' + c);
-  } else {
-    viewer.draw();
-  }
-}
-
-Viewer.prototype.setBorder = function() {
-  viewer.showBorder = document.getElementById("border").checked;
-  if (server)
-    requestData('/command=border ' + (this.showBorder ? "on" : "off"));
-  else {
-    viewer.draw();
-  }
-}
-
-Viewer.prototype.setBackground = function() {
-  var c = document.getElementById("bgColour").value;
-  var cc = Math.round(255*c);
-  vis.options.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
-  if (server) {
-    requestData('/command=background ' + c);
-  } else {
-    viewer.applyBackground(vis.options.background);
-    viewer.draw();
-  }
-}
-
-Viewer.prototype.applyBackground = function(bg) {
-  if (!bg) return;
-  this.background = new Colour(bg);
-  var hsv = this.background.HSV();
-  if (this.border) this.border.colour = hsv.V > 50 ? new Colour(0xff444444) : new Colour(0xffbbbbbb);
-  document.body.style.background = this.background.html();
-}
-
 function resizeToWindow() {
-  //var canvas = document.getElementById('canvas');
+  //var canvas = $('canvas');
   //if (canvas.width < window.innerWidth || canvas.height < window.innerHeight)
-    requestData('/command=resize ' + window.innerWidth + " " + window.innerHeight);
-  var frame = document.getElementById('frame');
+    sendCommand('resize ' + window.innerWidth + " " + window.innerHeight);
+  var frame = $('frame');
   canvas.style.width = frame.style.width = "100%";
   canvas.style.height = frame.style.height = "100%";
 }

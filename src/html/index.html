@@ -1,7 +1,7 @@
 <html>
 
 <head>
-<title>gLucifer Web Viewer</title>
+<title>LavaVu Interface</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
 <link rel="stylesheet" type="text/css" href="styles.css">
@@ -245,23 +245,92 @@ void main(void)
   </div>
 
 <div class="toolbox" id="params">
-  <h3>Model Parameters</h3>
+  <h3>Global Settings</h3>
   <hr>
-  <div class="scroll">
+  <div>
+    <!-- Clip controls -->
     <table>
-    <tr><td>Point Scaling:</td><td><input id="pointScale" type="range" min="1" max="255" value="50" onchange="viewer.setPointScale();"/></td></tr>
-    <tr><td>Opacity:</td><td><input id="globalAlpha" type="range" min="1" max="255" value="200" onchange="viewer.setAlpha();"/></td></tr>
-    <tr><td>Point Type:</td><td>
-    <select id="pointType" onchange="viewer.setPointType();">
-    <option value="-1">Flat</option>
+      <tr><td></td><td align="center">Clip Min</td><td align="center">Clip Max</td></tr>
+    </div>
+    <tr>
+      <td>X</td>
+      <td>
+         <input id="xmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="xmin" id="xmin-out">0</output>
+      </td>
+      <td>
+         <input id="xmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="xmax" id="xmax-out">0</output>
+      </td>
+    </tr>
+    <tr>
+      <td>Y</td>
+      <td>
+         <input id="ymin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="ymin" id="ymin-out">0</output>
+      </td>
+      <td>
+         <input id="ymax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="ymax" id="ymax-out">0</output>
+      </td>
+      </span>
+    </tr>
+    <tr>
+      <span>
+      <td>Z</td>
+      <td>
+         <input id="zmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="zmin" id="zmin-out">0</output>
+      </td>
+      <td>
+         <input id="zmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="zmax" id="zmax-out">0</output>
+      </td>
+      </span>
+    </tr>
+    </table>
+    <table>
+    <tr><td>Brightness</td>
+       <td>
+          <input id="brightness" type="range" min="-1" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+          <output for="brightness" id="brightness-out">0</output>
+       </td>
+    </tr>
+    <tr><td>Contrast</td>
+       <td>
+          <input id="contrast" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
+          <output for="contrast" id="contrast-out">1</output>
+       </td>
+    </tr>
+    <tr><td>Saturation</td>
+       <td>
+          <input id="saturation" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
+          <output for="saturation" id="saturation-out">1</output>
+       </td>
+    </tr>
+    <tr><td>Point Scaling</td>
+       <td>
+          <input id="pointScale" type="range" min="1" max="100" value="10" step="1" onchange="viewer.setProperties();"/>
+          <output for="pointScale" id="pointScale-out">5</output>
+       </td>
+    </tr>
+    <tr><td>Opacity</td>
+       <td>
+          <input id="globalAlpha" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();"/>
+          <output for="globalAlpha" id="globalAlpha-out">1</output>
+       </td>
+    </tr>
+    <tr><td>Point Type</td><td>
+    <select id="globalPointType" onchange="viewer.setProperties();">
     <option value="0" selected>Transparent - Gaussian</option>
     <option value="1">Transparent - Linear</option>
     <option value="2">Solid sphere</option>
     <option value="3">Sphere with highlight</option>
+    <option value="4">Flat</option>
     </select>
     </td></tr>
-    <tr><td>Background:</td><td>
-    <select id="bgColour" onchange="viewer.setBackground();">
+    <tr><td>Background</td><td>
+    <select id="bgColour" onchange="viewer.setProperties();">
     <option value="" selected></option>
     <option value="0">black</option>
     <option value="1">white</option>
@@ -270,7 +339,7 @@ void main(void)
     </select>
     </td></tr>
 
-    <tr><td>Zoom:</td><td>
+    <tr><td>Zoom</td><td>
     <input id="zoomin" type="button" value=" + " onclick="viewer.zoom(0.05)"/>
     <input id="zoomout" type="button" value=" - " onclick="viewer.zoom(-0.05)"/>
     </td></tr>
@@ -280,46 +349,58 @@ void main(void)
     </td></tr>
 
 
-    <tr><td>Left-click:</td><td>
+    <tr><td>Left-click</td><td>
       <input type="radio" name="mode" id="rmode" value="rotate" checked="checked"/> Rotate
     </td></tr>
     <tr><td></td><td>
       <input type="radio" name="mode" id="tmode" value="translate" /> Translate
     </td></tr>
+    <tr><td>Bounding box</td><td><input name="border" id="border" type="checkbox" checked="" onchange="viewer.setProperties();"></td></tr>
+    <tr><td>Axes</td><td><input name="axes" id="axes" type="checkbox" checked="" onchange="viewer.setProperties();"></td></tr>
+
+        <!--tr><td>Auto-subsample</td><td><input name="subsample" id="subsample" type="checkbox" checked="checked" onchange="viewer.draw();"></td></tr-->
+        <tr class="client"><td>Immediate sort</td><td><input name="immsort" id="immsort" type="checkbox" onchange="viewer.draw();"></td></tr>
+        <tr class="client"><td>Interactive render</td><td><input name="interactive" id="interactive" type="checkbox" onchange="viewer.draw();"></td></tr>
+
+        <tr class="server">
+          <td>Timestep</td><td><input id="timestep" type="range" min="0" max="100" value="50" onchange="viewer.setTimeStep();">
+          <input type="button" value="<-" onclick="requestData('/command=timestep up');">
+          <input type="button" value="->" onclick="requestData('/command=timestep down');"></td>
+        </tr>
+        <tr class="server"><td>Commands</td><td><input type="text" id="cmdInput" onkeypress="keyPressCommand(event, this);"></td></tr>
+        <tr class="server">
+          <td><input type="button" value="Resize" onclick="resizeToWindow();"></td>
+        </tr>
     </table>
-
-    <div class="client">
-      <table>
-        <!--tr><td>Auto-subsample:</td><td><input name="subsample" id="subsample" type="checkbox" checked="checked" onchange="viewer.draw();"></td></tr-->
-        <tr><td>Bounding box:</td><td><input name="border" id="border" type="checkbox" checked="" onchange="viewer.setBorder();"></td></tr>
-        <tr><td>Immediate sort:</td><td><input name="immsort" id="immsort" type="checkbox" onchange="viewer.draw();"></td></tr>
-        <tr><td>Interactive render:</td><td><input name="interactive" id="interactive" type="checkbox" onchange="viewer.draw();"></td></tr>
-      </table>
+      
     </div>
 
-    <div class="server">
       <table>
-        <tr><td>Commands:</td><td><input type="text" id="cmdInput" onkeypress="keyPressCommand(event, this);"></td></tr>
+        <tr>
+          <td><input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)"></td>
+        </tr>
+        <tr>
+          <td><input type="button" value="Objects" onclick="objectlist.toggle();"></td>
+          <!--td><input type="button" value="Console" onClick="OK.debug_on = true; messages.toggle();"></td-->
+          <td><input id="sort" type="button" value="Sort" onClick="document.body.style.cursor = 'wait'; this.style.display = 'none'; viewer.draw(); document.body.style.cursor = 'default';" style="display: none; float: right;"></td>
+        </tr>
+        <tr>
+            <td><input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();"></td>
+        </tr>
       </table>
-      <input type="button" value="Resize" onclick="resizeToWindow();">
-    </div>
-
-    <input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();"><input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)">
+    <br>
   </div>
-  <input type="button" value="Objects" onclick="objectlist.toggle();">
-  <input type="button" value="Console" onClick="OK.debug_on = true; messages.toggle();">
-  <input id="sort" type="button" value="Sort" onClick="document.body.style.cursor = 'wait'; this.style.display = 'none'; viewer.draw(); document.body.style.cursor = 'default';" style="display: none; float: right;">
 
 </div>
 
-<div class="toolbox" id="objectlist">
+<div class="toolbox" id="objectlist" style="max-height: 500px;">
   <div class="toolclose" onclick="window.objectlist.hide();">&times;</div>
   <h3>Objects</h3>
   <hr>
   <div id="objects" class="scroll">
   </div>
   <hr>
-  Update selected (visible) objects
+  <span class="client">Update selected (visible) objects</span>
   <input id="apply" class="right client" type="button" value="Apply" onClick="viewer.apply();" disabled>
 </div>
 
@@ -335,42 +416,107 @@ void main(void)
   <div class="toolclose" onclick="window.properties.hide();">&times;</div>
   <h3><span id="obj_name"></span> properties</h3>
   <hr>
-  <div id="props" class="scroll">
-    <input id="opacity" type="range" min="1" max="255" value="255" onclick="setOpacity(this.value);">Opacity<br>
-    <div class="points"><input id="pointsize" type="range" min="1" max="100" value="10" onclick="setPointSize(this.value);">Point Size</div>
-    <div class="points">Point Type:<br>
-      <select id="pointtype" onchange="setObjPointType(this.value);">
-      <option value="-1">Default</option>
-      <option value="0">Flat</option>
-      <option value="1" selected>Transparent - Gaussian</option>
-      <option value="2">Transparent - Linear</option>
-      <option value="3">Solid sphere</option>
-      <option value="4">Sphere with highlight</option>
+  <div id="props">
+    <input id="opacity" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Opacity
+    <output for="opacity" id="opacity-out">1</output>
+    <br>
+    <!--input id="brightness" type="range" min="-100" max="100" value="0">Brightness<br>
+    <input id="contrast" type="range" min="0" max="200" value="100">Contrast<br>
+    <input id="saturation" type="range" min="0" max="200" value="100">Saturation<br-->
+    <!-- Particle controls -->
+    <div class="point-obj">
+       <input id="pointSize" type="range" min="1" max="100" value="10" step="1" oninput="$(this.id+'-out').value = this.value/10.0;">
+       Point Size
+       <output for="pointSize" id="pointSize-out">1</output>
+    </div>
+    <div class="point-obj">Point Type<br>
+      <select id="pointType">
+      <option value="-1" selected>Default</option>
+      <option value="0">Transparent - Gaussian</option>
+      <option value="1">Transparent - Linear</option>
+      <option value="2">Solid sphere</option>
+      <option value="3">Sphere with highlight</option>
+      <option value="4">Flat</option>
       </select>
     </div>
-    <div class="triangles"><input id="wireframe" type="checkbox"><label for="wireframe">Wireframe</label></div>
-    <div class="triangles"><input id="cullface" type="checkbox"><label for="cullface">Cull faces</label></div>
+    <!-- Surface controls -->
+    <div class="surface-obj">
+      <input id="wireframe" type="checkbox"><label for="wireframe">Wireframe</label>
+      <input id="cullface" type="checkbox"><label for="cullface">Cull faces</label>
+    </div>
+    <!-- Volume controls -->
+    <div class="volume-obj">
+       <input id="density" type="range" min="0" max="100" value="10" step="1" oninput="$(this.id+'-out').value = this.value;">Density
+       <output for="" id="density-out">10</output>
+    </div>
+    <div class="volume-obj">
+       <input id="power" type="range" min="0.01" max="5" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Power
+       <output for="power" id="power-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="samples" type="range" min="32" max="2048" value="256" step="1" oninput="$(this.id+'-out').value = this.value;">Samples
+       <output for="samples" id="samples-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isovalue" type="range" min="0" max="1" value="0" step="0.01" oninput="$(this.id+'-out').value = this.value;">Isovalue
+       <output for="isovalue" id="isovalue-out">0</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isosmooth" type="range" min="0.1" max="3" value="0.1" step="0.1" oninput="$(this.id+'-out').value = this.value;">Isosmooth
+       <output for="isosmooth" id="isosmooth-out">0.1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isoalpha" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Isoalpha
+       <output for="isoalpha" id="isoalpha-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isowalls" type="checkbox">
+       <label for="isowalls">Draw Walls</label>
+    </div>
+    <div class="volume-obj">
+       <input id="isofilter" type="checkbox">
+       <label for="isofilter">Filter</label>
+    </div>
+    <!-- Clip controls >
+    <hr>
+    <div>
+      <span>
+      <input id="xmin" type="range" min="0" max="1" value="0" step="1">X min
+      <input id="xmax" type="range" min="0" max="1" value="1" step="1">X max
+      </span>
+    </div>
+    <div>
+      <span>
+      <input id="ymin" type="range" min="0" max="1" value="0" step="1">Y min
+      <input id="ymax" type="range" min="0" max="1" value="1" step="1">Y max
+      </span>
+    </div>
+    <div>
+      <span>
+      <input id="zmin" type="range" min="0" max="1" value="0" step="1">Z min
+      <input id="zmax" type="range" min="0" max="1" value="1" step="1">Z max
+      </span>
+    </div-->
   </div>
-  <br>
-  <strong>Colour:</strong>
   <hr>
-  Colour:<br>
+  Colour<br>
   <div id="colour-edit">
     <div id="colour" class="colourbg checkerboard">
-      <div id="colour_set" class="colour" onmousedown="setColour();"></div>
+      <div id="colour_set" class="colour" onmousedown="viewer.gradient.edit(this);"></div>
       </div>
   </div>
   <br>
-  Colourmap:
+  Colourmap
   <br>
-  <select id="colourmaps" onchange="setColourMap(this.value);">
-  <option value="-1">None</option>
+  <select id="colourmap-presets" onchange="viewer.setColourMap(this.value);">
+    <option value="-1">None</option>
   </select>
+  <input type="button" value=" + " onClick="viewer.addColourMap();">
   <br>
   <canvas id="palette" width="512" height="24" class="palette checkerboard"></canvas>
   <div id="log"><input id="logscale" type="checkbox"><label for="logscale">LogScale</label></div>
   <hr>
-  <input type="button" class="right client" value="Apply" onClick="viewer.updateProperties(); viewer">
+  <input type="button" class="right" value="Apply" onClick="viewer.setObjectProperties(); viewer">
 </div></div>
 </body>
 
