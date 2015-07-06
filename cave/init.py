@@ -9,6 +9,7 @@ import os
 cmds = []
 labels = dict()
 objmnu = None
+filemnu = None
 animate = 0
 saveAnimate = 7 # 10 fps
 time = 0
@@ -87,13 +88,16 @@ def _setFrameRate(val):
   global animate
   animate = val
 
+def _getPosition():
+  #TEST: TODO: allow saving/restoring positions
+  print getDefaultCamera().getPosition()
+
 def _setPosition():
   #TEST: TODO: allow saving/restoring positions
   getDefaultCamera().setPosition(Vector3(389.07, -5763.38, 725.44))
-  print getDefaultCamera().getPosition()
 
 def _onAppStart(binpath):
-  global objmnu
+  global objmnu, filemnu
   mm = MenuManager.createAndInitialize()
   mainmnu = mm.createMenu("Main Menu")
 
@@ -126,6 +130,8 @@ def _onAppStart(binpath):
   #LavaVu params
   objmnu = mainmnu.addSubMenu("Objects")
   objmnu.addLabel("Toggle Objects")
+  filemnu = mainmnu.addSubMenu("Files")
+  filemnu.addLabel("Load files")
   _addSlider(mainmnu, "Point Size", "_setPointSize(%value%)", 50, 1)
   _addCommandMenuItem(mainmnu, "Scale points up", "scale points up")
   _addCommandMenuItem(mainmnu, "Scale points down", "scale points down")
@@ -134,7 +140,8 @@ def _onAppStart(binpath):
   _addCommandMenuItem(mainmnu, "Next Model", "model down")
   _addSlider(mainmnu, "Animate", "_setFrameRate(%value%)", 10, 0)
   #_addCommandMenuItem(mainmnu, "Toggle Model Rotate", "")
-  _setFrameRate(8)
+  #_setFrameRate(8)
+  #_addMenuItem(mainmnu, "Save Position", "_getPosition()")
   #_addMenuItem(mainmnu, "Restore Position", "_setPosition()")
 
 def _addMenuItem(menu, label, call, checked=None):
@@ -159,11 +166,16 @@ def _addCommandMenuItem(menu, label, command):
 
 def _addObjectMenuItem(name, state):
   #Adds a toggle menu item to hide/show object
-  global objectMenu, objmenu
+  global objectMenu, objmnu
   mitem = objmnu.addButton(name, "_toggleObject('"  + name + "')")
   mitem.getButton().setCheckable(True)
   mitem.getButton().setChecked(state)
   objectMenu[name] = mitem
+
+def _addFileMenuItem(filename):
+  #Adds menu item to run a script
+  global filemnu
+  mitem = filemnu.addButton(filename, "_sendCommand('file "  + filename + "')")
 
 def onUpdate(frame, t, dt):
   global animate, cmds, labels, time
@@ -174,7 +186,7 @@ def onUpdate(frame, t, dt):
     spf = 1.0 / fps
     #print "fps %f spf %f elapsed %f" % (fps, spf, elapsed)
     if elapsed > spf:
-      _sendCommand("next")
+      _sendCommand("@next")
       labels["Animate"].setText("Animate: " + str(int(round(1.0 / elapsed))) + "fps")
       time = t
 

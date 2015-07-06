@@ -9,6 +9,7 @@
 #include "../src/ViewerApp.h"
 #include "../src/LavaVu.h"
 #include "../src/Server.h"
+#include <dirent.h>
 
 using namespace omega;
 using namespace omegaToolkit;
@@ -190,6 +191,23 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
          }
       }
 
+      //Add scripts menu
+      DIR *dir;
+      struct dirent *ent;
+      if ((dir = opendir(".")) != NULL)
+      {
+         while ((ent = readdir(dir)) != NULL)
+         {
+            FilePath fe = FilePath(ent->d_name);
+            if (fe.type == "script" && fe.base != "init")
+            {
+               printf ("%s\n", fe.full.c_str());
+               pi->eval("_addScriptMenuItem('" + fe.full + "')");
+            }
+         }
+         closedir (dir);
+      }
+
       if (context.tile->isInGrid)
       {
         //app->master = glapp; //Copy to master ref
@@ -211,12 +229,14 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
       app->cameraSetup(true);
 
       //Default nav speed
+      float navSpeed = Geometry::properties["navspeed"].ToFloat(0);
       CameraController* cc = cam->getController();
       View* view = app->glapp->aview;
       //cc->setSpeed(view->model_size * 0.03);
       float rotate[4], translate[3], focus[3];
       view->getCamera(rotate, translate, focus);
-      cc->setSpeed(abs(translate[2]) * 0.05);
+      if (navSpeed <= 0.0) navSpeed = abs(translate[2]) * 0.05;
+      cc->setSpeed(navSpeed);
 
     }
 
