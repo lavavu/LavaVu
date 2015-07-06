@@ -674,7 +674,9 @@ void TriSurfaces::render()
       GL_Error_Check;
       if (glIsBuffer(indexvbo))
       {
-         glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+         //DYNAMIC_DRAW is really really slow on Quadro K5000s in CAVE2, nVidie 340 drivers
+         //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+         glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
          debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
       }
       else 

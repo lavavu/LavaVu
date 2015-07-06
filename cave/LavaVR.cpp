@@ -202,7 +202,7 @@ void LavaVuRenderPass::render(Renderer* client, const DrawContext& context)
             if (fe.type == "script" && fe.base != "init")
             {
                printf ("%s\n", fe.full.c_str());
-               pi->eval("_addScriptMenuItem('" + fe.full + "')");
+               pi->eval("_addFileMenuItem('" + fe.full + "')");
             }
          }
          closedir (dir);
