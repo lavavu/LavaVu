@@ -251,7 +251,7 @@ void Volumes::render(int i)
    glUniform1f(prog->uniforms["uDensityFactor"], props["density"].ToFloat(5.0) * props["opacity"].ToFloat(1.0));
    glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"].ToFloat(0));
    Colour colour = Colour_FromJson(props, "colour", 220, 220, 200, 255);
-   float isoalpha = 255.0 * props["isoalpha"].ToFloat(colour.a/255.0);
+   colour.a = 255.0 * props["isoalpha"].ToFloat(colour.a/255.0);
    Colour_SetUniform(prog->uniforms["uIsoColour"], colour);
    glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"].ToFloat(0.1));
    glUniform1i(prog->uniforms["uIsoWalls"], props["isowalls"].ToInt(0));

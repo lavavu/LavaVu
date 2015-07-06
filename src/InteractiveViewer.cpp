@@ -1359,11 +1359,18 @@ bool LavaVu::parseCommands(std::string cmd)
          else
          {
             //No cmap id, parse a colourmap string (must be single line or enclosed in "")
-            if (what == "add" || !obj->colourMaps[lucColourValueData]) obj->colourMaps[lucColourValueData] = addColourMap();
-            obj->colourMaps[lucColourValueData]->loadPalette(what);
-            //obj->colourMaps[lucColourValueData]->print();
-            obj->colourMaps[lucColourValueData]->calibrate(); //Recalibrate
-            obj->colourMaps[lucColourValueData]->calc(); //Recalculate cached colours
+            if (what == "add" || !obj->colourMaps[lucColourValueData])
+            {
+               obj->colourMaps[lucColourValueData] = addColourMap();
+               what = parsed.get("colourmap", next+1);
+            }
+            if (what.length() > 0)
+            {
+               obj->colourMaps[lucColourValueData]->loadPalette(what);
+               //obj->colourMaps[lucColourValueData]->print();
+               obj->colourMaps[lucColourValueData]->calibrate(); //Recalibrate
+               obj->colourMaps[lucColourValueData]->calc(); //Recalculate cached colours
+            }
          }
          redraw(obj->id);
          redrawViewports();
@@ -1822,9 +1829,9 @@ bool LavaVu::parseCommands(std::string cmd)
       int id = parsed.Int("select", 0);
       aobject = findObject(what, id, true); //Don't allow default to currently selected
       if (aobject)
-         std::cerr << "SELECTED OBJECT: " << aobject->name << std::endl;
+         printMessage("Selected object: %s\n", aobject->name.c_str());
       else
-         std::cerr << "NO OBJECT SELECTED" << std::endl;
+         printMessage("Object selection cleared\n");
    }
    else if (parsed.exists("shaders"))
    {

@@ -558,7 +558,8 @@ void LavaVu::readXrwVolume(FilePath& fn)
    {
       volmin[i] *= inscale;
       volmax[i] *= inscale;
-      std::cerr << i << " " << inscale << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
+      if (infostream != NULL)
+         std::cerr << i << " " << inscale << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
    }
       
    //Define the bounding cube by corners

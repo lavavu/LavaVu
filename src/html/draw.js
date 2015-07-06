@@ -1824,21 +1824,22 @@ Viewer.prototype.addColourMap = function() {
   //New colourmap on active object
   if (server)
     sendCommand("colourmap " + vis.objects[properties.id].id + " add");
-  else {
-    //TODO: Not tested...
-    var id = 1;
-    if (view.colourmaps.length > 0) id = view.colourmaps[view.colourmaps.length-1] + 1;
-    var newmap = {
-      "id": id,
-      "name": "ColourMap " + id,
-      "minimum": 0,
-      "maximum": 1,
-      "log": 0,
-      "colours": [{"position": 0, "colour": "rgba(0,0,0,0)"},{"position": 1,"colour": "rgba(255,255,255,1)"}
-      ]
-    }
-    vis.colourmaps.push_back(newmap);
+
+  var id = 1;
+  if (vis.colourmaps.length > 0) id = vis.colourmaps[vis.colourmaps.length-1].id + 1;
+  var newmap = {
+    "id": id,
+    "name": "ColourMap " + id,
+    "minimum": 0,
+    "maximum": 1,
+    "log": 0,
+    "colours": [{"position": 0, "colour": "rgba(0,0,0,0)"},{"position": 1,"colour": "rgba(255,255,255,1)"}
+    ]
   }
+  vis.colourmaps.push(newmap);
+  loadColourMaps();
+  var list = $('colourmap-presets');
+  list.value = list.options[list.options.length-1].value;
 }
 
 Viewer.prototype.setColourMap = function(id) {
