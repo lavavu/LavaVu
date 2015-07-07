@@ -1829,9 +1829,9 @@ bool LavaVu::parseCommands(std::string cmd)
       int id = parsed.Int("select", 0);
       aobject = findObject(what, id, true); //Don't allow default to currently selected
       if (aobject)
-         printMessage("Selected object: %s\n", aobject->name.c_str());
+         printMessage("Selected object: %s", aobject->name.c_str());
       else
-         printMessage("Object selection cleared\n");
+         printMessage("Object selection cleared");
    }
    else if (parsed.exists("shaders"))
    {
