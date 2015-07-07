@@ -443,20 +443,17 @@ void Geometry::setState(int index, Shader* prog)
       else
          prog->setUniform("uCalcNormal", 0);
 
-      if (type == lucPointType || type == lucTriangleType || type == lucGridType || TriangleBased(type))
-      {
-         //TODO: Also enable clip for lines (will require line shader)
-         float clipMin[3] = {Geometry::properties["xmin"].ToFloat(0.0) * Geometry::dims[0] + Geometry::min[0],
-                             Geometry::properties["ymin"].ToFloat(0.0) * Geometry::dims[1] + Geometry::min[1],
-                             Geometry::properties["zmin"].ToFloat(0.0) * Geometry::dims[2] + Geometry::min[2]};
-         float clipMax[3] = {Geometry::properties["xmax"].ToFloat(1.0) * Geometry::dims[0] + Geometry::min[0],
-                             Geometry::properties["ymax"].ToFloat(1.0) * Geometry::dims[1] + Geometry::min[1],
-                             Geometry::properties["zmax"].ToFloat(1.0) * Geometry::dims[2] + Geometry::min[2]};
-         
-         //std::cout << "CLIP MIN " << Vec3d(clipMin) << " CLIP MAX " << Vec3d(clipMax) << std::endl;
-         glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
-         glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax);
-      }
+      //TODO: Also enable clip for lines (will require line shader)
+      float clipMin[3] = {Geometry::properties["xmin"].ToFloat(0.0) * Geometry::dims[0] + Geometry::min[0],
+                          Geometry::properties["ymin"].ToFloat(0.0) * Geometry::dims[1] + Geometry::min[1],
+                          Geometry::properties["zmin"].ToFloat(0.0) * Geometry::dims[2] + Geometry::min[2]};
+      float clipMax[3] = {Geometry::properties["xmax"].ToFloat(1.0) * Geometry::dims[0] + Geometry::min[0],
+                          Geometry::properties["ymax"].ToFloat(1.0) * Geometry::dims[1] + Geometry::min[1],
+                          Geometry::properties["zmax"].ToFloat(1.0) * Geometry::dims[2] + Geometry::min[2]};
+      
+      //std::cout << "CLIP MIN " << Vec3d(clipMin) << " CLIP MAX " << Vec3d(clipMax) << std::endl;
+      glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
+      glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax);
    }
    GL_Error_Check;
 }

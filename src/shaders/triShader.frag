@@ -21,8 +21,8 @@ uniform vec3 uClipMax;
 
 void main(void)
 {
-  //Clip planes in X/Y/Z
-  if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
+  //Clip planes in X/Y/Z (shift seems to be required on nvidia)
+  if (any(lessThan(vVertex, uClipMin - vec3(0.01))) || any(greaterThan(vVertex, uClipMax + vec3(0.01)))) discard;
 
   vec4 fColour = vColour;
   if (uTextured) 
