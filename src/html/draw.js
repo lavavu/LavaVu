@@ -85,9 +85,9 @@ function initPage(src, fn) {
 
   //Create tool windows
   params =     new Toolbox("params", 20, 20);
-  objectlist = new Toolbox("objectlist", 390, 20);
+  objectlist = new Toolbox("objectlist", 370, 20);
   messages =   new Toolbox("messages", 400, 300);
-  properties = new Toolbox("properties", 740, 20);
+  properties = new Toolbox("properties", 720, 20);
 
   params.show();
   objectlist.show();

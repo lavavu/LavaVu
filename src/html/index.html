@@ -246,50 +246,53 @@ void main(void)
 
 <div class="toolbox" id="params">
   <h3>Global Settings</h3>
+  <div class="toolclose" onclick="toggle('properties-controls');">&#x25BE;</div>
   <hr>
-  <div>
+  <div id="properties-controls" style="display: block;">
     <!-- Clip controls -->
     <table>
-      <tr><td></td><td align="center">Clip Min</td><td align="center">Clip Max</td></tr>
-    </div>
     <tr>
-      <td>X</td>
+      <td>X min</td>
       <td>
          <input id="xmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
          <output for="xmin" id="xmin-out">0</output>
       </td>
+    </tr>
+    <tr>
+      <td>X max</td>
       <td>
          <input id="xmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
          <output for="xmax" id="xmax-out">0</output>
       </td>
     </tr>
     <tr>
-      <td>Y</td>
+      <td>Y min</td>
       <td>
          <input id="ymin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
          <output for="ymin" id="ymin-out">0</output>
       </td>
+    </tr>
+    <tr>
+      <td>Y max</td>
       <td>
          <input id="ymax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
          <output for="ymax" id="ymax-out">0</output>
       </td>
-      </span>
     </tr>
     <tr>
-      <span>
-      <td>Z</td>
+      <td>Z min</td>
       <td>
          <input id="zmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
          <output for="zmin" id="zmin-out">0</output>
       </td>
+    </tr>
+    <tr>
+      <td>Z max</td>
       <td>
          <input id="zmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
          <output for="zmax" id="zmax-out">0</output>
       </td>
-      </span>
     </tr>
-    </table>
-    <table>
     <tr><td>Brightness</td>
        <td>
           <input id="brightness" type="range" min="-1" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
@@ -349,12 +352,13 @@ void main(void)
     </td></tr>
 
 
-    <tr><td>Left-click</td><td>
-      <input type="radio" name="mode" id="rmode" value="rotate" checked="checked"/> Rotate
-    </td></tr>
-    <tr><td></td><td>
-      <input type="radio" name="mode" id="tmode" value="translate" /> Translate
-    </td></tr>
+    <tr>
+      <td>Left-click</td>
+      <td>
+        <input type="radio" name="mode" id="rmode" value="rotate" checked="checked"/> Rotate
+        <input type="radio" name="mode" id="tmode" value="translate" /> Translate
+      </td>
+    </tr>
     <tr><td>Bounding box</td><td><input name="border" id="border" type="checkbox" checked="" onchange="viewer.setProperties();"></td></tr>
     <tr><td>Axes</td><td><input name="axes" id="axes" type="checkbox" checked="" onchange="viewer.setProperties();"></td></tr>
 
@@ -363,32 +367,26 @@ void main(void)
         <tr class="client"><td>Interactive render</td><td><input name="interactive" id="interactive" type="checkbox" onchange="viewer.draw();"></td></tr>
 
         <tr class="server">
-          <td>Timestep</td><td><input id="timestep" type="range" min="0" max="100" value="50" onchange="viewer.setTimeStep();">
-          <input type="button" value="<-" onclick="requestData('/command=timestep up');">
-          <input type="button" value="->" onclick="requestData('/command=timestep down');"></td>
+          <td>Timestep</td>
+          <td>
+            <input id="timestep" type="range" min="0" max="100" value="50" onchange="viewer.setTimeStep();">
+            <br>
+            <input type="button" value="<-" onclick="requestData('/command=timestep up');">
+            <input type="button" value="->" onclick="requestData('/command=timestep down');">
+          </td>
         </tr>
         <tr class="server"><td>Commands</td><td><input type="text" id="cmdInput" onkeypress="keyPressCommand(event, this);"></td></tr>
-        <tr class="server">
-          <td><input type="button" value="Resize" onclick="resizeToWindow();"></td>
-        </tr>
     </table>
       
-    </div>
-
-      <table>
-        <tr>
-          <td><input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)"></td>
-        </tr>
-        <tr>
-          <td><input type="button" value="Objects" onclick="objectlist.toggle();"></td>
-          <!--td><input type="button" value="Console" onClick="OK.debug_on = true; messages.toggle();"></td-->
-          <td><input id="sort" type="button" value="Sort" onClick="document.body.style.cursor = 'wait'; this.style.display = 'none'; viewer.draw(); document.body.style.cursor = 'default';" style="display: none; float: right;"></td>
-        </tr>
-        <tr>
-            <td><input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();"></td>
-        </tr>
-      </table>
-    <br>
+    <hr>
+    <input type="button" class="server" value="Resize" onclick="resizeToWindow();">
+    <input type="button" value="Import" onclick="$('fileupload').click();">
+    <input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)" style="display: none;">
+    <input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();">
+    <hr>
+    <input type="button" value="Objects" onclick="objectlist.toggle();">
+    <!--input type="button" value="Console" onClick="OK.debug_on = true; messages.toggle();"-->
+    <input id="sort" type="button" value="Sort" onClick="document.body.style.cursor = 'wait'; this.style.display = 'none'; viewer.draw(); document.body.style.cursor = 'default';" style="display: none; float: right;">
   </div>
 
 </div>
