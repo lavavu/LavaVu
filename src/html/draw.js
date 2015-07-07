@@ -1477,6 +1477,7 @@ Viewer.prototype.loadFile = function(source) {
     this.far_clip = vis.options.far_clip || 0;
     this.orientation = vis.options.orientation || 1;
     this.showBorder = vis.options.border;
+    this.axes = vis.options.axes;
     this.pointScale = vis.options.pointScale || 1.0;
     this.pointType = vis.options.pointType >= -1 ? vis.options.pointType : 0;
     this.opacity = vis.options.opacity || 1.0;
@@ -1489,6 +1490,7 @@ Viewer.prototype.loadFile = function(source) {
     $("pointScale").value = $("pointScale-out").value * 10.0;
     $("globalAlpha").value = $("globalAlpha-out").value = (this.opacity || 1.0);
     $("border").checked = this.showBorder;
+    $("axes").checked = this.axes;
     $("globalPointType").value = this.pointType;
 
     $('brightness').value = $("brightness-out").value = vis.properties.brightness;
@@ -1650,6 +1652,7 @@ Viewer.prototype.toString = function() {
   vis.options.pointScale = this.pointScale;
   vis.options.pointType = this.pointType;
   vis.options.border = this.showBorder;
+  vis.options.axes = this.axes;
   vis.options.opacity = this.opacity;
 
   this.applyBackground(vis.options.background);

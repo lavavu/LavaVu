@@ -2351,6 +2351,7 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
         << "    \"pointScale\" : " << Model::points->scale << ",\n"
         << "    \"pointType\" : " << Model::points->pointType << ",\n"
         << "    \"border\" : " << (aview->properties["border"].ToInt(0) ? "true" : "false") << ",\n"
+        << "    \"axes\" : " << (aview->properties["axis"].ToBool(true) ? "true" : "false") << ",\n"
         << "    \"opacity\" : " << GeomData::opacity << ",\n"
         << "    \"rotate\" : ["  << rotate[0] << "," << rotate[1] << "," << rotate[2] << "," << rotate[3] << "],\n";
    json << "    \"translate\" : [" << translate[0] << "," << translate[1] << "," << translate[2] << "],\n";
