@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 {
    OpenGLViewer* viewer = NULL;
    LavaVu* app;
-   int port = 0, quality = 90, threads = 4;
+   int port = 8080, quality = 0, threads = 4;
    bool stereo = false;
    bool fullscreen = false;
    int width = 0, height = 0;
@@ -180,7 +180,6 @@ int main(int argc, char *argv[])
          case 'p':
             //Web server enable
             ss >> port;
-            if (port <= 0) port = 8080;
             break;
          case 'q':
             //Web server JPEG quality
