@@ -287,7 +287,7 @@ void LavaVu::run(bool persist)
    if (!amodel) defaultModel();
 
    //Reselect the active view after loading all data
-   viewSelect(view, true, true);
+   //viewSelect(view, true, true);
 
    if (writeimage || writemovie || dump > lucExportNone)
    {
