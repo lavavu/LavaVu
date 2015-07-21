@@ -40,6 +40,8 @@ uniform int uIsoWalls;
 uniform int uFilter;
 uniform vec2 uRange;
 
+uniform vec4 uDenMinMax; // [dmin, dminclip, dmax, dmaxclip]
+
 //#define tex3D(pos) interpolate_tricubic_fast(pos)
 //#define tex3D(pos) texture3Dfrom2D(pos).x
 
@@ -154,8 +156,8 @@ void main()
     //Number of samples to take along this ray before we pass out back of volume...
     float travel = distance(rayStop, rayStart) / stepSize;
     int samples = int(ceil(travel));
-    float range = uRange.y - uRange.x;
-    if (range <= 0.0) range = 1.0;
+    //float range = uRange.y - uRange.x;
+    //if (range <= 0.0) range = 1.0;
   
     //Raymarch, front to back
     for (int i=0; i < maxSamples; ++i)
@@ -171,6 +173,12 @@ void main()
       {
         //Get density 
         float density = tex3D(pos);
+
+        // cal density value
+        if(density < uDenMinMax[0])
+          density = (uDenMinMax[1] == 0) ? 0.0 : uDenMinMax[0];
+        if(density > uDenMinMax[2])
+          density = (uDenMinMax[3] == 0) ? 0.0 : uDenMinMax[2];
 
 #define ISOSURFACE
 #ifdef ISOSURFACE
@@ -215,7 +223,12 @@ void main()
         if (uDensityFactor > 0.0)
         {
           //Normalise the density over provided range
-          density = (density - uRange.x) / range;
+          float minC = max(uRange.x, uDenMinMax[0]);
+          float maxC = min(uRange.y, uDenMinMax[2]);
+
+          //density = (density - uRange.x) / range;
+          density = (density - minC) / (maxC - minC);
+          density = clamp(density, 0, 1);
 
           density = pow(density, uPower); //Apply power
 

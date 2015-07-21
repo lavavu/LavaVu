@@ -1734,8 +1734,12 @@ Viewer.prototype.properties = function(id) {
   loadProp('isovalue');
   loadProp('isosmooth');
   loadProp('isoalpha');
+  loadProp('dmin');
+  loadProp('dmax');
   $('isowalls').checked = vis.objects[id].isowalls;
   $('isofilter').checked = vis.objects[id].isofilter;
+  $('dminclip').checked = vis.objects[id].dminclip;
+  $('dmaxclip').checked = vis.objects[id].dmaxclip;
 
   var c = new Colour(vis.objects[id].colour);
   $S('colour_set').backgroundColor = c.html();
@@ -1880,8 +1884,12 @@ Viewer.prototype.setObjectProperties = function() {
   setProp('isovalue');
   setProp('isosmooth');
   setProp('isoalpha');
+  setProp('dmin');
+  setProp('dmax');
   vis.objects[id].isowalls = $('isowalls').checked;
   vis.objects[id].isofilter = $('isofilter').checked;
+  vis.objects[id].dminclip = $('dminclip').checked;
+  vis.objects[id].dmaxclip = $('dmaxclip').checked;
   var colour = new Colour($('colour_set').style.backgroundColor);
   vis.objects[id].colour = colour.toInt();
   if (vis.objects[id].colourmap >= 0)
@@ -1919,6 +1927,10 @@ Viewer.prototype.setObjectProperties = function() {
       sendCommand('isowalls=' + (vis.objects[id].isowalls ? "1" : "0"));
       sendCommand('tricubicfilter=' + (vis.objects[id].isofilter ? "1" : "0"));
       sendCommand('isovalue=' + vis.objects[id].isovalue);
+      sendCommand('dmin=' + vis.objects[id].dmin);
+      sendCommand('dmax=' + vis.objects[id].dmax);
+      sendCommand('dminclip=' + (vis.objects[id].dminclip ? "1" : "0"));
+      sendCommand('dmaxclip=' + (vis.objects[id].dmaxclip ? "1" : "0"));
     }
     /*sendCommand('xmin=' + vis.objects[id].xmin);
     sendCommand('xmax=' + vis.objects[id].xmax);

@@ -282,7 +282,7 @@ void LavaVu::run(bool persist)
    if (!amodel) defaultModel();
 
    //Reselect the active view after loading all data
-   viewSelect(view, true, true);
+   //viewSelect(view, true, true);
 
    if (writeimage || writemovie || dump > lucExportNone)
    {
@@ -1475,8 +1475,8 @@ void LavaVu::reloadShaders()
    //Volume ray marching shaders
    if (Volumes::prog) delete Volumes::prog;
    Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
-   const char* vUniforms[23] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
-   Volumes::prog->loadUniforms(vUniforms, 23);
+   const char* vUniforms[24] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange", "uDenMinMax"};
+   Volumes::prog->loadUniforms(vUniforms, 24);
    const char* vAttribs[2] = {"aVertexPosition"};
    Volumes::prog->loadAttribs(pAttribs, 2);
 }
