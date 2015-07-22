@@ -174,12 +174,6 @@ void main()
         //Get density 
         float density = tex3D(pos);
 
-        // cal density value
-        if(density < uDenMinMax[0])
-          density = (uDenMinMax[1] == 0) ? 0.0 : uDenMinMax[0];
-        if(density > uDenMinMax[2])
-          density = (uDenMinMax[3] == 0) ? 0.0 : uDenMinMax[2];
-
 #define ISOSURFACE
 #ifdef ISOSURFACE
         //Passed through isosurface?
@@ -206,7 +200,7 @@ void main()
           if (uIsoWalls > 0 || all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
           {
             vec4 value = vec4(uIsoColour.rgb, 1.0);
-
+            
             //normal = normalize(normal);
             //if (length(normal) < 1.0) normal = vec3(0.0, 1.0, 0.0);
             vec3 normal = normalize(mat3(uNMatrix) * isoNormal(pos, shift, density));
@@ -222,6 +216,12 @@ void main()
 
         if (uDensityFactor > 0.0)
         {
+          // cal density value
+          if(density < uDenMinMax[0])
+            density = (uDenMinMax[1] == 0) ? 0.0 : uDenMinMax[0];
+          if(density > uDenMinMax[2])
+            density = (uDenMinMax[3] == 0) ? 0.0 : uDenMinMax[2];
+
           //Normalise the density over provided range
           float minC = max(uRange.x, uDenMinMax[0]);
           float maxC = min(uRange.y, uDenMinMax[2]);
@@ -229,7 +229,7 @@ void main()
           //density = (density - uRange.x) / range;
           density = (density - minC) / (maxC - minC);
           density = clamp(density, 0, 1);
-
+         
           density = pow(density, uPower); //Apply power
 
           vec4 value;
