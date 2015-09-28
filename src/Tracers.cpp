@@ -39,9 +39,6 @@
 Tracers::Tracers() : Geometry()
 {
    type = lucTracerType;
-   scaling = true;
-   steps = 0;
-   timestep = 0;
    //Create sub-renderers
    lines = new Lines(true); //Only used for 2d lines
    tris = new TriSurfaces();
@@ -80,56 +77,56 @@ void Tracers::update()
       //Calculate particle count using data count / data steps
       unsigned int particles = geom[i]->width;
       int count = geom[i]->count;
-      int datasteps = particles > 0 ? count / particles : count;
+      int datasteps = count / particles;
       int timesteps = (datasteps-1) * TimeStep::gap + 1; //Multiply by gap between recorded steps
 
-      //Swarm limit
+      //Per-Swarm step limit
       int drawSteps = geom[i]->draw->properties["steps"].ToInt(0);
       if (drawSteps > 0 && timesteps > drawSteps)
          timesteps = drawSteps;
-      //Global limit
-      if (steps > 0 && steps < timesteps)
-         timesteps = steps;
 
       //Get start and end indices
-      int max = timesteps;
+      int range = timesteps;
       //Skipped steps? Use closest available step
-      if (TimeStep::gap > 1) max = ceil(timesteps/(float)(TimeStep::gap-1));
+      if (TimeStep::gap > 1) range = ceil(timesteps/(float)(TimeStep::gap-1));
       int end = datasteps-1;
-      int start = end - max + 1;
+      int start = end - range + 1;
       if (start < 0) start = 0;
       debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d max %d)\n", particles, start, end, timesteps, datasteps, max);
 
-      //Calibrate colourMap
-      geom[i]->colourCalibrate();
       //Calibrate colour maps on timestep if no value data
       bool timecolour = false;
-                                              //Force until supplied colour values supported
-      if (geom[i]->draw->colourMaps[lucColourValueData])// && geom[i]->colourValue.size() == 0)
+      if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->colourValue.size() == 0)
+      {
          timecolour = true;
+         geom[i]->draw->colourMaps[lucColourValueData]->calibrate(TimeStep::timesteps[start]->time, TimeStep::timesteps[end]->time);
+      }
+      else
+      {
+         //Calibrate colour map on provided value range
+         geom[i]->colourCalibrate();
+      }
 
       //Get properties
+      bool taper = geom[i]->draw->properties["taper"].ToBool(true);
       int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
       float size0 = geom[i]->draw->properties["scaling"].ToFloat(1.0) * 0.001;
       float limit = geom[i]->draw->properties["limit"].ToFloat(view->model_size * 0.3);
       float factor = geom[i]->draw->properties["scaling"].ToFloat(1.0) * scale * TimeStep::gap * 0.0005;
       float arrowSize = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
       //Iterate individual tracers
+      float size; 
       for (unsigned int p=0; p < particles; p++) 
       {
-         float size = size0; 
          float* oldpos = NULL;
-         float time, oldtime = TimeStep::timesteps[start]->time;
+         Colour colour, oldColour;
          float radius, oldRadius = 0;
+         size = size0; 
+         //Loop through time steps
          for (int step=start; step <= end; step++) 
          {
             // Scale up line towards head of trajectory
-            if (scaling && step > start)
-            {
-               //float factor = geom[i]->draw->properties["scaling"].ToFloat(1.0) * scale * TimeStep::gap * 0.0005;
-               if (p==0) debug_print("Scaling tracers from %f by %f to %f\n", size, factor, size+factor);
-               size += factor;
-            }
+            if (taper && step > start) size += factor;
 
             //Lookup by provided particle index?
             int pidx = p;
@@ -150,10 +147,11 @@ void Tracers::update()
             float* pos = geom[i]->vertices[step * particles + pidx];
             //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);
 
-            //Get colour value either from previous colour values or time step
-            //if (timecolour)
-            time = TimeStep::timesteps[step]->time;
-            //geom[i]->getColour(colour, TimeStep::gap * step * particles + pidx);
+            //Get colour either from supplied colour values or time step
+            if (timecolour)
+               colour = geom[i]->draw->colourMaps[lucColourValueData]->getfast(TimeStep::timesteps[step]->time);
+            else
+               geom[i]->getColour(colour, step * particles + pidx);
 
             radius = scale * size;
 
@@ -164,8 +162,8 @@ void Tracers::update()
                {
                   lines->read(geom[i]->draw, 1, lucVertexData, oldpos);
                   lines->read(geom[i]->draw, 1, lucVertexData, pos);
-                  lines->read(geom[i]->draw, 1, lucColourValueData, &oldtime);
-                  lines->read(geom[i]->draw, 1, lucColourValueData, &time);
+                  lines->read(geom[i]->draw, 1, lucRGBAData, &oldColour.fvalue);
+                  lines->read(geom[i]->draw, 1, lucRGBAData, &colour.fvalue);
                }
                else
                {
@@ -178,31 +176,23 @@ void Tracers::update()
                   //Per vertex colours
                   for (int c=0; c<diff; c++) 
                   {
-                     float t = oldtime;
-                     //Top of shaft and arrowhead use current colour value, others (base) use previous
+                     //Top of shaft and arrowhead use current colour, others (base) use previous
                      //(Every second vertex is at top of shaft, first quality*2 are shaft verts)
-                     if (c%2==1 || c > quality*2) t = time;
-                     tris->read(geom[i]->draw, 1, lucColourValueData, &t);
+                     Colour& col = oldColour;
+                     if (c%2==1 || c > quality*2) col = colour;
+                     tris->read(geom[i]->draw, 1, lucRGBAData, &col.fvalue);
                   }
                }
             }
 
-            oldtime = time;
+            //oldtime = time;
             oldpos = pos;
             oldRadius = radius;
+            oldColour = colour;
          }
       }
+      if (taper) debug_print("Tapered tracers from %f to %f (step %f)\n", size0, size, factor);
       
-      if (timecolour)
-      {
-         float mintime = TimeStep::timesteps[start]->time;
-         float maxtime = TimeStep::timesteps[end]->time;
-         //Setup colour range on lines/tris data
-         lines->setup(geom[i]->draw, lucColourValueData, mintime, maxtime);
-         tris->setup(geom[i]->draw, lucColourValueData, mintime, maxtime);
-         timecolour = true;
-      }
-
       //Adjust bounding box
       tris->compareMinMax(geom[i]->min, geom[i]->max);
       lines->compareMinMax(geom[i]->min, geom[i]->max);

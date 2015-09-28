@@ -663,14 +663,6 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("Created static volume object");
       return false;
    }
-   else if (parsed.has(ival, "tracersteps"))
-   {
-      Model::tracers->steps = ival;
-      if (Model::tracers->steps > amodel->step()) Model::tracers->steps = amodel->step();
-      printMessage("Set tracer steps limit to %d", Model::tracers->steps);
-      Model::tracers->redraw = true;
-      return true;
-   }
    else if (parsed.has(fval, "alpha"))
    {
       if (fval > 1.0)
@@ -1225,8 +1217,7 @@ bool LavaVu::parseCommands(std::string cmd)
          std::cout << helpCommand("trianglestrips") << helpCommand("redraw") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
          std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
          std::cout << helpCommand("lighting") << helpCommand("colourmap") << helpCommand("pointtype");
-         std::cout << helpCommand("glyphquality");
-         std::cout << helpCommand("tracerscale") << helpCommand("tracersteps") << helpCommand("pointsample");
+         std::cout << helpCommand("glyphquality") << helpCommand("pointsample");
          std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
       }
       else if (cmd.length() > 0)
@@ -1472,12 +1463,6 @@ bool LavaVu::parseCommands(std::string cmd)
       Model::shapes->redraw = true;
       GeomData::glyphs = ival;
       printMessage("Glyph quality set to %d", GeomData::glyphs);
-   }
-   else if (parsed.exists("tracerscale"))
-   {
-      Model::tracers->redraw = true;
-      Model::tracers->scaling = Model::tracers->scaling ? false : true;
-      printMessage("Scaled tracer rendering is %s", Model::tracers->scaling ? "ON":"OFF");
    }
    else if (parsed.exists("pointsample"))
    {
@@ -1952,7 +1937,7 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "\nDisplay commands:\n\n"
                   "background, alpha, opacity, axis, cullface, wireframe, trianglestrips, scaling, rulers, log\n"
                   "antialias, localise, lockscale, lighting, colourmap, pointtype, glyphquality\n"
-                  "tracerscale, tracersteps, pointsample, border, title, scale\n";
+                  "pointsample, border, title, scale\n";
    }
    else if (cmd == "rotation")
    {
@@ -2114,12 +2099,6 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "Usage: dump object_id/object_name\n\n"
                   "object_id (integer) : the index of the object to export (see: \"list objects\")\n"
                   "object_name (string) : the name of the object to export (see: \"list objects\")\n";
-   }
-   else if (cmd == "tracersteps")
-   {
-      help += "Limit tracer time-steps to plot\n\n"
-                  "Usage: tracersteps limit\n\n"
-                  "limit (integer) : maximum steps back in time to plot of tracer trajectory\n";
    }
    else if (cmd == "alpha")
    {
@@ -2328,10 +2307,6 @@ std::string LavaVu::helpCommand(std::string cmd)
       help += "Set vector/tracer/shape rendering quality\n\n"
                   "Usage: glyphquality value\n\n"
                   "value (integer) : 0=flat, [1-10] increasing quality of 3d glyphs (default 2)\n";
-   }
-   else if (cmd == "tracerscale")
-   {
-      help += "Enable/disable scaled tracers (earlier timesteps = narrower lines)\n";
    }
    else if (cmd == "pointsample")
    {

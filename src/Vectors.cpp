@@ -99,6 +99,7 @@ void Vectors::update()
 
       Colour colour;
       geom[i]->colourCalibrate();
+      bool flat = geom[i]->draw->properties["flat"].ToBool(false) || quality < 1;
 
       for (int v=0; v < geom[i]->count; v++) 
       {
@@ -114,7 +115,7 @@ void Vectors::update()
 
          geom[i]->getColour(colour, v);
 
-         if (vec.magnitude() * scaling >= minL)
+         if (!flat && vec.magnitude() * scaling >= minL)
          {
             tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
             //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)

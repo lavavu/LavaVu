@@ -54,6 +54,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    viewAll = false;
    viewPorts = true;
    globalCam = false;
+   status = true;
    writeimage = writemovie = false;
 #ifdef USE_OMEGALIB
    sort_on_rotate = false;
@@ -191,6 +192,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          case 'S':
             //Don't run default script
             defaultScript = "";
+            break;
+         case 'Q':
+            //Quiet display, no status messages
+            status = false;
             break;
          case 'h':
             //Invisible window requested
@@ -1720,7 +1725,7 @@ void LavaVu::display(void)
 
    //Print current info message (displayed for one frame only)
 #ifndef USE_OMEGALIB
-   displayMessage();
+   if (status) displayMessage();
 #endif
 
    //Display object list if enabled

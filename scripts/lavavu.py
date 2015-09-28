@@ -162,6 +162,7 @@ class DrawingObject(object):
     self.props = props
     self.clear()
     self.id = None
+    self.width = 0
 
   def addVertex(self, x, y, z):
     self.vertices.append(x)
@@ -175,6 +176,11 @@ class DrawingObject(object):
     if x < self.bmin[0]: self.bmin[0] = x;
     if y < self.bmin[1]: self.bmin[1] = y;
     if z < self.bmin[2]: self.bmin[2] = z;
+
+  def addVector(self, x, y, z):
+    self.vectors.append(x)
+    self.vectors.append(y)
+    self.vectors.append(z)
 
   def addValue(self, v):
     val = float(v)
@@ -196,7 +202,7 @@ class DrawingObject(object):
   def addLength(self, v):
     self.lengths.append(v)
 
-  def write(self, db):
+  def write(self, db, minimum=0, maximum=0):
     if not self.id:
       cmapid = 0
       if self.cmap: cmapid = self.cmap.id
@@ -210,13 +216,11 @@ class DrawingObject(object):
                            "values (%d, %d, %d)" % (self.id, self.cmap.id, Data.ColourValue)))
 
     data = struct.pack('f'*len(self.vertices), *self.vertices)
-    
-    size = 3
-    count = len(self.vertices)
-    width = 0
-    minimum = maximum = 0 #Data value range
+    db.insertGeometry(self, Data.Vertex, 3, len(self.vertices), self.width, minimum, maximum, self.bmin, self.bmax, data)
 
-    db.insertGeometry(self, Data.Vertex, size, count, width, minimum, maximum, self.bmin, self.bmax, data)
+    if len(self.vectors):
+        data = struct.pack('f'*len(self.vectors), *self.vectors)
+        db.insertGeometry(self, Data.Vector, 3, len(self.vectors), 0, minimum, maximum, 0, 0, data)
 
     if len(self.colours):
         cdata = struct.pack('I'*len(self.colours), *self.colours)
@@ -243,6 +247,7 @@ class DrawingObject(object):
   def clear(self):
     #Reset/clear
     self.vertices = []
+    self.vectors = []
     self.colours = []
     self.values = []
     self.widths = self.heights = self.lengths = []
@@ -272,6 +277,13 @@ class Lines(DrawingObject):
   def __init__(self, name, cmap, width, link=False, flat=False, props=""):
     props = 'lineWidth=%d\nlink=%d\nflat=%d' % (width, link, flat) + props
     super(Lines, self).__init__(name, cmap, props)
+
+class Vectors(DrawingObject):
+  otype = Type.Vector
+
+  def __init__(self, name, cmap, flat=False, scaling=1.0, props=""):
+    props = 'flat=%d\nlinewidth=1\nlit=1\nscaling=%d\narrowhead=2\n' % (flat, scaling) + props
+    super(Vectors, self).__init__(name, cmap, props)
 
 class Tracers(DrawingObject):
   otype = Type.Tracer

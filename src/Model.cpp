@@ -919,7 +919,12 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
          //Create new geometry containers if required
          if (geometry.size() == 0) init();
 
-         if (type == lucTracerType) height = 0;
+         if (type == lucTracerType) 
+         {
+            height = 0;
+            //Default particle count:
+            if (width == 0) width = items;
+         }
 
          //Create object and set parameters
          if (type == lucPointType && pointspheres) type = lucShapeType;
@@ -935,7 +940,6 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
             //Tracers are loaded with a new select statement across multiple timesteps...
             //objects[object_id]->steps = timestep+1;
             Tracers* tracers = (Tracers*)active;
-            tracers->timestep = timestep; //Set current timestep for tracers
             int stepstart = 0; //timestep - objects[object_id]->steps;
             //int stepstart = timestep - tracers->steps;
 
