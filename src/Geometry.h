@@ -341,11 +341,6 @@ class Tracers : public Geometry
    Lines* lines;
    TriSurfaces* tris;
   public:
-   //Tracer specific data
-   int steps;
-   bool scaling;
-   int timestep;
-
    Tracers();
    ~Tracers();
    virtual void close();
