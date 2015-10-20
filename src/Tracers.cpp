@@ -225,3 +225,10 @@ void Tracers::draw()
 
    lines->draw();
 }
+
+void Tracers::jsonWrite(unsigned int id, json::Object& obj)
+{
+   tris->jsonWrite(id, obj);
+   lines->jsonWrite(id, obj);
+}
+

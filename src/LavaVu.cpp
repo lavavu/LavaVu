@@ -292,7 +292,8 @@ void LavaVu::run(bool persist)
    if (writeimage || writemovie || dump > lucExportNone)
    {
       //Load vis data for each window and write image
-      if (!writeimage && !writemovie) viewer->isopen = true; //Skip open
+      if (!writeimage && !writemovie && dump != lucExportJSON && dump != lucExportJSONP)
+         viewer->isopen = true; //Skip open
       for (int win=0; win < windows.size(); win++)
       {
          //Load the window data
@@ -357,6 +358,7 @@ void LavaVu::run(bool persist)
 void LavaVu::exportData(lucExportType type, unsigned int id)
 {
    //Export data
+   viewer->display();
    if (type == lucExportJSON)
       jsonWriteFile(id);
    else if (type == lucExportJSONP)
@@ -2334,10 +2336,10 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
    strcpy(ext, "jsonp");
    if (!jsonp) ext[4] = '\0';
    if (id > 0)
-     sprintf(filename, "%s%s_%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
+     sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
                                           amodel->objects[id]->name.c_str(), amodel->step(), ext);
    else
-     sprintf(filename, "%s%s.%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->step(), ext);
+     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->step(), ext);
    std::ofstream json(filename);
    if (jsonp) json << "loadData(\n";
    jsonWrite(json, id, true);
@@ -2351,54 +2353,68 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
    float rotate[4], translate[3], focus[3], stereo[3];
    aview->getCamera(rotate, translate, focus);
 
-   //TODO: Everything global should be on global Geometry::properties
-   json << "{\n  \"options\" :\n  {\n"
-        << "    \"pointScale\" : " << Model::points->scale << ",\n"
-        << "    \"pointType\" : " << Model::points->pointType << ",\n"
-        << "    \"border\" : " << (aview->properties["border"].ToInt(0) ? "true" : "false") << ",\n"
-        << "    \"axes\" : " << (aview->properties["axis"].ToBool(true) ? "true" : "false") << ",\n"
-        << "    \"opacity\" : " << GeomData::opacity << ",\n"
-        << "    \"rotate\" : ["  << rotate[0] << "," << rotate[1] << "," << rotate[2] << "," << rotate[3] << "],\n";
-   json << "    \"translate\" : [" << translate[0] << "," << translate[1] << "," << translate[2] << "],\n";
-   json << "    \"focus\" : [" << focus[0] << "," << focus[1] << "," << focus[2] << "],\n";
-   json << "    \"scale\" : [" << aview->scale[0] << "," << aview->scale[1] << "," << aview->scale[2] << "],\n";
-   if (aview->min[0] < HUGE_VAL && aview->min[1] < HUGE_VAL && aview->min[2] < HUGE_VAL)
-      json << "    \"min\" : [" << aview->min[0] << "," << aview->min[1] << "," << aview->min[2] << "],\n";
-   if (aview->max[0] > -HUGE_VAL && aview->max[1] > -HUGE_VAL && aview->max[2] > -HUGE_VAL)
-      json << "    \"max\" : [" << aview->max[0] << "," << aview->max[1] << "," << aview->max[2] << "],\n";
-   json << "    \"near\" : " << aview->near_clip << ",\n";
-   json << "    \"far\" : " << aview->far_clip << ",\n";
-   json << "    \"orientation\" : " << aview->orientation << ",\n";
-   json << "    \"background\" : " << awin->background.value << "\n";
-   json << "  },\n  \"properties\" : " << json::Serialize(Geometry::properties) << ",\n";
-   json << "\n  \"colourmaps\" :\n  [\n" << std::endl;
+   json::Object exported;
+   json::Object options;
+   json::Array colourmaps;
+   json::Array objects;
+
+   options["pointScale"] = Model::points->scale; 
+   options["pointType"] = Model::points->pointType; 
+   options["border"] = aview->properties["border"].ToBool(false); 
+   options["axes"] = aview->properties["axis"].ToBool(true); 
+   options["opacity"] = GeomData::opacity; 
+   json::Array rot, trans, foc, scale, min, max;
+   for (int i=0; i<4; i++)
+   {
+      rot.push_back(rotate[i]);
+      if (i>2) break;
+      trans.push_back(translate[i]);
+      foc.push_back(focus[i]);
+      scale.push_back(aview->scale[i]);
+      if (aview->min[i] < HUGE_VAL && aview->max[i] > -HUGE_VAL)
+      {
+         min.push_back(aview->min[i]);
+         max.push_back(aview->max[i]);
+      }
+   }
+   options["rotate"] = rot;
+   options["translate"] = trans;
+   options["focus"] = foc;
+   options["scale"] = scale;
+   options["min"] = min; 
+   options["max"] = max; 
+
+   options["near"] = aview->near_clip; 
+   options["far"] = aview->far_clip; 
+   options["orentation"] = aview->orientation; 
+   options["background"] = awin->background.value; 
 
    for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
    {
-      json << "    {" << std::endl;
-      json << "      \"id\" : " << amodel->colourMaps[i]->id << "," << std::endl;
-      json << "      \"name\" : \"" << amodel->colourMaps[i]->name << "\"," << std::endl;
-      json << "      \"minimum\" : " << amodel->colourMaps[i]->minimum << "," << std::endl;
-      json << "      \"maximum\" : " << amodel->colourMaps[i]->maximum << "," << std::endl;
-      json << "      \"log\" : " << amodel->colourMaps[i]->log << "," << std::endl;
-      json << "      \"colours\" :\n      [" << std::endl;
+      json::Object cmap;
+      json::Array colours;
 
       for (unsigned int c=0; c < amodel->colourMaps[i]->colours.size(); c++)
       {
-         json << "        {\"position\" : " << amodel->colourMaps[i]->colours[c].position << ",";
+         json::Object colour;
+         std::stringstream cs;
          Colour& col = amodel->colourMaps[i]->colours[c].colour;
-         json << " \"colour\" : \"rgba(" << (int)col.r << "," << (int)col.g << "," << (int)col.b << "," << (col.a/255.0) << ")\"}";
-         if (c < amodel->colourMaps[i]->colours.size()-1) json << ",";
-         json << std::endl;
+         colour["position"] = amodel->colourMaps[i]->colours[c].position;
+         cs << "rgba(" << (int)col.r << "," << (int)col.g << "," << (int)col.b << "," << (col.a/255.0) << ")";
+         colour["colour"] = cs.str();
+         colours.push_back(colour);
       }
-      json << "      ]\n    }";
 
-      if (i < amodel->colourMaps.size()-1) json << ",";
-      json << std::endl;
+      cmap["id"] = (int)amodel->colourMaps[i]->id;
+      cmap["name"] = amodel->colourMaps[i]->name;
+      cmap["minimum"] = amodel->colourMaps[i]->minimum;
+      cmap["maximum"] = amodel->colourMaps[i]->maximum;
+      cmap["log"] = amodel->colourMaps[i]->log;
+      cmap["colours"] = colours;
+
+      colourmaps.push_back(cmap);
    }
-   json << "  ],\n  \"objects\" : \n  [" << std::endl;
 
-   bool firstobj = true;
    if (!viewer->visible) aview->filtered = false; //Disable viewport filtering
    for (unsigned int i=0; i < amodel->objects.size(); i++)
    {
@@ -2408,86 +2424,63 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
          //TODO: fix to use sub-renderer output for others
          //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
          std::string names[] = {"", "points", "triangles", "triangles", "triangles", "triangles", "triangles", "lines", "triangles", "volume"};
-         bool points = false;
-         bool triangles = false;
-         bool lines = false;
-         bool volumes = false;
-         if (Model::geometry[lucPointType]->getCount(amodel->objects[i]) > 0) points = true;
-         if (Model::geometry[lucGridType]->getCount(amodel->objects[i]) > 0 ||
-             Model::geometry[lucTriangleType]->getCount(amodel->objects[i]) > 0 ||
-             Model::geometry[lucVectorType]->getCount(amodel->objects[i]) > 0 ||
-             Model::geometry[lucTracerType]->getCount(amodel->objects[i]) > 0 ||
-             Model::geometry[lucShapeType]->getCount(amodel->objects[i]) > 0) triangles = true;
-         if (Model::geometry[lucLineType]->getCount(amodel->objects[i]) > 0) lines = true;
-         if (Model::geometry[lucVolumeType]->getCount(amodel->objects[i]) > 0) volumes = true;
 
-         bool first = true;
+         //Find colourmap
+         int colourmap = -1;
+         ColourMap* cmap = amodel->objects[i]->colourMaps[lucColourValueData];
+         if (cmap)
+         {
+            //Search vector to find index of selected map
+            std::vector<ColourMap*>::iterator it = find(amodel->colourMaps.begin(), amodel->colourMaps.end(), cmap);
+            if (it != amodel->colourMaps.end())
+               colourmap = (it - amodel->colourMaps.begin());
+         }
+
+         json::Object obj = amodel->objects[i]->properties;
+         obj["id"] = (int)amodel->objects[i]->id;
+         obj["name"] = amodel->objects[i]->name;
+         obj["visible"] = !amodel->objects[i]->skip && amodel->objects[i]->visible;
+         if (colourmap >= 0) obj["colourmap"] = colourmap;
+         if (!objdata)
+         {
+            if (Model::geometry[lucPointType]->getCount(amodel->objects[i]) > 0) obj["points"] = true;
+            if (Model::geometry[lucGridType]->getCount(amodel->objects[i]) > 0 ||
+               Model::geometry[lucTriangleType]->getCount(amodel->objects[i]) > 0 ||
+               Model::geometry[lucVectorType]->getCount(amodel->objects[i]) > 0 ||
+               Model::geometry[lucTracerType]->getCount(amodel->objects[i]) > 0 ||
+               Model::geometry[lucShapeType]->getCount(amodel->objects[i]) > 0) obj["triangles"] = true;
+            if (Model::geometry[lucLineType]->getCount(amodel->objects[i]) > 0) obj["lines"] = true;
+            if (Model::geometry[lucVolumeType]->getCount(amodel->objects[i]) > 0) obj["volumes"] = true;
+
+            objects.push_back(obj);
+            continue;
+         }
+
          for (int type=lucMinType; type<lucMaxType; type++)
          {
             //Collect vertex/normal/index/value data
-            std::ostringstream ss;
-            if (objdata)
-            {
-               //When extracting data, skip objects with no data returned...
-               if (Model::geometry[type]->size() == 0) continue;
-               Model::geometry[type]->jsonWrite(amodel->objects[i]->id, &ss);
-               if (ss.tellp() == (std::streampos)0 || amodel->objects[i]->skip) continue;
-            }
+            //When extracting data, skip objects with no data returned...
+            //if (Model::geometry[type]->size() == 0) continue;
+            Model::geometry[type]->jsonWrite(amodel->objects[i]->id, obj);
+         }
 
-            int colourmap = -1;
-            ColourMap* cmap = amodel->objects[i]->colourMaps[lucColourValueData];
-            if (cmap)
-            {
-               //Search vector to find index of selected map
-               std::vector<ColourMap*>::iterator it = find(amodel->colourMaps.begin(), amodel->colourMaps.end(), cmap);
-               if (it != amodel->colourMaps.end())
-                  colourmap = (it - amodel->colourMaps.begin());
-            }
-
-            if (!first && !objdata) continue;  //Only output object props
-            if (first)
-            {
-               if (!firstobj) json << ",\n";
-               json << "    {" << std::endl;
-               json << "      \"id\" : " << amodel->objects[i]->id << "," << std::endl;
-               json << "      \"name\" : \"" << amodel->objects[i]->name << "\"," << std::endl;
-               json << "      \"visible\": " << (!amodel->objects[i]->skip && amodel->objects[i]->visible ? "true" : "false") << "," << std::endl;
-               json << "      \"colourmap\" : " << colourmap << "," << std::endl;
-               if (!objdata)
-               {
-                  if (points) json << "      \"points\" : true," << std::endl;
-                  if (triangles) json << "      \"triangles\" : true," << std::endl;
-                  if (lines) json << "      \"lines\" : true," << std::endl;
-                  if (volumes) json << "      \"volumes\" : true," << std::endl;
-               }
-               //Export all json properties from object
-               std::string props = json::Serialize(amodel->objects[i]->properties);
-               //Strip enclosing {} as we merge props with object data
-               props = props.substr(1, props.length() - 2);
-               json << "      " << props;
-            }
-            else
-            {
-               json << ",";
-            }
-
-            if (objdata) 
-            {
-               //Write object content
-               json << ",\n      \"" << names[type] << "\" : " << std::endl;
-               json << "      [" << std::endl;
-               json << ss.str();
-               json << "\n      ]" << std::endl;
-            }
-            else
-               json << std::endl;
-
-            json << "    }";
-            firstobj = first = false;
+         //Save object if contains data
+         if (obj["points"].size() > 0 ||
+             obj["triangles"].size() > 0 ||
+             obj["lines"].size() > 0 ||
+             obj["volumes"].size() > 0)
+         {
+            objects.push_back(obj);
          }
       }
    }
-   json << "\n  ]\n}" << std::endl;
+
+   exported["options"] = options; 
+   exported["properties"] = Geometry::properties; 
+   exported["colourmaps"] = colourmaps; 
+   exported["objects"] = objects; 
+
+   json << json::Serialize(exported);
 }
 
 //Data request from attached apps

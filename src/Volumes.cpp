@@ -401,19 +401,20 @@ void Volumes::pngWrite(unsigned int id, int xtiles)
 #endif
 }
 
-void Volumes::jsonWrite(unsigned int id, std::ostream* osp)
+void Volumes::jsonWrite(unsigned int id, json::Object& obj)
 {
    update();  //Count slices etc...
    //Note: update() must be called first to fill slices[]
    if (slices.size() == 0) return;
 
-   std::ostream& os = *osp;
-   
+   json::Array volumes;
+   if (obj.HasKey("volumes")) volumes = obj["volumes"].ToArray();
    for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id]) 
    {
-         printf("%d id == %d\n", i, geom[i]->draw->id);
+      //   printf("%d id == %d\n", i, geom[i]->draw->id);
       if (geom[i]->draw->id == id && drawable(i))
       {
+         json::Object data, vertices, volume;
          //Height needs calculating from values data
          int height = geom[i]->colourValue.size() / geom[i]->width;
          /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
@@ -431,40 +432,35 @@ void Volumes::jsonWrite(unsigned int id, std::ostream* osp)
          //Get a tiled image for WebGL to use as a 2D texture...
          int iw, ih;
          GLubyte *image = getTiledImage(id, iw, ih, false, 16); //16 * 256 = 4096^2 square texture
-         if (!image) return;
-         //For scaling factors
-         float dims[3] = {geom[i]->vertices[1][0] - geom[i]->vertices[0][0],
-                          geom[i]->vertices[1][1] - geom[i]->vertices[0][1],
-                          geom[i]->vertices[1][2] - geom[i]->vertices[0][2]};
-          
-         os << "        {" << std::endl;
-         os << "          \"res\" : \n          [" << std::endl;
-         os << "            " << geom[i]->width << "," << std::endl;
-         os << "            " << height << "," << std::endl;
-         os << "            " << slices[id] << std::endl;
-         os << "          ]," << std::endl;
-         os << "          \"scale\" : \n          [" << std::endl;
-         os << "            " << dims[0] << "," << std::endl;
-         os << "            " << dims[1] << "," << std::endl;
-         os << "            " << dims[2] << std::endl;
-         os << "          ]," << std::endl;
-         std::string vertices = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->vertices.value[0]), geom[i]->vertices.size() * sizeof(float));
-         os << "          \"vertices\" : \n          {" << std::endl;
-         os << "            \"size\" : 3," << std::endl;
-         os << "            \"data\" : \"" << vertices << "\"" << std::endl;
-         os << "          }," << std::endl;
-         //std::string vol = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[id] * sizeof(float)); //For 3D export
-         std::string vol = base64_encode(reinterpret_cast<const unsigned char*>(image), iw * ih * sizeof(GLubyte));
-         os << "          \"volume\" : \n          {" << std::endl;
-         os << "            \"size\" : 1," << std::endl;
-         os << "            \"data\" : \"" << vol << "\"" << std::endl;
-         os << "          }" << std::endl;
-         os << "        }";
+         if (!image) continue;
+         json::Array res, scale;
+         res.push_back(geom[i]->width);
+         res.push_back(height);
+         res.push_back(slices[id]);
+         //Scaling factors
+         scale.push_back(geom[i]->vertices[1][0] - geom[i]->vertices[0][0]);
+         scale.push_back(geom[i]->vertices[1][1] - geom[i]->vertices[0][1]);
+         scale.push_back(geom[i]->vertices[1][2] - geom[i]->vertices[0][2]);
+         data["res"] = res;
+         data["scale"] = scale;
+
+         vertices["size"] = 3;
+         vertices["count"] = geom[i]->vertices.size();
+         vertices["data"] = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->vertices.value[0]), geom[i]->vertices.size() * sizeof(float));
+         data["vertices"] = vertices;
+
+         volume["size"] = 1;
+         //volume["count"] = ;
+         volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(image), iw * ih * sizeof(GLubyte));
+         //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[id] * sizeof(float)); //For 3D export
+         data["volume"] = volume;
 
          delete[] image;
          //pngWrite(id);
-         //delete volume;
-         return; //Only one volume per id
+         
+         volumes.push_back(data);
       }
    }
+
+   if (volumes.size() > 0) obj["volumes"] = volumes;
 }

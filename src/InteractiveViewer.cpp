@@ -1208,7 +1208,7 @@ bool LavaVu::parseCommands(std::string cmd)
          std::cout << helpCommand("sort") << helpCommand("rotation") << helpCommand("translation");
          std::cout << "\nOutput commands:\n\n";
          std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
-         std::cout << helpCommand("movie") << helpCommand("dump") << helpCommand("json");
+         std::cout << helpCommand("movie") << helpCommand("export");
          std::cout << "\nObject commands:\n\n";
          std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file");
          std::cout << "\nDisplay commands:\n\n";
@@ -1931,7 +1931,7 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "focus, aperture, focallength, eyeseparation, nearclip, farclip, zerocam, reset, camera\n"
                   "resize, fullscreen, fit, autozoom, stereo, coordsystem, sort, rotation, translation\n"
                   "\nOutput commands:\n\n"
-                  "image, images, outwidth, outheight, movie, play, dump, json\n"
+                  "image, images, outwidth, outheight, movie, play, export\n"
                   "\nObject commands:\n\n"
                   "hide, show, delete, load, select\n"
                   "\nDisplay commands:\n\n"
@@ -2093,12 +2093,14 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "id (integer, optional) : id of geometry to hide/show\n"
                   "eg: 'hide points' will hide all point data\n";
    }
-   else if (cmd == "dump")
+   else if (cmd == "export")
    {
-      help += "Dump object vertices & values to CSV\n\n"
-                  "Usage: dump object_id/object_name\n\n"
+      help += "Export object data\n\n"
+                  "Usage: export [format] [object_id/object_name]\n\n"
+                  "format (string) : json/csv/db (left blank: compressed db)\n"
                   "object_id (integer) : the index of the object to export (see: \"list objects\")\n"
-                  "object_name (string) : the name of the object to export (see: \"list objects\")\n";
+                  "object_name (string) : the name of the object to export (see: \"list objects\")\n"
+                  "If object ommitted all will be exported\n";
    }
    else if (cmd == "alpha")
    {
@@ -2242,14 +2244,6 @@ std::string LavaVu::helpCommand(std::string cmd)
    else if (cmd == "localise")
    {
       help += "Experimental: adjust colourmaps on each object to fit actual value range\n";
-   }
-   else if (cmd == "json")
-   {
-      help += "Dump object data to JSON file for viewing in WebGL viewer\n\n"
-                  "Usage: json object_id/object_name\n\n"
-                  "object_id (integer) : the index of the object to export (see: \"list objects\")\n"
-                  "object_name (string) : the name of the object to export (see: \"list objects\")\n"
-                  "If object ommitted all will be exported\n";
    }
    else if (cmd == "lockscale")
    {

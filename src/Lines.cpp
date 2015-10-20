@@ -247,3 +247,14 @@ void Lines::draw()
    GL_Error_Check;
 }
 
+void Lines::jsonWrite(unsigned int id, json::Object& obj)
+{
+   json::Array lines;
+   if (obj.HasKey("lines")) lines = obj["lines"].ToArray();
+   jsonExportAll(id, lines);
+   if (lines.size() > 0) obj["lines"] = lines;
+
+   //Triangles rendered?
+   if (!all2d || tubes)
+      tris->jsonWrite(id, obj);
+}

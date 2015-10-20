@@ -427,53 +427,11 @@ void Points::draw()
    labels();
 }
 
-void Points::jsonWrite(unsigned int id, std::ostream* osp)
+void Points::jsonWrite(unsigned int id, json::Object& obj)
 {
-   std::ostream& os = *osp;
-   bool first = true;
-   for (unsigned int i = 0; i < geom.size(); i++) 
-   {
-      if (geom[i]->draw->id == id && drawable(i))
-      {
-         std::cerr << "Collected " << geom[i]->count << " vertices/values (" << i << ")" << std::endl;
-         //Only supports dump of vertex, size and colourValue at present
-         //if (subSample && rand() % subSample > 0) continue; //Not possible to subsample with this method...
-         std::string vertices = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->vertices.value[0]), geom[i]->vertices.size() * sizeof(float));
-         if (!first) os << "," << std::endl;
-         first = false;
-         os << "        {" << std::endl;
-         os << "          \"vertices\" : \n          {" << std::endl;
-         os << "            \"size\" : 3," << std::endl;
-         os << "            \"data\" : \"" << vertices << "\"" << std::endl;
-         os << "          }," << std::endl;
-         std::string normals = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->normals.value[0]), geom[i]->normals.size() * sizeof(float));
-         os << "          \"normals\" : \n          {" << std::endl;
-         os << "            \"size\" : 3," << std::endl;
-         os << "            \"data\" : \"" << normals << "\"" << std::endl;
-         
-         if (geom[i]->sizes.size() == geom[i]->count)
-         {
-            std::string sizes = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->sizes.value[0]), geom[i]->sizes.size() * sizeof(float));
-            os << "          }," << std::endl;
-            os << "          \"sizes\" : \n          {" << std::endl;
-            os << "            \"size\" : 1," << std::endl;
-            os << "            \"data\" : \"" << sizes << "\"" << std::endl;
-         }
-
-         if (geom[i]->colourValue.size() == geom[i]->count)
-         {
-            std::string values = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->colourValue.value[0]), geom[i]->colourValue.size() * sizeof(float));
-            geom[i]->colourCalibrate(); //Calibrate on data range
-            os << "          }," << std::endl;
-            os << "          \"values\" : \n          {" << std::endl;
-            os << "            \"size\" : 1," << std::endl;
-            os << "            \"minimum\" : " << geom[i]->colourValue.minimum << "," << std::endl;
-            os << "            \"maximum\" : " << geom[i]->colourValue.maximum << "," << std::endl;
-            os << "            \"data\" : \"" << values << "\"" << std::endl;
-         }
-         os << "          }" << std::endl;
-         os << "        }";
-      }
-   }
+   json::Array points;
+   if (obj.HasKey("points")) points = obj["points"].ToArray();
+   jsonExportAll(id, points);
+   if (points.size() > 0) obj["points"] = points;
 }
 

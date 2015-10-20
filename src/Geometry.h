@@ -94,7 +94,6 @@ class GeomData
 
    //Geometry data
    Coord3DValues vertices;
-   Coord3DValues positions;
    Coord3DValues vectors;
    Coord3DValues normals;
    FloatValues colourValue;
@@ -239,7 +238,8 @@ class Geometry
 
    void compareMinMax(float* min, float* max);
    void dumpById(std::ostream& csv, unsigned int id);
-   virtual void jsonWrite(unsigned int id, std::ostream* osp);
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
+   void jsonExportAll(unsigned int id, json::Array& array, bool encode=false);
    bool hide(unsigned int idx);
    void hideAll();
    bool show(unsigned int idx);
@@ -306,7 +306,7 @@ class TriSurfaces : public Geometry
    void depthSort();
    virtual void render();
    virtual void draw();
-   virtual void jsonWrite(unsigned int id, std::ostream* osp);
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 };
 
 class Lines : public Geometry
@@ -322,6 +322,7 @@ class Lines : public Geometry
    virtual void close();
    virtual void update();
    virtual void draw();
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 };
 
 class Vectors : public Geometry
@@ -334,6 +335,7 @@ class Vectors : public Geometry
    virtual void close();
    virtual void update();
    virtual void draw();
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 };
 
 class Tracers : public Geometry
@@ -346,6 +348,7 @@ class Tracers : public Geometry
    virtual void close();
    virtual void update();
    virtual void draw();
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 };
 
 class QuadSurfaces : public TriSurfaces
@@ -359,7 +362,6 @@ class QuadSurfaces : public TriSurfaces
    virtual void render();
    void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
    virtual void draw();
-   virtual void jsonWrite(unsigned int id, std::ostream* osp);
 };
 
 class Shapes : public Geometry
@@ -371,6 +373,7 @@ class Shapes : public Geometry
    virtual void close();
    virtual void update();
    virtual void draw();
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 };
 
 class Points : public Geometry
@@ -392,7 +395,7 @@ class Points : public Geometry
    void depthSort();
    void render();
    virtual void draw();
-   virtual void jsonWrite(unsigned int id, std::ostream* osp);
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 
    void dumpJSON();
 };
@@ -412,7 +415,7 @@ class Volumes : public Geometry
    void render(int i);
    GLubyte* getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles=16);
    void pngWrite(unsigned int id, int xtiles=16);
-   virtual void jsonWrite(unsigned int id, std::ostream* osp);
+   virtual void jsonWrite(unsigned int id, json::Object& obj);
 };
 
 //Sorting util functions

@@ -266,9 +266,64 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
    }
 }
 
-void Geometry::jsonWrite(unsigned int id, std::ostream* osp)
+void Geometry::jsonWrite(unsigned int id, json::Object& obj)
 {
-   //Placeholder virtual
+   //Export geometry to json
+}
+
+void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
+{
+   //Export all geometry to json
+   int dsizes[lucMaxDataType] = {3, 3, 3, 
+                                 1, 1, 1, 1, 1,
+                                 1, 1, 1, 1, 
+                                 1, 2};
+   const char* labels[lucMaxDataType] = {"vertices", "normals", "vectors", 
+                                 "values", "opacities", "red", "green", "blue", 
+                                 "indices", "widths", "heights", "lengths", 
+                                 "colours", "texcoords"};
+
+   for (unsigned int index = 0; index < geom.size(); index++) 
+   {
+      if (geom[index]->draw->id == id && drawable(index))
+      {
+         std::cerr << "Collecting data, " << geom[index]->count << " vertices (" << index << ")" << std::endl;
+         json::Object data;
+         for (int data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
+         {
+            if (geom[index]->data[data_type]->size() == 0) continue;
+            json::Object el;
+
+            unsigned int length = geom[index]->data[data_type]->size() * sizeof(float);
+            if (length > 0)
+            {
+               el["size"] = dsizes[data_type];
+               el["count"] = geom[index]->data[data_type]->size();
+               if (encode)
+                  el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->data[data_type]->value[0]), length);
+               else
+               {
+                  json::Array values;
+                  for (int j=0; j<geom[index]->data[data_type]->size(); j++)
+                  {
+                     if (data_type == lucIndexData || data_type == lucRGBAData)
+                        values.push_back((int)reinterpret_cast<unsigned int&>(geom[index]->data[data_type]->value[j]));
+                     else
+                        values.push_back(geom[index]->data[data_type]->value[j]);
+                  }
+                  el["data"] = values;
+               }
+               data[labels[data_type]] = el;
+            }
+         }
+
+         //for grid surfaces...
+         if (geom[index]->width) data["width"] = geom[index]->width;
+         if (geom[index]->height) data["height"] = geom[index]->height;
+
+         array.push_back(data);
+      }
+   }
 }
 
 bool Geometry::hide(unsigned int idx)
@@ -1175,7 +1230,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
          //Read triangle vertex, normal, texcoord
          read(draw, 1, lucVertexData, pos.ref());
          read(draw, 1, lucNormalData, edge.ref());
-         read(draw, 1, lucTexCoordData, tex);
+         //read(draw, 1, lucTexCoordData, tex);
 
          // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
          circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
@@ -1191,7 +1246,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
          //Read triangle vertex, normal, texcoord
          read(draw, 1, lucVertexData, pos.ref());
          read(draw, 1, lucNormalData, edge.ref());
-         read(draw, 1, lucTexCoordData, tex);
+         //read(draw, 1, lucTexCoordData, tex);
 
          //Triangle strip indices
          if (i > 0)

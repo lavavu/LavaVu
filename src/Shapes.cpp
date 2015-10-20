@@ -155,3 +155,9 @@ void Shapes::draw()
    glPopMatrix();
    GL_Error_Check;
 }
+
+void Shapes::jsonWrite(unsigned int id, json::Object& obj)
+{
+   tris->jsonWrite(id, obj);
+}
+

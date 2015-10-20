@@ -804,52 +804,10 @@ void TriSurfaces::draw()
    GL_Error_Check;
 }
 
-void TriSurfaces::jsonWrite(unsigned int id, std::ostream* osp)
+void TriSurfaces::jsonWrite(unsigned int id, json::Object& obj)
 {
-   bool first = true;
-   for (unsigned int index = 0; index < geom.size(); index++) 
-   {
-      //Save json data for export
-      if (geom[index]->draw->id == id && drawable(index))
-      {
-         std::ostream& os = *osp;
-         std::string indices_str = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->indices.value[0]), geom[index]->indices.size() * sizeof(GLuint));
-         std::string vertices_str = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->vertices.value[0]), geom[index]->vertices.size() * sizeof(float) * 3);
-         std::string normals_str = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->normals.value[0]), geom[index]->normals.size() * sizeof(float) * 3);
-
-         std::cerr << "Collected " << geom[index]->count << " vertices/values (" << index << ")" << std::endl;
-         //Only supports dump of vertex, normal and colourValue at present
-         if (!first) os << "," << std::endl;
-         first = false;
-         os << "        {" << std::endl;
-         os << "          \"indices\" : \n          {" << std::endl;
-         os << "            \"size\" : 1," << std::endl;
-         os << "            \"count\" : " << geom[index]->indices.size() << "," << std::endl;
-         os << "            \"data\" : \"" << indices_str << "\"" << std::endl;
-         os << "          }," << std::endl;
-         os << "          \"vertices\" : \n          {" << std::endl;
-         os << "            \"size\" : 3," << std::endl;
-         os << "            \"count\" : " << geom[index]->vertices.size() << "," << std::endl;
-         os << "            \"data\" : \"" << vertices_str << "\"" << std::endl;
-         os << "          }," << std::endl;
-         os << "          \"normals\" : \n          {" << std::endl;
-         os << "            \"size\" : 3," << std::endl;
-         os << "            \"count\" : " << geom[index]->normals.size() << "," << std::endl;
-         os << "            \"data\" : \"" << normals_str << "\"" << std::endl;
-         
-         if (geom[index]->colourValue.size())
-         {
-            std::string values_str = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->colourValue.value[0]), geom[index]->colourValue.size() * sizeof(float));
-            os << "          }," << std::endl;
-            os << "          \"values\" : \n          {" << std::endl;
-            os << "            \"size\" : 1," << std::endl;
-            os << "            \"count\" : " << geom[index]->colourValue.size() << "," << std::endl;
-            os << "            \"minimum\" : " << geom[index]->colourValue.minimum << "," << std::endl;
-            os << "            \"maximum\" : " << geom[index]->colourValue.maximum << "," << std::endl;
-            os << "            \"data\" : \"" << values_str << "\"" << std::endl;
-         }
-         os << "          }" << std::endl;
-         os << "        }";
-      }
-   }
+   json::Array tris;
+   if (obj.HasKey("triangles")) tris = obj["triangles"].ToArray();
+   jsonExportAll(id, tris);
+   if (tris.size() > 0) obj["triangles"] = tris;
 }
