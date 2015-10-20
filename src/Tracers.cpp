@@ -109,6 +109,7 @@ void Tracers::update()
 
       //Get properties
       bool taper = geom[i]->draw->properties["taper"].ToBool(true);
+      bool fade = geom[i]->draw->properties["fade"].ToBool(false);
       int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
       float size0 = geom[i]->draw->properties["scaling"].ToFloat(1.0) * 0.001;
       float limit = geom[i]->draw->properties["limit"].ToFloat(view->model_size * 0.3);
@@ -122,6 +123,7 @@ void Tracers::update()
          Colour colour, oldColour;
          float radius, oldRadius = 0;
          size = size0; 
+         bool flat = geom[i]->draw->properties["flat"].ToBool(false) || quality < 1;
          //Loop through time steps
          for (int step=start; step <= end; step++) 
          {
@@ -153,12 +155,15 @@ void Tracers::update()
             else
                geom[i]->getColour(colour, step * particles + pidx);
 
+            //Fade out
+            if (fade) colour.a = 255 * (step-start) / (float)(end-start);
+
             radius = scale * size;
 
             // Draw section
             if (step > start)
             {
-               if (geom[i]->draw->properties["flat"].ToBool(false) || quality < 1)
+               if (flat)
                {
                   lines->read(geom[i]->draw, 1, lucVertexData, oldpos);
                   lines->read(geom[i]->draw, 1, lucVertexData, pos);
