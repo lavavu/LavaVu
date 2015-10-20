@@ -311,7 +311,7 @@ function loadColourMaps() {
     palette.cache = [];
     for (var c=0; c<512; c++) {
       var cstr = "rgba(" + pixels[c*4] + "," + pixels[c*4+1] + "," + pixels[c*4+2] + "," + pixels[c*4+3] + ")";
-      OK.debug(c + " == " + cstr);
+      //OK.debug(c + " == " + cstr);
       //var colour = new Colour(cstr);
       palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
     }
@@ -335,26 +335,28 @@ function loadColourMaps() {
   //alert(offset + " : " + x + "," + y + "," + z);
 }*/
 
-function objVertexColour(obj, values, idx) {
-  return vertexColour(obj.colour, obj.opacity, obj.colourmap >= 0 ? vis.colourmaps[obj.colourmap] : null, values, idx);
+function objVertexColour(obj, data, idx) {
+  return vertexColour(obj.colour, obj.opacity, obj.colourmap >= 0 ? vis.colourmaps[obj.colourmap] : null, data, idx);
 }
 
-function vertexColour(colour, opacity, colourmap, values, idx) {
+function vertexColour(colour, opacity, colourmap, data, idx) {
   //Default to object colour property
-  if (values) {
+  if (data.values) {
+    var colrange = data.vertices.data.length / (3*data.values.data.length);
+    idx = Math.floor(idx/colrange);
     if (colourmap) {
       //Use a colourmap
       var min = parseFloat(colourmap.min);
       var max = parseFloat(colourmap.max);
-      if (values.minimum != undefined) min = values.minimum;
-      if (values.maximum != undefined) max = values.maximum;
+      if (data.values.minimum != undefined) min = data.values.minimum;
+      if (data.values.maximum != undefined) max = data.values.maximum;
       if (min == undefined) min = 0;
       if (max == undefined) min = 1;
       //Get nearest pixel on the canvas
       var pos = 256;  //If rubbish data, return centre
       //Allows single value for entire object
-      if (idx >= values.data.length) idx = values.data.length-1;
-      var val = values.data[idx];
+      if (idx >= data.values.data.length) idx = data.values.data.length-1;
+      var val = data.values.data[idx];
       if (val < min)
         pos = 0;
       else if (val > max)
@@ -373,10 +375,18 @@ function vertexColour(colour, opacity, colourmap, values, idx) {
       }
       colour = colourmap.palette.cache[pos];
       //if (idx % 100 == 0) console.log(" : " + val + " min " + min + " max " + max + " pos = " + pos + " colour: " + colour);
-    } else if (values.type == 'integer') {
+    } else if (data.values.type == 'integer') {
       //Integer data values, treat as colours
-      colour = values.data[idx];
+      colour = data.values.data[idx];
     }
+  }
+  //RGBA colour values
+  if (data.colours) {
+    var colrange = data.vertices.data.length / (3*data.colours.data.length);
+    idx = Math.floor(idx/colrange);
+    if (data.colours.data.length == 1) idx = 0;  //Single colour only provided
+    if (idx >= data.colours.data.length) idx = data.colours.data.length-1;
+    colour = data.colours.data[idx];
   }
 
   //Apply opacity per object setting
@@ -424,6 +434,7 @@ function demoData(num)
         {
           "name" : "particles",
           "points" :
+          [
           {
             "colour" : null,
             "colourmap" : 0,
@@ -441,10 +452,12 @@ function demoData(num)
               "data" : []
             }
           }
+          ]
         },
         {
           "name" : "surface",
           "triangles" :
+          [
           {
             "colour" : null,
             "colourmap" : 0,
@@ -472,6 +485,7 @@ function demoData(num)
               "data" : []
             }
           }
+          ]
         }
       ]
     };
@@ -791,7 +805,7 @@ function Renderer(gl, type, colour, border) {
   } else if (type == "line") {
     //Line renderer
     this.attributes = ["aVertexPosition", "aVertexColour"],
-    this.uniforms = ["uColour"]
+    this.uniforms = ["uColour", "uAlpha"]
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT];
   }
@@ -999,7 +1013,7 @@ VertexBuffer.prototype.loadParticles = function(object) {
       this.floats[this.offset] = vert[0];
       this.floats[this.offset+1] = vert[1];
       this.floats[this.offset+2] = vert[2];
-      this.ints[this.offset+3] = objVertexColour(object, dat.values, i);
+      this.ints[this.offset+3] = objVertexColour(object, dat, i);
       this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * object.pointsize : object.pointsize;
       this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype-1 : -1;
       this.offset += this.vertexSizeInFloats;
@@ -1047,7 +1061,7 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
           this.floats[this.offset+4] = dat.normals.data[ids3[j]+1];
           this.floats[this.offset+5] = dat.normals.data[ids3[j]+2];
         }
-        this.ints[this.offset+6] = objVertexColour(object, dat.values, ids[j]);
+        this.ints[this.offset+6] = objVertexColour(object, dat, ids[j]);
         this.bytes[this.byteOffset] = id;
         this.bytes[this.byteOffset+1] = texc[j][0];
         this.bytes[this.byteOffset+2] = texc[j][1];
@@ -1089,7 +1103,7 @@ VertexBuffer.prototype.loadLines = function(object) {
       this.floats[this.offset] = vert[0];
       this.floats[this.offset+1] = vert[1];
       this.floats[this.offset+2] = vert[2];
-      this.ints[this.offset+3] = objVertexColour(object, dat.values, i);
+      this.ints[this.offset+3] = objVertexColour(object, dat, i);
       this.offset += this.vertexSizeInFloats;
     }
   }
@@ -1200,6 +1214,7 @@ Renderer.prototype.box = function(min, max) {
 Renderer.prototype.draw = function() {
   if (!vis.objects || !vis.objects.length) return;
   var start = new Date();
+  var desc = "";
   //console.log(" ----- " + this.type + " --------------------------------------------------------------------");
 
   //Create buffer if not yet allocated
@@ -1272,7 +1287,7 @@ Renderer.prototype.draw = function() {
     this.gl.drawElements(this.gl.POINTS, this.elements, this.gl.UNSIGNED_INT, 0);
     //this.gl.drawElements(this.gl.POINTS, this.positions.length, this.gl.UNSIGNED_SHORT, 0);
     //this.gl.drawArrays(this.gl.POINTS, 0, this.positions.length);
-    var desc = this.elements + " points";
+    desc = this.elements + " points";
 
   } else if (this.type == "triangle") {
 
@@ -1299,13 +1314,13 @@ Renderer.prototype.draw = function() {
     this.gl.drawElements(this.gl.TRIANGLES, this.elements, this.gl.UNSIGNED_INT, 0);
     //this.gl.drawElements(this.gl.TRIANGLES, this.positions.length*3, this.gl.UNSIGNED_SHORT, 0);
     //this.gl.drawArrays(this.gl.TRIANGLES, 0, this.positions.length*3);
-    var desc = (this.elements / 3) + " triangles";
+    desc = (this.elements / 3) + " triangles";
 
   } else if (this.border) {
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, 0, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
     this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_SHORT, 0);
-    var desc = "border";
+    desc = "border";
 
   } else if (this.type == "line") {
 
@@ -1314,7 +1329,8 @@ Renderer.prototype.draw = function() {
 
     //Draw lines
     this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_INT, 0);
-    var desc = (this.elements / 2) + " lines";
+    desc = (this.elements / 2) + " lines";
+    //this.gl.drawArrays(this.gl.LINES, 0, this.positions.length);
   }
 
   //Disable attribs
@@ -1526,20 +1542,31 @@ Viewer.prototype.loadFile = function(source) {
     //Process points/triangles
     if (!source.exported) {
       for (var type in vis.objects[id]) {
-        if (["triangles", "points"].indexOf(type) < 0) continue;
+        if (["triangles", "points", "lines"].indexOf(type) < 0) continue;
         if (type == "triangles") this.hasTriangles = true;
         if (type == "points") this.hasPoints = true;
+        if (type == "lines") this.hasLines = true;
         //Read vertices, values, normals, sizes, etc...
         for (var idx in vis.objects[id][type]) {
+          //Only support following data types for now
           decodeBase64(id, type, idx, 'vertices');
           decodeBase64(id, type, idx, 'values');
           decodeBase64(id, type, idx, 'normals');
+          decodeBase64(id, type, idx, 'colours', 'integer');
           decodeBase64(id, type, idx, 'sizes');
           decodeBase64(id, type, idx, 'indices', 'integer');
           OK.debug("Loaded " + vis.objects[id][type][idx].vertices.data.length/3 + " vertices from " + name);
           this.vertexCount += vis.objects[id][type][idx].vertices.data.length/3;
 
-          //Create indices for cross-sections
+          //Create indices for cross-sections & lines
+          if (type == 'lines' && !vis.objects[id][type][idx].indices) {
+            //Collect indices
+            var verts = vis.objects[id][type][idx].vertices.data;
+            var buf = new Uint32Array(verts.length);
+            for (var j=0; j < verts.length; j++)  //Iterate over h-1 strips
+              buf[j] = j;
+            vis.objects[id][type][idx].indices = {"data" : buf, "type" : "integer"};
+          }
           if (type == 'triangles' && !vis.objects[id][type][idx].indices) {
             //Collect indices
             var h = vis.objects[id][type][idx].height;
