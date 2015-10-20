@@ -239,7 +239,7 @@ class Geometry
    void compareMinMax(float* min, float* max);
    void dumpById(std::ostream& csv, unsigned int id);
    virtual void jsonWrite(unsigned int id, json::Object& obj);
-   void jsonExportAll(unsigned int id, json::Array& array, bool encode=false);
+   void jsonExportAll(unsigned int id, json::Array& array, bool encode=true);
    bool hide(unsigned int idx);
    void hideAll();
    bool show(unsigned int idx);

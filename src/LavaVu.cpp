@@ -2333,13 +2333,15 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
    //Write new JSON format objects
    char filename[512];
    char ext[6];
+   int step = amodel->step();
    strcpy(ext, "jsonp");
    if (!jsonp) ext[4] = '\0';
+   if (step < 0) step = 0;
    if (id > 0)
      sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
-                                          amodel->objects[id]->name.c_str(), amodel->step(), ext);
+                                          amodel->objects[id]->name.c_str(), step, ext);
    else
-     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->step(), ext);
+     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), step, ext);
    std::ofstream json(filename);
    if (jsonp) json << "loadData(\n";
    jsonWrite(json, id, true);
