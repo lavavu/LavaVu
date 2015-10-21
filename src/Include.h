@@ -55,6 +55,10 @@
 #include "jpeg/jpgd.h"
 #include "json.h"
 
+#ifdef HAVE_LIBTIFF
+#include <tiffio.h>
+#endif
+
 #ifndef _WIN32
 #include <sys/poll.h>
 #include <unistd.h>

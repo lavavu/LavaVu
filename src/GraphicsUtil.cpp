@@ -1532,6 +1532,42 @@ int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GL
    return BuildTexture(texture, imageData, mipmaps, GL_RGB, mode);
 }
 
+int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+{
+   int texid = 0;
+#ifdef HAVE_LIBTIFF
+   TIFF* tif = TIFFOpen(filename, "r");
+   if (tif)
+   {
+      unsigned int width, height;
+      size_t npixels;
+      GLubyte* imageData;
+   
+      TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
+      TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
+      npixels = width * height;
+   
+      imageData = (GLubyte*)_TIFFmalloc(npixels * 4 * sizeof(GLubyte));
+      if (imageData)
+      {
+        if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
+        {
+           //RawImageFlip(imageData, width, height, 3);
+           texture->width = width;
+           texture->height = height;
+           texture->bpp = 32;
+           texid = BuildTexture(texture, imageData, mipmaps, GL_RGBA, mode);
+        }
+        _TIFFfree(imageData);
+      }
+      TIFFClose(tif);
+   }
+#else
+   abort_program("[Load Texture] Require libTIFF to load TIFF images\n");
+#endif
+   return texid;
+}
+
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode)
 {
    // Build A Texture From The Data

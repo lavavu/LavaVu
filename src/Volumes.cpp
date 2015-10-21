@@ -185,7 +185,7 @@ geom[i]->depth *= SUBSAMPLE;
             }
                unsigned int bytes = 4 * geom[i]->colourValue.size();
                unsigned int bpv = bytes / (float)(geom[i]->width * height);
-            debug_print("current %d width %d height %d depth %d (bpv %d)\n", current->id, geom[i]->width, height, slices[current->id], bpv);
+            debug_print("current %d width %d height %d depth %d (bpv %d) (bytes %d)\n", current->id, geom[i]->width, height, slices[current->id], bpv, bytes);
             size_t sliceSize = geom[i]->width * height * bpv;
             //unsigned char* volume = new unsigned char[sliceSize * slices[current->id]];
 
@@ -198,6 +198,9 @@ geom[i]->depth *= SUBSAMPLE;
                   glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, &geom[j]->colourValue.value[0]);
                else if (bpv == 4)
                   glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
+               else
+                  abort_program("Invalid BPV %d\n", bpv);
+
             }
             GL_Error_Check;
 

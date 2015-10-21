@@ -1035,6 +1035,7 @@ int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLe
 int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
+int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode);
 
 void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);

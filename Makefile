@@ -65,6 +65,10 @@ ifeq ($(PNG), 1)
 else
   CFLAGS += -DUSE_ZLIB
 endif
+ifeq ($(TIFF), 1)
+  CFLAGS += -DHAVE_LIBTIFF
+  LIBS += -ltiff
+endif
 
 #Source search paths
 vpath %.cpp src:src/Main:src:src/jpeg

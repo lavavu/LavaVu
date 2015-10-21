@@ -652,8 +652,10 @@ bool LavaVu::parseCommands(std::string cmd)
    }
    else if (parsed.has(fval, "inscale"))
    {
-      inscale = fval;
-      printMessage("Geometry input scaling set to %f", inscale);
+      inscale[0] = fval;
+      if (!parsed.has(inscale[1], "inscale", 1)) inscale[1] = inscale[0];
+      if (!parsed.has(inscale[2], "inscale", 2)) inscale[2] = inscale[0];
+      printMessage("Geometry input scaling set to %f,%f,%f", inscale[0], inscale[1], inscale[2]);
       return false;
    }
    else if (parsed.exists("createvolume"))
