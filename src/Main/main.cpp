@@ -36,7 +36,6 @@
 #include "../GraphicsUtil.h"
 #include "../LavaVu.h"
 #include "../Server.h"
-#include "../SageOutput.h"
 #include "../OpenGLViewer.h"
 #include "SDLViewer.h"
 #include "X11Viewer.h"
@@ -224,9 +223,6 @@ int main(int argc, char *argv[])
       std::string htmlpath = xpath + "html";
       viewer->addOutput(Server::Instance(viewer, htmlpath, port, quality, threads));
    }
-#endif
-#ifdef HAVE_SAGE
-   viewer->addOutput(SageOutput::Instance(viewer));
 #endif
 
    //Create & run application
