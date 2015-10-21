@@ -85,12 +85,19 @@ OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 PROGRAM = $(PREFIX)/LavaVu
+INDEX = $(PREFIX)/html/index.html
 
 default: install
 
 install: paths $(PROGRAM)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html $(PREFIX)
+	sed -i '/Point vertex shader/ r src/shaders/pointShaderWEBGL.vert' $(INDEX)
+	sed -i '/Point fragment shader/ r src/shaders/pointShaderWEBGL.frag' $(INDEX)
+	sed -i '/Tri vertex shader/ r src/shaders/triShaderWEBGL.vert' $(INDEX)
+	sed -i '/Tri fragment shader/ r src/shaders/triShaderWEBGL.frag' $(INDEX)
+	sed -i '/Line vertex shader/ r src/shaders/lineShader.vert' $(INDEX)
+	sed -i '/Line fragment shader/ r src/shaders/lineShader.frag' $(INDEX)
 
 paths:
 	mkdir -p $(OPATH)
