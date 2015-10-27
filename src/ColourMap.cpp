@@ -172,10 +172,14 @@ void ColourMap::calibrate()
 
 Colour ColourMap::getfast(float value) 
 {
+   //NOTE: value caching DOES NOT WORK for log scales!
+   //If this is causing slow downs in future, need a better method
+   if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1)) return get(value);
    int c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
    if (c > SAMPLE_COUNT - 1) c = SAMPLE_COUNT - 1;
    if (c < 0) c = 0;
-   //printf("%f min %f max %f pos = %d colour: %d\n", value, minimum, maximum, c, precalc[c]);
+   //Colour uc = get(value);
+   //std::cerr << value << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
    return precalc[c];
 }
 
