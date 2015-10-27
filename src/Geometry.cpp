@@ -616,16 +616,9 @@ std::vector<GeomData*> Geometry::getAllObjects(int id)
 GeomData* Geometry::getObjectStore(DrawingObject* draw)
 {
    //Get passed object's most recently added data store
-   GeomData* geomdata = NULL;
    for (int i=geom.size()-1; i>=0; i--)
-   {
-      if (geom[i]->draw == draw)
-      {
-         geomdata = geom[i];
-         break;
-      }
-   }
-   return geomdata;
+      if (geom[i]->draw == draw) return geom[i];
+   return NULL;
 }
 
 GeomData* Geometry::add(DrawingObject* draw)
@@ -937,7 +930,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       float shaft_vertex[3];
       for (v=0; v <= segment_count; v++)
       {
-         int vertex_index = getCount(draw);
+         int vertex_index = getVertexIdx(draw);
 
          // Base of shaft 
          Vec3d vertex0 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -length); // z = Shaft length to base of head 
@@ -983,7 +976,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
    {
       int v;
       // Pinnacle vertex is at point of arrow 
-      int pt = getCount(draw);
+      int pt = getVertexIdx(draw);
       Vec3d pinnacle = Vec3d(0, 0, 0);
 
       // First pair of vertices on circle define a triangle when combined with pinnacle 
@@ -1001,7 +994,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       Vec3d vertex0 = rot * Vec3d(head_radius * x_coords_[1], head_radius * y_coords_[1], -headD);
       for (v=segment_count; v >= 0; v--)
       {
-         int vertex_index = getCount(draw);
+         int vertex_index = getVertexIdx(draw);
 
          // Calc next vertex from unit circle coords
          Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
@@ -1025,7 +1018,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 
       // Flatten cone for circle base -> set common point to share z-coord 
       // Centre of base circle, normal facing back along arrow 
-      pt = getCount(draw);
+      pt = getVertexIdx(draw);
       pinnacle = rot * Vec3d(0,0,-headD);
       vertex = translate + pinnacle;
       normal = rot * Vec3d(0.0f, 0.0f, -1.0f);
@@ -1036,7 +1029,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       // Repeat vertices for outer edges of cone base 
       for (v=0; v<=segment_count; v++)
       {
-         int vertex_index = getCount(draw);
+         int vertex_index = getVertexIdx(draw);
          // Calc next vertex from unit circle coords
          Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
 
@@ -1171,7 +1164,7 @@ void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float 
    }
 
    //Triangle indices
-   unsigned vertex_index = (unsigned)getCount(draw);
+   unsigned vertex_index = (unsigned)getVertexIdx(draw);
    unsigned int indices[36] = {
 				0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index, 
 				3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index, 
@@ -1215,7 +1208,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       //Triangle strip vertices
       for (i=0; i<=segment_count; i++)
       {
-         int vertex_index = getCount(draw);
+         int vertex_index = getVertexIdx(draw);
          // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
          int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
          edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);

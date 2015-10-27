@@ -274,13 +274,21 @@ class Geometry
    void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
    int glyphSegments(int def=2);
 
-   int getCount(DrawingObject* draw)
+   //Return total vertex count
+   int getVertexCount(DrawingObject* draw)
+   {
+      int count = 0;
+      for (int i=0; i<geom.size(); i++)
+        count += geom[i]->count;
+      return count;
+   }
+   //Return vertex count of most recently used object
+   int getVertexIdx(DrawingObject* draw)
    {
       GeomData* geom = getObjectStore(draw);
       if (geom) return geom->count;
       return 0;
    }
-
 };
 
 class TriSurfaces : public Geometry

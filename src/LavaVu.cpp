@@ -2525,14 +2525,14 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
          if (colourmap >= 0) obj["colourmap"] = colourmap;
          if (!objdata)
          {
-            if (Model::geometry[lucPointType]->getCount(amodel->objects[i]) > 0) obj["points"] = true;
-            if (Model::geometry[lucGridType]->getCount(amodel->objects[i]) > 0 ||
-               Model::geometry[lucTriangleType]->getCount(amodel->objects[i]) > 0 ||
-               Model::geometry[lucVectorType]->getCount(amodel->objects[i]) > 0 ||
-               Model::geometry[lucTracerType]->getCount(amodel->objects[i]) > 0 ||
-               Model::geometry[lucShapeType]->getCount(amodel->objects[i]) > 0) obj["triangles"] = true;
-            if (Model::geometry[lucLineType]->getCount(amodel->objects[i]) > 0) obj["lines"] = true;
-            if (Model::geometry[lucVolumeType]->getCount(amodel->objects[i]) > 0) obj["volumes"] = true;
+            if (Model::points->getVertexCount(amodel->objects[i]) > 0) obj["points"] = true;
+            if (Model::quadSurfaces->getVertexCount(amodel->objects[i]) > 0 ||
+               Model::triSurfaces->getVertexCount(amodel->objects[i]) > 0 ||
+               Model::vectors->getVertexCount(amodel->objects[i]) > 0 ||
+               Model::tracers->getVertexCount(amodel->objects[i]) > 0 ||
+               Model::shapes->getVertexCount(amodel->objects[i]) > 0) obj["triangles"] = true;
+            if (Model::lines->getVertexCount(amodel->objects[i]) > 0) obj["lines"] = true;
+            if (Model::volumes->getVertexCount(amodel->objects[i]) > 0) obj["volumes"] = true;
 
             objects.push_back(obj);
             continue;

@@ -175,9 +175,9 @@ void Tracers::update()
                   //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
                   float arrowHead = -1;
                   if (step == end) arrowHead = arrowSize; //geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
-                  int diff = tris->getCount(geom[i]->draw);
+                  int diff = tris->getVertexIdx(geom[i]->draw);
                   tris->drawTrajectory(geom[i]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
-                  diff = tris->getCount(geom[i]->draw) - diff;
+                  diff = tris->getVertexIdx(geom[i]->draw) - diff;
                   //Per vertex colours
                   for (int c=0; c<diff; c++) 
                   {
