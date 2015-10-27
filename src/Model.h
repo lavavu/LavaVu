@@ -140,7 +140,8 @@ class Model
    void mergeDatabases();
    int decompressGeometry(int timestep);
    void writeDatabase(const char* path, unsigned int id, bool compress=false);
-   void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compress);
+   void writeObjects(sqlite3* outdb, int id, int step, bool compress);
+   void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, int step, bool compress);
    void deleteObject(int id);
    void backup(sqlite3 *fromDb, sqlite3* toDb);
 };

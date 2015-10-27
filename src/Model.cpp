@@ -1153,7 +1153,6 @@ int Model::decompressGeometry(int timestep)
 
 void Model::writeDatabase(const char* path, unsigned int id, bool compress)
 {
-   //TODO: implement zlib compression
    //Write objects to a new database
    sqlite3 *outdb;
    if (sqlite3_open_v2(path, &outdb, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL))
@@ -1236,8 +1235,14 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       }
    }
 
-   //Write timesteps...
-   if (timesteps.size() == 0) addTimeStep(0);
+   //Write timesteps & objects...
+   if (timesteps.size() == 0) 
+   {
+      //Create a timestep and 
+      if (!issue("insert into timestep (id, time) values (0, 0)", outdb)) return; 
+      writeObjects(outdb, id, 0, compress);
+   }
+
    for (unsigned int i = 0; i < timesteps.size(); i++)
    {
       snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", timesteps[i]->step, timesteps[i]->time, timesteps[i]->dimCoeff, timesteps[i]->units.c_str(), ""); 
@@ -1248,23 +1253,29 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       setTimeStep(i);
 
       //Write object data
-      for (unsigned int i=0; i < objects.size(); i++)
-      {
-         if (objects[i] && (id == 0 || objects[i]->id == id))
-         {
-            //Loop through all geometry classes (points/vectors etc)
-            for (int type=lucMinType; type<lucMaxType; type++)
-            {
-               writeGeometry(outdb, (lucGeometryType)type, objects[i]->id, compress);
-            }
-         }
-      }
+      writeObjects(outdb, id, step(), compress);
    }
    
    issue("COMMIT", outdb);
 }
 
-void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool compressdata)
+void Model::writeObjects(sqlite3* outdb, int id, int step, bool compress)
+{
+   //Write object data
+   for (unsigned int i=0; i < objects.size(); i++)
+   {
+      if (objects[i] && (id == 0 || objects[i]->id == id))
+      {
+         //Loop through all geometry classes (points/vectors etc)
+         for (int type=lucMinType; type<lucMaxType; type++)
+         {
+            writeGeometry(outdb, (lucGeometryType)type, objects[i]->id, step, compress);
+         }
+      }
+   }
+}
+
+void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, int step, bool compressdata)
 {
    std::vector<GeomData*> data = geometry[type]->getAllObjects(obj_id);
    //Loop through and write out all object data
@@ -1306,10 +1317,15 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, bool
         if (block->minimum == HUGE_VAL) block->minimum = 0;
         if (block->maximum == -HUGE_VAL) block->maximum = 0;
         
-        float *min = data[i]->min;
-        float *max = data[i]->max;
+        float min[3], max[3];
+        for (int c=0; c<3; c++)
+        {
+           if (ISFINITE(data[i]->min[c])) min[c] = data[i]->min[c]; else data[i]->min[c] = Geometry::min[c];
+           if (ISFINITE(data[i]->max[c])) max[c] = data[i]->max[c]; else data[i]->max[c] = Geometry::max[c];
+           
+        }
 
-        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step(), data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+        snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 
         /* Prepare statement... */
         if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
