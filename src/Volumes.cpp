@@ -128,17 +128,25 @@ void Volumes::update()
          fclose(pFile);
          std::cerr << "Wrote raw volume\n";
 #endif
-         //Calculate bytes-per-voxel
-         unsigned int bytes = 4 * geom[i]->colourValue.size();
-         unsigned int voxels = (geom[i]->width * geom[i]->height * geom[i]->depth);
-         unsigned int bpv = bytes / voxels; //4 * geom[i]->colourValue.size() / (geom[i]->width * geom[i]->height * geom[i]->depth);
-#define SUBSAMPLE 1.0
-         debug_print("volume 0 width %d height %d depth %d bpv %d\n", geom[i]->width, (geom[i]->height*SUBSAMPLE), (geom[i]->depth*SUBSAMPLE), bpv);
-
-geom[i]->depth *= SUBSAMPLE;
-         //Load the texture
-         unsigned char* volume = (unsigned char*)&geom[i]->colourValue.value[0];
-         current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], bpv);
+         //Determine type of data then load the texture
+         unsigned int bpv = 0;
+         if (geom[i]->colours.size() > 0)
+         {
+            bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+            if (bpv == 3)
+               current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colours.value[0], VOLUME_RGB);
+            if (bpv == 4)
+               current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colours.value[0], VOLUME_RGBA);
+         }
+         else
+         {
+            bpv = (4 * geom[i]->colourValue.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+            if (bpv == 1)
+               current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], VOLUME_BYTE);
+            if (bpv == 4)
+               current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], VOLUME_FLOAT);
+         }
+         debug_print("volume 0 width %d height %d depth %d (bpv %d)\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
          geom[i]->texture = current->defaultTexture;
          current->defaultTexture = NULL; ////
       }
@@ -177,31 +185,48 @@ geom[i]->depth *= SUBSAMPLE;
           DrawingObject* current = geom[i]->draw;
           if (!current->defaultTexture || current->defaultTexture->width == 0)
           {
-            int height = geom[i]->height;
-            if (!height)
-            {
+            if (!geom[i]->height)
                //No height? Calculate from values data (assumes float data (4 bpv))
-               height = geom[i]->height = geom[i]->colourValue.size() / geom[i]->width; // * 4;
-            }
-               unsigned int bytes = 4 * geom[i]->colourValue.size();
-               unsigned int bpv = bytes / (float)(geom[i]->width * height);
-            debug_print("current %d width %d height %d depth %d (bpv %d) (bytes %d)\n", current->id, geom[i]->width, height, slices[current->id], bpv, bytes);
-            size_t sliceSize = geom[i]->width * height * bpv;
-            //unsigned char* volume = new unsigned char[sliceSize * slices[current->id]];
+               geom[i]->height = geom[i]->colourValue.size() / geom[i]->width; // * 4;
 
             //Init/allocate/bind texture
-            current->load3DTexture(geom[i]->width, height, slices[current->id], NULL, bpv);
-            geom[i]->texture = current->defaultTexture;
-            for (int j=i; j<i+slices[current->id]; j++)
+            unsigned int bpv = 0;
+            GL_Error_Check;
+            if (geom[i]->colours.size() > 0)
             {
-               if (bpv == 1)
-                  glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, &geom[j]->colourValue.value[0]);
-               else if (bpv == 4)
-                  glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
-               else
-                  abort_program("Invalid BPV %d\n", bpv);
-
+               bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height);
+               if (bpv == 3)
+               {
+                  current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGB);
+                  for (int j=i; j<i+slices[current->id]; j++)
+                     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, &geom[j]->colours.value[0]);
+               }
+               if (bpv == 4)
+               {
+                  current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGBA);
+                  for (int j=i; j<i+slices[current->id]; j++)
+                     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, &geom[j]->colours.value[0]);
+               }
             }
+            else
+            {
+               bpv = (4 * geom[i]->colourValue.size()) / (float)(geom[i]->width * geom[i]->height);
+               if (bpv == 1)
+               {
+                  current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_BYTE);
+                  for (int j=i; j<i+slices[current->id]; j++)
+                     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, &geom[j]->colourValue.value[0]);
+               }
+               if (bpv == 4)
+               {
+                  current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_FLOAT);
+                  for (int j=i; j<i+slices[current->id]; j++)
+                     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
+               }
+            }
+            debug_print("current %d width %d height %d depth %d (bpv %d)\n", current->id, geom[i]->width, geom[i]->height, slices[current->id], bpv);
+
+            geom[i]->texture = current->defaultTexture;
             GL_Error_Check;
 
             //Calibrate on data now so if colour bar drawn it will have correct range
@@ -239,7 +264,18 @@ void Volumes::render(int i)
 
    //User settings
    json::Object props = geom[i]->draw->properties;
+   bool hasColourMap = geom[i]->draw->colourMaps[lucColourValueData] 
+                       && geom[i]->draw->colourMaps[lucColourValueData]
+                       && props["colourmap"].ToBool(true);
    //Use per-object clip box if set, otherwise use global clip
+   /*
+   float bbMin[3] = {props["xmin"].ToFloat(Geometry::properties["xmin"].ToFloat(0.01) * geom[i]->vertices[0][0]),
+                     props["ymin"].ToFloat(Geometry::properties["ymin"].ToFloat(0.01) * geom[i]->vertices[0][1]),
+                     props["zmin"].ToFloat(Geometry::properties["zmin"].ToFloat(0.01) * geom[i]->vertices[0][2])};
+   float bbMax[3] = {props["xmax"].ToFloat(Geometry::properties["xmax"].ToFloat(0.99) * geom[i]->vertices[1][0]),
+                     props["ymax"].ToFloat(Geometry::properties["ymax"].ToFloat(0.99) * geom[i]->vertices[1][1]),
+                     props["zmax"].ToFloat(Geometry::properties["zmax"].ToFloat(0.99) * geom[i]->vertices[1][2])};
+   */
    float bbMin[3] = {props["xmin"].ToFloat(Geometry::properties["xmin"].ToFloat(0.01)),
                      props["ymin"].ToFloat(Geometry::properties["ymin"].ToFloat(0.01)),
                      props["zmin"].ToFloat(Geometry::properties["zmin"].ToFloat(0.01))};
@@ -248,7 +284,7 @@ void Volumes::render(int i)
                      props["zmax"].ToFloat(Geometry::properties["zmax"].ToFloat(0.99))};
    glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
    glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
-   glUniform1i(prog->uniforms["uEnableColour"], geom[i]->draw->colourMaps[lucColourValueData] ? props["colourmap"].ToInt(1) : 0);
+   glUniform1i(prog->uniforms["uEnableColour"], hasColourMap ? 1 : 0);
    glUniform1f(prog->uniforms["uPower"], props["power"].ToFloat(1.0));
    glUniform1i(prog->uniforms["uSamples"], props["samples"].ToInt(256));
    glUniform1f(prog->uniforms["uDensityFactor"], props["density"].ToFloat(5.0) * props["opacity"].ToFloat(1.0));
@@ -273,10 +309,12 @@ void Volumes::render(int i)
    GL_Error_Check;
  
    //Gradient texture
-   glActiveTexture(GL_TEXTURE0);
-   glUniform1i(prog->uniforms["uTransferFunction"], 0);
-   if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->draw->colourMaps[lucColourValueData])
+   if (hasColourMap)
+   {
+      glActiveTexture(GL_TEXTURE0);
+      glUniform1i(prog->uniforms["uTransferFunction"], 0);
       glBindTexture(GL_TEXTURE_2D, geom[i]->draw->colourMaps[lucColourValueData]->texture->id);
+   }
  
    //Volume texture
    glActiveTexture(GL_TEXTURE1);

@@ -40,6 +40,11 @@
 #ifndef DrawingObject__
 #define DrawingObject__
 
+#define VOLUME_FLOAT 1
+#define VOLUME_BYTE 2
+#define VOLUME_RGB 3
+#define VOLUME_RGBA 4
+
 //Holds parameters for a drawing object
 class DrawingObject
 {
@@ -48,6 +53,7 @@ class DrawingObject
    unsigned int id;
    bool skip;
    bool visible;
+   int voltype;
    //Cached values for faster lookup
    float opacity;
    Colour colour;
@@ -64,7 +70,7 @@ class DrawingObject
    void addColourMap(ColourMap* map, lucGeometryDataType data_type);
    TextureData* loadTexture(std::string texfn);
    int useTexture(TextureData* texture);
-   void load3DTexture(int width, int height, int depth, void* data, int bpv=4);
+   void load3DTexture(int width, int height, int depth, void* data, int type=VOLUME_FLOAT);
    void cache()
    {
       //Cache values for faster lookups during draw calls

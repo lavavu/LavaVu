@@ -63,6 +63,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 #endif
    message[0] = '\0';
    volres[0] = volres[1] = volres[2] = 256;
+   volss[0] = volss[1] = volss[2] = 1.0;
    volmin[0] = volmin[1] = volmin[2] = -1;
    volmax[0] = volmax[1] = volmax[2] = 1;
    volume = NULL;
@@ -632,7 +633,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
       
       //Ensure count rounded up when storing bytes in float container
       int floatcount = ceil((float)(width * height) / sizeof(float));
-      Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height, count);
+      Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height); //, count);
       Model::volumes->setup(vobj, lucColourValueData, 0, 1);
       //std::cout << "SLICE LOAD: " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
       
@@ -682,40 +683,144 @@ void LavaVu::readVolumeTIFF(FilePath& fn)
       imageData = (GLubyte*)_TIFFmalloc(npixels * bytesPerPixel * sizeof(GLubyte));
       if (imageData)
       {
-         GLubyte* luminance = new GLubyte[width*height];
-         GLubyte* RGBA;
+         int w = width * volss[0];
+         int h = height * volss[1];
+         GLuint* buffer = new GLuint[w*h];
          do 
          {
             if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
             {
-               //Convert to luminance (just using red channel now, other options in future)
-               for (int y=0; y<height; y++)
+               //Add new store for each slice
+               //Subsample
+               GLuint* bp = buffer;
+               for (int y=0; y<h; y ++)
                {
-                  for (int x=0; x<width; x++)
+                  for (int x=0; x<w; x ++)
                   {
-                     RGBA = &imageData[(y*width+x)*bytesPerPixel];
-                     luminance[y*width+x] = (0.2126*RGBA[0] + 0.7152*RGBA[1] + 0.0722*RGBA[2]) * RGBA[3];
+                     assert((bp-buffer) < w * h);
+                     memcpy(bp, &imageData[(y*width+x)*bytesPerPixel], 4);
+                     bp++;
                   }
                }
-                
-               //Ensure count rounded up when storing bytes in float container
-               int floatcount = ceil((float)(width * height) / sizeof(float));
-               //Add new store for each slice
+
                if (count > 0) Model::volumes->add(vobj);
-               Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height, count);
-               Model::volumes->setup(vobj, lucColourValueData, 0, 1);
-               std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
-                
+               //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, count);
+               Model::volumes->read(vobj, w*h, lucRGBAData, buffer, w, h); //, count);
+               //std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+               std::cout << "SLICE LOAD " << count << " : " << w << "," << h << " bpp: " << bytesPerPixel << std::endl;
             }
             count++;
-         } while (TIFFReadDirectory(tif));
+         }
+         while (TIFFReadDirectory(tif));
+
          _TIFFfree(imageData);
-         delete[] luminance;
+         delete[] buffer;
       }
       TIFFClose(tif);
    }
 #else
    abort_program("Require libTIFF to load TIFF images\n");
+#endif
+}
+
+void LavaVu::createDemoVolume()
+{
+   //Create volume object, or if static volume object exists, use it
+   DrawingObject *vobj = volume;
+   if (!vobj) 
+   {
+      vobj = new DrawingObject("volume", 0xff000000, NULL, 1.0, "density=50\n");
+      addObject(vobj);
+      //Scale geometry by input scaling factor
+      for (int i=0; i<3; i++)
+      {
+         volmin[i] *= inscale[i];
+         volmax[i] *= inscale[i];
+         if (infostream != NULL)
+            std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
+      }
+      //Define the bounding cube by corners
+      Model::volumes->read(vobj, 1, lucVertexData, volmin);
+      Model::volumes->read(vobj, 1, lucVertexData, volmax);
+   }
+
+#if 1
+   unsigned int size;
+   unsigned int width = 256, height = 256, depth = 256, block = 24;
+   size_t npixels = width*height;
+   int bytesPerPixel = 4;
+   GLubyte* imageData;
+   int count = 0;
+   npixels = width * height;
+   imageData = (GLubyte*)malloc(npixels * bytesPerPixel * sizeof(GLubyte));
+   if (imageData)
+   {
+       bool val;
+       for (int z=0; z<depth; z++)
+       {
+           //Add new store for each slice
+           //Subsample
+           GLuint* bp = (GLuint*)imageData;
+           for (int y=0; y<height; y ++)
+           {
+              for (int x=0; x<width; x ++)
+              {
+                 assert((bp-(GLuint*)imageData) < width * height);
+                 if (z/block%2==0 || x/block%2==0 || y/block%2==0)
+                   val = false;
+                 else
+                   val = true;
+                 memset(bp, val ? 255 : 0, 4);
+                 bp++;
+              }
+           }
+
+           if (z > 0) Model::volumes->add(vobj);
+           Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
+           std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+      }
+   }
+#else
+   unsigned int size;
+   unsigned int width = 256, height = 256, depth = 256, block = 24;
+   size_t npixels = width*height;
+   int bytesPerPixel = 1;
+   GLubyte* imageData;
+   int count = 0;
+   npixels = width * height;
+   imageData = (GLubyte*)malloc(npixels * bytesPerPixel * sizeof(GLubyte));
+   if (imageData)
+   {
+       bool val;
+       for (int z=0; z<depth; z++)
+       {
+           //Add new store for each slice
+           //GLuint* bp = (GLuint*)imageData;
+           GLubyte* bp = imageData;
+           for (int y=0; y<height; y ++)
+           {
+              for (int x=0; x<width; x ++)
+              {
+                 //assert((bp-(GLuint*)imageData) < width * height);
+                 if (z/block%2==0 || x/block%2==0 || y/block%2==0)
+                   val = false;
+                 else
+                   val = true;
+                 //memset(bp, val ? 255 : 0, 4);
+                 *bp = (val ? 255 : 0);
+                 bp++;
+              }
+           }
+
+           //if (z > 0) Model::volumes->add(vobj);
+      int floatcount = ceil((float)(width * height) / sizeof(float));
+           //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, depth);
+           Model::volumes->read(vobj, floatcount, lucColourValueData, (float*)imageData, width, height, depth);
+      Model::volumes->setup(vobj, lucColourValueData, 0, 1);
+           std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+      }
+   }
+   free(imageData);
 #endif
 }
 
@@ -2269,6 +2374,7 @@ void LavaVu::loadModel(FilePath& fn)
 //Load model window at specified timestep
 bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
 {
+   if (!amodel) defaultModel();
    if (window_idx == window && at_timestep >= 0 && at_timestep == amodel->now) return false; //No change
    if (at_timestep >= 0)
    {
@@ -2534,6 +2640,7 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
             if (Model::lines->getVertexCount(amodel->objects[i]) > 0) obj["lines"] = true;
             if (Model::volumes->getVertexCount(amodel->objects[i]) > 0) obj["volumes"] = true;
 
+            std::cout << obj["points"].ToBool(false) << "," << obj["triangles"].ToBool(false) << "," << obj["volumes"].ToBool(false) << std::endl;
             objects.push_back(obj);
             continue;
          }

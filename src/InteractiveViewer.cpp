@@ -658,6 +658,14 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("Geometry input scaling set to %f,%f,%f", inscale[0], inscale[1], inscale[2]);
       return false;
    }
+   else if (parsed.has(fval, "volsubsample"))
+   {
+      parsed.has(volss[0], "volsubsample", 0);
+      parsed.has(volss[1], "volsubsample", 1);
+      parsed.has(volss[2], "volsubsample", 2);
+      printMessage("Volume sub-sampling set to %f x %f x %f", volss[0], volss[1], volss[2]);
+      return false;
+   }
    else if (parsed.exists("createvolume"))
    {
       //Use this to load multiple volumes as timesteps into the same object
@@ -1348,7 +1356,10 @@ bool LavaVu::parseCommands(std::string cmd)
             printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), cmap->name.c_str(), cmap->id);
          }
          else if (ival < 0 || what.length() == 0)
+         {
+            obj->addColourMap(NULL, lucColourValueData);
             printMessage("%s colourmap set to none", obj->name.c_str());
+         }
          else
          {
             //No cmap id, parse a colourmap string (must be single line or enclosed in "")
@@ -1843,6 +1854,11 @@ bool LavaVu::parseCommands(std::string cmd)
    else if (parsed.exists("test"))
    {
       createDemoModel();
+      resetViews();
+   }
+   else if (parsed.exists("voltest"))
+   {
+      createDemoVolume();
       resetViews();
    }
    else if (parsed.exists("name"))

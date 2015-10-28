@@ -138,7 +138,7 @@ int DrawingObject::useTexture(TextureData* texture)
    return -1;
 }
 
-void DrawingObject::load3DTexture(int width, int height, int depth, void* data, int bpv)
+void DrawingObject::load3DTexture(int width, int height, int depth, void* data, int type)
 {
   GL_Error_Check;
   //Create the texture
@@ -163,10 +163,24 @@ void DrawingObject::load3DTexture(int width, int height, int depth, void* data, 
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   GL_Error_Check;
 
-  //Load based on bytes-per-voxel (default 4=float)
-  if (bpv == 4)
-    //glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
-  else if (bpv == 1)
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+  //Load based on type
+  debug_print("Volume Texture: width %d height %d depth %d type %d\n", width, height, depth, type);
+  switch (type)
+  {
+    case VOLUME_FLOAT:
+      //glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+      glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+      break;
+    case VOLUME_BYTE:
+      glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+      break;
+    case VOLUME_RGB:
+      glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+      break;
+    case VOLUME_RGBA:
+      glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+      break;
+  }
+  voltype = type;
+  GL_Error_Check;
 }

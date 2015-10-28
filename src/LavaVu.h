@@ -72,7 +72,7 @@ class LavaVu : public ViewerApp
    bool writeimage, writemovie;
    int volres[3];
    float volmin[3], volmax[3];
-   float inscale[3]; //Scaling as data loaded, only for volumes currently
+   float volss[3], inscale[3]; //Scaling as data loaded, only for volumes currently
    DrawingObject *volume;
    int repeat;
 #ifdef HAVE_LIBAVCODEC
@@ -134,6 +134,7 @@ class LavaVu : public ViewerApp
    void readVolumeSlice(FilePath& fn);
    void readVolumeTIFF(FilePath& fn);
    void createDemoModel();
+   void createDemoVolume();
    void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
    DrawingObject* addObject(DrawingObject* obj);
    void setOpacity(unsigned int id, float opacity);
