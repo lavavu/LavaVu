@@ -73,14 +73,12 @@ void ColourMap::calc()
 {
    if (!colours.size()) return;
    //Precalculate colours
-   int cv;
-   for (cv=0; cv<SAMPLE_COUNT; cv++)
-   {
-      float val = minimum + range * (float)cv/(SAMPLE_COUNT-1);
-      precalc[cv] = get(val);
-      //float value = (float)cv/(SAMPLE_COUNT-1);
-      //precalc[cv] = getFromScaled(value);
-   }
+   if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1))
+      for (int cv=0; cv<SAMPLE_COUNT; cv++)
+         precalc[cv] = get(pow(10, log10(minimum) + range * (float)cv/(SAMPLE_COUNT-1)));
+   else
+      for (int cv=0; cv<SAMPLE_COUNT; cv++)
+         precalc[cv] = get(minimum + range * (float)cv/(SAMPLE_COUNT-1));
 }
 
 void ColourMap::calibrate(float min, float max)
@@ -100,8 +98,10 @@ void ColourMap::calibrate(float min, float max)
       if (maximum <= FLT_MIN) maximum =  FLT_MIN;
       //if (minimum == FLT_MIN || maximum == FLT_MIN )
       //   debug_print("WARNING: Field used for logscale colourmap possibly contains non-positive values. \n");
+      range = log10(maximum) - log10(minimum);
    }
-   range = maximum - minimum;
+   else
+      range = maximum - minimum;
 
    //Calculates positions based on field values over range
    if (!noValues)
@@ -174,12 +174,16 @@ Colour ColourMap::getfast(float value)
 {
    //NOTE: value caching DOES NOT WORK for log scales!
    //If this is causing slow downs in future, need a better method
-   if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1)) return get(value);
-   int c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
+   int c = 0;
+   if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1)) //return get(value);
+      c = (int)((SAMPLE_COUNT-1) * ((log10(value) - log10(minimum)) / range));
+   else
+      c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
    if (c > SAMPLE_COUNT - 1) c = SAMPLE_COUNT - 1;
    if (c < 0) c = 0;
    //Colour uc = get(value);
-   //std::cerr << value << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
+   //std::cerr << value << " range : " << range << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
+   //std::cerr << log10(value) << " range : " << range << " : Lmin " << log10(minimum) << ", max " << log10(maximum) << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
    return precalc[c];
 }
 
