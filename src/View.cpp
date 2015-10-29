@@ -154,7 +154,7 @@ bool View::init(bool force, float* newmin, float* newmax)
       far_clip = model_size * 20.0;
    }
 
-   if (max[2] > min[2]) is3d = true; else is3d = false;
+   if (max[2] > min[2]+FLT_EPSILON) is3d = true; else is3d = false;
    debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s\n", 
            model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"));
 
