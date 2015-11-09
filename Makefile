@@ -54,6 +54,11 @@ endif
 endif
 endif
 
+#Add a libpath (useful for linking specific libGL)
+ifdef LIBDIR
+  LIBS+= -L$(LIBDIR) -Wl,-rpath=$(LIBDIR)
+endif
+
 #Other optional components
 ifeq ($(VIDEO), 1)
   CFLAGS += -DHAVE_LIBAVCODEC
