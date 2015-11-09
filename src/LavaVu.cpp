@@ -288,7 +288,9 @@ void LavaVu::run(bool persist)
    if (!amodel) defaultModel();
 
    //Reselect the active view after loading all data
-   viewSelect(view, true, true);
+   //NOTE!! Removed as this is called before the context is created, crashing Mesa
+   //If required for image/movie dump will have to call later...
+   //viewSelect(view, true, true);
 
    if (writeimage || writemovie || dump > lucExportNone)
    {
