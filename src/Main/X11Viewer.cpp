@@ -44,7 +44,7 @@ int X11_error(Display* Xdisplay, XErrorEvent* error)
 {
    char error_str[256];
    XGetErrorText(Xdisplay, error->error_code, error_str, 256);
-   debug_print("X11 Error: %d -> %s\n", error->error_code, error_str);
+   fprintf(stderr, "X11 Error: %d -> %s\n", error->error_code, error_str);
    return error->error_code;
 }
 
@@ -89,19 +89,19 @@ void X11Viewer::open(int w, int h)
       Xdisplay = XOpenDisplay(NULL);
       if (Xdisplay == NULL)
       {
-         debug_print("In func %s: Function XOpenDisplay(NULL) returned NULL\n", __func__);
+         fprintf(stderr, "In func %s: Function XOpenDisplay(NULL) returned NULL\n", __func__);
 
          // Second Try 
          Xdisplay = XOpenDisplay(displayName);
          if (Xdisplay == NULL)
          {
-            debug_print("In func %s: Function XOpenDisplay(%s) didn't work.\n", __func__ , displayName);
+            fprintf(stderr, "In func %s: Function XOpenDisplay(%s) didn't work.\n", __func__ , displayName);
 
             // Third Try 
             Xdisplay = XOpenDisplay(":0.0");
             if (Xdisplay == NULL)
             {
-               debug_print("In func %s: Function XOpenDisplay(\":0.0\") returned NULL\n", __func__);
+               fprintf(stderr, "In func %s: Function XOpenDisplay(\":0.0\") returned NULL\n", __func__);
                return;
             }
          }
@@ -110,7 +110,7 @@ void X11Viewer::open(int w, int h)
       // Check to make sure display we've just opened has a glx extension 
       if (!glXQueryExtension(Xdisplay, NULL, NULL))
       {
-         debug_print("In func %s: X server has no OpenGL GLX extension\n", __func__);
+         fprintf(stderr, "In func %s: X server has no OpenGL GLX extension\n", __func__);
          return;
       }
 
