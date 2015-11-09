@@ -198,6 +198,7 @@ void TriSurfaces::loadMesh()
          indices.resize(triverts);
          calcGridNormals(index, normals);
          calcGridIndices(index, indices);
+         unique += geom[index]->count; //For calculating index offset (voffset)
          elements += triverts;
       }
       else
