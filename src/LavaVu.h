@@ -77,6 +77,10 @@ class LavaVu : public ViewerApp
    int repeat;
 #ifdef HAVE_LIBAVCODEC
    VideoEncoder* encoder;
+#else
+   //Ensure LavaVu class is same size in case linked from executable compiled 
+   //with different definitions (this was the cause of a hard to find bug)
+   void* encoder;
 #endif
 
    std::vector<Model*> models;
