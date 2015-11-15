@@ -68,8 +68,8 @@ values = {}
 execfile("viewer.cfg", globals(), values)
 env._dict.update(values)
 env['CPPDEFINES'] += cpp_defs
-srcs = Glob(src_dir + '/Main/main.cpp')
-srcs += Glob(src_dir + '/Main/X11Viewer.cpp')
+main = env.SharedObject('main', Glob(src_dir + '/Main/main.cpp'))
+srcs = Glob(src_dir + '/Main/X11Viewer.cpp')
 srcs += Glob(src_dir + '/Main/SDLViewer.cpp')
 srcs += Glob(src_dir + '/Main/GlutViewer.cpp')
 vobjs = env.SharedObject(srcs)
@@ -82,7 +82,7 @@ env['LIBPATH'] += [build_lib]
 #Add the renderer library
 libs = ['LavaVuRender'] + env.get('LIBS', [])
 #Build the executable
-env.Program('bin/LavaVu', vobjs, LIBS=libs)
+env.Program('bin/LavaVu', main + vobjs, LIBS=libs)
 
 if FindFile('offscreen.cfg', '.'):
    # Build LavaVu viewer (offscreen version)
@@ -103,5 +103,10 @@ if FindFile('offscreen.cfg', '.'):
    #Build the executable
    env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
 else:
-   env.Program('bin/LavaVuOS', vobjs, LIBS=libs)
+   env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
 
+#Build as a shared library (Experimental)
+#env = env.Clone()
+#env['CPPDEFINES'] = env['CPPDEFINES'] + ["__LAVAVULIB"]
+main = env.SharedObject('oslib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'] + ["__LAVAVULIB"])
+env.SharedLibrary('lib/LavaVu', main + vobjs, LIBS=libs)

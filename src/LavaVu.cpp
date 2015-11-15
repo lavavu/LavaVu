@@ -96,6 +96,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 #endif
 
    //Read command line switches
+   bool queueScript = false;
    for (int i=0; i<args.size(); i++)
    {
       char x;
@@ -233,6 +234,16 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          }
          //Clear non file arguments
          args[i].clear();
+      }
+      else if (x == ':')
+      {
+        //Queue rest of commands to script
+        queueScript = true;
+      }
+      else if (queueScript)
+      {
+        //Queue script commands for when viewer is opened
+        OpenGLViewer::commands.push_back(args[i]);
       }
       else
       {
@@ -2637,7 +2648,8 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
             if (Model::lines->getVertexCount(amodel->objects[i]) > 0) obj["lines"] = true;
             if (Model::volumes->getVertexCount(amodel->objects[i]) > 0) obj["volumes"] = true;
 
-            std::cout << obj["points"].ToBool(false) << "," << obj["triangles"].ToBool(false) << "," << obj["volumes"].ToBool(false) << std::endl;
+            //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << 
+            //obj["points"].ToBool(false) << "," << obj["triangles"].ToBool(false) << "," << obj["volumes"].ToBool(false) << std::endl;
             objects.push_back(obj);
             continue;
          }
