@@ -185,8 +185,8 @@ precision highp float;
           <td>
             <input id="timestep" type="range" min="0" max="100" value="50" onchange="viewer.setTimeStep();">
             <br>
-            <input type="button" value="<-" onclick="requestData('/command=timestep up');">
-            <input type="button" value="->" onclick="requestData('/command=timestep down');">
+            <input type="button" value="&larr;" onclick="requestData('/command=timestep up');">
+            <input type="button" value="&rarr;" onclick="requestData('/command=timestep down');">
           </td>
         </tr>
         <tr class="server"><td>Commands</td><td><input type="text" id="cmdInput" onkeypress="keyPressCommand(event, this);"></td></tr>
