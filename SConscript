@@ -106,7 +106,5 @@ else:
    env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
 
 #Build as a shared library (Experimental)
-#env = env.Clone()
-#env['CPPDEFINES'] = env['CPPDEFINES'] + ["__LAVAVULIB"]
 main = env.SharedObject('oslib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'] + ["__LAVAVULIB"])
 env.SharedLibrary('lib/LavaVu', main + vobjs, LIBS=libs)

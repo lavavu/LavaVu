@@ -230,6 +230,9 @@ void initViewer(int argc, char **argv)
 
    delete viewer;
    delete app;
+#ifndef DISABLE_SERVER
+   Server::Delete();
+#endif
 }
 
 // Main function
