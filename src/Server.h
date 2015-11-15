@@ -41,6 +41,7 @@ class Server : public OutputInterface
 
    //Public instance constructor/getter
    static Server* Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality=90, int threads=4);
+   static Server* Delete() {if (_self) delete _self; _self = NULL;}
    virtual ~Server();
    struct mg_context* ctx;
    
