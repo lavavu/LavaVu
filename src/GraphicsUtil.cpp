@@ -1616,15 +1616,16 @@ int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum
    return 1;
 }
 
-
 void abort_program(const char * s, ...)
 {
+   char buffer[2048];
    va_list args;
    va_start(args, s);
-   vprintf(s, args);
-   debug_print("\n");
+   vsprintf(buffer, s, args);
    va_end(args);
-   abort();
+   strcat(buffer, "\n");
+   fprintf(stderr, buffer);
+   throw std::runtime_error(buffer); 
 }
 
 void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent)

@@ -515,11 +515,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
          if (chunk+offset > size) chunk = size - offset; //Last chunk?
          printf("Offset %ld Chunk %ld\n", offset, chunk);
          len = gzread(f, &buffer[offset], chunk);
-         if (len != chunk)
-         {
-           fprintf(stderr, "gzread err: %s\n", gzerror(f, &err));
-           exit(1);
-         }
+         if (len != chunk) abort_program("gzread err: %s\n", gzerror(f, &err));
 
          offset += chunk;
       }
@@ -561,7 +557,6 @@ void LavaVu::readXrwVolume(FilePath& fn)
              offset += volres[0] * volres[1];
              printf("offset %ld\n", offset);
          }
-         exit(0);
 #endif
 
    //Scale geometry by input scaling factor

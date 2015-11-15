@@ -28,6 +28,7 @@
 #ifdef HAVE_LIBAVCODEC
 
 #include "VideoEncoder.h"
+#include "GraphicsUtil.h"
 
 /**************************************************************/
 /* video output */
@@ -42,11 +43,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 #else
    st = av_new_stream(oc, 0);
 #endif
-   if (!st)
-   {
-      fprintf(stderr, "Could not alloc stream\n");
-      exit(1);
-   }
+   if (!st) abort_program("Could not alloc stream");
 
    c = st->codec;
    c->codec_id = codec_id;
@@ -158,11 +155,7 @@ void VideoEncoder::open_video()
 
    /* find the video encoder */
    codec = avcodec_find_encoder(c->codec_id);
-   if (!codec)
-   {
-      fprintf(stderr, "codec not found\n");
-      exit(1);
-   }
+   if (!codec) abort_program("codec not found");
 
    /* open the codec */
 #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(53,6,1)
@@ -171,14 +164,10 @@ void VideoEncoder::open_video()
    av_dict_set(&opts, "vprofile", "main", 0);
    av_dict_set(&opts, "preset", "fast",0);
    av_dict_set(&opts, "tune", "film",0);
-   if (avcodec_open2(c, codec, &opts) < 0)
+   if (avcodec_open2(c, codec, &opts) < 0) abort_program("could not open codec");
 #else
-   if (avcodec_open(c, codec) < 0)
+   if (avcodec_open(c, codec) < 0) abort_program("could not open codec");
 #endif
-   {
-      fprintf(stderr, "could not open codec\n");
-      exit(1);
-   }
 
    video_outbuf = NULL;
 
@@ -195,11 +184,7 @@ void VideoEncoder::open_video()
 
    /* allocate the encoded raw picture */
    picture = alloc_picture(c->pix_fmt);
-   if (!picture)
-   {
-      fprintf(stderr, "Could not allocate picture\n");
-      exit(1);
-   }
+   if (!picture) abort_program("Could not allocate picture");
 
    /* Only supporting YUV420P now */
    assert(c->pix_fmt == PIX_FMT_YUV420P);
@@ -241,11 +226,7 @@ void VideoEncoder::write_video_frame()
       ret = av_interleaved_write_frame(oc, &pkt);
    }
    
-   if (ret != 0)
-   {
-      fprintf(stderr, "Error while writing video frame\n");
-      exit(1);
-   }
+   if (ret != 0) abort_program("Error while writing video frame\n");
    frame_count++;
 }
 
@@ -267,20 +248,16 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
    fmt = av_guess_format(NULL, filename, NULL);
    if (!fmt)
    {
-      fprintf(stderr, "Could not deduce output format from file extension: using MPEG.\n");
+      debug_print("Could not deduce output format from file extension: using MPEG.");
       fmt = av_guess_format("mpeg", NULL, NULL);
    }
-   if (!fmt)
-   {
-      fprintf(stderr, "Could not find suitable output format\n");
-      exit(1);
-   }
+   if (!fmt) abort_program("Could not find suitable output format");
    return fmt;
 }
 
 VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps) : width(width), height(height), fps(fps)
 {
-   fprintf(stderr, "Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
+   debug_print("Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
    //Create the frame buffer
    buffer = new unsigned char[width * height * 3];
 
@@ -289,11 +266,7 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps)
 
    /* allocate the output media context */
    oc = avformat_alloc_context();
-   if (!oc)
-   {
-      fprintf(stderr, "Memory error\n");
-      exit(1);
-   }
+   if (!oc) abort_program("Memory error");
    oc->oformat = defaultCodec(filename);
    snprintf(oc->filename, sizeof(oc->filename), "%s", filename);
 
@@ -321,11 +294,7 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps)
       open_video();
 
    /* open the output file */
-   if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0)
-   {
-      fprintf(stderr, "Could not open '%s'\n", filename);
-      exit(1);
-   }
+   if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0) abort_program("Could not open '%s'", filename);
 
    /* write the stream header, if any */
    /* also sets the output parameters (none). */
