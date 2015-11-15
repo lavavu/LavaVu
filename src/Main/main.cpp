@@ -49,8 +49,7 @@
 #define OSMESA_WINDOW 3
 #define AGL_WINDOW 4
 
-// Main function
-int main(int argc, char *argv[]) 
+void initViewer(int argc, char **argv) 
 {
    OpenGLViewer* viewer = NULL;
    LavaVu* app;
@@ -135,7 +134,7 @@ int main(int argc, char *argv[])
          std::cout << " -f: enable full-screen mode if supported\n";
          std::cout << " -GLUT: attempt to use GLUT window if available\n";
          std::cout << " -SDL: attempt to use SDL window if available\n";
-         return 0;
+         return;
       }
       //Switches can be before or after files but not between
       if (argv[i][0] == '-' && strlen(argv[i]) > 1)
@@ -231,7 +230,14 @@ int main(int argc, char *argv[])
 
    delete viewer;
    delete app;
-   
+}
+
+// Main function
+#if not defined __LAVAVULIB
+int main(int argc, char *argv[]) 
+{
+   initViewer(argc, argv);
    return 0;
 }
+#endif
 
