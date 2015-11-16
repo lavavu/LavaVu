@@ -1,8 +1,7 @@
 #Install path
 PREFIX = bin
 #Object files path
-#OPATH = /tmp
-OPATH = tmp
+OPATH = /tmp
 
 #Compilers
 CPP=g++
@@ -100,17 +99,14 @@ default: install
 
 install: paths $(PROGRAM)
 	cp src/shaders/*.* $(PREFIX)
-	cp -R src/html $(PREFIX)
-	sed -i '/Point vertex shader/ r src/shaders/pointShaderWEBGL.vert' $(INDEX)
-	sed -i '/Point fragment shader/ r src/shaders/pointShaderWEBGL.frag' $(INDEX)
-	sed -i '/Tri vertex shader/ r src/shaders/triShaderWEBGL.vert' $(INDEX)
-	sed -i '/Tri fragment shader/ r src/shaders/triShaderWEBGL.frag' $(INDEX)
-	sed -i '/Line vertex shader/ r src/shaders/lineShader.vert' $(INDEX)
-	sed -i '/Line fragment shader/ r src/shaders/lineShader.frag' $(INDEX)
+	cp -R src/html/*.js $(PREFIX)/html
+	cp -R src/html/*.css $(PREFIX)/html
+	./build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
 
 paths:
 	mkdir -p $(OPATH)
 	mkdir -p $(PREFIX)
+	mkdir -p $(PREFIX)/html
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)

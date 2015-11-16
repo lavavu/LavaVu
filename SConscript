@@ -42,7 +42,11 @@ inc_dir = 'include/LavaVu/Viewer/'
 env.Install('bin/', Glob(src_dir + '/shaders/*.vert'))
 env.Install('bin/', Glob(src_dir + '/shaders/*.frag'))
 # Install the html source
-env.Install('bin/html/', Glob(src_dir + '/html/*.*'))
+env.Install('bin/html/', Glob(src_dir + '/html/*.js'))
+env.Install('bin/html/', Glob(src_dir + '/html/*.css'))
+this_sconscript_file = (lambda x:x).func_code.co_filename
+code_base = os.path.dirname(this_sconscript_file)
+env.Command(bin_dir + '/html/index.html', 'src/html/index.html', code_base + "/build-index.sh $SOURCE $TARGET gLucifer/Viewer/src/shaders")
 
 # Build our source files.
 # C++ sources
