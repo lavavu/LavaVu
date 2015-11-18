@@ -239,8 +239,14 @@ void Model::loadWindows()
       float min[3], max[3];
       for (int i=0; i<3; i++)
       {
-         min[i] = (float)sqlite3_column_double(statement, 5+i);
-         max[i] = (float)sqlite3_column_double(statement, 8+i);
+         if (sqlite3_column_type(statement, 5+i) != SQLITE_NULL)
+            min[i] = (float)sqlite3_column_double(statement, 5+i);
+         else
+            min[i] = HUGE_VAL;
+         if (sqlite3_column_type(statement, 8+i) != SQLITE_NULL)
+            max[i] = (float)sqlite3_column_double(statement, 8+i);
+         else
+            max[i] = -HUGE_VAL;
       }
 
       Win* win = new Win(id, wtitle, width, height, bg, min, max);
