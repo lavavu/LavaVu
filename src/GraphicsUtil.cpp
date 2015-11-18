@@ -69,12 +69,14 @@ void compareCoordMinMax(float* min, float* max, float *coord)
       if (coord[i] > max[i] && coord[i] < HUGE_VAL) 
       {
          max[i] = coord[i];
-         //std::cerr << Vec3d(max) << std::endl;
+         //std::cerr << "Updated MAX: " << Vec3d(max) << std::endl;
+         //getchar();
       }
       if (coord[i] < min[i] && coord[i] > -HUGE_VAL) 
       {
          min[i] = coord[i];
-         //std::cerr << Vec3d(min) << std::endl;
+         //std::cerr << "Updated MIN: " << Vec3d(min) << std::endl;
+         //getchar();
       }
    }
 }
