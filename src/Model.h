@@ -67,6 +67,7 @@ class Model
    std::vector<TimeStep*> timesteps;
 
    bool readonly;
+   bool memory;
    FilePath file;
    int attached;
    std::string apath;

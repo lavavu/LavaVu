@@ -55,7 +55,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model(FilePath& fn, bool hideall) : readonly(true), file(fn), attached(0), db(NULL)
+Model::Model(FilePath& fn, bool hideall) : readonly(true), memory(false), file(fn), attached(0), db(NULL)
 {
    prefix[0] = '\0';
    
@@ -114,8 +114,12 @@ bool Model::open(bool write)
 {
    //Single file database
    char path[256];
+   int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
    strcpy(path, file.full.c_str());
-   if (sqlite3_open_v2(path, &db, write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY, NULL))
+   if (strstr(path, "file:")) flags = flags | SQLITE_OPEN_URI;
+   if (strstr(path, "mode=memory")) memory = true;
+   debug_print("Opening db %s with flags %d\n", path, flags);
+   if (sqlite3_open_v2(path, &db, flags, NULL))
    {
       //Try 0th timestep of multi-file split database
       sprintf(path, "%s%05d.%s", file.base.c_str(), 0, file.ext.c_str());
@@ -130,7 +134,6 @@ bool Model::open(bool write)
    debug_print("Open database %s successful, SQLite version %s\n", path, sqlite3_libversion());
    //rc = sqlite3_busy_handler(db, busy_handler, void*);
    sqlite3_busy_timeout(db, 10000); //10 seconds
-
 
    if (write) readonly = false;
 
@@ -156,6 +159,7 @@ void Model::reopen(bool write)
 void Model::attach(int timestep)
 {
    //Detach any attached db file
+   if (memory) return;
    char SQL[1024];
    if (attached && attached != timestep)
    {

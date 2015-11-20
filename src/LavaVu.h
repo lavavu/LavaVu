@@ -55,6 +55,7 @@ typedef enum
    lucExportJSONP,
    lucExportGLDB,
    lucExportGLDBZ,
+   lucExportIMAGE
 } lucExportType;
 
 class LavaVu : public ViewerApp
@@ -90,6 +91,7 @@ class LavaVu : public ViewerApp
    // Loaded model parameters
    int startstep, endstep;
    lucExportType dump;
+   lucExportType returndata;
    int dumpid;
    int window;
    int tracersteps;
@@ -120,7 +122,7 @@ class LavaVu : public ViewerApp
    LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width=0, int height=0);
    virtual ~LavaVu();
 
-   void run(bool persist=false);
+   std::string run(bool persist=false);
    void exportData(lucExportType type, unsigned int id=0);
 
    void parseProperties(std::string& properties);

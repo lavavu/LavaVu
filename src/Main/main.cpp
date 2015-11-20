@@ -49,7 +49,7 @@
 #define OSMESA_WINDOW 3
 #define AGL_WINDOW 4
 
-void initViewer(int argc, char **argv) 
+std::string initViewer(int argc, char **argv) 
 {
    OpenGLViewer* viewer = NULL;
    LavaVu* app;
@@ -59,6 +59,7 @@ void initViewer(int argc, char **argv)
    int width = 0, height = 0;
    int window;
    std::vector<std::string> args;
+   std::string result = "";
 
 //Evil platform specific extension handling stuff
 #if defined _WIN32
@@ -95,7 +96,7 @@ void initViewer(int argc, char **argv)
    for (int i=1; i<argc; i++)
    {
       //Help?
-      if (strstr(argv[i], "?") || strstr(argv[i], "help"))
+      if (strstr(argv[i], "-?") || strstr(argv[i], "help"))
       {
          std::cout << "Viewer command line options:\n\n";
          std::cout << "\nStart and end timesteps\n";
@@ -134,7 +135,7 @@ void initViewer(int argc, char **argv)
          std::cout << " -f: enable full-screen mode if supported\n";
          std::cout << " -GLUT: attempt to use GLUT window if available\n";
          std::cout << " -SDL: attempt to use SDL window if available\n";
-         return;
+         return result;
       }
       //Switches can be before or after files but not between
       if (argv[i][0] == '-' && strlen(argv[i]) > 1)
@@ -226,13 +227,14 @@ void initViewer(int argc, char **argv)
 
    //Create & run application
    app = new LavaVu(args, viewer, width, height);
-   app->run(port > 0); //If server running, always stay open (persist flag)
+   result = app->run(port > 0); //If server running, always stay open (persist flag)
 
    delete viewer;
    delete app;
 #ifndef DISABLE_SERVER
    Server::Delete();
 #endif
+   return result;
 }
 
 // Main function
