@@ -17,9 +17,14 @@ function initPage(src, fn) {
     query = parts[1]; 
 
     //Print debugging output?
+    //TODO, this query parser only handles a single arg, fix 
     if (query.indexOf("debug") > 0) debug_on = true;
 
-    if (!src && query.indexOf(".json") > 0) {
+    if (!src && query.length > 256) {
+       //Interpret as json data encoded in URL
+       src = atob(query);
+    }
+    else if (!src && query.indexOf(".json") > 0) {
       //Passed a json(p) file on URL
       if (query.indexOf(".jsonp") > 0) {
         //Load jsonp file as a script, useful when opening page as file://

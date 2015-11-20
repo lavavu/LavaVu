@@ -50,6 +50,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    startstep = -1;
    endstep = -1;
    dump = lucExportNone;
+   returndata = lucExportNone;
    dumpid = 0;
    viewAll = false;
    viewPorts = true;
@@ -223,6 +224,14 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
             //Add new timesteps after loading files
             Geometry::properties["filestep"] = true;
             break;
+         case 'u':
+            //Return encoded image string from run()
+            returndata = lucExportIMAGE;
+            break;
+         case 'U':
+            //Return encoded json string from run()
+            returndata = lucExportJSON;
+            break;
          default:
             //Attempt to interpret as timestep
             std::istringstream ss2(args[i]);
@@ -279,7 +288,7 @@ LavaVu::~LavaVu()
    debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
 }
 
-void LavaVu::run(bool persist)
+std::string LavaVu::run(bool persist)
 {
    if (persist)
    {
@@ -341,12 +350,11 @@ void LavaVu::run(bool persist)
             writeSteps(writeimage, writemovie, startstep, endstep, path);
          }
 
-         //Optimise triangle meshes
-         Model::triSurfaces->loadMesh();
          //Export data
+         Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
          exportData(dump, dumpid);
       }
-      return;
+      return "";
    }
    else
    {
@@ -358,6 +366,55 @@ void LavaVu::run(bool persist)
          loadWindow(0, startstep, true);
    }
 
+   //Return an image encoded as a base64 data url
+   if (returndata == lucExportIMAGE)
+   {
+      viewer->display();
+      int bpp = 3;
+      size_t size = viewer->width * viewer->height * bpp;
+      GLubyte *image = new GLubyte[size];
+#ifdef _HAVE_LIBPNG
+      // Read the pixels
+      viewer->pixels(image, bpp > 3);
+      // Write png to stringstream
+      std::stringstream ss;
+      write_png(ss, bpp, viewer->width, viewer->height, image);
+      delete[] image;
+      //Base64 encode!
+      std::string str = ss.str();
+      std::string encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
+#else
+      // Read the pixels (flipped)
+      viewer->pixels(image, bpp > 3, true);
+      // Writes JPEG image to memory buffer. 
+      // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes. 
+      // If return value is true, jpeg_bytes will be set to the size of the compressed data.
+      int jpeg_bytes = viewer->width * viewer->height * bpp;
+      unsigned char* jpeg = new unsigned char[jpeg_bytes];
+      // Fill in the compression parameter structure.
+      jpge::params params;
+      params.m_quality = 95;
+      params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
+      if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, viewer->width, viewer->height, bpp, (const unsigned char *)image, params))
+         debug_print("JPEG compressed, size %d\n", jpeg_bytes);
+      else
+         abort_program("JPEG compress error\n");
+      delete[] image;
+      //Base64 encode!
+      std::string encoded = "data:image/jpeg;base64," + base64_encode(reinterpret_cast<const unsigned char*>(jpeg), jpeg_bytes);
+      delete[] jpeg;
+#endif
+      return encoded;
+   }
+   if (returndata == lucExportJSON)
+   {
+      std::stringstream ss;
+      Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
+      jsonWrite(ss, 0, true);
+      std::string str = ss.str();
+      std::string encoded = "data:text/json;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
+   }
+
    //Start event loop
    if (persist || viewer->visible)
       viewer->execute();
@@ -367,6 +424,8 @@ void LavaVu::run(bool persist)
       viewer->pollInput();
       viewer->display();
    }
+
+   return "";
 }
 
 void LavaVu::exportData(lucExportType type, unsigned int id)
@@ -2260,7 +2319,7 @@ void LavaVu::loadFile(FilePath& fn)
    std::cerr << "Loading: " << fn.full << std::endl;
 
    //Database files always create their own Model object
-   if (fn.type == "gldb" || fn.type == "db")
+   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
    {
       loadModel(fn);
       //Load a window when first database loaded
