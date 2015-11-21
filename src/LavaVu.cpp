@@ -373,7 +373,7 @@ std::string LavaVu::run(bool persist)
       int bpp = 3;
       size_t size = viewer->width * viewer->height * bpp;
       GLubyte *image = new GLubyte[size];
-#ifdef _HAVE_LIBPNG
+#ifdef HAVE_LIBPNG
       // Read the pixels
       viewer->pixels(image, bpp > 3);
       // Write png to stringstream
@@ -411,8 +411,7 @@ std::string LavaVu::run(bool persist)
       std::stringstream ss;
       Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
       jsonWrite(ss, 0, true);
-      std::string str = ss.str();
-      std::string encoded = "data:text/json;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
+      return ss.str();
    }
 
    //Start event loop
