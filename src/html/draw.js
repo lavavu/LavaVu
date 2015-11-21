@@ -11,20 +11,15 @@ var debug_on = false;
 
 function initPage(src, fn) {
   var urlq = decodeURI(window.location.href);
-  var query;
   if (urlq.indexOf("?") > 0) {
     var parts = urlq.split("?"); //whole querystring before and after ?
-    query = parts[1]; 
+    var query = parts[1]; 
 
     //Print debugging output?
     //TODO, this query parser only handles a single arg, fix 
     if (query.indexOf("debug") > 0) debug_on = true;
 
-    if (!src && query.length > 256) {
-       //Interpret as json data encoded in URL
-       src = atob(query);
-    }
-    else if (!src && query.indexOf(".json") > 0) {
+    if (!src && query.indexOf(".json") > 0) {
       //Passed a json(p) file on URL
       if (query.indexOf(".jsonp") > 0) {
         //Load jsonp file as a script, useful when opening page as file://
@@ -42,6 +37,10 @@ function initPage(src, fn) {
       }
       return;
     }
+  } else if (!src && urlq.indexOf("#") > 0) {
+    //IPython strips out ? args so have to check for this instead
+    var parts = urlq.split("#"); //whole querystring before and after #
+    ajaxReadFile(parts[1], initPage, false);
   }
 
   progress();
