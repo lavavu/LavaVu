@@ -38,10 +38,10 @@
 #ifndef AGLViewer__
 #define AGLViewer__
 
-#include <AGL/agl.h>
-
 #include "../GraphicsUtil.h"
 #include "../OpenGLViewer.h"
+
+#include <AGL/agl.h>
 
 class AGLViewer  : public OpenGLViewer
 {
