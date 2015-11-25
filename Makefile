@@ -1,7 +1,7 @@
 #Install path
 PREFIX = bin
 #Object files path
-OPATH = /tmp
+OPATH = tmp
 
 #Compilers
 CPP=g++
