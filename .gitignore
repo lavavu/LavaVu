@@ -15,9 +15,3 @@ cave/Makefile
 output/*
 log/*
 
-
-# switch to regexp syntax.
-syntax: regexp
-(^|/)\.svn($|/)
-(^|/)\.hg($|/)
-(^|/)\.hgtags($|/)
