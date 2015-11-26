@@ -2064,7 +2064,7 @@ void LavaVu::displayCurrentView()
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
+      aview->drawOverlay(viewer->inverse);
 
       if (viewer->stereoBuffer)
       {
@@ -2091,7 +2091,7 @@ void LavaVu::displayCurrentView()
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
+      aview->drawOverlay(viewer->inverse);
 
       // Restore full-colour 
       //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
@@ -2101,7 +2101,7 @@ void LavaVu::displayCurrentView()
       // Default non-stereo render
       aview->projection(EYE_CENTRE);
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse, amodel->timeStamp());
+      aview->drawOverlay(viewer->inverse);
    }
 
    //Clear the rotation flag

@@ -901,7 +901,7 @@ void View::drawAxis()
    GL_Error_Check;
 }
 
-void View::drawOverlay(Colour& colour, std::string timestamp)
+void View::drawOverlay(Colour& colour)
 {
 #ifdef PDF_CAPTURE
    return;   //Skip overlay
@@ -916,8 +916,6 @@ void View::drawOverlay(Colour& colour, std::string timestamp)
    int h = height;
 
    //Colour bars
-   lucSetFontCharset(FONT_SMALL); //Bitmap fonts
-   glDisable(GL_MULTISAMPLE);
    GL_Error_Check;
    float last_y = 0;
    for (unsigned int i=0; i<objects.size(); i++)
@@ -936,23 +934,16 @@ void View::drawOverlay(Colour& colour, std::string timestamp)
    } 
 
    GL_Error_Check;
-   glEnable(GL_MULTISAMPLE);
 
    //Title
    if (properties.HasKey("title"))
    {
       const char* title = properties["title"].ToString().c_str();
-      lucSetFontCharset(FONT_DEFAULT);  //Bitmap fonts
-      Print(0.5 * (w - PrintWidth(title, 0.6)), h - 20, 0.6, title);
-   }
-
-   //Timestep (with scaling applied)
-   if (properties["timestep"].ToBool(false))
-   {
-      // Use scaling coeff and units to display time
-      lucSetFontCharset(FONT_SMALL);
-      lucPrint(1, height - 9, timestamp.c_str());
-      lucSetFontCharset(FONT_DEFAULT);
+      float fontscale = PrintSetFont(properties, "vector", 0.6);
+      if (fontscale == 0.0)
+         lucPrint(0.5 * (w - PrintWidth(title, 0.6)), h - 20, title);
+      else
+         Print(0.5 * (w - PrintWidth(title, 0.6)), h - 20, 0.6, title);
    }
 
    GL_Error_Check;

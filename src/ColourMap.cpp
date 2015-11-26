@@ -266,6 +266,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
 {
    int pixel_I;
    Colour colour;
+   glDisable(GL_MULTISAMPLE);
 
    if (!calibrated) calibrate(minimum, maximum);
 
@@ -282,13 +283,6 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       Colour_SetColour(&colour);
       glRecti( startx + pixel_I, starty + height*0.5, end, starty + height);
    }
-
-   /*/Labels with 3d font
-   char label[30];
-   //sprintf(label, "%-8.3f", colourMaps[i]->max);
-   Printf(startx + length + 3, starty - 2, 0.4, "%-8.3f", maximum);
-   sprintf(label, "%8.3f", minimum);
-   Print(startx - PrintWidth(label, 0.4) - 5, starty - 2, 0.4, label);*/
 
    // Draw Colour Bar
    glDisable(GL_CULL_FACE);
@@ -349,6 +343,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
    if (border > 0) glLineWidth(border); else glLineWidth(1.0);
    // No ticks if no range
    if (minimum == maximum) ticks = 0;
+   float fontscale = PrintSetFont(properties);
    for (int i = 0; i < ticks+2; i++)
    {
       /* Get tick value */
@@ -447,11 +442,16 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
             sprintf(string, format, tickValue);
          }
 
-         lucPrint(xpos - (int) (0.5 * (float)lucPrintWidth(string)),  starty - 10, string );
+         if (fontscale == 0.0)
+            lucPrint(xpos - (int) (0.5 * (float)lucPrintWidth(string)),  starty - 10, string);
+         else
+         {
+            glEnable(GL_MULTISAMPLE);
+            Print(xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  starty - 30*fontscale, fontscale, string);
+            glDisable(GL_MULTISAMPLE);
+         }
       }
    }
-
-
 
    // Draw Box around colour bar
    if (border > 0)
@@ -460,6 +460,8 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       glRecti(startx, starty, startx + length, starty + height);
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    }
+
+   glEnable(GL_MULTISAMPLE);
 } 
 
 void ColourMap::setComponent(int component_index)

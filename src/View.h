@@ -158,7 +158,7 @@ class View
    void drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks);
    void drawBorder();
    void drawAxis();
-   void drawOverlay(Colour& colour, std::string timestamp);
+   void drawOverlay(Colour& colour);
 };
 
 #endif //View__

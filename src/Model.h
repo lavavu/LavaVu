@@ -128,12 +128,11 @@ class Model
      return timesteps[timesteps.size()-1]->step;
    }
 
-   std::string timeStamp();
    bool hasTimeStep(int ts);
    int nearestTimeStep(int requested);
-   void addTimeStep(int step, double time=0.0, double dimCoeff=0.0, std::string units="")
+   void addTimeStep(int step, double time=0.0)
    {
-      timesteps.push_back(new TimeStep(step, time, dimCoeff, units));
+      timesteps.push_back(new TimeStep(step, time));
    }
 
    int setTimeStep(int stepidx=now);
