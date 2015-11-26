@@ -491,15 +491,7 @@ int Model::loadTimeSteps()
    {
       int step = sqlite3_column_int(statement, 0);
       double time = sqlite3_column_double(statement, 1);
-      //Next two fields are not present in pre-release databases
-      if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
-      {
-         double dimCoeff = sqlite3_column_double(statement, 2);
-         const char* units = (const char*)sqlite3_column_text(statement, 3);
-         timesteps.push_back(new TimeStep(step, time, dimCoeff, std::string(units)));
-      }
-      else
-         timesteps.push_back(new TimeStep(step, time));
+      timesteps.push_back(new TimeStep(step, time));
       //Save gap
       if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
       last_step = step;
@@ -706,20 +698,6 @@ void Model::printCache()
   printf("-----------CACHE %d steps\n", timesteps.size());
    for (int idx=0; idx < timesteps.size(); idx++)
       printf(" %d: has %d records\n", idx, timesteps[idx]->cache.size());
-}
-
-std::string Model::timeStamp()
-{
-   // Timestep (with scaling applied)
-   if (timesteps.size() == 0) return std::string("");
-   if (now < 0) return std::string("");
-
-   // Use scaling coeff and units to get display time
-   TimeStep* ts = timesteps[now];
-   char displayString[32];
-   sprintf(displayString, "Time %g%s", ts->time * ts->dimCoeff, ts->units.c_str());
-
-   return std::string(displayString);
 }
 
 //Set time step if available, otherwise return false and leave unchanged
@@ -1255,7 +1233,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
 
    for (unsigned int i = 0; i < timesteps.size(); i++)
    {
-      snprintf(SQL, 1024, "insert into timestep (id, time, dim_factor, units, properties) values (%d, %g, %g, '%s', '%s')", timesteps[i]->step, timesteps[i]->time, timesteps[i]->dimCoeff, timesteps[i]->units.c_str(), ""); 
+      snprintf(SQL, 1024, "insert into timestep (id, time, properties) values (%d, %g, '%s')", timesteps[i]->step, timesteps[i]->time, ""); 
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return; 
 

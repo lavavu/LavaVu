@@ -417,6 +417,28 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
+float PrintSetFont(json::Object& properties, std::string def, float scaling)
+{
+   //fixed, small, sans, serif, vector
+   std::string fonttype = properties["font"].ToString(def);
+   float fontscale = properties["fontscale"].ToFloat(scaling);
+   //Bitmap fonts
+   if (fonttype == "default" || fonttype == "small")
+      lucSetFontCharset(FONT_SMALL);
+   else if (fonttype == "fixed")
+      lucSetFontCharset(FONT_FIXED);
+   else if (fonttype == "sans")
+      lucSetFontCharset(FONT_NORMAL);
+   else if (fonttype == "serif")
+      lucSetFontCharset(FONT_SERIF);
+   else if (fonttype == "vector")
+      return fontscale;
+#ifdef USE_OMEGALIB
+   return fontscale;
+#endif
+   return 0.0;
+}
+
 void PrintSetColour(int colour)
 {
    fontColour.value = colour;
@@ -704,6 +726,7 @@ void lucDeleteFont()
    fonttexture = 0;
 }
 #else
+float PrintSetFont(json::Object& properties) {}
 void PrintSetColour(int colour) {}
 void PrintString(const char* str) {}
 void Printf(int x, int y, float scale, const char *fmt, ...) {}

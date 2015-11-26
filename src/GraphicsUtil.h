@@ -987,6 +987,7 @@ bool gluInvertMatrixf(const float m[16], float invOut[16]);
 void Viewport2d(int width, int height);
 
 //3d fonts
+float PrintSetFont(json::Object& properties, std::string def="default", float scaling=1.0);
 void PrintSetColour(int colour);
 void PrintString(const char* str);
 void Printf(int x, int y, float scale, const char *fmt, ...);

@@ -45,13 +45,9 @@ class TimeStep
    static int gap;
    int step;
    float time;
-   //Scaling for timesteps
-   float dimCoeff;
-   std::string units;
 
-   TimeStep(int step, float time, float dimCoeff, std::string units) : step(step), time(time), dimCoeff(dimCoeff), units(units) {}
-   TimeStep(int step, float time) : step(step), time(time), dimCoeff(1.0), units("") {}
-   TimeStep() : step(0), time(0), dimCoeff(1.0), units("") {}
+   TimeStep(int step, float time) : step(step), time(time) {}
+   TimeStep() : step(0), time(0) {}
 
    ~TimeStep()
    {
