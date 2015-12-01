@@ -52,7 +52,6 @@ DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float
    if (!properties.HasKey("colour")) properties["colour"] = colour;
    //All props now lowercase, fix a couple of legacy camelcase values
    if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
-   if (properties.HasKey("pointSmooth")) properties["pointsmooth"] = properties["pointSmooth"];
    defaultTexture = NULL;
 }
 
