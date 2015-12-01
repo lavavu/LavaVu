@@ -177,76 +177,6 @@ void jsonParseProperty(std::string& data, json::Object& object)
    }
 }
 
-Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
-{
-   Colour colour = {red, green, blue, alpha};
-   if (!object.HasKey(key)) return colour;
-   return Colour_FromJson(object[key], red, green, blue, alpha);
-}
-
-Colour Colour_FromJson(json::Value& value, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
-{
-   Colour colour = {red, green, blue, alpha};
-   //Will accept integer colour or [r,g,b,a] array
-   if (value.GetType() == json::IntVal)
-   {
-      colour.value = value.ToInt();
-   }
-   else if (value.GetType() == json::ArrayVal)
-   {
-      json::Array array = value.ToArray();
-      if (array[0].ToFloat(0) > 1.0)
-         colour.r = array[0].ToInt(0);
-      else
-         colour.r = array[0].ToFloat(0)*255.0;
-      if (array[1].ToFloat(0) > 1.0)
-         colour.g = array[1].ToInt(0);
-      else
-         colour.g = array[1].ToFloat(0)*255.0;
-      if (array[2].ToFloat(0) > 1.0)
-         colour.b = array[2].ToInt(0);
-      else
-         colour.b = array[2].ToFloat(0)*255.0;
-
-      if (array.size() > 3)
-         colour.a = array[3].ToFloat(0)*255.0;
-   }
-
-   return colour;
-}
-
-json::Value Colour_ToJson(int colourval)
-{
-   Colour colour;
-   colour.value = colourval;
-   return Colour_ToJson(colour);
-}
-
-json::Value Colour_ToJson(Colour& colour)
-{
-   json::Array array;
-   array.push_back(colour.r/255.0); 
-   array.push_back(colour.g/255.0); 
-   array.push_back(colour.b/255.0); 
-   array.push_back(colour.a/255.0); 
-   return array;
-}
-
-void Colour_SetUniform(GLint uniform, Colour colour)
-{
-   float array[4];
-   Colour_ToArray(colour, array);
-   glUniform4fv(uniform, 1, array);
-}
-
-void Colour_ToArray(Colour colour, float* array)
-{
-   array[0] = colour.r/255.0;
-   array[1] = colour.g/255.0;
-   array[2] = colour.b/255.0;
-   array[3] = colour.a/255.0;
-}
-
 void debug_print(const char *fmt, ...)
 {
    if (fmt == NULL || infostream == NULL) return;
@@ -439,8 +369,17 @@ float PrintSetFont(json::Object& properties, std::string def, float scaling)
    return 0.0;
 }
 
-void PrintSetColour(int colour)
+void PrintSetColour(int colour, bool XOR)
 {
+   if (XOR)
+   {
+      glColor4f(1.0, 1.0, 1.0, 1.0);
+      glLogicOp(GL_XOR);
+      glEnable(GL_COLOR_LOGIC_OP);
+   }
+   else
+      glDisable(GL_COLOR_LOGIC_OP);
+
    fontColour.value = colour;
 }
 
@@ -1317,60 +1256,6 @@ void drawVector3d_(float pos[3], float vector[3], float scale, float radius, flo
 
    // Restore modelview 
    glPopMatrix();
-}
-
-void Colour_SetColour(Colour* colour)
-{
-   glColor4ubv(colour->rgba);
-}
-
-void Colour_Invert(Colour& colour)
-{
-   int alpha = colour.value & 0xff000000;
-   colour.value = (~colour.value & 0x00ffffff) | alpha;
-}
-
-void Colour_SetXOR(bool switchOn)
-{
-   if (switchOn)
-   {
-      glColor4f(1.0, 1.0, 1.0, 1.0);
-      PrintSetColour(0xffffffff);
-      glLogicOp(GL_XOR);
-      glEnable(GL_COLOR_LOGIC_OP);
-   }
-   else
-      glDisable(GL_COLOR_LOGIC_OP);
-} 
-
-Colour parseRGBA(std::string value)
-{
-   //Parse rgba(r,g,b,a) values
-   Colour col;
-   int c;
-   float alpha;
-   try
-   {
-      std::stringstream ss(value.substr(5));
-      for (int i=0; i<3; i++)
-      {
-         ss >> c;
-         col.rgba[i] = c;
-         char next = ss.peek();
-         if (next == ',' || next == ' ')
-            ss.ignore();
-      }
-      ss >> alpha;
-      if (alpha > 1.)
-         col.a = alpha;
-      else
-        col.a = 255 * alpha;
-   }
-   catch (std::exception& e)
-   {
-      std::cerr << "Failed to parse rgba colour: " << value << " : " << e.what() << std::endl;
-   }
-   return col; //rgba(c[0],c[1],c[2],c[3]);
 }
 
 void RawImageFlip(void* image, int width, int height, int bpp)
