@@ -79,11 +79,8 @@ typedef union {
    };
 } Colour;
 
+Colour Colour_RGBA(int r, int g, int b, int a=255);
 Colour parseRGBA(std::string value);
-
-Colour Colour_FromString(std::string str);
-Colour Colour_FromX11Colour(std::string x11ColourName);
-Colour Colour_FromHex(std::string hexName);
 
 void Colour_SetColour(Colour* colour);
 void Colour_Invert(Colour& colour);
@@ -93,5 +90,9 @@ json::Value Colour_ToJson(int colourval);
 json::Value Colour_ToJson(Colour& colour);
 void Colour_ToArray(Colour colour, float* array);
 void Colour_SetUniform(GLint uniform, Colour colour);
+
+Colour Colour_FromString(std::string str);
+Colour Colour_FromX11Colour(std::string x11colour);
+Colour Colour_FromHex(std::string hexName);
 
 #endif //Colours__
