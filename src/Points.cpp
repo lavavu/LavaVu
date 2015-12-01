@@ -176,8 +176,23 @@ void Points::loadVertices()
       //Set opacity to drawing object/geometry override level if set
       float alpha = geo->draw->properties["opacity"].ToFloat(0.0);
       if (GeomData::opacity > 0.0 && GeomData::opacity < 1.0) alpha = GeomData::opacity;
-      float ptype = geo->draw->properties["pointtype"].ToInt(-1);
-      bool smooth = geo->draw->properties["pointsmooth"].ToBool(true);
+      float ptype = -1; //Default (-1) is to use the global (uniform) value
+      if (geo->draw->properties["pointtype"].GetType() == json::StringVal)
+      {
+         std::string val = geo->draw->properties["pointtype"];
+         if (val == "blur")
+            ptype = 0;
+         else if (val == "smooth")
+            ptype = 1;
+         else if (val == "sphere")
+            ptype = 2;
+         else if (val == "shiny")
+            ptype = 3;
+         else if (val == "flat")
+            ptype = 4;
+      }
+      else
+         ptype = geo->draw->properties["pointtype"].ToInt(-1);
 
       for (int i = 0; i < geom[s]->count; i ++) 
       {
@@ -207,7 +222,6 @@ void Points::loadVertices()
             //Copies settings (size + smooth)
             float psize = psize0;
             if (geo->sizes.size() > 0) psize *= geo->sizes[i];
-            if (!smooth) psize = -psize;
             memcpy(ptr, &psize, sizeof(float));
             ptr += sizeof(float);
             memcpy(ptr, &ptype, sizeof(float));
