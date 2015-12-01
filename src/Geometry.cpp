@@ -469,12 +469,12 @@ void Geometry::setState(int index, Shader* prog)
    else
       glEnable(GL_LIGHTING);
 
-   float lineWidth = draw->properties["linewidth"].ToFloat(1.0) * scale;
-   if (lineWidth <= 0) lineWidth = scale;
-   glLineWidth(lineWidth);
    //Textured?
    texunit = draw->useTexture(geom[index]->texture);
    GL_Error_Check;
+
+   //Replace the default colour with a json value if present
+   draw->colour = Colour_FromJson(draw->properties, "colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
 
    //Uniforms for shader programs
    if (prog && prog->program > 0)
@@ -544,9 +544,8 @@ void Geometry::draw()  //Display saved geometry
    {
       if (redraw)
          update();
-   GL_Error_Check;
+
       labels();
-   GL_Error_Check;
    }
 
    redraw = false;
@@ -557,6 +556,9 @@ void Geometry::draw()  //Display saved geometry
 void Geometry::labels()
 {
    //Print labels
+   glPushAttrib(GL_ENABLE_BIT);
+   glDisable(GL_DEPTH_TEST);  //No depth testing
+   glEnable(GL_MULTISAMPLE);
    for (unsigned int i=0; i < geom.size(); i++)
    {
       float fontscale = PrintSetFont(geom[i]->draw->properties);
@@ -566,7 +568,7 @@ void Geometry::labels()
          for (unsigned int j=0; j < geom[i]->labels.size(); j++)
          {
             float* p = geom[i]->vertices[j];
-            debug_print("Labels for %d - %d : (%f) %s\n", i, j, fontscale, geom[i]->labels[j].c_str());
+            //debug_print("Labels for %d - %d : (%f) %s\n", i, j, fontscale, geom[i]->labels[j].c_str());
             geom[i]->getColour(colour, j);
             //Multiply opacity by global override level if set
             if (GeomData::opacity > 0.0)
@@ -582,6 +584,7 @@ void Geometry::labels()
          }
       }
    }
+   glPopAttrib();
 }
 
 //Returns true if passed geometry element index is drawable
