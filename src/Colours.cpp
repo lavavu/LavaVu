@@ -1,6 +1,16 @@
 #include "GraphicsUtil.h"
 #include "Colours.h"
 
+Colour Colour_RGBA(int r, int g, int b, int a)
+{
+   Colour colour;
+   colour.r = r;
+   colour.g = g;
+   colour.b = b;
+   colour.a = a;
+   return colour;
+}
+
 void Colour_SetColour(Colour* colour)
 {
    glColor4ubv(colour->rgba);
@@ -140,3965 +150,935 @@ Colour Colour_FromString(std::string str)
 /* Reads hex or colour from X11 Colour Chart */
 /* Defaults to black if anything else */
 
-Colour Colour_FromX11Colour(std::string x11Colour)
+Colour Colour_FromX11Colour(std::string x11colour)
 {
-   Colour colour;
-   const char* x11ColourName = x11Colour.c_str();
-
-   if (strncmp(x11ColourName,"#",1) == 0)
-   {
-      return Colour_FromHex(x11ColourName);
-   }
-   else if (strncasecmp(x11ColourName,"snow",4) == 0)
-   {
-      colour.r = 255;
-      colour.g = 250;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"GhostWhite",10) == 0)
-   {
-      colour.r = 248;
-      colour.g = 248;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"WhiteSmoke",10) == 0)
-   {
-      colour.r = 245;
-      colour.g = 245;
-      colour.b = 245;
-   }
-   else if (strncasecmp(x11ColourName,"gainsboro",9) == 0)
-   {
-      colour.r = 220;
-      colour.g = 220;
-      colour.b = 220;
-   }
-   else if (strncasecmp(x11ColourName,"FloralWhite",11) == 0)
-   {
-      colour.r = 255;
-      colour.g = 250;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"OldLace",7) == 0)
-   {
-      colour.r = 253;
-      colour.g = 245;
-      colour.b = 230;
-   }
-   else if (strncasecmp(x11ColourName,"linen",5) == 0)
-   {
-      colour.r = 250;
-      colour.g = 240;
-      colour.b = 230;
-   }
-   else if (strncasecmp(x11ColourName,"AntiqueWhite",12) == 0)
-   {
-      colour.r = 250;
-      colour.g = 235;
-      colour.b = 215;
-   }
-   else if (strncasecmp(x11ColourName,"PapayaWhip",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 239;
-      colour.b = 213;
-   }
-   else if (strncasecmp(x11ColourName,"BlanchedAlmond",14) == 0)
-   {
-      colour.r = 255;
-      colour.g = 235;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"bisque",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 228;
-      colour.b = 196;
-   }
-   else if (strncasecmp(x11ColourName,"PeachPuff",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 218;
-      colour.b = 185;
-   }
-   else if (strncasecmp(x11ColourName,"NavajoWhite",11) == 0)
-   {
-      colour.r = 255;
-      colour.g = 222;
-      colour.b = 173;
-   }
-   else if (strncasecmp(x11ColourName,"moccasin",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 228;
-      colour.b = 181;
-   }
-   else if (strncasecmp(x11ColourName,"cornsilk",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 248;
-      colour.b = 220;
-   }
-   else if (strncasecmp(x11ColourName,"ivory",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"LemonChiffon",12) == 0)
-   {
-      colour.r = 255;
-      colour.g = 250;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"seashell",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 245;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"honeydew",8) == 0)
-   {
-      colour.r = 240;
-      colour.g = 255;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"MintCream",9) == 0)
-   {
-      colour.r = 245;
-      colour.g = 255;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"azure",5) == 0)
-   {
-      colour.r = 240;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"AliceBlue",9) == 0)
-   {
-      colour.r = 240;
-      colour.g = 248;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"lavender",8) == 0)
-   {
-      colour.r = 230;
-      colour.g = 230;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"LavenderBlush",13) == 0)
-   {
-      colour.r = 255;
-      colour.g = 240;
-      colour.b = 245;
-   }
-   else if (strncasecmp(x11ColourName,"MistyRose",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 228;
-      colour.b = 225;
-   }
-   else if (strncasecmp(x11ColourName,"white",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"black",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateGray",13) == 0)
-   {
-      colour.r = 47;
-      colour.g = 79;
-      colour.b = 79;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateGrey",13) == 0)
-   {
-      colour.r = 47;
-      colour.g = 79;
-      colour.b = 79;
-   }
-   else if (strncasecmp(x11ColourName,"DimGray",7) == 0)
-   {
-      colour.r = 105;
-      colour.g = 105;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"DimGrey",7) == 0)
-   {
-      colour.r = 105;
-      colour.g = 105;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"SlateGray",9) == 0)
-   {
-      colour.r = 112;
-      colour.g = 128;
-      colour.b = 144;
-   }
-   else if (strncasecmp(x11ColourName,"SlateGrey",9) == 0)
-   {
-      colour.r = 112;
-      colour.g = 128;
-      colour.b = 144;
-   }
-   else if (strncasecmp(x11ColourName,"LightSlateGray",14) == 0)
-   {
-      colour.r = 119;
-      colour.g = 136;
-      colour.b = 153;
-   }
-   else if (strncasecmp(x11ColourName,"LightSlateGrey",14) == 0)
-   {
-      colour.r = 119;
-      colour.g = 136;
-      colour.b = 153;
-   }
-   else if (strncasecmp(x11ColourName,"gray",4) == 0)
-   {
-      colour.r = 190;
-      colour.g = 190;
-      colour.b = 190;
-   }
-   else if (strncasecmp(x11ColourName,"grey",4) == 0)
-   {
-      colour.r = 190;
-      colour.g = 190;
-      colour.b = 190;
-   }
-   else if (strncasecmp(x11ColourName,"LightGrey",9) == 0)
-   {
-      colour.r = 211;
-      colour.g = 211;
-      colour.b = 211;
-   }
-   else if (strncasecmp(x11ColourName,"LightGray",9) == 0)
-   {
-      colour.r = 211;
-      colour.g = 211;
-      colour.b = 211;
-   }
-   else if (strncasecmp(x11ColourName,"MidnightBlue",12) == 0)
-   {
-      colour.r = 25;
-      colour.g = 25;
-      colour.b = 112;
-   }
-   else if (strncasecmp(x11ColourName,"navy",4) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 128;
-   }
-   else if (strncasecmp(x11ColourName,"NavyBlue",8) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 128;
-   }
-   else if (strncasecmp(x11ColourName,"CornflowerBlue",14) == 0)
-   {
-      colour.r = 100;
-      colour.g = 149;
-      colour.b = 237;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateBlue",13) == 0)
-   {
-      colour.r = 72;
-      colour.g = 61;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"SlateBlue",9) == 0)
-   {
-      colour.r = 106;
-      colour.g = 90;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"MediumSlateBlue",15) == 0)
-   {
-      colour.r = 123;
-      colour.g = 104;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"LightSlateBlue",14) == 0)
-   {
-      colour.r = 132;
-      colour.g = 112;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"MediumBlue",10) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"RoyalBlue",9) == 0)
-   {
-      colour.r = 65;
-      colour.g = 105;
-      colour.b = 225;
-   }
-   else if (strncasecmp(x11ColourName,"blue",4) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DodgerBlue",10) == 0)
-   {
-      colour.r = 30;
-      colour.g = 144;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DeepSkyBlue",11) == 0)
-   {
-      colour.r = 0;
-      colour.g = 191;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"SkyBlue",7) == 0)
-   {
-      colour.r = 135;
-      colour.g = 206;
-      colour.b = 235;
-   }
-   else if (strncasecmp(x11ColourName,"LightSkyBlue",12) == 0)
-   {
-      colour.r = 135;
-      colour.g = 206;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"SteelBlue",9) == 0)
-   {
-      colour.r = 70;
-      colour.g = 130;
-      colour.b = 180;
-   }
-   else if (strncasecmp(x11ColourName,"LightSteelBlue",14) == 0)
-   {
-      colour.r = 176;
-      colour.g = 196;
-      colour.b = 222;
-   }
-   else if (strncasecmp(x11ColourName,"LightBlue",9) == 0)
-   {
-      colour.r = 173;
-      colour.g = 216;
-      colour.b = 230;
-   }
-   else if (strncasecmp(x11ColourName,"PowderBlue",10) == 0)
-   {
-      colour.r = 176;
-      colour.g = 224;
-      colour.b = 230;
-   }
-   else if (strncasecmp(x11ColourName,"PaleTurquoise",13) == 0)
-   {
-      colour.r = 175;
-      colour.g = 238;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"DarkTurquoise",13) == 0)
-   {
-      colour.r = 0;
-      colour.g = 206;
-      colour.b = 209;
-   }
-   else if (strncasecmp(x11ColourName,"MediumTurquoise",15) == 0)
-   {
-      colour.r = 72;
-      colour.g = 209;
-      colour.b = 204;
-   }
-   else if (strncasecmp(x11ColourName,"turquoise",9) == 0)
-   {
-      colour.r = 64;
-      colour.g = 224;
-      colour.b = 208;
-   }
-   else if (strncasecmp(x11ColourName,"cyan",4) == 0)
-   {
-      colour.r = 0;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"LightCyan",9) == 0)
-   {
-      colour.r = 224;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"CadetBlue",9) == 0)
-   {
-      colour.r = 95;
-      colour.g = 158;
-      colour.b = 160;
-   }
-   else if (strncasecmp(x11ColourName,"MediumAquamarine",16) == 0)
-   {
-      colour.r = 102;
-      colour.g = 205;
-      colour.b = 170;
-   }
-   else if (strncasecmp(x11ColourName,"aquamarine",10) == 0)
-   {
-      colour.r = 127;
-      colour.g = 255;
-      colour.b = 212;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGreen",9) == 0)
-   {
-      colour.r = 0;
-      colour.g = 100;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOliveGreen",14) == 0)
-   {
-      colour.r = 85;
-      colour.g = 107;
-      colour.b = 47;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSeaGreen",12) == 0)
-   {
-      colour.r = 143;
-      colour.g = 188;
-      colour.b = 143;
-   }
-   else if (strncasecmp(x11ColourName,"SeaGreen",8) == 0)
-   {
-      colour.r = 46;
-      colour.g = 139;
-      colour.b = 87;
-   }
-   else if (strncasecmp(x11ColourName,"MediumSeaGreen",14) == 0)
-   {
-      colour.r = 60;
-      colour.g = 179;
-      colour.b = 113;
-   }
-   else if (strncasecmp(x11ColourName,"LightSeaGreen",13) == 0)
-   {
-      colour.r = 32;
-      colour.g = 178;
-      colour.b = 170;
-   }
-   else if (strncasecmp(x11ColourName,"PaleGreen",9) == 0)
-   {
-      colour.r = 152;
-      colour.g = 251;
-      colour.b = 152;
-   }
-   else if (strncasecmp(x11ColourName,"SpringGreen",11) == 0)
-   {
-      colour.r = 0;
-      colour.g = 255;
-      colour.b = 127;
-   }
-   else if (strncasecmp(x11ColourName,"LawnGreen",9) == 0)
-   {
-      colour.r = 124;
-      colour.g = 252;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"green",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 255;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"chartreuse",10) == 0)
-   {
-      colour.r = 127;
-      colour.g = 255;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"MediumSpringGreen",17) == 0)
-   {
-      colour.r = 0;
-      colour.g = 250;
-      colour.b = 154;
-   }
-   else if (strncasecmp(x11ColourName,"GreenYellow",11) == 0)
-   {
-      colour.r = 173;
-      colour.g = 255;
-      colour.b = 47;
-   }
-   else if (strncasecmp(x11ColourName,"LimeGreen",9) == 0)
-   {
-      colour.r = 50;
-      colour.g = 205;
-      colour.b = 50;
-   }
-   else if (strncasecmp(x11ColourName,"YellowGreen",11) == 0)
-   {
-      colour.r = 154;
-      colour.g = 205;
-      colour.b = 50;
-   }
-   else if (strncasecmp(x11ColourName,"ForestGreen",11) == 0)
-   {
-      colour.r = 34;
-      colour.g = 139;
-      colour.b = 34;
-   }
-   else if (strncasecmp(x11ColourName,"OliveDrab",9) == 0)
-   {
-      colour.r = 107;
-      colour.g = 142;
-      colour.b = 35;
-   }
-   else if (strncasecmp(x11ColourName,"DarkKhaki",9) == 0)
-   {
-      colour.r = 189;
-      colour.g = 183;
-      colour.b = 107;
-   }
-   else if (strncasecmp(x11ColourName,"khaki",5) == 0)
-   {
-      colour.r = 240;
-      colour.g = 230;
-      colour.b = 140;
-   }
-   else if (strncasecmp(x11ColourName,"PaleGoldenrod",13) == 0)
-   {
-      colour.r = 238;
-      colour.g = 232;
-      colour.b = 170;
-   }
-   else if (strncasecmp(x11ColourName,"LightGoldenrodYellow",20) == 0)
-   {
-      colour.r = 250;
-      colour.g = 250;
-      colour.b = 210;
-   }
-   else if (strncasecmp(x11ColourName,"LightYellow",11) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 224;
-   }
-   else if (strncasecmp(x11ColourName,"yellow",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"gold",4) == 0)
-   {
-      colour.r = 255;
-      colour.g = 215;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"LightGoldenrod",14) == 0)
-   {
-      colour.r = 238;
-      colour.g = 221;
-      colour.b = 130;
-   }
-   else if (strncasecmp(x11ColourName,"goldenrod",9) == 0)
-   {
-      colour.r = 218;
-      colour.g = 165;
-      colour.b = 32;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGoldenrod",13) == 0)
-   {
-      colour.r = 184;
-      colour.g = 134;
-      colour.b = 11;
-   }
-   else if (strncasecmp(x11ColourName,"RosyBrown",9) == 0)
-   {
-      colour.r = 188;
-      colour.g = 143;
-      colour.b = 143;
-   }
-   else if (strncasecmp(x11ColourName,"IndianRed",9) == 0)
-   {
-      colour.r = 205;
-      colour.g = 92;
-      colour.b = 92;
-   }
-   else if (strncasecmp(x11ColourName,"SaddleBrown",11) == 0)
-   {
-      colour.r = 139;
-      colour.g = 69;
-      colour.b = 19;
-   }
-   else if (strncasecmp(x11ColourName,"sienna",6) == 0)
-   {
-      colour.r = 160;
-      colour.g = 82;
-      colour.b = 45;
-   }
-   else if (strncasecmp(x11ColourName,"peru",4) == 0)
-   {
-      colour.r = 205;
-      colour.g = 133;
-      colour.b = 63;
-   }
-   else if (strncasecmp(x11ColourName,"burlywood",9) == 0)
-   {
-      colour.r = 222;
-      colour.g = 184;
-      colour.b = 135;
-   }
-   else if (strncasecmp(x11ColourName,"beige",5) == 0)
-   {
-      colour.r = 245;
-      colour.g = 245;
-      colour.b = 220;
-   }
-   else if (strncasecmp(x11ColourName,"wheat",5) == 0)
-   {
-      colour.r = 245;
-      colour.g = 222;
-      colour.b = 179;
-   }
-   else if (strncasecmp(x11ColourName,"SandyBrown",10) == 0)
-   {
-      colour.r = 244;
-      colour.g = 164;
-      colour.b = 96;
-   }
-   else if (strncasecmp(x11ColourName,"tan",3) == 0)
-   {
-      colour.r = 210;
-      colour.g = 180;
-      colour.b = 140;
-   }
-   else if (strncasecmp(x11ColourName,"chocolate",9) == 0)
-   {
-      colour.r = 210;
-      colour.g = 105;
-      colour.b = 30;
-   }
-   else if (strncasecmp(x11ColourName,"firebrick",9) == 0)
-   {
-      colour.r = 178;
-      colour.g = 34;
-      colour.b = 34;
-   }
-   else if (strncasecmp(x11ColourName,"brown",5) == 0)
-   {
-      colour.r = 165;
-      colour.g = 42;
-      colour.b = 42;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSalmon",10) == 0)
-   {
-      colour.r = 233;
-      colour.g = 150;
-      colour.b = 122;
-   }
-   else if (strncasecmp(x11ColourName,"salmon",6) == 0)
-   {
-      colour.r = 250;
-      colour.g = 128;
-      colour.b = 114;
-   }
-   else if (strncasecmp(x11ColourName,"LightSalmon",11) == 0)
-   {
-      colour.r = 255;
-      colour.g = 160;
-      colour.b = 122;
-   }
-   else if (strncasecmp(x11ColourName,"orange",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 165;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrange",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 140;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"coral",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 127;
-      colour.b = 80;
-   }
-   else if (strncasecmp(x11ColourName,"LightCoral",10) == 0)
-   {
-      colour.r = 240;
-      colour.g = 128;
-      colour.b = 128;
-   }
-   else if (strncasecmp(x11ColourName,"tomato",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 99;
-      colour.b = 71;
-   }
-   else if (strncasecmp(x11ColourName,"OrangeRed",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 69;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"red",3) == 0)
-   {
-      colour.r = 255;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"HotPink",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 105;
-      colour.b = 180;
-   }
-   else if (strncasecmp(x11ColourName,"DeepPink",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 20;
-      colour.b = 147;
-   }
-   else if (strncasecmp(x11ColourName,"pink",4) == 0)
-   {
-      colour.r = 255;
-      colour.g = 192;
-      colour.b = 203;
-   }
-   else if (strncasecmp(x11ColourName,"LightPink",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 182;
-      colour.b = 193;
-   }
-   else if (strncasecmp(x11ColourName,"PaleVioletRed",13) == 0)
-   {
-      colour.r = 219;
-      colour.g = 112;
-      colour.b = 147;
-   }
-   else if (strncasecmp(x11ColourName,"maroon",6) == 0)
-   {
-      colour.r = 176;
-      colour.g = 48;
-      colour.b = 96;
-   }
-   else if (strncasecmp(x11ColourName,"MediumVioletRed",15) == 0)
-   {
-      colour.r = 199;
-      colour.g = 21;
-      colour.b = 133;
-   }
-   else if (strncasecmp(x11ColourName,"VioletRed",9) == 0)
-   {
-      colour.r = 208;
-      colour.g = 32;
-      colour.b = 144;
-   }
-   else if (strncasecmp(x11ColourName,"magenta",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 0;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"violet",6) == 0)
-   {
-      colour.r = 238;
-      colour.g = 130;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"plum",4) == 0)
-   {
-      colour.r = 221;
-      colour.g = 160;
-      colour.b = 221;
-   }
-   else if (strncasecmp(x11ColourName,"orchid",6) == 0)
-   {
-      colour.r = 218;
-      colour.g = 112;
-      colour.b = 214;
-   }
-   else if (strncasecmp(x11ColourName,"MediumOrchid",12) == 0)
-   {
-      colour.r = 186;
-      colour.g = 85;
-      colour.b = 211;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrchid",10) == 0)
-   {
-      colour.r = 153;
-      colour.g = 50;
-      colour.b = 204;
-   }
-   else if (strncasecmp(x11ColourName,"DarkViolet",10) == 0)
-   {
-      colour.r = 148;
-      colour.g = 0;
-      colour.b = 211;
-   }
-   else if (strncasecmp(x11ColourName,"BlueViolet",10) == 0)
-   {
-      colour.r = 138;
-      colour.g = 43;
-      colour.b = 226;
-   }
-   else if (strncasecmp(x11ColourName,"purple",6) == 0)
-   {
-      colour.r = 160;
-      colour.g = 32;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"MediumPurple",12) == 0)
-   {
-      colour.r = 147;
-      colour.g = 112;
-      colour.b = 219;
-   }
-   else if (strncasecmp(x11ColourName,"thistle",7) == 0)
-   {
-      colour.r = 216;
-      colour.g = 191;
-      colour.b = 216;
-   }
-   else if (strncasecmp(x11ColourName,"snow1",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 250;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"snow2",5) == 0)
-   {
-      colour.r = 238;
-      colour.g = 233;
-      colour.b = 233;
-   }
-   else if (strncasecmp(x11ColourName,"snow3",5) == 0)
-   {
-      colour.r = 205;
-      colour.g = 201;
-      colour.b = 201;
-   }
-   else if (strncasecmp(x11ColourName,"snow4",5) == 0)
-   {
-      colour.r = 139;
-      colour.g = 137;
-      colour.b = 137;
-   }
-   else if (strncasecmp(x11ColourName,"seashell1",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 245;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"seashell2",9) == 0)
-   {
-      colour.r = 238;
-      colour.g = 229;
-      colour.b = 222;
-   }
-   else if (strncasecmp(x11ColourName,"seashell3",9) == 0)
-   {
-      colour.r = 205;
-      colour.g = 197;
-      colour.b = 191;
-   }
-   else if (strncasecmp(x11ColourName,"seashell4",9) == 0)
-   {
-      colour.r = 139;
-      colour.g = 134;
-      colour.b = 130;
-   }
-   else if (strncasecmp(x11ColourName,"AntiqueWhite1",13) == 0)
-   {
-      colour.r = 255;
-      colour.g = 239;
-      colour.b = 219;
-   }
-   else if (strncasecmp(x11ColourName,"AntiqueWhite2",13) == 0)
-   {
-      colour.r = 238;
-      colour.g = 223;
-      colour.b = 204;
-   }
-   else if (strncasecmp(x11ColourName,"AntiqueWhite3",13) == 0)
-   {
-      colour.r = 205;
-      colour.g = 192;
-      colour.b = 176;
-   }
-   else if (strncasecmp(x11ColourName,"AntiqueWhite4",13) == 0)
-   {
-      colour.r = 139;
-      colour.g = 131;
-      colour.b = 120;
-   }
-   else if (strncasecmp(x11ColourName,"bisque1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 228;
-      colour.b = 196;
-   }
-   else if (strncasecmp(x11ColourName,"bisque2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 213;
-      colour.b = 183;
-   }
-   else if (strncasecmp(x11ColourName,"bisque3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 183;
-      colour.b = 158;
-   }
-   else if (strncasecmp(x11ColourName,"bisque4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 125;
-      colour.b = 107;
-   }
-   else if (strncasecmp(x11ColourName,"PeachPuff1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 218;
-      colour.b = 185;
-   }
-   else if (strncasecmp(x11ColourName,"PeachPuff2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 203;
-      colour.b = 173;
-   }
-   else if (strncasecmp(x11ColourName,"PeachPuff3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 175;
-      colour.b = 149;
-   }
-   else if (strncasecmp(x11ColourName,"PeachPuff4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 119;
-      colour.b = 101;
-   }
-   else if (strncasecmp(x11ColourName,"NavajoWhite1",12) == 0)
-   {
-      colour.r = 255;
-      colour.g = 222;
-      colour.b = 173;
-   }
-   else if (strncasecmp(x11ColourName,"NavajoWhite2",12) == 0)
-   {
-      colour.r = 238;
-      colour.g = 207;
-      colour.b = 161;
-   }
-   else if (strncasecmp(x11ColourName,"NavajoWhite3",12) == 0)
-   {
-      colour.r = 205;
-      colour.g = 179;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"NavajoWhite4",12) == 0)
-   {
-      colour.r = 139;
-      colour.g = 121;
-      colour.b = 94;
-   }
-   else if (strncasecmp(x11ColourName,"LemonChiffon1",13) == 0)
-   {
-      colour.r = 255;
-      colour.g = 250;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"LemonChiffon2",13) == 0)
-   {
-      colour.r = 238;
-      colour.g = 233;
-      colour.b = 191;
-   }
-   else if (strncasecmp(x11ColourName,"LemonChiffon3",13) == 0)
-   {
-      colour.r = 205;
-      colour.g = 201;
-      colour.b = 165;
-   }
-   else if (strncasecmp(x11ColourName,"LemonChiffon4",13) == 0)
-   {
-      colour.r = 139;
-      colour.g = 137;
-      colour.b = 112;
-   }
-   else if (strncasecmp(x11ColourName,"cornsilk1",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 248;
-      colour.b = 220;
-   }
-   else if (strncasecmp(x11ColourName,"cornsilk2",9) == 0)
-   {
-      colour.r = 238;
-      colour.g = 232;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"cornsilk3",9) == 0)
-   {
-      colour.r = 205;
-      colour.g = 200;
-      colour.b = 177;
-   }
-   else if (strncasecmp(x11ColourName,"cornsilk4",9) == 0)
-   {
-      colour.r = 139;
-      colour.g = 136;
-      colour.b = 120;
-   }
-   else if (strncasecmp(x11ColourName,"ivory1",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"ivory2",6) == 0)
-   {
-      colour.r = 238;
-      colour.g = 238;
-      colour.b = 224;
-   }
-   else if (strncasecmp(x11ColourName,"ivory3",6) == 0)
-   {
-      colour.r = 205;
-      colour.g = 205;
-      colour.b = 193;
-   }
-   else if (strncasecmp(x11ColourName,"ivory4",6) == 0)
-   {
-      colour.r = 139;
-      colour.g = 139;
-      colour.b = 131;
-   }
-   else if (strncasecmp(x11ColourName,"honeydew1",9) == 0)
-   {
-      colour.r = 240;
-      colour.g = 255;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"honeydew2",9) == 0)
-   {
-      colour.r = 224;
-      colour.g = 238;
-      colour.b = 224;
-   }
-   else if (strncasecmp(x11ColourName,"honeydew3",9) == 0)
-   {
-      colour.r = 193;
-      colour.g = 205;
-      colour.b = 193;
-   }
-   else if (strncasecmp(x11ColourName,"honeydew4",9) == 0)
-   {
-      colour.r = 131;
-      colour.g = 139;
-      colour.b = 131;
-   }
-   else if (strncasecmp(x11ColourName,"LavenderBlush1",14) == 0)
-   {
-      colour.r = 255;
-      colour.g = 240;
-      colour.b = 245;
-   }
-   else if (strncasecmp(x11ColourName,"LavenderBlush2",14) == 0)
-   {
-      colour.r = 238;
-      colour.g = 224;
-      colour.b = 229;
-   }
-   else if (strncasecmp(x11ColourName,"LavenderBlush3",14) == 0)
-   {
-      colour.r = 205;
-      colour.g = 193;
-      colour.b = 197;
-   }
-   else if (strncasecmp(x11ColourName,"LavenderBlush4",14) == 0)
-   {
-      colour.r = 139;
-      colour.g = 131;
-      colour.b = 134;
-   }
-   else if (strncasecmp(x11ColourName,"MistyRose1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 228;
-      colour.b = 225;
-   }
-   else if (strncasecmp(x11ColourName,"MistyRose2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 213;
-      colour.b = 210;
-   }
-   else if (strncasecmp(x11ColourName,"MistyRose3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 183;
-      colour.b = 181;
-   }
-   else if (strncasecmp(x11ColourName,"MistyRose4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 125;
-      colour.b = 123;
-   }
-   else if (strncasecmp(x11ColourName,"azure1",6) == 0)
-   {
-      colour.r = 240;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"azure2",6) == 0)
-   {
-      colour.r = 224;
-      colour.g = 238;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"azure3",6) == 0)
-   {
-      colour.r = 193;
-      colour.g = 205;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"azure4",6) == 0)
-   {
-      colour.r = 131;
-      colour.g = 139;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"SlateBlue1",10) == 0)
-   {
-      colour.r = 131;
-      colour.g = 111;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"SlateBlue2",10) == 0)
-   {
-      colour.r = 122;
-      colour.g = 103;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"SlateBlue3",10) == 0)
-   {
-      colour.r = 105;
-      colour.g = 89;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"SlateBlue4",10) == 0)
-   {
-      colour.r = 71;
-      colour.g = 60;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"RoyalBlue1",10) == 0)
-   {
-      colour.r = 72;
-      colour.g = 118;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"RoyalBlue2",10) == 0)
-   {
-      colour.r = 67;
-      colour.g = 110;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"RoyalBlue3",10) == 0)
-   {
-      colour.r = 58;
-      colour.g = 95;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"RoyalBlue4",10) == 0)
-   {
-      colour.r = 39;
-      colour.g = 64;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"blue1",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"blue2",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"blue3",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"blue4",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DodgerBlue1",11) == 0)
-   {
-      colour.r = 30;
-      colour.g = 144;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DodgerBlue2",11) == 0)
-   {
-      colour.r = 28;
-      colour.g = 134;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"DodgerBlue3",11) == 0)
-   {
-      colour.r = 24;
-      colour.g = 116;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"DodgerBlue4",11) == 0)
-   {
-      colour.r = 16;
-      colour.g = 78;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"SteelBlue1",10) == 0)
-   {
-      colour.r = 99;
-      colour.g = 184;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"SteelBlue2",10) == 0)
-   {
-      colour.r = 92;
-      colour.g = 172;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"SteelBlue3",10) == 0)
-   {
-      colour.r = 79;
-      colour.g = 148;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"SteelBlue4",10) == 0)
-   {
-      colour.r = 54;
-      colour.g = 100;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DeepSkyBlue1",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 191;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DeepSkyBlue2",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 178;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"DeepSkyBlue3",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 154;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"DeepSkyBlue4",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 104;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"SkyBlue1",8) == 0)
-   {
-      colour.r = 135;
-      colour.g = 206;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"SkyBlue2",8) == 0)
-   {
-      colour.r = 126;
-      colour.g = 192;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"SkyBlue3",8) == 0)
-   {
-      colour.r = 108;
-      colour.g = 166;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"SkyBlue4",8) == 0)
-   {
-      colour.r = 74;
-      colour.g = 112;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"LightSkyBlue1",13) == 0)
-   {
-      colour.r = 176;
-      colour.g = 226;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"LightSkyBlue2",13) == 0)
-   {
-      colour.r = 164;
-      colour.g = 211;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"LightSkyBlue3",13) == 0)
-   {
-      colour.r = 141;
-      colour.g = 182;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"LightSkyBlue4",13) == 0)
-   {
-      colour.r = 96;
-      colour.g = 123;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"SlateGray1",10) == 0)
-   {
-      colour.r = 198;
-      colour.g = 226;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"SlateGray2",10) == 0)
-   {
-      colour.r = 185;
-      colour.g = 211;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"SlateGray3",10) == 0)
-   {
-      colour.r = 159;
-      colour.g = 182;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"SlateGray4",10) == 0)
-   {
-      colour.r = 108;
-      colour.g = 123;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"LightSteelBlue1",15) == 0)
-   {
-      colour.r = 202;
-      colour.g = 225;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"LightSteelBlue2",15) == 0)
-   {
-      colour.r = 188;
-      colour.g = 210;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"LightSteelBlue3",15) == 0)
-   {
-      colour.r = 162;
-      colour.g = 181;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"LightSteelBlue4",15) == 0)
-   {
-      colour.r = 110;
-      colour.g = 123;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"LightBlue1",10) == 0)
-   {
-      colour.r = 191;
-      colour.g = 239;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"LightBlue2",10) == 0)
-   {
-      colour.r = 178;
-      colour.g = 223;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"LightBlue3",10) == 0)
-   {
-      colour.r = 154;
-      colour.g = 192;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"LightBlue4",10) == 0)
-   {
-      colour.r = 104;
-      colour.g = 131;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"LightCyan1",10) == 0)
-   {
-      colour.r = 224;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"LightCyan2",10) == 0)
-   {
-      colour.r = 209;
-      colour.g = 238;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"LightCyan3",10) == 0)
-   {
-      colour.r = 180;
-      colour.g = 205;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"LightCyan4",10) == 0)
-   {
-      colour.r = 122;
-      colour.g = 139;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"PaleTurquoise1",14) == 0)
-   {
-      colour.r = 187;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"PaleTurquoise2",14) == 0)
-   {
-      colour.r = 174;
-      colour.g = 238;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"PaleTurquoise3",14) == 0)
-   {
-      colour.r = 150;
-      colour.g = 205;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"PaleTurquoise4",14) == 0)
-   {
-      colour.r = 102;
-      colour.g = 139;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"CadetBlue1",10) == 0)
-   {
-      colour.r = 152;
-      colour.g = 245;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"CadetBlue2",10) == 0)
-   {
-      colour.r = 142;
-      colour.g = 229;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"CadetBlue3",10) == 0)
-   {
-      colour.r = 122;
-      colour.g = 197;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"CadetBlue4",10) == 0)
-   {
-      colour.r = 83;
-      colour.g = 134;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"turquoise1",10) == 0)
-   {
-      colour.r = 0;
-      colour.g = 245;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"turquoise2",10) == 0)
-   {
-      colour.r = 0;
-      colour.g = 229;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"turquoise3",10) == 0)
-   {
-      colour.r = 0;
-      colour.g = 197;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"turquoise4",10) == 0)
-   {
-      colour.r = 0;
-      colour.g = 134;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"cyan1",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"cyan2",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 238;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"cyan3",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 205;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"cyan4",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 139;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateGray1",14) == 0)
-   {
-      colour.r = 151;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateGray2",14) == 0)
-   {
-      colour.r = 141;
-      colour.g = 238;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateGray3",14) == 0)
-   {
-      colour.r = 121;
-      colour.g = 205;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSlateGray4",14) == 0)
-   {
-      colour.r = 82;
-      colour.g = 139;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"aquamarine1",11) == 0)
-   {
-      colour.r = 127;
-      colour.g = 255;
-      colour.b = 212;
-   }
-   else if (strncasecmp(x11ColourName,"aquamarine2",11) == 0)
-   {
-      colour.r = 118;
-      colour.g = 238;
-      colour.b = 198;
-   }
-   else if (strncasecmp(x11ColourName,"aquamarine3",11) == 0)
-   {
-      colour.r = 102;
-      colour.g = 205;
-      colour.b = 170;
-   }
-   else if (strncasecmp(x11ColourName,"aquamarine4",11) == 0)
-   {
-      colour.r = 69;
-      colour.g = 139;
-      colour.b = 116;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSeaGreen1",13) == 0)
-   {
-      colour.r = 193;
-      colour.g = 255;
-      colour.b = 193;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSeaGreen2",13) == 0)
-   {
-      colour.r = 180;
-      colour.g = 238;
-      colour.b = 180;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSeaGreen3",13) == 0)
-   {
-      colour.r = 155;
-      colour.g = 205;
-      colour.b = 155;
-   }
-   else if (strncasecmp(x11ColourName,"DarkSeaGreen4",13) == 0)
-   {
-      colour.r = 105;
-      colour.g = 139;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"SeaGreen1",9) == 0)
-   {
-      colour.r = 84;
-      colour.g = 255;
-      colour.b = 159;
-   }
-   else if (strncasecmp(x11ColourName,"SeaGreen2",9) == 0)
-   {
-      colour.r = 78;
-      colour.g = 238;
-      colour.b = 148;
-   }
-   else if (strncasecmp(x11ColourName,"SeaGreen3",9) == 0)
-   {
-      colour.r = 67;
-      colour.g = 205;
-      colour.b = 128;
-   }
-   else if (strncasecmp(x11ColourName,"SeaGreen4",9) == 0)
-   {
-      colour.r = 46;
-      colour.g = 139;
-      colour.b = 87;
-   }
-   else if (strncasecmp(x11ColourName,"PaleGreen1",10) == 0)
-   {
-      colour.r = 154;
-      colour.g = 255;
-      colour.b = 154;
-   }
-   else if (strncasecmp(x11ColourName,"PaleGreen2",10) == 0)
-   {
-      colour.r = 144;
-      colour.g = 238;
-      colour.b = 144;
-   }
-   else if (strncasecmp(x11ColourName,"PaleGreen3",10) == 0)
-   {
-      colour.r = 124;
-      colour.g = 205;
-      colour.b = 124;
-   }
-   else if (strncasecmp(x11ColourName,"PaleGreen4",10) == 0)
-   {
-      colour.r = 84;
-      colour.g = 139;
-      colour.b = 84;
-   }
-   else if (strncasecmp(x11ColourName,"SpringGreen1",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 255;
-      colour.b = 127;
-   }
-   else if (strncasecmp(x11ColourName,"SpringGreen2",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 238;
-      colour.b = 118;
-   }
-   else if (strncasecmp(x11ColourName,"SpringGreen3",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 205;
-      colour.b = 102;
-   }
-   else if (strncasecmp(x11ColourName,"SpringGreen4",12) == 0)
-   {
-      colour.r = 0;
-      colour.g = 139;
-      colour.b = 69;
-   }
-   else if (strncasecmp(x11ColourName,"green1",6) == 0)
-   {
-      colour.r = 0;
-      colour.g = 255;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"green2",6) == 0)
-   {
-      colour.r = 0;
-      colour.g = 238;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"green3",6) == 0)
-   {
-      colour.r = 0;
-      colour.g = 205;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"green4",6) == 0)
-   {
-      colour.r = 0;
-      colour.g = 139;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"chartreuse1",11) == 0)
-   {
-      colour.r = 127;
-      colour.g = 255;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"chartreuse2",11) == 0)
-   {
-      colour.r = 118;
-      colour.g = 238;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"chartreuse3",11) == 0)
-   {
-      colour.r = 102;
-      colour.g = 205;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"chartreuse4",11) == 0)
-   {
-      colour.r = 69;
-      colour.g = 139;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"OliveDrab1",10) == 0)
-   {
-      colour.r = 192;
-      colour.g = 255;
-      colour.b = 62;
-   }
-   else if (strncasecmp(x11ColourName,"OliveDrab2",10) == 0)
-   {
-      colour.r = 179;
-      colour.g = 238;
-      colour.b = 58;
-   }
-   else if (strncasecmp(x11ColourName,"OliveDrab3",10) == 0)
-   {
-      colour.r = 154;
-      colour.g = 205;
-      colour.b = 50;
-   }
-   else if (strncasecmp(x11ColourName,"OliveDrab4",10) == 0)
-   {
-      colour.r = 105;
-      colour.g = 139;
-      colour.b = 34;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOliveGreen1",15) == 0)
-   {
-      colour.r = 202;
-      colour.g = 255;
-      colour.b = 112;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOliveGreen2",15) == 0)
-   {
-      colour.r = 188;
-      colour.g = 238;
-      colour.b = 104;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOliveGreen3",15) == 0)
-   {
-      colour.r = 162;
-      colour.g = 205;
-      colour.b = 90;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOliveGreen4",15) == 0)
-   {
-      colour.r = 110;
-      colour.g = 139;
-      colour.b = 61;
-   }
-   else if (strncasecmp(x11ColourName,"khaki1",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 246;
-      colour.b = 143;
-   }
-   else if (strncasecmp(x11ColourName,"khaki2",6) == 0)
-   {
-      colour.r = 238;
-      colour.g = 230;
-      colour.b = 133;
-   }
-   else if (strncasecmp(x11ColourName,"khaki3",6) == 0)
-   {
-      colour.r = 205;
-      colour.g = 198;
-      colour.b = 115;
-   }
-   else if (strncasecmp(x11ColourName,"khaki4",6) == 0)
-   {
-      colour.r = 139;
-      colour.g = 134;
-      colour.b = 78;
-   }
-   else if (strncasecmp(x11ColourName,"LightGoldenrod1",15) == 0)
-   {
-      colour.r = 255;
-      colour.g = 236;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"LightGoldenrod2",15) == 0)
-   {
-      colour.r = 238;
-      colour.g = 220;
-      colour.b = 130;
-   }
-   else if (strncasecmp(x11ColourName,"LightGoldenrod3",15) == 0)
-   {
-      colour.r = 205;
-      colour.g = 190;
-      colour.b = 112;
-   }
-   else if (strncasecmp(x11ColourName,"LightGoldenrod4",15) == 0)
-   {
-      colour.r = 139;
-      colour.g = 129;
-      colour.b = 76;
-   }
-   else if (strncasecmp(x11ColourName,"LightYellow1",12) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 224;
-   }
-   else if (strncasecmp(x11ColourName,"LightYellow2",12) == 0)
-   {
-      colour.r = 238;
-      colour.g = 238;
-      colour.b = 209;
-   }
-   else if (strncasecmp(x11ColourName,"LightYellow3",12) == 0)
-   {
-      colour.r = 205;
-      colour.g = 205;
-      colour.b = 180;
-   }
-   else if (strncasecmp(x11ColourName,"LightYellow4",12) == 0)
-   {
-      colour.r = 139;
-      colour.g = 139;
-      colour.b = 122;
-   }
-   else if (strncasecmp(x11ColourName,"yellow1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"yellow2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 238;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"yellow3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 205;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"yellow4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 139;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"gold1",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 215;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"gold2",5) == 0)
-   {
-      colour.r = 238;
-      colour.g = 201;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"gold3",5) == 0)
-   {
-      colour.r = 205;
-      colour.g = 173;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"gold4",5) == 0)
-   {
-      colour.r = 139;
-      colour.g = 117;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"goldenrod1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 193;
-      colour.b = 37;
-   }
-   else if (strncasecmp(x11ColourName,"goldenrod2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 180;
-      colour.b = 34;
-   }
-   else if (strncasecmp(x11ColourName,"goldenrod3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 155;
-      colour.b = 29;
-   }
-   else if (strncasecmp(x11ColourName,"goldenrod4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 105;
-      colour.b = 20;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGoldenrod1",14) == 0)
-   {
-      colour.r = 255;
-      colour.g = 185;
-      colour.b = 15;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGoldenrod2",14) == 0)
-   {
-      colour.r = 238;
-      colour.g = 173;
-      colour.b = 14;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGoldenrod3",14) == 0)
-   {
-      colour.r = 205;
-      colour.g = 149;
-      colour.b = 12;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGoldenrod4",14) == 0)
-   {
-      colour.r = 139;
-      colour.g = 101;
-      colour.b = 8;
-   }
-   else if (strncasecmp(x11ColourName,"RosyBrown1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 193;
-      colour.b = 193;
-   }
-   else if (strncasecmp(x11ColourName,"RosyBrown2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 180;
-      colour.b = 180;
-   }
-   else if (strncasecmp(x11ColourName,"RosyBrown3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 155;
-      colour.b = 155;
-   }
-   else if (strncasecmp(x11ColourName,"RosyBrown4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 105;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"IndianRed1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 106;
-      colour.b = 106;
-   }
-   else if (strncasecmp(x11ColourName,"IndianRed2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 99;
-      colour.b = 99;
-   }
-   else if (strncasecmp(x11ColourName,"IndianRed3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 85;
-      colour.b = 85;
-   }
-   else if (strncasecmp(x11ColourName,"IndianRed4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 58;
-      colour.b = 58;
-   }
-   else if (strncasecmp(x11ColourName,"sienna1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 130;
-      colour.b = 71;
-   }
-   else if (strncasecmp(x11ColourName,"sienna2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 121;
-      colour.b = 66;
-   }
-   else if (strncasecmp(x11ColourName,"sienna3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 104;
-      colour.b = 57;
-   }
-   else if (strncasecmp(x11ColourName,"sienna4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 71;
-      colour.b = 38;
-   }
-   else if (strncasecmp(x11ColourName,"burlywood1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 211;
-      colour.b = 155;
-   }
-   else if (strncasecmp(x11ColourName,"burlywood2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 197;
-      colour.b = 145;
-   }
-   else if (strncasecmp(x11ColourName,"burlywood3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 170;
-      colour.b = 125;
-   }
-   else if (strncasecmp(x11ColourName,"burlywood4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 115;
-      colour.b = 85;
-   }
-   else if (strncasecmp(x11ColourName,"wheat1",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 231;
-      colour.b = 186;
-   }
-   else if (strncasecmp(x11ColourName,"wheat2",6) == 0)
-   {
-      colour.r = 238;
-      colour.g = 216;
-      colour.b = 174;
-   }
-   else if (strncasecmp(x11ColourName,"wheat3",6) == 0)
-   {
-      colour.r = 205;
-      colour.g = 186;
-      colour.b = 150;
-   }
-   else if (strncasecmp(x11ColourName,"wheat4",6) == 0)
-   {
-      colour.r = 139;
-      colour.g = 126;
-      colour.b = 102;
-   }
-   else if (strncasecmp(x11ColourName,"tan1",4) == 0)
-   {
-      colour.r = 255;
-      colour.g = 165;
-      colour.b = 79;
-   }
-   else if (strncasecmp(x11ColourName,"tan2",4) == 0)
-   {
-      colour.r = 238;
-      colour.g = 154;
-      colour.b = 73;
-   }
-   else if (strncasecmp(x11ColourName,"tan3",4) == 0)
-   {
-      colour.r = 205;
-      colour.g = 133;
-      colour.b = 63;
-   }
-   else if (strncasecmp(x11ColourName,"tan4",4) == 0)
-   {
-      colour.r = 139;
-      colour.g = 90;
-      colour.b = 43;
-   }
-   else if (strncasecmp(x11ColourName,"chocolate1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 127;
-      colour.b = 36;
-   }
-   else if (strncasecmp(x11ColourName,"chocolate2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 118;
-      colour.b = 33;
-   }
-   else if (strncasecmp(x11ColourName,"chocolate3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 102;
-      colour.b = 29;
-   }
-   else if (strncasecmp(x11ColourName,"chocolate4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 69;
-      colour.b = 19;
-   }
-   else if (strncasecmp(x11ColourName,"firebrick1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 48;
-      colour.b = 48;
-   }
-   else if (strncasecmp(x11ColourName,"firebrick2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 44;
-      colour.b = 44;
-   }
-   else if (strncasecmp(x11ColourName,"firebrick3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 38;
-      colour.b = 38;
-   }
-   else if (strncasecmp(x11ColourName,"firebrick4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 26;
-      colour.b = 26;
-   }
-   else if (strncasecmp(x11ColourName,"brown1",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 64;
-      colour.b = 64;
-   }
-   else if (strncasecmp(x11ColourName,"brown2",6) == 0)
-   {
-      colour.r = 238;
-      colour.g = 59;
-      colour.b = 59;
-   }
-   else if (strncasecmp(x11ColourName,"brown3",6) == 0)
-   {
-      colour.r = 205;
-      colour.g = 51;
-      colour.b = 51;
-   }
-   else if (strncasecmp(x11ColourName,"brown4",6) == 0)
-   {
-      colour.r = 139;
-      colour.g = 35;
-      colour.b = 35;
-   }
-   else if (strncasecmp(x11ColourName,"salmon1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 140;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"salmon2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 130;
-      colour.b = 98;
-   }
-   else if (strncasecmp(x11ColourName,"salmon3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 112;
-      colour.b = 84;
-   }
-   else if (strncasecmp(x11ColourName,"salmon4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 76;
-      colour.b = 57;
-   }
-   else if (strncasecmp(x11ColourName,"LightSalmon1",12) == 0)
-   {
-      colour.r = 255;
-      colour.g = 160;
-      colour.b = 122;
-   }
-   else if (strncasecmp(x11ColourName,"LightSalmon2",12) == 0)
-   {
-      colour.r = 238;
-      colour.g = 149;
-      colour.b = 114;
-   }
-   else if (strncasecmp(x11ColourName,"LightSalmon3",12) == 0)
-   {
-      colour.r = 205;
-      colour.g = 129;
-      colour.b = 98;
-   }
-   else if (strncasecmp(x11ColourName,"LightSalmon4",12) == 0)
-   {
-      colour.r = 139;
-      colour.g = 87;
-      colour.b = 66;
-   }
-   else if (strncasecmp(x11ColourName,"orange1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 165;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"orange2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 154;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"orange3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 133;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"orange4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 90;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrange1",11) == 0)
-   {
-      colour.r = 255;
-      colour.g = 127;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrange2",11) == 0)
-   {
-      colour.r = 238;
-      colour.g = 118;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrange3",11) == 0)
-   {
-      colour.r = 205;
-      colour.g = 102;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrange4",11) == 0)
-   {
-      colour.r = 139;
-      colour.g = 69;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"coral1",6) == 0)
-   {
-      colour.r = 255;
-      colour.g = 114;
-      colour.b = 86;
-   }
-   else if (strncasecmp(x11ColourName,"coral2",6) == 0)
-   {
-      colour.r = 238;
-      colour.g = 106;
-      colour.b = 80;
-   }
-   else if (strncasecmp(x11ColourName,"coral3",6) == 0)
-   {
-      colour.r = 205;
-      colour.g = 91;
-      colour.b = 69;
-   }
-   else if (strncasecmp(x11ColourName,"coral4",6) == 0)
-   {
-      colour.r = 139;
-      colour.g = 62;
-      colour.b = 47;
-   }
-   else if (strncasecmp(x11ColourName,"tomato1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 99;
-      colour.b = 71;
-   }
-   else if (strncasecmp(x11ColourName,"tomato2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 92;
-      colour.b = 66;
-   }
-   else if (strncasecmp(x11ColourName,"tomato3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 79;
-      colour.b = 57;
-   }
-   else if (strncasecmp(x11ColourName,"tomato4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 54;
-      colour.b = 38;
-   }
-   else if (strncasecmp(x11ColourName,"OrangeRed1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 69;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"OrangeRed2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 64;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"OrangeRed3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 55;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"OrangeRed4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 37;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"red1",4) == 0)
-   {
-      colour.r = 255;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"red2",4) == 0)
-   {
-      colour.r = 238;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"red3",4) == 0)
-   {
-      colour.r = 205;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"red4",4) == 0)
-   {
-      colour.r = 139;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"DeepPink1",9) == 0)
-   {
-      colour.r = 255;
-      colour.g = 20;
-      colour.b = 147;
-   }
-   else if (strncasecmp(x11ColourName,"DeepPink2",9) == 0)
-   {
-      colour.r = 238;
-      colour.g = 18;
-      colour.b = 137;
-   }
-   else if (strncasecmp(x11ColourName,"DeepPink3",9) == 0)
-   {
-      colour.r = 205;
-      colour.g = 16;
-      colour.b = 118;
-   }
-   else if (strncasecmp(x11ColourName,"DeepPink4",9) == 0)
-   {
-      colour.r = 139;
-      colour.g = 10;
-      colour.b = 80;
-   }
-   else if (strncasecmp(x11ColourName,"HotPink1",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 110;
-      colour.b = 180;
-   }
-   else if (strncasecmp(x11ColourName,"HotPink2",8) == 0)
-   {
-      colour.r = 238;
-      colour.g = 106;
-      colour.b = 167;
-   }
-   else if (strncasecmp(x11ColourName,"HotPink3",8) == 0)
-   {
-      colour.r = 205;
-      colour.g = 96;
-      colour.b = 144;
-   }
-   else if (strncasecmp(x11ColourName,"HotPink4",8) == 0)
-   {
-      colour.r = 139;
-      colour.g = 58;
-      colour.b = 98;
-   }
-   else if (strncasecmp(x11ColourName,"pink1",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 181;
-      colour.b = 197;
-   }
-   else if (strncasecmp(x11ColourName,"pink2",5) == 0)
-   {
-      colour.r = 238;
-      colour.g = 169;
-      colour.b = 184;
-   }
-   else if (strncasecmp(x11ColourName,"pink3",5) == 0)
-   {
-      colour.r = 205;
-      colour.g = 145;
-      colour.b = 158;
-   }
-   else if (strncasecmp(x11ColourName,"pink4",5) == 0)
-   {
-      colour.r = 139;
-      colour.g = 99;
-      colour.b = 108;
-   }
-   else if (strncasecmp(x11ColourName,"LightPink1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 174;
-      colour.b = 185;
-   }
-   else if (strncasecmp(x11ColourName,"LightPink2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 162;
-      colour.b = 173;
-   }
-   else if (strncasecmp(x11ColourName,"LightPink3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 140;
-      colour.b = 149;
-   }
-   else if (strncasecmp(x11ColourName,"LightPink4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 95;
-      colour.b = 101;
-   }
-   else if (strncasecmp(x11ColourName,"PaleVioletRed1",14) == 0)
-   {
-      colour.r = 255;
-      colour.g = 130;
-      colour.b = 171;
-   }
-   else if (strncasecmp(x11ColourName,"PaleVioletRed2",14) == 0)
-   {
-      colour.r = 238;
-      colour.g = 121;
-      colour.b = 159;
-   }
-   else if (strncasecmp(x11ColourName,"PaleVioletRed3",14) == 0)
-   {
-      colour.r = 205;
-      colour.g = 104;
-      colour.b = 137;
-   }
-   else if (strncasecmp(x11ColourName,"PaleVioletRed4",14) == 0)
-   {
-      colour.r = 139;
-      colour.g = 71;
-      colour.b = 93;
-   }
-   else if (strncasecmp(x11ColourName,"maroon1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 52;
-      colour.b = 179;
-   }
-   else if (strncasecmp(x11ColourName,"maroon2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 48;
-      colour.b = 167;
-   }
-   else if (strncasecmp(x11ColourName,"maroon3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 41;
-      colour.b = 144;
-   }
-   else if (strncasecmp(x11ColourName,"maroon4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 28;
-      colour.b = 98;
-   }
-   else if (strncasecmp(x11ColourName,"VioletRed1",10) == 0)
-   {
-      colour.r = 255;
-      colour.g = 62;
-      colour.b = 150;
-   }
-   else if (strncasecmp(x11ColourName,"VioletRed2",10) == 0)
-   {
-      colour.r = 238;
-      colour.g = 58;
-      colour.b = 140;
-   }
-   else if (strncasecmp(x11ColourName,"VioletRed3",10) == 0)
-   {
-      colour.r = 205;
-      colour.g = 50;
-      colour.b = 120;
-   }
-   else if (strncasecmp(x11ColourName,"VioletRed4",10) == 0)
-   {
-      colour.r = 139;
-      colour.g = 34;
-      colour.b = 82;
-   }
-   else if (strncasecmp(x11ColourName,"magenta1",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 0;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"magenta2",8) == 0)
-   {
-      colour.r = 238;
-      colour.g = 0;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"magenta3",8) == 0)
-   {
-      colour.r = 205;
-      colour.g = 0;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"magenta4",8) == 0)
-   {
-      colour.r = 139;
-      colour.g = 0;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"orchid1",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 131;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"orchid2",7) == 0)
-   {
-      colour.r = 238;
-      colour.g = 122;
-      colour.b = 233;
-   }
-   else if (strncasecmp(x11ColourName,"orchid3",7) == 0)
-   {
-      colour.r = 205;
-      colour.g = 105;
-      colour.b = 201;
-   }
-   else if (strncasecmp(x11ColourName,"orchid4",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 71;
-      colour.b = 137;
-   }
-   else if (strncasecmp(x11ColourName,"plum1",5) == 0)
-   {
-      colour.r = 255;
-      colour.g = 187;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"plum2",5) == 0)
-   {
-      colour.r = 238;
-      colour.g = 174;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"plum3",5) == 0)
-   {
-      colour.r = 205;
-      colour.g = 150;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"plum4",5) == 0)
-   {
-      colour.r = 139;
-      colour.g = 102;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"MediumOrchid1",13) == 0)
-   {
-      colour.r = 224;
-      colour.g = 102;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"MediumOrchid2",13) == 0)
-   {
-      colour.r = 209;
-      colour.g = 95;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"MediumOrchid3",13) == 0)
-   {
-      colour.r = 180;
-      colour.g = 82;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"MediumOrchid4",13) == 0)
-   {
-      colour.r = 122;
-      colour.g = 55;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrchid1",11) == 0)
-   {
-      colour.r = 191;
-      colour.g = 62;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrchid2",11) == 0)
-   {
-      colour.r = 178;
-      colour.g = 58;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrchid3",11) == 0)
-   {
-      colour.r = 154;
-      colour.g = 50;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"DarkOrchid4",11) == 0)
-   {
-      colour.r = 104;
-      colour.g = 34;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"purple1",7) == 0)
-   {
-      colour.r = 155;
-      colour.g = 48;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"purple2",7) == 0)
-   {
-      colour.r = 145;
-      colour.g = 44;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"purple3",7) == 0)
-   {
-      colour.r = 125;
-      colour.g = 38;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"purple4",7) == 0)
-   {
-      colour.r = 85;
-      colour.g = 26;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"MediumPurple1",13) == 0)
-   {
-      colour.r = 171;
-      colour.g = 130;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"MediumPurple2",13) == 0)
-   {
-      colour.r = 159;
-      colour.g = 121;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"MediumPurple3",13) == 0)
-   {
-      colour.r = 137;
-      colour.g = 104;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"MediumPurple4",13) == 0)
-   {
-      colour.r = 93;
-      colour.g = 71;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"thistle1",8) == 0)
-   {
-      colour.r = 255;
-      colour.g = 225;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"thistle2",8) == 0)
-   {
-      colour.r = 238;
-      colour.g = 210;
-      colour.b = 238;
-   }
-   else if (strncasecmp(x11ColourName,"thistle3",8) == 0)
-   {
-      colour.r = 205;
-      colour.g = 181;
-      colour.b = 205;
-   }
-   else if (strncasecmp(x11ColourName,"thistle4",8) == 0)
-   {
-      colour.r = 139;
-      colour.g = 123;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"gray0",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"grey0",5) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"gray1",5) == 0)
-   {
-      colour.r = 3;
-      colour.g = 3;
-      colour.b = 3;
-   }
-   else if (strncasecmp(x11ColourName,"grey1",5) == 0)
-   {
-      colour.r = 3;
-      colour.g = 3;
-      colour.b = 3;
-   }
-   else if (strncasecmp(x11ColourName,"gray2",5) == 0)
-   {
-      colour.r = 5;
-      colour.g = 5;
-      colour.b = 5;
-   }
-   else if (strncasecmp(x11ColourName,"grey2",5) == 0)
-   {
-      colour.r = 5;
-      colour.g = 5;
-      colour.b = 5;
-   }
-   else if (strncasecmp(x11ColourName,"gray3",5) == 0)
-   {
-      colour.r = 8;
-      colour.g = 8;
-      colour.b = 8;
-   }
-   else if (strncasecmp(x11ColourName,"grey3",5) == 0)
-   {
-      colour.r = 8;
-      colour.g = 8;
-      colour.b = 8;
-   }
-   else if (strncasecmp(x11ColourName,"gray4",5) == 0)
-   {
-      colour.r = 10;
-      colour.g = 10;
-      colour.b = 10;
-   }
-   else if (strncasecmp(x11ColourName,"grey4",5) == 0)
-   {
-      colour.r = 10;
-      colour.g = 10;
-      colour.b = 10;
-   }
-   else if (strncasecmp(x11ColourName,"gray5",5) == 0)
-   {
-      colour.r = 13;
-      colour.g = 13;
-      colour.b = 13;
-   }
-   else if (strncasecmp(x11ColourName,"grey5",5) == 0)
-   {
-      colour.r = 13;
-      colour.g = 13;
-      colour.b = 13;
-   }
-   else if (strncasecmp(x11ColourName,"gray6",5) == 0)
-   {
-      colour.r = 15;
-      colour.g = 15;
-      colour.b = 15;
-   }
-   else if (strncasecmp(x11ColourName,"grey6",5) == 0)
-   {
-      colour.r = 15;
-      colour.g = 15;
-      colour.b = 15;
-   }
-   else if (strncasecmp(x11ColourName,"gray7",5) == 0)
-   {
-      colour.r = 18;
-      colour.g = 18;
-      colour.b = 18;
-   }
-   else if (strncasecmp(x11ColourName,"grey7",5) == 0)
-   {
-      colour.r = 18;
-      colour.g = 18;
-      colour.b = 18;
-   }
-   else if (strncasecmp(x11ColourName,"gray8",5) == 0)
-   {
-      colour.r = 20;
-      colour.g = 20;
-      colour.b = 20;
-   }
-   else if (strncasecmp(x11ColourName,"grey8",5) == 0)
-   {
-      colour.r = 20;
-      colour.g = 20;
-      colour.b = 20;
-   }
-   else if (strncasecmp(x11ColourName,"gray9",5) == 0)
-   {
-      colour.r = 23;
-      colour.g = 23;
-      colour.b = 23;
-   }
-   else if (strncasecmp(x11ColourName,"grey9",5) == 0)
-   {
-      colour.r = 23;
-      colour.g = 23;
-      colour.b = 23;
-   }
-   else if (strncasecmp(x11ColourName,"gray10",6) == 0)
-   {
-      colour.r = 26;
-      colour.g = 26;
-      colour.b = 26;
-   }
-   else if (strncasecmp(x11ColourName,"grey10",6) == 0)
-   {
-      colour.r = 26;
-      colour.g = 26;
-      colour.b = 26;
-   }
-   else if (strncasecmp(x11ColourName,"gray11",6) == 0)
-   {
-      colour.r = 28;
-      colour.g = 28;
-      colour.b = 28;
-   }
-   else if (strncasecmp(x11ColourName,"grey11",6) == 0)
-   {
-      colour.r = 28;
-      colour.g = 28;
-      colour.b = 28;
-   }
-   else if (strncasecmp(x11ColourName,"gray12",6) == 0)
-   {
-      colour.r = 31;
-      colour.g = 31;
-      colour.b = 31;
-   }
-   else if (strncasecmp(x11ColourName,"grey12",6) == 0)
-   {
-      colour.r = 31;
-      colour.g = 31;
-      colour.b = 31;
-   }
-   else if (strncasecmp(x11ColourName,"gray13",6) == 0)
-   {
-      colour.r = 33;
-      colour.g = 33;
-      colour.b = 33;
-   }
-   else if (strncasecmp(x11ColourName,"grey13",6) == 0)
-   {
-      colour.r = 33;
-      colour.g = 33;
-      colour.b = 33;
-   }
-   else if (strncasecmp(x11ColourName,"gray14",6) == 0)
-   {
-      colour.r = 36;
-      colour.g = 36;
-      colour.b = 36;
-   }
-   else if (strncasecmp(x11ColourName,"grey14",6) == 0)
-   {
-      colour.r = 36;
-      colour.g = 36;
-      colour.b = 36;
-   }
-   else if (strncasecmp(x11ColourName,"gray15",6) == 0)
-   {
-      colour.r = 38;
-      colour.g = 38;
-      colour.b = 38;
-   }
-   else if (strncasecmp(x11ColourName,"grey15",6) == 0)
-   {
-      colour.r = 38;
-      colour.g = 38;
-      colour.b = 38;
-   }
-   else if (strncasecmp(x11ColourName,"gray16",6) == 0)
-   {
-      colour.r = 41;
-      colour.g = 41;
-      colour.b = 41;
-   }
-   else if (strncasecmp(x11ColourName,"grey16",6) == 0)
-   {
-      colour.r = 41;
-      colour.g = 41;
-      colour.b = 41;
-   }
-   else if (strncasecmp(x11ColourName,"gray17",6) == 0)
-   {
-      colour.r = 43;
-      colour.g = 43;
-      colour.b = 43;
-   }
-   else if (strncasecmp(x11ColourName,"grey17",6) == 0)
-   {
-      colour.r = 43;
-      colour.g = 43;
-      colour.b = 43;
-   }
-   else if (strncasecmp(x11ColourName,"gray18",6) == 0)
-   {
-      colour.r = 46;
-      colour.g = 46;
-      colour.b = 46;
-   }
-   else if (strncasecmp(x11ColourName,"grey18",6) == 0)
-   {
-      colour.r = 46;
-      colour.g = 46;
-      colour.b = 46;
-   }
-   else if (strncasecmp(x11ColourName,"gray19",6) == 0)
-   {
-      colour.r = 48;
-      colour.g = 48;
-      colour.b = 48;
-   }
-   else if (strncasecmp(x11ColourName,"grey19",6) == 0)
-   {
-      colour.r = 48;
-      colour.g = 48;
-      colour.b = 48;
-   }
-   else if (strncasecmp(x11ColourName,"gray20",6) == 0)
-   {
-      colour.r = 51;
-      colour.g = 51;
-      colour.b = 51;
-   }
-   else if (strncasecmp(x11ColourName,"grey20",6) == 0)
-   {
-      colour.r = 51;
-      colour.g = 51;
-      colour.b = 51;
-   }
-   else if (strncasecmp(x11ColourName,"gray21",6) == 0)
-   {
-      colour.r = 54;
-      colour.g = 54;
-      colour.b = 54;
-   }
-   else if (strncasecmp(x11ColourName,"grey21",6) == 0)
-   {
-      colour.r = 54;
-      colour.g = 54;
-      colour.b = 54;
-   }
-   else if (strncasecmp(x11ColourName,"gray22",6) == 0)
-   {
-      colour.r = 56;
-      colour.g = 56;
-      colour.b = 56;
-   }
-   else if (strncasecmp(x11ColourName,"grey22",6) == 0)
-   {
-      colour.r = 56;
-      colour.g = 56;
-      colour.b = 56;
-   }
-   else if (strncasecmp(x11ColourName,"gray23",6) == 0)
-   {
-      colour.r = 59;
-      colour.g = 59;
-      colour.b = 59;
-   }
-   else if (strncasecmp(x11ColourName,"grey23",6) == 0)
-   {
-      colour.r = 59;
-      colour.g = 59;
-      colour.b = 59;
-   }
-   else if (strncasecmp(x11ColourName,"gray24",6) == 0)
-   {
-      colour.r = 61;
-      colour.g = 61;
-      colour.b = 61;
-   }
-   else if (strncasecmp(x11ColourName,"grey24",6) == 0)
-   {
-      colour.r = 61;
-      colour.g = 61;
-      colour.b = 61;
-   }
-   else if (strncasecmp(x11ColourName,"gray25",6) == 0)
-   {
-      colour.r = 64;
-      colour.g = 64;
-      colour.b = 64;
-   }
-   else if (strncasecmp(x11ColourName,"grey25",6) == 0)
-   {
-      colour.r = 64;
-      colour.g = 64;
-      colour.b = 64;
-   }
-   else if (strncasecmp(x11ColourName,"gray26",6) == 0)
-   {
-      colour.r = 66;
-      colour.g = 66;
-      colour.b = 66;
-   }
-   else if (strncasecmp(x11ColourName,"grey26",6) == 0)
-   {
-      colour.r = 66;
-      colour.g = 66;
-      colour.b = 66;
-   }
-   else if (strncasecmp(x11ColourName,"gray27",6) == 0)
-   {
-      colour.r = 69;
-      colour.g = 69;
-      colour.b = 69;
-   }
-   else if (strncasecmp(x11ColourName,"grey27",6) == 0)
-   {
-      colour.r = 69;
-      colour.g = 69;
-      colour.b = 69;
-   }
-   else if (strncasecmp(x11ColourName,"gray28",6) == 0)
-   {
-      colour.r = 71;
-      colour.g = 71;
-      colour.b = 71;
-   }
-   else if (strncasecmp(x11ColourName,"grey28",6) == 0)
-   {
-      colour.r = 71;
-      colour.g = 71;
-      colour.b = 71;
-   }
-   else if (strncasecmp(x11ColourName,"gray29",6) == 0)
-   {
-      colour.r = 74;
-      colour.g = 74;
-      colour.b = 74;
-   }
-   else if (strncasecmp(x11ColourName,"grey29",6) == 0)
-   {
-      colour.r = 74;
-      colour.g = 74;
-      colour.b = 74;
-   }
-   else if (strncasecmp(x11ColourName,"gray30",6) == 0)
-   {
-      colour.r = 77;
-      colour.g = 77;
-      colour.b = 77;
-   }
-   else if (strncasecmp(x11ColourName,"grey30",6) == 0)
-   {
-      colour.r = 77;
-      colour.g = 77;
-      colour.b = 77;
-   }
-   else if (strncasecmp(x11ColourName,"gray31",6) == 0)
-   {
-      colour.r = 79;
-      colour.g = 79;
-      colour.b = 79;
-   }
-   else if (strncasecmp(x11ColourName,"grey31",6) == 0)
-   {
-      colour.r = 79;
-      colour.g = 79;
-      colour.b = 79;
-   }
-   else if (strncasecmp(x11ColourName,"gray32",6) == 0)
-   {
-      colour.r = 82;
-      colour.g = 82;
-      colour.b = 82;
-   }
-   else if (strncasecmp(x11ColourName,"grey32",6) == 0)
-   {
-      colour.r = 82;
-      colour.g = 82;
-      colour.b = 82;
-   }
-   else if (strncasecmp(x11ColourName,"gray33",6) == 0)
-   {
-      colour.r = 84;
-      colour.g = 84;
-      colour.b = 84;
-   }
-   else if (strncasecmp(x11ColourName,"grey33",6) == 0)
-   {
-      colour.r = 84;
-      colour.g = 84;
-      colour.b = 84;
-   }
-   else if (strncasecmp(x11ColourName,"gray34",6) == 0)
-   {
-      colour.r = 87;
-      colour.g = 87;
-      colour.b = 87;
-   }
-   else if (strncasecmp(x11ColourName,"grey34",6) == 0)
-   {
-      colour.r = 87;
-      colour.g = 87;
-      colour.b = 87;
-   }
-   else if (strncasecmp(x11ColourName,"gray35",6) == 0)
-   {
-      colour.r = 89;
-      colour.g = 89;
-      colour.b = 89;
-   }
-   else if (strncasecmp(x11ColourName,"grey35",6) == 0)
-   {
-      colour.r = 89;
-      colour.g = 89;
-      colour.b = 89;
-   }
-   else if (strncasecmp(x11ColourName,"gray36",6) == 0)
-   {
-      colour.r = 92;
-      colour.g = 92;
-      colour.b = 92;
-   }
-   else if (strncasecmp(x11ColourName,"grey36",6) == 0)
-   {
-      colour.r = 92;
-      colour.g = 92;
-      colour.b = 92;
-   }
-   else if (strncasecmp(x11ColourName,"gray37",6) == 0)
-   {
-      colour.r = 94;
-      colour.g = 94;
-      colour.b = 94;
-   }
-   else if (strncasecmp(x11ColourName,"grey37",6) == 0)
-   {
-      colour.r = 94;
-      colour.g = 94;
-      colour.b = 94;
-   }
-   else if (strncasecmp(x11ColourName,"gray38",6) == 0)
-   {
-      colour.r = 97;
-      colour.g = 97;
-      colour.b = 97;
-   }
-   else if (strncasecmp(x11ColourName,"grey38",6) == 0)
-   {
-      colour.r = 97;
-      colour.g = 97;
-      colour.b = 97;
-   }
-   else if (strncasecmp(x11ColourName,"gray39",6) == 0)
-   {
-      colour.r = 99;
-      colour.g = 99;
-      colour.b = 99;
-   }
-   else if (strncasecmp(x11ColourName,"grey39",6) == 0)
-   {
-      colour.r = 99;
-      colour.g = 99;
-      colour.b = 99;
-   }
-   else if (strncasecmp(x11ColourName,"gray40",6) == 0)
-   {
-      colour.r = 102;
-      colour.g = 102;
-      colour.b = 102;
-   }
-   else if (strncasecmp(x11ColourName,"grey40",6) == 0)
-   {
-      colour.r = 102;
-      colour.g = 102;
-      colour.b = 102;
-   }
-   else if (strncasecmp(x11ColourName,"gray41",6) == 0)
-   {
-      colour.r = 105;
-      colour.g = 105;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"grey41",6) == 0)
-   {
-      colour.r = 105;
-      colour.g = 105;
-      colour.b = 105;
-   }
-   else if (strncasecmp(x11ColourName,"gray42",6) == 0)
-   {
-      colour.r = 107;
-      colour.g = 107;
-      colour.b = 107;
-   }
-   else if (strncasecmp(x11ColourName,"grey42",6) == 0)
-   {
-      colour.r = 107;
-      colour.g = 107;
-      colour.b = 107;
-   }
-   else if (strncasecmp(x11ColourName,"gray43",6) == 0)
-   {
-      colour.r = 110;
-      colour.g = 110;
-      colour.b = 110;
-   }
-   else if (strncasecmp(x11ColourName,"grey43",6) == 0)
-   {
-      colour.r = 110;
-      colour.g = 110;
-      colour.b = 110;
-   }
-   else if (strncasecmp(x11ColourName,"gray44",6) == 0)
-   {
-      colour.r = 112;
-      colour.g = 112;
-      colour.b = 112;
-   }
-   else if (strncasecmp(x11ColourName,"grey44",6) == 0)
-   {
-      colour.r = 112;
-      colour.g = 112;
-      colour.b = 112;
-   }
-   else if (strncasecmp(x11ColourName,"gray45",6) == 0)
-   {
-      colour.r = 115;
-      colour.g = 115;
-      colour.b = 115;
-   }
-   else if (strncasecmp(x11ColourName,"grey45",6) == 0)
-   {
-      colour.r = 115;
-      colour.g = 115;
-      colour.b = 115;
-   }
-   else if (strncasecmp(x11ColourName,"gray46",6) == 0)
-   {
-      colour.r = 117;
-      colour.g = 117;
-      colour.b = 117;
-   }
-   else if (strncasecmp(x11ColourName,"grey46",6) == 0)
-   {
-      colour.r = 117;
-      colour.g = 117;
-      colour.b = 117;
-   }
-   else if (strncasecmp(x11ColourName,"gray47",6) == 0)
-   {
-      colour.r = 120;
-      colour.g = 120;
-      colour.b = 120;
-   }
-   else if (strncasecmp(x11ColourName,"grey47",6) == 0)
-   {
-      colour.r = 120;
-      colour.g = 120;
-      colour.b = 120;
-   }
-   else if (strncasecmp(x11ColourName,"gray48",6) == 0)
-   {
-      colour.r = 122;
-      colour.g = 122;
-      colour.b = 122;
-   }
-   else if (strncasecmp(x11ColourName,"grey48",6) == 0)
-   {
-      colour.r = 122;
-      colour.g = 122;
-      colour.b = 122;
-   }
-   else if (strncasecmp(x11ColourName,"gray49",6) == 0)
-   {
-      colour.r = 125;
-      colour.g = 125;
-      colour.b = 125;
-   }
-   else if (strncasecmp(x11ColourName,"grey49",6) == 0)
-   {
-      colour.r = 125;
-      colour.g = 125;
-      colour.b = 125;
-   }
-   else if (strncasecmp(x11ColourName,"gray50",6) == 0)
-   {
-      colour.r = 127;
-      colour.g = 127;
-      colour.b = 127;
-   }
-   else if (strncasecmp(x11ColourName,"grey50",6) == 0)
-   {
-      colour.r = 127;
-      colour.g = 127;
-      colour.b = 127;
-   }
-   else if (strncasecmp(x11ColourName,"gray51",6) == 0)
-   {
-      colour.r = 130;
-      colour.g = 130;
-      colour.b = 130;
-   }
-   else if (strncasecmp(x11ColourName,"grey51",6) == 0)
-   {
-      colour.r = 130;
-      colour.g = 130;
-      colour.b = 130;
-   }
-   else if (strncasecmp(x11ColourName,"gray52",6) == 0)
-   {
-      colour.r = 133;
-      colour.g = 133;
-      colour.b = 133;
-   }
-   else if (strncasecmp(x11ColourName,"grey52",6) == 0)
-   {
-      colour.r = 133;
-      colour.g = 133;
-      colour.b = 133;
-   }
-   else if (strncasecmp(x11ColourName,"gray53",6) == 0)
-   {
-      colour.r = 135;
-      colour.g = 135;
-      colour.b = 135;
-   }
-   else if (strncasecmp(x11ColourName,"grey53",6) == 0)
-   {
-      colour.r = 135;
-      colour.g = 135;
-      colour.b = 135;
-   }
-   else if (strncasecmp(x11ColourName,"gray54",6) == 0)
-   {
-      colour.r = 138;
-      colour.g = 138;
-      colour.b = 138;
-   }
-   else if (strncasecmp(x11ColourName,"grey54",6) == 0)
-   {
-      colour.r = 138;
-      colour.g = 138;
-      colour.b = 138;
-   }
-   else if (strncasecmp(x11ColourName,"gray55",6) == 0)
-   {
-      colour.r = 140;
-      colour.g = 140;
-      colour.b = 140;
-   }
-   else if (strncasecmp(x11ColourName,"grey55",6) == 0)
-   {
-      colour.r = 140;
-      colour.g = 140;
-      colour.b = 140;
-   }
-   else if (strncasecmp(x11ColourName,"gray56",6) == 0)
-   {
-      colour.r = 143;
-      colour.g = 143;
-      colour.b = 143;
-   }
-   else if (strncasecmp(x11ColourName,"grey56",6) == 0)
-   {
-      colour.r = 143;
-      colour.g = 143;
-      colour.b = 143;
-   }
-   else if (strncasecmp(x11ColourName,"gray57",6) == 0)
-   {
-      colour.r = 145;
-      colour.g = 145;
-      colour.b = 145;
-   }
-   else if (strncasecmp(x11ColourName,"grey57",6) == 0)
-   {
-      colour.r = 145;
-      colour.g = 145;
-      colour.b = 145;
-   }
-   else if (strncasecmp(x11ColourName,"gray58",6) == 0)
-   {
-      colour.r = 148;
-      colour.g = 148;
-      colour.b = 148;
-   }
-   else if (strncasecmp(x11ColourName,"grey58",6) == 0)
-   {
-      colour.r = 148;
-      colour.g = 148;
-      colour.b = 148;
-   }
-   else if (strncasecmp(x11ColourName,"gray59",6) == 0)
-   {
-      colour.r = 150;
-      colour.g = 150;
-      colour.b = 150;
-   }
-   else if (strncasecmp(x11ColourName,"grey59",6) == 0)
-   {
-      colour.r = 150;
-      colour.g = 150;
-      colour.b = 150;
-   }
-   else if (strncasecmp(x11ColourName,"gray60",6) == 0)
-   {
-      colour.r = 153;
-      colour.g = 153;
-      colour.b = 153;
-   }
-   else if (strncasecmp(x11ColourName,"grey60",6) == 0)
-   {
-      colour.r = 153;
-      colour.g = 153;
-      colour.b = 153;
-   }
-   else if (strncasecmp(x11ColourName,"gray61",6) == 0)
-   {
-      colour.r = 156;
-      colour.g = 156;
-      colour.b = 156;
-   }
-   else if (strncasecmp(x11ColourName,"grey61",6) == 0)
-   {
-      colour.r = 156;
-      colour.g = 156;
-      colour.b = 156;
-   }
-   else if (strncasecmp(x11ColourName,"gray62",6) == 0)
-   {
-      colour.r = 158;
-      colour.g = 158;
-      colour.b = 158;
-   }
-   else if (strncasecmp(x11ColourName,"grey62",6) == 0)
-   {
-      colour.r = 158;
-      colour.g = 158;
-      colour.b = 158;
-   }
-   else if (strncasecmp(x11ColourName,"gray63",6) == 0)
-   {
-      colour.r = 161;
-      colour.g = 161;
-      colour.b = 161;
-   }
-   else if (strncasecmp(x11ColourName,"grey63",6) == 0)
-   {
-      colour.r = 161;
-      colour.g = 161;
-      colour.b = 161;
-   }
-   else if (strncasecmp(x11ColourName,"gray64",6) == 0)
-   {
-      colour.r = 163;
-      colour.g = 163;
-      colour.b = 163;
-   }
-   else if (strncasecmp(x11ColourName,"grey64",6) == 0)
-   {
-      colour.r = 163;
-      colour.g = 163;
-      colour.b = 163;
-   }
-   else if (strncasecmp(x11ColourName,"gray65",6) == 0)
-   {
-      colour.r = 166;
-      colour.g = 166;
-      colour.b = 166;
-   }
-   else if (strncasecmp(x11ColourName,"grey65",6) == 0)
-   {
-      colour.r = 166;
-      colour.g = 166;
-      colour.b = 166;
-   }
-   else if (strncasecmp(x11ColourName,"gray66",6) == 0)
-   {
-      colour.r = 168;
-      colour.g = 168;
-      colour.b = 168;
-   }
-   else if (strncasecmp(x11ColourName,"grey66",6) == 0)
-   {
-      colour.r = 168;
-      colour.g = 168;
-      colour.b = 168;
-   }
-   else if (strncasecmp(x11ColourName,"gray67",6) == 0)
-   {
-      colour.r = 171;
-      colour.g = 171;
-      colour.b = 171;
-   }
-   else if (strncasecmp(x11ColourName,"grey67",6) == 0)
-   {
-      colour.r = 171;
-      colour.g = 171;
-      colour.b = 171;
-   }
-   else if (strncasecmp(x11ColourName,"gray68",6) == 0)
-   {
-      colour.r = 173;
-      colour.g = 173;
-      colour.b = 173;
-   }
-   else if (strncasecmp(x11ColourName,"grey68",6) == 0)
-   {
-      colour.r = 173;
-      colour.g = 173;
-      colour.b = 173;
-   }
-   else if (strncasecmp(x11ColourName,"gray69",6) == 0)
-   {
-      colour.r = 176;
-      colour.g = 176;
-      colour.b = 176;
-   }
-   else if (strncasecmp(x11ColourName,"grey69",6) == 0)
-   {
-      colour.r = 176;
-      colour.g = 176;
-      colour.b = 176;
-   }
-   else if (strncasecmp(x11ColourName,"gray70",6) == 0)
-   {
-      colour.r = 179;
-      colour.g = 179;
-      colour.b = 179;
-   }
-   else if (strncasecmp(x11ColourName,"grey70",6) == 0)
-   {
-      colour.r = 179;
-      colour.g = 179;
-      colour.b = 179;
-   }
-   else if (strncasecmp(x11ColourName,"gray71",6) == 0)
-   {
-      colour.r = 181;
-      colour.g = 181;
-      colour.b = 181;
-   }
-   else if (strncasecmp(x11ColourName,"grey71",6) == 0)
-   {
-      colour.r = 181;
-      colour.g = 181;
-      colour.b = 181;
-   }
-   else if (strncasecmp(x11ColourName,"gray72",6) == 0)
-   {
-      colour.r = 184;
-      colour.g = 184;
-      colour.b = 184;
-   }
-   else if (strncasecmp(x11ColourName,"grey72",6) == 0)
-   {
-      colour.r = 184;
-      colour.g = 184;
-      colour.b = 184;
-   }
-   else if (strncasecmp(x11ColourName,"gray73",6) == 0)
-   {
-      colour.r = 186;
-      colour.g = 186;
-      colour.b = 186;
-   }
-   else if (strncasecmp(x11ColourName,"grey73",6) == 0)
-   {
-      colour.r = 186;
-      colour.g = 186;
-      colour.b = 186;
-   }
-   else if (strncasecmp(x11ColourName,"gray74",6) == 0)
-   {
-      colour.r = 189;
-      colour.g = 189;
-      colour.b = 189;
-   }
-   else if (strncasecmp(x11ColourName,"grey74",6) == 0)
-   {
-      colour.r = 189;
-      colour.g = 189;
-      colour.b = 189;
-   }
-   else if (strncasecmp(x11ColourName,"gray75",6) == 0)
-   {
-      colour.r = 191;
-      colour.g = 191;
-      colour.b = 191;
-   }
-   else if (strncasecmp(x11ColourName,"grey75",6) == 0)
-   {
-      colour.r = 191;
-      colour.g = 191;
-      colour.b = 191;
-   }
-   else if (strncasecmp(x11ColourName,"gray76",6) == 0)
-   {
-      colour.r = 194;
-      colour.g = 194;
-      colour.b = 194;
-   }
-   else if (strncasecmp(x11ColourName,"grey76",6) == 0)
-   {
-      colour.r = 194;
-      colour.g = 194;
-      colour.b = 194;
-   }
-   else if (strncasecmp(x11ColourName,"gray77",6) == 0)
-   {
-      colour.r = 196;
-      colour.g = 196;
-      colour.b = 196;
-   }
-   else if (strncasecmp(x11ColourName,"grey77",6) == 0)
-   {
-      colour.r = 196;
-      colour.g = 196;
-      colour.b = 196;
-   }
-   else if (strncasecmp(x11ColourName,"gray78",6) == 0)
-   {
-      colour.r = 199;
-      colour.g = 199;
-      colour.b = 199;
-   }
-   else if (strncasecmp(x11ColourName,"grey78",6) == 0)
-   {
-      colour.r = 199;
-      colour.g = 199;
-      colour.b = 199;
-   }
-   else if (strncasecmp(x11ColourName,"gray79",6) == 0)
-   {
-      colour.r = 201;
-      colour.g = 201;
-      colour.b = 201;
-   }
-   else if (strncasecmp(x11ColourName,"grey79",6) == 0)
-   {
-      colour.r = 201;
-      colour.g = 201;
-      colour.b = 201;
-   }
-   else if (strncasecmp(x11ColourName,"gray80",6) == 0)
-   {
-      colour.r = 204;
-      colour.g = 204;
-      colour.b = 204;
-   }
-   else if (strncasecmp(x11ColourName,"grey80",6) == 0)
-   {
-      colour.r = 204;
-      colour.g = 204;
-      colour.b = 204;
-   }
-   else if (strncasecmp(x11ColourName,"gray81",6) == 0)
-   {
-      colour.r = 207;
-      colour.g = 207;
-      colour.b = 207;
-   }
-   else if (strncasecmp(x11ColourName,"grey81",6) == 0)
-   {
-      colour.r = 207;
-      colour.g = 207;
-      colour.b = 207;
-   }
-   else if (strncasecmp(x11ColourName,"gray82",6) == 0)
-   {
-      colour.r = 209;
-      colour.g = 209;
-      colour.b = 209;
-   }
-   else if (strncasecmp(x11ColourName,"grey82",6) == 0)
-   {
-      colour.r = 209;
-      colour.g = 209;
-      colour.b = 209;
-   }
-   else if (strncasecmp(x11ColourName,"gray83",6) == 0)
-   {
-      colour.r = 212;
-      colour.g = 212;
-      colour.b = 212;
-   }
-   else if (strncasecmp(x11ColourName,"grey83",6) == 0)
-   {
-      colour.r = 212;
-      colour.g = 212;
-      colour.b = 212;
-   }
-   else if (strncasecmp(x11ColourName,"gray84",6) == 0)
-   {
-      colour.r = 214;
-      colour.g = 214;
-      colour.b = 214;
-   }
-   else if (strncasecmp(x11ColourName,"grey84",6) == 0)
-   {
-      colour.r = 214;
-      colour.g = 214;
-      colour.b = 214;
-   }
-   else if (strncasecmp(x11ColourName,"gray85",6) == 0)
-   {
-      colour.r = 217;
-      colour.g = 217;
-      colour.b = 217;
-   }
-   else if (strncasecmp(x11ColourName,"grey85",6) == 0)
-   {
-      colour.r = 217;
-      colour.g = 217;
-      colour.b = 217;
-   }
-   else if (strncasecmp(x11ColourName,"gray86",6) == 0)
-   {
-      colour.r = 219;
-      colour.g = 219;
-      colour.b = 219;
-   }
-   else if (strncasecmp(x11ColourName,"grey86",6) == 0)
-   {
-      colour.r = 219;
-      colour.g = 219;
-      colour.b = 219;
-   }
-   else if (strncasecmp(x11ColourName,"gray87",6) == 0)
-   {
-      colour.r = 222;
-      colour.g = 222;
-      colour.b = 222;
-   }
-   else if (strncasecmp(x11ColourName,"grey87",6) == 0)
-   {
-      colour.r = 222;
-      colour.g = 222;
-      colour.b = 222;
-   }
-   else if (strncasecmp(x11ColourName,"gray88",6) == 0)
-   {
-      colour.r = 224;
-      colour.g = 224;
-      colour.b = 224;
-   }
-   else if (strncasecmp(x11ColourName,"grey88",6) == 0)
-   {
-      colour.r = 224;
-      colour.g = 224;
-      colour.b = 224;
-   }
-   else if (strncasecmp(x11ColourName,"gray89",6) == 0)
-   {
-      colour.r = 227;
-      colour.g = 227;
-      colour.b = 227;
-   }
-   else if (strncasecmp(x11ColourName,"grey89",6) == 0)
-   {
-      colour.r = 227;
-      colour.g = 227;
-      colour.b = 227;
-   }
-   else if (strncasecmp(x11ColourName,"gray90",6) == 0)
-   {
-      colour.r = 229;
-      colour.g = 229;
-      colour.b = 229;
-   }
-   else if (strncasecmp(x11ColourName,"grey90",6) == 0)
-   {
-      colour.r = 229;
-      colour.g = 229;
-      colour.b = 229;
-   }
-   else if (strncasecmp(x11ColourName,"gray91",6) == 0)
-   {
-      colour.r = 232;
-      colour.g = 232;
-      colour.b = 232;
-   }
-   else if (strncasecmp(x11ColourName,"grey91",6) == 0)
-   {
-      colour.r = 232;
-      colour.g = 232;
-      colour.b = 232;
-   }
-   else if (strncasecmp(x11ColourName,"gray92",6) == 0)
-   {
-      colour.r = 235;
-      colour.g = 235;
-      colour.b = 235;
-   }
-   else if (strncasecmp(x11ColourName,"grey92",6) == 0)
-   {
-      colour.r = 235;
-      colour.g = 235;
-      colour.b = 235;
-   }
-   else if (strncasecmp(x11ColourName,"gray93",6) == 0)
-   {
-      colour.r = 237;
-      colour.g = 237;
-      colour.b = 237;
-   }
-   else if (strncasecmp(x11ColourName,"grey93",6) == 0)
-   {
-      colour.r = 237;
-      colour.g = 237;
-      colour.b = 237;
-   }
-   else if (strncasecmp(x11ColourName,"gray94",6) == 0)
-   {
-      colour.r = 240;
-      colour.g = 240;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"grey94",6) == 0)
-   {
-      colour.r = 240;
-      colour.g = 240;
-      colour.b = 240;
-   }
-   else if (strncasecmp(x11ColourName,"gray95",6) == 0)
-   {
-      colour.r = 242;
-      colour.g = 242;
-      colour.b = 242;
-   }
-   else if (strncasecmp(x11ColourName,"grey95",6) == 0)
-   {
-      colour.r = 242;
-      colour.g = 242;
-      colour.b = 242;
-   }
-   else if (strncasecmp(x11ColourName,"gray96",6) == 0)
-   {
-      colour.r = 245;
-      colour.g = 245;
-      colour.b = 245;
-   }
-   else if (strncasecmp(x11ColourName,"grey96",6) == 0)
-   {
-      colour.r = 245;
-      colour.g = 245;
-      colour.b = 245;
-   }
-   else if (strncasecmp(x11ColourName,"gray97",6) == 0)
-   {
-      colour.r = 247;
-      colour.g = 247;
-      colour.b = 247;
-   }
-   else if (strncasecmp(x11ColourName,"grey97",6) == 0)
-   {
-      colour.r = 247;
-      colour.g = 247;
-      colour.b = 247;
-   }
-   else if (strncasecmp(x11ColourName,"gray98",6) == 0)
-   {
-      colour.r = 250;
-      colour.g = 250;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"grey98",6) == 0)
-   {
-      colour.r = 250;
-      colour.g = 250;
-      colour.b = 250;
-   }
-   else if (strncasecmp(x11ColourName,"gray99",6) == 0)
-   {
-      colour.r = 252;
-      colour.g = 252;
-      colour.b = 252;
-   }
-   else if (strncasecmp(x11ColourName,"grey99",6) == 0)
-   {
-      colour.r = 252;
-      colour.g = 252;
-      colour.b = 252;
-   }
-   else if (strncasecmp(x11ColourName,"gray100",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"grey100",7) == 0)
-   {
-      colour.r = 255;
-      colour.g = 255;
-      colour.b = 255;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGrey",8) == 0)
-   {
-      colour.r = 169;
-      colour.g = 169;
-      colour.b = 169;
-   }
-   else if (strncasecmp(x11ColourName,"DarkGray",8) == 0)
-   {
-      colour.r = 169;
-      colour.g = 169;
-      colour.b = 169;
-   }
-   else if (strncasecmp(x11ColourName,"DarkBlue",8) == 0)
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DarkCyan",8) == 0)
-   {
-      colour.r = 0;
-      colour.g = 139;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DarkMagenta",11) == 0)
-   {
-      colour.r = 139;
-      colour.g = 0;
-      colour.b = 139;
-   }
-   else if (strncasecmp(x11ColourName,"DarkRed",7) == 0)
-   {
-      colour.r = 139;
-      colour.g = 0;
-      colour.b = 0;
-   }
-   else if (strncasecmp(x11ColourName,"LightGreen",10) == 0)
-   {
-      colour.r = 144;
-      colour.g = 238;
-      colour.b = 144;
-   }
-   else        /* Default is Black */
-   {
-      colour.r = 0;
-      colour.g = 0;
-      colour.b = 0;
-   }
-
-   return colour;
+   std::transform(x11colour.begin(), x11colour.end(), x11colour.begin(), ::tolower);
+   if (x11colour.at(0) == '#')
+      return Colour_FromHex(x11colour);
+   else if (x11colour == "snow")
+      return Colour_RGBA(255, 250, 250);
+   else if (x11colour == "ghostwhite")
+      return Colour_RGBA(248, 248, 255);
+   else if (x11colour == "whitesmoke")
+      return Colour_RGBA(245, 245, 245);
+   else if (x11colour == "gainsboro")
+      return Colour_RGBA(220, 220, 220);
+   else if (x11colour == "floralwhite")
+      return Colour_RGBA(255, 250, 240);
+   else if (x11colour == "oldlace")
+      return Colour_RGBA(253, 245, 230);
+   else if (x11colour == "linen")
+      return Colour_RGBA(250, 240, 230);
+   else if (x11colour == "antiquewhite")
+      return Colour_RGBA(250, 235, 215);
+   else if (x11colour == "papayawhip")
+      return Colour_RGBA(255, 239, 213);
+   else if (x11colour == "blanchedalmond")
+      return Colour_RGBA(255, 235, 205);
+   else if (x11colour == "bisque")
+      return Colour_RGBA(255, 228, 196);
+   else if (x11colour == "peachpuff")
+      return Colour_RGBA(255, 218, 185);
+   else if (x11colour == "navajowhite")
+      return Colour_RGBA(255, 222, 173);
+   else if (x11colour == "moccasin")
+      return Colour_RGBA(255, 228, 181);
+   else if (x11colour == "cornsilk")
+      return Colour_RGBA(255, 248, 220);
+   else if (x11colour == "ivory")
+      return Colour_RGBA(255, 255, 240);
+   else if (x11colour == "lemonchiffon")
+      return Colour_RGBA(255, 250, 205);
+   else if (x11colour == "seashell")
+      return Colour_RGBA(255, 245, 238);
+   else if (x11colour == "honeydew")
+      return Colour_RGBA(240, 255, 240);
+   else if (x11colour == "mintcream")
+      return Colour_RGBA(245, 255, 250);
+   else if (x11colour == "azure")
+      return Colour_RGBA(240, 255, 255);
+   else if (x11colour == "aliceblue")
+      return Colour_RGBA(240, 248, 255);
+   else if (x11colour == "lavender")
+      return Colour_RGBA(230, 230, 250);
+   else if (x11colour == "lavenderblush")
+      return Colour_RGBA(255, 240, 245);
+   else if (x11colour == "mistyrose")
+      return Colour_RGBA(255, 228, 225);
+   else if (x11colour == "white")
+      return Colour_RGBA(255, 255, 255);
+   else if (x11colour == "black")
+      return Colour_RGBA(0, 0, 0);
+   else if (x11colour == "darkslategray")
+      return Colour_RGBA(47, 79, 79);
+   else if (x11colour == "darkslategrey")
+      return Colour_RGBA(47, 79, 79);
+   else if (x11colour == "dimgray")
+      return Colour_RGBA(105, 105, 105);
+   else if (x11colour == "dimgrey")
+      return Colour_RGBA(105, 105, 105);
+   else if (x11colour == "slategray")
+      return Colour_RGBA(112, 128, 144);
+   else if (x11colour == "slategrey")
+      return Colour_RGBA(112, 128, 144);
+   else if (x11colour == "lightslategray")
+      return Colour_RGBA(119, 136, 153);
+   else if (x11colour == "lightslategrey")
+      return Colour_RGBA(119, 136, 153);
+   else if (x11colour == "gray")
+      return Colour_RGBA(190, 190, 190);
+   else if (x11colour == "grey")
+      return Colour_RGBA(190, 190, 190);
+   else if (x11colour == "lightgrey")
+      return Colour_RGBA(211, 211, 211);
+   else if (x11colour == "lightgray")
+      return Colour_RGBA(211, 211, 211);
+   else if (x11colour == "midnightblue")
+      return Colour_RGBA(25, 25, 112);
+   else if (x11colour == "navy")
+      return Colour_RGBA(0, 0, 128);
+   else if (x11colour == "navyblue")
+      return Colour_RGBA(0, 0, 128);
+   else if (x11colour == "cornflowerblue")
+      return Colour_RGBA(100, 149, 237);
+   else if (x11colour == "darkslateblue")
+      return Colour_RGBA(72, 61, 139);
+   else if (x11colour == "slateblue")
+      return Colour_RGBA(106, 90, 205);
+   else if (x11colour == "mediumslateblue")
+      return Colour_RGBA(123, 104, 238);
+   else if (x11colour == "lightslateblue")
+      return Colour_RGBA(132, 112, 255);
+   else if (x11colour == "mediumblue")
+      return Colour_RGBA(0, 0, 205);
+   else if (x11colour == "royalblue")
+      return Colour_RGBA(65, 105, 225);
+   else if (x11colour == "blue")
+      return Colour_RGBA(0, 0, 255);
+   else if (x11colour == "dodgerblue")
+      return Colour_RGBA(30, 144, 255);
+   else if (x11colour == "deepskyblue")
+      return Colour_RGBA(0, 191, 255);
+   else if (x11colour == "skyblue")
+      return Colour_RGBA(135, 206, 235);
+   else if (x11colour == "lightskyblue")
+      return Colour_RGBA(135, 206, 250);
+   else if (x11colour == "steelblue")
+      return Colour_RGBA(70, 130, 180);
+   else if (x11colour == "lightsteelblue")
+      return Colour_RGBA(176, 196, 222);
+   else if (x11colour == "lightblue")
+      return Colour_RGBA(173, 216, 230);
+   else if (x11colour == "powderblue")
+      return Colour_RGBA(176, 224, 230);
+   else if (x11colour == "paleturquoise")
+      return Colour_RGBA(175, 238, 238);
+   else if (x11colour == "darkturquoise")
+      return Colour_RGBA(0, 206, 209);
+   else if (x11colour == "mediumturquoise")
+      return Colour_RGBA(72, 209, 204);
+   else if (x11colour == "turquoise")
+      return Colour_RGBA(64, 224, 208);
+   else if (x11colour == "cyan")
+      return Colour_RGBA(0, 255, 255);
+   else if (x11colour == "lightcyan")
+      return Colour_RGBA(224, 255, 255);
+   else if (x11colour == "cadetblue")
+      return Colour_RGBA(95, 158, 160);
+   else if (x11colour == "mediumaquamarine")
+      return Colour_RGBA(102, 205, 170);
+   else if (x11colour == "aquamarine")
+      return Colour_RGBA(127, 255, 212);
+   else if (x11colour == "darkgreen")
+      return Colour_RGBA(0, 100, 0);
+   else if (x11colour == "darkolivegreen")
+      return Colour_RGBA(85, 107, 47);
+   else if (x11colour == "darkseagreen")
+      return Colour_RGBA(143, 188, 143);
+   else if (x11colour == "seagreen")
+      return Colour_RGBA(46, 139, 87);
+   else if (x11colour == "mediumseagreen")
+      return Colour_RGBA(60, 179, 113);
+   else if (x11colour == "lightseagreen")
+      return Colour_RGBA(32, 178, 170);
+   else if (x11colour == "palegreen")
+      return Colour_RGBA(152, 251, 152);
+   else if (x11colour == "springgreen")
+      return Colour_RGBA(0, 255, 127);
+   else if (x11colour == "lawngreen")
+      return Colour_RGBA(124, 252, 0);
+   else if (x11colour == "green")
+      return Colour_RGBA(0, 255, 0);
+   else if (x11colour == "chartreuse")
+      return Colour_RGBA(127, 255, 0);
+   else if (x11colour == "mediumspringgreen")
+      return Colour_RGBA(0, 250, 154);
+   else if (x11colour == "greenyellow")
+      return Colour_RGBA(173, 255, 47);
+   else if (x11colour == "limegreen")
+      return Colour_RGBA(50, 205, 50);
+   else if (x11colour == "yellowgreen")
+      return Colour_RGBA(154, 205, 50);
+   else if (x11colour == "forestgreen")
+      return Colour_RGBA(34, 139, 34);
+   else if (x11colour == "olivedrab")
+      return Colour_RGBA(107, 142, 35);
+   else if (x11colour == "darkkhaki")
+      return Colour_RGBA(189, 183, 107);
+   else if (x11colour == "khaki")
+      return Colour_RGBA(240, 230, 140);
+   else if (x11colour == "palegoldenrod")
+      return Colour_RGBA(238, 232, 170);
+   else if (x11colour == "lightgoldenrodyellow")
+      return Colour_RGBA(250, 250, 210);
+   else if (x11colour == "lightyellow")
+      return Colour_RGBA(255, 255, 224);
+   else if (x11colour == "yellow")
+      return Colour_RGBA(255, 255, 0);
+   else if (x11colour == "gold")
+      return Colour_RGBA(255, 215, 0);
+   else if (x11colour == "lightgoldenrod")
+      return Colour_RGBA(238, 221, 130);
+   else if (x11colour == "goldenrod")
+      return Colour_RGBA(218, 165, 32);
+   else if (x11colour == "darkgoldenrod")
+      return Colour_RGBA(184, 134, 11);
+   else if (x11colour == "rosybrown")
+      return Colour_RGBA(188, 143, 143);
+   else if (x11colour == "indianred")
+      return Colour_RGBA(205, 92, 92);
+   else if (x11colour == "saddlebrown")
+      return Colour_RGBA(139, 69, 19);
+   else if (x11colour == "sienna")
+      return Colour_RGBA(160, 82, 45);
+   else if (x11colour == "peru")
+      return Colour_RGBA(205, 133, 63);
+   else if (x11colour == "burlywood")
+      return Colour_RGBA(222, 184, 135);
+   else if (x11colour == "beige")
+      return Colour_RGBA(245, 245, 220);
+   else if (x11colour == "wheat")
+      return Colour_RGBA(245, 222, 179);
+   else if (x11colour == "sandybrown")
+      return Colour_RGBA(244, 164, 96);
+   else if (x11colour == "tan")
+      return Colour_RGBA(210, 180, 140);
+   else if (x11colour == "chocolate")
+      return Colour_RGBA(210, 105, 30);
+   else if (x11colour == "firebrick")
+      return Colour_RGBA(178, 34, 34);
+   else if (x11colour == "brown")
+      return Colour_RGBA(165, 42, 42);
+   else if (x11colour == "darksalmon")
+      return Colour_RGBA(233, 150, 122);
+   else if (x11colour == "salmon")
+      return Colour_RGBA(250, 128, 114);
+   else if (x11colour == "lightsalmon")
+      return Colour_RGBA(255, 160, 122);
+   else if (x11colour == "orange")
+      return Colour_RGBA(255, 165, 0);
+   else if (x11colour == "darkorange")
+      return Colour_RGBA(255, 140, 0);
+   else if (x11colour == "coral")
+      return Colour_RGBA(255, 127, 80);
+   else if (x11colour == "lightcoral")
+      return Colour_RGBA(240, 128, 128);
+   else if (x11colour == "tomato")
+      return Colour_RGBA(255, 99, 71);
+   else if (x11colour == "orangered")
+      return Colour_RGBA(255, 69, 0);
+   else if (x11colour == "red")
+      return Colour_RGBA(255, 0, 0);
+   else if (x11colour == "hotpink")
+      return Colour_RGBA(255, 105, 180);
+   else if (x11colour == "deeppink")
+      return Colour_RGBA(255, 20, 147);
+   else if (x11colour == "pink")
+      return Colour_RGBA(255, 192, 203);
+   else if (x11colour == "lightpink")
+      return Colour_RGBA(255, 182, 193);
+   else if (x11colour == "palevioletred")
+      return Colour_RGBA(219, 112, 147);
+   else if (x11colour == "maroon")
+      return Colour_RGBA(176, 48, 96);
+   else if (x11colour == "mediumvioletred")
+      return Colour_RGBA(199, 21, 133);
+   else if (x11colour == "violetred")
+      return Colour_RGBA(208, 32, 144);
+   else if (x11colour == "magenta")
+      return Colour_RGBA(255, 0, 255);
+   else if (x11colour == "violet")
+      return Colour_RGBA(238, 130, 238);
+   else if (x11colour == "plum")
+      return Colour_RGBA(221, 160, 221);
+   else if (x11colour == "orchid")
+      return Colour_RGBA(218, 112, 214);
+   else if (x11colour == "mediumorchid")
+      return Colour_RGBA(186, 85, 211);
+   else if (x11colour == "darkorchid")
+      return Colour_RGBA(153, 50, 204);
+   else if (x11colour == "darkviolet")
+      return Colour_RGBA(148, 0, 211);
+   else if (x11colour == "blueviolet")
+      return Colour_RGBA(138, 43, 226);
+   else if (x11colour == "purple")
+      return Colour_RGBA(160, 32, 240);
+   else if (x11colour == "mediumpurple")
+      return Colour_RGBA(147, 112, 219);
+   else if (x11colour == "thistle")
+      return Colour_RGBA(216, 191, 216);
+   else if (x11colour == "snow1")
+      return Colour_RGBA(255, 250, 250);
+   else if (x11colour == "snow2")
+      return Colour_RGBA(238, 233, 233);
+   else if (x11colour == "snow3")
+      return Colour_RGBA(205, 201, 201);
+   else if (x11colour == "snow4")
+      return Colour_RGBA(139, 137, 137);
+   else if (x11colour == "seashell1")
+      return Colour_RGBA(255, 245, 238);
+   else if (x11colour == "seashell2")
+      return Colour_RGBA(238, 229, 222);
+   else if (x11colour == "seashell3")
+      return Colour_RGBA(205, 197, 191);
+   else if (x11colour == "seashell4")
+      return Colour_RGBA(139, 134, 130);
+   else if (x11colour == "antiquewhite1")
+      return Colour_RGBA(255, 239, 219);
+   else if (x11colour == "antiquewhite2")
+      return Colour_RGBA(238, 223, 204);
+   else if (x11colour == "antiquewhite3")
+      return Colour_RGBA(205, 192, 176);
+   else if (x11colour == "antiquewhite4")
+      return Colour_RGBA(139, 131, 120);
+   else if (x11colour == "bisque1")
+      return Colour_RGBA(255, 228, 196);
+   else if (x11colour == "bisque2")
+      return Colour_RGBA(238, 213, 183);
+   else if (x11colour == "bisque3")
+      return Colour_RGBA(205, 183, 158);
+   else if (x11colour == "bisque4")
+      return Colour_RGBA(139, 125, 107);
+   else if (x11colour == "peachpuff1")
+      return Colour_RGBA(255, 218, 185);
+   else if (x11colour == "peachpuff2")
+      return Colour_RGBA(238, 203, 173);
+   else if (x11colour == "peachpuff3")
+      return Colour_RGBA(205, 175, 149);
+   else if (x11colour == "peachpuff4")
+      return Colour_RGBA(139, 119, 101);
+   else if (x11colour == "navajowhite1")
+      return Colour_RGBA(255, 222, 173);
+   else if (x11colour == "navajowhite2")
+      return Colour_RGBA(238, 207, 161);
+   else if (x11colour == "navajowhite3")
+      return Colour_RGBA(205, 179, 139);
+   else if (x11colour == "navajowhite4")
+      return Colour_RGBA(139, 121, 94);
+   else if (x11colour == "lemonchiffon1")
+      return Colour_RGBA(255, 250, 205);
+   else if (x11colour == "lemonchiffon2")
+      return Colour_RGBA(238, 233, 191);
+   else if (x11colour == "lemonchiffon3")
+      return Colour_RGBA(205, 201, 165);
+   else if (x11colour == "lemonchiffon4")
+      return Colour_RGBA(139, 137, 112);
+   else if (x11colour == "cornsilk1")
+      return Colour_RGBA(255, 248, 220);
+   else if (x11colour == "cornsilk2")
+      return Colour_RGBA(238, 232, 205);
+   else if (x11colour == "cornsilk3")
+      return Colour_RGBA(205, 200, 177);
+   else if (x11colour == "cornsilk4")
+      return Colour_RGBA(139, 136, 120);
+   else if (x11colour == "ivory1")
+      return Colour_RGBA(255, 255, 240);
+   else if (x11colour == "ivory2")
+      return Colour_RGBA(238, 238, 224);
+   else if (x11colour == "ivory3")
+      return Colour_RGBA(205, 205, 193);
+   else if (x11colour == "ivory4")
+      return Colour_RGBA(139, 139, 131);
+   else if (x11colour == "honeydew1")
+      return Colour_RGBA(240, 255, 240);
+   else if (x11colour == "honeydew2")
+      return Colour_RGBA(224, 238, 224);
+   else if (x11colour == "honeydew3")
+      return Colour_RGBA(193, 205, 193);
+   else if (x11colour == "honeydew4")
+      return Colour_RGBA(131, 139, 131);
+   else if (x11colour == "lavenderblush1")
+      return Colour_RGBA(255, 240, 245);
+   else if (x11colour == "lavenderblush2")
+      return Colour_RGBA(238, 224, 229);
+   else if (x11colour == "lavenderblush3")
+      return Colour_RGBA(205, 193, 197);
+   else if (x11colour == "lavenderblush4")
+      return Colour_RGBA(139, 131, 134);
+   else if (x11colour == "mistyrose1")
+      return Colour_RGBA(255, 228, 225);
+   else if (x11colour == "mistyrose2")
+      return Colour_RGBA(238, 213, 210);
+   else if (x11colour == "mistyrose3")
+      return Colour_RGBA(205, 183, 181);
+   else if (x11colour == "mistyrose4")
+      return Colour_RGBA(139, 125, 123);
+   else if (x11colour == "azure1")
+      return Colour_RGBA(240, 255, 255);
+   else if (x11colour == "azure2")
+      return Colour_RGBA(224, 238, 238);
+   else if (x11colour == "azure3")
+      return Colour_RGBA(193, 205, 205);
+   else if (x11colour == "azure4")
+      return Colour_RGBA(131, 139, 139);
+   else if (x11colour == "slateblue1")
+      return Colour_RGBA(131, 111, 255);
+   else if (x11colour == "slateblue2")
+      return Colour_RGBA(122, 103, 238);
+   else if (x11colour == "slateblue3")
+      return Colour_RGBA(105, 89, 205);
+   else if (x11colour == "slateblue4")
+      return Colour_RGBA(71, 60, 139);
+   else if (x11colour == "royalblue1")
+      return Colour_RGBA(72, 118, 255);
+   else if (x11colour == "royalblue2")
+      return Colour_RGBA(67, 110, 238);
+   else if (x11colour == "royalblue3")
+      return Colour_RGBA(58, 95, 205);
+   else if (x11colour == "royalblue4")
+      return Colour_RGBA(39, 64, 139);
+   else if (x11colour == "blue1")
+      return Colour_RGBA(0, 0, 255);
+   else if (x11colour == "blue2")
+      return Colour_RGBA(0, 0, 238);
+   else if (x11colour == "blue3")
+      return Colour_RGBA(0, 0, 205);
+   else if (x11colour == "blue4")
+      return Colour_RGBA(0, 0, 139);
+   else if (x11colour == "dodgerblue1")
+      return Colour_RGBA(30, 144, 255);
+   else if (x11colour == "dodgerblue2")
+      return Colour_RGBA(28, 134, 238);
+   else if (x11colour == "dodgerblue3")
+      return Colour_RGBA(24, 116, 205);
+   else if (x11colour == "dodgerblue4")
+      return Colour_RGBA(16, 78, 139);
+   else if (x11colour == "steelblue1")
+      return Colour_RGBA(99, 184, 255);
+   else if (x11colour == "steelblue2")
+      return Colour_RGBA(92, 172, 238);
+   else if (x11colour == "steelblue3")
+      return Colour_RGBA(79, 148, 205);
+   else if (x11colour == "steelblue4")
+      return Colour_RGBA(54, 100, 139);
+   else if (x11colour == "deepskyblue1")
+      return Colour_RGBA(0, 191, 255);
+   else if (x11colour == "deepskyblue2")
+      return Colour_RGBA(0, 178, 238);
+   else if (x11colour == "deepskyblue3")
+      return Colour_RGBA(0, 154, 205);
+   else if (x11colour == "deepskyblue4")
+      return Colour_RGBA(0, 104, 139);
+   else if (x11colour == "skyblue1")
+      return Colour_RGBA(135, 206, 255);
+   else if (x11colour == "skyblue2")
+      return Colour_RGBA(126, 192, 238);
+   else if (x11colour == "skyblue3")
+      return Colour_RGBA(108, 166, 205);
+   else if (x11colour == "skyblue4")
+      return Colour_RGBA(74, 112, 139);
+   else if (x11colour == "lightskyblue1")
+      return Colour_RGBA(176, 226, 255);
+   else if (x11colour == "lightskyblue2")
+      return Colour_RGBA(164, 211, 238);
+   else if (x11colour == "lightskyblue3")
+      return Colour_RGBA(141, 182, 205);
+   else if (x11colour == "lightskyblue4")
+      return Colour_RGBA(96, 123, 139);
+   else if (x11colour == "slategray1")
+      return Colour_RGBA(198, 226, 255);
+   else if (x11colour == "slategray2")
+      return Colour_RGBA(185, 211, 238);
+   else if (x11colour == "slategray3")
+      return Colour_RGBA(159, 182, 205);
+   else if (x11colour == "slategray4")
+      return Colour_RGBA(108, 123, 139);
+   else if (x11colour == "lightsteelblue1")
+      return Colour_RGBA(202, 225, 255);
+   else if (x11colour == "lightsteelblue2")
+      return Colour_RGBA(188, 210, 238);
+   else if (x11colour == "lightsteelblue3")
+      return Colour_RGBA(162, 181, 205);
+   else if (x11colour == "lightsteelblue4")
+      return Colour_RGBA(110, 123, 139);
+   else if (x11colour == "lightblue1")
+      return Colour_RGBA(191, 239, 255);
+   else if (x11colour == "lightblue2")
+      return Colour_RGBA(178, 223, 238);
+   else if (x11colour == "lightblue3")
+      return Colour_RGBA(154, 192, 205);
+   else if (x11colour == "lightblue4")
+      return Colour_RGBA(104, 131, 139);
+   else if (x11colour == "lightcyan1")
+      return Colour_RGBA(224, 255, 255);
+   else if (x11colour == "lightcyan2")
+      return Colour_RGBA(209, 238, 238);
+   else if (x11colour == "lightcyan3")
+      return Colour_RGBA(180, 205, 205);
+   else if (x11colour == "lightcyan4")
+      return Colour_RGBA(122, 139, 139);
+   else if (x11colour == "paleturquoise1")
+      return Colour_RGBA(187, 255, 255);
+   else if (x11colour == "paleturquoise2")
+      return Colour_RGBA(174, 238, 238);
+   else if (x11colour == "paleturquoise3")
+      return Colour_RGBA(150, 205, 205);
+   else if (x11colour == "paleturquoise4")
+      return Colour_RGBA(102, 139, 139);
+   else if (x11colour == "cadetblue1")
+      return Colour_RGBA(152, 245, 255);
+   else if (x11colour == "cadetblue2")
+      return Colour_RGBA(142, 229, 238);
+   else if (x11colour == "cadetblue3")
+      return Colour_RGBA(122, 197, 205);
+   else if (x11colour == "cadetblue4")
+      return Colour_RGBA(83, 134, 139);
+   else if (x11colour == "turquoise1")
+      return Colour_RGBA(0, 245, 255);
+   else if (x11colour == "turquoise2")
+      return Colour_RGBA(0, 229, 238);
+   else if (x11colour == "turquoise3")
+      return Colour_RGBA(0, 197, 205);
+   else if (x11colour == "turquoise4")
+      return Colour_RGBA(0, 134, 139);
+   else if (x11colour == "cyan1")
+      return Colour_RGBA(0, 255, 255);
+   else if (x11colour == "cyan2")
+      return Colour_RGBA(0, 238, 238);
+   else if (x11colour == "cyan3")
+      return Colour_RGBA(0, 205, 205);
+   else if (x11colour == "cyan4")
+      return Colour_RGBA(0, 139, 139);
+   else if (x11colour == "darkslategray1")
+      return Colour_RGBA(151, 255, 255);
+   else if (x11colour == "darkslategray2")
+      return Colour_RGBA(141, 238, 238);
+   else if (x11colour == "darkslategray3")
+      return Colour_RGBA(121, 205, 205);
+   else if (x11colour == "darkslategray4")
+      return Colour_RGBA(82, 139, 139);
+   else if (x11colour == "aquamarine1")
+      return Colour_RGBA(127, 255, 212);
+   else if (x11colour == "aquamarine2")
+      return Colour_RGBA(118, 238, 198);
+   else if (x11colour == "aquamarine3")
+      return Colour_RGBA(102, 205, 170);
+   else if (x11colour == "aquamarine4")
+      return Colour_RGBA(69, 139, 116);
+   else if (x11colour == "darkseagreen1")
+      return Colour_RGBA(193, 255, 193);
+   else if (x11colour == "darkseagreen2")
+      return Colour_RGBA(180, 238, 180);
+   else if (x11colour == "darkseagreen3")
+      return Colour_RGBA(155, 205, 155);
+   else if (x11colour == "darkseagreen4")
+      return Colour_RGBA(105, 139, 105);
+   else if (x11colour == "seagreen1")
+      return Colour_RGBA(84, 255, 159);
+   else if (x11colour == "seagreen2")
+      return Colour_RGBA(78, 238, 148);
+   else if (x11colour == "seagreen3")
+      return Colour_RGBA(67, 205, 128);
+   else if (x11colour == "seagreen4")
+      return Colour_RGBA(46, 139, 87);
+   else if (x11colour == "palegreen1")
+      return Colour_RGBA(154, 255, 154);
+   else if (x11colour == "palegreen2")
+      return Colour_RGBA(144, 238, 144);
+   else if (x11colour == "palegreen3")
+      return Colour_RGBA(124, 205, 124);
+   else if (x11colour == "palegreen4")
+      return Colour_RGBA(84, 139, 84);
+   else if (x11colour == "springgreen1")
+      return Colour_RGBA(0, 255, 127);
+   else if (x11colour == "springgreen2")
+      return Colour_RGBA(0, 238, 118);
+   else if (x11colour == "springgreen3")
+      return Colour_RGBA(0, 205, 102);
+   else if (x11colour == "springgreen4")
+      return Colour_RGBA(0, 139, 69);
+   else if (x11colour == "green1")
+      return Colour_RGBA(0, 255, 0);
+   else if (x11colour == "green2")
+      return Colour_RGBA(0, 238, 0);
+   else if (x11colour == "green3")
+      return Colour_RGBA(0, 205, 0);
+   else if (x11colour == "green4")
+      return Colour_RGBA(0, 139, 0);
+   else if (x11colour == "chartreuse1")
+      return Colour_RGBA(127, 255, 0);
+   else if (x11colour == "chartreuse2")
+      return Colour_RGBA(118, 238, 0);
+   else if (x11colour == "chartreuse3")
+      return Colour_RGBA(102, 205, 0);
+   else if (x11colour == "chartreuse4")
+      return Colour_RGBA(69, 139, 0);
+   else if (x11colour == "olivedrab1")
+      return Colour_RGBA(192, 255, 62);
+   else if (x11colour == "olivedrab2")
+      return Colour_RGBA(179, 238, 58);
+   else if (x11colour == "olivedrab3")
+      return Colour_RGBA(154, 205, 50);
+   else if (x11colour == "olivedrab4")
+      return Colour_RGBA(105, 139, 34);
+   else if (x11colour == "darkolivegreen1")
+      return Colour_RGBA(202, 255, 112);
+   else if (x11colour == "darkolivegreen2")
+      return Colour_RGBA(188, 238, 104);
+   else if (x11colour == "darkolivegreen3")
+      return Colour_RGBA(162, 205, 90);
+   else if (x11colour == "darkolivegreen4")
+      return Colour_RGBA(110, 139, 61);
+   else if (x11colour == "khaki1")
+      return Colour_RGBA(255, 246, 143);
+   else if (x11colour == "khaki2")
+      return Colour_RGBA(238, 230, 133);
+   else if (x11colour == "khaki3")
+      return Colour_RGBA(205, 198, 115);
+   else if (x11colour == "khaki4")
+      return Colour_RGBA(139, 134, 78);
+   else if (x11colour == "lightgoldenrod1")
+      return Colour_RGBA(255, 236, 139);
+   else if (x11colour == "lightgoldenrod2")
+      return Colour_RGBA(238, 220, 130);
+   else if (x11colour == "lightgoldenrod3")
+      return Colour_RGBA(205, 190, 112);
+   else if (x11colour == "lightgoldenrod4")
+      return Colour_RGBA(139, 129, 76);
+   else if (x11colour == "lightyellow1")
+      return Colour_RGBA(255, 255, 224);
+   else if (x11colour == "lightyellow2")
+      return Colour_RGBA(238, 238, 209);
+   else if (x11colour == "lightyellow3")
+      return Colour_RGBA(205, 205, 180);
+   else if (x11colour == "lightyellow4")
+      return Colour_RGBA(139, 139, 122);
+   else if (x11colour == "yellow1")
+      return Colour_RGBA(255, 255, 0);
+   else if (x11colour == "yellow2")
+      return Colour_RGBA(238, 238, 0);
+   else if (x11colour == "yellow3")
+      return Colour_RGBA(205, 205, 0);
+   else if (x11colour == "yellow4")
+      return Colour_RGBA(139, 139, 0);
+   else if (x11colour == "gold1")
+      return Colour_RGBA(255, 215, 0);
+   else if (x11colour == "gold2")
+      return Colour_RGBA(238, 201, 0);
+   else if (x11colour == "gold3")
+      return Colour_RGBA(205, 173, 0);
+   else if (x11colour == "gold4")
+      return Colour_RGBA(139, 117, 0);
+   else if (x11colour == "goldenrod1")
+      return Colour_RGBA(255, 193, 37);
+   else if (x11colour == "goldenrod2")
+      return Colour_RGBA(238, 180, 34);
+   else if (x11colour == "goldenrod3")
+      return Colour_RGBA(205, 155, 29);
+   else if (x11colour == "goldenrod4")
+      return Colour_RGBA(139, 105, 20);
+   else if (x11colour == "darkgoldenrod1")
+      return Colour_RGBA(255, 185, 15);
+   else if (x11colour == "darkgoldenrod2")
+      return Colour_RGBA(238, 173, 14);
+   else if (x11colour == "darkgoldenrod3")
+      return Colour_RGBA(205, 149, 12);
+   else if (x11colour == "darkgoldenrod4")
+      return Colour_RGBA(139, 101, 8);
+   else if (x11colour == "rosybrown1")
+      return Colour_RGBA(255, 193, 193);
+   else if (x11colour == "rosybrown2")
+      return Colour_RGBA(238, 180, 180);
+   else if (x11colour == "rosybrown3")
+      return Colour_RGBA(205, 155, 155);
+   else if (x11colour == "rosybrown4")
+      return Colour_RGBA(139, 105, 105);
+   else if (x11colour == "indianred1")
+      return Colour_RGBA(255, 106, 106);
+   else if (x11colour == "indianred2")
+      return Colour_RGBA(238, 99, 99);
+   else if (x11colour == "indianred3")
+      return Colour_RGBA(205, 85, 85);
+   else if (x11colour == "indianred4")
+      return Colour_RGBA(139, 58, 58);
+   else if (x11colour == "sienna1")
+      return Colour_RGBA(255, 130, 71);
+   else if (x11colour == "sienna2")
+      return Colour_RGBA(238, 121, 66);
+   else if (x11colour == "sienna3")
+      return Colour_RGBA(205, 104, 57);
+   else if (x11colour == "sienna4")
+      return Colour_RGBA(139, 71, 38);
+   else if (x11colour == "burlywood1")
+      return Colour_RGBA(255, 211, 155);
+   else if (x11colour == "burlywood2")
+      return Colour_RGBA(238, 197, 145);
+   else if (x11colour == "burlywood3")
+      return Colour_RGBA(205, 170, 125);
+   else if (x11colour == "burlywood4")
+      return Colour_RGBA(139, 115, 85);
+   else if (x11colour == "wheat1")
+      return Colour_RGBA(255, 231, 186);
+   else if (x11colour == "wheat2")
+      return Colour_RGBA(238, 216, 174);
+   else if (x11colour == "wheat3")
+      return Colour_RGBA(205, 186, 150);
+   else if (x11colour == "wheat4")
+      return Colour_RGBA(139, 126, 102);
+   else if (x11colour == "tan1")
+      return Colour_RGBA(255, 165, 79);
+   else if (x11colour == "tan2")
+      return Colour_RGBA(238, 154, 73);
+   else if (x11colour == "tan3")
+      return Colour_RGBA(205, 133, 63);
+   else if (x11colour == "tan4")
+      return Colour_RGBA(139, 90, 43);
+   else if (x11colour == "chocolate1")
+      return Colour_RGBA(255, 127, 36);
+   else if (x11colour == "chocolate2")
+      return Colour_RGBA(238, 118, 33);
+   else if (x11colour == "chocolate3")
+      return Colour_RGBA(205, 102, 29);
+   else if (x11colour == "chocolate4")
+      return Colour_RGBA(139, 69, 19);
+   else if (x11colour == "firebrick1")
+      return Colour_RGBA(255, 48, 48);
+   else if (x11colour == "firebrick2")
+      return Colour_RGBA(238, 44, 44);
+   else if (x11colour == "firebrick3")
+      return Colour_RGBA(205, 38, 38);
+   else if (x11colour == "firebrick4")
+      return Colour_RGBA(139, 26, 26);
+   else if (x11colour == "brown1")
+      return Colour_RGBA(255, 64, 64);
+   else if (x11colour == "brown2")
+      return Colour_RGBA(238, 59, 59);
+   else if (x11colour == "brown3")
+      return Colour_RGBA(205, 51, 51);
+   else if (x11colour == "brown4")
+      return Colour_RGBA(139, 35, 35);
+   else if (x11colour == "salmon1")
+      return Colour_RGBA(255, 140, 105);
+   else if (x11colour == "salmon2")
+      return Colour_RGBA(238, 130, 98);
+   else if (x11colour == "salmon3")
+      return Colour_RGBA(205, 112, 84);
+   else if (x11colour == "salmon4")
+      return Colour_RGBA(139, 76, 57);
+   else if (x11colour == "lightsalmon1")
+      return Colour_RGBA(255, 160, 122);
+   else if (x11colour == "lightsalmon2")
+      return Colour_RGBA(238, 149, 114);
+   else if (x11colour == "lightsalmon3")
+      return Colour_RGBA(205, 129, 98);
+   else if (x11colour == "lightsalmon4")
+      return Colour_RGBA(139, 87, 66);
+   else if (x11colour == "orange1")
+      return Colour_RGBA(255, 165, 0);
+   else if (x11colour == "orange2")
+      return Colour_RGBA(238, 154, 0);
+   else if (x11colour == "orange3")
+      return Colour_RGBA(205, 133, 0);
+   else if (x11colour == "orange4")
+      return Colour_RGBA(139, 90, 0);
+   else if (x11colour == "darkorange1")
+      return Colour_RGBA(255, 127, 0);
+   else if (x11colour == "darkorange2")
+      return Colour_RGBA(238, 118, 0);
+   else if (x11colour == "darkorange3")
+      return Colour_RGBA(205, 102, 0);
+   else if (x11colour == "darkorange4")
+      return Colour_RGBA(139, 69, 0);
+   else if (x11colour == "coral1")
+      return Colour_RGBA(255, 114, 86);
+   else if (x11colour == "coral2")
+      return Colour_RGBA(238, 106, 80);
+   else if (x11colour == "coral3")
+      return Colour_RGBA(205, 91, 69);
+   else if (x11colour == "coral4")
+      return Colour_RGBA(139, 62, 47);
+   else if (x11colour == "tomato1")
+      return Colour_RGBA(255, 99, 71);
+   else if (x11colour == "tomato2")
+      return Colour_RGBA(238, 92, 66);
+   else if (x11colour == "tomato3")
+      return Colour_RGBA(205, 79, 57);
+   else if (x11colour == "tomato4")
+      return Colour_RGBA(139, 54, 38);
+   else if (x11colour == "orangered1")
+      return Colour_RGBA(255, 69, 0);
+   else if (x11colour == "orangered2")
+      return Colour_RGBA(238, 64, 0);
+   else if (x11colour == "orangered3")
+      return Colour_RGBA(205, 55, 0);
+   else if (x11colour == "orangered4")
+      return Colour_RGBA(139, 37, 0);
+   else if (x11colour == "red1")
+      return Colour_RGBA(255, 0, 0);
+   else if (x11colour == "red2")
+      return Colour_RGBA(238, 0, 0);
+   else if (x11colour == "red3")
+      return Colour_RGBA(205, 0, 0);
+   else if (x11colour == "red4")
+      return Colour_RGBA(139, 0, 0);
+   else if (x11colour == "deeppink1")
+      return Colour_RGBA(255, 20, 147);
+   else if (x11colour == "deeppink2")
+      return Colour_RGBA(238, 18, 137);
+   else if (x11colour == "deeppink3")
+      return Colour_RGBA(205, 16, 118);
+   else if (x11colour == "deeppink4")
+      return Colour_RGBA(139, 10, 80);
+   else if (x11colour == "hotpink1")
+      return Colour_RGBA(255, 110, 180);
+   else if (x11colour == "hotpink2")
+      return Colour_RGBA(238, 106, 167);
+   else if (x11colour == "hotpink3")
+      return Colour_RGBA(205, 96, 144);
+   else if (x11colour == "hotpink4")
+      return Colour_RGBA(139, 58, 98);
+   else if (x11colour == "pink1")
+      return Colour_RGBA(255, 181, 197);
+   else if (x11colour == "pink2")
+      return Colour_RGBA(238, 169, 184);
+   else if (x11colour == "pink3")
+      return Colour_RGBA(205, 145, 158);
+   else if (x11colour == "pink4")
+      return Colour_RGBA(139, 99, 108);
+   else if (x11colour == "lightpink1")
+      return Colour_RGBA(255, 174, 185);
+   else if (x11colour == "lightpink2")
+      return Colour_RGBA(238, 162, 173);
+   else if (x11colour == "lightpink3")
+      return Colour_RGBA(205, 140, 149);
+   else if (x11colour == "lightpink4")
+      return Colour_RGBA(139, 95, 101);
+   else if (x11colour == "palevioletred1")
+      return Colour_RGBA(255, 130, 171);
+   else if (x11colour == "palevioletred2")
+      return Colour_RGBA(238, 121, 159);
+   else if (x11colour == "palevioletred3")
+      return Colour_RGBA(205, 104, 137);
+   else if (x11colour == "palevioletred4")
+      return Colour_RGBA(139, 71, 93);
+   else if (x11colour == "maroon1")
+      return Colour_RGBA(255, 52, 179);
+   else if (x11colour == "maroon2")
+      return Colour_RGBA(238, 48, 167);
+   else if (x11colour == "maroon3")
+      return Colour_RGBA(205, 41, 144);
+   else if (x11colour == "maroon4")
+      return Colour_RGBA(139, 28, 98);
+   else if (x11colour == "violetred1")
+      return Colour_RGBA(255, 62, 150);
+   else if (x11colour == "violetred2")
+      return Colour_RGBA(238, 58, 140);
+   else if (x11colour == "violetred3")
+      return Colour_RGBA(205, 50, 120);
+   else if (x11colour == "violetred4")
+      return Colour_RGBA(139, 34, 82);
+   else if (x11colour == "magenta1")
+      return Colour_RGBA(255, 0, 255);
+   else if (x11colour == "magenta2")
+      return Colour_RGBA(238, 0, 238);
+   else if (x11colour == "magenta3")
+      return Colour_RGBA(205, 0, 205);
+   else if (x11colour == "magenta4")
+      return Colour_RGBA(139, 0, 139);
+   else if (x11colour == "orchid1")
+      return Colour_RGBA(255, 131, 250);
+   else if (x11colour == "orchid2")
+      return Colour_RGBA(238, 122, 233);
+   else if (x11colour == "orchid3")
+      return Colour_RGBA(205, 105, 201);
+   else if (x11colour == "orchid4")
+      return Colour_RGBA(139, 71, 137);
+   else if (x11colour == "plum1")
+      return Colour_RGBA(255, 187, 255);
+   else if (x11colour == "plum2")
+      return Colour_RGBA(238, 174, 238);
+   else if (x11colour == "plum3")
+      return Colour_RGBA(205, 150, 205);
+   else if (x11colour == "plum4")
+      return Colour_RGBA(139, 102, 139);
+   else if (x11colour == "mediumorchid1")
+      return Colour_RGBA(224, 102, 255);
+   else if (x11colour == "mediumorchid2")
+      return Colour_RGBA(209, 95, 238);
+   else if (x11colour == "mediumorchid3")
+      return Colour_RGBA(180, 82, 205);
+   else if (x11colour == "mediumorchid4")
+      return Colour_RGBA(122, 55, 139);
+   else if (x11colour == "darkorchid1")
+      return Colour_RGBA(191, 62, 255);
+   else if (x11colour == "darkorchid2")
+      return Colour_RGBA(178, 58, 238);
+   else if (x11colour == "darkorchid3")
+      return Colour_RGBA(154, 50, 205);
+   else if (x11colour == "darkorchid4")
+      return Colour_RGBA(104, 34, 139);
+   else if (x11colour == "purple1")
+      return Colour_RGBA(155, 48, 255);
+   else if (x11colour == "purple2")
+      return Colour_RGBA(145, 44, 238);
+   else if (x11colour == "purple3")
+      return Colour_RGBA(125, 38, 205);
+   else if (x11colour == "purple4")
+      return Colour_RGBA(85, 26, 139);
+   else if (x11colour == "mediumpurple1")
+      return Colour_RGBA(171, 130, 255);
+   else if (x11colour == "mediumpurple2")
+      return Colour_RGBA(159, 121, 238);
+   else if (x11colour == "mediumpurple3")
+      return Colour_RGBA(137, 104, 205);
+   else if (x11colour == "mediumpurple4")
+      return Colour_RGBA(93, 71, 139);
+   else if (x11colour == "thistle1")
+      return Colour_RGBA(255, 225, 255);
+   else if (x11colour == "thistle2")
+      return Colour_RGBA(238, 210, 238);
+   else if (x11colour == "thistle3")
+      return Colour_RGBA(205, 181, 205);
+   else if (x11colour == "thistle4")
+      return Colour_RGBA(139, 123, 139);
+   else if (x11colour == "darkgrey")
+      return Colour_RGBA(169, 169, 169);
+   else if (x11colour == "darkgray")
+      return Colour_RGBA(169, 169, 169);
+   else if (x11colour == "darkblue")
+      return Colour_RGBA(0, 0, 139);
+   else if (x11colour == "darkcyan")
+      return Colour_RGBA(0, 139, 139);
+   else if (x11colour == "darkmagenta")
+      return Colour_RGBA(139, 0, 139);
+   else if (x11colour == "darkred")
+      return Colour_RGBA(139, 0, 0);
+   else if (x11colour == "lightgreen")
+      return Colour_RGBA(144, 238, 144);
+   else if (x11colour.substr(0, 4) == "grey" || 
+            x11colour.substr(0, 4) == "gray")
+   {
+      std::stringstream ss(x11colour.substr(4, 2));
+      float level;
+      if (ss >> level)
+      {
+         level = round(level*2.55);
+         return Colour_RGBA(level, level, level);
+      }
+   }
+   
+   // default is black
+   return Colour_RGBA(0, 0, 0);
 }
 
 Colour Colour_FromHex(std::string hexName)
@@ -4133,5 +1113,4 @@ Colour Colour_FromHex(std::string hexName)
 
    return colour;
 }
-
 
