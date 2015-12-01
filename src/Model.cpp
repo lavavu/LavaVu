@@ -513,38 +513,31 @@ void Model::loadColourMaps()
    ColourMap* colourMap = NULL;
    while ( sqlite3_step(statement) == SQLITE_ROW)
    {
-      int offset = 0;
       int id = sqlite3_column_int(statement, 0);
-      char *cmname = NULL;
       char idname[10];
       sprintf(idname, "%d", id);
-      //Name added to schema, support old db versions by checking number of fields (8 colourmap + 4 colourvalue)
-      if (sqlite3_column_count(statement) == 12)
-      {
-        offset = 1;
-        cmname = (char*)sqlite3_column_text(statement, 1);
-      }
+      char *cmname = (char*)sqlite3_column_text(statement, 1);
 
       //New map?
       if (id != map_id)
       {
          map_id = id;
-         minimum = sqlite3_column_double(statement, 1+offset);
-         maximum = sqlite3_column_double(statement, 2+offset);
-         int logscale = sqlite3_column_int(statement, 3+offset);
-         int discrete = sqlite3_column_int(statement, 4+offset);
-         float centreValue = sqlite3_column_double(statement, 5+offset);
-         const char *oprops = (char*)sqlite3_column_text(statement, 6+offset);
-         colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, centreValue, minimum, maximum);
+         minimum = sqlite3_column_double(statement, 2);
+         maximum = sqlite3_column_double(statement, 3);
+         int logscale = sqlite3_column_int(statement, 4);
+         int discrete = sqlite3_column_int(statement, 5);
+         float centreValue = sqlite3_column_double(statement, 6);
+         const char *props = (char*)sqlite3_column_text(statement, 7);
+         colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, centreValue, minimum, maximum, props);
          colourMaps.push_back(colourMap);
       }
 
       //Add colour value
-      int colour = sqlite3_column_int(statement, 9+offset);
+      int colour = sqlite3_column_int(statement, 10);
       //const char *name = sqlite3_column_name(statement, 7);
-      if (sqlite3_column_type(statement, 10+offset) != SQLITE_NULL)
+      if (sqlite3_column_type(statement, 11) != SQLITE_NULL)
       {
-         double value = sqlite3_column_double(statement, 10+offset);
+         double value = sqlite3_column_double(statement, 11);
          colourMap->add(colour, value);
       }
       else

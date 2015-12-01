@@ -63,6 +63,7 @@ public:
    Colour background;
    unsigned int id;
    std::string name;
+   std::string properties;
    float minimum;
    float maximum;
    float range;
@@ -75,7 +76,7 @@ public:
    float dimCoeff;
    std::string units;
 
-   ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1)
+   ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1, const char* props="")
        : id(id), minimum(min), maximum(max), log(log), discrete(discrete), centre(centre), calibrated(false), noValues(false), dimCoeff(1.0), units("")
    {
       if (id == 0)
@@ -83,6 +84,7 @@ public:
       else if (id > ColourMap::lastid)
          ColourMap::lastid = id;
       this->name = std::string(name);
+      properties = std::string(props);
       texture = NULL;
       background.value = 0xff000000;
    }
