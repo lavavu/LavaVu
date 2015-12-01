@@ -41,13 +41,6 @@
 #include "ApplicationInterface.h"
 #include "OutputInterface.h"
 
-// Check for framebuffer object support
-#ifdef GL_FRAMEBUFFER_EXT
-//#ifdef GL_DEPTH_STENCIL_EXT
-#define FBO_SUPPORTED
-//#endif
-#endif
-
 class OpenGLViewer : public ApplicationInterface
 {
   private:

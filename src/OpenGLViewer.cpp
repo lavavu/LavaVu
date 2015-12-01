@@ -163,7 +163,7 @@ void OpenGLViewer::show()
    if (!isopen || !visible) return;
 
    //Show a previously hidden window
-#ifdef FBO_SUPPORTED
+#ifdef GL_FRAMEBUFFER_EXT
    if (fbo_enabled)
    {
       debug_print("FBO disabled\n");
@@ -178,7 +178,7 @@ void OpenGLViewer::show()
 // FBO buffers
 void OpenGLViewer::fbo(int width, int height)
 {
-#ifdef FBO_SUPPORTED
+#ifdef GL_FRAMEBUFFER_EXT
    if (fbo_texture) glDeleteTextures(1, &fbo_texture);
    if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
    if (fbo_frame) glDeleteFramebuffersEXT(1, &fbo_frame);
@@ -270,7 +270,7 @@ void OpenGLViewer::close()
    // cleanup opengl memory - required before resize if context destroyed, then call open after resize
    DeleteFont();
    lucDeleteFont();
-#ifdef FBO_SUPPORTED
+#ifdef GL_FRAMEBUFFER_EXT
    if (fbo_texture) glDeleteTextures(1, &fbo_texture);
    if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
    if (fbo_frame) glDeleteFramebuffersEXT(1, &fbo_frame);
@@ -392,7 +392,7 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
          float ratio = height / (float)width;
          outheight = outwidth * ratio;
       }
-#ifdef FBO_SUPPORTED
+#ifdef GL_FRAMEBUFFER_EXT
       //Switch to a framebuffer object
       if (fbo_frame > 0)
       {
@@ -428,7 +428,7 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
    blend_mode = BLEND_NORMAL;
    if (outwidth > 0 && outwidth != savewidth)
    {
-#ifdef FBO_SUPPORTED
+#ifdef GL_FRAMEBUFFER_EXT
       show();  //Disables fbo mode
       resize(savewidth, saveheight); //Resized callback
 #else
