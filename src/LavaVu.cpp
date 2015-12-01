@@ -2187,14 +2187,13 @@ void LavaVu::displayMessage()
       Viewport2d(viewer->width, viewer->height);
 
       //Print in XOR to display against any background
-      Colour_SetXOR(true);
+      PrintSetColour(0xffffffff, true);
 
       //Print current message
       Print(10, 10, 1.0, message);
       message[0] = '\0';
 
       //Revert to normal colour
-      Colour_SetXOR(false);
       PrintSetColour(viewer->inverse.value);
 
       Viewport2d(0, 0);

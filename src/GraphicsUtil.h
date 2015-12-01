@@ -36,6 +36,7 @@
 #ifndef GraphicsUtil__
 #define GraphicsUtil__
 #include "Include.h"
+#include "Colours.h"
 
 #define INBUF_SIZE 65535
 
@@ -123,54 +124,10 @@
 #define MoveRaster( deltaX, deltaY ) \
    glBitmap( 0,0,0.0,0.0, (float)(deltaX), (float)(deltaY), NULL )
 
-//Some predefined rgba colour constants
-#define LUC_BLACK          0xff000000
-#define LUC_WHITE          0xffffffff
-#define LUC_GREEN          0xff00ff00
-#define LUC_BLUE           0xffff0000
-#define LUC_CYAN           0xffffff00
-#define LUC_YELLOW         0xff00ffff
-#define LUC_RED            0xff0000ff
-#define LUC_GREY           0xff888888
-#define LUC_SILVER         0xffcccccc
-#define LUC_MIDBLUE        0xffff3333
-#define LUC_STRAW          0xff77ffff
-#define LUC_ORANGE         0xff0088ff
-#define LUC_DARKGREEN      0xff006400
-#define LUC_DARKBLUE       0xff00008B
-#define LUC_SEAGREEN       0xff2E8B57
-#define LUC_YELLOWGREEN    0xff9ACD32
-#define LUC_OLIVE          0xff808000
-#define LUC_LIGHTBLUE      0xff1E90FF
-#define LUC_DARKTURQUOISE  0xff00CED1
-#define LUC_BISQUE         0xffFFE4C4
-#define LUC_ORANGERED      0xffFF4500
-#define LUC_BRICK          0xffB22222
-#define LUC_DARKRED        0xff8B0000
-
 extern float *x_coords_, *y_coords_;  // Saves arrays of x,y points on circle for set segment count
 extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);
-
-//Defines a 32bit colour accessible in multiple ways:
-// - rgba 4-byte array
-// - r,g,b,a component struct
-// - integer (hex AABBGGRR little endian)
-// - float for storing in a float data block
-typedef union {
-   GLubyte rgba[4];
-   int value;
-   float fvalue;
-   struct {
-      GLubyte r;
-      GLubyte g;
-      GLubyte b;
-      GLubyte a;
-   };
-} Colour;
-
-Colour parseRGBA(std::string value);
 
 class TextureData  //Texture TGA image data
 {
@@ -988,7 +945,7 @@ void Viewport2d(int width, int height);
 
 //3d fonts
 float PrintSetFont(json::Object& properties, std::string def="default", float scaling=1.0);
-void PrintSetColour(int colour);
+void PrintSetColour(int colour, bool XOR=false);
 void PrintString(const char* str);
 void Printf(int x, int y, float scale, const char *fmt, ...);
 void Print(int x, int y, float scale, const char *str);
@@ -1014,16 +971,6 @@ void drawNormalVector( float pos[3], float vector[3], float scale);
 void vectorNormalise(float vector[3]);
 void normalToPlane( float normal[3], float pos0[3], float pos1[3], float pos2[3]);
 float triAngle(float v0[3], float v1[3], float v2[3]);
-
-void Colour_SetColour(Colour* colour);
-void Colour_Invert(Colour& colour);
-void Colour_SetXOR(bool switchOn);
-Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
-Colour Colour_FromJson(json::Value& value, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
-json::Value Colour_ToJson(int colourval);
-json::Value Colour_ToJson(Colour& colour);
-void Colour_ToArray(Colour colour, float* array);
-void Colour_SetUniform(GLint uniform, Colour colour);
 
 void calcCircleCoords(int segment_count);
 void drawSphere_(float centre[3], float radius, int segment_count, Colour* colour);
