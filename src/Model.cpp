@@ -266,25 +266,24 @@ void Model::loadWindows()
 void Model::loadViewports()
 {
    sqlite3_stmt* statement;
-   statement = select("SELECT id,title,x,y,near,far FROM viewport ORDER BY y,x", true);
+   statement = select("SELECT id,x,y,near,far FROM viewport ORDER BY y,x", true);
 
    //viewport:
    //(id, title, x, y, near, far, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
    while (sqlite3_step(statement) == SQLITE_ROW)
    {
       unsigned int viewport_id = (unsigned int)sqlite3_column_int(statement, 0);
-      std::string vtitle = std::string((char*)sqlite3_column_text(statement, 1));
       float x = (float)sqlite3_column_double(statement, 2);
       float y = (float)sqlite3_column_double(statement, 3);
       float nearc = (float)sqlite3_column_double(statement, 4);
       float farc = (float)sqlite3_column_double(statement, 5);
 
       //Create the view object
-      View* v = new View(vtitle, false, x, y, nearc, farc);
+      View* v = new View("", false, x, y, nearc, farc);
       //Add to list
       if (views.size() < viewport_id) views.resize(viewport_id);
       views[viewport_id-1] = v;
-      debug_print("Loaded viewport \"%s\" at %f,%f\n", vtitle.c_str(), x, y);
+      debug_print("Loaded viewport at %f,%f\n", x, y);
    }
    sqlite3_finalize(statement);
 }
