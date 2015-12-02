@@ -1907,7 +1907,7 @@ bool LavaVu::parseCommands(std::string cmd)
       }
       else if (parsePropertySet(cmd))
       {
-         return false;
+         return true; //Redisplay after prop change
       }
       else
       {

@@ -238,7 +238,7 @@ int gluProjectf(float objx, float objy, float objz, float* modelview, float*proj
    fTempo[6]=projection[2]*fTempo[0]+projection[6]*fTempo[1]+projection[10]*fTempo[2]+projection[14]*fTempo[3];
    fTempo[7]=-fTempo[2];
    //The result normalizes between -1 and 1
-   if(fTempo[7]==0.0)	//The w value
+   if(fTempo[7]==0.0)   //The w value
       return 0;
    fTempo[7]=1.0/fTempo[7];
    //Perspective division
@@ -250,7 +250,7 @@ int gluProjectf(float objx, float objy, float objz, float* modelview, float*proj
    windowCoordinate[0]=(fTempo[4]*0.5+0.5)*viewport[2]+viewport[0];
    windowCoordinate[1]=(fTempo[5]*0.5+0.5)*viewport[3]+viewport[1];
    //This is only correct when glDepthRange(0.0, 1.0)
-   windowCoordinate[2]=(1.0+fTempo[6])*0.5;	//Between 0 and 1
+   windowCoordinate[2]=(1.0+fTempo[6])*0.5;   //Between 0 and 1
    return 1;
 }
 
@@ -698,14 +698,9 @@ void vectorNormalise(float vector[3]) {
    vector[0] = vector[0]/mag;
 }
 
-std::ostream & operator<<(std::ostream &os, const Colour& colour)
-{
-    return os << "(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << (int)colour.a << ")";
-}
-
 std::ostream & operator<<(std::ostream &os, const Vec3d& vec)
 {
-    return os << "[" << vec.x << "," << vec.y << "," << vec.z << "]";
+   return os << "[" << vec.x << "," << vec.y << "," << vec.z << "]";
 }
 
 // Given three points which define a plane, returns a vector which is normal to that plane

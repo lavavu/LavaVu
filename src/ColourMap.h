@@ -63,7 +63,7 @@ public:
    Colour background;
    unsigned int id;
    std::string name;
-   std::string properties;
+   json::Object properties;
    float minimum;
    float maximum;
    float range;
@@ -76,21 +76,12 @@ public:
    float dimCoeff;
    std::string units;
 
-   ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1, const char* props="")
-       : id(id), minimum(min), maximum(max), log(log), discrete(discrete), centre(centre), calibrated(false), noValues(false), dimCoeff(1.0), units("")
-   {
-      if (id == 0)
-         this->id = ++ColourMap::lastid;
-      else if (id > ColourMap::lastid)
-         ColourMap::lastid = id;
-      this->name = std::string(name);
-      properties = std::string(props);
-      texture = NULL;
-      background.value = 0xff000000;
-   }
-
+   ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1, std::string props="");
    ~ColourMap() {if (texture) delete texture;}
 
+   void parse(std::string colourMapString);
+   void add(std::string colour);
+   void add(std::string colour, float pvalue);
    void add(unsigned int colour);
    void add(unsigned int* colours, int count);
    void add(unsigned int colour, float pvalue);
@@ -103,7 +94,7 @@ public:
    Colour get(float value);
    float scaleValue(float value);
    Colour getFromScaled(float scaledValue);
-   void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour);
+   void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour, bool vertical);
    void setComponent(int component_index);
    void loadTexture(bool repeat=false);
    void loadPalette(std::string data);

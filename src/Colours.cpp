@@ -11,6 +11,11 @@ Colour Colour_RGBA(int r, int g, int b, int a)
    return colour;
 }
 
+std::ostream & operator<<(std::ostream &os, const Colour& colour)
+{
+   return os << "rgba(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << (int)colour.a << ")";
+}
+
 void Colour_SetColour(Colour* colour)
 {
    glColor4ubv(colour->rgba);

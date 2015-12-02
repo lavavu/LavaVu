@@ -713,6 +713,7 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
    glDisable(GL_LIGHTING);
    glDisable(GL_LINE_SMOOTH);
    glLineWidth(1.5f);
+   float fontscale = 0.0; //PrintSetFont(properties, "vector", 0.05*model_size);
 
    float vec[3];
    float length;
@@ -768,7 +769,10 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
       char label[20];
       float inc = (labelmax - labelmin) / (float)(ticks-1);
       sprintf(label, "%-10.3f", labelmin + i * inc);
-      Print3dBillboard(0, 2.0*height, pos, 0.03*model_size, label);
+      if (fontscale == 0.0)
+         lucPrint3d(0, 2.0*height, pos, label);
+      else
+         Print3dBillboard(0, 2.0*height, pos, 0.03*model_size, label);
    }
 
    //Draw ruler line
@@ -786,22 +790,23 @@ void View::drawRulers()
 {
    bool rulers = properties["rulers"].ToBool(false);
    if (!rulers) return;
+   int ticks = properties["rulerticks"].ToInt(0);
    //Axis rulers
    float shift[3] = {0.01f/scale[0] * model_size, 0.01f/scale[1] * model_size, 0.01f/scale[2] * model_size};
    {
       float sta[3] = {min[0], min[1]-shift[1], max[2]+shift[2]};
       float end[3] = {max[0], min[1]-shift[1], max[2]+shift[2]};
-      drawRuler(sta, end, min[0], max[0], 5);
+      drawRuler(sta, end, min[0], max[0], ticks);
    }
    {
       float sta[3] = {min[0]-shift[0], min[1], max[2]+shift[2]};
       float end[3] = {min[0]-shift[0], max[1], max[2]+shift[2]};
-      drawRuler(sta, end, min[1], max[1], 5);
+      drawRuler(sta, end, min[1], max[1], ticks);
    }
    {
       float sta[3] = {min[0]-shift[0], min[1]-shift[1], min[2]};
       float end[3] = {min[0]-shift[0], min[1]-shift[1], max[2]};
-      drawRuler(sta, end, min[2], max[2], 5);
+      drawRuler(sta, end, min[2], max[2], ticks);
    }
 }
 
@@ -918,18 +923,40 @@ void View::drawOverlay(Colour& colour)
    //Colour bars
    GL_Error_Check;
    float last_y = 0;
+   float last_margin = 0;
    for (unsigned int i=0; i<objects.size(); i++)
    {
       //Only when flagged as colour bar
       if (!objects[i] || !objects[i]->properties["colourbar"].ToBool(false) || !objects[i]->visible) continue;
+      int pos = objects[i]->properties["position"].ToInt(0);
+      std::string align = objects[i]->properties["align"].ToString("bottom");
+      int alignval = 0; //0=bottom, 1=left, 2=top, 3=right, a & 1 = vertical, a & 2 = opposite
+      int ww = w, hh = h;
+      bool vertical = false;
+      bool opposite = (align == "left" || align == "bottom");
+      int left = objects[i]->properties["left"].ToInt(0);
+      int top = objects[i]->properties["top"].ToInt(0);
+      if (align == "left" || align == "right")
+      {
+         vertical = true;
+         ww = h;
+         hh = w;
+      }
 
-      int length = w * objects[i]->properties["lengthfactor"].ToFloat(0.8); 
-      int bar_height = objects[i]->properties["height"].ToInt(10);
-      int startx = (w - length) / 2;  //Need an X pos / margin property
-      int starty = last_y + objects[i]->properties["margin"].ToInt(16);
-      //last_y = starty;   //Auto-increase y margin?
+      int margin = objects[i]->properties["margin"].ToInt(16);
+      int length = ww * objects[i]->properties["lengthfactor"].ToFloat(0.8); 
+      int bar_height = objects[i]->properties["height"].ToInt(objects[i]->properties["width"].ToInt(10));
+      int startx = (ww - length) / 2;
+      if (pos == 1) startx = margin;
+      if (pos == -1) startx = ww - margin - length;
+      int starty = margin;
+      if (last_margin == margin) starty += last_y;   //Auto-increase y margin if same value
+      if (!opposite) starty = hh - starty - bar_height;
 
-      objects[i]->colourMaps[lucColourValueData]->draw(objects[i]->properties, startx, starty, length, bar_height, colour);
+      last_y = starty;
+      last_margin = margin;
+
+      objects[i]->colourMaps[lucColourValueData]->draw(objects[i]->properties, startx, starty, length, bar_height, colour, vertical);
       GL_Error_Check;
    } 
 

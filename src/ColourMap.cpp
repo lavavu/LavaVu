@@ -40,6 +40,73 @@ bool ColourMap::lock = false;
 int ColourMap::logscales = 0;
 unsigned int ColourMap::lastid = 0;
 
+std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
+{
+   return os << cv.value << " --> " << cv.position << "=" << cv.colour;
+}
+
+ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete, 
+                     float centre, float min, float max, std::string props)
+   : id(id), minimum(min), maximum(max), log(log), discrete(discrete), 
+     centre(centre), calibrated(false), noValues(false), dimCoeff(1.0), units("")
+{
+   if (id == 0)
+      this->id = ++ColourMap::lastid;
+   else if (id > ColourMap::lastid)
+      ColourMap::lastid = id;
+   this->name = std::string(name);
+   texture = NULL;
+   background.value = 0xff000000;
+
+   jsonParseProperties(props, properties);
+   if (properties.HasKey("colours"))
+      parse(properties["colours"].ToString());
+}
+
+void ColourMap::parse(std::string colourMapString)
+{
+   const char *breakChars = " \t\n;,";
+   char *charPtr;
+   char colourStr[64];
+   char colourString[colourMapString.length()+1];
+   strcpy(colourString, colourMapString.c_str());
+   char *colourMap_ptr = colourString;
+   colours.clear();
+   charPtr = strtok(colourMap_ptr, breakChars);
+   while (charPtr != NULL)
+   {
+      float value = 0.0;
+
+      // Parse out value if provided, otherwise assign a default
+      // input string: (OPTIONAL-VALUE)colour
+      if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
+      {
+         //Add parsed colour to the map with value
+         add(colourStr, value);
+      }
+      else
+      {
+         //Add parsed colour to the map
+         add(charPtr);
+      }
+
+      charPtr = strtok(NULL, breakChars);
+   }
+}
+
+void ColourMap::add(std::string colour)
+{
+   Colour c = Colour_FromString(colour);
+   colours.push_back(ColourVal(c));
+   std::cerr << colour << " : " << colours[colours.size()-1] << std::endl;
+}
+
+void ColourMap::add(std::string colour, float pvalue)
+{
+   Colour c = Colour_FromString(colour);
+   colours.push_back(ColourVal(c, pvalue));
+}
+
 void ColourMap::add(unsigned int colour)
 {
    Colour c;
@@ -262,7 +329,10 @@ Colour ColourMap::getFromScaled(float scaledValue)
    return c;
 }
 
-void ColourMap::draw(json::Object& properties, int startx, int starty, int length, int height, Colour& printColour)
+#define RECT2(x0, y0, x1, y1, swap) swap ? glRecti(y0, x0, y1, x1) : glRecti(x0, y0, x1, y1);
+#define VERT2(x, y, swap) swap ? glVertex2i(y, x) : glVertex2i(x, y);
+
+void ColourMap::draw(json::Object& properties, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
 {
    int pixel_I;
    Colour colour;
@@ -278,10 +348,10 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       if (end > startx + length) end = startx + length;
 
       Colour_SetColour(&colour);
-      glRecti( startx + pixel_I, starty, end, starty + height*0.5 );
+      RECT2( startx + pixel_I, starty, end, starty + height*0.5, vertical);
       Colour_Invert(colour);
       Colour_SetColour(&colour);
-      glRecti( startx + pixel_I, starty + height*0.5, end, starty + height);
+      RECT2( startx + pixel_I, starty + height*0.5, end, starty + height, vertical);
    }
 
    // Draw Colour Bar
@@ -293,8 +363,8 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       glShadeModel(GL_FLAT); 
       glBegin(GL_QUAD_STRIP);
       xpos = startx;
-      glVertex2i(xpos, starty);
-      glVertex2i(xpos, starty + height);
+      VERT2(xpos, starty, vertical);
+      VERT2(xpos, starty + height, vertical);
       for (idx = 1; idx < count+1; idx++)
       {
          int oldx = xpos;
@@ -302,14 +372,14 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
          glColor4ubv(colour.rgba);
          if (idx == count) 
          {
-            glVertex2i(xpos, starty);
-            glVertex2i(xpos, starty + height);
+            VERT2(xpos, starty, vertical);
+            VERT2(xpos, starty + height, vertical);
          }
          else
          {
             xpos = startx + length * colours[idx].position;
-            glVertex2i(oldx + 0.5 * (xpos - oldx), starty);
-            glVertex2i(oldx + 0.5 * (xpos - oldx), starty + height);
+            VERT2(oldx + 0.5 * (xpos - oldx), starty, vertical);
+            VERT2(oldx + 0.5 * (xpos - oldx), starty + height, vertical);
          }
       }
       glEnd();
@@ -324,8 +394,8 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
          colour = getFromScaled(colours[idx].position);
          glColor4ubv(colour.rgba);
          xpos = startx + length * colours[idx].position;
-         glVertex2i(xpos, starty);
-         glVertex2i(xpos, starty + height);
+         VERT2(xpos, starty, vertical);
+         VERT2(xpos, starty + height, vertical);
       }
       glEnd();
    }
@@ -413,9 +483,11 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       int xpos = startx + length * scaledPos;
 
       /* Draws the tick */
+      int offset = 0;
+      if (vertical) offset = height+5;
       glBegin(GL_LINES);
-         glVertex2i( xpos, starty-5 );
-         glVertex2i( xpos, starty);
+         VERT2(xpos, starty-5+offset, vertical);
+         VERT2(xpos, starty+offset, vertical);
       glEnd();
 
       /* Always print end values, print others if flag set */
@@ -443,11 +515,19 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
          }
 
          if (fontscale == 0.0)
-            lucPrint(xpos - (int) (0.5 * (float)lucPrintWidth(string)),  starty - 10, string);
+         {
+            if (vertical)
+               lucPrint(starty + height + 10, xpos - (int) (0.5 * (float)lucPrintWidth(string)),  string);
+            else
+               lucPrint(xpos - (int) (0.5 * (float)lucPrintWidth(string)),  starty - 10, string);
+         }
          else
          {
             glEnable(GL_MULTISAMPLE);
-            Print(xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  starty - 30*fontscale, fontscale, string);
+            if (vertical)
+               Print(starty + height + 30*fontscale, xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  fontscale, string);
+            else
+               Print(xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  starty - 30*fontscale, fontscale, string);
             glDisable(GL_MULTISAMPLE);
          }
       }
@@ -457,7 +537,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
    if (border > 0)
    {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      glRecti(startx, starty, startx + length, starty + height);
+      RECT2(startx, starty, startx + length, starty + height, vertical);
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    }
 
@@ -561,8 +641,8 @@ void ColourMap::print()
 {
    for (int idx = 0; idx < colours.size(); idx++)
    {
-      Colour colour = getFromScaled(colours[idx].position);
-      std::cout << colours[idx].position << "=rgba(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << (int)colour.a << ")\n";
+      //Colour colour = getFromScaled(colours[idx].position);
+      std::cout << idx << " : " << colours[idx] << std::endl;
    }
 }
 
