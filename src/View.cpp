@@ -706,14 +706,11 @@ void View::zoomToFit(int margin)
    }
 }
 
-void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks)
+void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
 {
    // Draw rulers with optional tick marks
-   glPushAttrib(GL_ENABLE_BIT);
-   glDisable(GL_LIGHTING);
-   glDisable(GL_LINE_SMOOTH);
    glLineWidth(1.5f);
-   float fontscale = 0.0; //PrintSetFont(properties, "vector", 0.05*model_size);
+   float fontscale = PrintSetFont(properties, "vector", 0.025*model_size);
 
    float vec[3];
    float length;
@@ -730,12 +727,15 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
 
    // Length of the drawn vector = vector magnitude
    length = sqrt(dotProduct(vec,vec));
+   if (length <= FLT_MIN) return;
 
+   glPushAttrib(GL_ENABLE_BIT);
+   glDisable(GL_LIGHTING);
+   glDisable(GL_LINE_SMOOTH);
    glPushMatrix();
    // Undo any scaling factor
    if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
       glScalef(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
-
 
    // Translate to start of ruler
    glTranslatef(start[0], start[1], start[2]);
@@ -758,21 +758,40 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
       // Calculate pixel position
       float pos = length * scaledPos;
       float height = -0.01 * model_size;
+      float xo = 0;
+      float lw = 0;
+
+      char label[128];
+      float inc = (labelmax - labelmin) / (float)(ticks-1);
+      sprintf(label, "%-10.3f", labelmin + i * inc);
+      lw = model_size * 0.025;
 
       // Draws the tick
       glBegin(GL_LINES);
       glVertex3f(0, 0, pos);
-      glVertex3f(0, height, pos);
+
+      switch (axis)
+      {
+        case 0:
+          glVertex3f(0, height, pos);
+          break;
+        case 1:
+          glVertex3f(height, 0, pos);
+          xo = -lw;
+          break;
+        case 2:
+          glVertex3f(0, height, pos);
+          xo = -lw;
+          break;
+      }
+
       glEnd();
 
       //Draw a label
-      char label[20];
-      float inc = (labelmax - labelmin) / (float)(ticks-1);
-      sprintf(label, "%-10.3f", labelmin + i * inc);
       if (fontscale == 0.0)
-         lucPrint3d(0, 2.0*height, pos, label);
+         lucPrint3d(xo, 2.0*height, pos, label);
       else
-         Print3dBillboard(0, 2.0*height, pos, 0.03*model_size, label);
+         Print3dBillboard(xo, 2.0*height, pos, fontscale, label);
    }
 
    //Draw ruler line
@@ -790,23 +809,23 @@ void View::drawRulers()
 {
    bool rulers = properties["rulers"].ToBool(false);
    if (!rulers) return;
-   int ticks = properties["rulerticks"].ToInt(0);
+   int ticks = properties["rulerticks"].ToInt(5);
    //Axis rulers
    float shift[3] = {0.01f/scale[0] * model_size, 0.01f/scale[1] * model_size, 0.01f/scale[2] * model_size};
    {
-      float sta[3] = {min[0], min[1]-shift[1], max[2]+shift[2]};
-      float end[3] = {max[0], min[1]-shift[1], max[2]+shift[2]};
-      drawRuler(sta, end, min[0], max[0], ticks);
+      float sta[3] = {min[0], min[1]-shift[1], max[2]};
+      float end[3] = {max[0], min[1]-shift[1], max[2]};
+      drawRuler(sta, end, min[0], max[0], ticks, 0);
    }
    {
-      float sta[3] = {min[0]-shift[0], min[1], max[2]+shift[2]};
-      float end[3] = {min[0]-shift[0], max[1], max[2]+shift[2]};
-      drawRuler(sta, end, min[1], max[1], ticks);
+      float sta[3] = {min[0]-shift[0], min[1], max[2]};
+      float end[3] = {min[0]-shift[0], max[1], max[2]};
+      drawRuler(sta, end, min[1], max[1], ticks, 1);
    }
    {
       float sta[3] = {min[0]-shift[0], min[1]-shift[1], min[2]};
       float end[3] = {min[0]-shift[0], min[1]-shift[1], max[2]};
-      drawRuler(sta, end, min[2], max[2], ticks);
+      drawRuler(sta, end, min[2], max[2], ticks, 2);
    }
 }
 
@@ -930,7 +949,6 @@ void View::drawOverlay(Colour& colour)
       if (!objects[i] || !objects[i]->properties["colourbar"].ToBool(false) || !objects[i]->visible) continue;
       int pos = objects[i]->properties["position"].ToInt(0);
       std::string align = objects[i]->properties["align"].ToString("bottom");
-      int alignval = 0; //0=bottom, 1=left, 2=top, 3=right, a & 1 = vertical, a & 2 = opposite
       int ww = w, hh = h;
       bool vertical = false;
       bool opposite = (align == "left" || align == "bottom");
@@ -950,7 +968,7 @@ void View::drawOverlay(Colour& colour)
       if (pos == 1) startx = margin;
       if (pos == -1) startx = ww - margin - length;
       int starty = margin;
-      if (last_margin == margin) starty += last_y;   //Auto-increase y margin if same value
+      if (last_margin == margin) starty += last_y + 16;   //Auto-increase y margin if same value
       if (!opposite) starty = hh - starty - bar_height;
 
       last_y = starty;
@@ -966,11 +984,11 @@ void View::drawOverlay(Colour& colour)
    if (properties.HasKey("title"))
    {
       const char* title = properties["title"].ToString().c_str();
-      float fontscale = PrintSetFont(properties, "vector", 0.6);
+      float fontscale = 1.5 * PrintSetFont(properties, "vector", 0.6);
       if (fontscale == 0.0)
-         lucPrint(0.5 * (w - PrintWidth(title, 0.6)), h - 20, title);
+         lucPrint(0.5 * (w - lucPrintWidth(title)), h - 20, title);
       else
-         Print(0.5 * (w - PrintWidth(title, 0.6)), h - 20, 0.6, title);
+         Print(0.5 * (w - PrintWidth(title, fontscale)), h - 20, fontscale, title);
    }
 
    GL_Error_Check;
