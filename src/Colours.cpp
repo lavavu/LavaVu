@@ -136,8 +136,6 @@ Colour Colour_FromString(std::string str)
    char* charPointer;
    float opacity = 1.0;
 
-   Colour colour = Colour_FromX11Colour(str);
-
    /* Get Opacity From String */
    /* Opacity must be read in after the ":" of the name of the colour */
    int pos = str.find(":");
@@ -146,7 +144,10 @@ Colour Colour_FromString(std::string str)
       std::stringstream ss(str.substr(pos+1));
       if (!(ss >> opacity))
          opacity = 1.0;
+      str = str.substr(0, pos);
    }
+
+   Colour colour = Colour_FromX11Colour(str);
 
    colour.a = opacity * 255;
    return colour;
