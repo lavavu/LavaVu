@@ -83,6 +83,8 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
    properties["zoomstep"] = -1;
    properties["margin"] = 32;
    properties["rulers"] = false;
+   properties["rulerticks"] = 5;
+   properties["rulerwidth"] = 1.5;
    properties["border"] = 1;
    properties["fillborder"] = false;
    properties["bordercolour"] = Colour_ToJson(LUC_GREY);
@@ -709,8 +711,9 @@ void View::zoomToFit(int margin)
 void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
 {
    // Draw rulers with optional tick marks
-   glLineWidth(1.5f);
-   float fontscale = PrintSetFont(properties, "vector", 0.025*model_size);
+   float linewidth = properties["rulerwidth"].ToFloat(1.5);
+   glLineWidth(linewidth);
+   float fontscale = PrintSetFont(properties, "vector", 0.05*model_size);
 
    float vec[3];
    float length;
@@ -758,13 +761,7 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
       // Calculate pixel position
       float pos = length * scaledPos;
       float height = -0.01 * model_size;
-      float xo = 0;
-      float lw = 0;
-
-      char label[128];
-      float inc = (labelmax - labelmin) / (float)(ticks-1);
-      sprintf(label, "%-10.3f", labelmin + i * inc);
-      lw = model_size * 0.025;
+      bool rightAlign = false;
 
       // Draws the tick
       glBegin(GL_LINES);
@@ -777,21 +774,31 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
           break;
         case 1:
           glVertex3f(height, 0, pos);
-          xo = -lw;
+          rightAlign = true;
           break;
         case 2:
           glVertex3f(0, height, pos);
-          xo = -lw;
+          rightAlign = true;
           break;
       }
 
       glEnd();
 
       //Draw a label
+      char label[16];
+      float inc = (labelmax - labelmin) / (float)(ticks-1);
+      sprintf(label, "%-10.3f", labelmin + i * inc);
+
+      // Trim trailing space
+      char* end = label + strlen(label) - 1;
+      while(end > label && isspace(*end)) end--;
+      *(end+1) = 0; //Null terminator
+      strcat(label, "  "); //(Leave two spaces at end)
+
       if (fontscale == 0.0)
-         lucPrint3d(xo, 2.0*height, pos, label);
+         lucPrint3d(0, 2.0*height, pos, label, rightAlign);
       else
-         Print3dBillboard(xo, 2.0*height, pos, fontscale, label);
+         Print3dBillboard(rightAlign ? -0.01 * PrintWidth(label, fontscale) : 0.0, 2.0*height, pos, fontscale, label);
    }
 
    //Draw ruler line
@@ -952,8 +959,6 @@ void View::drawOverlay(Colour& colour)
       int ww = w, hh = h;
       bool vertical = false;
       bool opposite = (align == "left" || align == "bottom");
-      int left = objects[i]->properties["left"].ToInt(0);
-      int top = objects[i]->properties["top"].ToInt(0);
       if (align == "left" || align == "right")
       {
          vertical = true;
