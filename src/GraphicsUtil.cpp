@@ -547,7 +547,7 @@ if (mode == GL_FEEDBACK)
    glPopMatrix();
 }
 
-void lucPrint3d(double x, double y, double z, const char *str)
+void lucPrint3d(double x, double y, double z, const char *str, bool alignRight)
 {
    /* Calculate projected screen coords in viewport */
    float pos[3];
@@ -564,6 +564,7 @@ void lucPrint3d(double x, double y, double z, const char *str)
    /* Print at calculated position, compensating for viewport offset */
    int xs, ys;
    xs = (int)(pos[0]) - viewportArray[0];
+   if (alignRight) xs -= lucPrintWidth(str);
    ys = (int)(pos[1]) - viewportArray[1]; //(viewportArray[3] - (yPos - viewportArray[1]));
    lucPrint(xs, ys, str);
 
@@ -677,7 +678,7 @@ void DeleteFont() {}
 void lucPrintString(const char* str) {}
 void lucPrintf(int x, int y, const char *fmt, ...) {}
 void lucPrint(int x, int y, const char *str) {}
-void lucPrint3d(double x, double y, double z, const char *str) {}
+void lucPrint3d(double x, double y, double z, const char *str, bool alignRight) {}
 void lucSetFontCharset(int charset) {}
 int lucPrintWidth(const char *string) {return 0;}
 void lucSetupRasterFont() {}

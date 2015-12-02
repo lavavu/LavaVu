@@ -958,7 +958,7 @@ void DeleteFont();
 void lucPrintString(const char* str);
 void lucPrintf(int x, int y, const char* fmt, ...);
 void lucPrint(int x, int y, const char* str);
-void lucPrint3d(double x, double y, double z, const char *str);
+void lucPrint3d(double x, double y, double z, const char *str, bool alignRight=false);
 void lucSetFontCharset(int charset);
 int lucPrintWidth(const char *string);
 void lucSetupRasterFont();
