@@ -155,7 +155,7 @@ class View
 
    //Utility functions
    void drawRulers();
-   void drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks);
+   void drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis);
    void drawBorder();
    void drawAxis();
    void drawOverlay(Colour& colour);
