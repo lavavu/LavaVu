@@ -296,7 +296,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
          if (colours[i].position > scaledValue) break;
       }
 
-      if (i==colours.size()) abort_program("Colour position %f not in range [%f,%f]", scaledValue, colours[0].position, colours.back().position);
+      if (i==0 || i==colours.size()) abort_program("Colour position %f not in range [%f,%f]", scaledValue, colours[0].position, colours.back().position);
 
       // Calculate interpolation factor [0,1] between colour at index and previous colour
       float interpolate = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);
@@ -334,6 +334,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 
 void ColourMap::draw(json::Object& properties, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
 {
+   glPushAttrib(GL_ENABLE_BIT);
    int pixel_I;
    Colour colour;
    glDisable(GL_MULTISAMPLE);
@@ -411,6 +412,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
    float scaleval = properties["scaleValue"].ToFloat(1.0);
    float border = properties["border"].ToFloat(1.0);
    if (border > 0) glLineWidth(border); else glLineWidth(1.0);
+
    // No ticks if no range
    if (minimum == maximum) ticks = 0;
    float fontscale = PrintSetFont(properties);
@@ -517,7 +519,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
          if (fontscale == 0.0)
          {
             if (vertical)
-               lucPrint(starty + height + 10, xpos - (int) (0.5 * (float)lucPrintWidth(string)),  string);
+               lucPrint(starty + height + 10, xpos,  string);
             else
                lucPrint(xpos - (int) (0.5 * (float)lucPrintWidth(string)),  starty - 10, string);
          }
@@ -525,7 +527,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
          {
             glEnable(GL_MULTISAMPLE);
             if (vertical)
-               Print(starty + height + 30*fontscale, xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  fontscale, string);
+               Print(starty + height + 30*fontscale, xpos,  fontscale, string);
             else
                Print(xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  starty - 30*fontscale, fontscale, string);
             glDisable(GL_MULTISAMPLE);
@@ -541,7 +543,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
    }
 
-   glEnable(GL_MULTISAMPLE);
+   glPopAttrib();
 } 
 
 void ColourMap::setComponent(int component_index)
