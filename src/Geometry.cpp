@@ -459,7 +459,9 @@ void Geometry::setState(int index, Shader* prog)
       if (draw->properties["flat"].ToBool(false)) lighting = false;
    }
 
-   if (draw->properties["depthtest"].ToBool(true))
+   //Disable depth test by default for 2d lines, otherwise enable
+   bool depthTestDefault = (view->is3d || type != lucLineType);
+   if (draw->properties["depthtest"].ToBool(depthTestDefault))
       glEnable(GL_DEPTH_TEST);
    else
       glDisable(GL_DEPTH_TEST);
