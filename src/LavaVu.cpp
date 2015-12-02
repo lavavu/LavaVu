@@ -489,13 +489,14 @@ void LavaVu::parseProperties(std::string& properties)
 void LavaVu::parseProperty(std::string& data)
 {
    //Set properties of selected object or view/globals
+  std::string key = data.substr(0,data.find("="));
    if (aobject)
    {
       jsonParseProperty(data, aobject->properties);
       if (infostream != NULL)
          std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
    }
-   else if (aview && aview->properties.HasKey(data))
+   else if (aview && aview->properties.HasKey(key))
    {
       jsonParseProperty(data, aview->properties);
       if (infostream != NULL)
