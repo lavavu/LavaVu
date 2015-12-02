@@ -120,9 +120,9 @@ class OpenGLViewer : public ApplicationInterface
       background.value = value;
       inverse = background;
       Colour_Invert(inverse);
-      PrintSetColour(inverse.value);
       if (isopen)
       {
+         PrintSetColour(inverse.value);
          //Set clear colour
          glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
       }
