@@ -532,6 +532,9 @@ void Model::loadColourMaps()
          colourMaps.push_back(colourMap);
       }
 
+      //Colours already parsed from properties?
+      if (colourMap->colours.size() > 0) continue;
+
       //Add colour value
       int colour = sqlite3_column_int(statement, 10);
       //const char *name = sqlite3_column_name(statement, 7);
