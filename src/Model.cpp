@@ -510,6 +510,7 @@ void Model::loadColourMaps()
    int map_id = 0;
    double minimum;
    double maximum;
+   bool parsed = false;
    ColourMap* colourMap = NULL;
    while ( sqlite3_step(statement) == SQLITE_ROW)
    {
@@ -528,23 +529,25 @@ void Model::loadColourMaps()
          int discrete = sqlite3_column_int(statement, 5);
          float centreValue = sqlite3_column_double(statement, 6);
          const char *props = (char*)sqlite3_column_text(statement, 7);
-         colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, centreValue, minimum, maximum, props);
+         colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, centreValue, minimum, maximum, props ? props : "");
          colourMaps.push_back(colourMap);
+         //Colours already parsed from properties?
+         if (colourMap->colours.size() > 0) parsed = true; else parsed = false;
       }
 
-      //Colours already parsed from properties?
-      if (colourMap->colours.size() > 0) continue;
-
-      //Add colour value
-      int colour = sqlite3_column_int(statement, 10);
-      //const char *name = sqlite3_column_name(statement, 7);
-      if (sqlite3_column_type(statement, 11) != SQLITE_NULL)
+      if (!parsed)
       {
-         double value = sqlite3_column_double(statement, 11);
-         colourMap->add(colour, value);
+         //Add colour value
+         int colour = sqlite3_column_int(statement, 10);
+         //const char *name = sqlite3_column_name(statement, 7);
+         if (sqlite3_column_type(statement, 11) != SQLITE_NULL)
+         {
+            double value = sqlite3_column_double(statement, 11);
+            colourMap->add(colour, value);
+         }
+         else
+            colourMap->add(colour);
       }
-      else
-         colourMap->add(colour);
       //debug_print("ColourMap: %d min %f, max %f Value %d \n", id, minimum, maximum, colour);
    }
 
