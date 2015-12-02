@@ -1108,9 +1108,9 @@ Colour Colour_FromHex(std::string hexName)
    }
 
    /* Seperate colours */
-   std::string red = hexName.substr(0, 2);
-   std::string grn = hexName.substr(2, 2);
-   std::string blu = hexName.substr(4, 2);
+   std::string red = hexName.substr(1, 2);
+   std::string grn = hexName.substr(3, 2);
+   std::string blu = hexName.substr(5, 2);
 
    /* Read colours */
    sscanf(red.c_str(), "%x", &colour.r);
