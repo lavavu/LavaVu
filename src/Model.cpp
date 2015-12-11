@@ -970,7 +970,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
             if (labels) active->label(obj, labels);
 
             //Where min/max vertex provided, load
-            if (data_type == lucVertexData)
+            if (data_type == lucVertexData && type != lucLabelType)
             {
                float min[3] = {0,0,0}, max[3] = {0,0,0};
                if (datacol > 15 && sqlite3_column_type(statement, 15) != SQLITE_NULL)

@@ -700,7 +700,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
       total += n;
 
       //Update bounds on single vertex reads
-      if (n == 1) geomdata->checkPointMinMax((float*)data);
+      if (n == 1 && type != lucLabelType) geomdata->checkPointMinMax((float*)data);
    }
 }
 
