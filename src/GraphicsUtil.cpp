@@ -38,6 +38,7 @@
 #endif
 
 #include "GraphicsUtil.h"
+#include  "base64.h"
 #include <string.h>
 #include <math.h>
 
@@ -60,7 +61,9 @@ long FloatValues::mempeak = 0;
 int segments__ = 0;    // Saves segment count for circle based objects
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 
-unsigned int fontbase = 0, fontcharset = FONT_DEFAULT, fonttexture;
+unsigned int fontbase = 0, fonttexture;
+int fontcharset = FONT_DEFAULT;
+float fontscale = 1.0;
 
 void compareCoordMinMax(float* min, float* max, float *coord)
 {
@@ -347,11 +350,16 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
-float PrintSetFont(json::Object& properties, std::string def, float scaling)
+float PrintSetFont(json::Object& properties, std::string def, float scaling, float multiplier)
 {
    //fixed, small, sans, serif, vector
+#ifdef USE_OMEGALIB
+   //Always use 3D vector font
+   std::string fonttype = "vector";
+#else
    std::string fonttype = properties["font"].ToString(def);
-   float fontscale = properties["fontscale"].ToFloat(scaling);
+#endif
+   fontscale = properties["fontscale"].ToFloat(scaling) * multiplier;
    //Bitmap fonts
    if (fonttype == "default" || fonttype == "small")
       lucSetFontCharset(FONT_SMALL);
@@ -362,11 +370,12 @@ float PrintSetFont(json::Object& properties, std::string def, float scaling)
    else if (fonttype == "serif")
       lucSetFontCharset(FONT_SERIF);
    else if (fonttype == "vector")
-      return fontscale;
-#ifdef USE_OMEGALIB
+   {
+      lucSetFontCharset(FONT_VECTOR);
+      return -fontscale;
+   }
+
    return fontscale;
-#endif
-   return 0.0;
 }
 
 void PrintSetColour(int colour, bool XOR)
@@ -395,7 +404,7 @@ void PrintString(const char* str)
    glCallLists(strlen(str),GL_UNSIGNED_BYTE, str);      // Display
 }
 
-void Printf(int x, int y, float scale, const char *fmt, ...)
+void Printf(int x, int y, const char *fmt, ...)
 {
    char text[512];
    va_list ap;                 // Pointer to arguments list
@@ -404,33 +413,38 @@ void Printf(int x, int y, float scale, const char *fmt, ...)
    vsprintf(text, fmt, ap);    // Convert symbols
    va_end(ap);
 
-   Print(x, y, scale, text);   // Print result string
+   Print(x, y, text);   // Print result string
 }
 
-void Print(int x, int y, float scale, const char *str)
+void Print(int x, int y, const char *str)
 {
+   if (fontcharset > FONT_VECTOR) return lucPrint(x, y, str);
    glPushMatrix();
-   //glLoadIdentity();
    glTranslated(x, y, 0);
-      glScalef(scale, scale, scale);
+      //glScaled(fontscale * 0.01, fontscale * 0.01, fontscale * 0.01);
+      glScaled(fontscale, fontscale, 1.0);
    PrintString(str);
    glPopMatrix();
 }
 
-void Print3d(double x, double y, double z, double scale, const char *str)
+void Print3d(double x, double y, double z, const char *str)
 {
+   if (fontcharset > FONT_VECTOR) return lucPrint3d(x, y, z, str);
    glPushMatrix();
-   //glLoadIdentity();
    glTranslated(x, y, z);
-      glScaled(scale * 0.01, scale * 0.01, scale * 0.01);
+   glScaled(fontscale * 0.01, fontscale * 0.01, fontscale * 0.01);
    PrintString(str);
    glPopMatrix();
 }
 
-void Print3dBillboard(double x, double y, double z, double scale, const char *str)
+void Print3dBillboard(double x, double y, double z, const char *str, bool rightAlign)
 {
+   if (fontcharset > FONT_VECTOR) return lucPrint3d(x, y, z, str, rightAlign);
    float modelview[16];
    int i,j;
+
+   if (rightAlign) x -= 0.01 * PrintWidth(str);
+   z -= 0.25 * fontscale;
 
    // save the current modelview matrix
    glPushMatrix();
@@ -442,7 +456,8 @@ void Print3dBillboard(double x, double y, double z, double scale, const char *st
    // undo all rotations
    // beware all scaling is lost as well 
    for( i=0; i<3; i++ ) 
-      for( j=0; j<3; j++ ) {
+      for( j=0; j<3; j++ )
+      {
          if ( i==j )
             modelview[i*4+j] = 1.0;
          else
@@ -452,7 +467,7 @@ void Print3dBillboard(double x, double y, double z, double scale, const char *st
    // set the modelview with no rotations and scaling
    glLoadMatrixf(modelview);
 
-   glScaled(scale * 0.01, scale * 0.01, scale * 0.01);
+   glScaled(fontscale * 0.01, fontscale * 0.01, fontscale * 0.01);
    PrintString(str);
 
    // restores the modelview matrix
@@ -460,14 +475,15 @@ void Print3dBillboard(double x, double y, double z, double scale, const char *st
 }
 
 // String width calc 
-int PrintWidth(const char *string, float scale)
+int PrintWidth(const char *string)
 {
+   if (fontcharset > FONT_VECTOR) return lucPrintWidth(string);
    // Sum character widths in string
    int i, len = 0, slen = strlen(string);
    for (i = 0; i < slen; i++)
       len += font_charwidths[string[i]-32];
 
-   return scale * len;
+   return fontscale * len;
 }
 
 void DeleteFont()
@@ -494,21 +510,14 @@ void lucPrintString(const char* str)
    glEnable(GL_TEXTURE_2D);                            /* Enable Texture Mapping */
    glBindTexture(GL_TEXTURE_2D, fonttexture);
    glListBase(fontbase - 32 + (96 * fontcharset));      /* Choose the font and charset */
+   glPushMatrix();
+   if (fontscale < 1.0) fontscale = 1.0; //Don't allow downscaling bitmap fonts
+      glScalef(fontscale, fontscale, fontscale);
    glCallLists(strlen(str),GL_UNSIGNED_BYTE, str);      /* Display */
    glDisable(GL_TEXTURE_2D);                           /* Disable Texture Mapping */
 
+   glPopMatrix();
    glPopAttrib();
-}
-
-void lucPrintf(int x, int y, const char *fmt, ...)
-{
-   char    text[512];
-   va_list ap;                 /* Pointer to arguments list */
-   if (fmt == NULL) return;    /* No format string */
-   va_start(ap, fmt);          /* Parse format string for variables */
-   vsprintf(text, fmt, ap);    /* Convert symbols */
-   va_end(ap);
-   lucPrint(x, y, text);       /* Print result string */
 }
 
 void lucPrint(int x, int y, const char *str)
@@ -541,7 +550,7 @@ if (mode == GL_FEEDBACK)
 #endif
 
    glPushMatrix();
-   glLoadIdentity();
+   //glLoadIdentity();
    glTranslated(x, y-bmpfont_charheights[fontcharset], 0);
    lucPrintString(str);
    glPopMatrix();
@@ -578,6 +587,11 @@ void lucPrint3d(double x, double y, double z, const char *str, bool alignRight)
 void lucSetFontCharset(int charset)
 {
    fontcharset = charset;
+}
+
+void lucSetFontScale(float scale)
+{
+   fontscale = scale;
 }
 
 /* String width calc */
@@ -666,20 +680,20 @@ void lucDeleteFont()
    fonttexture = 0;
 }
 #else
-float PrintSetFont(json::Object& properties) {}
+float PrintSetFont(json::Object& properties, std::string def, float scaling, float multiplier) {}
 void PrintSetColour(int colour) {}
 void PrintString(const char* str) {}
-void Printf(int x, int y, float scale, const char *fmt, ...) {}
-void Print(int x, int y, float scale, const char *str) {}
-void Print3d(double x, double y, double z, double scale, const char *str) {}
-void Print3dBillboard(double x, double y, double z, double scale, const char *str) {}
-int PrintWidth(const char *string, float scale) {return 0;}
+void Printf(int x, int y, const char *fmt, ...) {}
+void Print(int x, int y, const char *str) {}
+void Print3d(double x, double y, double z, const char *str) {}
+void Print3dBillboard(double x, double y, double z const char *str, bool rightAlign) {}
+int PrintWidth(const char *string) {return 0;}
 void DeleteFont() {}
 void lucPrintString(const char* str) {}
-void lucPrintf(int x, int y, const char *fmt, ...) {}
 void lucPrint(int x, int y, const char *str) {}
 void lucPrint3d(double x, double y, double z, const char *str, bool alignRight) {}
 void lucSetFontCharset(int charset) {}
+void lucSetFontScale(float scale) {}
 int lucPrintWidth(const char *string) {return 0;}
 void lucSetupRasterFont() {}
 void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx) {}
@@ -1554,6 +1568,36 @@ void writeImage(GLubyte *image, int width, int height, const char* basename, boo
    if (!compress_image_to_jpeg_file(path, width, height, 3, image, params))
       abort_program("[write_jpeg] File %s could not be saved\n", path);
 #endif
+}
+
+std::string getImageString(GLubyte *image, int width, int height, int bpp)
+{
+#ifdef HAVE_LIBPNG
+   // Write png to stringstream
+   std::stringstream ss;
+   write_png(ss, bpp, width, height, image);
+   //Base64 encode!
+   std::string str = ss.str();
+   std::string encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
+#else
+   // Writes JPEG image to memory buffer. 
+   // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes. 
+   // If return value is true, jpeg_bytes will be set to the size of the compressed data.
+   int jpeg_bytes = width * height * bpp;
+   unsigned char* jpeg = new unsigned char[jpeg_bytes];
+   // Fill in the compression parameter structure.
+   jpge::params params;
+   params.m_quality = 95;
+   params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
+   if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, width, height, bpp, (const unsigned char *)image, params))
+      debug_print("JPEG compressed, size %d\n", jpeg_bytes);
+   else
+      abort_program("JPEG compress error\n");
+   //Base64 encode!
+   std::string encoded = "data:image/jpeg;base64," + base64_encode(reinterpret_cast<const unsigned char*>(jpeg), jpeg_bytes);
+   delete[] jpeg;
+#endif
+   return encoded;
 }
 
 #ifdef HAVE_LIBPNG

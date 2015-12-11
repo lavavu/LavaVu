@@ -516,7 +516,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
             sprintf(string, format, tickValue);
          }
 
-         if (fontscale == 0.0)
+         if (fontscale > 0.0)
          {
             if (vertical)
                lucPrint(starty + height + 10, xpos,  string);
@@ -527,9 +527,9 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
          {
             glEnable(GL_MULTISAMPLE);
             if (vertical)
-               Print(starty + height + 30*fontscale, xpos,  fontscale, string);
+               Print(starty + height + 10, xpos - (int) (0.5 * (float)PrintWidth("W")),  string);
             else
-               Print(xpos - (int) (0.5 * (float)PrintWidth(string, fontscale)),  starty - 30*fontscale, fontscale, string);
+               Print(xpos - (int) (0.5 * (float)PrintWidth(string)),  starty - 5 - PrintWidth("W"), string);
             glDisable(GL_MULTISAMPLE);
          }
       }

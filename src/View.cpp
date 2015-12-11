@@ -49,6 +49,7 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
    model_size = 0.0;       //Scalar magnitude of model dimensions
    width = 0;              //Viewport width
    height = 0;             //Viewport height
+   textscale = 1.0;
 
    x = xf;
    y = yf;
@@ -358,23 +359,6 @@ void View::print()
    printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n", 
            model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
    printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
-#ifndef USE_OMEGALIB
-   printf("<struct name=\"Camera\">\n");
-   printf("   <param name=\"Type\">lucCamera</param>\n");
-   printf("   <param name=\"focalPointX\">%f</param>\n", focal_point[0]);
-   printf("   <param name=\"focalPointY\">%f</param>\n", focal_point[1]);
-   printf("   <param name=\"focalPointZ\">%f</param>\n", focal_point[2]);
-   printf("   <param name=\"translateX\">%f</param>\n", model_trans_lag[0]);
-   printf("   <param name=\"translateY\">%f</param>\n", model_trans_lag[1]);
-   printf("   <param name=\"translateZ\">%f</param>\n", model_trans_lag[2]);
-   printf("   <param name=\"rotateX\">%.1f</param>\n", -xrot);
-   printf("   <param name=\"rotateY\">%.1f</param>\n", -yrot);
-   printf("   <param name=\"rotateZ\">%.1f</param>\n", -zrot);
-   printf("   <param name=\"aperture\">%.1f</param>\n", fov);
-   printf("   <param name=\"CoordinateSystem\">%s</param>\n", (orientation == RIGHT_HANDED ? "RightHanded" : "LeftHanded"));
-   printf("</struct>\n");
-   printf("------------------------------\n");
-#endif
    printf("%s\n", translateString().c_str());
    printf("%s\n", rotateString().c_str());
    printf("------------------------------\n");
@@ -711,9 +695,10 @@ void View::zoomToFit(int margin)
 void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
 {
    // Draw rulers with optional tick marks
-   float linewidth = properties["rulerwidth"].ToFloat(1.5);
+   float linewidth = textscale * properties["rulerwidth"].ToFloat(1.5);
    glLineWidth(linewidth);
-   float fontscale = PrintSetFont(properties, "vector", 0.05*model_size);
+   //float fontscale = PrintSetFont(properties, "vector", 0.05*model_size*textscale);
+   float fontscale = PrintSetFont(properties, "vector", 1.0, 0.08*model_size);
 
    float vec[3];
    float length;
@@ -795,10 +780,9 @@ void View::drawRuler(float start[3], float end[3], float labelmin, float labelma
       *(end+1) = 0; //Null terminator
       strcat(label, "  "); //(Leave two spaces at end)
 
-      if (fontscale == 0.0)
-         lucPrint3d(0, 2.0*height, pos, label, rightAlign);
-      else
-         Print3dBillboard(rightAlign ? -0.01 * PrintWidth(label, fontscale) : 0.0, 2.0*height, pos, fontscale, label);
+      Print3dBillboard(0.0, 2.0*height + 0.25*fontscale, pos, label, rightAlign);
+      //Print3dBillboard(rightAlign ? -0.01 * PrintWidth(label) : 0.0, 2.0*height + 0.25*fontscale, pos, label);
+      //lucPrint3d(0, 2.0*height, pos, label, rightAlign);
    }
 
    //Draw ruler line
@@ -917,10 +901,12 @@ void View::drawAxis()
    glDisable(GL_LIGHTING);
    glDisable(GL_DEPTH_TEST);
 
-   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], length, "X");
-   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], length, "Y");
+   lucSetFontCharset(FONT_VECTOR);
+   lucSetFontScale(length);
+   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
+   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
    if (is3d)
-      Print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], length, "Z");
+      Print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], "Z");
 
    glPopAttrib();
 
@@ -941,10 +927,11 @@ void View::drawOverlay(Colour& colour)
    drawAxis();
    drawRulers();
 
-   //2D overlay objects
+   //2D overlay objects, apply text scaling
    Viewport2d(width, height);
-   int w = width;
-   int h = height;
+   glScalef(textscale, textscale, textscale);
+   int w = width / textscale;
+   int h = height / textscale;
 
    //Colour bars
    GL_Error_Check;
@@ -975,6 +962,8 @@ void View::drawOverlay(Colour& colour)
       int starty = margin;
       if (last_margin == margin) starty += last_y + 16;   //Auto-increase y margin if same value
       if (!opposite) starty = hh - starty - bar_height;
+      //float border = properties["border"].ToFloat(1.0);
+      //if (border > 0) glLineWidth(border*textscale*0.75); else glLineWidth(textscale*0.75);
 
       last_y = starty;
       last_margin = margin;
@@ -989,11 +978,9 @@ void View::drawOverlay(Colour& colour)
    if (properties.HasKey("title"))
    {
       const char* title = properties["title"].ToString().c_str();
-      float fontscale = 1.5 * PrintSetFont(properties, "vector", 0.6);
-      if (fontscale == 0.0)
-         lucPrint(0.5 * (w - lucPrintWidth(title)), h - 20, title);
-      else
-         Print(0.5 * (w - PrintWidth(title, fontscale)), h - 20, fontscale, title);
+      float fontscale = PrintSetFont(properties, "vector", 1.0, 0.6);
+      if (fontscale > 0) fontscale *= -0.5;
+      Print(0.5 * (w - PrintWidth(title)), h + 30*fontscale, title);
    }
 
    GL_Error_Check;

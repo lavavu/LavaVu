@@ -113,6 +113,7 @@ class View
    float eye_shift;           // Stereo eye shift factor
    float eye_sep_ratio;       // Eye separation ratio to focal length
    float modelView[16];
+   float textscale;
 
    View(std::string title = "", bool stereo_flag = false, 
         float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);

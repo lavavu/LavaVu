@@ -60,6 +60,8 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
 
    setBackground(0xff000000);
 
+   downsample = 1;
+
    /* Init mutex */
    pthread_mutex_init(&cmd_mutex, NULL);
 }
@@ -127,9 +129,6 @@ void OpenGLViewer::init()
    //Font textures (bitmap fonts)
    lucSetupRasterFont();
 
-   //Setup lighting
-   light();
-
    //Enable scissor test
    glEnable(GL_SCISSOR_TEST);
 
@@ -182,19 +181,27 @@ void OpenGLViewer::fbo(int width, int height)
    if (fbo_texture) glDeleteTextures(1, &fbo_texture);
    if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
    if (fbo_frame) glDeleteFramebuffersEXT(1, &fbo_frame);
+   GL_Error_Check;
 
    // create a texture to use as the backbuffer
    glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
    //glActiveTexture(GL_TEXTURE2);
    glGenTextures(1, &fbo_texture);
-   glBindTexture(GL_TEXTURE_2D, fbo_texture);                  
+   glBindTexture(GL_TEXTURE_2D, fbo_texture);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);            
-
-   // make sure this is the same color format as the screen
-   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
+   if (downsample > 1)
+   {
+      glTexStorage2D(GL_TEXTURE_2D, downsample, GL_RGBA8, width, height);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+   }
+   else
+   {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      // make sure this is the same color format as the screen
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
+   }
 
    // Depth buffer
    glGenRenderbuffersEXT(1, &fbo_depth);
@@ -218,6 +225,7 @@ void OpenGLViewer::fbo(int width, int height)
    //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fbo_depth);
    //Image buffer texture attachment
    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fbo_texture, 0);
+   GL_Error_Check;
                
    if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
    {
@@ -240,6 +248,7 @@ void OpenGLViewer::fbo(int width, int height)
    visible = true;   //Have to use visible window if available
 #endif
    glBindTexture(GL_TEXTURE_2D, 0);
+   GL_Error_Check;
 }
 
 void OpenGLViewer::setsize(int width, int height)
@@ -355,9 +364,21 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
    //No row padding required
    glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-   //Read pixels from the specified render buffer
-   glReadBuffer(renderBuffer);
-   glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, buffer);
+#ifdef GL_FRAMEBUFFER_EXT
+   if (fbo_frame > 0)
+   {
+      glBindTexture(GL_TEXTURE_2D, fbo_texture);
+      glGenerateMipmap(GL_TEXTURE_2D);
+      glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, buffer);
+      GL_Error_Check;
+   }
+   else
+#endif
+   {
+      //Read pixels from the specified render buffer
+      glReadBuffer(renderBuffer);
+      glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, buffer);
+   }
 
    if (flip)
    {
@@ -365,13 +386,15 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
    }
 }
 
-void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
+std::string OpenGLViewer::snapshot(const char* name, int number, bool transparent, bool asString)
 {
    char path[256];
-   int pixel = transparent ? 4 : 3;
+   int bpp = transparent && !asString ? 4 : 3;
+   size_t size = width * height * bpp;
    int savewidth = width;
    int saveheight = height;
    static int counter = 0;
+   std::string retImg;
    if (number == -1)
    {
       number = counter;
@@ -385,6 +408,13 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
       blend_mode = BLEND_PNG;
 
    //Re-render at specified output size (in a framebuffer object if available)
+   float factor = pow(2, downsample-1);
+   if (downsample > 1) 
+   {
+      outwidth = width * factor;
+      outheight = height * factor;
+   }
+
    if (outwidth > 0 && (outwidth != width || outheight != height))
    {
       if (!outheight)
@@ -412,19 +442,34 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
 
    display();
 
+   if (downsample > 1)
+   {
+      width /= factor;
+      height /= factor;
+   }
+
    // Read the pixels
-   GLubyte *image = new GLubyte[width * height * pixel];
+   GLubyte *image = new GLubyte[size];
 #ifdef HAVE_LIBPNG
    pixels(image, transparent);
 #else
    pixels(image, false, true);
 #endif
+
    //Write PNG or JPEG
-   sprintf(path, "%s%s.%05d", output_path.c_str(), name, number);
-   writeImage(image, width, height, path, transparent);
+   if (asString)
+   {
+      retImg = getImageString(image, width, height, bpp);
+   }
+   else
+   {
+      sprintf(path, "%s%s.%05d", output_path.c_str(), name, number);
+      writeImage(image, width, height, path, transparent);
+   }
 
    delete[] image;
 
+   //Restore settings
    blend_mode = BLEND_NORMAL;
    if (outwidth > 0 && outwidth != savewidth)
    {
@@ -435,56 +480,8 @@ void OpenGLViewer::snapshot(const char* name, int number, bool transparent)
       setsize(savewidth, saveheight);
 #endif
    }
-}
 
-void OpenGLViewer::light()
-{
-   //Standard nice looking lighting model, not yet user configurable
-   float black[] = { 0.0, 0.0, 0.0, 1.0 };
-   float white[] = { 1.0, 1.0, 1.0, 1.0 };
-   float ambient[] = { 0.2, 0.2, 0.2, 1.0 };
-   float diffuse[] = { 0.8, 0.8, 0.8, 1.0 };
-
-   //Omni-directional light at camera
-   GLfloat lightPosition[4] = {0.0, 0.0, 0.0, 1.0};
-   //Directional light at position slightly behind camera
-   //GLfloat lightPosition[4] = {0.0, 0.0, 0.1 * view.coord_system, 0.0};
-
-   // Light positioning done in opengl coords, not eye coords, so restore identity
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
-
-   //Make it as pretty as possible
-   glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
-   glEnable(GL_COLOR_MATERIAL);
-   glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-   //    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
-   //    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
-   //    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, black);
-
-   //Set global material light properties
-   glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, black);        //Disable light emission on materials
-   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, black);    //Disable specular on material
-
-   //Set position, ambient, diffuse & specular properties of light 0
-   glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
-   glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-   glLightfv(GL_LIGHT0, GL_SPECULAR, white);
-
-   //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, black);   //Disable global ambient
-   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);   //Set global ambient
-   glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);   //Light both sides of polygons
-
-   // Enabling the light
-   glEnable(GL_LIGHT0);
-   // Enable lighting
-   glEnable(GL_LIGHTING);
-
-   //Restore model view   
-   glPopMatrix();
+   return retImg;
 }
 
 void OpenGLViewer::notIdle(int display)

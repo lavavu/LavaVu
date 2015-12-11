@@ -222,8 +222,6 @@ void Lines::draw()
             float lineWidth = geom[i]->draw->properties["linewidth"].ToFloat(1.0) * scale;
             if (lineWidth <= 0) lineWidth = scale;
             glLineWidth(lineWidth);
-            if (geom[i]->draw->properties["linesmooth"].ToBool(true))
-               glEnable(GL_LINE_SMOOTH);
          
             glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
 
