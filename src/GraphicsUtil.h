@@ -55,6 +55,7 @@
 #define BLEND_PNG 1
 #define BLEND_ADD 2
 
+#define FONT_VECTOR  -1
 #define FONT_FIXED    0
 #define FONT_SMALL    1
 #define FONT_NORMAL   2
@@ -944,22 +945,22 @@ bool gluInvertMatrixf(const float m[16], float invOut[16]);
 void Viewport2d(int width, int height);
 
 //3d fonts
-float PrintSetFont(json::Object& properties, std::string def="default", float scaling=1.0);
+float PrintSetFont(json::Object& properties, std::string def="default", float scaling=1.0, float multiplier=1.0);
 void PrintSetColour(int colour, bool XOR=false);
 void PrintString(const char* str);
-void Printf(int x, int y, float scale, const char *fmt, ...);
-void Print(int x, int y, float scale, const char *str);
-void Print3d(double x, double y, double z, double scale, const char *str);
-void Print3dBillboard(double x, double y, double z, double scale, const char *str);
-int PrintWidth(const char *string, float scale);
+void Printf(int x, int y, const char *fmt, ...);
+void Print(int x, int y, const char *str);
+void Print3d(double x, double y, double z, const char *str);
+void Print3dBillboard(double x, double y, double z, const char *str, bool alignRight=false);
+int PrintWidth(const char *string);
 void DeleteFont();
 
 //Bitmap texture fonts
 void lucPrintString(const char* str);
-void lucPrintf(int x, int y, const char* fmt, ...);
 void lucPrint(int x, int y, const char* str);
 void lucPrint3d(double x, double y, double z, const char *str, bool alignRight=false);
 void lucSetFontCharset(int charset);
+void lucSetFontScale(float scale);
 int lucPrintWidth(const char *string);
 void lucSetupRasterFont();
 void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx);
@@ -987,6 +988,7 @@ int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GL
 int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode);
 
 void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);
+std::string getImageString(GLubyte *image, int width, int height, int bpp);
 
 #ifdef HAVE_LIBPNG
 //PNG utils

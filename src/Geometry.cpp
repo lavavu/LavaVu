@@ -563,14 +563,15 @@ void Geometry::labels()
    glEnable(GL_MULTISAMPLE);
    for (unsigned int i=0; i < geom.size(); i++)
    {
-      float fontscale = PrintSetFont(geom[i]->draw->properties);
+      if (view->textscale > 0) geom[i]->draw->properties["font"] = "vector"; //Force vector if downsampling
+      PrintSetFont(geom[i]->draw->properties, "vector"); // , 1.0, view->textscale);
       Colour colour;
       if (drawable(i) && geom[i]->labels.size() > 0) 
       {
          for (unsigned int j=0; j < geom[i]->labels.size(); j++)
          {
             float* p = geom[i]->vertices[j];
-            //debug_print("Labels for %d - %d : (%f) %s\n", i, j, fontscale, geom[i]->labels[j].c_str());
+            //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
             geom[i]->getColour(colour, j);
             //Multiply opacity by global override level if set
             if (GeomData::opacity > 0.0)
@@ -578,10 +579,7 @@ void Geometry::labels()
             glColor4ubv(colour.rgba);
             if (geom[i]->labels[j].size() > 0)
             {
-               if (fontscale == 0.0)
-                  lucPrint3d(p[0], p[1], p[2], geom[i]->labels[j].c_str());
-               else
-                  Print3dBillboard(p[0], p[1], p[2], fontscale, geom[i]->labels[j].c_str());
+               Print3dBillboard(p[0], p[1], p[2], geom[i]->labels[j].c_str());
             }
          }
       }

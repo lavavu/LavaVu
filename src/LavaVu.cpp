@@ -107,6 +107,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
       if (x == '-' && args[i].length() > 1)
       {
          ss >> x;
+         //Unused switches: bk, BEFHKLMOXYZ
          switch (x)
          {
          case 'P':
@@ -227,10 +228,12 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
          case 'u':
             //Return encoded image string from run()
             returndata = lucExportIMAGE;
+            viewer->visible = false;
             break;
          case 'U':
             //Return encoded json string from run()
             returndata = lucExportJSON;
+            viewer->visible = false;
             break;
          default:
             //Attempt to interpret as timestep
@@ -369,42 +372,7 @@ std::string LavaVu::run(bool persist)
    //Return an image encoded as a base64 data url
    if (returndata == lucExportIMAGE)
    {
-      viewer->display();
-      int bpp = 3;
-      size_t size = viewer->width * viewer->height * bpp;
-      GLubyte *image = new GLubyte[size];
-#ifdef HAVE_LIBPNG
-      // Read the pixels
-      viewer->pixels(image, bpp > 3);
-      // Write png to stringstream
-      std::stringstream ss;
-      write_png(ss, bpp, viewer->width, viewer->height, image);
-      delete[] image;
-      //Base64 encode!
-      std::string str = ss.str();
-      std::string encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
-#else
-      // Read the pixels (flipped)
-      viewer->pixels(image, bpp > 3, true);
-      // Writes JPEG image to memory buffer. 
-      // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes. 
-      // If return value is true, jpeg_bytes will be set to the size of the compressed data.
-      int jpeg_bytes = viewer->width * viewer->height * bpp;
-      unsigned char* jpeg = new unsigned char[jpeg_bytes];
-      // Fill in the compression parameter structure.
-      jpge::params params;
-      params.m_quality = 95;
-      params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-      if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, viewer->width, viewer->height, bpp, (const unsigned char *)image, params))
-         debug_print("JPEG compressed, size %d\n", jpeg_bytes);
-      else
-         abort_program("JPEG compress error\n");
-      delete[] image;
-      //Base64 encode!
-      std::string encoded = "data:image/jpeg;base64," + base64_encode(reinterpret_cast<const unsigned char*>(jpeg), jpeg_bytes);
-      delete[] jpeg;
-#endif
-      return encoded;
+      return viewer->snapshot("", 0, false, true);
    }
    if (returndata == lucExportJSON)
    {
@@ -2006,6 +1974,11 @@ void LavaVu::displayCurrentView()
    viewSelect(view);
    GL_Error_Check;
 
+   //Scale text and 2d elements when downsampling output image
+   aview->textscale = 1.0;
+   if (viewer->downsample > 0)
+      aview->textscale = pow(2, viewer->downsample-1);
+
 #ifdef USE_OMEGALIB
    drawSceneBlended();
    return;
@@ -2191,7 +2164,9 @@ void LavaVu::displayMessage()
       PrintSetColour(0xffffffff, true);
 
       //Print current message
-      Print(10, 10, 1.0, message);
+      lucSetFontCharset(FONT_VECTOR);
+      lucSetFontScale(1.0);
+      Print(10, 10, message);
       message[0] = '\0';
 
       //Revert to normal colour
@@ -2218,14 +2193,16 @@ void LavaVu::displayText(std::string text, int lineno, int colour)
     {
        //Shadow
        PrintSetColour(viewer->background.value);
-       Print(11, viewer->height - lineht*lineno - 1, size, line.c_str());
+       lucSetFontCharset(FONT_VECTOR);
+       lucSetFontScale(size);
+       Print(11, viewer->height - lineht*lineno - 1, line.c_str());
 
        if (colour == 0)
           PrintSetColour(viewer->inverse.value);
        else
           PrintSetColour(colour | 0xff000000);
 
-       Print(10, viewer->height - lineht*lineno, size, line.c_str());
+       Print(10, viewer->height - lineht*lineno, line.c_str());
        lineno++;
 
        //Break if we run out of viewport for more lines
@@ -2287,6 +2264,7 @@ void LavaVu::drawScene()
 
    aview->drawBorder();
 
+   Model::lines->draw();
    Model::triSurfaces->draw();
    Model::quadSurfaces->draw();
    Model::points->draw();
@@ -2295,7 +2273,6 @@ void LavaVu::drawScene()
    Model::shapes->draw();
    Model::labels->draw();
    Model::volumes->draw();
-   Model::lines->draw();
 
    //Restore default state
    glPopAttrib();

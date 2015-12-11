@@ -69,6 +69,7 @@ class OpenGLViewer : public ApplicationInterface
 
    bool fbo_enabled;
    GLuint fbo_frame, fbo_texture, fbo_depth;
+   int downsample;
 
    int mouseState;
    ShiftState keyState;
@@ -98,7 +99,6 @@ class OpenGLViewer : public ApplicationInterface
    virtual void display();
    virtual void swap() {};
    virtual void close();
-   virtual void light();
    virtual void animate(int msec);
 
    // Default virtual functions for interactivity (call application interface)
@@ -113,7 +113,7 @@ class OpenGLViewer : public ApplicationInterface
 
    virtual void fullScreen() {}
    void pixels(void* buffer, bool alpha=false, bool flip=false);
-   void snapshot(const char* name, int number=-1, bool transparent=alphapng);
+   std::string snapshot(const char* name, int number=-1, bool transparent=alphapng, bool asString=false);
 
    void setBackground(int value)
    {

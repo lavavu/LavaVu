@@ -56,6 +56,7 @@ std::string initViewer(int argc, char **argv)
    int port = 8080, quality = 0, threads = 4;
    bool stereo = false;
    bool fullscreen = false;
+   int downsample = 0;
    int width = 0, height = 0;
    int window;
    std::vector<std::string> args;
@@ -176,6 +177,10 @@ std::string initViewer(int argc, char **argv)
             //Fullscreen window requested
             fullscreen = true;
             break;
+         case 'z':
+            //Downsample images
+            ss >> downsample;
+            break;
          case 'p':
             //Web server enable
             ss >> port;
@@ -224,6 +229,7 @@ std::string initViewer(int argc, char **argv)
       viewer->addOutput(Server::Instance(viewer, htmlpath, port, quality, threads));
    }
 #endif
+   if (downsample) viewer->downsample = downsample;
 
    //Create & run application
    app = new LavaVu(args, viewer, width, height);
