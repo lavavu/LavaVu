@@ -9,6 +9,7 @@ PFNGLACTIVETEXTUREPROC glActiveTexture;
 PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 PFNGLTEXIMAGE3DPROC glTexImage3D;
 PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
+PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 #else
 getProcAddressFN GetProcAddress;
 #endif
@@ -22,6 +23,7 @@ PFNGLGENBUFFERSPROC glGenBuffers;
 PFNGLISBUFFERPROC glIsBuffer;
 PFNGLMAPBUFFERPROC glMapBuffer;
 PFNGLBUFFERDATAPROC glBufferData;
+PFNGLBUFFERSUBDATAPROC glBufferSubData;
 PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 PFNGLCREATESHADERPROC glCreateShader;
@@ -72,6 +74,7 @@ void OpenGL_Extensions_Init()
    glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC) GetProcAddress("glDrawRangeElements");
    glTexImage3D = (PFNGLTEXIMAGE3DPROC) GetProcAddress("glTexImage3D");
    glTexSubImage3D = (PFNGLTEXSUBIMAGE3DPROC) GetProcAddress("glTexSubImage3D");
+   glGenerateMipmapEXT = (PFNGLGENERATEMIPMAPEXTPROC) GetProcAddress("glGenerateMipmapEXT");
 #endif
    glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC) GetProcAddress("glBlendFuncSeparate");
    glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GetProcAddress("glPointParameterfv");
@@ -81,6 +84,7 @@ void OpenGL_Extensions_Init()
    glIsBuffer = (PFNGLISBUFFERPROC) GetProcAddress("glIsBuffer");
    glMapBuffer = (PFNGLMAPBUFFERPROC) GetProcAddress("glMapBuffer");
    glBufferData = (PFNGLBUFFERDATAPROC) GetProcAddress("glBufferData");
+   glBufferSubData = (PFNGLBUFFERSUBDATAPROC) GetProcAddress("glBufferSubData");
    glUnmapBuffer = (PFNGLUNMAPBUFFERPROC) GetProcAddress("glUnmapBuffer");
    glDeleteBuffers = (PFNGLDELETEBUFFERSPROC) GetProcAddress("glDeleteBuffers");
    glCreateShader = (PFNGLCREATESHADERPROC) GetProcAddress("glCreateShader");

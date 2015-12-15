@@ -12,6 +12,7 @@ extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 extern PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
+extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 #define EXTENSION_POINTERS
 #else
 extern getProcAddressFN GetProcAddress;
@@ -26,6 +27,7 @@ extern PFNGLGENBUFFERSPROC glGenBuffers;
 extern PFNGLISBUFFERPROC glIsBuffer;
 extern PFNGLMAPBUFFERPROC glMapBuffer;
 extern PFNGLBUFFERDATAPROC glBufferData;
+extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 extern PFNGLCREATESHADERPROC glCreateShader;

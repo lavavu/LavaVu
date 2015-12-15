@@ -83,6 +83,9 @@
 #else
 
 /* WINDOWS */
+#define GL_R32F 0x822E
+static float _X_huge_valf = std::numeric_limits<float>::infinity();
+#define HUGE_VALF _X_huge_valf
 #define snprintf sprintf_s
 #define isnan(x) _isnan(x)
 #define isinf(x) (!_finite(x))

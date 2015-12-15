@@ -244,7 +244,7 @@ std::string initViewer(int argc, char **argv)
 }
 
 // Main function
-#if not defined __LAVAVULIB
+#ifndef __LAVAVULIB
 int main(int argc, char *argv[]) 
 {
    initViewer(argc, argv);
