@@ -99,7 +99,7 @@ void ColourMap::add(std::string colour)
 {
    Colour c = Colour_FromString(colour);
    colours.push_back(ColourVal(c));
-   std::cerr << colour << " : " << colours[colours.size()-1] << std::endl;
+   //std::cerr << colour << " : " << colours[colours.size()-1] << std::endl;
 }
 
 void ColourMap::add(std::string colour, float pvalue)
