@@ -193,15 +193,15 @@ void OpenGLViewer::fbo(int width, int height)
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);            
    if (downsample > 1)
    {
-      glTexStorage2D(GL_TEXTURE_2D, downsample, GL_RGBA8, width, height);
+      //glTexStorage2D(GL_TEXTURE_2D, downsample, GL_RGBA8, width, height);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
    }
    else
    {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      // make sure this is the same color format as the screen
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
    }
+   // make sure this is the same color format as the screen
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); 
 
    // Depth buffer
    glGenRenderbuffersEXT(1, &fbo_depth);
@@ -368,7 +368,7 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
    if (fbo_frame > 0)
    {
       glBindTexture(GL_TEXTURE_2D, fbo_texture);
-      glGenerateMipmap(GL_TEXTURE_2D);
+      glGenerateMipmapEXT(GL_TEXTURE_2D);
       glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, buffer);
       GL_Error_Check;
    }
