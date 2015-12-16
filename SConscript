@@ -13,7 +13,7 @@ env = env.Clone()
 #############################################
 # Switch env to LavaVu base!
 values = {}
-execfile("output.cfg", globals(), values)
+execfile("viewer.cfg", globals(), values)
 env._dict.update(values)
 #############################################
 
@@ -67,10 +67,6 @@ libs = ['pthread', 'dl'] + env.get('LIBS', [])
 l = env.SharedLibrary('lib/LavaVuRender', objs + sqlite3, LIBS=libs)
 
 # Build LavaVu viewer (interactive version)
-env = origenv.Clone()
-values = {}
-execfile("viewer.cfg", globals(), values)
-env._dict.update(values)
 env['CPPDEFINES'] += cpp_defs
 main = env.SharedObject('main', Glob(src_dir + '/Main/main.cpp'))
 srcs = Glob(src_dir + '/Main/X11Viewer.cpp')
@@ -88,27 +84,6 @@ libs = ['LavaVuRender'] + env.get('LIBS', [])
 #Build the executable
 env.Program('bin/LavaVu', main + vobjs, LIBS=libs)
 
-if FindFile('offscreen.cfg', '.'):
-   # Build LavaVu viewer (offscreen version)
-   env = origenv.Clone()
-   values = {}
-   execfile("offscreen.cfg", globals(), values)
-   env._dict.update(values)
-   env['CPPDEFINES'] += cpp_defs
-   srcs = Glob(src_dir + '/Main/AGLViewer.cpp')
-   srcs += Glob(src_dir + '/Main/OSMesaViewer.cpp')
-   vobjs = env.SharedObject(srcs)
-   main = env.SharedObject('osmain', Glob(src_dir + '/Main/main.cpp'))
-   #Set search paths for libraries
-   env['RPATH'] += rpath
-   env['LIBPATH'] += [build_lib]
-   #Add the renderer library
-   libs = ['LavaVuRender'] + env.get('LIBS', [])
-   #Build the executable
-   env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
-else:
-   env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
-
 #Build as a shared library (Experimental)
-main = env.SharedObject('oslib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'] + ["__LAVAVULIB"])
+main = env.SharedObject('lvlib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'] + ["__LAVAVULIB"])
 env.SharedLibrary('lib/LavaVu', main + vobjs, LIBS=libs)
