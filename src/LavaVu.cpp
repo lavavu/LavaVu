@@ -2264,7 +2264,6 @@ void LavaVu::drawScene()
 
    aview->drawBorder();
 
-   Model::lines->draw();
    Model::triSurfaces->draw();
    Model::quadSurfaces->draw();
    Model::points->draw();
@@ -2273,6 +2272,7 @@ void LavaVu::drawScene()
    Model::shapes->draw();
    Model::labels->draw();
    Model::volumes->draw();
+   Model::lines->draw();
 
    //Restore default state
    glPopAttrib();
