@@ -695,7 +695,7 @@ void View::zoomToFit(int margin)
 void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
 {
    // Draw rulers with optional tick marks
-   float linewidth = textscale * properties["rulerwidth"].ToFloat(1.5);
+   float linewidth = textscale * properties["linewidth"].ToFloat(1.5);
    glLineWidth(linewidth);
    //float fontscale = PrintSetFont(properties, "vector", 0.05*model_size*textscale);
    float fontscale = PrintSetFont(properties, "vector", 1.0, 0.08*model_size);
