@@ -68,7 +68,7 @@ void ColourMap::parse(std::string colourMapString)
    const char *breakChars = " \t\n;,";
    char *charPtr;
    char colourStr[64];
-   char *colourString = new char(colourMapString.length()+1);
+   char *colourString = new char[colourMapString.size()+1];
    strcpy(colourString, colourMapString.c_str());
    char *colourMap_ptr = colourString;
    colours.clear();
