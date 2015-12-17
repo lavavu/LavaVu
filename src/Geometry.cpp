@@ -1202,7 +1202,7 @@ void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float 
 
 void Geometry::drawCuboid(DrawingObject *draw, float min[3], float max[3], Quaternion& rot, bool quads)
 {
-  float pos[3] = {min[0] + 0.5*(max[0] - min[0]), min[1] + 0.5*(max[1] - min[1]), min[2] + 0.5*(max[2] - min[2])};
+  float pos[3] = {min[0] + 0.5f*(max[0] - min[0]), min[1] + 0.5f*(max[1] - min[1]), min[2] + 0.5f*(max[2] - min[2])};
   //Corner vertices
   Vec3d verts[8] =
   {
