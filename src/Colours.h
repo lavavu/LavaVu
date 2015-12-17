@@ -67,16 +67,18 @@
 // - r,g,b,a component struct
 // - integer (hex AABBGGRR little endian)
 // - float for storing in a float data block
-typedef union {
-   GLubyte rgba[4];
-   int value;
-   float fvalue;
-   struct {
-      GLubyte r;
-      GLubyte g;
-      GLubyte b;
-      GLubyte a;
-   };
+typedef union
+{
+  GLubyte rgba[4];
+  int value;
+  float fvalue;
+  struct
+  {
+    GLubyte r;
+    GLubyte g;
+    GLubyte b;
+    GLubyte a;
+  };
 } Colour;
 
 Colour Colour_RGBA(int r, int g, int b, int a=255);

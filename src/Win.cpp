@@ -40,44 +40,44 @@ unsigned int Win::lastid = 0;
 //Adds a view to active window
 View* Win::addView(View* v)
 {
-   views.push_back(v);
-   //debug_print("Adding view %s at %f,%f", titlestr, xf, yf);
-   //debug_print("Added %f,%f\n", aview->x, aview->y);
-   //Re-calculate viewports ( x,y width,height )
-   resizeViewports();
-   return v;
+  views.push_back(v);
+  //debug_print("Adding view %s at %f,%f", titlestr, xf, yf);
+  //debug_print("Added %f,%f\n", aview->x, aview->y);
+  //Re-calculate viewports ( x,y width,height )
+  resizeViewports();
+  return v;
 }
 
 void Win::initViewports(int w, int h)
 {
-   //Initialise all viewports to window size
-   for (unsigned int v=0; v<views.size(); v++)
-   {
-      //Calculate actual size based on window size
-      views[v]->port(w, h);
-      //debug_print("Viewport %d/%d at %d,%d %d x %d\n", v+1, views.size(), (int)(width * views[v]->x), (int)(height * views[v]->y), (int)(width * views[v]->w), (int)(height * views[v]->h));
-   }
+  //Initialise all viewports to window size
+  for (unsigned int v=0; v<views.size(); v++)
+  {
+    //Calculate actual size based on window size
+    views[v]->port(w, h);
+    //debug_print("Viewport %d/%d at %d,%d %d x %d\n", v+1, views.size(), (int)(width * views[v]->x), (int)(height * views[v]->y), (int)(width * views[v]->w), (int)(height * views[v]->h));
+  }
 }
 
 void Win::resizeViewports()
 {
-   //Calculate viewports ( x,y width,height )
-   for (unsigned int v=0; v<views.size(); v++)
-   {
-      float nextx = 1.0, nexty = 1.0;
-   
-      //Find next largest x & y positions
-      if (v+1 < views.size() && views[v+1]->x > views[v]->x)
-         nextx = views[v+1]->x;
+  //Calculate viewports ( x,y width,height )
+  for (unsigned int v=0; v<views.size(); v++)
+  {
+    float nextx = 1.0, nexty = 1.0;
 
-      for (unsigned int vv=v+1; vv<views.size(); vv++)
-      {
-         if (views[vv]->y > views[v]->y && views[vv]->y < nexty)
-            nexty = views[vv]->y;
-      }
+    //Find next largest x & y positions
+    if (v+1 < views.size() && views[v+1]->x > views[v]->x)
+      nextx = views[v+1]->x;
 
-      views[v]->w = nextx - views[v]->x;
-      views[v]->h = nexty - views[v]->y;
-      //debug_print("### Sized viewport %d at %d,%d %d x %d\n", v, (int)(width * views[v]->x), (int)(height * views[v]->y), (int)(width * views[v]->w), (int)(height * views[v]->h));
-   }
+    for (unsigned int vv=v+1; vv<views.size(); vv++)
+    {
+      if (views[vv]->y > views[v]->y && views[vv]->y < nexty)
+        nexty = views[vv]->y;
+    }
+
+    views[v]->w = nextx - views[v]->x;
+    views[v]->h = nexty - views[v]->y;
+    //debug_print("### Sized viewport %d at %d,%d %d x %d\n", v, (int)(width * views[v]->x), (int)(height * views[v]->y), (int)(width * views[v]->w), (int)(height * views[v]->h));
+  }
 }

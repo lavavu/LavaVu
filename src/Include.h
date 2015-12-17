@@ -110,14 +110,14 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #endif
 
 //Define pointers to required gl 2.0 functions
-#if defined _WIN32 
+#if defined _WIN32
 #define EXTENSION_POINTERS
 #endif
 
 typedef void* (*getProcAddressFN)(const char* procName);
 #if not defined _WIN32
 extern getProcAddressFN GetProcAddress;
-#endif 
+#endif
 
 #include "Extensions.h"
 

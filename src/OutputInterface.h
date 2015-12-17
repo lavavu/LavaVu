@@ -39,15 +39,15 @@
 //Interface for output appliances
 class OutputInterface
 {
-  public:
+public:
 
-   virtual void open(int width, int height) = 0;
-   virtual void close() = 0;
-   virtual void resize(int new_width, int new_height) = 0;
-   virtual void display() = 0;
-   virtual void idle() = 0;
+  virtual void open(int width, int height) = 0;
+  virtual void close() = 0;
+  virtual void resize(int new_width, int new_height) = 0;
+  virtual void display() = 0;
+  virtual void idle() = 0;
 
-   OutputInterface() {}
+  OutputInterface() {}
 };
 
 #endif //OutputInterface__

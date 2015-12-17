@@ -43,30 +43,30 @@
 
 class ViewerApp : public ApplicationInterface
 {
-  private:
+private:
 
-  protected:
+protected:
 
-  public:
+public:
 
-   OpenGLViewer* viewer;
+  OpenGLViewer* viewer;
 
-   ViewerApp(OpenGLViewer* viewer) : viewer(viewer)
-   {
-      //Provide our application interface to the viewer class
-      viewer->app = (ApplicationInterface*)this;
-   }
+  ViewerApp(OpenGLViewer* viewer) : viewer(viewer)
+  {
+    //Provide our application interface to the viewer class
+    viewer->app = (ApplicationInterface*)this;
+  }
 
-   virtual ~ViewerApp() {}
+  virtual ~ViewerApp() {}
 
-   //INTERFACE:
+  //INTERFACE:
 
-   // Placeholder virtual functions for window management
-   virtual void open(int width, int height) {}
-   virtual void resize(int new_width, int new_height) {}
-   virtual void display() {}
-   virtual void swap() {}
-   virtual void close() {}
+  // Placeholder virtual functions for window management
+  virtual void open(int width, int height) {}
+  virtual void resize(int new_width, int new_height) {}
+  virtual void display() {}
+  virtual void swap() {}
+  virtual void close() {}
 
 };
 

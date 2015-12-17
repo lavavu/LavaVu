@@ -45,21 +45,21 @@
 
 class AGLViewer  : public OpenGLViewer
 {
-  public:
-   AGLContext graphicsContext;
-   // Pixel buffer for background windows
-   AGLPbuffer PixelBuffer; 
+public:
+  AGLContext graphicsContext;
+  // Pixel buffer for background windows
+  AGLPbuffer PixelBuffer;
 
-   AGLViewer();
-   ~AGLViewer();
-   
-   //Function implementations
-   void open(int width, int height);
-   void setsize(int width, int height);
-   void show();
-   void display();
-   void swap();
-   void execute();
+  AGLViewer();
+  ~AGLViewer();
+
+  //Function implementations
+  void open(int width, int height);
+  void setsize(int width, int height);
+  void show();
+  void display();
+  void swap();
+  void execute();
 };
 
 #endif //AGLViewer__

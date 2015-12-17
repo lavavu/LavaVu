@@ -47,103 +47,103 @@
 
 class Model
 {
-  public:
-   static bool noload;
-   static bool pointspheres;
-   static int now;
-   //Current timestep geometry
-   static std::vector<Geometry*> geometry;
-   //Type specific geometry pointers
-   static Geometry* labels;
-   static Points* points;
-   static Vectors* vectors;
-   static Tracers* tracers;
-   static QuadSurfaces* quadSurfaces;
-   static TriSurfaces* triSurfaces;
-   static Lines* lines;
-   static Shapes* shapes;
-   static Volumes* volumes;
+public:
+  static bool noload;
+  static bool pointspheres;
+  static int now;
+  //Current timestep geometry
+  static std::vector<Geometry*> geometry;
+  //Type specific geometry pointers
+  static Geometry* labels;
+  static Points* points;
+  static Vectors* vectors;
+  static Tracers* tracers;
+  static QuadSurfaces* quadSurfaces;
+  static TriSurfaces* triSurfaces;
+  static Lines* lines;
+  static Shapes* shapes;
+  static Volumes* volumes;
 
-   std::vector<TimeStep*> timesteps;
+  std::vector<TimeStep*> timesteps;
 
-   bool readonly;
-   bool memory;
-   FilePath file;
-   int attached;
-   std::string apath;
-   char prefix[10];   //attached db prefix
+  bool readonly;
+  bool memory;
+  FilePath file;
+  int attached;
+  std::string apath;
+  char prefix[10];   //attached db prefix
 
-   std::vector<Win*> windows;
-   std::vector<View*> views;
-   std::vector<DrawingObject*> objects;
-   std::vector<ColourMap*> colourMaps;
+  std::vector<Win*> windows;
+  std::vector<View*> views;
+  std::vector<DrawingObject*> objects;
+  std::vector<ColourMap*> colourMaps;
 
-   sqlite3 *db;
+  sqlite3 *db;
 
-   sqlite3_stmt* select(const char* SQL, bool silent=false);
-   bool issue(const char* SQL, sqlite3* odb=NULL);
-   bool open(bool write=false);
-   void reopen(bool write=false);
-   void attach(int timestep);
-   void close();
-   void clearObjects(bool all=false);
-   void reset();
-   void loadWindows();
-   void loadLinks(Win* win);
-   void loadLinks(DrawingObject* draw);
-   void clearTimeSteps();
-   int loadTimeSteps();
-   void loadViewports();
-   void loadViewCamera(int viewport_id);
-   void loadObjects();
-   void loadColourMaps();
-   void initColourMaps();
+  sqlite3_stmt* select(const char* SQL, bool silent=false);
+  bool issue(const char* SQL, sqlite3* odb=NULL);
+  bool open(bool write=false);
+  void reopen(bool write=false);
+  void attach(int timestep);
+  void close();
+  void clearObjects(bool all=false);
+  void reset();
+  void loadWindows();
+  void loadLinks(Win* win);
+  void loadLinks(DrawingObject* draw);
+  void clearTimeSteps();
+  int loadTimeSteps();
+  void loadViewports();
+  void loadViewCamera(int viewport_id);
+  void loadObjects();
+  void loadColourMaps();
+  void initColourMaps();
 
-   Model(FilePath& fn, bool hideall=false);
-   void init();
-   ~Model();
+  Model(FilePath& fn, bool hideall=false);
+  void init();
+  ~Model();
 
-   void addObject(DrawingObject* draw)
-   {
-      //Create master drawing object list entry
-      if (objects.size() < draw->id) objects.resize(draw->id);
-      objects[draw->id-1] = draw;
-   }
+  void addObject(DrawingObject* draw)
+  {
+    //Create master drawing object list entry
+    if (objects.size() < draw->id) objects.resize(draw->id);
+    objects[draw->id-1] = draw;
+  }
 
-   //Timestep caching
-   void deleteCache();
-   void cacheStep();
-   bool restoreStep();
-   void printCache();
+  //Timestep caching
+  void deleteCache();
+  void cacheStep();
+  bool restoreStep();
+  void printCache();
 
-   int step()
-   {
-      //Current actual step
-      return now < 0 || timesteps.size() == 0 ? -1 : timesteps[now]->step;
-   }
+  int step()
+  {
+    //Current actual step
+    return now < 0 || timesteps.size() == 0 ? -1 : timesteps[now]->step;
+  }
 
-   int lastStep()
-   {
-     if (timesteps.size() == 0) return -1;
-     return timesteps[timesteps.size()-1]->step;
-   }
+  int lastStep()
+  {
+    if (timesteps.size() == 0) return -1;
+    return timesteps[timesteps.size()-1]->step;
+  }
 
-   bool hasTimeStep(int ts);
-   int nearestTimeStep(int requested);
-   void addTimeStep(int step, double time=0.0)
-   {
-      timesteps.push_back(new TimeStep(step, time));
-   }
+  bool hasTimeStep(int ts);
+  int nearestTimeStep(int requested);
+  void addTimeStep(int step, double time=0.0)
+  {
+    timesteps.push_back(new TimeStep(step, time));
+  }
 
-   int setTimeStep(int stepidx=now);
-   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
-   void mergeDatabases();
-   int decompressGeometry(int timestep);
-   void writeDatabase(const char* path, unsigned int id, bool compress=false);
-   void writeObjects(sqlite3* outdb, int id, int step, bool compress);
-   void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, int step, bool compress);
-   void deleteObject(int id);
-   void backup(sqlite3 *fromDb, sqlite3* toDb);
+  int setTimeStep(int stepidx=now);
+  int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
+  void mergeDatabases();
+  int decompressGeometry(int timestep);
+  void writeDatabase(const char* path, unsigned int id, bool compress=false);
+  void writeObjects(sqlite3* outdb, int id, int step, bool compress);
+  void writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, int step, bool compress);
+  void deleteObject(int id);
+  void backup(sqlite3 *fromDb, sqlite3* toDb);
 };
 
 #endif //Model__

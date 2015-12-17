@@ -42,67 +42,73 @@
 
 class ColourVal
 {
- public:
-   Colour colour;
-   float value;
-   float position;
+public:
+  Colour colour;
+  float value;
+  float position;
 
-   ColourVal() : value(0), position(0) {colour.value = 0xff000000;}
-   ColourVal(Colour& colour, float pvalue) : colour(colour), value(pvalue), position(0) {}
-   ColourVal(Colour& colour) : colour(colour), value(HUGE_VAL), position(0) {}
+  ColourVal() : value(0), position(0)
+  {
+    colour.value = 0xff000000;
+  }
+  ColourVal(Colour& colour, float pvalue) : colour(colour), value(pvalue), position(0) {}
+  ColourVal(Colour& colour) : colour(colour), value(HUGE_VAL), position(0) {}
 };
 
 //ColourMap class
 class ColourMap
 {
-   static const int SAMPLE_COUNT = 512;
-   Colour precalc[SAMPLE_COUNT];
+  static const int SAMPLE_COUNT = 512;
+  Colour precalc[SAMPLE_COUNT];
 
 public:
-   std::vector<ColourVal> colours;
-   Colour background;
-   unsigned int id;
-   std::string name;
-   json::Object properties;
-   float minimum;
-   float maximum;
-   float range;
-   bool log, discrete;
-   float centre;
-   bool calibrated;
-   bool noValues; //Use position data only
-   TextureData* texture;
+  std::vector<ColourVal> colours;
+  Colour background;
+  unsigned int id;
+  std::string name;
+  json::Object properties;
+  float minimum;
+  float maximum;
+  float range;
+  bool log, discrete;
+  float centre;
+  bool calibrated;
+  bool noValues; //Use position data only
+  TextureData* texture;
 
-   float dimCoeff;
-   std::string units;
+  float dimCoeff;
+  std::string units;
 
-   ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1, std::string props="");
-   ~ColourMap() {if (texture) delete texture;}
+  ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1, std::string props="");
+  ~ColourMap()
+  {
+    if (texture) delete texture;
+  }
 
-   void parse(std::string colourMapString);
-   void add(std::string colour);
-   void add(std::string colour, float pvalue);
-   void add(unsigned int colour);
-   void add(unsigned int* colours, int count);
-   void add(unsigned int colour, float pvalue);
-   void add(float *components, float pvalue);
-   void calc();
-   void calibrate(float min, float max);
-   void calibrate(FloatValues& dataValues);
-   void calibrate();
-   Colour getfast(float value);
-   Colour get(float value);
-   float scaleValue(float value);
-   Colour getFromScaled(float scaledValue);
-   void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour, bool vertical);
-   void setComponent(int component_index);
-   void loadTexture(bool repeat=false);
-   void loadPalette(std::string data);
-   void print();
+  void parse(std::string colourMapString);
+  void add(std::string colour);
+  void add(std::string colour, float pvalue);
+  void add(unsigned int colour);
+  void add(unsigned int* colours, int count);
+  void add(unsigned int colour, float pvalue);
+  void add(float *components, float pvalue);
+  void calc();
+  void calibrate(float min, float max);
+  void calibrate(FloatValues& dataValues);
+  void calibrate();
+  Colour getfast(float value);
+  Colour get(float value);
+  float scaleValue(float value);
+  Colour getFromScaled(float scaledValue);
+  void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour, bool vertical);
+  void setComponent(int component_index);
+  void loadTexture(bool repeat=false);
+  void loadPalette(std::string data);
+  void print();
 
-   static bool lock;
-   static int logscales;
-   static unsigned int lastid;
+  static bool lock;
+  static int logscales;
+  static unsigned int lastid;
 };
 
 #endif //ColourMap__

@@ -43,96 +43,111 @@
 
 class OpenGLViewer : public ApplicationInterface
 {
-  private:
+private:
 
-  protected:
-   int timer;
+protected:
+  int timer;
 
-   static int idle;
-   static int displayidle; //Redisplay when idle for # milliseconds
-   std::vector<OutputInterface*> outputs; //Additional output attachments
+  static int idle;
+  static int displayidle; //Redisplay when idle for # milliseconds
+  std::vector<OutputInterface*> outputs; //Additional output attachments
 
-  public:
-   ApplicationInterface* app;
-   static std::deque<std::string> commands;
-   static pthread_mutex_t cmd_mutex;
-   static bool alphapng;
+public:
+  ApplicationInterface* app;
+  static std::deque<std::string> commands;
+  static pthread_mutex_t cmd_mutex;
+  static bool alphapng;
 
-   GLboolean stereoBuffer, doubleBuffer;
-   GLuint renderBuffer;
-   bool visible;
-   bool stereo;
-   bool fullscreen;
-   bool postdisplay; //Flag to request a frame when animating
-   bool quitProgram;
-   bool isopen;   //Set when window is first opened
+  GLboolean stereoBuffer, doubleBuffer;
+  GLuint renderBuffer;
+  bool visible;
+  bool stereo;
+  bool fullscreen;
+  bool postdisplay; //Flag to request a frame when animating
+  bool quitProgram;
+  bool isopen;   //Set when window is first opened
 
-   bool fbo_enabled;
-   GLuint fbo_frame, fbo_texture, fbo_depth;
-   int downsample;
+  bool fbo_enabled;
+  GLuint fbo_frame, fbo_texture, fbo_depth;
+  int downsample;
 
-   int mouseState;
-   ShiftState keyState;
-   MouseButton button;
-   int last_x, last_y;
+  int mouseState;
+  ShiftState keyState;
+  MouseButton button;
+  int last_x, last_y;
 
-   int blend_mode;
-   Colour background;
-   Colour inverse;
+  int blend_mode;
+  Colour background;
+  Colour inverse;
 
-   int outwidth, outheight;
-   std::string title;
-   std::string output_path;
-   int width;
-   int height;
+  int outwidth, outheight;
+  std::string title;
+  std::string output_path;
+  int width;
+  int height;
 
-   OpenGLViewer(bool stereo=false, bool fullscreen=false);
-   virtual ~OpenGLViewer();
+  OpenGLViewer(bool stereo=false, bool fullscreen=false);
+  virtual ~OpenGLViewer();
 
-   void fbo(int width, int height);
+  void fbo(int width, int height);
 
-   //Window app management - called by derived classes, in turn call application interface virtuals
-   virtual void open(int width=0, int height=0);
-   virtual void init();
-   virtual void setsize(int width, int height);
-   virtual void resize(int new_width, int new_height);
-   virtual void display();
-   virtual void swap() {};
-   virtual void close();
-   virtual void animate(int msec);
+  //Window app management - called by derived classes, in turn call application interface virtuals
+  virtual void open(int width=0, int height=0);
+  virtual void init();
+  virtual void setsize(int width, int height);
+  virtual void resize(int new_width, int new_height);
+  virtual void display();
+  virtual void swap() {};
+  virtual void close();
+  virtual void animate(int msec);
 
-   // Default virtual functions for interactivity (call application interface)
-   virtual bool mouseMove(int x, int y) {return app->mouseMove(x,y);}
-   virtual bool mousePress(MouseButton btn, bool down, int x, int y) {return app->mousePress(btn, down, x, y);}
-   virtual bool mouseScroll(int scroll) {return app->mouseScroll(scroll);}
-   virtual bool keyPress(unsigned char key, int x, int y) {return app->keyPress(key, x, y);}
+  // Default virtual functions for interactivity (call application interface)
+  virtual bool mouseMove(int x, int y)
+  {
+    return app->mouseMove(x,y);
+  }
+  virtual bool mousePress(MouseButton btn, bool down, int x, int y)
+  {
+    return app->mousePress(btn, down, x, y);
+  }
+  virtual bool mouseScroll(int scroll)
+  {
+    return app->mouseScroll(scroll);
+  }
+  virtual bool keyPress(unsigned char key, int x, int y)
+  {
+    return app->keyPress(key, x, y);
+  }
 
-   virtual void show();
-   virtual void setTitle() {}
-   virtual void execute();
+  virtual void show();
+  virtual void setTitle() {}
+  virtual void execute();
 
-   virtual void fullScreen() {}
-   void pixels(void* buffer, bool alpha=false, bool flip=false);
-   std::string snapshot(const char* name, int number=-1, bool transparent=alphapng, bool asString=false);
+  virtual void fullScreen() {}
+  void pixels(void* buffer, bool alpha=false, bool flip=false);
+  std::string snapshot(const char* name, int number=-1, bool transparent=alphapng, bool asString=false);
 
-   void setBackground(int value)
-   {
-      background.value = value;
-      inverse = background;
-      Colour_Invert(inverse);
-      if (isopen)
-      {
-         PrintSetColour(inverse.value);
-         //Set clear colour
-         glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
-      }
-   }
+  void setBackground(int value)
+  {
+    background.value = value;
+    inverse = background;
+    Colour_Invert(inverse);
+    if (isopen)
+    {
+      PrintSetColour(inverse.value);
+      //Set clear colour
+      glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
+    }
+  }
 
-   void notIdle(int display=-1);
+  void notIdle(int display=-1);
 
-   void addOutput(OutputInterface* output) {outputs.push_back(output);}
+  void addOutput(OutputInterface* output)
+  {
+    outputs.push_back(output);
+  }
 
-   static bool pollInput(void);
+  static bool pollInput(void);
 };
 
 #endif //OpenGLViewer__

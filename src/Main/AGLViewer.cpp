@@ -39,125 +39,125 @@
 
 #include <sys/select.h>
 
-// Create a new AGL window 
+// Create a new AGL window
 AGLViewer::AGLViewer() : OpenGLViewer(false, false)
 {
-   visible = false;
-   PixelBuffer = NULL;
-   graphicsContext = NULL;
+  visible = false;
+  PixelBuffer = NULL;
+  graphicsContext = NULL;
 }
 
 AGLViewer::~AGLViewer()
 {
-   if (PixelBuffer)
-      aglDestroyPBuffer(PixelBuffer);
-   aglSetCurrentContext(0);
-   aglDestroyContext(graphicsContext );
+  if (PixelBuffer)
+    aglDestroyPBuffer(PixelBuffer);
+  aglSetCurrentContext(0);
+  aglDestroyContext(graphicsContext );
 }
 
 void AGLViewer::open(int w, int h)
 {
-   //Call base class open to set width/height
-   OpenGLViewer::open(w, h);
-   
-   if (PixelBuffer)
-      aglDestroyPBuffer(PixelBuffer);
+  //Call base class open to set width/height
+  OpenGLViewer::open(w, h);
 
-   AGLPixelFormat format; // OpenGL pixel format
-  
-   // OpenGL attributes
-   static GLint attributes[] =
-   {
-      AGL_RGBA,
-      AGL_RED_SIZE, 8,
-      AGL_GREEN_SIZE, 8,
-      AGL_BLUE_SIZE, 8,
-      AGL_ALPHA_SIZE, 8,
-      AGL_DEPTH_SIZE, 16,
-      AGL_STENCIL_SIZE, 1,
-      AGL_NONE
-   };
-   static GLint aaAttributes[] =
-   {
-      AGL_RGBA,
-      AGL_RED_SIZE, 8,
-      AGL_GREEN_SIZE, 8,
-      AGL_BLUE_SIZE, 8,
-      AGL_ALPHA_SIZE, 8,
-      AGL_DEPTH_SIZE, 16,
-      AGL_STENCIL_SIZE, 1,
-      AGL_SAMPLE_BUFFERS_ARB, 1, //Multisample
-      AGL_SAMPLES_ARB, 16,
-      AGL_NONE
-   };
-   int* attribs;
-   attribs = aaAttributes;
-   //if (antialias) attribs = aaAttributes;
-   //else attribs = attributes;
-  
-   // Create the OpenGL context (shared) and bind it to the window or pixelbuffer.
-   format = aglChoosePixelFormat(NULL, 0, attribs);
-   graphicsContext = aglCreateContext(format, NULL);
-   assert(graphicsContext);
-   aglDestroyPixelFormat(format);
-  
-   if (!fbo_enabled) // No PBuffer necessary if using fbo render mode
-   {
-      aglCreatePBuffer(width, height, GL_TEXTURE_RECTANGLE_EXT, GL_RGBA, 0, &PixelBuffer);
-      aglSetPBuffer(graphicsContext, PixelBuffer, 0, 0, 0);
-   }
-  
-   aglSetCurrentContext(graphicsContext); 
+  if (PixelBuffer)
+    aglDestroyPBuffer(PixelBuffer);
 
-   debug_print("AGL viewer created\n");
+  AGLPixelFormat format; // OpenGL pixel format
 
-   //Call OpenGL init
-   OpenGLViewer::init();
+  // OpenGL attributes
+  static GLint attributes[] =
+  {
+    AGL_RGBA,
+    AGL_RED_SIZE, 8,
+    AGL_GREEN_SIZE, 8,
+    AGL_BLUE_SIZE, 8,
+    AGL_ALPHA_SIZE, 8,
+    AGL_DEPTH_SIZE, 16,
+    AGL_STENCIL_SIZE, 1,
+    AGL_NONE
+  };
+  static GLint aaAttributes[] =
+  {
+    AGL_RGBA,
+    AGL_RED_SIZE, 8,
+    AGL_GREEN_SIZE, 8,
+    AGL_BLUE_SIZE, 8,
+    AGL_ALPHA_SIZE, 8,
+    AGL_DEPTH_SIZE, 16,
+    AGL_STENCIL_SIZE, 1,
+    AGL_SAMPLE_BUFFERS_ARB, 1, //Multisample
+    AGL_SAMPLES_ARB, 16,
+    AGL_NONE
+  };
+  int* attribs;
+  attribs = aaAttributes;
+  //if (antialias) attribs = aaAttributes;
+  //else attribs = attributes;
+
+  // Create the OpenGL context (shared) and bind it to the window or pixelbuffer.
+  format = aglChoosePixelFormat(NULL, 0, attribs);
+  graphicsContext = aglCreateContext(format, NULL);
+  assert(graphicsContext);
+  aglDestroyPixelFormat(format);
+
+  if (!fbo_enabled) // No PBuffer necessary if using fbo render mode
+  {
+    aglCreatePBuffer(width, height, GL_TEXTURE_RECTANGLE_EXT, GL_RGBA, 0, &PixelBuffer);
+    aglSetPBuffer(graphicsContext, PixelBuffer, 0, 0, 0);
+  }
+
+  aglSetCurrentContext(graphicsContext);
+
+  debug_print("AGL viewer created\n");
+
+  //Call OpenGL init
+  OpenGLViewer::init();
 }
 
 void AGLViewer::setsize(int width, int height)
 {
-   if (width == 0 || height == 0) return;
-   close();
-   open(width, height);
+  if (width == 0 || height == 0) return;
+  close();
+  open(width, height);
 }
 
 void AGLViewer::show()
 {
-   OpenGLViewer::show(); 
+  OpenGLViewer::show();
 }
 
 void AGLViewer::display()
 {
-   OpenGLViewer::display();
-   swap();
+  OpenGLViewer::display();
+  swap();
 }
 
 void AGLViewer::swap()
 {
-   // Swap buffers
-   if (doubleBuffer)
-      aglSwapBuffers(graphicsContext); 
+  // Swap buffers
+  if (doubleBuffer)
+    aglSwapBuffers(graphicsContext);
 
-   OpenGLViewer::display();
+  OpenGLViewer::display();
 }
 
 void AGLViewer::execute()
 {
-   // Set the current window's context as active
-   aglSetCurrentContext(graphicsContext);
-   aglUpdateContext(graphicsContext); 
+  // Set the current window's context as active
+  aglSetCurrentContext(graphicsContext);
+  aglUpdateContext(graphicsContext);
 
-   show();
-   display();
+  show();
+  display();
 
-   // Enter fake event loop processing
-   while (!quitProgram)
-   {
-      //New frame? call display
-      if (postdisplay || OpenGLViewer::pollInput())
-         display();
-   }
+  // Enter fake event loop processing
+  while (!quitProgram)
+  {
+    //New frame? call display
+    if (postdisplay || OpenGLViewer::pollInput())
+      display();
+  }
 }
 
 #endif   //HAVE_AGL
