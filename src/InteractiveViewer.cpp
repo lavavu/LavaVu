@@ -222,7 +222,6 @@ bool LavaVu::parseChar(unsigned char key)
       case 'a':       return parseCommands("axis");
       case 'b':       return parseCommands("background invert");
       case 'c':       return parseCommands("camera");
-      case 'd':       return parseCommands("trianglestrips");
       case 'e':       return parseCommands("list elements");
       case 'f':       return parseCommands("border");
       case 'g':       return parseCommands("logscales");
@@ -1129,12 +1128,6 @@ bool LavaVu::parseCommands(std::string cmd)
       GeomData::lit = !GeomData::lit;
       printMessage("Lighting is %s", GeomData::lit ? "ON":"OFF");
    }
-   else if (parsed.exists("trianglestrips"))
-   {
-      Model::quadSurfaces->triangles = !Model::quadSurfaces->triangles;
-      printMessage("Triangle strips for quad surfaces %s", Model::quadSurfaces->triangles ? "ON":"OFF");
-      Model::quadSurfaces->redraw = true;
-   }
    else if (parsed.exists("redraw"))
    {
       //for (int type=lucMinType; type<lucMaxType; type++)
@@ -1224,7 +1217,7 @@ bool LavaVu::parseCommands(std::string cmd)
          std::cout << "\nDisplay commands:\n\n";
          std::cout << helpCommand("background") << helpCommand("alpha") << helpCommand("opacity");
          std::cout << helpCommand("axis") << helpCommand("cullface") << helpCommand("wireframe");
-         std::cout << helpCommand("trianglestrips") << helpCommand("redraw") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
+         std::cout << helpCommand("redraw") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
          std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
          std::cout << helpCommand("lighting") << helpCommand("colourmap") << helpCommand("pointtype");
          std::cout << helpCommand("glyphquality") << helpCommand("pointsample");
@@ -1565,6 +1558,7 @@ bool LavaVu::parseCommands(std::string cmd)
    {
       //Output camera view xml and translation/rotation commands
       aview->print();
+      return false;
    }
    else if (parsed.exists("scale"))
    {
@@ -1953,7 +1947,7 @@ std::string LavaVu::helpCommand(std::string cmd)
                   "\nObject commands:\n\n"
                   "hide, show, delete, load, select\n"
                   "\nDisplay commands:\n\n"
-                  "background, alpha, opacity, axis, cullface, wireframe, trianglestrips, scaling, rulers, log\n"
+                  "background, alpha, opacity, axis, cullface, wireframe, scaling, rulers, log\n"
                   "antialias, localise, lockscale, lighting, colourmap, pointtype, glyphquality\n"
                   "pointsample, border, title, scale\n";
    }
@@ -2207,11 +2201,6 @@ std::string LavaVu::helpCommand(std::string cmd)
       help += "Switch surface wireframe (global setting)\n\n"
                   "Will not effect objects with wireframe set explicitly\n";
    }
-   else if (cmd == "trianglestrips")
-   {
-      help += "Draw quad surfaces with triangle strips\n"
-                  "(Default is on, provides better detail for terrain surfaces)\n";
-   }
    else if (cmd == "fullscreen")
    {
       help += "Switch viewer to full-screen mode and back to windowed mode\n";
@@ -2362,7 +2351,7 @@ std::string LavaVu::helpCommand(std::string cmd)
    }
    else if (cmd == "camera")
    {
-      help += "Output camera view as XML for use in model scripts\n";
+      help += "Output camera state for use in model scripts\n";
    }
    else if (cmd == "sort")
    {

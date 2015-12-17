@@ -125,7 +125,6 @@
 #define MoveRaster( deltaX, deltaY ) \
    glBitmap( 0,0,0.0,0.0, (float)(deltaX), (float)(deltaY), NULL )
 
-extern float *x_coords_, *y_coords_;  // Saves arrays of x,y points on circle for set segment count
 extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);
@@ -951,7 +950,7 @@ void PrintString(const char* str);
 void Printf(int x, int y, const char *fmt, ...);
 void Print(int x, int y, const char *str);
 void Print3d(double x, double y, double z, const char *str);
-void Print3dBillboard(double x, double y, double z, const char *str, bool alignRight=false);
+void Print3dBillboard(double x, double y, double z, const char *str, int align=-1);
 int PrintWidth(const char *string);
 void DeleteFont();
 

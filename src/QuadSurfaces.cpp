@@ -38,7 +38,6 @@
 QuadSurfaces::QuadSurfaces(bool flat2Dflag) : TriSurfaces()
 {
    type = lucGridType;
-   triangles = true;
    flat2d = flat2Dflag;
 }
 
