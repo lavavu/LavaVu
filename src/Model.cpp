@@ -693,9 +693,9 @@ bool Model::restoreStep()
 
 void Model::printCache()
 {
-  printf("-----------CACHE %d steps\n", timesteps.size());
+   debug_print("-----------CACHE %d steps\n", timesteps.size());
    for (int idx=0; idx < timesteps.size(); idx++)
-      printf(" %d: has %d records\n", idx, timesteps[idx]->cache.size());
+      debug_print(" %d: has %d records\n", idx, timesteps[idx]->cache.size());
 }
 
 //Set time step if available, otherwise return false and leave unchanged

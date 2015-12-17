@@ -441,7 +441,7 @@ void LavaVu::cacheLoad()
          {
             amodel->setTimeStep(i);
             if (amodel->now != i) break; //Finished early using loadGeometry caching
-            printf("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
+            debug_print("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
          }
          //Cache final step
          amodel->cacheStep();
@@ -558,7 +558,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
       do
       {
          if (chunk+offset > size) chunk = size - offset; //Last chunk?
-         printf("Offset %ld Chunk %ld\n", offset, chunk);
+         debug_print("Offset %ld Chunk %ld\n", offset, chunk);
          len = gzread(f, &buffer[offset], chunk);
          if (len != chunk) abort_program("gzread err: %s\n", gzerror(f, &err));
 
