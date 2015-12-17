@@ -40,47 +40,47 @@
 
 class TimeStep
 {
-  public:
-   static std::vector<TimeStep*> timesteps; //Active model timesteps
-   static int gap;
-   int step;
-   float time;
+public:
+  static std::vector<TimeStep*> timesteps; //Active model timesteps
+  static int gap;
+  int step;
+  float time;
 
-   TimeStep(int step, float time) : step(step), time(time) {}
-   TimeStep() : step(0), time(0) {}
+  TimeStep(int step, float time) : step(step), time(time) {}
+  TimeStep() : step(0), time(0) {}
 
-   ~TimeStep()
-   {
-      //Free cached geometry
-      for (unsigned int i=0; i < cache.size(); i++)
-         delete cache[i];
-   }
+  ~TimeStep()
+  {
+    //Free cached geometry
+    for (unsigned int i=0; i < cache.size(); i++)
+      delete cache[i];
+  }
 
-   //Cached data
-   static int cachesize;
-   std::vector<Geometry*> cache;
+  //Cached data
+  static int cachesize;
+  std::vector<Geometry*> cache;
 
-   void write(std::vector<Geometry*> &data)
-   {
-      //for (unsigned int i=0; i < data.size(); i++)
-      //   //Release any graphics memory
-      //   data[i]->close();
+  void write(std::vector<Geometry*> &data)
+  {
+    //for (unsigned int i=0; i < data.size(); i++)
+    //   //Release any graphics memory
+    //   data[i]->close();
 
-      cache = data;
-   }
+    cache = data;
+  }
 
-   void read(std::vector<Geometry*> &data)
-   {
-      //Preserve global properties when switching
-      for (unsigned int i=0; i < data.size(); i++)
-      {
-         cache[i]->scale = data[i]->scale;
-         //Release any graphics memory
-         data[i]->close();
-      }
+  void read(std::vector<Geometry*> &data)
+  {
+    //Preserve global properties when switching
+    for (unsigned int i=0; i < data.size(); i++)
+    {
+      cache[i]->scale = data[i]->scale;
+      //Release any graphics memory
+      data[i]->close();
+    }
 
-      data = cache;
-   }
+    data = cache;
+  }
 };
 
 #endif
