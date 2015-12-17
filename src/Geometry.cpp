@@ -47,6 +47,8 @@ bool GeomData::wireframe = false;
 bool GeomData::cullface = false;
 bool GeomData::lit = true;
 bool Lines::tubes = false;
+float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
+int segments__ = 0;    // Saves segment count for circle based objects
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -503,12 +505,17 @@ void Geometry::setState(int index, Shader* prog)
       if (prog->uniforms["uClipMin"])
       {
          //TODO: Also enable clip for lines (will require line shader)
-         float clipMin[3] = {Geometry::properties["xmin"].ToFloat(0.0) * Geometry::dims[0] + Geometry::min[0],
-                             Geometry::properties["ymin"].ToFloat(0.0) * Geometry::dims[1] + Geometry::min[1],
-                             Geometry::properties["zmin"].ToFloat(0.0) * Geometry::dims[2] + Geometry::min[2]};
-         float clipMax[3] = {Geometry::properties["xmax"].ToFloat(1.0) * Geometry::dims[0] + Geometry::min[0],
-                             Geometry::properties["ymax"].ToFloat(1.0) * Geometry::dims[1] + Geometry::min[1],
-                             Geometry::properties["zmax"].ToFloat(1.0) * Geometry::dims[2] + Geometry::min[2]};
+         float clipMin[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
+         float clipMax[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
+         if (draw->properties["clip"].ToBool(true))
+         {
+            clipMin[0] = Geometry::properties["xmin"].ToFloat(-HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
+            clipMin[1] = Geometry::properties["ymin"].ToFloat(-HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
+            clipMin[2] = Geometry::properties["zmin"].ToFloat(-HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
+            clipMax[0] = Geometry::properties["xmax"].ToFloat(HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
+            clipMax[1] = Geometry::properties["ymax"].ToFloat(HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
+            clipMax[2] = Geometry::properties["zmax"].ToFloat(HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
+         }
          
          //std::cout << "CLIP MIN " << Vec3d(clipMin) << " CLIP MAX " << Vec3d(clipMax) << std::endl;
          glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
@@ -577,9 +584,19 @@ void Geometry::labels()
             if (GeomData::opacity > 0.0)
                colour.a *= GeomData::opacity;
             glColor4ubv(colour.rgba);
+            std::string labstr = geom[i]->labels[j];
+            if (labstr.length() == 0) continue;
+            //Preceed with ! for right align, | for centre
+            float shift = PrintWidth("XX")*0.01; //Vertical shift
+            char alignchar = labstr.at(0);
+            int align = -1;
+            if (alignchar == '!') align = 1;
+            if (alignchar == '|') align = 0;
+            if (alignchar == '^') {align = 1; shift = 0.0;}
+            if (align > -1) labstr = labstr.substr(1);
             if (geom[i]->labels[j].size() > 0)
             {
-               Print3dBillboard(p[0], p[1], p[2], geom[i]->labels[j].c_str());
+               Print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align);
             }
          }
       }
@@ -851,6 +868,36 @@ void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *des
    }
 }
 
+// Calculates a set of points on a unit circle for a given number of segments__
+// Used to optimised rendering circular objects when segment count isn't changed
+void calcCircleCoords(int segment_count)
+{
+   // Recalc required? Only done first time called and when segment count changes
+   GLfloat angle;
+   float angle_inc = 2*M_PI / (float)segment_count;
+   int idx;
+   if (segments__ == segment_count) return;
+
+   // Calculate unit circle points when divided into specified segments__
+   // and store in static variable to re-use every time a vector with the
+   // same segment count is drawn
+   segments__ = segment_count;
+   if (x_coords_ != NULL) delete[] x_coords_;
+   if (y_coords_ != NULL) delete[] y_coords_;
+
+   x_coords_ = new float[segment_count + 1];
+   y_coords_ = new float[segment_count + 1];
+
+   // Loop around in a circle and specify even points along the circle
+   // as the vertices for the triangle fan cone, cone base and arrow shaft
+   for (idx = 0; idx <= segments__; idx++)
+   {
+      angle = angle_inc * (float)idx;
+      // Calculate x and y position of the next vertex and cylinder normals (unit circle coords)
+      x_coords_[idx] = sin(angle);
+      y_coords_[idx] = cos(angle);
+   }
+}
 
 //////////////////////////////////
 // Draws a 3d vector
@@ -1144,7 +1191,12 @@ void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float 
 {
    float min[3] = {-0.5f * width, -0.5f * height, -0.5f * depth};
    float max[3] = {min[0] + width, min[1] + height, min[2] + depth};
+   drawCuboid(draw, min, max, rot);
+}
 
+void Geometry::drawCuboid(DrawingObject *draw, float min[3], float max[3], Quaternion& rot, bool quads)
+{
+   float pos[3] = {min[0] + 0.5*(max[0] - min[0]), min[1] + 0.5*(max[1] - min[1]), min[2] + 0.5*(max[2] - min[2])};
    //Corner vertices
    Vec3d verts[8] = 
    {
@@ -1166,19 +1218,60 @@ void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float 
       //geom->checkPointMinMax(verts[i].ref());
    }
 
-   //Triangle indices
-   unsigned vertex_index = (unsigned)getVertexIdx(draw);
-   unsigned int indices[36] = {
-				0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index, 
-				3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index, 
-				7+vertex_index, 6+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 7+vertex_index, 
-				4+vertex_index, 0+vertex_index, 3+vertex_index, 3+vertex_index, 7+vertex_index, 4+vertex_index, 
-				0+vertex_index, 1+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 0+vertex_index,
-				1+vertex_index, 5+vertex_index, 6+vertex_index, 6+vertex_index, 2+vertex_index, 1+vertex_index 
-			};
+   if (quads)
+   {
+      //Back
+      read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
+      read(draw, 1, lucVertexData, verts[3].ref());
+      read(draw, 1, lucVertexData, verts[1].ref());
+      read(draw, 1, lucVertexData, verts[2].ref());
 
-   read(draw, 8, lucVertexData, verts[0].ref());
-   read(draw, 36, lucIndexData, indices);
+      //Front
+      read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
+      read(draw, 1, lucVertexData, verts[5].ref());
+      read(draw, 1, lucVertexData, verts[7].ref());
+      read(draw, 1, lucVertexData, verts[6].ref());
+
+      //Bottom
+      read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
+      read(draw, 1, lucVertexData, verts[1].ref());
+      read(draw, 1, lucVertexData, verts[4].ref());
+      read(draw, 1, lucVertexData, verts[5].ref());
+
+      //Top
+      read(draw, 1, lucVertexData, verts[7].ref(), 2, 2);
+      read(draw, 1, lucVertexData, verts[6].ref());
+      read(draw, 1, lucVertexData, verts[3].ref());
+      read(draw, 1, lucVertexData, verts[2].ref());
+
+      //Left
+      read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
+      read(draw, 1, lucVertexData, verts[7].ref());
+      read(draw, 1, lucVertexData, verts[0].ref());
+      read(draw, 1, lucVertexData, verts[3].ref());
+
+      //Right
+      read(draw, 1, lucVertexData, verts[5].ref(), 2, 2);
+      read(draw, 1, lucVertexData, verts[1].ref());
+      read(draw, 1, lucVertexData, verts[6].ref());
+      read(draw, 1, lucVertexData, verts[2].ref());
+   }
+   else
+   {
+      //Triangle indices
+      unsigned vertex_index = (unsigned)getVertexIdx(draw);
+      unsigned int indices[36] = {
+           0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index, 
+           3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index, 
+           7+vertex_index, 6+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 7+vertex_index, 
+           4+vertex_index, 0+vertex_index, 3+vertex_index, 3+vertex_index, 7+vertex_index, 4+vertex_index, 
+           0+vertex_index, 1+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 0+vertex_index,
+           1+vertex_index, 5+vertex_index, 6+vertex_index, 6+vertex_index, 2+vertex_index, 1+vertex_index 
+         };
+
+      read(draw, 8, lucVertexData, verts[0].ref());
+      read(draw, 36, lucIndexData, indices);
+   }
 }
 
 void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count)

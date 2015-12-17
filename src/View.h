@@ -104,7 +104,6 @@ class View
    bool  auto_stereo;         // Auto-adjust focal-len & eye-separation?
    float focal_length_adj;    // User adjust to focal length
 
-
  public:
    std::vector<DrawingObject*> objects;     // Contains these objects
    float fov;                 // Field of view
@@ -117,6 +116,8 @@ class View
 
    View(std::string title = "", bool stereo_flag = false, 
         float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
+
+   ~View();
 
    void setProperties(std::string props);
    
@@ -135,6 +136,7 @@ class View
    void setRotation(float x, float y, float z, float w);
    void rotate(float degrees, Vec3d axis);
    void rotate(float degreesX, float degreesY, float degreesZ);
+   void applyRotation() {rotation_lag.apply();}
    void setScale(float x, float y, float z);
    std::string zoom(float factor);
    std::string zoomClip(float factor);
@@ -155,10 +157,6 @@ class View
    void inertia(bool on=true);
 
    //Utility functions
-   void drawRulers();
-   void drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis);
-   void drawBorder();
-   void drawAxis();
    void drawOverlay(Colour& colour);
 };
 

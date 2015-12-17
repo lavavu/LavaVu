@@ -98,6 +98,10 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
    is3d = true;
 }
 
+View::~View()
+{
+}
+
 void View::setProperties(std::string props)
 {
    jsonParseProperties(props, properties);
@@ -354,11 +358,13 @@ void View::print()
 {
    float xrot, yrot, zrot;
    rotation_lag.toEuler(xrot, yrot, zrot);
+   printf("------------------------------\n");
    printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
    printf("Clip planes: near %f far %f\n", near_clip, far_clip);
    printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n", 
            model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
    printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
+   printf("------------------------------\n");
    printf("%s\n", translateString().c_str());
    printf("%s\n", rotateString().c_str());
    printf("------------------------------\n");
@@ -692,241 +698,11 @@ void View::zoomToFit(int margin)
    }
 }
 
-void View::drawRuler(float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
-{
-   // Draw rulers with optional tick marks
-   float linewidth = textscale * properties["linewidth"].ToFloat(1.5);
-   glLineWidth(linewidth);
-   //float fontscale = PrintSetFont(properties, "vector", 0.05*model_size*textscale);
-   float fontscale = PrintSetFont(properties, "vector", 1.0, 0.08*model_size);
-
-   float vec[3];
-   float length;
-   float rangle;
-
-   vectorSubtract(vec, end, start);
-
-            vec[0] *= scale[0];
-            vec[1] *= scale[1];
-            vec[2] *= scale[2];
-            start[0] *= scale[0];
-            start[1] *= scale[1];
-            start[2] *= scale[2];
-
-   // Length of the drawn vector = vector magnitude
-   length = sqrt(dotProduct(vec,vec));
-   if (length <= FLT_MIN) return;
-
-   glPushAttrib(GL_ENABLE_BIT);
-   glDisable(GL_LIGHTING);
-   glDisable(GL_LINE_SMOOTH);
-   glPushMatrix();
-   // Undo any scaling factor
-   if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
-      glScalef(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
-
-   // Translate to start of ruler
-   glTranslatef(start[0], start[1], start[2]);
-
-   // Rotate to orient ruler
-   //...Want to align our z-axis to point along vector:
-   // axis of rotation = (z x vec)
-   // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec|
-   // Normalise vector first so OSMesa doesn't have a fit when given a tiny vector as a rotation axis
-   vectorNormalise(vec); 
-   //Angle of rotation = acos(vec . [0,0,1]) = acos(vec[2])
-   rangle = RAD2DEG * acos(vec[2]);
-   //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
-   glRotatef(rangle, -vec[1], vec[0], 0);
-
-   for (int i = 0; i < ticks; i++)
-   {
-      // Get tick value
-      float scaledPos = i / (float)(ticks-1);
-      // Calculate pixel position
-      float pos = length * scaledPos;
-      float height = -0.01 * model_size;
-      bool rightAlign = false;
-
-      // Draws the tick
-      glBegin(GL_LINES);
-      glVertex3f(0, 0, pos);
-
-      switch (axis)
-      {
-        case 0:
-          glVertex3f(0, height, pos);
-          break;
-        case 1:
-          glVertex3f(height, 0, pos);
-          rightAlign = true;
-          break;
-        case 2:
-          glVertex3f(0, height, pos);
-          rightAlign = true;
-          break;
-      }
-
-      glEnd();
-
-      //Draw a label
-      char label[16];
-      float inc = (labelmax - labelmin) / (float)(ticks-1);
-      sprintf(label, "%-10.3f", labelmin + i * inc);
-
-      // Trim trailing space
-      char* end = label + strlen(label) - 1;
-      while(end > label && isspace(*end)) end--;
-      *(end+1) = 0; //Null terminator
-      strcat(label, "  "); //(Leave two spaces at end)
-
-      Print3dBillboard(0.0, 2.0*height + 0.25*fontscale, pos, label, rightAlign);
-      //Print3dBillboard(rightAlign ? -0.01 * PrintWidth(label) : 0.0, 2.0*height + 0.25*fontscale, pos, label);
-      //lucPrint3d(0, 2.0*height, pos, label, rightAlign);
-   }
-
-   //Draw ruler line
-   glBegin(GL_LINES);
-      glVertex3f(0,0,0);
-      glVertex3f(0,0,length);
-   glEnd();
-
-   glPopMatrix();
-   glLineWidth(1.0f);
-   glPopAttrib();
-}
-
-void View::drawRulers()
-{
-   bool rulers = properties["rulers"].ToBool(false);
-   if (!rulers) return;
-   int ticks = properties["rulerticks"].ToInt(5);
-   //Axis rulers
-   float shift[3] = {0.01f/scale[0] * model_size, 0.01f/scale[1] * model_size, 0.01f/scale[2] * model_size};
-   {
-      float sta[3] = {min[0], min[1]-shift[1], max[2]};
-      float end[3] = {max[0], min[1]-shift[1], max[2]};
-      drawRuler(sta, end, min[0], max[0], ticks, 0);
-   }
-   {
-      float sta[3] = {min[0]-shift[0], min[1], max[2]};
-      float end[3] = {min[0]-shift[0], max[1], max[2]};
-      drawRuler(sta, end, min[1], max[1], ticks, 1);
-   }
-   {
-      float sta[3] = {min[0]-shift[0], min[1]-shift[1], min[2]};
-      float end[3] = {min[0]-shift[0], min[1]-shift[1], max[2]};
-      drawRuler(sta, end, min[2], max[2], ticks, 2);
-   }
-}
-
-void View::drawBorder()
-{
-   int border = properties["border"].ToInt(1);
-   if (border == 0) return;
-   bool filled = properties["fillborder"].ToBool(false);
-   Colour borderColour = Colour_FromJson(properties, "bordercolour", 127, 127, 127, 255);
-
-   // Draw model bounding box with optional filled background surface
-   float adj = 0.0001 * model_size;
-   float minvert[3] = {min[0]-adj, min[1]-adj, min[2]-adj};
-   float maxvert[3] = {max[0]+adj, max[1]+adj, max[2]+adj};
-   glColor4ubv(borderColour.rgba);
-   //Min/max swapped to draw inverted box, see through to back walls
-   drawCuboid(maxvert, minvert, filled, border);
-   GL_Error_Check;
-}
-
-void View::drawAxis() 
-{
-   bool axis = properties["axis"].ToBool(true);
-   float axislen = properties["axislength"].ToFloat(0.1);
-
-   if (!axis) return;
-   float length = axislen;
-   float headsize = 8.0;   //8 x radius (r = 0.01 * length)
-   float LH = length * 0.1;
-   float aspectRatio = width / (float)height;
-
-   glPushAttrib(GL_ENABLE_BIT);
-   glEnable(GL_LIGHTING);
-   //Clear depth buffer
-   glClear(GL_DEPTH_BUFFER_BIT);
-
-   //Setup the projection
-   glMatrixMode(GL_PROJECTION);
-   glPushMatrix();
-   glLoadIdentity();
-   // Build the viewing frustum - fixed near/far
-   float nearc = 0.01, farc = 10.0, left, right, top, bottom;
-   top = tan(0.5f * DEG2RAD * 45) * nearc;
-   right = aspectRatio * top;
-   glFrustum(-right, right, -top, top, nearc, farc);
-   //Modelview (rotation only)
-   glMatrixMode(GL_MODELVIEW);
-   glPushMatrix();
-   glLoadIdentity();
-   //Position to the bottom left
-   glTranslatef(-0.3 * aspectRatio, -0.3, -1.0);
-   //Apply model rotation
-   rotation_lag.apply();
-   GL_Error_Check;
-   // Switch coordinate system if applicable
-   glScalef(1.0, 1.0, 1.0 * orientation); 
-
-   float Xpos[3] = {length/2, 0, 0};
-   float Ypos[3] = {0, length/2, 0};
-   float Zpos[3] = {0, 0, length/2};
-
-   glColor3f(1,0,0);
-   {
-      float vector[3] = {1.0, 0.0, 0.0};
-      drawVector3d_( Xpos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
-   }
-      
-   glColor3f(0,1,0);
-   {
-      float vector[3] = {0.0, 1.0, 0.0};
-      drawVector3d_( Ypos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
-   }
-
-   glColor3f(0,0,1);
-   if (is3d)
-   {
-      float vector[3] = {0.0, 0.0, 1.0};
-      drawVector3d_( Zpos, vector, length, 0.01*length, headsize, 16.0f, NULL, NULL );
-   }
-
-   //Labels
-   glDisable(GL_LIGHTING);
-   glDisable(GL_DEPTH_TEST);
-
-   lucSetFontCharset(FONT_VECTOR);
-   lucSetFontScale(length);
-   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
-   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
-   if (is3d)
-      Print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], "Z");
-
-   glPopAttrib();
-
-   //Restore
-   glMatrixMode(GL_PROJECTION);
-   glPopMatrix();
-   glMatrixMode(GL_MODELVIEW);
-   glPopMatrix();
-   GL_Error_Check;
-}
-
 void View::drawOverlay(Colour& colour)
 {
 #ifdef PDF_CAPTURE
    return;   //Skip overlay
 #endif
-   //Draw axis & rulers 
-   drawAxis();
-   drawRulers();
-
    //2D overlay objects, apply text scaling
    Viewport2d(width, height);
    glScalef(textscale, textscale, textscale);

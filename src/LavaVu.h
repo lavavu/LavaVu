@@ -105,6 +105,10 @@ class LavaVu : public ViewerApp
    std::vector<std::string> linehistory;
    std::vector<std::string> replay;
 
+   TriSurfaces* axis;
+   Lines* rulers;
+   QuadSurfaces* border;
+
   public:
    bool quiet;
    bool recording;
@@ -185,6 +189,11 @@ class LavaVu : public ViewerApp
    void drawColourBar(DrawingObject* draw, int startx, int starty, int length, int height);
    void drawScene(void);
    void drawSceneBlended();
+
+   void drawRulers();
+   void drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis);
+   void drawBorder();
+   void drawAxis();
 
    void writeImages(int start, int end);
    void encodeVideo(const char* filename, int start, int end);

@@ -85,6 +85,10 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
    amodel = NULL;
    aobject = NULL;
 
+   axis = new TriSurfaces();
+   rulers = new Lines();
+   border = new QuadSurfaces();
+
    //Interaction command prompt
    entry = "";
    recording = true;
@@ -274,6 +278,9 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
 LavaVu::~LavaVu()
 {
+   delete axis;
+   delete rulers;
+   delete border;
 #ifdef HAVE_LIBAVCODEC
    if (encoder) delete encoder;
 #endif
@@ -2038,7 +2045,6 @@ void LavaVu::displayCurrentView()
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse);
 
       if (viewer->stereoBuffer)
       {
@@ -2065,7 +2071,6 @@ void LavaVu::displayCurrentView()
       aview->apply();
       // Draw scene
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse);
 
       // Restore full-colour 
       //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE); 
@@ -2075,11 +2080,293 @@ void LavaVu::displayCurrentView()
       // Default non-stereo render
       aview->projection(EYE_CENTRE);
       drawSceneBlended();
-      aview->drawOverlay(viewer->inverse);
    }
 
    //Clear the rotation flag
    if (aview->sort) aview->rotated = false;
+}
+
+void LavaVu::drawAxis() 
+{
+   bool doaxis = aview->properties["axis"].ToBool(true);
+   float axislen = aview->properties["axislength"].ToFloat(0.1);
+
+   if (!doaxis) return;
+   float length = axislen;
+   float headsize = 8.0;   //8 x radius (r = 0.01 * length)
+   float LH = length * 0.1;
+   float radius = length * 0.01;
+   float aspectRatio = aview->width / (float)aview->height;
+
+   glPushAttrib(GL_ENABLE_BIT);
+   glEnable(GL_LIGHTING);
+   //Clear depth buffer
+   glClear(GL_DEPTH_BUFFER_BIT);
+
+   //Setup the projection
+   glMatrixMode(GL_PROJECTION);
+   glPushMatrix();
+   glLoadIdentity();
+   // Build the viewing frustum - fixed near/far
+   float nearc = 0.01, farc = 10.0, left, right, top, bottom;
+   top = tan(0.5f * DEG2RAD * 45) * nearc;
+   right = aspectRatio * top;
+   glFrustum(-right, right, -top, top, nearc, farc);
+   //Modelview (rotation only)
+   glMatrixMode(GL_MODELVIEW);
+   glPushMatrix();
+   glLoadIdentity();
+   //Position to the bottom left
+   glTranslatef(-0.3 * aspectRatio, -0.3, -1.0);
+   //Apply model rotation
+   aview->applyRotation();
+   GL_Error_Check;
+   // Switch coordinate system if applicable
+   glScalef(1.0, 1.0, 1.0 * aview->orientation); 
+
+   float Xpos[3] = {length/2, 0, 0};
+   float Ypos[3] = {0, length/2, 0};
+   float Zpos[3] = {0, 0, length/2};
+
+   axis->clear();
+   axis->setView(aview);
+   static DrawingObject* aobj = NULL;
+   if (!aobj) aobj = new DrawingObject("axis", 0xff000000, NULL, 1.0, "clip=false");
+   axis->add(aobj);
+
+   {
+      float vector[3] = {1.0, 0.0, 0.0};
+      Colour colour = {255, 0, 0, 255};
+      axis->drawVector(aobj, Xpos, vector, length, radius, radius, headsize, 16);
+      axis->read(aobj, 1, lucRGBAData, &colour.value);
+   }
+      
+   {
+      float vector[3] = {0.0, 1.0, 0.0};
+      Colour colour = {0, 255, 0, 255};
+      axis->drawVector(aobj, Ypos, vector, length, radius, radius, headsize, 16);
+      axis->read(aobj, 1, lucRGBAData, &colour.value);
+   }
+
+   if (aview->is3d)
+   {
+      float vector[3] = {0.0, 0.0, 1.0};
+      Colour colour = {0, 0, 255, 255};
+      axis->drawVector(aobj, Zpos, vector, length, radius, radius, headsize, 16);
+      axis->read(aobj, 1, lucRGBAData, &colour.value);
+   }
+   axis->update();
+   axis->draw();
+   if (glUseProgram) glUseProgram(0);
+
+   //Labels
+   glDisable(GL_LIGHTING);
+   glDisable(GL_DEPTH_TEST);
+
+   lucSetFontCharset(FONT_VECTOR);
+   lucSetFontScale(length);
+   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
+   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
+   if (aview->is3d)
+      Print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], "Z");
+
+   glPopAttrib();
+
+   //Restore
+   glMatrixMode(GL_PROJECTION);
+   glPopMatrix();
+   glMatrixMode(GL_MODELVIEW);
+   glPopMatrix();
+   GL_Error_Check;
+}
+
+void LavaVu::drawRulers()
+{
+   if (!aview->properties["rulers"].ToBool(false)) return;
+   static DrawingObject* obj = NULL;
+   rulers->clear();
+   rulers->setView(aview);
+   if (!obj) obj = new DrawingObject("rulers", viewer->inverse.value, NULL, 1.0, "lit=false");
+   rulers->add(obj);
+   obj->properties["linewidth"] = aview->textscale * aview->properties["linewidth"].ToFloat(1.5);
+   //obj->properties["fontscale"] = aview->textscale *
+   obj->properties["fontscale"] = aview->properties["fontscale"].ToFloat(1.0) * 0.08*aview->model_size;
+
+   int ticks = aview->properties["rulerticks"].ToInt(5);
+   //Axis rulers
+   float shift[3] = {0.01f/aview->scale[0] * aview->model_size,
+                     0.01f/aview->scale[1] * aview->model_size,
+                     0.01f/aview->scale[2] * aview->model_size};
+   {
+      float sta[3] = {aview->min[0], aview->min[1]-shift[1], aview->max[2]};
+      float end[3] = {aview->max[0], aview->min[1]-shift[1], aview->max[2]};
+      drawRuler(obj, sta, end, aview->min[0], aview->max[0], ticks, 0);
+   }
+   {
+      float sta[3] = {aview->min[0]-shift[0], aview->min[1], aview->max[2]};
+      float end[3] = {aview->min[0]-shift[0], aview->max[1], aview->max[2]};
+      drawRuler(obj, sta, end, aview->min[1], aview->max[1], ticks, 1);
+   }
+   {
+      float sta[3] = {aview->min[0]-shift[0], aview->min[1]-shift[1], aview->min[2]};
+      float end[3] = {aview->min[0]-shift[0], aview->min[1]-shift[1], aview->max[2]};
+      drawRuler(obj, sta, end, aview->min[2], aview->max[2], ticks, 2);
+   }
+
+   rulers->update();
+   rulers->draw();
+}
+
+void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
+{
+   // Draw rulers with optional tick marks
+   //float fontscale = PrintSetFont(properties, "vector", 0.05*model_size*textscale);
+   //float fontscale = PrintSetFont(aview->properties, "vector", 1.0, 0.08*aview->model_size);
+
+   float vec[3];
+   float length;
+   float rangle;
+
+   vectorSubtract(vec, end, start);
+
+            vec[0] *= aview->scale[0];
+            vec[1] *= aview->scale[1];
+            vec[2] *= aview->scale[2];
+            start[0] *= aview->scale[0];
+            start[1] *= aview->scale[1];
+            start[2] *= aview->scale[2];
+
+   // Length of the drawn vector = vector magnitude
+   length = sqrt(dotProduct(vec,vec));
+   if (length <= FLT_MIN) return;
+
+   //Draw ruler line
+   float pos[3] = {start[0] + vec[0] * 0.5, start[1] + vec[1] * 0.5, start[2] + vec[2] * 0.5};
+   rulers->drawVector(obj, pos, vec, 1.0, 0, 0, 0, 0);
+   rulers->add(obj); //Add new object for ticks
+
+   // Undo any scaling factor
+   //if (aview->scale[0] != 1.0 || aview->scale[1] != 1.0 || aview->scale[2] != 1.0)
+   //   glScalef(1.0/aview->scale[0], 1.0/aview->scale[1], 1.0/aview->scale[2]);
+
+   // Translate to start of ruler
+   //glTranslatef(start[0], start[1], start[2]);
+
+   // Rotate to orient ruler
+   //...Want to align our z-axis to point along vector:
+   // axis of rotation = (z x vec)
+   // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec|
+   // Normalise vector first so OSMesa doesn't have a fit when given a tiny vector as a rotation axis
+   //vectorNormalise(vec); 
+   //Angle of rotation = acos(vec . [0,0,1]) = acos(vec[2])
+   //rangle = RAD2DEG * acos(vec[2]);
+   //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
+   //glRotatef(rangle, -vec[1], vec[0], 0);
+
+   std::string align = "";
+   for (int i = 0; i < ticks; i++)
+   {
+      // Get tick value
+      float scaledPos = i / (float)(ticks-1);
+      // Calculate pixel position
+      float pos = length * scaledPos;
+      float height = -0.01 * aview->model_size;
+      bool rightAlign = false;
+
+      // Draws the tick
+      //glBegin(GL_LINES);
+      //glVertex3f(0, 0, pos);
+
+      if (axis == 0)
+      {
+        //glVertex3f(0, height, pos);
+        float tvec[3] = {0, height, 0};
+        float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height * 0.5, start[2]};
+        rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
+        align = "|"; //Centre
+      }
+      else if (axis == 1)
+      {
+        float tvec[3] = {height, 0, 0};
+        float tpos[3] = {start[0] + height * 0.5, start[1] + vec[1] * scaledPos, start[2]};
+        rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
+        align = "^"; //Right, no vertical shift
+      }
+      else if (axis == 2)
+      {
+        float tvec[3] = {0, height, 0};
+        float tpos[3] = {start[0], start[1] + height * 0.5, start[2] + vec[2] * scaledPos};
+        rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
+        align = "^"; //Right, no v shift
+      }
+
+      //Draw a label
+      char label[16];
+      float inc = (labelmax - labelmin) / (float)(ticks-1);
+      sprintf(label, "%-10.3f", labelmin + i * inc);
+
+      // Trim trailing space
+      char* end = label + strlen(label) - 1;
+      while(end > label && isspace(*end)) end--;
+      *(end+1) = 0; //Null terminator
+      strcat(label, "  "); //(Leave two spaces at end)
+
+      GeomData* geomdata = rulers->getObjectStore(obj);
+      std::string blank = "";
+      geomdata->label(blank);
+      std::string labelstr = align + label;
+      geomdata->label(labelstr);
+   }
+}
+
+void LavaVu::drawBorder()
+{
+   static DrawingObject* obj = NULL;
+   border->clear();
+   border->setView(aview);
+   Colour borderColour = Colour_FromJson(aview->properties, "bordercolour", 127, 127, 127, 255);
+   if (!obj) obj = new DrawingObject("border", borderColour.value, NULL, 1.0, "");
+   //border->add(obj);
+
+   int aborder = aview->properties["border"].ToInt(1);
+   if (aborder == 0) return;
+   bool filled = aview->properties["fillborder"].ToBool(false);
+
+   if (!filled) 
+   {
+      obj->properties["lit"] = false;
+      obj->properties["wireframe"] = true;
+      obj->properties["cullface"] = false;
+      obj->properties["linewidth"] = aborder;
+   }
+   else 
+   {
+      obj->properties["lit"] = true;
+      obj->properties["wireframe"] = false;
+      obj->properties["cullface"] = true;
+   }
+
+   if (aview->is3d)
+   {
+      // Draw model bounding box with optional filled background surface
+      float minvert[3] = {aview->min[0], aview->min[1], aview->min[2]};
+      float maxvert[3] = {aview->max[0], aview->max[1], aview->max[2]};
+      Quaternion qrot;
+      //Min/max swapped to draw inverted box, see through to back walls
+      border->drawCuboid(obj, maxvert, minvert, qrot, true);
+   }
+   else
+   {
+      Vec3d vert1 = Vec3d(aview->max[0], aview->min[1], 0);
+      Vec3d vert3 = Vec3d(aview->min[0], aview->max[1], 0);
+      border->read(obj, 1, lucVertexData, aview->min, 2, 2);
+      border->read(obj, 1, lucVertexData, vert1.ref());
+      border->read(obj, 1, lucVertexData, vert3.ref());
+      border->read(obj, 1, lucVertexData, aview->max);
+   }
+
+   border->update();
+   border->draw();
 }
 
 GeomData* LavaVu::getGeometry(DrawingObject* obj)
@@ -2245,6 +2532,7 @@ void LavaVu::drawSceneBlended()
       drawScene();
       break;
    }
+   aview->drawOverlay(viewer->inverse);
 }
 
 void LavaVu::drawScene()
@@ -2262,7 +2550,7 @@ void LavaVu::drawScene()
    glShadeModel(GL_SMOOTH);
    glPushAttrib(GL_ENABLE_BIT);
 
-   aview->drawBorder();
+   drawBorder();
 
    Model::triSurfaces->draw();
    Model::quadSurfaces->draw();
@@ -2273,6 +2561,9 @@ void LavaVu::drawScene()
    Model::labels->draw();
    Model::volumes->draw();
    Model::lines->draw();
+
+   drawAxis();
+   drawRulers();
 
    //Restore default state
    glPopAttrib();
