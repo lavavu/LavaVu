@@ -2244,7 +2244,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
   if (length <= FLT_MIN) return;
 
   //Draw ruler line
-  float pos[3] = {start[0] + vec[0] * 0.5, start[1] + vec[1] * 0.5, start[2] + vec[2] * 0.5};
+  float pos[3] = {start[0] + vec[0] * 0.5f, start[1] + vec[1] * 0.5f, start[2] + vec[2] * 0.5f};
   rulers->drawVector(obj, pos, vec, 1.0, 0, 0, 0, 0);
   rulers->add(obj); //Add new object for ticks
 
@@ -2284,21 +2284,21 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     {
       //glVertex3f(0, height, pos);
       float tvec[3] = {0, height, 0};
-      float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height * 0.5, start[2]};
+      float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height * 0.5f, start[2]};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
       align = "|"; //Centre
     }
     else if (axis == 1)
     {
       float tvec[3] = {height, 0, 0};
-      float tpos[3] = {start[0] + height * 0.5, start[1] + vec[1] * scaledPos, start[2]};
+      float tpos[3] = {start[0] + height * 0.5f, start[1] + vec[1] * scaledPos, start[2]};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
       align = "^"; //Right, no vertical shift
     }
     else if (axis == 2)
     {
       float tvec[3] = {0, height, 0};
-      float tpos[3] = {start[0], start[1] + height * 0.5, start[2] + vec[2] * scaledPos};
+      float tpos[3] = {start[0], start[1] + height * 0.5f, start[2] + vec[2] * scaledPos};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
       align = "^"; //Right, no v shift
     }
