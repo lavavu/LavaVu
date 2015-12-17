@@ -1113,9 +1113,13 @@ Colour Colour_FromHex(std::string hexName)
    std::string blu = hexName.substr(5, 2);
 
    /* Read colours */
-   sscanf(red.c_str(), "%x", &colour.r);
-   sscanf(grn.c_str(), "%x", &colour.g);
-   sscanf(blu.c_str(), "%x", &colour.b);
+   unsigned int hex;
+   sscanf(red.c_str(), "%x", &hex);
+   colour.r = hex;
+   sscanf(grn.c_str(), "%x", &hex);
+   colour.g = hex;
+   sscanf(blu.c_str(), "%x", &hex);
+   colour.b = hex;
 
    return colour;
 }
