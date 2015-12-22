@@ -504,7 +504,14 @@ int Model::loadTimeSteps()
 
 void Model::loadColourMaps()
 {
-  sqlite3_stmt* statement = select("SELECT * FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
+  bool old = false;
+  sqlite3_stmt* statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value,name,props FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
+  if (statement == NULL)
+  {
+    //Old DB format, had no name or props
+    statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
+    old = true;
+  }
   //colourmap (id, minimum, maximum, logscale, discrete, centreValue)
   //colourvalue (id, colourmap_id, colour, position)
   int map_id = 0;
@@ -517,19 +524,20 @@ void Model::loadColourMaps()
     int id = sqlite3_column_int(statement, 0);
     char idname[10];
     sprintf(idname, "%d", id);
-    char *cmname = (char*)sqlite3_column_text(statement, 1);
+    char *cmname = NULL;
+    if (!old) (char*)sqlite3_column_text(statement, 7);
 
     //New map?
     if (id != map_id)
     {
       map_id = id;
-      minimum = sqlite3_column_double(statement, 2);
-      maximum = sqlite3_column_double(statement, 3);
-      int logscale = sqlite3_column_int(statement, 4);
-      int discrete = sqlite3_column_int(statement, 5);
-      float centreValue = sqlite3_column_double(statement, 6);
-      const char *props = (char*)sqlite3_column_text(statement, 7);
-      colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, centreValue, minimum, maximum, props ? props : "");
+      minimum = sqlite3_column_double(statement, 1);
+      maximum = sqlite3_column_double(statement, 2);
+      int logscale = sqlite3_column_int(statement, 3);
+      int discrete = sqlite3_column_int(statement, 4);
+      char *props = NULL;
+      if (!old) props = (char*)sqlite3_column_text(statement, 8);
+      colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, minimum, maximum, props ? props : "");
       colourMaps.push_back(colourMap);
       //Colours already parsed from properties?
       if (colourMap->colours.size() > 0) parsed = true;
@@ -539,11 +547,11 @@ void Model::loadColourMaps()
     if (!parsed)
     {
       //Add colour value
-      int colour = sqlite3_column_int(statement, 10);
+      int colour = sqlite3_column_int(statement, 5);
       //const char *name = sqlite3_column_name(statement, 7);
-      if (sqlite3_column_type(statement, 11) != SQLITE_NULL)
+      if (sqlite3_column_type(statement, 6) != SQLITE_NULL)
       {
-        double value = sqlite3_column_double(statement, 11);
+        double value = sqlite3_column_double(statement, 6);
         colourMap->add(colour, value);
       }
       else
