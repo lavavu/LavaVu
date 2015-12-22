@@ -83,7 +83,7 @@ void Shapes::update()
     Colour colour;
     geom[i]->colourCalibrate();
 
-    for (int v=0; v < geom[i]->count; v++)
+    for (unsigned int v=0; v < geom[i]->count; v++)
     {
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
       float sdims[3] = {dims[0], dims[1], dims[2]};

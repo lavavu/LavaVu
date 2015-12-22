@@ -180,7 +180,8 @@ void Model::attach(int timestep)
     char path[1024];
     FILE* fp;
     sprintf(path, "%s%s%05d.%s", file.path.c_str(), file.base.c_str(), timestep, file.ext.c_str());
-    if (fp = fopen(path, "r"))
+    fp = fopen(path, "r");
+    if (fp)
     {
       fclose(fp);
       sprintf(SQL, "attach database '%s' as t%d", path, timestep);
@@ -442,8 +443,7 @@ void Model::loadLinks(DrawingObject* draw)
 
   while ( sqlite3_step(statement) == SQLITE_ROW)
   {
-    int object_id = sqlite3_column_int(statement, 0);
-    int colourmap_id = sqlite3_column_int(statement, 2); //Linked colourmap id
+    unsigned int colourmap_id = sqlite3_column_int(statement, 2); //Linked colourmap id
 
     //Fields from object_colourmap
     lucGeometryDataType colourmap_datatype = (lucGeometryDataType)sqlite3_column_int(statement, 3);
@@ -470,7 +470,7 @@ void Model::loadLinks(DrawingObject* draw)
 
 void Model::clearTimeSteps()
 {
-  for (int idx=0; idx < timesteps.size(); idx++)
+  for (unsigned int idx=0; idx < timesteps.size(); idx++)
     delete timesteps[idx];
   timesteps.clear();
 }
@@ -642,7 +642,7 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (TimeStep::cachesize == 0 || now < 0 || now >= timesteps.size()) return;
+  if (TimeStep::cachesize == 0 || now < 0 || now >= (int)timesteps.size()) return;
   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
   debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), FloatValues::membytes/1000000.0f);
@@ -703,7 +703,7 @@ bool Model::restoreStep()
 void Model::printCache()
 {
   debug_print("-----------CACHE %d steps\n", timesteps.size());
-  for (int idx=0; idx < timesteps.size(); idx++)
+  for (unsigned int idx=0; idx < timesteps.size(); idx++)
     debug_print(" %d: has %d records\n", idx, timesteps[idx]->cache.size());
 }
 
@@ -711,7 +711,7 @@ void Model::printCache()
 bool Model::hasTimeStep(int ts)
 {
   if (timesteps.size() == 0 && loadTimeSteps() == 0) return false;
-  for (int idx=0; idx < timesteps.size(); idx++)
+  for (unsigned int idx=0; idx < timesteps.size(); idx++)
     if (ts == timesteps[idx]->step)
       return true;
   return false;
@@ -725,17 +725,17 @@ int Model::nearestTimeStep(int requested)
   if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
   //if (timesteps.size() == 1 && now >= 0 && ) return -1;  //Single timestep
 
-  for (idx=0; idx < timesteps.size(); idx++)
+  for (idx=0; idx < (int)timesteps.size(); idx++)
     if (timesteps[idx]->step >= requested) break;
 
   //Reached end of list?
-  if (idx == timesteps.size()) idx--;
+  if (idx == (int)timesteps.size()) idx--;
 
   //Unchanged...
   //if (requested >= now && timesteps[idx]->step == now) return 0;
 
   if (idx < 0) idx = 0;
-  if (idx >= timesteps.size()) idx = timesteps.size() - 1;
+  if (idx >= (int)timesteps.size()) idx = timesteps.size() - 1;
 
   return idx;
 }
@@ -744,7 +744,6 @@ int Model::nearestTimeStep(int requested)
 int Model::setTimeStep(int stepidx)
 {
   clock_t t1 = clock();
-  unsigned int idx=0;
 
   //Default timestep only and no db? Skip load
   if (timesteps.size() == 0 && !db)
@@ -754,7 +753,7 @@ int Model::setTimeStep(int stepidx)
   }
 
   if (stepidx < 0) stepidx = 0; //return -1;
-  if (stepidx >= timesteps.size())
+  if (stepidx >= (int)timesteps.size())
     stepidx = timesteps.size()-1;
 
   //Cache currently loaded data
@@ -843,7 +842,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
     //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
     //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
     sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
-    sqlite3_stmt* statement = select(SQL, true);
+    statement = select(SQL, true);
     datacol = 15;
 
     //Fix
@@ -876,7 +875,6 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
     if (ret == SQLITE_ROW)
     {
       rows++;
-      int id = sqlite3_column_int(statement, 0);
       int object_id = sqlite3_column_int(statement, 1);
       int timestep = sqlite3_column_int(statement, 2);
       int height = sqlite3_column_int(statement, 3);  //unused - was rank, now height
@@ -934,7 +932,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
         //Tracers are loaded with a new select statement across multiple timesteps...
         //objects[object_id]->steps = timestep+1;
-        Tracers* tracers = (Tracers*)active;
+        //Tracers* tracers = (Tracers*)active;
         int stepstart = 0; //timestep - objects[object_id]->steps;
         //int stepstart = timestep - tracers->steps;
 
@@ -1045,7 +1043,7 @@ void Model::mergeDatabases()
 {
   char SQL[512];
   reopen(true);  //Open writable
-  for (int i=0; i<=timesteps.size(); i++)
+  for (unsigned int i=0; i<=timesteps.size(); i++)
   {
     debug_print("MERGE %d/%d...%d\n", i, timesteps.size(), step());
     setTimeStep(i);
@@ -1077,7 +1075,6 @@ int Model::decompressGeometry(int timestep)
     if (ret == SQLITE_ROW)
     {
       rows++;
-      int id = sqlite3_column_int(statement, 0);
       int count = sqlite3_column_int(statement, 1);
       const void *data = sqlite3_column_blob(statement, 2);
       unsigned int bytes = sqlite3_column_bytes(statement, 2);
@@ -1198,7 +1195,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     if (!issue(SQL, outdb)) return;
 
     /* Write colours and values */
-    for (int c=0; c< cm->colours.size(); c++)
+    for (unsigned int c=0; c< cm->colours.size(); c++)
     {
       snprintf(SQL, 1024, "insert into colourvalue (colourmap_id, colour, value) values (%d, %d, %g)",
                cm->id, cm->colours[c].colour.value, cm->colours[c].position * (cm->maximum - cm->minimum) + cm->minimum);
@@ -1256,7 +1253,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   issue("COMMIT", outdb);
 }
 
-void Model::writeObjects(sqlite3* outdb, int id, int step, bool compress)
+void Model::writeObjects(sqlite3* outdb, unsigned int id, int step, bool compress)
 {
   //Write object data
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1272,12 +1269,12 @@ void Model::writeObjects(sqlite3* outdb, int id, int step, bool compress)
   }
 }
 
-void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, int step, bool compressdata)
+void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj_id, int step, bool compressdata)
 {
   std::vector<GeomData*> data = geometry[type]->getAllObjects(obj_id);
   //Loop through and write out all object data
   char SQL[1024];
-  int i, data_type;
+  unsigned int i, data_type;
   for (i=0; i<data.size(); i++)
   {
     for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
@@ -1356,7 +1353,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, int obj_id, int 
   }
 }
 
-void Model::deleteObject(int id)
+void Model::deleteObject(unsigned int id)
 {
   reopen(true);  //Open writable
   char SQL[256];

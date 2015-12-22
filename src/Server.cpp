@@ -22,7 +22,7 @@ Server* Server::Instance(OpenGLViewer* viewer, std::string htmlpath, int port, i
 }
 
 Server::Server(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
-  : viewer(viewer), quality(quality), port(port), threads(threads), path(htmlpath)
+  : viewer(viewer), port(port), threads(threads), path(htmlpath), quality(quality)
 {
   imageCache = NULL;
   jpeg = NULL;
@@ -73,7 +73,7 @@ bool Server::compare(GLubyte* image)
   {
     match = true;
     size_t size = viewer->width * viewer->height * 3;
-    for (int i=0; i<size; i++)
+    for (unsigned int i=0; i<size; i++)
     {
       if (image[i] != imageCache[i])
       {

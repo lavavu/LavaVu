@@ -73,8 +73,6 @@ void TriSurfaces::update()
   Geometry::update();
 
   // Update triangles...
-  clock_t t1,t2,tt;
-  tt=clock();
   if (geom.size() == 0) return;
 
   //Get triangle count
@@ -148,7 +146,7 @@ void TriSurfaces::loadMesh()
     if (geom[index]->indices.size() > 0)
     {
       floatidx i1, i2, i3;
-      for (int j=0; j < geom[index]->indices.size(); j += 3)
+      for (unsigned int j=0; j < geom[index]->indices.size(); j += 3)
       {
         i1.val = geom[index]->indices[j];
         i2.val = geom[index]->indices[j+1];
@@ -174,7 +172,7 @@ void TriSurfaces::loadMesh()
     //Sort vertices vector with std::sort & custom compare sort( vec.begin(), vec.end() );
     //Iterate, for duplicates replace indices with index of first
     //Remove duplicate vertices Triangles stored as list of indices
-    int hasColours = geom[index]->colourCount();
+    unsigned int hasColours = geom[index]->colourCount();
     bool vertColour = hasColours && (hasColours == geom[index]->count);
     t1=tt=clock();
 
@@ -182,7 +180,7 @@ void TriSurfaces::loadMesh()
     std::vector<Vertex> verts(geom[index]->count);
     std::vector<Vec3d> normals(geom[index]->count);
     std::vector<GLuint> indices;
-    for (int j=0; j < geom[index]->count; j++)
+    for (unsigned int j=0; j < geom[index]->count; j++)
     {
       verts[j].id = verts[j].ref = j;
       verts[j].vert = geom[index]->vertices[j];
@@ -245,8 +243,6 @@ void TriSurfaces::loadMesh()
           if (vertColour && verts[v].vcount > 1)
             geom[index]->colourValue.value[verts[v].id] /= verts[v].vcount;
 
-          int id = verts[v].id;
-
           //Replace verts & normals
           vertices.push_back(Vec3d(verts[v].vert));
           read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
@@ -308,11 +304,11 @@ void TriSurfaces::loadBuffers()
   // VBO - copy normals/colours/positions to buffer object
   unsigned char *p, *ptr;
   ptr = p = NULL;
-  int datasize = sizeof(float) * 8 + sizeof(Colour);   //Vertex(3), normal(3), texCoord(2) and 32-bit colour
-  int vcount = 0;
+  unsigned int datasize = sizeof(float) * 8 + sizeof(Colour);   //Vertex(3), normal(3), texCoord(2) and 32-bit colour
+  unsigned int vcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
     vcount += geom[index]->count;
-  int bsize = vcount * datasize;
+  unsigned int bsize = vcount * datasize;
 
   //Initialise vertex buffer
   glGenBuffers(1, &vbo);
@@ -338,10 +334,8 @@ void TriSurfaces::loadBuffers()
     //if (hasColours) assert(colrange * hasColours == geom[index]->count);
     //if (hasColours && colrange * hasColours != geom[index]->count)
     //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count, hasColours);
-    bool vertColour = hasColours && colrange > 1;
     debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count, hasColours);
 
-    int i = 0;
     Colour colour;
     bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
     debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
@@ -353,13 +347,13 @@ void TriSurfaces::loadBuffers()
       else
       {
         //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
-        int cidx = v / colrange;
+        unsigned int cidx = v / colrange;
         if (cidx * colrange == v)
           geom[index]->getColour(colour, cidx);
       }
 
       //Write vertex data to vbo
-      assert((int)(ptr-p) < bsize);
+      assert((unsigned int)(ptr-p) < bsize);
       //Copies vertex bytes
       memcpy(ptr, &geom[index]->vertices[v][0], sizeof(float) * 3);
       ptr += sizeof(float) * 3;
@@ -444,7 +438,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   clock_t t1,t2;
   t1 = clock();
   debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->vertices.size()/3);
-  int hasColours = geom[index]->colourCount();
+  unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours == geom[index]->vertices.size()/3);
   //Calculate face normals for each triangle and copy to each face vertex
   for (unsigned int v=0; v<verts.size(); v += 3)
@@ -521,9 +515,9 @@ void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
 
   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   int n = 0;
-  for (int j = 0 ; j < geom[i]->height; j++ )
+  for (unsigned int j = 0 ; j < geom[i]->height; j++ )
   {
-    for (int k = 0 ; k < geom[i]->width; k++ )
+    for (unsigned int k = 0 ; k < geom[i]->width; k++ )
     {
       // Get sum of normal vectors
       if (j > 0)
@@ -580,16 +574,16 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
   debug_print("Calculating indices for grid tri surface %d... ", i);
 
   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
-  int o = 0;
-  for (int j = 0 ; j < geom[i]->height-1; j++ )
+  unsigned int o = 0;
+  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
   {
-    for (int k = 0 ; k < geom[i]->width-1; k++ )
+    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
     {
       //Add indices for two triangles per grid element
-      int offset0 = j * geom[i]->width + k;
-      int offset1 = (j+1) * geom[i]->width + k;
-      int offset2 = j * geom[i]->width + k + 1;
-      int offset3 = (j+1) * geom[i]->width + k + 1;
+      unsigned int offset0 = j * geom[i]->width + k;
+      unsigned int offset1 = (j+1) * geom[i]->width + k;
+      unsigned int offset2 = j * geom[i]->width + k + 1;
+      unsigned int offset3 = (j+1) * geom[i]->width + k + 1;
       assert(o <= indices.size()-6);
       //Tri 1
       setTriangle(i, geom[i]->vertices[offset0], geom[i]->vertices[offset1], geom[i]->vertices[offset2]);
@@ -637,7 +631,7 @@ void TriSurfaces::depthSort()
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (SORT_DIST_MAX-1.0) / (maxdist - mindist);
   if (tricount == 0) return;
-  int opaqueCount = 0;
+  unsigned int opaqueCount = 0;
   float fdistance;
   for (unsigned int i = 0; i < tricount; i++)
   {
@@ -724,7 +718,7 @@ void TriSurfaces::render()
     {
       if (hiddencache[tidx[i].geomid]) continue;
       elements += 3;
-      assert((int)(ptr-p) < 3 * tricount * sizeof(GLuint));
+      assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
       //Copies index bytes
       memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
       ptr += sizeof(GLuint) * 3;
@@ -792,7 +786,7 @@ void TriSurfaces::draw()
 
     //Draw remaining elements (transparent, depth sorted)
     //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
-    if (start < elements)
+    if (start < (unsigned int)elements)
     {
       if (start > 0)
       {

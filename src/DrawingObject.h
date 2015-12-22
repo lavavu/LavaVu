@@ -49,8 +49,8 @@
 class DrawingObject
 {
 public:
-  std::string name;
   unsigned int id;
+  std::string name;
   bool skip;
   bool visible;
   int voltype;

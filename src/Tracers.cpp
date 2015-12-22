@@ -59,8 +59,6 @@ void Tracers::close()
 void Tracers::update()
 {
   //Convert tracers to triangles
-  clock_t t1,t2,tt;
-  tt=clock();
   //All tracers stored as single vertex/value block
   //Contains vertex/value for every tracer particle at each timestep
   //Number of particles is number of entries divided by number of timesteps

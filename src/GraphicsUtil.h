@@ -215,7 +215,7 @@ class FloatValues
 {
 public:
   std::vector<float> value;
-  int next;
+  unsigned int next;
   float minimum;
   float maximum;
   int datasize;
@@ -273,7 +273,7 @@ public:
 
   void resize(unsigned long size)
   {
-    int oldsize = value.size();
+    unsigned int oldsize = value.size();
     if (oldsize < size)
     {
       value.resize(size);
@@ -283,7 +283,7 @@ public:
     }
   }
 
-  int size()
+  unsigned int size()
   {
     return next;
   }

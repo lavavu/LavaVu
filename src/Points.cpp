@@ -81,7 +81,6 @@ void Points::update()
   Geometry::update();
 
   // Update particles..
-  clock_t t1,t2;
   static unsigned int last_total = 0;
 
   //if (geom.size() == 0) return;
@@ -194,7 +193,7 @@ void Points::loadVertices()
     else
       ptype = geo->draw->properties["pointtype"].ToInt(-1);
 
-    for (int i = 0; i < geom[s]->count; i ++)
+    for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
       pidx[index].id = i;
       pidx[index].index = index;
@@ -205,7 +204,7 @@ void Points::loadVertices()
       Colour c;
       if (ptr)
       {
-        assert((int)(ptr-p) < total * datasize);
+        assert((unsigned int)(ptr-p) < total * datasize);
         //Copies vertex bytes
         memcpy(ptr, geo->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;

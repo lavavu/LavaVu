@@ -73,13 +73,6 @@ bool Shader::version()
     program = 0;
     return false;
   }
-  //Check function pointer not null
-  if (!glCreateShader || !glGetUniformLocation)
-  {
-    debug_print("%s does not support OpenGL 2.1 shaders, please upgrade your OpenGL drivers!\n", gl_version);
-    program = 0;
-    return false;
-  }
 #endif
 #endif
   return true;

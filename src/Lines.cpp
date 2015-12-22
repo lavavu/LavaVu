@@ -58,7 +58,7 @@ void Lines::close()
 void Lines::update()
 {
   //Skip update if count hasn't changed
-  if (elements > 0 && linetotal == elements || total == 0) return;
+  if (elements > 0 && (linetotal == (unsigned int)elements || total == 0)) return;
 
   tris->clear();
   tris->setView(view);
@@ -67,7 +67,7 @@ void Lines::update()
   linetotal = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    if (all2d || geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+    if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
       linetotal += geom[i]->count;
   }
 
@@ -102,15 +102,13 @@ void Lines::update()
     //Calibrate colour maps on range for this object
     geom[i]->colourCalibrate();
 
-    if (all2d || geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+    if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
     {
       int hasColours = geom[i]->colourCount();
       int colrange = hasColours ? geom[i]->count / hasColours : 1;
-      bool vertColour = hasColours && colrange > 1;
       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
       Colour colour;
-      float zero[3] = {0,0,0};
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
@@ -144,7 +142,7 @@ void Lines::update()
       float radius = scale*0.1;
       float* oldpos = NULL;
       Colour colour;
-      for (int v=0; v < geom[i]->count; v++)
+      for (unsigned int v=0; v < geom[i]->count; v++)
       {
         if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
         float* pos = geom[i]->vertices[v];
