@@ -190,16 +190,16 @@ void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned
   debug_print("Calculating indices for grid quad surface %d... ", i);
 
   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
-  int o = 0;
-  for (int j = 0 ; j < geom[i]->height-1; j++ )
+  unsigned int o = 0;
+  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
   {
-    for (int k = 0 ; k < geom[i]->width-1; k++ )
+    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
     {
       //Add indices for two triangles per grid element
-      int offset0 = j * geom[i]->width + k;
-      int offset1 = (j+1) * geom[i]->width + k;
-      int offset2 = j * geom[i]->width + k + 1;
-      int offset3 = (j+1) * geom[i]->width + k + 1;
+      unsigned int offset0 = j * geom[i]->width + k;
+      unsigned int offset1 = (j+1) * geom[i]->width + k;
+      unsigned int offset2 = j * geom[i]->width + k + 1;
+      unsigned int offset3 = (j+1) * geom[i]->width + k + 1;
 
       assert(offset2 + vertoffset < total);
       assert(o <= indices.size()-4);
@@ -228,7 +228,6 @@ void QuadSurfaces::draw()
   GL_Error_Check;
   // Draw using vertex buffer object
   clock_t t0 = clock();
-  clock_t t1 = clock();
   double time;
   int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -247,13 +246,13 @@ void QuadSurfaces::draw()
     //Render in reverse sorted order
     for (int i=geom.size()-1; i>=0; i--)
     {
-      int id = surf_sort[i].id;
+      unsigned int id = surf_sort[i].id;
       //if (!drawable(id)) continue;
       if (hiddencache[id]) continue;
 
       //Get the offset
       unsigned int start = 0;
-      for (int g=0; g<geom.size(); g++)
+      for (unsigned int g=0; g<geom.size(); g++)
       {
         if (g == id) break;
         start += 4 * (geom[g]->width-1) * (geom[g]->height-1); //geom[g]->indices.size();

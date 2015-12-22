@@ -128,7 +128,7 @@ int GeomData::colourCount()
 }
 
 //Sets the colour for specified vertex index, looks up all provided colourmaps
-void GeomData::getColour(Colour& colour, int idx)
+void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
   if (draw->colourMaps[lucColourValueData] && colourValue.size() > 0)
@@ -244,7 +244,7 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
       {
         //Dump colourValue data only
         std::cout << "Collected " << geom[i]->colourValue.size() << " values (" << i << ")" << std::endl;
-        for (int c=0; c < geom[i]->colourValue.size(); c++)
+        for (unsigned int c=0; c < geom[i]->colourValue.size(); c++)
         {
           csv << geom[i]->colourValue[c] << std::endl;
         }
@@ -254,7 +254,7 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
       {
         std::cout << "Collected " << geom[i]->count << " vertices/values (" << i << ")" << std::endl;
         //Only supports dump of vertex and colourValue at present
-        for (int v=0; v < geom[i]->count; v++)
+        for (unsigned int v=0; v < geom[i]->count; v++)
         {
           csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
 
@@ -302,13 +302,13 @@ void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
         if (length > 0)
         {
           el["size"] = dsizes[data_type];
-          el["count"] = geom[index]->data[data_type]->size();
+          el["count"] = (int)geom[index]->data[data_type]->size();
           if (encode)
             el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->data[data_type]->value[0]), length);
           else
           {
             json::Array values;
-            for (int j=0; j<geom[index]->data[data_type]->size(); j++)
+            for (unsigned int j=0; j<geom[index]->data[data_type]->size(); j++)
             {
               if (data_type == lucIndexData || data_type == lucRGBAData)
                 values.push_back((int)reinterpret_cast<unsigned int&>(geom[index]->data[data_type]->value[j]));
@@ -322,8 +322,8 @@ void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
       }
 
       //for grid surfaces...
-      if (geom[index]->width) data["width"] = geom[index]->width;
-      if (geom[index]->height) data["height"] = geom[index]->height;
+      if (geom[index]->width) data["width"] = (int)geom[index]->width;
+      if (geom[index]->height) data["height"] = (int)geom[index]->height;
 
       array.push_back(data);
     }
@@ -395,7 +395,7 @@ void Geometry::localiseColourValues()
     {
       geom[i]->colourValue.minimum = HUGE_VAL;
       geom[i]->colourValue.maximum = -HUGE_VAL;
-      for (int v=0; v < geom[i]->colourValue.size(); v++)
+      for (unsigned int v=0; v < geom[i]->colourValue.size(); v++)
       {
         // Check min/max against each value
         if (geom[i]->colourValue[v] > geom[i]->colourValue.maximum) geom[i]->colourValue.maximum = geom[i]->colourValue[v];
@@ -423,7 +423,7 @@ void Geometry::init() //Called on GL init
   redraw = true;
 }
 
-void Geometry::setState(int index, Shader* prog)
+void Geometry::setState(unsigned int index, Shader* prog)
 {
   GL_Error_Check;
   if (geom.size() <= index) return;
@@ -536,7 +536,7 @@ void Geometry::draw()  //Display saved geometry
   GL_Error_Check;
 
   //Default to no shaders
-  if (glUseProgram) glUseProgram(0);
+  glUseProgram(0);
 
   //Anything to draw?
   drawcount = 0;
@@ -629,11 +629,11 @@ bool Geometry::drawable(unsigned int idx)
   return false;
 }
 
-std::vector<GeomData*> Geometry::getAllObjects(int id)
+std::vector<GeomData*> Geometry::getAllObjects(unsigned int id)
 {
   //Get passed object's data store
   std::vector<GeomData*> geomlist;
-  for (int i=0; i<geom.size(); i++)
+  for (unsigned int i=0; i<geom.size(); i++)
     if (geom[i]->draw->id == id)
       geomlist.push_back(geom[i]);
   return geomlist;
@@ -669,7 +669,7 @@ void Geometry::setView(View* vp, float* min, float* max)
   {
     //Skip invisible
     if (!view->objects[o] || !view->objects[o]->visible) continue;
-    for (int g=0; g<geom.size(); g++)
+    for (unsigned int g=0; g<geom.size(); g++)
     {
       if (geom[g]->draw == view->objects[o])
       {
@@ -983,7 +983,6 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
   else if (length > headD)
   {
     int v;
-    float shaft_vertex[3];
     for (v=0; v <= segment_count; v++)
     {
       int vertex_index = getVertexIdx(draw);
@@ -1293,7 +1292,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 {
   int i,j;
   Vec3d edge, pos;
-  float tex[2];
+  //float tex[2];
 
   if (radii.x < 0) radii.x = -radii.x;
   if (radii.y < 0) radii.y = -radii.y;
@@ -1316,8 +1315,8 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       // Flip for normal
       edge = -edge;
 
-      tex[0] = i/(float)segment_count;
-      tex[1] = 2*(j+1)/(float)segment_count;
+      //tex[0] = i/(float)segment_count;
+      //tex[1] = 2*(j+1)/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       read(draw, 1, lucVertexData, pos.ref());
@@ -1332,8 +1331,8 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       // Flip for normal
       edge = -edge;
 
-      tex[0] = i/(float)segment_count;
-      tex[1] = 2*j/(float)segment_count;
+      //tex[0] = i/(float)segment_count;
+      //tex[1] = 2*j/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       read(draw, 1, lucVertexData, pos.ref());

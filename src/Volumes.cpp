@@ -54,7 +54,7 @@ void Volumes::close()
   //"cachevolumes" property allows switching this behaviour off for faster switching
   //requries enough GPU ram to store all volumes
   if (Geometry::properties["cachevolumes"].ToBool(false)) return;
-  for (int i=0; i<geom.size(); i++)
+  for (unsigned int i=0; i<geom.size(); i++)
   {
     if (geom[i]->texture)
     {
@@ -77,7 +77,7 @@ void Volumes::draw()
   //t1 = tt = clock();
 
   DrawingObject* current = NULL;
-  for (int i=0; i<geom.size(); i += 1)
+  for (unsigned int i=0; i<geom.size(); i++)
   {
     if (!drawable(i)) continue;
 
@@ -98,8 +98,8 @@ void Volumes::draw()
 
 void Volumes::update()
 {
-  clock_t t1,t2,tt;
-  t1 = tt = clock();
+  clock_t t2,tt;
+  tt = clock();
 
   Geometry::update();
 
@@ -159,9 +159,9 @@ void Volumes::update()
   {
     //Collection of 2D slices
     slices.clear();
-    int id = geom[0]->draw->id;
-    int count = 0;
-    for (int i=0; i<=geom.size(); i++)
+    unsigned int id = geom[0]->draw->id;
+    unsigned int count = 0;
+    for (unsigned int i=0; i<=geom.size(); i++)
     {
       //Force reload
       //if (i<geom.size() && geom[i]->texture)
@@ -198,13 +198,13 @@ void Volumes::update()
           if (bpv == 3)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGB);
-            for (int j=i; j<i+slices[current->id]; j++)
+            for (unsigned int j=i; j<i+slices[current->id]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, &geom[j]->colours.value[0]);
           }
           if (bpv == 4)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGBA);
-            for (int j=i; j<i+slices[current->id]; j++)
+            for (unsigned int j=i; j<i+slices[current->id]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, &geom[j]->colours.value[0]);
           }
         }
@@ -214,13 +214,13 @@ void Volumes::update()
           if (bpv == 1)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_BYTE);
-            for (int j=i; j<i+slices[current->id]; j++)
+            for (unsigned int j=i; j<i+slices[current->id]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, &geom[j]->colourValue.value[0]);
           }
           if (bpv == 4)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_FLOAT);
-            for (int j=i; j<i+slices[current->id]; j++)
+            for (unsigned int j=i; j<i+slices[current->id]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
           }
         }
@@ -399,7 +399,7 @@ GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, in
       GLubyte *image = new GLubyte[iw * ih];
       memset(image, 0, iw*ih*sizeof(GLubyte));
       int xoffset = 0, yoffset = 0;
-      for (int j=i; j<i+slices[id]; j++)
+      for (unsigned int j=i; j<i+slices[id]; j++)
       {
         //printf("%d %d < %d\n", i, j, i+slices[id]);
         //printf("SLICE %d OFFSETS %d,%d\n", j, xoffset, yoffset);
@@ -427,6 +427,7 @@ GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, in
       return image;
     }
   }
+  return NULL;
 }
 
 void Volumes::pngWrite(unsigned int id, int xtiles)
@@ -483,7 +484,7 @@ void Volumes::jsonWrite(unsigned int id, json::Object& obj)
       GLubyte *image = getTiledImage(id, iw, ih, false, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
       json::Array res, scale;
-      res.push_back(geom[i]->width);
+      res.push_back((int)geom[i]->width);
       res.push_back(height);
       res.push_back(slices[id]);
       //Scaling factors
@@ -494,7 +495,7 @@ void Volumes::jsonWrite(unsigned int id, json::Object& obj)
       data["scale"] = scale;
 
       vertices["size"] = 3;
-      vertices["count"] = geom[i]->vertices.size();
+      vertices["count"] = (int)geom[i]->vertices.size();
       vertices["data"] = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->vertices.value[0]), geom[i]->vertices.size() * sizeof(float));
       data["vertices"] = vertices;
 

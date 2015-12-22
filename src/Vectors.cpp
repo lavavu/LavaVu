@@ -58,7 +58,7 @@ void Vectors::close()
 void Vectors::update()
 {
   //Convert vectors to triangles
-  clock_t t1,t2,tt;
+  clock_t t1,tt;
   tt=clock();
   lines->clear();
   lines->setView(view);

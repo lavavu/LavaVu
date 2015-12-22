@@ -395,7 +395,7 @@ bool LavaVu::parseChar(unsigned char key)
     break;
   case KEY_DOWN:
     historyline = hline+1;
-    if (historyline >= linehistory.size())
+    if (historyline >= (int)linehistory.size())
     {
       historyline = -1;
       entry = "";
@@ -500,7 +500,7 @@ Geometry* LavaVu::getGeometryType(std::string what)
   return NULL;
 }
 
-DrawingObject* LavaVu::findObject(std::string what, int id, bool nodefault)
+DrawingObject* LavaVu::findObject(std::string what, unsigned int id, bool nodefault)
 {
   //Find by name/ID match in all drawing objects
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
@@ -509,7 +509,7 @@ DrawingObject* LavaVu::findObject(std::string what, int id, bool nodefault)
     if (!amodel->objects[i]) continue;
     std::string namekey = amodel->objects[i]->name;
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what || id > 0 && id == amodel->objects[i]->id)
+    if (namekey == what || (id > 0 && id == amodel->objects[i]->id))
     {
       //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
       return amodel->objects[i];
@@ -520,7 +520,7 @@ DrawingObject* LavaVu::findObject(std::string what, int id, bool nodefault)
   return nodefault ? NULL : aobject;
 }
 
-ColourMap* LavaVu::findColourMap(std::string what, int id)
+ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
 {
   //Find by name/ID match in all colour maps
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
@@ -529,7 +529,7 @@ ColourMap* LavaVu::findColourMap(std::string what, int id)
     if (!amodel->colourMaps[i]) continue;
     std::string namekey = amodel->colourMaps[i]->name;
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what || id > 0 && id == amodel->colourMaps[i]->id)
+    if (namekey == what || (id > 0 && id == amodel->colourMaps[i]->id))
     {
       return amodel->colourMaps[i];
     }
@@ -2383,9 +2383,9 @@ std::string LavaVu::helpCommand(std::string cmd)
   {
     help += "Set window background colour\n\n"
             "Usage: background value/white/black/grey/invert\n\n"
-            "value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white\n";
-    "white/black/grey : sets background to specified value\n"
-    "invert (or omitted value) : inverts current background colour\n";
+            "value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white\n"
+            "white/black/grey : sets background to specified value\n"
+            "invert (or omitted value) : inverts current background colour\n";
   }
   else if (cmd == "border")
   {

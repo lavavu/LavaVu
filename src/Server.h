@@ -19,6 +19,8 @@ protected:
 
   static Server* _self;
 
+  OpenGLViewer* viewer;
+
   int port, threads;
   std::string path;
 
@@ -32,8 +34,6 @@ protected:
   bool updated;
   std::map<int,bool> synched; //Client status
   GLubyte *imageCache;
-
-  OpenGLViewer* viewer;
 
 public:
   unsigned char* jpeg;

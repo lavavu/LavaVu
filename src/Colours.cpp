@@ -133,12 +133,11 @@ void Colour_ToArray(Colour colour, float* array)
 
 Colour Colour_FromString(std::string str)
 {
-  char* charPointer;
   float opacity = 1.0;
 
   /* Get Opacity From String */
   /* Opacity must be read in after the ":" of the name of the colour */
-  int pos = str.find(":");
+  unsigned int pos = str.find(":");
   if (pos != std::string::npos)
   {
     std::stringstream ss(str.substr(pos+1));

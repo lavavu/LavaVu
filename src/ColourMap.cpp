@@ -643,7 +643,7 @@ void ColourMap::loadPalette(std::string data)
 
 void ColourMap::print()
 {
-  for (int idx = 0; idx < colours.size(); idx++)
+  for (unsigned int idx = 0; idx < colours.size(); idx++)
   {
     //Colour colour = getFromScaled(colours[idx].position);
     std::cout << idx << " : " << colours[idx] << std::endl;

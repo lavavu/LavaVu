@@ -78,10 +78,10 @@ public:
   static int glyphs;
   static bool wireframe, cullface, lit;
   DrawingObject* draw; //Parent drawing object
-  int count;  //Number of vertices
-  int width;
-  int height;
-  int depth;
+  unsigned int count;  //Number of vertices
+  unsigned int width;
+  unsigned int height;
+  unsigned int depth;
   char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   TextureData* texture;
@@ -156,7 +156,7 @@ public:
   void colourCalibrate();
   void mapToColour(Colour& colour, float value);
   int colourCount();
-  void getColour(Colour& colour, int idx);
+  void getColour(Colour& colour, unsigned int idx);
 };
 
 
@@ -251,11 +251,11 @@ public:
   void localiseColourValues();
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
-  void setState(int index, Shader* prog=NULL);
+  void setState(unsigned int index, Shader* prog=NULL);
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();  //Display saved geometry
   void labels();  //Draw labels
-  std::vector<GeomData*> getAllObjects(int id);
+  std::vector<GeomData*> getAllObjects(unsigned int id);
   GeomData* getObjectStore(DrawingObject* draw);
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
@@ -281,15 +281,15 @@ public:
   int glyphSegments(int def=2);
 
   //Return total vertex count
-  int getVertexCount(DrawingObject* draw)
+  unsigned int getVertexCount(DrawingObject* draw)
   {
-    int count = 0;
-    for (int i=0; i<geom.size(); i++)
+    unsigned int count = 0;
+    for (unsigned int i=0; i<geom.size(); i++)
       count += geom[i]->count;
     return count;
   }
   //Return vertex count of most recently used object
-  int getVertexIdx(DrawingObject* draw)
+  unsigned int getVertexIdx(DrawingObject* draw)
   {
     GeomData* geom = getObjectStore(draw);
     if (geom) return geom->count;
@@ -300,7 +300,7 @@ public:
 class TriSurfaces : public Geometry
 {
   TIndex *tidx;
-  int tricount;
+  unsigned int tricount;
 protected:
   std::vector<Distance> surf_sort;
 public:
@@ -327,7 +327,7 @@ class Lines : public Geometry
 {
   TriSurfaces* tris;
   GLuint vbo;
-  int linetotal;
+  unsigned int linetotal;
   bool all2d;
 public:
   static bool tubes;

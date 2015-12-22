@@ -154,7 +154,7 @@ void OpenGLViewer::init()
   }
 
   //Call open on any output interfaces
-  for (int o=0; o<outputs.size(); o++)
+  for (unsigned int o=0; o<outputs.size(); o++)
     outputs[o]->open(width, height);
 }
 
@@ -271,7 +271,7 @@ void OpenGLViewer::resize(int new_width, int new_height)
     debug_print("%d x %d resized \n", width, height);
 
     //Call resize on any output interfaces
-    for (int o=0; o<outputs.size(); o++)
+    for (unsigned int o=0; o<outputs.size(); o++)
       outputs[o]->resize(width, height);
   }
 }
@@ -291,7 +291,7 @@ void OpenGLViewer::close()
   isopen = false;
 
   //Call close on any output interfaces
-  for (int o=0; o<outputs.size(); o++)
+  for (unsigned int o=0; o<outputs.size(); o++)
     outputs[o]->close();
 }
 
@@ -320,8 +320,6 @@ void OpenGLViewer::display(void)
   bool idling = false;
   while (OpenGLViewer::commands.size() > 0)
   {
-    int w = width;
-    int h = height;
     //Critical section
     pthread_mutex_lock(&cmd_mutex);
     std::string cmd = OpenGLViewer::commands.front();
@@ -353,7 +351,7 @@ void OpenGLViewer::display(void)
   app->display();
 
   //Call display (and idle) on any output interfaces
-  for (int o=0; o<outputs.size(); o++)
+  for (unsigned int o=0; o<outputs.size(); o++)
   {
     if (idling) outputs[o]->idle();
     outputs[o]->display();

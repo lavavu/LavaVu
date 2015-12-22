@@ -210,8 +210,8 @@ public:
   //Interactive command & script processing
   bool parseChar(unsigned char key);
   Geometry* getGeometryType(std::string what);
-  DrawingObject* findObject(std::string what, int id, bool nodefault=false);
-  ColourMap* findColourMap(std::string what, int id);
+  DrawingObject* findObject(std::string what, unsigned int id, bool nodefault=false);
+  ColourMap* findColourMap(std::string what, unsigned int id);
   std::string helpCommand(std::string cmd);
   void record(bool mouse, std::string command);
   void dumpById(unsigned int id);

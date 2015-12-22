@@ -102,7 +102,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
 
   //Read command line switches
   bool queueScript = false;
-  for (int i=0; i<args.size(); i++)
+  for (unsigned int i=0; i<args.size(); i++)
   {
     char x;
     std::istringstream ss(args[i]);
@@ -327,7 +327,7 @@ std::string LavaVu::run(bool persist)
     //Load vis data for each window and write image
     if (!writeimage && !writemovie && dump != lucExportJSON && dump != lucExportJSONP)
       viewer->isopen = true; //Skip open
-    for (int win=0; win < windows.size(); win++)
+    for (unsigned int win=0; win < windows.size(); win++)
     {
       //Load the window data
       loadWindow(win, startstep, true);
@@ -437,10 +437,10 @@ void LavaVu::cacheLoad()
       awin = models[m]->windows[0];
       amodel->loadTimeSteps();
       amodel->now = -1;
-      for (int i=0; i<amodel->timesteps.size(); i++)
+      for (unsigned int i=0; i<amodel->timesteps.size(); i++)
       {
         amodel->setTimeStep(i);
-        if (amodel->now != i) break; //Finished early using loadGeometry caching
+        if (amodel->now != (int)i) break; //Finished early using loadGeometry caching
         debug_print("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
       }
       //Cache final step
@@ -646,7 +646,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
   volume = vobj;
   count++;
 
-  int width, height, bytesPerPixel, bpp;
+  int width, height, bytesPerPixel;
   GLubyte* imageData;
   if (fn.type == "png")
   {
@@ -787,25 +787,23 @@ void LavaVu::createDemoVolume()
   }
 
 #if 1
-  unsigned int size;
   unsigned int width = 256, height = 256, depth = 256, block = 24;
   size_t npixels = width*height;
   int bytesPerPixel = 4;
   GLubyte* imageData;
-  int count = 0;
   npixels = width * height;
   imageData = (GLubyte*)malloc(npixels * bytesPerPixel * sizeof(GLubyte));
   if (imageData)
   {
     bool val;
-    for (int z=0; z<depth; z++)
+    for (unsigned int z=0; z<depth; z++)
     {
       //Add new store for each slice
       //Subsample
       GLuint* bp = (GLuint*)imageData;
-      for (int y=0; y<height; y ++)
+      for (unsigned int y=0; y<height; y ++)
       {
-        for (int x=0; x<width; x ++)
+        for (unsigned int x=0; x<width; x ++)
         {
           assert((bp-(GLuint*)imageData) < width * height);
           if (z/block%2==0 || x/block%2==0 || y/block%2==0)
@@ -977,8 +975,6 @@ void LavaVu::readHeightMap(FilePath& fn)
 
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
-  int seax = ceil(sx / (float)(subsample*50));
-  int seaz = ceil(sz / (float)(subsample*50));
 
   Vec3d vertex;
   vertex[0] = min[0];
@@ -1087,11 +1083,11 @@ void LavaVu::readHeightMap(FilePath& fn)
 void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
 {
   level--;
-  float a_b[3], a_c[3], b_c[3];
-  vectorSubtract(a_b, a, b);
-  vectorSubtract(a_c, a, c);
-  vectorSubtract(b_c, b, c);
-  float max = 100000; //aview->model_size / 100.0;
+  //float a_b[3], a_c[3], b_c[3];
+  //vectorSubtract(a_b, a, b);
+  //vectorSubtract(a_c, a, c);
+  //vectorSubtract(b_c, b, c);
+  //float max = 100000; //aview->model_size / 100.0;
   //printf("%f\n", max); getchar();
 
   if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
@@ -1145,7 +1141,6 @@ void LavaVu::readOBJ(FilePath& fn)
   DrawingObject* tobj = aobject;
   if (!tobj) tobj = addObject(new DrawingObject(fn.base, 0xff888888, NULL, 1.0, "static=1\n"));
 
-  int index = -1;
   for (size_t i = 0; i < shapes.size(); i++)
   {
     //Strip path from name
@@ -1288,7 +1283,7 @@ void LavaVu::readTecplot(FilePath& fn)
     int lcount = 0;
     int pcount = 0;
     int timestep = -1;
-    DrawingObject *pobj, *tobj, *lobj;
+    DrawingObject *tobj;
     while(std::getline(file, line))
     {
       //std::cerr << line << std::endl;
@@ -1523,7 +1518,7 @@ void LavaVu::readTecplot(FilePath& fn)
           count++;
         }
 
-        if (count >= N || coord > 2 && count >= ELS)
+        if (count >= N || (coord > 2 && count >= ELS))
         {
           count = tcount = lcount = pcount = 0;
           coord++;
@@ -1711,8 +1706,8 @@ void LavaVu::reloadShaders()
   Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
   const char* vUniforms[23] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange"};
   Volumes::prog->loadUniforms(vUniforms, 23);
-  const char* vAttribs[2] = {"aVertexPosition"};
-  Volumes::prog->loadAttribs(pAttribs, 2);
+  const char* vAttribs[1] = {"aVertexPosition"};
+  Volumes::prog->loadAttribs(vAttribs, 1);
 }
 
 void LavaVu::resize(int new_width, int new_height)
@@ -2110,7 +2105,7 @@ void LavaVu::drawAxis()
   glPushMatrix();
   glLoadIdentity();
   // Build the viewing frustum - fixed near/far
-  float nearc = 0.01, farc = 10.0, left, right, top, bottom;
+  float nearc = 0.01, farc = 10.0, right, top;
   top = tan(0.5f * DEG2RAD * 45) * nearc;
   right = aspectRatio * top;
   glFrustum(-right, right, -top, top, nearc, farc);
@@ -2159,7 +2154,7 @@ void LavaVu::drawAxis()
   }
   axis->update();
   axis->draw();
-  if (glUseProgram) glUseProgram(0);
+  glUseProgram(0);
 
   //Labels
   glDisable(GL_LIGHTING);
@@ -2228,8 +2223,6 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
 
   float vec[3];
   float length;
-  float rangle;
-
   vectorSubtract(vec, end, start);
 
   vec[0] *= aview->scale[0];
@@ -2252,37 +2245,17 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
   //if (aview->scale[0] != 1.0 || aview->scale[1] != 1.0 || aview->scale[2] != 1.0)
   //   glScalef(1.0/aview->scale[0], 1.0/aview->scale[1], 1.0/aview->scale[2]);
 
-  // Translate to start of ruler
-  //glTranslatef(start[0], start[1], start[2]);
-
-  // Rotate to orient ruler
-  //...Want to align our z-axis to point along vector:
-  // axis of rotation = (z x vec)
-  // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec|
-  // Normalise vector first so OSMesa doesn't have a fit when given a tiny vector as a rotation axis
-  //vectorNormalise(vec);
-  //Angle of rotation = acos(vec . [0,0,1]) = acos(vec[2])
-  //rangle = RAD2DEG * acos(vec[2]);
-  //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
-  //glRotatef(rangle, -vec[1], vec[0], 0);
-
   std::string align = "";
   for (int i = 0; i < ticks; i++)
   {
     // Get tick value
     float scaledPos = i / (float)(ticks-1);
     // Calculate pixel position
-    float pos = length * scaledPos;
     float height = -0.01 * aview->model_size;
-    bool rightAlign = false;
 
     // Draws the tick
-    //glBegin(GL_LINES);
-    //glVertex3f(0, 0, pos);
-
     if (axis == 0)
     {
-      //glVertex3f(0, height, pos);
       float tvec[3] = {0, height, 0};
       float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height * 0.5f, start[2]};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
@@ -2572,7 +2545,7 @@ void LavaVu::drawScene()
   //Restore default state
   glPopAttrib();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  if (glUseProgram) glUseProgram(0);
+  glUseProgram(0);
 }
 
 void LavaVu::loadFile(FilePath& fn)
@@ -2876,7 +2849,7 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
 void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
 {
   //Write new JSON format objects
-  float rotate[4], translate[3], focus[3], stereo[3];
+  float rotate[4], translate[3], focus[3];
   aview->getCamera(rotate, translate, focus);
 
   json::Object exported;
