@@ -71,7 +71,6 @@ public:
   float maximum;
   float range;
   bool log, discrete;
-  float centre;
   bool calibrated;
   bool noValues; //Use position data only
   TextureData* texture;
@@ -79,7 +78,7 @@ public:
   float dimCoeff;
   std::string units;
 
-  ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float centre=HUGE_VAL, float min=0, float max=1, std::string props="");
+  ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float min=0, float max=1, std::string props="");
   ~ColourMap()
   {
     if (texture) delete texture;

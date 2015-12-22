@@ -46,9 +46,9 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 }
 
 ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete,
-                     float centre, float min, float max, std::string props)
+                     float min, float max, std::string props)
   : id(id), minimum(min), maximum(max), log(log), discrete(discrete),
-    centre(centre), calibrated(false), noValues(false), dimCoeff(1.0), units("")
+    calibrated(false), noValues(false), dimCoeff(1.0), units("")
 {
   if (id == 0)
     this->id = ++ColourMap::lastid;
