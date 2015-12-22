@@ -1195,14 +1195,13 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
 
 void Geometry::drawCuboid(DrawingObject *draw, float pos[3], float width, float height, float depth, Quaternion& rot)
 {
-  float min[3] = {-0.5f * width, -0.5f * height, -0.5f * depth};
-  float max[3] = {min[0] + width, min[1] + height, min[2] + depth};
+  float min[3] = {pos[0] + -0.5f * width,  pos[1] + -0.5f * height,  pos[2] + -0.5f * depth};
+  float max[3] = {pos[0] + min[0] + width, pos[1] + min[1] + height, pos[2] + min[2] + depth};
   drawCuboid(draw, min, max, rot);
 }
 
 void Geometry::drawCuboid(DrawingObject *draw, float min[3], float max[3], Quaternion& rot, bool quads)
 {
-  float pos[3] = {min[0] + 0.5f*(max[0] - min[0]), min[1] + 0.5f*(max[1] - min[1]), min[2] + 0.5f*(max[2] - min[2])};
   //Corner vertices
   Vec3d verts[8] =
   {
@@ -1217,12 +1216,9 @@ void Geometry::drawCuboid(DrawingObject *draw, float min[3], float max[3], Quate
   };
 
   for (int i=0; i<8; i++)
-  {
     /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
     verts[i] = rot * verts[i];
-    verts[i] += Vec3d(pos);
     //geom->checkPointMinMax(verts[i].ref());
-  }
 
   if (quads)
   {
