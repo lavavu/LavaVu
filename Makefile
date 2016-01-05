@@ -101,7 +101,7 @@ install: paths $(PROGRAM)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(PREFIX)/html
 	cp -R src/html/*.css $(PREFIX)/html
-	./build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
+	/bin/bash build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
 
 paths:
 	mkdir -p $(OPATH)
