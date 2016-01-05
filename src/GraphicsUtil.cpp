@@ -157,7 +157,22 @@ void jsonParseProperty(std::string& data, json::Object& object)
 
     try
     {
-      if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
+      //Parse simple increments and decrements
+      int end = key.length()-1;
+      char prev = key.at(end);
+      if (prev == '+' || prev == '-')
+      {
+        std::string mkey = key.substr(0,end);
+        std::stringstream ss(value);
+        float parsedval;
+        ss >> parsedval;
+        if (prev == '+')
+          object[mkey] = object[mkey].ToFloat() + parsedval;
+        else if (prev == '-')
+          object[mkey] = object[mkey].ToFloat() - parsedval;
+
+      }
+      else if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
       {
         //This JSON parser only accepts objects or arrays as base element
         std::string nvalue = "[" + value + "]";
