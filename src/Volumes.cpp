@@ -103,6 +103,10 @@ void Volumes::update()
 
   Geometry::update();
 
+  int maxtex;
+  glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &maxtex);
+  debug_print("Max 3D texture size %d\n", maxtex);
+
   //Count slices in each volume
   //printf("Total slices: %d\n", geom.size());
   if (!geom.size()) return;
@@ -188,6 +192,10 @@ void Volumes::update()
         if (!geom[i]->height)
           //No height? Calculate from values data (assumes float data (4 bpv))
           geom[i]->height = geom[i]->colourValue.size() / geom[i]->width; // * 4;
+
+        assert(geom[i]->width <= maxtex);
+        assert(geom[i]->height <= maxtex);
+        assert(slices[current->id] <= maxtex);
 
         //Init/allocate/bind texture
         unsigned int bpv = 0;

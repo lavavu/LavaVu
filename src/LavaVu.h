@@ -142,6 +142,7 @@ public:
   void readRawVolume(FilePath& fn);
   void readXrwVolume(FilePath& fn);
   void readVolumeSlice(FilePath& fn);
+  void readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel, int outChannels);
   void readVolumeTIFF(FilePath& fn);
   void createDemoModel();
   void createDemoVolume();
