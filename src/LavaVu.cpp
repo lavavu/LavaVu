@@ -625,29 +625,15 @@ void LavaVu::readXrwVolume(FilePath& fn)
 void LavaVu::readVolumeSlice(FilePath& fn)
 {
   //png/jpg data
-
-  //Create volume object, or if static volume object exists, use it
-  static int count = 0;
-  static std::string path = "";
-  DrawingObject *vobj = volume;
-  if (!vobj || path != fn.path)
-  {
-    path = fn.path; //Store the path, multiple volumes can be loaded if slices in different folders
-    vobj = addObject(new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "static=1"));
-    //Define the bounding cube by corners
-    Model::volumes->add(vobj);
-    Model::volumes->read(vobj, 1, lucVertexData, volmin);
-    Model::volumes->read(vobj, 1, lucVertexData, volmax);
-  }
-  else
-    Model::volumes->add(vobj);
-
-  //Save static volume for loading multiple slices
-  volume = vobj;
-  count++;
-
   int width, height, bytesPerPixel;
   GLubyte* imageData;
+  static std::string path = "";
+  if (!volume || path != fn.path)
+  {
+    path = fn.path; //Store the path, multiple volumes can be loaded if slices in different folders
+    volume = NULL;  //Ensure new volume created
+  }
+
   if (fn.type == "png")
   {
     GLuint uwidth, uheight, ubpp;
@@ -667,6 +653,43 @@ void LavaVu::readVolumeSlice(FilePath& fn)
 
   if (imageData)
   {
+    readVolumeSlice(fn.base, imageData, width, height, bytesPerPixel, 1);
+    delete[] imageData;
+  }
+  else
+    debug_print("Slice load failed: %s\n", fn.full.c_str());
+}
+
+void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel, int outChannels)
+{
+  //Create volume object, or if static volume object exists, use it
+  static int count = 0;
+  DrawingObject *vobj = volume;
+  if (!vobj)
+  {
+    vobj = addObject(new DrawingObject(name, 0xff000000, NULL, 1.0, "static=1"));
+    //Scale geometry by input scaling factor
+    for (int i=0; i<3; i++)
+    {
+      volmin[i] *= inscale[i];
+      volmax[i] *= inscale[i];
+      if (infostream != NULL)
+        std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
+    }
+    //Define the bounding cube by corners
+    Model::volumes->add(vobj);
+    Model::volumes->read(vobj, 1, lucVertexData, volmin);
+    Model::volumes->read(vobj, 1, lucVertexData, volmax);
+  }
+  else
+    Model::volumes->add(vobj);
+
+  //Save static volume for loading multiple slices
+  volume = vobj;
+  count++;
+
+  if (outChannels == 1)
+  {
     //Convert to luminance (just using red channel now, other options in future)
     GLubyte* luminance = new GLubyte[width*height];
     for (int y=0; y<height; y++)
@@ -680,37 +703,17 @@ void LavaVu::readVolumeSlice(FilePath& fn)
     //std::cout << "SLICE LOAD: " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
 
     delete[] luminance;
-    delete[] imageData;
   }
   else
-    debug_print("Slice load failed: %s\n", fn.full.c_str());
+  {
+    Model::volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
+    std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+  }
 }
 
 void LavaVu::readVolumeTIFF(FilePath& fn)
 {
 #ifdef HAVE_LIBTIFF
-  //Create volume object, or if static volume object exists, use it
-  DrawingObject *vobj = volume;
-  if (!vobj)
-  {
-    vobj = new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "");
-    addObject(vobj);
-    //Scale geometry by input scaling factor
-    for (int i=0; i<3; i++)
-    {
-      volmin[i] *= inscale[i];
-      volmax[i] *= inscale[i];
-      if (infostream != NULL)
-        std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
-    }
-    //Define the bounding cube by corners
-    Model::volumes->read(vobj, 1, lucVertexData, volmin);
-    Model::volumes->read(vobj, 1, lucVertexData, volmax);
-  }
-
-  unsigned int size;
-  unsigned int floatcount;
-
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)
   {
@@ -745,11 +748,15 @@ void LavaVu::readVolumeTIFF(FilePath& fn)
             }
           }
 
-          if (count > 0) Model::volumes->add(vobj);
-          //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, count);
-          Model::volumes->read(vobj, w*h, lucRGBAData, buffer, w, h); //, count);
-          //std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
-          std::cout << "SLICE LOAD " << count << " : " << w << "," << h << " bpp: " << bytesPerPixel << std::endl;
+          //readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel, 4);
+          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel, 1);
+          /*
+                         if (count > 0) Model::volumes->add(vobj);
+                         //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, count);
+                         Model::volumes->read(vobj, w*h, lucRGBAData, buffer, w, h); //, count);
+                         //std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+                         std::cout << "SLICE LOAD " << count << " : " << w << "," << h << " bpp: " << bytesPerPixel << std::endl;
+          */
         }
         count++;
       }
