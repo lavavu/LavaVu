@@ -53,9 +53,13 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
     viewer->button = btn;
     viewer->last_x = x;
     viewer->last_y = y;
+    //Flag rotation in progress
+    if (btn == LeftButton && !viewer->keyState.alt && !viewer->keyState.shift)
+        aview->rotating = true;
   }
   else
   {
+    aview->rotating = false;
     aview->inertia(false); //Clear inertia
 
     //switch (viewer->button)
