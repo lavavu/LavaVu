@@ -74,6 +74,7 @@ protected:
   int volres[3];
   float volmin[3], volmax[3];
   float volss[3], inscale[3]; //Scaling as data loaded, only for volumes currently
+  int volchannels;
   DrawingObject *volume;
   int repeat;
 #ifdef HAVE_LIBAVCODEC
