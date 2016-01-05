@@ -675,6 +675,12 @@ bool LavaVu::parseCommands(std::string cmd)
     printMessage("Using local shaders");
     return false;
   }
+  else if (parsed.has(ival, "volchannels"))
+  {
+    volchannels = ival;
+    printMessage("Volume output channels set to %d", volchannels);
+    return false;
+  }
   else if (parsed.exists("volres"))
   {
     parsed.has(volres[0], "volres", 0);

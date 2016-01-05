@@ -67,6 +67,7 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
   volss[0] = volss[1] = volss[2] = 1.0;
   volmin[0] = volmin[1] = volmin[2] = -1;
   volmax[0] = volmax[1] = volmax[2] = 1;
+  volchannels = 1;
   volume = NULL;
   inscale[0] = inscale[1] = inscale[2] = 1.0;
 
@@ -653,7 +654,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
 
   if (imageData)
   {
-    readVolumeSlice(fn.base, imageData, width, height, bytesPerPixel, 1);
+    readVolumeSlice(fn.base, imageData, width, height, bytesPerPixel, volchannels);
     delete[] imageData;
   }
   else
@@ -748,15 +749,7 @@ void LavaVu::readVolumeTIFF(FilePath& fn)
             }
           }
 
-          //readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel, 4);
-          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel, 1);
-          /*
-                         if (count > 0) Model::volumes->add(vobj);
-                         //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, count);
-                         Model::volumes->read(vobj, w*h, lucRGBAData, buffer, w, h); //, count);
-                         //std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
-                         std::cout << "SLICE LOAD " << count << " : " << w << "," << h << " bpp: " << bytesPerPixel << std::endl;
-          */
+          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel, volchannels);
         }
         count++;
       }
