@@ -456,6 +456,9 @@ void Geometry::setState(unsigned int index, Shader* prog)
       glShadeModel(GL_FLAT);
     else
       glShadeModel(GL_SMOOTH);
+
+    //Disable transparent surfaces whilst rotating
+    if (view->rotating) glDisable(GL_BLEND);
   }
   else
   {
@@ -469,7 +472,7 @@ void Geometry::setState(unsigned int index, Shader* prog)
     glEnable(GL_DEPTH_TEST);
   else
     glDisable(GL_DEPTH_TEST);
-
+  
   if (!lighting)
     glDisable(GL_LIGHTING);
   else

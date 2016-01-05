@@ -44,7 +44,7 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
   fov = 45.0f; //60.0     //Field of view - important to adjust for stereo viewing
   focal_length = focal_length_adj = 0.0; //Stereo zero parallex distance adjustment
   scene_shift = 0.0;      //Stereo projection shift
-  rotated = sort = false;
+  rotated = rotating = sort = false;
 
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width

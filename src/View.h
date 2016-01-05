@@ -60,6 +60,7 @@ public:
   bool filtered; //Filter objects in view by object list
   bool scaled;
   bool rotated;  //Flags whether view has rotated since last redraw
+  bool rotating;  //Flags whether view is currently being rotated
   bool sort;
 
   // view params
