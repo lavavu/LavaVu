@@ -1,6 +1,7 @@
 #ifndef Shaders__
 #define Shaders__
 
+#include "Util.h"
 #include "GraphicsUtil.h"
 
 class Shader

@@ -33,7 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#include "../GraphicsUtil.h"
+#include "../Util.h"
 #include "../LavaVu.h"
 #include "../Server.h"
 #include "../OpenGLViewer.h"

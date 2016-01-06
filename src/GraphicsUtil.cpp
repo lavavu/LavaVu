@@ -51,12 +51,7 @@
 #include <gl2ps.h>
 #endif
 
-FILE* infostream = NULL;
-
 Colour fontColour;
-
-long FloatValues::membytes = 0;
-long FloatValues::mempeak = 0;
 
 unsigned int fontbase = 0, fonttexture;
 int fontcharset = FONT_DEFAULT;
@@ -96,111 +91,6 @@ void getCoordRange(float* min, float* max, float* dims)
   {
     dims[i] = max[i] - min[i];
   }
-}
-
-std::string GetBinaryPath(const char* argv0, const char* progname)
-{
-  //Try the PATH env var if argv0 contains no path info
-  FilePath xpath;
-  if (!argv0 || strlen(argv0) == 0 || strcmp(argv0, progname) == 0)
-  {
-    std::stringstream path(getenv("PATH"));
-    std::string line;
-    while (std::getline(path, line, ':'))
-    {
-      std::stringstream pathentry;
-      pathentry << line << "/" << argv0;
-      std::string pstr = pathentry.str();
-      const char* pathstr = pstr.c_str();
-#ifdef _WIN32
-      if (strstr(pathstr, ".exe"))
-#else
-      if (access(pathstr, X_OK) == 0)
-#endif
-      {
-        xpath.parse(pathstr);
-        break;
-      }
-    }
-  }
-  else
-  {
-    xpath.parse(argv0);
-  }
-  return xpath.path;
-}
-
-//Parse multi-line string
-void jsonParseProperties(std::string& properties, json::Object& object)
-{
-  //Process all lines
-  std::stringstream ss(properties);
-  std::string line;
-  while (std::getline(ss, line))
-    jsonParseProperty(line, object);
-}
-
-//Property containers now using json
-void jsonParseProperty(std::string& data, json::Object& object)
-{
-  //Parse a key=value property where value is a json object
-  std::string key, value;
-  std::istringstream iss(data);
-  std::getline(iss, key, '=');
-  std::getline(iss, value, '=');
-
-  if (value.length() > 0)
-  {
-    //Ignore case
-    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-    //std::cerr << "Key " << key << " == " << value << std::endl;
-
-    try
-    {
-      //Parse simple increments and decrements
-      int end = key.length()-1;
-      char prev = key.at(end);
-      if (prev == '+' || prev == '-')
-      {
-        std::string mkey = key.substr(0,end);
-        std::stringstream ss(value);
-        float parsedval;
-        ss >> parsedval;
-        if (prev == '+')
-          object[mkey] = object[mkey].ToFloat() + parsedval;
-        else if (prev == '-')
-          object[mkey] = object[mkey].ToFloat() - parsedval;
-
-      }
-      else if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
-      {
-        //This JSON parser only accepts objects or arrays as base element
-        std::string nvalue = "[" + value + "]";
-        object[key] = json::Deserialize(nvalue).ToArray()[0];
-      }
-      else
-      {
-        object[key] = json::Deserialize(value);
-      }
-    }
-    catch (std::exception& e)
-    {
-      //std::cerr << "[" << key << "] " << data << " : " << e.what();
-      //Treat as a string value
-      object[key] = json::Value(value);
-    }
-  }
-}
-
-void debug_print(const char *fmt, ...)
-{
-  if (fmt == NULL || infostream == NULL) return;
-  va_list args;
-  va_start(args, fmt);
-  //vprintf(fmt, args);
-  vfprintf(infostream, fmt, args);
-  //debug_print("\n");
-  va_end(args);
 }
 
 const char* glErrorString(GLenum errorCode)
