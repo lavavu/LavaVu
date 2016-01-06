@@ -36,6 +36,7 @@
 #ifndef ColourMap__
 #define ColourMap__
 
+#include "Util.h"
 #include "GraphicsUtil.h"
 
 #define PALETTE_TEX_SIZE 4096

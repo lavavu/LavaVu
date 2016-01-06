@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "Server.h"
+#include "Util.h"
 #if defined _WIN32
 #include <SDL/SDL_syswm.h>
 #endif

@@ -33,6 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+#include "Util.h"
 #include "GraphicsUtil.h"
 #include "DrawingObject.h"
 #include "ColourMap.h"
