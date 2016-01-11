@@ -1722,11 +1722,17 @@ Viewer.prototype.toString = function() {
 }
 
 Viewer.prototype.exportFile = function() {
+  
   if (server) {
-     //Dump history to script
-     //sendCommand('history history.script');
-     //window.open('/history');
+     var scriptname = "exported.script";
+     if (confirm('Overwrite init.script?')) scriptname = "init.script";
+
+     //Clear history before all saved to script
+     //sendCommand('clearhistory');
+     
      cmdlog = '';
+     sendCommand('' + this.getRotationString());
+     sendCommand('' + this.getTranslationString());
      this.setProperties();
      cmdlog += '\n#Object properties...\n';
      for (var id in vis.objects) {
@@ -1736,6 +1742,11 @@ Viewer.prototype.exportFile = function() {
      }
 
      window.open('data:text/plain;base64,' + window.btoa(cmdlog));
+
+     //Also save in script on disk
+     sendCommand('history ' + scriptname);
+     //window.open('/history');
+
      cmdlog = null;
 
   } else {
