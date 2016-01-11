@@ -261,6 +261,7 @@ public:
 //Property containers now using json
 void jsonParseProperties(std::string& properties, json::Object& object);
 void jsonParseProperty(std::string& data, json::Object& object);
+void jsonMerge(json::Object& lhs, json::Object rhs);
 
 //Utility class for parsing property,value strings
 typedef std::vector<std::string> prop_values;

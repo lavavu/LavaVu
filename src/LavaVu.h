@@ -220,6 +220,7 @@ public:
   void dumpById(unsigned int id);
   void jsonWriteFile(unsigned int id=0, bool jsonp=false);
   void jsonWrite(std::ostream& json, unsigned int id=0, bool objdata=false);
+  void jsonRead(std::string json);
 };
 
 #define HELP_MESSAGE "\

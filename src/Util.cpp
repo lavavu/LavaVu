@@ -136,6 +136,14 @@ void jsonParseProperty(std::string& data, json::Object& object)
   }
 }
 
+void jsonMerge(json::Object& lhs, json::Object rhs)
+{
+  //Merge: keep existing values, replace any imported
+  json::Object::ValueMap::iterator it;
+  for (it = rhs.begin() ; it != rhs.end(); ++it)
+    lhs[it->first] = it->second;
+}
+
 void debug_print(const char *fmt, ...)
 {
   if (fmt == NULL || infostream == NULL) return;

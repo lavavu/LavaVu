@@ -2577,6 +2577,10 @@ void LavaVu::loadFile(FilePath& fn)
   {
     parseCommands("script " + fn.full);
   }
+  else if (fn.type == "json")
+  {
+    parseCommands("jsonscript " + fn.full);
+  }
 
   //Other files require an existing model
   if (!amodel) defaultModel();
@@ -2885,7 +2889,7 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
 
   options["near"] = aview->near_clip;
   options["far"] = aview->far_clip;
-  options["orentation"] = aview->orientation;
+  options["orientation"] = aview->orientation;
   options["background"] = awin->background.value;
 
   for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
@@ -2982,6 +2986,77 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
   exported["objects"] = objects;
 
   json << json::Serialize(exported);
+}
+
+void LavaVu::jsonRead(std::string json)
+{
+  //Read new JSON format objects
+  json::Object exported = json::Deserialize(json);
+  Geometry::properties = exported["properties"];
+  json::Object options = exported["options"];
+  jsonMerge(aview->properties, exported["options"]);
+
+  Model::points->scale = aview->properties["pointScale"];
+  Model::points->pointType = aview->properties["pointType"];
+  GeomData::opacity = aview->properties["opacity"];
+
+  //TODO: Fix view to use all these properties driectly
+  json::Array rot, trans, foc, scale, min, max;
+  rot = aview->properties["rotate"];
+  trans = aview->properties["translate"];
+  foc = aview->properties["focus"];
+  scale = aview->properties["scale"];
+  //min = aview->properties["min"];
+  //max = aview->properties["max"];
+  aview->setRotation(rot[0], rot[1], rot[2], rot[3]);
+  aview->setTranslation(trans[0], trans[1], trans[2]);
+  aview->focus(foc[0], foc[1], foc[2]);
+  aview->setScale(scale[0], scale[1], scale[2]);
+  //aview->init(false, newmin, newmax);
+  aview->near_clip = aview->properties["near"];
+  aview->far_clip = aview->properties["far"];
+  aview->orientation = aview->properties["orientation"];
+  awin->background = parseRGBA(aview->properties["background"]);
+
+  // Import colourmaps (change only if existing)
+  json::Array colourmaps = exported["colourmaps"];
+  for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
+  {
+    for (unsigned int j=0; j < colourmaps.size(); j++)
+    {
+      json::Object cmap = colourmaps[j];
+      if (cmap["id"].ToInt(0) == amodel->colourMaps[i]->id)
+      {
+        amodel->colourMaps[i]->minimum = cmap["minimum"];
+        amodel->colourMaps[i]->maximum = cmap["maximum"];
+        amodel->colourMaps[i]->log = cmap["log"];
+        json::Array colours = cmap["colours"];
+        //Replace colours
+        amodel->colourMaps[i]->colours.clear();
+        for (unsigned int c=0; c < colours.size(); c++)
+        {
+          json::Object colour = colours[c];
+          Colour newcolour = parseRGBA(colour["colour"]);
+          amodel->colourMaps[i]->add(newcolour.value, colour["position"]);
+        }
+      }
+    }
+  }
+
+  //Import objects (change properties only if existing)
+  json::Array objects = exported["objects"];
+  for (unsigned int i=0; i < amodel->objects.size(); i++)
+  {
+    for (unsigned int j=0; j < objects.size(); j++)
+    {
+      json::Object obj = objects[j];
+      if (obj["id"].ToInt(0) == amodel->objects[i]->id)
+      {
+        jsonMerge(amodel->objects[i]->properties, obj);
+        //if (colourmap >= 0) obj["colourmap"] = colourmap;
+      }
+    }
+  }
 }
 
 //Data request from attached apps

@@ -614,6 +614,24 @@ bool LavaVu::parseCommands(std::string cmd)
     }
     return false;
   }
+  else if (parsed.exists("jsonscript"))
+  {
+    std::string scriptfile = parsed["jsonscript"];
+    std::ifstream file(scriptfile.c_str(), std::ios::in);
+    if (file.is_open())
+    {
+      printMessage("Running script: %s", scriptfile.c_str());
+      std::stringstream buffer;
+      buffer << file.rdbuf();
+      jsonRead(buffer.str());
+      file.close();
+    }
+    else
+    {
+      printMessage("Unable to open file: %s", scriptfile.c_str());
+    }
+    return false;
+  }
   else if (parsed.has(ival, "cache"))
   {
     TimeStep::cachesize = ival;
@@ -1952,13 +1970,9 @@ bool LavaVu::parseCommands(std::string cmd)
       printMessage("Go to timestep %d", amodel->step());
       resetViews(); //Update the viewports
     }
-    else if (cmd.at(0) == '#')
-    {
-      parseCommands("select " + cmd.substr(1));
-    }
     else if (parsePropertySet(cmd))
     {
-      return true; //Redisplay after prop change
+      redisplay = true; //Redisplay after prop change
     }
     else
     {
