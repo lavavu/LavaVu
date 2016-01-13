@@ -2087,6 +2087,7 @@ void LavaVu::drawAxis()
 {
   bool doaxis = aview->properties["axis"].ToBool(true);
   float axislen = aview->properties["axislength"].ToFloat(0.1);
+  infostream = NULL;
 
   if (!doaxis) return;
   float length = axislen;
@@ -2175,11 +2176,15 @@ void LavaVu::drawAxis()
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
   GL_Error_Check;
+
+  //Restore info/error stream
+  if (verbose && !output) infostream = stderr;
 }
 
 void LavaVu::drawRulers()
 {
   if (!aview->properties["rulers"].ToBool(false)) return;
+  infostream = NULL;
   static DrawingObject* obj = NULL;
   rulers->clear();
   rulers->setView(aview);
@@ -2213,6 +2218,9 @@ void LavaVu::drawRulers()
 
   rulers->update();
   rulers->draw();
+
+  //Restore info/error stream
+  if (verbose && !output) infostream = stderr;
 }
 
 void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
@@ -2298,6 +2306,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
 void LavaVu::drawBorder()
 {
   static DrawingObject* obj = NULL;
+  infostream = NULL;
   border->clear();
   border->setView(aview);
   Colour borderColour = Colour_FromJson(aview->properties, "bordercolour", 127, 127, 127, 255);
@@ -2343,6 +2352,9 @@ void LavaVu::drawBorder()
 
   border->update();
   border->draw();
+
+  //Restore info/error stream
+  if (verbose && !output) infostream = stderr;
 }
 
 GeomData* LavaVu::getGeometry(DrawingObject* obj)
