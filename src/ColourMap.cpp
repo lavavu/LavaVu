@@ -229,8 +229,8 @@ void ColourMap::calibrate(float min, float max)
 void ColourMap::calibrate(FloatValues& dataValues)
 {
   calibrate(dataValues.minimum, dataValues.maximum);
-  dimCoeff = dataValues.dimCoeff;
-  units = dataValues.units;
+  //dimCoeff = dataValues.dimCoeff;
+  //units = dataValues.units;
 }
 
 void ColourMap::calibrate()

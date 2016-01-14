@@ -39,8 +39,8 @@
 
 FILE* infostream = NULL;
 
-long FloatValues::membytes = 0;
-long FloatValues::mempeak = 0;
+long membytes__ = 0;
+long mempeak__ = 0;
 
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {

@@ -104,35 +104,38 @@ public:
   FloatValues redValue;
   FloatValues greenValue;
   FloatValues blueValue;
-  FloatValues indices;
+  UIntValues indices;
   FloatValues xWidths;
   FloatValues yHeights;
   FloatValues zLengths;
-  FloatValues colours;
+  UIntValues colours;
   Coord2DValues texCoords;
   FloatValues sizes;
 
-  std::vector<FloatValues*> data;
+  std::vector<DataContainer*> data;
+  std::vector<FloatValues*> valuedata;
 
   GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), labelptr(NULL), opaque(false)
   {
     //opaque = false; //true; //Always true for now (need to check colourmap, opacity and global opacity)
     data.resize(lucMaxDataType+1);
+    valuedata.resize(lucMaxDataType+1);
     data[lucVertexData] = &vertices;
     data[lucVectorData] = &vectors;
     data[lucNormalData] = &normals;
-    data[lucColourValueData] = &colourValue;
-    data[lucOpacityValueData] = &opacityValue;
-    data[lucRedValueData] = &redValue;
-    data[lucGreenValueData] = &greenValue;
-    data[lucBlueValueData] = &blueValue;
     data[lucIndexData] = &indices;
-    data[lucXWidthData] = &xWidths;
-    data[lucYHeightData] = &yHeights;
-    data[lucZLengthData] = &zLengths;
     data[lucRGBAData] = &colours;
     data[lucTexCoordData] = &texCoords;
-    data[lucSizeData] = &sizes;
+    //Scalar value only data
+    data[lucColourValueData] = valuedata[lucColourValueData] = &colourValue;
+    data[lucOpacityValueData] = valuedata[lucOpacityValueData] = &opacityValue;
+    data[lucRedValueData] = valuedata[lucRedValueData] = &redValue;
+    data[lucGreenValueData] = valuedata[lucGreenValueData] = &greenValue;
+    data[lucBlueValueData] = valuedata[lucBlueValueData] = &blueValue;
+    data[lucXWidthData] = valuedata[lucXWidthData] = &xWidths;
+    data[lucYHeightData] = valuedata[lucYHeightData] = &yHeights;
+    data[lucZLengthData] = valuedata[lucZLengthData] = &zLengths;
+    data[lucSizeData] = valuedata[lucSizeData] = &sizes;
 
     texture = NULL;
 
@@ -261,7 +264,7 @@ public:
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
-  void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, float dimFactor=1.0, const char* units="");
+  void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum);
   void label(DrawingObject* draw, const char* labels);
   void print();
   int size()

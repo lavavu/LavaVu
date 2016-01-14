@@ -107,29 +107,51 @@ public:
 std::string GetBinaryPath(const char* argv0, const char* progname);
 
 //General purpose geometry data store types...
-typedef union
-{
-  float val;
-  unsigned int idx;
-} floatidx; /* For index values stored in float container */
+extern long membytes__;
+extern long mempeak__;
 
-class FloatValues
+class DataContainer
 {
 public:
-  std::vector<float> value;
   unsigned int next;
   float minimum;
   float maximum;
   int datasize;
-  float dimCoeff;   //For scaling
-  std::string units;      //Scaling units
   unsigned int offset;
   bool generated;
-  static long membytes;  //Track memory usage
-  static long mempeak;
 
-  FloatValues() : next(0), minimum(0), maximum(0), datasize(1), dimCoeff(1.0), offset(0), generated(false) {}
-  ~FloatValues()
+  DataContainer() : next(0), minimum(0), maximum(0), datasize(1), offset(0), generated(false) {}
+
+  //Pure virtual methods
+  virtual void read(unsigned int n, const void* data) = 0;
+  virtual void resize(unsigned long size) = 0;
+  virtual void clear() = 0;
+  virtual void setOffset() = 0;
+  virtual void erase(int start, int end) = 0;
+  virtual void* ref(unsigned i) = 0;
+
+  void setup(float min, float max)
+  {
+    //if (min < minimum) minimum = min;
+    //if (max > maximum) maximum = max;
+    minimum = min;
+    maximum = max;
+  }
+
+  unsigned int size()
+  {
+    return next;
+  }
+
+};
+
+template <class dtype> class DataValues : public DataContainer
+{
+public:
+  std::vector<dtype> value;
+
+  DataValues() {}
+  ~DataValues()
   {
     if (value.size()) clear();
   }
@@ -144,33 +166,20 @@ public:
       if (size < oldsize*2) size = oldsize*2;
       resize(size);
     }
-    memcpy(&value[next], data, n * sizeof(float));
+    memcpy(&value[next], data, n * sizeof(dtype));
     next += n;
   }
 
-  void setup(float min, float max, float dimFactor, const char* units)
-  {
-    //if (min < minimum) minimum = min;
-    //if (max > maximum) maximum = max;
-    minimum = min;
-    maximum = max;
-    dimCoeff = dimFactor;
-    this->units = std::string(units ? units : "");
-  }
-
-  inline float operator[] (unsigned i)
+  inline dtype operator[] (unsigned i)
   {
     //if (i >= value.size())
     //   abort_program("Out of bounds %d -- %d (max idx %d)\n", i, i, value.size()-1);
     return value[i];
   }
 
-  Colour toColour(unsigned i)
+  void* ref (unsigned i)
   {
-    //Interpret a float value as RGBA colour
-    Colour c;
-    c.fvalue = value[i];
-    return c;
+    return (void*)&value[i];
   }
 
   void resize(unsigned long size)
@@ -179,23 +188,19 @@ public:
     if (oldsize < size)
     {
       value.resize(size);
-      FloatValues::membytes += 4*(size-oldsize);
-      if (FloatValues::membytes > FloatValues::mempeak) FloatValues::mempeak = FloatValues::membytes;
+      membytes__ += sizeof(dtype)*(size-oldsize);
+      if (membytes__ > mempeak__) mempeak__ = membytes__;
       //printf("============== MEMORY total %.3f mb, added %d ==============\n", FloatValues::membytes/1000000.0f, 4*(size-oldsize));
     }
   }
 
-  unsigned int size()
-  {
-    return next;
-  }
   void clear()
   {
     int count = value.size();
     if (count == 0) return;
     value.clear();
     offset = 0;
-    FloatValues::membytes -= 4*count;
+    membytes__ -= sizeof(dtype)*count;
     next = 0;
     //if (bytes) printf("============== MEMORY total %.3f mb, removed %d ==============\n", FloatValues::membytes/1000000.0f, bytes);
   }
@@ -211,9 +216,21 @@ public:
     //erase elements:
     value.erase(value.begin()+start, value.begin()+end);
     if (offset > 0) offset -= start;
-    FloatValues::membytes -= 4*(end - start);
+    membytes__ -= sizeof(dtype)*(end - start);
     //printf("============== MEMORY total %.3f mb, erased %d ==============\n", FloatValues::membytes/1000000.0f, (end - start));
   }
+};
+
+class FloatValues : public DataValues<float>
+{
+ public:
+  FloatValues() {}
+};
+
+class UIntValues : public DataValues<unsigned int>
+{
+ public:
+  UIntValues() {}
 };
 
 class Coord3DValues : public FloatValues
