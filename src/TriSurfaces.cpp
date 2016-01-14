@@ -145,18 +145,18 @@ void TriSurfaces::loadMesh()
     //Has index data, simply load the triangles
     if (geom[index]->indices.size() > 0)
     {
-      floatidx i1, i2, i3;
+      unsigned i1, i2, i3;
       for (unsigned int j=0; j < geom[index]->indices.size(); j += 3)
       {
-        i1.val = geom[index]->indices[j];
-        i2.val = geom[index]->indices[j+1];
-        i3.val = geom[index]->indices[j+2];
+        i1 = geom[index]->indices[j];
+        i2 = geom[index]->indices[j+1];
+        i3 = geom[index]->indices[j+2];
 
         TriSurfaces::setTriangle(index,
-                                 geom[index]->vertices[i1.idx],
-                                 geom[index]->vertices[i2.idx],
-                                 geom[index]->vertices[i3.idx],
-                                 i1.idx + voffset, i2.idx + voffset, i3.idx + voffset
+                                 geom[index]->vertices[i1],
+                                 geom[index]->vertices[i2],
+                                 geom[index]->vertices[i3],
+                                 i1 + voffset, i2 + voffset, i3 + voffset
                                 );
       }
 
@@ -227,7 +227,7 @@ void TriSurfaces::loadMesh()
       std::vector<Vec3d> vertices;
       geom[index]->vertices = Coord3DValues();
       geom[index]->normals = Coord3DValues();
-      geom[index]->indices = FloatValues();
+      geom[index]->indices = UIntValues();
       int i = 0;
       geom[index]->count = 0;
       for (unsigned int v=0; v<verts.size(); v++)

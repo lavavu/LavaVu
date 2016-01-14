@@ -296,7 +296,7 @@ LavaVu::~LavaVu()
   for (unsigned int i=0; i < models.size(); i++)
     delete models[i];
 
-  debug_print("Peak geometry memory usage: %.3f mb\n", FloatValues::mempeak/1000000.0f);
+  debug_print("Peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
 }
 
 std::string LavaVu::run(bool persist)

@@ -143,7 +143,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     if (colours.size() == 1) idx = 0;  //Single colour only provided
     if (idx >= colours.size()) idx = colours.size() - 1;
     //assert(idx < colours.size());
-    colour = colours.toColour(idx);
+    colour.value = colours[idx];
   }
   else
   {
@@ -304,16 +304,16 @@ void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
           el["size"] = dsizes[data_type];
           el["count"] = (int)geom[index]->data[data_type]->size();
           if (encode)
-            el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(&geom[index]->data[data_type]->value[0]), length);
+            el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(geom[index]->data[data_type]->ref(0)), length);
           else
           {
             json::Array values;
             for (unsigned int j=0; j<geom[index]->data[data_type]->size(); j++)
             {
               if (data_type == lucIndexData || data_type == lucRGBAData)
-                values.push_back((int)reinterpret_cast<unsigned int&>(geom[index]->data[data_type]->value[j]));
+                values.push_back((int)*reinterpret_cast<unsigned int*>(geom[index]->data[data_type]->ref(j)));
               else
-                values.push_back(geom[index]->data[data_type]->value[j]);
+                values.push_back((float)*reinterpret_cast<float*>(geom[index]->data[data_type]->ref(j)));
             }
             el["data"] = values;
           }
@@ -730,12 +730,12 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
   }
 }
 
-void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, float dimFactor, const char* units)
+void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum)
 {
   //Get passed object's most recently added data store and setup draw data
   GeomData* geomdata = getObjectStore(draw);
   if (!geomdata) return;
-  geomdata->data[dtype]->setup(minimum, maximum, dimFactor, units);
+  geomdata->data[dtype]->setup(minimum, maximum);
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)

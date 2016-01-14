@@ -210,8 +210,8 @@ void Model::close()
 
 void Model::clearObjects(bool all)
 {
-  if (FloatValues::membytes > 0 && geometry.size() > 0)
-    debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", FloatValues::membytes/1000000.0f);
+  if (membytes__ > 0 && geometry.size() > 0)
+    debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", membytes__/1000000.0f);
 
   //Clear containers...
   for (unsigned int i=0; i < geometry.size(); i++)
@@ -645,10 +645,10 @@ void Model::cacheStep()
   if (TimeStep::cachesize == 0 || now < 0 || now >= (int)timesteps.size()) return;
   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
-  debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), FloatValues::membytes/1000000.0f);
+  debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);
 
   //Copy all elements
-  if (FloatValues::membytes > 0)
+  if (membytes__ > 0)
   {
     timesteps[now]->write(geometry);
     debug_print("~~~ Cached step, at: %d\n", step());
@@ -695,7 +695,7 @@ bool Model::restoreStep()
   lines = (Lines*)geometry[lucLineType];
   shapes = (Shapes*)geometry[lucShapeType];
 
-  debug_print("~~~ Geom memory usage after load: %.3f mb\n", FloatValues::membytes/1000000.0f);
+  debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
   reset();  //Force reload
   return true;
 }
@@ -889,8 +889,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       float minimum = (float)sqlite3_column_double(statement, 10);
       float maximum = (float)sqlite3_column_double(statement, 11);
       //New fields for the scaling features, applied when drawing colour bars
-      float dimFactor = (float)sqlite3_column_double(statement, 12);
-      const char *units = (const char*)sqlite3_column_text(statement, 13);
+      //float dimFactor = (float)sqlite3_column_double(statement, 12);
+      //const char *units = (const char*)sqlite3_column_text(statement, 13);
       const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
 
       const void *data = sqlite3_column_blob(statement, datacol);
@@ -973,7 +973,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
         //Read data block
         GeomData* g = active->read(obj, items, data_type, data, width, height, depth);
-        active->setup(obj, data_type, minimum, maximum, dimFactor, units);
+        active->setup(obj, data_type, minimum, maximum);
         if (labels) active->label(obj, labels);
 
         //Where min/max vertex provided, load
@@ -1283,10 +1283,10 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
       std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
                 << data_type <<  ") for object : " << obj_id << " => " << objects[obj_id-1]->name << std::endl;
       //Get the data block
-      FloatValues* block = data[i]->data[data_type];
+      DataContainer* block = data[i]->data[data_type];
 
       sqlite3_stmt* statement;
-      unsigned char* buffer = (unsigned char*)&block->value[0];
+      unsigned char* buffer = (unsigned char*)block->ref(0);
       unsigned long src_len = block->size() * sizeof(float);
       // Compress the data if enabled and > 1kb
       unsigned long cmp_len = 0;
@@ -1296,12 +1296,12 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
         buffer = (unsigned char*)malloc((size_t)cmp_len);
         if (buffer == NULL)
           abort_program("Compress database: out of memory!\n");
-        if (compress(buffer, &cmp_len, (const unsigned char *)&block->value[0], src_len) != Z_OK)
+        if (compress(buffer, &cmp_len, (const unsigned char *)block->ref(0), src_len) != Z_OK)
           abort_program("Compress database buffer failed!\n");
         if (cmp_len >= src_len)
         {
           free(buffer);
-          buffer = (unsigned char*)&block->value[0];
+          buffer = (unsigned char*)block->ref(0);
           cmp_len = 0;
         }
         else

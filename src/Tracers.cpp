@@ -132,11 +132,9 @@ void Tracers::update()
         int pidx = p;
         if (geom[i]->indices.size() > 0)
         {
-          floatidx fidx;
           for (unsigned int x=0; x<particles; x++)
           {
-            fidx.val = geom[i]->indices[step * particles + x];
-            if (fidx.idx == p)
+            if (geom[i]->indices[step * particles + x] == p)
             {
               pidx = x;
               break;
