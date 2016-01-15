@@ -115,6 +115,9 @@ void Volumes::update()
   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+  //TODO: filtering
+  //Read all colourvalues, apply filter to each and store in filtered block before loading into texture
+
   //Single volume cube
   if (geom.size() == 1)
   {

@@ -41,6 +41,7 @@ Vectors::Vectors() : Geometry()
   //Create sub-renderers
   lines = new Lines(true); //Only used for 2d lines
   tris = new TriSurfaces();
+  tris->internal = lines->internal = true;
 }
 
 Vectors::~Vectors()
@@ -103,6 +104,7 @@ void Vectors::update()
 
     for (int v=0; v < geom[i]->count; v++)
     {
+      if (geom[i]->filter(v)) continue;
       //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
       Vec3d pos(geom[i]->vertices[v]);
       Vec3d vec(geom[i]->vectors[v]);

@@ -45,6 +45,13 @@
 #define VOLUME_RGB 3
 #define VOLUME_RGBA 4
 
+typedef struct
+{
+  unsigned int dataType;
+  float minimum;
+  float maximum;
+} Filter;
+
 //Holds parameters for a drawing object
 class DrawingObject
 {
@@ -57,6 +64,9 @@ public:
   //Cached values for faster lookup
   float opacity;
   Colour colour;
+  //TODO: store these in json props
+  std::vector<Filter> filters;
+  bool filterout;
 
   std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
 

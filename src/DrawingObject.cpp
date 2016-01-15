@@ -53,6 +53,7 @@ DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
   defaultTexture = NULL;
+  filterout = false;
 }
 
 DrawingObject::~DrawingObject()

@@ -178,7 +178,36 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     colour.a = draw->opacity * 255;
 }
 
-Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), type(lucMinType), total(0), scale(1.0f), redraw(true)
+bool GeomData::filter(unsigned int idx)
+{
+  for (int i=0; i < draw->filters.size(); i++)
+  {
+    Filter& filter = draw->filters[i];
+
+    int size = data[filter.dataType]->size();
+    int range = size ? count / size : 1;
+    if (filter.dataType && size > 0)
+    {
+      float filterValue;
+      unsigned int ridx = idx / range;
+      //Have values but not enough for per-vertex, spread over range (eg: per triangle)
+      filterValue = valuedata[filter.dataType]->value[ridx];
+      if (draw->filterout)
+      {
+        //Filter out values between specified ranges (allows filtering separate sections : intersection)
+        if (filterValue >= filter.minimum && filterValue <= filter.maximum) return true;
+      }
+      else
+      {
+        //Filter out values NOT between specified ranges (allows combining filters : union)
+        if (filterValue < filter.minimum || filterValue > filter.maximum) return true;
+      }
+    }
+  }
+  return false;
+}
+
+Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), internal(false), type(lucMinType), total(0), scale(1.0f), redraw(true)
 {
 }
 
@@ -425,6 +454,8 @@ void Geometry::init() //Called on GL init
 
 void Geometry::setState(unsigned int index, Shader* prog)
 {
+  //NOTE: Transparent triangle surfaces are drawn as a single object so 
+  //      no per-object state settings work, state applied is that of first in list
   GL_Error_Check;
   if (geom.size() <= index) return;
   DrawingObject* draw = geom[index]->draw;
@@ -522,7 +553,6 @@ void Geometry::setState(unsigned int index, Shader* prog)
         clipMax[2] = Geometry::properties["zmax"].ToFloat(HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
       }
 
-      //std::cout << "CLIP MIN " << Vec3d(clipMin) << " CLIP MAX " << Vec3d(clipMax) << std::endl;
       glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
       glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax);
     }
