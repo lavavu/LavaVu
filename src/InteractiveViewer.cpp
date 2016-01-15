@@ -1994,6 +1994,25 @@ bool LavaVu::parseCommands(std::string cmd)
       redrawViewports();
     }
   }
+  else if (parsed.exists("sealevel"))
+  {
+    //Create a sea level plane (generic command to do a cross section could be a good idea)
+    DrawingObject* sea = addObject(new DrawingObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n"));
+    //Sea grid points
+    Vec3d vertex;
+    vertex[0] = aview->min[0];
+    vertex[1] = 0;
+    vertex[2] = aview->min[2];
+    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+    vertex[0] = aview->max[0];
+    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+    vertex[0] = aview->min[0];
+    vertex[2] = aview->max[2];
+    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+    vertex[0] = aview->max[0];
+    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
+    redrawViewports();
+  }
   else
   {
     //If value parses as integer and contains nothing else
