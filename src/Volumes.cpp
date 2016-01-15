@@ -93,6 +93,8 @@ void Volumes::draw()
   }
 
   glUseProgram(0);
+  glBindTexture(GL_TEXTURE_3D, 0);
+  glBindTexture(GL_TEXTURE_2D, 0);
   //t2 = clock(); debug_print("  Draw %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
@@ -389,7 +391,6 @@ void Volumes::render(int i)
 
   glPopAttrib();
   GL_Error_Check;
-  glBindTexture(GL_TEXTURE_3D, 0);
   glActiveTexture(GL_TEXTURE0);
 }
 
