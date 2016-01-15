@@ -152,6 +152,8 @@ void TriSurfaces::loadMesh()
         i2 = geom[index]->indices[j+1];
         i3 = geom[index]->indices[j+2];
 
+        if (!internal && geom[index]->filter(i1)) continue; //If first vertex filtered, skip whole tri
+
         TriSurfaces::setTriangle(index,
                                  geom[index]->vertices[i1],
                                  geom[index]->vertices[i2],
@@ -182,6 +184,7 @@ void TriSurfaces::loadMesh()
     std::vector<GLuint> indices;
     for (unsigned int j=0; j < geom[index]->count; j++)
     {
+      if (!internal && geom[index]->filter(j)) continue;
       verts[j].id = verts[j].ref = j;
       verts[j].vert = geom[index]->vertices[j];
     }

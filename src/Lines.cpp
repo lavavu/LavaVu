@@ -43,6 +43,7 @@ Lines::Lines(bool all2Dflag)
   all2d = all2Dflag;
   //Create sub-renderers
   tris = new TriSurfaces();
+  tris->internal = true;
 }
 
 Lines::~Lines()
@@ -111,6 +112,7 @@ void Lines::update()
       Colour colour;
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
+        if (!internal && geom[i]->filter(i)) continue;
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;

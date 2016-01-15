@@ -40,6 +40,7 @@ Shapes::Shapes() : Geometry()
   type = lucShapeType;
   //Create sub-renderers
   tris = new TriSurfaces();
+  tris->internal = true;
 }
 
 Shapes::~Shapes()
@@ -85,6 +86,7 @@ void Shapes::update()
 
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
+      if (geom[i]->filter(v)) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
       float sdims[3] = {dims[0], dims[1], dims[2]};
       if (geom[i]->xWidths.size() > 0) sdims[0] = geom[i]->xWidths[v];

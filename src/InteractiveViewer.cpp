@@ -1958,6 +1958,42 @@ bool LavaVu::parseCommands(std::string cmd)
     //Don't record
     return false;
   }
+  else if (parsed.exists("filter"))
+  {
+    //Require a selected object, TODO: all object selection in command parser should be in a function
+    if (aobject)
+    {
+      //TODO: json representation
+      Filter filter;
+      filter.dataType = parsed.Int("filter", 0);
+      parsed.has(filter.minimum, "filter", 1);
+      parsed.has(filter.maximum, "filter", 2);
+      aobject->filters.push_back(filter);
+      printMessage("Filter on data type %d range %f to %f", filter.dataType, filter.minimum, filter.maximum);
+      //if (!loadWindow(window)) return false;
+      //requires manual "reload" or timestep change to activate
+    }
+  }
+  else if (parsed.exists("filterout"))
+  {
+    //Require a selected object, TODO: all object selection in command parser should be in a function
+    if (aobject)
+    {
+      aobject->filterout = !aobject->filterout;
+      printMessage("Filters on object %s set to %s", aobject->name, (aobject->filterout ? "OUT" : "IN"));
+      redrawViewports();
+    }
+  }
+  else if (parsed.exists("clearfilters"))
+  {
+    //Require a selected object, TODO: all object selection in command parser should be in a function
+    if (aobject)
+    {
+      printMessage("Filters cleared on object %s", aobject->name);
+      aobject->filters.clear();
+      redrawViewports();
+    }
+  }
   else
   {
     //If value parses as integer and contains nothing else

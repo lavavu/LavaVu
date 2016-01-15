@@ -42,6 +42,7 @@ Tracers::Tracers() : Geometry()
   //Create sub-renderers
   lines = new Lines(true); //Only used for 2d lines
   tris = new TriSurfaces();
+  tris->internal = lines->internal = true;
 }
 
 Tracers::~Tracers()
@@ -142,14 +143,18 @@ void Tracers::update()
           }
         }
 
-        float* pos = geom[i]->vertices[step * particles + pidx];
+        //TODO: test filtering
+        int pp = step * particles + pidx;
+        if (geom[i]->filter(pp)) continue;
+
+        float* pos = geom[i]->vertices[pp];
         //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);
 
         //Get colour either from supplied colour values or time step
         if (timecolour)
           colour = geom[i]->draw->colourMaps[lucColourValueData]->getfast(TimeStep::timesteps[step]->time);
         else
-          geom[i]->getColour(colour, step * particles + pidx);
+          geom[i]->getColour(colour, pp);
 
         //Fade out
         if (fade) colour.a = 255 * (step-start) / (float)(end-start);

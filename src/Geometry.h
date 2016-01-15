@@ -161,6 +161,7 @@ public:
   void mapToColour(Colour& colour, float value);
   int colourCount();
   void getColour(Colour& colour, unsigned int idx);
+  bool filter(unsigned int idx);
 };
 
 
@@ -229,7 +230,7 @@ public:
   static json::Object properties; //Global properties
   //Store the actual maximum bounding box
   static float min[3], max[3], dims[3];
-  bool allhidden;
+  bool allhidden, internal;
   lucGeometryType type;   //Holds the object type
   unsigned int total;     //Total entries of all objects in container
   float scale;   //Scaling factor

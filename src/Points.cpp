@@ -195,6 +195,7 @@ void Points::loadVertices()
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
+      if (geom[s]->filter(i)) continue;
       pidx[index].id = i;
       pidx[index].index = index;
       pidx[index].geomid = s;
