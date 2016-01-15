@@ -318,10 +318,10 @@ std::string LavaVu::run(bool persist)
   //Require a model from here on, set a default
   if (!amodel) defaultModel();
 
-  //Reselect the active view after loading all data
-  //NOTE!! Removed as this is called before the context is created, crashing Mesa
-  //If required for image/movie dump will have to call later...
-  //viewSelect(view, true, true);
+  //Reselect the active view after loading all data (resets model bounds)
+  //NOTE: sometimes we can reach this call before the GL context is created, hence the check
+  if (viewer->isopen)
+    viewSelect(view, true, true);
 
   if (writeimage || writemovie || dump > lucExportNone)
   {
@@ -2188,7 +2188,7 @@ void LavaVu::drawRulers()
   static DrawingObject* obj = NULL;
   rulers->clear();
   rulers->setView(aview);
-  if (!obj) obj = new DrawingObject("rulers", viewer->inverse.value, NULL, 1.0, "lit=false");
+  if (!obj) obj = new DrawingObject("rulers", viewer->inverse.value, NULL, 1.0, "clip=false\nlit=false");
   rulers->add(obj);
   obj->properties["linewidth"] = aview->textscale * aview->properties["linewidth"].ToFloat(1.5);
   //obj->properties["fontscale"] = aview->textscale *
@@ -2309,7 +2309,7 @@ void LavaVu::drawBorder()
   border->clear();
   border->setView(aview);
   Colour borderColour = Colour_FromJson(aview->properties, "bordercolour", 127, 127, 127, 255);
-  if (!obj) obj = new DrawingObject("border", borderColour.value, NULL, 1.0, "");
+  if (!obj) obj = new DrawingObject("border", borderColour.value, NULL, 1.0, "clip=false");
   //border->add(obj);
 
   int aborder = aview->properties["border"].ToInt(1);
