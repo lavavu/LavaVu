@@ -1250,11 +1250,11 @@ void LavaVu::readTecplot(FilePath& fn)
   addColourMap(colourMap);
 
   //Colours: hex, abgr
-  unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+  //unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
   //0xffff00ff,0xffff0088,0xffff4444,0xffff8844,0xffffff22,0xffffffff,0xff888888};
-  colourMap->add(colours, 8);
-  //unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
-  //colourMap->add(colours, 7);
+  //colourMap->add(colours, 8);
+  unsigned int colours[] = {0xff006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
+  colourMap->add(colours, 7);
 
   //Add colour bar display
   addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\nstatic=1\n"));
@@ -1272,6 +1272,9 @@ void LavaVu::readTecplot(FilePath& fn)
     int* triverts = NULL;
     float* lineverts = NULL;
     float* values = NULL;
+    float* Ivalues = NULL;
+    float* Jvalues = NULL;
+    float* Kvalues = NULL;
     float* particles = NULL;
 
     float valuemin = HUGE_VAL;
@@ -1309,6 +1312,9 @@ void LavaVu::readTecplot(FilePath& fn)
         triverts = new int[ELS*NTRI*3]; //6 faces = 12 tris * 3
         lineverts = new float[ELS*NLN*2*3]; //12 edges
         values = new float[ELS];
+        Ivalues = new float[ELS];
+        Jvalues = new float[ELS];
+        Kvalues = new float[ELS];
         particles = new float[ELS*3];  //Value of cell at centre
 
         printf("N = %d, ELS = %d\n", N, ELS);
@@ -1331,6 +1337,7 @@ void LavaVu::readTecplot(FilePath& fn)
       }
       else if (line.substr(0, 4) == "TEXT")
       {
+        //New timesteps contain only the changing value data...
         //Create the timestep
         if (TimeStep::cachesize <= timestep) TimeStep::cachesize++;
         amodel->addTimeStep(timestep+1);
@@ -1345,6 +1352,9 @@ void LavaVu::readTecplot(FilePath& fn)
         GeomData* g = Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
         Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
         Model::triSurfaces->read(tobj, ELS, lucColourValueData, values);
+        Model::triSurfaces->read(tobj, ELS, lucXWidthData, Ivalues);
+        Model::triSurfaces->read(tobj, ELS, lucYHeightData, Jvalues);
+        Model::triSurfaces->read(tobj, ELS, lucZLengthData, Kvalues);
         //printf("VALUES min %f max %f\n", valuemin, valuemax); getchar();
         Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
 
@@ -1358,7 +1368,8 @@ void LavaVu::readTecplot(FilePath& fn)
         valuemax = -HUGE_VAL;
 
         count = tcount = lcount = pcount = 0;
-        coord = 6;
+        //Load into the value index
+        coord = 6; //TODO: Fix this hard coding
 
         /*/Cache and add timestep
         if (TimeStep::cachesize <= timestep) TimeStep::cachesize++;
@@ -1397,6 +1408,7 @@ void LavaVu::readTecplot(FilePath& fn)
             assert(!isnan(value[i]));
 
           //Two triangles per side (set indices only when x,y,z all read)
+          //X=0,Y=1,Z=2
           if (coord == 2)
           {
             //Front
@@ -1525,10 +1537,16 @@ void LavaVu::readTecplot(FilePath& fn)
           outcoord = coord;
           if (swapY)
           {
+            //Swap Y/Z
             if (coord == 2)
               outcoord = 1;
             if (coord == 1)
               outcoord = 2;
+            //Also swap J/K
+            if (coord == 5)
+              outcoord = 4;
+            if (coord == 4)
+              outcoord = 5;
           }
           //std::cerr << " NEW BLOCK: " << tcount << " C " << coord << " OC " << outcoord << std::endl;
         }
@@ -1538,6 +1556,9 @@ void LavaVu::readTecplot(FilePath& fn)
 
     if (xyz) delete[] xyz;
     if (values) delete[] values;
+    if (Ivalues) delete[] Ivalues;
+    if (Jvalues) delete[] Jvalues;
+    if (Kvalues) delete[] Kvalues;
     if (triverts) delete[] triverts;
     if (lineverts) delete[] lineverts;
 
