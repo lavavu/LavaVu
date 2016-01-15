@@ -318,10 +318,11 @@ std::string LavaVu::run(bool persist)
   //Require a model from here on, set a default
   if (!amodel) defaultModel();
 
+  //Moved to loadFile so called after all model data loads, not just first
   //Reselect the active view after loading all data (resets model bounds)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
-  if (viewer->isopen)
-    viewSelect(view, true, true);
+  //if (viewer->isopen)
+  //  viewSelect(view, true, true);
 
   if (writeimage || writemovie || dump > lucExportNone)
   {
@@ -2165,6 +2166,7 @@ void LavaVu::drawAxis()
 
   lucSetFontCharset(FONT_VECTOR);
   lucSetFontScale(length);
+  PrintSetColour(viewer->inverse.value, true);
   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
   if (aview->is3d)
@@ -2584,16 +2586,17 @@ void LavaVu::loadFile(FilePath& fn)
     if (!amodel || !aview || !awin) loadWindow(0, startstep, true);
     //Set loaded gldb as active model/window if there was already an active window
     //if (window) loadWindow(windows.size()-1);
-    return;
   }
   //Script files, can contain other files to load
   else if (fn.type == "script")
   {
     parseCommands("script " + fn.full);
+    return;
   }
   else if (fn.type == "json")
   {
     parseCommands("jsonscript " + fn.full);
+    return;
   }
 
   //Other files require an existing model
@@ -2614,6 +2617,11 @@ void LavaVu::loadFile(FilePath& fn)
     readVolumeSlice(fn);
   else if (fn.type == "tiff" || fn.type == "tif")
     readVolumeTIFF(fn);
+
+  //Reselect the active view after loading any model data (resets model bounds)
+  //NOTE: sometimes we can reach this call before the GL context is created, hence the check
+  if (viewer->isopen)
+    viewSelect(view, true, true);
 }
 
 void LavaVu::defaultModel()
