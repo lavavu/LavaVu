@@ -966,13 +966,9 @@ void LavaVu::readHeightMap(FilePath& fn)
   int sx=cols, sz=rows;
   debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
   //opacity [0,1]
-  DrawingObject *obj, *sea;
+  DrawingObject *obj;
   std::string props = "static=1\ncullface=0\ntexturefile=%s\n" + texfile;
   obj = addObject(new DrawingObject(fn.base, 0, colourMap, 1.0, props));
-  //Sea level surf
-  //sea = addObject(new DrawingObject("Sea level", true, 0xffffff00, NULL, 0.5, "cullface=1\n"));
-  sea = addObject(new DrawingObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n"));
-
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
 
@@ -1055,21 +1051,6 @@ void LavaVu::readHeightMap(FilePath& fn)
   }
   file.close();
   Model::geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
-
-  //Sea grid points
-  vertex[0] = min[0];
-  vertex[1] = 0;
-  vertex[2] = min[2];
-  Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-  vertex[0] = max[0];
-  Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-  vertex[0] = min[0];
-  vertex[2] = max[2];
-  Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-  vertex[0] = max[0];
-  Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-
-  Model::quadSurfaces->setup(sea, lucColourValueData, min[1], max[1]);
 
   range[1] = max[1] - min[1];
   debug_print("Sampled %d values, min height %f max height %f\n", (sx / subsample) * (sz / subsample), min[1], max[1]);
