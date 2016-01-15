@@ -2087,9 +2087,9 @@ void LavaVu::drawAxis()
 {
   bool doaxis = aview->properties["axis"].ToBool(true);
   float axislen = aview->properties["axislength"].ToFloat(0.1);
-  infostream = NULL;
 
   if (!doaxis) return;
+  infostream = NULL;
   float length = axislen;
   float headsize = 8.0;   //8 x radius (r = 0.01 * length)
   float LH = length * 0.1;
@@ -2306,7 +2306,6 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
 void LavaVu::drawBorder()
 {
   static DrawingObject* obj = NULL;
-  infostream = NULL;
   border->clear();
   border->setView(aview);
   Colour borderColour = Colour_FromJson(aview->properties, "bordercolour", 127, 127, 127, 255);
@@ -2315,6 +2314,7 @@ void LavaVu::drawBorder()
 
   int aborder = aview->properties["border"].ToInt(1);
   if (aborder == 0) return;
+  infostream = NULL;
   bool filled = aview->properties["fillborder"].ToBool(false);
 
   if (!filled)
