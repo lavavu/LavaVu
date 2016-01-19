@@ -54,6 +54,8 @@ extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);
 
+bool FileExists(const std::string& name);
+
 //Class for handling filenames/paths
 class FilePath
 {

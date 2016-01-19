@@ -78,6 +78,11 @@ void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
 TextureData* DrawingObject::loadTexture(std::string texfn)
 {
   if (texfn.length() == 0) return NULL;
+  if (!FileExists(texfn))
+  {
+    debug_print("Texture File: %s not found!\n", texfn.c_str());
+    return NULL;
+  }
 
   FilePath fn(texfn);
   TextureData* texture = new TextureData();
@@ -113,8 +118,12 @@ int DrawingObject::useTexture(TextureData* texture)
   if (!texture) texture = defaultTexture;
 
   if (!texture)
+  {
     //Use default texture from properties if none loaded
     loadTexture(properties["texturefile"].ToString(""));
+    //Load failed, skip from now
+    if (!texture) properties["texturefile"] = "";
+  }
 
   if (texture && texture->width)
   {

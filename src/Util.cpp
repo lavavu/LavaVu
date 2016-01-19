@@ -42,6 +42,17 @@ FILE* infostream = NULL;
 long membytes__ = 0;
 long mempeak__ = 0;
 
+bool FileExists(const std::string& name)
+{
+  FILE *file = fopen(name.c_str(), "r");
+  if (file)
+  {
+    fclose(file);
+    return true;
+  }
+  return false;
+}
+
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {
   //Try the PATH env var if argv0 contains no path info
