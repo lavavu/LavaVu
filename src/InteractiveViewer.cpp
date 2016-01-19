@@ -1796,11 +1796,31 @@ bool LavaVu::parseCommands(std::string cmd)
   }
   else if (parsed.exists("sort"))
   {
-    //Always disables sort on rotate mode
-    sort_on_rotate = false;
-    aview->sort = true;
-    viewer->notIdle(1500); //Start idle redisplay timer
-    printMessage("Sorting geometry (auto-sort has been disabled)");
+    if (parsed["sort"] == "off")
+    {
+      //Disables all sorting
+      sort_on_rotate = false;
+      aview->sort = false;
+      printMessage("Geometry sorting has been disabled");
+    }
+    else if (parsed["sort"] == "timer")
+    {
+      //Disables sort on rotate mode
+      sort_on_rotate = false;
+      //Enables sort on timer
+      aview->sort = true;
+      viewer->notIdle(1500); //Start idle redisplay timer
+      printMessage("Sort geometry on timer instead of rotation enabled");
+    }
+    else if (parsed["sort"] == "on")
+    {
+      //Enables sort on rotate mode
+      sort_on_rotate = true;
+      //Disables sort on timer
+      aview->sort = false;
+      viewer->notIdle(0); //Stop idle redisplay timer
+      printMessage("Sort geometry on rotation enabled");
+    }
   }
   else if (parsed.exists("idle"))
   {
@@ -2472,7 +2492,7 @@ std::string LavaVu::helpCommand(std::string cmd)
             "Usage: border on/off/filled\n\n"
             "on : line border around model bounding-box\n"
             "off : no border\n"
-            "filled : filled background bounding box"
+            "filled : filled background bounding box\n"
             "(no value) : switch between possible values\n";
   }
   else if (cmd == "camera")
@@ -2481,7 +2501,11 @@ std::string LavaVu::helpCommand(std::string cmd)
   }
   else if (cmd == "sort")
   {
-    help += "Sort geometry on demand (with idle timer)\n";
+    help += "Sort geometry on demand (with idle timer)\n\n"
+            "Usage: sort on/off/timer\n\n"
+            "on : (default) sort after model rotation\n"
+            "off : no sorting\n"
+            "timer : sort after 1.5 second timeout\n";
   }
   else if (cmd == "scale")
   {
