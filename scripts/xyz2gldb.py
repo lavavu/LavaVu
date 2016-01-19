@@ -33,8 +33,8 @@ db.timestep()
 with open(filePath, 'r') as file:
   for line in file:
     #Read particle position
-    data = re.split(r'[,;\s]+', line)
-    print data
+    data = re.split(r'[,;\s]+', line.rstrip())
+    #print data
     if len(data) < 3: continue
     x = float(data[0])
     y = float(data[1])
@@ -43,10 +43,13 @@ with open(filePath, 'r') as file:
     #Write vertex position, Points...
     points.addVertex(x, y, z)
 
-    #R,G,B colour if provided
-    #if len(data) >= 6:
-    #  rgba = [int(data[3]), int(data[4]), int(data[5]), 255]
-    #  points.addColour(rgba)
+    #R,G,B[,A] colour if provided
+    if len(data) >= 7:
+      rgba = [int(data[3]), int(data[4]), int(data[5]), int(data[6])]
+      points.addColour(rgba)
+    elif len(data) == 6:
+      rgba = [int(data[3]), int(data[4]), int(data[5]), 255]
+      points.addColour(rgba)
 
   #Write saved data
   points.write(db)
