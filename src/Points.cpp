@@ -111,7 +111,7 @@ void Points::loadVertices()
   clock_t t1,t2;
 
   //Reset data structures
-  close();
+  //close();
 
   //Create sorting array
   pidx = new PIndex[total];
@@ -122,23 +122,19 @@ void Points::loadVertices()
 
   // VBO - copy normals/colours/positions to buffer object for quick display
   int datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
-  if (!vbo && prog && prog->program)  //Only use vbo if shaders available
+  if (!vbo) glGenBuffers(1, &vbo);
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  //Initialise point buffer
+  if (glIsBuffer(vbo))
   {
-    //glDeleteBuffers(1, &vbo);
-    glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    //Initialise point buffer
-    if (glIsBuffer(vbo))
-    {
-      glBindBuffer(GL_ARRAY_BUFFER, vbo);
-      glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_STREAM_DRAW);
-      debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
-    }
-    else
-      debug_print("  VBO creation failed!\n");
+    glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_STREAM_DRAW);
+    debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
   }
   else
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    debug_print("  VBO creation failed!\n");
+
   GL_Error_Check;
 
   unsigned char *p = NULL, *ptr = NULL;
