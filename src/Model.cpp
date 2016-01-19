@@ -505,7 +505,7 @@ int Model::loadTimeSteps()
 void Model::loadColourMaps()
 {
   bool old = false;
-  sqlite3_stmt* statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value,name,props FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
+  sqlite3_stmt* statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value,name,properties FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
   if (statement == NULL)
   {
     //Old DB format, had no name or props
