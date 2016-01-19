@@ -105,7 +105,7 @@ void TriSurfaces::update()
   if (elements < 0 || !tidx || tricount != total)
   {
     //Clear buffers
-    close();
+    //close();
     //Load & optimise the mesh data
     loadMesh();
     //Send the data to the GPU via VBO
@@ -314,7 +314,7 @@ void TriSurfaces::loadBuffers()
   unsigned int bsize = vcount * datasize;
 
   //Initialise vertex buffer
-  glGenBuffers(1, &vbo);
+  if (!vbo) glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   if (glIsBuffer(vbo))
   {
