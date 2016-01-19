@@ -296,7 +296,7 @@ void Points::render()
   if (total == 0) return;
 
   //First, depth sort the particles
-  if (view->is3d)
+  if (view->is3d && view->sort)
   {
     debug_print("Depth sorting %d particles...\n", total);
     depthSort();

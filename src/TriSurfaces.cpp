@@ -678,7 +678,7 @@ void TriSurfaces::render()
   assert(tidx);
 
   //First, depth sort the triangles
-  if (view->is3d)
+  if (view->is3d && view->sort)
   {
     debug_print("Depth sorting %d triangles...\n", tricount);
     depthSort();
