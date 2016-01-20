@@ -14,17 +14,11 @@ filePath = sys.argv[1] #cmds.fileDialog()
 dbPath = sys.argv[2]
 
 #Create vis object (points)
-points = lavavu.Points('points', None, size=5, pointtype=lavavu.Points.ShinySphere, props="colour=white")
+points = lavavu.Points('points', None, size=5, props="colour=white")
 #points = lavavu.Points('points', None, size=5, pointtype=lavavu.Points.ShinySphere, props="colour=white\ntexturefile=shiny.png")
 
 #Create vis database for output
 db = lavavu.Database(dbPath)
-#Write the colourmaps to the database
-#colours.write(db)
-
-#For storing bounding box
-bbmin = [float("inf"),float("inf"),float("inf")]
-bbmax = [float("-inf"),float("-inf"),float("-inf")]
 
 #Create a new timestep entry in database
 db.timestep()
