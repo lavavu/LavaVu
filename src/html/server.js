@@ -128,9 +128,19 @@ function mouseCall(request) {
 var cmdlog = null;
 function sendCommand(cmd) {
   //Shortcut to send commands (and optionally log)
+  if (!cmd) {
+    cmd = cmdQueue;
+    cmdQueue = "";
+  }
   requestData('/command=' + cmd);
   if (cmdlog != null)
     cmdlog += cmd + "\n";
+}
+
+var cmdQueue = "";
+function queueCommand(cmd) {
+  //Shortcut to send commands (and optionally log)
+  cmdQueue += cmd + ';';
 }
 
 var count = 0;
