@@ -722,7 +722,8 @@ void View::drawOverlay(Colour& colour)
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
-    if (!objects[i] || !objects[i]->properties["colourbar"].ToBool(false) || !objects[i]->visible) continue;
+    if (!objects[i] || !objects[i]->properties["colourbar"].ToBool(false) ||
+        !objects[i]->visible || !objects[i]->colourMaps[lucColourValueData]) continue;
     int pos = objects[i]->properties["position"].ToInt(0);
     std::string align = objects[i]->properties["align"].ToString("bottom");
     int ww = w, hh = h;
