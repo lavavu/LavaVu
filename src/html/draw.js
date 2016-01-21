@@ -1728,7 +1728,7 @@ Viewer.prototype.exportFile = function() {
      if (confirm('Overwrite init.script?')) scriptname = "init.script";
 
      //Clear history before all saved to script
-     //sendCommand('clearhistory');
+     sendCommand('clearhistory');
      
      cmdlog = '';
      sendCommand('' + this.getRotationString());
@@ -1819,24 +1819,25 @@ Viewer.prototype.setProperties = function() {
   //Set the local/server props
   if (server) {
     //Issue server commands
-    sendCommand('select'); //Ensure no object selected
-    sendCommand('scale points ' + viewer.pointScale);
-    sendCommand('alpha ' + (viewer.opacity*255));
-    sendCommand('pointtype all ' + viewer.pointType);
-    sendCommand('border ' + (this.showBorder ? "on" : "off"));
-    sendCommand('axis ' + (this.axes ? "on" : "off"));
-    if (c != "") sendCommand('background ' + c);
+    queueCommand('select'); //Ensure no object selected
+    queueCommand('scale points ' + viewer.pointScale);
+    queueCommand('alpha ' + (viewer.opacity*255));
+    queueCommand('pointtype all ' + viewer.pointType);
+    queueCommand('border ' + (this.showBorder ? "on" : "off"));
+    queueCommand('axis ' + (this.axes ? "on" : "off"));
+    if (c != "") queueCommand('background ' + c);
 
-    sendCommand('brightness=' + vis.properties.brightness);
-    sendCommand('contrast=' + vis.properties.contrast);
-    sendCommand('saturation=' + vis.properties.saturation);
+    queueCommand('brightness=' + vis.properties.brightness);
+    queueCommand('contrast=' + vis.properties.contrast);
+    queueCommand('saturation=' + vis.properties.saturation);
 
-    sendCommand('xmin=' + vis.properties.xmin);
-    sendCommand('xmax=' + vis.properties.xmax);
-    sendCommand('ymin=' + vis.properties.ymin);
-    sendCommand('ymax=' + vis.properties.ymax);
-    sendCommand('zmin=' + vis.properties.zmin);
-    sendCommand('zmax=' + vis.properties.zmax);
+    queueCommand('xmin=' + vis.properties.xmin);
+    queueCommand('xmax=' + vis.properties.xmax);
+    queueCommand('ymin=' + vis.properties.ymin);
+    queueCommand('ymax=' + vis.properties.ymax);
+    queueCommand('zmin=' + vis.properties.zmin);
+    queueCommand('zmax=' + vis.properties.zmax);
+    sendCommand();
   } else {
     viewer.applyBackground(vis.options.background);
     viewer.draw();
@@ -1937,50 +1938,51 @@ Viewer.prototype.setObjectProperties = function() {
 
   //Server side...
   if (server) {
-    sendCommand("select " + vis.objects[properties.id].id);
-    sendCommand("colour " + colour.hex());
-    sendCommand("opacity " + vis.objects[id].opacity);
-    //sendCommand('brightness=' + vis.objects[id].brightness);
-    //sendCommand('contrast=' + vis.objects[id].contrast);
-    //sendCommand('saturation=' + vis.objects[id].saturation);
+    queueCommand("select " + vis.objects[properties.id].id);
+    queueCommand("colour " + colour.hex());
+    queueCommand("opacity " + vis.objects[id].opacity);
+    //queueCommand('brightness=' + vis.objects[id].brightness);
+    //queueCommand('contrast=' + vis.objects[id].contrast);
+    //queueCommand('saturation=' + vis.objects[id].saturation);
     if (vis.objects[id].points) {
-      sendCommand("scale " + vis.objects[id].pointsize);
-      sendCommand("pointtype " + vis.objects[id].pointtype);
+      queueCommand("scale " + vis.objects[id].pointsize);
+      queueCommand("pointtype " + vis.objects[id].pointtype);
     }
     if (vis.objects[id].triangles) {
-      sendCommand("wireframe=" + (vis.objects[id].wireframe ? "1" : "0"));
-      sendCommand('cullface=' + (vis.objects[id].cullface ? "1" : "0"));
+      queueCommand("wireframe=" + (vis.objects[id].wireframe ? "1" : "0"));
+      queueCommand('cullface=' + (vis.objects[id].cullface ? "1" : "0"));
     }
     if (vis.objects[id].volumes) {
       //TODO: volume settings here, create volume options in dialog
-      sendCommand('density=' + vis.objects[id].density);
-      sendCommand('power=' + vis.objects[id].power);
-      sendCommand('samples=' + vis.objects[id].samples);
-      sendCommand('isosmooth=' + vis.objects[id].isosmooth);
-      sendCommand('isoalpha=' + vis.objects[id].isoalpha);
-      sendCommand('isowalls=' + (vis.objects[id].isowalls ? "1" : "0"));
-      sendCommand('tricubicfilter=' + (vis.objects[id].isofilter ? "1" : "0"));
-      sendCommand('isovalue=' + vis.objects[id].isovalue);
+      queueCommand('density=' + vis.objects[id].density);
+      queueCommand('power=' + vis.objects[id].power);
+      queueCommand('samples=' + vis.objects[id].samples);
+      queueCommand('isosmooth=' + vis.objects[id].isosmooth);
+      queueCommand('isoalpha=' + vis.objects[id].isoalpha);
+      queueCommand('isowalls=' + (vis.objects[id].isowalls ? "1" : "0"));
+      queueCommand('tricubicfilter=' + (vis.objects[id].isofilter ? "1" : "0"));
+      queueCommand('isovalue=' + vis.objects[id].isovalue);
     }
-    /*sendCommand('xmin=' + vis.objects[id].xmin);
-    sendCommand('xmax=' + vis.objects[id].xmax);
-    sendCommand('ymin=' + vis.objects[id].ymin);
-    sendCommand('ymax=' + vis.objects[id].ymax);
-    sendCommand('zmin=' + vis.objects[id].zmin);
-    sendCommand('zmax=' + vis.objects[id].zmax);*/
+    /*queueCommand('xmin=' + vis.objects[id].xmin);
+    queueCommand('xmax=' + vis.objects[id].xmax);
+    queueCommand('ymin=' + vis.objects[id].ymin);
+    queueCommand('ymax=' + vis.objects[id].ymax);
+    queueCommand('zmin=' + vis.objects[id].zmin);
+    queueCommand('zmax=' + vis.objects[id].zmax);*/
 
     //Get colourmap
     //console.log(JSON.stringify(vis.colourmaps));
     var cmid = vis.objects[properties.id].colourmap;
     if (cmid == undefined || cmid < 0) {
-      sendCommand("colourmap -1");
+      queueCommand("colourmap -1");
     } else {
-      sendCommand("colourmap " + vis.colourmaps[cmid].id);
+      queueCommand("colourmap " + vis.colourmaps[cmid].id);
       //Update full colourmap...
-      sendCommand("colourmap \"\n" + vis.colourmaps[cmid].palette + "\n\"\n");
+      queueCommand("colourmap \"\n" + vis.colourmaps[cmid].palette + "\n\"\n");
     }
 
-    sendCommand("select");
+    queueCommand("select");
+    sendCommand();
   }
 }
 
