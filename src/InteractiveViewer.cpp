@@ -2000,7 +2000,7 @@ bool LavaVu::parseCommands(std::string cmd)
     if (aobject)
     {
       aobject->filterout = !aobject->filterout;
-      printMessage("Filters on object %s set to %s", aobject->name, (aobject->filterout ? "OUT" : "IN"));
+      printMessage("Filters on object %s set to %s", aobject->name.c_str(), (aobject->filterout ? "OUT" : "IN"));
       redrawViewports();
     }
   }
@@ -2009,7 +2009,7 @@ bool LavaVu::parseCommands(std::string cmd)
     //Require a selected object, TODO: all object selection in command parser should be in a function
     if (aobject)
     {
-      printMessage("Filters cleared on object %s", aobject->name);
+      printMessage("Filters cleared on object %s", aobject->name.c_str());
       aobject->filters.clear();
       redrawViewports();
     }
