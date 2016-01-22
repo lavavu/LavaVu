@@ -1752,7 +1752,7 @@ void LavaVu::redraw(unsigned int id)
 void LavaVu::resetViews(bool autozoom)
 {
   //Setup view(s) for new model dimensions
-  if (!viewPorts || awin->views.size() == 1)
+  if (!viewPorts || awin->views.size() <= 1)
     //Current view only
     viewSelect(view, true, autozoom);
   else
@@ -1797,7 +1797,8 @@ void LavaVu::redrawViewports()
 //Called when view changed
 void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
-  if (awin->views.size() == 0) abort_program("No views available!");
+  //Set a default viewport/camera if none
+  if (awin->views.size() == 0) awin->addView(new View());
   view = idx;
   if (view < 0) view = awin->views.size() - 1;
   if (view >= (int)awin->views.size()) view = 0;
@@ -2166,7 +2167,7 @@ void LavaVu::drawAxis()
 
   lucSetFontCharset(FONT_VECTOR);
   lucSetFontScale(length);
-  PrintSetColour(viewer->inverse.value, true);
+  PrintSetColour(viewer->inverse.value);
   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
   if (aview->is3d)
@@ -2439,17 +2440,15 @@ void LavaVu::displayMessage()
     glScissor(0, 0, viewer->width, viewer->height);
     Viewport2d(viewer->width, viewer->height);
 
-    //Print in XOR to display against any background
-    PrintSetColour(0xffffffff, true);
-
     //Print current message
+    //Use shadow font
+    PrintSetColour(viewer->background.value);
     lucSetFontCharset(FONT_VECTOR);
     lucSetFontScale(1.0);
+    Print(11, 9, message);
+    PrintSetColour(viewer->inverse.value);
     Print(10, 10, message);
     message[0] = '\0';
-
-    //Revert to normal colour
-    PrintSetColour(viewer->inverse.value);
 
     Viewport2d(0, 0);
   }
@@ -2631,7 +2630,7 @@ void LavaVu::defaultModel()
   amodel = new Model(fm);
   models.push_back(amodel);
 
-  //Set a default window, viewport & camera
+  //Set a default window, viewport/camera
   awin = new Win("");
   aview = awin->addView(new View());
   windows.push_back(awin);

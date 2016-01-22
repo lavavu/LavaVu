@@ -284,14 +284,16 @@ void PrintSetColour(int colour, bool XOR)
 {
   if (XOR)
   {
-    glColor4f(1.0, 1.0, 1.0, 1.0);
+    fontColour.value = 0xffffffff;
     glLogicOp(GL_XOR);
     glEnable(GL_COLOR_LOGIC_OP);
   }
   else
+  {
     glDisable(GL_COLOR_LOGIC_OP);
-
-  fontColour.value = colour;
+    fontColour.value = colour;
+  }
+  glColor4ubv(fontColour.rgba);
 }
 
 void PrintString(const char* str)
