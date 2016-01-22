@@ -168,6 +168,7 @@ public:
   virtual bool keyPress(unsigned char key, int x, int y);
 
   virtual bool parseCommands(std::string cmd);
+  bool parseCommand(std::string cmd);
   bool parsePropertySet(std::string cmd);
   virtual std::string requestData(std::string key);
   //***
