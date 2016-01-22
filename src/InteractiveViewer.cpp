@@ -1390,10 +1390,22 @@ bool LavaVu::parseCommands(std::string cmd)
     aview->init(true);  //Reset camera to default view of model
     printMessage("View reset");
   }
+  else if (parsed.exists("clear"))
+  {
+    //Clear data
+    amodel->clearObjects(true);
+    //Delete objects? only works for active view/window/model
+    if (parsed["clear"] == "objects")
+    {
+       aview->objects.clear();
+       amodel->objects.clear();
+       aobject = NULL;
+    }
+  }
   else if (parsed.exists("reload"))
   {
     //Restore original window data
-    if (!loadWindow(window)) return false;
+    if (window < 0 || !loadWindow(window)) return false;
   }
   else if (parsed.exists("zerocam"))
   {
@@ -2083,7 +2095,7 @@ std::string LavaVu::helpCommand(std::string cmd)
   {
     help += "Command help:\n\nUse:\nhelp * [ENTER]\nwhere * is a command, for detailed help\n"
             "\nMiscellanious commands:\n\n"
-            "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, file, script\n"
+            "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, clear, file, script\n"
             "\nView/camera commands:\n\n"
             "rotate, rotatex, rotatey, rotatez, rotation, translate, translatex, translatey, translatez\n"
             "focus, aperture, focallength, eyeseparation, nearclip, farclip, zerocam, reset, camera\n"
@@ -2420,6 +2432,13 @@ std::string LavaVu::helpCommand(std::string cmd)
   else if (cmd == "reset")
   {
     help += "Reset the camera to the default model view\n";
+  }
+  else if (cmd == "clear")
+  {
+    help += "Clear all data of current model/timestep\n\n"
+            "Usage: clear [objects]\n\n"
+            "objects : optionally clear all object entries\n"
+            "          (if omitted, only the objects geometry data is cleared)\n";
   }
   else if (cmd == "reload")
   {
