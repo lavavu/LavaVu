@@ -543,6 +543,23 @@ ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
 
 bool LavaVu::parseCommands(std::string cmd)
 {
+  //Support multi-line command input by splitting on newlines
+  //and parsing separately
+  if (cmd.length() == 0) return false;
+  bool redisplay = true;
+
+  std::string line;
+  std::stringstream ss(cmd);
+  while(std::getline(ss, line))
+  {
+    redisplay |= parseCommand(line);
+  }
+
+  return redisplay;
+}
+
+bool LavaVu::parseCommand(std::string cmd)
+{
   if (cmd.length() == 0) return false;
   bool redisplay = true;
   bool norecord = false;
