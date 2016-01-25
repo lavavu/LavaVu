@@ -71,6 +71,7 @@ typedef struct
 } TIndex;
 
 //Geometry object data store
+#define MAX_DATA_ARRAYS 64
 class GeomData
 {
 public:
@@ -99,43 +100,23 @@ public:
   Coord3DValues vertices;
   Coord3DValues vectors;
   Coord3DValues normals;
-  FloatValues colourValue;
-  FloatValues opacityValue;
-  FloatValues redValue;
-  FloatValues greenValue;
-  FloatValues blueValue;
   UIntValues indices;
-  FloatValues xWidths;
-  FloatValues yHeights;
-  FloatValues zLengths;
   UIntValues colours;
   Coord2DValues texCoords;
-  FloatValues sizes;
 
   std::vector<DataContainer*> data;
-  std::vector<FloatValues*> valuedata;
+  std::vector<FloatValues*> values;
 
   GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), labelptr(NULL), opaque(false)
   {
     //opaque = false; //true; //Always true for now (need to check colourmap, opacity and global opacity)
-    data.resize(lucMaxDataType+1);
-    valuedata.resize(lucMaxDataType+1);
+    data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
     data[lucVertexData] = &vertices;
     data[lucVectorData] = &vectors;
     data[lucNormalData] = &normals;
     data[lucIndexData] = &indices;
     data[lucRGBAData] = &colours;
     data[lucTexCoordData] = &texCoords;
-    //Scalar value only data
-    data[lucColourValueData] = valuedata[lucColourValueData] = &colourValue;
-    data[lucOpacityValueData] = valuedata[lucOpacityValueData] = &opacityValue;
-    data[lucRedValueData] = valuedata[lucRedValueData] = &redValue;
-    data[lucGreenValueData] = valuedata[lucGreenValueData] = &greenValue;
-    data[lucBlueValueData] = valuedata[lucBlueValueData] = &blueValue;
-    data[lucXWidthData] = valuedata[lucXWidthData] = &xWidths;
-    data[lucYHeightData] = valuedata[lucYHeightData] = &yHeights;
-    data[lucZLengthData] = valuedata[lucZLengthData] = &zLengths;
-    data[lucSizeData] = valuedata[lucSizeData] = &sizes;
 
     texture = NULL;
 
@@ -151,6 +132,12 @@ public:
     if (labelptr) free(labelptr);
     labelptr = NULL;
     if (texture && texture != draw->defaultTexture) delete texture;
+
+    //Delete value data containers
+    for (int i=0; i<values.size(); i++)
+    {
+      delete values[i];
+    }
   }
 
   void checkPointMinMax(float *coord);
@@ -162,6 +149,10 @@ public:
   int colourCount();
   void getColour(Colour& colour, unsigned int idx);
   bool filter(unsigned int idx);
+  FloatValues* colourData();
+  float colourData(unsigned int idx);
+  FloatValues* valueData(lucGeometryDataType type);
+  float valueData(lucGeometryDataType type, unsigned int idx);
 };
 
 
@@ -268,10 +259,7 @@ public:
   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum);
   void label(DrawingObject* draw, const char* labels);
   void print();
-  int size()
-  {
-    return geom.size();
-  }
+  int size() {return geom.size();}
   void setView(View* vp, float* min=NULL, float* max=NULL);
   void move(Geometry* other);
   void toImage(unsigned int idx);

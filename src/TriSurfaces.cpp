@@ -244,7 +244,7 @@ void TriSurfaces::loadMesh()
 
           //Average final colour
           if (vertColour && verts[v].vcount > 1)
-            geom[index]->colourValue.value[verts[v].id] /= verts[v].vcount;
+            geom[index]->colourData()->value[verts[v].id] /= verts[v].vcount;
 
           //Replace verts & normals
           vertices.push_back(Vec3d(verts[v].vert));
@@ -492,7 +492,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
 
         //Colour value, add to matched
         if (vertColour)
-          geom[index]->colourValue.value[verts[match].id] += geom[index]->colourValue.value[verts[v].id];
+          geom[index]->colourData()->value[verts[match].id] += geom[index]->colourData()->value[verts[v].id];
 
         verts[match].vcount++;
         verts[v].vcount = 0;

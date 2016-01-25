@@ -95,7 +95,7 @@ void Tracers::update()
 
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;
-    if (geom[i]->draw->colourMaps[lucColourValueData] && geom[i]->colourValue.size() == 0)
+    if (geom[i]->draw->colourMaps[lucColourValueData] && !geom[i]->colourData())
     {
       timecolour = true;
       geom[i]->draw->colourMaps[lucColourValueData]->calibrate(TimeStep::timesteps[start]->time, TimeStep::timesteps[end]->time);

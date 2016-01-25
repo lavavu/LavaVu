@@ -89,10 +89,10 @@ void Shapes::update()
       if (geom[i]->filter(v)) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
       float sdims[3] = {dims[0], dims[1], dims[2]};
-      if (geom[i]->xWidths.size() > 0) sdims[0] = geom[i]->xWidths[v];
-      if (geom[i]->yHeights.size() > 0) sdims[1] = geom[i]->yHeights[v];
+      if (geom[i]->data[lucXWidthData]) sdims[0] = geom[i]->valueData(lucXWidthData, v);
+      if (geom[i]->data[lucYHeightData]) sdims[1] = geom[i]->valueData(lucYHeightData, v);
       else sdims[1] = sdims[0];
-      if (geom[i]->zLengths.size() > 0) sdims[2] = geom[i]->zLengths[v];
+      if (geom[i]->data[lucZLengthData]) sdims[2] = geom[i]->valueData(lucZLengthData, v);
       else sdims[2] = sdims[1];
 
       //Multiply by constant scaling factors if present

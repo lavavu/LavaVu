@@ -89,16 +89,11 @@ void GeomData::colourCalibrate()
   draw->setup();
 
   //Calibrate colour maps on ranges for related data
-  if (draw->colourMaps[lucColourValueData])
-    draw->colourMaps[lucColourValueData]->calibrate(colourValue);
-  if (draw->colourMaps[lucOpacityValueData])
-    draw->colourMaps[lucOpacityValueData]->calibrate(opacityValue);
-  if (draw->colourMaps[lucRedValueData])
-    draw->colourMaps[lucRedValueData]->calibrate(redValue);
-  if (draw->colourMaps[lucGreenValueData])
-    draw->colourMaps[lucGreenValueData]->calibrate(greenValue);
-  if (draw->colourMaps[lucBlueValueData])
-    draw->colourMaps[lucBlueValueData]->calibrate(blueValue);
+  if (draw->colourMaps[lucColourValueData] && values.size() > draw->colourIdx)
+    draw->colourMaps[lucColourValueData]->calibrate(values[draw->colourIdx]);
+  //TODO: hard coded to lucOpacityValueData, should also be referenced by an editable index
+  if (draw->colourMaps[lucOpacityValueData] && data[lucOpacityValueData])
+    draw->colourMaps[lucOpacityValueData]->calibrate(valueData(lucOpacityValueData));
 }
 
 //Get colour using specified colourValue
@@ -111,18 +106,10 @@ void GeomData::mapToColour(Colour& colour, float value)
     colour.a = opacity * 255;
 }
 
-struct ValCache
-{
-  //Cached values for faster lookup
-  float opacity;
-  Colour colour;
-  DrawingObject* draw;
-} valcache;
-
 int GeomData::colourCount()
 {
   //Return number of colour values or RGBA colours
-  int hasColours = colourValue.size();
+  int hasColours = data[lucColourValueData] ? data[lucColourValueData]->size() : 0;
   if (hasColours == 0) hasColours = colours.size();
   return hasColours;
 }
@@ -131,12 +118,12 @@ int GeomData::colourCount()
 void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
-  if (draw->colourMaps[lucColourValueData] && colourValue.size() > 0)
+  if (draw->colourMaps[lucColourValueData] && data[lucColourValueData])
   {
-    if (colourValue.size() == 1) idx = 0;  //Single colour value only provided
-    //assert(idx < colourValue.size());
-    if (idx >= colourValue.size()) idx = colourValue.size() - 1;
-    colour = draw->colourMaps[lucColourValueData]->getfast(colourValue[idx]);
+    if (data[lucColourValueData]->size() == 1) idx = 0;  //Single colour value only provided
+    //assert(idx < data[lucColourValueData]->size());
+    if (idx >= data[lucColourValueData]->size()) idx = data[lucColourValueData]->size() - 1;
+    colour = draw->colourMaps[lucColourValueData]->getfast(colourData(idx));
   }
   else if (colours.size() > 0)
   {
@@ -150,26 +137,10 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     colour = draw->colour;
   }
 
-  //Set components using component colourmaps...
-  Colour cc;
-  if (draw->colourMaps[lucRedValueData] && redValue.size() > 0)
+  //Set opacity using own value map...
+  if (draw->colourMaps[lucOpacityValueData] && data[lucOpacityValueData])
   {
-    cc = draw->colourMaps[lucRedValueData]->getfast(redValue[idx]);
-    colour.r = cc.r;
-  }
-  if (draw->colourMaps[lucGreenValueData] && greenValue.size() > 0)
-  {
-    cc = draw->colourMaps[lucGreenValueData]->getfast(greenValue[idx]);
-    colour.g = cc.g;
-  }
-  if (draw->colourMaps[lucBlueValueData] && blueValue.size() > 0)
-  {
-    cc = draw->colourMaps[lucBlueValueData]->getfast(blueValue[idx]);
-    colour.b = cc.b;
-  }
-  if (draw->colourMaps[lucOpacityValueData] && opacityValue.size() > 0)
-  {
-    cc = draw->colourMaps[lucOpacityValueData]->getfast(opacityValue[idx]);
+    Colour cc = draw->colourMaps[lucOpacityValueData]->getfast(valueData(lucOpacityValueData, idx));
     colour.a = cc.a;
   }
 
@@ -183,28 +154,54 @@ bool GeomData::filter(unsigned int idx)
   for (int i=0; i < draw->filters.size(); i++)
   {
     Filter& filter = draw->filters[i];
-
-    int size = data[filter.dataType]->size();
+    if (!values[filter.dataIdx]) continue;
+    int size = values[filter.dataIdx]->size();
     int range = size ? count / size : 1;
-    if (filter.dataType && size > 0)
+    if (filter.dataIdx >= 0 && size > 0)
     {
+      //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
       float filterValue;
       unsigned int ridx = idx / range;
       //Have values but not enough for per-vertex, spread over range (eg: per triangle)
-      filterValue = valuedata[filter.dataType]->value[ridx];
+      filterValue = values[filter.dataIdx]->value[ridx];
       if (draw->filterout)
       {
         //Filter out values between specified ranges (allows filtering separate sections : intersection)
-        if (filterValue >= filter.minimum && filterValue <= filter.maximum) return true;
+        if (filterValue >= filter.minimum && filterValue <= filter.maximum) 
+          return true;
       }
       else
       {
         //Filter out values NOT between specified ranges (allows combining filters : union)
-        if (filterValue < filter.minimum || filterValue > filter.maximum) return true;
+        if (filterValue < filter.minimum || filterValue > filter.maximum)
+          return true;
       }
     }
   }
   return false;
+}
+
+FloatValues* GeomData::colourData() 
+{
+  if (draw->colourIdx+1 <= values.size()) return values[draw->colourIdx]; return NULL;
+}
+
+float GeomData::colourData(unsigned int idx) 
+{
+  FloatValues* fv = values[draw->colourIdx]; if (!fv || idx >= fv->size()) abort_program("Out of range"); return fv->value[idx];
+}
+
+FloatValues* GeomData::valueData(lucGeometryDataType type)
+{
+  for (int d=0; d<values.size(); d++)
+    if (data[type] == values[d])
+      return values[d];
+  return NULL;
+}
+float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
+{
+  FloatValues* fv = valueData(type);
+  return fv ? fv->value[idx] : HUGE_VALF;
 }
 
 Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), internal(false), type(lucMinType), total(0), scale(1.0f), redraw(true)
@@ -272,10 +269,10 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
       if (type == lucVolumeType)
       {
         //Dump colourValue data only
-        std::cout << "Collected " << geom[i]->colourValue.size() << " values (" << i << ")" << std::endl;
-        for (unsigned int c=0; c < geom[i]->colourValue.size(); c++)
+        std::cout << "Collected " << geom[i]->data[lucColourValueData]->size() << " values (" << i << ")" << std::endl;
+        for (unsigned int c=0; c < geom[i]->data[lucColourValueData]->size(); c++)
         {
-          csv << geom[i]->colourValue[c] << std::endl;
+          csv << geom[i]->colourData(c) << std::endl;
         }
 
       }
@@ -287,8 +284,8 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
         {
           csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
 
-          if (geom[i]->colourValue.size() == geom[i]->count)
-            csv << ',' << geom[i]->colourValue[v];
+          if (geom[i]->colourData() && geom[i]->data[lucColourValueData]->size() == geom[i]->count)
+            csv << ',' << geom[i]->colourData(v);
 
           csv << std::endl;
         }
@@ -422,13 +419,13 @@ void Geometry::localiseColourValues()
     //Get local min and max for each element from colourValues
     if (geom[i]->draw->colourMaps[lucColourValueData])
     {
-      geom[i]->colourValue.minimum = HUGE_VAL;
-      geom[i]->colourValue.maximum = -HUGE_VAL;
-      for (unsigned int v=0; v < geom[i]->colourValue.size(); v++)
+      geom[i]->data[lucColourValueData]->minimum = HUGE_VAL;
+      geom[i]->data[lucColourValueData]->maximum = -HUGE_VAL;
+      for (unsigned int v=0; v < geom[i]->data[lucColourValueData]->size(); v++)
       {
         // Check min/max against each value
-        if (geom[i]->colourValue[v] > geom[i]->colourValue.maximum) geom[i]->colourValue.maximum = geom[i]->colourValue[v];
-        if (geom[i]->colourValue[v] < geom[i]->colourValue.minimum) geom[i]->colourValue.minimum = geom[i]->colourValue[v];
+        if (geom[i]->colourData(v) > geom[i]->colourData()->maximum) geom[i]->colourData()->maximum = geom[i]->colourData(v);
+        if (geom[i]->colourData(v) < geom[i]->colourData()->minimum) geom[i]->colourData()->minimum = geom[i]->colourData(v);
       }
     }
   }
@@ -686,7 +683,7 @@ GeomData* Geometry::add(DrawingObject* draw)
   geom.push_back(geomdata);
   if (hidden.size() < geom.size()) hidden.push_back(allhidden);
   if (allhidden) draw->visible = false;
-  //debug_print("NEW DATA STORE CREATED FOR %s size %d\n", draw->name.c_str(), geom.size());
+  //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p\n", draw->name.c_str(), geom.size(), geomdata);
   return geomdata;
 }
 
@@ -746,6 +743,15 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
   if (width) geomdata->width = width;
   if (height) geomdata->height = height;
   geomdata->depth = depth;
+
+  //Create value store if required
+  if (!geomdata->data[dtype])
+  {
+    FloatValues* fv = new FloatValues();
+    geomdata->data[dtype] = fv;
+    geomdata->values.push_back(fv);
+    //debug_print("NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name.c_str(), dtype, geomdata->values.size(), fv);
+  }
 
   //Read the data
   if (n > 0) geomdata->data[dtype]->read(n, data);
@@ -827,7 +833,7 @@ void Geometry::toImage(unsigned int idx)
   int width = geom[idx]->width;
   if (width == 0) width = 256;
   int height = geom[idx]->height;
-  if (height == 0) height = geom[idx]->colourValue.size() / width;
+  if (height == 0) height = geom[idx]->data[lucColourValueData]->size() / width;
   char path[256];
   int pixel = 3;
   GLubyte *image = new GLubyte[width * height * pixel];
@@ -836,7 +842,7 @@ void Geometry::toImage(unsigned int idx)
   {
     for (int x=0; x<width; x++)
     {
-      printf("%f\n", geom[idx]->colourValue[y * width + x]);
+      //printf("%f\n", geom[idx]->data[lucColourValueData][y * width + x]);
       Colour c;
       geom[idx]->getColour(c, y * width + x);
       image[y * width*pixel + x*pixel + 0] = c.r;

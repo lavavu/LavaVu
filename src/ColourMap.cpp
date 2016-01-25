@@ -226,9 +226,9 @@ void ColourMap::calibrate(float min, float max)
 }
 
 //Calibration from a geom data set, also copies scaling data fields
-void ColourMap::calibrate(FloatValues& dataValues)
+void ColourMap::calibrate(FloatValues* dataValues)
 {
-  calibrate(dataValues.minimum, dataValues.maximum);
+  calibrate(dataValues->minimum, dataValues->maximum);
   //dimCoeff = dataValues.dimCoeff;
   //units = dataValues.units;
 }
