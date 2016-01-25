@@ -47,7 +47,7 @@
 
 typedef struct
 {
-  unsigned int dataType;
+  unsigned int dataIdx;
   float minimum;
   float maximum;
 } Filter;
@@ -67,6 +67,7 @@ public:
   //TODO: store these in json props
   std::vector<Filter> filters;
   bool filterout;
+  unsigned int colourIdx;
 
   std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
 

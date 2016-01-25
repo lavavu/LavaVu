@@ -130,7 +130,7 @@ public:
   virtual void clear() = 0;
   virtual void setOffset() = 0;
   virtual void erase(int start, int end) = 0;
-  virtual void* ref(unsigned i) = 0;
+  virtual void* ref(unsigned i=0) = 0;
 
   void setup(float min, float max)
   {
@@ -179,7 +179,7 @@ public:
     return value[i];
   }
 
-  void* ref (unsigned i)
+  void* ref (unsigned i=0)
   {
     return (void*)&value[i];
   }

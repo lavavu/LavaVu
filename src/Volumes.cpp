@@ -133,7 +133,7 @@ void Volumes::update()
       //Dump raw
       FILE* pFile;
       pFile = fopen("volume.raw", "wb");
-      fwrite(&geom[i]->colourValue.value[0], 1, sizeof(float) * geom[i]->colourValue.size(), pFile);
+      fwrite(geom[i]->colourData()->ref(), 1, sizeof(float) * geom[i]->colourData()->size(), pFile);
       fclose(pFile);
       std::cerr << "Wrote raw volume\n";
 #endif
@@ -143,17 +143,17 @@ void Volumes::update()
       {
         bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
         if (bpv == 3)
-          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colours.value[0], VOLUME_RGB);
+          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGB);
         if (bpv == 4)
-          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colours.value[0], VOLUME_RGBA);
+          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGBA);
       }
-      else
+      else if (geom[i]->colourData())
       {
-        bpv = (4 * geom[i]->colourValue.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+        bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
         if (bpv == 1)
-          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], VOLUME_BYTE);
+          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_BYTE);
         if (bpv == 4)
-          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, &geom[i]->colourValue.value[0], VOLUME_FLOAT);
+          current->load3DTexture(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
       }
       debug_print("volume 0 width %d height %d depth %d (bpv %d)\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
       geom[i]->texture = current->defaultTexture;
@@ -196,7 +196,7 @@ void Volumes::update()
       {
         if (!geom[i]->height)
           //No height? Calculate from values data (assumes float data (4 bpv))
-          geom[i]->height = geom[i]->colourValue.size() / geom[i]->width; // * 4;
+          geom[i]->height = geom[i]->colourData()->size() / geom[i]->width; // * 4;
 
         assert(geom[i]->width <= maxtex);
         assert(geom[i]->height <= maxtex);
@@ -212,29 +212,29 @@ void Volumes::update()
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGB);
             for (unsigned int j=i; j<i+slices[current->id]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, &geom[j]->colours.value[0]);
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
           if (bpv == 4)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGBA);
             for (unsigned int j=i; j<i+slices[current->id]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, &geom[j]->colours.value[0]);
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
         }
-        else
+        else if (geom[i]->colourData())
         {
-          bpv = (4 * geom[i]->colourValue.size()) / (float)(geom[i]->width * geom[i]->height);
+          bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height);
           if (bpv == 1)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_BYTE);
             for (unsigned int j=i; j<i+slices[current->id]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, &geom[j]->colourValue.value[0]);
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->colourData()->ref());
           }
           if (bpv == 4)
           {
             current->load3DTexture(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_FLOAT);
             for (unsigned int j=i; j<i+slices[current->id]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, &geom[j]->colourValue.value[0]);
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
           }
         }
         debug_print("current %d width %d height %d depth %d (bpv %d)\n", current->id, geom[i]->width, geom[i]->height, slices[current->id], bpv);
@@ -317,10 +317,10 @@ void Volumes::render(int i)
   //Field data requires normalisation to [0,1]
   //Pass minimum,maximum in place of colourmap calibrate
   float range[2] = {0.0, 1.0};
-  if (geom[i]->colourValue.size() > 0)
+  if (geom[i]->colourData())
   {
-    range[0] = geom[i]->colourValue.minimum;
-    range[1] = geom[i]->colourValue.maximum;
+    range[0] = geom[i]->colourData()->minimum;
+    range[1] = geom[i]->colourData()->maximum;
   }
   glUniform2fv(prog->uniforms["uRange"], 1, range);
   GL_Error_Check;
@@ -403,7 +403,7 @@ GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, in
     if (geom[i]->draw->id == id && drawable(i))
     {
       int width = geom[i]->width;
-      int height = geom[i]->colourValue.size() / width;
+      int height = geom[i]->colourData()->size() / width;
       iw = width * xtiles;
       ih = ceil(slices[id] / (float)xtiles) * height;
       if (ih == height) iw = width * slices[id];
@@ -415,16 +415,17 @@ GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, in
       {
         //printf("%d %d < %d\n", i, j, i+slices[id]);
         //printf("SLICE %d OFFSETS %d,%d\n", j, xoffset, yoffset);
-        float min = geom[j]->colourValue.minimum;
-        float range = geom[j]->colourValue.maximum - min;
+        float min = geom[j]->colourData()->minimum;
+        float range = geom[j]->colourData()->maximum - min;
         for (int y=0; y<height; y++)
         {
           for (int x=0; x<width; x++)
           {
+            float val = geom[j]->colourData(y * width + x);
             if (flip)
-              image[iw * (ih - (y + yoffset) - 1) + x + xoffset] = (geom[j]->colourValue[y * width + x] - min) / range * 255;
+              image[iw * (ih - (y + yoffset) - 1) + x + xoffset] = (val - min) / range * 255;
             else
-              image[iw * (y + yoffset) + x + xoffset] = (geom[j]->colourValue[y * width + x] - min) / range * 255;
+              image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
           }
         }
 
@@ -478,7 +479,7 @@ void Volumes::jsonWrite(unsigned int id, json::Object& obj)
     {
       json::Object data, vertices, volume;
       //Height needs calculating from values data
-      int height = geom[i]->colourValue.size() / geom[i]->width;
+      int height = geom[i]->colourData()->size() / geom[i]->width;
       /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
       printf("Exporting: %d width %d height %d depth %d\n", id, geom[i]->width, height, slices[id]);
       int sliceSize = geom[i]->width * height;
@@ -487,7 +488,7 @@ void Volumes::jsonWrite(unsigned int id, json::Object& obj)
       for (int j=i; j<i+slices[id]; j++)
       {
          size_t size = sliceSize * sizeof(float);
-         memcpy(volume + offset, &geom[j]->colourValue.value[0], size);
+         memcpy(volume + offset, geom[j]->colourData()->ref(), size);
          offset += sliceSize;
       }*/
 

@@ -166,7 +166,7 @@ void Points::loadVertices()
     float psize0 = geo->draw->properties["pointsize"].ToFloat(1.0) * geo->draw->properties["scaling"].ToFloat(1.0);
     //TODO: this duplicates code in getColour,
     // try to optimise getColour better instead
-    if (geo->draw->colourMaps[lucColourValueData] && geo->colourValue.size() > 0)
+    if (geo->draw->colourMaps[lucColourValueData] && geo->colourData())
       cmap = geo->draw->colourMaps[lucColourValueData];
     //Set opacity to drawing object/geometry override level if set
     float alpha = geo->draw->properties["opacity"].ToFloat(0.0);
@@ -206,9 +206,9 @@ void Points::loadVertices()
         memcpy(ptr, geo->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
         //Copies colour bytes
-        if (cmap)
+        if (cmap && geo->colourData())
         {
-          c = cmap->getfast(geo->colourValue[i]);
+          c = cmap->getfast(geo->colourData(i));
           if (alpha > 0.0) c.a *= alpha;
         }
         else
@@ -217,7 +217,7 @@ void Points::loadVertices()
         ptr += sizeof(Colour);
         //Copies settings (size + smooth)
         float psize = psize0;
-        if (geo->sizes.size() > 0) psize *= geo->sizes[i];
+        if (geo->data[lucSizeData]) psize *= geo->valueData(lucSizeData, i);
         memcpy(ptr, &psize, sizeof(float));
         ptr += sizeof(float);
         memcpy(ptr, &ptype, sizeof(float));

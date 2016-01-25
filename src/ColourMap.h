@@ -94,7 +94,7 @@ public:
   void add(float *components, float pvalue);
   void calc();
   void calibrate(float min, float max);
-  void calibrate(FloatValues& dataValues);
+  void calibrate(FloatValues* dataValues);
   void calibrate();
   Colour getfast(float value);
   Colour get(float value);

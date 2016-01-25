@@ -1977,11 +1977,11 @@ bool LavaVu::parseCommand(std::string cmd)
     {
       //TODO: json representation
       Filter filter;
-      filter.dataType = parsed.Int("filter", 0);
+      filter.dataIdx = parsed.Int("filter", 0);
       parsed.has(filter.minimum, "filter", 1);
       parsed.has(filter.maximum, "filter", 2);
       aobject->filters.push_back(filter);
-      printMessage("Filter on data type %d range %f to %f", filter.dataType, filter.minimum, filter.maximum);
+      printMessage("Filter on value index %d range %f to %f", filter.dataIdx, filter.minimum, filter.maximum);
       //if (!loadWindow(window)) return false;
       //requires manual "reload" or timestep change to activate
     }

@@ -54,6 +54,7 @@ DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float
   if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
   defaultTexture = NULL;
   filterout = false;
+  colourIdx = 0; //Default colouring data is first value block
 }
 
 DrawingObject::~DrawingObject()
