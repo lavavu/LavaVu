@@ -77,16 +77,11 @@ public:
   DrawingObject(std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="", unsigned int id=0);
   ~DrawingObject();
 
+  void setup();
   void addColourMap(ColourMap* map, lucGeometryDataType data_type);
   TextureData* loadTexture(std::string texfn);
   int useTexture(TextureData* texture);
   void load3DTexture(int width, int height, int depth, void* data, int type=VOLUME_FLOAT);
-  void cache()
-  {
-    //Cache values for faster lookups during draw calls
-    opacity = properties["opacity"].ToFloat(1.0);
-    colour = Colour_FromJson(properties, "colour");
-  }
 
   static unsigned int lastid;
 };

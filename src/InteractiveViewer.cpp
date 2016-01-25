@@ -1056,27 +1056,6 @@ bool LavaVu::parseCommand(std::string cmd)
       }
     }
   }
-  else if (parsed.exists("opacity"))
-  {
-    //Alpha by name/ID match in all drawing objects
-    DrawingObject* obj = aobject;
-    int next = 0;
-    if (!obj)
-    {
-      std::string what = parsed["opacity"];
-      int id = parsed.Int("opacity", 0);
-      obj = findObject(what, id);
-      next++;
-    }
-    if (obj && parsed.has(fval, "opacity", next))
-    {
-      if (fval > 1.0) fval /= 255.0;
-      obj->properties["opacity"] = fval;
-      redraw(obj->id);
-      printMessage("%s opacity set to %f", obj->name.c_str(), fval);
-      redrawViewports();
-    }
-  }
   else if (parsed.has(ival, "movie"))
   {
     std::string fn = awin->name + ".mp4";
@@ -1307,7 +1286,7 @@ bool LavaVu::parseCommand(std::string cmd)
       std::cout << "\nObject commands:\n\n";
       std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file");
       std::cout << "\nDisplay commands:\n\n";
-      std::cout << helpCommand("background") << helpCommand("alpha") << helpCommand("opacity");
+      std::cout << helpCommand("background") << helpCommand("alpha");
       std::cout << helpCommand("axis") << helpCommand("cullface") << helpCommand("wireframe");
       std::cout << helpCommand("redraw") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
       std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
@@ -1479,21 +1458,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("colour"))
   {
-    //Set object colour by name/ID match in all drawing objects
-    DrawingObject* obj = aobject;
-    int next = 0;
-    if (!obj)
+    //Add colours to object
+    //(this now only adds rgba data values, to set global colour use property: colour=val)
+    if (aobject)
     {
-      std::string what = parsed["colour"];
-      int id = parsed.Int("colour", 0);
-      obj = findObject(what, id);
-      next++;
-    }
-    if (obj)
-    {
-      bool append = (parsed.get("colour", next+1) == "append");
       Colour c;
-      std::string str = parsed.get("colour", next);
+      std::string str = parsed.get("colour");
       if (str.find('[') != std::string::npos)
       {
         //Parse colour json array
@@ -1503,25 +1473,18 @@ bool LavaVu::parseCommand(std::string cmd)
       else
       {
         //Parse colour as RGB(A) hex, convert to ARGB int
-        c.value = parsed.Colour("colour", next);
+        c.value = parsed.Colour("colour");
       }
 
-      if (append)
+      //Find the first available geometry container for this drawing object and append a colour
+      GeomData* geomdata = getGeometry(aobject);
+      if (geomdata)
       {
-        //Find the first available geometry container for this drawing object and append a colour
-        GeomData* geomdata = getGeometry(obj);
-        if (geomdata)
-        {
-          geomdata->data[lucRGBAData]->read(1, &c.value);
-          printMessage("%s colour appended %x", obj->name.c_str(), c.value);
-        }
+        geomdata->data[lucRGBAData]->read(1, &c.value);
+        printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
       }
-      else
-      {
-        obj->properties["colour"] = Colour_ToJson(c);
-        printMessage("%s colour set to %x", obj->name.c_str(), c.value);
-      }
-      redraw(obj->id);
+
+      redraw(aobject->id);
       redrawViewports();
     }
   }
@@ -2293,15 +2256,6 @@ std::string LavaVu::helpCommand(std::string cmd)
   {
     help += "Set global transparency value\n\n"
             "Usage: alpha value\n\n"
-            "value (integer > 1) : sets alpha as integer in range [1,255] where 255 is fully opaque\n"
-            "value (number [0,1]) : sets alpha as real number in range [0,1] where 1.0 is fully opaque\n";
-  }
-  else if (cmd == "opacity")
-  {
-    help += "Set object transparency value\n\n"
-            "Usage: opacity object_id/object_name value\n\n"
-            "object_id (integer) : the index of the object (see: \"list objects\")\n"
-            "object_name (string) : the name of the object (see: \"list objects\")\n"
             "value (integer > 1) : sets alpha as integer in range [1,255] where 255 is fully opaque\n"
             "value (number [0,1]) : sets alpha as real number in range [0,1] where 1.0 is fully opaque\n";
   }
