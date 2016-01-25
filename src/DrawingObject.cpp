@@ -61,6 +61,15 @@ DrawingObject::~DrawingObject()
   if (defaultTexture) delete defaultTexture;
 }
 
+void DrawingObject::setup()
+{
+  //Cache values for faster lookups during draw calls
+  colour = Colour_FromJson(properties, "colour");
+  opacity = properties["opacity"].ToFloat(1.0);
+  //Convert values (1,255] -> [0,1]
+  if (opacity > 1.0) opacity /= 255.0;
+}
+
 void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
 {
   //Sets the colour map for the specified geometry data type

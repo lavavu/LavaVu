@@ -85,6 +85,9 @@ const char* GeomData::getLabels()
 //Utility functions, calibrate colourmaps and get colours
 void GeomData::colourCalibrate()
 {
+  //Cache colour lookups
+  draw->setup();
+
   //Calibrate colour maps on ranges for related data
   if (draw->colourMaps[lucColourValueData])
     draw->colourMaps[lucColourValueData]->calibrate(colourValue);
@@ -96,8 +99,6 @@ void GeomData::colourCalibrate()
     draw->colourMaps[lucGreenValueData]->calibrate(greenValue);
   if (draw->colourMaps[lucBlueValueData])
     draw->colourMaps[lucBlueValueData]->calibrate(blueValue);
-  //Cache colour lookups
-  draw->cache();
 }
 
 //Get colour using specified colourValue
@@ -106,8 +107,7 @@ void GeomData::mapToColour(Colour& colour, float value)
   colour = draw->colourMaps[lucColourValueData]->getfast(value);
 
   //Set opacity to drawing object override level if set
-  float opacity = draw->properties["opacity"].ToFloat(1.0);
-  if (opacity > 0.0 && opacity < 1.0)
+  if (draw->opacity > 0.0 && draw->opacity < 1.0)
     colour.a = opacity * 255;
 }
 
