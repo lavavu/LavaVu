@@ -69,6 +69,8 @@ void DrawingObject::setup()
   opacity = properties["opacity"].ToFloat(1.0);
   //Convert values (1,255] -> [0,1]
   if (opacity > 1.0) opacity /= 255.0;
+
+  colourIdx = properties["colourby"].ToInt(0);
 }
 
 void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)

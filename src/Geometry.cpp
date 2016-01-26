@@ -88,6 +88,9 @@ void GeomData::colourCalibrate()
   //Cache colour lookups
   draw->setup();
 
+  //Check for sane range
+  if (draw->colourIdx >= values.size()) draw->colourIdx = 0;
+
   //Calibrate colour maps on ranges for related data
   if (draw->colourMaps[lucColourValueData] && values.size() > draw->colourIdx)
     draw->colourMaps[lucColourValueData]->calibrate(values[draw->colourIdx]);
@@ -183,12 +186,13 @@ bool GeomData::filter(unsigned int idx)
 
 FloatValues* GeomData::colourData() 
 {
-  if (draw->colourIdx+1 <= values.size()) return values[draw->colourIdx]; return NULL;
+  return values[draw->colourIdx];
 }
 
 float GeomData::colourData(unsigned int idx) 
 {
-  FloatValues* fv = values[draw->colourIdx]; if (!fv || idx >= fv->size()) abort_program("Out of range"); return fv->value[idx];
+  FloatValues* fv = values[draw->colourIdx];
+  return fv->value[idx];
 }
 
 FloatValues* GeomData::valueData(lucGeometryDataType type)

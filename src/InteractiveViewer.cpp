@@ -1972,7 +1972,7 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("filter"))
   {
-    //Require a selected object, TODO: all object selection in command parser should be in a function
+    //Require a selected object
     if (aobject)
     {
       //TODO: json representation
@@ -1988,7 +1988,7 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("filterout"))
   {
-    //Require a selected object, TODO: all object selection in command parser should be in a function
+    //Require a selected object
     if (aobject)
     {
       aobject->filterout = !aobject->filterout;
@@ -1998,7 +1998,7 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("clearfilters"))
   {
-    //Require a selected object, TODO: all object selection in command parser should be in a function
+    //Require a selected object
     if (aobject)
     {
       printMessage("Filters cleared on object %s", aobject->name.c_str());
