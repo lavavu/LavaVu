@@ -599,7 +599,6 @@ void Geometry::labels()
   //Print labels
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_DEPTH_TEST);  //No depth testing
-  glEnable(GL_MULTISAMPLE);
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (view->textscale > 0) geom[i]->draw->properties["font"] = "vector"; //Force vector if downsampling
