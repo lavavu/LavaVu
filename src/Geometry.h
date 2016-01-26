@@ -87,6 +87,7 @@ public:
   char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   TextureData* texture;
+  unsigned int fixedOffset; //Offset to end of fixed value data
 
   float distance;
 
@@ -125,6 +126,8 @@ public:
       min[i] = HUGE_VAL;
       max[i] = -HUGE_VAL;
     }
+
+    fixedOffset = 0;
   }
 
   ~GeomData()
@@ -133,11 +136,9 @@ public:
     labelptr = NULL;
     if (texture && texture != draw->defaultTexture) delete texture;
 
-    //Delete value data containers
-    for (int i=0; i<values.size(); i++)
-    {
+    //Delete value data containers (exclude fixed additions)
+    for (int i=fixedOffset; i<values.size(); i++)
       delete values[i];
-    }
   }
 
   void checkPointMinMax(float *coord);
@@ -215,6 +216,7 @@ protected:
   int elements;
   int drawcount;
   bool flat2d; //Flag for flat surfaces in 2d
+  GeomData* fixed; //Pointer to fixed data
 
 public:
   //TODO: Move globals from GeomData and elsewhere to this properties object...
@@ -257,6 +259,7 @@ public:
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum);
+  GeomData* fix(GeomData* fgeom=NULL);
   void label(DrawingObject* draw, const char* labels);
   void print();
   int size() {return geom.size();}
@@ -264,7 +267,6 @@ public:
   void move(Geometry* other);
   void toImage(unsigned int idx);
   void setTexture(DrawingObject* draw, TextureData* texture);
-
   void drawVector(DrawingObject *draw, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count=24);
   void drawCuboid(DrawingObject *draw, float min[3], float max[3], Quaternion& rot, bool quads=false);

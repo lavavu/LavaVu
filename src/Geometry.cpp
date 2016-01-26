@@ -208,7 +208,9 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
   return fv ? fv->value[idx] : HUGE_VALF;
 }
 
-Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), internal(false), type(lucMinType), total(0), scale(1.0f), redraw(true)
+Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), internal(false), 
+                       type(lucMinType), total(0), scale(1.0f), redraw(true), 
+                       fixed(NULL)
 {
 }
 
@@ -733,6 +735,15 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
     //No store yet or loading vertices and already have required amount, new object required...
     //Create new data store, save in drawing object and Geometry list
     geomdata = add(draw);
+
+    //After creating new store, insert any fixed geometry records
+    if (fixed) 
+    {
+      //Default shallow copy
+      *geomdata = *fixed;
+      geomdata->fixedOffset = geomdata->values.size();
+      //std::cout << "FIXED DATA RECORDS LOADED " << geomdata->vertices.size() << " verts " << std::endl;
+    }
   }
 
   read(geomdata, n, dtype, data, width, height, depth);
@@ -775,6 +786,28 @@ void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minim
   GeomData* geomdata = getObjectStore(draw);
   if (!geomdata) return;
   geomdata->data[dtype]->setup(minimum, maximum);
+}
+
+
+GeomData* Geometry::fix(GeomData* fgeom)
+{
+  //Fixed geomdata (static over timesteps)
+  //If fgeom provided, simply save as the fixed data
+  //If not, move own data into fixed and clear
+  if (fgeom)
+  {
+    fixed = fgeom;
+  }
+  else if (geom.size() == 1)
+  {
+    fixed = geom[0];
+    geom.clear();
+  }
+  else
+  {
+    std::cout << "Unexpected: multiple fixed geometry containers\n";
+  }
+  return fixed;
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)
