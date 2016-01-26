@@ -825,7 +825,7 @@ int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLe
 
   //Flip scanlines vertically
   for (int j = texture->height - 1 ; j >= 0 ; j--)
-    fread(&imageData[texture->width * j * bytesPerPixel], bytesPerPixel, texture->width, imageFile);
+    if (fread(&imageData[texture->width * j * bytesPerPixel], bytesPerPixel, texture->width, imageFile) < texture->width) abort_program("PPM Read Error");
   fclose(imageFile);
 
   return BuildTexture(texture, imageData, mipmaps, GL_RGB, mode);
