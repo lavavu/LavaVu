@@ -773,7 +773,6 @@ int Model::setTimeStep(int stepidx)
   //Clear any existing geometry
   clearObjects();
 
-
   //Attempt to load from cache first
   //if (restoreStep(now)) return 0; //Cache hit successful return value
   if (!db) return 0;
