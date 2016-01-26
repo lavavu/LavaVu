@@ -545,6 +545,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   }
 
+  glEnable(GL_MULTISAMPLE);
   glPopAttrib();
 }
 
