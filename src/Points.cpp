@@ -101,6 +101,7 @@ void Points::update()
   last_total = total;
 
   //Initial depth sort & render
+  view->sort = true;
   render();
 }
 
