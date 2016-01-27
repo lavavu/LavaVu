@@ -137,11 +137,16 @@ void ColourMap::add(float *components, float pvalue)
   add(colour.value, pvalue);
 }
 
+bool ColourMap::isLog()
+{
+  return ColourMap::logscales < 2 && (log || ColourMap::logscales == 1);
+}
+
 void ColourMap::calc()
 {
   if (!colours.size()) return;
   //Precalculate colours
-  if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1))
+  if (isLog())
     for (int cv=0; cv<SAMPLE_COUNT; cv++)
       precalc[cv] = get(pow(10, log10(minimum) + range * (float)cv/(SAMPLE_COUNT-1)));
   else
@@ -160,7 +165,7 @@ void ColourMap::calibrate(float min, float max)
 
   minimum = min;
   maximum = max;
-  if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1))
+  if (isLog())
   {
     if (minimum <= FLT_MIN) minimum =  FLT_MIN;
     if (maximum <= FLT_MIN) maximum =  FLT_MIN;
@@ -243,7 +248,7 @@ Colour ColourMap::getfast(float value)
   //NOTE: value caching DOES NOT WORK for log scales!
   //If this is causing slow downs in future, need a better method
   int c = 0;
-  if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1)) //return get(value);
+  if (isLog())
     c = (int)((SAMPLE_COUNT-1) * ((log10(value) - log10(minimum)) / range));
   else
     c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
@@ -267,7 +272,7 @@ float ColourMap::scaleValue(float value)
   if (value <= min) return 0.0;
   if (value >= max) return 1.0;
 
-  if (ColourMap::logscales < 2 && (log || ColourMap::logscales == 1))
+  if (isLog())
   {
     value = log10(value);
     min = log10(minimum);
@@ -406,7 +411,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
   glColor4ubv(printColour.rgba);
   float tickValue;
   int ticks = properties["ticks"].ToInt(0);
-  bool printTicks = properties["printticks"].ToBool(false);
+  bool printTicks = properties["printticks"].ToBool(true);
   bool printUnits = properties["printunits"].ToBool(false);
   bool scientific = properties["scientific"].ToBool(false);
   int precision = properties["precision"].ToInt(2);
@@ -415,6 +420,8 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
   if (border > 0) glLineWidth(border);
   else glLineWidth(1.0);
 
+  //Always show at least two ticks on a log scale
+  if (isLog() && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
   float fontscale = PrintSetFont(properties);
@@ -446,7 +453,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
       if (tickValue == FLT_MIN)  /* No fixed value provided */
       {
         /* First get scaled position 0-1 */
-        if (log)
+        if (isLog())
         {
           /* Space ticks based on a logarithmic scale of log(1) to log(11)
              shows non-linearity while keeping ticks spaced apart enough to read labels */
@@ -458,9 +465,9 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
           scaledPos = (float)i / (ticks+1);
 
         /* Compute the tick value */
-        if (log)
+        if (isLog())
         {
-          /* Reverse calc to find Value tick value at calculated position 0-1: */
+          /* Reverse calc to find tick value at calculated position 0-1: */
           tickValue = log10(minimum) + scaledPos
                       * (log10(maximum) - log10(minimum));
           tickValue = pow( 10.0f, tickValue );
@@ -506,15 +513,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
         // For display purpose, scales the printed values if needed
         tickValue = scaleval * tickValue;
         char format[10];
-        if (printUnits && units == "K")
-        {
-          //Convert degrees to Celcius from Kelvin
-          tickValue -= 273.15;
-          char degree = '\x7f';
-          sprintf(format, "%%.%d%c%cC", precision, scientific ? 'e' : 'g', degree);
-        }
-        else
-          sprintf(format, "%%.%d%c%s", precision, scientific ? 'e' : 'g', (printUnits ? units.c_str() : ""));
+        sprintf(format, "%%.%d%c%s", precision, scientific ? 'e' : 'g', (printUnits ? units.c_str() : ""));
         sprintf(string, format, tickValue);
       }
 

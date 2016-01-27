@@ -92,6 +92,7 @@ public:
   void add(unsigned int* colours, int count);
   void add(unsigned int colour, float pvalue);
   void add(float *components, float pvalue);
+  bool isLog();
   void calc();
   void calibrate(float min, float max);
   void calibrate(FloatValues* dataValues);
