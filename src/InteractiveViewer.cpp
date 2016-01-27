@@ -504,7 +504,7 @@ Geometry* LavaVu::getGeometryType(std::string what)
   return NULL;
 }
 
-DrawingObject* LavaVu::findObject(std::string what, unsigned int id, bool nodefault)
+DrawingObject* LavaVu::findObject(std::string what, unsigned int id)
 {
   //Find by name/ID match in all drawing objects
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
@@ -520,8 +520,7 @@ DrawingObject* LavaVu::findObject(std::string what, unsigned int id, bool nodefa
     }
   }
   //std::cerr << "Not found, returning " << (nodefault ? "NULL" : "DEFAULT : ") << aobject << std::endl;
-  //Return selected object unless disabled with nodefault
-  return nodefault ? NULL : aobject;
+  return NULL;
 }
 
 ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
@@ -1329,7 +1328,7 @@ bool LavaVu::parseCommand(std::string cmd)
     for (int c=0; c<10; c++) //Allow multiple id/name specs on line
     {
       int id = parsed.Int("export", 0, c);
-      DrawingObject* obj = findObject(parsed.get("export", 1), id, true);
+      DrawingObject* obj = findObject(parsed.get("export", 1), id);
       if (obj)
       {
         exportData(type, obj->id);
@@ -1906,7 +1905,7 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     std::string what = parsed["select"];
     int id = parsed.Int("select", 0);
-    aobject = findObject(what, id, true); //Don't allow default to currently selected
+    aobject = findObject(what, id);
     if (aobject)
       printMessage("Selected object: %s", aobject->name.c_str());
     else
