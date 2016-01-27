@@ -154,7 +154,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
 
 bool GeomData::filter(unsigned int idx)
 {
-  for (int i=0; i < draw->filters.size(); i++)
+  for (unsigned int i=0; i < draw->filters.size(); i++)
   {
     Filter& filter = draw->filters[i];
     if (!values[filter.dataIdx]) continue;
@@ -197,7 +197,7 @@ float GeomData::colourData(unsigned int idx)
 
 FloatValues* GeomData::valueData(lucGeometryDataType type)
 {
-  for (int d=0; d<values.size(); d++)
+  for (unsigned int d=0; d<values.size(); d++)
     if (data[type] == values[d])
       return values[d];
   return NULL;
@@ -208,9 +208,9 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
   return fv ? fv->value[idx] : HUGE_VALF;
 }
 
-Geometry::Geometry() : view(NULL), elements(-1), allhidden(false), internal(false), 
-                       type(lucMinType), total(0), scale(1.0f), redraw(true), 
-                       fixed(NULL)
+Geometry::Geometry() : view(NULL), elements(-1), flat2d(false),
+                       fixed(NULL), allhidden(false), internal(false), 
+                       type(lucMinType), total(0), scale(1.0f), redraw(true)
 {
 }
 

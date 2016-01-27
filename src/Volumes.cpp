@@ -198,8 +198,8 @@ void Volumes::update()
           //No height? Calculate from values data (assumes float data (4 bpv))
           geom[i]->height = geom[i]->colourData()->size() / geom[i]->width; // * 4;
 
-        assert(geom[i]->width <= maxtex);
-        assert(geom[i]->height <= maxtex);
+        assert(geom[i]->width <= (unsigned)maxtex);
+        assert(geom[i]->height <= (unsigned)maxtex);
         assert(slices[current->id] <= maxtex);
 
         //Init/allocate/bind texture

@@ -137,7 +137,7 @@ public:
     if (texture && texture != draw->defaultTexture) delete texture;
 
     //Delete value data containers (exclude fixed additions)
-    for (int i=fixedOffset; i<values.size(); i++)
+    for (unsigned int i=fixedOffset; i<values.size(); i++)
       delete values[i];
   }
 
