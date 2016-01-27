@@ -112,7 +112,8 @@ void TriSurfaces::update()
     loadBuffers();
   }
 
-  //Depth sort & render
+  //Initial depth sort & render
+  view->sort = true;
   render();
 }
 
