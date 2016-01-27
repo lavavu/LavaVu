@@ -508,6 +508,7 @@ void Geometry::setState(unsigned int index, Shader* prog)
   {
     //Flat disables lighting for non surface types
     if (draw->properties["flat"].ToBool(false)) lighting = false;
+    glEnable(GL_BLEND);
   }
 
   //Disable depth test by default for 2d lines, otherwise enable
@@ -752,7 +753,7 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
       //Default shallow copy
       *geomdata = *fixed;
       geomdata->fixedOffset = geomdata->values.size();
-      //std::cout << "FIXED DATA RECORDS LOADED " << geomdata->vertices.size() << " verts " << std::endl;
+      //std::cout << "FIXED DATA RECORDS LOADED FOR " << draw->name << ", " << geomdata->vertices.size() << " verts " << std::endl;
     }
   }
 
@@ -811,6 +812,7 @@ GeomData* Geometry::fix(GeomData* fgeom)
   else if (geom.size() == 1)
   {
     fixed = geom[0];
+    //std::cout << "SET FIXED DATA RECORDS FOR " << fixed->draw->name << ", " << fixed->vertices.size() << " verts " << std::endl;
     geom.clear();
   }
   else
