@@ -77,11 +77,11 @@ void TriSurfaces::update()
 
   //Get triangle count
   total = 0;
-  tricount = 0;
+  unsigned int tcount = 0;
   hiddencache.resize(geom.size());
   for (unsigned int t = 0; t < geom.size(); t++)
   {
-    tricount += geom[t]->indices.size() / 3;
+    tcount += geom[t]->indices.size() / 3;
     int tris;
     if (geom[t]->indices.size() > 0)
       tris = geom[t]->indices.size() / 3;
@@ -102,7 +102,7 @@ void TriSurfaces::update()
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //To force, use Geometry->reset() which sets elements to -1
-  if (elements < 0 || !tidx || tricount != total)
+  if (elements < 0 || !tidx || tcount != total)
   {
     //Clear buffers
     //close();

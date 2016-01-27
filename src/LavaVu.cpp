@@ -1889,14 +1889,6 @@ ColourMap* LavaVu::addColourMap(ColourMap* cmap)
   return cmap;
 }
 
-void LavaVu::redrawObjects()
-{
-  //Flag redraw on all objects...
-  for (unsigned int i=0; i < Model::geometry.size(); i++)
-    Model::geometry[i]->redraw = true;
-}
-
-
 // Render
 void LavaVu::display(void)
 {
@@ -1938,7 +1930,7 @@ void LavaVu::display(void)
     {
       //if (!awin->views[v]->redraw) continue;
       //All objects need redrawing if the viewport changed
-      if (lastdraw != v) redrawObjects();
+      if (lastdraw != v) amodel->redraw();
       awin->views[v]->redraw = false;
 
       view = v;
@@ -2734,7 +2726,7 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
         if (models[m]->windows[w] == awin) amodel = models[m];
 
     //Reset new model data
-    amodel->reset();
+    amodel->redraw(true);
     //if (amodel->objects.size() == 0) return false;
 
     //Set timestep and load geometry at that step
@@ -3046,7 +3038,7 @@ void LavaVu::jsonRead(std::string json)
     for (unsigned int j=0; j < colourmaps.size(); j++)
     {
       json::Object cmap = colourmaps[j];
-      if (cmap["id"].ToInt(0) == amodel->colourMaps[i]->id)
+      if (cmap["id"].ToInt(0) == (int)amodel->colourMaps[i]->id)
       {
         amodel->colourMaps[i]->minimum = cmap["minimum"];
         amodel->colourMaps[i]->maximum = cmap["maximum"];
@@ -3071,7 +3063,7 @@ void LavaVu::jsonRead(std::string json)
     for (unsigned int j=0; j < objects.size(); j++)
     {
       json::Object obj = objects[j];
-      if (obj["id"].ToInt(0) == amodel->objects[i]->id)
+      if (obj["id"].ToInt(0) == (int)amodel->objects[i]->id)
       {
         jsonMerge(amodel->objects[i]->properties, obj);
         //if (colourmap >= 0) obj["colourmap"] = colourmap;

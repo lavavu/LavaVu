@@ -413,35 +413,35 @@ bool LavaVu::parseChar(unsigned char key)
     if (viewAll)
     {
       viewAll = false;
-      redrawObjects();
+      amodel->redraw();
     }
     viewSelect(view-1);
     printMessage("Set viewport to %d", view);
-    if (!viewPorts) redrawObjects();
+    if (!viewPorts) amodel->redraw();
     break;
   case KEY_PAGEDOWN:
     //Next viewport
     if (viewAll)
     {
       viewAll = false;
-      redrawObjects();
+      amodel->redraw();
     }
     viewSelect(view+1);
     printMessage("Set viewport to %d", view);
-    if (!viewPorts) redrawObjects();
+    if (!viewPorts) amodel->redraw();
     break;
   case KEY_HOME:
     //All viewports
     viewAll = !viewAll;
     if (viewAll) viewPorts = false; //Invalid in viewAll mode
-    redrawObjects();
+    amodel->redraw();
     printMessage("View All set to %s", (viewAll ? "ON" : "OFF"));
     break;
   case KEY_END:
     //No viewports (use first view but full window and all objects)
     viewPorts = !viewPorts;
     if (viewPorts) viewAll = false;  //Invalid in viewPorts mode
-    redrawObjects();
+    amodel->redraw();
     printMessage("ViewPorts set to %s", (viewPorts ? "ON" : "OFF"));
     break;
   case '`':
@@ -1256,7 +1256,7 @@ bool LavaVu::parseCommand(std::string cmd)
       amodel->colourMaps[i]->calibrate();
     ColourMap::lock = state;  //restore setting
     printMessage("Log scales are %s", ColourMap::logscales  == 0 ? "DEFAULT": ( ColourMap::logscales  == 1 ? "ON" : "OFF"));
-    redrawObjects();
+    amodel->redraw(true); //Redraw with forced reload
   }
   else if (parsed.exists("help"))
   {
@@ -1319,7 +1319,7 @@ bool LavaVu::parseCommand(std::string cmd)
     for (int type=lucMinType; type<lucMaxType; type++)
       Model::geometry[type]->localiseColourValues();
     printMessage("ColourMap scales localised");
-    redrawObjects();
+    amodel->redraw(true); //Colour change so force reload
   }
   else if (parsed.exists("export"))
   {
@@ -1347,7 +1347,7 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     ColourMap::lock = !ColourMap::lock;
     printMessage("ColourMap scale locking %s", ColourMap::lock ? "ON":"OFF");
-    redrawObjects();
+    amodel->redraw(true); //Colour change so force reload
   }
   else if (parsed.exists("list"))
   {
@@ -1774,7 +1774,7 @@ bool LavaVu::parseCommand(std::string cmd)
         amodel->loadGeometry(obj->id);
         //Update the views
         resetViews(false);
-        redrawObjects();
+        amodel->redraw();
         //Delete the cache as object list changed
         amodel->deleteCache();
       }
@@ -1975,15 +1975,19 @@ bool LavaVu::parseCommand(std::string cmd)
     //Require a selected object
     if (aobject)
     {
-      //TODO: json representation
+      //TODO: document, implement a json representation for web ui
       Filter filter;
       filter.dataIdx = parsed.Int("filter", 0);
       parsed.has(filter.minimum, "filter", 1);
       parsed.has(filter.maximum, "filter", 2);
+      //Range keyword defines a filter applied over the range of available values not literal values
+      //eg: 0.1-0.9 will filter out the lowest and highest 10% of values
+      filter.range = (parsed.get("filter", 3) == "range");
       aobject->filters.push_back(filter);
-      printMessage("Filter on value index %d range %f to %f", filter.dataIdx, filter.minimum, filter.maximum);
+      printMessage("%s filter on value index %d from %f to %f", (filter.range ? "Range" : "Value"), filter.dataIdx, filter.minimum, filter.maximum);
       //if (!loadWindow(window)) return false;
       //requires manual "reload" or timestep change to activate
+      amodel->redraw(true); //Force reload
     }
   }
   else if (parsed.exists("filterout"))
@@ -1993,7 +1997,7 @@ bool LavaVu::parseCommand(std::string cmd)
     {
       aobject->filterout = !aobject->filterout;
       printMessage("Filters on object %s set to %s", aobject->name.c_str(), (aobject->filterout ? "OUT" : "IN"));
-      redrawViewports();
+      amodel->redraw(true); //Force reload
     }
   }
   else if (parsed.exists("clearfilters"))
@@ -2003,7 +2007,7 @@ bool LavaVu::parseCommand(std::string cmd)
     {
       printMessage("Filters cleared on object %s", aobject->name.c_str());
       aobject->filters.clear();
-      redrawViewports();
+      amodel->redraw(true); //Force reload
     }
   }
   else if (parsed.exists("sealevel"))

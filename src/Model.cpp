@@ -221,11 +221,24 @@ void Model::clearObjects(bool all)
   }
 }
 
-void Model::reset()
+void Model::redraw(bool reset)
 {
-  //Flag redraw and clear element count...
+  //Flag redraw on all objects...
   for (unsigned int i=0; i < geometry.size(); i++)
-    geometry[i]->reset();
+  {
+    if (reset) 
+      //Flag redraw and clear element count to force colour reload...
+      geometry[i]->reset();
+    else
+      //Just flag a redraw, will only be reloaded if vertex count changed
+      geometry[i]->redraw = true;
+  }
+
+
+  for (unsigned int i = 0; i < colourMaps.size(); i++)
+  {
+    colourMaps[i]->calibrated = false;
+  }
 }
 
 void Model::loadWindows()
@@ -696,7 +709,7 @@ bool Model::restoreStep()
   shapes = (Shapes*)geometry[lucShapeType];
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
-  reset();  //Force reload
+  redraw(true);  //Force reload
   return true;
 }
 
