@@ -153,7 +153,7 @@ public:
   std::vector<dtype> value;
 
   DataValues() {}
-  ~DataValues()
+  virtual ~DataValues()
   {
     if (value.size()) clear();
   }

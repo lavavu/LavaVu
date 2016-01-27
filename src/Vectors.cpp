@@ -102,7 +102,7 @@ void Vectors::update()
     geom[i]->colourCalibrate();
     bool flat = geom[i]->draw->properties["flat"].ToBool(false) || quality < 1;
 
-    for (int v=0; v < geom[i]->count; v++)
+    for (unsigned int v=0; v < geom[i]->count; v++)
     {
       if (geom[i]->filter(v)) continue;
       //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
