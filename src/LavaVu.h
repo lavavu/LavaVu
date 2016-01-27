@@ -184,7 +184,6 @@ public:
   void redrawViewports();
   int viewFromPixel(int x, int y);
 
-  void redrawObjects();
   GeomData* getGeometry(DrawingObject* obj);
   void displayObjectList(bool console=true);
   void printMessage(const char *fmt, ...);

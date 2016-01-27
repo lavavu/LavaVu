@@ -50,6 +50,7 @@ typedef struct
   unsigned int dataIdx;
   float minimum;
   float maximum;
+  bool range;
 } Filter;
 
 //Holds parameters for a drawing object

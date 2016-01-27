@@ -87,7 +87,7 @@ public:
   void attach(int timestep);
   void close();
   void clearObjects(bool all=false);
-  void reset();
+  void redraw(bool reset=true);
   void loadWindows();
   void loadLinks(Win* win);
   void loadLinks(DrawingObject* draw);

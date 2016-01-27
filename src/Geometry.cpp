@@ -157,26 +157,36 @@ bool GeomData::filter(unsigned int idx)
   for (unsigned int i=0; i < draw->filters.size(); i++)
   {
     Filter& filter = draw->filters[i];
-    if (!values[filter.dataIdx]) continue;
+    if (values.size() <= filter.dataIdx || !values[filter.dataIdx]) continue;
     int size = values[filter.dataIdx]->size();
     int range = size ? count / size : 1;
     if (filter.dataIdx >= 0 && size > 0)
     {
       //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
       float filterValue;
+      float min = filter.minimum;
+      float max = filter.maximum;
+      if (filter.range)
+      {
+        //Range type filter over available values
+        float valrange = values[filter.dataIdx]->maximum - values[filter.dataIdx]->minimum;
+        min = values[filter.dataIdx]->minimum + min * valrange;
+        max = values[filter.dataIdx]->minimum + max * valrange;
+      }
       unsigned int ridx = idx / range;
       //Have values but not enough for per-vertex, spread over range (eg: per triangle)
       filterValue = values[filter.dataIdx]->value[ridx];
       if (draw->filterout)
       {
-        //Filter out values between specified ranges (allows filtering separate sections : intersection)
-        if (filterValue >= filter.minimum && filterValue <= filter.maximum) 
+        //Filter out values between specified ranges (allows filtering separate sections)
+        if (filterValue >= min && filterValue <= max) 
           return true;
       }
       else
       {
-        //Filter out values NOT between specified ranges (allows combining filters : union)
-        if (filterValue < filter.minimum || filterValue > filter.maximum)
+        //Filter out values unless between specified ranges (allows combining filters)
+        //std::cout << min << " < " << filterValue << " < " << max << std::endl;
+        if (filterValue < min || filterValue > max)
           return true;
       }
     }
