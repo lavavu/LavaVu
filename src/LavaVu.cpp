@@ -33,6 +33,12 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+//TODO/FIX:
+//Ability to list available data
+//Value data types independent from geometry types?
+//Timestep inconsistencies in tecplot load
+//Shapes rendering test gldb broken
+
 //Viewer class
 #include "Include.h"
 #include "LavaVu.h"
@@ -961,7 +967,7 @@ void LavaVu::readHeightMap(FilePath& fn)
   colourMap->add(0xff000000, 1.0);
 
   //Add colour bar display
-  //addObject(new DrawingObject("colourbar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n"));
+  //addObject(new DrawingObject("colourbar", 0, colourMap, 1.0, "colourbar=1\n"));
 
   //Create a height map grid
   int sx=cols, sz=rows;
@@ -1239,7 +1245,7 @@ void LavaVu::readTecplot(FilePath& fn)
   colourMap->add(colours, 7);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\nstatic=1\n"));
+  addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\n"));
 
   std::ifstream file(fn.full.c_str(), std::ios::in);
   if (file.is_open())
@@ -1254,9 +1260,6 @@ void LavaVu::readTecplot(FilePath& fn)
     int* triverts = NULL;
     float* lineverts = NULL;
     float* values = NULL;
-    float* Ivalues = NULL;
-    float* Jvalues = NULL;
-    float* Kvalues = NULL;
     float* particles = NULL;
 
     float valuemin = HUGE_VAL;
@@ -1268,98 +1271,85 @@ void LavaVu::readTecplot(FilePath& fn)
     int lcount = 0;
     int pcount = 0;
     int timestep = -1;
-    DrawingObject *tobj;
+    int VALUE_OFFSET = 6; //TODO: fix hard coding, this is idx of first time varying value
+    DrawingObject *tobj, *lobj;
+    GeomData *fixedtris, *fixedlines;
+    std::vector<std::string> labels;
     while(std::getline(file, line))
     {
       //std::cerr << line << std::endl;
-      if (line.find("ZONE") != std::string::npos)
+      if (line.find("VARIABLES=") != std::string::npos)
       {
-        //ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
-        if (zoneparsed) continue; //Only parse first zone for now
-        zoneparsed = true;
-
-        std::cerr << line << std::endl;
-        std::stringstream ss(line);
-        std::string token;
-        while (ss >> token)
+        //Parse labels
+        size_t pos = 0, pos2 = 0;
+        while ((pos = line.find("\"", pos+1)) != std::string::npos)
         {
-          if (token.substr(0, 2) == "N=")
-            N = atoi(token.substr(2).c_str());
-          else if (token.substr(0, 2) == "E=")
-            ELS = atoi(token.substr(2).c_str());
+          pos2 = line.find("\"", pos+1);
+          if (pos2 == std::string::npos) break;
+          labels.push_back(line.substr(pos+1, pos2-pos-1));
+          //std::cout << labels[labels.size()-1] << std::endl;
+          pos = pos2;
         }
-
-        //FEBRICK
-        xyz = new float[N*3];
-        triverts = new int[ELS*NTRI*3]; //6 faces = 12 tris * 3
-        lineverts = new float[ELS*NLN*2*3]; //12 edges
-        values = new float[ELS];
-        Ivalues = new float[ELS];
-        Jvalues = new float[ELS];
-        Kvalues = new float[ELS];
-        particles = new float[ELS*3];  //Value of cell at centre
-
-        printf("N = %d, ELS = %d\n", N, ELS);
-
-
-        //Add points object
-        //pobj = addObject(new DrawingObject("particles", 0, colourMap, 1.0, "static=1\nlit=0\n"));
-        //Model::points->add(pobj);
-        //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
-
-        //Add triangles object
-        tobj = addObject(new DrawingObject("triangles", 0, colourMap, 1.0, "static=1\nflat=1\n"));
-        Model::triSurfaces->add(tobj);
-
-        //Add lines object
-        //lobj = addObject(new DrawingObject("lines", 0xff000000, NULL, 1.0, "static=1\nlit=0\n"));
-        //Model::lines->add(lobj);
-
-
       }
-      else if (line.substr(0, 4) == "TEXT")
+      else if (line.find("ZONE") != std::string::npos)
       {
-        //New timesteps contain only the changing value data...
         //Create the timestep
         if (TimeStep::cachesize <= timestep) TimeStep::cachesize++;
         amodel->addTimeStep(timestep+1);
         amodel->setTimeStep(timestep+1);
         timestep = amodel->now;
+        std::cout << "TIMESTEP " << timestep << std::endl;
 
+        //First step, init stuff
+        if (!zoneparsed)
+        {
+          //ZONE T="Image 1",ZONETYPE=FEBRICK, DATAPACKING=BLOCK, VARLOCATION=([1-3]=NODAL,[4-7]=CELLCENTERED), N=356680, E=44585
+          zoneparsed = true;
 
-        //Model::points->read(pobj, ELS, lucVertexData, particles);
-        //Model::points->read(pobj, ELS, lucColourValueData, values);
-        //Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+          std::cerr << line << std::endl;
+          std::stringstream ss(line);
+          std::string token;
+          while (ss >> token)
+          {
+            if (token.substr(0, 2) == "N=")
+              N = atoi(token.substr(2).c_str());
+            else if (token.substr(0, 2) == "E=")
+              ELS = atoi(token.substr(2).c_str());
+          }
 
-        GeomData* g = Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
-        Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
-        Model::triSurfaces->read(tobj, ELS, lucColourValueData, values);
-        Model::triSurfaces->read(tobj, ELS, lucXWidthData, Ivalues);
-        Model::triSurfaces->read(tobj, ELS, lucYHeightData, Jvalues);
-        Model::triSurfaces->read(tobj, ELS, lucZLengthData, Kvalues);
-        //printf("VALUES min %f max %f\n", valuemin, valuemax); getchar();
-        Model::triSurfaces->setup(tobj, lucColourValueData, valuemin, valuemax);
+          //FEBRICK
+          xyz = new float[N*3];
+          triverts = new int[ELS*NTRI*3]; //6 faces = 12 tris * 3
+          lineverts = new float[ELS*NLN*2*3]; //12 edges
+          values = new float[ELS];
+          particles = new float[ELS*3];  //Value of cell at centre
 
-        //Bounds check
-        for (int t=0; t<N*3; t += 3)
-          g->checkPointMinMax(&xyz[t]);
+          printf("N = %d, ELS = %d\n", N, ELS);
 
-        //Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
+          //Add points object
+          //pobj = addObject(new DrawingObject("particles", 0, colourMap, 1.0, "lit=0\n"));
+          //Model::points->add(pobj);
+          //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
-        valuemin = HUGE_VAL;
-        valuemax = -HUGE_VAL;
+          //Add triangles object
+          tobj = addObject(new DrawingObject("triangles", 0, colourMap, 1.0, "flat=1\n"));
+          Model::triSurfaces->add(tobj);
 
-        count = tcount = lcount = pcount = 0;
-        //Load into the value index
-        coord = 6; //TODO: Fix this hard coding
+          //Add lines object
+          lobj = addObject(new DrawingObject("lines", 0xff888888, NULL, 0.5, "lit=0\n"));
+          Model::lines->add(lobj);
+        }
+        else
+        {
+          //Subsequent steps
 
-        /*/Cache and add timestep
-        if (TimeStep::cachesize <= timestep) TimeStep::cachesize++;
-        amodel->addTimeStep(timestep+1);
-        amodel->setTimeStep(timestep+1);
-        timestep = amodel->now;*/
-        printf("READ TIMESTEP %d TRIS %d\n", timestep, ELS*NTRI);
+          //New timesteps contain only the changing value data...
+          coord = VALUE_OFFSET; //TODO: Fix this hard coding - first zone with time varying data
+          printf("READING TIMESTEP %d TRIS %d\n", timestep, ELS*NTRI);
+        }
       }
+      else if (line.substr(0, 4) == "TEXT")
+        continue;
       else if (zoneparsed)
       {
         std::stringstream ss(line);
@@ -1495,9 +1485,9 @@ void LavaVu::readTecplot(FilePath& fn)
           particles[pcount*3+outcoord] /= 8;
           pcount++;
         }
-        else if (coord == 6) //Skip I,J,K indices
+        else if (coord > 2)
         {
-          //Load SG (1 per line)
+          //Load a scalar value (1 per line)
           float value;
           ss >> value;
           //std::cout << line << "[" << count << "*3+" << coord << "] = " << xyz[count*3+coord] << " " << value << std::endl;
@@ -1512,8 +1502,68 @@ void LavaVu::readTecplot(FilePath& fn)
           count++;
         }
 
-        if (count >= N || (coord > 2 && count >= ELS))
+        //Parsed a set of data, load it
+        if (count == N || (coord > 2 && count == ELS))
         {
+          std::cerr << " LOADED BLOCK: " << labels[coord] << " : COORD " << coord << " (" << outcoord << ")" << std::endl;
+
+          //Load vertex data once all coords/indices loaded
+          if (coord == 2) // || timestep > 0 && coord == VALUE_OFFSET)
+          {
+
+          }
+          else if (coord > 2 && coord < VALUE_OFFSET)
+          {
+            unsigned int dtype;
+            if (coord == 3) dtype = lucXWidthData;
+            if (coord == 4) dtype = lucYHeightData;
+            if (coord == 5) dtype = lucZLengthData;
+
+            Model::triSurfaces->read(tobj, ELS, (lucGeometryDataType)dtype, values);
+            printf("  VALUES min %f max %f (%s : %d)\n", valuemin, valuemax, labels[coord].c_str(), coord-3);
+            Model::triSurfaces->setup(tobj, (lucGeometryDataType)dtype, valuemin, valuemax);
+
+            //Done with fixed data 
+            if (coord == VALUE_OFFSET-1)
+            {
+              GeomData* g = Model::triSurfaces->read(tobj, N, lucVertexData, xyz);
+              Model::triSurfaces->read(tobj, ELS*NTRI*3, lucIndexData, triverts);
+              //Model::points->read(pobj, ELS, lucVertexData, particles);
+              Model::lines->read(lobj, ELS*NLN*2, lucVertexData, lineverts);
+              printf("  VERTS %d\n", N);
+
+              //Bounds check
+              for (int t=0; t<N*3; t += 3)
+                g->checkPointMinMax(&xyz[t]);
+
+              //SET FIXED DATA (clears all existing first)
+              fixedtris = Model::triSurfaces->fix();
+              fixedlines = Model::lines->fix();
+              std::cout << " VERTS? " << fixedtris->vertices.size() << std::endl;
+            }
+          }
+          //if (coord > 2)
+          //else if (coord > 2)
+          else if (coord >= VALUE_OFFSET)
+          {
+            //Apply fixed data to each timestep
+            Model::triSurfaces->fix(fixedtris);
+            Model::lines->fix(fixedlines);
+            //Load other data as float values
+            unsigned int dtype = lucMaxDataType + coord - VALUE_OFFSET;
+            if (coord == VALUE_OFFSET) dtype = lucColourValueData;
+
+            Model::triSurfaces->read(tobj, ELS, (lucGeometryDataType)dtype, values);
+            Model::lines->read(lobj, 0, lucMinDataType, NULL); //Read a dummy value as currently won't load fixed data until other data read
+            //Model::points->read(pobj, ELS, lucColourValueData, values);
+            printf("  VALUES min %f max %f (%s : %d)\n", valuemin, valuemax, labels[coord].c_str(), coord-3);
+            Model::triSurfaces->setup(tobj, (lucGeometryDataType)dtype, valuemin, valuemax);
+            //Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
+          }
+
+          valuemin = HUGE_VAL;
+          valuemax = -HUGE_VAL;
+
           count = tcount = lcount = pcount = 0;
           coord++;
           outcoord = coord;
@@ -1530,7 +1580,6 @@ void LavaVu::readTecplot(FilePath& fn)
             if (coord == 4)
               outcoord = 5;
           }
-          //std::cerr << " NEW BLOCK: " << tcount << " C " << coord << " OC " << outcoord << std::endl;
         }
       }
     }
@@ -1538,15 +1587,13 @@ void LavaVu::readTecplot(FilePath& fn)
 
     if (xyz) delete[] xyz;
     if (values) delete[] values;
-    if (Ivalues) delete[] Ivalues;
-    if (Jvalues) delete[] Jvalues;
-    if (Kvalues) delete[] Kvalues;
     if (triverts) delete[] triverts;
     if (lineverts) delete[] lineverts;
 
     //Always cache
     TimeStep::cachesize++;
     amodel->setTimeStep(0);
+        timestep = amodel->now = 0;
   }
   else
     printMessage("Unable to open file: %s", fn.full.c_str());
@@ -1570,7 +1617,7 @@ void LavaVu::createDemoModel()
   colourMap->calibrate(0, size);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "static=1\ncolourbar=1\n"));
+  addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\n"));
 
   //Add points object
   DrawingObject* obj = addObject(new DrawingObject("particles", 0, colourMap, 0.75, "static=1\nlit=0\n"));
@@ -2708,7 +2755,7 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
   {
     //Cache selected step, then force new timestep set when window changes
     if (TimeStep::cachesize > 0) amodel->cacheStep();
-    amodel->now = -1;
+    if (amodel->db) amodel->now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
   }
 
   //Have a database model loaded already?
