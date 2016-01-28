@@ -196,11 +196,12 @@ bool GeomData::filter(unsigned int idx)
 
 FloatValues* GeomData::colourData() 
 {
-  return values[draw->colourIdx];
+  return values.size() ? values[draw->colourIdx] : NULL;
 }
 
 float GeomData::colourData(unsigned int idx) 
 {
+  if (values.size() == 0) return HUGE_VALF;
   FloatValues* fv = values[draw->colourIdx];
   return fv->value[idx];
 }
@@ -337,7 +338,7 @@ void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
       json::Object data;
       for (int data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
       {
-        if (geom[index]->data[data_type]->size() == 0) continue;
+        if (!geom[index]->data[data_type]) continue;
         json::Object el;
 
         unsigned int length = geom[index]->data[data_type]->size() * sizeof(float);

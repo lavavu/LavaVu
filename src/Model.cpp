@@ -1289,9 +1289,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
   unsigned int i, data_type;
   for (i=0; i<data.size(); i++)
   {
-    for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
+    for (data_type=0; data_type<data[i]->data.size(); data_type++)
     {
-      if (data[i]->data[data_type]->size() == 0) continue;
+      if (!data[i]->data[data_type]) continue;
       std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
                 << data_type <<  ") for object : " << obj_id << " => " << objects[obj_id-1]->name << std::endl;
       //Get the data block

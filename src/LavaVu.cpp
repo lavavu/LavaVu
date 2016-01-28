@@ -3025,7 +3025,7 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
       {
         //Collect vertex/normal/index/value data
         //When extracting data, skip objects with no data returned...
-        //if (Model::geometry[type]->size() == 0) continue;
+        //if (!Model::geometry[type]) continue;
         Model::geometry[type]->jsonWrite(amodel->objects[i]->id, obj);
       }
 
