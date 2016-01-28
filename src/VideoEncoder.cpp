@@ -130,8 +130,11 @@ AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
   AVFrame *picture;
   uint8_t *picture_buf;
   int size;
-
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+  picture = avcodec_alloc_frame();
+#else
   picture = av_frame_alloc();
+#endif
   if (!picture)
     return NULL;
   size = avpicture_get_size(pix_fmt, width, height);
