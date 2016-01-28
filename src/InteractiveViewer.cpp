@@ -1334,7 +1334,7 @@ bool LavaVu::parseCommand(std::string cmd)
         exportData(type, obj->id);
         printMessage("Dumped object %s to %s", obj->name.c_str(), what.c_str());
       }
-      else
+      else if (c==0) //Only export all if no other spec provided
       {
         exportData(type);
         printMessage("Dumped all objects to %s", what.c_str());
