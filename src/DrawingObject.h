@@ -40,39 +40,52 @@
 #ifndef DrawingObject__
 #define DrawingObject__
 
+#define VOLUME_FLOAT 1
+#define VOLUME_BYTE 2
+#define VOLUME_RGB 3
+#define VOLUME_RGBA 4
+
+typedef struct
+{
+  unsigned int dataIdx;
+  float minimum;
+  float maximum;
+  bool range;
+} Filter;
+
 //Holds parameters for a drawing object
 class DrawingObject
 {
-  public:
-   std::string name;
-   unsigned int id;
-   bool skip;
-   bool visible;
-   //Cached values for faster lookup
-   float opacity;
-   Colour colour;
+public:
+  unsigned int id;
+  std::string name;
+  bool skip;
+  bool visible;
+  int voltype;
+  //Cached values for faster lookup
+  float opacity;
+  Colour colour;
+  //TODO: store these in json props
+  std::vector<Filter> filters;
+  bool filterout;
+  unsigned int colourIdx;
 
-   std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
+  std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
 
-   //Object properties data...
-   json::Object properties;
-   TextureData* defaultTexture;
+  //Object properties data...
+  json::Object properties;
+  TextureData* defaultTexture;
 
-   DrawingObject(std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="", unsigned int id=0);
-   ~DrawingObject();
+  DrawingObject(std::string name="", int colour=0, ColourMap* map=NULL, float opacity=1.0, std::string props="", unsigned int id=0);
+  ~DrawingObject();
 
-   void addColourMap(ColourMap* map, lucGeometryDataType data_type);
-   TextureData* loadTexture(std::string texfn);
-   int useTexture(TextureData* texture);
-   void load3DTexture(int width, int height, int depth, void* data, int bpv=4);
-   void cache()
-   {
-      //Cache values for faster lookups during draw calls
-      opacity = properties["opacity"].ToFloat(1.0);
-      colour = Colour_FromJson(properties, "colour");
-   }
+  void setup();
+  void addColourMap(ColourMap* map, lucGeometryDataType data_type);
+  TextureData* loadTexture(std::string texfn);
+  int useTexture(TextureData* texture);
+  void load3DTexture(int width, int height, int depth, void* data, int type=VOLUME_FLOAT);
 
-   static unsigned int lastid;
+  static unsigned int lastid;
 };
 
 #endif //DrawingObject__

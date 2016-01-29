@@ -13,7 +13,7 @@ env = env.Clone()
 #############################################
 # Switch env to LavaVu base!
 values = {}
-execfile("output.cfg", globals(), values)
+execfile("viewer.cfg", globals(), values)
 env._dict.update(values)
 #############################################
 
@@ -42,7 +42,11 @@ inc_dir = 'include/LavaVu/Viewer/'
 env.Install('bin/', Glob(src_dir + '/shaders/*.vert'))
 env.Install('bin/', Glob(src_dir + '/shaders/*.frag'))
 # Install the html source
-env.Install('bin/html/', Glob(src_dir + '/html/*.*'))
+env.Install('bin/html/', Glob(src_dir + '/html/*.js'))
+env.Install('bin/html/', Glob(src_dir + '/html/*.css'))
+this_sconscript_file = (lambda x:x).func_code.co_filename
+code_base = os.path.dirname(this_sconscript_file)
+env.Command(bin_dir + '/html/index.html', 'src/html/index.html', code_base + "/build-index.sh $SOURCE $TARGET gLucifer/Viewer/src/shaders")
 
 # Build our source files.
 # C++ sources
@@ -63,13 +67,9 @@ libs = ['pthread', 'dl'] + env.get('LIBS', [])
 l = env.SharedLibrary('lib/LavaVuRender', objs + sqlite3, LIBS=libs)
 
 # Build LavaVu viewer (interactive version)
-env = origenv.Clone()
-values = {}
-execfile("viewer.cfg", globals(), values)
-env._dict.update(values)
 env['CPPDEFINES'] += cpp_defs
-srcs = Glob(src_dir + '/Main/main.cpp')
-srcs += Glob(src_dir + '/Main/X11Viewer.cpp')
+main = env.SharedObject('main', Glob(src_dir + '/Main/main.cpp'))
+srcs = Glob(src_dir + '/Main/X11Viewer.cpp')
 srcs += Glob(src_dir + '/Main/SDLViewer.cpp')
 srcs += Glob(src_dir + '/Main/GlutViewer.cpp')
 vobjs = env.SharedObject(srcs)
@@ -82,26 +82,8 @@ env['LIBPATH'] += [build_lib]
 #Add the renderer library
 libs = ['LavaVuRender'] + env.get('LIBS', [])
 #Build the executable
-env.Program('bin/LavaVu', vobjs, LIBS=libs)
+env.Program('bin/LavaVu', main + vobjs, LIBS=libs)
 
-if FindFile('offscreen.cfg', '.'):
-   # Build LavaVu viewer (offscreen version)
-   env = origenv.Clone()
-   values = {}
-   execfile("offscreen.cfg", globals(), values)
-   env._dict.update(values)
-   env['CPPDEFINES'] += cpp_defs
-   srcs = Glob(src_dir + '/Main/AGLViewer.cpp')
-   srcs += Glob(src_dir + '/Main/OSMesaViewer.cpp')
-   vobjs = env.SharedObject(srcs)
-   main = env.SharedObject('osmain', Glob(src_dir + '/Main/main.cpp'))
-   #Set search paths for libraries
-   env['RPATH'] += rpath
-   env['LIBPATH'] += [build_lib]
-   #Add the renderer library
-   libs = ['LavaVuRender'] + env.get('LIBS', [])
-   #Build the executable
-   env.Program('bin/LavaVuOS', main + vobjs, LIBS=libs)
-else:
-   env.Program('bin/LavaVuOS', vobjs, LIBS=libs)
-
+#Build as a shared library (Experimental)
+main = env.SharedObject('lvlib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'] + ["__LAVAVULIB"])
+env.SharedLibrary('lib/LavaVu', main + vobjs, LIBS=libs)

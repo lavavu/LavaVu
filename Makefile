@@ -1,7 +1,6 @@
 #Install path
 PREFIX = bin
 #Object files path
-#OPATH = /tmp
 OPATH = tmp
 
 #Compilers
@@ -54,6 +53,11 @@ endif
 endif
 endif
 
+#Add a libpath (useful for linking specific libGL)
+ifdef LIBDIR
+  LIBS+= -L$(LIBDIR) -Wl,-rpath=$(LIBDIR)
+endif
+
 #Other optional components
 ifeq ($(VIDEO), 1)
   CFLAGS += -DHAVE_LIBAVCODEC
@@ -64,6 +68,10 @@ ifeq ($(PNG), 1)
   LIBS += -lpng
 else
   CFLAGS += -DUSE_ZLIB
+endif
+ifeq ($(TIFF), 1)
+  CFLAGS += -DHAVE_LIBTIFF
+  LIBS += -ltiff
 endif
 
 #Source search paths
@@ -85,16 +93,20 @@ OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 PROGRAM = $(PREFIX)/LavaVu
+INDEX = $(PREFIX)/html/index.html
 
 default: install
 
 install: paths $(PROGRAM)
 	cp src/shaders/*.* $(PREFIX)
-	cp -R src/html $(PREFIX)
+	cp -R src/html/*.js $(PREFIX)/html
+	cp -R src/html/*.css $(PREFIX)/html
+	/bin/bash build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
 
 paths:
 	mkdir -p $(OPATH)
 	mkdir -p $(PREFIX)
+	mkdir -p $(PREFIX)/html
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)

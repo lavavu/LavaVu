@@ -46,27 +46,27 @@
 //Derived from window class
 class SDLViewer : public OpenGLViewer
 {
-   bool resized;
-  public:
-   int savewidth;
-   int saveheight;
-   SDL_Surface* screen;
-   SDL_TimerID timer_id;
+  bool resized;
+public:
+  int savewidth;
+  int saveheight;
+  SDL_Surface* screen;
+  SDL_TimerID timer_id;
 
-   SDLViewer(bool stereo, bool fullscreen);
-   ~SDLViewer();
-   
-   //Function implementations
-   void open(int width, int height);
-   void setsize(int width, int height);
-   void show();
-   void display();
-   void swap();
-   void execute();
-   void fullScreen();
-   void animate(int msec);
+  SDLViewer(bool stereo, bool fullscreen);
+  ~SDLViewer();
 
-   void createWindow(int width, int height);
+  //Function implementations
+  void open(int width, int height);
+  void setsize(int width, int height);
+  void show();
+  void display();
+  void swap();
+  void execute();
+  void fullScreen();
+  void animate(int msec);
+
+  void createWindow(int width, int height);
 };
 
 #endif //SDLViewer__

@@ -416,6 +416,7 @@ void LavaVuApplication::handleEvent(const Event& evt)
     int x = evt.getPosition().x();
     int y = evt.getPosition().y();
     int key = evt.getSourceId();
+
     if (evt.isButtonDown(Event::Button2)) //Circle
     {
        menuOpen = true;
@@ -522,13 +523,13 @@ void LavaVuApplication::handleEvent(const Event& evt)
     {
         glapp->parseCommands("model down");
     }
-    //else
+    else
     {
         //Grab the analog stick horizontal axis
         float analogLR = evt.getAxis(0);
         //Grab the analog stick vertical axis
         float analogUD = evt.getAxis(1);
-        if (abs(analogUD) + abs(analogLR) > 0.001)
+        if (abs(analogUD) + abs(analogLR) > 0.01)
         {
            //TODO: default is model rotate, enable timestep sweep mode via menu option
            bool rotateStick = Geometry::properties["sweep"].ToInt(0) == 0;

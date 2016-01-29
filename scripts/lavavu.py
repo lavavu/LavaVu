@@ -3,6 +3,7 @@ import re
 import sqlite3
 import struct
 import random
+import zlib
 from abc import ABCMeta, abstractmethod
 
 class Type:
@@ -202,7 +203,7 @@ class DrawingObject(object):
   def addLength(self, v):
     self.lengths.append(v)
 
-  def write(self, db, minimum=0, maximum=0):
+  def write(self, db, minimum=0, maximum=0, compress=False):
     if not self.id:
       cmapid = 0
       if self.cmap: cmapid = self.cmap.id
@@ -215,31 +216,39 @@ class DrawingObject(object):
         db.cursor.execute(("insert into object_colourmap (object_id, colourmap_id, data_type) "
                            "values (%d, %d, %d)" % (self.id, self.cmap.id, Data.ColourValue)))
 
-    data = struct.pack('f'*len(self.vertices), *self.vertices)
-    db.insertGeometry(self, Data.Vertex, 3, len(self.vertices), self.width, minimum, maximum, self.bmin, self.bmax, data)
+    if len(self.vertices):
+      data = struct.pack('f'*len(self.vertices), *self.vertices)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.Vertex, 3, len(self.vertices), self.width, minimum, maximum, self.bmin, self.bmax, data)
 
     if len(self.vectors):
-        data = struct.pack('f'*len(self.vectors), *self.vectors)
-        db.insertGeometry(self, Data.Vector, 3, len(self.vectors), 0, minimum, maximum, 0, 0, data)
+      data = struct.pack('f'*len(self.vectors), *self.vectors)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.Vector, 3, len(self.vectors), 0, minimum, maximum, 0, 0, data)
 
     if len(self.colours):
-        cdata = struct.pack('I'*len(self.colours), *self.colours)
-        db.insertGeometry(self, Data.RGBA, 1, len(self.colours), 0, 0, 0, None, None, cdata)
+      data = struct.pack('I'*len(self.colours), *self.colours)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.RGBA, 1, len(self.colours), 0, 0, 0, None, None, data)
 
     if len(self.values):
-        #print "Values: " + str(self.vmin) + " to " + str(self.vmax)
-        cvdata = struct.pack('f'*len(self.values), *self.values)
-        db.insertGeometry(self, Data.ColourValue, 1, len(self.values), 0, self.vmin, self.vmax, None, None, cvdata)
+      #print "Values: " + str(self.vmin) + " to " + str(self.vmax)
+      data = struct.pack('f'*len(self.values), *self.values)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.ColourValue, 1, len(self.values), 0, self.vmin, self.vmax, None, None, data)
 
     if len(self.widths):
-        data = struct.pack('f'*len(self.widths), *self.widths)
-        db.insertGeometry(self, Data.XWidth, 1, len(self.widths), 0, 0, 0, None, None, data)
+      data = struct.pack('f'*len(self.widths), *self.widths)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.XWidth, 1, len(self.widths), 0, 0, 0, None, None, data)
     if len(self.heights):
-        data = struct.pack('f'*len(self.heights), *self.heights)
-        db.insertGeometry(self, Data.YHeight, 1, len(self.heights), 0, 0, 0, None, None, data)
+      data = struct.pack('f'*len(self.heights), *self.heights)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.YHeight, 1, len(self.heights), 0, 0, 0, None, None, data)
     if len(self.lengths):
-        data = struct.pack('f'*len(self.lengths), *self.lengths)
-        db.insertGeometry(self, Data.ZLength, 1, len(self.lengths), 0, 0, 0, None, None, data)
+      data = struct.pack('f'*len(self.lengths), *self.lengths)
+      if compress: data = zlib.compress(data)
+      db.insertGeometry(self, Data.ZLength, 1, len(self.lengths), 0, 0, 0, None, None, data)
 
     #Reset
     self.clear()
@@ -267,15 +276,17 @@ class Points(DrawingObject):
 
   otype = Type.Point
 
-  def __init__(self, name, cmap, size, pointtype, props=""):
-    props = 'pointsize=%d\npointtype=%d\n' % (size, pointtype) + props
+  def __init__(self, name, cmap, size, pointtype=None, props=""):
+    props = 'pointsize=%d\n' % (size) + props
+    if pointtype != None:
+      props = 'pointtype=%d\n' % (pointtype) + props
     super(Points, self).__init__(name, cmap, props)
 
 class Lines(DrawingObject):
   otype = Type.Line
 
   def __init__(self, name, cmap, width, link=False, flat=False, props=""):
-    props = 'lineWidth=%d\nlink=%d\nflat=%d' % (width, link, flat) + props
+    props = 'lineWidth=%d\nlink=%d\nflat=%d\n' % (width, link, flat) + props
     super(Lines, self).__init__(name, cmap, props)
 
 class Vectors(DrawingObject):

@@ -52,32 +52,32 @@
 //Derived from window class
 class GlutViewer  : public OpenGLViewer
 {
-  public:
-   GlutViewer(bool stereo, bool fullscreen);
-   
-   //Function implementations
-   void open(int width, int height);
-   void setsize(int width, int height);
-   void show();
-   void display();
-   void swap();
-   void execute();
-   void fullScreen();
-   void animate(int msec);
+public:
+  GlutViewer(bool stereo, bool fullscreen);
 
-  private:
-   //Static self-reference
-   static GlutViewer* self;
-   int win;
-   //Callback functions
-   static void glut_timer(int value);
-   static void glut_display(void);
-   static void glut_resize(int width, int height);
-   static void glut_mouseclick(int btn, int state, int x, int y);
-   static void glut_mousemove(int x, int y);
-   static void glut_keyboard(unsigned char key, int x, int y);
-   static void glut_keyboard_ext(int code, int x, int y);
-   static void get_modifiers(void);
+  //Function implementations
+  void open(int width, int height);
+  void setsize(int width, int height);
+  void show();
+  void display();
+  void swap();
+  void execute();
+  void fullScreen();
+  void animate(int msec);
+
+private:
+  //Static self-reference
+  static GlutViewer* self;
+  int win;
+  //Callback functions
+  static void glut_timer(int value);
+  static void glut_display(void);
+  static void glut_resize(int width, int height);
+  static void glut_mouseclick(int btn, int state, int x, int y);
+  static void glut_mousemove(int x, int y);
+  static void glut_keyboard(unsigned char key, int x, int y);
+  static void glut_keyboard_ext(int code, int x, int y);
+  static void get_modifiers(void);
 };
 
 #endif //GlutViewer__

@@ -23,13 +23,13 @@ Currently I am the sole developer but contributions are welcome.
 ### How do I get set up? ###
 
 The simplest way to get started on a Unix based OS is clone this repository and build from source:
-(You will need to first install Mercurial http://mercurial.selenic.com/downloads)
+(You will need to first install git )
 
 ```
 #!shell script
 
-  hg clone https://bitbucket.org/underworldproject/lavavu
-  cd lavavu
+  git clone https://github.com/OKaluza/LavaVu
+  cd LavaVu
   make -j4
 ```
 
@@ -39,7 +39,7 @@ If all goes well it should build the software and the viewer will be built and r
 
 TODO:
 
-Dependencies required - Mercurial, otherwise base build should not require any
+Dependencies required - Git, otherwise base build should not require any
 
 Releases: prebuilt versions for Windows, Mac, Linux
 
@@ -47,7 +47,8 @@ Releases: prebuilt versions for Windows, Mac, Linux
 
 * Owen Kaluza (at) monash.edu
 
-WIll be adding documentation to the Wiki https://bitbucket.org/underworldproject/lavavu/wiki/Home
+Will be adding documentation / examples to the Wiki
+* https://github.com/OKaluza/LavaVu/wiki
 
 TODO: 
-License, include/update documentation
+* License, include/update documentation

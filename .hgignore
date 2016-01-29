@@ -2,6 +2,7 @@
 syntax: glob
 
 bin/*
+tmp/*
 cave/CMakeFiles/*
 cave/CMakeCache.txt
 cave/cmake_install.cmake
