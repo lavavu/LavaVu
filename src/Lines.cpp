@@ -81,8 +81,7 @@ void Lines::update()
   if (linetotal > 0)
   {
     //Initialise vertex buffer
-    if (vbo) glDeleteBuffers(1, &vbo);
-    glGenBuffers(1, &vbo);
+    if (!vbo) glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     if (glIsBuffer(vbo))
     {
@@ -96,12 +95,15 @@ void Lines::update()
 
   clock_t t1,t2,tt;
   tt=clock();
+  counts.clear();
+  counts.resize(geom.size());
   for (unsigned int i=0; i<geom.size(); i++)
   {
     t1=tt=clock();
 
     //Calibrate colour maps on range for this object
     geom[i]->colourCalibrate();
+    float limit = geom[i]->draw->properties["limit"].ToFloat(0);
 
     if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
     {
@@ -113,6 +115,20 @@ void Lines::update()
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
         if (!internal && geom[i]->filter(i)) continue;
+
+        //Check length limit if applied (used for periodic boundary conditions)
+        if (v%2 == 0 && v < geom[i]->count-1 && limit > 0.f)
+        {
+          Vec3d line;
+          vectorSubtract(line, geom[i]->vertices[v+1], geom[i]->vertices[v]);
+          if (line.magnitude() > limit) 
+          {
+            //Skip next two vertices
+            v++;
+            continue;
+          }
+        }
+
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;
@@ -126,11 +142,14 @@ void Lines::update()
         //Copies colour bytes
         memcpy(ptr, &colour, sizeof(Colour));
         ptr += sizeof(Colour);
+
+        //Count of vertices actually plotted
+        counts[i]++;
       }
       t2 = clock();
-      debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[i]->count);
+      debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, counts[i]);
       t1 = clock();
-      elements += geom[i]->count;
+      elements += counts[i];
     }
     else
     {
@@ -150,7 +169,7 @@ void Lines::update()
         float* pos = geom[i]->vertices[v];
         if (oldpos)
         {
-          tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
+          tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
           //Per line colours (can do this as long as sub-renderer always outputs same tri count)
           geom[i]->getColour(colour, v);
           tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
@@ -229,9 +248,9 @@ void Lines::draw()
         glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
 
         if (geom[i]->draw->properties["link"].ToBool(false))
-          glDrawArrays(GL_LINE_STRIP, offset, geom[i]->count);
+          glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
         else
-          glDrawArrays(GL_LINES, offset, geom[i]->count);
+          glDrawArrays(GL_LINES, offset, counts[i]);
 
         glPopAttrib();
       }

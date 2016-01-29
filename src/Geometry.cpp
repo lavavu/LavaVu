@@ -1231,7 +1231,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
   length = sqrt(dotProduct(vector,vector));
 
   //Exceeds max length? Draw endpoint only
-  if (length > maxLength)
+  if (maxLength > 0.f && length > maxLength)
   {
     Vec3d centre(coord1);
     drawSphere(draw, centre, radius0, segment_count);
