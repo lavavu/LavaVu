@@ -71,7 +71,7 @@ void Shapes::update()
     dims[1] = geom[i]->draw->properties["height"].ToFloat(FLT_MIN);
     dims[2] = geom[i]->draw->properties["length"].ToFloat(FLT_MIN);
     int shape = geom[i]->draw->properties["shape"].ToInt(0);
-    int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(6));
+    int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(3));
     //Points drawn as shapes?
     if (!geom[i]->draw->properties.HasKey("shape"))
     {
@@ -88,7 +88,7 @@ void Shapes::update()
     {
       if (geom[i]->filter(v)) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
-      float sdims[3] = {dims[0], dims[1], dims[2]};
+      Vec3d sdims = Vec3d(dims[0], dims[1], dims[2]);
       if (geom[i]->data[lucXWidthData]) sdims[0] = geom[i]->valueData(lucXWidthData, v);
       if (geom[i]->data[lucYHeightData]) sdims[1] = geom[i]->valueData(lucYHeightData, v);
       else sdims[1] = sdims[0];
@@ -122,17 +122,16 @@ void Shapes::update()
       }
 
       //Create shape
-      Vec3d posv = Vec3d(geom[i]->vertices[v]);
-      Vec3d radii = Vec3d(sdims);
+      Vec3d pos = Vec3d(geom[i]->vertices[v]);
       if (shape == 1)
-        tris->drawCuboid(geom[i]->draw, geom[i]->vertices[v], sdims[0], sdims[1], sdims[2], qrot);
+        tris->drawCuboidAt(geom[i]->draw, pos, sdims, qrot);
       else
-        tris->drawEllipsoid(geom[i]->draw, posv, radii, qrot, quality);
-      //Per shape colours (can do this as long as sub-renderer always outputs same tri count)
+        tris->drawEllipsoid(geom[i]->draw, pos, sdims, qrot, quality);
+
+      //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
       geom[i]->getColour(colour, v);
       tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
     }
-    //printf("%d Shapes: %d Vertices: %d Indices: %d\n", i, geom[i]->positions.size()/3, geom[i]->count, geom[i]->indices.size());
 
     //Adjust bounding box
     tris->compareMinMax(geom[i]->min, geom[i]->max);

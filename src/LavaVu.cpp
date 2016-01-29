@@ -2378,8 +2378,8 @@ void LavaVu::drawBorder()
   if (aview->is3d)
   {
     // Draw model bounding box with optional filled background surface
-    float minvert[3] = {aview->min[0], aview->min[1], aview->min[2]};
-    float maxvert[3] = {aview->max[0], aview->max[1], aview->max[2]};
+    Vec3d minvert = Vec3d(aview->min);
+    Vec3d maxvert = Vec3d(aview->max);
     Quaternion qrot;
     //Min/max swapped to draw inverted box, see through to back walls
     border->drawCuboid(obj, maxvert, minvert, qrot, true);
