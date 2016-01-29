@@ -269,8 +269,8 @@ public:
   void setTexture(DrawingObject* draw, TextureData* texture);
   void drawVector(DrawingObject *draw, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count=24);
-  void drawCuboid(DrawingObject *draw, float min[3], float max[3], Quaternion& rot, bool quads=false);
-  void drawCuboid(DrawingObject *draw, float pos[3], float width, float height, float depth, Quaternion& rot);
+  void drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads=false);
+  void drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads=false);
   void drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count=24);
   void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
   int glyphSegments(int def=2);
