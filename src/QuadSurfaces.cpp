@@ -125,25 +125,22 @@ void QuadSurfaces::render()
 
   //Prepare the Index buffer
   if (!indexvbo)
-  {
-    assert(elements);
     glGenBuffers(1, &indexvbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-    GL_Error_Check;
-    if (glIsBuffer(indexvbo))
-    {
-      //glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * tricount * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-      //debug_print("  %d byte IBO created for %d indices\n", 3 * tricount * sizeof(GLuint), tricount * 3);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-      debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
-    }
-    else
-      debug_print("  IBO creation failed\n");
-    GL_Error_Check;
-  }
 
+  //Always set data size again in case changed
+  assert(elements);
+  glGenBuffers(1, &indexvbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-  if (!glIsBuffer(indexvbo)) return;
+  GL_Error_Check;
+  if (glIsBuffer(indexvbo))
+  {
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+    debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
+  }
+  else
+    abort_program("IBO creation failed!\n");
+  GL_Error_Check;
 
   elements = 0;
   int offset = 0;

@@ -302,51 +302,47 @@ void Points::render()
   tt = t1 = clock();
 
   // Index buffer object for quick display
-  if (!indexvbo && prog && prog->program)   //Only use vbo if shaders available
-  {
-    //glDeleteBuffers(1, &vbo);
+  if (!indexvbo)
     glGenBuffers(1, &indexvbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-    GL_Error_Check;
-    //Initialise particle buffer
-    if (glIsBuffer(indexvbo))
-    {
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-      debug_print("  %d byte IBO created for %d indices\n", total * sizeof(GLuint), total);
-    }
-    else
-      debug_print("  IBO creation failed!\n");
+
+  //Always set data size again in case changed
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+  GL_Error_Check;
+  //Initialise particle buffer
+  if (glIsBuffer(indexvbo))
+  {
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+    debug_print("  %d byte IBO created for %d indices\n", total * sizeof(GLuint), total);
   }
   else
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+    abort_program("IBO creation failed!\n");
   GL_Error_Check;
 
   //Re-map vertex indices in sorted order
-  if (glIsBuffer(indexvbo))
+  t1 = clock();
+  GLuint *ptr = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+  if (!ptr) abort_program("glMapBuffer failed");
+  //Reverse order farthest to nearest
+  elements = 0;
+  for(int i=total-1; i>=0; i--)
   {
-    t1 = clock();
-    GLuint *ptr = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-    if (!ptr) abort_program("glMapBuffer failed");
-    //Reverse order farthest to nearest
-    elements = 0;
-    for(int i=total-1; i>=0; i--)
-    {
-      if (hiddencache[pidx[i].geomid]) continue;
-      // If subSampling, use a pseudo random distribution to select which particles to draw
-      // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
-      if (subSample > 1 && SHR3 % subSample > 0) continue;
-      ptr[elements] = pidx[i].index;
-      elements++;
-      //printf("%d distance %d idx %d swarm %d vertex ", i, pidx[i].distance, pidx[i].id, pidx[i].geomid);
-      //printVertex(geom[pidx[i].geomid]->vertices[pidx[i].id]);
-      //printf("\n");
-    }
-    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-    t2 = clock();
-    debug_print("  %.4lf seconds to upload indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, subSample);
-    t1 = clock();
+    if (hiddencache[pidx[i].geomid]) continue;
+    // If subSampling, use a pseudo random distribution to select which particles to draw
+    // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
+    if (subSample > 1 && SHR3 % subSample > 0) continue;
+    ptr[elements] = pidx[i].index;
+    elements++;
+    //printf("%d distance %d idx %d swarm %d vertex ", i, pidx[i].distance, pidx[i].id, pidx[i].geomid);
+    //printVertex(geom[pidx[i].geomid]->vertices[pidx[i].id]);
+    //printf("\n");
   }
+  glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+  t2 = clock();
+  debug_print("  %.4lf seconds to upload indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, subSample);
+  t1 = clock();
   GL_Error_Check;
+
   t2 = clock();
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
