@@ -20,11 +20,13 @@ SET( srcs
         ../src/OpenGLViewer.cpp
         ../src/base64.cpp
         ../src/ColourMap.cpp
+        ../src/Colours.cpp
         ../src/DrawingObject.cpp
         ../src/Extensions.cpp
         ../src/FontSans.cpp
         ../src/Geometry.cpp
         ../src/GraphicsUtil.cpp
+        ../src/Util.cpp
         ../src/Lines.cpp
         ../src/Model.cpp
         ../src/Points.cpp
