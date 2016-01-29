@@ -1405,7 +1405,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
       int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
-      pos = rot * (centre + radii * edge);
+      pos = centre + rot * (radii * edge);
 
       // Flip for normal
       edge = -edge;
@@ -1421,7 +1421,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
-      pos = rot * (centre + radii * edge);
+      pos = centre + rot * (radii * edge);
 
       // Flip for normal
       edge = -edge;

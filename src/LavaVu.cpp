@@ -37,7 +37,7 @@
 //Ability to list available data
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
-//Shapes rendering test gldb broken
+//Vector arrow head and ellipsoid shading/normals not quite right
 
 //Viewer class
 #include "Include.h"
