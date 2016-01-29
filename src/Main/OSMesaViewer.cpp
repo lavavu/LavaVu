@@ -39,61 +39,61 @@
 
 #include <sys/select.h>
 
-// Create a new OSMesa window 
+// Create a new OSMesa window
 OSMesaViewer::OSMesaViewer() : OpenGLViewer(false, false)
 {
-   visible = false;
-   pixelBuffer = NULL;
-   osMesaContext = NULL;
-   fbo_enabled = false;
+  visible = false;
+  pixelBuffer = NULL;
+  osMesaContext = NULL;
+  fbo_enabled = false;
 }
 
 OSMesaViewer::~OSMesaViewer()
 {
-   animate(0);
-   OSMesaDestroyContext(osMesaContext);
-   delete[] pixelBuffer;
+  animate(0);
+  OSMesaDestroyContext(osMesaContext);
+  delete[] pixelBuffer;
 }
 
 void OSMesaViewer::open(int w, int h)
 {
-   //Call base class open to set width/height
-   OpenGLViewer::open(w, h);
-   fbo_enabled = false; //Force fbo disabled
-   
-   if (osMesaContext)
-      OSMesaDestroyContext(osMesaContext);
-   if (pixelBuffer)
-      delete[] pixelBuffer;
+  //Call base class open to set width/height
+  OpenGLViewer::open(w, h);
+  fbo_enabled = false; //Force fbo disabled
 
-   // Init OSMesa display buffer
-   pixelBuffer = new GLubyte[width * height * 4];
-   // 24 bit depth, 1 bit stencil, no accum, no shared display lists
-   osMesaContext = OSMesaCreateContextExt(OSMESA_RGBA, 24, 1, 0, NULL);
-   OSMesaMakeCurrent(osMesaContext, pixelBuffer, GL_UNSIGNED_BYTE, width, height);
-   debug_print("OSMesa viewer created\n");
-   timer = 0;
-   //const char* gl_version = (const char*)glGetString(GL_VERSION);
+  if (osMesaContext)
+    OSMesaDestroyContext(osMesaContext);
+  if (pixelBuffer)
+    delete[] pixelBuffer;
 
-   //Call OpenGL init
-   OpenGLViewer::init();
+  // Init OSMesa display buffer
+  pixelBuffer = new GLubyte[width * height * 4];
+  // 24 bit depth, 1 bit stencil, no accum, no shared display lists
+  osMesaContext = OSMesaCreateContextExt(OSMESA_RGBA, 24, 1, 0, NULL);
+  OSMesaMakeCurrent(osMesaContext, pixelBuffer, GL_UNSIGNED_BYTE, width, height);
+  debug_print("OSMesa viewer created\n");
+  timer = 0;
+  //const char* gl_version = (const char*)glGetString(GL_VERSION);
+
+  //Call OpenGL init
+  OpenGLViewer::init();
 }
 
 void OSMesaViewer::setsize(int width, int height)
 {
-   if (width == 0 || height == 0) return;
-   close();
-   open(width, height);
+  if (width == 0 || height == 0) return;
+  close();
+  open(width, height);
 }
 
 void OSMesaViewer::display()
 {
-   // Make sure we are using the correct context when more than one are created
-   OSMesaContext context = OSMesaGetCurrentContext();
-   if (context != osMesaContext)
-      OSMesaMakeCurrent(osMesaContext, pixelBuffer, GL_UNSIGNED_BYTE, width, height);
+  // Make sure we are using the correct context when more than one are created
+  OSMesaContext context = OSMesaGetCurrentContext();
+  if (context != osMesaContext)
+    OSMesaMakeCurrent(osMesaContext, pixelBuffer, GL_UNSIGNED_BYTE, width, height);
 
-   OpenGLViewer::display();
+  OpenGLViewer::display();
 }
 
 #endif   //HAVE_OSMESA

@@ -5,7 +5,6 @@ uniform int uPointDist;   // Scale by distance
 attribute float aSize;
 attribute float aPointType;
 
-varying float vSmooth;
 varying float vPointType;
 varying vec3 vPosEye;
 varying float vPointSize;
@@ -13,7 +12,6 @@ varying vec3 vVertex;
 
 void main(void)
 {
-   vSmooth = aSize;
    float pSize = abs(aSize);
 
    // calculate window-space point size

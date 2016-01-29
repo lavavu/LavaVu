@@ -50,35 +50,35 @@
 //Derived from interactive window class
 class X11Viewer  : public OpenGLViewer
 {
-   int quitEventLoop;
-   GLXContext     glxcontext;
-   Display*       Xdisplay;
-   Window         win;
-   XVisualInfo*   vi;
-   XWMHints*      wmHints;
-   XSizeHints*    sHints;
-   Atom           wmDeleteWindow;
-   char           displayName[256];
-   char           host[256];
-   unsigned int   displayNumber;
-   unsigned int   displayScreen;
+  int quitEventLoop;
+  GLXContext     glxcontext;
+  Display*       Xdisplay;
+  Window         win;
+  XVisualInfo*   vi;
+  XWMHints*      wmHints;
+  XSizeHints*    sHints;
+  Atom           wmDeleteWindow;
+  char           displayName[256];
+  char           host[256];
+  unsigned int   displayNumber;
+  unsigned int   displayScreen;
 
-  public:
+public:
 
-   X11Viewer(bool stereo, bool fullscreen);
-   ~X11Viewer();
-   
-   //Function implementations
-   void open(int w, int h);
-   void setsize(int width, int height);
-   void show();
-   void display();
-   void swap();
-   void execute();
-   void fullScreen();
+  X11Viewer(bool stereo, bool fullscreen);
+  ~X11Viewer();
 
-   bool chooseVisual();
-   bool createWindow(int width, int height);
+  //Function implementations
+  void open(int w, int h);
+  void setsize(int width, int height);
+  void show();
+  void display();
+  void swap();
+  void execute();
+  void fullScreen();
+
+  bool chooseVisual();
+  bool createWindow(int width, int height);
 };
 
 #endif //X11Viewer__

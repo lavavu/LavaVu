@@ -37,213 +37,251 @@
 
 Lines::Lines(bool all2Dflag)
 {
-   type = lucLineType;
-   vbo = 0;
-   linetotal = 0;
-   all2d = all2Dflag;
-   //Create sub-renderers
-   tris = new TriSurfaces();
+  type = lucLineType;
+  vbo = 0;
+  linetotal = 0;
+  all2d = all2Dflag;
+  //Create sub-renderers
+  tris = new TriSurfaces();
+  tris->internal = true;
 }
 
 Lines::~Lines()
 {
-   delete tris;
+  delete tris;
 }
 
-void Lines::close() 
+void Lines::close()
 {
-   tris->close();
+  tris->close();
 }
 
 void Lines::update()
 {
-   //Skip update if count hasn't changed
-   if (elements > 0 && linetotal == elements || total == 0) return;
+  //Skip update if count hasn't changed
+  if (elements > 0 && (linetotal == (unsigned int)elements || total == 0)) return;
 
-   tris->clear();
-   tris->setView(view);
+  tris->clear();
+  tris->setView(view);
 
-   //Count 2d lines
-   linetotal = 0;
-   for (unsigned int i=0; i<geom.size(); i++) 
-   {
-      if (all2d || geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
-         linetotal += geom[i]->count;
-   }
+  //Count 2d lines
+  linetotal = 0;
+  for (unsigned int i=0; i<geom.size(); i++)
+  {
+    if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
+      linetotal += geom[i]->count;
+  }
 
-   //Copy data to Vertex Buffer Object
-   // VBO - copy normals/colours/positions to buffer object 
-   unsigned char *p, *ptr;
-   ptr = p = NULL;
-   int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
-   int bsize = linetotal * datasize;
-   if (linetotal > 0)
-   {
-      //Initialise vertex buffer
-      if (vbo) glDeleteBuffers(1, &vbo);
-      glGenBuffers(1, &vbo);
-      glBindBuffer(GL_ARRAY_BUFFER, vbo);
-      if (glIsBuffer(vbo))
+  //Copy data to Vertex Buffer Object
+  // VBO - copy normals/colours/positions to buffer object
+  unsigned char *p, *ptr;
+  ptr = p = NULL;
+  int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
+  int bsize = linetotal * datasize;
+  if (linetotal > 0)
+  {
+    //Initialise vertex buffer
+    if (!vbo) glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    if (glIsBuffer(vbo))
+    {
+      glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
+      debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
+      ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+      GL_Error_Check;
+    }
+    if (!p) abort_program("VBO setup failed");
+  }
+
+  clock_t t1,t2,tt;
+  tt=clock();
+  counts.clear();
+  counts.resize(geom.size());
+  for (unsigned int i=0; i<geom.size(); i++)
+  {
+    t1=tt=clock();
+
+    //Calibrate colour maps on range for this object
+    geom[i]->colourCalibrate();
+    float limit = geom[i]->draw->properties["limit"].ToFloat(0);
+
+    if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
+    {
+      int hasColours = geom[i]->colourCount();
+      int colrange = hasColours ? geom[i]->count / hasColours : 1;
+      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
+
+      Colour colour;
+      for (unsigned int v=0; v < geom[i]->count; v++)
       {
-         glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
-         debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
-         ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-         GL_Error_Check;
+        if (!internal && geom[i]->filter(i)) continue;
+
+        //Check length limit if applied (used for periodic boundary conditions)
+        if (v%2 == 0 && v < geom[i]->count-1 && limit > 0.f)
+        {
+          Vec3d line;
+          vectorSubtract(line, geom[i]->vertices[v+1], geom[i]->vertices[v]);
+          if (line.magnitude() > limit) 
+          {
+            //Skip next two vertices
+            v++;
+            continue;
+          }
+        }
+
+        //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
+        int cidx = v / colrange;
+        if (cidx >= hasColours) cidx = hasColours - 1;
+        geom[i]->getColour(colour, cidx);
+        //if (cidx%100 ==0) printf("COLOUR %d => %d,%d,%d\n", cidx, colour.r, colour.g, colour.b);
+        //Write vertex data to vbo
+        assert((int)(ptr-p) < bsize);
+        //Copies vertex bytes
+        memcpy(ptr, &geom[i]->vertices[v][0], sizeof(float) * 3);
+        ptr += sizeof(float) * 3;
+        //Copies colour bytes
+        memcpy(ptr, &colour, sizeof(Colour));
+        ptr += sizeof(Colour);
+
+        //Count of vertices actually plotted
+        counts[i]++;
       }
-      if (!p) abort_program("VBO setup failed");
-   }
+      t2 = clock();
+      debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, counts[i]);
+      t1 = clock();
+      elements += counts[i];
+    }
+    else
+    {
+      //Create a new data store for output geometry
+      tris->add(geom[i]->draw);
 
-   clock_t t1,t2,tt;
-   tt=clock();
-   for (unsigned int i=0; i<geom.size(); i++) 
-   {
-      t1=tt=clock();
-
-      //Calibrate colour maps on range for this object
-      geom[i]->colourCalibrate();
-
-      if (all2d || geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+      //3d lines - using triangle sub-renderer
+      geom[i]->draw->properties["lit"] = true; //Override lit
+      //Draw as 3d cylinder sections
+      int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
+      float radius = scale*0.1;
+      float* oldpos = NULL;
+      Colour colour;
+      for (unsigned int v=0; v < geom[i]->count; v++)
       {
-         int hasColours = geom[i]->colourCount();
-         int colrange = hasColours ? geom[i]->count / hasColours : 1;
-         bool vertColour = hasColours && colrange > 1;
-         debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
-
-         Colour colour;
-         float zero[3] = {0,0,0};
-         for (unsigned int v=0; v < geom[i]->count; v++)
-         {
-            //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
-            int cidx = v / colrange;
-            if (cidx >= hasColours) cidx = hasColours - 1;
-            geom[i]->getColour(colour, cidx);
-            //if (cidx%100 ==0) printf("COLOUR %d => %d,%d,%d\n", cidx, colour.r, colour.g, colour.b);
-            //Write vertex data to vbo
-            assert((int)(ptr-p) < bsize);
-            //Copies vertex bytes
-            memcpy(ptr, &geom[i]->vertices[v][0], sizeof(float) * 3);
-            ptr += sizeof(float) * 3;
-            //Copies colour bytes
-            memcpy(ptr, &colour, sizeof(Colour));
-            ptr += sizeof(Colour);
-         }
-         t2 = clock(); debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[i]->count); t1 = clock();
-         elements += geom[i]->count; 
+        if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
+        float* pos = geom[i]->vertices[v];
+        if (oldpos)
+        {
+          tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
+          //Per line colours (can do this as long as sub-renderer always outputs same tri count)
+          geom[i]->getColour(colour, v);
+          tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+        }
+        oldpos = pos;
       }
-      else
-      {
-         //Create a new data store for output geometry
-         tris->add(geom[i]->draw);
 
-         //3d lines - using triangle sub-renderer
-         geom[i]->draw->properties["lit"] = true; //Override lit
-         //Draw as 3d cylinder sections
-         int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
-         float radius = scale*0.1;
-         float* oldpos = NULL;
-         Colour colour;
-         for (int v=0; v < geom[i]->count; v++) 
-         {
-            if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
-            float* pos = geom[i]->vertices[v];
-            if (oldpos)
-            {
-               tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, HUGE_VAL, quality);
-               //Per line colours (can do this as long as sub-renderer always outputs same tri count)
-               geom[i]->getColour(colour, v);
-               tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
-            }
-            oldpos = pos;
-         }
+      //Adjust bounding box
+      tris->compareMinMax(geom[i]->min, geom[i]->max);
+    }
+  }
 
-         //Adjust bounding box
-         tris->compareMinMax(geom[i]->min, geom[i]->max);
-      }
-   }
+  if (linetotal > 0)
+  {
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+  }
+  GL_Error_Check;
 
-   if (linetotal > 0)
-   {
-      glUnmapBuffer(GL_ARRAY_BUFFER);
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-   }
-   GL_Error_Check;
+  t1 = clock();
+  debug_print("Plotted %d lines in %.4lf seconds\n", linetotal, (t1-tt)/(double)CLOCKS_PER_SEC);
 
-   t1 = clock(); debug_print("Plotted %d lines in %.4lf seconds\n", linetotal, (t1-tt)/(double)CLOCKS_PER_SEC);
-
-   tris->update();
+  tris->update();
 }
 
 void Lines::draw()
 {
-   //Draw, calls update when required
-   Geometry::draw();
-   if (drawcount == 0) return;
+  //Draw, calls update when required
+  Geometry::draw();
+  if (drawcount == 0) return;
 
-   // Undo any scaling factor for arrow drawing...
-   glPushMatrix();
-   if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
-      glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+  // Undo any scaling factor for arrow drawing...
+  glPushMatrix();
+  if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
+    glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
 
-   //Draw any 3d rendered tubes
-   tris->draw();
+  //Draw any 3d rendered tubes
+  tris->draw();
 
-   // Re-Apply scaling factors
-   glPopMatrix();
+  // Re-Apply scaling factors
+  glPopMatrix();
 
-   // Draw using vertex buffer object
-   glPushAttrib(GL_ENABLE_BIT);
-   clock_t t0 = clock();
-   double time;
-   int stride = 3 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
-   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo))
-   {
-      glBindBuffer(GL_ARRAY_BUFFER, vbo);
-      glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-      glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
-      glEnableClientState(GL_VERTEX_ARRAY);
-      glEnableClientState(GL_COLOR_ARRAY);
+  // Draw using vertex buffer object
+  glPushAttrib(GL_ENABLE_BIT);
+  clock_t t0 = clock();
+  double time;
+  int stride = 3 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
+  if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo))
+  {
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
+    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
 
-      //Disable depth test on 2d models
-      if (view->is3d)
-         glEnable(GL_DEPTH_TEST);
-      else
-         glDisable(GL_DEPTH_TEST);
+    //Disable depth test on 2d models
+    if (view->is3d)
+      glEnable(GL_DEPTH_TEST);
+    else
+      glDisable(GL_DEPTH_TEST);
 
-      int offset = 0;
-      for (unsigned int i=0; i<geom.size(); i++) 
+    int offset = 0;
+    for (unsigned int i=0; i<geom.size(); i++)
+    {
+      if (drawable(i) && geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
       {
-         if (drawable(i) && geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
-         {
-            //Set draw state
-            setState(i);
-            glPushAttrib(GL_ENABLE_BIT);
-         
-            glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
+        //Set draw state
+        setState(i);
+        glPushAttrib(GL_ENABLE_BIT);
 
-            if (geom[i]->draw->properties["link"].ToBool(false))
-               glDrawArrays(GL_LINE_STRIP, offset, geom[i]->count);
-            else
-               glDrawArrays(GL_LINES, offset, geom[i]->count);
+        //Lines specific state
+        float lineWidth = geom[i]->draw->properties["linewidth"].ToFloat(1.0) * scale;
+        if (lineWidth <= 0) lineWidth = scale;
+        glLineWidth(lineWidth);
 
-            glPopAttrib();
-         }
+        glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
 
-         offset += geom[i]->count;
+        if (geom[i]->draw->properties["link"].ToBool(false))
+          glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
+        else
+          glDrawArrays(GL_LINES, offset, counts[i]);
+
+        glPopAttrib();
       }
 
-      glDisableClientState(GL_VERTEX_ARRAY);
-      glDisableClientState(GL_COLOR_ARRAY);
-   }
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
-   GL_Error_Check;
+      offset += geom[i]->count;
+    }
 
-   //Restore state
-   glPopAttrib();
-   glBindTexture(GL_TEXTURE_2D, 0);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+  }
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  GL_Error_Check;
 
-   time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
-   if (time > 0.05)
-     debug_print("  %.4lf seconds to draw lines\n", time);
-   GL_Error_Check;
+  //Restore state
+  glPopAttrib();
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
+  if (time > 0.05)
+    debug_print("  %.4lf seconds to draw lines\n", time);
+  GL_Error_Check;
 }
 
+void Lines::jsonWrite(unsigned int id, json::Object& obj)
+{
+  json::Array lines;
+  if (obj.HasKey("lines")) lines = obj["lines"].ToArray();
+  jsonExportAll(id, lines);
+  if (lines.size() > 0) obj["lines"] = lines;
+
+  //Triangles rendered?
+  if (!all2d || tubes)
+    tris->jsonWrite(id, obj);
+}

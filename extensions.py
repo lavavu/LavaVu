@@ -13,6 +13,7 @@ functions = [
 "glIsBuffer",
 "glMapBuffer",
 "glBufferData",
+"glBufferSubData",
 "glUnmapBuffer",
 "glDeleteBuffers",
 "glCreateShader",
@@ -55,7 +56,13 @@ functions = [
 "glIsProgram",
   ]
 
-win_functions = ["glActiveTexture", "glDrawRangeElements", "glTexImage3D", "glTexSubImage3D"]
+win_functions = [
+"glActiveTexture", 
+"glDrawRangeElements",
+"glTexImage3D",
+"glTexSubImage3D",
+"glGenerateMipmapEXT",
+]
 
 #Write the header
 header = open("src/Extensions.h", "w")
@@ -69,7 +76,7 @@ header.write("\n")
 header.write("typedef void* (*getProcAddressFN)(const char* procName);\n")
 header.write("\n")
 header.write("#if defined _WIN32\n")
-header.write("#include <SDL/SDL_opengl.h>\n")
+header.write("#include "Include.h"\n")
 
 for fn in win_functions:
     header.write("extern PFN" + fn.upper() + "PROC " + fn + ";\n")

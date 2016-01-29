@@ -58,13 +58,13 @@ extern "C"
 #endif
 
 #if LIBAVFORMAT_VERSION_MAJOR < 52 || (LIBAVFORMAT_VERSION_MAJOR == 52 && LIBAVFORMAT_VERSION_MINOR < 105)
- #define avio_open url_fopen
- #define avio_tell url_ftell
- #define avio_close url_fclose
+#define avio_open url_fopen
+#define avio_tell url_ftell
+#define avio_close url_fclose
 #endif
 
 #ifndef AVIO_FLAG_WRITE
- #define AVIO_FLAG_WRITE URL_WRONLY
+#define AVIO_FLAG_WRITE URL_WRONLY
 #endif
 
 #ifndef AV_PKT_FLAG_KEY
@@ -81,28 +81,28 @@ extern "C"
 
 class VideoEncoder
 {
-  public:
-   unsigned char* buffer;
+public:
+  unsigned char* buffer;
 
-   VideoEncoder(const char *filename, int width, int height, int fps);
-   ~VideoEncoder();
-   void frame(int channels=3);
-   AVOutputFormat *defaultCodec(const char *filename);
+  VideoEncoder(const char *filename, int width, int height, int fps);
+  ~VideoEncoder();
+  void frame(int channels=3);
+  AVOutputFormat *defaultCodec(const char *filename);
 
-  protected:
-   int width, height, fps;
-   AVFormatContext *oc;
-   AVStream *video_st;
+protected:
+  int width, height, fps;
+  AVFormatContext *oc;
+  AVStream *video_st;
 
-   AVFrame *picture;
-   uint8_t *video_outbuf;
-   int frame_count, video_outbuf_size;
+  AVFrame *picture;
+  uint8_t *video_outbuf;
+  int frame_count, video_outbuf_size;
 
-   AVStream* add_video_stream(enum AVCodecID codec_id);
-   AVFrame* alloc_picture(enum PixelFormat pix_fmt);
-   void open_video();
-   void write_video_frame();
-   void close_video();
+  AVStream* add_video_stream(enum AVCodecID codec_id);
+  AVFrame* alloc_picture(enum PixelFormat pix_fmt);
+  void open_video();
+  void write_video_frame();
+  void close_video();
 };
 
 #endif //HAVE_LIBAVCODEC

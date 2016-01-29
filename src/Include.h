@@ -55,6 +55,10 @@
 #include "jpeg/jpgd.h"
 #include "json.h"
 
+#ifdef HAVE_LIBTIFF
+#include <tiffio.h>
+#endif
+
 #ifndef _WIN32
 #include <sys/poll.h>
 #include <unistd.h>
@@ -79,6 +83,9 @@
 #else
 
 /* WINDOWS */
+#define GL_R32F 0x822E
+static float _X_huge_valf = std::numeric_limits<float>::infinity();
+#define HUGE_VALF _X_huge_valf
 #define snprintf sprintf_s
 #define isnan(x) _isnan(x)
 #define isinf(x) (!_finite(x))
@@ -103,14 +110,14 @@
 #endif
 
 //Define pointers to required gl 2.0 functions
-#if defined _WIN32 
+#if defined _WIN32
 #define EXTENSION_POINTERS
 #endif
 
 typedef void* (*getProcAddressFN)(const char* procName);
 #if not defined _WIN32
 extern getProcAddressFN GetProcAddress;
-#endif 
+#endif
 
 #include "Extensions.h"
 

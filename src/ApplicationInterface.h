@@ -37,44 +37,52 @@
 #define ApplicationInterface__
 
 //Mouse/keyboard input definitions
-typedef enum {
-   NoButton     = 0,
-   LeftButton   = 1,
-   MiddleButton = 2,
-   RightButton  = 3,
-   WheelUp      = 4,
-   WheelDown    = 5
+typedef enum
+{
+  NoButton     = 0,
+  LeftButton   = 1,
+  MiddleButton = 2,
+  RightButton  = 3,
+  WheelUp      = 4,
+  WheelDown    = 5
 } MouseButton;
 
-typedef struct {
-   int shift;
-   int ctrl;
-   int alt;
-   int meta;
+typedef struct
+{
+  int shift;
+  int ctrl;
+  int alt;
+  int meta;
 } ShiftState;
 
 class ApplicationInterface
 {
-  public:
+public:
 
-   virtual void open(int width, int height) = 0;
-   virtual void close() = 0;
-   virtual void resize(int new_width, int new_height) = 0;
-   virtual void setsize(int width, int height) {}
-   virtual void display() = 0;
-   virtual void swap() = 0;
+  virtual void open(int width, int height) = 0;
+  virtual void close() = 0;
+  virtual void resize(int new_width, int new_height) = 0;
+  virtual void setsize(int width, int height) {}
+  virtual void display() = 0;
+  virtual void swap() = 0;
 
-   // Virtual functions for interactivity
-   virtual bool mouseMove(int x, int y) = 0;
-   virtual bool mousePress(MouseButton btn, bool down, int x, int y) = 0;
-   virtual bool mouseScroll(int scroll) = 0;
-   virtual bool keyPress(unsigned char key, int x, int y) = 0;
+  // Virtual functions for interactivity
+  virtual bool mouseMove(int x, int y) = 0;
+  virtual bool mousePress(MouseButton btn, bool down, int x, int y) = 0;
+  virtual bool mouseScroll(int scroll) = 0;
+  virtual bool keyPress(unsigned char key, int x, int y) = 0;
 
-   virtual bool parseCommands(std::string cmd) {return false;}
+  virtual bool parseCommands(std::string cmd)
+  {
+    return false;
+  }
 
-   virtual std::string requestData(std::string key) {return std::string("");}
+  virtual std::string requestData(std::string key)
+  {
+    return std::string("");
+  }
 
-   ApplicationInterface() {}
+  ApplicationInterface() {}
 };
 
 //Some key codes, using ascii range
