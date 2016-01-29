@@ -690,49 +690,47 @@ void TriSurfaces::render()
   //Prepare the Index buffer
   if (!indexvbo)
   {
-    assert(elements);
     glGenBuffers(1, &indexvbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-    GL_Error_Check;
-    if (glIsBuffer(indexvbo))
-    {
-      //DYNAMIC_DRAW is really really slow on Quadro K5000s in CAVE2, nVidie 340 drivers
-      //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-      debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
-    }
-    else
-      debug_print("  IBO creation failed\n");
-    GL_Error_Check;
   }
 
-  //Re-map vertex indices in sorted order
+  //Always set data size again in case changed
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+  GL_Error_Check;
   if (glIsBuffer(indexvbo))
   {
-    unsigned char *p, *ptr;
-    t1 = clock();
-    ptr = p = (unsigned char*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-    GL_Error_Check;
-    if (!p) abort_program("glMapBuffer failed");
-    //Reverse order farthest to nearest
-    elements = 0;
-    for(int i=tricount-1; i>=0; i--)
-      //for(int i=0; i<tricount; i++)
-    {
-      if (hiddencache[tidx[i].geomid]) continue;
-      elements += 3;
-      assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
-      //Copies index bytes
-      memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
-      ptr += sizeof(GLuint) * 3;
-    }
-    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-    GL_Error_Check;
-    t2 = clock();
-    debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, tricount);
-    t1 = clock();
+    assert(elements);
+    //DYNAMIC_DRAW is really really slow on Quadro K5000s in CAVE2, nVidia 340 drivers
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+    debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
   }
+  else
+    abort_program("IBO creation failed\n");
+  GL_Error_Check;
+
+  //Re-map vertex indices in sorted order
+  unsigned char *p, *ptr;
+  t1 = clock();
+  ptr = p = (unsigned char*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+  GL_Error_Check;
+  if (!p) abort_program("glMapBuffer failed");
+  //Reverse order farthest to nearest
+  elements = 0;
+  for(int i=tricount-1; i>=0; i--)
+    //for(int i=0; i<tricount; i++)
+  {
+    if (hiddencache[tidx[i].geomid]) continue;
+    elements += 3;
+    assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
+    //Copies index bytes
+    memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
+    ptr += sizeof(GLuint) * 3;
+  }
+  glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+  GL_Error_Check;
+  t2 = clock();
+  debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, tricount);
+  t1 = clock();
 }
 
 void TriSurfaces::draw()
