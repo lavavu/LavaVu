@@ -286,7 +286,7 @@ class Lines(DrawingObject):
   otype = Type.Line
 
   def __init__(self, name, cmap, width, link=False, flat=False, props=""):
-    props = 'lineWidth=%d\nlink=%d\nflat=%d' % (width, link, flat) + props
+    props = 'lineWidth=%d\nlink=%d\nflat=%d\n' % (width, link, flat) + props
     super(Lines, self).__init__(name, cmap, props)
 
 class Vectors(DrawingObject):
