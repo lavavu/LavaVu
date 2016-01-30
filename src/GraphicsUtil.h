@@ -95,7 +95,7 @@
 //Get eye pos vector z by multiplying vertex by modelview matrix
 #define eyeDistance(M,V) -(M[2] * V[0] + M[6] * V[1] + M[10] * V[2] + M[14]);
 
-#define printVertex(v) printf("%9f,%9f,%9f",v[0],v[1],v[2]);
+#define printVertex(v) printf("%9f,%9f,%9f\n",v[0],v[1],v[2]);
 // Print out a matrix
 #ifndef M
 #define M(mat,row,col)  mat[col*4+row]
@@ -229,14 +229,9 @@ public:
     return *this;
   }
 
-  Vec3d& cross(const Vec3d& rhs)
+  Vec3d cross(const Vec3d& rhs)
   {
-    float tempx = y * rhs.z - rhs.y * z;
-    float tempy = z * rhs.x - rhs.z * x;
-    z = x * rhs.y - rhs.x * y;
-    x = tempx;
-    y = tempy;
-    return *this;
+    return Vec3d(y * rhs.z - rhs.y * z, z * rhs.x - rhs.z * x, x * rhs.y - rhs.x * y);
   }
 
   float dot(const Vec3d& rhs) const
@@ -384,27 +379,14 @@ public:
   }
 
   /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
-  Vec3d operator* (const Vec3d &vec) const
+  Vec3d operator*(const Vec3d &vec) const
   {
-    /*/https://molecularmusings.wordpress.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+    //https://molecularmusings.wordpress.com/2013/05/24/a-faster-quaternion-vector-multiplication/
+    //t = 2 * cross(q.xyz, v)
+    //v' = v + q.w * t + cross(q.xyz, t)
     Vec3d q = Vec3d(x, y, z);
     Vec3d t = q.cross(vec) * 2.0;
-    Vec3d r = vec + (t * w) + q.cross(t);
-    return r;*/
-
-    Vec3d vn(vec);
-    float mag = vn.magnitude();
-    vn.normalise();
-
-    Quaternion vecQuat(vn.x, vn.y, vn.z, 0.0f);
-    Quaternion conj(-x, -y, -z, w);
-    /* result = q * v * q^ */
-    Quaternion result = vecQuat * conj;
-    result = *this * result;
-
-    /* Get transformed vector (which is normalised) and restore scale */
-    return Vec3d(result.x*mag, result.y*mag, result.z*mag);
-    //return Vec3d(result.x, result.y, result.z);
+    return vec + (t * w) + q.cross(t);
   }
 
   float magnitude()
