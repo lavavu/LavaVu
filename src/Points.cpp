@@ -371,66 +371,60 @@ void Points::draw()
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   if (!view->is3d) glDisable(GL_DEPTH_TEST);
 
-  if (prog && prog->program)
+  //Point size distance attenuation (disabled for 2d models)
+  if (view->is3d && attenuate) //Adjust scaling by model size when using distance size attenuation
+    prog->setUniform("uPointScale", scale * view->model_size);
+  else
+    prog->setUniform("uPointScale", scale);
+  prog->setUniform("uPointType", pointType);
+  prog->setUniform("uPointDist", (view->is3d && attenuate ? 1 : 0));
+
+  glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+  GL_Error_Check;
+
+  // Draw using vertex buffer object
+  int stride = 5 * sizeof(float) + sizeof(Colour);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+  if (elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    prog->use();
-    GL_Error_Check;
-    //Point size distance attenuation (disabled for 2d models)
-    if (view->is3d && attenuate) //Adjust scaling by model size when using distance size attenuation
-      prog->setUniform("uPointScale", scale * view->model_size);
-    else
-      prog->setUniform("uPointScale", scale);
-    prog->setUniform("uPointType", pointType);
-    prog->setUniform("uOpacity", GeomData::opacity);
-    prog->setUniform("uPointDist", (view->is3d && attenuate ? 1 : 0));
+    //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
+    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
+    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
 
-    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-    GL_Error_Check;
-
-    // Draw using vertex buffer object
-    int stride = 5 * sizeof(float) + sizeof(Colour);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-    if (elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
+    //Generic vertex attributes, "aSize", "aPointType"
+    GLint aSize = 0, aPointType = 0;
+    if (prog && prog->program)
     {
-      //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
-      glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-      glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
-      glEnableClientState(GL_VERTEX_ARRAY);
-      glEnableClientState(GL_COLOR_ARRAY);
-
-      //Generic vertex attributes, "aSize", "aPointType"
-      GLint aSize = 0, aPointType = 0;
-      if (prog && prog->program)
+      aSize = prog->attribs["aSize"];
+      if (aSize >= 0)
       {
-        aSize = prog->attribs["aSize"];
-        if (aSize >= 0)
-        {
-          glEnableVertexAttribArray(aSize);
-          glVertexAttribPointer(aSize, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float)+sizeof(Colour)));
-        }
-        aPointType = prog->attribs["aPointType"];
-        if (aPointType >= 0)
-        {
-          glEnableVertexAttribArray(aPointType);
-          glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(4*sizeof(float)+sizeof(Colour)));
-        }
+        glEnableVertexAttribArray(aSize);
+        glVertexAttribPointer(aSize, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float)+sizeof(Colour)));
       }
-
-      //Draw the points
-      glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
-
-      if (prog && prog->program)
+      aPointType = prog->attribs["aPointType"];
+      if (aPointType >= 0)
       {
-        if (aSize >= 0) glDisableVertexAttribArray(aSize);
-        if (aPointType >= 0) glDisableVertexAttribArray(aPointType);
+        glEnableVertexAttribArray(aPointType);
+        glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(4*sizeof(float)+sizeof(Colour)));
       }
-      glDisableClientState(GL_VERTEX_ARRAY);
-      glDisableClientState(GL_COLOR_ARRAY);
     }
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    //Draw the points
+    glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+
+    if (prog && prog->program)
+    {
+      if (aSize >= 0) glDisableVertexAttribArray(aSize);
+      if (aPointType >= 0) glDisableVertexAttribArray(aPointType);
+    }
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
   }
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   //Restore state
   glBindTexture(GL_TEXTURE_2D, 0);

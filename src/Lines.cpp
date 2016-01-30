@@ -35,6 +35,8 @@
 
 #include "Geometry.h"
 
+Shader* Lines::prog = NULL;
+
 Lines::Lines(bool all2Dflag)
 {
   type = lucLineType;
@@ -217,6 +219,7 @@ void Lines::draw()
   clock_t t0 = clock();
   double time;
   int stride = 3 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
+  int offset = 0;
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo))
   {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -231,31 +234,25 @@ void Lines::draw()
     else
       glDisable(GL_DEPTH_TEST);
 
-    int offset = 0;
     for (unsigned int i=0; i<geom.size(); i++)
     {
       if (drawable(i) && geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
       {
         //Set draw state
-        setState(i);
-        glPushAttrib(GL_ENABLE_BIT);
+        setState(i, prog);
 
         //Lines specific state
         float lineWidth = geom[i]->draw->properties["linewidth"].ToFloat(1.0) * scale;
         if (lineWidth <= 0) lineWidth = scale;
         glLineWidth(lineWidth);
 
-        glDisable(GL_LIGHTING); //Turn off lighting (for databases without properties exported)
-
         if (geom[i]->draw->properties["link"].ToBool(false))
           glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
         else
           glDrawArrays(GL_LINES, offset, counts[i]);
-
-        glPopAttrib();
       }
 
-      offset += geom[i]->count;
+      offset += counts[i];
     }
 
     glDisableClientState(GL_VERTEX_ARRAY);
@@ -270,7 +267,7 @@ void Lines::draw()
 
   time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
   if (time > 0.05)
-    debug_print("  %.4lf seconds to draw lines\n", time);
+    debug_print("  %.4lf seconds to draw %d lines\n", time, offset);
   GL_Error_Check;
 }
 

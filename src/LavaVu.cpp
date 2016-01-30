@@ -37,6 +37,8 @@
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
 //Vector arrow head and ellipsoid shading/normals not quite right
+//Lock down save/restore state json format so translation between script commands and json props unecessary
+//Merge WebGL/standard shader code
 
 //Viewer class
 #include "Include.h"
@@ -1727,36 +1729,34 @@ void LavaVu::open(int width, int height)
 
 void LavaVu::reloadShaders()
 {
-  // Load shaders
+  //Point shaders
   if (Points::prog) delete Points::prog;
   Points::prog = new Shader("pointShader.vert", "pointShader.frag");
   const char* pUniforms[14] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", "uTextured", "uTexture", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
   Points::prog->loadUniforms(pUniforms, 14);
   const char* pAttribs[2] = {"aSize", "aPointType"};
   Points::prog->loadAttribs(pAttribs, 2);
-  if (strstr(typeid(*viewer).name(), "OSMesa"))
-  {
-    //Hack to speed up default point drawing size when using OSMesa
-    Model::points->pointType = 4;
-    debug_print("OSMesa Detected: pointType default = 4\n");
-  }
-  else
-  {
-    //Triangle shaders too slow with OSMesa
-    if (TriSurfaces::prog) delete TriSurfaces::prog;
-    TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
-    const char* tUniforms[13] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
-    TriSurfaces::prog->loadUniforms(tUniforms, 13);
-    QuadSurfaces::prog = TriSurfaces::prog;
-  }
+
+  //Line shaders
+  if (Lines::prog) delete Lines::prog;
+  Lines::prog = new Shader("lineShader.vert", "lineShader.frag");
+  const char* lUniforms[6] = {"uOpacity", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation"};
+  Lines::prog->loadUniforms(lUniforms, 6);
+
+  //Triangle shaders
+  if (TriSurfaces::prog) delete TriSurfaces::prog;
+  TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
+  const char* tUniforms[13] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
+  TriSurfaces::prog->loadUniforms(tUniforms, 13);
+  QuadSurfaces::prog = TriSurfaces::prog;
 
   //Volume ray marching shaders
   if (Volumes::prog) delete Volumes::prog;
   Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
-   const char* vUniforms[24] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange", "uDenMinMax"};
-   Volumes::prog->loadUniforms(vUniforms, 24);
-   const char* vAttribs[2] = {"aVertexPosition"};
-   Volumes::prog->loadAttribs(pAttribs, 2);
+  const char* vUniforms[24] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange", "uDenMinMax"};
+  Volumes::prog->loadUniforms(vUniforms, 24);
+  const char* vAttribs[2] = {"aVertexPosition"};
+  Volumes::prog->loadAttribs(pAttribs, 2);
 }
 
 void LavaVu::resize(int new_width, int new_height)
