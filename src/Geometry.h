@@ -327,6 +327,7 @@ class Lines : public Geometry
   bool all2d;
   std::vector<unsigned int> counts;
 public:
+  static Shader* prog;
   static bool tubes;
   Lines(bool all2Dflag=false);
   ~Lines();

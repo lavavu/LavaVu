@@ -1,22 +1,11 @@
-attribute vec3 aVertexPosition;
-attribute vec4 aVertexColour;
-
-uniform mat4 uMVMatrix;
-uniform mat4 uPMatrix;
-
-uniform vec4 uColour;
-uniform float uAlpha;
-
 varying vec4 vColour;
+varying vec3 vVertex;
 
 void main(void)
 {
-  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
-  gl_Position = uPMatrix * mvPosition;
-  if (uColour.a > 0.0)
-    vColour = uColour;
-  else
-    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uAlpha);
+  vec4 mvPosition = gl_ModelViewMatrix * gl_Vertex;
+  gl_Position = gl_ProjectionMatrix * mvPosition;
+  vColour = gl_Color;
+  vVertex = gl_Vertex.xyz;
 }
-
 

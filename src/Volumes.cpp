@@ -70,9 +70,6 @@ void Volumes::draw()
   Geometry::draw();
   if (drawcount == 0) return;
 
-  //Use shaders if available
-  if (prog) prog->use();
-
   //clock_t t1,t2,tt;
   //t1 = tt = clock();
 
