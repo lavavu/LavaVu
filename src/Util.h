@@ -121,6 +121,7 @@ public:
   int datasize;
   unsigned int offset;
   bool generated;
+  std::string label;
 
   DataContainer() : next(0), minimum(0), maximum(0), datasize(1), offset(0), generated(false) {}
 
@@ -132,12 +133,13 @@ public:
   virtual void erase(int start, int end) = 0;
   virtual void* ref(unsigned i=0) = 0;
 
-  void setup(float min, float max)
+  void setup(float min, float max, std::string labelstr="")
   {
     //if (min < minimum) minimum = min;
     //if (max > maximum) maximum = max;
     minimum = min;
     maximum = max;
+    label = labelstr;
   }
 
   unsigned int size()

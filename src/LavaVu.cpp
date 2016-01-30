@@ -34,7 +34,6 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 //TODO/FIX:
-//Ability to list available data
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
 //Vector arrow head and ellipsoid shading/normals not quite right
@@ -1521,7 +1520,7 @@ void LavaVu::readTecplot(FilePath& fn)
 
             Model::triSurfaces->read(tobj, ELS, (lucGeometryDataType)dtype, values);
             printf("  VALUES min %f max %f (%s : %d)\n", valuemin, valuemax, labels[coord].c_str(), coord-3);
-            Model::triSurfaces->setup(tobj, (lucGeometryDataType)dtype, valuemin, valuemax);
+            Model::triSurfaces->setup(tobj, (lucGeometryDataType)dtype, valuemin, valuemax, labels[coord]);
 
             //Done with fixed data 
             if (coord == VALUE_OFFSET-1)
@@ -1557,7 +1556,7 @@ void LavaVu::readTecplot(FilePath& fn)
             Model::lines->read(lobj, 0, lucMinDataType, NULL); //Read a dummy value as currently won't load fixed data until other data read
             //Model::points->read(pobj, ELS, lucColourValueData, values);
             printf("  VALUES min %f max %f (%s : %d)\n", valuemin, valuemax, labels[coord].c_str(), coord-3);
-            Model::triSurfaces->setup(tobj, (lucGeometryDataType)dtype, valuemin, valuemax);
+            Model::triSurfaces->setup(tobj, (lucGeometryDataType)dtype, valuemin, valuemax, labels[coord]);
             //Model::points->setup(pobj, lucColourValueData, valuemin, valuemax);
           }
 
@@ -1638,7 +1637,7 @@ void LavaVu::createDemoModel()
 
     if (i % NUMSWARM == NUMSWARM-1)
     {
-      Model::points->setup(obj, lucColourValueData, 0, size);
+      Model::points->setup(obj, lucColourValueData, 0, size, "demo colours");
       if (i != NUMPOINTS-1)
         Model::points->add(obj);
     }
@@ -1660,7 +1659,7 @@ void LavaVu::createDemoModel()
     Model::lines->read(obj, 1, lucColourValueData, &colour);
   }
 
-  Model::lines->setup(obj, lucColourValueData, 0, size);
+  Model::lines->setup(obj, lucColourValueData, 0, size, "demo colours");
 
   //Add some quads (using tri surface mode)
   {
