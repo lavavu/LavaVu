@@ -545,7 +545,7 @@ bool LavaVu::parseCommands(std::string cmd)
   //Support multi-line command input by splitting on newlines
   //and parsing separately
   if (cmd.length() == 0) return false;
-  bool redisplay = true;
+  bool redisplay = false;
 
   std::string line;
   std::stringstream ss(cmd);
@@ -1378,6 +1378,24 @@ bool LavaVu::parseCommand(std::string cmd)
       viewer->swap();  //Immediate display
       return false;
     }
+    if (parsed["list"] == "data" && aobject)
+    {
+      int offset = 2;
+      displayText("Data sets for: " + aobject->name + "\n-----------------------------------------", 1);
+      std::cerr << "Data sets for: " + aobject->name + "\n-----------------------------------------\n";
+      std::vector<std::string> list;
+      for (unsigned int i=0; i < Model::geometry.size(); i++)
+      {
+        list = Model::geometry[i]->getDataLabels(aobject->id);
+        for (unsigned int l=0; l < list.size(); l++)
+        {
+          displayText(list[l], ++offset);
+          std::cerr << list[l] << std::endl;
+        }
+      }
+      viewer->swap();  //Immediate display
+      return false;
+    }
   }
   else if (parsed.exists("reset"))
   {
@@ -1984,8 +2002,6 @@ bool LavaVu::parseCommand(std::string cmd)
       filter.range = (parsed.get("filter", 3) == "range");
       aobject->filters.push_back(filter);
       printMessage("%s filter on value index %d from %f to %f", (filter.range ? "Range" : "Value"), filter.dataIdx, filter.minimum, filter.maximum);
-      //if (!loadWindow(window)) return false;
-      //requires manual "reload" or timestep change to activate
       amodel->redraw(true); //Force reload
     }
   }
@@ -2401,7 +2417,8 @@ std::string LavaVu::helpCommand(std::string cmd)
             "objects : enable object list (stays on screen until disabled)\n"
             "          (dimmed objects are hidden or not in selected viewport)\n"
             "colourmaps : show colourmap list (onlt temporarily shown)\n"
-            "elements : show geometry elements by id in terminal\n";
+            "elements : show geometry elements by id in terminal\n"
+            "data : show available data sets in selected object\n";
   }
   else if (cmd == "reset")
   {

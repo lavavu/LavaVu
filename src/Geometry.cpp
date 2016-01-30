@@ -792,12 +792,12 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
   }
 }
 
-void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum)
+void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label)
 {
   //Get passed object's most recently added data store and setup draw data
   GeomData* geomdata = getObjectStore(draw);
   if (!geomdata) return;
-  geomdata->data[dtype]->setup(minimum, maximum);
+  geomdata->data[dtype]->setup(minimum, maximum, label);
 }
 
 
@@ -838,41 +838,35 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 
 void Geometry::print()
 {
+  std::string types[lucMaxType+1] = {"Labels", "Particles", "Vectors", "Tracers", "QuadSurface", "TriSurface", "Lines", "Shapes", "Volume", "UNKNOWN"};
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    switch (type)
-    {
-    case lucLabelType:
-      std::cout << "Labels ";
-      break;
-    case lucPointType:
-      std::cout << "Point swarm ";
-      break;
-    case lucVectorType:
-      std::cout << "Vectors";
-      break;
-    case lucTracerType:
-      std::cout << "Tracer swarm";
-      break;
-    case lucGridType:
-      std::cout << "Surface";
-      break;
-    case lucTriangleType:
-      std::cout << "Isosurface";
-      break;
-    case lucLineType:
-      std::cout << "Lines";
-      break;
-    case lucShapeType:
-      std::cout << "Shapes";
-      break;
-    default:
-      std::cout << "UNKNOWN";
-    }
-
-    std::cout << i << " - " << std::endl;
+    std::cout << types[type] << i << " - " << std::endl;
     //std::cout << i << " - " << (drawable(i) ? "shown" : "hidden") << std::endl;
   }
+}
+
+std::vector<std::string> Geometry::getDataLabels(unsigned int id)
+{
+  //Iterate through all geometry of given object(id) and print
+  //the index and label of the associated value data sets
+  //(used for colouring and filtering)
+  std::vector<std::string> list;
+  for (unsigned int i = 0; i < geom.size(); i++)
+  {
+    if (geom[i]->draw->id == id)
+    {
+      for (unsigned int v = 0; v < geom[i]->values.size(); v++)
+      {
+        std::stringstream ss;
+        ss << "[" << v << "] " << geom[i]->values[v]->label
+           << " (range) " << geom[i]->values[v]->minimum
+           << " to " << geom[i]->values[v]->maximum;
+        list.push_back(ss.str());
+      }
+    }
+  }
+  return list;
 }
 
 //Dumps colourmapped data to image

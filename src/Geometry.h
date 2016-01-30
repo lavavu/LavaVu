@@ -258,10 +258,11 @@ public:
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
-  void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum);
+  void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label="(unnamed)");
   GeomData* fix(GeomData* fgeom=NULL);
   void label(DrawingObject* draw, const char* labels);
   void print();
+  std::vector<std::string> getDataLabels(unsigned int id);
   int size() {return geom.size();}
   void setView(View* vp, float* min=NULL, float* max=NULL);
   void move(Geometry* other);
