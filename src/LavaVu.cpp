@@ -36,7 +36,6 @@
 //TODO/FIX:
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
-//Vector arrow head and ellipsoid shading/normals not quite right
 //Lock down save/restore state json format so translation between script commands and json props unecessary
 //Merge WebGL/standard shader code
 
