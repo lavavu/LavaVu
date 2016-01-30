@@ -1380,7 +1380,7 @@ void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int 
 void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count)
 {
   int i,j;
-  Vec3d edge, pos;
+  Vec3d edge, pos, normal;
   //float tex[2];
 
   if (radii.x < 0) radii.x = -radii.x;
@@ -1401,15 +1401,13 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
       pos = centre + rot * (radii * edge);
 
-      // Flip for normal
-      edge = -edge;
-
       //tex[0] = i/(float)segment_count;
       //tex[1] = 2*(j+1)/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       read(draw, 1, lucVertexData, pos.ref());
-      read(draw, 1, lucNormalData, edge.ref());
+      normal = rot * -edge;
+      read(draw, 1, lucNormalData, normal.ref());
       //read(draw, 1, lucTexCoordData, tex);
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
@@ -1417,15 +1415,13 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
       pos = centre + rot * (radii * edge);
 
-      // Flip for normal
-      edge = -edge;
-
       //tex[0] = i/(float)segment_count;
       //tex[1] = 2*j/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       read(draw, 1, lucVertexData, pos.ref());
-      read(draw, 1, lucNormalData, edge.ref());
+      normal = rot * -edge;
+      read(draw, 1, lucNormalData, normal.ref());
       //read(draw, 1, lucTexCoordData, tex);
 
       //Triangle strip indices
