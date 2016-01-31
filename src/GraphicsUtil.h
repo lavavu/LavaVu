@@ -385,7 +385,7 @@ public:
     //t = 2 * cross(q.xyz, v)
     //v' = v + q.w * t + cross(q.xyz, t)
     Vec3d q = Vec3d(x, y, z);
-    Vec3d t = q.cross(vec) * 2.0;
+    Vec3d t = q.cross(vec) * 2.0f;
     return vec + (t * w) + q.cross(t);
   }
 
