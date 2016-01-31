@@ -1121,36 +1121,41 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 
     //Read triangle vertex, normal
     Vec3d vertex = translate + pinnacle;;
-    read(draw, 1, lucVertexData, vertex.ref());
 
     Vec3d normal = rot * Vec3d(0.0f, 0.0f, 1.0f);
     normal.normalise();
-    read(draw, 1, lucNormalData, normal.ref());
 
     // Subsequent vertices describe outer edges of cone base
-    Vec3d vertex0 = rot * Vec3d(head_radius * x_coords_[1], head_radius * y_coords_[1], -headD);
+    Vec3d vertex0 = translate + rot * Vec3d(head_radius * x_coords_[1], head_radius * y_coords_[1], -headD);
     for (v=segment_count; v >= 0; v--)
     {
       int vertex_index = getVertexIdx(draw);
 
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
+      Vec3d vertex1 = translate + rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
 
-      //Calculate normal
-      Vec3d normal = vectorNormalToPlane(pinnacle.ref(), vertex0.ref(), vertex1.ref());
-      vertex0 = vertex1;
-      normal.normalise();
+      //Calculate normal at base
+      Vec3d normal1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], 0);
+      normal1.normalise();
 
-      vertex1 = translate + vertex1;
+      //Duplicate pinnacle vertex as each facet needs a different normal
+      read(draw, 1, lucVertexData, vertex.ref());
+      //Balance between smoothness (normal) and highlighting angle of cone (normal1)
+      Vec3d avgnorm = normal * 0.4 + normal1 * 0.6;
+      avgnorm.normalise();
+      read(draw, 1, lucNormalData, avgnorm.ref());
 
       //Read triangle vertex, normal
       read(draw, 1, lucVertexData, vertex1.ref());
-      read(draw, 1, lucNormalData, normal.ref());
+      read(draw, 1, lucNormalData, avgnorm.ref());
 
       //Triangle fan indices
-      indices.push_back(pt);
-      indices.push_back(vertex_index-1);
-      indices.push_back(vertex_index);
+      if (v < segment_count)
+      {
+        indices.push_back(vertex_index);    //Pinnacle vertex
+        indices.push_back(vertex_index-1);  //Previous vertex
+        indices.push_back(vertex_index+1);  //Current vertex
+      }
     }
 
     // Flatten cone for circle base -> set common point to share z-coord
