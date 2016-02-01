@@ -658,7 +658,7 @@ void Model::cacheStep()
   if (TimeStep::cachesize == 0 || now < 0 || now >= (int)timesteps.size()) return;
   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
-  debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);
+  printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);
 
   //Copy all elements
   if (membytes__ > 0)
