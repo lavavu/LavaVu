@@ -56,7 +56,6 @@ public:
   // Settings
   bool stereo;
   bool autozoom;
-  bool redraw;   //Redraw flag
   bool filtered; //Filter objects in view by object list
   bool scaled;
   bool rotated;  //Flags whether view has rotated since last redraw

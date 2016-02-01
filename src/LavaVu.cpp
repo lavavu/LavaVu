@@ -1778,7 +1778,7 @@ void LavaVu::resize(int new_width, int new_height)
     }
   }
 
-  redrawViewports();
+  amodel->redraw();
 }
 
 void LavaVu::close()
@@ -1806,7 +1806,7 @@ void LavaVu::resetViews(bool autozoom)
       viewSelect(v, true, autozoom);
 
   //Flag redraw required
-  redrawViewports();
+  amodel->redraw();
 
   //Set viewer title
   std::stringstream title;
@@ -1826,17 +1826,6 @@ void LavaVu::resetViews(bool autozoom)
 
   if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
   viewer->setBackground(awin->background.value); //Update background colour
-}
-
-//Called when all viewports need to update
-void LavaVu::redrawViewports()
-{
-  for (unsigned int v=0; v<awin->views.size(); v++)
-    awin->views[v]->redraw = true;
-
-  //Flag redraw on all objects
-  for (unsigned int i=0; i < Model::geometry.size(); i++)
-    Model::geometry[i]->redraw = true;
 }
 
 //Called when view changed
@@ -1948,7 +1937,6 @@ void LavaVu::display(void)
   //Always redraw the active view, others only if flag set
   if (aview)
   {
-    aview->redraw = true;
     if (!viewer->mouseState && sort_on_rotate && aview->rotated)
       aview->sort = true;
   }
@@ -1973,10 +1961,8 @@ void LavaVu::display(void)
     int selview = view;
     for (unsigned int v=0; v < awin->views.size(); v++)
     {
-      //if (!awin->views[v]->redraw) continue;
       //All objects need redrawing if the viewport changed
       if (lastdraw != v) amodel->redraw();
-      awin->views[v]->redraw = false;
 
       view = v;
       lastdraw = v;
