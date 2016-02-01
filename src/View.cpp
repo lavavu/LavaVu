@@ -59,7 +59,6 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
 
   stereo = stereo_flag;
   autozoom = false;
-  redraw = true;
   filtered = true;
   scaled = true;
   initialised = false;

@@ -181,7 +181,6 @@ public:
 
   void resetViews(bool autozoom=false);
   void viewSelect(int idx, bool setBounds=false, bool autozoom=false);
-  void redrawViewports();
   int viewFromPixel(int x, int y);
 
   GeomData* getGeometry(DrawingObject* obj);

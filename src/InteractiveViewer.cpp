@@ -770,7 +770,7 @@ bool LavaVu::parseCommand(std::string cmd)
       GeomData::opacity = fval;
     printMessage("Set global alpha to %.2f", GeomData::opacity);
     if (amodel)
-      redrawViewports();
+      amodel->redraw();
     return false;
   }
   //TODO: not yet documented
@@ -784,7 +784,7 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     Lines::tubes = !Lines::tubes;
     printMessage("Lines rendered as tubes is %s", Lines::tubes ? "ON":"OFF");
-    redrawViewports();
+    amodel->redraw();
     return true;
   }
   else if (parsed.exists("open"))
@@ -1023,7 +1023,7 @@ bool LavaVu::parseCommand(std::string cmd)
           active->showAll();
         printMessage("%s all %s %d", action.c_str(), what.c_str(), id);
       }
-      redrawViewports();
+      amodel->redraw();
     }
     else
     {
@@ -1049,7 +1049,7 @@ bool LavaVu::parseCommand(std::string cmd)
               Model::geometry[i]->showById(obj->id, state);
             obj->visible = state; //This allows hiding of objects without geometry (colourbars)
             printMessage("%s object %s", action.c_str(), obj->name.c_str());
-            redrawViewports();
+            amodel->redraw();
           }
         }
       }
@@ -1183,13 +1183,13 @@ bool LavaVu::parseCommand(std::string cmd)
   else if (parsed.exists("cullface"))
   {
     GeomData::cullface = !GeomData::cullface;
-    redrawViewports();
+    amodel->redraw();
     printMessage("Back face culling for surfaces is %s", GeomData::cullface ? "ON":"OFF");
   }
   else if (parsed.exists("wireframe"))
   {
     GeomData::wireframe = !GeomData::wireframe;
-    redrawViewports();
+    amodel->redraw();
     printMessage("Wireframe %s", GeomData::wireframe ? "ON":"OFF");
   }
   else if (parsed.exists("lighting"))
@@ -1202,7 +1202,7 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     //for (int type=lucMinType; type<lucMaxType; type++)
     //   Model::geometry[type]->redraw = true;
-    redrawViewports();
+    amodel->redraw();
     printMessage("Redrawing all objects");
   }
   else if (parsed.exists("fullscreen"))
@@ -1470,7 +1470,7 @@ bool LavaVu::parseCommand(std::string cmd)
         }
       }
       redraw(obj->id);
-      redrawViewports();
+      amodel->redraw();
     }
   }
   else if (parsed.exists("colour"))
@@ -1502,7 +1502,7 @@ bool LavaVu::parseCommand(std::string cmd)
       }
 
       redraw(aobject->id);
-      redrawViewports();
+      amodel->redraw();
     }
   }
   else if (parsed.exists("pointtype"))
@@ -1541,7 +1541,7 @@ bool LavaVu::parseCommand(std::string cmd)
         printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointtype"].ToInt(-1));
         Model::geometry[lucPointType]->redraw = true;
         redraw(obj->id);
-        redrawViewports();
+        amodel->redraw();
       }
     }
   }
@@ -1667,7 +1667,7 @@ bool LavaVu::parseCommand(std::string cmd)
         if (parsed.has(fval, "scale", 1))
         {
           aview->setScale(fval, 1, 1);
-          redrawViewports();
+          amodel->redraw();
         }
       }
       else if (what == "y")
@@ -1675,7 +1675,7 @@ bool LavaVu::parseCommand(std::string cmd)
         if (parsed.has(fval, "scale", 1))
         {
           aview->setScale(1, fval, 1);
-          redrawViewports();
+          amodel->redraw();
         }
       }
       else if (what == "z")
@@ -1683,14 +1683,14 @@ bool LavaVu::parseCommand(std::string cmd)
         if (parsed.has(fval, "scale", 1))
         {
           aview->setScale(1, 1, fval);
-          redrawViewports();
+          amodel->redraw();
         }
       }
       else if (what == "all" && parsed.has(fval, "scale", 1))
       {
         //Scale everything
         aview->setScale(fval, fval, fval);
-        redrawViewports();
+        amodel->redraw();
       }
       else
       {
@@ -1715,7 +1715,7 @@ bool LavaVu::parseCommand(std::string cmd)
           for (int type=lucMinType; type<lucMaxType; type++)
             Model::geometry[type]->redraw = true;
           redraw(obj->id);
-          redrawViewports();
+          amodel->redraw();
         }
       }
     }
@@ -2042,7 +2042,7 @@ bool LavaVu::parseCommand(std::string cmd)
     Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
     vertex[0] = aview->max[0];
     Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-    redrawViewports();
+    amodel->redraw();
   }
   else
   {
@@ -2069,7 +2069,7 @@ bool LavaVu::parseCommand(std::string cmd)
 
   //Always redraw when using multiple viewports in window (urgh sooner this is gone the better)
   if (awin && awin->views.size() > 1 && viewPorts)
-    redrawViewports();
+    amodel->redraw();
   last_cmd = cmd;
   if (!norecord) record(false, cmd);
   if (animate && redisplay) viewer->display();
