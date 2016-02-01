@@ -106,6 +106,7 @@ void Lines::update()
     //Calibrate colour maps on range for this object
     geom[i]->colourCalibrate();
     float limit = geom[i]->draw->properties["limit"].ToFloat(0);
+    bool linked = geom[i]->draw->properties["link"].ToBool(false);
 
     if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
     {
@@ -119,7 +120,8 @@ void Lines::update()
         if (!internal && geom[i]->filter(i)) continue;
 
         //Check length limit if applied (used for periodic boundary conditions)
-        if (v%2 == 0 && v < geom[i]->count-1 && limit > 0.f)
+        //NOTE: will not work with linked lines, require separated segments
+        if (!linked && v%2 == 0 && v < geom[i]->count-1 && limit > 0.f)
         {
           Vec3d line;
           vectorSubtract(line, geom[i]->vertices[v+1], geom[i]->vertices[v]);
@@ -167,7 +169,7 @@ void Lines::update()
       Colour colour;
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
-        if (v%2 == 0 && !geom[i]->draw->properties["link"].ToBool(false)) oldpos = NULL;
+        if (v%2 == 0 && !linked) oldpos = NULL;
         float* pos = geom[i]->vertices[v];
         if (oldpos)
         {
