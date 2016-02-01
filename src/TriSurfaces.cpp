@@ -93,9 +93,10 @@ void TriSurfaces::update()
     hiddencache[t] = !drawable(t); //Save flags
     debug_print("Surface %d, triangles %d hidden? %s\n", t, tris, (hiddencache[t] ? "yes" : "no"));
 
-    //TODO: hack for now to get wireframe working, should detect/switch opacity
-    if (GeomData::wireframe || geom[t]->draw->properties["wireframe"].ToBool(false))
-      geom[t]->opaque = true;
+    //Per-object wireframe works only when drawing opaque objects
+    //(can't set per-objects properties when all triangles collected and sorted)
+    geom[t]->opaque = (geom[t]->draw->properties["wireframe"].ToBool(false) || 
+                       geom[t]->draw->properties["opaque"].ToBool(false));
   }
   if (total == 0) return;
 
@@ -138,6 +139,8 @@ void TriSurfaces::loadMesh()
   GLuint unique = 0;
   tricount = 0;
   elements = 0;
+  counts.clear();
+  counts.resize(geom.size());
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     //Save initial offset
@@ -164,7 +167,7 @@ void TriSurfaces::loadMesh()
       }
 
       //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
-      elements += geom[index]->indices.size();
+      elements += counts[index]; //geom[index]->indices.size();
       unique += geom[index]->vertices.size() / 3;
       continue;
     }
@@ -435,6 +438,8 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
     memcpy(tidx[tricount].centroid, centroid, sizeof(float)*3);
   }
   tricount++;
+  //Count of vertices actually plotted
+  counts[index] += 3;
 }
 
 void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)
@@ -662,7 +667,11 @@ void TriSurfaces::depthSort()
   t1 = clock();
 
   //Skip sort if all opaque
-  if (opaqueCount == tricount) return;
+  if (opaqueCount == tricount) 
+  {
+    debug_print("No sort necessary\n");
+    return;
+  }
 
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
   radix_sort<TIndex>(tidx, swap, tricount, 2);
@@ -770,9 +779,9 @@ void TriSurfaces::draw()
       if (geom[index]->opaque)
       {
         setState(index, prog); //Set draw state settings for this object
-        //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, geom[index]->indices.size()/3, start/3, (start+geom[index]->indices.size())/3);
-        glDrawRangeElements(GL_TRIANGLES, 0, elements, geom[index]->indices.size(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-        start += geom[index]->indices.size();
+        fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
+        glDrawRangeElements(GL_TRIANGLES, 0, elements, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+        start += counts[index];
       }
       else
         tridx = index;
