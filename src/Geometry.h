@@ -297,6 +297,7 @@ class TriSurfaces : public Geometry
 {
   TIndex *tidx;
   unsigned int tricount;
+  std::vector<unsigned int> counts;
 protected:
   std::vector<Distance> surf_sort;
 public:
