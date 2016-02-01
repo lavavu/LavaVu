@@ -1505,6 +1505,7 @@ void LavaVu::readTecplot(FilePath& fn)
         //Parsed a set of data, load it
         if (count == N || (coord > 2 && count == ELS))
         {
+          if (labels.size() == coord) labels.push_back("");
           std::cerr << " LOADED BLOCK: " << labels[coord] << " : COORD " << coord << " (" << outcoord << ")" << std::endl;
 
           //Load vertex data once all coords/indices loaded

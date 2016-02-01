@@ -270,6 +270,7 @@ void Volumes::render(int i)
   glGetFloatv(GL_VIEWPORT, viewport);
   TextureData* voltexture = geom[i]->texture;
   if (!voltexture) voltexture = geom[i]->draw->defaultTexture;
+  if (!voltexture) abort_program("No volume texture loaded!\n");
   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};
   glUniform3fv(prog->uniforms["uResolution"], 1, res);
   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
