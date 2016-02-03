@@ -594,6 +594,15 @@ void ColourMap::loadTexture(bool repeat)
 
 void ColourMap::loadPalette(std::string data)
 {
+  //Two types of palette data accepted
+  // - space separated colour list (process with parse())
+  // - position=rgba colour palette (process here)
+  if (data.find("=") == std::string::npos)
+  {
+     parse(data);
+     return;
+  }
+
   //Currently only support loading palettes with literal position data, not values to scale
   noValues = true;
   //Parse palette string into key/value pairs
