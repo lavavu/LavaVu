@@ -952,30 +952,13 @@ void LavaVu::readHeightMap(FilePath& fn)
 
   viewer->title = fn.base;
 
-  //Demo colourmap
-  ColourMap* colourMap = new ColourMap();
-  addColourMap(colourMap);
-
-  //Colours: hex, abgr
-  colourMap->add(0x55660000, 0);         //Sea
-  colourMap->add(0xffffff00);
-  colourMap->add(0xff118866, 0.000001); //Land
-  colourMap->add(0xff006633);
-  colourMap->add(0xff77ffff);
-  colourMap->add(0xff0088ff);
-  colourMap->add(0xff0000ff);
-  colourMap->add(0xff000000, 1.0);
-
-  //Add colour bar display
-  //addObject(new DrawingObject("colourbar", 0, colourMap, 1.0, "colourbar=1\n"));
-
   //Create a height map grid
   int sx=cols, sz=rows;
   debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
   //opacity [0,1]
   DrawingObject *obj;
   std::string props = "static=1\ncullface=0\ntexturefile=%s\n" + texfile;
-  obj = addObject(new DrawingObject(fn.base, 0, colourMap, 1.0, props));
+  obj = addObject(new DrawingObject(fn.base, 0xffcceeee, NULL, 1.0, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
 
@@ -1674,7 +1657,7 @@ void LavaVu::createDemoModel()
     {
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
-      obj = addObject(new DrawingObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5));
+      obj = addObject(new DrawingObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5, "static=1\n"));
       Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
     }
   }
@@ -2548,7 +2531,9 @@ void LavaVu::drawSceneBlended()
     drawScene();
     break;
   }
+#ifndef USE_OMEGALIB
   aview->drawOverlay(viewer->inverse);
+#endif
 }
 
 void LavaVu::drawScene()
