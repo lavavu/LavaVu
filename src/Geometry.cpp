@@ -248,11 +248,18 @@ void Geometry::clear(bool all)
     unsigned int idx = i;
     if (all || !geom[i]->draw->properties["static"].ToBool(false))
     {
+      //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name << std::endl;
       delete geom[idx];
       if (!all) geom.erase(geom.begin()+idx);
     }
+    else
+    {
+      total += geom[i]->count;
+      //std::cout << " skipped deleting static geom: " << i << " : " << geom[i]->draw->name << std::endl;
+    }
   }
   if (all) geom.clear();
+  //if (all) std::cout << " deleting all geometry " << std::endl;
 }
 
 void Geometry::reset()
