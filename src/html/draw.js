@@ -1770,18 +1770,16 @@ Viewer.prototype.properties = function(id) {
   $('wireframe').checked = vis.objects[id].wireframe;
   $('cullface').checked = vis.objects[id].cullface;
 
-  loadProp('density');
-  loadProp('power');
-  loadProp('samples');
-  loadProp('isovalue');
-  loadProp('isosmooth');
-  loadProp('isoalpha');
-  loadProp('dmin');
-  loadProp('dmax');
+  loadProp('density', 5);
+  loadProp('power', 1.0);
+  loadProp('samples', 255);
+  loadProp('isovalue', 0.0);
+  loadProp('isosmooth', 1.0);
+  loadProp('isoalpha', 1.0);
+  loadProp('dminclip', 0.0);
+  loadProp('dmaxclip', 1.0);
   $('isowalls').checked = vis.objects[id].isowalls;
   $('isofilter').checked = vis.objects[id].isofilter;
-  $('dminclip').checked = vis.objects[id].dminclip;
-  $('dmaxclip').checked = vis.objects[id].dmaxclip;
 
   var c = new Colour(vis.objects[id].colour);
   $S('colour_set').backgroundColor = c.html();
@@ -1927,12 +1925,10 @@ Viewer.prototype.setObjectProperties = function() {
   setProp('isovalue');
   setProp('isosmooth');
   setProp('isoalpha');
-  setProp('dmin');
-  setProp('dmax');
+  setProp('dminclip');
+  setProp('dmaxclip');
   vis.objects[id].isowalls = $('isowalls').checked;
   vis.objects[id].isofilter = $('isofilter').checked;
-  vis.objects[id].dminclip = $('dminclip').checked;
-  vis.objects[id].dmaxclip = $('dmaxclip').checked;
   var colour = new Colour($('colour_set').style.backgroundColor);
   vis.objects[id].colour = colour.toInt();
   if (vis.objects[id].colourmap >= 0)
@@ -1947,8 +1943,8 @@ Viewer.prototype.setObjectProperties = function() {
   //Server side...
   if (server) {
     queueCommand("select " + vis.objects[properties.id].id);
-    queueCommand("colour " + colour.hex());
-    queueCommand("opacity " + vis.objects[id].opacity);
+    queueCommand("colour=" + JSON.stringify(colour.rgba()));
+    queueCommand("opacity=" + vis.objects[id].opacity);
     //queueCommand('brightness=' + vis.objects[id].brightness);
     //queueCommand('contrast=' + vis.objects[id].contrast);
     //queueCommand('saturation=' + vis.objects[id].saturation);
@@ -1970,10 +1966,8 @@ Viewer.prototype.setObjectProperties = function() {
       queueCommand('isowalls=' + (vis.objects[id].isowalls ? "1" : "0"));
       queueCommand('tricubicfilter=' + (vis.objects[id].isofilter ? "1" : "0"));
       queueCommand('isovalue=' + vis.objects[id].isovalue);
-      queueCommand('dmin=' + vis.objects[id].dmin);
-      queueCommand('dmax=' + vis.objects[id].dmax);
-      queueCommand('dminclip=' + (vis.objects[id].dminclip ? "1" : "0"));
-      queueCommand('dmaxclip=' + (vis.objects[id].dmaxclip ? "1" : "0"));
+      queueCommand('dminclip=' + vis.objects[id].dminclip);
+      queueCommand('dmaxclip=' + vis.objects[id].dmaxclip);
     }
     /*queueCommand('xmin=' + vis.objects[id].xmin);
     queueCommand('xmax=' + vis.objects[id].xmax);

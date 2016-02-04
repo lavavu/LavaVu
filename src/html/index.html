@@ -282,12 +282,12 @@ precision highp float;
        <output for="isoalpha" id="isoalpha-out">1</output>
     </div>
     <div class="volume-obj">
-       <input id="dmin" type="range" min="0" max="1" value="0" step="0.01" oninput="$(this.id+'-out').value = this.value;">DensityMin
-       <output for="dmin" id="dmin-out">0</output>
+       <input id="dminclip" type="range" min="0" max="1" value="0" step="0.01" oninput="$(this.id+'-out').value = this.value;">Density Clip Min
+       <output for="dminclip" id="dminclip-out">0</output>
     </div>
     <div class="volume-obj">
-       <input id="dmax" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">DensityMax
-       <output for="dmax" id="dmax-out">1</output>
+       <input id="dmaxclip" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Density Clip Max
+       <output for="dmaxclip" id="dmaxclip-out">1</output>
     </div>
     <div class="volume-obj">
        <input id="isowalls" type="checkbox">
@@ -296,14 +296,6 @@ precision highp float;
     <div class="volume-obj">
        <input id="isofilter" type="checkbox">
        <label for="isofilter">Filter</label>
-    </div>
-    <div class="volume-obj">
-       <input id="dminclip" type="checkbox">
-       <label for="dminclip">DMIN Clip</label>
-    </div>
-    <div class="volume-obj">
-       <input id="dmaxclip" type="checkbox">
-       <label for="dmaxclip">DMAX Clip</label>
     </div>
     <!-- Clip controls >
     <hr>
