@@ -310,12 +310,10 @@ void Volumes::render(int i)
   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"].ToFloat(0.1));
   glUniform1i(prog->uniforms["uIsoWalls"], props["isowalls"].ToInt(0));
   glUniform1i(prog->uniforms["uFilter"], props["tricubicfilter"].ToInt(0));
-   //density min max
-   float dminmax[4] = { props["dmin"].ToFloat(0.0),
-                        props["dminclip"].ToInt(0),
-                        props["dmax"].ToFloat(1.0),
-                        props["dmaxclip"].ToInt(0)};
-   glUniform4fv(prog->uniforms["uDenMinMax"], 1, dminmax);
+  //density min max
+  float dminmax[2] = {props["dminclip"].ToFloat(0.0),
+                      props["dmaxclip"].ToFloat(1.0)};
+  glUniform2fv(prog->uniforms["uDenMinMax"], 1, dminmax);
   GL_Error_Check;
 
   //Field data requires normalisation to [0,1]

@@ -39,8 +39,7 @@ uniform float uIsoSmooth;
 uniform int uIsoWalls;
 uniform int uFilter;
 uniform vec2 uRange;
-
-uniform vec4 uDenMinMax; // [dmin, dminclip, dmax, dmaxclip]
+uniform vec2 uDenMinMax;
 
 //#define tex3D(pos) interpolate_tricubic_fast(pos)
 //#define tex3D(pos) texture3Dfrom2D(pos).x
@@ -156,8 +155,10 @@ void main()
     //Number of samples to take along this ray before we pass out back of volume...
     float travel = distance(rayStop, rayStart) / stepSize;
     int samples = int(ceil(travel));
-    //float range = uRange.y - uRange.x;
-    //if (range <= 0.0) range = 1.0;
+    float range = uRange.y - uRange.x;
+    if (range <= 0.0) range = 1.0;
+    //Scale isoValue
+    float isoValue = uRange.x + uIsoValue * range;
   
     //Raymarch, front to back
     for (int i=0; i < maxSamples; ++i)
@@ -177,7 +178,7 @@ void main()
 #define ISOSURFACE
 #ifdef ISOSURFACE
         //Passed through isosurface?
-        if (uIsoValue > 0.0 && ((!inside && density >= uIsoValue) || (inside && density < uIsoValue)))
+        if (isoValue > 0.0 && ((!inside && density >= isoValue) || (inside && density < isoValue)))
         {
           inside = !inside;
           //Find closer to exact position by iteration
@@ -190,7 +191,7 @@ void main()
             exact = (b + a) * 0.5;
             pos = rayDirection * exact + rayOrigin;
             density = tex3D(pos);
-            if (density - uIsoValue < 0.0)
+            if (density - isoValue < 0.0)
               b = exact;
             else
               a = exact;
@@ -216,20 +217,16 @@ void main()
 
         if (uDensityFactor > 0.0)
         {
-          // cal density value
-          if(density < uDenMinMax[0])
-            density = (uDenMinMax[1] == 0) ? 0.0 : uDenMinMax[0];
-          if(density > uDenMinMax[2])
-            density = (uDenMinMax[3] == 0) ? 0.0 : uDenMinMax[2];
-
           //Normalise the density over provided range
-          float minC = max(uRange.x, uDenMinMax[0]);
-          float maxC = min(uRange.y, uDenMinMax[2]);
-
-          //density = (density - uRange.x) / range;
-          density = (density - minC) / (maxC - minC);
+          density = (density - uRange.x) / range;
           density = clamp(density, 0, 1);
-         
+          if (density < uDenMinMax[0] || density > uDenMinMax[1])
+          {
+            //Skip to next sample...
+            pos += step;
+            continue;
+          }
+
           density = pow(density, uPower); //Apply power
 
           vec4 value;
