@@ -40,6 +40,7 @@
 #include "GraphicsUtil.h"
 #include "ApplicationInterface.h"
 #include "OutputInterface.h"
+#include "InputInterface.h"
 
 class OpenGLViewer : public ApplicationInterface
 {
@@ -51,6 +52,7 @@ protected:
   static int idle;
   static int displayidle; //Redisplay when idle for # milliseconds
   std::vector<OutputInterface*> outputs; //Additional output attachments
+  static std::vector<InputInterface*> inputs; //Additional input attachments
 
 public:
   ApplicationInterface* app;
@@ -145,6 +147,11 @@ public:
   void addOutput(OutputInterface* output)
   {
     outputs.push_back(output);
+  }
+
+  static void addInput(InputInterface* input)
+  {
+    inputs.push_back(input);
   }
 
   static bool pollInput(void);

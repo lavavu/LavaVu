@@ -44,6 +44,7 @@ pthread_mutex_t OpenGLViewer::cmd_mutex;
 int OpenGLViewer::idle = -1;
 int OpenGLViewer::displayidle = 0;
 bool OpenGLViewer::alphapng = false;
+std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
 
 //OpenGLViewer class implementation...
 OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fullscreen(fullscreen), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0)
@@ -505,19 +506,16 @@ bool OpenGLViewer::pollInput()
 
   //Check for input at stdin...
   bool parsed = false;
-  char cmd[INBUF_SIZE];
-#if defined _WIN32
-  while (_kbhit() != 0)
-#else
-  struct pollfd fds;
-  fds.fd = 0; /* this is STDIN */
-  fds.events = POLLIN;
-  while (poll(&fds, 1, 0) == 1)
-#endif
+
+  //Poll any input interfaces until no more data
+  std::string cmd;
+  for (unsigned int i=0; i<inputs.size(); i++)
   {
-    if (fgets(cmd, INBUF_SIZE, stdin) == NULL) break;
-    OpenGLViewer::commands.push_back(std::string(cmd));
-    parsed = true;
+    while (inputs[i]->read(cmd))
+    {
+      OpenGLViewer::commands.push_back(cmd);
+      parsed = true;
+    }
   }
 
   if (idle >= 0)
