@@ -229,6 +229,8 @@ std::string initViewer(int argc, char **argv)
     viewer->addOutput(Server::Instance(viewer, htmlpath, port, quality, threads));
   }
 #endif
+  StdInput stdi;
+  viewer->addInput(&stdi);
   if (downsample) viewer->downsample = downsample;
 
   //Create & run application
