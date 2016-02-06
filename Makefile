@@ -8,7 +8,7 @@ CPP=g++
 CC=gcc
 
 #Default flags
-CFLAGS = -Isrc
+CFLAGS = -fPIC -Isrc
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -92,7 +92,9 @@ OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
-PROGRAM = $(PREFIX)/LavaVu
+PROGNAME = LavaVu
+PROGRAM = $(PREFIX)/$(PROGNAME)
+LIBNAME = $(PREFIX)/lib$(PROGNAME).so
 INDEX = $(PREFIX)/html/index.html
 
 default: install
@@ -113,7 +115,8 @@ $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) paths
-	$(CPP) -o $(PROGRAM) $(OBJS) $(OBJ2) $(LIBS)
+	$(CPP) -o $(LIBNAME) -shared $(OBJS) $(OBJ2) $(LIBS)
+	$(CPP) -o $(PROGRAM) $(LIBNAME) $(LIBS)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
 	$(CPP) $(CFLAGS) -o $@ -c $^ 
@@ -125,7 +128,7 @@ $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
 
 clean:
-	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM)
+	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
 	/bin/rm $(PREFIX)/html/*
 	/bin/rm $(PREFIX)/*.vert
 	/bin/rm $(PREFIX)/*.frag
