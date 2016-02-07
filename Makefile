@@ -1,5 +1,7 @@
 #Install path
 PREFIX = bin
+APREFIX = $(realpath $(PREFIX))
+
 #Object files path
 OPATH = tmp
 
@@ -116,7 +118,7 @@ $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 
 $(PROGRAM): $(OBJS) $(OBJ2) paths
 	$(CPP) -o $(LIBNAME) -shared $(OBJS) $(OBJ2) $(LIBS)
-	$(CPP) -o $(PROGRAM) $(LIBNAME) $(LIBS)
+	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) -Wl,-rpath=$(APREFIX)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
 	$(CPP) $(CFLAGS) -o $@ -c $^ 
