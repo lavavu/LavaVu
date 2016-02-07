@@ -56,7 +56,7 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
   fbo_enabled = false;
   fbo_texture = fbo_depth = fbo_frame = 0;
 
-  title = "gLucifer Viewer";
+  title = "LavaVu";
   output_path = "";
 
   setBackground(0xff000000);

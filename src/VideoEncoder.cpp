@@ -74,7 +74,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->max_qdiff = 4;
     c->refs = 3; // reference frames
 
-    c->max_b_frames = 16; //Default
+    c->max_b_frames = 2; //Default
     c->b_frame_strategy = 1;
     c->chromaoffset = 0;
     c->thread_count = 1;
