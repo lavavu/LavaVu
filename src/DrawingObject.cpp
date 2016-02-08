@@ -38,7 +38,7 @@
 
 unsigned int DrawingObject::lastid = 0;
 
-DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float opacity, std::string props, unsigned int id) : id(id), name(name), skip(Model::noload), visible(true)
+DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map, unsigned int id) : id(id), name(name), skip(Model::noload), visible(true)
 {
   if (id == 0) this->id = DrawingObject::lastid+1;
   DrawingObject::lastid = this->id;
@@ -47,9 +47,7 @@ DrawingObject::DrawingObject(std::string name, int colour, ColourMap* map, float
   if (map) colourMaps[lucColourValueData] = map;
 
   jsonParseProperties(props, properties);
-  //Store on properties to allow modification
-  if (!properties.HasKey("opacity") && opacity >= 0.0) properties["opacity"] = opacity;
-  if (!properties.HasKey("colour")) properties["colour"] = colour;
+
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
   defaultTexture = NULL;

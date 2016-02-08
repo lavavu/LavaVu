@@ -241,6 +241,21 @@ void Model::redraw(bool reset)
   }
 }
 
+//Adds colourmap
+ColourMap* Model::addColourMap(ColourMap* cmap)
+{
+  if (!cmap)
+  {
+    //Create a default greyscale map
+    cmap = new ColourMap();
+    unsigned int colours[] = {0xff000000, 0xffffffff};
+    cmap->add(colours, 2);
+  }
+  //Save colour map in list
+  colourMaps.push_back(cmap);
+  return cmap;
+}
+
 void Model::loadWindows()
 {
   //Load windows list from database and insert into models
@@ -376,13 +391,14 @@ void Model::loadObjects()
     float opacity = (float)sqlite3_column_double(statement, 3);
 
     //Create drawing object and add to master list
+    std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
-    {
-      std::string props = std::string((char*)sqlite3_column_text(statement, 4));
-      addObject(new DrawingObject(otitle, colour, NULL, opacity, props, object_id));
-    }
-    else
-      addObject(new DrawingObject(otitle, colour, NULL, opacity, "", object_id));
+      props = std::string((char*)sqlite3_column_text(statement, 4));
+    DrawingObject* obj = new DrawingObject(otitle, props, NULL, object_id);
+    addObject(obj);
+    //Convert old colour/opacity from hard coded fields
+    if (!obj->properties.HasKey("opacity") && opacity >= 0.0) obj->properties["opacity"] = opacity;
+    if (!obj->properties.HasKey("colour")) obj->properties["colour"] = colour;
   }
   sqlite3_finalize(statement);
 }
@@ -1188,10 +1204,9 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     if (objects[i] && (id == 0 || objects[i]->id == id))
     {
       std::string props = json::Serialize(objects[i]->properties);
-      Colour c = Colour_FromJson(objects[i]->properties, "colour"); //Write as seperate param too?
       int cmap = 0;
       if (objects[i]->colourMaps[lucColourValueData]) cmap = objects[i]->colourMaps[lucColourValueData]->id;
-      snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, colour, opacity, properties) values (%d, '%s', '%d', %d, %g, '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, c.value, objects[i]->properties["opacity"].ToFloat(1.0), props.c_str());
+      snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, properties) values (%d, '%s', '%d', '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, props.c_str());
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
 

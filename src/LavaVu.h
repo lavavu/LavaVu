@@ -175,8 +175,6 @@ public:
 
 
   void addWindow(Win* win);
-  ColourMap* addColourMap(ColourMap* cmap=NULL);
-
   void displayCurrentView();
 
   void resetViews(bool autozoom=false);

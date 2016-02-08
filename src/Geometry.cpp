@@ -482,6 +482,7 @@ void Geometry::setState(unsigned int index, Shader* prog)
   DrawingObject* draw = geom[index]->draw;
   int texunit = -1;
   bool lighting = GeomData::lit;
+  bool decoration = draw->properties["decoration"].ToBool(false);
   lighting = lighting && draw->properties["lit"].ToBool(true);
 
   //Global/Local draw state
@@ -497,7 +498,7 @@ void Geometry::setState(unsigned int index, Shader* prog)
     //Don't light surfaces in 2d models
     if (!view->is3d && flat2d) lighting = false;
     //Disable lighting and polygon faces in wireframe mode
-    if (GeomData::wireframe || draw->properties["wireframe"].ToBool(false))
+    if (!decoration && (GeomData::wireframe || draw->properties["wireframe"].ToBool(false)))
     {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       lighting = false;
@@ -565,7 +566,7 @@ void Geometry::setState(unsigned int index, Shader* prog)
       //TODO: Also enable clip for lines (will require line shader)
       float clipMin[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
       float clipMax[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
-      if (draw->properties["clip"].ToBool(true))
+      if (!decoration && draw->properties["clip"].ToBool(true))
       {
         clipMin[0] = Geometry::properties["xmin"].ToFloat(-HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
         clipMin[1] = Geometry::properties["ymin"].ToFloat(-HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
@@ -624,10 +625,11 @@ void Geometry::labels()
   //Print labels
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_DEPTH_TEST);  //No depth testing
+  glDisable(GL_LIGHTING);  //No lighting
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (view->textscale > 0) geom[i]->draw->properties["font"] = "vector"; //Force vector if downsampling
-    PrintSetFont(geom[i]->draw->properties, "vector"); // , 1.0, view->textscale);
+    PrintSetFont(geom[i]->draw->properties, "small"); // , 1.0, view->textscale);
     Colour colour;
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
@@ -635,11 +637,13 @@ void Geometry::labels()
       {
         float* p = geom[i]->vertices[j];
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
-        geom[i]->getColour(colour, j);
+        //geom[i]->getColour(colour, j);
+        colour = geom[i]->draw->colour;
         //Multiply opacity by global override level if set
         if (GeomData::opacity > 0.0)
           colour.a *= GeomData::opacity;
         glColor4ubv(colour.rgba);
+        PrintSetColour(colour.value);
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre

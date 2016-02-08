@@ -627,6 +627,8 @@ bool LavaVu::parseCommand(std::string cmd)
     {
       if (scriptfile != "init.script")
         printMessage("Unable to open file: %s", scriptfile.c_str());
+      else
+        std::cout << "(not found)" << std::endl;
     }
     return false;
   }
@@ -1456,9 +1458,12 @@ bool LavaVu::parseCommand(std::string cmd)
       else
       {
         //No cmap id, parse a colourmap string (must be single line or enclosed in "")
-        if (what == "add" || !obj->colourMaps[lucColourValueData])
+        if (what == "add" || !obj->colourMaps[lucColourValueData] || ival > 0)
         {
-          obj->colourMaps[lucColourValueData] = addColourMap();
+          if (ival > 0) //Add specified ID
+            obj->colourMaps[lucColourValueData] = amodel->addColourMap(new ColourMap(ival));
+          else
+            obj->colourMaps[lucColourValueData] = amodel->addColourMap();
           what = parsed.get("colourmap", next+1);
         }
         if (what.length() > 0)
@@ -2028,7 +2033,7 @@ bool LavaVu::parseCommand(std::string cmd)
   else if (parsed.exists("sealevel"))
   {
     //Create a sea level plane (generic command to do a cross section could be a good idea)
-    DrawingObject* sea = addObject(new DrawingObject("Sea level", 0xffffcc00, NULL, 0.5, "static=1\ncullface=0\n"));
+    DrawingObject* sea = addObject(new DrawingObject("Sea level", "colour=[0,204,255]\nopacity=0.5\nstatic=1\ncullface=0\n"));
     //Sea grid points
     Vec3d vertex;
     vertex[0] = aview->min[0];
