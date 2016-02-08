@@ -88,6 +88,7 @@ public:
   void close();
   void clearObjects(bool all=false);
   void redraw(bool reset=true);
+  ColourMap* addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
   void loadLinks(Win* win);
   void loadLinks(DrawingObject* draw);

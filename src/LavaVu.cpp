@@ -316,10 +316,7 @@ std::string LavaVu::run(bool persist)
 
   //Loads files, runs scripts
   for (unsigned int m=0; m < files.size(); m++)
-  {
-    std::cerr << files[m].full << std::endl;
     loadFile(files[m]);
-  }
 
   //Require a model from here on, set a default
   if (!amodel) defaultModel();
@@ -512,7 +509,7 @@ void LavaVu::readRawVolume(FilePath& fn)
 
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
-  if (!vobj) vobj = new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "");
+  if (!vobj) vobj = new DrawingObject(fn.base);
   addObject(vobj);
 
   std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
@@ -541,7 +538,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
 
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
-  if (!vobj) vobj = new DrawingObject(fn.base, 0xff000000, NULL, 1.0, "");
+  if (!vobj) vobj = new DrawingObject(fn.base);
   addObject(vobj);
 
   std::vector<char> buffer;
@@ -675,7 +672,7 @@ void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, i
   DrawingObject *vobj = volume;
   if (!vobj)
   {
-    vobj = addObject(new DrawingObject(name, 0xff000000, NULL, 1.0, "static=1"));
+    vobj = addObject(new DrawingObject(name, "static=1"));
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
     {
@@ -778,7 +775,7 @@ void LavaVu::createDemoVolume()
   DrawingObject *vobj = volume;
   if (!vobj)
   {
-    vobj = new DrawingObject("volume", 0xff000000, NULL, 1.0, "density=50\n");
+    vobj = new DrawingObject("volume", "density=50\n");
     addObject(vobj);
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
@@ -957,8 +954,8 @@ void LavaVu::readHeightMap(FilePath& fn)
   debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
   //opacity [0,1]
   DrawingObject *obj;
-  std::string props = "static=1\ncullface=0\ntexturefile=%s\n" + texfile;
-  obj = addObject(new DrawingObject(fn.base, 0xffcceeee, NULL, 1.0, props));
+  std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=%s\n" + texfile;
+  obj = addObject(new DrawingObject(fn.base, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
 
@@ -1110,7 +1107,7 @@ void LavaVu::readOBJ(FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(fn.base, 0xff888888, NULL, 1.0, "static=1\n"));
+  if (!tobj) tobj = addObject(new DrawingObject(fn.base, "static=1\ncolour=[128,128,128]\n"));
 
   for (size_t i = 0; i < shapes.size(); i++)
   {
@@ -1218,7 +1215,7 @@ void LavaVu::readTecplot(FilePath& fn)
 
   //Demo colourmap
   ColourMap* colourMap = new ColourMap();
-  addColourMap(colourMap);
+  amodel->addColourMap(colourMap);
 
   //Colours: hex, abgr
   //unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
@@ -1228,7 +1225,7 @@ void LavaVu::readTecplot(FilePath& fn)
   colourMap->add(colours, 7);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\n"));
+  addObject(new DrawingObject("colour-bar", "colourbar=1\n", colourMap));
 
   std::ifstream file(fn.full.c_str(), std::ios::in);
   if (file.is_open())
@@ -1310,16 +1307,16 @@ void LavaVu::readTecplot(FilePath& fn)
           printf("N = %d, ELS = %d\n", N, ELS);
 
           //Add points object
-          //pobj = addObject(new DrawingObject("particles", 0, colourMap, 1.0, "lit=0\n"));
+          //pobj = addObject(new DrawingObject("particles", "lit=0\n", colourMap));
           //Model::points->add(pobj);
           //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
           //Add triangles object
-          tobj = addObject(new DrawingObject("triangles", 0, colourMap, 1.0, "flat=1\n"));
+          tobj = addObject(new DrawingObject("triangles", "flat=1\n", colourMap));
           Model::triSurfaces->add(tobj);
 
           //Add lines object
-          lobj = addObject(new DrawingObject("lines", 0xff888888, NULL, 0.5, "lit=0\n"));
+          lobj = addObject(new DrawingObject("lines", "colour=[128,128,128]\nopacity=0.5\nlit=0\n"));
           Model::lines->add(lobj);
         }
         else
@@ -1594,17 +1591,17 @@ void LavaVu::createDemoModel()
 
   //Demo colourmap, distance from model origin
   ColourMap* colourMap = new ColourMap();
-  addColourMap(colourMap);
+  amodel->addColourMap(colourMap);
   //Colours: hex, abgr
   unsigned int colours[] = {0xff33bb66,0xff00ff00,0xffff3333,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff,0xff000000};
   colourMap->add(colours, 8);
   colourMap->calibrate(0, size);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", 0, colourMap, 1.0, "colourbar=1\n"));
+  addObject(new DrawingObject("colour-bar", "colourbar=1\n", colourMap));
 
   //Add points object
-  DrawingObject* obj = addObject(new DrawingObject("particles", 0, colourMap, 0.75, "static=1\nlit=0\n"));
+  DrawingObject* obj = addObject(new DrawingObject("particles", "opacity=0.75\nstatic=1\nlit=0\n", colourMap));
   int NUMPOINTS = 200000;
   int NUMSWARM = NUMPOINTS/4;
   for (int i=0; i < NUMPOINTS; i++)
@@ -1629,7 +1626,7 @@ void LavaVu::createDemoModel()
   }
 
   //Add lines
-  obj = addObject(new DrawingObject("line-segments", 0, colourMap, 1.0, "static=1\nlit=0\n"));
+  obj = addObject(new DrawingObject("line-segments", "static=1\nlit=0\n", colourMap));
   for (int i=0; i < 50; i++)
   {
     float colour, ref[3];
@@ -1657,7 +1654,8 @@ void LavaVu::createDemoModel()
     {
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
-      obj = addObject(new DrawingObject(label, 0xff000000 | 0xff<<(8*i), NULL, 0.5, "static=1\n"));
+      obj = addObject(new DrawingObject(label, "opacity=0.5\nstatic=1\n"));
+      obj->properties["colour"] = Colour_ToJson(0xff000000 | 0xff<<(8*i));
       Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
     }
   }
@@ -1890,21 +1888,6 @@ int LavaVu::viewFromPixel(int x, int y)
     //Viewport coords opposite to windowing system coords, flip y
     if (awin->views[v]->hasPixel(x, viewer->height - y)) return v;
   return view;
-}
-
-//Adds colourmap to active model
-ColourMap* LavaVu::addColourMap(ColourMap* cmap)
-{
-  if (!cmap)
-  {
-    //Create a default greyscale map
-    cmap = new ColourMap();
-    unsigned int colours[] = {0x00000000, 0xffffffff};
-    cmap->add(colours, 2);
-  }
-  //Save colour map in list
-  amodel->colourMaps.push_back(cmap);
-  return cmap;
 }
 
 // Render
@@ -2140,7 +2123,7 @@ void LavaVu::drawAxis()
   axis->clear();
   axis->setView(aview);
   static DrawingObject* aobj = NULL;
-  if (!aobj) aobj = new DrawingObject("axis", 0xff000000, NULL, 1.0, "clip=false");
+  if (!aobj) aobj = new DrawingObject("axis", "decoration=true");
   axis->add(aobj);
 
   {
@@ -2200,11 +2183,14 @@ void LavaVu::drawRulers()
   static DrawingObject* obj = NULL;
   rulers->clear();
   rulers->setView(aview);
-  if (!obj) obj = new DrawingObject("rulers", viewer->inverse.value, NULL, 1.0, "clip=false\nlit=false");
+  if (!obj) obj = new DrawingObject("rulers", "decoration=true\nlit=false");
   rulers->add(obj);
   obj->properties["linewidth"] = aview->textscale * aview->properties["linewidth"].ToFloat(1.5);
   //obj->properties["fontscale"] = aview->textscale *
   obj->properties["fontscale"] = aview->properties["fontscale"].ToFloat(1.0) * 0.08*aview->model_size;
+  //Colour for labels
+  obj->properties["colour"] = Colour_ToJson(viewer->inverse);
+
 
   int ticks = aview->properties["rulerticks"].ToInt(5);
   //Axis rulers
@@ -2320,9 +2306,8 @@ void LavaVu::drawBorder()
   static DrawingObject* obj = NULL;
   border->clear();
   border->setView(aview);
-  Colour borderColour = Colour_FromJson(aview->properties, "bordercolour", 127, 127, 127, 255);
-  if (!obj) obj = new DrawingObject("border", borderColour.value, NULL, 1.0, "clip=false");
-  //border->add(obj);
+  if (!obj) obj = new DrawingObject("border", "decoration=true");
+  obj->properties["colour"] = aview->properties["bordercolour"];
 
   int aborder = aview->properties["border"].ToInt(1);
   if (aborder == 0) return;
@@ -2563,13 +2548,14 @@ void LavaVu::drawScene()
   Model::volumes->draw();
   Model::lines->draw();
 
-  drawAxis();
   drawRulers();
 
   //Restore default state
   glPopAttrib();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glUseProgram(0);
+
+  drawAxis();
 }
 
 void LavaVu::loadFile(FilePath& fn)
