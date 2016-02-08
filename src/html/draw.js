@@ -286,6 +286,69 @@ function getImageDataURL(img) {
   return dataURL;
 }
 
+function defaultColourMaps() {
+  //Add some default colourmaps
+  var id = 1;
+  if (!vis.colourmaps) vis.colourmaps = [];
+  if (vis.colourmaps.length > 0) id = vis.colourmaps[vis.colourmaps.length-1].id;
+  
+  vis.colourmaps.push({
+    "id": ++id,
+    "name": "Grayscale",
+    "minimum": 0, "maximum": 1, "log": 0,
+    "colours": [{"colour": "rgba(0,0,0,255)"},{"colour": "rgba(255,255,255,1)"}]
+  });
+
+  vis.colourmaps.push({
+    "id": ++id,
+    "name": "Topology",
+    "minimum": 0, "maximum": 1, "log": 0,
+    "colours": [{"colour": 0xff33bb66},
+                {"colour": 0xff00ff00},
+                {"colour": 0xffff3333},
+                {"colour": 0xffffff00},
+                {"colour": 0xff77ffff},
+                {"colour": 0xff0088ff},
+                {"colour": 0xff0000ff},
+                {"colour": 0xff000000}]
+  });
+
+  vis.colourmaps.push({
+    "id": ++id,
+    "name": "Rainbow",
+    "minimum": 0, "maximum": 1, "log": 0,
+    "colours": [{"colour": 0xfff020a0},
+                {"colour": 0xffff0000},
+                {"colour": 0xff00ff00},
+                {"colour": 0xff00ffff},
+                {"colour": 0xff00a5ff},
+                {"colour": 0xff0000ff},
+                {"colour": 0xff000000}]
+  });
+
+  vis.colourmaps.push({
+    "id": ++id,
+    "name": "Heat",
+    "minimum": 0, "maximum": 1, "log": 0,
+    "colours": [{"colour": 0xff000000},
+                {"colour": 0xff0000ff},
+                {"colour": 0xff00ffff},
+                {"colour": 0xffffffff}]
+  });
+
+  vis.colourmaps.push({
+    "id": ++id,
+    "name": "Bluered",
+    "minimum": 0, "maximum": 1, "log": 0,
+    "colours": [{"colour": 0xffff0000},
+                {"colour": 0xffff901e},
+                {"colour": 0xffd1ce00},
+                {"colour": 0xffc4e4ff},
+                {"colour": 0xff00a5ff},
+                {"colour": 0xff2222b2}]
+  });
+}
+
 function loadColourMaps() {
   //Load colourmaps
   if (!vis.colourmaps) return;
@@ -298,9 +361,13 @@ function loadColourMaps() {
     vis.colourmaps[i].palette = palette;
 
     //palette.colours = vis.colourmaps[i].colours;
-    for (var j=0; j<vis.colourmaps[i].colours.length; j++)
+    for (var j=0; j<vis.colourmaps[i].colours.length; j++) {
+      //Calculate default position if none provided
+      if (vis.colourmaps[i].colours[j].position == undefined)
+        vis.colourmaps[i].colours[j].position = j * (1.0 / (vis.colourmaps[i].colours.length-1));
       //palette.colours.push(new ColourPos(parseInt(vis.colourmaps[i].colours[j].colour), vis.colourmaps[i].colours[j].position));
       palette.colours.push(new ColourPos(vis.colourmaps[i].colours[j].colour, vis.colourmaps[i].colours[j].position));
+    }
 
     var option = new Option(vis.colourmaps[i].name || ("ColourMap " + i), i);
     list.options[list.options.length] = option;
@@ -325,7 +392,7 @@ function loadColourMaps() {
   }
   //Restore selection
   list.value = sel;
-  viewer.setColourMap(sel);
+  if (viewer) viewer.setColourMap(sel);
 }
 
 /*function checkPointMinMax(x, y, z) {
@@ -1484,6 +1551,9 @@ Viewer.prototype.loadFile = function(source) {
 
     //Replace
     vis = source;
+
+    //Add default colour maps
+    defaultColourMaps();
   }
 
   //Always set a bounding box
@@ -1869,6 +1939,7 @@ Viewer.prototype.applyBackground = function(bg) {
 
 Viewer.prototype.addColourMap = function() {
   if (properties.id == undefined) return;
+  var name = prompt("Enter colourmap name:");
   //New colourmap on active object
   if (server)
     sendCommand("colourmap " + vis.objects[properties.id].id + " add");
@@ -1877,17 +1948,18 @@ Viewer.prototype.addColourMap = function() {
   if (vis.colourmaps.length > 0) id = vis.colourmaps[vis.colourmaps.length-1].id + 1;
   var newmap = {
     "id": id,
-    "name": "ColourMap " + id,
-    "minimum": 0,
-    "maximum": 1,
-    "log": 0,
+    "name": name,
+    "minimum": 0, "maximum": 1, "log": 0,
     "colours": [{"position": 0, "colour": "rgba(0,0,0,0)"},{"position": 1,"colour": "rgba(255,255,255,1)"}
     ]
   }
   vis.colourmaps.push(newmap);
+
   loadColourMaps();
+
+  //Select newly added
   var list = $('colourmap-presets');
-  list.value = list.options[list.options.length-1].value;
+  viewer.setColourMap(list.options.length-2)
 }
 
 Viewer.prototype.setColourMap = function(id) {

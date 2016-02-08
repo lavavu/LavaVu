@@ -538,7 +538,7 @@ void Model::loadColourMaps()
     char idname[10];
     sprintf(idname, "%d", id);
     char *cmname = NULL;
-    if (!old) (char*)sqlite3_column_text(statement, 7);
+    if (!old) cmname = (char*)sqlite3_column_text(statement, 7);
 
     //New map?
     if (id != map_id)
@@ -574,40 +574,6 @@ void Model::loadColourMaps()
   }
 
   sqlite3_finalize(statement);
-
-  //Load default maps and calibrate all
-  initColourMaps();
-}
-
-void Model::initColourMaps()
-{
-  //Load default colourmaps
-  ColourMap* colourMap = NULL;
-  //Colours: hex, abgr
-  colourMap = new ColourMap(0, "Greyscale");
-  colourMaps.push_back(colourMap);
-  unsigned int colours0[] = {0xff000000,0xffffffff};
-  colourMap->add(colours0, 2);
-
-  colourMap = new ColourMap(0, "Topology");
-  colourMaps.push_back(colourMap);
-  unsigned int colours1[] = {0xff33bb66,0xff00ff00,0xffff3333,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff,0xff000000};
-  colourMap->add(colours1, 8);
-
-  colourMap = new ColourMap(0, "Rainbow");
-  colourMaps.push_back(colourMap);
-  unsigned int colours2[] = {0xfff020a0,0xffff0000,0xff00ff00,0xff00ffff,0xff00a5ff,0xff0000ff,0xff000000};
-  colourMap->add(colours2, 7);
-
-  colourMap = new ColourMap(0, "Heat");
-  colourMaps.push_back(colourMap);
-  unsigned int colours3[] = {0xff000000,0xff0000ff,0xff00ffff,0xffffffff};
-  colourMap->add(colours3, 4);
-
-  colourMap = new ColourMap(0, "Bluered");
-  colourMaps.push_back(colourMap);
-  unsigned int colours4[] = {0xffff0000,0xffff901e,0xffd1ce00,0xffc4e4ff,0xff00a5ff,0xff2222b2};
-  colourMap->add(colours4, 6);
 
   //Initial calibration for all maps
   for (unsigned int i=0; i<colourMaps.size(); i++)
