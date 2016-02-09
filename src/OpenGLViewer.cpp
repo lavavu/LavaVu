@@ -314,7 +314,7 @@ void OpenGLViewer::execute()
 }
 
 // Render
-void OpenGLViewer::display(void)
+void OpenGLViewer::display()
 {
   postdisplay = false;
   //Parse stored commands first...
@@ -326,6 +326,7 @@ void OpenGLViewer::display(void)
     std::string cmd = OpenGLViewer::commands.front();
     OpenGLViewer::commands.pop_front();
     pthread_mutex_unlock(&cmd_mutex);
+    std::cout << cmd << " -- remaining: " << OpenGLViewer::commands.size() << std::endl;
 
     //Idle posted?
     idling = cmd.find("idle") != std::string::npos;
@@ -337,14 +338,12 @@ void OpenGLViewer::display(void)
       return;
     }
 
-    if (cmd.length() > 0)
+    if (app->parseCommands(cmd))
     {
-      if (app->parseCommands(cmd))
-      {
-        //For what was this needed? test...
-        //We're about to call display anyway regardless, if setting should probably return after
-        //postdisplay = true;
-      }
+      //For what was this needed? test...
+      //We're about to call display anyway regardless, if setting should probably return after
+      //postdisplay = true;
+      break;
     }
   }
 
