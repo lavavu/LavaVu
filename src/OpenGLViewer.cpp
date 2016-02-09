@@ -326,7 +326,6 @@ void OpenGLViewer::display()
     std::string cmd = OpenGLViewer::commands.front();
     OpenGLViewer::commands.pop_front();
     pthread_mutex_unlock(&cmd_mutex);
-    std::cout << cmd << " -- remaining: " << OpenGLViewer::commands.size() << std::endl;
 
     //Idle posted?
     idling = cmd.find("idle") != std::string::npos;
