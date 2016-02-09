@@ -49,7 +49,7 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   if (down)
   {
     translated = false;
-    if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
+    //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
     viewer->button = btn;
     viewer->last_x = x;
     viewer->last_y = y;
@@ -178,7 +178,7 @@ bool LavaVu::mouseScroll(int scroll)
 bool LavaVu::keyPress(unsigned char key, int x, int y)
 {
   viewer->notIdle(); //Reset idle timer
-  if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
+  //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
   return parseChar(key);
 }
 
@@ -410,39 +410,19 @@ bool LavaVu::parseChar(unsigned char key)
     break;
   case KEY_PAGEUP:
     //Previous viewport
-    if (viewAll)
-    {
-      viewAll = false;
-      amodel->redraw();
-    }
     viewSelect(view-1);
     printMessage("Set viewport to %d", view);
-    if (!viewPorts) amodel->redraw();
+    amodel->redraw();
     break;
   case KEY_PAGEDOWN:
     //Next viewport
-    if (viewAll)
-    {
-      viewAll = false;
-      amodel->redraw();
-    }
     viewSelect(view+1);
     printMessage("Set viewport to %d", view);
-    if (!viewPorts) amodel->redraw();
+    amodel->redraw();
     break;
   case KEY_HOME:
-    //All viewports
-    viewAll = !viewAll;
-    if (viewAll) viewPorts = false; //Invalid in viewAll mode
-    amodel->redraw();
-    printMessage("View All set to %s", (viewAll ? "ON" : "OFF"));
     break;
   case KEY_END:
-    //No viewports (use first view but full window and all objects)
-    viewPorts = !viewPorts;
-    if (viewPorts) viewAll = false;  //Invalid in viewPorts mode
-    amodel->redraw();
-    printMessage("ViewPorts set to %s", (viewPorts ? "ON" : "OFF"));
     break;
   case '`':
     return parseCommands("fullscreen");
@@ -1085,8 +1065,14 @@ bool LavaVu::parseCommand(std::string cmd)
   else if (parsed.exists("play"))
   {
     //Play loop
+    if (animate < 1) animate = 50;
+    replay.clear();
+    last_cmd = "next";
+    replay.push_back(last_cmd);
+    repeat = -1; //Infinite
     loop = true;
     OpenGLViewer::commands.push_back(std::string("next"));
+    return true;  //Skip record
   }
   else if (parsed.exists("next"))
   {
@@ -1130,6 +1116,7 @@ bool LavaVu::parseCommand(std::string cmd)
   else if (parsed.exists("repeat"))
   {
     bool state = recording;
+    //Repeat N commands from history
     if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
     {
       recording = false;
@@ -1149,6 +1136,7 @@ bool LavaVu::parseCommand(std::string cmd)
       recording = state;
       return true; //Skip record
     }
+    //Repeat last command N times
     else if (parsed.has(ival, "repeat"))
     {
       recording = false;
@@ -2072,18 +2060,15 @@ bool LavaVu::parseCommand(std::string cmd)
     }
   }
 
-  //Always redraw when using multiple viewports in window (urgh sooner this is gone the better)
-  if (awin && awin->views.size() > 1 && viewPorts)
-    amodel->redraw();
   last_cmd = cmd;
   if (!norecord) record(false, cmd);
-  if (animate && redisplay) viewer->display();
+  if (animate && redisplay) viewer->postdisplay = true;
   return redisplay;
 }
 
 bool LavaVu::parsePropertySet(std::string cmd)
 {
-  std::size_t found = cmd.find("=");
+  std::size_t found = cmd.find("=");viewer->postdisplay = true;
   json::Value jval;
   if (found == std::string::npos) return false;
   parseProperty(cmd);

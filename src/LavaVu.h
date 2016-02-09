@@ -65,8 +65,6 @@ protected:
   bool output, verbose, hideall, dbpath;
   std::string defaultScript;
 
-  bool viewAll;
-  bool viewPorts;
   bool globalCam;
   bool sort_on_rotate;
   bool status;
@@ -173,10 +171,7 @@ public:
   virtual std::string requestData(std::string key);
   //***
 
-
   void addWindow(Win* win);
-  void displayCurrentView();
-
   void resetViews(bool autozoom=false);
   void viewSelect(int idx, bool setBounds=false, bool autozoom=false);
   int viewFromPixel(int x, int y);
@@ -236,8 +231,6 @@ Hold [shift] and use the scroll wheel to move the clip plane in and out.\n\
 [RIGHT]      Next time-step\n\
 [Page Up]    Select the previous viewport if available\n\
 [Page Down]  Select the next viewport if available\n\
-[Home]       View All mode ON/OFF, shows all objects in a single viewport\n\
-[End]        ViewPort mode ON/OFF, shows all viewports in window together\n\
 \n\
 \nHold [ALT] plus:\n\
 [`]          Full screen ON/OFF\n\

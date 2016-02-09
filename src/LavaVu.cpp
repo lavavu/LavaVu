@@ -58,8 +58,6 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
   dump = lucExportNone;
   returndata = lucExportNone;
   dumpid = 0;
-  viewAll = false;
-  viewPorts = true;
   globalCam = false;
   status = true;
   writeimage = writemovie = false;
@@ -307,13 +305,6 @@ LavaVu::~LavaVu()
 
 std::string LavaVu::run(bool persist)
 {
-  if (persist)
-  {
-    //Server mode, disable viewports
-    viewAll = true;
-    viewPorts = false;
-  }
-
   //Loads files, runs scripts
   for (unsigned int m=0; m < files.size(); m++)
     loadFile(files[m]);
@@ -1779,13 +1770,8 @@ void LavaVu::redraw(unsigned int id)
 void LavaVu::resetViews(bool autozoom)
 {
   //Setup view(s) for new model dimensions
-  if (!viewPorts || awin->views.size() <= 1)
-    //Current view only
-    viewSelect(view, true, autozoom);
-  else
-    //All viewports...
-    for (unsigned int v=0; v < awin->views.size(); v++)
-      viewSelect(v, true, autozoom);
+  for (unsigned int v=0; v < awin->views.size(); v++)
+    viewSelect(v, true, autozoom);
 
   //Flag redraw required
   amodel->redraw();
@@ -1831,12 +1817,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->setView(aview, omin, omax);
 
-    if (viewPorts)
-      //Set viewport based on window size
-      aview->port(viewer->width, viewer->height);
-    else
-      //Set viewport to entire window
-      aview->port(0, 0, viewer->width, viewer->height);
+    //Set viewport based on window size
+    aview->port(viewer->width, viewer->height);
 
     // Apply initial autozoom if set (only applied based on provided dimensions)
     //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
@@ -1895,12 +1877,6 @@ void LavaVu::display(void)
 {
   clock_t t1 = clock();
 
-  //if (viewer->mouseState)
-  //   sort = 0;
-
-  // Save last drawn view so we know whether it needs to be re-rendered
-  static unsigned int lastdraw = 1;
-
   //Always redraw the active view, others only if flag set
   if (aview)
   {
@@ -1912,62 +1888,11 @@ void LavaVu::display(void)
   if (awin->views.size() > 1 || windows.size() > 1)
   {
     for (unsigned int v=0; v<awin->views.size(); v++)
-      awin->views[v]->filtered = !viewAll;
+      awin->views[v]->filtered = true;
   }
   else  //Single viewport, always disable filter
     aview->filtered = false;
 
-  if (!viewPorts || awin->views.size() == 1)
-  {
-    //Current view only
-    displayCurrentView();
-  }
-  else
-  {
-    //Process all viewports...
-    int selview = view;
-    for (unsigned int v=0; v < awin->views.size(); v++)
-    {
-      //All objects need redrawing if the viewport changed
-      if (lastdraw != v) amodel->redraw();
-
-      view = v;
-      lastdraw = v;
-
-      displayCurrentView();
-    }
-
-    //Restore selected
-    viewSelect(selview);
-  }
-
-  //Print current info message (displayed for one frame only)
-#ifndef USE_OMEGALIB
-  if (status) displayMessage();
-#endif
-
-  //Display object list if enabled
-  if (objectlist)
-    displayObjectList(false);
-
-  double time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
-  if (time > 0.1)
-    debug_print("%.4lf seconds to render scene\n", time);
-
-  aview->sort = false;
-
-#ifdef HAVE_LIBAVCODEC
-  if (encoder)
-  {
-    viewer->pixels(encoder->buffer, false, true);
-    //bitrate settings?
-    encoder->frame();
-  }
-#endif
-}
-
-void LavaVu::displayCurrentView()
-{
   GL_Error_Check;
   viewSelect(view);
   GL_Error_Check;
@@ -1982,23 +1907,15 @@ void LavaVu::displayCurrentView()
   return;
 #endif
 
-  if (viewPorts)
-    //Set viewport based on window size
-    aview->port(viewer->width, viewer->height);
-  else
-    //Set viewport to entire window
-    aview->port(0, 0, viewer->width, viewer->height);
+  //Set viewport based on window size
+  aview->port(viewer->width, viewer->height);
 
   // Clear viewport
-  GL_Error_Check;
   glDrawBuffer(viewer->renderBuffer);
-  GL_Error_Check;
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  GL_Error_Check;
 
   // View transform
   //debug_print("### Displaying viewport %s at %d,%d %d x %d\n", aview->title.c_str(), (int)(viewer->width * aview->x), (int)(viewer->height * aview->y), (int)(viewer->width * aview->w), (int)(viewer->height * aview->h));
-
   if (aview->autozoom)
   {
     aview->projection(EYE_CENTRE);
@@ -2075,6 +1992,31 @@ void LavaVu::displayCurrentView()
 
   //Clear the rotation flag
   if (aview->sort) aview->rotated = false;
+
+
+  //Print current info message (displayed for one frame only)
+#ifndef USE_OMEGALIB
+  if (status) displayMessage();
+#endif
+
+  //Display object list if enabled
+  if (objectlist)
+    displayObjectList(false);
+
+  double time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
+  if (time > 0.1)
+    debug_print("%.4lf seconds to render scene\n", time);
+
+  aview->sort = false;
+
+#ifdef HAVE_LIBAVCODEC
+  if (encoder)
+  {
+    viewer->pixels(encoder->buffer, false, true);
+    //bitrate settings?
+    encoder->frame();
+  }
+#endif
 }
 
 void LavaVu::drawAxis()
@@ -2428,8 +2370,7 @@ void LavaVu::displayMessage()
   if (strlen(message))
   {
     //Set viewport to entire window
-    glViewport(0, 0, viewer->width, viewer->height);
-    glScissor(0, 0, viewer->width, viewer->height);
+    aview->port(0, 0, viewer->width, viewer->height);
     Viewport2d(viewer->width, viewer->height);
 
     //Print current message
@@ -2449,8 +2390,7 @@ void LavaVu::displayMessage()
 void LavaVu::displayText(std::string text, int lineno, int colour)
 {
   //Set viewport to entire window
-  glViewport(0, 0, viewer->width, viewer->height);
-  glScissor(0, 0, viewer->width, viewer->height);
+  aview->port(0, 0, viewer->width, viewer->height);
   Viewport2d(viewer->width, viewer->height);
 
   float size = 0.0008 * viewer->height;
@@ -2518,6 +2458,7 @@ void LavaVu::drawSceneBlended()
   }
 #ifndef USE_OMEGALIB
   aview->drawOverlay(viewer->inverse);
+  drawAxis();
 #endif
 }
 
@@ -2554,8 +2495,6 @@ void LavaVu::drawScene()
   glPopAttrib();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glUseProgram(0);
-
-  drawAxis();
 }
 
 void LavaVu::loadFile(FilePath& fn)

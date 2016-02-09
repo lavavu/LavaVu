@@ -391,6 +391,7 @@ void Volumes::render(int i)
   glVertex2f(1, -1);
   glEnd();
 
+  glEnable(GL_MULTISAMPLE);
   glPopAttrib();
   GL_Error_Check;
   glActiveTexture(GL_TEXTURE0);
