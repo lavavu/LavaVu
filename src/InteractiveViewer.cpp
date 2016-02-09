@@ -2068,7 +2068,7 @@ bool LavaVu::parseCommand(std::string cmd)
 
 bool LavaVu::parsePropertySet(std::string cmd)
 {
-  std::size_t found = cmd.find("=");viewer->postdisplay = true;
+  std::size_t found = cmd.find("=");
   json::Value jval;
   if (found == std::string::npos) return false;
   parseProperty(cmd);
