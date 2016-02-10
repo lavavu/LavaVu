@@ -47,6 +47,7 @@ void Server::open(int width, int height)
 {
   //Enable the animation timer
   //viewer->animate(250);   //1/4 sec timer
+  struct mg_callbacks callbacks;
 
   char ports[16], threadstr[16];
   sprintf(ports, "%d", port);
@@ -60,7 +61,10 @@ void Server::open(int width, int height)
     NULL
   };
 
-  ctx = mg_start(&Server::callback, NULL, options);
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.begin_request = &Server::request;
+  if ((ctx = mg_start(&callbacks, NULL, options)) == NULL)
+    abort_program("%s\n", "Cannot start http server, fatal exit");
 }
 
 void Server::resize(int new_width, int new_height)
@@ -176,168 +180,161 @@ void send_string(std::string str, struct mg_connection *conn)
   mg_write(conn, encoded.c_str(), encoded.length());
 }
 
-void* Server::callback(enum mg_event event,
-                       struct mg_connection *conn,
-                       const struct mg_request_info *request_info)
+int Server::request(struct mg_connection *conn)
 {
-  if (event == MG_NEW_REQUEST)
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
+  debug_print("SERVER REQUEST: %s\n", request_info->uri);
+
+  if (strcmp("/", request_info->uri) == 0)
   {
+    mg_printf(conn, "HTTP/1.1 302 Found\r\n"
+              "Set-Cookie: original_url=%s\r\n"
+              "Location: %s\r\n\r\n",
+              request_info->uri, "/index.html?server");
+  }
+  else if (strstr(request_info->uri, "/timestep=") != NULL)
+  {
+    //Update timesteps from database,
+    //Load timestep
+    //Write image for each window
+    int ts = atoi(request_info->uri+10);
+    debug_print("TIMESTEP REQUEST %d\n", ts);
+  }
+  else if (strstr(request_info->uri, "/connect") != NULL)
+  {
+    //Return an id assigned to this client
+    _self->client_id++;
+    debug_print("NEW CONNECTION: %d (%d THREADS)\n", _self->client_id, _self->threads);
+    mg_printf(conn, "HTTP/1.1 200 OK\r\n"
+              "Content-Type: text/plain\r\n\r\n"
+              "%d", _self->client_id);
+    _self->updated = true; //Force update
+    _self->synched[_self->client_id] = false;
+  }
+  else if (strstr(request_info->uri, "/disconnect=") != NULL)
+  {
+    int id = atoi(request_info->uri+12);
+    _self->synched.erase(id);
+    debug_print("%d DISCONNECTED, CLIENT %d\n", id, _self->client_id);
+    mg_printf(conn, "HTTP/1.1 200 OK\r\n"
+              "Content-Type: text/plain\r\n\r\n");
+    _self->updated = true; //Force update
+    pthread_cond_broadcast(&_self->condition_var);  //Display complete signal
+  }
+  else if (strstr(request_info->uri, "/objects") != NULL)
+  {
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+    std::string objects = _self->viewer->app->requestData("objects");
+    mg_write(conn, objects.c_str(), objects.length());
+  }
+  else if (strstr(request_info->uri, "/history") != NULL)
+  {
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+    std::string history = _self->viewer->app->requestData("history");
+    mg_write(conn, history.c_str(), history.length());
+  }
+  else if (strstr(request_info->uri, "/image=") != NULL)
+  {
+    //Image update requested, wait until data available then send
+    int id = atoi(request_info->uri+7);
+    pthread_t tid;
+    tid = pthread_self();
+    pthread_mutex_lock(&_self->cs_mutex);
+    debug_print("CLIENT %d THREAD ID %u ENTERING WAIT STATE (synched %d)\n", id, tid, _self->synched[id]);
 
-    debug_print("SERVER REQUEST: %s\n", request_info->uri);
+    //while (!_self->updated && !_self->viewer->quitProgram)
+    while (_self->synched[id] && !_self->viewer->quitProgram)
+    {
+      debug_print("CLIENT %d THREAD ID %u WAITING\n", id, tid);
+      //This doesn't seem to be needed, causes constant display updates even when no changes
+      //_self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
+      pthread_cond_wait(&_self->condition_var, &_self->cs_mutex);
+    }
+    debug_print("CLIENT %d THREAD ID %u RESUMED, quit? %d\n", id, tid, _self->viewer->quitProgram);
 
-    if (strcmp("/", request_info->uri) == 0)
+    if (!_self->viewer->quitProgram)
     {
-      mg_printf(conn, "HTTP/1.1 302 Found\r\n"
-                "Set-Cookie: original_url=%s\r\n"
-                "Location: %s\r\n\r\n",
-                request_info->uri, "/index.html?server");
-    }
-    else if (strstr(request_info->uri, "/timestep=") != NULL)
-    {
-      //Update timesteps from database,
-      //Load timestep
-      //Write image for each window
-      int ts = atoi(request_info->uri+10);
-      debug_print("TIMESTEP REQUEST %d\n", ts);
-    }
-    else if (strstr(request_info->uri, "/connect") != NULL)
-    {
-      //Return an id assigned to this client
-      _self->client_id++;
-      debug_print("NEW CONNECTION: %d (%d THREADS)\n", _self->client_id, _self->threads);
-      mg_printf(conn, "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/plain\r\n\r\n"
-                "%d", _self->client_id);
-      _self->updated = true; //Force update
-      _self->synched[_self->client_id] = false;
-    }
-    else if (strstr(request_info->uri, "/disconnect=") != NULL)
-    {
-      int id = atoi(request_info->uri+12);
-      _self->synched.erase(id);
-      debug_print("%d DISCONNECTED, CLIENT %d\n", id, _self->client_id);
-      mg_printf(conn, "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/plain\r\n\r\n");
-      _self->updated = true; //Force update
-      pthread_cond_broadcast(&_self->condition_var);  //Display complete signal
-    }
-    else if (strstr(request_info->uri, "/objects") != NULL)
-    {
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-      std::string objects = _self->viewer->app->requestData("objects");
-      mg_write(conn, objects.c_str(), objects.length());
-    }
-    else if (strstr(request_info->uri, "/history") != NULL)
-    {
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-      std::string history = _self->viewer->app->requestData("history");
-      mg_write(conn, history.c_str(), history.length());
-    }
-    else if (strstr(request_info->uri, "/image=") != NULL)
-    {
-      //Image update requested, wait until data available then send
-      int id = atoi(request_info->uri+7);
-      pthread_t tid;
-      tid = pthread_self();
-      pthread_mutex_lock(&_self->cs_mutex);
-      debug_print("CLIENT %d THREAD ID %u ENTERING WAIT STATE (synched %d)\n", id, tid, _self->synched[id]);
+      //debug_print("Sending JPEG %d bytes...\n", self->jpeg_bytes);
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
+      mg_printf(conn, "Content-Length: %d\r\n", _self->jpeg_bytes);
+      //Allow cross-origin requests
+      mg_printf(conn, "Access-Control-Allow-Origin: *\r\n\r\n");
+      //Write raw
+      mg_write(conn, _self->jpeg, _self->jpeg_bytes);
 
-      //while (!_self->updated && !_self->viewer->quitProgram)
-      while (_self->synched[id] && !_self->viewer->quitProgram)
-      {
-        debug_print("CLIENT %d THREAD ID %u WAITING\n", id, tid);
-        //This doesn't seem to be needed, causes constant display updates even when no changes
-        //_self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
-        pthread_cond_wait(&_self->condition_var, &_self->cs_mutex);
-      }
-      debug_print("CLIENT %d THREAD ID %u RESUMED, quit? %d\n", id, tid, _self->viewer->quitProgram);
-
-      if (!_self->viewer->quitProgram)
-      {
-        //debug_print("Sending JPEG %d bytes...\n", self->jpeg_bytes);
-        mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
-        mg_printf(conn, "Content-Length: %d\r\n", _self->jpeg_bytes);
-        //Allow cross-origin requests
-        mg_printf(conn, "Access-Control-Allow-Origin: *\r\n\r\n");
-        //Write raw
-        mg_write(conn, _self->jpeg, _self->jpeg_bytes);
-
-        _self->updated = false;
-        _self->synched[id] = true;
-      }
-      pthread_mutex_unlock(&_self->cs_mutex);
+      _self->updated = false;
+      _self->synched[id] = true;
     }
-    else if (strstr(request_info->uri, "/command=") != NULL)
-    {
+    pthread_mutex_unlock(&_self->cs_mutex);
+  }
+  else if (strstr(request_info->uri, "/command=") != NULL)
+  {
 #if defined _WIN32
-      SDL_SysWMinfo info;
-      SDL_VERSION(&info.version); // this is important!
-      if (SDL_GetWMInfo(&info))
-        SetWindowPos(info.window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
-      SetWindowPos(info.window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+    SDL_SysWMinfo info;
+    SDL_VERSION(&info.version); // this is important!
+    if (SDL_GetWMInfo(&info))
+      SetWindowPos(info.window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+    SetWindowPos(info.window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
 #endif
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-      std::string data = request_info->uri+1;
-      //Replace semi-colon with newlines, multiple line commands
-      std::replace(data.begin(), data.end(), ';', '\n');
-      const size_t equals = data.find('=');
-      const size_t amp = data.find('&');
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+    std::string data = request_info->uri+1;
+    //Replace semi-colon with newlines, multiple line commands
+    std::replace(data.begin(), data.end(), ';', '\n');
+    const size_t equals = data.find('=');
+    const size_t amp = data.find('&');
+    //Push command onto queue to be processed in the viewer thread
+    pthread_mutex_lock(&_self->viewer->cmd_mutex);
+    if (amp != std::string::npos)
+      OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
+    else
+      OpenGLViewer::commands.push_back(data.substr(equals+1));
+    debug_print("CMD: %s\n", data.substr(equals+1).c_str());
+    _self->viewer->postdisplay = true;
+    pthread_mutex_unlock(&_self->viewer->cmd_mutex);
+  }
+  else if (strstr(request_info->uri, "/post") != NULL)
+  {
+    //mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+    char post_data[32000];
+    int post_data_len = mg_read(conn, post_data, sizeof(post_data));
+    //printf("%d\n%s\n", post_data_len, post_data);
+    if (post_data_len)
+    {
       //Push command onto queue to be processed in the viewer thread
       pthread_mutex_lock(&_self->viewer->cmd_mutex);
-      if (amp != std::string::npos)
-        OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
-      else
-        OpenGLViewer::commands.push_back(data.substr(equals+1));
-      debug_print("CMD: %s\n", data.substr(equals+1).c_str());
+      OpenGLViewer::commands.push_back(std::string(post_data));
       _self->viewer->postdisplay = true;
       pthread_mutex_unlock(&_self->viewer->cmd_mutex);
     }
-    else if (strstr(request_info->uri, "/post") != NULL)
-    {
-      //mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-      char post_data[32000];
-      int post_data_len = mg_read(conn, post_data, sizeof(post_data));
-      //printf("%d\n%s\n", post_data_len, post_data);
-      if (post_data_len)
-      {
-        //Push command onto queue to be processed in the viewer thread
-        pthread_mutex_lock(&_self->viewer->cmd_mutex);
-        OpenGLViewer::commands.push_back(std::string(post_data));
-        _self->viewer->postdisplay = true;
-        pthread_mutex_unlock(&_self->viewer->cmd_mutex);
-      }
-    }
-    else if (strstr(request_info->uri, "/key=") != NULL)
-    {
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-      std::string data = request_info->uri+1;
-      pthread_mutex_lock(&_self->viewer->cmd_mutex);
-      OpenGLViewer::commands.push_back("key " + data);
-      _self->viewer->postdisplay = true;
-      pthread_mutex_unlock(&_self->viewer->cmd_mutex);
-    }
-    else if (strstr(request_info->uri, "/mouse=") != NULL)
-    {
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty response, prevent XML errors
-      std::string data = request_info->uri+1;
-      pthread_mutex_lock(&_self->viewer->cmd_mutex);
-      OpenGLViewer::commands.push_back("mouse " + data);
-      _self->viewer->postdisplay = true;
-      pthread_mutex_unlock(&_self->viewer->cmd_mutex);
-    }
-    else
-    {
-      // No suitable handler found, mark as not processed. Mongoose will
-      // try to serve the request.
-      return NULL;
-    }
-
-    return (void*)request_info;  // Mark as processed
+  }
+  else if (strstr(request_info->uri, "/key=") != NULL)
+  {
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+    std::string data = request_info->uri+1;
+    pthread_mutex_lock(&_self->viewer->cmd_mutex);
+    OpenGLViewer::commands.push_back("key " + data);
+    _self->viewer->postdisplay = true;
+    pthread_mutex_unlock(&_self->viewer->cmd_mutex);
+  }
+  else if (strstr(request_info->uri, "/mouse=") != NULL)
+  {
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty response, prevent XML errors
+    std::string data = request_info->uri+1;
+    pthread_mutex_lock(&_self->viewer->cmd_mutex);
+    OpenGLViewer::commands.push_back("mouse " + data);
+    _self->viewer->postdisplay = true;
+    pthread_mutex_unlock(&_self->viewer->cmd_mutex);
   }
   else
   {
-    return NULL;
+    // No suitable handler found, mark as not processed. Mongoose will
+    // try to serve the request.
+    return 0;
   }
+
+  // Returning non-zero tells mongoose that our function has replied to
+  // the client, and mongoose should not send client any more data.
+  return 1;
 }
 
 #endif  //DISABLE_SERVER
