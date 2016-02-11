@@ -137,6 +137,7 @@ public:
 
   void addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level);
   void readHeightMap(FilePath& fn);
+  void readHeightMapImage(FilePath& fn);
   void readOBJ(FilePath& fn);
   void readTecplot(FilePath& fn);
   void readRawVolume(FilePath& fn);
