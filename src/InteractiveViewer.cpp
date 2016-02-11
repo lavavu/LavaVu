@@ -1039,28 +1039,19 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(ival, "movie"))
   {
-    std::string fn = awin->name + ".mp4";
-    encodeVideo(fn.c_str(), amodel->step(), ival);
+    encodeVideo();
+    writeSteps(false, amodel->step(), ival);
+    encodeVideo(); //Write final step and stop encoding
   }
   else if (parsed.exists("record"))
   {
-#ifdef HAVE_LIBAVCODEC
+    //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
-    if (!encoder)
-    {
-      std::string fn = awin->name + ".mp4";
-      encoder = new VideoEncoder(fn.c_str(), viewer->width, viewer->height, ival);
-    }
-    else
-    {
-      delete encoder;
-      encoder = NULL;
-    }
-#endif
+    encodeVideo("", ival);
   }
   else if (parsed.has(ival, "play"))
   {
-    writeSteps(false, false, amodel->step(), ival, NULL);
+    writeSteps(false, amodel->step(), ival);
   }
   else if (parsed.exists("play"))
   {

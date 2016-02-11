@@ -192,8 +192,8 @@ public:
   void drawAxis();
 
   void writeImages(int start, int end);
-  void encodeVideo(const char* filename, int start, int end);
-  void writeSteps(bool images, bool video, int start, int end, const char* filename);
+  void encodeVideo(std::string filename="", int fps=30);
+  void writeSteps(bool images, int start, int end);
 
   //data loading
   void loadFile(FilePath& fn);
