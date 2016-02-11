@@ -74,7 +74,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->max_qdiff = 4;
     c->refs = 3; // reference frames
 
-    c->max_b_frames = 2; //Default
+    c->max_b_frames = 2; //16; //2; //Default
     c->b_frame_strategy = 1;
     c->chromaoffset = 0;
     c->thread_count = 1;
@@ -113,8 +113,9 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
    of which frame timestamps are represented. for fixed-fps content,
    timebase should be 1/framerate and timestamp increments should be
    identically 1. */
-  c->time_base.num = 1;
-  c->time_base.den = fps; /* frames per second */
+  std::cout << "Attempting to set framerate to " << fps << " fps " << std::endl;
+  st->time_base.num = 1;
+  st->time_base.den = fps; /* frames per second */
   c->pix_fmt = PIX_FMT_YUV420P;
   c->gop_size = 4; /* Maximum distance between key-frames, low setting allows fine granularity seeking */
   //c->keyint_min = 4; /*Minimum distance between keyframes */
@@ -146,6 +147,10 @@ AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
   }
   avpicture_fill((AVPicture *)picture, picture_buf,
                  pix_fmt, width, height);
+  //Fix warnings?
+  picture->width = width;
+  picture->height = height;
+  picture->format = PIX_FMT_YUV420P;
   return picture;
 }
 
@@ -230,6 +235,7 @@ void VideoEncoder::write_video_frame()
   }
 
   if (ret != 0) abort_program("Error while writing video frame\n");
+  std::cout << " frame " << frame_count << std::endl;
   frame_count++;
 }
 
@@ -261,6 +267,8 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps) : width(width), height(height), fps(fps)
 {
   debug_print("Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
+  frame_count = 0;
+
   //Create the frame buffer
   buffer = new unsigned char[width * height * 3];
 
