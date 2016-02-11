@@ -349,11 +349,11 @@ std::string LavaVu::run(bool persist)
         {
           std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
           //Other formats?? avi/mpeg4?
-          sprintf(path, "%s.mp4", awin->name.c_str());
+          encodeVideo();
         }
 
         //Write output
-        writeSteps(writeimage, writemovie, startstep, endstep, path);
+        writeSteps(writeimage, startstep, endstep);
       }
 
       //Export data
@@ -2735,15 +2735,34 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
 
 void LavaVu::writeImages(int start, int end)
 {
-  writeSteps(true, false, start, end, NULL);
+  writeSteps(true, start, end);
 }
 
-void LavaVu::encodeVideo(const char* filename, int start, int end)
+void LavaVu::encodeVideo(std::string filename, int fps)
 {
-  writeSteps(false, true, start, end, filename);
+  //TODO: - make VideoEncoder use OutputInterface
+  //      - make image frame output a default video output
+  //        when libavcodec not available
+#ifdef HAVE_LIBAVCODEC
+  if (!encoder)
+  {
+    if (filename.length() == 0 && awin) filename = awin->name + ".mp4";
+    if (filename.length() == 0) filename = "output.mp4";
+    encoder = new VideoEncoder(filename.c_str(), viewer->width, viewer->height, fps);
+  }
+  else
+  {
+    //Deleting the encoder completes the video
+    delete encoder;
+    encoder = NULL;
+    return;
+  }
+#else
+  std::cout << "Video output disabled, libavcodec not found!" << std::endl;
+#endif
 }
 
-void LavaVu::writeSteps(bool images, bool video, int start, int end, const char* filename)
+void LavaVu::writeSteps(bool images, int start, int end)
 {
   if (start > end)
   {
@@ -2751,13 +2770,7 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
     start = end;
     end = temp;
   }
-#ifdef HAVE_LIBAVCODEC
-  if (video)
-    encoder = new VideoEncoder(filename, viewer->width, viewer->height, 30);
-#else
-  if (video)
-    std::cout << "Video output disabled, libavcodec not found!" << std::endl;
-#endif
+
   for (int i=start; i<=end; i++)
   {
     //Only load steps that contain geometry data
@@ -2768,10 +2781,13 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
       //Update the views
       resetViews(true);
       viewer->display();
+
       if (images)
         viewer->snapshot(awin->name.c_str(), amodel->step());
+
 #ifdef HAVE_LIBAVCODEC
-      if (video)
+      //Always output to video encode if it exists
+      if (encoder)
       {
         viewer->pixels(encoder->buffer, false, true);
         //bitrate settings?
@@ -2780,13 +2796,6 @@ void LavaVu::writeSteps(bool images, bool video, int start, int end, const char*
 #endif
     }
   }
-#ifdef HAVE_LIBAVCODEC
-  if (encoder)
-  {
-    delete encoder;
-    encoder = NULL;
-  }
-#endif
 }
 
 void LavaVu::dumpById(unsigned int id)
