@@ -114,8 +114,6 @@ TextureData* DrawingObject::loadTexture(std::string texfn)
     LoadTextureJPEG(texture, fn.full.c_str(), true, mode);
   if (fn.type == "png")
     LoadTexturePNG(texture, fn.full.c_str(), true, mode);
-  if (fn.type == "tga")
-    LoadTextureTGA(texture, fn.full.c_str(), true, mode);
   if (fn.type == "ppm")
     LoadTexturePPM(texture, fn.full.c_str(), true, mode);
 
