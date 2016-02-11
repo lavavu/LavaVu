@@ -621,8 +621,6 @@ void LavaVu::readXrwVolume(FilePath& fn)
 void LavaVu::readVolumeSlice(FilePath& fn)
 {
   //png/jpg data
-  int width, height, bytesPerPixel;
-  GLubyte* imageData;
   static std::string path = "";
   if (!volume || path != fn.path)
   {
@@ -630,27 +628,10 @@ void LavaVu::readVolumeSlice(FilePath& fn)
     volume = NULL;  //Ensure new volume created
   }
 
-  if (fn.type == "png")
+  ImageFile image(fn);
+  if (image.pixels)
   {
-    GLuint uwidth, uheight, ubpp;
-    std::ifstream file(fn.full.c_str(), std::ios::binary);
-    if (!file) abort_program("Cannot open '%s'\n", fn.full.c_str());
-    imageData = (GLubyte*)read_png(file, ubpp, uwidth, uheight);
-    file.close();
-    bytesPerPixel = ubpp/8;
-    width = uwidth;
-    height = uheight;
-  }
-  else
-  {
-    imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
-    bytesPerPixel = 3;
-  }
-
-  if (imageData)
-  {
-    readVolumeSlice(fn.base, imageData, width, height, bytesPerPixel, volchannels);
-    delete[] imageData;
+    readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.bytesPerPixel, volchannels);
   }
   else
     debug_print("Slice load failed: %s\n", fn.full.c_str());
@@ -945,7 +926,7 @@ void LavaVu::readHeightMap(FilePath& fn)
   debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
   //opacity [0,1]
   DrawingObject *obj;
-  std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=%s\n" + texfile;
+  std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
   obj = addObject(new DrawingObject(fn.base, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
@@ -1037,6 +1018,53 @@ void LavaVu::readHeightMap(FilePath& fn)
   debug_print("X min %f max %f range %f\n", min[0], max[0], range[0]);
   debug_print("Y min %f max %f range %f\n", min[1], max[1], range[1]);
   debug_print("Z min %f max %f range %f\n", min[2], max[2], range[2]);
+}
+
+void LavaVu::readHeightMapImage(FilePath& fn)
+{
+  ImageFile image(fn);
+
+  if (!image.pixels) return;
+
+  int geomtype = lucTriangleType;
+  //int geomtype = lucGridType;
+
+  float heightrange = 10.0;
+  float min[3] = {0, 0, 0};
+  float max[3] = {image.width, heightrange, image.height};
+
+  viewer->title = fn.base;
+
+  //Create a height map grid
+  std::string texfile = fn.base + "-texture." + fn.ext;
+  DrawingObject *obj;
+  std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
+  obj = addObject(new DrawingObject(fn.base, props));
+
+  Vec3d vertex;
+
+  //Use red channel as luminance for now
+  for (int z=0; z<image.height; z++)
+  {
+    vertex[2] = z;
+    for (int x=0; x<image.width; x++)
+    {
+      vertex[0] = x;
+      vertex[1] = heightrange * image.pixels[(z*image.width+x)*image.bytesPerPixel] / 255.0;
+
+      float colourval = vertex[1];
+
+      if (vertex[1] < min[1]) min[1] = vertex[1];
+      if (vertex[1] > max[1]) max[1] = vertex[1];
+
+      //Add grid point
+      Model::geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
+      //Colour by height
+      Model::geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+    }
+  }
+
+  Model::geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
 }
 
 void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
@@ -2547,7 +2575,12 @@ void LavaVu::loadFile(FilePath& fn)
   else if (fn.type == "xrw" || fn.type == "xrwu")
     readXrwVolume(fn);
   else if (fn.type == "jpg" || fn.type == "jpeg" || fn.type == "png")
-    readVolumeSlice(fn);
+  {
+    if (fn.base.find("heightmap") != std::string::npos)
+      readHeightMapImage(fn);
+    else
+      readVolumeSlice(fn);
+  }
   else if (fn.type == "tiff" || fn.type == "tif")
     readVolumeTIFF(fn);
 
