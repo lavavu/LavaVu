@@ -521,6 +521,7 @@ void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
   clock_t t1,t2;
   t1=clock();
   debug_print("Calculating normals for grid surface %d... ", i);
+  bool genTexCoords = (geom[i]->texCoords.size() == 0);
 
   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   int n = 0;
@@ -528,6 +529,13 @@ void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
   {
     for (unsigned int k = 0 ; k < geom[i]->width; k++ )
     {
+      //Tex coords
+      if (genTexCoords)
+      {
+        float texCoord[2] = {k / (float)(geom[i]->width-1), j / (float)(geom[i]->height-1)};
+        read(geom[i], 1, lucTexCoordData, texCoord);
+      }
+
       // Get sum of normal vectors
       if (j > 0)
       {
@@ -535,14 +543,16 @@ void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
         {
           // Look back
           normals[n] += vectorNormalToPlane(geom[i]->vertices[geom[i]->width * j + k],
-                                            geom[i]->vertices[geom[i]->width * (j-1) + k], geom[i]->vertices[geom[i]->width * j + k-1]);
+                                            geom[i]->vertices[geom[i]->width * (j-1) + k],
+                                            geom[i]->vertices[geom[i]->width * j + k-1]);
         }
 
         if (k < geom[i]->width - 1)
         {
           // Look back in x, forward in y
           normals[n] += vectorNormalToPlane(geom[i]->vertices[geom[i]->width * j + k],
-                                            geom[i]->vertices[geom[i]->width * j + k+1], geom[i]->vertices[geom[i]->width * (j-1) + k]);
+                                            geom[i]->vertices[geom[i]->width * j + k+1],
+                                            geom[i]->vertices[geom[i]->width * (j-1) + k]);
         }
       }
 
@@ -552,14 +562,16 @@ void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
         {
           // Look forward in x, back in y
           normals[n] += vectorNormalToPlane(geom[i]->vertices[geom[i]->width * j + k],
-                                            geom[i]->vertices[geom[i]->width * j + k-1], geom[i]->vertices[geom[i]->width * (j+1) + k]);
+                                            geom[i]->vertices[geom[i]->width * j + k-1],
+                                            geom[i]->vertices[geom[i]->width * (j+1) + k]);
         }
 
         if (k < geom[i]->width - 1)
         {
           // Look forward
           normals[n] += vectorNormalToPlane(geom[i]->vertices[geom[i]->width * j + k],
-                                            geom[i]->vertices[geom[i]->width * (j+1) + k], geom[i]->vertices[geom[i]->width * j + k+1]);
+                                            geom[i]->vertices[geom[i]->width * (j+1) + k],
+                                            geom[i]->vertices[geom[i]->width * j + k+1]);
         }
       }
 
