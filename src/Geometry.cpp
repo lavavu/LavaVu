@@ -498,7 +498,7 @@ void Geometry::setState(unsigned int index, Shader* prog)
     //Don't light surfaces in 2d models
     if (!view->is3d && flat2d) lighting = false;
     //Disable lighting and polygon faces in wireframe mode
-    if (!decoration && (GeomData::wireframe || draw->properties["wireframe"].ToBool(false)))
+    if (draw->properties["wireframe"].ToBool(false) || (!decoration && GeomData::wireframe))
     {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       lighting = false;
