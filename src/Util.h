@@ -36,7 +36,6 @@
 #ifndef Utils__
 #define Utils__
 #include "Include.h"
-#include "GraphicsUtil.h"
 #include "Colours.h"
 
 #define INBUF_SIZE 65535

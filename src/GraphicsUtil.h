@@ -115,7 +115,7 @@
 #define MoveRaster( deltaX, deltaY ) \
    glBitmap( 0,0,0.0,0.0, (float)(deltaX), (float)(deltaY), NULL )
 
-class TextureData  //Texture TGA image data
+class TextureData  //Texture image data
 {
 public:
   GLuint   bpp;      // Image Color Depth In Bits Per Pixel.
@@ -577,7 +577,6 @@ void drawVector3d_( float pos[3], float vector[3], float scale, float radius, fl
 void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
 void RawImageFlip(void* image, int width, int height, int bpp);
-int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
 int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
@@ -594,5 +593,42 @@ void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
 #else
 #define read_png(stream, bpp, width, height) NULL
 #endif
+
+//Generic image loader (only png/jpg supported)
+class ImageFile
+{
+public:
+  int width, height, bytesPerPixel;
+  GLubyte* pixels;
+
+  ImageFile(FilePath& fn)
+  {
+    //png/jpg data
+    pixels = NULL;
+    if (fn.type == "png")
+    {
+#ifdef HAVE_LIBPNG
+      GLuint uwidth, uheight, ubpp;
+      std::ifstream file(fn.full.c_str(), std::ios::binary);
+      if (!file) abort_program("Cannot open '%s'\n", fn.full.c_str());
+      pixels = (GLubyte*)read_png(file, ubpp, uwidth, uheight);
+      file.close();
+      bytesPerPixel = ubpp/8;
+      width = uwidth;
+      height = uheight;
+#endif
+    }
+    else if (fn.type == "jpg" || fn.type == "jpeg")
+    {
+      pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
+      bytesPerPixel = 3;
+    }
+  }
+
+  ~ImageFile()
+  {
+    if (pixels) delete[] pixels;
+  }
+};
 
 #endif //GraphicsUtil__

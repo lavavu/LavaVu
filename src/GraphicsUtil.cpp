@@ -695,64 +695,6 @@ void RawImageFlip(void* image, int width, int height, int bpp)
   delete[] temp;
 }
 
-// Loads TGA Image
-int LoadTextureTGA(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
-{
-  GLubyte      TGAheader0[12]= {0,0,2,0,0,0,0,0,0,0,0,0};   // Uncompressed RGB(A) TGA Header
-  GLubyte      TGAheader1[12]= {0,0,3,0,0,0,0,0,0,0,0,0};   // Uncompressed B&W TGA Header
-  GLubyte      TGAcompare[12];         // Used To Compare TGA Header
-  GLubyte      header[6];            // First 6 Useful Bytes From The Header
-  GLuint      bytesPerPixel;         // Holds Number Of Bytes Per Pixel Used In The TGA File
-  GLuint      imageSize;            // Used To Store The Image Size When Setting Aside Ram
-  GLubyte *imageData;            // Image Data (Up To 32 Bits)
-
-  FILE *file = fopen(filename, "rb");      // Open The TGA File
-
-  if (file==NULL ||                   // Does File Even Exist?
-      fread(TGAcompare,1,sizeof(TGAcompare),file)!=sizeof(TGAcompare) ||   // Are There 12 Bytes To Read?
-      (memcmp(TGAheader0,TGAcompare,sizeof(TGAheader0))!=0 &&
-       memcmp(TGAheader1,TGAcompare,sizeof(TGAheader1))!=0) ||      // Does The Header Match What We Want?
-      fread(header,1,sizeof(header),file)!=sizeof(header))      // If So Read Next 6 Header Bytes
-  {
-    if (file == NULL)               // Does The File Even Exist? *Added Jim Strong*
-      return 0;               // return 0
-    else                        // Otherwise
-    {
-      fclose(file);               // If Anything Failed, Close The File
-      return 0;               // return 0
-    }
-  }
-
-  texture->width  = header[1] * 256 + header[0];   // Determine The TGA Width   (highbyte*256+lowbyte)
-  texture->height = header[3] * 256 + header[2];   // Determine The TGA Height   (highbyte*256+lowbyte)
-
-  //Check width & height
-  if (texture->width   <=0 || texture->height <=0)
-  {
-    fclose(file);                         // If Anything Failed, Close The File
-    return 0;                         // return 0
-  }
-
-  texture->bpp   = header[4];               // Grab The TGA's Bits Per Pixel (16, 24 or 32)
-  bytesPerPixel   = texture->bpp/8;            // Divide By 8 To Get The Bytes Per Pixel
-  imageSize      = texture->width*texture->height*bytesPerPixel;   // Calculate The Memory Required For The TGA Data
-
-  imageData= new GLubyte[imageSize];   // Reserve Memory To Hold The TGA Data
-  if (imageData==NULL ||               // Does The Storage Memory Exist?
-      fread(imageData, 1, imageSize, file)!=imageSize)   // Does The Image Size Match The Memory Reserved?
-  {
-    if (imageData!=NULL)            // Was Image Data Loaded
-      delete[] imageData;            // If So, Release The Image Data
-
-    fclose(file);                     // Close The File
-    return 0;                     // return 0
-  }
-
-  fclose (file);                        // Close The File
-
-  return BuildTexture(texture, imageData, mipmaps, 0, mode);
-}
-
 // Loads a PPM image
 int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
 {
