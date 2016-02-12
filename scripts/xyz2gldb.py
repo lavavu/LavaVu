@@ -2,16 +2,24 @@ import sys
 import re
 import lavavu
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 3:
   print "Convert text xyz to LavaVu database"
   print "(basic comma/space/tab delimited X,Y,Z[,R,G,B] only)"
+  print ""
   print "  Usage: "
-  print "    xyz2gldb.py input.txt output.gldb"
+  print ""
+  print "    xyz2gldb.py input.txt output.gldb [subsample]"
+  print ""
+  print "      subsample: N, use every N'th point, skip others"
   print ""
   exit()
 
 filePath = sys.argv[1] #cmds.fileDialog()
 dbPath = sys.argv[2]
+#Optional subsample arg
+subsample = 0
+if len(sys.argv) > 3:
+  subsample = int(sys.argv[3])
 
 #Create vis object (points)
 points = lavavu.Points('points', None, size=5, props="colour=white")
@@ -24,8 +32,17 @@ db = lavavu.Database(dbPath)
 db.timestep()
 
 #Loop over lines in input file
+count = 0
 with open(filePath, 'r') as file:
   for line in file:
+    #Subsample?
+    count += 1
+    if subsample > 1 and count % subsample != 1: continue
+
+    if count % 10000 == 0:
+      print count
+      sys.stdout.flush()
+
     #Read particle position
     data = re.split(r'[,;\s]+', line.rstrip())
     #print data

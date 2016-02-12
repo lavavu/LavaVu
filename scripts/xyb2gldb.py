@@ -3,15 +3,23 @@ import lavavu
 import os
 import struct
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 3:
   print "Convert binary IEEE 32-bit float xyz to LavaVu database"
   print "  Usage: "
-  print "    xyz2gldb.py input.xyb output.gldb"
+  print ""
+  print "    xyz2gldb.py input.xyb output.gldb [subsample]"
+  print ""
+  print "      subsample: N, use every N'th point, skip others"
   print ""
   exit()
 
 filePath = sys.argv[1] #cmds.fileDialog()
 dbPath = sys.argv[2]
+#Optional subsample arg
+subsample = 0
+if len(sys.argv) > 3:
+  subsample = int(sys.argv[3])
+
 inbytes = os.path.getsize(filePath)
 num = inbytes / (4 * 6) # x y z r g b
 
@@ -39,10 +47,12 @@ with open(filePath, 'rb') as infile:
     vert = struct.unpack('f'*3, infile.read(3*4))
     rgb = struct.unpack('f'*3, infile.read(3*4))
     rgba = [int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255), 0xff]
+    #Subsample?
+    if subsample > 1 and p % subsample != 0: continue
     points.addVertex(vert[0], vert[1], vert[2])
     points.addColour(rgba)
 
-  print "Writing " + str(num) + " points to database"
+  print "Writing " + str(int(num/subsample)) + " points to database"
   sys.stdout.flush()
   #Close and write database to disk
   #points.write(db)
