@@ -2505,7 +2505,9 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
+#ifndef USE_OMEGALIB
   drawBorder();
+#endif
 
   Model::triSurfaces->draw();
   Model::quadSurfaces->draw();
