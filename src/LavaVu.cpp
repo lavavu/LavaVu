@@ -1932,8 +1932,7 @@ void LavaVu::display(void)
 
 #ifdef USE_OMEGALIB
   drawSceneBlended();
-  return;
-#endif
+#else
 
   //Set viewport based on window size
   aview->port(viewer->width, viewer->height);
@@ -2018,14 +2017,12 @@ void LavaVu::display(void)
     drawSceneBlended();
   }
 
-  //Clear the rotation flag
-  if (aview->sort) aview->rotated = false;
-
-
   //Print current info message (displayed for one frame only)
-#ifndef USE_OMEGALIB
   if (status) displayMessage();
 #endif
+
+  //Clear the rotation flag
+  if (aview->sort) aview->rotated = false;
 
   //Display object list if enabled
   if (objectlist)
