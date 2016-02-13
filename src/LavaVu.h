@@ -69,7 +69,8 @@ protected:
   bool sort_on_rotate;
   bool status;
   int fixedwidth, fixedheight;
-  bool writeimage, writemovie;
+  bool writeimage;
+  int writemovie;
   int volres[3];
   float volmin[3], volmax[3];
   float volss[3], inscale[3]; //Scaling as data loaded, only for volumes currently

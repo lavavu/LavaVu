@@ -59,6 +59,11 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps)
 
   oc->oformat->audio_codec = AV_CODEC_ID_NONE;
 
+#ifdef HAVE_SWSCALE
+  //Get swscale context to convert RGB to YUV(420/422)
+  ctx = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, video_st->codec->pix_fmt, 0, 0, 0, 0);
+#endif
+
 #if LIBAVFORMAT_VERSION_MAJOR <= 52
   av_set_parameters(oc, NULL);
 #endif
@@ -162,6 +167,9 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->qcompress = 0.6; // qcomp=0.5
     c->qmin = 2;        //10 default
     c->qmax = 31;       //51 default
+    //Higher quality!
+      c->qmin = 1;
+      c->qmax = 4;
 
     c->max_qdiff = 4;
     c->refs = 3; // reference frames
@@ -174,8 +182,9 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     //c->trellis = 1/0;
     //c->level = 13/41; //?????
 
-    c->bit_rate = (int)(3200000.f * 0.80f);
-    c->bit_rate_tolerance = (int)(3200000.f * 0.20f);
+    //Do we need to do this or just let it be calculated?
+    //c->bit_rate = (int)(3200000.f * 0.80f);
+    //c->bit_rate_tolerance = (int)(3200000.f * 0.20f);
   }
   else
   {
@@ -206,8 +215,11 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
    timebase should be 1/framerate and timestamp increments should be
    identically 1. */
   std::cout << "Attempting to set framerate to " << fps << " fps " << std::endl;
+  //This doesn't seem to work
   st->time_base.num = 1;
   st->time_base.den = fps; /* frames per second */
+  c->time_base.num = 1;
+  c->time_base.den = fps; /* frames per second */
   c->pix_fmt = PIX_FMT_YUV420P;
   c->gop_size = 4; /* Maximum distance between key-frames, low setting allows fine granularity seeking */
   //c->keyint_min = 4; /*Minimum distance between keyframes */
@@ -239,7 +251,7 @@ AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
   }
   avpicture_fill((AVPicture *)picture, picture_buf,
                  pix_fmt, width, height);
-  //Fix warnings?
+  //Fixes frame warnings?
   picture->width = width;
   picture->height = height;
   picture->format = PIX_FMT_YUV420P;
@@ -358,6 +370,11 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 
 void VideoEncoder::frame(int channels)
 {
+#ifdef HAVE_SWSCALE
+  uint8_t * inData[1] = { buffer }; // RGB24 have one plane
+  int inLinesize[1] = { 3*width }; // RGB stride
+  sws_scale(ctx, inData, inLinesize, 0, height, picture->data, picture->linesize);
+#else
   /* YUV420P encoded frame */
   int            pixel_I;
   int            xPixel_I;
@@ -412,6 +429,7 @@ void VideoEncoder::frame(int channels)
         (unsigned char) ((0.439 * red) - (0.368 * green) - (0.071 * blue) + 128);
     }
   }
+#endif
 
   /* Calculate PTS for h264 */
   picture->pts = video_st->codec->frame_number;

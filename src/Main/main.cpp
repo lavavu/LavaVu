@@ -123,7 +123,7 @@ std::string initViewer(int argc, char **argv)
       std::cout << " -W: write images as above but using input database path as output path for images\n";
       std::cout << " -I: as above\n";
       std::cout << " -t: write transparent background png images (if supported)\n";
-      std::cout << " -m: write movies of all loaded timesteps/windows then exit (if supported)\n";
+      std::cout << " -m#: write movies of all loaded timesteps/windows #=fps(30) (if supported)\n";
       std::cout << " -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if omitted)\n";
       std::cout << "\nData export\n";
       std::cout << " -d#: export object id # to CSV vertices + values\n";

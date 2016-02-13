@@ -60,7 +60,8 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
   dumpid = 0;
   globalCam = false;
   status = true;
-  writeimage = writemovie = false;
+  writeimage = false;
+  writemovie = 0;
 #ifdef USE_OMEGALIB
   sort_on_rotate = false;
 #else
@@ -226,8 +227,9 @@ LavaVu::LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width, i
         viewer->visible = false;
         break;
       case 'm':
-        //Movie write
-        writemovie = true;
+        //Movie write (fps optional)
+        writemovie = 30;
+        if (args[i].length() > 2) ss >> writemovie;
         viewer->visible = false;
         break;
       case 'e':
@@ -349,7 +351,7 @@ std::string LavaVu::run(bool persist)
         {
           std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
           //Other formats?? avi/mpeg4?
-          encodeVideo();
+          encodeVideo("", writemovie);
         }
 
         //Write output
