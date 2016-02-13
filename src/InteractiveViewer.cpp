@@ -796,6 +796,16 @@ bool LavaVu::parseCommand(std::string cmd)
     }
     return true;
   }
+  else if (parsed.exists("quit"))
+  {
+    viewer->quitProgram = true;
+  }
+  else if (parsed.exists("record"))
+  {
+    //Default to 30 fps
+    if (!parsed.has(ival, "record")) ival = 30;
+    encodeVideo("", ival);
+  }
 
   //******************************************************************************
   //Following commands require a model!
@@ -1043,12 +1053,6 @@ bool LavaVu::parseCommand(std::string cmd)
     writeSteps(false, amodel->step(), ival);
     encodeVideo(); //Write final step and stop encoding
   }
-  else if (parsed.exists("record"))
-  {
-    //Default to 30 fps
-    if (!parsed.has(ival, "record")) ival = 30;
-    encodeVideo("", ival);
-  }
   else if (parsed.has(ival, "play"))
   {
     writeSteps(false, amodel->step(), ival);
@@ -1145,10 +1149,6 @@ bool LavaVu::parseCommand(std::string cmd)
     }
     else
       return parseCommands(last_cmd);
-  }
-  else if (parsed.exists("quit"))
-  {
-    viewer->quitProgram = true;
   }
   else if (parsed.exists("axis"))
   {
