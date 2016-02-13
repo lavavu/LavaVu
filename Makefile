@@ -10,7 +10,7 @@ CPP=g++
 CC=gcc
 
 #Default flags
-CFLAGS = -fPIC -Isrc
+CFLAGS = $(FLAGS) -fPIC -Isrc
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -62,8 +62,8 @@ endif
 
 #Other optional components
 ifeq ($(VIDEO), 1)
-  CFLAGS += -DHAVE_LIBAVCODEC
-  LIBS += -lavcodec -lavutil -lavformat
+  CFLAGS += -DHAVE_LIBAVCODEC -DHAVE_SWSCALE
+  LIBS += -lavcodec -lavutil -lavformat -lswscale
 endif
 ifeq ($(PNG), 1)
   CFLAGS += -DHAVE_LIBPNG

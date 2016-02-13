@@ -40,6 +40,9 @@ extern "C"
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/mathematics.h>
+#ifdef HAVE_SWSCALE
+#include <libswscale/swscale.h>
+#endif
 }
 #undef exit
 
@@ -93,7 +96,9 @@ protected:
   int width, height, fps;
   AVFormatContext *oc;
   AVStream *video_st;
-
+#ifdef HAVE_SWSCALE
+  SwsContext * ctx;
+#endif
   AVFrame *picture;
   uint8_t *video_outbuf;
   int frame_count, video_outbuf_size;
