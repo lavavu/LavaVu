@@ -791,7 +791,7 @@ void TriSurfaces::draw()
       if (geom[index]->opaque)
       {
         setState(index, prog); //Set draw state settings for this object
-        fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
+        //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
         glDrawRangeElements(GL_TRIANGLES, 0, elements, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
       }
