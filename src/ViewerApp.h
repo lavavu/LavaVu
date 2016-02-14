@@ -51,15 +51,14 @@ public:
 
   OpenGLViewer* viewer;
 
-  ViewerApp(OpenGLViewer* viewer) : viewer(viewer)
-  {
-    //Provide our application interface to the viewer class
-    viewer->app = (ApplicationInterface*)this;
-  }
-
+  ViewerApp() {}
   virtual ~ViewerApp() {}
 
   //INTERFACE:
+
+  //Execution function - this will be called by main()/initViewer()
+  virtual std::string run(int width=0, int height=0, bool persist=false) = 0;
+  virtual void arguments(std::vector<std::string> args) {}
 
   // Placeholder virtual functions for window management
   virtual void open(int width, int height) {}

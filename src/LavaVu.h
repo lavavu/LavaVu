@@ -48,6 +48,9 @@
 
 #define MAX_MSG 256
 
+std::string initViewer(int argc, char **argv);
+std::string initViewer(int argc, char **argv, ViewerApp* application, bool noserver=false);
+
 typedef enum
 {
   lucExportNone,
@@ -124,10 +127,14 @@ public:
   View* aview;   //Active viewport
   DrawingObject* aobject; //Selected object
 
-  LavaVu(std::vector<std::string> args, OpenGLViewer* viewer, int width=0, int height=0);
+  LavaVu();
   virtual ~LavaVu();
 
-  std::string run(bool persist=false);
+  //Execute function
+  std::string run(int width=0, int height=0, bool persist=false);
+  //Argument parser
+  virtual void arguments(std::vector<std::string> args);
+
   void exportData(lucExportType type, unsigned int id=0);
 
   void parseProperties(std::string& properties);
