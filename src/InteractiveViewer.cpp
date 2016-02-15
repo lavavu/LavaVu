@@ -799,12 +799,14 @@ bool LavaVu::parseCommand(std::string cmd)
   else if (parsed.exists("quit"))
   {
     viewer->quitProgram = true;
+    return false;
   }
   else if (parsed.exists("record"))
   {
     //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
     encodeVideo("", ival);
+    return false;
   }
 
   //******************************************************************************
