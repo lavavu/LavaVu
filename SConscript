@@ -56,6 +56,7 @@ srcs += [src_dir + '/miniz/miniz.c']
 srcs += [src_dir + '/jpeg/jpge.cpp']
 srcs += [src_dir + '/jpeg/jpgd.cpp']
 srcs += [src_dir + '/tiny_obj_loader.cc']
+srcs += Glob(src_dir + '/Main/*Viewer.cpp')
 objs = env.SharedObject(srcs)
 #build SQLite3 source (named object prevents clash)
 sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/src/sqlite3.c'])
@@ -64,15 +65,11 @@ sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/src/sqlite3.c'])
 #Add pthreads & dl (required for sqlite3)
 libs = ['pthread', 'dl'] + env.get('LIBS', [])
 #libs = ['pthread', 'dl', 'z'] + env.get('LIBS', [])
-l = env.SharedLibrary('lib/LavaVuRender', objs + sqlite3, LIBS=libs)
+l = env.SharedLibrary('lib/LavaVu', objs + sqlite3, LIBS=libs)
 
 # Build LavaVu viewer (interactive version)
 env['CPPDEFINES'] += cpp_defs
 main = env.SharedObject('main', Glob(src_dir + '/Main/main.cpp'))
-srcs = Glob(src_dir + '/Main/X11Viewer.cpp')
-srcs += Glob(src_dir + '/Main/SDLViewer.cpp')
-srcs += Glob(src_dir + '/Main/GlutViewer.cpp')
-vobjs = env.SharedObject(srcs)
 #Set search paths for libraries
 env['RPATH'] += rpath
 build_lib = os.path.join(env['build_dir'], "lib")
@@ -80,10 +77,9 @@ if build_lib[0] != "/":
    build_lib = "#" + build_lib
 env['LIBPATH'] += [build_lib]
 #Add the renderer library
-libs = ['LavaVuRender'] + env.get('LIBS', [])
+libs = ['LavaVu'] + env.get('LIBS', [])
 #Build the executable
-env.Program('bin/LavaVu', main + vobjs, LIBS=libs)
+env.Program('bin/LavaVu', main, LIBS=libs)
 
 #Build as a shared library (Experimental)
-main = env.SharedObject('lvlib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'] + ["__LAVAVULIB"])
-env.SharedLibrary('lib/LavaVu', main + vobjs, LIBS=libs)
+main = env.SharedObject('lvlib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'])

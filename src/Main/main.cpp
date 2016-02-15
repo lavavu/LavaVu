@@ -36,11 +36,9 @@
 #include "../LavaVu.h"
 
 // Main function
-#ifndef __LAVAVULIB
 int main(int argc, char *argv[])
 {
   initViewer(argc, argv);
   return 0;
 }
-#endif
 
