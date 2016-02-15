@@ -65,6 +65,10 @@ OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fulls
 
   /* Init mutex */
   pthread_mutex_init(&cmd_mutex, NULL);
+
+  //Clear static data
+  inputs.clear();
+  outputs.clear();
 }
 
 OpenGLViewer::~OpenGLViewer()
