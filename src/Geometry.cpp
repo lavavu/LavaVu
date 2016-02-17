@@ -303,13 +303,15 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
       else
       {
         std::cout << "Collected " << geom[i]->count << " vertices/values (" << i << ")" << std::endl;
-        //Only supports dump of vertex and colourValue at present
+        //Only supports dump of vertex, vector and scalar colour value
         for (unsigned int v=0; v < geom[i]->count; v++)
         {
           csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
 
           if (geom[i]->colourData() && geom[i]->data[lucColourValueData]->size() == geom[i]->count)
             csv << ',' << geom[i]->colourData(v);
+          if (geom[i]->vectors.size() > v)
+            csv << ',' << geom[i]->vectors[v][0] << ',' <<  geom[i]->vectors[v][1] << ',' << geom[i]->vectors[v][2];
 
           csv << std::endl;
         }
