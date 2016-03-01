@@ -2764,9 +2764,6 @@ void LavaVu::loadFile(FilePath& fn)
   // - If none exists, a default will be created
   // - Sequence matters! To display non-gldb data with model, load the gldb first
 
-  //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
-  if (Geometry::properties["filestep"].ToBool(false)) parseCommands("newstep");
-
   //Load a file based on extension
   std::cerr << "Loading: " << fn.full << std::endl;
 
@@ -2793,6 +2790,9 @@ void LavaVu::loadFile(FilePath& fn)
 
   //Other files require an existing model
   if (!amodel) defaultModel();
+
+  //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
+  if (Geometry::properties["filestep"].ToBool(false)) parseCommands("newstep");
 
   //Load other data by type
   if (fn.type == "dem")
