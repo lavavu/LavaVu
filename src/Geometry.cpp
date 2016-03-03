@@ -482,7 +482,6 @@ void Geometry::setState(unsigned int index, Shader* prog)
   GL_Error_Check;
   if (geom.size() <= index) return;
   DrawingObject* draw = geom[index]->draw;
-  int texunit = -1;
   bool lighting = GeomData::lit;
   bool decoration = draw->properties["decoration"].ToBool(false);
   lighting = lighting && draw->properties["lit"].ToBool(true);
@@ -535,8 +534,17 @@ void Geometry::setState(unsigned int index, Shader* prog)
     glEnable(GL_LIGHTING);
 
   //Textured?
-  texunit = draw->useTexture(geom[index]->texture);
+  TextureData* texture = draw->useTexture(geom[index]->texIdx);
   GL_Error_Check;
+  if (texture)
+  {
+    //Combine texture with colourmap? Requires modulate mode
+    //GL_MODULATE/BLEND/REPLACE/DECAL
+    if (geom[index]->colourCount() > 0)
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    else
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);  
+  }
 
   //Replace the default colour with a json value if present
   draw->colour = Colour_FromJson(draw->properties, "colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
@@ -553,10 +561,10 @@ void Geometry::setState(unsigned int index, Shader* prog)
     prog->setUniform("uAmbient", Geometry::properties["ambient"].ToFloat(0.4));
     prog->setUniform("uDiffuse", Geometry::properties["diffuse"].ToFloat(0.8));
     prog->setUniform("uSpecular", Geometry::properties["specular"].ToFloat(0.0));
-    prog->setUniform("uTextured", texunit >= 0);
+    prog->setUniform("uTextured", texture && texture->unit >= 0);
 
-    if (texunit >= 0)
-      prog->setUniform("uTexture", texunit);
+    if (texture)
+      prog->setUniform("uTexture", (int)texture->unit);
 
     if (geom[index]->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
       prog->setUniform("uCalcNormal", 1);
@@ -912,10 +920,11 @@ void Geometry::toImage(unsigned int idx)
   delete[] image;
 }
 
-void Geometry::setTexture(DrawingObject* draw, TextureData* texture)
+void Geometry::setTexture(DrawingObject* draw, int idx)
 {
   GeomData* geomdata = getObjectStore(draw);
-  geomdata->texture = texture;
+  geomdata->texIdx = idx;
+  //printf("SET TEXTURE: %p\n", idx);
   //Must be opaque to draw with own texture
   geomdata->opaque = true;
 }

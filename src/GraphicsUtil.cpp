@@ -695,8 +695,55 @@ void RawImageFlip(void* image, int width, int height, int bpp)
   delete[] temp;
 }
 
+TextureData* TextureLoader::use()
+{
+  load();
+
+  if (texture && texture->width)
+  {
+    if (texture->depth > 1)
+    {
+      glEnable(GL_TEXTURE_3D);
+      glActiveTexture(GL_TEXTURE0 + texture->unit);
+      glBindTexture(GL_TEXTURE_3D, texture->id);
+    }
+    else
+    {
+      glEnable(GL_TEXTURE_2D);
+      glActiveTexture(GL_TEXTURE0 + texture->unit);
+      glBindTexture(GL_TEXTURE_2D, texture->id);
+    }
+    //printf("USE TEXTURE: (id %d unit %d)\n", texture->id, texture->unit);
+    return texture;
+  }
+
+  //No texture:
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_TEXTURE_3D);
+  return NULL;
+}
+
+void TextureLoader::load()
+{
+  //Already loaded
+  if (texture) return;
+
+  //No file, requires manual load
+  if (fn.full.length() == 0) return;
+
+  texture = new TextureData();
+
+  //Load texture file
+  if (fn.type == "jpg" || fn.type == "jpeg")
+    loadJPEG();
+  if (fn.type == "png")
+    loadPNG();
+  if (fn.type == "ppm")
+    loadPPM();
+}
+
 // Loads a PPM image
-int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+int TextureLoader::loadPPM()
 {
   bool readTag = false, readWidth = false, readHeight = false, readColourCount = false;
   char stringBuffer[241];
@@ -704,10 +751,10 @@ int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLe
   GLuint bytesPerPixel, imageSize;
   GLubyte *imageData;
 
-  FILE* imageFile = fopen(filename, "rb");
+  FILE* imageFile = fopen(fn.full.c_str(), "rb");
   if (imageFile == NULL)
   {
-    debug_print("Cannot open '%s'\n", filename);
+    debug_print("Cannot open '%s'\n", fn.full.c_str());
     return 0;
   }
 
@@ -770,30 +817,30 @@ int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLe
     if (fread(&imageData[texture->width * j * bytesPerPixel], bytesPerPixel, texture->width, imageFile) < texture->width) abort_program("PPM Read Error");
   fclose(imageFile);
 
-  return BuildTexture(texture, imageData, mipmaps, GL_RGB, mode);
+  return build(imageData, GL_RGB);
 }
 
-int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+int TextureLoader::loadPNG()
 {
   GLubyte *imageData;
 
-  std::ifstream file(filename, std::ios::binary);
+  std::ifstream file(fn.full.c_str(), std::ios::binary);
   if (!file)
   {
-    debug_print("Cannot open '%s'\n", filename);
+    debug_print("Cannot open '%s'\n", fn.full.c_str());
     return 0;
   }
   imageData = (GLubyte*)read_png(file, texture->bpp, texture->width, texture->height);
 
   file.close();
 
-  return BuildTexture(texture, imageData, mipmaps, texture->bpp == 24 ? GL_RGB : GL_RGBA, mode);
+  return build(imageData, texture->bpp == 24 ? GL_RGB : GL_RGBA);
 }
 
-int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+int TextureLoader::loadJPEG()
 {
   int width, height, bytesPerPixel;
-  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(filename, &width, &height, &bytesPerPixel, 3);
+  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
 
   RawImageFlip(imageData, width, height, 3);
 
@@ -801,14 +848,14 @@ int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GL
   texture->height = height;
   texture->bpp = 24;
 
-  return BuildTexture(texture, imageData, mipmaps, GL_RGB, mode);
+  return build(imageData, GL_RGB);
 }
 
-int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GLenum mode)
+int TextureLoader::loadTIFF()
 {
   int texid = 0;
 #ifdef HAVE_LIBTIFF
-  TIFF* tif = TIFFOpen(filename, "r");
+  TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)
   {
     unsigned int width, height;
@@ -828,7 +875,7 @@ int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GL
         texture->width = width;
         texture->height = height;
         texture->bpp = 32;
-        texid = BuildTexture(texture, imageData, mipmaps, GL_RGBA, mode);
+        texid = build(imageData, GL_RGBA);
       }
       _TIFFfree(imageData);
     }
@@ -840,15 +887,13 @@ int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GL
   return texid;
 }
 
-int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode)
+int TextureLoader::build(GLubyte* imageData, GLenum format)
 {
-  // Build A Texture From The Data
-  glActiveTexture(GL_TEXTURE0);
+  //Build texture from raw data
+  glActiveTexture(GL_TEXTURE0 + texture->unit);
   glBindTexture(GL_TEXTURE_2D, texture->id);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-  glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, mode);  //GL_MODULATE/BLEND/REPLACE/DECAL
 
   // use linear filtering
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -886,6 +931,53 @@ int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum
   delete[] imageData;
 
   return 1;
+}
+
+void TextureLoader::load3D(int width, int height, int depth, void* data, int type)
+{
+  GL_Error_Check;
+  //Create the texture
+  if (!texture) texture = new TextureData();
+  GL_Error_Check;
+  //Hard coded unit for 3d textures for now
+  texture->unit = 1;
+
+  glActiveTexture(GL_TEXTURE0 + texture->unit);
+  GL_Error_Check;
+  glBindTexture(GL_TEXTURE_3D, texture->id);
+  GL_Error_Check;
+
+  texture->width = width;
+  texture->height = height;
+  texture->depth = depth;
+
+  // set the texture parameters
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  GL_Error_Check;
+
+  //Load based on type
+  debug_print("Volume Texture: width %d height %d depth %d type %d\n", width, height, depth, type);
+  switch (type)
+  {
+  case VOLUME_FLOAT:
+    //glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+    break;
+  case VOLUME_BYTE:
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    break;
+  case VOLUME_RGB:
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    break;
+  case VOLUME_RGBA:
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    break;
+  }
+  GL_Error_Check;
 }
 
 void abort_program(const char * s, ...)

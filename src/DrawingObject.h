@@ -40,11 +40,6 @@
 #ifndef DrawingObject__
 #define DrawingObject__
 
-#define VOLUME_FLOAT 1
-#define VOLUME_BYTE 2
-#define VOLUME_RGB 3
-#define VOLUME_RGBA 4
-
 typedef struct
 {
   unsigned int dataIdx;
@@ -61,7 +56,6 @@ public:
   std::string name;
   bool skip;
   bool visible;
-  int voltype;
   //Cached values for faster lookup
   float opacity;
   Colour colour;
@@ -74,16 +68,16 @@ public:
 
   //Object properties data...
   json::Object properties;
-  TextureData* defaultTexture;
+  //Texture list
+  std::vector<TextureLoader*> textures;
 
   DrawingObject(std::string name="", std::string props="", ColourMap* map=NULL, unsigned int id=0);
   ~DrawingObject();
 
   void setup();
   void addColourMap(ColourMap* map, lucGeometryDataType data_type);
-  TextureData* loadTexture(std::string texfn);
-  int useTexture(TextureData* texture);
-  void load3DTexture(int width, int height, int depth, void* data, int type=VOLUME_FLOAT);
+  int addTexture(std::string texfn="");
+  TextureData* useTexture(int index);
 
   static unsigned int lastid;
 };

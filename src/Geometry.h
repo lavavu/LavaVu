@@ -86,7 +86,7 @@ public:
   unsigned int depth;
   char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
-  TextureData* texture;
+  int texIdx;    //Texture index to use
   unsigned int fixedOffset; //Offset to end of fixed value data
 
   float distance;
@@ -119,7 +119,7 @@ public:
     data[lucRGBAData] = &colours;
     data[lucTexCoordData] = &texCoords;
 
-    texture = NULL;
+    texIdx = -1;
 
     for (int i=0; i<3; i++)
     {
@@ -134,7 +134,6 @@ public:
   {
     if (labelptr) free(labelptr);
     labelptr = NULL;
-    if (texture && texture != draw->defaultTexture) delete texture;
 
     //Delete value data containers (exclude fixed additions)
     for (unsigned int i=fixedOffset; i<values.size(); i++)
@@ -267,7 +266,7 @@ public:
   void setView(View* vp, float* min=NULL, float* max=NULL);
   void move(Geometry* other);
   void toImage(unsigned int idx);
-  void setTexture(DrawingObject* draw, TextureData* texture);
+  void setTexture(DrawingObject* draw, int idx);
   void drawVector(DrawingObject *draw, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength=0.f, int segment_count=24);
   void drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads=false);
