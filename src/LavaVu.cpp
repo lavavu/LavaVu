@@ -1345,11 +1345,12 @@ void LavaVu::readOBJ(FilePath& fn)
   //Use tiny_obj_loader to load a model
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
-  std::string err = tinyobj::LoadObj(shapes, materials, fn.full.c_str(), fn.path.c_str());
+  std::string err;
+  bool ret = tinyobj::LoadObj(shapes, materials, err, fn.full.c_str()); //false);
 
-  if (!err.empty())
+  if (!err.empty() || !ret)
   {
-    std::cerr << err << std::endl;
+    std::cerr << "Error loading OBJ file: " << fn.full << " - " << err << std::endl;
     return;
   }
 
@@ -1450,7 +1451,6 @@ void LavaVu::readOBJ(FilePath& fn)
     printf("  material.map_Ka = %s\n", materials[i].ambient_texname.c_str());
     printf("  material.map_Kd = %s\n", materials[i].diffuse_texname.c_str());
     printf("  material.map_Ks = %s\n", materials[i].specular_texname.c_str());
-    printf("  material.map_Ns = %s\n", materials[i].normal_texname.c_str());
     std::map<std::string, std::string>::const_iterator it(materials[i].unknown_parameter.begin());
     std::map<std::string, std::string>::const_iterator itEnd(materials[i].unknown_parameter.end());
     for (; it != itEnd; it++)
