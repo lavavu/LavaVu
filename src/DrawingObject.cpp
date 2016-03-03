@@ -50,14 +50,14 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
 
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
-  defaultTexture = NULL;
   filterout = false;
   colourIdx = 0; //Default colouring data is first value block
 }
 
 DrawingObject::~DrawingObject()
 {
-  if (defaultTexture) delete defaultTexture;
+  for (int i=0; i<textures.size(); i++)
+    delete textures[i];
 }
 
 void DrawingObject::setup()
@@ -85,119 +85,57 @@ void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
   */
 }
 
-TextureData* DrawingObject::loadTexture(std::string texfn)
+int DrawingObject::addTexture(std::string texfn)
 {
-  if (texfn.length() == 0) return NULL;
-  if (!FileExists(texfn))
-  {
-    debug_print("Texture File: %s not found!\n", texfn.c_str());
-    return NULL;
-  }
-
-  FilePath fn(texfn);
-  TextureData* texture = new TextureData();
-
-  GLenum mode = GL_REPLACE;
-  //Combined with colourmap?
-  int data_type;
-  for (data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
-  {
-    if (colourMaps[data_type])
-    {
-      mode = GL_MODULATE;
-      break;
-    }
-  }
-
-  //Load textures
-  if (fn.type == "jpg" || fn.type == "jpeg")
-    LoadTextureJPEG(texture, fn.full.c_str(), true, mode);
-  if (fn.type == "png")
-    LoadTexturePNG(texture, fn.full.c_str(), true, mode);
-  if (fn.type == "ppm")
-    LoadTexturePPM(texture, fn.full.c_str(), true, mode);
-
-  defaultTexture = texture;
-  return texture;
+  //If passed a valid file path:
+  // - will add the texture loader object but not load the file yet
+  //If not:
+  // - will add an empty texture loader object that must be manually filled
+  textures.push_back(new TextureLoader(texfn));
+  return textures.size() - 1;
 }
 
-int DrawingObject::useTexture(TextureData* texture)
+TextureData* DrawingObject::useTexture(int index)
 {
-  if (!texture) texture = defaultTexture;
-
-  if (!texture)
+  GL_Error_Check;
+  //Load default texture if available
+  if (textures.size() == 0)
   {
-    //Use default texture from properties if none loaded
-    loadTexture(properties["texturefile"].ToString(""));
-    //Load failed, skip from now
-    if (!texture) properties["texturefile"] = "";
-  }
-
-  if (texture && texture->width)
-  {
-    if (texture->depth > 1)
+    if (properties.HasKey("texturefile"))
     {
-      glEnable(GL_TEXTURE_3D);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_3D, texture->id);
+      std::string texfn = properties["texturefile"].ToString("");
+      if (texfn.length() > 0 && FileExists(texfn))
+      {
+        index = addTexture(texfn);
+      }
+      else
+      {
+        if (texfn.length() > 0) debug_print("Texture File: %s not found!\n", texfn.c_str());
+        //If load failed, skip from now on
+        properties["texturefile"] = "";
+        return NULL;
+      }
     }
     else
-    {
-      glEnable(GL_TEXTURE_2D);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, texture->id);
-    }
-    return 0; //Return unit id
+      return NULL;
   }
+
+  //Use first available texture if out of range
+  //if (index+1 > textures.size())
+  if (textures.size() > 0 && (index < 0 || index+1 > textures.size()))
+    index = textures.size() - 1;
+
+  if (index >= 0 && textures[index])
+  {
+    //On first call only loads data from external file if provided
+    //Then, and on subsequent calls, simply returns the preloaded texture
+    return textures[index]->use();
+  }
+  GL_Error_Check;
 
   //No texture:
   glDisable(GL_TEXTURE_2D);
-  return -1;
+  glDisable(GL_TEXTURE_3D);
+  return NULL;
 }
 
-void DrawingObject::load3DTexture(int width, int height, int depth, void* data, int type)
-{
-  GL_Error_Check;
-  //Create the texture
-  if (!defaultTexture) defaultTexture = new TextureData();
-  TextureData* texture = defaultTexture;
-  GL_Error_Check;
-
-  glActiveTexture(GL_TEXTURE1);
-  GL_Error_Check;
-  glBindTexture(GL_TEXTURE_3D, texture->id);
-  GL_Error_Check;
-
-  texture->width = width;
-  texture->height = height;
-  texture->depth = depth;
-
-  // set the texture parameters
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  GL_Error_Check;
-
-  //Load based on type
-  debug_print("Volume Texture: width %d height %d depth %d type %d\n", width, height, depth, type);
-  switch (type)
-  {
-  case VOLUME_FLOAT:
-    //glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
-    break;
-  case VOLUME_BYTE:
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
-    break;
-  case VOLUME_RGB:
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    break;
-  case VOLUME_RGBA:
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    break;
-  }
-  voltype = type;
-  GL_Error_Check;
-}

@@ -1346,7 +1346,7 @@ void LavaVu::readOBJ(FilePath& fn)
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string err;
-  bool ret = tinyobj::LoadObj(shapes, materials, err, fn.full.c_str()); //false);
+  bool ret = tinyobj::LoadObj(shapes, materials, err, fn.full.c_str());
 
   if (!err.empty() || !ret)
   {
@@ -1384,10 +1384,14 @@ void LavaVu::readOBJ(FilePath& fn)
         if (materials[id].diffuse_texname.length() > 0)
         {
           std::cerr << "APPLYING DIFFUSE TEXTURE: " << materials[id].diffuse_texname << std::endl;
+          std::string texpath = materials[id].diffuse_texname;
           if (fn.path.length() > 0)
-            Model::triSurfaces->setTexture(tobj, tobj->loadTexture(fn.path + "/" + materials[id].diffuse_texname));
-          else
-            Model::triSurfaces->setTexture(tobj, tobj->loadTexture(materials[id].diffuse_texname));
+            texpath = fn.path + "/" + texpath;
+
+          //Add per-object texture
+          Model::triSurfaces->setTexture(tobj, tobj->addTexture(texpath));
+          //if (tobj->properties["texturefile"].ToString("").length() == 0)
+          //  tobj->properties["texturefile"] = texpath;
         }
         else
         {
@@ -1406,16 +1410,18 @@ void LavaVu::readOBJ(FilePath& fn)
     //Can be overridden by setting trisplit (-T#)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
-    if (trisplit == 0 && shapes[i].mesh.normals.size() > 0)
+    if (trisplit == 0)
     {
       GeomData* g = Model::triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
-      Model::triSurfaces->read(tobj, shapes[i].mesh.normals.size()/3, lucNormalData, &shapes[i].mesh.normals[0]);
       Model::triSurfaces->read(tobj, shapes[i].mesh.indices.size(), lucIndexData, &shapes[i].mesh.indices[0]);
+      if (shapes[i].mesh.normals.size() > 0)
+        Model::triSurfaces->read(tobj, shapes[i].mesh.normals.size()/3, lucNormalData, &shapes[i].mesh.normals[0]);
       for (size_t f = 0; f < shapes[i].mesh.positions.size(); f += 3)
         g->checkPointMinMax(&shapes[i].mesh.positions[f]);
     }
     else
     {
+      //This won't work with textures and tex coords... ordering incorrect
       for (size_t f = 0; f < shapes[i].mesh.indices.size() / 3; f++)
       {
         unsigned ids[3] = {shapes[i].mesh.indices[3*f], shapes[i].mesh.indices[3*f+1], shapes[i].mesh.indices[3*f+2]};

@@ -115,25 +115,6 @@
 #define MoveRaster( deltaX, deltaY ) \
    glBitmap( 0,0,0.0,0.0, (float)(deltaX), (float)(deltaY), NULL )
 
-class TextureData  //Texture image data
-{
-public:
-  GLuint   bpp;      // Image Color Depth In Bits Per Pixel.
-  GLuint   width;    // Image Width
-  GLuint   height;   // Image Height
-  GLuint   depth;    // Image Depth
-  GLuint   id;       // Texture ID Used To Select A Texture
-
-  TextureData() : bpp(0), width(0), height(0), depth(0)
-  {
-    glGenTextures(1, &id);
-  }
-  ~TextureData()
-  {
-    glDeleteTextures(1, &id);
-  }
-};
-
 void compareCoordMinMax(float* min, float* max, float *coord);
 void clearMinMax(float* min, float* max);
 void getCoordRange(float* min, float* max, float* dims);
@@ -577,11 +558,6 @@ void drawVector3d_( float pos[3], float vector[3], float scale, float radius, fl
 void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
 void RawImageFlip(void* image, int width, int height, int bpp);
-int LoadTexturePPM(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
-int LoadTexturePNG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
-int LoadTextureJPEG(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
-int LoadTextureTIFF(TextureData *texture, const char *filename, bool mipmaps, GLenum mode);
-int BuildTexture(TextureData *texture, GLubyte* imageData , bool mipmaps, GLenum format, GLenum mode);
 
 void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);
 std::string getImageString(GLubyte *image, int width, int height, int bpp);
@@ -628,6 +604,55 @@ public:
   ~ImageFile()
   {
     if (pixels) delete[] pixels;
+  }
+};
+
+#define VOLUME_FLOAT 1
+#define VOLUME_BYTE 2
+#define VOLUME_RGB 3
+#define VOLUME_RGBA 4
+
+class TextureData  //Texture image data
+{
+public:
+  GLuint   bpp;      // Image Color Depth In Bits Per Pixel.
+  GLuint   width;    // Image Width
+  GLuint   height;   // Image Height
+  GLuint   depth;    // Image Depth
+  GLuint   id;       // Texture ID Used To Select A Texture
+  int      unit;
+
+  TextureData() : bpp(0), width(0), height(0), depth(0), unit(0)
+  {
+    glGenTextures(1, &id);
+  }
+  ~TextureData()
+  {
+    glDeleteTextures(1, &id);
+  }
+};
+
+class TextureLoader
+{
+public:
+  FilePath fn;       // Source data
+  bool mipmaps;
+  TextureData* texture;
+
+  TextureLoader(std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL) {}
+
+  TextureData* use();
+  void load();
+  int loadPPM();
+  int loadPNG();
+  int loadJPEG();
+  int loadTIFF();
+  int build(GLubyte* imageData, GLenum format);
+  void load3D(int width, int height, int depth, void* data, int type);
+
+  ~TextureLoader()
+  {
+    if (texture) delete texture;
   }
 };
 
