@@ -578,12 +578,12 @@ void Geometry::setState(unsigned int index, Shader* prog)
       float clipMax[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
       if (!decoration && draw->properties["clip"].ToBool(true))
       {
-        clipMin[0] = Geometry::properties["xmin"].ToFloat(-HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
-        clipMin[1] = Geometry::properties["ymin"].ToFloat(-HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
-        clipMin[2] = Geometry::properties["zmin"].ToFloat(-HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
-        clipMax[0] = Geometry::properties["xmax"].ToFloat(HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
-        clipMax[1] = Geometry::properties["ymax"].ToFloat(HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
-        clipMax[2] = Geometry::properties["zmax"].ToFloat(HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
+        clipMin[0] = view->properties["xmin"].ToFloat(-HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
+        clipMin[1] = view->properties["ymin"].ToFloat(-HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
+        clipMin[2] = view->properties["zmin"].ToFloat(-HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
+        clipMax[0] = view->properties["xmax"].ToFloat(HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
+        clipMax[1] = view->properties["ymax"].ToFloat(HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
+        clipMax[2] = view->properties["zmax"].ToFloat(HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
       }
 
       glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
