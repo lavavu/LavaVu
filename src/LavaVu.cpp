@@ -1951,12 +1951,6 @@ void LavaVu::open(int width, int height)
   if (!Geometry::properties.HasKey("ambient")) Geometry::properties["ambient"] = 0.4;
   if (!Geometry::properties.HasKey("diffuse")) Geometry::properties["diffuse"] = 0.8;
   if (!Geometry::properties.HasKey("specular")) Geometry::properties["specular"] = 0.0;
-  if (!Geometry::properties.HasKey("xmin")) Geometry::properties["xmin"] = 0.0;
-  if (!Geometry::properties.HasKey("xmax")) Geometry::properties["xmax"] = 1.0;
-  if (!Geometry::properties.HasKey("ymin")) Geometry::properties["ymin"] = 0.0;
-  if (!Geometry::properties.HasKey("ymax")) Geometry::properties["ymax"] = 1.0;
-  if (!Geometry::properties.HasKey("zmin")) Geometry::properties["zmin"] = 0.0;
-  if (!Geometry::properties.HasKey("zmax")) Geometry::properties["zmax"] = 1.0;
 
   //Initialise all viewports to window size
   for (unsigned int w=0; w<windows.size(); w++)
@@ -3087,44 +3081,59 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
 void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
 {
   //Write new JSON format objects
-  float rotate[4], translate[3], focus[3];
-  aview->getCamera(rotate, translate, focus);
-
+  //TODO:
+  // - globals are all stored on / sourced from Geometry::properties
+  // - views[] list holds view properies (previously single instance in "options")
   json::Object exported;
-  json::Object options;
+  json::Object properties = Geometry::properties;
   json::Array colourmaps;
   json::Array objects;
+  json::Array views;
 
-  options["pointScale"] = Model::points->scale;
-  options["pointType"] = Model::points->pointType;
-  options["border"] = aview->properties["border"].ToBool(false);
-  options["axes"] = aview->properties["axis"].ToBool(true);
-  options["opacity"] = GeomData::opacity;
-  json::Array rot, trans, foc, scale, min, max;
-  for (int i=0; i<4; i++)
+  properties["pointScale"] = Model::points->scale;
+  properties["pointType"] = Model::points->pointType;
+  properties["background"] = awin->background.value;
+
+  for (unsigned int v=0; v < awin->views.size(); v++)
   {
-    rot.push_back(rotate[i]);
-    if (i>2) break;
-    trans.push_back(translate[i]);
-    foc.push_back(focus[i]);
-    scale.push_back(aview->scale[i]);
-    if (aview->min[i] < HUGE_VAL && aview->max[i] > -HUGE_VAL)
-    {
-      min.push_back(aview->min[i]);
-      max.push_back(aview->max[i]);
-    }
-  }
-  options["rotate"] = rot;
-  options["translate"] = trans;
-  options["focus"] = foc;
-  options["scale"] = scale;
-  options["min"] = min;
-  options["max"] = max;
+    View* view = awin->views[v];
+    json::Object& vprops = view->properties;
 
-  options["near"] = aview->near_clip;
-  options["far"] = aview->far_clip;
-  options["orientation"] = aview->orientation;
-  options["background"] = awin->background.value;
+    float rotate[4], translate[3], focus[3];
+    view->getCamera(rotate, translate, focus);
+    json::Array rot, trans, foc, scale, min, max;
+    for (int i=0; i<4; i++)
+    {
+      rot.push_back(rotate[i]);
+      if (i>2) break;
+      trans.push_back(translate[i]);
+      foc.push_back(focus[i]);
+      scale.push_back(aview->scale[i]);
+      if (aview->min[i] < HUGE_VAL && aview->max[i] > -HUGE_VAL)
+      {
+        min.push_back(aview->min[i]);
+        max.push_back(aview->max[i]);
+      }
+    }
+
+    vprops["border"] = view->properties["border"].ToBool(false);
+    vprops["axes"] = view->properties["axis"].ToBool(true);
+    vprops["opacity"] = GeomData::opacity;
+
+    vprops["rotate"] = rot;
+    vprops["translate"] = trans;
+    vprops["focus"] = foc;
+    vprops["scale"] = scale;
+    vprops["min"] = min;
+    vprops["max"] = max;
+
+    vprops["near"] = view->near_clip;
+    vprops["far"] = view->far_clip;
+    vprops["orientation"] = view->orientation;
+
+    //Add the view
+    views.push_back(vprops);
+  }
 
   for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
   {
@@ -3214,8 +3223,8 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
     }
   }
 
-  exported["options"] = options;
-  exported["properties"] = Geometry::properties;
+  exported["properties"] = properties;
+  exported["views"] = views;
   exported["colourmaps"] = colourmaps;
   exported["objects"] = objects;
 
@@ -3224,39 +3233,60 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
 
 void LavaVu::jsonRead(std::string json)
 {
-  //Read new JSON format objects
-  json::Object exported = json::Deserialize(json);
-  Geometry::properties = exported["properties"];
-  json::Object options = exported["options"];
-  jsonMerge(aview->properties, exported["options"]);
+  //TODO: Update this to read new format!
+  json::Object imported = json::Deserialize(json);
+  Geometry::properties = imported["properties"];
+  json::Array views;
+  //If "options" exists (old format) read it as first view properties
+  if (imported.HasKey("options"))
+    views.push_back(imported["options"]);
+  else
+    views = imported["views"];
 
-  Model::points->scale = aview->properties["pointScale"];
-  Model::points->pointType = aview->properties["pointType"];
-  GeomData::opacity = aview->properties["opacity"];
+  Model::points->scale = Geometry::properties["pointScale"].ToFloat(1.0);
+  Model::points->pointType = Geometry::properties["pointType"].ToInt(0);
+  GeomData::opacity = Geometry::properties["opacity"].ToFloat(0.0);
+  awin->background = parseRGBA(Geometry::properties["background"].ToString(""));
 
-  //TODO: Fix view to use all these properties driectly
-  json::Array rot, trans, foc, scale, min, max;
-  rot = aview->properties["rotate"];
-  trans = aview->properties["translate"];
-  foc = aview->properties["focus"];
-  scale = aview->properties["scale"];
-  //min = aview->properties["min"];
-  //max = aview->properties["max"];
-  aview->setRotation(rot[0], rot[1], rot[2], rot[3]);
-  aview->setTranslation(trans[0], trans[1], trans[2]);
-  aview->focus(foc[0], foc[1], foc[2]);
-  aview->setScale(scale[0], scale[1], scale[2]);
-  //aview->init(false, newmin, newmax);
-  aview->near_clip = aview->properties["near"];
-  aview->far_clip = aview->properties["far"];
-  aview->orientation = aview->properties["orientation"];
-  awin->background = parseRGBA(aview->properties["background"]);
-
-  // Import colourmaps (change only if existing)
-  json::Array colourmaps = exported["colourmaps"];
-  for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
+  // Import views
+  for (unsigned int v=0; v < views.size(); v++)
   {
-    for (unsigned int j=0; j < colourmaps.size(); j++)
+    if (v >= awin->views.size())
+    {
+      //TODO:
+      //Insert a view based on previous in list (same objects)
+      //Apply new properties to that
+      //(This will enable adding views in the web interface)
+      break;
+    }
+    View* view = awin->views[v];
+
+    //Apply base properties
+    view->properties = views[v];
+
+    //TODO: Fix view to use all these properties directly
+    json::Array rot, trans, foc, scale, min, max;
+    rot = view->properties["rotate"];
+    trans = view->properties["translate"];
+    foc = view->properties["focus"];
+    scale = view->properties["scale"];
+    //min = aview->properties["min"];
+    //max = aview->properties["max"];
+    view->setRotation(rot[0], rot[1], rot[2], rot[3]);
+    view->setTranslation(trans[0], trans[1], trans[2]);
+    view->focus(foc[0], foc[1], foc[2]);
+    view->setScale(scale[0], scale[1], scale[2]);
+    //view->init(false, newmin, newmax);
+    view->near_clip = view->properties["near"];
+    view->far_clip = view->properties["far"];
+    view->orientation = view->properties["orientation"];
+  }
+
+  // Import colourmaps (one way: process only if exists - TODO: allow insert from web)
+  json::Array colourmaps = imported["colourmaps"];
+  for (unsigned int j=0; j < colourmaps.size(); j++)
+  {
+    for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
     {
       json::Object cmap = colourmaps[j];
       if (cmap["id"].ToInt(0) == (int)amodel->colourMaps[i]->id)
@@ -3278,7 +3308,7 @@ void LavaVu::jsonRead(std::string json)
   }
 
   //Import objects (change properties only if existing)
-  json::Array objects = exported["objects"];
+  json::Array objects = imported["objects"];
   for (unsigned int i=0; i < amodel->objects.size(); i++)
   {
     for (unsigned int j=0; j < objects.size(); j++)

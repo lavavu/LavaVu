@@ -293,13 +293,13 @@ void Volumes::render(int i)
                     props["ymax"].ToFloat(Geometry::properties["ymax"].ToFloat(0.99) * geom[i]->vertices[1][1]),
                     props["zmax"].ToFloat(Geometry::properties["zmax"].ToFloat(0.99) * geom[i]->vertices[1][2])};
   */
-  float bbMin[3] = {props["xmin"].ToFloat(Geometry::properties["xmin"].ToFloat(0.01)),
-                    props["ymin"].ToFloat(Geometry::properties["ymin"].ToFloat(0.01)),
-                    props["zmin"].ToFloat(Geometry::properties["zmin"].ToFloat(0.01))
+  float bbMin[3] = {props["xmin"].ToFloat(view->properties["xmin"].ToFloat(0.01)),
+                    props["ymin"].ToFloat(view->properties["ymin"].ToFloat(0.01)),
+                    props["zmin"].ToFloat(view->properties["zmin"].ToFloat(0.01))
                    };
-  float bbMax[3] = {props["xmax"].ToFloat(Geometry::properties["xmax"].ToFloat(0.99)),
-                    props["ymax"].ToFloat(Geometry::properties["ymax"].ToFloat(0.99)),
-                    props["zmax"].ToFloat(Geometry::properties["zmax"].ToFloat(0.99))
+  float bbMax[3] = {props["xmax"].ToFloat(view->properties["xmax"].ToFloat(0.99)),
+                    props["ymax"].ToFloat(view->properties["ymax"].ToFloat(0.99)),
+                    props["zmax"].ToFloat(view->properties["zmax"].ToFloat(0.99))
                    };
   glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
   glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
