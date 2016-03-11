@@ -621,7 +621,7 @@ void ColourMap::loadPalette(std::string data)
     {
       iss >> delim;
       std::getline(iss, value); //Read rest of stream into value
-      Colour colour = parseRGBA(value);
+      Colour colour = Colour_FromString(value);
       //Add to colourmap
       add(colour.value, pos);
       //Use positions, values will be calculated
@@ -634,7 +634,7 @@ void ColourMap::loadPalette(std::string data)
       std::size_t pos = line.find("=") + 1;
       if (pos == 11)
       {
-        Colour c = parseRGBA(line.substr(pos));
+        Colour c = Colour_FromString(line.substr(pos));
         background.r = c.rgba[0] / 255.0;
         background.g = c.rgba[1] / 255.0;
         background.b = c.rgba[2] / 255.0;

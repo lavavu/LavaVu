@@ -84,8 +84,6 @@ typedef union
 #define printColour(c) printf("RGB:A %d,%d,%d:%d\n",c.r,c.g,c.b,c.a)
 
 Colour Colour_RGBA(int r, int g, int b, int a=255);
-Colour parseRGBA(std::string value);
-
 void Colour_SetColour(Colour* colour);
 void Colour_Invert(Colour& colour);
 Colour Colour_FromJson(json& value, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);

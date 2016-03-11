@@ -27,40 +27,11 @@ void Colour_Invert(Colour& colour)
   colour.value = (~colour.value & 0x00ffffff) | alpha;
 }
 
-Colour parseRGBA(std::string value)
-{
-  //Parse rgba(r,g,b,a) values
-  Colour col;
-  int c;
-  float alpha;
-  try
-  {
-    std::stringstream ss(value.substr(5));
-    for (int i=0; i<3; i++)
-    {
-      ss >> c;
-      col.rgba[i] = c;
-      char next = ss.peek();
-      if (next == ',' || next == ' ')
-        ss.ignore();
-    }
-    ss >> alpha;
-    if (alpha > 1.)
-      col.a = alpha;
-    else
-      col.a = 255 * alpha;
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "Failed to parse rgba colour: " << value << " : " << e.what() << std::endl;
-  }
-  return col; //rgba(c[0],c[1],c[2],c[3]);
-}
-
 Colour Colour_FromJson(json& value, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
   Colour colour = {red, green, blue, alpha};
-  //Will accept integer colour or [r,g,b,a] array or string containing x11 name or #hex)
+  //Will accept integer colour or [r,g,b,a] array or 
+  // string containing x11 name or hex #rrggbb or html rgba(r,g,b,a) 
   if (value.is_number())
   {
     colour.value = value;
@@ -95,6 +66,7 @@ json Colour_ToJson(int colourval)
 
 json Colour_ToJson(Colour& colour)
 {
+  //Default storage type is simple array [R,G,B,A] [0,1]
   json array = {colour.r/255.0, colour.g/255.0, colour.b/255.0, colour.a/255.0};
   return array;
 }
@@ -116,28 +88,58 @@ void Colour_ToArray(Colour colour, float* array)
 
 Colour Colour_FromString(std::string str)
 {
-  float opacity = 1.0;
-
-  /* Get Opacity From String */
-  /* Opacity must be read in after the ":" of the name of the colour */
-  unsigned int pos = str.find(":");
-  if (pos != std::string::npos)
+  Colour colour;
+  if (str.find("rgba(") != std::string::npos) 
   {
-    std::stringstream ss(str.substr(pos+1));
-    if (!(ss >> opacity))
-      opacity = 1.0;
-    str = str.substr(0, pos);
+    //Parse HTML format rgba(r,g,b,a) values
+    //RGB all [0,255], Alpha can be [0-255] or [0,1]
+    int c;
+    float alpha;
+    try
+    {
+      std::stringstream ss(str.substr(5));
+      for (int i=0; i<3; i++)
+      {
+        ss >> c;
+        colour.rgba[i] = c;
+        char next = ss.peek();
+        if (next == ',' || next == ' ')
+          ss.ignore();
+      }
+      ss >> alpha;
+      if (alpha > 1.)
+        colour.a = alpha;
+      else
+        colour.a = 255 * alpha;
+    }
+    catch (std::exception& e)
+    {
+      std::cerr << "Failed to parse rgba colour: " << str << " : " << e.what() << std::endl;
+    }
   }
+  else
+  {
+    //Parses X11 colour names or hex #RRGGBB with
+    // optional alpha indicated by colon then value [0,1]
+    float opacity = 1.0;
+    unsigned int pos = str.find(":");
+    if (pos != std::string::npos)
+    {
+      std::stringstream ss(str.substr(pos+1));
+      if (!(ss >> opacity))
+        opacity = 1.0;
+      str = str.substr(0, pos);
+    }
 
-  Colour colour = Colour_FromX11Colour(str);
+    colour = Colour_FromX11Colour(str);
 
-  colour.a = opacity * 255;
+    colour.a = opacity * 255;
+  }
   return colour;
 }
 
-/* Reads hex or colour from X11 Colour Chart */
-/* Defaults to black if anything else */
-
+// Reads hex or colour from X11 colour list
+// Defaults to black
 Colour Colour_FromX11Colour(std::string x11colour)
 {
   std::transform(x11colour.begin(), x11colour.end(), x11colour.begin(), ::tolower);
