@@ -3187,7 +3187,7 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
   json views = json::array();
 
   //TODO: convert this to a global prop too and store as rgba() string
-  properties["background"] = awin->background.value;
+  properties["background"] = Colour_ToJson(awin->background);
 
   for (unsigned int v=0; v < awin->views.size(); v++)
   {
@@ -3337,7 +3337,7 @@ void LavaVu::jsonRead(std::string data)
     views = imported["views"];
 
   //TODO: get rid of this & store/get from property directly instead of Win class
-  awin->background = parseRGBA(Properties::global("background"));
+  awin->background = Colour_FromJson(Properties::global("background"));
 
   // Import views
   for (unsigned int v=0; v < views.size(); v++)
@@ -3391,7 +3391,7 @@ void LavaVu::jsonRead(std::string data)
         for (unsigned int c=0; c < colours.size(); c++)
         {
           json colour = colours[c];
-          Colour newcolour = parseRGBA(colour["colour"]);
+          Colour newcolour = Colour_FromJson(colour["colour"]);
           amodel->colourMaps[i]->add(newcolour.value, colour["position"]);
         }
       }
