@@ -67,7 +67,7 @@ public:
   Colour background;
   unsigned int id;
   std::string name;
-  json::Object properties;
+  Properties properties;
   float minimum;
   float maximum;
   float range;
@@ -101,7 +101,7 @@ public:
   Colour get(float value);
   float scaleValue(float value);
   Colour getFromScaled(float scaledValue);
-  void draw(json::Object& propertiess, int startx, int starty, int length, int height, Colour& printColour, bool vertical);
+  void draw(Properties& propertiess, int startx, int starty, int length, int height, Colour& printColour, bool vertical);
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);

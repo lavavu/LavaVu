@@ -746,11 +746,14 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(fval, "alpha"))
   {
+    float opacity = Properties::global("opacity");
+    if (opacity == 0.0) opacity = 1.0;
     if (fval > 1.0)
-      GeomData::opacity = fval / 255.0;
+      opacity = fval / 255.0;
     else
-      GeomData::opacity = fval;
-    printMessage("Set global alpha to %.2f", GeomData::opacity);
+      opacity = fval;
+    Properties::globals["opacity"] = opacity;
+    printMessage("Set global alpha to %.2f", opacity);
     if (amodel)
       amodel->redraw();
     return false;
@@ -761,13 +764,6 @@ bool LavaVu::parseCommand(std::string cmd)
     Model::pointspheres = !Model::pointspheres;
     printMessage("Points rendered as spheres is %s", Model::pointspheres ? "ON":"OFF");
     return false;
-  }
-  else if (parsed.exists("linetubes"))
-  {
-    Lines::tubes = !Lines::tubes;
-    printMessage("Lines rendered as tubes is %s", Lines::tubes ? "ON":"OFF");
-    amodel->redraw();
-    return true;
   }
   else if (parsed.exists("open"))
   {
@@ -1156,30 +1152,12 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     std::string axis = parsed["axis"];
     if (parsed["axis"] == "on")
-      aview->properties["axis"] = true;
+      aview->properties.data["axis"] = true;
     else if (parsed["axis"] == "off")
-      aview->properties["axis"] = false;
+      aview->properties.data["axis"] = false;
     else
-      aview->properties["axis"] = !aview->properties["axis"].ToBool(true);
-    printMessage("Axis %s", aview->properties["axis"].ToBool() ? "ON" : "OFF");
-  }
-  else if (parsed.exists("cullface"))
-  {
-    GeomData::cullface = !GeomData::cullface;
-    amodel->redraw();
-    printMessage("Back face culling for surfaces is %s", GeomData::cullface ? "ON":"OFF");
-  }
-  else if (parsed.exists("wireframe"))
-  {
-    GeomData::wireframe = !GeomData::wireframe;
-    amodel->redraw();
-    printMessage("Wireframe %s", GeomData::wireframe ? "ON":"OFF");
-  }
-  else if (parsed.exists("lighting"))
-  {
-    //Lighting ON/OFF
-    GeomData::lit = !GeomData::lit;
-    printMessage("Lighting is %s", GeomData::lit ? "ON":"OFF");
+      aview->properties.data["axis"] = !aview->properties["axis"];
+    printMessage("Axis %s", aview->properties["axis"] ? "ON" : "OFF");
   }
   else if (parsed.exists("redraw"))
   {
@@ -1219,15 +1197,15 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     //Hide or set title
     if (cmd.length() > 6)
-      aview->properties["title"] = parsed["title"];
+      aview->properties.data["title"] = parsed["title"];
     else
-      aview->properties["title"] = "";
+      aview->properties.data["title"] = "";
   }
   else if (parsed.exists("rulers"))
   {
     //Show/hide rulers
-    aview->properties["rulers"] = !aview->properties["rulers"].ToBool(false);
-    printMessage("Rulers %s", aview->properties["rulers"].ToBool() ? "ON" : "OFF");
+    aview->properties.data["rulers"] = !aview->properties["rulers"];
+    printMessage("Rulers %s", aview->properties["rulers"] ? "ON" : "OFF");
   }
   else if (parsed.exists("log"))
   {
@@ -1269,11 +1247,10 @@ bool LavaVu::parseCommand(std::string cmd)
       std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file");
       std::cout << "\nDisplay commands:\n\n";
       std::cout << helpCommand("background") << helpCommand("alpha");
-      std::cout << helpCommand("axis") << helpCommand("cullface") << helpCommand("wireframe");
-      std::cout << helpCommand("redraw") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
+      std::cout << helpCommand("axis") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
       std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
       std::cout << helpCommand("lighting") << helpCommand("colourmap") << helpCommand("pointtype");
-      std::cout << helpCommand("glyphquality") << helpCommand("pointsample");
+      std::cout << helpCommand("pointsample");
       std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
     }
     else if (cmd.length() > 0)
@@ -1292,8 +1269,8 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("antialias"))
   {
-    aview->properties["antialias"] = !aview->properties["antialias"].ToBool(true);
-    printMessage("Anti-aliasing %s", aview->properties["antialias"].ToBool() ? "ON":"OFF");
+    aview->properties.data["antialias"] = !aview->properties["antialias"];
+    printMessage("Anti-aliasing %s", aview->properties["antialias"] ? "ON":"OFF");
   }
   else if (parsed.exists("localise"))
   {
@@ -1302,6 +1279,11 @@ bool LavaVu::parseCommand(std::string cmd)
       Model::geometry[type]->localiseColourValues();
     printMessage("ColourMap scales localised");
     amodel->redraw(true); //Colour change so force reload
+  }
+  else if (parsed.exists("json"))
+  {
+    //Export json settings only (no object data)
+    jsonWriteFile(0, false, false);
   }
   else if (parsed.exists("export"))
   {
@@ -1470,7 +1452,7 @@ bool LavaVu::parseCommand(std::string cmd)
       if (str.find('[') != std::string::npos)
       {
         //Parse colour json array
-        json::Value j = json::Deserialize(str);
+        json j = json::parse(str);
         c = Colour_FromJson(j);
       }
       else
@@ -1496,14 +1478,14 @@ bool LavaVu::parseCommand(std::string cmd)
     std::string what = parsed["pointtype"];
     if (what == "all")
     {
-      //Should use a set method here...
+      int pt = 1;
+      if (Properties::globals.count("pointtype") > 0)
+        pt = Properties::globals["pointtype"];
       if (parsed.has(ival, "pointtype", 1))
-        Points::pointType = ival;
+        Properties::globals["pointtype"] = ival % 5;
       else
-        Points::pointType++;
-      if (Points::pointType > 4) Points::pointType = 0;
-      if (Points::pointType < 0) Points::pointType = 4;
-      printMessage("Point type %d", Points::pointType);
+        Properties::globals["pointtype"] = (pt+1) % 5;
+      printMessage("Point type %d", (int)Properties::globals["pointtype"]);
     }
     else
     {
@@ -1518,27 +1500,19 @@ bool LavaVu::parseCommand(std::string cmd)
       }
       if (obj)
       {
+        int pt = obj->properties["pointtype"];
         if (parsed.has(ival, "pointtype", next))
-          obj->properties["pointtype"] = ival;
+          obj->properties.data["pointtype"] = ival;
         else if (parsed.get("pointtype", next) == "up")
-          obj->properties["pointtype"] = (obj->properties["pointtype"].ToInt(-1)-1) % 5;
+          obj->properties.data["pointtype"] = (pt-1) % 5;
         else if (parsed.get("pointtype", next) == "down")
-          obj->properties["pointtype"] = (obj->properties["pointtype"].ToInt(-1)+1) % 5;
-        printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointtype"].ToInt(-1));
+          obj->properties.data["pointtype"] = (pt+1) % 5;
+        printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointtype"]);
         Model::geometry[lucPointType]->redraw = true;
         redraw(obj->id);
         amodel->redraw();
       }
     }
-  }
-  else if (parsed.has(ival, "glyphquality"))
-  {
-    if (ival < 0 || ival > 10) return false;
-    Model::vectors->redraw = true;
-    Model::tracers->redraw = true;
-    Model::shapes->redraw = true;
-    GeomData::glyphs = ival;
-    printMessage("Glyph quality set to %d", GeomData::glyphs);
   }
   else if (parsed.exists("pointsample"))
   {
@@ -1602,27 +1576,27 @@ bool LavaVu::parseCommand(std::string cmd)
   else if (parsed.exists("border"))
   {
     //Frame off/on/filled
-    aview->properties["fillborder"] = false;
-    int state = aview->properties["border"].ToInt(1);
+    aview->properties.data["fillborder"] = false;
+    int state = aview->properties["border"];
     if (parsed["border"] == "on")
-      aview->properties["border"] = 1;
+      aview->properties.data["border"] = 1;
     else if (parsed["border"] == "off")
-      aview->properties["border"] = 0;
+      aview->properties.data["border"] = 0;
     else if (parsed["border"] == "filled")
     {
-      aview->properties["fillborder"] = true;
-      aview->properties["border"] = 1;
+      aview->properties.data["fillborder"] = true;
+      aview->properties.data["border"] = 1;
     }
     else
     {
       if (parsed.has(ival, "border"))
-        aview->properties["border"] = ival;
+        aview->properties.data["border"] = ival;
       else if (state > 0)
-        aview->properties["border"] = 0;
+        aview->properties.data["border"] = 0;
       else
-        aview->properties["border"] = 1;
+        aview->properties.data["border"] = 1;
     }
-    printMessage("Frame set to %d, filled=%d", aview->properties["border"].ToInt(), aview->properties["fillborder"].ToBool());
+    printMessage("Frame set to %d, filled=%d", aview->properties["border"], aview->properties["fillborder"]);
   }
   else if (parsed.exists("camera"))
   {
@@ -1636,14 +1610,17 @@ bool LavaVu::parseCommand(std::string cmd)
     Geometry* active = getGeometryType(what);
     if (active)
     {
+      std::string key = "scale" + what;
+      float scale = 1.0;
+      if (Properties::globals.count(key) > 0) scale = Properties::globals[key];
       if (parsed.has(fval, "scale", 1))
-        active->scale = fval;
+        Properties::globals[key] = fval;
       else if (parsed.get("scale", 1) == "up")
-        active->scale *= 1.5;
+        Properties::globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
-        active->scale /= 1.5;
+        Properties::globals[key] = scale / 1.5;
       active->redraw = true;
-      printMessage("%s scaling set to %f", what.c_str(), active->scale);
+      printMessage("%s scaling set to %f", what.c_str(), Properties::globals[key]);
     }
     else
     {
@@ -1691,13 +1668,15 @@ bool LavaVu::parseCommand(std::string cmd)
         }
         if (obj)
         {
+          float sc = obj->properties["scaling"];
+          if (sc <= 0.0) sc = 1.0;
           if (parsed.has(fval, "scale", next))
-            obj->properties["scaling"] = fval;
+            obj->properties.data["scaling"] = fval;
           else if (parsed.get("scale", next) == "up")
-            obj->properties["scaling"] = obj->properties["scaling"].ToFloat(1.0) * 1.5;
+            obj->properties.data["scaling"] = sc * 1.5;
           else if (parsed.get("scale", next) == "down")
-            obj->properties["scaling"] = obj->properties["scaling"].ToFloat(1.0) / 1.5;
-          printMessage("%s scaling set to %f", obj->name.c_str(), obj->properties["scaling"].ToFloat(1.0));
+            obj->properties.data["scaling"] = sc / 1.5;
+          printMessage("%s scaling set to %f", obj->name.c_str(), obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
             Model::geometry[type]->redraw = true;
           redraw(obj->id);
@@ -2062,7 +2041,7 @@ bool LavaVu::parseCommand(std::string cmd)
 bool LavaVu::parsePropertySet(std::string cmd)
 {
   std::size_t found = cmd.find("=");
-  json::Value jval;
+  json jval;
   if (found == std::string::npos) return false;
   parseProperty(cmd);
   if (aobject && aobject->id) redraw(aobject->id);
@@ -2087,8 +2066,8 @@ std::string LavaVu::helpCommand(std::string cmd)
             "\nObject commands:\n\n"
             "hide, show, delete, load, select\n"
             "\nDisplay commands:\n\n"
-            "background, alpha, opacity, axis, cullface, wireframe, scaling, rulers, log\n"
-            "antialias, localise, lockscale, lighting, colourmap, pointtype, glyphquality\n"
+            "background, alpha, axis, scaling, rulers, log\n"
+            "antialias, localise, lockscale, lighting, colourmap, pointtype\n"
             "pointsample, border, title, scale\n";
   }
   else if (cmd == "rotation")
@@ -2322,16 +2301,6 @@ std::string LavaVu::helpCommand(std::string cmd)
             "Usage: axis (on/off)\n\n"
             "on/off (optional) : show/hide the axis, if omitted switches state\n";
   }
-  else if (cmd == "cullface")
-  {
-    help += "Switch surface face culling (global setting)\n\n"
-            "Will not effect objects with cullface set explicitly\n";
-  }
-  else if (cmd == "wireframe")
-  {
-    help += "Switch surface wireframe (global setting)\n\n"
-            "Will not effect objects with wireframe set explicitly\n";
-  }
   else if (cmd == "fullscreen")
   {
     help += "Switch viewer to full-screen mode and back to windowed mode\n";
@@ -2441,12 +2410,6 @@ std::string LavaVu::helpCommand(std::string cmd)
             "object_name (string) : the name of the object to set (see: \"list objects\")\n"
             "type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)\n"
             "up/down : use 'up' or 'down' to switch to the previous/next type in list\n";
-  }
-  else if (cmd == "glyphquality")
-  {
-    help += "Set vector/tracer/shape rendering quality\n\n"
-            "Usage: glyphquality value\n\n"
-            "value (integer) : 0=flat, [1-10] increasing quality of 3d glyphs (default 2)\n";
   }
   else if (cmd == "pointsample")
   {

@@ -68,16 +68,19 @@ void Vectors::update()
   int tot = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
+    Properties& props = geom[i]->draw->properties;
+
     //Create new data stores for output geometry
     tris->add(geom[i]->draw);
     lines->add(geom[i]->draw);
 
     tot += geom[i]->count;
 
-    float arrowHead = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
+    float arrowHead = props["arrowhead"];
 
     //Dynamic range?
-    float scaling = scale * geom[i]->draw->properties["scaling"].ToFloat(1.0);
+    float scaling = props["scaling"];
+    scaling *= (float)props["scalevectors"];
 
     if (geom[i]->vectors.maximum > 0)
     {
@@ -87,12 +90,14 @@ void Vectors::update()
     }
 
     //Load scaling factors from properties
-    int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
-    scaling *= geom[i]->draw->properties["length"].ToFloat(1.0);
+    int quality = 4 * (int)props["glyphs"];
+    float length = props["length"];
+    scaling *= length;
     //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
 
     //Default (0) = automatically calculated radius
-    float radius = scale * geom[i]->draw->properties["radius"].ToFloat(0.0);
+    float radius = props["radius"];
+    radius *= scaling;
 
     if (scaling <= 0) scaling = 1.0;
 
@@ -100,7 +105,7 @@ void Vectors::update()
 
     Colour colour;
     geom[i]->colourCalibrate();
-    bool flat = geom[i]->draw->properties["flat"].ToBool(false) || quality < 1;
+    bool flat = props["flat"] || quality < 1;
 
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
@@ -159,7 +164,7 @@ void Vectors::draw()
   lines->draw();
 }
 
-void Vectors::jsonWrite(unsigned int id, json::Object& obj)
+void Vectors::jsonWrite(unsigned int id, json& obj)
 {
   tris->jsonWrite(id, obj);
   lines->jsonWrite(id, obj);

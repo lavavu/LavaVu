@@ -69,6 +69,8 @@ void Tracers::update()
   tris->setView(view);
   for (unsigned int i=0; i<geom.size(); i++)
   {
+    Properties& props = geom[i]->draw->properties;
+
     //Create a new data stores for output geometry
     tris->add(geom[i]->draw);
     lines->add(geom[i]->draw);
@@ -80,7 +82,7 @@ void Tracers::update()
     int timesteps = (datasteps-1) * TimeStep::gap + 1; //Multiply by gap between recorded steps
 
     //Per-Swarm step limit
-    int drawSteps = geom[i]->draw->properties["steps"].ToInt(0);
+    int drawSteps = props["steps"];
     if (drawSteps > 0 && timesteps > drawSteps)
       timesteps = drawSteps;
 
@@ -107,13 +109,16 @@ void Tracers::update()
     }
 
     //Get properties
-    bool taper = geom[i]->draw->properties["taper"].ToBool(true);
-    bool fade = geom[i]->draw->properties["fade"].ToBool(false);
-    int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
-    float size0 = geom[i]->draw->properties["scaling"].ToFloat(1.0) * 0.001;
-    float limit = geom[i]->draw->properties["limit"].ToFloat(view->model_size * 0.3);
-    float factor = geom[i]->draw->properties["scaling"].ToFloat(1.0) * scale * TimeStep::gap * 0.0005;
-    float arrowSize = geom[i]->draw->properties["arrowhead"].ToFloat(2.0);
+    bool taper = props["taper"];
+    bool fade = props["fade"];
+    int quality = 4 * (int)props["glyphs"];
+    float size0 = props["scaling"];
+    size0 *= 0.001;
+    float limit = props.getFloat("limit", view->model_size * 0.3);
+    float factor = props["scaling"];
+    float scaling = props["scaletracers"];
+    factor *= scaling * TimeStep::gap * 0.0005;
+    float arrowSize = props["arrowhead"];
     //Iterate individual tracers
     float size;
     for (unsigned int p=0; p < particles; p++)
@@ -122,7 +127,7 @@ void Tracers::update()
       Colour colour, oldColour;
       float radius, oldRadius = 0;
       size = size0;
-      bool flat = geom[i]->draw->properties["flat"].ToBool(false) || quality < 1;
+      bool flat = props["flat"] || quality < 1;
       //Loop through time steps
       for (int step=start; step <= end; step++)
       {
@@ -159,7 +164,7 @@ void Tracers::update()
         //Fade out
         if (fade) colour.a = 255 * (step-start) / (float)(end-start);
 
-        radius = scale * size;
+        radius = scaling * size;
 
         // Draw section
         if (step > start)
@@ -227,7 +232,7 @@ void Tracers::draw()
   lines->draw();
 }
 
-void Tracers::jsonWrite(unsigned int id, json::Object& obj)
+void Tracers::jsonWrite(unsigned int id, json& obj)
 {
   tris->jsonWrite(id, obj);
   lines->jsonWrite(id, obj);

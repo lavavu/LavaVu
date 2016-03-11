@@ -82,6 +82,114 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   std::string result = "";
   if (noserver) port = 0;
 
+  //Setup default properties
+  
+  //Object defaults
+  Properties::defaults["static"] = false;
+  Properties::defaults["lit"] = true;
+  Properties::defaults["cullface"] = true;
+  Properties::defaults["wireframe"] = false;
+  Properties::defaults["flat"] = false; //True for lines?
+  Properties::defaults["depthtest"] = true;
+
+  Properties::defaults["opacity"] = 1.0;
+  Properties::defaults["brightness"] = 0.0;
+  Properties::defaults["contrast"] = 1.0;
+  Properties::defaults["saturation"] = 1.0;
+
+  Properties::defaults["ambient"] = 0.4;
+  Properties::defaults["diffuse"] = 0.8;
+  Properties::defaults["specular"] = 0.0;
+
+  Properties::defaults["xmin"] = -FLT_MAX;
+  Properties::defaults["ymin"] = -FLT_MAX;
+  Properties::defaults["zmin"] = -FLT_MAX;
+  Properties::defaults["xmax"] = FLT_MAX;
+  Properties::defaults["ymax"] = FLT_MAX;
+  Properties::defaults["zmax"] = FLT_MAX;
+
+  Properties::defaults["glyphs"] = 2;
+  Properties::defaults["scaling"] = 1.0;
+  Properties::defaults["clip"] = true;
+  Properties::defaults["texturefile"] = "";
+  Properties::defaults["colourby"] = 0;
+
+  //ColourBar
+  Properties::defaults["colourbar"] = false;
+  Properties::defaults["position"] = 0;
+  Properties::defaults["align"] = "bottom";
+  Properties::defaults["margin"] = 16;
+  Properties::defaults["lengthfactor"] = 0.8;
+  //Properties::defaults["width"] = 10; //CONFLICT with shapes
+
+  //Labels/text
+  Properties::defaults["font"] = "vector";
+  Properties::defaults["fontscale"] = 1.0;
+
+  //Lines
+  Properties::defaults["limit"] = 0;
+  Properties::defaults["link"] = false;
+  Properties::defaults["scalelines"] = 1.0;
+  Properties::defaults["linewidth"] = 1.0;
+  Properties::defaults["tubes"] = false;
+
+  //Points
+  Properties::defaults["pointsize"] = 1.0;
+  Properties::defaults["pointtype"] = 1;
+  Properties::defaults["scalepoints"] = 1.0;
+
+  //Surfaces
+  Properties::defaults["opaque"] = false;
+
+  //Volumes
+  Properties::defaults["colourmap"] = true;
+  Properties::defaults["power"] = 1.0;
+  Properties::defaults["samples"] = 256;
+  Properties::defaults["density"] = 5.0;
+  Properties::defaults["isovalue"] = 0.0;
+  Properties::defaults["colour"] = {220, 220, 200, 255};
+  Properties::defaults["isoalpha"] = 1.0;
+  Properties::defaults["isosmooth"] = 0.1;
+  Properties::defaults["isowalls"] = true;
+  Properties::defaults["tricubicfilter"] = false;
+  Properties::defaults["dminclip"] = 0.0;
+  Properties::defaults["dmaxclip"] = 1.0;
+
+  //Vectors
+  Properties::defaults["arrowhead"] = 2.0;
+  Properties::defaults["scalevectors"] = 1.0;
+  Properties::defaults["length"] = 1.0;
+  Properties::defaults["radius"] = 0.0;
+
+  //Tracers
+  Properties::defaults["steps"] = 0;
+  Properties::defaults["taper"] = true;
+  Properties::defaults["fade"] = false;
+  //Properties::defaults["limit"] = view->model_size * 0.3;
+  Properties::defaults["scaletracers"] = 1.0;
+
+  //Shapes
+  Properties::defaults["width"] = FLT_MIN;
+  Properties::defaults["height"] = FLT_MIN;
+  Properties::defaults["length"] = FLT_MIN;
+  Properties::defaults["shape"] = 0;
+  Properties::defaults["scaleshapes"] = 1.0;
+
+  //ColourMaps
+  Properties::defaults["ticks"] = 0;
+  Properties::defaults["printticks"] = true;
+  Properties::defaults["printunits"] = false;
+  Properties::defaults["scientific"] = false;
+  Properties::defaults["precision"] = 2;
+  Properties::defaults["scalevalue"] = 1.0;
+  //Properties::defaults["border"] = 1.0; //Conflict with global
+
+  //View - see View() constructor
+
+  //Global Properties::defaults
+  Properties::defaults["cachevolumes"] = false;
+  Properties::defaults["filestep"] = false;
+
 //Evil platform specific extension handling stuff
 #if defined _WIN32
   //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
@@ -132,7 +240,6 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
       std::cout << " -v : Verbose output, debugging info displayed to console\n";
       std::cout << " -o : output mode: all commands entered dumped to standard output,\n";
       std::cout << "      useful for redirecting to a script file to recreate a visualisation setup.\n";
-      std::cout << " -a#: set global alpha to # [0,255] where 255 is fully opaque\n";
       std::cout << " -p#: port, web server interface listen on port #\n";
       std::cout << " -q#: quality, web server jpeg quality (0=don't serve images)\n";
       std::cout << " -n#: number of threads to launch for web server #\n";
@@ -366,7 +473,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bk, BEFHKLMOXYZ
+      //Unused switches: abk, BEFHKLMOXYZ
       switch (x)
       {
       case 'P':
@@ -391,11 +498,6 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'x':
         ss >> viewer->outwidth >> x >> viewer->outheight;
-        break;
-      case 'a':
-        //Opacity override: either [0,1] or (1,255]
-        ss >> GeomData::opacity;
-        if (GeomData::opacity > 1.0) GeomData::opacity /= 255.0;
         break;
       case 'c':
         ss >> TimeStep::cachesize;
@@ -483,7 +585,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'e':
         //Add new timesteps after loading files
-        Geometry::properties["filestep"] = true;
+        Properties::globals["filestep"] = true;
         break;
       case 'u':
         //Return encoded image string from run()
@@ -695,22 +797,22 @@ void LavaVu::parseProperty(std::string& data)
   std::string key = data.substr(0,data.find("="));
   if (aobject)
   {
-    jsonParseProperty(data, aobject->properties);
+    aobject->properties.parse(data);
     if (infostream != NULL)
-      std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
+      std::cerr << "OBJECT " << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
   }
-  else if (aview && aview->properties.HasKey(key))
+  else if (aview && aview->properties.data.count(key) > 0)
   {
-    jsonParseProperty(data, aview->properties);
+    aview->properties.parse(data);
     if (infostream != NULL)
-      std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
+      std::cerr << "VIEW: " << aview->properties.data << std::endl;
   }
   else
   {
     //Properties not found on view are set globally
-    jsonParseProperty(data, Geometry::properties);
+    aview->properties.parse(data, true);
     if (infostream != NULL)
-      std::cerr << "GLOBAL: " << json::Serialize(Geometry::properties) << std::endl;
+      std::cerr << "GLOBAL: " << Properties::globals << std::endl;
   }
 }
 
@@ -718,11 +820,11 @@ void LavaVu::printProperties()
 {
   //Show properties of selected object or view/globals
   if (aobject)
-    std::cerr << "OBJECT " << aobject->name << ", DATA: " << json::Serialize(aobject->properties) << std::endl;
+    std::cerr << "OBJECT " << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
   else
   {
-    std::cerr << "VIEW: " << json::Serialize(aview->properties) << std::endl;
-    std::cerr << "GLOBAL: " << json::Serialize(Geometry::properties) << std::endl;
+    std::cerr << "VIEW: " << aview->properties.data << std::endl;
+    std::cerr << "GLOBAL: " << Properties::globals << std::endl;
   }
 }
 
@@ -1263,7 +1365,7 @@ void LavaVu::readHeightMapImage(FilePath& fn)
 
   float heightrange = 10.0;
   float min[3] = {0, 0, 0};
-  float max[3] = {image.width, heightrange, image.height};
+  float max[3] = {(float)image.width, heightrange, (float)image.height};
 
   viewer->title = fn.base;
 
@@ -1391,7 +1493,7 @@ void LavaVu::readOBJ(FilePath& fn)
           //Add per-object texture
           Model::triSurfaces->setTexture(tobj, tobj->addTexture(texpath));
           //if (tobj->properties["texturefile"].ToString("").length() == 0)
-          //  tobj->properties["texturefile"] = texpath;
+          //  tobj->properties.data["texturefile"] = texpath;
         }
         else
         {
@@ -1912,7 +2014,7 @@ void LavaVu::createDemoModel()
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
       obj = addObject(new DrawingObject(label, "opacity=0.5\nstatic=1\n"));
-      obj->properties["colour"] = Colour_ToJson(0xff000000 | 0xff<<(8*i));
+      obj->properties.data["colour"] = Colour_ToJson(0xff000000 | 0xff<<(8*i));
       Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
     }
   }
@@ -1943,14 +2045,6 @@ void LavaVu::open(int width, int height)
   //Init geometry containers
   for (unsigned int i=0; i < Model::geometry.size(); i++)
     Model::geometry[i]->init();
-
-  //Some default global properties
-  if (!Geometry::properties.HasKey("brightness")) Geometry::properties["brightness"] = 0.0;
-  if (!Geometry::properties.HasKey("contrast")) Geometry::properties["contrast"] = 1.0;
-  if (!Geometry::properties.HasKey("saturation")) Geometry::properties["saturation"] = 1.0;
-  if (!Geometry::properties.HasKey("ambient")) Geometry::properties["ambient"] = 0.4;
-  if (!Geometry::properties.HasKey("diffuse")) Geometry::properties["diffuse"] = 0.8;
-  if (!Geometry::properties.HasKey("specular")) Geometry::properties["specular"] = 0.0;
 
   //Initialise all viewports to window size
   for (unsigned int w=0; w<windows.size(); w++)
@@ -2001,10 +2095,11 @@ void LavaVu::resize(int new_width, int new_height)
     {
       float size1 = new_width * new_height;
       float r = sqrt(size1 / size0);
+      float pscale = Properties::global("scalepoints");
       // Adjust particle size by smallest of dimension changes
-      debug_print("Adjusting particle size scale %f to ", Model::points->scale);
-      Model::points->scale *= r;
-      debug_print("%f ( * %f )\n", Model::points->scale, r);
+      debug_print("Adjusting particle size scale %f to ", pscale);
+      Properties::globals["scalepoints"] = pscale * r;
+      debug_print("%f ( * %f )\n", pscale*r, r);
       std::ostringstream ss;
       ss << "resize " << new_width << " " << new_height;
       record(true, ss.str());
@@ -2038,10 +2133,10 @@ void LavaVu::resetViews(bool autozoom)
 
   //Set viewer title
   std::stringstream title;
-  std::string vpt = aview->properties["title"].ToString("");
+  std::string vpt = aview->properties["title"];
   if (vpt.length() > 0)
   {
-    title << aview->properties["title"].ToString();
+    title << aview->properties["title"];
     title << " (" << awin->name << ")";
   }
   else
@@ -2112,7 +2207,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
                 Geometry::max[0], Geometry::max[1], Geometry::max[2]);
 
     // Apply step autozoom if set (applied based on detected bounding box)
-    if (autozoom && aview->properties["zoomstep"].ToInt(-1) > 0 && amodel->step() % aview->properties["zoomstep"].ToInt(-1) == 0)
+    int zstep = aview->properties["zoomstep"];
+    if (autozoom && zstep > 0 && amodel->step() % zstep == 0)
       aview->zoomToFit();
   }
   else
@@ -2278,8 +2374,8 @@ void LavaVu::display(void)
 
 void LavaVu::drawAxis()
 {
-  bool doaxis = aview->properties["axis"].ToBool(true);
-  float axislen = aview->properties["axislength"].ToFloat(0.1);
+  bool doaxis = aview->properties["axis"];
+  float axislen = aview->properties["axislength"];
 
   if (!doaxis) return;
   infostream = NULL;
@@ -2322,7 +2418,7 @@ void LavaVu::drawAxis()
   axis->clear();
   axis->setView(aview);
   static DrawingObject* aobj = NULL;
-  if (!aobj) aobj = new DrawingObject("axis", "decoration=true");
+  if (!aobj) aobj = new DrawingObject("axis", "wireframe=false\nclip=false\n");
   axis->add(aobj);
 
   {
@@ -2377,21 +2473,21 @@ void LavaVu::drawAxis()
 
 void LavaVu::drawRulers()
 {
-  if (!aview->properties["rulers"].ToBool(false)) return;
+  if (!aview->properties["rulers"]) return;
   infostream = NULL;
   static DrawingObject* obj = NULL;
   rulers->clear();
   rulers->setView(aview);
-  if (!obj) obj = new DrawingObject("rulers", "decoration=true\nlit=false");
+  if (!obj) obj = new DrawingObject("rulers", "wireframe=false\nclip=false\nlit=false");
   rulers->add(obj);
-  obj->properties["linewidth"] = aview->textscale * aview->properties["linewidth"].ToFloat(1.5);
-  //obj->properties["fontscale"] = aview->textscale *
-  obj->properties["fontscale"] = aview->properties["fontscale"].ToFloat(1.0) * 0.08*aview->model_size;
+  obj->properties.data["linewidth"] = aview->textscale * (float)aview->properties["rulerwidth"];
+  //obj->properties.data["fontscale"] = aview->textscale *
+  obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.08*aview->model_size;
   //Colour for labels
-  obj->properties["colour"] = Colour_ToJson(viewer->inverse);
+  obj->properties.data["colour"] = Colour_ToJson(viewer->inverse);
 
 
-  int ticks = aview->properties["rulerticks"].ToInt(5);
+  int ticks = aview->properties["rulerticks"];
   //Axis rulers
   float shift[3] = {0.01f/aview->scale[0] * aview->model_size,
                     0.01f/aview->scale[1] * aview->model_size,
@@ -2505,26 +2601,26 @@ void LavaVu::drawBorder()
   static DrawingObject* obj = NULL;
   border->clear();
   border->setView(aview);
-  if (!obj) obj = new DrawingObject("border", "decoration=true");
-  obj->properties["colour"] = aview->properties["bordercolour"];
+  if (!obj) obj = new DrawingObject("border", "clip=false\n");
+  obj->properties.data["colour"] = aview->properties["bordercolour"];
 
-  int aborder = aview->properties["border"].ToInt(1);
-  if (aborder == 0) return;
+  int bordersize = aview->properties["border"];
+  if (!bordersize) return;
   infostream = NULL;
-  bool filled = aview->properties["fillborder"].ToBool(false);
+  bool filled = aview->properties["fillborder"];
 
   if (!filled)
   {
-    obj->properties["lit"] = false;
-    obj->properties["wireframe"] = true;
-    obj->properties["cullface"] = false;
-    obj->properties["linewidth"] = aborder;
+    obj->properties.data["lit"] = false;
+    obj->properties.data["wireframe"] = true;
+    obj->properties.data["cullface"] = false;
+    obj->properties.data["linewidth"] = bordersize;
   }
   else
   {
-    obj->properties["lit"] = true;
-    obj->properties["wireframe"] = false;
-    obj->properties["cullface"] = true;
+    obj->properties.data["lit"] = true;
+    obj->properties.data["wireframe"] = false;
+    obj->properties.data["cullface"] = true;
   }
 
   if (aview->is3d)
@@ -2595,7 +2691,7 @@ void LavaVu::displayObjectList(bool console)
         if (geomdata)
           geomdata->getColour(c, 0);
         else
-          c = Colour_FromJson(amodel->objects[i]->properties, "colour");
+          c = amodel->objects[i]->properties.getColour("colour", 0, 0, 0, 255);
         c.a = 255;
         if (c.value != viewer->background.value)
           colour = c.value;
@@ -2721,7 +2817,7 @@ void LavaVu::drawSceneBlended()
 
 void LavaVu::drawScene()
 {
-  if (!aview->properties["antialias"].ToBool(true))
+  if (!aview->properties["antialias"])
     glDisable(GL_MULTISAMPLE);
   else
     glEnable(GL_MULTISAMPLE);
@@ -2792,7 +2888,7 @@ void LavaVu::loadFile(FilePath& fn)
   if (!amodel) defaultModel();
 
   //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
-  if (Geometry::properties["filestep"].ToBool(false)) parseCommands("newstep");
+  if (Properties::global("filestep")) parseCommands("newstep");
 
   //Load other data by type
   if (fn.type == "dem")
@@ -3057,7 +3153,7 @@ void LavaVu::dumpById(unsigned int id)
   }
 }
 
-void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
+void LavaVu::jsonWriteFile(unsigned int id, bool jsonp, bool objdata)
 {
   //Write new JSON format objects
   char filename[512];
@@ -3073,35 +3169,34 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp)
     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), step, ext);
   std::ofstream json(filename);
   if (jsonp) json << "loadData(\n";
-  jsonWrite(json, id, true);
+  jsonWrite(json, id, objdata);
   if (jsonp) json << ");\n";
   json.close();
 }
 
-void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
+void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
 {
   //Write new JSON format objects
   //TODO:
-  // - globals are all stored on / sourced from Geometry::properties
+  // - globals are all stored on / sourced from Properties::globals
   // - views[] list holds view properies (previously single instance in "options")
-  json::Object exported;
-  json::Object properties = Geometry::properties;
-  json::Array colourmaps;
-  json::Array objects;
-  json::Array views;
+  json exported;
+  json properties = Properties::globals;
+  json colourmaps = json::array();
+  json objects = json::array();
+  json views = json::array();
 
-  properties["pointScale"] = Model::points->scale;
-  properties["pointType"] = Model::points->pointType;
+  //TODO: convert this to a global prop too and store as rgba() string
   properties["background"] = awin->background.value;
 
   for (unsigned int v=0; v < awin->views.size(); v++)
   {
     View* view = awin->views[v];
-    json::Object& vprops = view->properties;
+    json& vprops = view->properties.data;
 
     float rotate[4], translate[3], focus[3];
     view->getCamera(rotate, translate, focus);
-    json::Array rot, trans, foc, scale, min, max;
+    json rot, trans, foc, scale, min, max;
     for (int i=0; i<4; i++)
     {
       rot.push_back(rotate[i]);
@@ -3115,10 +3210,6 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
         max.push_back(aview->max[i]);
       }
     }
-
-    vprops["border"] = view->properties["border"].ToBool(false);
-    vprops["axes"] = view->properties["axis"].ToBool(true);
-    vprops["opacity"] = GeomData::opacity;
 
     vprops["rotate"] = rot;
     vprops["translate"] = trans;
@@ -3137,12 +3228,12 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
 
   for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
   {
-    json::Object cmap;
-    json::Array colours;
+    json cmap;
+    json colours;
 
     for (unsigned int c=0; c < amodel->colourMaps[i]->colours.size(); c++)
     {
-      json::Object colour;
+      json colour;
       std::stringstream cs;
       Colour& col = amodel->colourMaps[i]->colours[c].colour;
       colour["position"] = amodel->colourMaps[i]->colours[c].position;
@@ -3182,7 +3273,7 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
           colourmap = (it - amodel->colourMaps.begin());
       }
 
-      json::Object obj = amodel->objects[i]->properties;
+      json obj = amodel->objects[i]->properties.data;
       obj["id"] = (int)amodel->objects[i]->id;
       obj["name"] = amodel->objects[i]->name;
       obj["visible"] = !amodel->objects[i]->skip && amodel->objects[i]->visible;
@@ -3198,8 +3289,8 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
         if (Model::lines->getVertexCount(amodel->objects[i]) > 0) obj["lines"] = true;
         if (Model::volumes->getVertexCount(amodel->objects[i]) > 0) obj["volumes"] = true;
 
-        //std::cout << "HAS OBJ TYPES: (point,tri,vol)" <<
-        //obj["points"].ToBool(false) << "," << obj["triangles"].ToBool(false) << "," << obj["volumes"].ToBool(false) << std::endl;
+        //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.getBool("points", false) << "," 
+        //          << obj.getBool("triangles", false) << "," << obj.getBool("volumes", false) << std::endl;
         objects.push_back(obj);
         continue;
       }
@@ -3228,25 +3319,25 @@ void LavaVu::jsonWrite(std::ostream& json, unsigned int id, bool objdata)
   exported["colourmaps"] = colourmaps;
   exported["objects"] = objects;
 
-  json << json::Serialize(exported);
+  //Export with indentation
+  os << std::setw(2) << exported;
+  std::cout << std::setw(2) << exported << std::endl;
 }
 
-void LavaVu::jsonRead(std::string json)
+void LavaVu::jsonRead(std::string data)
 {
   //TODO: Update this to read new format!
-  json::Object imported = json::Deserialize(json);
-  Geometry::properties = imported["properties"];
-  json::Array views;
+  json imported = json::parse(data);
+  Properties::globals = imported["properties"];
+  json views;
   //If "options" exists (old format) read it as first view properties
-  if (imported.HasKey("options"))
+  if (imported.count("options") > 0)
     views.push_back(imported["options"]);
   else
     views = imported["views"];
 
-  Model::points->scale = Geometry::properties["pointScale"].ToFloat(1.0);
-  Model::points->pointType = Geometry::properties["pointType"].ToInt(0);
-  GeomData::opacity = Geometry::properties["opacity"].ToFloat(0.0);
-  awin->background = parseRGBA(Geometry::properties["background"].ToString(""));
+  //TODO: get rid of this & store/get from property directly instead of Win class
+  awin->background = parseRGBA(Properties::global("background"));
 
   // Import views
   for (unsigned int v=0; v < views.size(); v++)
@@ -3261,11 +3352,11 @@ void LavaVu::jsonRead(std::string json)
     }
     View* view = awin->views[v];
 
-    //Apply base properties
-    view->properties = views[v];
+    //Apply base properties with merge
+    view->properties.merge(views[v]);
 
     //TODO: Fix view to use all these properties directly
-    json::Array rot, trans, foc, scale, min, max;
+    json rot, trans, foc, scale, min, max;
     rot = view->properties["rotate"];
     trans = view->properties["translate"];
     foc = view->properties["focus"];
@@ -3283,23 +3374,23 @@ void LavaVu::jsonRead(std::string json)
   }
 
   // Import colourmaps (one way: process only if exists - TODO: allow insert from web)
-  json::Array colourmaps = imported["colourmaps"];
+  json colourmaps = imported["colourmaps"];
   for (unsigned int j=0; j < colourmaps.size(); j++)
   {
     for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
     {
-      json::Object cmap = colourmaps[j];
-      if (cmap["id"].ToInt(0) == (int)amodel->colourMaps[i]->id)
+      json cmap = colourmaps[j];
+      if (cmap["id"] == (int)amodel->colourMaps[i]->id)
       {
         amodel->colourMaps[i]->minimum = cmap["minimum"];
         amodel->colourMaps[i]->maximum = cmap["maximum"];
         amodel->colourMaps[i]->log = cmap["log"];
-        json::Array colours = cmap["colours"];
+        json colours = cmap["colours"];
         //Replace colours
         amodel->colourMaps[i]->colours.clear();
         for (unsigned int c=0; c < colours.size(); c++)
         {
-          json::Object colour = colours[c];
+          json colour = colours[c];
           Colour newcolour = parseRGBA(colour["colour"]);
           amodel->colourMaps[i]->add(newcolour.value, colour["position"]);
         }
@@ -3308,15 +3399,15 @@ void LavaVu::jsonRead(std::string json)
   }
 
   //Import objects (change properties only if existing)
-  json::Array objects = imported["objects"];
+  json objects = imported["objects"];
   for (unsigned int i=0; i < amodel->objects.size(); i++)
   {
     for (unsigned int j=0; j < objects.size(); j++)
     {
-      json::Object obj = objects[j];
-      if (obj["id"].ToInt(0) == (int)amodel->objects[i]->id)
+      json obj = objects[j];
+      if (obj["id"] == (int)amodel->objects[i]->id)
       {
-        jsonMerge(amodel->objects[i]->properties, obj);
+        amodel->objects[i]->properties.merge(obj);
         //if (colourmap >= 0) obj["colourmap"] = colourmap;
       }
     }

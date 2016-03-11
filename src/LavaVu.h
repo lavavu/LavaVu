@@ -219,9 +219,9 @@ public:
   std::string helpCommand(std::string cmd);
   void record(bool mouse, std::string command);
   void dumpById(unsigned int id);
-  void jsonWriteFile(unsigned int id=0, bool jsonp=false);
-  void jsonWrite(std::ostream& json, unsigned int id=0, bool objdata=false);
-  void jsonRead(std::string json);
+  void jsonWriteFile(unsigned int id=0, bool jsonp=false, bool objdata=true);
+  void jsonWrite(std::ostream& os, unsigned int id=0, bool objdata=false);
+  void jsonRead(std::string data);
 };
 
 #define HELP_MESSAGE "\

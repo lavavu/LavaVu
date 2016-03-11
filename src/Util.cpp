@@ -37,6 +37,9 @@
 #include <string.h>
 #include <math.h>
 
+json Properties::globals;
+json Properties::defaults;
+
 FILE* infostream = NULL;
 
 long membytes__ = 0;
@@ -85,22 +88,80 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
   return xpath.path;
 }
 
+json& Properties::global(const std::string& key)
+{
+  if (globals.count(key) > 0 && !globals[key].is_null()) return globals[key];
+  return defaults[key];
+}
+
+bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
+
+json& Properties::operator[](const std::string& key)
+{
+  //std::cout << key << std::endl;
+  json& val = defaults["default"];
+  try
+  {
+    if (data.count(key)) val = data[key];
+    else if (globals.count(key)) val = globals[key];
+    //std::cout << key << " :: DATA\n" << data << std::endl;
+    //std::cout << key << " :: DEFAULTS\n" << defaults << std::endl;
+    else val = defaults[key];
+    //return defaults[key];
+  }
+  catch (std::exception& e)
+  //catch (std::domain_error& e)
+  {
+    std::cerr << key << " : key error : " << e.what() << std::endl;
+    //std::cerr << key << " : key error : " << std::endl;
+  }
+  //return defaults["default"];
+  return val;
+}
+
+//Functions to get values with provided defaults
+Colour Properties::getColour(const std::string& key, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha)
+{
+  Colour colour = {red, green, blue, alpha};
+  if (data.count(key) == 0) return colour;
+  return Colour_FromJson(data[key], red, green, blue, alpha);
+}
+
+float Properties::getFloat(const std::string& key, float def)
+{
+  if (data.count(key) == 0) return def;
+  return data[key];
+}
+
+int Properties::getInt(const std::string& key, int def)
+{
+  if (data.count(key) == 0) return def;
+  return data[key];
+}
+
+bool Properties::getBool(const std::string& key, bool def)
+{
+  if (data.count(key) == 0) return def;
+  return data[key];
+}
+
 //Parse multi-line string
-void jsonParseProperties(std::string& properties, json::Object& object)
+void Properties::parseSet(const std::string& properties)
 {
   //Process all lines
   std::stringstream ss(properties);
   std::string line;
   while (std::getline(ss, line))
-    jsonParseProperty(line, object);
+    parse(line);
 }
 
 //Property containers now using json
-void jsonParseProperty(std::string& data, json::Object& object)
+void Properties::parse(const std::string& property, bool global)
 {
   //Parse a key=value property where value is a json object
+  json& dest = global ? globals : data; //Parse into data by default
   std::string key, value;
-  std::istringstream iss(data);
+  std::istringstream iss(property);
   std::getline(iss, key, '=');
   std::getline(iss, value, '=');
 
@@ -121,38 +182,48 @@ void jsonParseProperty(std::string& data, json::Object& object)
         std::stringstream ss(value);
         float parsedval;
         ss >> parsedval;
+        float val = dest[mkey];
         if (prev == '+')
-          object[mkey] = object[mkey].ToFloat() + parsedval;
+          dest[mkey] = val + parsedval;
         else if (prev == '-')
-          object[mkey] = object[mkey].ToFloat() - parsedval;
+          dest[mkey] = val - parsedval;
 
       }
       else if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
       {
         //This JSON parser only accepts objects or arrays as base element
         std::string nvalue = "[" + value + "]";
-        object[key] = json::Deserialize(nvalue).ToArray()[0];
+        dest[key] = json::parse(nvalue)[0];
       }
       else
       {
-        object[key] = json::Deserialize(value);
+        dest[key] = json::parse(value);
       }
     }
     catch (std::exception& e)
     {
       //std::cerr << "[" << key << "] " << data << " : " << e.what();
       //Treat as a string value
-      object[key] = json::Value(value);
+      dest[key] = value;
     }
   }
 }
 
-void jsonMerge(json::Object& lhs, json::Object rhs)
+void Properties::merge(json& other)
 {
   //Merge: keep existing values, replace any imported
-  json::Object::ValueMap::iterator it;
-  for (it = rhs.begin() ; it != rhs.end(); ++it)
-    lhs[it->first] = it->second;
+  for (json::iterator it = other.begin() ; it != other.end(); ++it)
+    data[it.key()] = it.value();
+}
+
+void Properties::convertBools(std::vector<std::string> list)
+{
+  //Converts a list of properties from int to boolean
+  for (int i=0; i<list.size(); i++)
+  {
+    if (has(list[i]) && data[list[i]].is_number())
+      data[list[i]] = ((int)data[list[i]] != 0);
+  }
 }
 
 void debug_print(const char *fmt, ...)

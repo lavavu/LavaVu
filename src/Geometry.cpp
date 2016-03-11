@@ -36,17 +36,10 @@
 #include "Geometry.h"
 
 //Init static data
-json::Object Geometry::properties;
 float Geometry::min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
 float Geometry::max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
 float Geometry::dims[3];
 std::string GeomData::names[lucMaxType] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volume"};
-float GeomData::opacity = 0;
-int GeomData::glyphs = -1; //Glyph quality (-1 = use default per type)
-bool GeomData::wireframe = false;
-bool GeomData::cullface = false;
-bool GeomData::lit = true;
-bool Lines::tubes = false;
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 int segments__ = 0;    // Saves segment count for circle based objects
 
@@ -106,7 +99,7 @@ void GeomData::mapToColour(Colour& colour, float value)
 
   //Set opacity to drawing object override level if set
   if (draw->opacity > 0.0 && draw->opacity < 1.0)
-    colour.a = opacity * 255;
+    colour.a = draw->opacity * 255;
 }
 
 int GeomData::colourCount()
@@ -221,7 +214,7 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
 
 Geometry::Geometry() : view(NULL), elements(-1), flat2d(false),
                        fixed(NULL), allhidden(false), internal(false), 
-                       type(lucMinType), total(0), scale(1.0f), redraw(true)
+                       type(lucMinType), total(0), redraw(true)
 {
 }
 
@@ -246,7 +239,7 @@ void Geometry::clear(bool all)
   for (int i = geom.size()-1; i>=0; i--)
   {
     unsigned int idx = i;
-    if (all || !geom[i]->draw->properties["static"].ToBool(false))
+    if (all || !geom[i]->draw->properties["static"])
     {
       //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name << std::endl;
       delete geom[idx];
@@ -320,12 +313,12 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
   }
 }
 
-void Geometry::jsonWrite(unsigned int id, json::Object& obj)
+void Geometry::jsonWrite(unsigned int id, json& obj)
 {
   //Export geometry to json
 }
 
-void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
+void Geometry::jsonExportAll(unsigned int id, json& array, bool encode)
 {
   //Export all geometry to json
   int dsizes[lucMaxDataType] = {3, 3, 3,
@@ -344,11 +337,11 @@ void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
     if (geom[index]->draw->id == id && drawable(index))
     {
       std::cerr << "Collecting data, " << geom[index]->count << " vertices (" << index << ")" << std::endl;
-      json::Object data;
+      json data;
       for (int data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
       {
         if (!geom[index]->data[data_type]) continue;
-        json::Object el;
+        json el;
 
         unsigned int length = geom[index]->data[data_type]->size() * sizeof(float);
         if (length > 0)
@@ -359,7 +352,7 @@ void Geometry::jsonExportAll(unsigned int id, json::Array& array, bool encode)
             el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(geom[index]->data[data_type]->ref(0)), length);
           else
           {
-            json::Array values;
+            json values;
             for (unsigned int j=0; j<geom[index]->data[data_type]->size(); j++)
             {
               if (data_type == lucIndexData || data_type == lucRGBAData)
@@ -475,19 +468,17 @@ void Geometry::init() //Called on GL init
   redraw = true;
 }
 
-void Geometry::setState(unsigned int index, Shader* prog)
+void Geometry::setState(unsigned int i, Shader* prog)
 {
   //NOTE: Transparent triangle surfaces are drawn as a single object so 
   //      no per-object state settings work, state applied is that of first in list
   GL_Error_Check;
-  if (geom.size() <= index) return;
-  DrawingObject* draw = geom[index]->draw;
-  bool lighting = GeomData::lit;
-  bool decoration = draw->properties["decoration"].ToBool(false);
-  lighting = lighting && draw->properties["lit"].ToBool(true);
+  if (geom.size() <= i) return;
+  DrawingObject* draw = geom[i]->draw;
+  bool lighting = geom[i]->draw->properties["lit"];
 
   //Global/Local draw state
-  if (GeomData::cullface || draw->properties["cullface"].ToBool(false))
+  if (geom[i]->draw->properties["cullface"])
     glEnable(GL_CULL_FACE);
   else
     glDisable(GL_CULL_FACE);
@@ -499,14 +490,14 @@ void Geometry::setState(unsigned int index, Shader* prog)
     //Don't light surfaces in 2d models
     if (!view->is3d && flat2d) lighting = false;
     //Disable lighting and polygon faces in wireframe mode
-    if (draw->properties["wireframe"].ToBool(false) || (!decoration && GeomData::wireframe))
+    if (geom[i]->draw->properties["wireframe"])
     {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       lighting = false;
       glDisable(GL_CULL_FACE);
     }
 
-    if (draw->properties["flat"].ToBool(false))
+    if (geom[i]->draw->properties["flat"])
       glShadeModel(GL_FLAT);
     else
       glShadeModel(GL_SMOOTH);
@@ -517,13 +508,13 @@ void Geometry::setState(unsigned int index, Shader* prog)
   else
   {
     //Flat disables lighting for non surface types
-    if (draw->properties["flat"].ToBool(false)) lighting = false;
+    if (geom[i]->draw->properties["flat"]) lighting = false;
     glEnable(GL_BLEND);
   }
 
   //Disable depth test by default for 2d lines, otherwise enable
   bool depthTestDefault = (view->is3d || type != lucLineType);
-  if (draw->properties["depthtest"].ToBool(depthTestDefault))
+  if (geom[i]->draw->properties.getBool("depthtest", depthTestDefault))
     glEnable(GL_DEPTH_TEST);
   else
     glDisable(GL_DEPTH_TEST);
@@ -534,39 +525,39 @@ void Geometry::setState(unsigned int index, Shader* prog)
     glEnable(GL_LIGHTING);
 
   //Textured?
-  TextureData* texture = draw->useTexture(geom[index]->texIdx);
+  TextureData* texture = draw->useTexture(geom[i]->texIdx);
   GL_Error_Check;
   if (texture)
   {
     //Combine texture with colourmap? Requires modulate mode
     //GL_MODULATE/BLEND/REPLACE/DECAL
-    if (geom[index]->colourCount() > 0)
+    if (geom[i]->colourCount() > 0)
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     else
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);  
   }
 
   //Replace the default colour with a json value if present
-  draw->colour = Colour_FromJson(draw->properties, "colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
+  draw->colour = draw->properties.getColour("colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
 
   //Uniforms for shader programs
   if (prog && prog->program > 0)
   {
     prog->use();
-    prog->setUniform("uOpacity", GeomData::opacity);
-    prog->setUniform("uLighting", lighting);
-    prog->setUniform("uBrightness", Geometry::properties["brightness"].ToFloat(0.0));
-    prog->setUniform("uContrast", Geometry::properties["contrast"].ToFloat(1.0));
-    prog->setUniform("uSaturation", Geometry::properties["saturation"].ToFloat(1.0));
-    prog->setUniform("uAmbient", Geometry::properties["ambient"].ToFloat(0.4));
-    prog->setUniform("uDiffuse", Geometry::properties["diffuse"].ToFloat(0.8));
-    prog->setUniform("uSpecular", Geometry::properties["specular"].ToFloat(0.0));
-    prog->setUniform("uTextured", texture && texture->unit >= 0);
+    prog->setUniformf("uOpacity", geom[i]->draw->properties["opacity"]);
+    prog->setUniformi("uLighting", lighting);
+    prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
+    prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);
+    prog->setUniformf("uSaturation", geom[i]->draw->properties["saturation"]);
+    prog->setUniformf("uAmbient", geom[i]->draw->properties["ambient"]);
+    prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
+    prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
+    prog->setUniformi("uTextured", texture && texture->unit >= 0);
 
     if (texture)
       prog->setUniform("uTexture", (int)texture->unit);
 
-    if (geom[index]->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
+    if (geom[i]->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
       prog->setUniform("uCalcNormal", 1);
     else
       prog->setUniform("uCalcNormal", 0);
@@ -576,14 +567,14 @@ void Geometry::setState(unsigned int index, Shader* prog)
       //TODO: Also enable clip for lines (will require line shader)
       float clipMin[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
       float clipMax[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
-      if (!decoration && draw->properties["clip"].ToBool(true))
+      if (geom[i]->draw->properties["clip"])
       {
-        clipMin[0] = view->properties["xmin"].ToFloat(-HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
-        clipMin[1] = view->properties["ymin"].ToFloat(-HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
-        clipMin[2] = view->properties["zmin"].ToFloat(-HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
-        clipMax[0] = view->properties["xmax"].ToFloat(HUGE_VALF) * Geometry::dims[0] + Geometry::min[0];
-        clipMax[1] = view->properties["ymax"].ToFloat(HUGE_VALF) * Geometry::dims[1] + Geometry::min[1];
-        clipMax[2] = view->properties["zmax"].ToFloat(HUGE_VALF) * Geometry::dims[2] + Geometry::min[2];
+        clipMin[0] = (float)geom[i]->draw->properties["xmin"] * Geometry::dims[0] + Geometry::min[0];
+        clipMin[1] = (float)geom[i]->draw->properties["ymin"] * Geometry::dims[1] + Geometry::min[1];
+        clipMin[2] = (float)geom[i]->draw->properties["zmin"] * Geometry::dims[2] + Geometry::min[2];
+        clipMax[0] = (float)geom[i]->draw->properties["xmax"]* Geometry::dims[0] + Geometry::min[0];
+        clipMax[1] = (float)geom[i]->draw->properties["ymax"]* Geometry::dims[1] + Geometry::min[1];
+        clipMax[2] = (float)geom[i]->draw->properties["zmax"]* Geometry::dims[2] + Geometry::min[2];
       }
 
       glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
@@ -638,7 +629,7 @@ void Geometry::labels()
   glDisable(GL_LIGHTING);  //No lighting
   for (unsigned int i=0; i < geom.size(); i++)
   {
-    if (view->textscale > 0) geom[i]->draw->properties["font"] = "vector"; //Force vector if downsampling
+    if (view->textscale > 0) geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
     PrintSetFont(geom[i]->draw->properties, "small"); // , 1.0, view->textscale);
     Colour colour;
     if (drawable(i) && geom[i]->labels.size() > 0)
@@ -650,8 +641,8 @@ void Geometry::labels()
         //geom[i]->getColour(colour, j);
         colour = geom[i]->draw->colour;
         //Multiply opacity by global override level if set
-        if (GeomData::opacity > 0.0)
-          colour.a *= GeomData::opacity;
+        //if (GeomData::opacity > 0.0)
+        //  colour.a *= GeomData::opacity;
         glColor4ubv(colour.rgba);
         PrintSetColour(colour.value);
         std::string labstr = geom[i]->labels[j];
@@ -1470,11 +1461,3 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   read(draw, indices.size(), lucIndexData, &indices[0]);
 }
 
-int Geometry::glyphSegments(int def)
-{
-  //Use global if set, otherwise use passed default
-  int quality = GeomData::glyphs;
-  if (quality < 0) quality = def;
-  //Segment count = quality * 4
-  return quality*4;
-}

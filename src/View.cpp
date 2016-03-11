@@ -78,23 +78,24 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
   rotation_lag.identity();
   use_inertia = false;
 
-  //View properties can only be set if exist, so set all defaults
-  properties["title"] = title;
-  properties["zoomstep"] = -1;
-  properties["margin"] = 32;
-  properties["rulers"] = false;
-  properties["rulerticks"] = 5;
-  properties["rulerwidth"] = 1.5;
-  properties["border"] = 1;
-  properties["fillborder"] = false;
-  properties["bordercolour"] = Colour_ToJson(LUC_GREY);
-  properties["axis"] = true;
-  properties["axislength"] = 0.1;
-  properties["timestep"] = false;
-  properties["antialias"] = true; //Should be global
-  properties["shift"] = 0;
-
   is3d = true;
+
+  //View properties can only be set if exist, so set all defaults
+  properties.data["title"] = title;
+  properties.data["zoomstep"] = -1;
+  properties.data["margin"] = 32;
+  properties.data["rulers"] = false;
+  properties.data["rulerticks"] = 5;
+  properties.data["rulerwidth"] = 1.5;
+  properties.data["fontscale"] = 1.0;
+  properties.data["border"] = 1;
+  properties.data["fillborder"] = false;
+  properties.data["bordercolour"] = Colour_ToJson(LUC_GREY);
+  properties.data["axis"] = true;
+  properties.data["axislength"] = 0.1;
+  properties.data["timestep"] = false;
+  properties.data["antialias"] = true; //Should be global
+  properties.data["shift"] = 0;
 }
 
 View::~View()
@@ -103,13 +104,19 @@ View::~View()
 
 void View::setProperties(std::string props)
 {
-  jsonParseProperties(props, properties);
+  properties.parseSet(props);
+  std::cout << props << std::endl;
+
+  //Adjust types of some old props
+  properties.convertBools({"rulers", "axis", "antialias", "timestep", "fillborder"});
+
+  std::cout << properties.data << std::endl;
 }
 
 void View::addObject(DrawingObject* obj)
 {
   objects.push_back(obj);
-  debug_print("Object %d '%s' added to viewport '%s'\n", obj->id, obj->name.c_str(), properties["title"].ToString().c_str());
+  debug_print("Object %d '%s' added to viewport\n", obj->id, obj->name.c_str());
 }
 
 bool View::hasObject(DrawingObject* obj)
@@ -178,7 +185,7 @@ bool View::init(bool force, float* newmin, float* newmax)
       model_trans[2] = model_trans_lag[2] = -model_size;
 
     // Initial zoom to fit
-    if (properties["zoomstep"].ToInt(-1) == 0) zoomToFit();
+    if (properties["zoomstep"] == 0) zoomToFit();
 
     debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
     debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -590,7 +597,7 @@ void View::inertia(bool on)
 #define ADJUST 0.444444
 void View::zoomToFit(int margin)
 {
-  if (margin < 0) margin = properties["margin"].ToInt(32);
+  if (margin < 0) margin = properties["margin"];
 
   // The bounding box of model
   GLfloat rect3d[8][3] = {{min[0], min[1], min[2]},
@@ -721,10 +728,10 @@ void View::drawOverlay(Colour& colour)
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
-    if (!objects[i] || !objects[i]->properties["colourbar"].ToBool(false) ||
+    if (!objects[i] || !objects[i]->properties["colourbar"] ||
         !objects[i]->visible || !objects[i]->colourMaps[lucColourValueData]) continue;
-    int pos = objects[i]->properties["position"].ToInt(0);
-    std::string align = objects[i]->properties["align"].ToString("bottom");
+    int pos = objects[i]->properties["position"];
+    std::string align = objects[i]->properties["align"];
     int ww = w, hh = h;
     bool vertical = false;
     bool opposite = (align == "left" || align == "bottom");
@@ -735,16 +742,17 @@ void View::drawOverlay(Colour& colour)
       hh = w;
     }
 
-    int margin = objects[i]->properties["margin"].ToInt(16);
-    int length = ww * objects[i]->properties["lengthfactor"].ToFloat(0.8);
-    int bar_height = objects[i]->properties["height"].ToInt(objects[i]->properties["width"].ToInt(10));
+    int margin = objects[i]->properties["margin"];
+    int length = objects[i]->properties["lengthfactor"];
+    length *= ww;
+    int bar_height = objects[i]->properties.getInt("width", 10); //Conflict with shape width
     int startx = (ww - length) / 2;
     if (pos == 1) startx = margin;
     if (pos == -1) startx = ww - margin - length;
     int starty = margin;
     if (last_margin == margin) starty += last_y + 16;   //Auto-increase y margin if same value
     if (!opposite) starty = hh - starty - bar_height;
-    //float border = properties["border"].ToFloat(1.0);
+    //float border = properties["border", 1.0);
     //if (border > 0) glLineWidth(border*textscale*0.75); else glLineWidth(textscale*0.75);
 
     last_y = starty;
@@ -757,12 +765,12 @@ void View::drawOverlay(Colour& colour)
   GL_Error_Check;
 
   //Title
-  if (properties.HasKey("title"))
+  if (properties.has("title"))
   {
-    const char* title = properties["title"].ToString().c_str();
+    std::string title = properties["title"];
     float fontscale = PrintSetFont(properties, "vector", 1.0, 0.6);
     if (fontscale > 0) fontscale *= -0.5;
-    Print(0.5 * (w - PrintWidth(title)), h + 30*fontscale, title);
+    Print(0.5 * (w - PrintWidth(title.c_str())), h + 30*fontscale, title.c_str());
   }
 
   GL_Error_Check;

@@ -88,10 +88,9 @@ Colour parseRGBA(std::string value);
 
 void Colour_SetColour(Colour* colour);
 void Colour_Invert(Colour& colour);
-Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
-Colour Colour_FromJson(json::Value& value, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
-json::Value Colour_ToJson(int colourval);
-json::Value Colour_ToJson(Colour& colour);
+Colour Colour_FromJson(json& value, GLubyte red=0, GLubyte green=0, GLubyte blue=0, GLubyte alpha=255);
+json Colour_ToJson(int colourval);
+json Colour_ToJson(Colour& colour);
 void Colour_ToArray(Colour colour, float* array);
 void Colour_SetUniform(GLint uniform, Colour colour);
 

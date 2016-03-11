@@ -199,7 +199,10 @@ void Shader::loadAttribs(const char** names, int count)
   }
 }
 
-void Shader::setUniform(const char* name, int value)
+void Shader::setUniform(const char* name, int value)   {setUniformi(name, value);}
+void Shader::setUniform(const char* name, float value) {setUniformf(name, value);}
+
+void Shader::setUniformi(const char* name, int value)
 {
   if (!supported || !program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
@@ -211,7 +214,7 @@ void Shader::setUniform(const char* name, int value)
   }
 }
 
-void Shader::setUniform(const char* name, float value)
+void Shader::setUniformf(const char* name, float value)
 {
   if (!supported || !program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);

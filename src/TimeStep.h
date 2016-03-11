@@ -71,10 +71,8 @@ public:
 
   void read(std::vector<Geometry*> &data)
   {
-    //Preserve global properties when switching
     for (unsigned int i=0; i < data.size(); i++)
     {
-      cache[i]->scale = data[i]->scale;
       //Release any graphics memory
       data[i]->close();
     }
