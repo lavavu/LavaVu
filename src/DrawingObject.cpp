@@ -46,10 +46,14 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
   //Sets the default colour map if provided, newer databases provide separately
   if (map) colourMaps[lucColourValueData] = map;
 
-  jsonParseProperties(props, properties);
+  properties.parseSet(props);
+  //Adjust types of some old props
+  properties.convertBools({"static", "lit", "cullface", "wireframe", "flat", "depthtest", "clip", "colourbar", "link", 
+                          "tubes", "opaque", "colourmap", "isowalls", "tricubicfilter", "taper", "fade", "printticks", 
+                          "printunits", "scientific"});
 
   //All props now lowercase, fix a couple of legacy camelcase values
-  if (properties.HasKey("pointSize")) properties["pointsize"] = properties["pointSize"];
+  if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
   filterout = false;
   colourIdx = 0; //Default colouring data is first value block
 }
@@ -63,12 +67,14 @@ DrawingObject::~DrawingObject()
 void DrawingObject::setup()
 {
   //Cache values for faster lookups during draw calls
-  colour = Colour_FromJson(properties, "colour");
-  opacity = properties["opacity"].ToFloat(1.0);
+  colour = properties.getColour("colour", 255, 255, 255, 255);
+  opacity = 1.0;
+  if (properties.has("opacity"))
+    opacity = properties["opacity"];
   //Convert values (1,255] -> [0,1]
   if (opacity > 1.0) opacity /= 255.0;
 
-  colourIdx = properties["colourby"].ToInt(0);
+  colourIdx = properties["colourby"];
 }
 
 void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
@@ -101,9 +107,9 @@ TextureData* DrawingObject::useTexture(int index)
   //Load default texture if available
   if (textures.size() == 0)
   {
-    if (properties.HasKey("texturefile"))
+    if (properties.has("texturefile"))
     {
-      std::string texfn = properties["texturefile"].ToString("");
+      std::string texfn = properties["texturefile"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
         index = addTexture(texfn);
@@ -112,7 +118,7 @@ TextureData* DrawingObject::useTexture(int index)
       {
         if (texfn.length() > 0) debug_print("Texture File: %s not found!\n", texfn.c_str());
         //If load failed, skip from now on
-        properties["texturefile"] = "";
+        properties.data["texturefile"] = "";
         return NULL;
       }
     }

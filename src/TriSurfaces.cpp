@@ -95,8 +95,8 @@ void TriSurfaces::update()
 
     //Per-object wireframe works only when drawing opaque objects
     //(can't set per-objects properties when all triangles collected and sorted)
-    geom[t]->opaque = (geom[t]->draw->properties["wireframe"].ToBool(false) || 
-                       geom[t]->draw->properties["opaque"].ToBool(false));
+    geom[t]->opaque = (geom[t]->draw->properties["wireframe"] || 
+                       geom[t]->draw->properties["opaque"]);
   }
   if (total == 0) return;
 
@@ -647,7 +647,7 @@ void TriSurfaces::depthSort()
   view->getMinMaxDistance(&mindist, &maxdist);
   //printMatrix(modelView);
   //printf("MINDIST %f MAXDIST %f\n", mindist, maxdist);
-  int shift = view->properties["shift"].ToInt(0);
+  int shift = view->properties["shift"]; //.ToInt(0);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (SORT_DIST_MAX-1.0) / (maxdist - mindist);
@@ -847,10 +847,10 @@ void TriSurfaces::draw()
   GL_Error_Check;
 }
 
-void TriSurfaces::jsonWrite(unsigned int id, json::Object& obj)
+void TriSurfaces::jsonWrite(unsigned int id, json& obj)
 {
-  json::Array tris;
-  if (obj.HasKey("triangles")) tris = obj["triangles"].ToArray();
+  json tris;
+  if (obj.count("triangles") > 0) tris = obj["triangles"];
   jsonExportAll(id, tris);
   if (tris.size() > 0) obj["triangles"] = tris;
 }

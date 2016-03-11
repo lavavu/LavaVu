@@ -67,7 +67,7 @@ public:
   std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
 
   //Object properties data...
-  json::Object properties;
+  Properties properties;
   //Texture list
   std::vector<TextureLoader*> textures;
 

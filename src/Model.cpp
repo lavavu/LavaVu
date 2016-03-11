@@ -397,8 +397,8 @@ void Model::loadObjects()
     DrawingObject* obj = new DrawingObject(otitle, props, NULL, object_id);
     addObject(obj);
     //Convert old colour/opacity from hard coded fields
-    if (!obj->properties.HasKey("opacity") && opacity >= 0.0) obj->properties["opacity"] = opacity;
-    if (!obj->properties.HasKey("colour")) obj->properties["colour"] = colour;
+    if (!obj->properties.has("opacity") && opacity >= 0.0) obj->properties.data["opacity"] = opacity;
+    if (!obj->properties.has("colour")) obj->properties.data["colour"] = colour;
   }
   sqlite3_finalize(statement);
 }
@@ -1203,10 +1203,9 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   {
     if (objects[i] && (id == 0 || objects[i]->id == id))
     {
-      std::string props = json::Serialize(objects[i]->properties);
       int cmap = 0;
       if (objects[i]->colourMaps[lucColourValueData]) cmap = objects[i]->colourMaps[lucColourValueData]->id;
-      snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, properties) values (%d, '%s', '%d', '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, props.c_str());
+      snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, properties) values (%d, '%s', '%d', '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, objects[i]->properties.data.dump().c_str());
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
 

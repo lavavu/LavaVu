@@ -29,6 +29,8 @@ public:
   void loadAttribs(const char** names, int count);
   void setUniform(const char* name, int value);
   void setUniform(const char* name, float value);
+  void setUniformi(const char* name, int value);
+  void setUniformf(const char* name, float value);
 
   std::map<std::string, GLint> uniforms;
   std::map<std::string, GLint> attribs;

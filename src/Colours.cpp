@@ -57,62 +57,45 @@ Colour parseRGBA(std::string value)
   return col; //rgba(c[0],c[1],c[2],c[3]);
 }
 
-Colour Colour_FromJson(json::Object& object, std::string key, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
-{
-  Colour colour = {red, green, blue, alpha};
-  if (!object.HasKey(key)) return colour;
-  return Colour_FromJson(object[key], red, green, blue, alpha);
-}
-
-Colour Colour_FromJson(json::Value& value, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
+Colour Colour_FromJson(json& value, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
 {
   Colour colour = {red, green, blue, alpha};
   //Will accept integer colour or [r,g,b,a] array or string containing x11 name or #hex)
-  if (value.GetType() == json::IntVal)
+  if (value.is_number())
   {
-    colour.value = value.ToInt();
+    colour.value = value;
   }
-  else if (value.GetType() == json::ArrayVal)
+  else if (value.is_array())
   {
-    json::Array array = value.ToArray();
-    if (array[0].ToFloat(0) > 1.0)
-      colour.r = array[0].ToInt(0);
-    else
-      colour.r = array[0].ToFloat(0)*255.0;
-    if (array[1].ToFloat(0) > 1.0)
-      colour.g = array[1].ToInt(0);
-    else
-      colour.g = array[1].ToFloat(0)*255.0;
-    if (array[2].ToFloat(0) > 1.0)
-      colour.b = array[2].ToInt(0);
-    else
-      colour.b = array[2].ToFloat(0)*255.0;
-
-    if (array.size() > 3)
-      colour.a = array[3].ToFloat(0)*255.0;
+    float r = value[0];
+    float g = value[1];
+    float b = value[2];
+    float a = 1.0;
+    if (value.size() > 3) a = value[3];
+    colour.r = r > 1.0 ? r : r*255.0;
+    colour.g = g > 1.0 ? g : g*255.0;
+    colour.b = b > 1.0 ? b : b*255.0;
+    //colour.a = a > 1.0 ? a : a*255.0;
+    colour.a = a*255.0;
   }
-  else if (value.GetType() == json::StringVal)
+  else if (value.is_string())
   {
-    return Colour_FromString(value.ToString());
+    return Colour_FromString(value);
   }
 
   return colour;
 }
 
-json::Value Colour_ToJson(int colourval)
+json Colour_ToJson(int colourval)
 {
   Colour colour;
   colour.value = colourval;
   return Colour_ToJson(colour);
 }
 
-json::Value Colour_ToJson(Colour& colour)
+json Colour_ToJson(Colour& colour)
 {
-  json::Array array;
-  array.push_back(colour.r/255.0);
-  array.push_back(colour.g/255.0);
-  array.push_back(colour.b/255.0);
-  array.push_back(colour.a/255.0);
+  json array = {colour.r/255.0, colour.g/255.0, colour.b/255.0, colour.a/255.0};
   return array;
 }
 

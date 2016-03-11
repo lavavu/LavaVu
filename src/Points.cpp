@@ -38,14 +38,12 @@
 
 unsigned int Points::subSample = 1;
 Shader* Points::prog = NULL;
-int Points::pointType = 0;
 GLuint Points::indexvbo = 0;
 GLuint Points::vbo = 0;
 
 Points::Points() : Geometry()
 {
   type = lucPointType;
-  scale = 1.0f;
   attenuate = true;
   pidx = NULL;
 }
@@ -162,33 +160,20 @@ void Points::loadVertices()
     geom[s]->colourCalibrate();
 
     //Cache values if possible, getColour() is slow!
-    GeomData* geo = geom[s];
+    Properties& props = geom[s]->draw->properties;
     ColourMap* cmap = NULL;
-    float psize0 = geo->draw->properties["pointsize"].ToFloat(1.0) * geo->draw->properties["scaling"].ToFloat(1.0);
+    float psize0 = props["pointsize"];
+    float scaling = props["scaling"];
+    psize0 *= scaling;
     //TODO: this duplicates code in getColour,
     // try to optimise getColour better instead
-    if (geo->draw->colourMaps[lucColourValueData] && geo->colourData())
-      cmap = geo->draw->colourMaps[lucColourValueData];
+    if (geom[s]->draw->colourMaps[lucColourValueData] && geom[s]->colourData())
+      cmap = geom[s]->draw->colourMaps[lucColourValueData];
     //Set opacity to drawing object/geometry override level if set
-    float alpha = geo->draw->properties["opacity"].ToFloat(0.0);
-    if (GeomData::opacity > 0.0 && GeomData::opacity < 1.0) alpha = GeomData::opacity;
-    float ptype = -1; //Default (-1) is to use the global (uniform) value
-    if (geo->draw->properties["pointtype"].GetType() == json::StringVal)
-    {
-      std::string val = geo->draw->properties["pointtype"];
-      if (val == "blur")
-        ptype = 0;
-      else if (val == "smooth")
-        ptype = 1;
-      else if (val == "sphere")
-        ptype = 2;
-      else if (val == "shiny")
-        ptype = 3;
-      else if (val == "flat")
-        ptype = 4;
-    }
-    else
-      ptype = geo->draw->properties["pointtype"].ToInt(-1);
+    float alpha = props["opacity"];
+    //float opacity = props["opacity"];
+    //if (opacity > 0.0 && opacity < 1.0) alpha *= opacity;
+    float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
@@ -204,21 +189,21 @@ void Points::loadVertices()
       {
         assert((unsigned int)(ptr-p) < total * datasize);
         //Copies vertex bytes
-        memcpy(ptr, geo->vertices[i], sizeof(float) * 3);
+        memcpy(ptr, geom[s]->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
         //Copies colour bytes
-        if (cmap && geo->colourData())
+        if (cmap && geom[s]->colourData())
         {
-          c = cmap->getfast(geo->colourData(i));
+          c = cmap->getfast(geom[s]->colourData(i));
           if (alpha > 0.0) c.a *= alpha;
         }
         else
-          geo->getColour(c, i);
+          geom[s]->getColour(c, i);
         memcpy(ptr, &c, sizeof(Colour));
         ptr += sizeof(Colour);
         //Copies settings (size + smooth)
         float psize = psize0;
-        if (geo->data[lucSizeData]) psize *= geo->valueData(lucSizeData, i);
+        if (geom[s]->data[lucSizeData]) psize *= geom[s]->valueData(lucSizeData, i);
         memcpy(ptr, &psize, sizeof(float));
         ptr += sizeof(float);
         memcpy(ptr, &ptype, sizeof(float));
@@ -347,6 +332,38 @@ void Points::render()
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
+int Points::getPointType(int index)
+{
+  json& pointtype = Properties::global("pointtype");
+  int ptype = -1;
+  if (index > 0)
+  {
+    if (geom[index]->draw->properties.has("pointtype"))
+      pointtype = geom[index]->draw->properties["pointtype"];
+    else
+      return -1; //Use global 
+  }
+
+  if (pointtype.is_string())
+  {
+    std::string val = pointtype;
+    if (pointtype == "blur")
+      ptype = 0;
+    else if (pointtype == "smooth")
+      ptype = 1;
+    else if (pointtype == "sphere")
+      ptype = 2;
+    else if (pointtype == "shiny")
+      ptype = 3;
+    else if (pointtype == "flat")
+      ptype = 4;
+  }
+  else if (pointtype.is_number())
+    ptype = pointtype;
+
+  return ptype;
+}
+
 void Points::draw()
 {
   //Draw, update
@@ -372,11 +389,12 @@ void Points::draw()
   if (!view->is3d) glDisable(GL_DEPTH_TEST);
 
   //Point size distance attenuation (disabled for 2d models)
+  float scale0 = geom[0]->draw->properties["scalepoints"];
   if (view->is3d && attenuate) //Adjust scaling by model size when using distance size attenuation
-    prog->setUniform("uPointScale", scale * view->model_size);
+    prog->setUniform("uPointScale", scale0 * view->model_size);
   else
-    prog->setUniform("uPointScale", scale);
-  prog->setUniform("uPointType", pointType);
+    prog->setUniform("uPointScale", scale0);
+  prog->setUniformi("uPointType", getPointType());
   prog->setUniform("uPointDist", (view->is3d && attenuate ? 1 : 0));
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
@@ -437,10 +455,10 @@ void Points::draw()
   labels();
 }
 
-void Points::jsonWrite(unsigned int id, json::Object& obj)
+void Points::jsonWrite(unsigned int id, json& obj)
 {
-  json::Array points;
-  if (obj.HasKey("points")) points = obj["points"].ToArray();
+  json points;
+  if (obj.count("points") > 0) points = obj["points"];
   jsonExportAll(id, points);
   if (points.size() > 0) obj["points"] = points;
 }

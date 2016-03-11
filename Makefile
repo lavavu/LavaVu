@@ -3,6 +3,7 @@ PREFIX = bin
 APREFIX = $(realpath $(PREFIX))
 
 #Object files path
+#OPATH = /tmp
 OPATH = tmp
 
 #Compilers
@@ -11,12 +12,13 @@ CC=gcc
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
+CPPFLAGS = $(CFLAGS) -std=c++11
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
-  CFLAGS += -g -O0
+  CFLAGS += -g -O0 -DDEBUG
 else
-  CFLAGS += -O3
+  CFLAGS += -O3 -DNDEBUG
 endif
 
 #Linux/Mac specific libraries/flags for offscreen & interactive
@@ -114,14 +116,14 @@ paths:
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
-	$(CPP) $(CFLAGS) $(DEFINES) -c $< -o $@
+	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) paths
 	$(CPP) -o $(LIBNAME) -shared $(OBJS) $(OBJ2) $(LIBS)
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) -Wl,-rpath=$(APREFIX)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
-	$(CPP) $(CFLAGS) -o $@ -c $^ 
+	$(CPP) $(CPPFLAGS) -o $@ -c $^ 
 
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 

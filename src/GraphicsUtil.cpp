@@ -252,20 +252,19 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
-float PrintSetFont(json::Object& properties, std::string def, float scaling, float multiplier)
+float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier)
 {
   //fixed, small, sans, serif, vector
 #ifdef USE_OMEGALIB
   //Always use 3D vector font
   std::string fonttype = "vector";
 #else
-  std::string fonttype = properties["font"].ToString(def);
+  std::string fonttype = properties["font"];
 #endif
-  fontscale = properties["fontscale"].ToFloat(scaling) * multiplier;
+  fontscale = properties["fontscale"];
+  fontscale *= scaling * multiplier;
   //Bitmap fonts
-  if (fonttype == "default" || fonttype == "small")
-    lucSetFontCharset(FONT_SMALL);
-  else if (fonttype == "fixed")
+  if (fonttype == "fixed")
     lucSetFontCharset(FONT_FIXED);
   else if (fonttype == "sans")
     lucSetFontCharset(FONT_NORMAL);
@@ -276,6 +275,8 @@ float PrintSetFont(json::Object& properties, std::string def, float scaling, flo
     lucSetFontCharset(FONT_VECTOR);
     return -fontscale;
   }
+  else  //Default (small)
+    lucSetFontCharset(FONT_SMALL);
 
   return fontscale;
 }
@@ -587,7 +588,7 @@ void lucDeleteFont()
   fonttexture = 0;
 }
 #else
-float PrintSetFont(json::Object& properties, std::string def, float scaling, float multiplier) {}
+float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier) {}
 void PrintSetColour(int colour) {}
 void PrintString(const char* str) {}
 void Printf(int x, int y, const char *fmt, ...) {}

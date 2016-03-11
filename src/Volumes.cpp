@@ -53,7 +53,7 @@ void Volumes::close()
   //Iterate geom and delete textures
   //"cachevolumes" property allows switching this behaviour off for faster switching
   //requries enough GPU ram to store all volumes
-  if (Geometry::properties["cachevolumes"].ToBool(false)) return;
+  if (Properties::global("cachevolumes")) return;
   for (unsigned int i=0; i<geom.size(); i++)
   {
     if (geom[i]->texIdx >= 0)
@@ -271,6 +271,7 @@ void Volumes::render(int i)
   GL_Error_Check;
 
   //Uniform variables
+  Properties& props = geom[i]->draw->properties;
   float viewport[4];
   glGetFloatv(GL_VIEWPORT, viewport);
   TextureData* voltexture = geom[i]->draw->useTexture(geom[i]->texIdx);
@@ -280,43 +281,44 @@ void Volumes::render(int i)
   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
   //User settings
-  json::Object props = geom[i]->draw->properties;
   bool hasColourMap = geom[i]->draw->colourMaps[lucColourValueData]
                       && geom[i]->draw->colourMaps[lucColourValueData]
-                      && props["colourmap"].ToBool(true);
+                      && props["colourmap"];
   //Use per-object clip box if set, otherwise use global clip
   /*
-  float bbMin[3] = {props["xmin"].ToFloat(Geometry::properties["xmin"].ToFloat(0.01) * geom[i]->vertices[0][0]),
-                    props["ymin"].ToFloat(Geometry::properties["ymin"].ToFloat(0.01) * geom[i]->vertices[0][1]),
-                    props["zmin"].ToFloat(Geometry::properties["zmin"].ToFloat(0.01) * geom[i]->vertices[0][2])};
-  float bbMax[3] = {props["xmax"].ToFloat(Geometry::properties["xmax"].ToFloat(0.99) * geom[i]->vertices[1][0]),
-                    props["ymax"].ToFloat(Geometry::properties["ymax"].ToFloat(0.99) * geom[i]->vertices[1][1]),
-                    props["zmax"].ToFloat(Geometry::properties["zmax"].ToFloat(0.99) * geom[i]->vertices[1][2])};
+  float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->vertices[0][0]),
+                    props.getFloat("ymin", 0.01) * geom[i]->vertices[0][1]),
+                    props.getFloat("zmin", 0.01) * geom[i]->vertices[0][2])};
+  float bbMax[3] = {props.getFloat("xmax", 0.99) * geom[i]->vertices[1][0]),
+                    props.getFloat("ymax", 0.99) * geom[i]->vertices[1][1]),
+                    props.getFloat("zmax", 0.99) * geom[i]->vertices[1][2])};
   */
-  float bbMin[3] = {props["xmin"].ToFloat(view->properties["xmin"].ToFloat(0.01)),
-                    props["ymin"].ToFloat(view->properties["ymin"].ToFloat(0.01)),
-                    props["zmin"].ToFloat(view->properties["zmin"].ToFloat(0.01))
+  float bbMin[3] = {props.getFloat("xmin", 0.01),
+                    props.getFloat("ymin", 0.01),
+                    props.getFloat("zmin", 0.01)
                    };
-  float bbMax[3] = {props["xmax"].ToFloat(view->properties["xmax"].ToFloat(0.99)),
-                    props["ymax"].ToFloat(view->properties["ymax"].ToFloat(0.99)),
-                    props["zmax"].ToFloat(view->properties["zmax"].ToFloat(0.99))
+  float bbMax[3] = {props.getFloat("xmax", 0.99),
+                    props.getFloat("ymax", 0.99),
+                    props.getFloat("zmax", 0.99)
                    };
+
   glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
   glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
   glUniform1i(prog->uniforms["uEnableColour"], hasColourMap ? 1 : 0);
-  glUniform1f(prog->uniforms["uPower"], props["power"].ToFloat(1.0));
-  glUniform1i(prog->uniforms["uSamples"], props["samples"].ToInt(256));
-  glUniform1f(prog->uniforms["uDensityFactor"], props["density"].ToFloat(5.0) * props["opacity"].ToFloat(1.0));
-  glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"].ToFloat(0));
-  Colour colour = Colour_FromJson(props, "colour", 220, 220, 200, 255);
-  colour.a = 255.0 * props["isoalpha"].ToFloat(colour.a/255.0);
+  glUniform1f(prog->uniforms["uPower"], props["power"]);
+  glUniform1i(prog->uniforms["uSamples"], props["samples"]);
+  float opacity = props["opacity"], density = props["density"];
+  glUniform1f(prog->uniforms["uDensityFactor"], density * opacity);
+  glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"]);
+  Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
+  colour.a = 255.0 * props.getFloat("isoalpha", colour.a/255.0);
   Colour_SetUniform(prog->uniforms["uIsoColour"], colour);
-  glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"].ToFloat(0.1));
-  glUniform1i(prog->uniforms["uIsoWalls"], props["isowalls"].ToInt(0));
-  glUniform1i(prog->uniforms["uFilter"], props["tricubicfilter"].ToInt(0));
+  glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
+  glUniform1i(prog->uniforms["uIsoWalls"], (bool)props["isowalls"]);
+  glUniform1i(prog->uniforms["uFilter"], (bool)props["tricubicfilter"]);
   //density min max
-  float dminmax[2] = {props["dminclip"].ToFloat(0.0),
-                      props["dmaxclip"].ToFloat(1.0)};
+  float dminmax[2] = {props["dminclip"],
+                      props["dmaxclip"]};
   glUniform2fv(prog->uniforms["uDenMinMax"], 1, dminmax);
   GL_Error_Check;
 
@@ -403,6 +405,7 @@ void Volumes::render(int i)
 
 GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles)
 {
+  //if (geom.size() == 1)
   //Note: update() must be called first to fill slices[]
   if (slices.size() == 0) return NULL;
   for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id])
@@ -471,20 +474,25 @@ void Volumes::pngWrite(unsigned int id, int xtiles)
 #endif
 }
 
-void Volumes::jsonWrite(unsigned int id, json::Object& obj)
+void Volumes::jsonWrite(unsigned int id, json& obj)
 {
   update();  //Count slices etc...
   //Note: update() must be called first to fill slices[]
-  if (slices.size() == 0) return;
+  //if (geom.size() == 1)
+  if (slices.size() == 0)
+  {
+    std::cerr << "Volume has no slices, cube export not yet supported, skipping\n";
+    return;
+  }
 
-  json::Array volumes;
-  if (obj.HasKey("volumes")) volumes = obj["volumes"].ToArray();
+  json volumes;
+  if (obj.count("volumes")) volumes = obj["volumes"];
   for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id])
   {
-    //   printf("%d id == %d\n", i, geom[i]->draw->id);
+       printf("%d id == %d\n", i, geom[i]->draw->id);
     if (geom[i]->draw->id == id && drawable(i))
     {
-      json::Object data, vertices, volume;
+      json data, vertices, volume;
       //Height needs calculating from values data
       int height = geom[i]->colourData()->size() / geom[i]->width;
       /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
@@ -503,7 +511,7 @@ void Volumes::jsonWrite(unsigned int id, json::Object& obj)
       int iw, ih;
       GLubyte *image = getTiledImage(id, iw, ih, false, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
-      json::Array res, scale;
+      json res, scale;
       res.push_back((int)geom[i]->width);
       res.push_back(height);
       res.push_back(slices[id]);

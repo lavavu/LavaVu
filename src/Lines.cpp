@@ -69,8 +69,8 @@ void Lines::update()
   //Count 2d lines
   linetotal = 0;
   for (unsigned int i=0; i<geom.size(); i++)
-  {
-    if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
+  { //Force true as default here, global default is false for "flat"
+    if (all2d || (geom[i]->draw->properties.getBool("flat", true) && !geom[i]->draw->properties["tubes"]))
       linetotal += geom[i]->count;
   }
 
@@ -99,16 +99,18 @@ void Lines::update()
   tt=clock();
   counts.clear();
   counts.resize(geom.size());
+  any3d = false;
   for (unsigned int i=0; i<geom.size(); i++)
   {
     t1=tt=clock();
+    Properties& props = geom[i]->draw->properties;
 
     //Calibrate colour maps on range for this object
     geom[i]->colourCalibrate();
-    float limit = geom[i]->draw->properties["limit"].ToFloat(0);
-    bool linked = geom[i]->draw->properties["link"].ToBool(false);
+    float limit = props["limit"];
+    bool linked = props["link"];
 
-    if (all2d || (geom[i]->draw->properties["flat"].ToBool(true) && !tubes))
+    if (all2d || (props.getBool("flat", true) && !props["tubes"]))
     {
       int hasColours = geom[i]->colourCount();
       int colrange = hasColours ? geom[i]->count / hasColours : 1;
@@ -157,14 +159,17 @@ void Lines::update()
     }
     else
     {
+      any3d = true; //Flag 3d tubes drawn
+
       //Create a new data store for output geometry
       tris->add(geom[i]->draw);
 
       //3d lines - using triangle sub-renderer
-      geom[i]->draw->properties["lit"] = true; //Override lit
+      geom[i]->draw->properties.data["lit"] = true; //Override lit
       //Draw as 3d cylinder sections
-      int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(2));
-      float radius = scale*0.1;
+      int quality = 4 * (int)props["glyphs"];
+      float scaling = (float)props["scaling"] * (float)props["scalelines"];
+      float radius = scaling*0.1;
       float* oldpos = NULL;
       Colour colour;
       for (unsigned int v=0; v < geom[i]->count; v++)
@@ -238,17 +243,19 @@ void Lines::draw()
 
     for (unsigned int i=0; i<geom.size(); i++)
     {
-      if (drawable(i) && geom[i]->draw->properties["flat"].ToBool(true) && !tubes)
+      Properties& props = geom[i]->draw->properties;
+      if (drawable(i) && props.getBool("flat", true) && !props["tubes"])
       {
         //Set draw state
         setState(i, prog);
 
         //Lines specific state
-        float lineWidth = geom[i]->draw->properties["linewidth"].ToFloat(1.0) * scale;
-        if (lineWidth <= 0) lineWidth = scale;
+        float scaling = (float)props["scaling"] * (float)props["scalelines"];
+        float lineWidth = (float)props["linewidth"] * scaling;
+        if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);
 
-        if (geom[i]->draw->properties["link"].ToBool(false))
+        if (props["link"])
           glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
         else
           glDrawArrays(GL_LINES, offset, counts[i]);
@@ -273,14 +280,14 @@ void Lines::draw()
   GL_Error_Check;
 }
 
-void Lines::jsonWrite(unsigned int id, json::Object& obj)
+void Lines::jsonWrite(unsigned int id, json& obj)
 {
-  json::Array lines;
-  if (obj.HasKey("lines")) lines = obj["lines"].ToArray();
+  json lines;
+  if (obj.count("lines") > 0) lines = obj["lines"];
   jsonExportAll(id, lines);
   if (lines.size() > 0) obj["lines"] = lines;
 
   //Triangles rendered?
-  if (!all2d || tubes)
+  if (!all2d || any3d)
     tris->jsonWrite(id, obj);
 }

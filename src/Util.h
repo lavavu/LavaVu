@@ -278,10 +278,33 @@ public:
   }
 };
 
-//Property containers now using json
-void jsonParseProperties(std::string& properties, json::Object& object);
-void jsonParseProperty(std::string& data, json::Object& object);
-void jsonMerge(json::Object& lhs, json::Object rhs);
+//JSON Property set wrapper class
+class Properties
+{
+public:
+  static json globals;
+  static json defaults;
+  json data;
+
+  Properties() 
+  {
+    defaults["default"] = false; //Dummy value
+  }
+
+  static json& global(const std::string& key);
+
+  bool has(const std::string& key);
+  json& operator[](const std::string& key);
+  Colour getColour(const std::string& key, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+  float getFloat(const std::string& key, float def);
+  int getInt(const std::string& key, int def);
+  bool getBool(const std::string& key, bool def);
+  void parseSet(const std::string& properties);
+  void parse(const std::string& property, bool global=false);
+  void merge(json& other);
+  void convertBools(std::vector<std::string> list);
+
+};
 
 //Utility class for parsing property,value strings
 typedef std::vector<std::string> prop_values;

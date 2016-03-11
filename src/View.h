@@ -77,7 +77,7 @@ public:
 
   std::string title;
   //View properties data...
-  json::Object properties;
+  Properties properties;
 
   // Scene scaling
   float scale[3];

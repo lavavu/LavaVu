@@ -76,9 +76,6 @@ class GeomData
 {
 public:
   static std::string names[lucMaxType];
-  static float opacity;  //Global opacity
-  static int glyphs;
-  static bool wireframe, cullface, lit;
   DrawingObject* draw; //Parent drawing object
   unsigned int count;  //Number of vertices
   unsigned int width;
@@ -218,14 +215,11 @@ protected:
   GeomData* fixed; //Pointer to fixed data
 
 public:
-  //TODO: Move globals from GeomData and elsewhere to this properties object...
-  static json::Object properties; //Global properties
   //Store the actual maximum bounding box
   static float min[3], max[3], dims[3];
   bool allhidden, internal;
   lucGeometryType type;   //Holds the object type
   unsigned int total;     //Total entries of all objects in container
-  float scale;   //Scaling factor
   bool redraw;    //Redraw from scratch flag
 
   Geometry();
@@ -237,8 +231,8 @@ public:
 
   void compareMinMax(float* min, float* max);
   void dumpById(std::ostream& csv, unsigned int id);
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
-  void jsonExportAll(unsigned int id, json::Array& array, bool encode=true);
+  virtual void jsonWrite(unsigned int id, json& obj);
+  void jsonExportAll(unsigned int id, json& array, bool encode=true);
   bool hide(unsigned int idx);
   void hideAll();
   bool show(unsigned int idx);
@@ -248,7 +242,7 @@ public:
   void localiseColourValues();
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
-  void setState(unsigned int index, Shader* prog=NULL);
+  void setState(unsigned int i, Shader* prog=NULL);
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();  //Display saved geometry
   void labels();  //Draw labels
@@ -273,7 +267,6 @@ public:
   void drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads=false);
   void drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count=24);
   void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
-  int glyphSegments(int def=2);
 
   //Return total vertex count
   unsigned int getVertexCount(DrawingObject* draw)
@@ -316,7 +309,7 @@ public:
   void depthSort();
   virtual void render();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 };
 
 class Lines : public Geometry
@@ -324,7 +317,7 @@ class Lines : public Geometry
   TriSurfaces* tris;
   GLuint vbo;
   unsigned int linetotal;
-  bool all2d;
+  bool all2d, any3d;
   std::vector<unsigned int> counts;
 public:
   static Shader* prog;
@@ -334,7 +327,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 };
 
 class Vectors : public Geometry
@@ -347,7 +340,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 };
 
 class Tracers : public Geometry
@@ -360,7 +353,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 };
 
 class QuadSurfaces : public TriSurfaces
@@ -383,7 +376,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 };
 
 class Points : public Geometry
@@ -392,7 +385,6 @@ class Points : public Geometry
 public:
   static Shader* prog;
   static unsigned int subSample;
-  static int pointType;
   bool attenuate;
   static GLuint indexvbo, vbo;
 
@@ -404,8 +396,9 @@ public:
   void loadVertices();
   void depthSort();
   void render();
+  int getPointType(int index=0);
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 
   void dumpJSON();
 };
@@ -425,7 +418,7 @@ public:
   void render(int i);
   GLubyte* getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles=16);
   void pngWrite(unsigned int id, int xtiles=16);
-  virtual void jsonWrite(unsigned int id, json::Object& obj);
+  virtual void jsonWrite(unsigned int id, json& obj);
 };
 
 //Sorting util functions

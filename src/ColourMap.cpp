@@ -58,9 +58,10 @@ ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete,
   texture = NULL;
   background.value = 0xff000000;
 
-  jsonParseProperties(props, properties);
-  if (properties.HasKey("colours"))
-    parse(properties["colours"].ToString());
+  properties.parseSet(props);
+
+  if (properties.has("colours"))
+    parse(properties["colours"]);
 }
 
 void ColourMap::parse(std::string colourMapString)
@@ -338,7 +339,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 #define RECT2(x0, y0, x1, y1, swap) swap ? glRecti(y0, x0, y1, x1) : glRecti(x0, y0, x1, y1);
 #define VERT2(x, y, swap) swap ? glVertex2i(y, x) : glVertex2i(x, y);
 
-void ColourMap::draw(json::Object& properties, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
+void ColourMap::draw(Properties& properties, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
 {
   glPushAttrib(GL_ENABLE_BIT);
   int pixel_I;
@@ -410,13 +411,13 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
   //Labels / tick marks
   glColor4ubv(printColour.rgba);
   float tickValue;
-  int ticks = properties["ticks"].ToInt(0);
-  bool printTicks = properties["printticks"].ToBool(true);
-  bool printUnits = properties["printunits"].ToBool(false);
-  bool scientific = properties["scientific"].ToBool(false);
-  int precision = properties["precision"].ToInt(2);
-  float scaleval = properties["scaleValue"].ToFloat(1.0);
-  float border = properties["border"].ToFloat(1.0);
+  int ticks = properties["ticks"];
+  bool printTicks = properties["printticks"];
+  bool printUnits = properties["printunits"];
+  bool scientific = properties["scientific"];
+  int precision = properties["precision"];
+  float scaleval = properties["scalevalue"];
+  float border = properties.getFloat("border", 1.0); //Use getFloat or will load global border prop as default
   if (border > 0) glLineWidth(border);
   else glLineWidth(1.0);
 
@@ -447,7 +448,7 @@ void ColourMap::draw(json::Object& properties, int startx, int starty, int lengt
     {
       char label[10];
       sprintf(label, "tick%d", i);
-      tickValue = properties[label].ToFloat(FLT_MIN);
+      tickValue = properties.getFloat(label, FLT_MIN);
 
       /* Calculate tick position */
       if (tickValue == FLT_MIN)  /* No fixed value provided */

@@ -60,23 +60,25 @@ void Shapes::update()
   tris->setView(view);
   for (unsigned int i=0; i<geom.size(); i++)
   {
+    Properties& props = geom[i]->draw->properties;
+
     //Create a new data store for output geometry
     tris->add(geom[i]->draw);
 
-    float scaling = geom[i]->draw->properties["scaling"].ToFloat(1.0);
+    float scaling = props["scaling"];
 
     //Load constant scaling factors from properties
     float dims[3];
-    dims[0] = geom[i]->draw->properties["width"].ToFloat(FLT_MIN);
-    dims[1] = geom[i]->draw->properties["height"].ToFloat(FLT_MIN);
-    dims[2] = geom[i]->draw->properties["length"].ToFloat(FLT_MIN);
-    int shape = geom[i]->draw->properties["shape"].ToInt(0);
-    int quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(3));
+    dims[0] = props["width"];
+    dims[1] = props["height"];
+    dims[2] = props["length"];
+    int shape = props["shape"];
+    int quality = 4 * props.getInt("glyphs", 3);
     //Points drawn as shapes?
-    if (!geom[i]->draw->properties.HasKey("shape"))
+    if (!geom[i]->draw->properties.has("shape"))
     {
-      dims[0] = dims[1] = dims[2] = geom[i]->draw->properties["pointsize"].ToFloat(1.0) / 8.0;
-      quality = glyphSegments(geom[i]->draw->properties["glyphs"].ToInt(4));
+      dims[0] = dims[1] = dims[2] = (float)props["pointsize"] / 8.0;
+      quality = 4 * props.getInt("glyphs", 4);
     }
 
     if (scaling <= 0) scaling = 1.0;
@@ -100,7 +102,7 @@ void Shapes::update()
       {
         if (dims[c] != FLT_MIN) sdims[c] *= dims[c];
         //Apply scaling, also inverse of model scaling to avoid distorting glyphs
-        sdims[c] *= scaling * scale / view->scale[c];
+        sdims[c] *= scaling * (float)props["scaleshapes"] / view->scale[c];
       }
 
       //Setup orientation using alignment vector
@@ -159,7 +161,7 @@ void Shapes::draw()
   GL_Error_Check;
 }
 
-void Shapes::jsonWrite(unsigned int id, json::Object& obj)
+void Shapes::jsonWrite(unsigned int id, json& obj)
 {
   tris->jsonWrite(id, obj);
 }
