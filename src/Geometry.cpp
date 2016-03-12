@@ -544,7 +544,8 @@ void Geometry::setState(unsigned int i, Shader* prog)
   if (prog && prog->program > 0)
   {
     prog->use();
-    prog->setUniformf("uOpacity", geom[i]->draw->properties["opacity"]);
+    //prog->setUniformf("uOpacity", geom[i]->draw->properties["opacity"]);
+    prog->setUniformf("uOpacity", Properties::global("opacity"));  //Use global opacity only here
     prog->setUniformi("uLighting", lighting);
     prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
     prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);
@@ -629,7 +630,7 @@ void Geometry::labels()
   glDisable(GL_LIGHTING);  //No lighting
   for (unsigned int i=0; i < geom.size(); i++)
   {
-    if (view->textscale > 0) geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
+    //if (view->textscale > 0) geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
     PrintSetFont(geom[i]->draw->properties, "small"); // , 1.0, view->textscale);
     Colour colour;
     if (drawable(i) && geom[i]->labels.size() > 0)

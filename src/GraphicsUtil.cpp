@@ -259,10 +259,10 @@ float PrintSetFont(Properties& properties, std::string def, float scaling, float
   //Always use 3D vector font
   std::string fonttype = "vector";
 #else
-  std::string fonttype = properties["font"];
+  std::string fonttype = def;
+  if (properties.has("font")) def = properties["font"];
 #endif
-  fontscale = properties["fontscale"];
-  fontscale *= scaling * multiplier;
+  fontscale = properties.getFloat("fontscale", scaling) * multiplier;
   //Bitmap fonts
   if (fonttype == "fixed")
     lucSetFontCharset(FONT_FIXED);
