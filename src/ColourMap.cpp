@@ -96,6 +96,15 @@ void ColourMap::parse(std::string colourMapString)
   delete[] colourString;
 }
 
+
+void ColourMap::addAt(Colour& colour, float position)
+{
+  //Adds by position, not "value"
+  colours.push_back(ColourVal(colour));
+  colours[colours.size()-1].value = HUGE_VAL;
+  colours[colours.size()-1].position = position;
+}
+
 void ColourMap::add(std::string colour)
 {
   Colour c = Colour_FromString(colour);
@@ -623,10 +632,7 @@ void ColourMap::loadPalette(std::string data)
       std::getline(iss, value); //Read rest of stream into value
       Colour colour = Colour_FromString(value);
       //Add to colourmap
-      add(colour.value, pos);
-      //Use positions, values will be calculated
-      colours[colours.size()-1].value = HUGE_VAL;
-      colours[colours.size()-1].position = pos;
+      addAt(colour, pos);
     }
     else
     {

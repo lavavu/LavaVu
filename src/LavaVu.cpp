@@ -3392,7 +3392,7 @@ void LavaVu::jsonRead(std::string data)
         {
           json colour = colours[c];
           Colour newcolour = Colour_FromJson(colour["colour"]);
-          amodel->colourMaps[i]->add(newcolour.value, colour["position"]);
+          amodel->colourMaps[i]->addAt(newcolour, colour["position"]);
         }
       }
     }

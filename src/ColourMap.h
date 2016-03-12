@@ -86,6 +86,7 @@ public:
   }
 
   void parse(std::string colourMapString);
+  void addAt(Colour& colour, float position);
   void add(std::string colour);
   void add(std::string colour, float pvalue);
   void add(unsigned int colour);
