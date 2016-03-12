@@ -34,6 +34,8 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 //TODO/FIX:
+//boolean properties no longer support int values
+//can't seem to catch exception on property lookup
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
 //Lock down save/restore state json format so translation between script commands and json props unecessary
@@ -159,7 +161,7 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   //Vectors
   Properties::defaults["arrowhead"] = 2.0;
   Properties::defaults["scalevectors"] = 1.0;
-  Properties::defaults["length"] = 1.0;
+  Properties::defaults["lengthscale"] = 1.0;
   Properties::defaults["radius"] = 0.0;
 
   //Tracers

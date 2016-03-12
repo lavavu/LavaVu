@@ -79,8 +79,7 @@ void Vectors::update()
     float arrowHead = props["arrowhead"];
 
     //Dynamic range?
-    float scaling = props["scaling"];
-    scaling *= (float)props["scalevectors"];
+    float scaling = (float)props["scaling"] * (float)props["scalevectors"];
 
     if (geom[i]->vectors.maximum > 0)
     {
@@ -91,8 +90,7 @@ void Vectors::update()
 
     //Load scaling factors from properties
     int quality = 4 * (int)props["glyphs"];
-    float length = props["length"];
-    scaling *= length;
+    float length = scaling * (float)props["lengthscale"];
     //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
 
     //Default (0) = automatically calculated radius

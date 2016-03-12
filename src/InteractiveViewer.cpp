@@ -1508,7 +1508,7 @@ bool LavaVu::parseCommand(std::string cmd)
           obj->properties.data["pointtype"] = (pt-1) % 5;
         else if (parsed.get("pointtype", next) == "down")
           obj->properties.data["pointtype"] = (pt+1) % 5;
-        printMessage("%s point type set to %d", obj->name.c_str(), obj->properties["pointtype"]);
+        printMessage("%s point type set to %d", obj->name.c_str(), (int)obj->properties["pointtype"]);
         Model::geometry[lucPointType]->redraw = true;
         redraw(obj->id);
         amodel->redraw();
@@ -1597,7 +1597,7 @@ bool LavaVu::parseCommand(std::string cmd)
       else
         aview->properties.data["border"] = 1;
     }
-    printMessage("Frame set to %d, filled=%d", aview->properties["border"], aview->properties["fillborder"]);
+    printMessage("Frame set to %d, filled=%d", (int)aview->properties["border"], (bool)aview->properties["fillborder"]);
   }
   else if (parsed.exists("camera"))
   {
@@ -1621,7 +1621,7 @@ bool LavaVu::parseCommand(std::string cmd)
       else if (parsed.get("scale", 1) == "down")
         Properties::globals[key] = scale / 1.5;
       active->redraw = true;
-      printMessage("%s scaling set to %f", what.c_str(), Properties::globals[key]);
+      printMessage("%s scaling set to %f", what.c_str(), (float)Properties::globals[key]);
     }
     else
     {
@@ -1677,7 +1677,7 @@ bool LavaVu::parseCommand(std::string cmd)
             obj->properties.data["scaling"] = sc * 1.5;
           else if (parsed.get("scale", next) == "down")
             obj->properties.data["scaling"] = sc / 1.5;
-          printMessage("%s scaling set to %f", obj->name.c_str(), obj->properties["scaling"]);
+          printMessage("%s scaling set to %f", obj->name.c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
             Model::geometry[type]->redraw = true;
           redraw(obj->id);
