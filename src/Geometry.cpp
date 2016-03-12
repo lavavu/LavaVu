@@ -390,7 +390,7 @@ void Geometry::hideAll()
   for (unsigned int i=0; i<hidden.size(); i++)
   {
     hidden[i] = true;
-    geom[i]->draw->visible = false;
+    geom[i]->draw->properties.data["visible"] = false;
   }
   allhidden = true;
   redraw = true;
@@ -411,7 +411,7 @@ void Geometry::showAll()
   for (unsigned int i=0; i<hidden.size(); i++)
   {
     hidden[i] = false;
-    geom[i]->draw->visible = true;
+    geom[i]->draw->properties.data["visible"] = true;
   }
   allhidden = false;
   redraw = true;
@@ -425,7 +425,7 @@ void Geometry::showById(unsigned int id, bool state)
     if (geom[i]->draw->id == id)
     {
       hidden[i] = !state;
-      geom[i]->draw->visible = state;
+      geom[i]->draw->properties.data["visible"] = state;
     }
   }
   redraw = true;
@@ -673,7 +673,7 @@ void Geometry::labels()
 //ie: has data, in range, not hidden and in viewport object list
 bool Geometry::drawable(unsigned int idx)
 {
-  if (!geom[idx]->draw->visible) return false;
+  if (!geom[idx]->draw->properties["visible"]) return false;
   //Within bounds and not hidden
   if (idx < geom.size() && geom[idx]->count > 0 && !hidden[idx])
   {
@@ -711,7 +711,7 @@ GeomData* Geometry::add(DrawingObject* draw)
   GeomData* geomdata = new GeomData(draw);
   geom.push_back(geomdata);
   if (hidden.size() < geom.size()) hidden.push_back(allhidden);
-  if (allhidden) draw->visible = false;
+  if (allhidden) draw->properties.data["visible"] = false;
   //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p\n", draw->name.c_str(), geom.size(), geomdata);
   return geomdata;
 }
@@ -727,7 +727,7 @@ void Geometry::setView(View* vp, float* min, float* max)
   for (unsigned int o=0; o<view->objects.size(); o++)
   {
     //Skip invisible
-    if (!view->objects[o] || !view->objects[o]->visible) continue;
+    if (!view->objects[o] || !view->objects[o]->properties.data["visible"]) continue;
     for (unsigned int g=0; g<geom.size(); g++)
     {
       if (geom[g]->draw == view->objects[o])

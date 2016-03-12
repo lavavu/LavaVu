@@ -809,6 +809,7 @@ bool LavaVu::parseCommand(std::string cmd)
   //Following commands require a model!
   if (!amodel || !aview || !awin)
   {
+    std::cerr << "Model/View/Window required to execute command: " << cmd << std::endl;
     //Attempt to parse as property=value first
     parsePropertySet(cmd);
     return false;
@@ -1037,7 +1038,7 @@ bool LavaVu::parseCommand(std::string cmd)
             bool state = (action == "show");
             for (unsigned int i=0; i < Model::geometry.size(); i++)
               Model::geometry[i]->showById(obj->id, state);
-            obj->visible = state; //This allows hiding of objects without geometry (colourbars)
+            obj->properties["visible"] = state; //This allows hiding of objects without geometry (colourbars)
             printMessage("%s object %s", action.c_str(), obj->name.c_str());
             amodel->redraw();
           }

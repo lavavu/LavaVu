@@ -729,7 +729,7 @@ void View::drawOverlay(Colour& colour)
   {
     //Only when flagged as colour bar
     if (!objects[i] || !objects[i]->properties["colourbar"] ||
-        !objects[i]->visible || !objects[i]->colourMaps[lucColourValueData]) continue;
+        !objects[i]->properties["visible"] || !objects[i]->colourMaps[lucColourValueData]) continue;
     int pos = objects[i]->properties["position"];
     std::string align = objects[i]->properties["align"];
     int ww = w, hh = h;

@@ -113,6 +113,7 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["clip"] = true;
   Properties::defaults["texturefile"] = "";
   Properties::defaults["colourby"] = 0;
+  Properties::defaults["visible"] = true;
 
   //ColourBar
   Properties::defaults["colourbar"] = false;
@@ -2681,7 +2682,7 @@ void LavaVu::displayObjectList(bool console)
         if (console) std::cerr << "[ no data  ]" << ss.str() << std::endl;
         displayText(ss.str(), ++offset, 0xff222288);
       }
-      else if (amodel->objects[i]->visible)
+      else if (amodel->objects[i]->properties["visible"])
       {
         if (console) std::cerr << "[          ]" << ss.str() << std::endl;
         //Use object colour if provided, unless matches background
@@ -3276,7 +3277,6 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
       json obj = amodel->objects[i]->properties.data;
       obj["id"] = (int)amodel->objects[i]->id;
       obj["name"] = amodel->objects[i]->name;
-      obj["visible"] = !amodel->objects[i]->skip && amodel->objects[i]->visible;
       if (colourmap >= 0) obj["colourmap"] = colourmap;
       if (!objdata)
       {
