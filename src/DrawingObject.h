@@ -55,7 +55,6 @@ public:
   unsigned int id;
   std::string name;
   bool skip;
-  bool visible;
   //Cached values for faster lookup
   float opacity;
   Colour colour;
