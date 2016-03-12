@@ -743,8 +743,7 @@ void View::drawOverlay(Colour& colour)
     }
 
     int margin = objects[i]->properties["margin"];
-    int length = objects[i]->properties["lengthfactor"];
-    length *= ww;
+    int length = ww * (float)objects[i]->properties["lengthfactor"];
     int bar_height = objects[i]->properties.getInt("width", 10); //Conflict with shape width
     int startx = (ww - length) / 2;
     if (pos == 1) startx = margin;

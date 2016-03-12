@@ -87,9 +87,9 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   //Object defaults
   Properties::defaults["static"] = false;
   Properties::defaults["lit"] = true;
-  Properties::defaults["cullface"] = true;
+  Properties::defaults["cullface"] = false;
   Properties::defaults["wireframe"] = false;
-  Properties::defaults["flat"] = false; //True for lines?
+  Properties::defaults["flat"] = false;
   Properties::defaults["depthtest"] = true;
 
   Properties::defaults["opacity"] = 1.0;
@@ -121,7 +121,7 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["align"] = "bottom";
   Properties::defaults["margin"] = 16;
   Properties::defaults["lengthfactor"] = 0.8;
-  //Properties::defaults["width"] = 10; //CONFLICT with shapes
+  //Properties::defaults["barwidth"] = 10;
 
   //Labels/text
   Properties::defaults["font"] = "vector";
@@ -166,7 +166,6 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["steps"] = 0;
   Properties::defaults["taper"] = true;
   Properties::defaults["fade"] = false;
-  //Properties::defaults["limit"] = view->model_size * 0.3;
   Properties::defaults["scaletracers"] = 1.0;
 
   //Shapes
@@ -3178,7 +3177,6 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp, bool objdata)
 void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
 {
   //Write new JSON format objects
-  //TODO:
   // - globals are all stored on / sourced from Properties::globals
   // - views[] list holds view properies (previously single instance in "options")
   json exported;
@@ -3326,7 +3324,6 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
 
 void LavaVu::jsonRead(std::string data)
 {
-  //TODO: Update this to read new format!
   json imported = json::parse(data);
   Properties::globals = imported["properties"];
   json views;
@@ -3405,7 +3402,7 @@ void LavaVu::jsonRead(std::string data)
     for (unsigned int j=0; j < objects.size(); j++)
     {
       json obj = objects[j];
-      if (obj["id"] == (int)amodel->objects[i]->id)
+      if (amodel->objects[i] && obj["id"] == (int)amodel->objects[i]->id)
       {
         amodel->objects[i]->properties.merge(obj);
         //if (colourmap >= 0) obj["colourmap"] = colourmap;
