@@ -174,8 +174,10 @@ void Volumes::update()
       //Force reload
       //if (i<geom.size() && geom[i]->texture)
       //  geom[i]->texture->width = 0;
-      if (i<geom.size() && geom[i]->draw->textures.size() > 0 && geom[i]->draw->textures[0])
-        geom[i]->draw->textures[0]->texture->width = 0;
+      //What was this for again?????? Causes crash in new texture loading
+      //if (i<geom.size() && geom[i]->draw->textures.size() > 0 && geom[i]->draw->textures[0])
+      //  geom[i]->draw->textures[0]->texture->width = 0;
+
       if (i==geom.size() || id != geom[i]->draw->id)
       {
         slices[id] = count;
