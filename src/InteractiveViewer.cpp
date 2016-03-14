@@ -255,9 +255,9 @@ bool LavaVu::parseChar(unsigned char key)
     case 'k':
       return parseCommands("lockscale");
     case 'u':
-      return parseCommands("cullface");
+      return parseCommands("toggle cullface");
     case 'w':
-      return parseCommands("wireframe");
+      return parseCommands("toggle wireframe");
     case 'J':
       return parseCommands("json");
     case 'o':
@@ -1159,6 +1159,17 @@ bool LavaVu::parseCommand(std::string cmd)
     else
       aview->properties.data["axis"] = !aview->properties["axis"];
     printMessage("Axis %s", aview->properties["axis"] ? "ON" : "OFF");
+  }
+  else if (parsed.exists("toggle"))
+  {
+    std::string what = parsed["toggle"];
+    if (Properties::global(what).is_boolean())
+    {
+      bool current = Properties::global(what);
+      Properties::global(what) = !current;
+      amodel->redraw();
+      printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
+    }
   }
   else if (parsed.exists("redraw"))
   {
