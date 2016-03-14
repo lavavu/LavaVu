@@ -105,7 +105,6 @@ View::~View()
 void View::setProperties(std::string props)
 {
   properties.parseSet(props);
-  std::cout << props << std::endl;
 
   //Adjust types of some old props
   properties.convertBools({"rulers", "axis", "antialias", "timestep", "fillborder"});
