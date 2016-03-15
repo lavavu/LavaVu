@@ -2608,9 +2608,11 @@ class basic_json
     /// get a boolean (explicit)
     constexpr boolean_t get_impl(boolean_t*) const
     {
-        return is_boolean()
-               ? m_value.boolean
-               : throw std::domain_error("type must be boolean, but is " + type_name());
+        //OK: Modified to support returning numeric values as bools
+        if (is_boolean()) return m_value.boolean;
+        if (is_number_integer()) return m_value.number_integer != 0;
+        if (is_number_float()) return m_value.number_float != 0.;
+        throw std::domain_error("type must be boolean/numeric, but is " + type_name());
     }
 
     /// get a pointer to the value (object)
