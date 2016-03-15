@@ -49,7 +49,7 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
   properties.parseSet(props);
   //Adjust types of some old props
   properties.convertBools({"static", "lit", "cullface", "wireframe", "flat", "depthtest", "clip", "colourbar", "link", 
-                          "tubes", "opaque", "colourmap", "isowalls", "tricubicfilter", "taper", "fade", "printticks", 
+                          "tubes", "opaque", "isowalls", "tricubicfilter", "taper", "fade", "printticks", 
                           "printunits", "scientific"});
 
   //All props now lowercase, fix a couple of legacy camelcase values

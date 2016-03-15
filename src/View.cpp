@@ -80,22 +80,8 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
 
   is3d = true;
 
-  //View properties can only be set if exist, so set all defaults
+  //Apply properties
   properties.data["title"] = title;
-  properties.data["zoomstep"] = -1;
-  properties.data["margin"] = 32;
-  properties.data["rulers"] = false;
-  properties.data["rulerticks"] = 5;
-  properties.data["rulerwidth"] = 1.5;
-  properties.data["fontscale"] = 1.0;
-  properties.data["border"] = 1;
-  properties.data["fillborder"] = false;
-  properties.data["bordercolour"] = Colour_ToJson(LUC_GREY);
-  properties.data["axis"] = true;
-  properties.data["axislength"] = 0.1;
-  properties.data["timestep"] = false;
-  properties.data["antialias"] = true; //Should be global
-  properties.data["shift"] = 0;
 }
 
 View::~View()

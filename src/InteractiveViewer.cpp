@@ -1589,7 +1589,6 @@ bool LavaVu::parseCommand(std::string cmd)
   {
     //Frame off/on/filled
     aview->properties.data["fillborder"] = false;
-    int state = aview->properties["border"];
     if (parsed["border"] == "on")
       aview->properties.data["border"] = 1;
     else if (parsed["border"] == "off")
@@ -1603,12 +1602,10 @@ bool LavaVu::parseCommand(std::string cmd)
     {
       if (parsed.has(ival, "border"))
         aview->properties.data["border"] = ival;
-      else if (state > 0)
-        aview->properties.data["border"] = 0;
       else
-        aview->properties.data["border"] = 1;
+        aview->properties.data["border"] = !aview->properties["border"];
     }
-    printMessage("Frame set to %d, filled=%d", (int)aview->properties["border"], (bool)aview->properties["fillborder"]);
+    printMessage("Frame set to %s, filled=%d", (bool)aview->properties["border"] ? "ON" : "OFF", (bool)aview->properties["fillborder"]);
   }
   else if (parsed.exists("camera"))
   {

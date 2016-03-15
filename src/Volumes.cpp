@@ -285,7 +285,7 @@ void Volumes::render(int i)
   //User settings
   bool hasColourMap = geom[i]->draw->colourMaps[lucColourValueData]
                       && geom[i]->draw->colourMaps[lucColourValueData]
-                      && props["colourmap"];
+                      && props.has("colourmap");
   //Use per-object clip box if set, otherwise use global clip
   /*
   float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->vertices[0][0]),
