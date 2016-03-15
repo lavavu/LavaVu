@@ -3,6 +3,7 @@
 //Replace all control creation, update and set with automated routines from list of defined property controls
 // License: LGPLv3 for now
 var vis = {};
+var view = 0; //Active view
 var viewer;
 var params, messages, properties, objectlist;
 var server = false;
@@ -357,18 +358,8 @@ function loadColourMaps() {
   var canvas = $('palette');
   list.options.length = 1; //Remove all except "None"
   for (var i=0; i<vis.colourmaps.length; i++) {
-    var palette = new Palette("Background=rgba(255,255,255,0)\n");
+    var palette = new Palette(vis.colourmaps[i].colours);
     vis.colourmaps[i].palette = palette;
-
-    //palette.colours = vis.colourmaps[i].colours;
-    for (var j=0; j<vis.colourmaps[i].colours.length; j++) {
-      //Calculate default position if none provided
-      if (vis.colourmaps[i].colours[j].position == undefined)
-        vis.colourmaps[i].colours[j].position = j * (1.0 / (vis.colourmaps[i].colours.length-1));
-      //palette.colours.push(new ColourPos(parseInt(vis.colourmaps[i].colours[j].colour), vis.colourmaps[i].colours[j].position));
-      palette.colours.push(new ColourPos(vis.colourmaps[i].colours[j].colour, vis.colourmaps[i].colours[j].position));
-    }
-
     var option = new Option(vis.colourmaps[i].name || ("ColourMap " + i), i);
     list.options[list.options.length] = option;
 
@@ -396,12 +387,12 @@ function loadColourMaps() {
 }
 
 /*function checkPointMinMax(x, y, z) {
-  if (x < vis.options.min[0]) vis.options.min[0] = x;
-  if (y < vis.options.min[1]) vis.options.min[1] = y;
-  if (z < vis.options.min[2]) vis.options.min[2] = z;
-  if (x > vis.options.max[0]) vis.options.max[0] = x;
-  if (y > vis.options.max[1]) vis.options.max[1] = y;
-  if (z > vis.options.max[2]) vis.options.max[2] = z;
+  if (x < vis.views[view].min[0]) vis.views[view].min[0] = x;
+  if (y < vis.views[view].min[1]) vis.views[view].min[1] = y;
+  if (z < vis.views[view].min[2]) vis.views[view].min[2] = z;
+  if (x > vis.views[view].max[0]) vis.views[view].max[0] = x;
+  if (y > vis.views[view].max[1]) vis.views[view].max[1] = y;
+  if (z > vis.views[view].max[2]) vis.views[view].max[2] = z;
   //alert(min[0] + "," + min[1] + "," + min[2] + " -- " + max[0] + "," + max[1] + "," + max[2]);
   //alert(offset + " : " + x + "," + y + "," + z);
 }*/
@@ -482,7 +473,7 @@ function demoData(num)
   OK.debug("Generating demo particles...");
   var data = 
     {
-      "options" : {"pointScale" : 1, "rotate" : [0,0,0], "min" : min, "max" : max},
+      "views" : [{"pointScale" : 1, "rotate" : [0,0,0], "min" : min, "max" : max}],
       "colourmaps" : 
       [
         {
@@ -1193,7 +1184,7 @@ VertexBuffer.prototype.update = function(gl) {
 
 Renderer.prototype.updateBuffers = function() {
   if (this.border) {
-    this.box(vis.options.min, vis.options.max);
+    this.box(vis.views[view].min, vis.views[view].max);
     this.elements = 24;
     return;
   }
@@ -1426,13 +1417,13 @@ function minMaxDist()
   var maxdist = -Number.MAX_VALUE, mindist = Number.MAX_VALUE;
   for (i=0; i<2; i++)
   {
-     var x = i==0 ? vis.options.min[0] : vis.options.max[0];
+     var x = i==0 ? vis.views[view].min[0] : vis.views[view].max[0];
      for (var j=0; j<2; j++)
      {
-        var y = j==0 ? vis.options.min[1] : vis.options.max[1];
+        var y = j==0 ? vis.views[view].min[1] : vis.views[view].max[1];
         for (var k=0; k<2; k++)
         {
-           var z = k==0 ? vis.options.min[2] : vis.options.max[2];
+           var z = k==0 ? vis.views[view].min[2] : vis.views[view].max[2];
            var dist = eyeDistance(M2, [x, y, z]);
            if (dist < mindist) mindist = dist;
            if (dist > maxdist) maxdist = dist;
@@ -1504,6 +1495,7 @@ function Viewer(canvas) {
 
 Viewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
+  //console.log(source);
   if (document.mouse.isdown) return;
   var start = new Date();
   var updated = true;
@@ -1537,10 +1529,10 @@ Viewer.prototype.loadFile = function(source) {
   OK.debug(time + " seconds to parse data");
 
   if (source.exported) {
-    if (!vis.options) {OK.debug("Exported settings require loaded model"); return;}
+    if (!vis.views[view]) {OK.debug("Exported settings require loaded model"); return;}
     var old = this.toString();
     //Copy, overwriting if exists in source
-    if (source.options.rotate) vis.options.rotate = source.options.rotate;
+    if (source.views[view].rotate) vis.views[view].rotate = source.views[view].rotate;
     Merge(vis, source);
     if (!source.reload) updated = false;  //No reload necessary
   } else {
@@ -1557,22 +1549,22 @@ Viewer.prototype.loadFile = function(source) {
   }
 
   //Always set a bounding box
-  if (!source.options.min) source.options.min = [0, 0, 0];
-  if (!source.options.max) source.options.max = [1, 1, 1];
+  if (!source.views[view].min) source.views[view].min = [0, 0, 0];
+  if (!source.views[view].max) source.views[view].max = [1, 1, 1];
 
   //Load some user options...
   loadColourMaps();
-  if (vis.options) {
-    this.near_clip = vis.options.near_clip || 0;
-    this.far_clip = vis.options.far_clip || 0;
-    this.orientation = vis.options.orientation || 1;
-    this.showBorder = vis.options.border;
-    this.axes = vis.options.axes;
-    this.pointScale = vis.options.pointScale || 1.0;
-    this.pointType = vis.options.pointType >= -1 ? vis.options.pointType : 0;
-    this.opacity = vis.options.opacity || 1.0;
+  if (vis.views[view]) {
+    this.near_clip = vis.views[view].near_clip || 0;
+    this.far_clip = vis.views[view].far_clip || 0;
+    this.orientation = vis.views[view].orientation || 1;
+    this.showBorder = vis.views[view].border;
+    this.axes = vis.views[view].axes;
+    this.pointScale = vis.properties.scalepoints || 1.0;
+    this.pointType = vis.properties.pointtype >= -1 ? vis.properties.pointtype : 0;
+    this.opacity = vis.properties.opacity || 1.0;
 
-    this.applyBackground(vis.options.background);
+    this.applyBackground(vis.properties.background);
 
     //Copy global options to controls where applicable..
     $("bgColour").value = this.background.r;
@@ -1583,20 +1575,20 @@ Viewer.prototype.loadFile = function(source) {
     $("axes").checked = this.axes;
     $("globalPointType").value = this.pointType;
 
-    $('brightness').value = $("brightness-out").value = vis.properties.brightness;
-    $('contrast').value = $("contrast-out").value = vis.properties.contrast;
-    $('saturation').value = $("saturation-out").value = vis.properties.saturation;
+    $('brightness').value = $("brightness-out").value = vis.properties.brightness || 0.0;
+    $('contrast').value = $("contrast-out").value = vis.properties.contrast || 1.0;
+    $('saturation').value = $("saturation-out").value = vis.properties.saturation || 1.0;
 
-    $('xmin').value = $("xmin-out").value = vis.properties.xmin;
-    $('xmax').value = $("xmax-out").value = vis.properties.xmax;
-    $('ymin').value = $("ymin-out").value = vis.properties.ymin;
-    $('ymax').value = $("ymax-out").value = vis.properties.ymax;
-    $('zmin').value = $("zmin-out").value = vis.properties.zmin;
-    $('zmax').value = $("zmax-out").value = vis.properties.zmax;
+    $('xmin').value = $("xmin-out").value = vis.properties.xmin || 0.0;
+    $('xmax').value = $("xmax-out").value = vis.properties.xmax || 1.0;
+    $('ymin').value = $("ymin-out").value = vis.properties.ymin || 0.0;
+    $('ymax').value = $("ymax-out").value = vis.properties.ymax || 1.0;
+    $('zmin').value = $("zmin-out").value = vis.properties.zmin || 0.0;
+    $('zmax').value = $("zmax-out").value = vis.properties.zmax || 1.0;
   }
 
-  this.updateDims(vis.options);
-  //boundingBox(vis.options.min, vis.options.max);
+  this.updateDims(vis.views[view]);
+  //boundingBox(vis.views[view].min, vis.views[view].max);
 
   //Load objects and add to form
   var objdiv = $("objects");
@@ -1743,27 +1735,27 @@ function Merge(obj1, obj2) {
 }
 
 Viewer.prototype.toString = function() {
-  var exp = {};
+  var exp = {"objects": [], "colourmaps": [], "views" : [], "properties" : {}};
 
   //Copy camera settings
-  vis.options.rotate = this.getRotation();
-  vis.options.focus = this.focus;
-  vis.options.translate = this.translate;
-  vis.options.scale = this.scale;
-  vis.options.pointScale = this.pointScale;
-  vis.options.pointType = this.pointType;
-  vis.options.border = this.showBorder;
-  vis.options.axes = this.axes;
-  vis.options.opacity = this.opacity;
+  vis.views[view].rotate = this.getRotation();
+  vis.views[view].focus = this.focus;
+  vis.views[view].translate = this.translate;
+  vis.views[view].scale = this.scale;
+  vis.views[view].border = this.showBorder;
+  vis.views[view].axes = this.axes;
+  vis.properties.scalepoints = this.pointScale;
+  vis.properties.pointtype = this.pointType;
+  vis.properties.opacity = this.opacity;
 
-  this.applyBackground(vis.options.background);
+  this.applyBackground(vis.properties.background);
 
-  exp.options = vis.options;
+  exp.views[view] = vis.views[view];
   exp.shaders = vis.shaders;
   exp.properties = vis.properties;
   exp.objects = [];
   exp.colourmaps = [];
-  exp.options.background = this.background.toString();
+  exp.views[view].background = this.background.toString();
   exp.exported = true;
   exp.reload = true;
 
@@ -1811,13 +1803,17 @@ Viewer.prototype.exportFile = function() {
        cmdlog += '\n';
      }
 
-     window.open('data:text/plain;base64,' + window.btoa(cmdlog));
+     //Script version
+     //window.open('data:text/plain;base64,' + window.btoa(cmdlog));
+     //Json version
+     window.open('data:text/plain;base64,' + window.btoa(this.toString()));
 
      //Also save in script on disk
      sendCommand('history ' + scriptname);
      //window.open('/history');
 
      cmdlog = null;
+
 
   } else {
     //Export using data URL
@@ -1877,7 +1873,7 @@ Viewer.prototype.setProperties = function() {
   viewer.axes = $("axes").checked;
   var c = $("bgColour").value;
   var cc = Math.round(255*c);
-  vis.options.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+  vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
   setProp('brightness');
   setProp('contrast');
   setProp('saturation');
@@ -1911,7 +1907,7 @@ Viewer.prototype.setProperties = function() {
     queueCommand('zmax=' + vis.properties.zmax);
     sendCommand();
   } else {
-    viewer.applyBackground(vis.options.background);
+    viewer.applyBackground(vis.properties.background);
     viewer.draw();
   }
 }
@@ -1959,7 +1955,7 @@ Viewer.prototype.addColourMap = function() {
 
   //Select newly added
   var list = $('colourmap-presets');
-  viewer.setColourMap(list.options.length-2)
+  viewer.setColourMap(list.views[view].length-2)
 }
 
 Viewer.prototype.setColourMap = function(id) {
@@ -2325,7 +2321,7 @@ Viewer.prototype.getTranslationString = function() {
 
 Viewer.prototype.reset = function() {
   if (this.gl) {
-    this.updateDims(vis.options);
+    this.updateDims(vis.views[view]);
     this.draw();
   }
 
@@ -2358,13 +2354,13 @@ Viewer.prototype.zoomClip = function(factor) {
     sendCommand('zoomclip ' + factor);
 }
 
-Viewer.prototype.updateDims = function(options) {
-  if (!options) return;
+Viewer.prototype.updateDims = function(view) {
+  if (!view) return;
   var oldsize = this.modelsize;
-  this.dims = [options.max[0] - options.min[0], options.max[1] - options.min[1], options.max[2] - options.min[2]];
+  this.dims = [view.max[0] - view.min[0], view.max[1] - view.min[1], view.max[2] - view.min[2]];
   this.modelsize = Math.sqrt(this.dims[0]*this.dims[0] + this.dims[1]*this.dims[1] + this.dims[2]*this.dims[2]);
 
-  this.focus = [options.min[0] + 0.5*this.dims[0], options.min[1] + 0.5*this.dims[1], options.min[2] + 0.5*this.dims[2]];
+  this.focus = [view.min[0] + 0.5*this.dims[0], view.min[1] + 0.5*this.dims[1], view.min[2] + 0.5*this.dims[2]];
   this.centre = [this.focus[0],this.focus[1],this.focus[2]];
 
   this.translate = [0,0,0];
@@ -2376,37 +2372,37 @@ Viewer.prototype.updateDims = function(options) {
   quat4.identity(this.rotate);
   this.rotated = true; 
 
-  if (options) {
+  if (view) {
     //Initial rotation
-    if (options.rotate) {
-      if (options.rotate.length == 3) {
-        this.rotateZ(-options.rotate[2]);
-        this.rotateY(-options.rotate[1]);
-        this.rotateX(-options.rotate[0]);
-      } else if (options.rotate.length == 4) {
-        this.rotate = quat4.create(options.rotate);
+    if (view.rotate) {
+      if (view.rotate.length == 3) {
+        this.rotateZ(-view.rotate[2]);
+        this.rotateY(-view.rotate[1]);
+        this.rotateX(-view.rotate[0]);
+      } else if (view.rotate.length == 4) {
+        this.rotate = quat4.create(view.rotate);
       }
     }
 
     //Translate
-    if (options.translate) {
-      this.translate[0] = options.translate[0];
-      this.translate[1] = options.translate[1];
-      this.translate[2] = options.translate[2];
+    if (view.translate) {
+      this.translate[0] = view.translate[0];
+      this.translate[1] = view.translate[1];
+      this.translate[2] = view.translate[2];
     }
 
     //Scale
-    if (options.scale) {
-      this.scale[0] = options.scale[0];
-      this.scale[1] = options.scale[1];
-      this.scale[2] = options.scale[2];
+    if (view.scale) {
+      this.scale[0] = view.scale[0];
+      this.scale[1] = view.scale[1];
+      this.scale[2] = view.scale[2];
     }
 
     //Focal point
-    if (options.focus) {
-      this.focus[0] = this.centre[0] = options.focus[0];
-      this.focus[1] = this.centre[1] = options.focus[1];
-      this.focus[2] = this.centre[2] = options.focus[2];
+    if (view.focus) {
+      this.focus[0] = this.centre[0] = view.focus[0];
+      this.focus[1] = this.centre[1] = view.focus[1];
+      this.focus[2] = this.centre[2] = view.focus[2];
     }
 
   }
