@@ -87,6 +87,8 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   //Setup default properties
   
   //Object defaults
+  Properties::defaults["name"] = "";
+  Properties::defaults["visible"] = true;
   Properties::defaults["static"] = false;
   Properties::defaults["lit"] = true;
   Properties::defaults["cullface"] = false;
@@ -115,7 +117,6 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["clip"] = true;
   Properties::defaults["texturefile"] = "";
   Properties::defaults["colourby"] = 0;
-  Properties::defaults["visible"] = true;
 
   //ColourBar
   Properties::defaults["colourbar"] = false;
@@ -145,7 +146,7 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["opaque"] = false;
 
   //Volumes
-  Properties::defaults["colourmap"] = true;
+  //Properties::defaults["colourmap"] = 1;
   Properties::defaults["power"] = 1.0;
   Properties::defaults["samples"] = 256;
   Properties::defaults["density"] = 5.0;
@@ -185,12 +186,44 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["precision"] = 2;
   Properties::defaults["scalevalue"] = 1.0;
   //Properties::defaults["border"] = 1.0; //Conflict with global
+  Properties::defaults["log"] = false;
+  Properties::defaults["discrete"] = false;
+  Properties::defaults["colours"] = "";
 
-  //View - see View() constructor
+  //View
+  Properties::defaults["title"] = "";
+  Properties::defaults["zoomstep"] = -1;
+  Properties::defaults["margin"] = 32;
+  Properties::defaults["rulers"] = false;
+  Properties::defaults["rulerticks"] = 5;
+  Properties::defaults["rulerwidth"] = 1.5;
+  Properties::defaults["fontscale"] = 1.0;
+  Properties::defaults["border"] = 1.0;
+  Properties::defaults["fillborder"] = false;
+  Properties::defaults["bordercolour"] = Colour_ToJson(LUC_GREY);
+  Properties::defaults["axis"] = true;
+  Properties::defaults["axislength"] = 0.1;
+  Properties::defaults["timestep"] = false;
+  Properties::defaults["antialias"] = true; //Should be global
+  Properties::defaults["shift"] = 0;
+  //View: Camera
+  Properties::defaults["rotate"] = {0., 0., 0., 1.};
+  Properties::defaults["translate"] = {0., 0., 0.};
+  Properties::defaults["focus"] = {0., 0., 0.};
+  Properties::defaults["scale"] = {1., 1., 1.};
+  Properties::defaults["min"] = {0., 0., 0.};
+  Properties::defaults["max"] = {1., 1., 1.};
+  Properties::defaults["near"] = 0.1;
+  Properties::defaults["far"] = 10.0;
+  Properties::defaults["orientation"] = 1;
 
   //Global Properties::defaults
   Properties::defaults["cachevolumes"] = false;
   Properties::defaults["filestep"] = false;
+
+#ifdef DEBUG
+  std::cerr << std::setw(2) << Properties::defaults << std::endl;
+#endif
 
 //Evil platform specific extension handling stuff
 #if defined _WIN32
@@ -2606,9 +2639,16 @@ void LavaVu::drawBorder()
   if (!obj) obj = new DrawingObject("border", "clip=false\n");
   obj->properties.data["colour"] = aview->properties["bordercolour"];
 
-  int bordersize = aview->properties["border"];
-  if (!bordersize) return;
-  infostream = NULL;
+  //Check for boolean or numeric value for border
+  float bordersize = 1.0;
+  json& bord = aview->properties["border"];
+  if (bord.is_number())
+    bordersize = bord;
+  else if (!bord)
+    bordersize = 0.0;
+  if (bordersize <= 0.0) return;
+
+  infostream = NULL; //Disable debug output while drawing this
   bool filled = aview->properties["fillborder"];
 
   if (!filled)
@@ -3376,14 +3416,17 @@ void LavaVu::jsonRead(std::string data)
   json colourmaps = imported["colourmaps"];
   for (unsigned int j=0; j < colourmaps.size(); j++)
   {
+    if (j >= amodel->colourMaps.size())
+      amodel->addColourMap();
+
     for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
     {
       json cmap = colourmaps[j];
       if (cmap["id"] == (int)amodel->colourMaps[i]->id)
       {
-        amodel->colourMaps[i]->minimum = cmap["minimum"];
-        amodel->colourMaps[i]->maximum = cmap["maximum"];
-        amodel->colourMaps[i]->log = cmap["log"];
+        if (cmap["minimum"].is_number()) amodel->colourMaps[i]->minimum = cmap["minimum"];
+        if (cmap["maximum"].is_number()) amodel->colourMaps[i]->maximum = cmap["maximum"];
+        if (cmap["log"].is_boolean()) amodel->colourMaps[i]->log = cmap["log"];
         json colours = cmap["colours"];
         //Replace colours
         amodel->colourMaps[i]->colours.clear();
