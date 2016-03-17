@@ -2967,7 +2967,7 @@ void LavaVu::defaultModel()
   models.push_back(amodel);
 
   //Set a default window, viewport/camera
-  awin = new Win("");
+  awin = new Win();
   aview = awin->addView(new View());
   windows.push_back(awin);
   amodel->windows.push_back(awin);
@@ -3003,7 +3003,7 @@ void LavaVu::loadModel(FilePath& fn)
       awin = amodel->windows[0];
     else
     {
-      awin = new Win(fn.base);
+      awin = new Win();
       //Add window to model window list
       amodel->windows.push_back(awin);
     }

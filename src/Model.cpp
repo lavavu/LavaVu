@@ -282,7 +282,7 @@ void Model::loadWindows()
         max[i] = -HUGE_VAL;
     }
 
-    Win* win = new Win(id, wtitle, width, height, bg, min, max);
+    Win* win = new Win(id, width, height, bg, min, max);
     windows.push_back(win);
 
     //Link the window viewports, objects & colourmaps
