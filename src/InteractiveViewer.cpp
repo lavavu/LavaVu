@@ -1548,7 +1548,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("image"))
   {
-    viewer->snapshot(awin->name.c_str());
+    std::string filename = parsed["image"];
+    if (filename.length() > 0)
+      viewer->image(filename);
+    else
+      viewer->snapshot();
+
     if (viewer->outwidth > 0)
       printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);
     else

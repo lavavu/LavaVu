@@ -390,20 +390,27 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
   }
 }
 
-std::string OpenGLViewer::snapshot(const char* name, int number, bool transparent, bool asString)
+std::string OpenGLViewer::snapshot(int number, bool transparent, bool asString)
 {
-  char path[256];
-  int bpp = transparent && !asString ? 4 : 3;
-  size_t size = width * height * bpp;
-  int savewidth = width;
-  int saveheight = height;
   static int counter = 0;
-  std::string retImg;
   if (number == -1)
   {
     number = counter;
     counter++;
   }
+  std::stringstream path;
+  path << output_path << title << "." << std::setw(5) << std::setfill('0') << number;
+  return image(path.str(), transparent, asString);
+}
+
+std::string OpenGLViewer::image(const std::string& path, bool transparent, bool asString)
+{
+  int bpp = transparent && !asString ? 4 : 3;
+  size_t size = width * height * bpp;
+  int savewidth = width;
+  int saveheight = height;
+  std::string retImg;
+
   //Make sure any status message cleared
   display();
 
@@ -467,8 +474,7 @@ std::string OpenGLViewer::snapshot(const char* name, int number, bool transparen
   }
   else
   {
-    sprintf(path, "%s%s.%05d", output_path.c_str(), name, number);
-    writeImage(image, width, height, path, transparent);
+    writeImage(image, width, height, path.c_str(), transparent);
   }
 
   delete[] image;
