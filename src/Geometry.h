@@ -396,7 +396,7 @@ public:
   void loadVertices();
   void depthSort();
   void render();
-  int getPointType(int index=0);
+  int getPointType(int index=-1);
   virtual void draw();
   virtual void jsonWrite(unsigned int id, json& obj);
 

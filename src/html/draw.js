@@ -289,64 +289,57 @@ function getImageDataURL(img) {
 
 function defaultColourMaps() {
   //Add some default colourmaps
-  var id = 1;
   if (!vis.colourmaps) vis.colourmaps = [];
-  if (vis.colourmaps.length > 0) id = vis.colourmaps[vis.colourmaps.length-1].id;
   
   vis.colourmaps.push({
-    "id": ++id,
     "name": "Grayscale",
     "minimum": 0, "maximum": 1, "log": 0,
     "colours": [{"colour": "rgba(0,0,0,255)"},{"colour": "rgba(255,255,255,1)"}]
   });
 
   vis.colourmaps.push({
-    "id": ++id,
     "name": "Topology",
     "minimum": 0, "maximum": 1, "log": 0,
-    "colours": [{"colour": 0xff33bb66},
-                {"colour": 0xff00ff00},
-                {"colour": 0xffff3333},
-                {"colour": 0xffffff00},
-                {"colour": 0xff77ffff},
-                {"colour": 0xff0088ff},
-                {"colour": 0xff0000ff},
-                {"colour": 0xff000000}]
+    "colours": [{"colour": "#66bb33"},
+                {"colour": "#00ff00"},
+                {"colour": "#3333ff"},
+                {"colour": "#00ffff"},
+                {"colour": "#ffff77"},
+                {"colour": "#ff8800"},
+                {"colour": "#ff0000"},
+                {"colour": "#000000"}]
   });
 
   vis.colourmaps.push({
-    "id": ++id,
     "name": "Rainbow",
     "minimum": 0, "maximum": 1, "log": 0,
-    "colours": [{"colour": 0xfff020a0},
-                {"colour": 0xffff0000},
-                {"colour": 0xff00ff00},
-                {"colour": 0xff00ffff},
-                {"colour": 0xff00a5ff},
-                {"colour": 0xff0000ff},
-                {"colour": 0xff000000}]
+    "colours": [{"colour": "#a020f0"},
+                {"colour": "#0000ff"},
+                {"colour": "#00ff00"},
+                {"colour": "#ffff00"},
+                {"colour": "#ffa500"},
+                {"colour": "#ff0000"},
+                {"colour": "#000000"}]
   });
 
   vis.colourmaps.push({
-    "id": ++id,
     "name": "Heat",
     "minimum": 0, "maximum": 1, "log": 0,
-    "colours": [{"colour": 0xff000000},
-                {"colour": 0xff0000ff},
-                {"colour": 0xff00ffff},
-                {"colour": 0xffffffff}]
+    "colours": [{"colour": "#000000"},
+                {"colour": "#ff0000"},
+                {"colour": "#ffff00"},
+                {"colour": "#ffffff"}]
   });
 
   vis.colourmaps.push({
-    "id": ++id,
     "name": "Bluered",
     "minimum": 0, "maximum": 1, "log": 0,
-    "colours": [{"colour": 0xffff0000},
-                {"colour": 0xffff901e},
-                {"colour": 0xffd1ce00},
-                {"colour": 0xffc4e4ff},
-                {"colour": 0xff00a5ff},
-                {"colour": 0xff2222b2}]
+    "colours": [{"colour": "#0000ff"},
+                {"colour": "#1e90ff"},
+                {"colour": "#00ced1"},
+                {"colour": "#ffe4c4"},
+                {"colour": "#ffa500"},
+                {"colour": "#b22222"}]
   });
 }
 
@@ -1495,7 +1488,6 @@ function Viewer(canvas) {
 
 Viewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
-  //console.log(source);
   if (document.mouse.isdown) return;
   var start = new Date();
   var updated = true;
@@ -1734,57 +1726,69 @@ function Merge(obj1, obj2) {
   return obj1;
 }
 
-Viewer.prototype.toString = function() {
-  var exp = {"objects": [], "colourmaps": [], "views" : [], "properties" : {}};
+Viewer.prototype.toString = function(noviews) {
+  var exp = {"objects"    : this.exportObjects(), 
+             "colourmaps" : this.exportColourMaps(),
+             "views"      : noviews ? [] : this.exportViews(),
+             "properties" : this.exportProperties()};
 
-  //Copy camera settings
+  exp.exported = true;
+  exp.reload = true;
+
+  //Export with 2 space indentation
+  return JSON.stringify(exp, undefined, 2);
+}
+
+Viewer.prototype.exportProperties = function() {
+  vis.properties.scalepoints = this.pointScale;
+  vis.properties.pointtype = this.pointType;
+  vis.properties.opacity = this.opacity;
+  this.applyBackground(vis.properties.background);
+  return vis.properties;
+}
+
+Viewer.prototype.exportViews = function() {
+  //Update camera settings of current view
   vis.views[view].rotate = this.getRotation();
   vis.views[view].focus = this.focus;
   vis.views[view].translate = this.translate;
   vis.views[view].scale = this.scale;
   vis.views[view].border = this.showBorder;
   vis.views[view].axes = this.axes;
-  vis.properties.scalepoints = this.pointScale;
-  vis.properties.pointtype = this.pointType;
-  vis.properties.opacity = this.opacity;
+  //views[view].background = this.background.toString();
+  return vis.views;
+}
 
-  this.applyBackground(vis.properties.background);
-
-  exp.views[view] = vis.views[view];
-  exp.shaders = vis.shaders;
-  exp.properties = vis.properties;
-  exp.objects = [];
-  exp.colourmaps = [];
-  exp.views[view].background = this.background.toString();
-  exp.exported = true;
-  exp.reload = true;
-
+Viewer.prototype.exportObjects = function() {
+  objs = [];
   for (var id in vis.objects) {
-    exp.objects[id] = {};
-    //Skip points/triangles
+    objs[id] = {};
+    //Skip geometry data
     for (var type in vis.objects[id]) {
-      if (type != "triangles" && type != "points") {
-        exp.objects[id][type] = vis.objects[id][type];
+      if (type != "triangles" && type != "points" && type != 'lines' && type != "volume") {
+        objs[id][type] = vis.objects[id][type];
       }
     }
   }
+  return objs;
+}
+
+Viewer.prototype.exportColourMaps = function() {
+  cmaps = [];
   if (vis.colourmaps) {
     for (var i=0; i<vis.colourmaps.length; i++) {
-      exp.colourmaps[i] = {};
+      cmaps[i] = {};
       for (var type in vis.colourmaps[i]) {
         if (type != "palette") {
-          exp.colourmaps[i][type] = vis.colourmaps[i][type];
+          cmaps[i][type] = vis.colourmaps[i][type];
         }
       }
     }
   }
-
-  //Export with 2 space indentation
-  return JSON.stringify(exp, undefined, 2);
+  return cmaps;
 }
 
 Viewer.prototype.exportFile = function() {
-  
   if (server) {
      var scriptname = "exported.script";
      if (confirm('Overwrite init.script?')) scriptname = "init.script";
@@ -1863,12 +1867,12 @@ Viewer.prototype.properties = function(id) {
 Viewer.prototype.setProperties = function() {
   function setProp(name, fieldname) {
     if (fieldname == undefined) fieldname = name;
-    vis.properties[name] = $(fieldname + '-out').value = $(fieldname).value;
+    vis.properties[name] = $(fieldname + '-out').value = parseFloat($(fieldname).value);
   }
 
   viewer.pointScale = $('pointScale-out').value = $('pointScale').value / 10.0;
-  viewer.opacity = $('globalAlpha-out').value = $('globalAlpha').value;
-  viewer.pointType = $('globalPointType').value;
+  viewer.opacity = $('globalAlpha-out').value = parseFloat($('globalAlpha').value);
+  viewer.pointType = parseInt($('globalPointType').value);
   viewer.showBorder = $("border").checked;
   viewer.axes = $("axes").checked;
   var c = $("bgColour").value;
@@ -1938,12 +1942,9 @@ Viewer.prototype.addColourMap = function() {
   var name = prompt("Enter colourmap name:");
   //New colourmap on active object
   if (server)
-    sendCommand("colourmap " + vis.objects[properties.id].id + " add");
+    sendCommand("colourmap " + properties.id + " add");
 
-  var id = 1;
-  if (vis.colourmaps.length > 0) id = vis.colourmaps[vis.colourmaps.length-1].id + 1;
   var newmap = {
-    "id": id,
     "name": name,
     "minimum": 0, "maximum": 1, "log": 0,
     "colours": [{"position": 0, "colour": "rgba(0,0,0,0)"},{"position": 1,"colour": "rgba(255,255,255,1)"}
@@ -1960,7 +1961,7 @@ Viewer.prototype.addColourMap = function() {
 
 Viewer.prototype.setColourMap = function(id) {
   if (properties.id == undefined) return;
-  vis.objects[properties.id].colourmap = id;
+  vis.objects[properties.id].colourmap = parseInt(id);
   if (id === undefined) id = -1;
   //Set new colourmap on active object
   $('colourmap-presets').value = id;
@@ -1981,15 +1982,15 @@ Viewer.prototype.setColourMap = function(id) {
 Viewer.prototype.setObjectProperties = function() {
   //Copy from controls
   var id = properties.id;
-  function setProp(name) {vis.objects[id][name] = $(name + '-out').value = $(name).value;}
+  function setProp(name) {vis.objects[id][name] = $(name + '-out').value = parseFloat($(name).value);}
   setProp('opacity');
   vis.objects[id].pointsize = $('pointSize-out').value = $('pointSize').value / 10.0;
-  vis.objects[id].pointtype = $('pointType').value;
+  vis.objects[id].pointtype = parseInt($('pointType').value);
   vis.objects[id].wireframe = $('wireframe').checked;
   vis.objects[id].cullface = $('cullface').checked;
   setProp('density');
   setProp('power');
-  setProp('samples');
+  setProp('samples'); //parseInt??
   setProp('isovalue');
   setProp('isosmooth');
   setProp('isoalpha');
@@ -2008,9 +2009,13 @@ Viewer.prototype.setObjectProperties = function() {
   }
   viewer.draw();
 
+
   //Server side...
   if (server) {
-    queueCommand("select " + vis.objects[properties.id].id);
+    //Export all data except views
+    ajaxPost('/post', this.toString(true)); //, callback, progress, headers)
+return;
+    queueCommand("select " + properties.id);
     queueCommand("colour=" + JSON.stringify(colour.rgba()));
     queueCommand("opacity=" + vis.objects[id].opacity);
     //queueCommand('brightness=' + vis.objects[id].brightness);
@@ -2050,7 +2055,7 @@ Viewer.prototype.setObjectProperties = function() {
     if (cmid == undefined || cmid < 0) {
       queueCommand("colourmap -1");
     } else {
-      queueCommand("colourmap " + vis.colourmaps[cmid].id);
+      queueCommand("colourmap " + cmid);
       //Update full colourmap...
       queueCommand("colourmap \"\n" + vis.colourmaps[cmid].palette + "\n\"\n");
     }
@@ -2065,9 +2070,9 @@ Viewer.prototype.action = function(id, reload, sort, el) {
   if (server) {
     var show = el.checked;
     if (show)
-      sendCommand("show " + vis.objects[id].id);
+      sendCommand("show " + (id+1));
     else
-      sendCommand("hide " + vis.objects[id].id);
+      sendCommand("hide " + (id+1));
     return;
   }
 

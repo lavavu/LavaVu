@@ -3283,7 +3283,6 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
       colours.push_back(colour);
     }
 
-    cmap["id"] = (int)amodel->colourMaps[i]->id;
     cmap["name"] = amodel->colourMaps[i]->name;
     cmap["minimum"] = amodel->colourMaps[i]->minimum;
     cmap["maximum"] = amodel->colourMaps[i]->maximum;
@@ -3315,7 +3314,6 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
       }
 
       json obj = amodel->objects[i]->properties.data;
-      obj["id"] = (int)amodel->objects[i]->id;
       obj["name"] = amodel->objects[i]->name;
       if (colourmap >= 0) obj["colourmap"] = colourmap;
       if (!objdata)
@@ -3412,47 +3410,44 @@ void LavaVu::jsonRead(std::string data)
     view->orientation = view->properties["orientation"];
   }
 
-  // Import colourmaps (one way: process only if exists - TODO: allow insert from web)
+  // Import colourmaps
   json colourmaps = imported["colourmaps"];
-  for (unsigned int j=0; j < colourmaps.size(); j++)
+  for (unsigned int i=0; i < colourmaps.size(); i++)
   {
-    if (j >= amodel->colourMaps.size())
+    if (i >= amodel->colourMaps.size())
       amodel->addColourMap();
 
-    for (unsigned int i = 0; i < amodel->colourMaps.size(); i++)
+    json cmap = colourmaps[i];
+    if (cmap["minimum"].is_number()) amodel->colourMaps[i]->minimum = cmap["minimum"];
+    if (cmap["maximum"].is_number()) amodel->colourMaps[i]->maximum = cmap["maximum"];
+    if (cmap["log"].is_boolean()) amodel->colourMaps[i]->log = cmap["log"];
+    json colours = cmap["colours"];
+    //Replace colours
+    amodel->colourMaps[i]->colours.clear();
+    for (unsigned int c=0; c < colours.size(); c++)
     {
-      json cmap = colourmaps[j];
-      if (cmap["id"] == (int)amodel->colourMaps[i]->id)
-      {
-        if (cmap["minimum"].is_number()) amodel->colourMaps[i]->minimum = cmap["minimum"];
-        if (cmap["maximum"].is_number()) amodel->colourMaps[i]->maximum = cmap["maximum"];
-        if (cmap["log"].is_boolean()) amodel->colourMaps[i]->log = cmap["log"];
-        json colours = cmap["colours"];
-        //Replace colours
-        amodel->colourMaps[i]->colours.clear();
-        for (unsigned int c=0; c < colours.size(); c++)
-        {
-          json colour = colours[c];
-          Colour newcolour = Colour_FromJson(colour["colour"]);
-          amodel->colourMaps[i]->addAt(newcolour, colour["position"]);
-        }
-      }
+      json colour = colours[c];
+      Colour newcolour = Colour_FromJson(colour["colour"]);
+      amodel->colourMaps[i]->addAt(newcolour, colour["position"]);
     }
   }
 
-  //Import objects (change properties only if existing)
+  //Import objects
   json objects = imported["objects"];
-  for (unsigned int i=0; i < amodel->objects.size(); i++)
+  for (unsigned int i=0; i < objects.size(); i++)
   {
-    for (unsigned int j=0; j < objects.size(); j++)
+    if (i >= amodel->objects.size())
     {
-      json obj = objects[j];
-      if (amodel->objects[i] && obj["id"] == (int)amodel->objects[i]->id)
-      {
-        amodel->objects[i]->properties.merge(obj);
-        //if (colourmap >= 0) obj["colourmap"] = colourmap;
-      }
+      std::string name = objects[i]["name"];
+      addObject(new DrawingObject(name));
     }
+    
+    //Merge properties
+    amodel->objects[i]->properties.merge(objects[i]);
+
+    //Colourmap selection?
+    if (objects[i].count("colourmap") > 0)
+      amodel->objects[i]->colourMaps[lucColourValueData] = amodel->colourMaps[objects[i]["colourmap"]];
   }
 }
 

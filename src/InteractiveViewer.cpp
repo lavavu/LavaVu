@@ -527,6 +527,14 @@ bool LavaVu::parseCommands(std::string cmd)
   if (cmd.length() == 0) return false;
   bool redisplay = false;
 
+  //Json 
+  if (cmd.at(0) == '{')
+  {
+    jsonRead(cmd);
+    amodel->redraw();
+    return true;
+  }
+
   std::string line;
   std::stringstream ss(cmd);
   while(std::getline(ss, line))
@@ -1038,7 +1046,7 @@ bool LavaVu::parseCommand(std::string cmd)
             bool state = (action == "show");
             for (unsigned int i=0; i < Model::geometry.size(); i++)
               Model::geometry[i]->showById(obj->id, state);
-            obj->properties["visible"] = state; //This allows hiding of objects without geometry (colourbars)
+            obj->properties.data["visible"] = state; //This allows hiding of objects without geometry (colourbars)
             printMessage("%s object %s", action.c_str(), obj->name.c_str());
             amodel->redraw();
           }
