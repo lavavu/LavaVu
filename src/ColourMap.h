@@ -39,8 +39,6 @@
 #include "Util.h"
 #include "GraphicsUtil.h"
 
-#define PALETTE_TEX_SIZE 4096
-
 class ColourVal
 {
 public:
@@ -59,8 +57,8 @@ public:
 //ColourMap class
 class ColourMap
 {
-  static const int SAMPLE_COUNT = 512;
-  Colour precalc[SAMPLE_COUNT];
+  static int samples;
+  Colour* precalc;
 
 public:
   std::vector<ColourVal> colours;
@@ -83,6 +81,7 @@ public:
   ~ColourMap()
   {
     if (texture) delete texture;
+    delete[] precalc;
   }
 
   void parse(std::string colourMapString);
