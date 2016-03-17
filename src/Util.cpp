@@ -170,7 +170,9 @@ void Properties::parse(const std::string& property, bool global)
     //Ignore case
     std::transform(key.begin(), key.end(), key.begin(), ::tolower);
     //std::cerr << "Key " << key << " == " << value << std::endl;
-
+    std::string valuel = value;
+    std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
+    
     try
     {
       //Parse simple increments and decrements
@@ -189,11 +191,13 @@ void Properties::parse(const std::string& property, bool global)
           dest[mkey] = val - parsedval;
 
       }
-      else if (value.find("[") == std::string::npos && value.find("{") == std::string::npos)
+      else if (valuel == "true")
       {
-        //This JSON parser only accepts objects or arrays as base element
-        std::string nvalue = "[" + value + "]";
-        dest[key] = json::parse(nvalue)[0];
+        dest[key] = true;
+      }
+      else if (valuel == "false")
+      {
+        dest[key] = false;
       }
       else
       {
