@@ -39,6 +39,7 @@
 bool ColourMap::lock = false;
 int ColourMap::logscales = 0;
 unsigned int ColourMap::lastid = 0;
+int ColourMap::samples = 4096;
 
 std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 {
@@ -50,6 +51,7 @@ ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete,
   : id(id), minimum(min), maximum(max), log(log), discrete(discrete),
     calibrated(false), noValues(false), dimCoeff(1.0), units("")
 {
+  precalc = new Colour[samples];
   if (id == 0)
     this->id = ++ColourMap::lastid;
   else if (id > ColourMap::lastid)
@@ -157,11 +159,11 @@ void ColourMap::calc()
   if (!colours.size()) return;
   //Precalculate colours
   if (isLog())
-    for (int cv=0; cv<SAMPLE_COUNT; cv++)
-      precalc[cv] = get(pow(10, log10(minimum) + range * (float)cv/(SAMPLE_COUNT-1)));
+    for (int cv=0; cv<samples; cv++)
+      precalc[cv] = get(pow(10, log10(minimum) + range * (float)cv/(samples-1)));
   else
-    for (int cv=0; cv<SAMPLE_COUNT; cv++)
-      precalc[cv] = get(minimum + range * (float)cv/(SAMPLE_COUNT-1));
+    for (int cv=0; cv<samples; cv++)
+      precalc[cv] = get(minimum + range * (float)cv/(samples-1));
 }
 
 void ColourMap::calibrate(float min, float max)
@@ -259,10 +261,10 @@ Colour ColourMap::getfast(float value)
   //If this is causing slow downs in future, need a better method
   int c = 0;
   if (isLog())
-    c = (int)((SAMPLE_COUNT-1) * ((log10(value) - log10(minimum)) / range));
+    c = (int)((samples-1) * ((log10(value) - log10(minimum)) / range));
   else
-    c = (int)((SAMPLE_COUNT-1) * ((value - minimum) / range));
-  if (c > SAMPLE_COUNT - 1) c = SAMPLE_COUNT - 1;
+    c = (int)((samples-1) * ((value - minimum) / range));
+  if (c > samples - 1) c = samples - 1;
   if (c < 0) c = 0;
   //Colour uc = get(value);
   //std::cerr << value << " range : " << range << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
@@ -570,11 +572,11 @@ void ColourMap::loadTexture(bool repeat)
 {
   if (!texture) texture = new TextureData();
   calibrate(0, 1);
-  unsigned char paletteData[4*PALETTE_TEX_SIZE];
+  unsigned char paletteData[4*samples];
   Colour col;
-  for (int i=0; i<PALETTE_TEX_SIZE; i++)
+  for (int i=0; i<samples; i++)
   {
-    col = get(i / (float)(PALETTE_TEX_SIZE-1));
+    col = get(i / (float)(samples-1));
     //if (i%64==0) printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
     paletteData[i*4] = col.r;
     paletteData[i*4+1] = col.g;
@@ -584,7 +586,7 @@ void ColourMap::loadTexture(bool repeat)
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture->id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, PALETTE_TEX_SIZE, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, paletteData);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, samples, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, paletteData);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
