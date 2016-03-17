@@ -744,7 +744,7 @@ std::string LavaVu::run(int width, int height, bool persist)
   //Return an image encoded as a base64 data url
   if (returndata == lucExportIMAGE)
   {
-    return viewer->snapshot("", 0, false, true);
+    return viewer->snapshot(0, false, true);
   }
   if (returndata == lucExportJSON)
   {
@@ -2174,8 +2174,10 @@ void LavaVu::resetViews(bool autozoom)
     title << aview->properties["title"];
     title << " (" << awin->name << ")";
   }
-  else
+  else if (awin->name.length() > 0)
     title << awin->name;
+  else
+    title << "LavaVu";
 
   if (amodel->timesteps.size() > 1)
     title << " : timestep " << amodel->step();
@@ -3152,7 +3154,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
       viewer->display();
 
       if (images)
-        viewer->snapshot(awin->name.c_str(), amodel->step());
+        viewer->snapshot(amodel->step());
 
 #ifdef HAVE_LIBAVCODEC
       //Always output to video encode if it exists

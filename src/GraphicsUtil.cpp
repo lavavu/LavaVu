@@ -1013,6 +1013,7 @@ void writeImage(GLubyte *image, int width, int height, const char* basename, boo
   if (!compress_image_to_jpeg_file(path, width, height, 3, image, params))
     abort_program("[write_jpeg] File %s could not be saved\n", path);
 #endif
+  debug_print("[%s] File successfully written\n", path);
 }
 
 std::string getImageString(GLubyte *image, int width, int height, int bpp)
