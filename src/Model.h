@@ -106,8 +106,9 @@ public:
   void addObject(DrawingObject* draw)
   {
     //Create master drawing object list entry
-    if (objects.size() < draw->id) objects.resize(draw->id);
-    objects[draw->id-1] = draw;
+    //if (objects.size() < draw->id) objects.resize(draw->id);
+    //objects[draw->id-1] = draw;
+    objects.push_back(draw);
   }
 
   //Timestep caching
