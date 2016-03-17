@@ -52,10 +52,10 @@ public:
   //List of viewports in this window
   std::vector<View*> views;
 
-  Win(std::string name) : width(0), height(0)
+  Win() : width(0), height(0)
   {
-    if (name.length() == 0) name = "LavaVu";
-    this->name = name;
+    //This is no longer used
+    name = "";
     this->id = ++Win::lastid;
     background.value = 0xff000000;
     //min[0] = min[1] = min[2] = 0.0;
@@ -64,12 +64,12 @@ public:
     max[0] = max[1] = max[2] = -HUGE_VAL;
   }
 
-  Win(unsigned int id, std::string name, int w, int h, int bg, float mmin[3]=NULL, float mmax[3]=NULL)
+  Win(unsigned int id, int w, int h, int bg, float mmin[3]=NULL, float mmax[3]=NULL)
     : id(id), width(w), height(h)
   {
     if (id == 0) this->id = ++Win::lastid;
-    if (name.length() == 0) name = "LavaVu";
-    this->name = name;
+    //This is no longer used
+    name = "";
     background.value = bg;
     if (mmin)
       memcpy(min, mmin, 3 * sizeof(float));
