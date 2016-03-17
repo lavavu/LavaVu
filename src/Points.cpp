@@ -336,7 +336,7 @@ int Points::getPointType(int index)
 {
   json& pointtype = Properties::global("pointtype");
   int ptype = -1;
-  if (index > 0)
+  if (index != -1)
   {
     if (geom[index]->draw->properties.has("pointtype"))
       pointtype = geom[index]->draw->properties["pointtype"];
