@@ -57,7 +57,7 @@ public:
   //INTERFACE:
 
   //Execution function - this will be called by main()/initViewer()
-  virtual std::string run(int width=0, int height=0, bool persist=false) = 0;
+  virtual std::string run(int width=0, int height=0, bool persist=false);
   virtual void arguments(std::vector<std::string> args) {}
 
   // Placeholder virtual functions for window management

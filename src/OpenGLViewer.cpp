@@ -345,8 +345,12 @@ void OpenGLViewer::display()
     {
       //For what was this needed? test...
       //We're about to call display anyway regardless, if setting should probably return after
-      //postdisplay = true;
+#ifdef USE_OMEGALIB
+      //Is this needed for Omegalib mode param updates?
+      postdisplay = true;
+#else
       break;
+#endif
     }
   }
 
