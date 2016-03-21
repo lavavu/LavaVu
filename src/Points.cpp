@@ -113,6 +113,7 @@ void Points::loadVertices()
   //close();
 
   //Create sorting array
+  if (pidx) delete[] pidx;
   pidx = new PIndex[total];
   if (pidx == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
   if (geom.size() == 0) return;
