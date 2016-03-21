@@ -354,7 +354,6 @@ void LavaVu::defaults()
   //Vectors
   Properties::defaults["arrowhead"] = 2.0;
   Properties::defaults["scalevectors"] = 1.0;
-  Properties::defaults["lengthscale"] = 1.0;
   Properties::defaults["radius"] = 0.0;
 
   //Tracers
@@ -679,7 +678,6 @@ std::string LavaVu::run()
         //Read input script from stdin on first timestep
         viewer->pollInput();
 
-        char path[256];
         if (writeimage)
         {
           std::cout << "... Writing image(s) for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
@@ -1627,13 +1625,13 @@ void LavaVu::readTecplot(FilePath& fn)
     float valuemin = HUGE_VAL;
     float valuemax = -HUGE_VAL;
     int count = 0;
-    int coord = 0;
-    int outcoord = 0;
+    unsigned int coord = 0;
+    unsigned int outcoord = 0;
     int tcount = 0;
     int lcount = 0;
     int pcount = 0;
     int timestep = -1;
-    int VALUE_OFFSET = 6; //TODO: fix hard coding, this is idx of first time varying value
+    unsigned int VALUE_OFFSET = 6; //TODO: fix hard coding, this is idx of first time varying value
     DrawingObject *tobj, *lobj;
     GeomData *fixedtris, *fixedlines;
     std::vector<std::string> labels;
@@ -2103,8 +2101,8 @@ void LavaVu::reloadShaders()
   Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
   const char* vUniforms[24] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange", "uDenMinMax"};
   Volumes::prog->loadUniforms(vUniforms, 24);
-  const char* vAttribs[2] = {"aVertexPosition"};
-  Volumes::prog->loadAttribs(pAttribs, 2);
+  const char* vAttribs[1] = {"aVertexPosition"};
+  Volumes::prog->loadAttribs(vAttribs, 1);
 }
 
 void LavaVu::resize(int new_width, int new_height)
@@ -2200,7 +2198,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     aview->port(viewer->width, viewer->height);
 
     // Apply initial autozoom if set (only applied based on provided dimensions)
-    //if (autozoom && aview->properties["zoomstep"].ToInt(-1) == 0)
+    //if (autozoom && (int)aview->properties["zoomstep"] == 0)
     //   aview->init(false, awin->min, awin->max);
 
     //Update the model bounding box - use window bounds if provided and sane in at least 2 dimensions
@@ -2298,7 +2296,7 @@ void LavaVu::display(void)
   if (aview->autozoom)
   {
     aview->projection(EYE_CENTRE);
-    aview->zoomToFit(0);
+    aview->zoomToFit();
   }
   else
     aview->apply();

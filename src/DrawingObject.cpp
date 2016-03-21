@@ -61,7 +61,7 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
 
 DrawingObject::~DrawingObject()
 {
-  for (int i=0; i<textures.size(); i++)
+  for (unsigned int i=0; i<textures.size(); i++)
     delete textures[i];
 }
 
@@ -129,7 +129,7 @@ TextureData* DrawingObject::useTexture(int index)
 
   //Use first available texture if out of range
   //if (index+1 > textures.size())
-  if (textures.size() > 0 && (index < 0 || index+1 > textures.size()))
+  if (textures.size() > 0 && (index < 0 || index+1 > (int)textures.size()))
     index = textures.size() - 1;
 
   if (index >= 0 && textures[index])

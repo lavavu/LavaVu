@@ -90,7 +90,6 @@ void Vectors::update()
 
     //Load scaling factors from properties
     int quality = 4 * (int)props["glyphs"];
-    float length = scaling * (float)props["lengthscale"];
     //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
 
     //Default (0) = automatically calculated radius
