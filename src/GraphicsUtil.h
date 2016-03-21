@@ -559,7 +559,7 @@ void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrow
 
 void RawImageFlip(void* image, int width, int height, int bpp);
 
-void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);
+std::string writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent);
 std::string getImageString(GLubyte *image, int width, int height, int bpp);
 
 #ifdef HAVE_LIBPNG
