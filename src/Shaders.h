@@ -35,7 +35,7 @@ public:
   std::map<std::string, GLint> uniforms;
   std::map<std::string, GLint> attribs;
 
-  static const char* path;
+  static std::string path;
 };
 
 #endif //Shaders__

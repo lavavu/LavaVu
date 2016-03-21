@@ -48,8 +48,12 @@
 
 #define MAX_MSG 256
 
-std::string initViewer(int argc, char **argv);
-std::string initViewer(int argc, char **argv, ViewerApp* application, bool noserver=false);
+std::string execute(int argc, char **argv);
+std::string execute(int argc, char **argv, ViewerApp* myApp);
+void command(std::string cmd);
+std::string image(std::string filename="");
+void killViewer();
+OpenGLViewer* createViewer();
 
 typedef enum
 {
@@ -128,12 +132,14 @@ public:
   DrawingObject* aobject; //Selected object
 
   LavaVu();
+  void defaults();
   virtual ~LavaVu();
 
-  //Execute function
-  std::string run(int width=0, int height=0, bool persist=false);
   //Argument parser
   virtual void arguments(std::vector<std::string> args);
+  //Execute function
+  std::string run();
+  void clearData(bool objects=false);
 
   void exportData(lucExportType type, unsigned int id=0);
 
@@ -292,6 +298,41 @@ Verbose commands:\n\
 help commands [ENTER] -- list of all verbose commands\n\
 help * [ENTER] where * is a command -- detailed help for a command\n\
 \n\
+"
+
+#define HELP_COMMANDS "\
+Viewer command line options:\n\n\
+\nStart and end timesteps\n\
+ -# : Any integer entered as a switch will be interpreted as the initial timestep to load\n\
+      Any following integer switch will be interpreted as the final timestep for output\n\
+      eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n\
+ -c#: caching, set # of timesteps to cache data in memory for\n\
+ -P#: subsample points\n\
+ -A : All objects hidden initially, use 'show object' to display\n\
+ -N : No load, deferred loading mode, use 'load object' to load & display from database\n\
+\nGeneral options\n\
+ -v : Verbose output, debugging info displayed to console\n\
+ -o : output mode: all commands entered dumped to standard output,\n\
+      useful for redirecting to a script file to recreate a visualisation setup.\n\
+ -p#: port, web server interface listen on port #\n\
+ -q#: quality, web server jpeg quality (0=don't serve images)\n\
+ -n#: number of threads to launch for web server #\n\
+ -l: use local shaders, locate in working directory not executable directory\n\
+\nImage/Video output\n\
+ -w: write images of all loaded timesteps/windows then exit\n\
+ -i: as above\n\
+ -W: write images as above but using input database path as output path for images\n\
+ -I: as above\n\
+ -t: write transparent background png images (if supported)\n\
+ -m#: write movies of all loaded timesteps/windows #=fps(30) (if supported)\n\
+ -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if omitted)\n\
+\nData export\n\
+ -d#: export object id # to CSV vertices + values\n\
+ -j#: export object id # to JSON, if # omitted will output all compatible objects\n\
+ -g#: export object id # to GLDB, if # omitted will output all compatible objects\n\
+\nWindow settings\n\
+ -rWIDTH,HEIGHT: resize initial viewer window to width x height\n\
+ -h: hidden window, will exit after running any provided input script and output options\n\
 "
 
 #endif //LavaVu__

@@ -47,7 +47,7 @@ bool OpenGLViewer::alphapng = false;
 std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer(bool stereo, bool fullscreen) : stereo(stereo), fullscreen(fullscreen), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0)
+OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0)
 {
   keyState.shift = keyState.ctrl = keyState.alt = 0;
 
@@ -373,7 +373,7 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 #ifdef GL_FRAMEBUFFER_EXT
-  if (fbo_frame > 0)
+  if (fbo_enabled && fbo_frame > 0)
   {
     glBindTexture(GL_TEXTURE_2D, fbo_texture);
     glGenerateMipmapEXT(GL_TEXTURE_2D);

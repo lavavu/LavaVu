@@ -88,7 +88,7 @@ public:
   int width;
   int height;
 
-  OpenGLViewer(bool stereo=false, bool fullscreen=false);
+  OpenGLViewer();
   virtual ~OpenGLViewer();
 
   void fbo(int width, int height);

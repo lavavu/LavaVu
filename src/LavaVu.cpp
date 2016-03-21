@@ -62,28 +62,217 @@
 #define OSMESA_WINDOW 3
 #define AGL_WINDOW 4
 
-std::string initViewer(int argc, char **argv)
+ViewerApp* app = NULL;
+
+std::string execute(int argc, char **argv)
 {
   //Default entry point, create a LavaVu application and run
-  ViewerApp* app = new LavaVu();
-  return initViewer(argc, argv, app);
-  delete app;
+  if (!app) app = new LavaVu();
+  return execute(argc, argv, app);
 }
 
-std::string initViewer(int argc, char **argv, ViewerApp* application, bool noserver)
+std::string execute(int argc, char **argv, ViewerApp* myApp)
 {
-  //Generic entry point, setup passed application and run
-  OpenGLViewer* viewer = NULL;
-  int port = 8080, quality = 0, threads = 4;
-  bool stereo = false;
-  bool fullscreen = false;
-  int downsample = 0;
-  int width = 0, height = 0;
-  int window;
-  std::vector<std::string> args;
-  std::string result = "";
-  if (noserver) port = 0;
+  //Customisable entry point, create viewer and run provided application
+  app = myApp;
 
+  //Read command line
+  std::vector<std::string> args;
+  for (int i=1; i<argc; i++)
+  {
+    //Help?
+    if (strstr(argv[i], "-?") || strstr(argv[i], "help"))
+    {
+      std::cout << HELP_COMMANDS << std::endl;
+      return "";
+    }
+    if (strlen(argv[i]) > 0)
+      args.push_back(argv[i]);
+  }
+
+  if (!app->viewer)
+  {
+    //Create the viewer window
+    OpenGLViewer* viewer = createViewer();
+    viewer->app = (ApplicationInterface*)app;
+    app->viewer = viewer;
+
+    //Shader path (default to program path if not set)
+    std::string xpath = GetBinaryPath(argv[0], "LavaVu");
+    if (Shader::path.length() == 0) Shader::path = xpath;
+    //Set default web server path
+    Server::htmlpath = xpath + "html";
+
+    //Add any output attachments to the viewer
+    if (Server::port > 0)
+      viewer->addOutput(Server::Instance(viewer));
+    static StdInput stdi;
+    viewer->addInput(&stdi);
+  }
+
+  //Reset defaults
+  app->defaults();
+
+  //App specific argument processing
+  app->arguments(args);
+
+  //Run visualisation task
+  return app->run(); 
+}
+
+void command(std::string cmd)
+{
+  app->parseCommands(cmd);
+}
+
+std::string image(std::string filename)
+{
+  std::string result = "";
+  app->display();
+  //Write image to file or return as string
+  if (filename.length() > 0)
+    app->viewer->image(filename);
+  else
+    result = app->viewer->snapshot(0, false, true);
+  return result;
+}
+
+void killViewer()
+{
+  Server::Delete();
+  delete app->viewer;
+  app = NULL;
+}
+
+OpenGLViewer* createViewer()
+{
+  OpenGLViewer* viewer = NULL;
+
+//Evil platform specific extension handling stuff
+#if defined _WIN32
+  //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
+#elif defined HAVE_OSMESA
+  GetProcAddress = (getProcAddressFN)OSMesaGetProcAddress;
+#elif defined HAVE_X11  //not defined __APPLE__
+  //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+  GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
+#elif defined HAVE_GLUT and not defined __APPLE__
+  GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+#endif
+
+  //Set default viewer
+  int window;
+#if defined HAVE_SDL
+  window = SDL_WINDOW;
+#elif defined HAVE_GLUT
+  window = GLUT_WINDOW;
+#elif defined HAVE_X11
+  window = X11_WINDOW;
+#elif defined HAVE_AGL
+  window = AGL_WINDOW;
+#elif defined HAVE_OSMESA
+  window = OSMESA_WINDOW;
+#else
+  abort_program("No windowing system configured (requires X11, GLUT, SDL, AGL or OSMesa)");
+#endif
+
+  //Create viewer window
+#if defined HAVE_X11
+  if (window == X11_WINDOW) viewer = new X11Viewer();
+#endif
+#if defined HAVE_GLUT
+  if (window == GLUT_WINDOW) viewer = new GlutViewer();
+#endif
+#if defined HAVE_SDL || defined _WIN32
+  if (window == SDL_WINDOW) viewer = new SDLViewer();
+#endif
+#if defined HAVE_OSMESA
+  if (window == OSMESA_WINDOW) viewer = new OSMesaViewer();
+#endif
+#if defined HAVE_AGL
+  if (window == AGL_WINDOW) viewer = new AGLViewer();
+#endif
+  //std::cerr << "Using " << viewer->type << " window";
+  if (!viewer) abort_program("No Viewer available\n");
+
+  return viewer;
+}
+
+//Viewer class implementation...
+LavaVu::LavaVu()
+{
+  viewer = NULL;
+  output = verbose = hideall = dbpath = false;
+
+  defaultScript = "init.script";
+
+  fixedwidth = 0;
+  fixedheight = 0;
+
+  axis = new TriSurfaces();
+  rulers = new Lines();
+  border = new QuadSurfaces();
+
+  view = -1;
+  aview = NULL;
+  awin = NULL;
+  amodel = NULL;
+  aobject = NULL;
+
+  defaults();
+}
+
+void LavaVu::defaults()
+{
+  if (viewer) 
+  {
+    viewer->visible = true;
+    //Delete all objects/data
+    clearData(true);
+    viewer->quitProgram = false;
+  }
+
+  //Defaults
+  files.clear();
+  startstep = -1;
+  endstep = -1;
+  dump = lucExportNone;
+  returndata = lucExportNone;
+  dumpid = 0;
+  globalCam = false;
+  status = true;
+  writeimage = false;
+  writemovie = 0;
+#ifdef USE_OMEGALIB
+  sort_on_rotate = false;
+#else
+  sort_on_rotate = true;
+#endif
+  message[0] = '\0';
+  volres[0] = volres[1] = volres[2] = 256;
+  volss[0] = volss[1] = volss[2] = 1.0;
+  volmin[0] = volmin[1] = volmin[2] = -1;
+  volmax[0] = volmax[1] = volmax[2] = 1;
+  volchannels = 1;
+  volume = NULL;
+  inscale[0] = inscale[1] = inscale[2] = 1.0;
+
+  window = -1;
+  tracersteps = 0;
+  objectlist = false;
+  swapY = false;
+  trisplit = 0;
+
+  //Interaction command prompt
+  entry = "";
+  recording = true;
+  loop = false;
+  animate = false;
+  quiet = false;
+  repeat = 0;
+#ifdef HAVE_LIBAVCODEC
+  encoder = NULL;
+#endif
   //Setup default properties
   
   //Object defaults
@@ -222,254 +411,7 @@ std::string initViewer(int argc, char **argv, ViewerApp* application, bool noser
   Properties::defaults["filestep"] = false;
 
 #ifdef DEBUG
-  std::cerr << std::setw(2) << Properties::defaults << std::endl;
-#endif
-
-//Evil platform specific extension handling stuff
-#if defined _WIN32
-  //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
-#elif defined HAVE_OSMESA
-  GetProcAddress = (getProcAddressFN)OSMesaGetProcAddress;
-#elif defined HAVE_X11  //not defined __APPLE__
-  //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-  GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
-#elif defined HAVE_GLUT and not defined __APPLE__
-  GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-#endif
-
-  //Set default viewer
-#if defined HAVE_X11
-  window = X11_WINDOW;
-#elif defined HAVE_GLUT
-  window = GLUT_WINDOW;
-#elif defined HAVE_SDL
-  window = SDL_WINDOW;
-#elif defined HAVE_OSMESA
-  window = OSMESA_WINDOW;
-#elif defined HAVE_AGL
-  window = AGL_WINDOW;
-#else
-  abort_program("No windowing system configured (requires X11, GLUT, SDL, AGL or OSMesa)");
-#endif
-
-  //Shader path (default to program path if not set)
-  std::string xpath = GetBinaryPath(argv[0], "LavaVu");
-  if (!Shader::path) Shader::path = xpath.c_str();
-
-  //Read command line
-  for (int i=1; i<argc; i++)
-  {
-    //Help?
-    if (strstr(argv[i], "-?") || strstr(argv[i], "help"))
-    {
-      std::cout << "Viewer command line options:\n\n";
-      std::cout << "\nStart and end timesteps\n";
-      std::cout << " -# : Any integer entered as a switch will be interpreted as the initial timestep to load\n";
-      std::cout << "      Any following integer switch will be interpreted as the final timestep for output\n";
-      std::cout << "      eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n";
-      std::cout << " -c#: caching, set # of timesteps to cache data in memory for\n";
-      std::cout << " -P#: subsample points\n";
-      std::cout << " -A : All objects hidden initially, use 'show object' to display\n";
-      std::cout << " -N : No load, deferred loading mode, use 'load object' to load & display from database\n";
-      std::cout << "\nGeneral options\n";
-      std::cout << " -v : Verbose output, debugging info displayed to console\n";
-      std::cout << " -o : output mode: all commands entered dumped to standard output,\n";
-      std::cout << "      useful for redirecting to a script file to recreate a visualisation setup.\n";
-      std::cout << " -p#: port, web server interface listen on port #\n";
-      std::cout << " -q#: quality, web server jpeg quality (0=don't serve images)\n";
-      std::cout << " -n#: number of threads to launch for web server #\n";
-      std::cout << " -l: use local shaders, locate in working directory not executable directory\n";
-      std::cout << "\nImage/Video output\n";
-      std::cout << " -w: write images of all loaded timesteps/windows then exit\n";
-      std::cout << " -i: as above\n";
-      std::cout << " -W: write images as above but using input database path as output path for images\n";
-      std::cout << " -I: as above\n";
-      std::cout << " -t: write transparent background png images (if supported)\n";
-      std::cout << " -m#: write movies of all loaded timesteps/windows #=fps(30) (if supported)\n";
-      std::cout << " -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if omitted)\n";
-      std::cout << "\nData export\n";
-      std::cout << " -d#: export object id # to CSV vertices + values\n";
-      std::cout << " -j#: export object id # to JSON, if # omitted will output all compatible objects\n";
-      std::cout << " -g#: export object id # to GLDB, if # omitted will output all compatible objects\n";
-      std::cout << "\nWindow settings\n";
-      std::cout << " -rWIDTH,HEIGHT: resize initial viewer window to width x height\n";
-      std::cout << " -h: hidden window, will exit after running any provided input script and output options\n";
-      std::cout << " -s: enable stereo mode if hardware available\n";
-      std::cout << " -f: enable full-screen mode if supported\n";
-      std::cout << " -GLUT: attempt to use GLUT window if available\n";
-      std::cout << " -SDL: attempt to use SDL window if available\n";
-      return result;
-    }
-    //Switches can be before or after files but not between
-    if (argv[i][0] == '-' && strlen(argv[i]) > 1)
-    {
-      char x;
-      std::istringstream ss(argv[i]+2);
-
-      //Window type requests
-      if (strcmp(argv[i], "-SDL") == 0)
-      {
-#if defined HAVE_SDL
-        window = SDL_WINDOW;
-#else
-        std::cerr << "SDL support not available\n";
-#endif
-        continue;
-      }
-      else if (strcmp(argv[i], "-GLUT") == 0)
-      {
-#if defined HAVE_GLUT
-        window = GLUT_WINDOW;
-#else
-        std::cerr << "GLUT support not available\n";
-#endif
-        continue;
-      }
-
-      switch (argv[i][1])
-      {
-      case 'r':
-        ss >> width >> x >> height;
-        break;
-      case 's':
-        //Stereo window requested
-        stereo = true;
-        break;
-      case 'f':
-        //Fullscreen window requested
-        fullscreen = true;
-        break;
-      case 'z':
-        //Downsample images
-        ss >> downsample;
-        break;
-      case 'p':
-        //Web server enable
-        ss >> port;
-        break;
-      case 'q':
-        //Web server JPEG quality
-        ss >> quality;
-        break;
-      case 'n':
-        //Web server threads
-        ss >> threads;
-        break;
-      default:
-        if (strlen(argv[i]) > 0)
-          args.push_back(argv[i]);
-      }
-    }
-    else if (strlen(argv[i]) > 0)
-      args.push_back(argv[i]);
-  }
-
-  //Create viewer window
-#if defined HAVE_X11
-  if (window == X11_WINDOW) viewer = new X11Viewer(stereo, fullscreen);
-#endif
-#if defined HAVE_GLUT
-  if (window == GLUT_WINDOW) viewer = new GlutViewer(stereo, fullscreen);
-#endif
-#if defined HAVE_SDL || defined _WIN32
-  if (window == SDL_WINDOW) viewer = new SDLViewer(stereo, fullscreen);
-#endif
-#if defined HAVE_OSMESA
-  if (window == OSMESA_WINDOW) viewer = new OSMesaViewer();
-#endif
-#if defined HAVE_AGL
-  if (window == AGL_WINDOW) viewer = new AGLViewer();
-#endif
-  if (!viewer) abort_program("No Viewer available\n");
-
-  //Add any output attachments to the viewer
-#ifndef DISABLE_SERVER
-  if (port)
-  {
-    //Use executable path as base for html path
-    std::string htmlpath = xpath + "html";
-    viewer->addOutput(Server::Instance(viewer, htmlpath, port, quality, threads));
-  }
-#endif
-  StdInput stdi;
-  viewer->addInput(&stdi);
-  if (downsample) viewer->downsample = downsample;
-
-  //Setup & run application
-  //Requires this horrible circular voodoo for... reasons
-  application->viewer = viewer;
-  viewer->app = (ApplicationInterface*)application;
-
-  //App specific argument processing
-  application->arguments(args);
-  //Execute the app
-  result = application->run(width, height, port > 0); //If server running, always stay open (persist flag)
-
-  delete viewer;
-#ifndef DISABLE_SERVER
-  Server::Delete();
-#endif
-  return result;
-}
-
-//Viewer class implementation...
-LavaVu::LavaVu()
-{
-  output = verbose = hideall = dbpath = false;
-
-  //Defaults
-  defaultScript = "init.script";
-  startstep = -1;
-  endstep = -1;
-  dump = lucExportNone;
-  returndata = lucExportNone;
-  dumpid = 0;
-  globalCam = false;
-  status = true;
-  writeimage = false;
-  writemovie = 0;
-#ifdef USE_OMEGALIB
-  sort_on_rotate = false;
-#else
-  sort_on_rotate = true;
-#endif
-  message[0] = '\0';
-  volres[0] = volres[1] = volres[2] = 256;
-  volss[0] = volss[1] = volss[2] = 1.0;
-  volmin[0] = volmin[1] = volmin[2] = -1;
-  volmax[0] = volmax[1] = volmax[2] = 1;
-  volchannels = 1;
-  volume = NULL;
-  inscale[0] = inscale[1] = inscale[2] = 1.0;
-
-  fixedwidth = 0;
-  fixedheight = 0;
-
-  window = -1;
-  tracersteps = 0;
-  objectlist = false;
-  swapY = false;
-  trisplit = 0;
-
-  view = -1;
-  aview = NULL;
-  awin = NULL;
-  amodel = NULL;
-  aobject = NULL;
-
-  axis = new TriSurfaces();
-  rulers = new Lines();
-  border = new QuadSurfaces();
-
-  //Interaction command prompt
-  entry = "";
-  recording = true;
-  loop = false;
-  animate = false;
-  quiet = false;
-  repeat = 0;
-#ifdef HAVE_LIBAVCODEC
-  encoder = NULL;
+  //std::cerr << std::setw(2) << Properties::defaults << std::endl;
 #endif
 }
 
@@ -508,9 +450,28 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: abk, BEFHKLMOXYZ
+      //Unused switches: abfks, BEFHKLMOXYZ
       switch (x)
       {
+      case 'z':
+        //Downsample images
+        ss >> viewer->downsample;
+        break;
+      case 'p':
+        //Web server enable
+        ss >> Server::port;
+        break;
+      case 'q':
+        //Web server JPEG quality
+        ss >> Server::quality;
+        break;
+      case 'n':
+        //Web server threads
+        ss >> Server::threads;
+        break;
+      case 'r':
+        ss >> fixedwidth >> x >> fixedheight;
+        break;
       case 'P':
         //Points initial sub-sampling
         if (args[i].length() > 2)
@@ -567,27 +528,22 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'd':
         if (args[i].length() > 2) ss >> dumpid;
         dump = lucExportCSV;
-        viewer->visible = false;
         break;
       case 'J':
         if (args[i].length() > 2) ss >> dumpid;
         dump = lucExportJSONP;
-        viewer->visible = false;
         break;
       case 'j':
         if (args[i].length() > 2) ss >> dumpid;
         dump = lucExportJSON;
-        viewer->visible = false;
         break;
       case 'g':
         if (args[i].length() > 2) ss >> dumpid;
         dump = lucExportGLDBZ;
-        viewer->visible = false;
         break;
       case 'G':
         if (args[i].length() > 2) ss >> dumpid;
         dump = lucExportGLDB;
-        viewer->visible = false;
         break;
       case 'S':
         //Don't run default script
@@ -610,13 +566,11 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'i':
         //Image write
         writeimage = true;
-        viewer->visible = false;
         break;
       case 'm':
         //Movie write (fps optional)
         writemovie = 30;
         if (args[i].length() > 2) ss >> writemovie;
-        viewer->visible = false;
         break;
       case 'e':
         //Add new timesteps after loading files
@@ -625,12 +579,10 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'u':
         //Return encoded image string from run()
         returndata = lucExportIMAGE;
-        viewer->visible = false;
         break;
       case 'U':
         //Return encoded json string from run()
         returndata = lucExportJSON;
-        viewer->visible = false;
         break;
       default:
         //Attempt to interpret as timestep
@@ -660,12 +612,20 @@ void LavaVu::arguments(std::vector<std::string> args)
       files.push_back(args[i]);
     }
   }
+
+  //Output and exit modes?
+  if (writeimage || writemovie || dump > lucExportNone)
+  {
+    viewer->visible = false;
+    Server::port = 0;
+  }
 }
 
-std::string LavaVu::run(int width, int height, bool persist)
+std::string LavaVu::run()
 {
-  fixedwidth = width;
-  fixedheight = height;
+  std::string ret = "";
+  //If server running, always stay open (persist flag)
+  bool persist = Server::running();
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
@@ -689,6 +649,7 @@ std::string LavaVu::run(int width, int height, bool persist)
 
   if (writeimage || writemovie || dump > lucExportNone)
   {
+    persist = false; //Disable persist
     //Load vis data for each window and write image
     if (!writeimage && !writemovie && dump != lucExportJSON && dump != lucExportJSONP)
       viewer->isopen = true; //Skip open
@@ -729,7 +690,6 @@ std::string LavaVu::run(int width, int height, bool persist)
       Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
       exportData(dump, dumpid);
     }
-    return "";
   }
   else
   {
@@ -744,27 +704,43 @@ std::string LavaVu::run(int width, int height, bool persist)
   //Return an image encoded as a base64 data url
   if (returndata == lucExportIMAGE)
   {
-    return viewer->snapshot(0, false, true);
+    ret = viewer->snapshot(0, false, true);
   }
-  if (returndata == lucExportJSON)
+  else if (returndata == lucExportJSON)
   {
     std::stringstream ss;
     Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
     jsonWrite(ss, 0, true);
-    return ss.str();
+    ret = ss.str();
   }
-
-  //Start event loop
-  if (persist || viewer->visible)
-    viewer->execute();
   else
   {
-    //Read input script from stdin on first timestep
-    viewer->pollInput();
-    viewer->display();
+    //Start event loop
+    if (persist || viewer->visible)
+      viewer->execute();
+    else
+    {
+      //Read input script from stdin on first timestep
+      viewer->pollInput();
+      viewer->display();
+    }
   }
 
-  return "";
+  return ret;
+}
+
+void LavaVu::clearData(bool objects)
+{
+  //Clear data
+  if (amodel) amodel->clearObjects(true);
+  //Delete objects? only works for active view/window/model
+  if (objects)
+  {
+    if (aview) aview->objects.clear();
+    if (amodel) amodel->objects.clear();
+    aobject = NULL;
+    DrawingObject::lastid = 0;
+  }
 }
 
 void LavaVu::exportData(lucExportType type, unsigned int id)
@@ -2068,8 +2044,7 @@ DrawingObject* LavaVu::addObject(DrawingObject* obj)
   if (!aview->hasObject(obj))
     aview->addObject(obj);
 
-  //Add to model master list if not already present
-  if (amodel->objects.size() >= obj->id && amodel->objects[obj->id-1] != obj);
+  //Add to model master list
   amodel->addObject(obj);
 
   return obj;
@@ -3145,7 +3120,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
   for (int i=start; i<=end; i++)
   {
     //Only load steps that contain geometry data
-    if (amodel->hasTimeStep(i))
+    if (amodel->hasTimeStep(i) || amodel->timesteps.size() == 0)
     {
       amodel->setTimeStep(amodel->nearestTimeStep(i));
       std::cout << "... Writing timestep: " << amodel->step() << std::endl;

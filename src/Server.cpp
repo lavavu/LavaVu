@@ -14,16 +14,21 @@
 
 Server* Server::_self = NULL; //Static
 
-Server* Server::Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
+//Defaults
+int Server::port = 8080;
+int Server::quality = 0;
+int Server::threads = 4;
+std::string Server::htmlpath = "html";
+
+Server* Server::Instance(OpenGLViewer* viewer)
 {
   if (!_self)   // Only allow one instance of class to be generated.
-    _self = new Server(viewer, htmlpath, port, quality, threads);
+    _self = new Server(viewer);
 
   return _self;
 }
 
-Server::Server(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads)
-  : viewer(viewer), port(port), threads(threads), path(htmlpath), quality(quality)
+Server::Server(OpenGLViewer* viewer) : viewer(viewer)
 {
   imageCache = NULL;
   jpeg = NULL;
@@ -45,6 +50,7 @@ Server::~Server()
 // virtual functions for window management
 void Server::open(int width, int height)
 {
+  if (!port) return;
   //Enable the animation timer
   //viewer->animate(250);   //1/4 sec timer
   struct mg_callbacks callbacks;
@@ -52,10 +58,10 @@ void Server::open(int width, int height)
   char ports[16], threadstr[16];
   sprintf(ports, "%d", port);
   sprintf(threadstr, "%d", threads);
-  debug_print("html path: %s ports: %s\n", path.c_str(), ports);
+  debug_print("html path: %s ports: %s\n", htmlpath.c_str(), ports);
   const char *options[] =
   {
-    "document_root", path.c_str(),
+    "document_root", htmlpath.c_str(),
     "listening_ports", ports,
     "num_threads", threadstr,
     NULL
