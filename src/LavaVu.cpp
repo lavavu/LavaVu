@@ -128,10 +128,11 @@ void command(std::string cmd)
 std::string image(std::string filename)
 {
   std::string result = "";
+  if (!app) abort_program("No application initialised!");
   app->display();
   //Write image to file or return as string
   if (filename.length() > 0)
-    app->viewer->image(filename);
+    result = app->viewer->image(filename);
   else
     result = app->viewer->snapshot(0, false, true);
   return result;
@@ -266,8 +267,10 @@ void LavaVu::defaults()
   //Interaction command prompt
   entry = "";
   recording = true;
+
   loop = false;
   animate = false;
+  automate = false;
   quiet = false;
   repeat = 0;
 #ifdef HAVE_LIBAVCODEC
@@ -450,9 +453,15 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: abfks, BEFHKLMOXYZ
+      //Unused switches: bfks, BEFHKLMOXYZ
       switch (x)
       {
+      case 'a':
+        //Automation mode:
+        //return from run() immediately after loading
+        //All actions to be performed by subsequent 
+        //library calls
+        automate = true;
       case 'z':
         //Downsample images
         ss >> viewer->downsample;
@@ -700,6 +709,9 @@ std::string LavaVu::run()
     if (window < 0)
       loadWindow(0, startstep, true);
   }
+
+  //If automation mode turned on, return at this point
+  if (automate) return ret;
 
   //Return an image encoded as a base64 data url
   if (returndata == lucExportIMAGE)

@@ -118,6 +118,7 @@ protected:
   QuadSurfaces* border;
 
 public:
+  bool automate;
   bool quiet;
   bool recording;
   bool loop;
