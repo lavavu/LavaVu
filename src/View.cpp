@@ -170,7 +170,8 @@ bool View::init(bool force, float* newmin, float* newmax)
       model_trans[2] = model_trans_lag[2] = -model_size;
 
     // Initial zoom to fit
-    if (properties["zoomstep"] == 0) zoomToFit();
+    // NOTE without (int) cast properties["zoomstep"] == 0 here always evaluated to false!
+    if ((int)properties["zoomstep"] == 0) zoomToFit();
 
     debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
     debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);

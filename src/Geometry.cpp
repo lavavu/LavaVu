@@ -1140,7 +1140,6 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
     normal.normalise();
 
     // Subsequent vertices describe outer edges of cone base
-    Vec3d vertex0 = translate + rot * Vec3d(head_radius * x_coords_[1], head_radius * y_coords_[1], -headD);
     for (v=segment_count; v >= 0; v--)
     {
       int vertex_index = getVertexIdx(draw);
