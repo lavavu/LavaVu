@@ -13,7 +13,7 @@ class Server : public OutputInterface
   //Singleton class, construct with Server::Instance()
 protected:
   //Server() {}   //Protected constructors
-  Server(OpenGLViewer* viewer, std::string htmlpath, int port, int quality, int threads);
+  Server(OpenGLViewer* viewer);
   //Server(Server const&) {} // copy constructor is protected
   //Server& operator=(Server const&) {} // assignment operator is protected
 
@@ -21,31 +21,31 @@ protected:
 
   OpenGLViewer* viewer;
 
-  int port, threads;
-  std::string path;
-
   // Thread sync
   pthread_mutex_t cs_mutex;
   pthread_cond_t condition_var;
   std::deque<std::string> commands;
 
   int client_id;
-  int quality;
   bool updated;
   std::map<int,bool> synched; //Client status
   GLubyte *imageCache;
 
 public:
+  static int port, threads, quality;
+  static std::string htmlpath;
+
   unsigned char* jpeg;
   int jpeg_bytes;
 
   //Public instance constructor/getter
-  static Server* Instance(OpenGLViewer* viewer, std::string htmlpath, int port, int quality=90, int threads=4);
+  static Server* Instance(OpenGLViewer* viewer);
   static void Delete()
   {
     if (_self) delete _self;
     _self = NULL;
   }
+  static bool running() { return _self != NULL;}
   virtual ~Server();
   struct mg_context* ctx;
 

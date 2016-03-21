@@ -44,7 +44,7 @@
 GlutViewer* GlutViewer::self; //Declare self-referential static pointer (must be outside class)
 
 // Create a new Glut window
-GlutViewer::GlutViewer(bool stereo, bool fullscreen) : OpenGLViewer(stereo, fullscreen)
+GlutViewer::GlutViewer() : OpenGLViewer()
 {
   GlutViewer::self = NULL;
 

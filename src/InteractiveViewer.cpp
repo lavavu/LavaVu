@@ -694,7 +694,7 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("localshaders"))
   {
-    Shader::path = NULL;
+    Shader::path = "./";
     std::cerr << "Ignoring shader path, using current directory\n";
     printMessage("Using local shaders");
     return false;
@@ -1390,15 +1390,7 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("clear"))
   {
-    //Clear data
-    amodel->clearObjects(true);
-    //Delete objects? only works for active view/window/model
-    if (parsed["clear"] == "objects")
-    {
-       aview->objects.clear();
-       amodel->objects.clear();
-       aobject = NULL;
-    }
+    clearData(parsed["clear"] == "objects");
   }
   else if (parsed.exists("reload"))
   {

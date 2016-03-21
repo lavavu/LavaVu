@@ -53,7 +53,7 @@ public:
   SDL_Surface* screen;
   SDL_TimerID timer_id;
 
-  SDLViewer(bool stereo, bool fullscreen);
+  SDLViewer();
   ~SDLViewer();
 
   //Function implementations

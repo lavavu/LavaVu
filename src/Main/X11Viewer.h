@@ -65,7 +65,7 @@ class X11Viewer  : public OpenGLViewer
 
 public:
 
-  X11Viewer(bool stereo, bool fullscreen);
+  X11Viewer();
   ~X11Viewer();
 
   //Function implementations

@@ -49,7 +49,7 @@ int X11_error(Display* Xdisplay, XErrorEvent* error)
 }
 
 // Create a new X11 window
-X11Viewer::X11Viewer(bool stereo, bool fullscreen) : OpenGLViewer(stereo, fullscreen)
+X11Viewer::X11Viewer() : OpenGLViewer()
 {
   // Setup display name
   strcpy(host, "localhost");

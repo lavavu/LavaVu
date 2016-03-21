@@ -53,7 +53,7 @@
 class GlutViewer  : public OpenGLViewer
 {
 public:
-  GlutViewer(bool stereo, bool fullscreen);
+  GlutViewer();
 
   //Function implementations
   void open(int width, int height);

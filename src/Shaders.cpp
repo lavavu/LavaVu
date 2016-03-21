@@ -1,9 +1,9 @@
 #include "Shaders.h"
 
 #ifndef SHADER_PATH
-const char* Shader::path = NULL;
+std::string Shader::path = "";
 #else
-const char* Shader::path = SHADER_PATH;
+std::string Shader::path = SHADER_PATH;
 #endif
 
 //Default shaders
@@ -84,7 +84,7 @@ std::string Shader::read_file(const char *fname)
   char filepath[2048] = "";
   if (!fname) return std::string("");
 
-  if (Shader::path) strcpy(filepath, Shader::path);
+  if (Shader::path.length() > 0) strcpy(filepath, Shader::path.c_str());
   strcat(filepath, fname);
   debug_print("Shader loading: %s\n", filepath);
 

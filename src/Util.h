@@ -193,7 +193,7 @@ public:
       value.resize(size);
       membytes__ += sizeof(dtype)*(size-oldsize);
       if (membytes__ > mempeak__) mempeak__ = membytes__;
-      //printf("============== MEMORY total %.3f mb, added %d ==============\n", FloatValues::membytes/1000000.0f, 4*(size-oldsize));
+      //printf("============== MEMORY total %.3f mb, added %d ==============\n", membytes__/1000000.0f, (size-oldsize));
     }
   }
 
@@ -205,7 +205,7 @@ public:
     offset = 0;
     membytes__ -= sizeof(dtype)*count;
     next = 0;
-    //if (bytes) printf("============== MEMORY total %.3f mb, removed %d ==============\n", FloatValues::membytes/1000000.0f, bytes);
+    //printf("============== MEMORY total %.3f mb, removed %d ==============\n", membytes__/1000000.0f, count);
   }
 
   //Update saved position
@@ -220,7 +220,7 @@ public:
     value.erase(value.begin()+start, value.begin()+end);
     if (offset > 0) offset -= start;
     membytes__ -= sizeof(dtype)*(end - start);
-    //printf("============== MEMORY total %.3f mb, erased %d ==============\n", FloatValues::membytes/1000000.0f, (end - start));
+    //printf("============== MEMORY total %.3f mb, erased %d ==============\n", membytes__/1000000.0f, (end - start));
   }
 };
 

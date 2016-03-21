@@ -38,7 +38,7 @@
 // Main function
 int main(int argc, char *argv[])
 {
-  initViewer(argc, argv);
+  execute(argc, argv);
   return 0;
 }
 
