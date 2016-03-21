@@ -197,26 +197,33 @@ LavaVu::LavaVu()
   rulers = new Lines();
   border = new QuadSurfaces();
 
+  defaults();
+}
+
+void LavaVu::defaults()
+{
+  //Set all values/state to defaults
+  if (viewer) 
+  {
+    //Now the app init phase can be repeated, need to reset all data
+    viewer->visible = true;
+    //Delete all objects/data
+    clearData(true);
+    viewer->quitProgram = false;
+    //Clear models
+    for (unsigned int i=0; i < models.size(); i++)
+      delete models[i];
+    models.clear();
+    if (awin) awin->views.clear();
+    windows.clear();
+  }
+
   view = -1;
   aview = NULL;
   awin = NULL;
   amodel = NULL;
   aobject = NULL;
 
-  defaults();
-}
-
-void LavaVu::defaults()
-{
-  if (viewer) 
-  {
-    viewer->visible = true;
-    //Delete all objects/data
-    clearData(true);
-    viewer->quitProgram = false;
-  }
-
-  //Defaults
   files.clear();
   startstep = -1;
   endstep = -1;
@@ -2099,10 +2106,11 @@ void LavaVu::resize(int new_width, int new_height)
       float size1 = new_width * new_height;
       float r = sqrt(size1 / size0);
       float pscale = Properties::global("scalepoints");
-      // Adjust particle size by smallest of dimension changes
+      //Disable this, manual scaling is fine anyway except possibly when oversampling 
+      /*/ Adjust particle size by smallest of dimension changes
       debug_print("Adjusting particle size scale %f to ", pscale);
       Properties::globals["scalepoints"] = pscale * r;
-      debug_print("%f ( * %f )\n", pscale*r, r);
+      debug_print("%f ( * %f )\n", pscale*r, r);*/
       std::ostringstream ss;
       ss << "resize " << new_width << " " << new_height;
       record(true, ss.str());
