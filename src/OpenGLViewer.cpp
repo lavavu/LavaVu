@@ -478,7 +478,7 @@ std::string OpenGLViewer::image(const std::string& path, bool transparent, bool 
   }
   else
   {
-    writeImage(image, width, height, path.c_str(), transparent);
+    retImg = writeImage(image, width, height, path.c_str(), transparent);
   }
 
   delete[] image;

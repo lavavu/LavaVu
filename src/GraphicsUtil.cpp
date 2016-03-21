@@ -993,7 +993,7 @@ void abort_program(const char * s, ...)
   throw std::runtime_error(buffer);
 }
 
-void writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent)
+std::string writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent)
 {
   char path[256];
 #ifdef HAVE_LIBPNG
@@ -1014,6 +1014,7 @@ void writeImage(GLubyte *image, int width, int height, const char* basename, boo
     abort_program("[write_jpeg] File %s could not be saved\n", path);
 #endif
   debug_print("[%s] File successfully written\n", path);
+  return std::string(path);
 }
 
 std::string getImageString(GLubyte *image, int width, int height, int bpp)
