@@ -161,40 +161,23 @@ OpenGLViewer* createViewer()
   GetProcAddress = (getProcAddressFN)glXGetProcAddress;
 #endif
 
-  //Set default viewer
-  int window;
-#if defined HAVE_SDL
-  window = SDL_WINDOW;
-#elif defined HAVE_GLUT
-  window = GLUT_WINDOW;
-#elif defined HAVE_X11
-  window = X11_WINDOW;
-#elif defined HAVE_AGL
-  window = AGL_WINDOW;
-#elif defined HAVE_OSMESA
-  window = OSMESA_WINDOW;
-#else
-  abort_program("No windowing system configured (requires X11, GLUT, SDL, AGL or OSMesa)");
-#endif
-
   //Create viewer window
 #if defined HAVE_X11
-  if (window == X11_WINDOW) viewer = new X11Viewer();
+  if (!viewer) viewer = new X11Viewer();
 #endif
 #if defined HAVE_GLUT
-  if (window == GLUT_WINDOW) viewer = new GlutViewer();
+  if (!viewer) viewer = new X11Viewer();
 #endif
 #if defined HAVE_SDL || defined _WIN32
-  if (window == SDL_WINDOW) viewer = new SDLViewer();
+  if (!viewer) viewer = new SDLViewer();
 #endif
 #if defined HAVE_OSMESA
-  if (window == OSMESA_WINDOW) viewer = new OSMesaViewer();
+  if (!viewer) viewer = new OSMesaViewer();
 #endif
 #if defined HAVE_AGL
-  if (window == AGL_WINDOW) viewer = new AGLViewer();
+  if (!viewer) viewer = new AGLViewer();
 #endif
-  //std::cerr << "Using " << viewer->type << " window";
-  if (!viewer) abort_program("No Viewer available\n");
+  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, AGL or OSMesa)");
 
   return viewer;
 }
