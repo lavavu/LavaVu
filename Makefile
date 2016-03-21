@@ -131,6 +131,12 @@ $(OPATH)/mongoose.o : mongoose.c
 $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
 
+swig: $(LIBNAME)
+	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i
+	mv LavaVu.py bin
+	$(CPP) $(CPPFLAGS) `python-config --includes` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
+	$(CPP) -o $(PREFIX)/_LavaVu.so -shared $(OPATH)/LavaVu_wrap.os -lLavaVu -L$(PREFIX) -Wl,-rpath=$(APREFIX)
+
 clean:
 	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
 	/bin/rm $(PREFIX)/html/*
