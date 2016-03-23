@@ -161,10 +161,9 @@ void Properties::parse(const std::string& property, bool global)
   //Parse a key=value property where value is a json object
   json& dest = global ? globals : data; //Parse into data by default
   std::string key, value;
-  std::istringstream iss(property);
-  std::getline(iss, key, '=');
-  std::getline(iss, value, '=');
-
+  size_t pos = property.find("=");
+  key = property.substr(0,pos);
+  value = property.substr(pos+1);
   if (value.length() > 0)
   {
     //Ignore case
