@@ -615,8 +615,6 @@ bool LavaVu::parseCommand(std::string cmd)
     {
       if (scriptfile != "init.script")
         printMessage("Unable to open file: %s", scriptfile.c_str());
-      else
-        std::cout << "(not found)" << std::endl;
     }
     return false;
   }
@@ -1544,7 +1542,7 @@ bool LavaVu::parseCommand(std::string cmd)
     if (filename.length() > 0)
       viewer->image(filename);
     else
-      viewer->snapshot();
+      viewer->image(viewer->title);
 
     if (viewer->outwidth > 0)
       printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);

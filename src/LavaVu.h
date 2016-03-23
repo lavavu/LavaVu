@@ -51,7 +51,7 @@
 std::string execute(int argc, char **argv);
 std::string execute(int argc, char **argv, ViewerApp* myApp);
 void command(std::string cmd);
-std::string image(std::string filename="");
+std::string image(std::string filename="", int width=0, int height=0);
 void killViewer();
 OpenGLViewer* createViewer();
 

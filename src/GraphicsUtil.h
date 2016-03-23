@@ -62,6 +62,8 @@
 
 #define FONT_DEFAULT FONT_NORMAL
 
+#define FONT_SCALE_3D 0.0015
+
 #define EPSILON 0.000001
 #ifndef M_PI
 #define M_PI 3.1415926536
@@ -523,7 +525,7 @@ bool gluInvertMatrixf(const float m[16], float invOut[16]);
 void Viewport2d(int width, int height);
 
 //3d fonts
-float PrintSetFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier=1.0);
+float PrintSetFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
 void PrintSetColour(int colour, bool XOR=false);
 void PrintString(const char* str);
 void Printf(int x, int y, const char *fmt, ...);

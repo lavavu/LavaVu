@@ -59,6 +59,7 @@ public:
   static std::deque<std::string> commands;
   static pthread_mutex_t cmd_mutex;
   static bool alphapng;
+  static int imagecounter;
 
   GLboolean stereoBuffer, doubleBuffer;
   GLuint renderBuffer;
@@ -127,8 +128,7 @@ public:
 
   virtual void fullScreen() {}
   void pixels(void* buffer, bool alpha=false, bool flip=false);
-  std::string snapshot(int number=-1, bool transparent=alphapng, bool asString=false);
-  std::string image(const std::string& path, bool transparent=alphapng, bool asString=false);
+  std::string image(const std::string& path="");
 
   void setBackground(int value)
   {
