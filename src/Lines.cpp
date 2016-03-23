@@ -251,7 +251,7 @@ void Lines::draw()
 
         //Lines specific state
         float scaling = (float)props["scaling"] * (float)props["scalelines"];
-        float lineWidth = (float)props["linewidth"] * scaling;
+        float lineWidth = (float)props["linewidth"] * scaling * view->scale2d; //Include 2d scale factor
         if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);
 
