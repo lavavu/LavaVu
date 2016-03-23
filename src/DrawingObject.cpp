@@ -57,6 +57,7 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
   properties.data["visible"] = true;
   filterout = false;
   colourIdx = 0; //Default colouring data is first value block
+  setup();
 }
 
 DrawingObject::~DrawingObject()
@@ -68,7 +69,7 @@ DrawingObject::~DrawingObject()
 void DrawingObject::setup()
 {
   //Cache values for faster lookups during draw calls
-  colour = properties.getColour("colour", 255, 255, 255, 255);
+  colour = properties.getColour("colour");
   opacity = 1.0;
   if (properties.has("opacity"))
     opacity = properties["opacity"];

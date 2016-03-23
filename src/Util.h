@@ -295,7 +295,7 @@ public:
 
   bool has(const std::string& key);
   json& operator[](const std::string& key);
-  Colour getColour(const std::string& key, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha);
+  Colour getColour(const std::string& key, unsigned char red=0, unsigned char green=0, unsigned char blue=0, unsigned char alpha=255);
   float getFloat(const std::string& key, float def);
   int getInt(const std::string& key, int def);
   bool getBool(const std::string& key, bool def);
