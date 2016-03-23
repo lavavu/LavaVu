@@ -2102,14 +2102,6 @@ void LavaVu::resize(int new_width, int new_height)
     float size0 = viewer->width * viewer->height;
     if (size0 > 0)
     {
-      float size1 = new_width * new_height;
-      float r = sqrt(size1 / size0);
-      float pscale = Properties::global("scalepoints");
-      //Disable this, manual scaling is fine anyway except possibly when oversampling 
-      /*/ Adjust particle size by smallest of dimension changes
-      debug_print("Adjusting particle size scale %f to ", pscale);
-      Properties::globals["scalepoints"] = pscale * r;
-      debug_print("%f ( * %f )\n", pscale*r, r);*/
       std::ostringstream ss;
       ss << "resize " << new_width << " " << new_height;
       record(true, ss.str());
