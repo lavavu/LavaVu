@@ -429,8 +429,8 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   int precision = properties["precision"];
   float scaleval = properties["scalevalue"];
   float border = properties.getFloat("border", 1.0); //Use getFloat or will load global border prop as default
-  if (border > 0) glLineWidth(border);
-  else glLineWidth(1.0);
+  if (border > 0) glLineWidth(border-0.5);
+  else glLineWidth(0.5);
 
   //Always show at least two ticks on a log scale
   if (isLog() && ticks < 2) ticks = 2;

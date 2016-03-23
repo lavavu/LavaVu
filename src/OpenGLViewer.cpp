@@ -44,10 +44,11 @@ pthread_mutex_t OpenGLViewer::cmd_mutex;
 int OpenGLViewer::idle = -1;
 int OpenGLViewer::displayidle = 0;
 bool OpenGLViewer::alphapng = false;
+int OpenGLViewer::imagecounter = 0;
 std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0)
+OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
 {
   keyState.shift = keyState.ctrl = keyState.alt = 0;
 
@@ -200,7 +201,6 @@ void OpenGLViewer::fbo(int width, int height)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   if (downsample > 1)
   {
-    //glTexStorage2D(GL_TEXTURE_2D, downsample, GL_RGBA8, width, height);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   }
   else
@@ -394,49 +394,41 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
   }
 }
 
-std::string OpenGLViewer::snapshot(int number, bool transparent, bool asString)
+std::string OpenGLViewer::image(const std::string& path)
 {
-  static int counter = 0;
-  if (number == -1)
-  {
-    number = counter;
-    counter++;
-  }
-  std::stringstream path;
-  path << output_path << title << "." << std::setw(5) << std::setfill('0') << number;
-  return image(path.str(), transparent, asString);
-}
-
-std::string OpenGLViewer::image(const std::string& path, bool transparent, bool asString)
-{
-  int bpp = transparent && !asString ? 4 : 3;
-  size_t size = width * height * bpp;
+  int bpp = alphapng ? 4 : 3;
   int savewidth = width;
   int saveheight = height;
   std::string retImg;
+
+  if (outwidth && !outheight)
+  {
+    //Calculate outheight based on ratio
+    float ratio = height / (float)width;
+    outheight = outwidth * ratio;
+  }
+
+  int w = outwidth ? outwidth : width;
+  int h = outheight ? outheight : height;
 
   //Make sure any status message cleared
   display();
 
   //Redraw blended for output as transparent PNG
-  if (transparent)
+  if (alphapng)
     blend_mode = BLEND_PNG;
 
   //Re-render at specified output size (in a framebuffer object if available)
   float factor = pow(2, downsample-1);
   if (downsample > 1)
   {
-    outwidth = width * factor;
-    outheight = height * factor;
+    w *= factor;
+    h *= factor;
   }
 
-  if (outwidth > 0 && (outwidth != width || outheight != height))
+  //Resize necessary?
+  if (w != width || h != height)
   {
-    if (!outheight)
-    {
-      float ratio = height / (float)width;
-      outheight = outwidth * ratio;
-    }
 #ifdef GL_FRAMEBUFFER_EXT
     //Switch to a framebuffer object
     if (fbo_frame > 0)
@@ -447,11 +439,11 @@ std::string OpenGLViewer::image(const std::string& path, bool transparent, bool 
       glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_frame);
     }
     //else
-    //   fbo(outwidth, outheight);
+    //   fbo(w, h);
 
-    setsize(outwidth, outheight);
+    setsize(w, h);
 #else
-    setsize(outwidth, outheight);
+    setsize(w, h);
 #endif
   }
 
@@ -459,33 +451,41 @@ std::string OpenGLViewer::image(const std::string& path, bool transparent, bool 
 
   if (downsample > 1)
   {
-    width /= factor;
-    height /= factor;
+    //Saved image will be in original size
+    w /= factor;
+    h /= factor;
   }
 
   // Read the pixels
+  size_t size = w * h * bpp;
   GLubyte *image = new GLubyte[size];
 #ifdef HAVE_LIBPNG
-  pixels(image, transparent);
+  pixels(image, alphapng);
 #else
   pixels(image, false, true);
 #endif
 
   //Write PNG or JPEG
-  if (asString)
+  if (path.length() == 0)
   {
-    retImg = getImageString(image, width, height, bpp);
+    retImg = getImageString(image, w, h, bpp);
   }
   else
   {
-    retImg = writeImage(image, width, height, path.c_str(), transparent);
+    //Apply image counter when multiple images output
+    std::stringstream outpath;
+    outpath << path;
+    if (imagecounter > 0)
+      outpath <<  "-" << imagecounter;
+    retImg = writeImage(image, w, h, outpath.str().c_str(), alphapng);
+    imagecounter++;
   }
 
   delete[] image;
 
   //Restore settings
   blend_mode = BLEND_NORMAL;
-  if (outwidth > 0 && outwidth != savewidth)
+  if (downsample > 1 || w != savewidth || h != saveheight)
   {
 #ifdef GL_FRAMEBUFFER_EXT
     show();  //Disables fbo mode

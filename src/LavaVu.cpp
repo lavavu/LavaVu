@@ -125,16 +125,16 @@ void command(std::string cmd)
   app->parseCommands(cmd);
 }
 
-std::string image(std::string filename)
+std::string image(std::string filename, int width, int height)
 {
   std::string result = "";
   if (!app) abort_program("No application initialised!");
   app->display();
+  //Set width/height override
+  app->viewer->outwidth = width;
+  app->viewer->outheight = height;
   //Write image to file or return as string
-  if (filename.length() > 0)
-    result = app->viewer->image(filename);
-  else
-    result = app->viewer->snapshot(0, false, true);
+  result = app->viewer->image(filename);
   return result;
 }
 
@@ -378,7 +378,6 @@ void LavaVu::defaults()
   Properties::defaults["rulers"] = false;
   Properties::defaults["rulerticks"] = 5;
   Properties::defaults["rulerwidth"] = 1.5;
-  Properties::defaults["fontscale"] = 1.0;
   Properties::defaults["border"] = 1.0;
   Properties::defaults["fillborder"] = false;
   Properties::defaults["bordercolour"] = Colour_ToJson(LUC_GREY);
@@ -704,7 +703,7 @@ std::string LavaVu::run()
   //Return an image encoded as a base64 data url
   if (returndata == lucExportIMAGE)
   {
-    ret = viewer->snapshot(0, false, true);
+    ret = viewer->image();
   }
   else if (returndata == lucExportJSON)
   {
@@ -2156,9 +2155,10 @@ void LavaVu::resetViews(bool autozoom)
     title << "LavaVu";
 
   if (amodel->timesteps.size() > 1)
-    title << " : timestep " << amodel->step();
+    title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->step();
 
   viewer->title = title.str();
+  OpenGLViewer::imagecounter = 0; //Reset counter when title changes
 
   if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
   viewer->setBackground(awin->background.value); //Update background colour
@@ -2267,9 +2267,8 @@ void LavaVu::display(void)
   GL_Error_Check;
 
   //Scale text and 2d elements when downsampling output image
-  aview->textscale = 1.0;
-  if (viewer->downsample > 0)
-    aview->textscale = pow(2, viewer->downsample-1);
+  aview->textscale = viewer->downsample > 1;
+  aview->scale2d = pow(2, viewer->downsample-1);
 
 #ifdef USE_OMEGALIB
   drawSceneBlended();
@@ -2464,7 +2463,7 @@ void LavaVu::drawAxis()
   glDisable(GL_DEPTH_TEST);
 
   lucSetFontCharset(FONT_VECTOR);
-  lucSetFontScale(length);
+  lucSetFontScale(length*6.0);
   PrintSetColour(viewer->inverse.value);
   Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
@@ -2493,9 +2492,9 @@ void LavaVu::drawRulers()
   rulers->setView(aview);
   if (!obj) obj = new DrawingObject("rulers", "wireframe=false\nclip=false\nlit=false");
   rulers->add(obj);
-  obj->properties.data["linewidth"] = aview->textscale * (float)aview->properties["rulerwidth"];
-  //obj->properties.data["fontscale"] = aview->textscale *
-  obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.08*aview->model_size;
+  obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
+  obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.5*aview->model_size;
+  obj->properties.data["font"] = "vector";
   //Colour for labels
   obj->properties.data["colour"] = Colour_ToJson(viewer->inverse);
 
@@ -2634,7 +2633,7 @@ void LavaVu::drawBorder()
     obj->properties.data["lit"] = false;
     obj->properties.data["wireframe"] = true;
     obj->properties.data["cullface"] = false;
-    obj->properties.data["linewidth"] = bordersize;
+    obj->properties.data["linewidth"] = bordersize - 0.5;
   }
   else
   {
@@ -2881,7 +2880,7 @@ void LavaVu::loadFile(FilePath& fn)
   // - Sequence matters! To display non-gldb data with model, load the gldb first
 
   //Load a file based on extension
-  std::cerr << "Loading: " << fn.full << std::endl;
+  debug_print("Loading: %s\n", fn.full.c_str());
 
   //Database files always create their own Model object
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
@@ -3130,7 +3129,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
       viewer->display();
 
       if (images)
-        viewer->snapshot(amodel->step());
+        viewer->image(viewer->title);
 
 #ifdef HAVE_LIBAVCODEC
       //Always output to video encode if it exists

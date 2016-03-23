@@ -630,8 +630,11 @@ void Geometry::labels()
   glDisable(GL_LIGHTING);  //No lighting
   for (unsigned int i=0; i < geom.size(); i++)
   {
-    //if (view->textscale > 0) geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
-    PrintSetFont(geom[i]->draw->properties, "small"); // , 1.0, view->textscale);
+    std::string font = geom[i]->draw->properties["font"];
+    if (view->textscale && font != "vector")
+      geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
+    PrintSetFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
+
     Colour colour;
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
@@ -649,7 +652,7 @@ void Geometry::labels()
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
-        float shift = PrintWidth("XX")*0.01; //Vertical shift
+        float shift = PrintWidth("XX")*FONT_SCALE_3D; //Vertical shift
         char alignchar = labstr.at(0);
         int align = -1;
         if (alignchar == '!') align = 1;
@@ -659,7 +662,7 @@ void Geometry::labels()
           align = 1;
           shift = 0.0;
         }
-        if (align > -1) labstr = labstr.substr(1);
+        if (align > -1) labstr = labstr.substr(1); //String align char
         if (geom[i]->labels[j].size() > 0)
         {
           Print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align);

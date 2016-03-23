@@ -252,7 +252,7 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
-float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier)
+float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier2d)
 {
   //fixed, small, sans, serif, vector
 #ifdef USE_OMEGALIB
@@ -260,9 +260,9 @@ float PrintSetFont(Properties& properties, std::string def, float scaling, float
   std::string fonttype = "vector";
 #else
   std::string fonttype = def;
-  if (properties.has("font")) def = properties["font"];
+  if (properties.has("font")) fonttype = properties["font"];
 #endif
-  fontscale = properties.getFloat("fontscale", scaling) * multiplier;
+  fontscale = properties.getFloat("fontscale", scaling);
   //Bitmap fonts
   if (fonttype == "fixed")
     lucSetFontCharset(FONT_FIXED);
@@ -278,6 +278,8 @@ float PrintSetFont(Properties& properties, std::string def, float scaling, float
   else  //Default (small)
     lucSetFontCharset(FONT_SMALL);
 
+  //For non-vector fonts
+  fontscale *= multiplier2d;
   return fontscale;
 }
 
@@ -305,8 +307,9 @@ void PrintString(const char* str)
   fontColour.rgba[3] = 255;
   glColor4ubv(fontColour.rgba);
   glDisable(GL_CULL_FACE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glListBase(charLists - 32);      // Set font display list base (space)
-  glCallLists(strlen(str),GL_UNSIGNED_BYTE, str);      // Display
+  glCallLists(strlen(str), GL_UNSIGNED_BYTE, str);      // Display
 }
 
 void Printf(int x, int y, const char *fmt, ...)
@@ -326,7 +329,6 @@ void Print(int x, int y, const char *str)
   if (fontcharset > FONT_VECTOR) return lucPrint(x, y, str);
   glPushMatrix();
   glTranslated(x, y, 0);
-  //glScaled(fontscale * 0.01, fontscale * 0.01, fontscale * 0.01);
   glScaled(fontscale, fontscale, 1.0);
   PrintString(str);
   glPopMatrix();
@@ -337,7 +339,7 @@ void Print3d(double x, double y, double z, const char *str)
   if (fontcharset > FONT_VECTOR) return lucPrint3d(x, y, z, str);
   glPushMatrix();
   glTranslated(x, y, z);
-  glScaled(fontscale * 0.01, fontscale * 0.01, fontscale * 0.01);
+  glScaled(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
   PrintString(str);
   glPopMatrix();
 }
@@ -348,11 +350,11 @@ void Print3dBillboard(double x, double y, double z, const char *str, int align)
   float modelview[16];
   int i,j;
 
-  float sw = 0.01 * PrintWidth(str);
+  float sw = FONT_SCALE_3D * PrintWidth(str);
   //Default align = -1 (Left)
   if (align == 1) x -= sw;     //Right
   if (align == 0) x -= sw*0.5; //Centre
-  z -= 0.25 * fontscale;
+  z -= 0.025 * fontscale;
 
   // save the current modelview matrix
   glPushMatrix();
@@ -375,7 +377,7 @@ void Print3dBillboard(double x, double y, double z, const char *str, int align)
   // set the modelview with no rotations and scaling
   glLoadMatrixf(modelview);
 
-  glScaled(fontscale * 0.01, fontscale * 0.01, fontscale * 0.01);
+  glScaled(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
   PrintString(str);
 
   // restores the modelview matrix
@@ -414,13 +416,14 @@ void lucPrintString(const char* str)
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_LIGHTING);
   glDisable(GL_CULL_FACE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   glEnable(GL_TEXTURE_2D);                            /* Enable Texture Mapping */
   glBindTexture(GL_TEXTURE_2D, fonttexture);
   glListBase(fontbase - 32 + (96 * fontcharset));      /* Choose the font and charset */
   glPushMatrix();
-  if (fontscale < 1.0) fontscale = 1.0; //Don't allow downscaling bitmap fonts
-  glScalef(fontscale, fontscale, fontscale);
+  if (fontscale >= 1.0) //Don't allow downscaling bitmap fonts
+    glScalef(fontscale, fontscale, fontscale);
   glCallLists(strlen(str),GL_UNSIGNED_BYTE, str);      /* Display */
   glDisable(GL_TEXTURE_2D);                           /* Disable Texture Mapping */
 
@@ -509,8 +512,10 @@ int lucPrintWidth(const char *string)
   int i, len = 0, slen = strlen(string);
   for (i = 0; i < slen; i++)
     len += bmpfont_charwidths[string[i]-32 + (96 * fontcharset)];
-
-  return len + slen;   /* Additional pixel of spacing for each character */
+  /* Additional pixel of spacing for each character */
+  float w = len + slen;
+  if (fontscale >= 1.0) return fontscale * w;
+  return w;
 }
 
 void lucSetupRasterFont()
@@ -588,13 +593,13 @@ void lucDeleteFont()
   fonttexture = 0;
 }
 #else
-float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier) {}
-void PrintSetColour(int colour) {}
+float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return 0.0;}
+void PrintSetColour(int colour, bool XOR) {}
 void PrintString(const char* str) {}
 void Printf(int x, int y, const char *fmt, ...) {}
 void Print(int x, int y, const char *str) {}
 void Print3d(double x, double y, double z, const char *str) {}
-void Print3dBillboard(double x, double y, double z const char *str, bool rightAlign) {}
+void Print3dBillboard(double x, double y, double z, const char *str, int align) {}
 int PrintWidth(const char *string)
 {
   return 0;
@@ -996,14 +1001,17 @@ void abort_program(const char * s, ...)
 std::string writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent)
 {
   char path[256];
+  strncpy(path, basename, 255);
 #ifdef HAVE_LIBPNG
   //Write data to image file
-  sprintf(path, "%s.png", basename);
+  if (!strstr(basename, ".png"))
+    sprintf(path, "%s.png", basename);
   std::ofstream file(path, std::ios::binary);
   write_png(file, transparent ? 4 : 3, width, height, image);
 #else
   //JPEG support with built in encoder
-  sprintf(path, "%s.jpg", basename);
+  if (!strstr(basename, ".jpg") && !!strstr(basename, ".jpeg"))
+    sprintf(path, "%s.jpg", basename);
 
   // Fill in the compression parameter structure.
   jpge::params params;

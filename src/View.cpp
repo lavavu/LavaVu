@@ -49,7 +49,8 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
   height = 0;             //Viewport height
-  textscale = 1.0;
+  textscale = false;
+  scale2d = 1.0;
 
   x = xf;
   y = yf;
@@ -94,8 +95,6 @@ void View::setProperties(std::string props)
 
   //Adjust types of some old props
   properties.convertBools({"rulers", "axis", "antialias", "timestep", "fillborder"});
-
-  std::cout << properties.data << std::endl;
 }
 
 void View::addObject(DrawingObject* obj)
@@ -703,9 +702,9 @@ void View::drawOverlay(Colour& colour)
 #endif
   //2D overlay objects, apply text scaling
   Viewport2d(width, height);
-  glScalef(textscale, textscale, textscale);
-  int w = width / textscale;
-  int h = height / textscale;
+  glScalef(scale2d, scale2d, scale2d);
+  int w = width / scale2d;
+  int h = height / scale2d;
 
   //Colour bars
   GL_Error_Check;
@@ -739,6 +738,10 @@ void View::drawOverlay(Colour& colour)
     if (!opposite) starty = hh - starty - bar_height;
     //float border = properties["border", 1.0);
     //if (border > 0) glLineWidth(border*textscale*0.75); else glLineWidth(textscale*0.75);
+
+    std::string font = objects[i]->properties["font"];
+    if (textscale && font != "vector")
+      objects[i]->properties.data["font"] = "vector"; //Force vector font if downsampling
 
     last_y = starty;
     last_margin = margin;
