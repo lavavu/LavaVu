@@ -295,6 +295,8 @@ void PrintSetColour(int colour, bool XOR)
   {
     glDisable(GL_COLOR_LOGIC_OP);
     fontColour.value = colour;
+    //Disable alpha
+    fontColour.a = 255;
   }
   glColor4ubv(fontColour.rgba);
 }

@@ -2689,13 +2689,14 @@ void LavaVu::displayObjectList(bool console)
       if (amodel->objects[i]->skip)
       {
         if (console) std::cerr << "[ no data  ]" << ss.str() << std::endl;
-        displayText(ss.str(), ++offset, 0xff222288);
+        Colour c;
+        c.value = 0xff222288;
+        displayText(ss.str(), ++offset, &c);
       }
       else if (amodel->objects[i]->properties["visible"])
       {
         if (console) std::cerr << "[          ]" << ss.str() << std::endl;
         //Use object colour if provided, unless matches background
-        int colour = 0;
         Colour c;
         GeomData* geomdata = getGeometry(amodel->objects[i]);
         if (geomdata)
@@ -2703,14 +2704,17 @@ void LavaVu::displayObjectList(bool console)
         else
           c = amodel->objects[i]->properties.getColour("colour", 0, 0, 0, 255);
         c.a = 255;
+        Colour* pc = NULL;
         if (c.value != viewer->background.value)
-          colour = c.value;
-        displayText(ss.str(), ++offset, colour);
+          pc = &c;
+        displayText(ss.str(), ++offset, pc);
       }
       else
       {
         if (console) std::cerr << "[  hidden  ]" << ss.str() << std::endl;
-        displayText(ss.str(), ++offset, 0xff888888);
+        Colour c;
+        c.value = 0xff888888;
+        displayText(ss.str(), ++offset, &c);
       }
     }
   }
@@ -2728,6 +2732,37 @@ void LavaVu::printMessage(const char *fmt, ...)
   }
 }
 
+void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colour* colour)
+{
+  //Black on white or reverse depending on background intensity
+  int avg = (viewer->background.r + viewer->background.g + viewer->background.b) / 3;
+  int tcol = 0xff000000;
+  int scol = 0xffffffff;
+  if (avg < 127) 
+  {
+    tcol = 0xffffffff;
+    scol = 0xff000000;
+  }
+
+  //Shadow
+  PrintSetColour(scol);
+  lucSetFontCharset(FONT_VECTOR);
+  lucSetFontScale(scale);
+
+  Print(xpos+1, ypos-1, str.c_str());
+
+  //Use provided text colour or calculated
+  if (colour)
+    PrintSetColour(colour->value);
+  else
+    PrintSetColour(tcol);
+
+  Print(xpos, ypos, str.c_str());
+
+  //Revert to normal colour
+  PrintSetColour(viewer->inverse.value);
+}
+
 void LavaVu::displayMessage()
 {
   if (strlen(message))
@@ -2737,20 +2772,13 @@ void LavaVu::displayMessage()
     Viewport2d(viewer->width, viewer->height);
 
     //Print current message
-    //Use shadow font
-    PrintSetColour(viewer->background.value);
-    lucSetFontCharset(FONT_VECTOR);
-    lucSetFontScale(1.0);
-    Print(11, 9, message);
-    PrintSetColour(viewer->inverse.value);
-    Print(10, 10, message);
-    message[0] = '\0';
+    text(message, 10, 10, 1.0);
 
     Viewport2d(0, 0);
   }
 }
 
-void LavaVu::displayText(std::string text, int lineno, int colour)
+void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
 {
   //Set viewport to entire window
   aview->port(0, 0, viewer->width, viewer->height);
@@ -2760,30 +2788,14 @@ void LavaVu::displayText(std::string text, int lineno, int colour)
   if (size < 0.5) size = 0.5;
   float lineht = 27 * size;
 
-  std::stringstream ss(text);
+  std::stringstream ss(str);
   std::string line;
   while(std::getline(ss, line))
   {
-    //Shadow
-    PrintSetColour(viewer->background.value);
-    lucSetFontCharset(FONT_VECTOR);
-    lucSetFontScale(size);
-    Print(11, viewer->height - lineht*lineno - 1, line.c_str());
-
-    if (colour == 0)
-      PrintSetColour(viewer->inverse.value);
-    else
-      PrintSetColour(colour | 0xff000000);
-
-    Print(10, viewer->height - lineht*lineno, line.c_str());
-    lineno++;
-
-    //Break if we run out of viewport for more lines
-    if ((lineht+1) * lineno > viewer->height) break;
+    std::string mark = "#";
+    text(mark, 5, viewer->height - lineht*lineno, size, colour);
+    text(line, 10, viewer->height - lineht*lineno, size);
   }
-
-  //Revert to normal colour
-  PrintSetColour(viewer->inverse.value);
 
   Viewport2d(0, 0);
 }
