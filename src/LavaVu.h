@@ -195,7 +195,8 @@ public:
   GeomData* getGeometry(DrawingObject* obj);
   void displayObjectList(bool console=true);
   void printMessage(const char *fmt, ...);
-  void displayText(std::string text, int lineno=1, int colour=0);
+  void text(const std::string& str, int xpos=10, int ypos=0, float scale=1.0, Colour* colour=NULL);
+  void displayText(const std::string& str, int lineno=1, Colour* colour=NULL);
   void displayMessage();
   void drawColourBar(DrawingObject* draw, int startx, int starty, int length, int height);
   void drawScene(void);
