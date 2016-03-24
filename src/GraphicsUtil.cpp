@@ -393,7 +393,9 @@ int PrintWidth(const char *string)
   for (i = 0; i < slen; i++)
     len += font_charwidths[string[i]-32];
 
-  return fontscale * len;
+  // Additional pixel of spacing for each character
+  float w = len + slen;
+  return fontscale * w;
 }
 
 void DeleteFont()

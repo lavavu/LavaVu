@@ -734,7 +734,7 @@ void View::drawOverlay(Colour& colour)
     if (pos == 1) startx = margin;
     if (pos == -1) startx = ww - margin - length;
     int starty = margin;
-    if (last_margin == margin) starty += last_y + 16;   //Auto-increase y margin if same value
+    if (last_margin == margin) starty += last_y + margin;   //Auto-increase y margin if same value
     if (!opposite) starty = hh - starty - bar_height;
     //float border = properties["border", 1.0);
     //if (border > 0) glLineWidth(border*textscale*0.75); else glLineWidth(textscale*0.75);
@@ -756,9 +756,11 @@ void View::drawOverlay(Colour& colour)
   if (properties.has("title"))
   {
     std::string title = properties["title"];
-    float fontscale = PrintSetFont(properties, "vector", 1.0, 0.6);
-    if (fontscale > 0) fontscale *= -0.5;
-    Print(0.5 * (w - PrintWidth(title.c_str())), h + 30*fontscale, title.c_str());
+    float fontscale = PrintSetFont(properties, "vector", 1.0);
+    if (fontscale < 0)
+      lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
+    Print(0.5 * (w - PrintWidth(title.c_str())), h - 3 - PrintWidth("W"), title.c_str());
+
   }
 
   GL_Error_Check;
