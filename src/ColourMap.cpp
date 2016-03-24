@@ -105,6 +105,8 @@ void ColourMap::addAt(Colour& colour, float position)
   colours.push_back(ColourVal(colour));
   colours[colours.size()-1].value = HUGE_VAL;
   colours[colours.size()-1].position = position;
+  //Flag positions provided
+  noValues = true;
 }
 
 void ColourMap::add(std::string colour)
