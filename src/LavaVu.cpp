@@ -304,7 +304,6 @@ void LavaVu::defaults()
   Properties::defaults["colourbar"] = false;
   Properties::defaults["position"] = 0;
   Properties::defaults["align"] = "bottom";
-  Properties::defaults["margin"] = 16;
   Properties::defaults["lengthfactor"] = 0.8;
   //Properties::defaults["barwidth"] = 10;
 
@@ -374,7 +373,7 @@ void LavaVu::defaults()
   //View
   Properties::defaults["title"] = "";
   Properties::defaults["zoomstep"] = -1;
-  Properties::defaults["margin"] = 32;
+  Properties::defaults["margin"] = 20; //Also colourbar
   Properties::defaults["rulers"] = false;
   Properties::defaults["rulerticks"] = 5;
   Properties::defaults["rulerwidth"] = 1.5;
@@ -2757,8 +2756,8 @@ void LavaVu::displayText(std::string text, int lineno, int colour)
   aview->port(0, 0, viewer->width, viewer->height);
   Viewport2d(viewer->width, viewer->height);
 
-  float size = 0.0008 * viewer->height;
-  if (size < 0.4) size = 0.4;
+  float size = viewer->height / 1250.0;
+  if (size < 0.5) size = 0.5;
   float lineht = 27 * size;
 
   std::stringstream ss(text);
