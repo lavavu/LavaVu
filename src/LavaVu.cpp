@@ -2794,6 +2794,8 @@ void LavaVu::displayMessage()
     text(message, 10, 10, 1.0);
 
     Viewport2d(0, 0);
+
+    message[0] = 0;
   }
 }
 
