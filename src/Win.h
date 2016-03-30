@@ -54,7 +54,6 @@ public:
 
   Win() : width(0), height(0)
   {
-    //This is no longer used
     name = "";
     this->id = ++Win::lastid;
     background.value = 0xff000000;

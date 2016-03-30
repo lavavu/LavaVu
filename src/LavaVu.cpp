@@ -34,7 +34,7 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 //TODO/FIX:
-//boolean properties no longer support int values
+//Volume colourmap not selected by default
 //can't seem to catch exception on property lookup
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
@@ -207,16 +207,26 @@ void LavaVu::defaults()
   {
     //Now the app init phase can be repeated, need to reset all data
     viewer->visible = true;
-    //Delete all objects/data
-    clearData(true);
     viewer->quitProgram = false;
-    //Clear models
+
+    //Clear models - will delete contained views, windows, objects
     for (unsigned int i=0; i < models.size(); i++)
+    {
+      models[i]->clearObjects(true);
       delete models[i];
+    }
     models.clear();
-    if (awin) awin->views.clear();
     windows.clear();
+
+    //Clear geometry containers
+    for (unsigned int i=0; i < Model::geometry.size(); i++)
+      delete Model::geometry[i];
+    Model::geometry.clear();
+
   }
+
+  //Clear any queued commands
+  OpenGLViewer::commands.clear();
 
   view = -1;
   aview = NULL;
@@ -225,6 +235,7 @@ void LavaVu::defaults()
   aobject = NULL;
 
   files.clear();
+
   startstep = -1;
   endstep = -1;
   dump = lucExportNone;
@@ -2159,10 +2170,18 @@ void LavaVu::resetViews(bool autozoom)
 void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
   //Set a default viewport/camera if none
-  if (awin->views.size() == 0) awin->addView(new View());
-  view = idx;
-  if (view < 0) view = awin->views.size() - 1;
-  if (view >= (int)awin->views.size()) view = 0;
+  if (awin->views.size() == 0) 
+  {
+    aview = new View();
+    awin->addView(aview);
+    amodel->views.push_back(aview);
+  }
+  else
+  {
+    view = idx;
+    if (view < 0) view = awin->views.size() - 1;
+    if (view >= (int)awin->views.size()) view = 0;
+  }
 
   aview = awin->views[view];
 
@@ -2948,9 +2967,10 @@ void LavaVu::defaultModel()
 
   //Set a default window, viewport/camera
   awin = new Win();
-  aview = awin->addView(new View());
   windows.push_back(awin);
+  aview = awin->addView(new View());
   amodel->windows.push_back(awin);
+  amodel->views.push_back(aview);
 
   //Setup default colourmaps
   //amodel->initColourMaps();
@@ -2991,7 +3011,10 @@ void LavaVu::loadModel(FilePath& fn)
     if (globalCam && aview)
       awin->addView(aview);
     else
+    {
       aview = awin->addView(new View(fn.base));
+      amodel->views.push_back(aview);
+    }
 
     //Add objects to window & viewport
     for (unsigned int o=0; o<amodel->objects.size(); o++)
