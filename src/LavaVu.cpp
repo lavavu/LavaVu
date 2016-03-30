@@ -166,7 +166,7 @@ OpenGLViewer* createViewer()
   if (!viewer) viewer = new X11Viewer();
 #endif
 #if defined HAVE_GLUT
-  if (!viewer) viewer = new X11Viewer();
+  if (!viewer) viewer = new GlutViewer();
 #endif
 #if defined HAVE_SDL || defined _WIN32
   if (!viewer) viewer = new SDLViewer();
