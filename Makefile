@@ -1,6 +1,10 @@
 #Install path
 PREFIX = bin
 APREFIX = $(realpath $(PREFIX))
+PROGNAME = LavaVu
+PROGRAM = $(PREFIX)/$(PROGNAME)
+LIBNAME = lib$(PROGNAME).$(LIBEXT)
+INDEX = $(PREFIX)/html/index.html
 
 #Object files path
 #OPATH = /tmp
@@ -30,10 +34,16 @@ ifeq ($(OS), Darwin)
   CFLAGS += -FAGL -FOpenGL -I/usr/include/malloc
   LIBS=-ldl -lpthread -framework AGL -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_AGL
+  LIBEXT=dylib
+  LIBBUILD=-dynamiclib -installname @rpath$(APREFIX)/lib$(PROGNAME).$(LIBEXT)
+  LIBLINK=-rpath
 else
   #OSMesa offscreen config:
   LIBS=-ldl -lpthread -lm -lOSMesa -lz
   DEFINES += -DUSE_FONTS -DHAVE_OSMESA
+  LIBEXT=so
+  LIBBUILD=-shared
+  LIBLINK=-Wl,-rpath=$(APREFIX)
 endif
 else
 #Interactive build
@@ -42,10 +52,16 @@ ifeq ($(OS), Darwin)
   CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_GLUT
+  LIBEXT=dylib
+  LIBBUILD=-dynamiclib -installname @rpath$(APREFIX)/lib$(PROGNAME).$(LIBEXT)
+  LIBLINK=-rpath
 else
   #Linux interactive with X11 (and optional GLUT, SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11
   DEFINES += -DUSE_FONTS -DHAVE_X11
+  LIBEXT=so
+  LIBBUILD=-shared
+  LIBLINK=-Wl,-rpath=$(APREFIX)
 ifeq ($(GLUT), 1)
   LIBS+= -lglut
   DEFINES += -DHAVE_GLUT
@@ -96,11 +112,6 @@ OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
-PROGNAME = LavaVu
-PROGRAM = $(PREFIX)/$(PROGNAME)
-LIBNAME = $(PREFIX)/lib$(PROGNAME).so
-INDEX = $(PREFIX)/html/index.html
-
 default: install
 
 install: paths $(PROGRAM)
@@ -119,8 +130,8 @@ $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) paths
-	$(CPP) -o $(LIBNAME) -shared $(OBJS) $(OBJ2) $(LIBS)
-	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) -Wl,-rpath=$(APREFIX)
+	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(OBJS) $(OBJ2) $(LIBS)
+	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
 	$(CPP) $(CPPFLAGS) -o $@ -c $^ 
@@ -131,11 +142,11 @@ $(OPATH)/mongoose.o : mongoose.c
 $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
 
-swig: $(LIBNAME)
+swig: $(PREFIX)/$(LIBNAME)
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i
 	mv LavaVu.py bin
 	$(CPP) $(CPPFLAGS) `python-config --includes` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
-	$(CPP) -o $(PREFIX)/_LavaVu.so -shared $(OPATH)/LavaVu_wrap.os -lLavaVu -L$(PREFIX) -Wl,-rpath=$(APREFIX)
+	$(CPP) -o $(PREFIX)/_$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(OPATH)/LavaVu_wrap.os -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 clean:
 	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
