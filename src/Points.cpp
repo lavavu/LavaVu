@@ -46,6 +46,7 @@ Points::Points() : Geometry()
   type = lucPointType;
   attenuate = true;
   pidx = NULL;
+  swap = NULL;
 }
 
 Points::~Points()
@@ -61,6 +62,8 @@ void Points::close()
     glDeleteBuffers(1, &indexvbo);
   if (pidx)
     delete[] pidx;
+  if (swap)
+    delete[] swap;
 
   vbo = 0;
   indexvbo = 0;
@@ -233,7 +236,6 @@ void Points::depthSort()
 
   //Sort is much faster without allocate, so keep buffer until size changes
   static long last_size = 0;
-  static PIndex* swap = NULL;
   int size = total*sizeof(PIndex);
   if (size != last_size)
   {
