@@ -113,7 +113,7 @@ Model::~Model()
 bool Model::open(bool write)
 {
   //Single file database
-  char path[256];
+  char path[FILE_PATH_MAX];
   int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
   strcpy(path, file.full.c_str());
   if (strstr(path, "file:")) flags = flags | SQLITE_OPEN_URI;
@@ -177,7 +177,7 @@ void Model::attach(int timestep)
   //Attach n'th timestep database if available
   if (timestep > 0 && !attached)
   {
-    char path[1024];
+    char path[FILE_PATH_MAX];
     FILE* fp;
     sprintf(path, "%s%s%05d.%s", file.path.c_str(), file.base.c_str(), timestep, file.ext.c_str());
     fp = fopen(path, "r");
@@ -1070,7 +1070,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
 void Model::mergeDatabases()
 {
-  char SQL[512];
+  char SQL[SQL_QUERY_MAX];
   reopen(true);  //Open writable
   for (unsigned int i=0; i<=timesteps.size(); i++)
   {
@@ -1078,7 +1078,7 @@ void Model::mergeDatabases()
     setTimeStep(i);
     if (attached == step())
     {
-      sprintf(SQL, "insert into geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ from %sgeometry", prefix);
+      snprintf(SQL, SQL_QUERY_MAX, "insert into geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ from %sgeometry", prefix);
       issue(SQL);
     }
   }

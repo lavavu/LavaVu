@@ -933,7 +933,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
 #if 0
   //Dump slices
   size_t offset = 0;
-  char path[256];
+  char path[FILE_PATH_MAX];
   for (int slice=0; slice<volres[2]; slice++)
   {
     //Write data to image file
@@ -1199,10 +1199,10 @@ void LavaVu::readHeightMap(FilePath& fn)
 
   //Can only parse dem format wth ers or hdr header
 
-  char ersfilename[256];
-  char hdrfilename[256];
-  sprintf(ersfilename, "%s%s.ers", fn.path.c_str(), fn.base.c_str());
-  sprintf(hdrfilename, "%s%s.hdr", fn.path.c_str(), fn.base.c_str());
+  char ersfilename[FILE_PATH_MAX];
+  char hdrfilename[FILE_PATH_MAX];
+  snprintf(ersfilename, FILE_PATH_MAX-1, "%s%s.ers", fn.path.c_str(), fn.base.c_str());
+  snprintf(hdrfilename, FILE_PATH_MAX-1, "%s%s.hdr", fn.path.c_str(), fn.base.c_str());
 
   //Parse ERS file
   std::ifstream ersfile(ersfilename, std::ios::in);
@@ -3195,7 +3195,7 @@ void LavaVu::dumpById(unsigned int id)
         std::string results = ss.str();
         if (results.size() > 0)
         {
-          char filename[512];
+          char filename[FILE_PATH_MAX];
           sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
                   GeomData::names[type].c_str(), amodel->step());
           std::ofstream csv;
@@ -3212,7 +3212,7 @@ void LavaVu::dumpById(unsigned int id)
 void LavaVu::jsonWriteFile(unsigned int id, bool jsonp, bool objdata)
 {
   //Write new JSON format objects
-  char filename[512];
+  char filename[FILE_PATH_MAX];
   char ext[6];
   int step = amodel->step();
   strcpy(ext, "jsonp");

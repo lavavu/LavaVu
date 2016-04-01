@@ -314,16 +314,16 @@ void PrintString(const char* str)
   glCallLists(strlen(str), GL_UNSIGNED_BYTE, str);      // Display
 }
 
+char buffer[4096];
 void Printf(int x, int y, const char *fmt, ...)
 {
-  char text[512];
   va_list ap;                 // Pointer to arguments list
   if (fmt == NULL) return;    // No format string
   va_start(ap, fmt);          // Parse format string for variables
-  vsprintf(text, fmt, ap);    // Convert symbols
+  vsprintf(buffer, fmt, ap);    // Convert symbols
   va_end(ap);
 
-  Print(x, y, text);   // Print result string
+  Print(x, y, buffer);   // Print result string
 }
 
 void Print(int x, int y, const char *str)
@@ -1004,8 +1004,8 @@ void abort_program(const char * s, ...)
 
 std::string writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent)
 {
-  char path[256];
-  strncpy(path, basename, 255);
+  char path[FILE_PATH_MAX];
+  strncpy(path, basename, FILE_PATH_MAX-1);
 #ifdef HAVE_LIBPNG
   //Write data to image file
   if (!strstr(basename, ".png"))

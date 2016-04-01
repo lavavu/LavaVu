@@ -56,6 +56,7 @@ void debug_print(const char *fmt, ...);
 bool FileExists(const std::string& name);
 
 //Class for handling filenames/paths
+#define FILE_PATH_MAX 4096
 class FilePath
 {
 public:
