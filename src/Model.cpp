@@ -149,7 +149,7 @@ void Model::reopen(bool write)
   //Re-attach any attached db file
   if (attached)
   {
-    char SQL[1024];
+    char SQL[SQL_QUERY_MAX];
     sprintf(SQL, "attach database '%s' as t%d", apath.c_str(), attached);
     if (issue(SQL))
       debug_print("Model %s found and re-attached\n", apath.c_str());
@@ -160,7 +160,7 @@ void Model::attach(int timestep)
 {
   //Detach any attached db file
   if (memory) return;
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
   if (attached && attached != timestep)
   {
     sprintf(SQL, "detach database 't%d'", attached);
@@ -322,7 +322,7 @@ void Model::loadViewCamera(int viewport_id)
 {
   int adj=0;
   //Load specified viewport and apply camera settings
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
   sprintf(SQL, "SELECT aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", viewport_id);
   sqlite3_stmt* statement = select(SQL);
   if (statement == NULL)
@@ -407,7 +407,7 @@ void Model::loadObjects()
 void Model::loadLinks(Win* win)
 {
   //Select statment to get all viewports in window and all objects in viewports
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
   sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE window_viewport.window_id=%d AND viewport.id=window_viewport.viewport_id AND viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id", win->id);
   sqlite3_stmt* statement = select(SQL, true); //Don't report errors as these tables are allowed to not exist
@@ -467,7 +467,7 @@ void Model::loadLinks(Win* win)
 void Model::loadLinks(DrawingObject* draw)
 {
   //Select statment to get all viewports in window and all objects in viewports
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
   sprintf(SQL, "SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", draw->id);
   sqlite3_stmt* statement = select(SQL);
@@ -835,7 +835,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   if (time_stop < 0) time_stop = step();
 
   //Load geometry
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
   char filter[256] = {'\0'};
   char objfilter[32] = {'\0'};
 
@@ -1089,7 +1089,7 @@ int Model::decompressGeometry(int timestep)
   reopen(true);  //Open writable
   clock_t t1 = clock();
   //Load geometry
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
 
   sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE timestep=%d ORDER BY idx,rank", prefix, timestep);
   sqlite3_stmt* statement = select(SQL, true);
@@ -1135,7 +1135,7 @@ int Model::decompressGeometry(int timestep)
 #ifdef ALTER_DB
         //UNCOMPRESSED
         sqlite3_stmt* statement2;
-        snprintf(SQL, 1024, "UPDATE %sgeometry SET data = ? WHERE id==%d;", prefix, id);
+        snprintf(SQL, SQL_QUERY_MAX, "UPDATE %sgeometry SET data = ? WHERE id==%d;", prefix, id);
         printf("%s\n", SQL);
         /* Prepare statement... */
         if (sqlite3_prepare_v2(db, SQL, -1, &statement2, NULL) != SQLITE_OK)
@@ -1208,7 +1208,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
 
   issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
 
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
 
   //Write colour maps
   for (unsigned int i = 0; i < colourMaps.size(); i++)
@@ -1229,7 +1229,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     cm->properties.data["colours"] = colours.str();
 
     //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
-    snprintf(SQL, 1024, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, properties) values (%d, '%s', %g, %g, %d, %d, '%s')", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
+    snprintf(SQL, SQL_QUERY_MAX, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, properties) values (%d, '%s', %g, %g, %d, %d, '%s')", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
     //printf("%s\n", SQL);
     if (!issue(SQL, outdb)) return;
   }
@@ -1241,7 +1241,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     {
       int cmap = 0;
       if (objects[i]->colourMaps[lucColourValueData]) cmap = objects[i]->colourMaps[lucColourValueData]->id;
-      snprintf(SQL, 1024, "insert into object (id, name, colourmap_id, properties) values (%d, '%s', '%d', '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, objects[i]->properties.data.dump().c_str());
+      snprintf(SQL, SQL_QUERY_MAX, "insert into object (id, name, colourmap_id, properties) values (%d, '%s', '%d', '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, objects[i]->properties.data.dump().c_str());
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
 
@@ -1250,7 +1250,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
       {
         if (!objects[i]->colourMaps[c]) continue;
         /* Link object & colour map */
-        snprintf(SQL, 1024, "insert into object_colourmap (object_id, colourmap_id, data_type) values (%d, %d, %d)", objects[i]->id, objects[i]->colourMaps[c]->id, c);
+        snprintf(SQL, SQL_QUERY_MAX, "insert into object_colourmap (object_id, colourmap_id, data_type) values (%d, %d, %d)", objects[i]->id, objects[i]->colourMaps[c]->id, c);
         printf("%s\n", SQL);
         if (!issue(SQL, outdb)) return;
       }
@@ -1267,7 +1267,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
-    snprintf(SQL, 1024, "insert into timestep (id, time, properties) values (%d, %g, '%s')", timesteps[i]->step, timesteps[i]->time, "");
+    snprintf(SQL, SQL_QUERY_MAX, "insert into timestep (id, time, properties) values (%d, %g, '%s')", timesteps[i]->step, timesteps[i]->time, "");
     //printf("%s\n", SQL);
     if (!issue(SQL, outdb)) return;
 
@@ -1301,7 +1301,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
 {
   std::vector<GeomData*> data = geometry[type]->getAllObjects(obj_id);
   //Loop through and write out all object data
-  char SQL[1024];
+  char SQL[SQL_QUERY_MAX];
   unsigned int i, data_type;
   for (i=0; i<data.size(); i++)
   {
@@ -1349,7 +1349,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
 
       }
 
-      snprintf(SQL, 1024, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+      snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 
       /* Prepare statement... */
       if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1384,8 +1384,8 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
 void Model::deleteObject(unsigned int id)
 {
   reopen(true);  //Open writable
-  char SQL[256];
-  sprintf(SQL, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
+  char SQL[SQL_QUERY_MAX];
+  snprintf(SQL, SQL_QUERY_MAX, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
   issue(SQL);
   issue("vacuum");
   for (unsigned int i=0; i<objects.size(); i++)
