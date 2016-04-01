@@ -138,7 +138,13 @@ std::string image(std::string filename, int width, int height)
   return result;
 }
 
-void killViewer()
+void clear()
+{
+  //Close any open models and free memory
+  app->close();
+}
+
+void kill()
 {
   Server::Delete();
   delete app->viewer;
@@ -208,21 +214,7 @@ void LavaVu::defaults()
     //Now the app init phase can be repeated, need to reset all data
     viewer->visible = true;
     viewer->quitProgram = false;
-
-    //Clear models - will delete contained views, windows, objects
-    for (unsigned int i=0; i < models.size(); i++)
-    {
-      models[i]->clearObjects(true);
-      delete models[i];
-    }
-    models.clear();
-    windows.clear();
-
-    //Clear geometry containers
-    for (unsigned int i=0; i < Model::geometry.size(); i++)
-      delete Model::geometry[i];
-    Model::geometry.clear();
-
+    close();
   }
 
   //Clear any queued commands
@@ -2125,6 +2117,23 @@ void LavaVu::close()
 {
   for (unsigned int i=0; i < models.size(); i++)
     models[i]->close();
+
+  //Clear models - will delete contained views, windows, objects
+  //Should free all allocated memory
+  for (unsigned int i=0; i < models.size(); i++)
+  {
+    models[i]->clearObjects(true);
+    delete models[i];
+  }
+  models.clear();
+  windows.clear();
+
+  //Clear geometry containers
+  for (unsigned int i=0; i < Model::geometry.size(); i++)
+    delete Model::geometry[i];
+  Model::geometry.clear();
+
+  ColourMap::lastid = 0;
 }
 
 void LavaVu::redraw(unsigned int id)
