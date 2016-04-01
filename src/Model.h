@@ -45,7 +45,7 @@
 #include "Geometry.h"
 #include "TimeStep.h"
 
-#define SQL_QUERY_MAX 4096;
+#define SQL_QUERY_MAX 4096
 
 class Model
 {

@@ -893,7 +893,7 @@ void Geometry::toImage(unsigned int idx)
   if (width == 0) width = 256;
   int height = geom[idx]->height;
   if (height == 0) height = geom[idx]->data[lucColourValueData]->size() / width;
-  char path[256];
+  char path[FILE_PATH_MAX];
   int pixel = 3;
   GLubyte *image = new GLubyte[width * height * pixel];
   // Read the pixels

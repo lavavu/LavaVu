@@ -81,7 +81,7 @@ bool Shader::version()
 //Read a fragment or vertex shader from a file into a shader object
 std::string Shader::read_file(const char *fname)
 {
-  char filepath[2048] = "";
+  char filepath[FILE_PATH_MAX] = "";
   if (!fname) return std::string("");
 
   if (Shader::path.length() > 0) strcpy(filepath, Shader::path.c_str());

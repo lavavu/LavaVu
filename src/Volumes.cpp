@@ -465,7 +465,7 @@ void Volumes::pngWrite(unsigned int id, int xtiles)
       int iw, ih;
       GLubyte *image = getTiledImage(id, iw, ih, true, xtiles);
       if (!image) return;
-      char path[256];
+      char path[FILE_PATH_MAX];
       sprintf(path, "%s.png", geom[i]->draw->name.c_str());
       std::ofstream file(path, std::ios::binary);
       write_png(file, 1, iw, ih, image);
