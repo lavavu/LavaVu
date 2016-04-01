@@ -98,6 +98,7 @@ public:
   void loadViewCamera(int viewport_id);
   void loadObjects();
   void loadColourMaps();
+  void loadColourMapsLegacy();
 
   Model(FilePath& fn, bool hideall=false);
   void init();

@@ -441,7 +441,7 @@ void Model::loadLinks(Win* win)
     }
 
     //Get drawing object
-    if (!objects[object_id-1]) continue; //No geometry
+    if (objects.size() < object_id || !objects[object_id-1]) continue; //No geometry
     draw = objects[object_id-1];
     if (last_object != object_id)
     {
@@ -452,6 +452,8 @@ void Model::loadLinks(Win* win)
     //Add colour maps to drawing objects...
     if (colourmap_id)
     {
+      if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
+        abort_program("Invalid colourmap id %d\n", colourmap_id);
       //Find colourmap by id
       ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
@@ -533,6 +535,39 @@ int Model::loadTimeSteps()
 
 void Model::loadColourMaps()
 {
+  if (issue("select count(*) from colourvalue")) return loadColourMapsLegacy();
+
+  //New databases have only a colourmap table with colour data in properties
+  sqlite3_stmt* statement = select("SELECT id,name,minimum,maximum,logscale,discrete,properties FROM colourmap");
+  int map_id = 0;
+  double minimum;
+  double maximum;
+  bool parsed = false;
+  ColourMap* colourMap = NULL;
+  while ( sqlite3_step(statement) == SQLITE_ROW)
+  {
+    int id = sqlite3_column_int(statement, 0);
+    char *cmname = (char*)sqlite3_column_text(statement, 1);
+
+    minimum = sqlite3_column_double(statement, 2);
+    maximum = sqlite3_column_double(statement, 3);
+    int logscale = sqlite3_column_int(statement, 4);
+    int discrete = sqlite3_column_int(statement, 5);
+    char *props = (char*)sqlite3_column_text(statement, 6);
+    colourMap = new ColourMap(id, cmname, logscale, discrete, minimum, maximum, props ? props : "");
+    colourMaps.push_back(colourMap);
+  }
+
+  sqlite3_finalize(statement);
+
+  //Initial calibration for all maps
+  for (unsigned int i=0; i<colourMaps.size(); i++)
+    colourMaps[i]->calibrate();
+}
+
+void Model::loadColourMapsLegacy()
+{
+  //Handles old databases with colourvalue table
   bool old = false;
   sqlite3_stmt* statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value,name,properties FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
   if (statement == NULL)
@@ -1154,7 +1189,6 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   issue("drop table IF EXISTS timestep", outdb);
   issue("drop table IF EXISTS object_colourmap", outdb);
   issue("drop table IF EXISTS colourmap", outdb);
-  issue("drop table IF EXISTS colourvalue", outdb);
   issue("drop table IF EXISTS object", outdb);
 
   // Create new tables when not present
@@ -1170,9 +1204,6 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048), FOREIGN KEY (colourmap_id) REFERENCES colourmap (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
 
   issue(
-    "create table colourvalue (id INTEGER PRIMARY KEY ASC, colourmap_id INTEGER, colour INTEGER, value REAL, FOREIGN KEY (colourmap_id) REFERENCES colourmap (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
-
-  issue(
     "create table colourmap (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), minimum REAL, maximum REAL, logscale INTEGER, discrete INTEGER, centreValue REAL, properties VARCHAR(2048))", outdb);
 
   issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
@@ -1183,19 +1214,24 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   for (unsigned int i = 0; i < colourMaps.size(); i++)
   {
     ColourMap* cm = colourMaps[i];
-    //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
-    snprintf(SQL, 1024, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, centreValue) values (%d, '%s', %g, %g, %d, %d, %g)", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, 0.0 );
-    //printf("%s\n", SQL);
-    if (!issue(SQL, outdb)) return;
 
-    /* Write colours and values */
+    //Convert colour/values to properties string
+    std::stringstream colours;
+    std::stringstream positions;
     for (unsigned int c=0; c< cm->colours.size(); c++)
     {
-      snprintf(SQL, 1024, "insert into colourvalue (colourmap_id, colour, value) values (%d, %d, %g)",
-               cm->id, cm->colours[c].colour.value, cm->colours[c].position * (cm->maximum - cm->minimum) + cm->minimum);
-      //printf("%s\n", SQL);
-      if (!issue(SQL, outdb)) return;
+      colours << cm->colours[c].position; // * (cm->maximum - cm->minimum) + cm->minimum);
+      colours << "=rgba(" << (int)cm->colours[c].colour.r;
+      colours << "," << (int)cm->colours[c].colour.g;
+      colours << "," << (int)cm->colours[c].colour.b;
+      colours << "," << (cm->colours[c].colour.a/255.0) << ")\n";
     }
+    cm->properties.data["colours"] = colours.str();
+
+    //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
+    snprintf(SQL, 1024, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, properties) values (%d, '%s', %g, %g, %d, %d, '%s')", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
+    //printf("%s\n", SQL);
+    if (!issue(SQL, outdb)) return;
   }
 
   //Write objects

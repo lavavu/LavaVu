@@ -63,7 +63,7 @@ ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete,
   properties.parseSet(props);
 
   if (properties.has("colours"))
-    parse(properties["colours"]);
+    loadPalette(properties["colours"]);
 }
 
 void ColourMap::parse(std::string colourMapString)
@@ -97,7 +97,6 @@ void ColourMap::parse(std::string colourMapString)
   }
   delete[] colourString;
 }
-
 
 void ColourMap::addAt(Colour& colour, float position)
 {
