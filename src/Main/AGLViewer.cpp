@@ -109,6 +109,38 @@ void AGLViewer::open(int w, int h)
 
   aglSetCurrentContext(graphicsContext);
 
+#if 0
+CGLContextObj context;
+    int num = 0;
+    CGLError err;
+    CGLPixelFormatAttribute attribs[4] = 
+      {
+        kCGLPFAAccelerated,
+        kCGLPFAOpenGLProfile,
+        /*
+        (CGLPixelFormatAttribute) kCGLOGLPVersion_3_2_Core,
+        (CGLPixelFormatAttribute) kCGLOGLPVersion_GL3_Core,
+        (CGLPixelFormatAttribute) kCGLOGLPVersion_Legacy,
+        */
+        (CGLPixelFormatAttribute) 0
+      };
+
+    err = CGLChoosePixelFormat(attribs, &pixelFormat,&num);
+
+    if (err == kCGLBadPixelFormat)
+      abort_progam("Error creating OpenGL context");
+
+    err = CGLCreateContext(pixelFormat, NULL, &context);
+
+    if (err == kCGLBadContext)
+      abort_progam("Error creating OpenGL context");
+
+    CGLDestroyPixelFormat(pixelFormat);
+
+    err = CGLSetCurrentContext(context);
+//    CGLDestroyContext(context);
+#endif
+
   debug_print("AGL viewer created\n");
 
   //Call OpenGL init
