@@ -2712,6 +2712,7 @@ void LavaVu::displayObjectList(bool console)
     if (amodel->objects[i])
     {
       std::ostringstream ss;
+      ss << "   ";
       ss << std::setw(5) << amodel->objects[i]->id << " : " << amodel->objects[i]->name;
       if (amodel->objects[i] == aobject) ss << "*";
       if (amodel->objects[i]->skip)
@@ -2732,10 +2733,10 @@ void LavaVu::displayObjectList(bool console)
         else
           c = amodel->objects[i]->properties.getColour("colour", 0, 0, 0, 255);
         c.a = 255;
-        Colour* pc = NULL;
+        offset++;
+        displayText(ss.str(), offset);
         if (c.value != viewer->background.value)
-          pc = &c;
-        displayText(ss.str(), ++offset, pc);
+          displayText("##", offset, &c);
       }
       else
       {
@@ -2822,9 +2823,8 @@ void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
   std::string line;
   while(std::getline(ss, line))
   {
-    std::string mark = "#";
-    text(mark, 5, viewer->height - lineht*lineno, size, colour);
-    text(line, 10, viewer->height - lineht*lineno, size);
+    text(line, 5, viewer->height - lineht*lineno, size, colour);
+    lineno++;
   }
 
   Viewport2d(0, 0);
