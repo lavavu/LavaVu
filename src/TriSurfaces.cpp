@@ -44,6 +44,7 @@ TriSurfaces::TriSurfaces(bool flat2Dflag) : Geometry()
   vbo = 0;
   indexvbo = 0;
   tidx = NULL;
+  swap = NULL;
   flat2d = flat2Dflag;
 }
 
@@ -60,6 +61,8 @@ void TriSurfaces::close()
     glDeleteBuffers(1, &indexvbo);
   if (tidx)
     delete[] tidx;
+  if (swap)
+    delete[] swap;
 
   vbo = 0;
   indexvbo = 0;
@@ -632,7 +635,6 @@ void TriSurfaces::depthSort()
 
   //Sort is much faster without allocate, so keep buffer until size changes
   static long last_size = 0;
-  static TIndex* swap = NULL;
   int size = tricount*sizeof(TIndex);
   if (size != last_size)
   {

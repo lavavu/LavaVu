@@ -288,6 +288,7 @@ public:
 class TriSurfaces : public Geometry
 {
   TIndex *tidx;
+  TIndex *swap;
   unsigned int tricount;
   std::vector<unsigned int> counts;
 protected:
@@ -382,6 +383,7 @@ public:
 class Points : public Geometry
 {
   PIndex *pidx;
+  PIndex *swap;
 public:
   static Shader* prog;
   static unsigned int subSample;
