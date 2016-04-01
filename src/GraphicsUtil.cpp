@@ -1014,7 +1014,7 @@ std::string writeImage(GLubyte *image, int width, int height, const char* basena
   write_png(file, transparent ? 4 : 3, width, height, image);
 #else
   //JPEG support with built in encoder
-  if (!strstr(basename, ".jpg") && !!strstr(basename, ".jpeg"))
+  if (!strstr(basename, ".jpg") && !strstr(basename, ".jpeg"))
     sprintf(path, "%s.jpg", basename);
 
   // Fill in the compression parameter structure.
