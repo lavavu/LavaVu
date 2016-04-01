@@ -183,9 +183,16 @@ void OpenGLViewer::show()
 }
 
 // FBO buffers
-void OpenGLViewer::fbo(int width, int height)
+void OpenGLViewer::fbo(int w, int h)
 {
 #ifdef GL_FRAMEBUFFER_EXT
+  if (fbo_texture && width == w && height == h)
+  {
+    debug_print("FBO exists %d %d\n", width, height);
+    return;
+  }
+  width = w;
+  height = h;
   if (fbo_texture) glDeleteTextures(1, &fbo_texture);
   if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
   if (fbo_frame) glDeleteFramebuffersEXT(1, &fbo_frame);
@@ -258,10 +265,10 @@ void OpenGLViewer::fbo(int width, int height)
   GL_Error_Check;
 }
 
-void OpenGLViewer::setsize(int width, int height)
+void OpenGLViewer::setsize(int w, int h)
 {
   //Resize fbo
-  if (fbo_enabled) fbo(width, height);
+  if (fbo_enabled) fbo(w, h);
 }
 
 void OpenGLViewer::resize(int new_width, int new_height)
@@ -438,8 +445,6 @@ std::string OpenGLViewer::image(const std::string& path)
       //glBindTexture(GL_TEXTURE_2D, fbo_texture);
       glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_frame);
     }
-    //else
-    //   fbo(w, h);
 
     setsize(w, h);
 #else
