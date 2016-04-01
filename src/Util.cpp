@@ -148,11 +148,22 @@ bool Properties::getBool(const std::string& key, bool def)
 //Parse multi-line string
 void Properties::parseSet(const std::string& properties)
 {
-  //Process all lines
-  std::stringstream ss(properties);
-  std::string line;
-  while (std::getline(ss, line))
-    parse(line);
+  //Properties can be provided as valid json object {...}
+  //in which case, parse directly
+  if (properties.length() > 2 && properties.at(0) == '{')
+  {
+    json props = json::parse(properties);
+    merge(props);
+  }
+  //Otherwise, provided as single prop=value per line 
+  //where value is a parsable as json
+  else
+  {
+    std::stringstream ss(properties);
+    std::string line;
+    while (std::getline(ss, line))
+      parse(line);
+  }
 }
 
 //Property containers now using json
