@@ -35,7 +35,8 @@ ifeq ($(OS), Darwin)
   LIBS=-ldl -lpthread -framework AGL -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_AGL
   LIBEXT=dylib
-  LIBBUILD=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
+  LIBBUILD=-dynamiclib
+  LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
 else
   #OSMesa offscreen config:
@@ -53,7 +54,8 @@ ifeq ($(OS), Darwin)
   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_GLUT
   LIBEXT=dylib
-  LIBBUILD=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
+  LIBBUILD=-dynamiclib
+  LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
 else
   #Linux interactive with X11 (and optional GLUT, SDL)
@@ -130,7 +132,7 @@ $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) paths
-	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(OBJS) $(OBJ2) $(LIBS)
+	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(LIBS)
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
@@ -145,8 +147,9 @@ $(OPATH)/sqlite3.o : sqlite3.c
 swig: $(PREFIX)/$(LIBNAME)
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i
 	mv LavaVu.py bin
+	#touch bin/__init__.py
 	$(CPP) $(CPPFLAGS) `python-config --includes` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
-	$(CPP) -o $(PREFIX)/_$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(OPATH)/LavaVu_wrap.os -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CPP) -o $(PREFIX)/_$(PROGNAME).so $(LIBBUILD) $(OPATH)/LavaVu_wrap.os `python-config --libs` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 clean:
 	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
