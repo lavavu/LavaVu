@@ -35,8 +35,8 @@ ifeq ($(OS), Darwin)
   LIBS=-ldl -lpthread -framework AGL -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_AGL
   LIBEXT=dylib
-  LIBBUILD=-dynamiclib -installname @rpath$(APREFIX)/lib$(PROGNAME).$(LIBEXT)
-  LIBLINK=-rpath
+  LIBBUILD=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
+  LIBLINK=-Wl,-rpath $(APREFIX)
 else
   #OSMesa offscreen config:
   LIBS=-ldl -lpthread -lm -lOSMesa -lz
@@ -53,8 +53,8 @@ ifeq ($(OS), Darwin)
   LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_GLUT
   LIBEXT=dylib
-  LIBBUILD=-dynamiclib -installname @rpath$(APREFIX)/lib$(PROGNAME).$(LIBEXT)
-  LIBLINK=-rpath
+  LIBBUILD=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
+  LIBLINK=-Wl,-rpath $(APREFIX)
 else
   #Linux interactive with X11 (and optional GLUT, SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11
