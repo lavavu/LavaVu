@@ -30,10 +30,10 @@ OS := $(shell uname)
 #Offscreen build
 ifeq ($(OFFSCREEN), 1)
 ifeq ($(OS), Darwin)
-  #AGL offscreen config:
-  CFLAGS += -FAGL -FOpenGL -I/usr/include/malloc
-  LIBS=-ldl -lpthread -framework AGL -framework OpenGL -lobjc -lm -lz
-  DEFINES += -DUSE_FONTS -DHAVE_AGL
+  #CGL offscreen config:
+  CFLAGS += -FOpenGL -I/usr/include/malloc
+  LIBS=-ldl -lpthread -framework OpenGL -lobjc -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_CGL
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
@@ -49,10 +49,10 @@ endif
 else
 #Interactive build
 ifeq ($(OS), Darwin)
-  #Mac OS X interactive with GLUT
-  CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
-  LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
-  DEFINES += -DUSE_FONTS -DHAVE_GLUT
+  #Mac OS X interactive with Cocoa
+  CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc
+  LIBS=-ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_COCOA
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
@@ -112,7 +112,7 @@ OBJS = $(notdir $(OBJ))
 #Add object path
 OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
-OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
+OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o $(OPATH)/CocoaViewer.o
 
 default: install
 
@@ -143,6 +143,9 @@ $(OPATH)/mongoose.o : mongoose.c
 
 $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
+
+$(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
+	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
 swig: $(PREFIX)/$(LIBNAME)
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i

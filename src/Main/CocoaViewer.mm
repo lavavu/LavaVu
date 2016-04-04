@@ -41,14 +41,10 @@
 
 #include <sys/select.h>
 
-#import <Cocoa/Cocoa.h>
-#import <QuartzCore/CVDisplayLink.h>
-#import <OpenGL/OpenGL.h>
-
-@class View;
+@class CView;
 static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*, CVOptionFlags, CVOptionFlags*, void*);
 
-@interface View : NSOpenGLView <NSWindowDelegate>
+@interface CView : NSOpenGLView <NSWindowDelegate>
 {
 @public
   CVDisplayLinkRef displayLink;
@@ -58,21 +54,21 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 }
 @end
 
-@implementation View
+@implementation CView
 // Initialize
 - (id) initWithFrame: (NSRect) frame
 {
   running = true;
 
-  // No multisampling
-  int samples = 0;
+  // multisampling
+  int samples = 4;
 
   // Keep multisampling attributes at the start of the attribute lists since code below assumes they are array elements 0 through 4.
   NSOpenGLPixelFormatAttribute windowedAttrs[] =
   {
     NSOpenGLPFAMultisample,
-    NSOpenGLPFASampleBuffers, samples ? 1 : 0,
-    NSOpenGLPFASamples, samples,
+    NSOpenGLPFASampleBuffers, 1,
+    NSOpenGLPFASamples, 4,
     NSOpenGLPFAAccelerated,
     NSOpenGLPFADoubleBuffer,
     NSOpenGLPFAColorSize, 32,
@@ -137,7 +133,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   CGLPixelFormatObj cglPixelFormat = (CGLPixelFormatObj)[[self pixelFormat] CGLPixelFormatObj];
   CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
 
-  GLint dim[2] = {windowRect.size.width, windowRect.size.height};
+  GLint dim[2] = {(int)windowRect.size.width, (int)windowRect.size.height};
   CGLSetParameter(cglContext, kCGLCPSurfaceBackingSize, dim);
   CGLEnable(cglContext, kCGLCESurfaceBackingSize);
 
@@ -355,20 +351,13 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 
 static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef displayLink, const CVTimeStamp* now, const CVTimeStamp* outputTime, CVOptionFlags flagsIn, CVOptionFlags* flagsOut, void* displayLinkContext)
 {
-  CVReturn result = [(View*)displayLinkContext getFrameForTime:outputTime];
+  CVReturn result = [(CView*)displayLinkContext getFrameForTime:outputTime];
   return result;
 }
 
-int main(int argc, const char * argv[])
-{
-
-}
-
-// Create a new AGL window
-CocoaViewer::CocoaViewer() : OpenGLViewer(false, false)
+CocoaViewer::CocoaViewer() : OpenGLViewer()
 {
   visible = false;
-  graphicsContext = NULL;
 }
 
 CocoaViewer::~CocoaViewer()
@@ -383,7 +372,7 @@ void CocoaViewer::open(int w, int h)
   // Autorelease Pool:
   // Objects declared in this scope will be automatically
   // released at the end of it, when the pool is "drained".
-  NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
+  pool = [[NSAutoreleasePool alloc] init];
 
   // Create a shared app instance.
   // This will initialize the global variable
@@ -397,15 +386,15 @@ void CocoaViewer::open(int w, int h)
 
   // Window bounds (x, y, width, height)
   NSRect screenRect = [[NSScreen mainScreen] frame];
-  NSRect viewRect = NSMakeRect(0, 0, w, h);
+  NSRect viewRect = NSMakeRect(0, 0, width, height);
   NSRect windowRect = NSMakeRect(NSMidX(screenRect) - NSMidX(viewRect),
                                  NSMidY(screenRect) - NSMidY(viewRect),
                                  viewRect.size.width,
                                  viewRect.size.height);
 
-  NSWindow * window = [[NSWindow alloc] initWithContentRect:windowRect
-                       styleMask:windowStyle
-                       backing:NSBackingStoreBuffered
+  window = [[NSWindow alloc] initWithContentRect:windowRect
+            styleMask:windowStyle
+            backing:NSBackingStoreBuffered
                        defer:NO];
   [window autorelease];
 
@@ -435,7 +424,7 @@ void CocoaViewer::open(int w, int h)
   [appMenuItem setSubmenu:appMenu];
 
   // Create app delegate to handle system events
-  View* view = [[[View alloc] initWithFrame:windowRect] autorelease];
+  CView* view = [[[CView alloc] initWithFrame:windowRect] autorelease];
   view->windowRect = windowRect;
   [window setAcceptsMouseMovedEvents:YES];
   [window setContentView:view];
@@ -447,42 +436,12 @@ void CocoaViewer::open(int w, int h)
   // Add fullscreen button
   [window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenPrimary];
 
-#if 0
-CGLContextObj context;
-    int num = 0;
-    CGLError err;
-    CGLPixelFormatAttribute attribs[4] = 
-      {
-        kCGLPFAAccelerated,
-        kCGLPFAOpenGLProfile,
-        /*
-        (CGLPixelFormatAttribute) kCGLOGLPVersion_3_2_Core,
-        (CGLPixelFormatAttribute) kCGLOGLPVersion_GL3_Core,
-        (CGLPixelFormatAttribute) kCGLOGLPVersion_Legacy,
-        */
-        (CGLPixelFormatAttribute) 0
-      };
-
-    err = CGLChoosePixelFormat(attribs, &pixelFormat,&num);
-
-    if (err == kCGLBadPixelFormat)
-      abort_progam("Error creating OpenGL context");
-
-    err = CGLCreateContext(pixelFormat, NULL, &context);
-
-    if (err == kCGLBadContext)
-      abort_progam("Error creating OpenGL context");
-
-    CGLDestroyPixelFormat(pixelFormat);
-
-    err = CGLSetCurrentContext(context);
-//    CGLDestroyContext(context);
-#endif
-
   debug_print("Cocoa viewer created\n");
 
-  //Call OpenGL init
   OpenGLViewer::init();
+
+  //Call OpenGL init
+  //OpenGLViewer::init();
 }
 
 void CocoaViewer::setsize(int width, int height)
@@ -506,8 +465,6 @@ void CocoaViewer::display()
 void CocoaViewer::swap()
 {
   // Swap buffers
-  //if (doubleBuffer)
-  //  aglSwapBuffers(graphicsContext);
 
   OpenGLViewer::display();
 }
@@ -517,6 +474,7 @@ void CocoaViewer::execute()
   //Ensure window visible for interaction
   if (visible)
   {
+
     // Show window and run event loop
     [window orderFrontRegardless];
     [NSApp run];
