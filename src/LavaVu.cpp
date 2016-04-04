@@ -1733,7 +1733,7 @@ void LavaVu::readTecplot(FilePath& fn)
           }
 
           for (int i=0; i<8; i++)
-            assert(!isnan(value[i]));
+            assert(!std::isnan(value[i]));
 
           //Two triangles per side (set indices only when x,y,z all read)
           //X=0,Y=1,Z=2
