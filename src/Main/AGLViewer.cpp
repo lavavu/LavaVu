@@ -40,7 +40,7 @@
 #include <sys/select.h>
 
 // Create a new AGL window
-AGLViewer::AGLViewer() : OpenGLViewer(false, false)
+AGLViewer::AGLViewer() : OpenGLViewer()
 {
   visible = false;
   PixelBuffer = NULL;

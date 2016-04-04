@@ -40,7 +40,7 @@
 #include <sys/select.h>
 
 // Create a new OSMesa window
-OSMesaViewer::OSMesaViewer() : OpenGLViewer(false, false)
+OSMesaViewer::OSMesaViewer() : OpenGLViewer()
 {
   visible = false;
   pixelBuffer = NULL;
