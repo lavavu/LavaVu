@@ -51,7 +51,7 @@ else
 ifeq ($(OS), Darwin)
   #Mac OS X interactive with Cocoa
   CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc
-  LIBS=-ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
+  LIBS=-ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz $(OPATH)/CocoaViewer.o
   DEFINES += -DUSE_FONTS -DHAVE_COCOA
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
@@ -112,7 +112,7 @@ OBJS = $(notdir $(OBJ))
 #Add object path
 OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
-OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o $(OPATH)/CocoaViewer.o
+OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 default: install
 
