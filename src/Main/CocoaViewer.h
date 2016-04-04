@@ -41,8 +41,14 @@
 #include "../GraphicsUtil.h"
 #include "../OpenGLViewer.h"
 
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/CVDisplayLink.h>
+#import <OpenGL/OpenGL.h>
+
 class CocoaViewer  : public OpenGLViewer
 {
+  NSAutoreleasePool * pool;
+  NSWindow * window;
 public:
 
   CocoaViewer();

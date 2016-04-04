@@ -38,6 +38,8 @@
 #ifndef CGLViewer__
 #define CGLViewer__
 
+#import <OpenGL/OpenGL.h>
+
 #include "../GraphicsUtil.h"
 #include "../OpenGLViewer.h"
 

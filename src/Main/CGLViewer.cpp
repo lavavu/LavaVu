@@ -57,9 +57,10 @@ void CGLViewer::open(int w, int h)
   //Call base class open to set width/height
   OpenGLViewer::open(w, h);
 
+  CGLPixelFormatObj pix;
   int num = 0;
   CGLError err;
-  CGLPixelFormatAttribute attribs[4] = 
+  CGLPixelFormatAttribute attribs[7] = 
     {
       kCGLPFAColorSize,     (CGLPixelFormatAttribute)24,
       kCGLPFAAlphaSize,     (CGLPixelFormatAttribute)8,
@@ -73,17 +74,17 @@ void CGLViewer::open(int w, int h)
       (CGLPixelFormatAttribute) 0
     };
 
-  err = CGLChoosePixelFormat(attribs, &pixelFormat, &num);
+  err = CGLChoosePixelFormat(attribs, &pix, &num);
 
   if (err == kCGLBadPixelFormat)
-    abort_progam("Error creating OpenGL context");
+    abort_program("Error creating OpenGL context");
 
-  err = CGLCreateContext(pixelFormat, NULL, &context);
+  err = CGLCreateContext(pix, NULL, &context);
 
   if (err == kCGLBadContext)
-    abort_progam("Error creating OpenGL context");
+    abort_program("Error creating OpenGL context");
 
-  CGLDestroyPixelFormat(pixelFormat);
+  CGLDestroyPixelFormat(pix);
 
   err = CGLSetCurrentContext(context);
 
@@ -117,7 +118,7 @@ void CGLViewer::swap()
 void CGLViewer::execute()
 {
   // Set the current window's context as active
-  err = CGLSetCurrentContext(context);
+  CGLSetCurrentContext(context);
 
   show();
 
