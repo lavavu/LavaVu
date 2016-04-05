@@ -12,7 +12,7 @@
 #include <omegaGl.h>
 #endif
 
-#define ISFINITE(val) (!isnan(val) && !isinf(val))
+#define ISFINITE(val) (!std::isnan(val) && !std::isinf(val))
 
 //C++ STL
 #include <string>
@@ -89,8 +89,6 @@ using json = nlohmann::json;
 static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define HUGE_VALF _X_huge_valf
 #define snprintf sprintf_s
-#define isnan(x) _isnan(x)
-#define isinf(x) (!_finite(x))
 #include <conio.h>
 #include "windows/inc/pthread.h"
 #include "windows/inc/zlib.h"

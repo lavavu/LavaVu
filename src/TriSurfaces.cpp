@@ -405,9 +405,9 @@ void TriSurfaces::setTriangle(int index, float* v1, float* v2, float* v3, int id
 #ifdef DEBUG
   for (int i=0; i<3; i++)
   {
-    assert(!isnan(v1[i]));
-    assert(!isnan(v2[i]));
-    assert(!isnan(v3[i]));
+    assert(!std::isnan(v1[i]));
+    assert(!std::isnan(v2[i]));
+    assert(!std::isnan(v3[i]));
   }
 #endif
 
