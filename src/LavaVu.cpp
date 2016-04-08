@@ -372,6 +372,7 @@ void LavaVu::defaults()
   Properties::defaults["log"] = false;
   Properties::defaults["discrete"] = false;
   Properties::defaults["colours"] = "";
+  Properties::defaults["dynamic"] = true;
 
   //View
   Properties::defaults["title"] = "";
