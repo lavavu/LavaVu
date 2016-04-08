@@ -512,6 +512,10 @@ void Geometry::setState(unsigned int i, Shader* prog)
     glEnable(GL_BLEND);
   }
 
+  //Default line width
+  float lineWidth = (float)geom[i]->draw->properties["linewidth"] * view->scale2d; //Include 2d scale factor
+  glLineWidth(lineWidth);
+
   //Disable depth test by default for 2d lines, otherwise enable
   bool depthTestDefault = (view->is3d || type != lucLineType);
   if (geom[i]->draw->properties.getBool("depthtest", depthTestDefault))
