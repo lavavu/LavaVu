@@ -2882,10 +2882,6 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
-#ifndef USE_OMEGALIB
-  drawBorder();
-#endif
-
   Model::triSurfaces->draw();
   Model::quadSurfaces->draw();
   Model::points->draw();
@@ -2896,6 +2892,9 @@ void LavaVu::drawScene()
   Model::volumes->draw();
   Model::lines->draw();
 
+#ifndef USE_OMEGALIB
+  drawBorder();
+#endif
   drawRulers();
 
   //Restore default state
