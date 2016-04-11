@@ -186,11 +186,6 @@ void OpenGLViewer::show()
 void OpenGLViewer::fbo(int w, int h)
 {
 #ifdef GL_FRAMEBUFFER_EXT
-  if (fbo_texture && width == w && height == h)
-  {
-    debug_print("FBO exists %d %d\n", width, height);
-    return;
-  }
   width = w;
   height = h;
   if (fbo_texture) glDeleteTextures(1, &fbo_texture);

@@ -53,10 +53,6 @@ public:
 
   //Function implementations
   void open(int width, int height);
-  void setsize(int width, int height);
-  void show();
-  void display();
-  void swap();
   void execute();
 };
 

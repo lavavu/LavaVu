@@ -16,7 +16,7 @@ CC=gcc
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
-CPPFLAGS = $(CFLAGS) -std=c++11
+CPPFLAGS = $(CFLAGS) -std=c++0x
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -31,8 +31,8 @@ OS := $(shell uname)
 ifeq ($(OFFSCREEN), 1)
 ifeq ($(OS), Darwin)
   #CGL offscreen config:
-  CFLAGS += -FOpenGL -I/usr/include/malloc
-  LIBS=-ldl -lpthread -framework OpenGL -lobjc -lm -lz
+  CFLAGS += -FOpenGL -I/usr/include/malloc -stdlib=libc++
+  LIBS=-lc++ -ldl -lpthread -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_CGL
   LIBEXT=dylib
   LIBBUILD=-dynamiclib

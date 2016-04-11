@@ -217,7 +217,7 @@ void LavaVu::defaults()
   if (viewer) 
   {
     //Now the app init phase can be repeated, need to reset all data
-    viewer->visible = true;
+    //viewer->visible = true;
     viewer->quitProgram = false;
     close();
   }
@@ -377,6 +377,7 @@ void LavaVu::defaults()
   Properties::defaults["log"] = false;
   Properties::defaults["discrete"] = false;
   Properties::defaults["colours"] = "";
+  Properties::defaults["dynamic"] = true;
 
   //View
   Properties::defaults["title"] = "";
@@ -2887,10 +2888,6 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
-#ifndef USE_OMEGALIB
-  drawBorder();
-#endif
-
   Model::triSurfaces->draw();
   Model::quadSurfaces->draw();
   Model::points->draw();
@@ -2901,6 +2898,9 @@ void LavaVu::drawScene()
   Model::volumes->draw();
   Model::lines->draw();
 
+#ifndef USE_OMEGALIB
+  drawBorder();
+#endif
   drawRulers();
 
   //Restore default state
