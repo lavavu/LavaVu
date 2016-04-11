@@ -60,16 +60,17 @@ void CGLViewer::open(int w, int h)
   CGLPixelFormatObj pix;
   int num = 0;
   CGLError err;
-  CGLPixelFormatAttribute attribs[7] = 
+  CGLPixelFormatAttribute attribs[8] = 
     {
       kCGLPFAColorSize,     (CGLPixelFormatAttribute)24,
       kCGLPFAAlphaSize,     (CGLPixelFormatAttribute)8,
       kCGLPFAAccelerated,
       kCGLPFAOpenGLProfile,
+      (CGLPixelFormatAttribute) kCGLOGLPVersion_Legacy,
       /*
       (CGLPixelFormatAttribute) kCGLOGLPVersion_3_2_Core,
       (CGLPixelFormatAttribute) kCGLOGLPVersion_GL3_Core,
-      (CGLPixelFormatAttribute) kCGLOGLPVersion_Legacy,
+      (CGLPixelFormatAttribute) 0
       */
       (CGLPixelFormatAttribute) 0
     };
@@ -92,27 +93,6 @@ void CGLViewer::open(int w, int h)
 
   //Call OpenGL init
   OpenGLViewer::init();
-}
-
-void CGLViewer::setsize(int width, int height)
-{
-  if (width == 0 || height == 0) return;
-  close();
-  open(width, height);
-}
-
-void CGLViewer::show()
-{
-  OpenGLViewer::show();
-}
-
-void CGLViewer::display()
-{
-  OpenGLViewer::display();
-}
-
-void CGLViewer::swap()
-{
 }
 
 void CGLViewer::execute()
