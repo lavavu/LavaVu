@@ -54,13 +54,13 @@
 #include "Main/X11Viewer.h"
 #include "Main/GlutViewer.h"
 #include "Main/OSMesaViewer.h"
-#include "Main/AGLViewer.h"
+#include "Main/CGLViewer.h"
 
 #define X11_WINDOW 0
 #define GLUT_WINDOW 1
 #define SDL_WINDOW 2
 #define OSMESA_WINDOW 3
-#define AGL_WINDOW 4
+#define CGL_WINDOW 4
 
 ViewerApp* app = NULL;
 
@@ -180,10 +180,10 @@ OpenGLViewer* createViewer()
 #if defined HAVE_OSMESA
   if (!viewer) viewer = new OSMesaViewer();
 #endif
-#if defined HAVE_AGL
-  if (!viewer) viewer = new AGLViewer();
+#if defined HAVE_CGL
+  if (!viewer) viewer = new CGLViewer();
 #endif
-  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, AGL or OSMesa)");
+  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, CGL or OSMesa)");
 
   return viewer;
 }
@@ -212,7 +212,7 @@ void LavaVu::defaults()
   if (viewer) 
   {
     //Now the app init phase can be repeated, need to reset all data
-    viewer->visible = true;
+    //viewer->visible = true;
     viewer->quitProgram = false;
     close();
   }
