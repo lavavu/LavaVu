@@ -33,36 +33,30 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#ifdef HAVE_AGL
+#ifdef HAVE_CGL
 
-#ifndef AGLViewer__
-#define AGLViewer__
+#ifndef CGLViewer__
+#define CGLViewer__
+
+#import <OpenGL/OpenGL.h>
 
 #include "../GraphicsUtil.h"
 #include "../OpenGLViewer.h"
 
-#include <AGL/agl.h>
-
-class AGLViewer  : public OpenGLViewer
+class CGLViewer  : public OpenGLViewer
 {
 public:
-  AGLContext graphicsContext;
-  // Pixel buffer for background windows
-  AGLPbuffer PixelBuffer;
+  CGLContextObj context;
 
-  AGLViewer();
-  ~AGLViewer();
+  CGLViewer();
+  ~CGLViewer();
 
   //Function implementations
   void open(int width, int height);
-  void setsize(int width, int height);
-  void show();
-  void display();
-  void swap();
   void execute();
 };
 
-#endif //AGLViewer__
+#endif //CGLViewer__
 
-#endif //HAVE_AGL
+#endif //HAVE_CGL
 
