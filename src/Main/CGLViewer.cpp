@@ -37,8 +37,6 @@
 
 #include "CGLViewer.h"
 
-#include <sys/select.h>
-
 // Create a new CGL window
 CGLViewer::CGLViewer() : OpenGLViewer()
 {

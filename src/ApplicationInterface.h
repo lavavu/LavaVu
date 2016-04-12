@@ -69,7 +69,7 @@ public:
   // Virtual functions for interactivity
   virtual bool mouseMove(int x, int y) = 0;
   virtual bool mousePress(MouseButton btn, bool down, int x, int y) = 0;
-  virtual bool mouseScroll(int scroll) = 0;
+  virtual bool mouseScroll(float scroll) = 0;
   virtual bool keyPress(unsigned char key, int x, int y) = 0;
 
   virtual bool parseCommands(std::string cmd)

@@ -27,38 +27,18 @@ endif
 
 #Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
-#Offscreen build
-ifeq ($(OFFSCREEN), 1)
 ifeq ($(OS), Darwin)
-  #CGL offscreen config:
-  CFLAGS += -FOpenGL -I/usr/include/malloc -stdlib=libc++
-  LIBS=-lc++ -ldl -lpthread -framework OpenGL -lobjc -lm -lz
-  DEFINES += -DUSE_FONTS -DHAVE_CGL
+  #Mac OS X with Cocoa + CGL
+  CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
+  LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_COCOA -DHAVE_CGL
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
+  APPLEOBJ=$(OPATH)/CocoaViewer.o
 else
-  #OSMesa offscreen config:
-  LIBS=-ldl -lpthread -lm -lOSMesa -lz
-  DEFINES += -DUSE_FONTS -DHAVE_OSMESA
-  LIBEXT=so
-  LIBBUILD=-shared
-  LIBLINK=-Wl,-rpath=$(APREFIX)
-endif
-else
-#Interactive build
-ifeq ($(OS), Darwin)
-  #Mac OS X interactive with GLUT
-  CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc
-  LIBS=-ldl -lpthread -framework GLUT -framework OpenGL -lobjc -lm -lz
-  DEFINES += -DUSE_FONTS -DHAVE_GLUT
-  LIBEXT=dylib
-  LIBBUILD=-dynamiclib
-  LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
-  LIBLINK=-Wl,-rpath $(APREFIX)
-else
-  #Linux interactive with X11 (and optional GLUT, SDL)
+  #Linux with X11 (and optional GLUT, SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11
   DEFINES += -DUSE_FONTS -DHAVE_X11
   LIBEXT=so
@@ -71,7 +51,6 @@ endif
 ifeq ($(SDL), 1)
   LIBS+= -lSDL
   DEFINES += -DHAVE_SDL
-endif
 endif
 endif
 
@@ -131,8 +110,8 @@ paths:
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(OBJS) $(OBJ2) paths
-	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(LIBS)
+$(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
+	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(APPLEOBJ) $(LIBS)
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
@@ -143,6 +122,9 @@ $(OPATH)/mongoose.o : mongoose.c
 
 $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(CFLAGS) -o $@ -c $^ 
+
+$(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
+	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
 swig: $(PREFIX)/$(LIBNAME)
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i

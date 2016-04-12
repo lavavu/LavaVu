@@ -55,12 +55,7 @@
 #include "Main/GlutViewer.h"
 #include "Main/OSMesaViewer.h"
 #include "Main/CGLViewer.h"
-
-#define X11_WINDOW 0
-#define GLUT_WINDOW 1
-#define SDL_WINDOW 2
-#define OSMESA_WINDOW 3
-#define CGL_WINDOW 4
+#include "Main/CocoaViewer.h"
 
 ViewerApp* app = NULL;
 
@@ -180,10 +175,13 @@ OpenGLViewer* createViewer()
 #if defined HAVE_OSMESA
   if (!viewer) viewer = new OSMesaViewer();
 #endif
+#if defined HAVE_COCOA
+  if (!viewer) viewer = new CocoaViewer();
+#endif
 #if defined HAVE_CGL
   if (!viewer) viewer = new CGLViewer();
 #endif
-  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, CGL or OSMesa)");
+  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, Cocoa, CGL or OSMesa)");
 
   return viewer;
 }
