@@ -39,11 +39,9 @@
 
 OpenGLViewer* _viewer = NULL;
 
-#ifdef __OBJC__
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CVDisplayLink.h>
 #import <OpenGL/OpenGL.h>
-#endif
 
 @class CView;
 static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*, CVOptionFlags, CVOptionFlags*, void*);
@@ -169,7 +167,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
+  //NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -177,7 +175,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
+  //NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -185,7 +183,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Mouse wheel at: %lf, %lf. Delta: %lf", point.x, point.y, [event deltaY]);
+  MouseButton button = event.deltaY < 0 ? WheelUp : WheelDown;
+  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  //NSLog(@"Mouse wheel at: %lf, %lf. Delta: %lf", point.x, point.y, [event deltaY]);
   [appLock unlock];
 }
 
@@ -193,7 +193,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Left mouse down: %lf, %lf", point.x, point.y);
+  MouseButton button = LeftButton;
+  _viewer->mouseState ^= (int)pow(2, button);
+  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  //NSLog(@"Left mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -201,7 +204,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Left mouse up: %lf, %lf", point.x, point.y);
+  MouseButton button = LeftButton;
+  _viewer->mouseState = 0;
+  _viewer->mousePress(button, false, (int)point.x, (int)point.y);
+  //NSLog(@"Left mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -209,7 +215,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
+  MouseButton button = RightButton;
+  _viewer->mouseState ^= (int)pow(2, button);
+  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  //NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -217,7 +226,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Right mouse up: %lf, %lf", point.x, point.y);
+  MouseButton button = RightButton;
+  _viewer->mouseState = 0;
+  _viewer->mousePress(button, false, (int)point.x, (int)point.y);
+  //NSLog(@"Right mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -225,7 +237,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Middle mouse down: %lf, %lf", point.x, point.y);
+  MouseButton button = MiddleButton;
+  _viewer->mouseState ^= (int)pow(2, button);
+  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  //NSLog(@"Middle mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -233,21 +248,24 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  NSLog(@"Middle mouse up: %lf, %lf", point.x, point.y);
+  MouseButton button = MiddleButton;
+  _viewer->mouseState = 0;
+  _viewer->mousePress(button, false, (int)point.x, (int)point.y);
+  //NSLog(@"Middle mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
 - (void) mouseEntered: (NSEvent*)event
 {
   [appLock lock];
-  NSLog(@"Mouse entered");
+  //NSLog(@"Mouse entered");
   [appLock unlock];
 }
 
 - (void) mouseExited: (NSEvent*)event
 {
   [appLock lock];
-  NSLog(@"Mouse left");
+  //NSLog(@"Mouse left");
   [appLock unlock];
 }
 
@@ -256,7 +274,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [appLock lock];
   if ([event isARepeat] == NO)
   {
+    NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
     NSLog(@"Key down: %d", [event keyCode]);
+    _viewer->keyPress([event keyCode], (int)point.x, (int)point.y);
   }
   [appLock unlock];
 }
@@ -305,7 +325,8 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   // Temp
   windowRect.size.width = size.width;
   windowRect.size.height = size.height;
-  glViewport(0, 0, windowRect.size.width, windowRect.size.height);
+  //glViewport(0, 0, windowRect.size.width, windowRect.size.height);
+  _viewer->resize(size.width, size.height);
   // End temp
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
@@ -358,65 +379,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef displayLink, const CV
   return result;
 }
 
-CocoaViewer::CocoaViewer() : CGLViewer()
-{
-  _viewer = this;
-  visible = true; //override
-}
-
-CocoaViewer::~CocoaViewer()
-{
-}
-
-void CocoaViewer::open(int w, int h)
-{
-  if (!visible) 
-  {
-    //Use CGL viewer for offscreen
-    CGLViewer::open(w, h);
-  }
-  else
-  {
-    //Call base class open to set width/height
-    OpenGLViewer::open(w, h);
-
-    execute();
-  }
-}
-
-void CocoaViewer::setsize(int width, int height)
-{
-  CGLViewer::setsize(width, height);
-  //if (width == 0 || height == 0) return;
-  //close();
-  //open(width, height);
-}
-
-void CocoaViewer::show()
-{
-  OpenGLViewer::show();
-}
-
-void CocoaViewer::display()
-{
-  //OpenGLViewer::display();
-  CGLViewer::display();
-  //swap();
-}
-
-void CocoaViewer::swap()
-{
-  // Swap buffers
-  //OpenGLViewer::display();
-}
-
 void CocoaWindow()
 {
-  //if (!visible) return OpenGLViewer::execute();
-#ifdef __OBJC__
   NSAutoreleasePool * pool;
   NSWindow * window;
-#endif
 
   // Autorelease Pool:
   // Objects declared in this scope will be automatically
@@ -492,6 +458,58 @@ void CocoaWindow()
   [NSApp run];
 
   [pool drain];
+}
+
+CocoaViewer::CocoaViewer() : CGLViewer()
+{
+  _viewer = this;
+  visible = true; //override
+}
+
+CocoaViewer::~CocoaViewer()
+{
+}
+
+void CocoaViewer::open(int w, int h)
+{
+  if (!visible) 
+  {
+    //Use CGL viewer for offscreen
+    CGLViewer::open(w, h);
+  }
+  else
+  {
+    //Call base class open to set width/height
+    OpenGLViewer::open(w, h);
+
+    execute();
+  }
+}
+
+void CocoaViewer::setsize(int width, int height)
+{
+  CGLViewer::setsize(width, height);
+  //if (width == 0 || height == 0) return;
+  //close();
+  //open(width, height);
+}
+
+void CocoaViewer::show()
+{
+  OpenGLViewer::show();
+}
+
+void CocoaViewer::display()
+{
+  //OpenGLViewer::display();
+  CGLViewer::display();
+  //swap();
+}
+
+void CocoaViewer::swap()
+{
+  // Swap buffers
+  //OpenGLViewer::display();
 }
 
 void CocoaViewer::execute()
