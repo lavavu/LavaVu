@@ -38,17 +38,12 @@
 #ifndef COCOAViewer__
 #define COCOAViewer__
 
+#include "CGLViewer.h"
 #include "../GraphicsUtil.h"
 #include "../OpenGLViewer.h"
 
-#import <Cocoa/Cocoa.h>
-#import <QuartzCore/CVDisplayLink.h>
-#import <OpenGL/OpenGL.h>
-
-class CocoaViewer  : public OpenGLViewer
+class CocoaViewer : public CGLViewer
 {
-  NSAutoreleasePool * pool;
-  NSWindow * window;
 public:
 
   CocoaViewer();

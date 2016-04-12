@@ -33,13 +33,17 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-// gcc CocoaViewer.m -o OSXWindow -framework Cocoa -framework Quartz -framework OpenGL
-
 #ifdef HAVE_COCOA
 
 #include "CocoaViewer.h"
 
-#include <sys/select.h>
+OpenGLViewer* _viewer = NULL;
+
+#ifdef __OBJC__
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/CVDisplayLink.h>
+#import <OpenGL/OpenGL.h>
+#endif
 
 @class CView;
 static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*, CVOptionFlags, CVOptionFlags*, void*);
@@ -143,10 +147,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 
   NSLog(@"GL version:   %s", glGetString(GL_VERSION));
   NSLog(@"GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
-  // Temp
-  glClearColor(0.5f, 0.6f, 0.7f, 1.0f);
-  glViewport(0, 0, windowRect.size.width, windowRect.size.height);
-  glEnable(GL_DEPTH_TEST);
+
+  //Call Viewer OpenGL init
+  _viewer->init();
+
   // End temp
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
@@ -272,9 +276,8 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  NSLog(@"Update");
-  // Temp
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  //NSLog(@"Update");
+  _viewer->display();
 
   // EndTemp
 
@@ -355,9 +358,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef displayLink, const CV
   return result;
 }
 
-CocoaViewer::CocoaViewer() : OpenGLViewer()
+CocoaViewer::CocoaViewer() : CGLViewer()
 {
-  visible = false;
+  _viewer = this;
+  visible = true; //override
 }
 
 CocoaViewer::~CocoaViewer()
@@ -366,8 +370,53 @@ CocoaViewer::~CocoaViewer()
 
 void CocoaViewer::open(int w, int h)
 {
-  //Call base class open to set width/height
-  OpenGLViewer::open(w, h);
+  if (!visible) 
+  {
+    //Use CGL viewer for offscreen
+    CGLViewer::open(w, h);
+  }
+  else
+  {
+    //Call base class open to set width/height
+    OpenGLViewer::open(w, h);
+
+    execute();
+  }
+}
+
+void CocoaViewer::setsize(int width, int height)
+{
+  CGLViewer::setsize(width, height);
+  //if (width == 0 || height == 0) return;
+  //close();
+  //open(width, height);
+}
+
+void CocoaViewer::show()
+{
+  OpenGLViewer::show();
+}
+
+void CocoaViewer::display()
+{
+  //OpenGLViewer::display();
+  CGLViewer::display();
+  //swap();
+}
+
+void CocoaViewer::swap()
+{
+  // Swap buffers
+  //OpenGLViewer::display();
+}
+
+void CocoaWindow()
+{
+  //if (!visible) return OpenGLViewer::execute();
+#ifdef __OBJC__
+  NSAutoreleasePool * pool;
+  NSWindow * window;
+#endif
 
   // Autorelease Pool:
   // Objects declared in this scope will be automatically
@@ -386,7 +435,7 @@ void CocoaViewer::open(int w, int h)
 
   // Window bounds (x, y, width, height)
   NSRect screenRect = [[NSScreen mainScreen] frame];
-  NSRect viewRect = NSMakeRect(0, 0, width, height);
+  NSRect viewRect = NSMakeRect(0, 0, _viewer->width, _viewer->height);
   NSRect windowRect = NSMakeRect(NSMidX(screenRect) - NSMidX(viewRect),
                                  NSMidY(screenRect) - NSMidY(viewRect),
                                  viewRect.size.width,
@@ -438,54 +487,18 @@ void CocoaViewer::open(int w, int h)
 
   debug_print("Cocoa viewer created\n");
 
-  OpenGLViewer::init();
+  // Show window and run event loop
+  [window orderFrontRegardless];
+  [NSApp run];
 
-  //Call OpenGL init
-  //OpenGLViewer::init();
-}
-
-void CocoaViewer::setsize(int width, int height)
-{
-  if (width == 0 || height == 0) return;
-  close();
-  open(width, height);
-}
-
-void CocoaViewer::show()
-{
-  OpenGLViewer::show();
-}
-
-void CocoaViewer::display()
-{
-  OpenGLViewer::display();
-  swap();
-}
-
-void CocoaViewer::swap()
-{
-  // Swap buffers
-
-  OpenGLViewer::display();
+  [pool drain];
 }
 
 void CocoaViewer::execute()
 {
-  //Ensure window visible for interaction
-  if (visible)
-  {
-
-    // Show window and run event loop
-    [window orderFrontRegardless];
-    [NSApp run];
-
-    [pool drain];
-  }
+  if (visible) 
+    CocoaWindow();
   else
-  {
-    //Run our own event loop
     OpenGLViewer::execute();
-  }
 }
-
 #endif   //HAVE_COCOA

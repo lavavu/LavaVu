@@ -57,13 +57,6 @@
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 
-#define X11_WINDOW 0
-#define GLUT_WINDOW 1
-#define SDL_WINDOW 2
-#define OSMESA_WINDOW 3
-#define CGL_WINDOW 4
-#define COCOA_WINDOW 5
-
 ViewerApp* app = NULL;
 
 std::string execute(int argc, char **argv)
