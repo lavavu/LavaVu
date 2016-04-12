@@ -36,8 +36,9 @@ ifeq ($(OS), Darwin)
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
+  APPLEOBJ=$(OPATH)/CocoaViewer.o
 else
-  #Linux interactive with X11 (and optional GLUT, SDL)
+  #Linux with X11 (and optional GLUT, SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11
   DEFINES += -DUSE_FONTS -DHAVE_X11
   LIBEXT=so
@@ -109,8 +110,8 @@ paths:
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(OBJS) $(OBJ2) $(OPATH)/CocoaViewer.o paths
-	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(LIBS) $(OPATH)/CocoaViewer.o
+$(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
+	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(APPLEOBJ) $(LIBS)
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
