@@ -146,7 +146,7 @@ bool LavaVu::mouseMove(int x, int y)
   return true;
 }
 
-bool LavaVu::mouseScroll(int scroll)
+bool LavaVu::mouseScroll(float scroll)
 {
   //Only process on mouse release
   //Process wheel scrolling

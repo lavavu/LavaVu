@@ -38,6 +38,7 @@
 #include "CocoaViewer.h"
 
 OpenGLViewer* _viewer = NULL;
+bool redisplay = true;
 
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CVDisplayLink.h>
@@ -163,10 +164,20 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   return YES;
 }
 
+void getKeyModifiers(NSEvent* event)
+{
+  //Save shift states
+  int modifiers = [event modifierFlags];
+  _viewer->keyState.shift = (modifiers & NSShiftKeyMask);
+  _viewer->keyState.ctrl = (modifiers & NSControlKeyMask);
+  _viewer->keyState.alt = (modifiers & NSAlternateKeyMask);
+}
+
 - (void)mouseMoved:(NSEvent*) event
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+  //redisplay = _viewer->mouseMove((int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -175,6 +186,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+  getKeyModifiers(event);
+  //Only works for left-drag
+  redisplay = _viewer->mouseMove((int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -183,8 +197,12 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  MouseButton button = event.deltaY < 0 ? WheelUp : WheelDown;
-  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  //MouseButton button = event.deltaY < 0 ? WheelUp : WheelDown;
+  //redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
+  getKeyModifiers(event);
+  float delta = [event deltaY] / 5.0;
+  if (delta != 0)
+    redisplay = _viewer->mouseScroll(delta);
   //NSLog(@"Mouse wheel at: %lf, %lf. Delta: %lf", point.x, point.y, [event deltaY]);
   [appLock unlock];
 }
@@ -195,7 +213,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = LeftButton;
   _viewer->mouseState ^= (int)pow(2, button);
-  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Left mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -206,7 +224,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = LeftButton;
   _viewer->mouseState = 0;
-  _viewer->mousePress(button, false, (int)point.x, (int)point.y);
+  redisplay = _viewer->mousePress(button, false, (int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Left mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -217,8 +235,8 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = RightButton;
   _viewer->mouseState ^= (int)pow(2, button);
-  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
-  //NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
+  redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
+  NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -228,7 +246,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = RightButton;
   _viewer->mouseState = 0;
-  _viewer->mousePress(button, false, (int)point.x, (int)point.y);
+  redisplay = _viewer->mousePress(button, false, (int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Right mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -239,7 +257,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = MiddleButton;
   _viewer->mouseState ^= (int)pow(2, button);
-  _viewer->mousePress(button, true, (int)point.x, (int)point.y);
+  redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Middle mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -250,7 +268,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = MiddleButton;
   _viewer->mouseState = 0;
-  _viewer->mousePress(button, false, (int)point.x, (int)point.y);
+  redisplay = _viewer->mousePress(button, false, (int)point.x, _viewer->height-(int)point.y);
   //NSLog(@"Middle mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -276,7 +294,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   {
     NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
     NSLog(@"Key down: %d", [event keyCode]);
-    _viewer->keyPress([event keyCode], (int)point.x, (int)point.y);
+    //redisplay = _viewer->keyPress([event keyCode], (int)point.x, _viewer->height-(int)point.y);
   }
   [appLock unlock];
 }
@@ -284,7 +302,26 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 - (void) keyUp: (NSEvent*) event
 {
   [appLock lock];
-  NSLog(@"Key up: %d", [event keyCode]);
+  //NSLog(@"Key up: %d", [event keyCode]);
+  NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+  NSString *keyChars = [event charactersIgnoringModifiers];
+  unichar keyChar = 0;
+  getKeyModifiers(event);
+  if ( [keyChars length] == 1 ) {
+    unsigned char key = [keyChars characterAtIndex:0];
+    printf("KEYCHAR %c / %d\n", key, key);
+    if ([event keyCode] == 126) key = KEY_UP;
+    else if ([event keyCode] == 125) key = KEY_DOWN;
+    else if ([event keyCode] == 123) key = KEY_LEFT;
+    else if ([event keyCode] == 124) key = KEY_RIGHT;
+    else if ([event keyCode] == 116) key = KEY_PAGEUP;
+    else if ([event keyCode] == 121) key = KEY_PAGEDOWN;
+    else if ([event keyCode] == 115) key = KEY_HOME;
+    else if ([event keyCode] == 119) key = KEY_END;
+
+    redisplay = _viewer->keyPress(key, (int)point.x, _viewer->height-(int)point.y);
+    //redisplay = true;
+  }
   [appLock unlock];
 }
 
@@ -293,18 +330,41 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   [appLock lock];
 
+#if 0
+  //Resized?
+NSSize size = [ [ _window contentView ] frame ].size;
+NSRect frame = [_window frame];
+//frame.origin.y += frame.size.height; // origin.y is top Y coordinate now
+//frame.origin.y -= _viewer->height; // new Y coordinate for the origin
+  if (_viewer->width != size.width || _viewer->height != size.height) 
+{
+printf("%d != %f or %d != %f\n", _viewer->width, size.width, _viewer->height, size.height); 
+float xdiff = frame.size.width - size.width;
+float ydiff = frame.size.height - size.height;
+frame.size.width = _viewer->width + xdiff;
+frame.size.height = _viewer->height + ydiff;
+//printf("%f  %f\n", xdiff, ydiff); 
+  [_window setFrame:frame display:YES animate:NO];
+}
+#endif
+
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
+  if (_viewer->postdisplay || OpenGLViewer::pollInput())
+    redisplay = true;
+
   //NSLog(@"Update");
-  _viewer->display();
+  if (redisplay)
+    _viewer->display();
+  redisplay = false;
 
   // EndTemp
 
   CGLFlushDrawable((CGLContextObj)[[self openGLContext] CGLContextObj]);
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  if (false)   // Update loop returns false
+  if (_viewer->quitProgram)   // Update loop returns false
   {
     [NSApp terminate:self];
   }
@@ -325,8 +385,10 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   // Temp
   windowRect.size.width = size.width;
   windowRect.size.height = size.height;
-  //glViewport(0, 0, windowRect.size.width, windowRect.size.height);
+  glViewport(0, 0, windowRect.size.width, windowRect.size.height);
+  // _viewer->width = _viewer->height = -1;
   _viewer->resize(size.width, size.height);
+  redisplay = true;
   // End temp
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
@@ -382,7 +444,6 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef displayLink, const CV
 void CocoaWindow()
 {
   NSAutoreleasePool * pool;
-  NSWindow * window;
 
   // Autorelease Pool:
   // Objects declared in this scope will be automatically
@@ -395,6 +456,7 @@ void CocoaWindow()
   [NSApplication sharedApplication];
 
   // Create a window:
+  NSWindow * window;
 
   // Style flags
   NSUInteger windowStyle = NSTitledWindowMask  | NSClosableWindowMask | NSResizableWindowMask | NSMiniaturizableWindowMask;
@@ -489,9 +551,11 @@ void CocoaViewer::open(int w, int h)
 void CocoaViewer::setsize(int width, int height)
 {
   CGLViewer::setsize(width, height);
-  //if (width == 0 || height == 0) return;
-  //close();
-  //open(width, height);
+  if (visible)
+  {
+    _viewer->width = width;
+    _viewer->height = height;
+  }
 }
 
 void CocoaViewer::show()
