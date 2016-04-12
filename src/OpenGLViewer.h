@@ -113,7 +113,7 @@ public:
   {
     return app->mousePress(btn, down, x, y);
   }
-  virtual bool mouseScroll(int scroll)
+  virtual bool mouseScroll(float scroll)
   {
     return app->mouseScroll(scroll);
   }

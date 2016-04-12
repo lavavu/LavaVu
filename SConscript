@@ -57,6 +57,8 @@ srcs += [src_dir + '/jpeg/jpge.cpp']
 srcs += [src_dir + '/jpeg/jpgd.cpp']
 srcs += [src_dir + '/tiny_obj_loader.cc']
 srcs += Glob(src_dir + '/Main/*Viewer.cpp')
+if platform.system() == 'Darwin':
+  srcs += Glob(src_dir + '/Main/CocoaViewer.mm')
 objs = env.SharedObject(srcs)
 #build SQLite3 source (named object prevents clash)
 sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/src/sqlite3.c'])
