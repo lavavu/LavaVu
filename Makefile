@@ -27,32 +27,11 @@ endif
 
 #Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
-#Offscreen build
-ifeq ($(OFFSCREEN), 1)
 ifeq ($(OS), Darwin)
-  #CGL offscreen config:
-  CFLAGS += -FOpenGL -I/usr/include/malloc -stdlib=libc++
-  LIBS=-lc++ -ldl -lpthread -framework OpenGL -lobjc -lm -lz
-  DEFINES += -DUSE_FONTS -DHAVE_CGL
-  LIBEXT=dylib
-  LIBBUILD=-dynamiclib
-  LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
-  LIBLINK=-Wl,-rpath $(APREFIX)
-else
-  #OSMesa offscreen config:
-  LIBS=-ldl -lpthread -lm -lOSMesa -lz
-  DEFINES += -DUSE_FONTS -DHAVE_OSMESA
-  LIBEXT=so
-  LIBBUILD=-shared
-  LIBLINK=-Wl,-rpath=$(APREFIX)
-endif
-else
-#Interactive build
-ifeq ($(OS), Darwin)
-  #Mac OS X interactive with Cocoa
-  CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc
-  LIBS=-ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz $(OPATH)/CocoaViewer.o
-  DEFINES += -DUSE_FONTS -DHAVE_COCOA
+  #Mac OS X with Cocoa + CGL
+  CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
+  LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_COCOA -DHAVE_CGL
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
@@ -71,7 +50,6 @@ endif
 ifeq ($(SDL), 1)
   LIBS+= -lSDL
   DEFINES += -DHAVE_SDL
-endif
 endif
 endif
 
@@ -131,8 +109,8 @@ paths:
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(OBJS) $(OBJ2) paths
-	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(LIBS)
+$(PROGRAM): $(OBJS) $(OBJ2) $(OPATH)/CocoaViewer.o paths
+	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(LIBS) $(OPATH)/CocoaViewer.o
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc

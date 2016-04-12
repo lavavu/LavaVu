@@ -526,7 +526,7 @@ void lucSetupRasterFont()
 {
   /* Load font bitmaps and Convert To Textures */
   int i, j;
-  unsigned char pixel_data[IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_BYTES_PER_PIXEL];
+  unsigned char* pixel_data = new unsigned char[IMAGE_HEIGHT * IMAGE_WIDTH * IMAGE_BYTES_PER_PIXEL];
   unsigned char fontdata[IMAGE_HEIGHT][IMAGE_WIDTH];   /* font texture data */
 
   /* Get font pixels from source data - interpret RGB (greyscale) as alpha channel */
@@ -551,6 +551,7 @@ void lucSetupRasterFont()
 
   /* Build font display lists */
   lucBuildFont(16, 16, 0, 384);      /* 16x16 glyphs, 16 columns - 4 fonts */
+  delete [] pixel_data;
 }
 
 void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx)
