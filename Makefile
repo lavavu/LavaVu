@@ -31,7 +31,7 @@ ifeq ($(OS), Darwin)
   #Mac OS X with Cocoa + CGL
   CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
   LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
-  DEFINES += -DUSE_FONTS -DHAVE_COCOA -DHAVE_CGL
+  DEFINES += -DUSE_FONTS -DHAVE_CGL
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)

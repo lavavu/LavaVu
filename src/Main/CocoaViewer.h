@@ -33,7 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#ifdef HAVE_COCOA
+#ifdef HAVE_CGL
 
 #ifndef COCOAViewer__
 #define COCOAViewer__
@@ -60,5 +60,5 @@ public:
 
 #endif //COCOAViewer__
 
-#endif //HAVE_COCOA
+#endif //HAVE_CGL
 

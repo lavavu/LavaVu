@@ -33,7 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#ifdef HAVE_COCOA
+#ifdef HAVE_CGL
 
 #include "CocoaViewer.h"
 
@@ -583,4 +583,4 @@ void CocoaViewer::execute()
   else
     OpenGLViewer::execute();
 }
-#endif   //HAVE_COCOA
+#endif   //HAVE_CGL
