@@ -175,10 +175,8 @@ OpenGLViewer* createViewer()
 #if defined HAVE_OSMESA
   if (!viewer) viewer = new OSMesaViewer();
 #endif
-#if defined HAVE_COCOA
-  if (!viewer) viewer = new CocoaViewer();
-#endif
 #if defined HAVE_CGL
+  if (!viewer) viewer = new CocoaViewer();
   if (!viewer) viewer = new CGLViewer();
 #endif
   if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, Cocoa, CGL or OSMesa)");
