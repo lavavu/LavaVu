@@ -44,7 +44,7 @@ TriSurfaces::TriSurfaces(bool flat2Dflag) : Geometry()
   vbo = 0;
   indexvbo = 0;
   tidx = NULL;
-  swap = NULL;
+  tidx = swap = NULL;
   flat2d = flat2Dflag;
 }
 
@@ -66,7 +66,7 @@ void TriSurfaces::close()
 
   vbo = 0;
   indexvbo = 0;
-  tidx = NULL;
+  tidx = swap = NULL;
 
   Geometry::close();
 }
@@ -636,7 +636,7 @@ void TriSurfaces::depthSort()
   //Sort is much faster without allocate, so keep buffer until size changes
   static long last_size = 0;
   int size = tricount*sizeof(TIndex);
-  if (size != last_size)
+  if (size != last_size || !swap)
   {
     if (swap) delete[] swap;
     swap = new TIndex[tricount];
