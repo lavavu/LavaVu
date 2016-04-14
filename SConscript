@@ -13,7 +13,7 @@ env = env.Clone()
 #############################################
 # Switch env to LavaVu base!
 values = {}
-execfile("viewer.cfg", globals(), values)
+execfile("graphics.cfg", globals(), values)
 env._dict.update(values)
 #############################################
 
