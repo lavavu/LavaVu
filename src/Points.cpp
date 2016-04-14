@@ -45,8 +45,7 @@ Points::Points() : Geometry()
 {
   type = lucPointType;
   attenuate = true;
-  pidx = NULL;
-  swap = NULL;
+  pidx = swap = NULL;
 }
 
 Points::~Points()
@@ -67,7 +66,7 @@ void Points::close()
 
   vbo = 0;
   indexvbo = 0;
-  pidx = NULL;
+  pidx = swap = NULL;
 
   Geometry::close();
 }
@@ -237,7 +236,7 @@ void Points::depthSort()
   //Sort is much faster without allocate, so keep buffer until size changes
   static long last_size = 0;
   int size = total*sizeof(PIndex);
-  if (size != last_size)
+  if (size != last_size || !swap)
   {
     if (swap) delete[] swap;
     swap = new PIndex[total];
