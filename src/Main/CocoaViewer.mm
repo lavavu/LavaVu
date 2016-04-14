@@ -236,7 +236,7 @@ void getKeyModifiers(NSEvent* event)
   MouseButton button = RightButton;
   _viewer->mouseState ^= (int)pow(2, button);
   redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
-  NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
+  //NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
 
@@ -292,8 +292,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   if ([event isARepeat] == NO)
   {
-    NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-    NSLog(@"Key down: %d", [event keyCode]);
+    //NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
+    //NSLog(@"Key down: %d", [event keyCode]);
     //redisplay = _viewer->keyPress([event keyCode], (int)point.x, _viewer->height-(int)point.y);
   }
   [appLock unlock];
