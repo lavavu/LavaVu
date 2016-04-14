@@ -309,7 +309,6 @@ void getKeyModifiers(NSEvent* event)
   getKeyModifiers(event);
   if ( [keyChars length] == 1 ) {
     unsigned char key = [keyChars characterAtIndex:0];
-    printf("KEYCHAR %c / %d\n", key, key);
     if ([event keyCode] == 126) key = KEY_UP;
     else if ([event keyCode] == 125) key = KEY_DOWN;
     else if ([event keyCode] == 123) key = KEY_LEFT;
@@ -329,24 +328,6 @@ void getKeyModifiers(NSEvent* event)
 - (CVReturn) getFrameForTime:(const CVTimeStamp*)outputTime
 {
   [appLock lock];
-
-#if 0
-  //Resized?
-NSSize size = [ [ _window contentView ] frame ].size;
-NSRect frame = [_window frame];
-//frame.origin.y += frame.size.height; // origin.y is top Y coordinate now
-//frame.origin.y -= _viewer->height; // new Y coordinate for the origin
-  if (_viewer->width != size.width || _viewer->height != size.height) 
-{
-printf("%d != %f or %d != %f\n", _viewer->width, size.width, _viewer->height, size.height); 
-float xdiff = frame.size.width - size.width;
-float ydiff = frame.size.height - size.height;
-frame.size.width = _viewer->width + xdiff;
-frame.size.height = _viewer->height + ydiff;
-//printf("%f  %f\n", xdiff, ydiff); 
-  [_window setFrame:frame display:YES animate:NO];
-}
-#endif
 
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
@@ -377,19 +358,23 @@ frame.size.height = _viewer->height + ydiff;
 // Resize
 - (void)windowDidResize:(NSNotification*)notification
 {
-  NSSize size = [ [ _window contentView ] frame ].size;
   [appLock lock];
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
+
+  NSSize size = [ [ _window contentView ] frame ].size;
   NSLog(@"Window resize: %lf, %lf", size.width, size.height);
-  // Temp
   windowRect.size.width = size.width;
   windowRect.size.height = size.height;
-  glViewport(0, 0, windowRect.size.width, windowRect.size.height);
-  // _viewer->width = _viewer->height = -1;
+
+  //Update dims to context
+  GLint dim[2] = {(int)windowRect.size.width, (int)windowRect.size.height};
+  CGLContextObj cglContext = (CGLContextObj)[[self openGLContext] CGLContextObj];
+  CGLSetParameter(cglContext, kCGLCPSurfaceBackingSize, dim);
+
   _viewer->resize(size.width, size.height);
   redisplay = true;
-  // End temp
+
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
 }
@@ -441,10 +426,11 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef displayLink, const CV
   return result;
 }
 
-void CocoaWindow()
-{
-  NSAutoreleasePool * pool;
+NSAutoreleasePool * pool;
+NSWindow * window;
 
+void CocoaWindow_Open()
+{
   // Autorelease Pool:
   // Objects declared in this scope will be automatically
   // released at the end of it, when the pool is "drained".
@@ -456,7 +442,6 @@ void CocoaWindow()
   [NSApplication sharedApplication];
 
   // Create a window:
-  NSWindow * window;
 
   // Style flags
   NSUInteger windowStyle = NSTitledWindowMask  | NSClosableWindowMask | NSResizableWindowMask | NSMiniaturizableWindowMask;
@@ -514,11 +499,33 @@ void CocoaWindow()
   [window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenPrimary];
 
   debug_print("Cocoa viewer created\n");
+}
 
+void CocoaWindow_Execute()
+{
   // Show window and run event loop
   [window orderFrontRegardless];
   [NSApp run];
+}
 
+void CocoaWindow_Setsize(int width, int height)
+{
+  //Resize to specified size
+  NSSize size = [ [ window contentView ] frame ].size;
+  NSRect frame = [window frame];
+
+  //Calc and add frame decoration sizes
+  float xdiff = frame.size.width - size.width;
+  float ydiff = frame.size.height - size.height;
+
+  frame.size.width = width + xdiff;
+  frame.size.height = height + ydiff;
+
+  [window setFrame:frame display:YES animate:NO];
+}
+
+void CocoaWindow_Close()
+{
   [pool drain];
 }
 
@@ -530,6 +537,7 @@ CocoaViewer::CocoaViewer() : CGLViewer()
 
 CocoaViewer::~CocoaViewer()
 {
+  CocoaWindow_Close();
 }
 
 void CocoaViewer::open(int w, int h)
@@ -544,7 +552,7 @@ void CocoaViewer::open(int w, int h)
     //Call base class open to set width/height
     OpenGLViewer::open(w, h);
 
-    execute();
+    CocoaWindow_Open();
   }
 }
 
@@ -552,10 +560,7 @@ void CocoaViewer::setsize(int width, int height)
 {
   CGLViewer::setsize(width, height);
   if (visible)
-  {
-    _viewer->width = width;
-    _viewer->height = height;
-  }
+    CocoaWindow_Setsize(width, height);
 }
 
 void CocoaViewer::show()
@@ -565,21 +570,19 @@ void CocoaViewer::show()
 
 void CocoaViewer::display()
 {
-  //OpenGLViewer::display();
-  CGLViewer::display();
+  OpenGLViewer::display();
   //swap();
 }
 
 void CocoaViewer::swap()
 {
   // Swap buffers
-  //OpenGLViewer::display();
 }
 
 void CocoaViewer::execute()
 {
   if (visible) 
-    CocoaWindow();
+    CocoaWindow_Execute();
   else
     OpenGLViewer::execute();
 }
