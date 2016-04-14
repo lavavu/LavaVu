@@ -228,14 +228,24 @@ function canvasMouseMove(event, mouse) {
   return false;
 }
 
+var zoomTimer;
+var zoomClipTimer;
+var zoomFactor = 0;
+
 function canvasMouseWheel(event, mouse) {
-  //if (server) serverMouseWheel(event, mouse); //Pass to server handler
   if (event.shiftKey) {
     var factor = event.spin * 0.01;
-    viewer.zoomClip(factor);
+    if (window.navigator.platform.indexOf("Mac") >= 0)
+      factor *= 0.1;
+    if (zoomClipTimer) clearTimeout(zoomClipTimer);
+    zoomClipTimer = setTimeout(function () {viewer.zoomClip(factor);}, 100 );
   } else {
     var factor = event.spin * 0.05;
-    viewer.zoom(factor);
+    if (window.navigator.platform.indexOf("Mac") >= 0)
+      factor *= 0.1;
+    if (zoomTimer) clearTimeout(zoomTimer);
+    zoomFactor += factor;
+    zoomTimer = setTimeout(function () {viewer.zoom(zoomFactor); zoomFactor = 0;}, 100 );
   }
   return false; //Prevent default
 }
