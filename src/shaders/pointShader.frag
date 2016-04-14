@@ -64,7 +64,7 @@ void main(void)
    N.z = sqrt(1.0-R);
 
    //Calculate diffuse lighting
-   vec3 lightDir = normalize(vec3(0,0,0) - vPosEye);
+   vec3 lightDir = normalize(vec3(0.1,-0.1,2) - vPosEye);
    float diffuse = max(0.0, dot(lightDir, N));
 
    //Compute the specular term
