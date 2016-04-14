@@ -177,9 +177,12 @@ void Model::attach(int timestep)
   //Attach n'th timestep database if available
   if (timestep > 0 && !attached)
   {
+    //Strip digits from end
+    size_t last_index = file.base.find_last_not_of("0123456789");
+    std::string basename = file.base.substr(0, last_index + 1);
     char path[FILE_PATH_MAX];
     FILE* fp;
-    sprintf(path, "%s%s%05d.%s", file.path.c_str(), file.base.c_str(), timestep, file.ext.c_str());
+    sprintf(path, "%s%s%05d.%s", file.path.c_str(), basename.c_str(), timestep, file.ext.c_str());
     fp = fopen(path, "r");
     if (fp)
     {
@@ -528,6 +531,32 @@ int Model::loadTimeSteps()
     rows++;
   }
   sqlite3_finalize(statement);
+
+  //Check for other timesteps in external files if only 0 or 1 loaded
+  if (timesteps.size() < 2)
+  {
+    //Strip digits from end
+    timesteps.clear();
+    size_t last_index = file.base.find_last_not_of("0123456789");
+    std::string basename = file.base.substr(0, last_index + 1);
+    char path[FILE_PATH_MAX];
+    FILE* fp;
+    debug_print("Scanning for timesteps...\n");
+    for (unsigned int ts=0; ts<10000; ts++)
+    {
+      sprintf(path, "%s%s%05d.%s", file.path.c_str(), basename.c_str(), ts, file.ext.c_str());
+      fp = fopen(path, "r");
+      if (fp)
+      {
+        fclose(fp);
+        debug_print("Found %d %s\n", ts, path);
+        timesteps.push_back(new TimeStep(ts, ts));
+      }
+    }
+    //Prevent reloading
+    debug_print("Scanning complete, found %d steps.\n", timesteps.size());
+  }
+
   //Copy to static for use in Tracers etc
   TimeStep::timesteps = timesteps;
   return timesteps.size();
