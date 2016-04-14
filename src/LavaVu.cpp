@@ -396,7 +396,7 @@ void LavaVu::defaults()
   Properties::defaults["far"] = 10.0;
   Properties::defaults["orientation"] = 1;
 
-  //Global Properties::defaults
+  //Global Properties
   Properties::defaults["cachevolumes"] = false;
   Properties::defaults["filestep"] = false;
 
@@ -2985,6 +2985,10 @@ void LavaVu::defaultModel()
 
 void LavaVu::loadModel(FilePath& fn)
 {
+  //Delete default model if empty
+  if (models.size() == 1 and amodel->objects.size() == 0)
+    close();
+
   //Open database file
   Model* newmodel = new Model(fn, hideall);
   if (!newmodel->open())
@@ -2996,7 +3000,7 @@ void LavaVu::loadModel(FilePath& fn)
   amodel = newmodel;
   models.push_back(amodel);
 
-  //amodel->loadTimeSteps();
+  amodel->loadTimeSteps();
   amodel->loadColourMaps();
   amodel->loadObjects();
   amodel->loadViewports();
@@ -3038,6 +3042,7 @@ void LavaVu::loadModel(FilePath& fn)
   if (awin->name.length() == 0) awin->name = amodel->file.base;
 
   //Add all windows to global window list
+  int win = windows.size();
   for (unsigned int w=0; w<amodel->windows.size(); w++)
     windows.push_back(amodel->windows[w]);
 
@@ -3050,6 +3055,12 @@ void LavaVu::loadModel(FilePath& fn)
   {
     viewer->output_path = fn.path;
     debug_print("Output path set to %s\n", viewer->output_path.c_str());
+  }
+
+  if (viewer->isopen)
+  {
+    loadWindow(win, 0);
+    viewer->display();
   }
 }
 
