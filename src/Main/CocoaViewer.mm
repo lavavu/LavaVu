@@ -373,8 +373,8 @@ void getKeyModifiers(NSEvent* event)
   CGLSetParameter(cglContext, kCGLCPSurfaceBackingSize, dim);
 
   _viewer->resize(size.width, size.height);
-  redisplay = true;
-
+  _viewer->postdisplay = true;
+ 
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
 }
@@ -499,17 +499,22 @@ void CocoaWindow_Open()
   [window setCollectionBehavior: NSWindowCollectionBehaviorFullScreenPrimary];
 
   debug_print("Cocoa viewer created\n");
+
+  // Show window
+  [window orderFrontRegardless];
 }
 
 void CocoaWindow_Execute()
 {
-  // Show window and run event loop
-  [window orderFrontRegardless];
+  //Run event loop
+  _viewer->postdisplay = true;
   [NSApp run];
 }
 
 void CocoaWindow_Setsize(int width, int height)
 {
+  NSAutoreleasePool * newpool = [[NSAutoreleasePool alloc] init];
+
   //Resize to specified size
   NSSize size = [ [ window contentView ] frame ].size;
   NSRect frame = [window frame];
@@ -522,6 +527,8 @@ void CocoaWindow_Setsize(int width, int height)
   frame.size.height = height + ydiff;
 
   [window setFrame:frame display:YES animate:NO];
+
+  [newpool release];
 }
 
 void CocoaWindow_Close()
@@ -551,14 +558,13 @@ void CocoaViewer::open(int w, int h)
   {
     //Call base class open to set width/height
     OpenGLViewer::open(w, h);
-
     CocoaWindow_Open();
   }
 }
 
 void CocoaViewer::setsize(int width, int height)
 {
-  CGLViewer::setsize(width, height);
+  OpenGLViewer::setsize(width, height);
   if (visible)
     CocoaWindow_Setsize(width, height);
 }
