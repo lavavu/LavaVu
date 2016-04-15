@@ -2269,18 +2269,17 @@ void LavaVu::display(void)
       aview->sort = true;
   }
 
+  viewSelect(view);
+  GL_Error_Check;
+
   //Turn filtering of objects on/off
   if (awin->views.size() > 1 || windows.size() > 1)
   {
     for (unsigned int v=0; v<awin->views.size(); v++)
       awin->views[v]->filtered = true;
   }
-  else  //Single viewport, always disable filter
+  else //Single viewport, always disable filter
     aview->filtered = false;
-
-  GL_Error_Check;
-  viewSelect(view);
-  GL_Error_Check;
 
   //Scale text and 2d elements when downsampling output image
   aview->textscale = viewer->downsample > 1;
@@ -2292,6 +2291,7 @@ void LavaVu::display(void)
 
   //Set viewport based on window size
   aview->port(viewer->width, viewer->height);
+  GL_Error_Check;
 
   // Clear viewport
   glDrawBuffer(viewer->renderBuffer);
@@ -3060,7 +3060,7 @@ void LavaVu::loadModel(FilePath& fn)
   if (viewer->isopen)
   {
     loadWindow(win, 0);
-    viewer->display();
+    viewer->postdisplay = true;
   }
 }
 
