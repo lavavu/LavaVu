@@ -513,21 +513,25 @@ void CocoaWindow_Execute()
 
 void CocoaWindow_Setsize(int width, int height)
 {
+  //Doing this in pool fixes warnings, but could still be threading issues here
+  //causing intermittant problems...
   NSAutoreleasePool * newpool = [[NSAutoreleasePool alloc] init];
 
   //Resize to specified size
   NSSize size = [ [ window contentView ] frame ].size;
   NSRect frame = [window frame];
 
-  //Calc and add frame decoration sizes
-  float xdiff = frame.size.width - size.width;
-  float ydiff = frame.size.height - size.height;
+  if (size.width != width && size.height != height)
+  {
+    //Calc and add frame decoration sizes
+    float xdiff = frame.size.width - size.width;
+    float ydiff = frame.size.height - size.height;
 
-  frame.size.width = width + xdiff;
-  frame.size.height = height + ydiff;
+    frame.size.width = width + xdiff;
+    frame.size.height = height + ydiff;
 
-  [window setFrame:frame display:YES animate:NO];
-
+    [window setFrame:frame display:YES animate:NO];
+  }
   [newpool release];
 }
 
