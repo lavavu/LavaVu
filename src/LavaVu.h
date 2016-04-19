@@ -74,6 +74,7 @@ protected:
   bool output, verbose, hideall, dbpath;
   std::string defaultScript;
 
+  int viewset;
   bool globalCam;
   bool sort_on_rotate;
   bool status;

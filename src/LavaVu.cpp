@@ -189,6 +189,7 @@ LavaVu::LavaVu()
 {
   viewer = NULL;
   output = verbose = hideall = dbpath = false;
+  viewset = 0;
 
   defaultScript = "init.script";
 
@@ -605,7 +606,8 @@ void LavaVu::arguments(std::vector<std::string> args)
     else
     {
       //Model data file
-      files.push_back(args[i]);
+      OpenGLViewer::commands.push_back("file " + args[i]);
+      //files.push_back(args[i]);
     }
   }
 
@@ -628,7 +630,8 @@ std::string LavaVu::run()
 
   //Add default script
   if (defaultScript.length())
-    files.push_back(defaultScript);
+    OpenGLViewer::commands.insert(OpenGLViewer::commands.begin(), "file " + defaultScript);
+    //files.push_back(defaultScript);
 
   //Loads files, runs scripts
   for (unsigned int m=0; m < files.size(); m++)
@@ -2142,6 +2145,8 @@ void LavaVu::redraw(unsigned int id)
 //Called when model loaded/changed, updates all views and window settings
 void LavaVu::resetViews(bool autozoom)
 {
+  viewset = 0;
+
   //Setup view(s) for new model dimensions
   for (unsigned int v=0; v < awin->views.size(); v++)
     viewSelect(v, true, autozoom);
@@ -2261,6 +2266,10 @@ int LavaVu::viewFromPixel(int x, int y)
 void LavaVu::display(void)
 {
   clock_t t1 = clock();
+
+  //Viewport reset flagged
+  if (viewset > 0)
+    resetViews(viewset == 2);
 
   //Always redraw the active view, others only if flag set
   if (aview)
@@ -3117,8 +3126,8 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
     //Resize if necessary
     viewer->setsize(awin->width, awin->height);
 
-  //Update the views
-  resetViews(autozoom);
+  //Flag a view update
+  viewset = autozoom ? 2 : 1;
 
   return true;
 }
