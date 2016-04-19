@@ -308,7 +308,15 @@ bool LavaVu::parseChar(unsigned char key)
   case KEY_LEFT:
     return parseCommands("timestep up");
   case KEY_ESC:
-    return parseCommands("quit");
+    //Don't quit immediately on ESC by request, if entry, then clear, 
+    msg = true;
+    if (entry.length() == 0)
+      entry = "quit";
+    else if (entry == "quit")
+      return parseCommands("quit");
+    else
+      entry = "";
+    break;
   case KEY_ENTER:
     if (entry.length() == 0)
       return parseCommands("repeat");
