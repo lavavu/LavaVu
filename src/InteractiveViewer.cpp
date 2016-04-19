@@ -312,8 +312,6 @@ bool LavaVu::parseChar(unsigned char key)
     msg = true;
     if (entry.length() == 0)
       entry = "quit";
-    else if (entry == "quit")
-      return parseCommands("quit");
     else
       entry = "";
     break;
