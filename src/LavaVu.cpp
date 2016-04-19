@@ -189,7 +189,6 @@ LavaVu::LavaVu()
 {
   viewer = NULL;
   output = verbose = hideall = dbpath = false;
-  viewset = 0;
 
   defaultScript = "init.script";
 
@@ -217,6 +216,7 @@ void LavaVu::defaults()
   //Clear any queued commands
   OpenGLViewer::commands.clear();
 
+  viewset = 0;
   view = -1;
   aview = NULL;
   awin = NULL;
@@ -606,8 +606,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     else
     {
       //Model data file
-      OpenGLViewer::commands.push_back("file " + args[i]);
-      //files.push_back(args[i]);
+      files.push_back(args[i]);
     }
   }
 
@@ -630,12 +629,12 @@ std::string LavaVu::run()
 
   //Add default script
   if (defaultScript.length())
-    OpenGLViewer::commands.insert(OpenGLViewer::commands.begin(), "file " + defaultScript);
-    //files.push_back(defaultScript);
+    files.push_back(defaultScript);
 
   //Loads files, runs scripts
   for (unsigned int m=0; m < files.size(); m++)
     loadFile(files[m]);
+    //OpenGLViewer::commands.push_back("file " + files[m].full);
 
   //Require a model from here on, set a default
   if (!amodel) defaultModel();
