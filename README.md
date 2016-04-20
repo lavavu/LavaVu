@@ -26,20 +26,21 @@ The simplest way to get started on a Unix based OS is clone this repository and 
 (You will need to first install git )
 
 ```
-#!shell script
-
   git clone https://github.com/OKaluza/LavaVu
   cd LavaVu
   make -j4
 ```
 
 
-If all goes well it should build the software and the viewer will be built and ready to run under ./bin, try running with:
+If all goes well it should build the software and the viewer will be built and ready to run in ./bin, try running with:
   bin/LavaVu
 
-TODO:
+### Dependencies ###
 
-Dependencies required - Git, otherwise base build should not require any
+For video output, requires: libavcodec, libavformat, libavutil
+For png image output, requires: libpng
+
+TODO:
 
 Releases: prebuilt versions for Windows, Mac, Linux
 
