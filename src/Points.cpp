@@ -317,6 +317,7 @@ void Points::render()
     if (hiddencache[pidx[i].geomid]) continue;
     // If subSampling, use a pseudo random distribution to select which particles to draw
     // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
+    SEED_VAL = pidx[i].index; //Reset the seed for determinism based on index
     if (subSample > 1 && SHR3 % subSample > 0) continue;
     ptr[elements] = pidx[i].index;
     elements++;
