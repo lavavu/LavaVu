@@ -234,9 +234,8 @@ public:
   virtual void jsonWrite(unsigned int id, json& obj);
   void jsonExportAll(unsigned int id, json& array, bool encode=true);
   bool hide(unsigned int idx);
-  void hideAll();
+  void hideShowAll(bool hide);
   bool show(unsigned int idx);
-  void showAll();
   void showById(unsigned int id, bool state);
   void redrawObject(unsigned int id);
   void localiseColourValues();

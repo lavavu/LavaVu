@@ -102,7 +102,7 @@ public:
   void loadColourMaps();
   void loadColourMapsLegacy();
 
-  Model(FilePath& fn, bool hideall=false);
+  Model(FilePath& fn);
   void init();
   ~Model();
 

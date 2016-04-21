@@ -384,15 +384,14 @@ bool Geometry::hide(unsigned int idx)
   return true;
 }
 
-void Geometry::hideAll()
+void Geometry::hideShowAll(bool hide)
 {
-  if (hidden.size() == 0) return;
   for (unsigned int i=0; i<hidden.size(); i++)
   {
-    hidden[i] = true;
-    geom[i]->draw->properties.data["visible"] = false;
+    hidden[i] = hide;
+    //geom[i]->draw->properties.data["visible"] = false;
   }
-  allhidden = true;
+  allhidden = hide;
   redraw = true;
 }
 
@@ -403,18 +402,6 @@ bool Geometry::show(unsigned int idx)
   hidden[idx] = false;
   redraw = true;
   return true;
-}
-
-void Geometry::showAll()
-{
-  if (hidden.size() == 0) return;
-  for (unsigned int i=0; i<hidden.size(); i++)
-  {
-    hidden[i] = false;
-    geom[i]->draw->properties.data["visible"] = true;
-  }
-  allhidden = false;
-  redraw = true;
 }
 
 void Geometry::showById(unsigned int id, bool state)
@@ -719,8 +706,8 @@ GeomData* Geometry::add(DrawingObject* draw)
   GeomData* geomdata = new GeomData(draw);
   geom.push_back(geomdata);
   if (hidden.size() < geom.size()) hidden.push_back(allhidden);
-  if (allhidden) draw->properties.data["visible"] = false;
-  //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p\n", draw->name.c_str(), geom.size(), geomdata);
+  //if (allhidden) draw->properties.data["visible"] = false;
+  //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", draw->name.c_str(), geom.size(), geomdata, allhidden);
   return geomdata;
 }
 
@@ -734,8 +721,7 @@ void Geometry::setView(View* vp, float* min, float* max)
   //Apply geometry bounds from all object data within this viewport
   for (unsigned int o=0; o<view->objects.size(); o++)
   {
-    //Skip invisible
-    if (!view->objects[o] || !view->objects[o]->properties.data["visible"]) continue;
+    if (!view->objects[o]) continue;
     for (unsigned int g=0; g<geom.size(); g++)
     {
       if (geom[g]->draw == view->objects[o])
@@ -858,11 +844,11 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 
 void Geometry::print()
 {
-  std::string types[lucMaxType+1] = {"Labels", "Particles", "Vectors", "Tracers", "QuadSurface", "TriSurface", "Lines", "Shapes", "Volume", "UNKNOWN"};
+  std::string types[lucMaxType+1] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "UNKNOWN"};
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    std::cout << types[type] << i << " - " << std::endl;
-    //std::cout << i << " - " << (drawable(i) ? "shown" : "hidden") << std::endl;
+    std::cout << types[type] << " [" << i << "] - "
+              << (drawable(i) ? "shown" : "hidden") << std::endl;
   }
 }
 

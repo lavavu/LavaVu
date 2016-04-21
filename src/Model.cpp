@@ -55,7 +55,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model(FilePath& fn, bool hideall) : readonly(true), memory(false), file(fn), attached(0), db(NULL)
+Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0), db(NULL)
 {
   prefix[0] = '\0';
 
@@ -64,8 +64,9 @@ Model::Model(FilePath& fn, bool hideall) : readonly(true), memory(false), file(f
 
   for (unsigned int i=0; i < geometry.size(); i++)
   {
+    bool hideall = Properties::global("hideall");
     if (hideall)
-      geometry[i]->hideAll();
+      geometry[i]->hideShowAll(true);
     //Reset static data
     geometry[i]->close();
   }
