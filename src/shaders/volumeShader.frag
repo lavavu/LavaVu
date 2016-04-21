@@ -178,7 +178,7 @@ void main()
 #define ISOSURFACE
 #ifdef ISOSURFACE
         //Passed through isosurface?
-        if (isoValue > 0.0 && ((!inside && density >= isoValue) || (inside && density < isoValue)))
+        if (isoValue > uRange.x && ((!inside && density >= isoValue) || (inside && density < isoValue)))
         {
           inside = !inside;
           //Find closer to exact position by iteration
