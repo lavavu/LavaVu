@@ -74,9 +74,6 @@ public:
   bool noValues; //Use position data only
   TextureData* texture;
 
-  float dimCoeff;
-  std::string units;
-
   ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float min=0, float max=1, std::string props="");
   ~ColourMap()
   {

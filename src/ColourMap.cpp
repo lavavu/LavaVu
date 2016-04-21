@@ -49,7 +49,7 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete,
                      float min, float max, std::string props)
   : id(id), minimum(min), maximum(max), log(log), discrete(discrete),
-    calibrated(false), noValues(false), dimCoeff(1.0), units("")
+    calibrated(false), noValues(false)
 {
   precalc = new Colour[samples];
   if (id == 0)
@@ -250,8 +250,6 @@ void ColourMap::calibrate(FloatValues* dataValues)
     calibrate(dataValues->minimum, dataValues->maximum);
   else
     calibrate();
-  //dimCoeff = dataValues.dimCoeff;
-  //units = dataValues.units;
 }
 
 void ColourMap::calibrate()
@@ -428,7 +426,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   float tickValue;
   int ticks = properties["ticks"];
   bool printTicks = properties["printticks"];
-  bool printUnits = properties["printunits"];
+  std::string units = properties["units"];
   bool scientific = properties["scientific"];
   int precision = properties["precision"];
   float scaleval = properties["scalevalue"];
@@ -521,15 +519,15 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
     char string[20];
     if (printTicks || i == 0 || i == ticks+1)
     {
-      /* Apply any scaling factor  and show units on output, stored in dimCoeff & units */
-      if ( !scientific && fabs(tickValue * dimCoeff) <= FLT_MIN )
+      /* Apply any scaling factor  and show units on output */
+      if ( !scientific && fabs(tickValue) <= FLT_MIN )
         sprintf( string, "0" );
       else
       {
         // For display purpose, scales the printed values if needed
         tickValue = scaleval * tickValue;
         char format[10];
-        sprintf(format, "%%.%d%c%s", precision, scientific ? 'e' : 'g', (printUnits ? units.c_str() : ""));
+        sprintf(format, "%%.%d%c%s", precision, scientific ? 'e' : 'g', units.c_str());
         sprintf(string, format, tickValue);
       }
 
