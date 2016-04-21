@@ -95,9 +95,7 @@ private:
   float default_focus[3];    // Default Focal point
 
   float model_trans[3];
-  float model_trans_lag[3];
   Quaternion rotation;
-  Quaternion rotation_lag;
 
   float focal_length;        // Stereo zero parallex distance
   float scene_shift;         // Stereo projection shift (calculated from eye sep)
@@ -108,7 +106,6 @@ public:
   std::vector<DrawingObject*> objects;     // Contains these objects
   float fov;                 // Field of view
   bool is3d;
-  bool use_inertia;
   float eye_shift;           // Stereo eye shift factor
   float eye_sep_ratio;       // Eye separation ratio to focal length
   float modelView[16];
@@ -139,7 +136,7 @@ public:
   void rotate(float degreesX, float degreesY, float degreesZ);
   void applyRotation()
   {
-    rotation_lag.apply();
+    rotation.apply();
   }
   void setScale(float x, float y, float z);
   std::string zoom(float factor);
@@ -158,7 +155,6 @@ public:
   void zoomToFit(int margin=-1);
   bool scaleSwitch();
   int direction();
-  void inertia(bool on=true);
 
   //Utility functions
   void drawOverlay(Colour& colour);

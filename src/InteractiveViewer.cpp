@@ -60,7 +60,6 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   else
   {
     aview->rotating = false;
-    aview->inertia(false); //Clear inertia
 
     //switch (viewer->button)
     switch (btn)
@@ -1779,12 +1778,6 @@ bool LavaVu::parseCommand(std::string cmd)
         amodel->deleteCache();
       }
     }
-  }
-  //TODO: NOT YET DOCUMENTED
-  else if (parsed.exists("inertia"))
-  {
-    aview->use_inertia = !aview->use_inertia;
-    printMessage("Inertia is %s", aview->use_inertia ? "ON":"OFF");
   }
   else if (parsed.exists("sort"))
   {

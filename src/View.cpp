@@ -70,14 +70,11 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
     focal_point[i]       = FLT_MIN;  // Focal point
     default_focus[i]     = FLT_MIN;  // Default focal point
     model_trans[i]       = 0.0;
-    model_trans_lag[i]   = 0.0;
     scale[i]             = 1.0;
     min[i]               = 0.0;
     max[i]               = 0.0;
   }
   rotation.identity();
-  rotation_lag.identity();
-  use_inertia = false;
 
   is3d = true;
 
@@ -166,7 +163,7 @@ bool View::init(bool force, float* newmin, float* newmax)
 
     //Default translation by model size
     if (model_trans[2] == 0)
-      model_trans[2] = model_trans_lag[2] = -model_size;
+      model_trans[2] = -model_size;
 
     // Initial zoom to fit
     // NOTE without (int) cast properties["zoomstep"] == 0 here always evaluated to false!
@@ -178,12 +175,9 @@ bool View::init(bool force, float* newmin, float* newmax)
     debug_print("   Clip planes: near %f far %f. Focal length %f Eye separation ratio: %f\n", near_clip, far_clip, focal_length, eye_sep_ratio);
     debug_print("   Translate: %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
 
-    //Apply changes to view (and reset inertia)
-    inertia(false);
+    //Apply changes to view
     apply();
   }
-
-  //inertia(false); //Reset inertia lag
 
   return true;
 }
@@ -280,7 +274,6 @@ void View::translate(float x, float y, float z)
   model_trans[0] += x;
   model_trans[1] += y;
   model_trans[2] += z;
-  inertia();
 }
 
 void View::setRotation(float x, float y, float z, float w)
@@ -294,7 +287,6 @@ void View::rotate(float degrees, Vec3d axis)
   nrot.fromAxisAngle(axis, degrees);
   nrot.normalise();
   rotation = nrot * rotation;
-  inertia();
 }
 
 void View::rotate(float degreesX, float degreesY, float degreesZ)
@@ -315,7 +307,7 @@ void View::setScale(float x, float y, float z)
 std::string View::zoom(float factor)
 {
   float adj = factor * model_size;
-  model_trans_lag[2] = model_trans[2] += adj;
+  model_trans[2] += adj;
   std::ostringstream ss;
   ss << "translate z " << adj;
   return ss.str();
@@ -335,21 +327,20 @@ void View::reset()
 {
   for (int i=0; i<3; i++)
   {
-    model_trans[i] = model_trans_lag[i] = 0;
+    model_trans[i] = 0;
     //Default focal point and rotation centre = model bounding box centre point
     //if (focal_point[i] == FLT_MIN)
     //   focal_point[i] = min[i] + dims[i] / 2.0f;
     rotate_centre[i] = focal_point[i];
   }
   rotation.identity();
-  rotation_lag.identity();
   rotated = true;   //Flag rotation
 }
 
 void View::print()
 {
   float xrot, yrot, zrot;
-  rotation_lag.toEuler(xrot, yrot, zrot);
+  rotation.toEuler(xrot, yrot, zrot);
   printf("------------------------------\n");
   printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
   printf("Clip planes: near %f far %f\n", near_clip, far_clip);
@@ -415,7 +406,7 @@ void View::projection(int eye)
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
   //default is to set to distance to model front edge...
-  float focal_length = fabs(model_trans_lag[2]) - model_size * 0.5; //3/4 of model size - distance from eye to model centre
+  float focal_length = fabs(model_trans[2]) - model_size * 0.5; //3/4 of model size - distance from eye to model centre
   focal_length += focal_length_adj;   //Apply user adjustment (default 0)
   if (focal_length < 0) focal_length = 0.1;
 
@@ -457,7 +448,6 @@ void View::projection(int eye)
 
 void View::apply(bool use_fp)
 {
-  if (!use_inertia) inertia(false);
   GL_Error_Check;
   // Setup view transforms
   glMatrixMode(GL_MODELVIEW);
@@ -471,7 +461,7 @@ void View::apply(bool use_fp)
 
   // Translate model away from eye by camera zoom/pan translation
   //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
-  glTranslatef(model_trans_lag[0]*scale[0], model_trans_lag[1]*scale[0], model_trans_lag[2]*scale[0]);
+  glTranslatef(model_trans[0]*scale[0], model_trans[1]*scale[0], model_trans[2]*scale[0]);
   GL_Error_Check;
 #endif
 
@@ -481,7 +471,7 @@ void View::apply(bool use_fp)
   GL_Error_Check;
 
   // rotate model
-  rotation_lag.apply();
+  rotation.apply();
   GL_Error_Check;
 
   // Adjust back for rotation centre
@@ -557,26 +547,6 @@ int View::switchCoordSystem()
     setCoordSystem(RIGHT_HANDED);
   rotated = true;   //Flag rotation
   return orientation;
-}
-
-void View::inertia(bool on)
-{
-  if (!on)
-  {
-    memcpy(model_trans_lag, model_trans, sizeof(float) * 3);
-    rotation_lag = Quaternion(rotation);
-    return;
-  }
-
-  // Apply inertia lag to translations and rotations
-  for (int c = 0; c < 3; ++c)
-    model_trans_lag[c] += (model_trans[c] - model_trans_lag[c]) * 0.1;
-  rotation_lag.x += (rotation.x - rotation_lag.x) * 0.05;
-  rotation_lag.y += (rotation.y - rotation_lag.y) * 0.05;
-  rotation_lag.z += (rotation.z - rotation_lag.z) * 0.05;
-  rotation_lag.w += (rotation.w - rotation_lag.w) * 0.05;
-  //After linear interpolation between quaternions, need to normalise
-  rotation_lag.normalise();
 }
 
 #define ADJUST 0.444444
@@ -691,7 +661,6 @@ void View::zoomToFit(int margin)
     //   debug_print(" --> error: %f (adjust %f) zoom from %f to %f\n", error, adjust, oldz, model_trans[2]);
     //}
     count++;
-    model_trans_lag[2] = model_trans[2];
   }
 }
 
