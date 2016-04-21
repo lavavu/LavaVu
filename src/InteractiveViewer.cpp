@@ -737,12 +737,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     printMessage("Database object loading is %s", Model::noload ? "ON":"OFF");
     return false;
   }
-  else if (parsed.exists("hideall"))
-  {
-    hideall = !hideall;
-    printMessage("Object load initial state is %s", hideall ? "VISIBLE":"HIDDEN");
-    return false;
-  }
   else if (parsed.exists("verbose"))
   {
     std::string what = parsed["verbose"];
@@ -1359,15 +1353,23 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "\nUsage: hide/show geometry_type id\n\n"
               "geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines\n"
               "id (integer, optional) : id of geometry to hide/show\n"
-              "eg: 'hide points' will hide all point data\n";
+              "eg: 'hide points' will hide all objects containing point data\n"
+              "note: 'hide all' will hide all objects\n";
       return false;
     }
 
     std::string action = parsed.exists("hide") ? "hide" : "show";
     std::string what = parsed[action];
-    Geometry* active = getGeometryType(what);
+
+    if (what == "all")
+    {
+      for (unsigned int i=0; i < Model::geometry.size(); i++)
+        Model::geometry[i]->hideShowAll(action == "hide");
+      return true;
+    }
 
     //Have selected a geometry type?
+    Geometry* active = getGeometryType(what);
     if (active)
     {
       int id;
@@ -1400,11 +1402,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       else
       {
-        if (action == "hide")
-          active->hideAll();
-        else
-          active->showAll();
-        printMessage("%s all %s %d", action.c_str(), what.c_str(), id);
+        active->hideShowAll(action == "hide");
+        printMessage("%s all %s %d", action.c_str(), what.c_str());
       }
       amodel->redraw();
     }

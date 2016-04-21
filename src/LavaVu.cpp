@@ -237,7 +237,7 @@ OpenGLViewer* createViewer()
 LavaVu::LavaVu()
 {
   viewer = NULL;
-  output = verbose = hideall = dbpath = false;
+  output = verbose = dbpath = false;
 
   defaultScript = "init.script";
 
@@ -542,6 +542,8 @@ void LavaVu::defaults()
   Properties::defaults["cachevolumes"] = false;
   // | global | boolean | Turn on to automatically add and switch to a new timestep after loading a data file
   Properties::defaults["filestep"] = false;
+  // | global | boolean | Turn on to set initial state of all loaded objects to hidden
+  Properties::defaults["hideall"] = false;
 
 #ifdef DEBUG
   //std::cerr << std::setw(2) << Properties::defaults << std::endl;
@@ -622,7 +624,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         parseCommands("noload");
         break;
       case 'A':
-        parseCommands("hideall");
+        Properties::globals["hideall"] = true;
         break;
       case 'v':
         parseCommands("verbose on");
@@ -3146,7 +3148,7 @@ void LavaVu::loadModel(FilePath& fn)
     close();
 
   //Open database file
-  Model* newmodel = new Model(fn, hideall);
+  Model* newmodel = new Model(fn);
   if (!newmodel->open())
   {
     std::cerr << "Model database open failed\n";
