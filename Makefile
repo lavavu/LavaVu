@@ -95,7 +95,7 @@ OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 default: install
 
-install: paths $(PROGRAM)
+install: paths $(PROGRAM) docs
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(PREFIX)/html
 	cp -R src/html/*.css $(PREFIX)/html
@@ -132,6 +132,12 @@ swig: $(PREFIX)/$(LIBNAME)
 	#touch bin/__init__.py
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
 	$(CPP) -o $(PREFIX)/_$(PROGNAME).so $(LIBBUILD) $(OPATH)/LavaVu_wrap.os `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+
+docs:
+	python docparse.py
+	bin/LavaVu -S -h -p0 : docs:interaction quit > docs/Interaction.md
+	bin/LavaVu -S -h -p0 : docs:scripting quit > docs/Scripting-Commands-Reference.md
+	bin/LavaVu -? > docs/Commandline-Arguments.md
 
 clean:
 	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)

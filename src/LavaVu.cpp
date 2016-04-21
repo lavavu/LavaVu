@@ -57,6 +57,55 @@
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 
+#define HELP_COMMANDS "\
+\n## Command line arguments\n\n\
+```\n\
+\nStart and end timesteps\n\
+ -# : Any integer entered as a switch will be interpreted as the initial timestep to load\n\
+      Any following integer switch will be interpreted as the final timestep for output\n\
+      eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n\
+ -c#: caching, set # of timesteps to cache data in memory for\n\
+ -P#: subsample points, loading only every #'th\n\
+ -A : All objects hidden initially, use 'show object' to display\n\
+ -N : No load, deferred loading mode, use 'load object' to load & display from database\n\
+ -S : Skip default script, don't run init.script\n\
+\nGeneral options\n\
+ -v : Verbose output, debugging info displayed to console\n\
+ -o : output mode: all commands entered dumped to standard output,\n\
+      useful for redirecting to a script file to recreate a visualisation setup.\n\
+ -a : Automation mode, don't activate event processing loop\n\
+ -p#: port, web server interface listen on port #\n\
+ -q#: quality, web server jpeg quality (0=don't serve images)\n\
+ -n#: number of threads to launch for web server #\n\
+ -l: use local shaders, locate in working directory not executable directory\n\
+ -Q: quiet mode, no status updates to screen\n\
+\nModel options\n\
+ -C: global camera, each model shares the same camera view\n\
+ -y: swap z/y axes of imported static models\n\
+ -T#: subdivide imported static model triangles into #\n\
+ -V#,#,#: volume data resolution in X,Y,Z\n\
+ -D#,#,#-#,#,#: volume data bounds min/max X,Y,Z\n\
+ -e: each data set loaded from non time varying source has new timestep inserted\n\
+\nImage/Video output\n\
+ -z#: render images # times larger and downsample for output\n\
+ -i/w: write images of all loaded timesteps/windows then exit\n\
+ -I/W: write images as above but using input database path as output path for images\n\
+ -u: returns images encoded as string data (for library use)\n\
+ -U: returns json model data encoded string (for library use)\n\
+ -t: write transparent background png images (if supported)\n\
+ -m#: write movies of all loaded timesteps/windows #=fps(30) (if supported)\n\
+ -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if omitted)\n\
+\nData export\n\
+ -d#: export object id # to CSV vertices + values\n\
+ -j#: export object id # to JSON, if # omitted will output all compatible objects\n\
+ -g#: export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects\n\
+ -G#: export object id # to GLDB (uncompressed), if # omitted will output all compatible objects\n\
+\nWindow settings\n\
+ -rWIDTH,HEIGHT: resize initial viewer window to width x height\n\
+ -h: hidden window, will exit after running any provided input script and output options\n\
+```\n\
+"
+
 ViewerApp* app = NULL;
 
 std::string execute(int argc, char **argv)
@@ -267,138 +316,231 @@ void LavaVu::defaults()
   encoder = NULL;
 #endif
   //Setup default properties
+  //(Comments formatted to be parsed into documentation)
   
   //Object defaults
+  // | object | string | Name of object
   Properties::defaults["name"] = "";
+  // | object | boolean | Set to false to hide object
   Properties::defaults["visible"] = true;
+  // | object | boolean | Set to true if object remains static regardless of timestep
   Properties::defaults["static"] = false;
+  // | object | boolean | Apply lighting to object
   Properties::defaults["lit"] = true;
+  // | object | boolean | Cull back facing polygons of object surfaces
   Properties::defaults["cullface"] = false;
+  // | object | boolean | Render object surfaces as wireframe
   Properties::defaults["wireframe"] = false;
+  // | object | boolean | Renders surfaces as flat shaded, lines/vectors as 2d, faster but no 3d or lighting
   Properties::defaults["flat"] = false;
+  // | object | boolean | Set to false to disable depth test when drawing object so always drawn regardless of 3d position
   Properties::defaults["depthtest"] = true;
 
+  // | object | real [0,1] | Opacity of object where 0 is transparent and 1 is opaque
   Properties::defaults["opacity"] = 1.0;
+  // | object | real [-1,1] | Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)
   Properties::defaults["brightness"] = 0.0;
+  // | object | real [0,2] | Contrast of object from 0 (none, grey) to 2 (max)
   Properties::defaults["contrast"] = 1.0;
+  // | object | real [0,2] | Saturation of object from 0 (greyscale) to 2 (fully saturated)
   Properties::defaults["saturation"] = 1.0;
 
+  // | object | real [0,1] | Ambient lighting level (background constant light)
   Properties::defaults["ambient"] = 0.4;
+  // | object | real [0,1] | Diffuse lighting level (shading light/dark)
   Properties::defaults["diffuse"] = 0.8;
+  // | object | real [0,1] | Sepcular highlight lighting level (spot highlights)
   Properties::defaults["specular"] = 0.0;
 
+  // | object | boolean | Allow object to be clipped
+  Properties::defaults["clip"] = true;
+  // | object | real [0,1] | Object clipping, minimum x
   Properties::defaults["xmin"] = -FLT_MAX;
+  // | object | real [0,1] | Object clipping, maximum x
   Properties::defaults["ymin"] = -FLT_MAX;
+  // | object | real [0,1] | Object clipping, minimum y
   Properties::defaults["zmin"] = -FLT_MAX;
+  // | object | real [0,1] | Object clipping, maximum y
   Properties::defaults["xmax"] = FLT_MAX;
+  // | object | real [0,1] | Object clipping, minimum z
   Properties::defaults["ymax"] = FLT_MAX;
+  // | object | real [0,1] | Object clipping, maximum z
   Properties::defaults["zmax"] = FLT_MAX;
 
+  // | object | integer [0,n] | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)
   Properties::defaults["glyphs"] = 2;
+  // | object | real | Object scaling factor
   Properties::defaults["scaling"] = 1.0;
-  Properties::defaults["clip"] = true;
+  // | object | string | External texture image file path to load and apply to surface or points
   Properties::defaults["texturefile"] = "";
+  // | object | integer [0,n] | Index of data set to colour object by (requires colour map)
   Properties::defaults["colourby"] = 0;
 
-  //ColourBar
+  // | colourbar | boolean | Indicates object is a colourbar
   Properties::defaults["colourbar"] = false;
+  // | colourbar | integer | Align position of colour bar, 1=towards left/bottom, 0=centre, -1=towards right/top
   Properties::defaults["position"] = 0;
+  // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
   Properties::defaults["align"] = "bottom";
+  // | colourbar | real [0,1] | Length of colour bar as ratio of screen width or height
   Properties::defaults["lengthfactor"] = 0.8;
-  //Properties::defaults["barwidth"] = 10;
+  // | colourbar | integer | Width of colour bar in pixels
+  Properties::defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
 
   //Labels/text
+  // | object/colourbar/view | string | Font typeface vector/small/fixed/sans/serif
   Properties::defaults["font"] = "vector";
+  // | object/colourbar/view | real | Font scaling, note that only the vector font scales well
   Properties::defaults["fontscale"] = 1.0;
 
-  //Lines
+  // | object(line) | real | Line length limit, can be used to skip drawing line segments that cross periodic boundary
   Properties::defaults["limit"] = 0;
+  // | object(line) | boolean | To chain line vertices into longer lines set to true
   Properties::defaults["link"] = false;
+  // | object(line) | real | Line scaling multiplier, applies to all line objects
   Properties::defaults["scalelines"] = 1.0;
+  // | object(line) | real | Line width scaling
   Properties::defaults["linewidth"] = 1.0;
+  // | object(line) | boolean | Draw lines as 3D tubes
   Properties::defaults["tubes"] = false;
 
-  //Points
+  // | object(point) | real | Point size scaling
   Properties::defaults["pointsize"] = 1.0;
+  // | object(point) | integer/string | Point type 0/blur, 1/smooth, 2/sphere, 3/shiny, 4/flat
   Properties::defaults["pointtype"] = 1;
+  // | object(point) | real | Point scaling multiplier, applies to all points objects
   Properties::defaults["scalepoints"] = 1.0;
 
-  //Surfaces
+  // | object(surface) | boolean | If opaque flag is set skips depth sorting step and allows individual surface properties to be applied
   Properties::defaults["opaque"] = false;
 
-  //Volumes
   //Properties::defaults["colourmap"] = 1;
+  // | object(volume) | real | Power used when applying transfer function, 1.0=linear mapping
   Properties::defaults["power"] = 1.0;
+  // | object(volume) | integer | Number of samples to take per ray cast, higher = better quality, slower
   Properties::defaults["samples"] = 256;
+  // | object(volume) | real | Density multiplier for volume data
   Properties::defaults["density"] = 5.0;
+  // | object(volume) | real | Isovalue for dynamic isosurface
   Properties::defaults["isovalue"] = 0.0;
+  // | object(volume) | colour | RGBA colour for isosurface
   Properties::defaults["colour"] = {220, 220, 200, 255};
+  // | object(volume) | real [0,1] | Transparency value for isosurface
   Properties::defaults["isoalpha"] = 1.0;
+  // | object(volume) | real | Isosurface smoothing factor for normal calculation
   Properties::defaults["isosmooth"] = 0.1;
+  // | object(volume) | boolean | Connect isosurface enclosed area with walls
   Properties::defaults["isowalls"] = true;
+  // | object(volume) | boolean | Apply a tricubic filter for increased smoothness
   Properties::defaults["tricubicfilter"] = false;
+  // | object(volume) | real | Minimum density value to map, lower discarded
   Properties::defaults["dminclip"] = 0.0;
+  // | object(volume) | real | Maximum density value to map, higher discarded
   Properties::defaults["dmaxclip"] = 1.0;
 
-  //Vectors
+  // | object(vector) | real | Arrow head size as a multiple of width
   Properties::defaults["arrowhead"] = 2.0;
+  // | object(vector) | real | Vector scaling multiplier, applies to all vector objects
   Properties::defaults["scalevectors"] = 1.0;
+  // | object(vector) | real | Arrow fixed shaft radius, default is to calculate proportional to length
   Properties::defaults["radius"] = 0.0;
 
-  //Tracers
+  // | object(tracer) | integer | Number of time steps to trace particle path
   Properties::defaults["steps"] = 0;
+  // | object(tracer) | boolean | Taper width of tracer arrow up as we get closer to current timestep
   Properties::defaults["taper"] = true;
+  // | object(tracer) | boolean | Fade opacity of tracer arrow in from transparent as we get closer to current timestep
   Properties::defaults["fade"] = false;
+  // | object(tracer) | real | Tracer scaling multiplier, applies to all tracer objects
   Properties::defaults["scaletracers"] = 1.0;
 
-  //Shapes
+  // | object(shape) | real | Shape width scaling factor
   Properties::defaults["width"] = FLT_MIN;
+  // | object(shape) | real | Shape height scaling factor
   Properties::defaults["height"] = FLT_MIN;
+  // | object(shape) | real | Shape length scaling factor
   Properties::defaults["length"] = FLT_MIN;
+  // | object(shape) | integer | Shape type: 0=ellipsoid, 1=cuboid
   Properties::defaults["shape"] = 0;
+  // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
   Properties::defaults["scaleshapes"] = 1.0;
 
-  //ColourMaps
+  // | colourbar | integer | Number of additional tick marks to draw besides start and end
   Properties::defaults["ticks"] = 0;
+  // | colourbar | boolean | Set to false to disable drawing of tick values
   Properties::defaults["printticks"] = true;
-  Properties::defaults["printunits"] = false;
+  // | colourbar | string | Units to print with tick values
+  Properties::defaults["units"] = "";
+  // | colourbar | boolean | Set to true to use scientific exponential notation for tick values
   Properties::defaults["scientific"] = false;
+  // | colourbar | integer | Number of significant decimal digits to show
   Properties::defaults["precision"] = 2;
+  // | colourbar | real | Multiplier to scale tick values
   Properties::defaults["scalevalue"] = 1.0;
-  //Properties::defaults["border"] = 1.0; //Conflict with global
+  // | colourbar | integer | Border width to draw around colour bar
+  Properties::defaults["border"] = 1.0; //Conflict with global, overridden below
+
+  // | colourmap | boolean | Set to true to use log scales
   Properties::defaults["log"] = false;
+  // | colourmap | boolean | Set to true to apply colours as discrete values rather than gradient
   Properties::defaults["discrete"] = false;
+  // | colourmap | colours | Colour list, see [Colour map lists] for more information
   Properties::defaults["colours"] = "";
+  // | colourmap | boolean | Automatically calculate colourmap min/max range based on available data range
   Properties::defaults["dynamic"] = true;
 
-  //View
+  // | view | string | Title to display at top centre of view
   Properties::defaults["title"] = "";
+  // | view | integer | When to apply camera auto-zoom to fit model to window, -1=never, 0=first timestep only, 1=every timestep
   Properties::defaults["zoomstep"] = -1;
+  // | view | integer | Margin in pixels to leave around edge of model when to applying camera auto-zoom
   Properties::defaults["margin"] = 20; //Also colourbar
+  // | view | boolean | Draw rulers around object axes
   Properties::defaults["rulers"] = false;
+  // | view | integer | Number of tick marks to display on rulers
   Properties::defaults["rulerticks"] = 5;
+  // | view | real | Width of ruler lines
   Properties::defaults["rulerwidth"] = 1.5;
+  // | view | integer | Border width around model boundary, 0=disabled
   Properties::defaults["border"] = 1.0;
+  // | view | boolean | Draw filled background box around model boundary
   Properties::defaults["fillborder"] = false;
-  Properties::defaults["bordercolour"] = Colour_ToJson(LUC_GREY);
+  // | view | colour | Colour of model boundary border
+  Properties::defaults["bordercolour"] = "grey";
+  // | view | boolean | Draw X/Y/Z legend showing model axes orientation
   Properties::defaults["axis"] = true;
+  // | view | real | Axis legend scaling factor
   Properties::defaults["axislength"] = 0.1;
+  // | view | boolean | Draw a timestep label at top right of view - CURRENTLY NOT IMPLEMENTED
   Properties::defaults["timestep"] = false;
+  // | view | boolean | Enable multisample anti-aliasing, only works with interactive viewing
   Properties::defaults["antialias"] = true; //Should be global
+  // | view | integer | Apply a shift to object depth sort index by this amount multiplied by id, improves visualising objects drawn at same depth
   Properties::defaults["shift"] = 0;
   //View: Camera
+  // | view | real[4] | Camera rotation quaternion [x,y,z,w]
   Properties::defaults["rotate"] = {0., 0., 0., 1.};
+  // | view | real[3] | Camera translation [x,y,z]
   Properties::defaults["translate"] = {0., 0., 0.};
+  // | view | real[3] | Camera focal point [x,y,z]
   Properties::defaults["focus"] = {0., 0., 0.};
+  // | view | real[3] | Global model scaling factors [x,y,z]
   Properties::defaults["scale"] = {1., 1., 1.};
+  // | view | real[3] | Global model minimum bounds [x,y,z]
   Properties::defaults["min"] = {0., 0., 0.};
+  // | view | real[3] | Global model maximum bounds [x,y,z]
   Properties::defaults["max"] = {1., 1., 1.};
+  // | view | real | Near clipping plane position, adjusts where geometry close to the camera is clipped
   Properties::defaults["near"] = 0.1;
+  // | view | real | Far clip plane position, adjusts where far geometry is clipped
   Properties::defaults["far"] = 10.0;
+  // | view | integer | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed
   Properties::defaults["orientation"] = 1;
 
   //Global Properties
+  // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
   Properties::defaults["cachevolumes"] = false;
+  // | global | boolean | Turn on to automatically add and switch to a new timestep after loading a data file
   Properties::defaults["filestep"] = false;
 
 #ifdef DEBUG
@@ -810,20 +952,20 @@ void LavaVu::parseProperty(std::string& data)
   {
     aobject->properties.parse(data);
     if (infostream != NULL)
-      std::cerr << "OBJECT " << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
+      std::cerr << "OBJECT " << std::setw(2) << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
   }
   else if (aview && aview->properties.data.count(key) > 0)
   {
     aview->properties.parse(data);
     if (infostream != NULL)
-      std::cerr << "VIEW: " << aview->properties.data << std::endl;
+      std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
   }
   else
   {
     //Properties not found on view are set globally
     aview->properties.parse(data, true);
     if (infostream != NULL)
-      std::cerr << "GLOBAL: " << Properties::globals << std::endl;
+      std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
   }
 }
 
@@ -831,12 +973,18 @@ void LavaVu::printProperties()
 {
   //Show properties of selected object or view/globals
   if (aobject)
-    std::cerr << "OBJECT " << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
+    std::cerr << "OBJECT " << aobject->name << ", DATA: " << std::setw(2) << aobject->properties.data << std::endl;
   else
   {
-    std::cerr << "VIEW: " << aview->properties.data << std::endl;
-    std::cerr << "GLOBAL: " << Properties::globals << std::endl;
+    std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
+    std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
   }
+}
+
+void LavaVu::printDefaultProperties()
+{
+  //Show default properties
+  std::cerr << std::setw(2) << Properties::defaults << std::endl;
 }
 
 void LavaVu::readRawVolume(FilePath& fn)
