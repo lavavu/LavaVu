@@ -88,7 +88,7 @@ void Shapes::update()
 
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
-      if (geom[i]->filter(v)) continue;
+      if (!drawable(i) || geom[i]->filter(v)) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
       Vec3d sdims = Vec3d(dims[0], dims[1], dims[2]);
       if (geom[i]->data[lucXWidthData]) sdims[0] = geom[i]->valueData(lucXWidthData, v);

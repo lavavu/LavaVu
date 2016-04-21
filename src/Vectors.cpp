@@ -106,7 +106,7 @@ void Vectors::update()
 
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
-      if (geom[i]->filter(v)) continue;
+      if (!drawable(i) || geom[i]->filter(v)) continue;
       //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
       Vec3d pos(geom[i]->vertices[v]);
       Vec3d vec(geom[i]->vectors[v]);

@@ -150,7 +150,7 @@ void Tracers::update()
 
         //TODO: test filtering
         int pp = step * particles + pidx;
-        if (geom[i]->filter(pp)) continue;
+        if (!drawable(i) || geom[i]->filter(pp)) continue;
 
         float* pos = geom[i]->vertices[pp];
         //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);
