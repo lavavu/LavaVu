@@ -36,6 +36,73 @@
 #include "LavaVu.h"
 #include "ColourMap.h"
 
+#define HELP_INTERACTION "\
+\n## User Interface commands\n\n\
+Hold the Left mouse button and drag to Rotate about the X & Y axes  \n\
+Hold the Right mouse button and drag to Pan (left/right/up/down)  \n\
+Hold the Middle mouse button and drag to Rotate about the Z axis  \n\
+Hold [shift] and use the scroll wheel to move the clip plane in and out.  \n\
+\n```\n\
+[F1]         Print help\n\
+[UP]         Previous command in history if available\n\
+[DOWN]       Next command in history if available\n\
+[TAB]        Nearest match from history to partially typed command\n\
+[ALT+UP]     Load previous model in list at current time-step if data available\n\
+[ALT+DOWN]   Load next model in list at current time-step if data available\n\
+[LEFT]       Previous time-step\n\
+[RIGHT]      Next time-step\n\
+[Page Up]    Select the previous viewport if available\n\
+[Page Down]  Select the next viewport if available\n\
+[`]          Full screen ON/OFF\n\
+\n\
+\nHold [ALT] plus:\n\
+[*]          Auto zoom to fit ON/OFF\n\
+[/]          Stereo ON/OFF\n\
+[\\]          Switch coordinate system Right-handed/Left-handed\n\
+[|]          Switch rulers ON/OFF\n\
+[,]          Switch to next particle rendering texture\n\
+[+/=]        More particles (reduce sub-sampling)\n\
+[-]          Less particles (increase sub-sampling)\n\
+\n\
+[a]          Hide/show axis\n\
+[b]          Background colour switch WHITE/BLACK\n\
+[B]          Background colour grey\n\
+[c]          Camera info: output to console current camera parameters\n\
+[f]          Frame border ON/OFF\n\
+[g]          Colour map log scales override DEFAULT/ON/OFF\n\
+[i]          Take screen-shot and save as png/jpeg image file\n\
+[j]          Localise colour scales, minimum and maximum calibrated to each object drawn\n\
+[k]          Lock colour scale calibrations to current values ON/OFF\n\
+[o]          Object legend, print list of object names with id numbers.\n\
+[r]          Reset camera viewpoint\n\
+[q]          Quit program\n\
+[u]          Backface Culling ON/OFF\n\
+[w]          Wireframe ON/OFF\n\
+\n\
+[v]          Increase vector size scaling\n\
+[V]          Reduce vector size scaling\n\
+[t]          Increase tracer size scaling\n\
+[T]          Reduce tracer size scaling\n\
+[p]          Increase particle size scaling\n\
+[P]          Reduce particle size scaling\n\
+[s]          Increase shape size scaling\n\
+[S]          Reduce shape size scaling\n\
+\n\
+[p] [ENTER]  hide/show all particle swarms\n\
+[v] [ENTER]  hide/show all vector arrow fields\n\
+[t] [ENTER]  hide/show all tracer trajectories\n\
+[q] [ENTER]  hide/show all quad surfaces (scalar fields, cross sections etc.)\n\
+[u] [ENTER]  hide/show all triangle surfaces (isosurfaces)\n\
+[s] [ENTER]  hide/show all shapes\n\
+[l] [ENTER]  hide/show all lines\n\
+[ESC][ENTER] quit program\n\
+\n\
+Verbose commands:\n\
+help commands [ENTER] -- list of all verbose commands\n\
+help * [ENTER] where * is a command -- detailed help for a command\n\
+\n```\n\
+"
+
 /////////////////////////////////////////////////////////////////////////////////
 // Event handling
 /////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +311,7 @@ bool LavaVu::parseChar(unsigned char key)
     case 'f':
       return parseCommands("border");
     case 'g':
-      return parseCommands("logscales");
+      return parseCommands("log");
     case 'h':
       return parseCommands("history");
     case 'i':
@@ -550,7 +617,7 @@ bool LavaVu::parseCommands(std::string cmd)
   return redisplay;
 }
 
-bool LavaVu::parseCommand(std::string cmd)
+bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 {
   if (cmd.length() == 0) return false;
   bool redisplay = true;
@@ -596,6 +663,14 @@ bool LavaVu::parseCommand(std::string cmd)
   //First check for settings commands that don't require a model to be loaded yet!
   if (parsed.exists("file"))
   {
+    if (gethelp)
+    {
+      help += "Load database or model file\n"
+              "Usage: file \"filename\"\n\n"
+              "filename (string) : the path to the file, quotes optional but necessary if path contains spaces\n";
+      return false;
+    }
+
     std::string what = parsed["file"];
     //Attempt to load external file
     FilePath file = FilePath(what);
@@ -604,6 +679,15 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("script"))
   {
+    if (gethelp)
+    {
+      help += "Run script file\n"
+              "Load a saved script of viewer commands from a file\n\n"
+              "Usage: script filename\n\n"
+              "filename (string) : path and name of the script file to load\n";
+      return false;
+    }
+
     std::string scriptfile = parsed["script"];
     std::ifstream file(scriptfile.c_str(), std::ios::in);
     if (file.is_open())
@@ -757,6 +841,15 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(fval, "alpha"))
   {
+    if (gethelp)
+    {
+      help += "Set global transparency value\n\n"
+              "Usage: alpha value\n\n"
+              "value (integer > 1) : sets alpha as integer in range [1,255] where 255 is fully opaque\n"
+              "value (number [0,1]) : sets alpha as real number in range [0,1] where 1.0 is fully opaque\n";
+      return false;
+    }
+
     float opacity = Properties::global("opacity");
     if (opacity == 0.0) opacity = 1.0;
     if (fval > 1.0)
@@ -783,6 +876,15 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("resize"))
   {
+    if (gethelp)
+    {
+      help += "Resize view window\n\n"
+              "Usage: resize width height\n\n"
+              "width (integer) : width in pixels\n"
+              "height (integer) : height in pixels\n";
+      return false;
+    }
+
     float w = 0, h = 0;
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
@@ -805,20 +907,76 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("quit"))
   {
+    if (gethelp)
+    {
+      help += "Quit the program\n";
+      return false;
+    }
+
     viewer->quitProgram = true;
     return false;
   }
   else if (parsed.exists("record"))
   {
+    if (gethelp)
+    {
+      help += "Encode video of all frames displayed at specified framerate\n"
+              "(Requires libavcodec)\n\n"
+              "Usage: record (framerate)\n\n"
+              "framerate (integer): frames per second (default 30)\n";
+      return false;
+    }
+
     //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
     encodeVideo("", ival);
     return false;
   }
+  else if (parsed.exists("docs:scripting"))
+  {
+    std::cout << "\n##Scripting command reference\n\n";
+    std::cout << "\n###General commands:\n\n";
+    std::cout << helpCommand("quit") << helpCommand("repeat") << helpCommand("history");
+    std::cout << helpCommand("clearhistory") << helpCommand("pause") << helpCommand("list");
+    std::cout << helpCommand("timestep") << helpCommand("jump") << helpCommand("model") << helpCommand("reload");
+    std::cout << helpCommand("next") << helpCommand("play") << helpCommand("stop") << helpCommand("script");
+    std::cout << "\n###View/camera commands:\n\n";
+    std::cout << helpCommand("rotate") << helpCommand("rotatex") << helpCommand("rotatey");
+    std::cout << helpCommand("rotatez") << helpCommand("rotation") << helpCommand("zoom") << helpCommand("translate");
+    std::cout << helpCommand("translatex") << helpCommand("translatey") << helpCommand("translatez");
+    std::cout << helpCommand("focus") << helpCommand("aperture") << helpCommand("focallength");
+    std::cout << helpCommand("eyeseparation") << helpCommand("nearclip") << helpCommand("farclip") << helpCommand("zoomclip");
+    std::cout << helpCommand("zerocam") << helpCommand("reset") << helpCommand("camera");
+    std::cout << helpCommand("resize") << helpCommand("fullscreen") << helpCommand("fit");
+    std::cout << helpCommand("autozoom") << helpCommand("stereo") << helpCommand("coordsystem");
+    std::cout << helpCommand("sort") << helpCommand("rotation") << helpCommand("translation");
+    std::cout << "\n###Output commands:\n\n";
+    std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
+    std::cout << helpCommand("movie") << helpCommand("export") << helpCommand("json");
+    std::cout << "\n###Object commands:\n\n";
+    std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file") << helpCommand("name");
+    std::cout << "\n###Display commands:\n\n";
+    std::cout << helpCommand("background") << helpCommand("alpha") << helpCommand("toggle");
+    std::cout << helpCommand("axis") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
+    std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
+    std::cout << helpCommand("colourmap") << helpCommand("colour") << helpCommand("pointtype");
+    std::cout << helpCommand("pointsample");
+    std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
+    std::cout << "\n###Miscellanious commands:\n\n";
+    std::cout << helpCommand("shaders") << helpCommand("blend") << helpCommand("props") << helpCommand("defaults");
+    std::cout << helpCommand("test") << helpCommand("voltest") << helpCommand("newstep");
+    std::cout << helpCommand("filter") << helpCommand("filterout") << helpCommand("clearfilters") << helpCommand("sealevel");
+    return false;
+  }
+  else if (parsed.exists("docs:interaction"))
+  {
+    std::cout << HELP_INTERACTION;
+    return false;
+  }
 
   //******************************************************************************
   //Following commands require a model!
-  if (!amodel || !aview || !awin)
+  if (!gethelp && (!amodel || !aview || !awin))
   {
     std::cerr << "Model/View/Window required to execute command: " << cmd << std::endl;
     //Attempt to parse as property=value first
@@ -828,6 +986,17 @@ bool LavaVu::parseCommand(std::string cmd)
 
   if (parsed.exists("rotation"))
   {
+    if (gethelp)
+    {
+      help += "Set model rotation in 3d coords about given axis vector (replaces any previous rotation)\n\n"
+              "Usage: rotation x y z degrees\n\n"
+              "x (number) : axis of rotation x component\n"
+              "y (number) : axis of rotation y component\n"
+              "z (number) : axis of rotation z component\n"
+              "degrees (number) : degrees of rotation\n";
+      return false;
+    }
+
     float x = 0, y = 0, z = 0, w = 0;
     if (parsed.has(x, "rotation", 0) &&
         parsed.has(y, "rotation", 1) &&
@@ -840,6 +1009,16 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("translation"))
   {
+    if (gethelp)
+    {
+      help += "Set model translation in 3d coords (replaces any previous translation)\n\n"
+              "Usage: translation x y z\n\n"
+              "x (number) : x axis shift\n"
+              "y (number) : y axis shift\n"
+              "z (number) : z axis shift\n";
+      return false;
+    }
+
     float x = 0, y = 0, z = 0;
     if (parsed.has(x, "translation", 0) &&
         parsed.has(y, "translation", 1) &&
@@ -850,6 +1029,19 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("rotate"))
   {
+    if (gethelp)
+    {
+      help += "Rotate model\n\n"
+              "Usage: rotate axis degrees\n\n"
+              "axis (x/y/z) : axis of rotation\n"
+              "degrees (number) : degrees of rotation\n"
+              "\nUsage: rotate x y z\n\n"
+              "x (number) : x axis degrees of rotation\n"
+              "y (number) : y axis degrees of rotation\n"
+              "z (number) : z axis degrees of rotation\n";
+      return false;
+    }
+
     float xr = 0, yr = 0, zr = 0;
     std::string axis = parsed["rotate"];
     if (axis == "x")
@@ -869,29 +1061,108 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(fval, "rotatex"))
   {
+    if (gethelp)
+    {
+      help += "Rotate model about x-axis\n\n"
+              "Usage: rotatex degrees\n\n"
+              "degrees (number) : degrees of rotation\n";
+      return false;
+    }
+
     aview->rotate(fval, 0, 0);
     aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "rotatey"))
   {
+    if (gethelp)
+    {
+      help += "Rotate model about y-axis\n\n"
+              "Usage: rotatey degrees\n\n"
+              "degrees (number) : degrees of rotation\n";
+      return false;
+    }
+
     aview->rotate(0, fval, 0);
     aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "rotatez"))
   {
+    if (gethelp)
+    {
+      help += "Rotate model about z-axis\n\n"
+              "Usage: rotatez degrees\n\n"
+              "degrees (number) : degrees of rotation\n";
+      return false;
+    }
+
     aview->rotate(0, 0, fval);
     aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "zoom"))
+  {
+    if (gethelp)
+    {
+      help += "Translate model in Z direction (zoom)\n\n"
+              "Usage: zoom units\n\n"
+              "units (number) : distance to zoom, units are based on model size\n"
+              "                 1 unit is approx the model bounding box size\n"
+              "                 negative to zoom out, positive in\n";
+      return false;
+    }
+
     aview->zoom(fval);
+  }
   else if (parsed.has(fval, "translatex"))
+  {
+    if (gethelp)
+    {
+      help += "Translate model in X direction\n\n"
+              "Usage: translationx shift\n\n"
+              "shift (number) : x axis shift\n";
+      return false;
+    }
+
     aview->translate(fval, 0, 0);
+  }
   else if (parsed.has(fval, "translatey"))
+  {
+    if (gethelp)
+    {
+      help += "Translate model in Y direction\n\n"
+              "Usage: translationy shift\n\n"
+              "shift (number) : y axis shift\n";
+      return false;
+    }
+
     aview->translate(0, fval, 0);
+  }
   else if (parsed.has(fval, "translatez"))
+  {
+    if (gethelp)
+    {
+      help += "Translate model in Z direction\n\n"
+              "Usage: translationz shift\n\n"
+              "shift (number) : z axis shift\n";
+      return false;
+    }
+
     aview->translate(0, 0, fval);
+  }
   else if (parsed.exists("translate"))
   {
+    if (gethelp)
+    {
+      help += "Translate model in 3 dimensions\n\n"
+              "Usage: translate dir shift\n\n"
+              "dir (x/y/z) : direction to translate\n"
+              "shift (number) : amount of translation\n"
+              "\nUsage: translation x y z\n\n"
+              "x (number) : x axis shift\n"
+              "y (number) : y axis shift\n"
+              "z (number) : z axis shift\n";
+      return false;
+    }
+
     float xt = 0, yt = 0, zt = 0;
     std::string axis = parsed["translate"];
     if (axis == "x")
@@ -910,6 +1181,16 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("focus"))
   {
+    if (gethelp)
+    {
+      help += "Set model focal point in 3d coords\n\n"
+              "Usage: focus x y z\n\n"
+              "x (number) : x coord\n"
+              "y (number) : y coord\n"
+              "z (number) : z coord\n";
+      return false;
+    }
+
     float xf = 0, yf = 0, zf = 0;
     if (parsed.has(xf, "focus", 0) &&
         parsed.has(yf, "focus", 1) &&
@@ -919,19 +1200,88 @@ bool LavaVu::parseCommand(std::string cmd)
     }
   }
   else if (parsed.has(fval, "aperture"))
+  {
+    if (gethelp)
+    {
+      help += "Set camera aperture (field-of-view)\n\n"
+              "Usage: aperture degrees\n\n"
+              "degrees (number) : degrees of viewing range\n";
+      return false;
+    }
+
     aview->adjustStereo(fval, 0, 0);
+  }
   else if (parsed.has(fval, "focallength"))
+  {
+    if (gethelp)
+    {
+      help += "Set camera focal length (for stereo viewing)\n\n"
+              "Usage: focallength len\n\n"
+              "len (number) : distance from camera to focal point\n";
+      return false;
+    }
+
     aview->adjustStereo(0, fval, 0);
+  }
   else if (parsed.has(fval, "eyeseparation"))
+  {
+    if (gethelp)
+    {
+      help += "Set camera stereo eye separation\n\n"
+              "Usage: eyeseparation len\n\n"
+              "len (number) : distance between left and right eye camera viewpoints\n";
+      return false;
+    }
+
     aview->adjustStereo(0, 0, fval);
+  }
   else if (parsed.has(fval, "zoomclip"))
+  {
+    if (gethelp)
+    {
+      help += "Adjust near clip plane relative to current value\n\n"
+              "Usage: zoomclip multiplier\n\n"
+              "multiplier (number) : multiply current near clip plane by this value\n";
+      return false;
+    }
+
     aview->zoomClip(fval);
+  }
   else if (parsed.has(fval, "nearclip"))
+  {
+    if (gethelp)
+    {
+      help += "Set near clip plane, before which geometry is not displayed\n\n"
+              "Usage: nearclip dist\n\n"
+              "dist (number) : distance from camera to near clip plane\n";
+      return false;
+    }
+
     aview->near_clip = fval;
+  }
   else if (parsed.has(fval, "farclip"))
+  {
+    if (gethelp)
+    {
+      help += "Set far clip plane, beyond which geometry is not displayed\n\n"
+              "Usage: farrclip dist\n\n"
+              "dist (number) : distance from camera to far clip plane\n";
+      return false;
+    }
+
     aview->far_clip = fval;
+  }
   else if (parsed.exists("timestep"))  //Absolute
   {
+    if (gethelp)
+    {
+      help += "Set timestep to view\n\n"
+              "Usage: timestep up/down/value\n\n"
+              "value (integer) : the timestep to view\n"
+              "up : switch to previous timestep if available\n"
+              "down : switch to next timestep if available\n";
+      return false;
+    }
     if (!parsed.has(ival, "timestep"))
     {
       if (parsed["timestep"] == "up")
@@ -954,6 +1304,14 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(ival, "jump"))      //Relative
   {
+    if (gethelp)
+    {
+      help += "Jump from current timestep forward/backwards\n\n"
+              "Usage: jump value\n\n"
+              "value (integer) : how many timesteps to jump (negative for backwards)\n";
+      return false;
+    }
+
     //Relative jump
     if (amodel->setTimeStep(amodel->now+ival) >= 0)
     {
@@ -965,6 +1323,16 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("model"))      //Model switch
   {
+    if (gethelp)
+    {
+      help += "Set model to view (when multiple models loaded)\n\n"
+              "Usage: model up/down/value\n\n"
+              "value (integer) : the model index to view [1,n]\n"
+              "up : switch to previous model if available\n"
+              "down : switch to next model if available\n";
+      return false;
+    }
+
     if (window < 0) window = 0; //No window selection yet...
     if (!parsed.has(ival, "model"))
     {
@@ -982,6 +1350,19 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
   {
+    if (gethelp)
+    {
+      help += "Hide/show objects/geometry types\n\n"
+              "Usage: hide/show object_id/object_name\n\n"
+              "object_id (integer) : the index of the object to hide/show (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to hide/show (see: \"list objects\")\n"
+              "\nUsage: hide/show geometry_type id\n\n"
+              "geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines\n"
+              "id (integer, optional) : id of geometry to hide/show\n"
+              "eg: 'hide points' will hide all point data\n";
+      return false;
+    }
+
     std::string action = parsed.exists("hide") ? "hide" : "show";
     std::string what = parsed[action];
     Geometry* active = getGeometryType(what);
@@ -1059,14 +1440,34 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(ival, "movie"))
   {
+    if (gethelp)
+    {
+      help += "Encode video of model running from current timestep to specified timestep\n"
+              "(Requires libavcodec)\n\n"
+              "Usage: movie endstep\n\n"
+              "endstep (integer) : last frame timestep\n";
+      return false;
+    }
+
     encodeVideo();
     writeSteps(false, amodel->step(), ival);
     encodeVideo(); //Write final step and stop encoding
   }
   else if (parsed.has(ival, "play"))
   {
+    if (gethelp)
+    {
+      help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
+              "Usage: play endstep\n\n"
+              "endstep (integer) : last frame timestep\n"
+              "If endstep omitted, will loop back to start until 'stop' command entered\n";
+      return false;
+    }
+
     writeSteps(false, amodel->step(), ival);
   }
+//NOTE: commented this for now, which implementation should be used?
+#if 0
   else if (parsed.exists("play"))
   {
     //Play loop
@@ -1079,8 +1480,15 @@ bool LavaVu::parseCommand(std::string cmd)
     OpenGLViewer::commands.push_back(std::string("next"));
     return true;  //Skip record
   }
+#endif
   else if (parsed.exists("next"))
   {
+    if (gethelp)
+    {
+      help += "Go to next timestep in sequence\n";
+      return false;
+    }
+
     int old = amodel->now;
     if (amodel->timesteps.size() < 2) return false;
     amodel->setTimeStep(amodel->now+1);
@@ -1094,14 +1502,38 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("stop"))
   {
+    if (gethelp)
+    {
+      help += "Stop the looping 'play' command\n";
+      return false;
+    }
+
     loop = false;
   }
   else if (parsed.has(ival, "images"))
   {
+    if (gethelp)
+    {
+      help += "Write images in sequence from current timestep to specified timestep\n\n"
+              "Usage: images endstep\n\n"
+              "endstep (integer) : last frame timestep\n";
+      return false;
+    }
+
     writeImages(amodel->step(), ival);
   }
   else if (parsed.exists("animate"))
   {
+    if (gethelp)
+    {
+      help += "Update display between each command\n\n"
+              "Usage: animate rate\n\n"
+              "rate (integer) : animation timer to fire every (rate) msec, default 50\n"
+              "When on if multiple commands are issued the frame is re-rendered at set framerate\n"
+              "When off all commands will be processed before the display is updated\n";
+      return false;
+    }
+
     if (parsed.has(ival, "animate"))
     {
       animate = ival;
@@ -1120,6 +1552,16 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("repeat"))
   {
+    if (gethelp)
+    {
+      help += "Repeat commands from history\n\n"
+              "Usage: repeat count\n\n"
+              "count (integer) : repeat the last entered command count times\n"
+              "\nUsage: repeat history count (animate)\n\n"
+              "count (integer) : repeat every command in history buffer count times\n";
+      return false;
+    }
+
     bool state = recording;
     //Repeat N commands from history
     if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
@@ -1162,6 +1604,14 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("axis"))
   {
+    if (gethelp)
+    {
+      help += "Display/hide the axis legend\n\n"
+              "Usage: axis (on/off)\n\n"
+              "on/off (optional) : show/hide the axis, if omitted switches state\n";
+      return false;
+    }
+
     std::string axis = parsed["axis"];
     if (parsed["axis"] == "on")
       aview->properties.data["axis"] = true;
@@ -1173,6 +1623,14 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("toggle"))
   {
+    if (gethelp)
+    {
+      help += "Toggle a boolean property\n\n"
+              "Usage: toogle (property-name)\n\n"
+              "property-name : name of global property to switch\n";
+      return false;
+    }
+
     std::string what = parsed["toggle"];
     if (Properties::global(what).is_boolean())
     {
@@ -1184,6 +1642,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("redraw"))
   {
+    if (gethelp)
+    {
+      help += "Redraw all object data, required after changing some parameters but may be slow\n";
+      return false;
+    }
+
     //for (int type=lucMinType; type<lucMaxType; type++)
     //   Model::geometry[type]->redraw = true;
     amodel->redraw();
@@ -1191,33 +1655,75 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("fullscreen"))
   {
+    if (gethelp)
+    {
+      help += "Switch viewer to full-screen mode and back to windowed mode\n";
+      return false;
+    }
+
     viewer->fullScreen();
     printMessage("Full-screen is %s", viewer->fullscreen ? "ON":"OFF");
   }
   else if (parsed.exists("scaling"))
   {
+    if (gethelp)
+    {
+      help += "Disable/enable scaling, default is on, disable to view model un-scaled\n";
+      return false;
+    }
+
     printMessage("Scaling is %s", aview->scaleSwitch() ? "ON":"OFF");
   }
   else if (parsed.exists("fit"))
   {
+    if (gethelp)
+    {
+      help += "Adjust camera view to fit the model in window\n";
+      return false;
+    }
+
     aview->zoomToFit();
   }
   else if (parsed.exists("autozoom"))
   {
+    if (gethelp)
+    {
+      help += "Automatically adjust camera view to always fit the model in window (enable/disable)\n";
+      return false;
+    }
+
     aview->autozoom = !aview->autozoom;
     printMessage("AutoZoom is %s", aview->autozoom ? "ON":"OFF");
   }
   else if (parsed.exists("stereo"))
   {
+    if (gethelp)
+    {
+      help += "Enable/disable stereo projection\n"
+              "If no stereo hardware found will use red/cyan anaglyph mode\n";
+      return false;
+    }
+
     aview->stereo = !aview->stereo;
     printMessage("Stereo is %s", aview->stereo ? "ON":"OFF");
   }
   else if (parsed.exists("coordsystem"))
   {
+    if (gethelp)
+    {
+      help += "Switch between Right-handed and Lef-handed coordinate system\n";
+      return false;
+    }
+
     printMessage("%s coordinate system", (aview->switchCoordSystem() == RIGHT_HANDED ? "Right-handed":"Left-handed"));
   }
   else if (parsed.exists("title"))
   {
+    if (gethelp)
+    {
+      help += "Set title heading to following text, use double quotes for titles with spaces\n";
+      return false;
+    }
     //Hide or set title
     if (cmd.length() > 6)
       aview->properties.data["title"] = parsed["title"];
@@ -1226,12 +1732,26 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("rulers"))
   {
+    if (gethelp)
+    {
+      help += "Enable/disable axis rulers (unfinished)\n";
+      return false;
+    }
+
     //Show/hide rulers
     aview->properties.data["rulers"] = !aview->properties["rulers"];
     printMessage("Rulers %s", aview->properties["rulers"] ? "ON" : "OFF");
   }
   else if (parsed.exists("log"))
   {
+    if (gethelp)
+    {
+      help += "Over-ride colourmap settings to use log scales\n"
+              "Cycles between ON/OFF/DEFAULT\n"
+              "(default uses original settings for each colourmap)\n";
+      return false;
+    }
+
     ColourMap::logscales = (ColourMap::logscales + 1) % 3;
     bool state = ColourMap::lock;
     ColourMap::lock = false;
@@ -1243,40 +1763,15 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("help"))
   {
+    if (gethelp)
+    {
+      help += "Display help about a command\n";
+      return false;
+    }
+
     viewer->display();  //Ensures any previous help text wiped
     std::string cmd = parsed["help"];
-    if (cmd == "manual")
-    {
-      std::cout << HELP_MESSAGE;
-      std::cout << "\nMiscellanious commands:\n\n";
-      std::cout << helpCommand("quit") << helpCommand("repeat") << helpCommand("history");
-      std::cout << helpCommand("clearhistory") << helpCommand("pause") << helpCommand("list");
-      std::cout << helpCommand("timestep") << helpCommand("jump") << helpCommand("model") << helpCommand("reload");
-      std::cout << helpCommand("next") << helpCommand("play") << helpCommand("stop") << helpCommand("script");
-      std::cout << "\nView/camera commands:\n\n";
-      std::cout << helpCommand("rotate") << helpCommand("rotatex") << helpCommand("rotatey");
-      std::cout << helpCommand("rotatez") << helpCommand("rotation") << helpCommand("zoom") << helpCommand("translate");
-      std::cout << helpCommand("translatex") << helpCommand("translatey") << helpCommand("translatez");
-      std::cout << helpCommand("focus") << helpCommand("aperture") << helpCommand("focallength");
-      std::cout << helpCommand("eyeseparation") << helpCommand("nearclip") << helpCommand("farclip");
-      std::cout << helpCommand("zerocam") << helpCommand("reset") << helpCommand("camera");
-      std::cout << helpCommand("resize") << helpCommand("fullscreen") << helpCommand("fit");
-      std::cout << helpCommand("autozoom") << helpCommand("stereo") << helpCommand("coordsystem");
-      std::cout << helpCommand("sort") << helpCommand("rotation") << helpCommand("translation");
-      std::cout << "\nOutput commands:\n\n";
-      std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
-      std::cout << helpCommand("movie") << helpCommand("export");
-      std::cout << "\nObject commands:\n\n";
-      std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file");
-      std::cout << "\nDisplay commands:\n\n";
-      std::cout << helpCommand("background") << helpCommand("alpha");
-      std::cout << helpCommand("axis") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
-      std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
-      std::cout << helpCommand("lighting") << helpCommand("colourmap") << helpCommand("pointtype");
-      std::cout << helpCommand("pointsample");
-      std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
-    }
-    else if (cmd.length() > 0)
+    if (cmd.length() > 0)
     {
       displayText(helpCommand(cmd));
       std::cout << helpCommand(cmd);
@@ -1284,7 +1779,7 @@ bool LavaVu::parseCommand(std::string cmd)
     else
     {
       displayText(helpCommand("help"));
-      std::cout << HELP_MESSAGE;
+      std::cout << HELP_INTERACTION;
       std::cout << helpCommand("help");
     }
     viewer->swap();  //Immediate display
@@ -1292,11 +1787,23 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("antialias"))
   {
+    if (gethelp)
+    {
+      help += "Enable/disable multi-sample anti-aliasing (if supported by OpenGL drivers)\n";
+      return false;
+    }
+
     aview->properties.data["antialias"] = !aview->properties["antialias"];
     printMessage("Anti-aliasing %s", aview->properties["antialias"] ? "ON":"OFF");
   }
   else if (parsed.exists("localise"))
   {
+    if (gethelp)
+    {
+      help += "Experimental: adjust colourmaps on each object to fit actual value range\n";
+      return false;
+    }
+
     //Find colour value min/max local to each geom element
     for (int type=lucMinType; type<lucMaxType; type++)
       Model::geometry[type]->localiseColourValues();
@@ -1305,11 +1812,28 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("json"))
   {
+    if (gethelp)
+    {
+      help += "Export all settings as json state file that can be reloaded with jsonscript or on command line\n";
+      return false;
+    }
+
     //Export json settings only (no object data)
     jsonWriteFile(0, false, false);
   }
   else if (parsed.exists("export"))
   {
+    if (gethelp)
+    {
+      help += "Export object data\n\n"
+              "Usage: export [format] [object_id/object_name]\n\n"
+              "format (string) : json/csv/db (left blank: compressed db)\n"
+              "object_id (integer) : the index of the object to export (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to export (see: \"list objects\")\n"
+              "If object ommitted all will be exported\n";
+      return false;
+    }
+
     std::string what = parsed["export"];
     lucExportType type = what == "json" ? lucExportJSON : (what == "csv" ? lucExportCSV : (what == "db" ? lucExportGLDB : lucExportGLDBZ));
     //Export drawing object by name/ID match
@@ -1332,12 +1856,32 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("lockscale"))
   {
+    if (gethelp)
+    {
+      help += "Enable/disable colourmap lock\n"
+              "When locked, dynamic range colourmaps will keep current values\n"
+              "when switching between timesteps instead of being re-calibrated\n";
+      return false;
+    }
+
     ColourMap::lock = !ColourMap::lock;
     printMessage("ColourMap scale locking %s", ColourMap::lock ? "ON":"OFF");
     amodel->redraw(true); //Colour change so force reload
   }
   else if (parsed.exists("list"))
   {
+    if (gethelp)
+    {
+      help += "List available data\n\n"
+              "Usage: list objects/colourmaps/elements\n\n"
+              "objects : enable object list (stays on screen until disabled)\n"
+              "          (dimmed objects are hidden or not in selected viewport)\n"
+              "colourmaps : show colourmap list (onlt temporarily shown)\n"
+              "elements : show geometry elements by id in terminal\n"
+              "data : show available data sets in selected object\n";
+      return false;
+    }
+
     if (parsed["list"] == "objects")
     {
       objectlist = !objectlist;
@@ -1387,25 +1931,65 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("reset"))
   {
+    if (gethelp)
+    {
+      help += "Reset the camera to the default model view\n";
+      return false;
+    }
+
     aview->reset();     //Reset camera
     aview->init(true);  //Reset camera to default view of model
     printMessage("View reset");
   }
   else if (parsed.exists("clear"))
   {
+    if (gethelp)
+    {
+      help += "Clear all data of current model/timestep\n\n"
+              "Usage: clear [objects]\n\n"
+              "objects : optionally clear all object entries\n"
+              "          (if omitted, only the objects geometry data is cleared)\n";
+      return false;
+    }
+
     clearData(parsed["clear"] == "objects");
   }
   else if (parsed.exists("reload"))
   {
+    if (gethelp)
+    {
+      help += "Reload all data of current model/timestep from database\n";
+      return false;
+    }
+
     //Restore original window data
     if (window < 0 || !loadWindow(window)) return false;
   }
   else if (parsed.exists("zerocam"))
   {
+    if (gethelp)
+    {
+      help += "Set the camera postiion to the origin (for scripting, not generally advisable)\n";
+      return false;
+    }
+
     aview->reset();     //Zero camera
   }
   else if (parsed.exists("colourmap"))
   {
+    if (gethelp)
+    {
+      help += "Set colourmap on object\n\n"
+              "Usage: colourmap object_id/object_name [colourmap_id/colourmap_name/\"add\" | \"data\"]\n\n"
+              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+              "colourmap_id (integer) : the index of the colourmap to apply (see: \"list colourmaps\")\n"
+              "colourmap_name (string) : the name of the colourmap to apply (see: \"list colourmaps\")\n"
+              "add : add a new colourmap to selected object\n"
+              "data (string) : data to load into selected object's colourmap\n";
+      return false;
+    }
+
     //Set colourmap on object by name/ID match
     DrawingObject* obj = aobject;
     int next = 0;
@@ -1458,6 +2042,16 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("colour"))
   {
+    if (gethelp)
+    {
+      help += "Add a colour value to an object, adds to the colour value array\n\n"
+              "Usage: colour [object_id/object_name] colourval\n\n"
+              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+              "colourval (string) : json [r,g,b(,a)] or hex RRGGBB(AA)\n";
+      return false;
+    }
+
     //Add colours to object
     //(this now only adds rgba data values, to set global colour use property: colour=val)
     if (aobject)
@@ -1490,6 +2084,18 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("pointtype"))
   {
+    if (gethelp)
+    {
+      help += "Set point-rendering type on object\n\n"
+              "Usage: pointtype all/object_id/object_name type/up/down\n\n"
+              "all : use 'all' to set the global default point type\n"
+              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+              "type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)\n"
+              "up/down : use 'up' or 'down' to switch to the previous/next type in list\n";
+      return false;
+    }
+
     std::string what = parsed["pointtype"];
     if (what == "all")
     {
@@ -1531,6 +2137,15 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("pointsample"))
   {
+    if (gethelp)
+    {
+      help += "Set point sub-sampling value\n\n"
+              "Usage: pointsample value/up/down\n\n"
+              "value (integer) : 1=no sub-sampling=50%% sampled etc..\n"
+              "up/down : use 'up' or 'down' to sample more (up) or less (down) points\n";
+      return false;
+    }
+
     if (parsed.has(ival, "pointsample"))
       Points::subSample = ival;
     else if (parsed["pointsample"] == "up")
@@ -1543,6 +2158,14 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("image"))
   {
+    if (gethelp)
+    {
+      help += "Save an image of the current view\n"
+              "Usage: image [filename]\n\n"
+              "filename (string) : optional base filename without extension\n";
+      return false;
+    }
+
     std::string filename = parsed["image"];
     if (filename.length() > 0)
       viewer->image(filename);
@@ -1556,18 +2179,44 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.has(ival, "outwidth"))
   {
+    if (gethelp)
+    {
+      help += "Set output image width (height calculated to match window aspect)\n\n"
+              "Usage: outwidth value\n\n"
+              "value (integer) : width in pixels for output images\n";
+      return false;
+    }
+
     if (ival < 10) return false;
     viewer->outwidth = ival;
     printMessage("Output image width set to %d", viewer->outwidth);
   }
   else if (parsed.has(ival, "outheight"))
   {
+    if (gethelp)
+    {
+      help += "Set output image height\n\n"
+              "Usage: outheight value\n\n"
+              "value (integer) : height in pixels for output images\n";
+      return false;
+    }
+
     if (ival < 10) return false;
     viewer->outheight = ival;
     printMessage("Output image height set to %d", viewer->outheight);
   }
   else if (parsed.exists("background"))
   {
+    if (gethelp)
+    {
+      help += "Set window background colour\n\n"
+              "Usage: background value/white/black/grey/invert\n\n"
+              "value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white\n"
+              "white/black/grey : sets background to specified value\n"
+              "invert (or omitted value) : inverts current background colour\n";
+      return false;
+    }
+
     //TODO: fix this, should work as colour
     if (parsed["background"] == "white")
       awin->background.value = 0xffffffff;
@@ -1595,6 +2244,17 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("border"))
   {
+    if (gethelp)
+    {
+      help += "Set model border frame\n\n"
+              "Usage: border on/off/filled\n\n"
+              "on : line border around model bounding-box\n"
+              "off : no border\n"
+              "filled : filled background bounding box\n"
+              "(no value) : switch between possible values\n";
+      return false;
+    }
+
     //Frame off/on/filled
     aview->properties.data["fillborder"] = false;
     if (parsed["border"] == "on")
@@ -1617,12 +2277,34 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("camera"))
   {
+    if (gethelp)
+    {
+      help += "Output camera state for use in model scripts\n";
+      return false;
+    }
+
     //Output camera view xml and translation/rotation commands
     aview->print();
     return false;
   }
   else if (parsed.exists("scale"))
   {
+    if (gethelp)
+    {
+      help += "Scale applicable objects up/down in size (points/vectors/shapes)\n\n"
+              "Usage: scale axis value\n\n"
+              "axis : x/y/z\n"
+              "value (number) : scaling value applied to all geometry on specified axis\n\n"
+              "Usage: scale geometry_type value/up/down\n\n"
+              "geometry_type : points/vectors/tracers/shapes\n"
+              "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n"
+              "\nUsage: scale object_id/object_name value/up/down\n\n"
+              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+              "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n";
+      return false;
+    }
+
     std::string what = parsed["scale"];
     Geometry* active = getGeometryType(what);
     if (active)
@@ -1704,6 +2386,14 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("history"))
   {
+    if (gethelp)
+    {
+      help += "Write command history to output (eg: terminal)"
+              "Usage: history [filename]\n\n"
+              "filename (string) : optional file to write data to\n";
+      return false;
+    }
+
     std::string scriptfile = parsed["history"];
     if (scriptfile.length() > 0)
     {
@@ -1726,15 +2416,39 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("clearhistory"))
   {
+    if (gethelp)
+    {
+      help += "Clear command history\n";
+      return false;
+    }
+
     history.clear();
     return false; //Skip record
   }
   else if (parsed.has(ival, "pause"))
   {
+    if (gethelp)
+    {
+      help += "Pause execution (for scripting)\n\n"
+              "Usage: pause msecs\n\n"
+              "msecs (integer) : how long to pause for in milliseconds\n";
+      return false;
+    }
+
     PAUSE(ival);
   }
   else if (parsed.exists("delete"))
   {
+    if (gethelp)
+    {
+      help += "Delete objects from database\n"
+              "WARNING: This is irreversable! Backup your database before using!\n\n"
+              "Usage: delete object_id/object_name\n\n"
+              "object_id (integer) : the index of the object to delete (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to delete (see: \"list objects\")\n";
+      return false;
+    }
+
     //Delete drawing object by name/ID match
     std::string what = parsed["delete"];
     int id = parsed.Int("delete", 0);
@@ -1757,11 +2471,27 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("merge"))
   {
+    if (gethelp)
+    {
+      help += "Merge data from attached databases into main (warning: backup first!)\n";
+      return false;
+    }
+
     amodel->mergeDatabases();
     parseCommands("quit");
   }
   else if (parsed.exists("load"))
   {
+    if (gethelp)
+    {
+      help += "Load objects from database\n"
+              "Used when running with deferred loading (-N command line switch)\n\n"
+              "Usage: load object_id/object_name\n\n"
+              "object_id (integer) : the index of the object to load (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to load (see: \"list objects\")\n";
+      return false;
+    }
+
     //Load drawing object by name/ID match
     std::string what = parsed["load"];
     for (int c=0; c<10; c++) //Allow multiple id/name specs on line
@@ -1781,6 +2511,16 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("sort"))
   {
+    if (gethelp)
+    {
+      help += "Sort geometry on demand (with idle timer)\n\n"
+              "Usage: sort on/off/timer\n\n"
+              "on : (default) sort after model rotation\n"
+              "off : no sorting\n"
+              "timer : sort after 1.5 second timeout\n";
+      return false;
+    }
+
     if (parsed["sort"] == "off")
     {
       //Disables all sorting
@@ -1809,6 +2549,9 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("idle"))
   {
+    //Internal usage, no help
+    if (gethelp) return false;
+
     if (!sort_on_rotate && aview->rotated)
       aview->sort = true;
     //Command playback
@@ -1832,6 +2575,9 @@ bool LavaVu::parseCommand(std::string cmd)
   //Special commands for passing keyboard/mouse actions directly (web server mode)
   else if (parsed.exists("mouse"))
   {
+    //Internal usage, no help
+    if (gethelp) return false;
+
     std::string data = parsed["mouse"];
 
     std::replace(data.begin(), data.end(), ',', '\n');
@@ -1877,6 +2623,9 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("key"))
   {
+    //Internal usage, no help
+    if (gethelp) return false;
+
     std::string data = parsed["key"];
 
     std::replace(data.begin(), data.end(), ',', '\n');
@@ -1897,6 +2646,18 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("select"))
   {
+    if (gethelp)
+    {
+      help += "Select object as the active object\n"
+              "Used for setting properties of objects\n"
+              "following commands that take an object id will no longer require one)\n\n";
+              "Usage: select object_id/object_name\n\n"
+              "object_id (integer) : the index of the object to select (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to select (see: \"list objects\")\n"
+              "Leave object parameter empty to clear selection.\n";
+      return false;
+    }
+
     std::string what = parsed["select"];
     int id = parsed.Int("select", 0);
     aobject = findObject(what, id);
@@ -1907,12 +2668,26 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("shaders"))
   {
+    if (gethelp)
+    {
+      help += "Reload shader program files from disk\n";
+      return false;
+    }
+
     printMessage("Reloading shaders");
     reloadShaders();
     return false;
   }
   else if (parsed.exists("blend"))
   {
+    if (gethelp)
+    {
+      help += "Select blending type\n\n"
+              "Usage: blend mode\n\n"
+              "mode (string) : normal: multiplicative, add: additive, png: premultiplied for png output\n";
+      return false;
+    }
+
     std::string what = parsed["blend"];
     if (what == "png")
       viewer->blend_mode = BLEND_PNG;
@@ -1923,20 +2698,58 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("props"))
   {
+    if (gethelp)
+    {
+      help += "Print properties on active object or global and view if none selected\n";
+      return false;
+    }
+
     printProperties();
+  }
+  else if (parsed.exists("defaults"))
+  {
+    if (gethelp)
+    {
+      help += "Print all available properties and their default values\n";
+      return false;
+    }
+
+    printDefaultProperties();
   }
   else if (parsed.exists("test"))
   {
+    if (gethelp)
+    {
+      help += "Create and display some test data, points, lines, quads\n";
+      return false;
+    }
+
     createDemoModel();
     resetViews();
   }
   else if (parsed.exists("voltest"))
   {
+    if (gethelp)
+    {
+      help += "Create and display a test volume dataset\n";
+      return false;
+    }
+
     createDemoVolume();
     resetViews();
   }
   else if (parsed.exists("name"))
   {
+    if (gethelp)
+    {
+      help += "Set object name\n\n"
+              "Usage: name object_id/object_name newname\n\n"
+              "object_id (integer) : the index of the object to delete (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to delete (see: \"list objects\")\n"
+              "newname (string) : new name to apply\n";
+      return false;
+    }
+
     DrawingObject* obj = aobject;
     int next = 0;
     if (!obj)
@@ -1958,6 +2771,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("newstep"))
   {
+    if (gethelp)
+    {
+      help += "Add a new timestep after the current one\n";
+      return false;
+    }
+
     amodel->addTimeStep(amodel->step()+1);
     amodel->setTimeStep(amodel->now+1);
     //Don't record
@@ -1965,10 +2784,22 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("filter"))
   {
+    if (gethelp)
+    {
+      help += "Set a data filter on selected object\n\n"
+              "Usage: filter index min max [range]\n\n"
+              "index (integer) : the index of the data set to filter on (see: \"list objects\")\n"
+              "min (number) : the minimum value of the range to filter in or out\n"
+              "max (number) : the maximum value of the range to filter in or out\n"
+              "range (literal) : add range keyword for min/max [0,1] on available data range\n"
+              "                  eg: 0.1-0.9 will filter the lowest and highest 10% of values\n";
+      return false;
+    }
+
     //Require a selected object
     if (aobject)
     {
-      //TODO: document, implement a json representation for web ui
+      //TODO: implement a json representation for web ui
       Filter filter;
       filter.dataIdx = parsed.Int("filter", 0);
       parsed.has(filter.minimum, "filter", 1);
@@ -1983,6 +2814,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("filterout"))
   {
+    if (gethelp)
+    {
+      help += "Toggle filters on selected object to filter set data range out or in\n";
+      return false;
+    }
+
     //Require a selected object
     if (aobject)
     {
@@ -1993,6 +2830,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("clearfilters"))
   {
+    if (gethelp)
+    {
+      help += "Clear filters on selected object\n";
+      return false;
+    }
+
     //Require a selected object
     if (aobject)
     {
@@ -2003,6 +2846,12 @@ bool LavaVu::parseCommand(std::string cmd)
   }
   else if (parsed.exists("sealevel"))
   {
+    if (gethelp)
+    {
+      help += "Draw a sea level plane at Y=0\n";
+      return false;
+    }
+
     //Create a sea level plane (generic command to do a cross section could be a good idea)
     DrawingObject* sea = addObject(new DrawingObject("Sea level", "colour=[0,204,255]\nopacity=0.5\nstatic=1\ncullface=0\n"));
     //Sea grid points
@@ -2061,496 +2910,34 @@ bool LavaVu::parsePropertySet(std::string cmd)
 
 std::string LavaVu::helpCommand(std::string cmd)
 {
+  help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
   //Verbose command help
-  std::string help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
   if (cmd == "help")
   {
     help += "Command help:\n\nUse:\nhelp * [ENTER]\nwhere * is a command, for detailed help\n"
-            "\nMiscellanious commands:\n\n"
+            "\nGeneral commands:\n\n"
             "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, clear, file, script\n"
             "\nView/camera commands:\n\n"
             "rotate, rotatex, rotatey, rotatez, rotation, translate, translatex, translatey, translatez\n"
-            "focus, aperture, focallength, eyeseparation, nearclip, farclip, zerocam, reset, camera\n"
+            "focus, aperture, focallength, eyeseparation, nearclip, farclip, zoomclip, zerocam, reset, camera\n"
             "resize, fullscreen, fit, autozoom, stereo, coordsystem, sort, rotation, translation\n"
             "\nOutput commands:\n\n"
-            "image, images, outwidth, outheight, movie, play, export\n"
+            "image, images, outwidth, outheight, movie, play, export, json\n"
             "\nObject commands:\n\n"
-            "hide, show, delete, load, select\n"
+            "hide, show, delete, load, select, name\n"
             "\nDisplay commands:\n\n"
-            "background, alpha, axis, scaling, rulers, log\n"
-            "antialias, localise, lockscale, lighting, colourmap, pointtype\n"
-            "pointsample, border, title, scale\n";
-  }
-  else if (cmd == "rotation")
-  {
-    help += "Set model rotation in 3d coords about given axis vector (replaces any previous rotation)\n\n"
-            "Usage: rotation x y z degrees\n\n"
-            "x (number) : axis of rotation x component\n"
-            "y (number) : axis of rotation y component\n"
-            "z (number) : axis of rotation z component\n"
-            "degrees (number) : degrees of rotation\n";
-  }
-  else if (cmd == "translation")
-  {
-    help += "Set model translation in 3d coords (replaces any previous translation)\n\n"
-            "Usage: translation x y z\n\n"
-            "x (number) : x axis shift\n"
-            "y (number) : y axis shift\n"
-            "z (number) : z axis shift\n";
-  }
-  else if (cmd == "rotate")
-  {
-    help += "Rotate model\n\n"
-            "Usage: rotate axis degrees\n\n"
-            "axis (x/y/z) : axis of rotation\n"
-            "degrees (number) : degrees of rotation\n"
-            "\nUsage: rotate x y z\n\n"
-            "x (number) : x axis degrees of rotation\n"
-            "y (number) : y axis degrees of rotation\n"
-            "z (number) : z axis degrees of rotation\n";
-  }
-  else if (cmd == "rotatex")
-  {
-    help += "Rotate model about x-axis\n\n"
-            "Usage: rotatex degrees\n\n"
-            "degrees (number) : degrees of rotation\n";
-  }
-  else if (cmd == "rotatey")
-  {
-    help += "Rotate model about y-axis\n\n"
-            "Usage: rotatey degrees\n\n"
-            "degrees (number) : degrees of rotation\n";
-  }
-  else if (cmd == "rotatez")
-  {
-    help += "Rotate model about z-axis\n\n"
-            "Usage: rotatez degrees\n\n"
-            "degrees (number) : degrees of rotation\n";
-  }
-  else if (cmd == "zoom")
-  {
-    help += "Translate model in Z direction (zoom)\n\n"
-            "Usage: zoom units\n\n"
-            "units (number) : distance to zoom, units are based on model size\n"
-            "                 1 unit is approx the model bounding box size\n"
-            "                 negative to zoom out, positive in\n";
-  }
-  else if (cmd == "translatex")
-  {
-    help += "Translate model in X direction\n\n"
-            "Usage: translationx shift\n\n"
-            "shift (number) : x axis shift\n";
-  }
-  else if (cmd == "translatey")
-  {
-    help += "Translate model in Y direction\n\n"
-            "Usage: translationy shift\n\n"
-            "shift (number) : y axis shift\n";
-  }
-  else if (cmd == "translatez")
-  {
-    help += "Translate model in Z direction\n\n"
-            "Usage: translationz shift\n\n"
-            "shift (number) : z axis shift\n";
-  }
-  else if (cmd == "translate")
-  {
-    help += "Translate model in 3 dimensions\n\n"
-            "Usage: translate dir shift\n\n"
-            "dir (x/y/z) : direction to translate\n"
-            "shift (number) : amount of translation\n"
-            "\nUsage: translation x y z\n\n"
-            "x (number) : x axis shift\n"
-            "y (number) : y axis shift\n"
-            "z (number) : z axis shift\n";
-  }
-  else if (cmd == "focus")
-  {
-    help += "Set model focal point in 3d coords\n\n"
-            "Usage: focus x y z\n\n"
-            "x (number) : x coord\n"
-            "y (number) : y coord\n"
-            "z (number) : z coord\n";
-  }
-  else if (cmd == "aperture")
-  {
-    help += "Set camera aperture (field-of-view)\n\n"
-            "Usage: aperture degrees\n\n"
-            "degrees (number) : degrees of viewing range\n";
-  }
-  else if (cmd == "focallength")
-  {
-    help += "Set camera focal length (for stereo viewing)\n\n"
-            "Usage: focallength len\n\n"
-            "len (number) : distance from camera to focal point\n";
-  }
-  else if (cmd == "eyeseparation")
-  {
-    help += "Set camera stereo eye separation\n\n"
-            "Usage: eyeseparation len\n\n"
-            "len (number) : distance between left and right eye camera viewpoints\n";
-  }
-  else if (cmd == "nearclip")
-  {
-    help += "Set near clip plane, before which geometry is not displayed\n\n"
-            "Usage: nearclip dist\n\n"
-            "dist (number) : distance from camera to near clip plane\n";
-  }
-  else if (cmd == "farclip")
-  {
-    help += "Set far clip plane, beyond which geometry is not displayed\n\n"
-            "Usage: farrclip dist\n\n"
-            "dist (number) : distance from camera to far clip plane\n";
-  }
-  else if (cmd == "timestep")  //Absolute
-  {
-    help += "Set timestep to view\n\n"
-            "Usage: timestep up/down/value\n\n"
-            "value (integer) : the timestep to view\n"
-            "up : switch to previous timestep if available\n"
-            "down : switch to next timestep if available\n";
-  }
-  else if (cmd == "jump")      //Relative
-  {
-    help += "Jump from current timestep forward/backwards\n\n"
-            "Usage: jump value\n\n"
-            "value (integer) : how many timesteps to jump (negative for backwards)\n";
-  }
-  else if (cmd == "model")      //Model switch
-  {
-    help += "Set model to view (when multiple models loaded)\n\n"
-            "Usage: model up/down/value\n\n"
-            "value (integer) : the model index to view [1,n]\n"
-            "up : switch to previous model if available\n"
-            "down : switch to next model if available\n";
-  }
-  else if (cmd == "hide" || cmd == "show")
-  {
-    help += "Hide/show objects/geometry types\n\n"
-            "Usage: hide/show object_id/object_name\n\n"
-            "object_id (integer) : the index of the object to hide/show (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to hide/show (see: \"list objects\")\n"
-            "\nUsage: hide/show geometry_type id\n\n"
-            "geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines\n"
-            "id (integer, optional) : id of geometry to hide/show\n"
-            "eg: 'hide points' will hide all point data\n";
-  }
-  else if (cmd == "export")
-  {
-    help += "Export object data\n\n"
-            "Usage: export [format] [object_id/object_name]\n\n"
-            "format (string) : json/csv/db (left blank: compressed db)\n"
-            "object_id (integer) : the index of the object to export (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to export (see: \"list objects\")\n"
-            "If object ommitted all will be exported\n";
-  }
-  else if (cmd == "alpha")
-  {
-    help += "Set global transparency value\n\n"
-            "Usage: alpha value\n\n"
-            "value (integer > 1) : sets alpha as integer in range [1,255] where 255 is fully opaque\n"
-            "value (number [0,1]) : sets alpha as real number in range [0,1] where 1.0 is fully opaque\n";
-  }
-  else if (cmd == "movie")
-  {
-    help += "Encode video of model running from current timestep to specified timestep\n"
-            "(Requires libavcodec)\n\n"
-            "Usage: movie endstep\n\n"
-            "endstep (integer) : last frame timestep\n";
-  }
-  else if (cmd == "record")
-  {
-    help += "Encode video of all frames displayed at specified framerate\n"
-            "(Requires libavcodec)\n\n"
-            "Usage: record (framerate)\n\n"
-            "framerate (integer): frames per second (default 30)\n";
-  }
-  else if (cmd == "play")
-  {
-    help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
-            "Usage: play endstep\n\n"
-            "endstep (integer) : last frame timestep\n"
-            "If endstep omitted, will loop back to start until 'stop' command entered\n";
-  }
-  else if (cmd == "next")
-  {
-    help += "Go to next timestep in sequence\n";
-  }
-  else if (cmd == "stop")
-  {
-    help += "Stop the looping 'play' command\n";
-  }
-  else if (cmd == "images")
-  {
-    help += "Write images in sequence from current timestep to specified timestep\n\n"
-            "Usage: images endstep\n\n"
-            "endstep (integer) : last frame timestep\n";
-  }
-  else if (cmd == "repeat")
-  {
-    help += "Repeat commands from history\n\n"
-            "Usage: repeat count\n\n"
-            "count (integer) : repeat the last entered command count times\n"
-            "\nUsage: repeat history count (animate)\n\n"
-            "count (integer) : repeat every command in history buffer count times\n";
-  }
-  else if (cmd == "animate")
-  {
-    help += "Update display between each command\n\n"
-            "Usage: animate rate\n\n"
-            "rate (integer) : animation timer to fire every (rate) msec, default 50\n"
-            "When on if multiple commands are issued the frame is re-rendered at set framerate\n"
-            "When off all commands will be processed before the display is updated\n";
-  }
-  else if (cmd == "quit")
-  {
-    help += "Quit the program\n";
-  }
-  else if (cmd == "axis")
-  {
-    help += "Display/hide the axis legend\n\n"
-            "Usage: axis (on/off)\n\n"
-            "on/off (optional) : show/hide the axis, if omitted switches state\n";
-  }
-  else if (cmd == "fullscreen")
-  {
-    help += "Switch viewer to full-screen mode and back to windowed mode\n";
-  }
-  else if (cmd == "redraw")
-  {
-    help += "Redraw all object data, required after changing some parameters but may be slow\n";
-  }
-  else if (cmd == "scaling")
-  {
-    help += "Disable/enable scaling, default is on, disable to view model un-scaled\n";
-  }
-  else if (cmd == "fit")
-  {
-    help += "Adjust camera view to fit the model in window\n";
-  }
-  else if (cmd == "autozoom")
-  {
-    help += "Automatically adjust camera view to always fit the model in window (enable/disable)\n";
-  }
-  else if (cmd == "stereo")
-  {
-    help += "Enable/disable stereo projection\n"
-            "If no stereo hardware found will use red/cyan anaglyph mode\n";
-  }
-  else if (cmd == "coordsystem")
-  {
-    help += "Switch between Right-handed and Lef-handed coordinate system\n";
-  }
-  else if (cmd == "rulers")
-  {
-    help += "Enable/disable axis rulers (unfinished)\n";
-  }
-  else if (cmd == "title")
-  {
-    help += "Clear title heading\n";
-  }
-  else if (cmd == "log")
-  {
-    help += "Over-ride colourmap settings to use log scales\n"
-            "Cycles between ON/OFF/DEFAULT\n"
-            "(default uses original settings for each colourmap)\n";
-  }
-  else if (cmd == "antialias")
-  {
-    help += "Enable/disable multi-sample anti-aliasing (if supported by OpenGL drivers)\n";
-  }
-  else if (cmd == "localise")
-  {
-    help += "Experimental: adjust colourmaps on each object to fit actual value range\n";
-  }
-  else if (cmd == "lockscale")
-  {
-    help += "Enable/disable colourmap lock\n"
-            "When locked, dynamic range colourmaps will keep current values\n"
-            "when switching between timesteps instead of being re-calibrated\n";
-  }
-  else if (cmd == "lighting")
-  {
-    help += "Enable/disable lighting for objects that support this setting\n";
-  }
-  else if (cmd == "list")
-  {
-    help += "List available data\n\n"
-            "Usage: list objects/colourmaps/elements\n\n"
-            "objects : enable object list (stays on screen until disabled)\n"
-            "          (dimmed objects are hidden or not in selected viewport)\n"
-            "colourmaps : show colourmap list (onlt temporarily shown)\n"
-            "elements : show geometry elements by id in terminal\n"
-            "data : show available data sets in selected object\n";
-  }
-  else if (cmd == "reset")
-  {
-    help += "Reset the camera to the default model view\n";
-  }
-  else if (cmd == "clear")
-  {
-    help += "Clear all data of current model/timestep\n\n"
-            "Usage: clear [objects]\n\n"
-            "objects : optionally clear all object entries\n"
-            "          (if omitted, only the objects geometry data is cleared)\n";
-  }
-  else if (cmd == "reload")
-  {
-    help += "Reload all data of current model/timestep from database\n";
-  }
-  else if (cmd == "zerocam")
-  {
-    help += "Set the camera postiion to the origin (for scripting, not generally advisable)\n";
-  }
-  else if (cmd == "colourmap")
-  {
-    help += "Set colourmap on object\n\n"
-            "Usage: colourmap object_id/object_name [colourmap_id/colourmap_name | \"data\"]\n\n"
-            "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to set (see: \"list objects\")\n"
-            "colourmap_id (integer) : the index of the colourmap to apply (see: \"list colourmaps\")\n"
-            "colourmap_name (string) : the name of the colourmap to apply (see: \"list colourmaps\")\n"
-            "data (string) : data to load into selected object's colourmap\n";
-  }
-  else if (cmd == "pointtype")
-  {
-    help += "Set point-rendering type on object\n\n"
-            "Usage: pointtype all/object_id/object_name type/up/down\n\n"
-            "all : use 'all' to set the global default point type\n"
-            "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to set (see: \"list objects\")\n"
-            "type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)\n"
-            "up/down : use 'up' or 'down' to switch to the previous/next type in list\n";
-  }
-  else if (cmd == "pointsample")
-  {
-    help += "Set point sub-sampling value\n\n"
-            "Usage: pointsample value/up/down\n\n"
-            "value (integer) : 1=no sub-sampling=50%% sampled etc..\n"
-            "up/down : use 'up' or 'down' to sample more (up) or less (down) points\n";
-  }
-  else if (cmd == "image")
-  {
-    help += "Save an image of the current view\n";
-  }
-  else if (cmd == "outwidth")
-  {
-    help += "Set output image width (height calculated to match window aspect)\n\n"
-            "Usage: outwidth value\n\n"
-            "value (integer) : width in pixels for output images\n";
-  }
-  else if (cmd == "outheight")
-  {
-    help += "Set output image height\n\n"
-            "Usage: outheight value\n\n"
-            "value (integer) : height in pixels for output images\n";
-  }
-  else if (cmd == "background")
-  {
-    help += "Set window background colour\n\n"
-            "Usage: background value/white/black/grey/invert\n\n"
-            "value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white\n"
-            "white/black/grey : sets background to specified value\n"
-            "invert (or omitted value) : inverts current background colour\n";
-  }
-  else if (cmd == "border")
-  {
-    help += "Set model border frame\n\n"
-            "Usage: border on/off/filled\n\n"
-            "on : line border around model bounding-box\n"
-            "off : no border\n"
-            "filled : filled background bounding box\n"
-            "(no value) : switch between possible values\n";
-  }
-  else if (cmd == "camera")
-  {
-    help += "Output camera state for use in model scripts\n";
-  }
-  else if (cmd == "sort")
-  {
-    help += "Sort geometry on demand (with idle timer)\n\n"
-            "Usage: sort on/off/timer\n\n"
-            "on : (default) sort after model rotation\n"
-            "off : no sorting\n"
-            "timer : sort after 1.5 second timeout\n";
-  }
-  else if (cmd == "scale")
-  {
-    help += "Scale applicable objects up/down in size (points/vectors/shapes)\n\n"
-            "Usage: scale axis value\n\n"
-            "axis : x/y/z\n"
-            "value (number) : scaling value applied to all geometry on specified axis\n\n"
-            "Usage: scale geometry_type value/up/down\n\n"
-            "geometry_type : points/vectors/tracers/shapes\n"
-            "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n"
-            "\nUsage: scale object_id/object_name value/up/down\n\n"
-            "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to set (see: \"list objects\")\n"
-            "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n";
-  }
-  else if (cmd == "history")
-  {
-    help += "Write command history to output (eg: terminal)"
-            "Usage: history [filename]\n\n"
-            "filename (string) : optional file to write data to\n";
-  }
-  else if (cmd == "clearhistory")
-  {
-    help += "Clear command history\n";
-  }
-  else if (cmd == "resize")
-  {
-    help += "Resize view window\n\n"
-            "Usage: resize width height\n\n"
-            "width (integer) : width in pixels\n"
-            "height (integer) : height in pixels\n";
-  }
-  else if (cmd == "pause")
-  {
-    help += "Pause execution (for scripting)\n\n"
-            "Usage: pause msecs\n\n"
-            "msecs (integer) : how long to pause for in milliseconds\n";
-  }
-  else if (cmd == "delete")
-  {
-    help += "Delete objects from database\n"
-            "WARNING: This is irreversable! Backup your database before using!\n\n"
-            "Usage: delete object_id/object_name\n\n"
-            "object_id (integer) : the index of the object to delete (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to delete (see: \"list objects\")\n";
-  }
-  else if (cmd == "load")
-  {
-    help += "Load objects from database\n"
-            "Used when running with deferred loading (-N command line switch)\n\n"
-            "Usage: load object_id/object_name\n\n"
-            "object_id (integer) : the index of the object to load (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to load (see: \"list objects\")\n";
-  }
-  else if (cmd == "file")
-  {
-    help += "Load database or model file\n"
-            "Usage: file \"filename\"\n\n"
-            "filename (string) : the path to the file, quotes optional but necessary if path contains spaces\n";
-  }
-  else if (cmd == "script")
-  {
-    help += "Run script file\n"
-            "Load a saved script of viewer commands from a file\n\n"
-            "Usage: script filename\n\n"
-            "filename (string) : path and name of the script file to load\n";
-  }
-  else if (cmd == "select")
-  {
-    help += "Select object as the active object\n"
-            "Used for setting properties of objects\n\n"
-            "Usage: select object_id/object_name\n\n"
-            "object_id (integer) : the index of the object to select (see: \"list objects\")\n"
-            "object_name (string) : the name of the object to select (see: \"list objects\")\n"
-            "Leave object parameter empty to clear selection.\n";
+            "background, alpha, toggle, axis, scaling, rulers, log\n"
+            "antialias, localise, lockscale, lighting, colourmap, colour, pointtype\n"
+            "pointsample, border, title, scale\n"
+            "\nMiscellanious commands:\n\n"
+            "shaders, blend, props, defaults, test, voltest\n"
+            "newstep, filter, filterout, clearfilters, sealevel\n";
   }
   else
-    return std::string("");
+  {
+    parseCommand(cmd + " 1.0", true);
+  }
+
   return help;
 }
 
