@@ -954,21 +954,18 @@ void LavaVu::parseProperty(std::string& data)
   if (aobject)
   {
     aobject->properties.parse(data);
-    if (infostream != NULL)
-      std::cerr << "OBJECT " << std::setw(2) << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
+    if (verbose) std::cerr << "OBJECT " << std::setw(2) << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
   }
   else if (aview && aview->properties.data.count(key) > 0)
   {
     aview->properties.parse(data);
-    if (infostream != NULL)
-      std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
+    if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
   }
   else
   {
     //Properties not found on view are set globally
     aview->properties.parse(data, true);
-    if (infostream != NULL)
-      std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
+    if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
   }
 }
 
@@ -1101,8 +1098,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
   {
     volmin[i] *= inscale[i];
     volmax[i] *= inscale[i];
-    if (infostream != NULL)
-      std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
+    if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
   }
 
   //Define the bounding cube by corners
@@ -1146,8 +1142,7 @@ void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, i
     {
       volmin[i] *= inscale[i];
       volmax[i] *= inscale[i];
-      if (infostream != NULL)
-        std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
+      if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
     }
     //Define the bounding cube by corners
     Model::volumes->add(vobj);
@@ -1250,8 +1245,7 @@ void LavaVu::createDemoVolume()
     {
       volmin[i] *= inscale[i];
       volmax[i] *= inscale[i];
-      if (infostream != NULL)
-        std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
+      if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
     }
     //Define the bounding cube by corners
     Model::volumes->read(vobj, 1, lucVertexData, volmin);
