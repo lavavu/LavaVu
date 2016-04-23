@@ -336,6 +336,8 @@ void LavaVu::defaults()
   // | object | boolean | Set to false to disable depth test when drawing object so always drawn regardless of 3d position
   Properties::defaults["depthtest"] = true;
 
+  // | object | integer | id of the colourmap used
+  Properties::defaults["colourmap"] = -1;
   // | object | real [0,1] | Opacity of object where 0 is transparent and 1 is opaque
   Properties::defaults["opacity"] = 1.0;
   // | object | real [-1,1] | Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)
@@ -414,7 +416,6 @@ void LavaVu::defaults()
   // | object(surface) | boolean | If opaque flag is set skips depth sorting step and allows individual surface properties to be applied
   Properties::defaults["opaque"] = false;
 
-  //Properties::defaults["colourmap"] = 1;
   // | object(volume) | real | Power used when applying transfer function, 1.0=linear mapping
   Properties::defaults["power"] = 1.0;
   // | object(volume) | integer | Number of samples to take per ray cast, higher = better quality, slower
@@ -3625,7 +3626,8 @@ void LavaVu::jsonRead(std::string data)
     amodel->objects[i]->properties.merge(objects[i]);
 
     //Colourmap selection?
-    if (objects[i].count("colourmap") > 0)
+    amodel->objects[i]->colourMaps[lucColourValueData] = NULL;
+    if (objects[i].count("colourmap") > 0 && objects[i]["colourmap"] > -1)
       amodel->objects[i]->colourMaps[lucColourValueData] = amodel->colourMaps[objects[i]["colourmap"]];
   }
 }

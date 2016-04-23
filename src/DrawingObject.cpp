@@ -81,6 +81,10 @@ void DrawingObject::setup()
 
 void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
 {
+  //Set selected map property to first map added for web interface / volumes
+  if (map && !properties.has("colourmap"))
+    properties.data["colourmap"] = map->id-1;
+
   //Sets the colour map for the specified geometry data type
   colourMaps[data_type] = map;
   /*
