@@ -324,8 +324,6 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("toggle cullface");
     case 'w':
       return parseCommands("toggle wireframe");
-    case 'J':
-      return parseCommands("json");
     case 'o':
       return parseCommands("list objects");
     case 'q':
@@ -667,7 +665,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Load database or model file\n"
               "Usage: file \"filename\"\n\n"
-              "filename (string) : the path to the file, quotes optional but necessary if path contains spaces\n";
+              "filename (string) : the path to the file, quotes necessary if path contains spaces\n";
       return false;
     }
 
@@ -707,38 +705,60 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     return false;
   }
-  else if (parsed.exists("jsonscript"))
+  else if (parsed.exists("state"))
   {
-    std::string scriptfile = parsed["jsonscript"];
-    std::ifstream file(scriptfile.c_str(), std::ios::in);
-    if (file.is_open())
+    if (gethelp)
     {
-      printMessage("Running script: %s", scriptfile.c_str());
-      std::stringstream buffer;
-      buffer << file.rdbuf();
-      jsonRead(buffer.str());
-      file.close();
+      help += "Export all settings as json state file that can be reloaded later\n\n"
+              "Usage: state [\"filename\"]\n\n"
+              "file (string) : name of file to import (default: state.json)\n";
+      return false;
     }
-    else
-    {
-      printMessage("Unable to open file: %s", scriptfile.c_str());
-    }
-    return false;
+
+    //Export json settings only (no object data)
+    std::string what = parsed["state"];
+    jsonWriteFile(what, 0, false, false);
   }
   else if (parsed.has(ival, "cache"))
   {
+    if (gethelp)
+    {
+      help += "Set the timestep cache size\n"
+              "When cache enabled, timestep data will be loaded into memory for faster access\n"
+              "(currently any size > 0 attempts to cache all steps)\n\n"
+              "Usage: cache size\n\n"
+              "size (integer) : number of timesteps, 0 to disable\n";
+      return false;
+    }
+
     TimeStep::cachesize = ival;
     printMessage("Geometry cache set to %d timesteps", TimeStep::cachesize);
     return false;
   }
   else if (parsed.exists("noload"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Disable initial loading of object data from database\n"
+              "When set only object names will be loaded, use the \"load\" command to\n"
+              "subsequently load selected object data\n\n";
+      return false;
+    }
+
     Model::noload = !Model::noload;
     printMessage("Database object loading is %s", Model::noload ? "ON":"OFF");
     return false;
   }
   else if (parsed.exists("verbose"))
   {
+    if (gethelp)
+    {
+      help += "Switch verbose output mode on/off\n\n"
+              "Usage: verbose [off]\n";
+      return false;
+    }
+
     std::string what = parsed["verbose"];
     verbose = what != "off";
     printMessage("Verbose output is %s", verbose ? "ON":"OFF");
@@ -751,30 +771,60 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.exists("pngalpha"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Toggle transparent png output\n";
+      return false;
+    }
     viewer->alphapng = !viewer->alphapng;
     printMessage("Transparency in PNG output is %s", viewer->alphapng ? "ON":"OFF");
     return false;
   }
   else if (parsed.exists("swapyz"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Set imported model y/z axis swap\n";
+      return false;
+    }
     swapY = !swapY;
     printMessage("Y/Z axis swap on OBJ load is %s", swapY ? "ON":"OFF");
     return false;
   }
   else if (parsed.has(ival, "trisplit"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Set imported model triangle subdivision level\n";
+      return false;
+    }
     trisplit = ival;
     printMessage("Triangle subdivision level set to %d", trisplit);
     return false;
   }
   else if (parsed.exists("globalcam"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Toggle global camera for all models (default is separate cam for each)\n";
+      return false;
+    }
     globalCam = !globalCam;
     printMessage("Global camera is %s", globalCam ? "ON":"OFF");
     return false;
   }
   else if (parsed.exists("localshaders"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Toggle loading shaders from working directory\n";
+      return false;
+    }
     Shader::path = "./";
     std::cerr << "Ignoring shader path, using current directory\n";
     printMessage("Using local shaders");
@@ -782,12 +832,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.has(ival, "volchannels"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Set volume rendering channels 1 (luminance) 3/4 (rgba)\n";
+      return false;
+    }
     volchannels = ival;
     printMessage("Volume output channels set to %d", volchannels);
     return false;
   }
   else if (parsed.exists("volres"))
   {
+    //TODO: GLOBAL PROPERTY??
+    if (gethelp)
+    {
+      help += "Set volume rendering data voxel resolution X Y Z\n";
+      return false;
+    }
     parsed.has(volres[0], "volres", 0);
     parsed.has(volres[1], "volres", 1);
     parsed.has(volres[2], "volres", 2);
@@ -796,6 +858,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.exists("volmin"))
   {
+    //TODO: GLOBAL PROPERTY??
+    if (gethelp)
+    {
+      help += "Set volume rendering min bound X Y Z\n";
+      return false;
+    }
     parsed.has(volmin[0], "volmin", 0);
     parsed.has(volmin[1], "volmin", 1);
     parsed.has(volmin[2], "volmin", 2);
@@ -804,6 +872,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.exists("volmax"))
   {
+    //TODO: GLOBAL PROPERTY??
+    if (gethelp)
+    {
+      help += "Set volume rendering max bound X Y Z\n";
+      return false;
+    }
     parsed.has(volmax[0], "volmax", 0);
     parsed.has(volmax[1], "volmax", 1);
     parsed.has(volmax[2], "volmax", 2);
@@ -812,6 +886,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.has(fval, "inscale"))
   {
+    //TODO: GLOBAL PROPERTY??
+    if (gethelp)
+    {
+      help += "Set scaling of input data X Y Z\n";
+      return false;
+    }
     inscale[0] = fval;
     if (!parsed.has(inscale[1], "inscale", 1)) inscale[1] = inscale[0];
     if (!parsed.has(inscale[2], "inscale", 2)) inscale[2] = inscale[0];
@@ -820,6 +900,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.has(fval, "volsubsample"))
   {
+    //TODO: GLOBAL PROPERTY??
+    if (gethelp)
+    {
+      help += "Set volume subsampling X Y Z\n";
+      return false;
+    }
     parsed.has(volss[0], "volsubsample", 0);
     parsed.has(volss[1], "volsubsample", 1);
     parsed.has(volss[2], "volsubsample", 2);
@@ -828,6 +914,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.exists("createvolume"))
   {
+    if (gethelp)
+    {
+      help += "Create a static volume object which will receive all following volumes as timesteps\n";
+      return false;
+    }
+
     //Use this to load multiple volumes as timesteps into the same object
     volume = new DrawingObject("volume");
     printMessage("Created static volume object");
@@ -856,15 +948,27 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->redraw();
     return false;
   }
-  //TODO: not yet documented
   else if (parsed.exists("pointspheres"))
   {
+    //TODO: GLOBAL PROPERTY
+    if (gethelp)
+    {
+      help += "Toggle rendering points as triangulated spheres\n";
+      return false;
+    }
+
     Model::pointspheres = !Model::pointspheres;
     printMessage("Points rendered as spheres is %s", Model::pointspheres ? "ON":"OFF");
     return false;
   }
   else if (parsed.exists("open"))
   {
+    if (gethelp)
+    {
+      help += "Open the viewer window if not already done, for use in scripts\n";
+      return false;
+    }
+
     loadWindow(0, 0, true);
     return false;
   }
@@ -933,7 +1037,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cout << helpCommand("quit") << helpCommand("repeat") << helpCommand("history");
     std::cout << helpCommand("clearhistory") << helpCommand("pause") << helpCommand("list");
     std::cout << helpCommand("timestep") << helpCommand("jump") << helpCommand("model") << helpCommand("reload");
-    std::cout << helpCommand("next") << helpCommand("play") << helpCommand("stop") << helpCommand("script");
+    std::cout << helpCommand("next") << helpCommand("play") << helpCommand("stop");
+    std::cout << "\n###Input commands:\n\n";
+    std::cout << helpCommand("file") << helpCommand("script");
+    std::cout << "\n###Output commands:\n\n";
+    std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
+    std::cout << helpCommand("movie") << helpCommand("export") << helpCommand("state");
     std::cout << "\n###View/camera commands:\n\n";
     std::cout << helpCommand("rotate") << helpCommand("rotatex") << helpCommand("rotatey");
     std::cout << helpCommand("rotatez") << helpCommand("rotation") << helpCommand("zoom") << helpCommand("translate");
@@ -944,11 +1053,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cout << helpCommand("resize") << helpCommand("fullscreen") << helpCommand("fit");
     std::cout << helpCommand("autozoom") << helpCommand("stereo") << helpCommand("coordsystem");
     std::cout << helpCommand("sort") << helpCommand("rotation") << helpCommand("translation");
-    std::cout << "\n###Output commands:\n\n";
-    std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
-    std::cout << helpCommand("movie") << helpCommand("export") << helpCommand("json");
     std::cout << "\n###Object commands:\n\n";
-    std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("file") << helpCommand("name");
+    std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("name");
     std::cout << "\n###Display commands:\n\n";
     std::cout << helpCommand("background") << helpCommand("alpha") << helpCommand("toggle");
     std::cout << helpCommand("axis") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
@@ -960,6 +1066,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cout << helpCommand("shaders") << helpCommand("blend") << helpCommand("props") << helpCommand("defaults");
     std::cout << helpCommand("test") << helpCommand("voltest") << helpCommand("newstep");
     std::cout << helpCommand("filter") << helpCommand("filterout") << helpCommand("clearfilters") << helpCommand("sealevel");
+    std::cout << helpCommand("cache") << helpCommand("noload") << helpCommand("verbose") << helpCommand("pngalpha") << helpCommand("swapyz");
+    std::cout << helpCommand("trisplit") << helpCommand("globalcam") << helpCommand("localshaders") << helpCommand("pointspheres");
+    std::cout << helpCommand("volchannels") << helpCommand("volres") << helpCommand("volmin") << helpCommand("volmax");
+    std::cout << helpCommand("inscale") << helpCommand("volsubsample") << helpCommand("createvolume");
     return false;
   }
   else if (parsed.exists("docs:interaction"))
@@ -1452,34 +1562,34 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     writeSteps(false, amodel->step(), ival);
     encodeVideo(); //Write final step and stop encoding
   }
-  else if (parsed.has(ival, "play"))
+  else if (parsed.exists("play"))
   {
     if (gethelp)
     {
       help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
               "Usage: play endstep\n\n"
               "endstep (integer) : last frame timestep\n"
-              "If endstep omitted, will loop back to start until 'stop' command entered\n";
+              "If endstep omitted, will loop continually until 'stop' command entered\n";
       return false;
     }
 
-    writeSteps(false, amodel->step(), ival);
-  }
-//NOTE: commented this for now, which implementation should be used?
-#if 0
-  else if (parsed.exists("play"))
-  {
-    //Play loop
-    if (animate < 1) animate = 50;
-    replay.clear();
-    last_cmd = "next";
-    replay.push_back(last_cmd);
-    repeat = -1; //Infinite
-    loop = true;
-    OpenGLViewer::commands.push_back(std::string("next"));
+    if (parsed.has(ival, "play"))
+    {
+      writeSteps(false, amodel->step(), ival);
+    }
+    else
+    {
+      //Play loop
+      if (animate < 1) animate = 50;
+      replay.clear();
+      last_cmd = "next";
+      replay.push_back(last_cmd);
+      repeat = -1; //Infinite
+      loop = true;
+      OpenGLViewer::commands.push_back(std::string("next"));
+    }
     return true;  //Skip record
   }
-#endif
   else if (parsed.exists("next"))
   {
     if (gethelp)
@@ -1808,17 +1918,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       Model::geometry[type]->localiseColourValues();
     printMessage("ColourMap scales localised");
     amodel->redraw(true); //Colour change so force reload
-  }
-  else if (parsed.exists("json"))
-  {
-    if (gethelp)
-    {
-      help += "Export all settings as json state file that can be reloaded with jsonscript or on command line\n";
-      return false;
-    }
-
-    //Export json settings only (no object data)
-    jsonWriteFile(0, false, false);
   }
   else if (parsed.exists("export"))
   {
@@ -2915,13 +3014,15 @@ std::string LavaVu::helpCommand(std::string cmd)
   {
     help += "Command help:\n\nUse:\nhelp * [ENTER]\nwhere * is a command, for detailed help\n"
             "\nGeneral commands:\n\n"
-            "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, clear, file, script\n"
+            "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, clear"
+            "\nInput commands:\n\n"
+            "file, script\n"
+            "\nOutput commands:\n\n"
+            "image, images, outwidth, outheight, movie, play, export, state\n"
             "\nView/camera commands:\n\n"
             "rotate, rotatex, rotatey, rotatez, rotation, translate, translatex, translatey, translatez\n"
             "focus, aperture, focallength, eyeseparation, nearclip, farclip, zoomclip, zerocam, reset, camera\n"
             "resize, fullscreen, fit, autozoom, stereo, coordsystem, sort, rotation, translation\n"
-            "\nOutput commands:\n\n"
-            "image, images, outwidth, outheight, movie, play, export, json\n"
             "\nObject commands:\n\n"
             "hide, show, delete, load, select, name\n"
             "\nDisplay commands:\n\n"
@@ -2930,7 +3031,9 @@ std::string LavaVu::helpCommand(std::string cmd)
             "pointsample, border, title, scale\n"
             "\nMiscellanious commands:\n\n"
             "shaders, blend, props, defaults, test, voltest\n"
-            "newstep, filter, filterout, clearfilters, sealevel\n";
+            "newstep, filter, filterout, clearfilters, sealevel\n\n"
+            "cache, noload, verbose, pngalpha, swapyz, trisplit, globalcam, localshaders, pointspheres\n"
+            "volchannels, volres, volmin, volmax, inscale, volsubsample, createvolume\n";
   }
   else
   {

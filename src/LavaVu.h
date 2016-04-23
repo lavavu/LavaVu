@@ -233,7 +233,9 @@ public:
   void record(bool mouse, std::string command);
   void dumpById(unsigned int id);
   void jsonWriteFile(unsigned int id=0, bool jsonp=false, bool objdata=true);
+  void jsonWriteFile(std::string fn, unsigned int id, bool jsonp, bool objdata);
   void jsonWrite(std::ostream& os, unsigned int id=0, bool objdata=false);
+  void jsonReadFile(std::string fn);
   void jsonRead(std::string data);
 };
 
