@@ -308,6 +308,8 @@ int Server::request(struct mg_connection *conn)
     {
       //Push command onto queue to be processed in the viewer thread
       pthread_mutex_lock(&_self->viewer->cmd_mutex);
+      //Seems post data string can exceed data length or be missing terminator
+      if (strlen(post_data) > post_data_len) post_data[post_data_len] = 0;
       OpenGLViewer::commands.push_back(std::string(post_data));
       _self->viewer->postdisplay = true;
       pthread_mutex_unlock(&_self->viewer->cmd_mutex);
