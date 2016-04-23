@@ -160,7 +160,7 @@ void Volumes::update()
     }
 
     //Setup gradient texture from colourmap
-    if (geom[i]->draw->colourMaps[lucColourValueData] && !geom[i]->draw->colourMaps[lucColourValueData]->texture)
+    if (geom[i]->draw->colourMaps[lucColourValueData])
       geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
   }
   else
@@ -251,7 +251,7 @@ void Volumes::update()
       }
 
       //Setup gradient texture from colourmap
-      if (geom[i]->draw->colourMaps[lucColourValueData] && !geom[i]->draw->colourMaps[lucColourValueData]->texture)
+      if (geom[i]->draw->colourMaps[lucColourValueData])
         geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
     }
   }
@@ -283,9 +283,10 @@ void Volumes::render(int i)
   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
   //User settings
+  int cmap = props["colourmap"];
   bool hasColourMap = geom[i]->draw->colourMaps[lucColourValueData]
                       && geom[i]->draw->colourMaps[lucColourValueData]
-                      && props.has("colourmap");
+                      && cmap >= 0;
   //Use per-object clip box if set, otherwise use global clip
   /*
   float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->vertices[0][0]),
