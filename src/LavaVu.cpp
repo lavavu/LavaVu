@@ -3079,9 +3079,10 @@ void LavaVu::loadFile(FilePath& fn)
     parseCommands("script " + fn.full);
     return;
   }
+  //JSON state file (doesn't load objects if any, only state)
   else if (fn.type == "json")
   {
-    parseCommands("jsonscript " + fn.full);
+    jsonReadFile(fn.full);
     return;
   }
 
@@ -3383,7 +3384,14 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp, bool objdata)
             amodel->objects[id]->name.c_str(), step, ext);
   else
     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), step, ext);
-  std::ofstream json(filename);
+  jsonWriteFile(filename, id, jsonp, objdata);
+}
+
+void LavaVu::jsonWriteFile(std::string fn, unsigned int id, bool jsonp, bool objdata)
+{
+  //Write new JSON format objects
+  if (fn.length() == 0) fn = "state.json";
+  std::ofstream json(fn);
   if (jsonp) json << "loadData(\n";
   jsonWrite(json, id, objdata);
   if (jsonp) json << ");\n";
@@ -3534,6 +3542,22 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
   //Export with indentation
   os << std::setw(2) << exported;
   std::cout << std::setw(2) << exported << std::endl;
+}
+
+void LavaVu::jsonReadFile(std::string fn)
+{
+  if (fn.length() == 0) fn = "state.json";
+  std::ifstream file(fn.c_str(), std::ios::in);
+  if (file.is_open())
+  {
+    printMessage("Loading state: %s", fn.c_str());
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    jsonRead(buffer.str());
+    file.close();
+  }
+  else
+    printMessage("Unable to open file: %s", fn.c_str());
 }
 
 void LavaVu::jsonRead(std::string data)
