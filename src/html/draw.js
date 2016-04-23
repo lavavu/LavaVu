@@ -1787,7 +1787,17 @@ Viewer.prototype.exportColourMaps = function() {
   cmaps = [];
   if (vis.colourmaps) {
     for (var i=0; i<vis.colourmaps.length; i++) {
+
+      //TODO:Move this to library function, palette.toList()
+      //Clone the palette colours back to colours array
+      vis.colourmaps[i].colours = JSON.parse(JSON.stringify(vis.colourmaps[i].palette.colours));
+      //vis.colourmaps[i].colours.clear();
+      for (var c=0; c<vis.colourmaps[i].palette.colours.length; c++) {
+        vis.colourmaps[i].colours[c].colour = vis.colourmaps[i].palette.colours[c].colour.toString();
+      }
+
       cmaps[i] = {};
+      //Copy the properties
       for (var type in vis.colourmaps[i]) {
         if (type != "palette") {
           cmaps[i][type] = vis.colourmaps[i][type];
@@ -1801,7 +1811,7 @@ Viewer.prototype.exportColourMaps = function() {
 Viewer.prototype.exportFile = function() {
   if (server) {
      var scriptname = "exported.script";
-     if (confirm('Overwrite init.script?')) scriptname = "init.script";
+     //if (confirm('Overwrite init.script?')) scriptname = "init.script";
 
      //Clear history before all saved to script
      sendCommand('clearhistory');
@@ -1966,7 +1976,7 @@ Viewer.prototype.addColourMap = function() {
 
   //Select newly added
   var list = $('colourmap-presets');
-  viewer.setColourMap(list.views[view].length-2)
+  viewer.setColourMap(list.options.length-2)
 }
 
 Viewer.prototype.setColourMap = function(id) {
