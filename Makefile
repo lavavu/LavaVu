@@ -95,7 +95,7 @@ OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 default: install
 
-install: paths $(PROGRAM) docs
+install: paths $(PROGRAM)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(PREFIX)/html
 	cp -R src/html/*.css $(PREFIX)/html
