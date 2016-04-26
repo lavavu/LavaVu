@@ -342,6 +342,8 @@ void LavaVu::defaults()
   // | object | boolean | Set to false to disable depth test when drawing object so always drawn regardless of 3d position
   Properties::defaults["depthtest"] = true;
 
+  // | object | colour | Object colour RGB(A)
+  Properties::defaults["colour"] = {0, 0, 0, 255};
   // | object | integer | id of the colourmap used
   Properties::defaults["colourmap"] = -1;
   // | object | real [0,1] | Opacity of object where 0 is transparent and 1 is opaque
@@ -413,8 +415,6 @@ void LavaVu::defaults()
   Properties::defaults["density"] = 5.0;
   // | object(volume) | real | Isovalue for dynamic isosurface
   Properties::defaults["isovalue"] = 0.0;
-  // | object(volume) | colour | RGBA colour for isosurface
-  Properties::defaults["colour"] = {220, 220, 200, 255};
   // | object(volume) | real [0,1] | Transparency value for isosurface
   Properties::defaults["isoalpha"] = 1.0;
   // | object(volume) | real | Isosurface smoothing factor for normal calculation
