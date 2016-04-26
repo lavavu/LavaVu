@@ -318,6 +318,12 @@ void LavaVu::defaults()
   //Setup default properties
   //(Comments formatted to be parsed into documentation)
   
+  //Labels/text
+  // | all | string | Font typeface vector/small/fixed/sans/serif
+  Properties::defaults["font"] = "vector";
+  // | all | real | Font scaling, note that only the vector font scales well
+  Properties::defaults["fontscale"] = 1.0;
+
   //Object defaults
   // | object | string | Name of object
   Properties::defaults["name"] = "";
@@ -377,23 +383,6 @@ void LavaVu::defaults()
   Properties::defaults["texturefile"] = "";
   // | object | integer [0,n] | Index of data set to colour object by (requires colour map)
   Properties::defaults["colourby"] = 0;
-
-  // | colourbar | boolean | Indicates object is a colourbar
-  Properties::defaults["colourbar"] = false;
-  // | colourbar | integer | Align position of colour bar, 1=towards left/bottom, 0=centre, -1=towards right/top
-  Properties::defaults["position"] = 0;
-  // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
-  Properties::defaults["align"] = "bottom";
-  // | colourbar | real [0,1] | Length of colour bar as ratio of screen width or height
-  Properties::defaults["lengthfactor"] = 0.8;
-  // | colourbar | integer | Width of colour bar in pixels
-  Properties::defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
-
-  //Labels/text
-  // | object/colourbar/view | string | Font typeface vector/small/fixed/sans/serif
-  Properties::defaults["font"] = "vector";
-  // | object/colourbar/view | real | Font scaling, note that only the vector font scales well
-  Properties::defaults["fontscale"] = 1.0;
 
   // | object(line) | real | Line length limit, can be used to skip drawing line segments that cross periodic boundary
   Properties::defaults["limit"] = 0;
@@ -466,6 +455,16 @@ void LavaVu::defaults()
   // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
   Properties::defaults["scaleshapes"] = 1.0;
 
+  // | colourbar | boolean | Indicates object is a colourbar
+  Properties::defaults["colourbar"] = false;
+  // | colourbar | integer | Align position of colour bar, 1=towards left/bottom, 0=centre, -1=towards right/top
+  Properties::defaults["position"] = 0;
+  // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
+  Properties::defaults["align"] = "bottom";
+  // | colourbar | real [0,1] | Length of colour bar as ratio of screen width or height
+  Properties::defaults["lengthfactor"] = 0.8;
+  // | colourbar | integer | Width of colour bar in pixels
+  Properties::defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
   // | colourbar | integer | Number of additional tick marks to draw besides start and end
   Properties::defaults["ticks"] = 0;
   // | colourbar | boolean | Set to false to disable drawing of tick values
