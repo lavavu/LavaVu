@@ -588,26 +588,27 @@ void Geometry::draw()  //Display saved geometry
   glUseProgram(0);
 
   //Anything to draw?
-  drawcount = 0;
+  int newcount = 0;
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (drawable(i))
     {
-      drawcount++;
+      newcount++;
       break;
     }
   }
 
   GL_Error_Check;
   //Have something to update?
-  if (drawcount)
+  if (newcount)
   {
-    if (redraw)
+    if (redraw || newcount != drawcount)
       update();
 
     labels();
   }
 
+  drawcount = newcount;
   redraw = false;
   GL_Error_Check;
 
