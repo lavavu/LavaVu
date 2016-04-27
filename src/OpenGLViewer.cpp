@@ -44,7 +44,6 @@ pthread_mutex_t OpenGLViewer::cmd_mutex;
 int OpenGLViewer::idle = -1;
 int OpenGLViewer::displayidle = 0;
 bool OpenGLViewer::alphapng = false;
-int OpenGLViewer::imagecounter = 0;
 std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
 
 //OpenGLViewer class implementation...
@@ -465,20 +464,14 @@ std::string OpenGLViewer::image(const std::string& path)
   pixels(image, false, true);
 #endif
 
-  //Write PNG or JPEG
+  //Write PNG/JPEG to string or file
   if (path.length() == 0)
   {
     retImg = getImageString(image, w, h, bpp);
   }
   else
   {
-    //Apply image counter when multiple images output
-    std::stringstream outpath;
-    outpath << path;
-    if (imagecounter > 0)
-      outpath <<  "-" << imagecounter;
-    retImg = writeImage(image, w, h, outpath.str().c_str(), alphapng);
-    imagecounter++;
+    retImg = writeImage(image, w, h, path, alphapng);
   }
 
   delete[] image;
