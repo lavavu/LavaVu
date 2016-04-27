@@ -1003,31 +1003,41 @@ void abort_program(const char * s, ...)
   throw std::runtime_error(buffer);
 }
 
-std::string writeImage(GLubyte *image, int width, int height, const char* basename, bool transparent)
+std::string getImageFilename(const std::string& basename)
 {
-  char path[FILE_PATH_MAX];
-  strncpy(path, basename, FILE_PATH_MAX-1);
+  std::string path = basename;
 #ifdef HAVE_LIBPNG
   //Write data to image file
-  if (!strstr(basename, ".png"))
-    sprintf(path, "%s.png", basename);
+  if (!strstr(basename.c_str(), ".png"))
+    path += ".png";
+#else
+  //JPEG support with built in encoder
+  if (!strstr(basename.c_str(), ".jpg") && !strstr(basename.c_str(), ".jpeg"))
+    path += ".jpg";
+#endif
+  return path;
+}
+
+bool writeImage(GLubyte *image, int width, int height, const std::string& path, bool transparent)
+{
+#ifdef HAVE_LIBPNG
+  //Write data to image file
   std::ofstream file(path, std::ios::binary);
   write_png(file, transparent ? 4 : 3, width, height, image);
 #else
   //JPEG support with built in encoder
-  if (!strstr(basename, ".jpg") && !strstr(basename, ".jpeg"))
-    sprintf(path, "%s.jpg", basename);
-
   // Fill in the compression parameter structure.
   jpge::params params;
   params.m_quality = 95;
   params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-
   if (!compress_image_to_jpeg_file(path, width, height, 3, image, params))
-    abort_program("[write_jpeg] File %s could not be saved\n", path);
+  {
+    fprintf(stderr, "[write_jpeg] File %s could not be saved\n", path);
+    return false;
+  }
 #endif
   debug_print("[%s] File successfully written\n", path);
-  return std::string(path);
+  return true;
 }
 
 std::string getImageString(GLubyte *image, int width, int height, int bpp)
@@ -1173,7 +1183,7 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
   pngWrite = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
   if (!pngWrite)
   {
-    debug_print("[write_png_file] create PNG write struct failed");
+    fprintf(stderr, "[write_png_file] create PNG write struct failed");
     return;
   }
 
@@ -1206,7 +1216,7 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
   pngInfo = png_create_info_struct(pngWrite);
   if (!pngInfo)
   {
-    debug_print("[write_png_file] create PNG info struct failed");
+    fprintf(stderr, "[write_png_file] create PNG info struct failed");
     return;
   }
   //if (setjmp(png_jmpbuf(pngWrite)))

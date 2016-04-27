@@ -59,7 +59,6 @@ public:
   static std::deque<std::string> commands;
   static pthread_mutex_t cmd_mutex;
   static bool alphapng;
-  static int imagecounter;
 
   GLboolean stereoBuffer, doubleBuffer;
   GLuint renderBuffer;

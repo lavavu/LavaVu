@@ -34,7 +34,6 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 //TODO/FIX:
-//Volume colourmap not selected by default
 //can't seem to catch exception on property lookup
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
@@ -178,7 +177,7 @@ std::string image(std::string filename, int width, int height)
   app->viewer->outwidth = width;
   app->viewer->outheight = height;
   //Write image to file or return as string
-  result = app->viewer->image(filename);
+  result = app->viewer->image(getImageFilename(filename));
   return result;
 }
 
@@ -2314,7 +2313,6 @@ void LavaVu::resetViews(bool autozoom)
     title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->step();
 
   viewer->title = title.str();
-  OpenGLViewer::imagecounter = 0; //Reset counter when title changes
 
   if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
   viewer->setBackground(awin->background.value); //Update background colour
@@ -3326,7 +3324,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
       viewer->display();
 
       if (images)
-        viewer->image(viewer->title);
+        parseCommand("image");
 
 #ifdef HAVE_LIBAVCODEC
       //Always output to video encode if it exists
