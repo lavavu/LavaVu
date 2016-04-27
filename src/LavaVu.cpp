@@ -365,13 +365,13 @@ void LavaVu::defaults()
   Properties::defaults["clip"] = true;
   // | object | real [0,1] | Object clipping, minimum x
   Properties::defaults["xmin"] = -FLT_MAX;
-  // | object | real [0,1] | Object clipping, maximum x
-  Properties::defaults["ymin"] = -FLT_MAX;
-  // | object | real [0,1] | Object clipping, minimum y
-  Properties::defaults["zmin"] = -FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum y
-  Properties::defaults["xmax"] = FLT_MAX;
+  Properties::defaults["ymin"] = -FLT_MAX;
   // | object | real [0,1] | Object clipping, minimum z
+  Properties::defaults["zmin"] = -FLT_MAX;
+  // | object | real [0,1] | Object clipping, maximum x
+  Properties::defaults["xmax"] = FLT_MAX;
+  // | object | real [0,1] | Object clipping, maximum y
   Properties::defaults["ymax"] = FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum z
   Properties::defaults["zmax"] = FLT_MAX;
@@ -593,6 +593,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         //All actions to be performed by subsequent 
         //library calls
         automate = true;
+        break;
       case 'z':
         //Downsample images
         ss >> viewer->downsample;
