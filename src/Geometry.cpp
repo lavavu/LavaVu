@@ -85,17 +85,20 @@ void GeomData::colourCalibrate()
   if (draw->colourIdx >= values.size()) draw->colourIdx = 0;
 
   //Calibrate colour maps on ranges for related data
-  if (draw->colourMaps[lucColourValueData] && values.size() > draw->colourIdx)
-    draw->colourMaps[lucColourValueData]->calibrate(values[draw->colourIdx]);
+  ColourMap* cmap = draw->getColourMap();
+  if (cmap && values.size() > draw->colourIdx)
+    cmap->calibrate(values[draw->colourIdx]);
   //TODO: hard coded to lucOpacityValueData, should also be referenced by an editable index
-  if (draw->colourMaps[lucOpacityValueData] && data[lucOpacityValueData])
-    draw->colourMaps[lucOpacityValueData]->calibrate(valueData(lucOpacityValueData));
+  ColourMap* omap = draw->getColourMap("opacitymap");
+  if (omap && data[lucOpacityValueData])
+    omap->calibrate(valueData(lucOpacityValueData));
 }
 
 //Get colour using specified colourValue
 void GeomData::mapToColour(Colour& colour, float value)
 {
-  colour = draw->colourMaps[lucColourValueData]->getfast(value);
+  ColourMap* cmap = draw->getColourMap();
+  if (cmap) colour = cmap->getfast(value);
 
   //Set opacity to drawing object override level if set
   if (draw->opacity > 0.0 && draw->opacity < 1.0)
@@ -105,6 +108,7 @@ void GeomData::mapToColour(Colour& colour, float value)
 int GeomData::colourCount()
 {
   //Return number of colour values or RGBA colours
+  //TODO: Use colourIdx?
   int hasColours = data[lucColourValueData] ? data[lucColourValueData]->size() : 0;
   if (hasColours == 0) hasColours = colours.size();
   return hasColours;
@@ -114,12 +118,13 @@ int GeomData::colourCount()
 void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
-  if (draw->colourMaps[lucColourValueData] && data[lucColourValueData])
+  ColourMap* cmap = draw->getColourMap();
+  if (cmap && data[lucColourValueData])
   {
     if (data[lucColourValueData]->size() == 1) idx = 0;  //Single colour value only provided
     //assert(idx < data[lucColourValueData]->size());
     if (idx >= data[lucColourValueData]->size()) idx = data[lucColourValueData]->size() - 1;
-    colour = draw->colourMaps[lucColourValueData]->getfast(colourData(idx));
+    colour = cmap->getfast(colourData(idx));
   }
   else if (colours.size() > 0)
   {
@@ -134,9 +139,10 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
   }
 
   //Set opacity using own value map...
-  if (draw->colourMaps[lucOpacityValueData] && data[lucOpacityValueData])
+  ColourMap* omap = draw->getColourMap("opacitymap");
+  if (omap && data[lucOpacityValueData])
   {
-    Colour cc = draw->colourMaps[lucOpacityValueData]->getfast(valueData(lucOpacityValueData, idx));
+    Colour cc = omap->getfast(valueData(lucOpacityValueData, idx));
     colour.a = cc.a;
   }
 
@@ -423,7 +429,7 @@ void Geometry::localiseColourValues()
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     //Get local min and max for each element from colourValues
-    if (geom[i]->draw->colourMaps[lucColourValueData])
+    if (geom[i]->draw->getColourMap())
     {
       geom[i]->data[lucColourValueData]->minimum = HUGE_VAL;
       geom[i]->data[lucColourValueData]->maximum = -HUGE_VAL;

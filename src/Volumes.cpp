@@ -160,8 +160,8 @@ void Volumes::update()
     }
 
     //Setup gradient texture from colourmap
-    if (geom[i]->draw->colourMaps[lucColourValueData])
-      geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
+    ColourMap* cmap = geom[i]->draw->getColourMap();
+    if (cmap) cmap->loadTexture();
   }
   else
   {
@@ -251,8 +251,8 @@ void Volumes::update()
       }
 
       //Setup gradient texture from colourmap
-      if (geom[i]->draw->colourMaps[lucColourValueData])
-        geom[i]->draw->colourMaps[lucColourValueData]->loadTexture();
+      ColourMap* cmap = geom[i]->draw->getColourMap();
+      if (cmap) cmap->loadTexture();
     }
   }
   //Restore padding
@@ -283,10 +283,9 @@ void Volumes::render(int i)
   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
   //User settings
-  int cmap = props["colourmap"];
-  bool hasColourMap = geom[i]->draw->colourMaps[lucColourValueData]
-                      && geom[i]->draw->colourMaps[lucColourValueData]
-                      && cmap >= 0;
+  int cmapid = props["colourmap"];
+  ColourMap* cmap = geom[i]->draw->getColourMap();
+  bool hasColourMap = cmap && cmapid >= 0;
   //Use per-object clip box if set, otherwise use global clip
   /*
   float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->vertices[0][0]),
@@ -341,7 +340,7 @@ void Volumes::render(int i)
   {
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(prog->uniforms["uTransferFunction"], 0);
-    glBindTexture(GL_TEXTURE_2D, geom[i]->draw->colourMaps[lucColourValueData]->texture->id);
+    glBindTexture(GL_TEXTURE_2D, cmap->texture->id);
   }
 
   //Volume texture

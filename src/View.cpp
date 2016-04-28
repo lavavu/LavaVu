@@ -674,8 +674,9 @@ void View::drawOverlay(Colour& colour)
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
+    ColourMap* cmap = objects[i]->getColourMap();
     if (!objects[i] || !objects[i]->properties["colourbar"] ||
-        !objects[i]->properties["visible"] || !objects[i]->colourMaps[lucColourValueData]) continue;
+        !objects[i]->properties["visible"] || !cmap) continue;
     int pos = objects[i]->properties["position"];
     std::string align = objects[i]->properties["align"];
     int ww = w, hh = h;
@@ -707,7 +708,7 @@ void View::drawOverlay(Colour& colour)
     last_y = starty;
     last_margin = margin;
 
-    objects[i]->colourMaps[lucColourValueData]->draw(objects[i]->properties, startx, starty, length, bar_height, colour, vertical);
+    cmap->draw(objects[i]->properties, startx, starty, length, bar_height, colour, vertical);
     GL_Error_Check;
   }
 

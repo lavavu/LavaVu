@@ -257,6 +257,7 @@ ColourMap* Model::addColourMap(ColourMap* cmap)
   }
   //Save colour map in list
   colourMaps.push_back(cmap);
+  //TODO: Index == ID
   return cmap;
 }
 
@@ -461,7 +462,7 @@ void Model::loadLinks(Win* win)
       //Find colourmap by id
       ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
-      draw->addColourMap(cmap, colourmap_datatype);
+      draw->properties.data["colourmap"] = colourmap_id-1;
     }
   }
   sqlite3_finalize(statement);
@@ -497,7 +498,7 @@ void Model::loadLinks(DrawingObject* draw)
       //Find colourmap by id
       ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
-      draw->addColourMap(cmap, colourmap_datatype);
+      draw->properties.data["colourmap"] = colourmap_id-1;
     }
   }
   sqlite3_finalize(statement);
@@ -1269,21 +1270,9 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   {
     if (objects[i] && (id == 0 || objects[i]->id == id))
     {
-      int cmap = 0;
-      if (objects[i]->colourMaps[lucColourValueData]) cmap = objects[i]->colourMaps[lucColourValueData]->id;
-      snprintf(SQL, SQL_QUERY_MAX, "insert into object (id, name, colourmap_id, properties) values (%d, '%s', '%d', '%s')", objects[i]->id, objects[i]->name.c_str(), cmap, objects[i]->properties.data.dump().c_str());
+      snprintf(SQL, SQL_QUERY_MAX, "insert into object (id, name, properties) values (%d, '%s', '%s')", objects[i]->id, objects[i]->name.c_str(), objects[i]->properties.data.dump().c_str());
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
-
-      /* Add colourmap reference for object */
-      for (unsigned int c = 0; c < objects[i]->colourMaps.size(); c++)
-      {
-        if (!objects[i]->colourMaps[c]) continue;
-        /* Link object & colour map */
-        snprintf(SQL, SQL_QUERY_MAX, "insert into object_colourmap (object_id, colourmap_id, data_type) values (%d, %d, %d)", objects[i]->id, objects[i]->colourMaps[c]->id, c);
-        printf("%s\n", SQL);
-        if (!issue(SQL, outdb)) return;
-      }
     }
   }
 

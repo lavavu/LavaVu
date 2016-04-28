@@ -343,8 +343,10 @@ void LavaVu::defaults()
 
   // | object | colour | Object colour RGB(A)
   Properties::defaults["colour"] = {0, 0, 0, 255};
-  // | object | integer | id of the colourmap used
+  // | object | integer | id of the colourmap to use
   Properties::defaults["colourmap"] = -1;
+  // | object | integer | id of opacity colourmap to use
+  Properties::defaults["opacitymap"] = -1;
   // | object | real [0,1] | Opacity of object where 0 is transparent and 1 is opaque
   Properties::defaults["opacity"] = 1.0;
   // | object | real [-1,1] | Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)
@@ -3485,7 +3487,7 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
 
       //Find colourmap
       int colourmap = -1;
-      ColourMap* cmap = amodel->objects[i]->colourMaps[lucColourValueData];
+      ColourMap* cmap = amodel->objects[i]->getColourMap();
       if (cmap)
       {
         //Search vector to find index of selected map
@@ -3619,6 +3621,7 @@ void LavaVu::jsonRead(std::string data)
     if (cmap["maximum"].is_number()) amodel->colourMaps[i]->maximum = cmap["maximum"];
     if (cmap["log"].is_boolean()) amodel->colourMaps[i]->log = cmap["log"];
     json colours = cmap["colours"];
+    if (cmap["name"].is_string()) amodel->colourMaps[i]->name = cmap["name"];
     //Replace colours
     amodel->colourMaps[i]->colours.clear();
     for (unsigned int c=0; c < colours.size(); c++)
@@ -3641,11 +3644,6 @@ void LavaVu::jsonRead(std::string data)
     
     //Merge properties
     amodel->objects[i]->properties.merge(objects[i]);
-
-    //Colourmap selection?
-    amodel->objects[i]->colourMaps[lucColourValueData] = NULL;
-    if (objects[i].count("colourmap") > 0 && objects[i]["colourmap"] > -1)
-      amodel->objects[i]->colourMaps[lucColourValueData] = amodel->colourMaps[objects[i]["colourmap"]];
   }
 }
 
