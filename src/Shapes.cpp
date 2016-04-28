@@ -69,9 +69,9 @@ void Shapes::update()
 
     //Load constant scaling factors from properties
     float dims[3];
-    dims[0] = props["width"];
-    dims[1] = props["height"];
-    dims[2] = props["length"];
+    dims[0] = props["shapewidth"];
+    dims[1] = props["shapeheight"];
+    dims[2] = props["shapelength"];
     int shape = props["shape"];
     int quality = 4 * props.getInt("glyphs", 3);
     //Points drawn as shapes?
