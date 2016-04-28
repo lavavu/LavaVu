@@ -718,6 +718,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Export json settings only (no object data)
     std::string what = parsed["state"];
     jsonWriteFile(what, 0, false, false);
+    return false;
   }
   else if (parsed.has(ival, "cache"))
   {
@@ -1513,7 +1514,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       else
       {
         active->hideShowAll(action == "hide");
-        printMessage("%s all %s %d", action.c_str(), what.c_str());
+        printMessage("%s all %s", action.c_str(), what.c_str());
       }
       amodel->redraw();
     }
@@ -1980,18 +1981,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    if (parsed["list"] == "objects")
-    {
-      objectlist = !objectlist;
-      displayObjectList(true);
-    }
     if (parsed["list"] == "elements")
     {
       //Print available elements by id
       for (unsigned int i=0; i < Model::geometry.size(); i++)
         Model::geometry[i]->print();
     }
-    if (parsed["list"] == "colourmaps")
+    else if (parsed["list"] == "colourmaps")
     {
       int offset = 0;
       for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
@@ -2008,7 +2004,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       viewer->swap();  //Immediate display
       return false;
     }
-    if (parsed["list"] == "data" && aobject)
+    else if (parsed["list"] == "data" && aobject)
     {
       int offset = 2;
       displayText("Data sets for: " + aobject->name + "\n-----------------------------------------", 1);
@@ -2025,6 +2021,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       viewer->swap();  //Immediate display
       return false;
+    }
+    else //if (parsed["list"] == "objects")
+    {
+      objectlist = !objectlist;
+      displayObjectList(true);
     }
   }
   else if (parsed.exists("reset"))
