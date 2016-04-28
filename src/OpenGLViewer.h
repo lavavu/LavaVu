@@ -133,7 +133,7 @@ public:
   {
     background.value = value;
     inverse = background;
-    Colour_Invert(inverse);
+    inverse.invert();
     if (isopen)
     {
       PrintSetColour(inverse.value);

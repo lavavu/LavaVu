@@ -110,14 +110,14 @@ void ColourMap::addAt(Colour& colour, float position)
 
 void ColourMap::add(std::string colour)
 {
-  Colour c = Colour_FromString(colour);
+  Colour c(colour);
   colours.push_back(ColourVal(c));
   //std::cerr << colour << " : " << colours[colours.size()-1] << std::endl;
 }
 
 void ColourMap::add(std::string colour, float pvalue)
 {
-  Colour c = Colour_FromString(colour);
+  Colour c(colour);
   colours.push_back(ColourVal(c, pvalue));
 }
 
@@ -368,10 +368,10 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
     int end = startx + pixel_I + height;
     if (end > startx + length) end = startx + length;
 
-    Colour_SetColour(&colour);
+    glColor4ubv(colour.rgba);
     RECT2( startx + pixel_I, starty, end, starty + height*0.5, vertical);
-    Colour_Invert(colour);
-    Colour_SetColour(&colour);
+    colour.invert();
+    glColor4ubv(colour.rgba);
     RECT2( startx + pixel_I, starty + height*0.5, end, starty + height, vertical);
   }
 
@@ -634,7 +634,7 @@ void ColourMap::loadPalette(std::string data)
     {
       iss >> delim;
       std::getline(iss, value); //Read rest of stream into value
-      Colour colour = Colour_FromString(value);
+      Colour colour(value);
       //Add to colourmap
       addAt(colour, pos);
     }
@@ -644,7 +644,7 @@ void ColourMap::loadPalette(std::string data)
       std::size_t pos = line.find("=") + 1;
       if (pos == 11)
       {
-        Colour c = Colour_FromString(line.substr(pos));
+        Colour c(line.substr(pos));
         background.r = c.rgba[0] / 255.0;
         background.g = c.rgba[1] / 255.0;
         background.b = c.rgba[2] / 255.0;

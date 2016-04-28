@@ -2160,7 +2160,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         //Parse colour json array
         json j = json::parse(str);
-        c = Colour_FromJson(j);
+        c = Colour(j);
       }
       else
       {
@@ -2340,7 +2340,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (parsed["background"] == "grey")
       awin->background.value = 0xff666666;
     else if (parsed["background"] == "invert")
-      Colour_Invert(awin->background);
+      awin->background.invert();
     else if (parsed.has(fval, "background"))
     {
       awin->background.a = 255;

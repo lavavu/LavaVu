@@ -124,7 +124,7 @@ Colour Properties::getColour(const std::string& key, unsigned char red, unsigned
 {
   Colour colour = {red, green, blue, alpha};
   if (data.count(key) == 0) return colour;
-  return Colour_FromJson(data[key], red, green, blue, alpha);
+  return Colour(data[key], red, green, blue, alpha);
 }
 
 float Properties::getFloat(const std::string& key, float def)
