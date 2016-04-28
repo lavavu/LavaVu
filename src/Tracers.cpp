@@ -97,10 +97,11 @@ void Tracers::update()
 
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;
-    if (geom[i]->draw->colourMaps[lucColourValueData] && !geom[i]->colourData())
+    ColourMap* cmap = geom[i]->draw->getColourMap();
+    if (cmap && !geom[i]->colourData())
     {
       timecolour = true;
-      geom[i]->draw->colourMaps[lucColourValueData]->calibrate(TimeStep::timesteps[start]->time, TimeStep::timesteps[end]->time);
+      cmap->calibrate(TimeStep::timesteps[start]->time, TimeStep::timesteps[end]->time);
     }
     else
     {
@@ -157,7 +158,7 @@ void Tracers::update()
 
         //Get colour either from supplied colour values or time step
         if (timecolour)
-          colour = geom[i]->draw->colourMaps[lucColourValueData]->getfast(TimeStep::timesteps[step]->time);
+          colour = cmap->getfast(TimeStep::timesteps[step]->time);
         else
           geom[i]->getColour(colour, pp);
 

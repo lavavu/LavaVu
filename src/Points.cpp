@@ -164,14 +164,12 @@ void Points::loadVertices()
 
     //Cache values if possible, getColour() is slow!
     Properties& props = geom[s]->draw->properties;
-    ColourMap* cmap = NULL;
+    ColourMap* cmap = geom[s]->draw->getColourMap();
     float psize0 = props["pointsize"];
     float scaling = props["scaling"];
     psize0 *= scaling;
     //TODO: this duplicates code in getColour,
     // try to optimise getColour better instead
-    if (geom[s]->draw->colourMaps[lucColourValueData] && geom[s]->colourData())
-      cmap = geom[s]->draw->colourMaps[lucColourValueData];
     //Set opacity to drawing object/geometry override level if set
     float alpha = props["opacity"];
     //float opacity = props["opacity"];

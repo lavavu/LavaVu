@@ -42,11 +42,16 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
 {
   if (id == 0) this->id = DrawingObject::lastid+1;
   DrawingObject::lastid = this->id;
-  colourMaps.resize(lucMaxDataType);
-  //Sets the default colour map if provided, newer databases provide separately
-  if (map) colourMaps[lucColourValueData] = map;
+  colourMaps = NULL;
 
   properties.parseSet(props);
+  //Adjust types of some old props
+  //properties.convertBools({"static", "lit", "cullface", "wireframe", "flat", "depthtest", "clip", "colourbar", "link", 
+  //                        "tubes", "opaque", "isowalls", "tricubicfilter", "taper", "fade", "printticks", 
+  //                        "printunits", "scientific"});
+
+  //Sets the default colour map if provided, newer databases provide separately
+  if (map) properties.data["colourmap"] = map->id-1;
 
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
@@ -75,22 +80,13 @@ void DrawingObject::setup()
   colourIdx = properties["colourby"];
 }
 
-void DrawingObject::addColourMap(ColourMap* map, lucGeometryDataType data_type)
-{
-  //Set selected map property to first map added for web interface / volumes
-  if (map && !properties.has("colourmap"))
-    properties.data["colourmap"] = map->id-1;
 
-  //Sets the colour map for the specified geometry data type
-  colourMaps[data_type] = map;
-  /*
-     if (data_type == lucRedValueData)
-        map->setComponent(0);
-     if (data_type == lucGreenValueData)
-        map->setComponent(1);
-     if (data_type == lucBlueValueData)
-        map->setComponent(2);
-  */
+ColourMap* DrawingObject::getColourMap(const std::string& type)
+{
+  //Lookup colourmap by id from property "colourmap", TODO: "opacitymap"
+  int mapid = properties[type];
+  if (mapid >= 0 && mapid < colourMaps->size()) return (*colourMaps)[mapid];
+  return NULL;
 }
 
 int DrawingObject::addTexture(std::string texfn)

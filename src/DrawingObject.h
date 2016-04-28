@@ -62,8 +62,7 @@ public:
   std::vector<Filter> filters;
   bool filterout;
   unsigned int colourIdx;
-
-  std::vector<ColourMap*> colourMaps; // Uses these Colour Maps (by data type)
+  std::vector<ColourMap*> * colourMaps; // Reference to model colour map list
 
   //Object properties data...
   Properties properties;
@@ -74,7 +73,7 @@ public:
   ~DrawingObject();
 
   void setup();
-  void addColourMap(ColourMap* map, lucGeometryDataType data_type);
+  ColourMap* getColourMap(const std::string& type="colourmap");
   int addTexture(std::string texfn="");
   TextureData* useTexture(int index);
 

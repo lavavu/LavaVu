@@ -2108,31 +2108,33 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Only able to set the value colourmap now
       if (cmap)
       {
-        obj->addColourMap(cmap, lucColourValueData);
+        obj->properties.data["colourmap"] = cmap->id-1;
         printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), cmap->name.c_str(), cmap->id);
       }
       else if (ival < 0 || what.length() == 0)
       {
-        obj->addColourMap(NULL, lucColourValueData);
+        obj->properties.data["colourmap"] = -1;
         printMessage("%s colourmap set to none", obj->name.c_str());
       }
       else
       {
         //No cmap id, parse a colourmap string (must be single line or enclosed in "")
-        if (what == "add" || !obj->colourMaps[lucColourValueData] || ival > 0)
+        ColourMap* cmap = obj->getColourMap();
+        if (what == "add" || !cmap || ival > 0)
         {
           if (ival > 0) //Add specified ID
-            obj->colourMaps[lucColourValueData] = amodel->addColourMap(new ColourMap(ival));
+            cmap = amodel->addColourMap(new ColourMap(ival));
           else
-            obj->colourMaps[lucColourValueData] = amodel->addColourMap();
+            cmap = amodel->addColourMap();
+          obj->properties.data["colourmap"] = cmap->id-1;
           what = parsed.get("colourmap", next+1);
         }
         if (what.length() > 0)
         {
-          obj->colourMaps[lucColourValueData]->loadPalette(what);
-          //obj->colourMaps[lucColourValueData]->print();
-          obj->colourMaps[lucColourValueData]->calibrate(); //Recalibrate
-          obj->colourMaps[lucColourValueData]->calc(); //Recalculate cached colours
+          cmap->loadPalette(what);
+          //cmap->print();
+          cmap->calibrate(); //Recalibrate
+          cmap->calc(); //Recalculate cached colours
         }
       }
       redraw(obj->id);
