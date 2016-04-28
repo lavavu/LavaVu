@@ -289,7 +289,7 @@ public:
 
   Properties() 
   {
-    defaults["default"] = false; //Dummy value
+    defaults["default"] = false; //Fallback value
   }
 
   static json& global(const std::string& key);
@@ -461,7 +461,7 @@ public:
     //reverse order to get (AA)RRGGBB little endian hex, convert to ARGB int
     std::string str = get(key, idx);
     int len = str.length();
-    if (len != 6 && len != 8) return LUC_BLACK;
+    if (len != 6 && len != 8) return 0xff000000;
     if (str.length() == 6) str += "ff";
 
     //Reverse components but preserve order of each 2 letter code

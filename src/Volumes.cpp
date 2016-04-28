@@ -315,7 +315,7 @@ void Volumes::render(int i)
   glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"]);
   Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
   colour.a = 255.0 * props.getFloat("isoalpha", colour.a/255.0);
-  Colour_SetUniform(prog->uniforms["uIsoColour"], colour);
+  colour.setUniform(prog->uniforms["uIsoColour"]);
   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
   glUniform1i(prog->uniforms["uIsoWalls"], (bool)props["isowalls"]);
   glUniform1i(prog->uniforms["uFilter"], (bool)props["tricubicfilter"]);

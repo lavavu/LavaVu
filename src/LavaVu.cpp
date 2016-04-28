@@ -543,6 +543,8 @@ void LavaVu::defaults()
   Properties::defaults["filestep"] = false;
   // | global | boolean | Turn on to set initial state of all loaded objects to hidden
   Properties::defaults["hideall"] = false;
+  // | global | colour | Background colour RGB(A)
+  Properties::defaults["background"] = {0, 0, 0, 255};
 
 #ifdef DEBUG
   //std::cerr << std::setw(2) << Properties::defaults << std::endl;
@@ -2169,7 +2171,9 @@ void LavaVu::createDemoModel()
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
       obj = addObject(new DrawingObject(label, "opacity=0.5\nstatic=1\n"));
-      obj->properties.data["colour"] = Colour_ToJson(0xff000000 | 0xff<<(8*i));
+      Colour c;
+      c.value = (0xff000000 | 0xff<<(8*i));
+      obj->properties.data["colour"] = c.toJson();
       Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
     }
   }
@@ -2663,7 +2667,7 @@ void LavaVu::drawRulers()
   obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.5*aview->model_size;
   obj->properties.data["font"] = "vector";
   //Colour for labels
-  obj->properties.data["colour"] = Colour_ToJson(viewer->inverse);
+  obj->properties.data["colour"] = viewer->inverse.toJson();
 
 
   int ticks = aview->properties["rulerticks"];
@@ -3408,7 +3412,7 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
   json views = json::array();
 
   //TODO: convert this to a global prop too and store as rgba() string
-  properties["background"] = Colour_ToJson(awin->background);
+  properties["background"] = awin->background.toString();
 
   for (unsigned int v=0; v < awin->views.size(); v++)
   {
@@ -3455,11 +3459,8 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
     for (unsigned int c=0; c < amodel->colourMaps[i]->colours.size(); c++)
     {
       json colour;
-      std::stringstream cs;
-      Colour& col = amodel->colourMaps[i]->colours[c].colour;
       colour["position"] = amodel->colourMaps[i]->colours[c].position;
-      cs << "rgba(" << (int)col.r << "," << (int)col.g << "," << (int)col.b << "," << (col.a/255.0) << ")";
-      colour["colour"] = cs.str();
+      colour["colour"] = amodel->colourMaps[i]->colours[c].colour.toString();
       colours.push_back(colour);
     }
 
@@ -3539,7 +3540,6 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
 
   //Export with indentation
   os << std::setw(2) << exported;
-  std::cout << std::setw(2) << exported << std::endl;
 }
 
 void LavaVu::jsonReadFile(std::string fn)
@@ -3570,7 +3570,8 @@ void LavaVu::jsonRead(std::string data)
     views = imported["views"];
 
   //TODO: get rid of this & store/get from property directly instead of Win class
-  awin->background = Colour_FromJson(Properties::global("background"));
+  awin->background = Colour(Properties::global("background"));
+  viewer->setBackground(awin->background.value); //Update background colour
 
   // Import views
   for (unsigned int v=0; v < views.size(); v++)
@@ -3623,7 +3624,7 @@ void LavaVu::jsonRead(std::string data)
     for (unsigned int c=0; c < colours.size(); c++)
     {
       json colour = colours[c];
-      Colour newcolour = Colour_FromJson(colour["colour"]);
+      Colour newcolour(colour["colour"]);
       amodel->colourMaps[i]->addAt(newcolour, colour["position"]);
     }
   }
