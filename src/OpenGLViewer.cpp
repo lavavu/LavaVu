@@ -350,7 +350,10 @@ void OpenGLViewer::display()
       //Is this needed for Omegalib mode param updates?
       postdisplay = true;
 #else
-      break;
+      //This break causes server commands to back up and not all be processed in loop
+      //However, animate "play" repeats forever without display if not enabled
+      if (timer > 0)
+        break;
 #endif
     }
   }
