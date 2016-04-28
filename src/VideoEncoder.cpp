@@ -158,7 +158,6 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 
     c->coder_type = 0;
     c->me_cmp |= 1; // cmp=+chroma, where CHROMA = 1
-    c->me_method = ME_HEX;
     c->me_subpel_quality = 7; //9, 7, 0
     c->me_range = 16;
 
