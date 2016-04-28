@@ -372,7 +372,7 @@ void Model::loadViewCamera(int viewport_id)
     v->rotate(rotate[0], rotate[1], rotate[2]);
     v->setScale(scale[0], scale[1], scale[2]);
     v->setCoordSystem(orientation);
-    v->setProperties(std::string(vprops));
+    v->properties.parseSet(std::string(vprops));
     //debug_print("Loaded \"%s\" at %f,%f\n");
   }
   sqlite3_finalize(statement);
