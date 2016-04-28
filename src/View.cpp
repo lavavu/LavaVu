@@ -86,14 +86,6 @@ View::~View()
 {
 }
 
-void View::setProperties(std::string props)
-{
-  properties.parseSet(props);
-
-  //Adjust types of some old props
-  properties.convertBools({"rulers", "axis", "antialias", "timestep", "fillborder"});
-}
-
 void View::addObject(DrawingObject* obj)
 {
   objects.push_back(obj);

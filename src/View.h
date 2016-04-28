@@ -117,8 +117,6 @@ public:
 
   ~View();
 
-  void setProperties(std::string props);
-
   void addObject(DrawingObject* obj);
   bool hasObject(DrawingObject* obj);
 

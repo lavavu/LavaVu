@@ -99,23 +99,15 @@ bool Properties::has(const std::string& key) {return data.count(key) > 0 && !dat
 json& Properties::operator[](const std::string& key)
 {
   //std::cout << key << std::endl;
+  //std::cout << key << " :: DATA\n" << data << std::endl;
+  //std::cout << key << " :: DEFAULTS\n" << defaults << std::endl;
   json& val = defaults["default"];
-  try
-  {
-    if (data.count(key)) val = data[key];
-    else if (globals.count(key)) val = globals[key];
-    //std::cout << key << " :: DATA\n" << data << std::endl;
-    //std::cout << key << " :: DEFAULTS\n" << defaults << std::endl;
-    else val = defaults[key];
-    //return defaults[key];
-  }
-  catch (std::exception& e)
-  //catch (std::domain_error& e)
-  {
-    std::cerr << key << " : key error : " << e.what() << std::endl;
-    //std::cerr << key << " : key error : " << std::endl;
-  }
-  //return defaults["default"];
+  if (data.count(key))
+    val = data[key];
+  else if (globals.count(key))
+    val = globals[key];
+  else
+    val = defaults[key];
   return val;
 }
 
@@ -227,16 +219,9 @@ void Properties::merge(json& other)
 {
   //Merge: keep existing values, replace any imported
   for (json::iterator it = other.begin() ; it != other.end(); ++it)
-    data[it.key()] = it.value();
-}
-
-void Properties::convertBools(std::vector<std::string> list)
-{
-  //Converts a list of properties from int to boolean
-  for (int i=0; i<list.size(); i++)
   {
-    if (has(list[i]) && data[list[i]].is_number())
-      data[list[i]] = ((int)data[list[i]] != 0);
+    if (!it.value().is_null())
+      data[it.key()] = it.value();
   }
 }
 

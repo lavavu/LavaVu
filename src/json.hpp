@@ -2612,6 +2612,7 @@ class basic_json
         if (is_boolean()) return m_value.boolean;
         if (is_number_integer()) return m_value.number_integer != 0;
         if (is_number_float()) return m_value.number_float != 0.;
+        if (is_null()) return false;
         throw std::domain_error("type must be boolean/numeric, but is " + type_name());
     }
 
