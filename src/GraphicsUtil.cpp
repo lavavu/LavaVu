@@ -1030,9 +1030,9 @@ bool writeImage(GLubyte *image, int width, int height, const std::string& path, 
   jpge::params params;
   params.m_quality = 95;
   params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-  if (!compress_image_to_jpeg_file(path, width, height, 3, image, params))
+  if (!compress_image_to_jpeg_file(path.c_str(), width, height, 3, image, params))
   {
-    fprintf(stderr, "[write_jpeg] File %s could not be saved\n", path);
+    fprintf(stderr, "[write_jpeg] File %s could not be saved\n", path.c_str());
     return false;
   }
 #endif
