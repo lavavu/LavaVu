@@ -25,6 +25,7 @@
 #include <map>
 #include <deque>
 #include <iomanip>
+#include <climits>
 
 //C headers
 #include <assert.h>
