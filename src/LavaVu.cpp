@@ -544,6 +544,8 @@ void LavaVu::defaults()
   Properties::defaults["filestep"] = false;
   // | global | boolean | Turn on to set initial state of all loaded objects to hidden
   Properties::defaults["hideall"] = false;
+  // | global | boolean | Set to enable image serving to browser
+  Properties::defaults["renderserver"] = false;
   // | global | colour | Background colour RGB(A)
   Properties::defaults["background"] = {0, 0, 0, 255};
 
@@ -587,7 +589,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bfks, BEFHKLMOXYZ
+      //Unused switches: bfks, BDEFHKLMOXYZ
       switch (x)
       {
       case 'a':
@@ -608,6 +610,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'q':
         //Web server JPEG quality
         ss >> Server::quality;
+        if (Server::quality > 0) Properties::globals["renderserver"] = true;
         break;
       case 'n':
         //Web server threads
