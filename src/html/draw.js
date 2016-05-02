@@ -1557,11 +1557,11 @@ Viewer.prototype.loadFile = function(source) {
   //Load some user options...
   loadColourMaps();
   if (vis.views[view]) {
-    this.near_clip = vis.views[view].near_clip || 0;
-    this.far_clip = vis.views[view].far_clip || 0;
+    this.near_clip = vis.views[view].near || 0;
+    this.far_clip = vis.views[view].far || 0;
     this.orientation = vis.views[view].orientation || 1;
-    this.showBorder = vis.views[view].border;
-    this.axes = vis.views[view].axes;
+    this.showBorder = vis.views[view].border == undefined ? true : vis.views[view].border > 0;
+    this.axes = vis.views[view].axis == undefined ? true : vis.views[view].axis;
     this.pointScale = vis.properties.scalepoints || 1.0;
     this.pointType = vis.properties.pointtype >= -1 ? vis.properties.pointtype : 0;
     this.opacity = vis.properties.opacity || 1.0;
@@ -1683,7 +1683,7 @@ Viewer.prototype.loadFile = function(source) {
     check.setAttribute('type', 'checkbox');
     check.setAttribute('name', 'object_' + name);
     check.setAttribute('id', 'object_' + name);
-    check.setAttribute('onchange', 'viewer.action(' + id + ', false, true, this);');
+    check.setAttribute('onchange', 'viewer.action("' + name + '", false, true, this);');
     div.appendChild(check);
 
     var label= document.createElement('label');
@@ -1736,15 +1736,16 @@ function Merge(obj1, obj2) {
   return obj1;
 }
 
-Viewer.prototype.toString = function(noviews) {
+Viewer.prototype.toString = function(nocam, reload) {
   var exp = {"objects"    : this.exportObjects(), 
              "colourmaps" : this.exportColourMaps(),
-             "views"      : noviews ? [] : this.exportViews(),
+             "views"      : this.exportViews(nocam),
              "properties" : this.exportProperties()};
 
   exp.exported = true;
-  exp.reload = true;
+  exp.reload = reload ? true : false;
 
+  if (nocam) return JSON.stringify(exp);
   //Export with 2 space indentation
   return JSON.stringify(exp, undefined, 2);
 }
@@ -1753,18 +1754,25 @@ Viewer.prototype.exportProperties = function() {
   vis.properties.scalepoints = this.pointScale;
   vis.properties.pointtype = this.pointType;
   vis.properties.opacity = this.opacity;
-  this.applyBackground(vis.properties.background);
+  //vis.properties.background = this.background.html();
+  //this.applyBackground(vis.properties.background);
   return vis.properties;
 }
 
-Viewer.prototype.exportViews = function() {
+Viewer.prototype.exportViews = function(nocam) {
   //Update camera settings of current view
-  vis.views[view].rotate = this.getRotation();
-  vis.views[view].focus = this.focus;
-  vis.views[view].translate = this.translate;
-  vis.views[view].scale = this.scale;
-  vis.views[view].border = this.showBorder;
-  vis.views[view].axes = this.axes;
+  if (nocam)
+    vis.views[view] = {};
+  else {
+    vis.views[view].rotate = this.getRotation();
+    vis.views[view].focus = this.focus;
+    vis.views[view].translate = this.translate;
+    vis.views[view].scale = this.scale;
+  }
+  vis.views[view].near = this.near_clip;
+  vis.views[view].far = this.far_clip;
+  vis.views[view].border = this.showBorder ? 1 : 0;
+  vis.views[view].axis = this.axes;
   //views[view].background = this.background.toString();
   return vis.views;
 }
@@ -1787,21 +1795,11 @@ Viewer.prototype.exportColourMaps = function() {
   cmaps = [];
   if (vis.colourmaps) {
     for (var i=0; i<vis.colourmaps.length; i++) {
-
-      //TODO:Move this to library function, palette.toList()
-      //Clone the palette colours back to colours array
-      vis.colourmaps[i].colours = JSON.parse(JSON.stringify(vis.colourmaps[i].palette.colours));
-      //vis.colourmaps[i].colours.clear();
-      for (var c=0; c<vis.colourmaps[i].palette.colours.length; c++) {
-        vis.colourmaps[i].colours[c].colour = vis.colourmaps[i].palette.colours[c].colour.toString();
-      }
-
-      cmaps[i] = {};
-      //Copy the properties
+      cmaps[i] = vis.colourmaps[i].palette.get();
+      //Copy additional properties
       for (var type in vis.colourmaps[i]) {
-        if (type != "palette") {
+        if (type != "palette" && type != "colours")
           cmaps[i][type] = vis.colourmaps[i][type];
-        }
       }
     }
   }
@@ -1809,40 +1807,7 @@ Viewer.prototype.exportColourMaps = function() {
 }
 
 Viewer.prototype.exportFile = function() {
-  if (server) {
-     var scriptname = "exported.script";
-     //if (confirm('Overwrite init.script?')) scriptname = "init.script";
-
-     //Clear history before all saved to script
-     sendCommand('clearhistory');
-     
-     cmdlog = '';
-     sendCommand('' + this.getRotationString());
-     sendCommand('' + this.getTranslationString());
-     this.setProperties();
-     cmdlog += '\n#Object properties...\n';
-     for (var id in vis.objects) {
-       this.properties(id);
-       this.setObjectProperties();
-       cmdlog += '\n';
-     }
-
-     //Script version
-     //window.open('data:text/plain;base64,' + window.btoa(cmdlog));
-     //Json version
-     window.open('data:text/plain;base64,' + window.btoa(this.toString()));
-
-     //Also save in script on disk
-     sendCommand('history ' + scriptname);
-     //window.open('/history');
-
-     cmdlog = null;
-
-
-  } else {
-    //Export using data URL
-    window.open('data:text/plain;base64,' + window.btoa(this.toString()));
-  }
+  window.open('data:text/plain;base64,' + window.btoa(this.toString(false, true)));
 }
 
 Viewer.prototype.properties = function(id) {
@@ -1897,7 +1862,9 @@ Viewer.prototype.setProperties = function() {
   viewer.axes = $("axes").checked;
   var c = $("bgColour").value;
   var cc = Math.round(255*c);
-  vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+  //vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+  //
+  vis.properties.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
   setProp('brightness');
   setProp('contrast');
   setProp('saturation');
@@ -1910,26 +1877,8 @@ Viewer.prototype.setProperties = function() {
 
   //Set the local/server props
   if (server) {
-    //Issue server commands
-    queueCommand('select'); //Ensure no object selected
-    queueCommand('scale points ' + viewer.pointScale);
-    queueCommand('alpha ' + (viewer.opacity*255));
-    queueCommand('pointtype all ' + viewer.pointType);
-    queueCommand('border ' + (this.showBorder ? "on" : "off"));
-    queueCommand('axis ' + (this.axes ? "on" : "off"));
-    if (c != "") queueCommand('background ' + c);
-
-    queueCommand('brightness=' + vis.properties.brightness);
-    queueCommand('contrast=' + vis.properties.contrast);
-    queueCommand('saturation=' + vis.properties.saturation);
-
-    queueCommand('xmin=' + vis.properties.xmin);
-    queueCommand('xmax=' + vis.properties.xmax);
-    queueCommand('ymin=' + vis.properties.ymin);
-    queueCommand('ymax=' + vis.properties.ymax);
-    queueCommand('zmin=' + vis.properties.zmin);
-    queueCommand('zmax=' + vis.properties.zmax);
-    sendCommand();
+    //Export all data except views
+    ajaxPost('/post', this.toString(true, false)); //, callback, progress, headers)
   } else {
     viewer.applyBackground(vis.properties.background);
     viewer.draw();
@@ -2019,7 +1968,7 @@ Viewer.prototype.setObjectProperties = function() {
   vis.objects[id].isowalls = $('isowalls').checked;
   vis.objects[id].isofilter = $('isofilter').checked;
   var colour = new Colour($('colour_set').style.backgroundColor);
-  vis.objects[id].colour = colour.toInt();
+  vis.objects[id].colour = colour.html();
   if (vis.objects[id].colourmap >= 0)
     vis.colourmaps[vis.objects[id].colourmap].log = $('logscale').checked;
 
@@ -2029,70 +1978,21 @@ Viewer.prototype.setObjectProperties = function() {
   }
   viewer.draw();
 
-
   //Server side...
   if (server) {
     //Export all data except views
-    ajaxPost('/post', this.toString(true)); //, callback, progress, headers)
-return;
-    queueCommand("select " + properties.id);
-    queueCommand("colour=" + JSON.stringify(colour.rgba()));
-    queueCommand("opacity=" + vis.objects[id].opacity);
-    //queueCommand('brightness=' + vis.objects[id].brightness);
-    //queueCommand('contrast=' + vis.objects[id].contrast);
-    //queueCommand('saturation=' + vis.objects[id].saturation);
-    if (vis.objects[id].points) {
-      queueCommand("scale " + vis.objects[id].pointsize);
-      queueCommand("pointtype " + vis.objects[id].pointtype);
-    }
-    if (vis.objects[id].triangles) {
-      queueCommand("wireframe=" + (vis.objects[id].wireframe ? "1" : "0"));
-      queueCommand('cullface=' + (vis.objects[id].cullface ? "1" : "0"));
-    }
-    if (vis.objects[id].volumes) {
-      //TODO: volume settings here, create volume options in dialog
-      queueCommand('density=' + vis.objects[id].density);
-      queueCommand('power=' + vis.objects[id].power);
-      queueCommand('samples=' + vis.objects[id].samples);
-      queueCommand('isosmooth=' + vis.objects[id].isosmooth);
-      queueCommand('isoalpha=' + vis.objects[id].isoalpha);
-      queueCommand('isowalls=' + (vis.objects[id].isowalls ? "1" : "0"));
-      queueCommand('tricubicfilter=' + (vis.objects[id].isofilter ? "1" : "0"));
-      queueCommand('isovalue=' + vis.objects[id].isovalue);
-      queueCommand('dminclip=' + vis.objects[id].dminclip);
-      queueCommand('dmaxclip=' + vis.objects[id].dmaxclip);
-    }
-    /*queueCommand('xmin=' + vis.objects[id].xmin);
-    queueCommand('xmax=' + vis.objects[id].xmax);
-    queueCommand('ymin=' + vis.objects[id].ymin);
-    queueCommand('ymax=' + vis.objects[id].ymax);
-    queueCommand('zmin=' + vis.objects[id].zmin);
-    queueCommand('zmax=' + vis.objects[id].zmax);*/
-
-    //Get colourmap
-    //console.log(JSON.stringify(vis.colourmaps));
-    var cmid = vis.objects[properties.id].colourmap;
-    if (cmid == undefined || cmid < 0) {
-      queueCommand("colourmap -1");
-    } else {
-      queueCommand("colourmap " + cmid);
-      //Update full colourmap...
-      queueCommand("colourmap \"\n" + vis.colourmaps[cmid].palette + "\n\"\n");
-    }
-
-    queueCommand("select");
-    sendCommand();
+    ajaxPost('/post', this.toString(true, true)); //, callback, progress, headers)
   }
 }
 
-Viewer.prototype.action = function(id, reload, sort, el) {
+Viewer.prototype.action = function(name, reload, sort, el) {
   //Object checkbox clicked
   if (server) {
     var show = el.checked;
     if (show)
-      sendCommand("show " + (id+1));
+      sendCommand('show "' + name + '"');
     else
-      sendCommand("hide " + (id+1));
+      sendCommand('hide "' + name + '"');
     return;
   }
 
@@ -2391,8 +2291,8 @@ Viewer.prototype.updateDims = function(view) {
   this.translate = [0,0,0];
   if (this.modelsize != oldsize) this.translate[2] = -this.modelsize*1.25;
 
-  this.near_clip = this.modelsize / 10.0;   
-  this.far_clip = this.modelsize * 10.0;
+  if (this.near_clip == 0.0) this.near_clip = this.modelsize / 10.0;   
+  if (this.far_clip == 0.0) this.far_clip = this.modelsize * 10.0;
 
   quat4.identity(this.rotate);
   this.rotated = true; 
