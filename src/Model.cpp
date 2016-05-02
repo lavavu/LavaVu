@@ -446,8 +446,8 @@ void Model::loadLinks(Win* win)
     }
 
     //Get drawing object
-    if (objects.size() < object_id || !objects[object_id-1]) continue; //No geometry
-    draw = objects[object_id-1];
+    draw = findObject(object_id);
+    if (!draw) continue; //No geometry
     if (last_object != object_id)
     {
       view->addObject(draw);
@@ -875,7 +875,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   {
     sprintf(objfilter, "WHERE object_id=%d", obj_id);
     //Remove the skip flag now we have explicitly loaded object
-    objects[obj_id-1]->skip = false;
+    DrawingObject* obj = findObject(obj_id);
+    if (obj) obj->skip = false;
   }
 
   //...timestep...
@@ -956,7 +957,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       const void *data = sqlite3_column_blob(statement, datacol);
       unsigned int bytes = sqlite3_column_bytes(statement, datacol);
 
-      DrawingObject* obj = objects[object_id-1];
+      DrawingObject* obj = findObject(object_id);
 
       //Skip object? (When noload enabled)
       if (obj->skip) continue;
@@ -1328,7 +1329,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
     {
       if (!data[i]->data[data_type]) continue;
       std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
-                << data_type <<  ") for object : " << obj_id << " => " << objects[obj_id-1]->name << std::endl;
+                << data_type <<  ") for object : " << obj_id << " => " << findObject(obj_id)->name << std::endl;
       //Get the data block
       DataContainer* block = data[i]->data[data_type];
 

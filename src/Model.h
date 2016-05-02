@@ -115,6 +115,14 @@ public:
     objects.push_back(draw);
   }
 
+
+  DrawingObject* findObject(unsigned int id)
+  {
+    for (int i=0; i<objects.size(); i++)
+      if (objects[i]->id == id) return objects[i];
+    return NULL;
+  }
+
   //Timestep caching
   void deleteCache();
   void cacheStep();
