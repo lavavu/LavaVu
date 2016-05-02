@@ -16,7 +16,7 @@ Server* Server::_self = NULL; //Static
 
 //Defaults
 int Server::port = 8080;
-int Server::quality = 0;
+int Server::quality = 90;
 int Server::threads = 4;
 std::string Server::htmlpath = "html";
 
@@ -100,8 +100,9 @@ bool Server::compare(GLubyte* image)
 
 void Server::display()
 {
-  //Image serving can be disabled by setting quality to 0
-  if (quality == 0) return;
+  //Image serving can be disabled by global prop
+  if (!Properties::global("renderserver")) return;
+  if (quality == 0) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data
   if (pthread_mutex_trylock(&cs_mutex) == 0)
