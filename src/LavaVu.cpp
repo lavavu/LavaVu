@@ -54,55 +54,6 @@
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 
-#define HELP_COMMANDS "\
-\n## Command line arguments\n\n\
-```\n\
-\nStart and end timesteps\n\
- -# : Any integer entered as a switch will be interpreted as the initial timestep to load\n\
-      Any following integer switch will be interpreted as the final timestep for output\n\
-      eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n\
- -c#: caching, set # of timesteps to cache data in memory for\n\
- -P#: subsample points, loading only every #'th\n\
- -A : All objects hidden initially, use 'show object' to display\n\
- -N : No load, deferred loading mode, use 'load object' to load & display from database\n\
- -S : Skip default script, don't run init.script\n\
-\nGeneral options\n\
- -v : Verbose output, debugging info displayed to console\n\
- -o : output mode: all commands entered dumped to standard output,\n\
-      useful for redirecting to a script file to recreate a visualisation setup.\n\
- -a : Automation mode, don't activate event processing loop\n\
- -p#: port, web server interface listen on port #\n\
- -q#: quality, web server jpeg quality (0=don't serve images)\n\
- -n#: number of threads to launch for web server #\n\
- -l: use local shaders, locate in working directory not executable directory\n\
- -Q: quiet mode, no status updates to screen\n\
-\nModel options\n\
- -C: global camera, each model shares the same camera view\n\
- -y: swap z/y axes of imported static models\n\
- -T#: subdivide imported static model triangles into #\n\
- -V#,#,#: volume data resolution in X,Y,Z\n\
- -D#,#,#-#,#,#: volume data bounds min/max X,Y,Z\n\
- -e: each data set loaded from non time varying source has new timestep inserted\n\
-\nImage/Video output\n\
- -z#: render images # times larger and downsample for output\n\
- -i/w: write images of all loaded timesteps/windows then exit\n\
- -I/W: write images as above but using input database path as output path for images\n\
- -u: returns images encoded as string data (for library use)\n\
- -U: returns json model data encoded string (for library use)\n\
- -t: write transparent background png images (if supported)\n\
- -m#: write movies of all loaded timesteps/windows #=fps(30) (if supported)\n\
- -xWIDTH,HEIGHT: set output image width (height optional, will be calculated if omitted)\n\
-\nData export\n\
- -d#: export object id # to CSV vertices + values\n\
- -j#: export object id # to JSON, if # omitted will output all compatible objects\n\
- -g#: export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects\n\
- -G#: export object id # to GLDB (uncompressed), if # omitted will output all compatible objects\n\
-\nWindow settings\n\
- -rWIDTH,HEIGHT: resize initial viewer window to width x height\n\
- -h: hidden window, will exit after running any provided input script and output options\n\
-```\n\
-"
-
 ViewerApp* app = NULL;
 
 std::string execute(int argc, char **argv)
@@ -124,7 +75,57 @@ std::string execute(int argc, char **argv, ViewerApp* myApp)
     //Help?
     if (strstr(argv[i], "-?") || strstr(argv[i], "help"))
     {
-      std::cout << HELP_COMMANDS << std::endl;
+      std::cout << "## Command line arguments\n\n";
+      std::cout << "|         | General options\n";
+      std::cout << "| ------- | ---------------\n";
+      std::cout << "| -#      | Any integer entered as a switch will be interpreted as the initial timestep to load. ";
+      std::cout << "Any following integer switch will be interpreted as the final timestep for output. ";
+      std::cout << "eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n";
+      std::cout << "| -c#     | caching, set # of timesteps to cache data in memory for\n";
+      std::cout << "| -P#     | subsample points, loading only every #'th\n";
+      std::cout << "| -A      | All objects hidden initially, use 'show object' to display\n";
+      std::cout << "| -N      | No load, deferred loading mode, use 'load object' to load & display from database\n";
+      std::cout << "| -S      | Skip default script, don't run init.script\n";
+      std::cout << "| -v      | Verbose output, debugging info displayed to console\n";
+      std::cout << "| -o      | Output mode: all commands entered dumped to standard output, ";
+      std::cout << "useful for redirecting to a script file.\n";
+      std::cout << "| -a      | Automation mode, don't activate event processing loop\n";
+      std::cout << "| -p#     | port, web server interface listen on port #\n";
+      std::cout << "| -q#     | quality, web server jpeg quality (0=don't serve images)\n";
+      std::cout << "| -n#     | number of threads to launch for web server #\n";
+      std::cout << "| -l      | use local shaders, locate in working directory not executable directory\n";
+      std::cout << "| -Q      | quiet mode, no status updates to screen\n";
+      std::cout << "\n";
+      std::cout << "|         | Model options\n";
+      std::cout << "| ------- | -------------\n";
+      std::cout << "| -C      | Global camera, each model shares the same camera view\n";
+      std::cout << "| -y      | Swap z/y axes of imported static models\n";
+      std::cout << "| -T#     | Subdivide imported static model triangles into #\n";
+      std::cout << "| -V#,#,# | Volume data resolution in X,Y,Z\n";
+      std::cout << "| -e      | Each data set loaded from non time varying source has new timestep inserted\n";
+      std::cout << "\n";
+      std::cout << "|         | Image/Video output\n";
+      std::cout << "| ------- | ------------------\n";
+      std::cout << "| -z#     | Render images # times larger and downsample for output\n";
+      std::cout << "| -i/w    | Write images of all loaded timesteps/windows then exit\n";
+      std::cout << "| -I/W    | Write images as above but using input database path as output path for images\n";
+      std::cout << "| -u      | Returns images encoded as string data (for library use)\n";
+      std::cout << "| -U      | Returns json model data encoded string (for library use)\n";
+      std::cout << "| -t      | Write transparent background png images (if supported)\n";
+      std::cout << "| -m#     | Write movies of all loaded timesteps/windows #=fps(30) (if supported)\n";
+      std::cout << "| -x#,#   | Set output image width, height (height will be calculated if omitted)\n";
+      std::cout << "\n";
+      std::cout << "|         | Data Export\n";
+      std::cout << "| ------- | -----------\n";
+      std::cout << "| -d#     | Export object id # to CSV vertices + values\n";
+      std::cout << "| -j#     | Export object id # to JSON, if # omitted will output all compatible objects\n";
+      std::cout << "| -g#     | Export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects\n";
+      std::cout << "| -G#     | Export object id # to GLDB (uncompressed), if # omitted will output all compatible objects\n";
+      std::cout << "\n";
+      std::cout << "|         | Window Settings\n";
+      std::cout << "| ------- | ---------------\n";
+      std::cout << "| -r#,#   | Resize initial viewer window width, height\n";
+      std::cout << "| -h      | hidden window, will exit after running any provided input script and output options\n";
       return "";
     }
     if (strlen(argv[i]) > 0)
@@ -663,10 +664,6 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'V':
         ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
-        break;
-      case 'D':
-        ss >> volmin[0] >> x >> volmin[1] >> x >> volmin[2];
-        ss >> x >> volmax[0] >> x >> volmax[1] >> x >> volmax[2];
         break;
       case 'd':
         if (args[i].length() > 2) ss >> dumpid;
