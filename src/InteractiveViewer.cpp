@@ -323,7 +323,9 @@ bool LavaVu::parseChar(unsigned char key)
     case 'u':
       return parseCommands("toggle cullface");
     case 'w':
-      return parseCommands("toggle wireframe");
+      parseCommands("toggle wireframe");
+      amodel->redraw(true);
+      return true;
     case 'o':
       return parseCommands("list objects");
     case 'q':
@@ -601,7 +603,6 @@ bool LavaVu::parseCommands(std::string cmd)
   if (cmd.at(0) == '{')
   {
     jsonRead(cmd);
-    amodel->redraw();
     return true;
   }
 
@@ -1760,7 +1761,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //for (int type=lucMinType; type<lucMaxType; type++)
     //   Model::geometry[type]->redraw = true;
-    amodel->redraw();
+    amodel->redraw(true); //Redraw & reload
     printMessage("Redrawing all objects");
   }
   else if (parsed.exists("fullscreen"))
@@ -2138,7 +2139,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
       }
       redraw(obj->id);
-      amodel->redraw();
+      amodel->redraw(true); //Redraw & reload
     }
   }
   else if (parsed.exists("colour"))
@@ -2180,7 +2181,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
 
       redraw(aobject->id);
-      amodel->redraw();
+      amodel->redraw(true); //Redraw & reload
     }
   }
   else if (parsed.exists("pointtype"))
@@ -2230,8 +2231,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         else if (parsed.get("pointtype", next) == "down")
           obj->properties.data["pointtype"] = (pt+1) % 5;
         printMessage("%s point type set to %d", obj->name.c_str(), (int)obj->properties["pointtype"]);
-        Model::geometry[lucPointType]->redraw = true;
-        redraw(obj->id);
+        redraw(obj->id); //Full reload of this object only
         amodel->redraw();
       }
     }
@@ -2496,7 +2496,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           printMessage("%s scaling set to %f", obj->name.c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
             Model::geometry[type]->redraw = true;
-          redraw(obj->id);
+          redraw(obj->id); //Full reload of object by id
           amodel->redraw();
         }
       }
@@ -2621,7 +2621,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         amodel->loadGeometry(obj->id);
         //Update the views
         resetViews(false);
-        amodel->redraw();
+        amodel->redraw(true); //Redraw & reload
         //Delete the cache as object list changed
         amodel->deleteCache();
       }
