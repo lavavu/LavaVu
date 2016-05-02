@@ -34,10 +34,8 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 //TODO/FIX:
-//can't seem to catch exception on property lookup
 //Value data types independent from geometry types?
 //Timestep inconsistencies in tecplot load
-//Lock down save/restore state json format so translation between script commands and json props unecessary
 //Merge WebGL/standard shader code
 
 //Viewer class
@@ -3539,6 +3537,7 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
   exported["views"] = views;
   exported["colourmaps"] = colourmaps;
   exported["objects"] = objects;
+  exported["reload"] = true;
 
   //Export with indentation
   os << std::setw(2) << exported;
@@ -3593,16 +3592,22 @@ void LavaVu::jsonRead(std::string data)
 
     //TODO: Fix view to use all these properties directly
     json rot, trans, foc, scale, min, max;
-    rot = view->properties["rotate"];
-    trans = view->properties["translate"];
-    foc = view->properties["focus"];
-    scale = view->properties["scale"];
+    //Skip import cam if not provided
+    if (views[v].count("rotate") > 0)
+    {
+      rot = view->properties["rotate"];
+      trans = view->properties["translate"];
+      foc = view->properties["focus"];
+      scale = view->properties["scale"];
+      view->setRotation(rot[0], rot[1], rot[2], rot[3]);
+      view->setTranslation(trans[0], trans[1], trans[2]);
+      view->focus(foc[0], foc[1], foc[2]);
+      view->scale[0] = scale[0];
+      view->scale[1] = scale[1];
+      view->scale[2] = scale[2];
+    }
     //min = aview->properties["min"];
     //max = aview->properties["max"];
-    view->setRotation(rot[0], rot[1], rot[2], rot[3]);
-    view->setTranslation(trans[0], trans[1], trans[2]);
-    view->focus(foc[0], foc[1], foc[2]);
-    view->setScale(scale[0], scale[1], scale[2]);
     //view->init(false, newmin, newmax);
     view->near_clip = view->properties["near"];
     view->far_clip = view->properties["far"];
@@ -3645,6 +3650,9 @@ void LavaVu::jsonRead(std::string data)
     //Merge properties
     amodel->objects[i]->properties.merge(objects[i]);
   }
+
+  bool reload = (imported["reload"].is_boolean() && imported["reload"]);
+  amodel->redraw(reload);
 }
 
 //Data request from attached apps
