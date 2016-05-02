@@ -1972,8 +1972,9 @@ Viewer.prototype.setObjectProperties = function() {
   if (vis.objects[id].colourmap >= 0)
     vis.colourmaps[vis.objects[id].colourmap].log = $('logscale').checked;
 
+  //Flag reload on WebGL objects
   for (var type in types) {
-    if (vis.objects[id][type])
+    if (vis.objects[id][type] && this[type])
       this[type].sort = this[type].reload = true;
   }
   viewer.draw();
@@ -2103,7 +2104,7 @@ Viewer.prototype.draw = function(borderOnly) {
 Viewer.prototype.drawFrame = function(borderOnly) {
   if (!this.canvas) return;
 
-  if (server && !document.mouse.isdown) {
+  if (server && !document.mouse.isdown && this.gl) {
     //Don't draw in server mode unless interacting (border view)
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     return;
