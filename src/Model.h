@@ -89,7 +89,7 @@ public:
   void attach(int timestep);
   void close();
   void clearObjects(bool all=false);
-  void redraw(bool reset=true);
+  void redraw(bool reload=false);
   ColourMap* addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
   void loadLinks(Win* win);

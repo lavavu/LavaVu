@@ -225,12 +225,12 @@ void Model::clearObjects(bool all)
   }
 }
 
-void Model::redraw(bool reset)
+void Model::redraw(bool reload)
 {
   //Flag redraw on all objects...
   for (unsigned int i=0; i < geometry.size(); i++)
   {
-    if (reset) 
+    if (reload) 
       //Flag redraw and clear element count to force colour reload...
       geometry[i]->reset();
     else
