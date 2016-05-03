@@ -359,7 +359,6 @@ void Volumes::render(int i)
   glPushMatrix();
 #ifndef USE_OMEGALIB
   //Get modelview without focal point / rotation centre adjustment
-  glLoadIdentity();
   view->apply(false);
 #endif
   //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);

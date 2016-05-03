@@ -289,7 +289,7 @@ void LavaVu::defaults()
   message[0] = '\0';
   volres[0] = volres[1] = volres[2] = 256;
   volss[0] = volss[1] = volss[2] = 1.0;
-  volmin[0] = volmin[1] = volmin[2] = -1;
+  volmin[0] = volmin[1] = volmin[2] = 0.0;
   volmax[0] = volmax[1] = volmax[2] = 1;
   volchannels = 1;
   volume = NULL;
