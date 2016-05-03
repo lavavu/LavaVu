@@ -78,15 +78,17 @@ Colour::Colour(json& jvalue, GLubyte red, GLubyte grn, GLubyte blu, GLubyte alph
 
 void Colour::fromString(const std::string& str)
 {
-  if (str.find("rgba(") != std::string::npos) 
+  if (str.find("rgb") != std::string::npos) 
   {
-    //Parse HTML format rgba(r,g,b,a) values
+    //Parse HTML format rgba(r,g,b,a) or rgb(r,g,b) values
     //RGB all [0,255], Alpha can be [0-255] or [0,1]
+    bool hasalpha = str.find("rgba(") != std::string::npos;
+    int start = hasalpha ? 5 : 4;
     int c;
     float alpha;
     try
     {
-      std::stringstream ss(str.substr(5));
+      std::stringstream ss(str.substr(start));
       for (int i=0; i<3; i++)
       {
         ss >> c;
@@ -95,11 +97,17 @@ void Colour::fromString(const std::string& str)
         if (next == ',' || next == ' ')
           ss.ignore();
       }
-      ss >> alpha;
-      if (alpha > 1.)
-        a = alpha;
+
+      if (hasalpha)
+      {
+        ss >> alpha;
+        if (alpha > 1.)
+          a = alpha;
+        else
+          a = 255 * alpha;
+      }
       else
-        a = 255 * alpha;
+        a = 255;
     }
     catch (std::exception& e)
     {
