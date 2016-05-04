@@ -594,7 +594,6 @@ ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
 
 float LavaVu::parseCoord(const std::string& str)
 {
-  std::cout << str << std::endl;
   //Return a coord value macro replacement for bounds if valid string
   //minX/Y/Z max/X/Y/Z
   if (str == "minX")
