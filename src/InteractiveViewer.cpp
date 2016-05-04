@@ -592,6 +592,26 @@ ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
   return NULL;
 }
 
+float LavaVu::parseCoord(const std::string& str)
+{
+  std::cout << str << std::endl;
+  //Return a coord value macro replacement for bounds if valid string
+  //minX/Y/Z max/X/Y/Z
+  if (str == "minX")
+    return aview->min[0];
+  if (str == "maxX")
+    return aview->max[0];
+  if (str == "minY")
+    return aview->min[1];
+  if (str == "maxY")
+    return aview->max[1];
+  if (str == "minZ")
+    return aview->min[2];
+  if (str == "maxZ")
+    return aview->max[2];
+  return 0.0;
+}
+
 bool LavaVu::parseCommands(std::string cmd)
 {
   //Support multi-line command input by splitting on newlines
@@ -963,6 +983,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     printMessage("Points rendered as spheres is %s", Model::pointspheres ? "ON":"OFF");
     return false;
   }
+  else if (parsed.exists("interactive"))
+  {
+    if (gethelp)
+    {
+      help += "Switch to interactive mode, for use in scripts\n";
+      return false;
+    }
+
+    viewer->execute();
+    return false;
+  }
   else if (parsed.exists("open"))
   {
     if (gethelp)
@@ -972,6 +1003,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     loadWindow(0, 0, true);
+    resetViews(); //Forces bounding box update
     return false;
   }
   else if (parsed.exists("resize"))
@@ -2058,7 +2090,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Reload all data of current model/timestep from database\n";
+      help += "Reload all data of current model/timestep from database\n"
+              "(If no database, will still reload window)\n";
       return false;
     }
 
@@ -2146,10 +2179,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Add a colour value to an object, adds to the colour value array\n\n"
-              "Usage: colour [object_id/object_name] colourval\n\n"
-              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+      help += "Add a colour value to selected object, appends to colour value array\n\n"
+              "Usage: colour colourval\n\n"
               "colourval (string) : json [r,g,b(,a)] or hex RRGGBB(AA)\n";
       return false;
     }
@@ -2159,13 +2190,150 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       Colour c(parsed.get("colour"));
-      //Find the first available geometry container for this drawing object and append a colour
+      /*/Find the first available geometry container for this drawing object and append a colour
       GeomData* geomdata = getGeometry(aobject);
       if (geomdata)
       {
         geomdata->data[lucRGBAData]->read(1, &c.value);
         printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
+      }*/
+      //Use the "geometry" property to get the type to read into
+      std::string gtype = aobject->properties["geometry"];
+      Geometry* active = getGeometryType(gtype);
+      active->read(aobject, 1, lucRGBAData, &c.value);
+      printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
+
+      redraw(aobject->id);
+      amodel->redraw(true); //Redraw & reload
+    }
+  }
+  else if (parsed.exists("value"))
+  {
+    if (gethelp)
+    {
+      help += "Add a float value to selected object, appends to value array\n\n"
+              "Usage: value val\n\n"
+              "val (number) : value to append\n";
+      return false;
+    }
+
+    //Add values to object
+    if (aobject && parsed.has(fval, "value"))
+    {
+      //Use the "geometry" property to get the type to read into
+      std::string gtype = aobject->properties["geometry"];
+      Geometry* active = getGeometryType(gtype);
+      active->read(aobject, 1, lucColourValueData, &fval);
+      printMessage("%s value appended %f", aobject->name.c_str(), fval);
+
+      redraw(aobject->id);
+      amodel->redraw(true); //Redraw & reload
+    }
+  }
+  else if (parsed.exists("vertex") || parsed.exists("vector") || parsed.exists("normal"))
+  {
+    std::string action = "vertex";
+    lucGeometryDataType dtype = lucVertexData;
+    if (parsed.exists("vector"))
+    {
+      action = "vector";
+      dtype = lucVectorData;
+    }
+    if (parsed.exists("normal"))
+    {
+      action = "normal";
+      dtype = lucNormalData;
+    }
+
+    if (gethelp)
+    {
+      help += "Add a " + action + " to selected object, appends to " + action + " array\n\n"
+              "Usage: " + action + " x y z\n\n"
+              "x (number) : " + action + " X coord\n"
+              "y (number) : " + action + " Y coord\n"
+              "z (number) : " + action + " Z coord\n\n"
+              "(minX/Y/Z or maxX/Y/Z can be used in place of number for model bounding box edges)\n";
+      return false;
+    }
+
+    if (aobject)
+    {
+      float xyz[3];
+      for (int i=0; i<3; i++)
+      {
+        if (!parsed.has(xyz[i], action, i))
+          xyz[i] = parseCoord(parsed.get(action, i));
       }
+
+      //Use the "geometry" property to get the type to read into
+      std::string gtype = aobject->properties["geometry"];
+      Geometry* active = getGeometryType(gtype);
+      active->read(aobject, 1, dtype, xyz);
+      printMessage("%s %s appended", aobject->name.c_str(), action.c_str());
+
+      redraw(aobject->id);
+      amodel->redraw(true); //Redraw & reload
+    }
+  }
+  else if (parsed.exists("read"))
+  {
+    if (gethelp)
+    {
+      help += "Read data into selected object, appends to specified data array\n\n"
+              "Usage: data type\n\n"
+              "type (string) : data type to load vertices/vectors/normals/values/colours\n"
+              "Before using this command, store the data a json array in a property of same name\n\n";
+      return false;
+    }
+
+    std::string what = parsed["read"];
+    if (aobject && aobject->properties.has(what))
+    {
+      json data = aobject->properties[what];
+      if (!data.is_array() || data.size() == 0) return false;
+      lucGeometryDataType dtype;
+
+      int width = 3;
+      if (what == "vertices")
+        dtype = lucVertexData;
+      if (what == "normals")
+        dtype = lucNormalData;
+      if (what == "vectors")
+        dtype = lucVectorData;
+      if (what == "colours")
+      {
+        dtype = lucRGBAData;
+        width = 1;
+      }
+      if (what == "values")
+      {
+        dtype = lucColourValueData;
+        width = 1;
+      }
+
+      //Use the "geometry" property to get the type to read into
+      std::string gtype = aobject->properties["geometry"];
+      Geometry* active = getGeometryType(gtype);
+      int size = data.size();
+      if (data[0].is_array()) size *= data[0].size();
+      float* vals = new float[size];
+      for (unsigned int i=0; i<data.size(); i++)
+      {
+        if (data[i].is_array())
+        {
+          if (width != 3) return false;
+          //Support 2d array for vertex/vector/normal
+          vals[i*3] = data[i][0];
+          vals[i*3+1] = data[i][1];
+          vals[i*3+2] = data[i][2];
+        }
+        else
+          vals[i] = data[i];
+      }
+      int len = size/width;
+      active->read(aobject, len, dtype, vals);
+      delete[] vals;
+      printMessage("%s %s appended %d", aobject->name.c_str(), what.c_str(), len);
 
       redraw(aobject->id);
       amodel->redraw(true); //Redraw & reload
@@ -2749,6 +2917,27 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     redisplay = keyPress(key, x, y);
   }
+  else if (parsed.exists("add"))
+  {
+    if (gethelp)
+    {
+      help += "Add a new object and select as the active object\n\n"
+              "Usage: add [object_nam] [data_type]\n\n"
+              "object_name (string) : optional name of the object to add\n"
+              "data_type (string) : optional name of the default data type\n"
+              "(points/labels/vectors/tracers/triangles/quads/shapes/lines)\n";
+      return false;
+    }
+
+    std::string name = parsed["add"];
+    aobject = addObject(new DrawingObject(name));
+    if (aobject)
+    {
+      std::string type = parsed.get("add", 1);
+      if (type.length() > 0) aobject->properties.data["geometry"] = type;
+      printMessage("Added object: %s", aobject->name.c_str());
+    }
+  }
   else if (parsed.exists("select"))
   {
     if (gethelp)
@@ -2948,31 +3137,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       aobject->filters.clear();
       amodel->redraw(true); //Force reload
     }
-  }
-  else if (parsed.exists("sealevel"))
-  {
-    if (gethelp)
-    {
-      help += "Draw a sea level plane at Y=0\n";
-      return false;
-    }
-
-    //Create a sea level plane (generic command to do a cross section could be a good idea)
-    DrawingObject* sea = addObject(new DrawingObject("Sea level", "colour=[0,204,255]\nopacity=0.5\nstatic=1\ncullface=0\n"));
-    //Sea grid points
-    Vec3d vertex;
-    vertex[0] = aview->min[0];
-    vertex[1] = 0;
-    vertex[2] = aview->min[2];
-    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-    vertex[0] = aview->max[0];
-    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-    vertex[0] = aview->min[0];
-    vertex[2] = aview->max[2];
-    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-    vertex[0] = aview->max[0];
-    Model::quadSurfaces->read(sea, 1, lucVertexData, vertex.ref(), 2, 2);
-    amodel->redraw();
   }
   else
   {

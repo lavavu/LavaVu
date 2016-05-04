@@ -68,6 +68,7 @@ void Vectors::update()
   int tot = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
+    if (geom[i]->vectors.size() < geom[i]->count) continue;
     Properties& props = geom[i]->draw->properties;
 
     //Create new data stores for output geometry

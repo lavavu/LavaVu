@@ -329,6 +329,8 @@ void LavaVu::defaults()
   Properties::defaults["visible"] = true;
   // | object | boolean | Set to true if object remains static regardless of timestep
   Properties::defaults["static"] = false;
+  // | object | string | Geometry type to load when adding new data
+  Properties::defaults["geometry"] = "points";
   // | object | boolean | Apply lighting to object
   Properties::defaults["lit"] = true;
   // | object | boolean | Cull back facing polygons of object surfaces
@@ -339,6 +341,12 @@ void LavaVu::defaults()
   Properties::defaults["flat"] = false;
   // | object | boolean | Set to false to disable depth test when drawing object so always drawn regardless of 3d position
   Properties::defaults["depthtest"] = true;
+  // | object | integer | width override for geometry
+  Properties::defaults["geomwidth"] = 0;
+  // | object | integer | height override for geometry
+  Properties::defaults["geomheight"] = 0;
+  // | object | integer | depth override for geometry
+  Properties::defaults["geomdepth"] = 0;
 
   // | object | colour | Object colour RGB(A)
   Properties::defaults["colour"] = {0, 0, 0, 255};

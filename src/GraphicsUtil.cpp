@@ -1036,7 +1036,7 @@ bool writeImage(GLubyte *image, int width, int height, const std::string& path, 
     return false;
   }
 #endif
-  debug_print("[%s] File successfully written\n", path);
+  debug_print("[%s] File successfully written\n", path.c_str());
   return true;
 }
 
@@ -1245,8 +1245,6 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
   png_destroy_info_struct(pngWrite, &pngInfo);
   png_destroy_write_struct(&pngWrite, NULL);
   delete[] row_pointers;
-
-  debug_print("[write_png_file] File successfully written\n");
 }
 
 #endif //HAVE_LIBPNG
