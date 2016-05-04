@@ -680,7 +680,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
   //******************************************************************************
   //First check for settings commands that don't require a model to be loaded yet!
-  if (parsed.exists("file"))
+  if (parsed.exists("docs:scripting"))
+  {
+    helpCommand("docs:scripting");
+    return false;
+  }
+  else if (parsed.exists("docs:interaction"))
+  {
+    std::cout << HELP_INTERACTION;
+    return false;
+  }
+  else if (parsed.exists("file"))
   {
     if (gethelp)
     {
@@ -1062,53 +1072,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
     encodeVideo("", ival);
-    return false;
-  }
-  else if (parsed.exists("docs:scripting"))
-  {
-    std::cout << "\n##Scripting command reference\n\n";
-    std::cout << "\n###General commands:\n\n";
-    std::cout << helpCommand("quit") << helpCommand("repeat") << helpCommand("history");
-    std::cout << helpCommand("clearhistory") << helpCommand("pause") << helpCommand("list");
-    std::cout << helpCommand("timestep") << helpCommand("jump") << helpCommand("model") << helpCommand("reload");
-    std::cout << helpCommand("next") << helpCommand("play") << helpCommand("stop");
-    std::cout << "\n###Input commands:\n\n";
-    std::cout << helpCommand("file") << helpCommand("script");
-    std::cout << "\n###Output commands:\n\n";
-    std::cout << helpCommand("image") << helpCommand("images") << helpCommand("outwidth") << helpCommand("outheight");
-    std::cout << helpCommand("movie") << helpCommand("export") << helpCommand("state");
-    std::cout << "\n###View/camera commands:\n\n";
-    std::cout << helpCommand("rotate") << helpCommand("rotatex") << helpCommand("rotatey");
-    std::cout << helpCommand("rotatez") << helpCommand("rotation") << helpCommand("zoom") << helpCommand("translate");
-    std::cout << helpCommand("translatex") << helpCommand("translatey") << helpCommand("translatez");
-    std::cout << helpCommand("focus") << helpCommand("aperture") << helpCommand("focallength");
-    std::cout << helpCommand("eyeseparation") << helpCommand("nearclip") << helpCommand("farclip") << helpCommand("zoomclip");
-    std::cout << helpCommand("zerocam") << helpCommand("reset") << helpCommand("camera");
-    std::cout << helpCommand("resize") << helpCommand("fullscreen") << helpCommand("fit");
-    std::cout << helpCommand("autozoom") << helpCommand("stereo") << helpCommand("coordsystem");
-    std::cout << helpCommand("sort") << helpCommand("rotation") << helpCommand("translation");
-    std::cout << "\n###Object commands:\n\n";
-    std::cout << helpCommand("hide") << helpCommand("show") << helpCommand("delete") << helpCommand("load") << helpCommand("name");
-    std::cout << "\n###Display commands:\n\n";
-    std::cout << helpCommand("background") << helpCommand("alpha") << helpCommand("toggle");
-    std::cout << helpCommand("axis") << helpCommand("scaling") << helpCommand("rulers") << helpCommand("log");
-    std::cout << helpCommand("antialias") << helpCommand("localise") << helpCommand("lockscale");
-    std::cout << helpCommand("colourmap") << helpCommand("colour") << helpCommand("pointtype");
-    std::cout << helpCommand("pointsample");
-    std::cout << helpCommand("border") << helpCommand("title") << helpCommand("scale") << helpCommand("select");
-    std::cout << "\n###Miscellanious commands:\n\n";
-    std::cout << helpCommand("shaders") << helpCommand("blend") << helpCommand("props") << helpCommand("defaults");
-    std::cout << helpCommand("test") << helpCommand("voltest") << helpCommand("newstep");
-    std::cout << helpCommand("filter") << helpCommand("filterout") << helpCommand("clearfilters") << helpCommand("sealevel");
-    std::cout << helpCommand("cache") << helpCommand("noload") << helpCommand("verbose") << helpCommand("pngalpha") << helpCommand("swapyz");
-    std::cout << helpCommand("trisplit") << helpCommand("globalcam") << helpCommand("localshaders") << helpCommand("pointspheres");
-    std::cout << helpCommand("volchannels") << helpCommand("volres") << helpCommand("volmin") << helpCommand("volmax");
-    std::cout << helpCommand("inscale") << helpCommand("volsubsample") << helpCommand("createvolume");
-    return false;
-  }
-  else if (parsed.exists("docs:interaction"))
-  {
-    std::cout << HELP_INTERACTION;
     return false;
   }
 
@@ -3179,32 +3142,53 @@ bool LavaVu::parsePropertySet(std::string cmd)
 
 std::string LavaVu::helpCommand(std::string cmd)
 {
+  //This list of categories and commands must be maintained along with the individual command help strings
+  std::vector<std::string> categories = {"General", "Input", "Output", "View/Camera", "Object", "Display", "Scripting", "Miscellanious"};
+  std::vector<std::vector<std::string> > cmdlist = {
+    {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
+    {"file", "script"},
+    {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
+    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
+     "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "camera",
+     "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
+    {"hide", "show", "delete", "load", "select", "add", "read", "name",
+     "vertex", "normal", "vector", "value", "colour"},
+    {"background", "alpha", "axis", "scaling", "rulers", "log",
+     "antialias", "localise", "lockscale", "lighting", "colourmap", "pointtype",
+     "pointsample", "border", "title", "scale"},
+    {"next", "play", "stop", "open", "interactive"},
+    {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",
+     "cache", "noload", "verbose", "pngalpha", "swapyz", "trisplit", "globalcam", "localshaders", "pointspheres",
+     "toggle", "volchannels", "volres", "volmin", "volmax", "inscale", "volsubsample", "createvolume"}
+  };
+
   help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
   //Verbose command help
   if (cmd == "help")
   {
-    help += "Command help:\n\nUse:\nhelp * [ENTER]\nwhere * is a command, for detailed help\n"
-            "\nGeneral commands:\n\n"
-            "quit, repeat, animate, history, clearhistory, pause, list, timestep, jump, model, reload, clear"
-            "\nInput commands:\n\n"
-            "file, script\n"
-            "\nOutput commands:\n\n"
-            "image, images, outwidth, outheight, movie, play, export, state\n"
-            "\nView/camera commands:\n\n"
-            "rotate, rotatex, rotatey, rotatez, rotation, translate, translatex, translatey, translatez\n"
-            "focus, aperture, focallength, eyeseparation, nearclip, farclip, zoomclip, zerocam, reset, camera\n"
-            "resize, fullscreen, fit, autozoom, stereo, coordsystem, sort, rotation, translation\n"
-            "\nObject commands:\n\n"
-            "hide, show, delete, load, select, name\n"
-            "\nDisplay commands:\n\n"
-            "background, alpha, toggle, axis, scaling, rulers, log\n"
-            "antialias, localise, lockscale, lighting, colourmap, colour, pointtype\n"
-            "pointsample, border, title, scale\n"
-            "\nMiscellanious commands:\n\n"
-            "shaders, blend, props, defaults, test, voltest\n"
-            "newstep, filter, filterout, clearfilters, sealevel\n\n"
-            "cache, noload, verbose, pngalpha, swapyz, trisplit, globalcam, localshaders, pointspheres\n"
-            "volchannels, volres, volmin, volmax, inscale, volsubsample, createvolume\n";
+    help += "For detailed help on a command, type:\nhelp command [ENTER]";
+    for (unsigned int i=0; i<categories.size(); i++)
+    {
+      help += "\n\n" + categories[i] + " commands:\n\n  ";
+      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      {
+        if (j % 11 == 10) help += "\n  ";
+        help += cmdlist[i][j];
+        if (j < cmdlist[i].size() - 1) help += ", ";
+      }
+    }
+  }
+  else if (cmd == "docs:scripting")
+  {
+    std::cout << "\n##Scripting command reference\n\n";
+    for (unsigned int i=0; i<categories.size(); i++)
+    {
+      std::cout <<  "\n###" + categories[i] + " commands:\n\n";
+      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      {
+        std::cout << helpCommand(cmdlist[i][j]);
+      }
+    }
   }
   else
   {
