@@ -455,28 +455,6 @@ public:
     return val;
   }
 
-  unsigned int Colour(std::string key, unsigned int idx=0)
-  {
-    //Parse colour as RRGGBBAA hex string:
-    //reverse order to get (AA)RRGGBB little endian hex, convert to ARGB int
-    std::string str = get(key, idx);
-    int len = str.length();
-    if (len != 6 && len != 8) return 0xff000000;
-    if (str.length() == 6) str += "ff";
-
-    //Reverse components but preserve order of each 2 letter code
-    if (str.length() == 6) //Alpha optional
-      str = "ff" + str.substr(4,2) + str.substr(2,2) + str.substr(0,2);
-    else
-      str = str.substr(6,2) + str.substr(4,2) + str.substr(2,2) + str.substr(0,2);
-
-    std::stringstream parsess(str);
-    unsigned int val;
-    parsess >> std::hex >> val;
-
-    return val;
-  }
-
   float Float(std::string key, float def=0.0, unsigned int idx=0)
   {
     std::stringstream parsess(get(key, idx));
