@@ -118,7 +118,7 @@ public:
 
   DrawingObject* findObject(unsigned int id)
   {
-    for (int i=0; i<objects.size(); i++)
+    for (unsigned int i=0; i<objects.size(); i++)
       if (objects[i]->id == id) return objects[i];
     return NULL;
   }
@@ -133,6 +133,12 @@ public:
   {
     //Current actual step
     return now < 0 || timesteps.size() == 0 ? -1 : timesteps[now]->step;
+  }
+
+  int stepInfo()
+  {
+    //Current actual step (returns 0 if none instead of -1 for output functions)
+    return now < 0 || timesteps.size() == 0 ? 0 : timesteps[now]->step;
   }
 
   int lastStep()
