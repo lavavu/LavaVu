@@ -3154,7 +3154,7 @@ std::string LavaVu::helpCommand(std::string cmd)
     {"hide", "show", "delete", "load", "select", "add", "read", "name",
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers", "log",
-     "antialias", "localise", "lockscale", "lighting", "colourmap", "pointtype",
+     "antialias", "localise", "lockscale", "colourmap", "pointtype",
      "pointsample", "border", "title", "scale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",

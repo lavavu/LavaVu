@@ -753,9 +753,12 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
   geomdata = getObjectStore(draw);
 
   //Allow spec width/height/depth in properties
-  if (width == 0) width = draw->properties["geomwidth"];
-  if (height == 0) height = draw->properties["geomheight"];
-  if (depth == 0) depth = draw->properties["geomdepth"];
+  if (!geomdata || geomdata->count == 0)
+  {
+    if (width == 0) width = draw->properties["geomwidth"];
+    if (height == 0) height = draw->properties["geomheight"];
+    if (depth == 0) depth = draw->properties["geomdepth"];
+  }
 
   //Objects with a specified width & height: detect new data store when required (full)
   if (!geomdata || (dtype == lucVertexData &&
