@@ -2315,7 +2315,7 @@ void LavaVu::resetViews(bool autozoom)
     title << "LavaVu";
 
   if (amodel->timesteps.size() > 1)
-    title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->step();
+    title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->stepInfo();
 
   viewer->title = title.str();
 
@@ -3360,7 +3360,7 @@ void LavaVu::dumpById(unsigned int id)
         {
           char filename[FILE_PATH_MAX];
           sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
-                  GeomData::names[type].c_str(), amodel->step());
+                  GeomData::names[type].c_str(), amodel->stepInfo());
           std::ofstream csv;
           csv.open(filename, std::ios::out | std::ios::trunc);
           std::cout << " * Writing object " << amodel->objects[i]->id << " to " << filename << std::endl;
@@ -3377,15 +3377,13 @@ void LavaVu::jsonWriteFile(unsigned int id, bool jsonp, bool objdata)
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
   char ext[6];
-  int step = amodel->step();
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
-  if (step < 0) step = 0;
   if (id > 0)
     sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
-            amodel->objects[id]->name.c_str(), step, ext);
+            amodel->objects[id]->name.c_str(), amodel->stepInfo(), ext);
   else
-    sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), step, ext);
+    sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->stepInfo(), ext);
   jsonWriteFile(filename, id, jsonp, objdata);
 }
 
@@ -3481,7 +3479,6 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
       //Only able to dump point/triangle based objects currently:
       //TODO: fix to use sub-renderer output for others
       //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
-      std::string names[] = {"", "points", "triangles", "triangles", "triangles", "triangles", "triangles", "lines", "triangles", "volume"};
 
       //Find colourmap
       int colourmap = -1;
