@@ -180,6 +180,55 @@ std::string image(std::string filename, int width, int height)
   return result;
 }
 
+void addObject(std::string name, std::string properties)
+{
+  app->parseCommands("add " + name);
+  LavaVu* lvapp = (LavaVu*)app;
+  if (!lvapp->amodel) return;
+  lvapp->aobject->properties.parseSet(properties);
+}
+
+void loadVertices(std::vector< std::vector <float> > array)
+{
+  LavaVu* lvapp = (LavaVu*)app;
+  if (!lvapp->amodel) return;
+
+  //Get selected object or create a new one
+  if (!lvapp->aobject) addObject("(unnamed)", "");
+
+  //Get the type to load (defaults to points)
+  std::string type = lvapp->aobject->properties["geometry"];
+  Geometry* container = lvapp->getGeometryType(type);
+  if (!container) return;
+
+  //Load 3d vertices
+  for (int i=0; i < array.size(); i++)
+    container->read(lvapp->aobject, 1, lucVertexData, &array[i][0]);
+}
+
+void loadValues(std::vector <float> array)
+{
+  LavaVu* lvapp = (LavaVu*)app;
+  if (!lvapp->amodel) return;
+  //Get selected object or create a new one
+  if (!lvapp->aobject) addObject("(unnamed)", "");
+
+  //Get the type to load (defaults to points)
+  std::string type = lvapp->aobject->properties["geometry"];
+  Geometry* container = lvapp->getGeometryType(type);
+  if (!container) return;
+
+  //Load scalar values
+  for (int i=0; i < array.size(); i++)
+    container->read(lvapp->aobject, 1, lucColourValueData, &array[i]);
+}
+
+void display()
+{
+  //Call display on app
+  app->display();
+}
+
 void clear()
 {
   //Close any open models and free memory
