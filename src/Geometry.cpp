@@ -39,7 +39,7 @@
 float Geometry::min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
 float Geometry::max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
 float Geometry::dims[3];
-std::string GeomData::names[lucMaxType] = {"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volume"};
+std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volumes"};
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 int segments__ = 0;    // Saves segment count for circle based objects
 
@@ -752,6 +752,11 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
   //Get passed object's most recently added data store
   geomdata = getObjectStore(draw);
 
+  //Allow spec width/height/depth in properties
+  if (width == 0) width = draw->properties["geomwidth"];
+  if (height == 0) height = draw->properties["geomheight"];
+  if (depth == 0) depth = draw->properties["geomdepth"];
+
   //Objects with a specified width & height: detect new data store when required (full)
   if (!geomdata || (dtype == lucVertexData &&
                     geomdata->width > 0 && geomdata->height > 0 &&
@@ -791,6 +796,10 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     geomdata->values.push_back(fv);
     //debug_print("NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name.c_str(), dtype, geomdata->values.size(), fv);
   }
+
+  //Update the default type property on first read
+  if (geomdata->count == 0 && !geomdata->draw->properties.has("geometry"))
+    geomdata->draw->properties.data["geometry"] = GeomData::names[type];
 
   //Read the data
   if (n > 0) geomdata->data[dtype]->read(n, data);
