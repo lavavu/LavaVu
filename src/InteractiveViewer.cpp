@@ -2158,20 +2158,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //(this now only adds rgba data values, to set global colour use property: colour=val)
     if (aobject)
     {
-      Colour c;
-      std::string str = parsed.get("colour");
-      if (str.find('[') != std::string::npos)
-      {
-        //Parse colour json array
-        json j = json::parse(str);
-        c = Colour(j);
-      }
-      else
-      {
-        //Parse colour as RGB(A) hex, convert to ARGB int
-        c.value = parsed.Colour("colour");
-      }
-
+      Colour c(parsed.get("colour"));
       //Find the first available geometry container for this drawing object and append a colour
       GeomData* geomdata = getGeometry(aobject);
       if (geomdata)
@@ -2768,7 +2755,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Select object as the active object\n"
               "Used for setting properties of objects\n"
-              "following commands that take an object id will no longer require one)\n\n";
+              "following commands that take an object id will no longer require one)\n\n"
               "Usage: select object_id/object_name\n\n"
               "object_id (integer) : the index of the object to select (see: \"list objects\")\n"
               "object_name (string) : the name of the object to select (see: \"list objects\")\n"
