@@ -1781,7 +1781,7 @@ void LavaVu::readTecplot(FilePath& fn)
 
   //Demo colourmap
   ColourMap* colourMap = new ColourMap();
-  amodel->addColourMap(colourMap);
+  unsigned int cmid = amodel->addColourMap(colourMap);
 
   //Colours: hex, abgr
   //unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
@@ -1791,7 +1791,7 @@ void LavaVu::readTecplot(FilePath& fn)
   colourMap->add(colours, 7);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", "colourbar=1\n", colourMap));
+  addObject(new DrawingObject("colour-bar", "colourbar=1\n", cmid));
 
   std::ifstream file(fn.full.c_str(), std::ios::in);
   if (file.is_open())
@@ -1873,12 +1873,12 @@ void LavaVu::readTecplot(FilePath& fn)
           printf("N = %d, ELS = %d\n", N, ELS);
 
           //Add points object
-          //pobj = addObject(new DrawingObject("particles", "lit=0\n", colourMap));
+          //pobj = addObject(new DrawingObject("particles", "lit=0\n", cmid));
           //Model::points->add(pobj);
           //std::cout << values[0] << "," << valuemin << "," << valuemax << std::endl;
 
           //Add triangles object
-          tobj = addObject(new DrawingObject("triangles", "flat=1\n", colourMap));
+          tobj = addObject(new DrawingObject("triangles", "flat=1\n", cmid));
           Model::triSurfaces->add(tobj);
 
           //Add lines object
@@ -2157,17 +2157,17 @@ void LavaVu::createDemoModel()
 
   //Demo colourmap, distance from model origin
   ColourMap* colourMap = new ColourMap();
-  amodel->addColourMap(colourMap);
+  unsigned int cmid = amodel->addColourMap(colourMap);
   //Colours: hex, abgr
   unsigned int colours[] = {0xff33bb66,0xff00ff00,0xffff3333,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff,0xff000000};
   colourMap->add(colours, 8);
   colourMap->calibrate(0, size);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", "colourbar=1\n", colourMap));
+  addObject(new DrawingObject("colour-bar", "colourbar=1\n", cmid));
 
   //Add points object
-  DrawingObject* obj = addObject(new DrawingObject("particles", "opacity=0.75\nstatic=1\nlit=0\n", colourMap));
+  DrawingObject* obj = addObject(new DrawingObject("particles", "opacity=0.75\nstatic=1\nlit=0\n", cmid));
   int NUMPOINTS = 200000;
   int NUMSWARM = NUMPOINTS/4;
   for (int i=0; i < NUMPOINTS; i++)
@@ -2192,7 +2192,7 @@ void LavaVu::createDemoModel()
   }
 
   //Add lines
-  obj = addObject(new DrawingObject("line-segments", "static=1\nlit=0\n", colourMap));
+  obj = addObject(new DrawingObject("line-segments", "static=1\nlit=0\n", cmid));
   for (int i=0; i < 50; i++)
   {
     float colour, ref[3];
@@ -2329,8 +2329,6 @@ void LavaVu::close()
   for (unsigned int i=0; i < Model::geometry.size(); i++)
     delete Model::geometry[i];
   Model::geometry.clear();
-
-  ColourMap::lastid = 0;
 }
 
 void LavaVu::redraw(DrawingObject* obj)

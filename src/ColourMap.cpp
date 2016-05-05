@@ -38,7 +38,6 @@
 //Init static data
 bool ColourMap::lock = false;
 int ColourMap::logscales = 0;
-unsigned int ColourMap::lastid = 0;
 int ColourMap::samples = 4096;
 
 std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
@@ -46,16 +45,12 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
   return os << cv.value << " --> " << cv.position << "=" << cv.colour;
 }
 
-ColourMap::ColourMap(unsigned int id, const char* name, bool log, bool discrete,
+ColourMap::ColourMap(const char* name, bool log, bool discrete,
                      float min, float max, std::string props)
-  : id(id), minimum(min), maximum(max), log(log), discrete(discrete),
+  : minimum(min), maximum(max), log(log), discrete(discrete),
     calibrated(false), noValues(false)
 {
   precalc = new Colour[samples];
-  if (id == 0)
-    this->id = ++ColourMap::lastid;
-  else if (id > ColourMap::lastid)
-    ColourMap::lastid = id;
   this->name = std::string(name);
   texture = NULL;
   background.value = 0xff000000;

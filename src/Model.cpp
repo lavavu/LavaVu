@@ -246,7 +246,7 @@ void Model::redraw(bool reload)
 }
 
 //Adds colourmap
-ColourMap* Model::addColourMap(ColourMap* cmap)
+unsigned int Model::addColourMap(ColourMap* cmap)
 {
   if (!cmap)
   {
@@ -257,8 +257,8 @@ ColourMap* Model::addColourMap(ColourMap* cmap)
   }
   //Save colour map in list
   colourMaps.push_back(cmap);
-  //TODO: Index == ID
-  return cmap;
+  //Return index
+  return colourMaps.size()-1;
 }
 
 void Model::loadWindows()
@@ -399,7 +399,7 @@ void Model::loadObjects()
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
-    DrawingObject* obj = new DrawingObject(otitle, props, NULL, object_id);
+    DrawingObject* obj = new DrawingObject(otitle, props, -1, object_id);
     addObject(obj);
     //Convert old colour/opacity from hard coded fields
     if (!obj->properties.has("opacity") && opacity >= 0.0) obj->properties.data["opacity"] = opacity;
@@ -459,7 +459,7 @@ void Model::loadLinks(Win* win)
     {
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
-      //Find colourmap by id
+      //Find colourmap by id == index
       ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
       draw->properties.data["colourmap"] = colourmap_id-1;
@@ -495,7 +495,7 @@ void Model::loadLinks(DrawingObject* obj)
     {
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
-      //Find colourmap by id
+      //Find colourmap by id == index
       ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
       obj->properties.data["colourmap"] = colourmap_id-1;
@@ -585,7 +585,7 @@ void Model::loadColourMaps()
     int logscale = sqlite3_column_int(statement, 4);
     int discrete = sqlite3_column_int(statement, 5);
     char *props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(id, cmname, logscale, discrete, minimum, maximum, props ? props : "");
+    colourMap = new ColourMap(cmname, logscale, discrete, minimum, maximum, props ? props : "");
     colourMaps.push_back(colourMap);
   }
 
@@ -632,7 +632,7 @@ void Model::loadColourMapsLegacy()
       int discrete = sqlite3_column_int(statement, 4);
       char *props = NULL;
       if (!old) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(id, cmname ? cmname : idname, logscale, discrete, minimum, maximum, props ? props : "");
+      colourMap = new ColourMap(cmname ? cmname : idname, logscale, discrete, minimum, maximum, props ? props : "");
       colourMaps.push_back(colourMap);
       //Colours already parsed from properties?
       if (colourMap->colours.size() > 0) parsed = true;

@@ -36,7 +36,7 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map, unsigned int id) : dbid(id), name(name), skip(Model::noload)
+DrawingObject::DrawingObject(std::string name, std::string props, unsigned int colourmap, unsigned int id) : dbid(id), name(name), skip(Model::noload)
 {
   colourMaps = NULL;
 
@@ -49,8 +49,8 @@ DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map
   //                        "tubes", "opaque", "isowalls", "tricubicfilter", "taper", "fade", "printticks", 
   //                        "printunits", "scientific"});
 
-  //Sets the default colour map if provided, newer databases provide separately
-  if (map) properties.data["colourmap"] = map->id-1;
+  //Sets the default colour map idx if provided, newer databases provide separately
+  properties.data["colourmap"] = colourmap;
 
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}

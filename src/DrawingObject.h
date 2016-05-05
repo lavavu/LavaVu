@@ -69,7 +69,7 @@ public:
   //Texture list
   std::vector<TextureLoader*> textures;
 
-  DrawingObject(std::string name="", std::string props="", ColourMap* map=NULL, unsigned int id=0);
+  DrawingObject(std::string name="", std::string props="", unsigned int colourmap=-1, unsigned int id=0);
   ~DrawingObject();
 
   void setup();
