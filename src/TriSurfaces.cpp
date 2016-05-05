@@ -855,10 +855,10 @@ void TriSurfaces::draw()
   GL_Error_Check;
 }
 
-void TriSurfaces::jsonWrite(unsigned int id, json& obj)
+void TriSurfaces::jsonWrite(DrawingObject* draw, json& obj)
 {
   json tris;
   if (obj.count("triangles") > 0) tris = obj["triangles"];
-  jsonExportAll(id, tris);
+  jsonExportAll(draw, tris);
   if (tris.size() > 0) obj["triangles"] = tris;
 }

@@ -226,18 +226,19 @@ public:
   virtual ~Geometry();
 
   void clear(bool all=false); //Called before new data loaded
+  void remove(DrawingObject* draw);
   void reset(); //Called before new data loaded when caching previous data
   virtual void close(); //Called on quit & before gl context recreated
 
   void compareMinMax(float* min, float* max);
-  void dumpById(std::ostream& csv, unsigned int id);
-  virtual void jsonWrite(unsigned int id, json& obj);
-  void jsonExportAll(unsigned int id, json& array, bool encode=true);
+  void dump(std::ostream& csv, DrawingObject* draw=NULL);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
+  void jsonExportAll(DrawingObject* draw, json& array, bool encode=true);
   bool hide(unsigned int idx);
   void hideShowAll(bool hide);
   bool show(unsigned int idx);
-  void showById(unsigned int id, bool state);
-  void redrawObject(unsigned int id);
+  void showObj(DrawingObject* draw, bool state);
+  void redrawObject(DrawingObject* draw);
   void localiseColourValues();
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
@@ -245,7 +246,7 @@ public:
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();  //Display saved geometry
   void labels();  //Draw labels
-  std::vector<GeomData*> getAllObjects(unsigned int id);
+  std::vector<GeomData*> getAllObjects(DrawingObject* draw);
   GeomData* getObjectStore(DrawingObject* draw);
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
@@ -254,7 +255,7 @@ public:
   GeomData* fix(GeomData* fgeom=NULL);
   void label(DrawingObject* draw, const char* labels);
   void print();
-  std::vector<std::string> getDataLabels(unsigned int id);
+  std::vector<std::string> getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
   void setView(View* vp, float* min=NULL, float* max=NULL);
   void move(Geometry* other);
@@ -272,7 +273,7 @@ public:
   {
     unsigned int count = 0;
     for (unsigned int i=0; i<geom.size(); i++)
-      if (!draw || draw->id == geom[i]->draw->id) count += geom[i]->count;
+      if (!draw || draw == geom[i]->draw) count += geom[i]->count;
     return count;
   }
   //Return vertex count of most recently used object
@@ -309,7 +310,7 @@ public:
   void depthSort();
   virtual void render();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json& obj);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 class Lines : public Geometry
@@ -327,7 +328,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json& obj);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 class Vectors : public Geometry
@@ -340,7 +341,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json& obj);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 class Tracers : public Geometry
@@ -353,7 +354,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json& obj);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 class QuadSurfaces : public TriSurfaces
@@ -376,7 +377,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json& obj);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 class Points : public Geometry
@@ -399,7 +400,7 @@ public:
   void render();
   int getPointType(int index=-1);
   virtual void draw();
-  virtual void jsonWrite(unsigned int id, json& obj);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 
   void dumpJSON();
 };
@@ -409,7 +410,7 @@ class Volumes : public Geometry
 public:
   static Shader* prog;
   GLuint colourTexture;
-  std::map<int, int> slices;
+  std::map<DrawingObject*, int> slices;
 
   Volumes();
   ~Volumes();
@@ -417,9 +418,9 @@ public:
   virtual void update();
   virtual void draw();
   void render(int i);
-  GLubyte* getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles=16);
-  void pngWrite(unsigned int id, int xtiles=16);
-  virtual void jsonWrite(unsigned int id, json& obj);
+  GLubyte* getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip, int xtiles=16);
+  void pngWrite(DrawingObject* draw, int xtiles=16);
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 //Sorting util functions

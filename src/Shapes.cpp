@@ -161,8 +161,8 @@ void Shapes::draw()
   GL_Error_Check;
 }
 
-void Shapes::jsonWrite(unsigned int id, json& obj)
+void Shapes::jsonWrite(DrawingObject* draw, json& obj)
 {
-  tris->jsonWrite(id, obj);
+  tris->jsonWrite(draw, obj);
 }
 

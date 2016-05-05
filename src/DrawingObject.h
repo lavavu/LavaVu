@@ -52,7 +52,7 @@ typedef struct
 class DrawingObject
 {
 public:
-  unsigned int id;
+  unsigned int dbid;
   std::string name;
   bool skip;
   //Cached values for faster lookup
@@ -76,8 +76,6 @@ public:
   ColourMap* getColourMap(const std::string& type="colourmap");
   int addTexture(std::string texfn="");
   TextureData* useTexture(int index);
-
-  static unsigned int lastid;
 };
 
 #endif //DrawingObject__

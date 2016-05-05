@@ -556,23 +556,38 @@ Geometry* LavaVu::getGeometryType(std::string what)
   return NULL;
 }
 
-DrawingObject* LavaVu::findObject(std::string what, unsigned int id)
+DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& action, int idx)
 {
-  //Find by name/ID match in all drawing objects
+  //Try index(id) first
+  int id = parsed.Int(action, -1, idx);
+  if (id >= 0 && id < amodel->objects.size()) return amodel->objects[id];
+  //Otherwise lookup by name
+  std::string what = parsed.get(action, idx);
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
   {
-    if (!amodel->objects[i]) continue;
     std::string namekey = amodel->objects[i]->name;
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what || (id > 0 && id == amodel->objects[i]->id))
-    {
+    if (namekey == what)
       //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
       return amodel->objects[i];
-    }
   }
   //std::cerr << "Not found, returning " << (nodefault ? "NULL" : "DEFAULT : ") << aobject << std::endl;
   return NULL;
+}
+
+std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const std::string& action, int start)
+{
+  std::vector<DrawingObject*> list;
+  for (int c=0; c<20; c++) //Allow multiple id/name specs on line (up to 20)
+  {
+    DrawingObject* obj = lookupObject(parsed, action, c+start);
+    if (obj)
+      list.push_back(obj);
+    else
+      break;
+  }
+  return list;
 }
 
 ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
@@ -1453,9 +1468,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Hide/show objects/geometry types\n\n"
-              "Usage: hide/show object_id/object_name\n\n"
-              "object_id (integer) : the index of the object to hide/show (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to hide/show (see: \"list objects\")\n"
+              "Usage: hide/show object\n\n"
+              "object (integer/string) : the index or name of the object to hide/show (see: \"list objects\")\n"
               "\nUsage: hide/show geometry_type id\n\n"
               "geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines\n"
               "id (integer, optional) : id of geometry to hide/show\n"
@@ -1516,29 +1530,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
     {
       //Hide/show by name/ID match in all drawing objects
-      //std::string which = parsed.get(action, 1);
-      for (int c=0; c<10; c++) //Allow multiple id/name specs on line
+      std::vector<DrawingObject*> list = lookupObjects(parsed, action);
+      for (int c=0; c<list.size(); c++)
       {
-        int id = parsed.Int(action, 0, c);
-        DrawingObject* obj = findObject(what, id);
-        if (obj)
+        if (list[c]->skip)
         {
-          if (obj->skip)
-          {
-            std::ostringstream ss;
-            ss << "load " << obj->id;
-            return parseCommands(ss.str());
-          }
-          else
-          {
-            //Hide/show all data for this object
-            bool state = (action == "show");
-            for (unsigned int i=0; i < Model::geometry.size(); i++)
-              Model::geometry[i]->showById(obj->id, state);
-            obj->properties.data["visible"] = state; //This allows hiding of objects without geometry (colourbars)
-            printMessage("%s object %s", action.c_str(), obj->name.c_str());
-            amodel->redraw();
-          }
+          std::ostringstream ss;
+          ss << "load " << list[c]->name;
+          return parseCommands(ss.str());
+        }
+        else
+        {
+          //Hide/show all data for this object
+          bool state = (action == "show");
+          for (unsigned int i=0; i < Model::geometry.size(); i++)
+            Model::geometry[i]->showObj(list[c], state);
+          list[c]->properties.data["visible"] = state; //This allows hiding of objects without geometry (colourbars)
+          printMessage("%s object %s", action.c_str(), list[c]->name.c_str());
+          amodel->redraw();
         }
       }
     }
@@ -1920,9 +1929,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Export object data\n\n"
-              "Usage: export [format] [object_id/object_name]\n\n"
+              "Usage: export [format] [object]\n\n"
               "format (string) : json/csv/db (left blank: compressed db)\n"
-              "object_id (integer) : the index of the object to export (see: \"list objects\")\n"
+              "object (integer/string) : the index or name of the object to export (see: \"list objects\")\n"
               "object_name (string) : the name of the object to export (see: \"list objects\")\n"
               "If object ommitted all will be exported\n";
       return false;
@@ -1931,20 +1940,19 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed["export"];
     lucExportType type = what == "json" ? lucExportJSON : (what == "csv" ? lucExportCSV : (what == "db" ? lucExportGLDB : lucExportGLDBZ));
     //Export drawing object by name/ID match
-    for (int c=0; c<10; c++) //Allow multiple id/name specs on line
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "export");
+    if (list.size() == 0)
     {
-      int id = parsed.Int("export", 0, c);
-      DrawingObject* obj = findObject(parsed.get("export", 1), id);
-      if (obj)
+      //Only export all if no other spec provided
+      exportData(type);
+      printMessage("Dumped all objects to %s", what.c_str());
+    }
+    else
+    {
+      for (int c=0; c<list.size(); c++)
       {
-        exportData(type, obj->id);
-        printMessage("Dumped object %s to %s", obj->name.c_str(), what.c_str());
-      }
-      else if (c==0) //Only export all if no other spec provided
-      {
-        exportData(type);
-        printMessage("Dumped all objects to %s", what.c_str());
-        break;
+        exportData(type, list[c]);
+        printMessage("Dumped object %s to %s", list[c]->name.c_str(), what.c_str());
       }
     }
   }
@@ -2007,7 +2015,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::vector<std::string> list;
       for (unsigned int i=0; i < Model::geometry.size(); i++)
       {
-        list = Model::geometry[i]->getDataLabels(aobject->id);
+        list = Model::geometry[i]->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
           displayText(list[l], ++offset);
@@ -2075,11 +2083,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Set colourmap on object\n\n"
-              "Usage: colourmap object_id/object_name [colourmap_id/colourmap_name/\"add\" | \"data\"]\n\n"
-              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
-              "colourmap_id (integer) : the index of the colourmap to apply (see: \"list colourmaps\")\n"
-              "colourmap_name (string) : the name of the colourmap to apply (see: \"list colourmaps\")\n"
+              "Usage: colourmap object [colourmap / \"add\" | \"data\"]\n\n"
+              "object (integer/string) : the index or name of the object to set (see: \"list objects\")\n"
+              "colourmap (integer/string) : the index or name of the colourmap to apply (see: \"list colourmaps\")\n"
               "add : add a new colourmap to selected object\n"
               "data (string) : data to load into selected object's colourmap\n";
       return false;
@@ -2090,9 +2096,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     int next = 0;
     if (!obj)
     {
-      std::string what = parsed["colourmap"];
-      int id = parsed.Int("colourmap", 0);
-      obj = findObject(what, id);
+      obj = lookupObject(parsed, "colourmap");
       next++;
     }
     if (obj)
@@ -2133,7 +2137,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           cmap->calc(); //Recalculate cached colours
         }
       }
-      redraw(obj->id);
+      redraw(obj);
       amodel->redraw(true); //Redraw & reload
     }
   }
@@ -2165,7 +2169,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       active->read(aobject, 1, lucRGBAData, &c.value);
       printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
 
-      redraw(aobject->id);
+      redraw(aobject);
       amodel->redraw(true); //Redraw & reload
     }
   }
@@ -2188,7 +2192,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       active->read(aobject, 1, lucColourValueData, &fval);
       printMessage("%s value appended %f", aobject->name.c_str(), fval);
 
-      redraw(aobject->id);
+      redraw(aobject);
       amodel->redraw(true); //Redraw & reload
     }
   }
@@ -2233,7 +2237,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       active->read(aobject, 1, dtype, xyz);
       printMessage("%s %s appended", aobject->name.c_str(), action.c_str());
 
-      redraw(aobject->id);
+      redraw(aobject);
       amodel->redraw(true); //Redraw & reload
     }
   }
@@ -2297,7 +2301,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       delete[] vals;
       printMessage("%s %s appended %d", aobject->name.c_str(), what.c_str(), len);
 
-      redraw(aobject->id);
+      redraw(aobject);
       amodel->redraw(true); //Redraw & reload
     }
   }
@@ -2306,10 +2310,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Set point-rendering type on object\n\n"
-              "Usage: pointtype all/object_id/object_name type/up/down\n\n"
+              "Usage: pointtype all/object type/up/down\n\n"
               "all : use 'all' to set the global default point type\n"
-              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+              "object (integer/string) : the index or name of the object to set (see: \"list objects\")\n"
               "type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)\n"
               "up/down : use 'up' or 'down' to switch to the previous/next type in list\n";
       return false;
@@ -2334,8 +2337,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       int next = 0;
       if (!obj)
       {
-        int id = parsed.Int("pointtype", 0);
-        obj = findObject(what, id);
+        obj = lookupObject(parsed, "pointtype");
         next++;
       }
       if (obj)
@@ -2348,7 +2350,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         else if (parsed.get("pointtype", next) == "down")
           obj->properties.data["pointtype"] = (pt+1) % 5;
         printMessage("%s point type set to %d", obj->name.c_str(), (int)obj->properties["pointtype"]);
-        redraw(obj->id); //Full reload of this object only
+        redraw(obj); //Full reload of this object only
         amodel->redraw();
       }
     }
@@ -2533,9 +2535,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "Usage: scale geometry_type value/up/down\n\n"
               "geometry_type : points/vectors/tracers/shapes\n"
               "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n"
-              "\nUsage: scale object_id/object_name value/up/down\n\n"
-              "object_id (integer) : the index of the object to set (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to set (see: \"list objects\")\n"
+              "\nUsage: scale object value/up/down\n\n"
+              "object (integer/string) : the index or name of the object to scale (see: \"list objects\")\n"
               "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n";
       return false;
     }
@@ -2596,8 +2597,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         int next = 0;
         if (!obj)
         {
-          int id = parsed.Int("scale", 0);
-          obj = findObject(what, id);
+          obj = lookupObject(parsed, "scale");
           next++;
         }
         if (obj)
@@ -2613,7 +2613,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           printMessage("%s scaling set to %f", obj->name.c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
             Model::geometry[type]->redraw = true;
-          redraw(obj->id); //Full reload of object by id
+          redraw(obj); //Full reload of object by id
           amodel->redraw();
         }
       }
@@ -2676,32 +2676,63 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Delete objects from database\n"
-              "WARNING: This is irreversable! Backup your database before using!\n\n"
-              "Usage: delete object_id/object_name\n\n"
-              "object_id (integer) : the index of the object to delete (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to delete (see: \"list objects\")\n";
+      help += "Delete objects\n"
+              "Usage: delete object\n\n"
+              "object (integer/string) : the index or name of the object to delete (see: \"list objects\")\n";
       return false;
     }
 
     //Delete drawing object by name/ID match
-    std::string what = parsed["delete"];
-    int id = parsed.Int("delete", 0);
-    DrawingObject* obj = findObject(what, id);
-    if (obj)
+    DrawingObject* obj = lookupObject(parsed, "delete");
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "delete");
+    for (int c=0; c<list.size(); c++)
     {
-      amodel->deleteObject(obj->id);
-      printMessage("%s deleted from database", obj->name.c_str());
+      printMessage("%s deleted", list[c]->name.c_str());
+      //Delete geometry
+      for (unsigned int i=0; i < Model::geometry.size(); i++)
+        Model::geometry[i]->remove(list[c]);
+      //Delete from model obj list
+      for (unsigned int i=0; i<amodel->objects.size(); i++)
+      {
+        if (list[c] == amodel->objects[i])
+        {
+          amodel->objects.erase(amodel->objects.begin()+i);
+          break;
+        }
+      }
+      //Delete from viewport obj list
       for (unsigned int i=0; i<aview->objects.size(); i++)
       {
-        if (!aview->objects[i]) continue;
-        if (obj == aview->objects[i])
+        if (list[c] == aview->objects[i])
         {
           aview->objects.erase(aview->objects.begin()+i);
           break;
         }
       }
-      loadWindow(window);
+      //Free memory
+      delete list[c];
+      amodel->redraw(true); //Redraw & reload
+    }
+  }
+  else if (parsed.exists("deletedb"))
+  {
+    if (gethelp)
+    {
+      help += "Delete objects from database\n"
+              "WARNING: This is irreversible! Backup your database before using!\n\n"
+              "Usage: delete object_id\n\n"
+              "object (integer/string) : the index or name of the object to delete (see: \"list objects\")\n";
+      return false;
+    }
+
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "deletedb");
+    for (int c=0; c<list.size(); c++)
+    {
+      if (list[c]->dbid == 0) continue;
+      amodel->deleteObject(list[c]->dbid);
+      printMessage("%s deleted from database", list[c]->name.c_str());
+      //Delete the loaded object data
+      parseCommand("delete " + list[c]->name);
     }
   }
   else if (parsed.exists("merge"))
@@ -2721,28 +2752,23 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Load objects from database\n"
               "Used when running with deferred loading (-N command line switch)\n\n"
-              "Usage: load object_id/object_name\n\n"
-              "object_id (integer) : the index of the object to load (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to load (see: \"list objects\")\n";
+              "Usage: load object\n\n"
+              "object (integer/string) : the index or name of the object to load (see: \"list objects\")\n";
       return false;
     }
 
     //Load drawing object by name/ID match
-    std::string what = parsed["load"];
-    for (int c=0; c<10; c++) //Allow multiple id/name specs on line
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "load");
+    for (int c=0; c<list.size(); c++)
     {
-      int id = parsed.Int("load", 0, c);
-      DrawingObject* obj = findObject(what, id);
-      if (obj)
-      {
-        amodel->loadGeometry(obj->id);
-        //Update the views
-        resetViews(false);
-        amodel->redraw(true); //Redraw & reload
-        //Delete the cache as object list changed
-        amodel->deleteCache();
-      }
+      if (list[c]->dbid == 0) continue;
+      amodel->loadGeometry(list[c]->dbid);
     }
+    //Update the views
+    resetViews(false);
+    amodel->redraw(true); //Redraw & reload
+    //Delete the cache as object list changed
+    amodel->deleteCache();
   }
   else if (parsed.exists("sort"))
   {
@@ -2907,16 +2933,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       help += "Select object as the active object\n"
               "Used for setting properties of objects\n"
               "following commands that take an object id will no longer require one)\n\n"
-              "Usage: select object_id/object_name\n\n"
-              "object_id (integer) : the index of the object to select (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to select (see: \"list objects\")\n"
+              "Usage: select object\n\n"
+              "object (integer/string) : the index or name of the object to select (see: \"list objects\")\n"
               "Leave object parameter empty to clear selection.\n";
       return false;
     }
 
-    std::string what = parsed["select"];
-    int id = parsed.Int("select", 0);
-    aobject = findObject(what, id);
+    aobject = lookupObject(parsed, "select");
     if (aobject)
       printMessage("Selected object: %s", aobject->name.c_str());
     else
@@ -2999,9 +3022,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Set object name\n\n"
-              "Usage: name object_id/object_name newname\n\n"
-              "object_id (integer) : the index of the object to delete (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to delete (see: \"list objects\")\n"
+              "Usage: name object newname\n\n"
+              "object (integer/string) : the index or name of the object to rename (see: \"list objects\")\n"
               "newname (string) : new name to apply\n";
       return false;
     }
@@ -3010,9 +3032,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     int next = 0;
     if (!obj)
     {
-      std::string what = parsed["name"];
-      int id = parsed.Int("name", 0);
-      obj = findObject(what, id);
+      obj = lookupObject(parsed, "name");
       next++;
     }
     if (obj)
@@ -3021,7 +3041,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (name.length() > 0)
       {
         obj->name = name;
-        std::cerr << "RENAMED OBJECT: " << obj->id << " " << obj->name << std::endl;
+        printMessage("Renamed object: %s", obj->name.c_str());
       }
     }
   }
@@ -3135,7 +3155,7 @@ bool LavaVu::parsePropertySet(std::string cmd)
   json jval;
   if (found == std::string::npos) return false;
   parseProperty(cmd);
-  if (aobject && aobject->id) redraw(aobject->id);
+  if (aobject) redraw(aobject);
   return true;
 }
 

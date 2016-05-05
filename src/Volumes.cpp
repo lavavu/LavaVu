@@ -167,7 +167,7 @@ void Volumes::update()
   {
     //Collection of 2D slices
     slices.clear();
-    unsigned int id = geom[0]->draw->id;
+    DrawingObject* draw = geom[0]->draw;
     unsigned int count = 0;
     for (unsigned int i=0; i<=geom.size(); i++)
     {
@@ -178,17 +178,17 @@ void Volumes::update()
       //if (i<geom.size() && geom[i]->draw->textures.size() > 0 && geom[i]->draw->textures[0])
       //  geom[i]->draw->textures[0]->texture->width = 0;
 
-      if (i==geom.size() || id != geom[i]->draw->id)
+      if (i==geom.size() || draw != geom[i]->draw)
       {
-        slices[id] = count;
-        debug_print("Reloading: %d slices in object %d\n", count, id);
+        slices[draw] = count;
+        debug_print("Reloading: %d slices in object %s\n", count, draw->name);
         count = 0;
-        if (i<geom.size()) id = geom[i]->draw->id;
+        if (i<geom.size()) draw = geom[i]->draw;
       }
       count++;
     }
 
-    for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id])
+    for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
     {
       if (!drawable(i)) continue;
 
@@ -202,7 +202,7 @@ void Volumes::update()
 
         assert(geom[i]->width <= (unsigned)maxtex);
         assert(geom[i]->height <= (unsigned)maxtex);
-        assert(slices[current->id] <= maxtex);
+        assert(slices[current] <= maxtex);
 
         //Init/allocate/bind texture
         int idx = current->addTexture(); //Add a new texture container
@@ -213,14 +213,14 @@ void Volumes::update()
           bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height);
           if (bpv == 3)
           {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGB);
-            for (unsigned int j=i; j<i+slices[current->id]; j++)
+            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGB);
+            for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
           if (bpv == 4)
           {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_RGBA);
-            for (unsigned int j=i; j<i+slices[current->id]; j++)
+            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGBA);
+            for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
         }
@@ -229,18 +229,18 @@ void Volumes::update()
           bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height);
           if (bpv == 1)
           {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_BYTE);
-            for (unsigned int j=i; j<i+slices[current->id]; j++)
+            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_BYTE);
+            for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->colourData()->ref());
           }
           if (bpv == 4)
           {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current->id], NULL, VOLUME_FLOAT);
-            for (unsigned int j=i; j<i+slices[current->id]; j++)
+            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_FLOAT);
+            for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
           }
         }
-        debug_print("current %d width %d height %d depth %d (bpv %d)\n", current->id, geom[i]->width, geom[i]->height, slices[current->id], bpv);
+        debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name, geom[i]->width, geom[i]->height, slices[current], bpv);
 
         //Set the loaded texture
         geom[i]->texIdx = idx;
@@ -404,27 +404,27 @@ void Volumes::render(int i)
   glActiveTexture(GL_TEXTURE0);
 }
 
-GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, int xtiles)
+GLubyte* Volumes::getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip, int xtiles)
 {
   //if (geom.size() == 1)
   //Note: update() must be called first to fill slices[]
   if (slices.size() == 0) return NULL;
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id])
+  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
-    if (geom[i]->draw->id == id && drawable(i))
+    if (geom[i]->draw == draw && drawable(i))
     {
       int width = geom[i]->width;
       int height = geom[i]->colourData()->size() / width;
       iw = width * xtiles;
-      ih = ceil(slices[id] / (float)xtiles) * height;
-      if (ih == height) iw = width * slices[id];
-      printf("Exporting Image: %d width %d height %d depth %d --> %d x %d\n", id, width, height, slices[id], iw, ih);
+      ih = ceil(slices[draw] / (float)xtiles) * height;
+      if (ih == height) iw = width * slices[draw];
+      printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name.c_str(), width, height, slices[draw], iw, ih);
       GLubyte *image = new GLubyte[iw * ih];
       memset(image, 0, iw*ih*sizeof(GLubyte));
       int xoffset = 0, yoffset = 0;
-      for (unsigned int j=i; j<i+slices[id]; j++)
+      for (unsigned int j=i; j<i+slices[draw]; j++)
       {
-        //printf("%d %d < %d\n", i, j, i+slices[id]);
+        //printf("%d %d < %d\n", i, j, i+slices[draw]);
         //printf("SLICE %d OFFSETS %d,%d\n", j, xoffset, yoffset);
         float min = geom[j]->colourData()->minimum;
         float range = geom[j]->colourData()->maximum - min;
@@ -454,15 +454,15 @@ GLubyte* Volumes::getTiledImage(unsigned int id, int& iw, int& ih, bool flip, in
   return NULL;
 }
 
-void Volumes::pngWrite(unsigned int id, int xtiles)
+void Volumes::pngWrite(DrawingObject* draw, int xtiles)
 {
 #ifdef HAVE_LIBPNG
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id])
+  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
-    if (geom[i]->draw->id == id && drawable(i))
+    if (geom[i]->draw == draw && drawable(i))
     {
       int iw, ih;
-      GLubyte *image = getTiledImage(id, iw, ih, true, xtiles);
+      GLubyte *image = getTiledImage(draw, iw, ih, true, xtiles);
       if (!image) return;
       char path[FILE_PATH_MAX];
       sprintf(path, "%s.png", geom[i]->draw->name.c_str());
@@ -475,7 +475,7 @@ void Volumes::pngWrite(unsigned int id, int xtiles)
 #endif
 }
 
-void Volumes::jsonWrite(unsigned int id, json& obj)
+void Volumes::jsonWrite(DrawingObject* draw, json& obj)
 {
   update();  //Count slices etc...
   //Note: update() must be called first to fill slices[]
@@ -488,20 +488,19 @@ void Volumes::jsonWrite(unsigned int id, json& obj)
 
   json volumes;
   if (obj.count("volumes")) volumes = obj["volumes"];
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw->id])
+  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
-       printf("%d id == %d\n", i, geom[i]->draw->id);
-    if (geom[i]->draw->id == id && drawable(i))
+    if (geom[i]->draw == draw && drawable(i))
     {
       json data, vertices, volume;
       //Height needs calculating from values data
       int height = geom[i]->colourData()->size() / geom[i]->width;
       /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
-      printf("Exporting: %d width %d height %d depth %d\n", id, geom[i]->width, height, slices[id]);
+      printf("Exporting: %d width %d height %d depth %d\n", id, geom[i]->width, height, slices[draw]);
       int sliceSize = geom[i]->width * height;
-      float* volume = new float[sliceSize * slices[id]];
+      float* volume = new float[sliceSize * slices[draw]];
       size_t offset = 0;
-      for (int j=i; j<i+slices[id]; j++)
+      for (int j=i; j<i+slices[draw]; j++)
       {
          size_t size = sliceSize * sizeof(float);
          memcpy(volume + offset, geom[j]->colourData()->ref(), size);
@@ -510,12 +509,12 @@ void Volumes::jsonWrite(unsigned int id, json& obj)
 
       //Get a tiled image for WebGL to use as a 2D texture...
       int iw, ih;
-      GLubyte *image = getTiledImage(id, iw, ih, false, 16); //16 * 256 = 4096^2 square texture
+      GLubyte *image = getTiledImage(draw, iw, ih, false, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
       json res, scale;
       res.push_back((int)geom[i]->width);
       res.push_back(height);
-      res.push_back(slices[id]);
+      res.push_back(slices[draw]);
       //Scaling factors
       scale.push_back(geom[i]->vertices[1][0] - geom[i]->vertices[0][0]);
       scale.push_back(geom[i]->vertices[1][1] - geom[i]->vertices[0][1]);
@@ -531,7 +530,7 @@ void Volumes::jsonWrite(unsigned int id, json& obj)
       volume["size"] = 1;
       //volume["count"] = ;
       volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(image), iw * ih * sizeof(GLubyte));
-      //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[id] * sizeof(float)); //For 3D export
+      //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[draw] * sizeof(float)); //For 3D export
       data["volume"] = volume;
 
       delete[] image;
