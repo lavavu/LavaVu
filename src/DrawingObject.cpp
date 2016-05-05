@@ -36,13 +36,12 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-unsigned int DrawingObject::lastid = 0;
-
-DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map, unsigned int id) : id(id), name(name), skip(Model::noload)
+DrawingObject::DrawingObject(std::string name, std::string props, ColourMap* map, unsigned int id) : dbid(id), name(name), skip(Model::noload)
 {
-  if (id == 0) this->id = DrawingObject::lastid+1;
-  DrawingObject::lastid = this->id;
   colourMaps = NULL;
+
+  //Fix any names with spaces
+  std::replace(name.begin(), name.end(), ' ', '_');
 
   properties.parseSet(props);
   //Adjust types of some old props

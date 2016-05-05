@@ -93,7 +93,7 @@ public:
   ColourMap* addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
   void loadLinks(Win* win);
-  void loadLinks(DrawingObject* draw);
+  void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps();
   void loadViewports();
@@ -106,20 +106,18 @@ public:
   void init();
   ~Model();
 
-  void addObject(DrawingObject* draw)
+  void addObject(DrawingObject* obj)
   {
     //Create master drawing object list entry
-    //if (objects.size() < draw->id) objects.resize(draw->id);
-    //objects[draw->id-1] = draw;
-    draw->colourMaps = &colourMaps;
-    objects.push_back(draw);
+    obj->colourMaps = &colourMaps;
+    objects.push_back(obj);
   }
 
 
   DrawingObject* findObject(unsigned int id)
   {
     for (unsigned int i=0; i<objects.size(); i++)
-      if (objects[i]->id == id) return objects[i];
+      if (objects[i]->dbid == id) return objects[i];
     return NULL;
   }
 
@@ -158,9 +156,9 @@ public:
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
   void mergeDatabases();
   int decompressGeometry(int timestep);
-  void writeDatabase(const char* path, unsigned int id, bool compress=false);
-  void writeObjects(sqlite3* outdb, unsigned int id, int step, bool compress);
-  void writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj_id, int step, bool compress);
+  void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);
+  void writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress);
+  void writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
   void deleteObject(unsigned int id);
   void backup(sqlite3 *fromDb, sqlite3* toDb);
 };

@@ -249,7 +249,11 @@ void Geometry::clear(bool all)
     {
       //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name << std::endl;
       delete geom[idx];
-      if (!all) geom.erase(geom.begin()+idx);
+      if (!all) 
+      {
+        geom.erase(geom.begin()+idx);
+        if (hidden.size() > idx) hidden.erase(hidden.begin()+idx);
+      }
     }
     else
     {
@@ -259,6 +263,22 @@ void Geometry::clear(bool all)
   }
   if (all) geom.clear();
   //if (all) std::cout << " deleting all geometry " << std::endl;
+}
+
+void Geometry::remove(DrawingObject* draw)
+{
+  elements = -1;
+  redraw = true;
+  for (int i = geom.size()-1; i>=0; i--)
+  {
+    if (draw == geom[i]->draw)
+    {
+      total -= geom[i]->count;
+      delete geom[i];
+      geom.erase(geom.begin()+i);
+      if (hidden.size() > i) hidden.erase(hidden.begin()+i);
+    }
+  }
 }
 
 void Geometry::reset()
@@ -283,11 +303,11 @@ void Geometry::compareMinMax(float* min, float* max)
   getCoordRange(Geometry::min, Geometry::max, Geometry::dims);
 }
 
-void Geometry::dumpById(std::ostream& csv, unsigned int id)
+void Geometry::dump(std::ostream& csv, DrawingObject* draw)
 {
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    if (geom[i]->draw->id == id)
+    if (geom[i]->draw == draw)
     {
       if (type == lucVolumeType)
       {
@@ -319,12 +339,12 @@ void Geometry::dumpById(std::ostream& csv, unsigned int id)
   }
 }
 
-void Geometry::jsonWrite(unsigned int id, json& obj)
+void Geometry::jsonWrite(DrawingObject* draw, json& obj)
 {
   //Export geometry to json
 }
 
-void Geometry::jsonExportAll(unsigned int id, json& array, bool encode)
+void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
 {
   //Export all geometry to json
   int dsizes[lucMaxDataType] = {3, 3, 3,
@@ -340,7 +360,7 @@ void Geometry::jsonExportAll(unsigned int id, json& array, bool encode)
 
   for (unsigned int index = 0; index < geom.size(); index++)
   {
-    if (geom[index]->draw->id == id && drawable(index))
+    if (geom[index]->draw == draw && drawable(index))
     {
       std::cerr << "Collecting data, " << geom[index]->count << " vertices (" << index << ")" << std::endl;
       json data;
@@ -410,15 +430,15 @@ bool Geometry::show(unsigned int idx)
   return true;
 }
 
-void Geometry::showById(unsigned int id, bool state)
+void Geometry::showObj(DrawingObject* draw, bool state)
 {
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     //std::cerr << i << " owned by object " << geom[i]->draw->id << std::endl;
-    if (geom[i]->draw->id == id)
+    if (geom[i]->draw == draw)
     {
       hidden[i] = !state;
-      geom[i]->draw->properties.data["visible"] = state;
+      draw->properties.data["visible"] = state;
     }
   }
   redraw = true;
@@ -443,11 +463,11 @@ void Geometry::localiseColourValues()
   }
 }
 
-void Geometry::redrawObject(unsigned int id)
+void Geometry::redrawObject(DrawingObject* draw)
 {
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    if (geom[i]->draw->id == id)
+    if (geom[i]->draw == draw)
     {
       elements = -1; //Force reload data
       redraw = true;
@@ -690,12 +710,12 @@ bool Geometry::drawable(unsigned int idx)
   return false;
 }
 
-std::vector<GeomData*> Geometry::getAllObjects(unsigned int id)
+std::vector<GeomData*> Geometry::getAllObjects(DrawingObject* draw)
 {
   //Get passed object's data store
   std::vector<GeomData*> geomlist;
   for (unsigned int i=0; i<geom.size(); i++)
-    if (geom[i]->draw->id == id)
+    if (geom[i]->draw == draw)
       geomlist.push_back(geom[i]);
   return geomlist;
 }
@@ -871,7 +891,7 @@ void Geometry::print()
   }
 }
 
-std::vector<std::string> Geometry::getDataLabels(unsigned int id)
+std::vector<std::string> Geometry::getDataLabels(DrawingObject* draw)
 {
   //Iterate through all geometry of given object(id) and print
   //the index and label of the associated value data sets
@@ -879,7 +899,7 @@ std::vector<std::string> Geometry::getDataLabels(unsigned int id)
   std::vector<std::string> list;
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    if (geom[i]->draw->id == id)
+    if (geom[i]->draw == draw)
     {
       for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {

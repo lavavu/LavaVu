@@ -150,7 +150,7 @@ public:
   std::string run();
   void clearData(bool objects=false);
 
-  void exportData(lucExportType type, unsigned int id=0);
+  void exportData(lucExportType type, DrawingObject* obj=NULL);
 
   void parseProperties(std::string& properties);
   void parseProperty(std::string& data);
@@ -174,7 +174,7 @@ public:
   void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
   DrawingObject* addObject(DrawingObject* obj);
   void setOpacity(unsigned int id, float opacity);
-  void redraw(unsigned int id);
+  void redraw(DrawingObject* obj);
 
   //*** Our application interface:
 
@@ -232,14 +232,15 @@ public:
   //Interactive command & script processing
   bool parseChar(unsigned char key);
   Geometry* getGeometryType(std::string what);
-  DrawingObject* findObject(std::string what, unsigned int id);
+  DrawingObject* lookupObject(PropertyParser& parsed, const std::string& action, int idx=0);
+  std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& action, int start=0);
   ColourMap* findColourMap(std::string what, unsigned int id);
   std::string helpCommand(std::string cmd);
   void record(bool mouse, std::string command);
-  void dumpById(unsigned int id);
-  void jsonWriteFile(unsigned int id=0, bool jsonp=false, bool objdata=true);
-  void jsonWriteFile(std::string fn, unsigned int id, bool jsonp, bool objdata);
-  void jsonWrite(std::ostream& os, unsigned int id=0, bool objdata=false);
+  void dumpCSV(DrawingObject* obj=NULL);
+  void jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
+  void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
+  void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
   void jsonReadFile(std::string fn);
   void jsonRead(std::string data);
 };

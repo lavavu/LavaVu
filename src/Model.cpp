@@ -469,12 +469,12 @@ void Model::loadLinks(Win* win)
 }
 
 //Load colourmaps for each object only
-void Model::loadLinks(DrawingObject* draw)
+void Model::loadLinks(DrawingObject* obj)
 {
   //Select statment to get all viewports in window and all objects in viewports
   char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
-  sprintf(SQL, "SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", draw->id);
+  sprintf(SQL, "SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", obj->dbid);
   sqlite3_stmt* statement = select(SQL);
 
   while ( sqlite3_step(statement) == SQLITE_ROW)
@@ -498,7 +498,7 @@ void Model::loadLinks(DrawingObject* draw)
       //Find colourmap by id
       ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
-      draw->properties.data["colourmap"] = colourmap_id-1;
+      obj->properties.data["colourmap"] = colourmap_id-1;
     }
   }
   sqlite3_finalize(statement);
@@ -959,8 +959,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
       DrawingObject* obj = findObject(object_id);
 
-      //Skip object? (When noload enabled)
-      if (obj->skip) continue;
+      //Deleted or Skip object? (When noload enabled)
+      if (!obj || obj->skip) continue;
 
       //Bulk load: switch timestep and cache if timestep changes!
       if (step() != timestep)
@@ -1062,7 +1062,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
             for (int p=0; p < items*3; p += 3)
               g->checkPointMinMax((float*)data + p);
 
-            debug_print("No bounding dims provided for object %d, calculated for %d vertices...%f,%f,%f - %f,%f,%f\n", obj->id, items, g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
+            debug_print("No bounding dims provided for object %d, calculated for %d vertices...%f,%f,%f - %f,%f,%f\n", obj->dbid, items, g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
 
             //Fix for future loads
 #ifdef ALTER_DB
@@ -1102,6 +1102,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
 void Model::mergeDatabases()
 {
+  if (!db) return;
   char SQL[SQL_QUERY_MAX];
   reopen(true);  //Open writable
   for (unsigned int i=0; i<=timesteps.size(); i++)
@@ -1118,6 +1119,7 @@ void Model::mergeDatabases()
 
 int Model::decompressGeometry(int timestep)
 {
+  if (!db) return 0;
   reopen(true);  //Open writable
   clock_t t1 = clock();
   //Load geometry
@@ -1206,7 +1208,7 @@ int Model::decompressGeometry(int timestep)
   return rows;
 }
 
-void Model::writeDatabase(const char* path, unsigned int id, bool compress)
+void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 {
   //Write objects to a new database
   sqlite3 *outdb;
@@ -1228,9 +1230,6 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
 
   issue(
     "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))", outdb);
-
-  issue(
-    "create table object_colourmap (id integer primary key asc, object_id integer, colourmap_id integer, data_type integer, foreign key (object_id) references object (id) on delete cascade on update cascade, foreign key (colourmap_id) references colourmap (id) on delete cascade on update cascade)", outdb);
 
   issue(
     "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048), FOREIGN KEY (colourmap_id) REFERENCES colourmap (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
@@ -1261,7 +1260,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     cm->properties.data["colours"] = colours.str();
 
     //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
-    snprintf(SQL, SQL_QUERY_MAX, "insert into colourmap (id, name, minimum, maximum, logscale, discrete, properties) values (%d, '%s', %g, %g, %d, %d, '%s')", cm->id, cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
+    snprintf(SQL, SQL_QUERY_MAX, "insert into colourmap (name, minimum, maximum, logscale, discrete, properties) values ('%s', %g, %g, %d, %d, '%s')", cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
     //printf("%s\n", SQL);
     if (!issue(SQL, outdb)) return;
   }
@@ -1269,11 +1268,13 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   //Write objects
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    if (objects[i] && (id == 0 || objects[i]->id == id))
+    if (!obj || objects[i] == obj)
     {
-      snprintf(SQL, SQL_QUERY_MAX, "insert into object (id, name, properties) values (%d, '%s', '%s')", objects[i]->id, objects[i]->name.c_str(), objects[i]->properties.data.dump().c_str());
+      snprintf(SQL, SQL_QUERY_MAX, "insert into object (name, properties) values ('%s', '%s')", objects[i]->name.c_str(), objects[i]->properties.data.dump().c_str());
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
+      //Store the id
+      obj->dbid = sqlite3_last_insert_rowid(outdb);
     }
   }
 
@@ -1282,7 +1283,7 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
   {
     //Create a timestep and
     if (!issue("insert into timestep (id, time) values (0, 0)", outdb)) return;
-    writeObjects(outdb, id, 0, compress);
+    writeObjects(outdb, obj, 0, compress);
   }
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
@@ -1295,31 +1296,31 @@ void Model::writeDatabase(const char* path, unsigned int id, bool compress)
     setTimeStep(i);
 
     //Write object data
-    writeObjects(outdb, id, step(), compress);
+    writeObjects(outdb, obj, step(), compress);
   }
 
   issue("COMMIT", outdb);
 }
 
-void Model::writeObjects(sqlite3* outdb, unsigned int id, int step, bool compress)
+void Model::writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress)
 {
   //Write object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    if (objects[i] && (id == 0 || objects[i]->id == id))
+    if (!obj || obj == objects[i])
     {
       //Loop through all geometry classes (points/vectors etc)
       for (int type=lucMinType; type<lucMaxType; type++)
       {
-        writeGeometry(outdb, (lucGeometryType)type, objects[i]->id, step, compress);
+        writeGeometry(outdb, (lucGeometryType)type, objects[i], step, compress);
       }
     }
   }
 }
 
-void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj_id, int step, bool compressdata)
+void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compressdata)
 {
-  std::vector<GeomData*> data = geometry[type]->getAllObjects(obj_id);
+  std::vector<GeomData*> data = geometry[type]->getAllObjects(obj);
   //Loop through and write out all object data
   char SQL[SQL_QUERY_MAX];
   unsigned int i, data_type;
@@ -1329,7 +1330,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
     {
       if (!data[i]->data[data_type]) continue;
       std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
-                << data_type <<  ") for object : " << obj_id << " => " << findObject(obj_id)->name << std::endl;
+                << data_type <<  ") for object : " << obj->dbid << " => " << obj->name << std::endl;
       //Get the data block
       DataContainer* block = data[i]->data[data_type];
 
@@ -1369,7 +1370,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
 
       }
 
-      snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj_id, step, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+      snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj->dbid, step, data[i]->height, data[i]->depth, type, data_type, block->datasize, block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
 
       /* Prepare statement... */
       if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1403,24 +1404,17 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, unsigned int obj
 
 void Model::deleteObject(unsigned int id)
 {
+  if (!db) return;
   reopen(true);  //Open writable
   char SQL[SQL_QUERY_MAX];
   snprintf(SQL, SQL_QUERY_MAX, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
   issue(SQL);
   issue("vacuum");
-  for (unsigned int i=0; i<objects.size(); i++)
-  {
-    if (!objects[i]) continue;
-    if (id == objects[i]->id)
-    {
-      objects[i] = NULL; //Don't erase as objects referenced by id
-      break;
-    }
-  }
 }
 
 void Model::backup(sqlite3 *fromDb, sqlite3* toDb)
 {
+  if (!db) return;
   sqlite3_backup *pBackup;  // Backup object used to copy data
   pBackup = sqlite3_backup_init(toDb, "main", fromDb, "main");
   if (pBackup)

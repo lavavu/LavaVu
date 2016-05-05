@@ -888,7 +888,9 @@ std::string LavaVu::run()
 
       //Export data
       Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
-      exportData(dump, dumpid);
+      DrawingObject* obj = NULL;
+      if (dumpid > 0) obj = amodel->findObject(dumpid);
+      exportData(dump, obj);
     }
   }
   else
@@ -942,32 +944,23 @@ void LavaVu::clearData(bool objects)
     if (aview) aview->objects.clear();
     if (amodel) amodel->objects.clear();
     aobject = NULL;
-    DrawingObject::lastid = 0;
   }
 }
 
-void LavaVu::exportData(lucExportType type, unsigned int id)
+void LavaVu::exportData(lucExportType type, DrawingObject* obj)
 {
   //Export data
   viewer->display();
   if (type == lucExportJSON)
-    jsonWriteFile(id);
+    jsonWriteFile(obj);
   else if (type == lucExportJSONP)
-    jsonWriteFile(id, true);
+    jsonWriteFile(obj, true);
   else if (type == lucExportGLDB)
-    amodel->writeDatabase("exported.gldb", id);
+    amodel->writeDatabase("exported.gldb", obj);
   else if (type == lucExportGLDBZ)
-    amodel->writeDatabase("exported.gldb", id, true);
+    amodel->writeDatabase("exported.gldb", obj, true);
   else if (type == lucExportCSV)
-  {
-    if (id > 0)
-      dumpById(dumpid);
-    else
-    {
-      for (unsigned int i=0; i < amodel->objects.size(); i++)
-        dumpById(amodel->objects[i]->id);
-    }
-  }
+    dumpCSV(obj);
 }
 
 void LavaVu::cacheLoad()
@@ -2340,10 +2333,10 @@ void LavaVu::close()
   ColourMap::lastid = 0;
 }
 
-void LavaVu::redraw(unsigned int id)
+void LavaVu::redraw(DrawingObject* obj)
 {
   for (unsigned int i=0; i < Model::geometry.size(); i++)
-    Model::geometry[i]->redrawObject(id);
+    Model::geometry[i]->redrawObject(obj);
 }
 
 //Called when model loaded/changed, updates all views and window settings
@@ -2922,7 +2915,7 @@ void LavaVu::displayObjectList(bool console)
     {
       std::ostringstream ss;
       ss << "   ";
-      ss << std::setw(5) << amodel->objects[i]->id << " : " << amodel->objects[i]->name;
+      ss << std::setw(5) << i << " : " << amodel->objects[i]->name;
       if (amodel->objects[i] == aobject) ss << "*";
       if (amodel->objects[i]->skip)
       {
@@ -3289,15 +3282,15 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
     if (amodel->db) amodel->now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
   }
 
+  if (window_idx >= (int)windows.size()) return false;
+
+  //Save active window as selected
+  awin = windows[window_idx];
+  window = window_idx;
+
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)
   {
-    if (window_idx >= (int)windows.size()) return false;
-
-    //Save active window as selected
-    awin = windows[window_idx];
-    window = window_idx;
-
     // Ensure correct model is selected
     for (unsigned int m=0; m < models.size(); m++)
       for (unsigned int w=0; w < models[m]->windows.size(); w++)
@@ -3401,16 +3394,16 @@ void LavaVu::writeSteps(bool images, int start, int end)
   }
 }
 
-void LavaVu::dumpById(unsigned int id)
+void LavaVu::dumpCSV(DrawingObject* obj)
 {
   for (unsigned int i=0; i < amodel->objects.size(); i++)
   {
-    if (amodel->objects[i] && !amodel->objects[i]->skip && (id == 0 || amodel->objects[i]->id == id))
+    if (!amodel->objects[i]->skip && (!obj || amodel->objects[i] == obj))
     {
       for (int type=lucMinType; type<lucMaxType; type++)
       {
         std::ostringstream ss;
-        Model::geometry[type]->dumpById(ss, amodel->objects[i]->id);
+        Model::geometry[type]->dump(ss, amodel->objects[i]);
 
         std::string results = ss.str();
         if (results.size() > 0)
@@ -3420,7 +3413,7 @@ void LavaVu::dumpById(unsigned int id)
                   GeomData::names[type].c_str(), amodel->stepInfo());
           std::ofstream csv;
           csv.open(filename, std::ios::out | std::ios::trunc);
-          std::cout << " * Writing object " << amodel->objects[i]->id << " to " << filename << std::endl;
+          std::cout << " * Writing object " << amodel->objects[i]->name << " to " << filename << std::endl;
           csv << results;
           csv.close();
         }
@@ -3429,33 +3422,33 @@ void LavaVu::dumpById(unsigned int id)
   }
 }
 
-void LavaVu::jsonWriteFile(unsigned int id, bool jsonp, bool objdata)
+void LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
 {
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
   char ext[6];
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
-  if (id > 0)
+  if (obj)
     sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
-            amodel->objects[id]->name.c_str(), amodel->stepInfo(), ext);
+            obj->name.c_str(), amodel->stepInfo(), ext);
   else
     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->stepInfo(), ext);
-  jsonWriteFile(filename, id, jsonp, objdata);
+  jsonWriteFile(filename, obj, jsonp, objdata);
 }
 
-void LavaVu::jsonWriteFile(std::string fn, unsigned int id, bool jsonp, bool objdata)
+void LavaVu::jsonWriteFile(std::string fn, DrawingObject* obj, bool jsonp, bool objdata)
 {
   //Write new JSON format objects
   if (fn.length() == 0) fn = "state.json";
   std::ofstream json(fn);
   if (jsonp) json << "loadData(\n";
-  jsonWrite(json, id, objdata);
+  jsonWrite(json, obj, objdata);
   if (jsonp) json << ");\n";
   json.close();
 }
 
-void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
+void LavaVu::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 {
   //Write new JSON format objects
   // - globals are all stored on / sourced from Properties::globals
@@ -3531,7 +3524,7 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
   if (!viewer->visible) aview->filtered = false; //Disable viewport filtering
   for (unsigned int i=0; i < amodel->objects.size(); i++)
   {
-    if (amodel->objects[i] && (id == 0 || amodel->objects[i]->id == id))
+    if (!obj || amodel->objects[i] == obj)
     {
       //Only able to dump point/triangle based objects currently:
       //TODO: fix to use sub-renderer output for others
@@ -3573,7 +3566,7 @@ void LavaVu::jsonWrite(std::ostream& os, unsigned int id, bool objdata)
         //Collect vertex/normal/index/value data
         //When extracting data, skip objects with no data returned...
         //if (!Model::geometry[type]) continue;
-        Model::geometry[type]->jsonWrite(amodel->objects[i]->id, obj);
+        Model::geometry[type]->jsonWrite(amodel->objects[i], obj);
       }
 
       //Save object if contains data

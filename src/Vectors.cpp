@@ -162,9 +162,9 @@ void Vectors::draw()
   lines->draw();
 }
 
-void Vectors::jsonWrite(unsigned int id, json& obj)
+void Vectors::jsonWrite(DrawingObject* draw, json& obj)
 {
-  tris->jsonWrite(id, obj);
-  lines->jsonWrite(id, obj);
+  tris->jsonWrite(draw, obj);
+  lines->jsonWrite(draw, obj);
 }
 

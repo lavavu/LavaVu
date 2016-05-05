@@ -280,14 +280,14 @@ void Lines::draw()
   GL_Error_Check;
 }
 
-void Lines::jsonWrite(unsigned int id, json& obj)
+void Lines::jsonWrite(DrawingObject* draw, json& obj)
 {
   json lines;
   if (obj.count("lines") > 0) lines = obj["lines"];
-  jsonExportAll(id, lines);
+  jsonExportAll(draw, lines);
   if (lines.size() > 0) obj["lines"] = lines;
 
   //Triangles rendered?
   if (!all2d || any3d)
-    tris->jsonWrite(id, obj);
+    tris->jsonWrite(draw, obj);
 }

@@ -233,9 +233,9 @@ void Tracers::draw()
   lines->draw();
 }
 
-void Tracers::jsonWrite(unsigned int id, json& obj)
+void Tracers::jsonWrite(DrawingObject* draw, json& obj)
 {
-  tris->jsonWrite(id, obj);
-  lines->jsonWrite(id, obj);
+  tris->jsonWrite(draw, obj);
+  lines->jsonWrite(draw, obj);
 }
 
