@@ -92,7 +92,7 @@ public:
   void redraw(bool reload=false);
   unsigned int addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
-  void loadLinks(Win* win);
+  void loadLinks(Win* win, unsigned int winid);
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps();

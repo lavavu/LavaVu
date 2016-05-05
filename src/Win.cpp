@@ -35,8 +35,6 @@
 
 #include "Win.h"
 
-unsigned int Win::lastid = 0;
-
 //Adds a view to active window
 View* Win::addView(View* v)
 {

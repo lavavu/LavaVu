@@ -44,7 +44,6 @@ class Win
 {
 public:
   std::string name;
-  unsigned int id;
   int width, height;
   Colour background;
   float min[3];
@@ -55,7 +54,6 @@ public:
   Win() : width(0), height(0)
   {
     name = "";
-    this->id = ++Win::lastid;
     background.value = 0xff000000;
     //min[0] = min[1] = min[2] = 0.0;
     //max[0] = max[1] = max[2] = 0.0;
@@ -63,11 +61,9 @@ public:
     max[0] = max[1] = max[2] = -HUGE_VAL;
   }
 
-  Win(unsigned int id, int w, int h, int bg, float mmin[3]=NULL, float mmax[3]=NULL)
-    : id(id), width(w), height(h)
+  Win(int w, int h, int bg, float mmin[3]=NULL, float mmax[3]=NULL)
+    : width(w), height(h)
   {
-    if (id == 0) this->id = ++Win::lastid;
-    //This is no longer used
     name = "";
     background.value = bg;
     if (mmin)
@@ -83,8 +79,6 @@ public:
   View* addView(View* v);
   void initViewports(int w, int h);
   void resizeViewports();
-
-  static unsigned int lastid;
 };
 
 #endif //Win__
