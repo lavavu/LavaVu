@@ -556,13 +556,14 @@ Geometry* LavaVu::getGeometryType(std::string what)
   return NULL;
 }
 
-DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& action, int idx)
+DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& key, int idx)
 {
   //Try index(id) first
-  int id = parsed.Int(action, -1, idx);
+  int id = parsed.Int(key, -1, idx);
   if (id >= 0 && id < amodel->objects.size()) return amodel->objects[id];
+
   //Otherwise lookup by name
-  std::string what = parsed.get(action, idx);
+  std::string what = parsed.get(key, idx);
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
   {
@@ -576,12 +577,12 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& a
   return NULL;
 }
 
-std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const std::string& action, int start)
+std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const std::string& key, int start)
 {
   std::vector<DrawingObject*> list;
   for (int c=0; c<20; c++) //Allow multiple id/name specs on line (up to 20)
   {
-    DrawingObject* obj = lookupObject(parsed, action, c+start);
+    DrawingObject* obj = lookupObject(parsed, key, c+start);
     if (obj)
       list.push_back(obj);
     else
@@ -590,21 +591,24 @@ std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const 
   return list;
 }
 
-ColourMap* LavaVu::findColourMap(std::string what, unsigned int id)
+int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int idx)
 {
-  //Find by name/ID match in all colour maps
+  //Try index(id) first
+  int id = parsed.Int(key, -1, idx);
+  if (id >= 0 && id < amodel->colourMaps.size()) return id;
+
+  //Find by name match in all colour maps
+  std::string what = parsed.get(key, idx);
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->colourMaps.size(); i++)
   {
     if (!amodel->colourMaps[i]) continue;
     std::string namekey = amodel->colourMaps[i]->name;
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what || (id > 0 && id == amodel->colourMaps[i]->id))
-    {
-      return amodel->colourMaps[i];
-    }
+    if (namekey == what)
+      return i;
   }
-  return NULL;
+  return -1;
 }
 
 float LavaVu::parseCoord(const std::string& str)
@@ -1998,7 +2002,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (amodel->colourMaps[i])
         {
           std::ostringstream ss;
-          ss << std::setw(5) << amodel->colourMaps[i]->id << " : " << amodel->colourMaps[i]->name;
+          ss << std::setw(5) << i << " : " << amodel->colourMaps[i]->name;
 
           displayText(ss.str(), ++offset);
           std::cerr << ss.str() << std::endl;
@@ -2101,15 +2105,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     if (obj)
     {
+      int cmap = lookupColourMap(parsed, "colourmap", next);
       std::string what = parsed.get("colourmap", next);
-      //int cid = parsed.Int("colourmap", 2);
-      parsed.has(ival, "colourmap", next);
-      ColourMap* cmap = findColourMap(what, ival);
       //Only able to set the value colourmap now
-      if (cmap)
+      if (cmap >= 0)
       {
-        obj->properties.data["colourmap"] = cmap->id-1;
-        printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), cmap->name.c_str(), cmap->id);
+        obj->properties.data["colourmap"] = cmap;
+        printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), amodel->colourMaps[cmap]->name.c_str(), cmap);
       }
       else if (ival < 0 || what.length() == 0)
       {
@@ -2119,22 +2121,19 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       else
       {
         //No cmap id, parse a colourmap string (must be single line or enclosed in "")
-        ColourMap* cmap = obj->getColourMap();
-        if (what == "add" || !cmap || ival > 0)
+        cmap = obj->properties["colourmap"];
+        if (what == "add" || cmap < 0)
         {
-          if (ival > 0) //Add specified ID
-            cmap = amodel->addColourMap(new ColourMap(ival));
-          else
-            cmap = amodel->addColourMap();
-          obj->properties.data["colourmap"] = cmap->id-1;
+          cmap = amodel->addColourMap();
+          obj->properties.data["colourmap"] = cmap;
           what = parsed.get("colourmap", next+1);
         }
         if (what.length() > 0)
         {
-          cmap->loadPalette(what);
+          amodel->colourMaps[cmap]->loadPalette(what);
           //cmap->print();
-          cmap->calibrate(); //Recalibrate
-          cmap->calc(); //Recalculate cached colours
+          amodel->colourMaps[cmap]->calibrate(); //Recalibrate
+          amodel->colourMaps[cmap]->calc(); //Recalculate cached colours
         }
       }
       redraw(obj);

@@ -63,7 +63,6 @@ class ColourMap
 public:
   std::vector<ColourVal> colours;
   Colour background;
-  unsigned int id;
   std::string name;
   Properties properties;
   float minimum;
@@ -74,7 +73,7 @@ public:
   bool noValues; //Use position data only
   TextureData* texture;
 
-  ColourMap(unsigned int id=0, const char* name="", bool log=false, bool discrete=false, float min=0, float max=1, std::string props="");
+  ColourMap(const char* name="", bool log=false, bool discrete=false, float min=0, float max=1, std::string props="");
   ~ColourMap()
   {
     if (texture) delete texture;
@@ -106,7 +105,6 @@ public:
 
   static bool lock;
   static int logscales;
-  static unsigned int lastid;
 };
 
 #endif //ColourMap__

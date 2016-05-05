@@ -232,9 +232,9 @@ public:
   //Interactive command & script processing
   bool parseChar(unsigned char key);
   Geometry* getGeometryType(std::string what);
-  DrawingObject* lookupObject(PropertyParser& parsed, const std::string& action, int idx=0);
-  std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& action, int start=0);
-  ColourMap* findColourMap(std::string what, unsigned int id);
+  DrawingObject* lookupObject(PropertyParser& parsed, const std::string& key, int idx=0);
+  std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
+  int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   std::string helpCommand(std::string cmd);
   void record(bool mouse, std::string command);
   void dumpCSV(DrawingObject* obj=NULL);
