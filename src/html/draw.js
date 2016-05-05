@@ -1572,21 +1572,21 @@ Viewer.prototype.loadFile = function(source) {
     $("bgColour").value = this.background.r;
     $("pointScale-out").value = (this.pointScale || 1.0);
     $("pointScale").value = $("pointScale-out").value * 10.0;
-    $("globalAlpha").value = $("globalAlpha-out").value = (this.opacity || 1.0);
+    $("globalAlpha").value = $("globalAlpha-out").value = (this.opacity || 1.0).toFixed(2);
     $("border").checked = this.showBorder;
     $("axes").checked = this.axes;
     $("globalPointType").value = this.pointType;
 
-    $('brightness').value = $("brightness-out").value = vis.properties.brightness || 0.0;
-    $('contrast').value = $("contrast-out").value = vis.properties.contrast || 1.0;
-    $('saturation').value = $("saturation-out").value = vis.properties.saturation || 1.0;
+    $('brightness').value = $("brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
+    $('contrast').value = $("contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
+    $('saturation').value = $("saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
 
-    $('xmin').value = $("xmin-out").value = vis.properties.xmin || 0.0;
-    $('xmax').value = $("xmax-out").value = vis.properties.xmax || 1.0;
-    $('ymin').value = $("ymin-out").value = vis.properties.ymin || 0.0;
-    $('ymax').value = $("ymax-out").value = vis.properties.ymax || 1.0;
-    $('zmin').value = $("zmin-out").value = vis.properties.zmin || 0.0;
-    $('zmax').value = $("zmax-out").value = vis.properties.zmax || 1.0;
+    $('xmin').value = $("xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
+    $('xmax').value = $("xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
+    $('ymin').value = $("ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
+    $('ymax').value = $("ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
+    $('zmin').value = $("zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
+    $('zmax').value = $("zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
   }
 
   this.updateDims(vis.views[view]);
@@ -1816,7 +1816,7 @@ Viewer.prototype.properties = function(id) {
   $('obj_name').innerHTML = vis.objects[id].name;
   this.setColourMap(vis.objects[id].colourmap);
 
-  function loadProp(name, def) {$(name + '-out').value = $(name).value = vis.objects[id][name] ? vis.objects[id][name] : def;}
+  function loadProp(name, def) {$(name + '-out').value = $(name).value = vis.objects[id][name] ? parseFloat(vis.objects[id][name].toFixed(2)) : def;}
 
   loadProp('opacity', 1.0);
   $('pointSize').value = vis.objects[id].pointsize ? vis.objects[id].pointsize : 10.0;
@@ -1861,10 +1861,11 @@ Viewer.prototype.setProperties = function() {
   viewer.showBorder = $("border").checked;
   viewer.axes = $("axes").checked;
   var c = $("bgColour").value;
-  var cc = Math.round(255*c);
-  //vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
-  //
-  vis.properties.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+  if (c != "") {
+    var cc = Math.round(255*c);
+    //vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+    vis.properties.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+  }
   setProp('brightness');
   setProp('contrast');
   setProp('saturation');
