@@ -82,6 +82,7 @@ void TriSurfaces::update()
   total = 0;
   unsigned int tcount = 0;
   hiddencache.resize(geom.size());
+  int drawelements = 0;
   for (unsigned int t = 0; t < geom.size(); t++)
   {
     tcount += geom[t]->indices.size() / 3;
@@ -94,6 +95,7 @@ void TriSurfaces::update()
       tris = geom[t]->count / 3;
     total += tris;
     hiddencache[t] = !drawable(t); //Save flags
+    if (!hiddencache[t]) drawelements += tris*3; //Count drawable
     debug_print("Surface %d, triangles %d hidden? %s\n", t, tris, (hiddencache[t] ? "yes" : "no"));
 
     //Per-object wireframe works only when drawing opaque objects
@@ -115,6 +117,9 @@ void TriSurfaces::update()
     //Send the data to the GPU via VBO
     loadBuffers();
   }
+
+  //When objects hidden/shown drawable count changes, so need to reallocate
+  elements = drawelements;
 
   //Initial depth sort & render
   view->sort = true;
@@ -739,6 +744,7 @@ void TriSurfaces::render()
   if (!p) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
   elements = 0;
+  assert(tricount <= total); //Or will overflow tidx buffer
   for(int i=tricount-1; i>=0; i--)
     //for(int i=0; i<tricount; i++)
   {

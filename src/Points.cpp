@@ -87,6 +87,14 @@ void Points::update()
   if (total == 0)
     return;
 
+  hiddencache.resize(geom.size());
+  int drawelements = 0;
+  for (unsigned int i = 0; i < geom.size(); i++)
+  {
+    hiddencache[i] = !drawable(i); //Save flags
+    if (!hiddencache[i]) drawelements += geom[i]->count; //Count drawable
+  }
+
   //Ensure vbo recreated if total changed
   if (elements < 0 || total != last_total)
     //if (true)
@@ -94,9 +102,8 @@ void Points::update()
     loadVertices();
   }
 
-  hiddencache.resize(geom.size());
-  for (unsigned int i = 0; i < geom.size(); i++)
-    hiddencache[i] = !drawable(i); //Save flags
+  //When objects hidden/shown drawable count changes, so need to reallocate
+  elements = drawelements;
 
   last_total = total;
 
