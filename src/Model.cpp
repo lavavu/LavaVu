@@ -287,11 +287,11 @@ void Model::loadWindows()
         max[i] = -HUGE_VAL;
     }
 
-    Win* win = new Win(id, width, height, bg, min, max);
+    Win* win = new Win(width, height, bg, min, max);
     windows.push_back(win);
 
     //Link the window viewports, objects & colourmaps
-    loadLinks(win);
+    loadLinks(win, id);
   }
   sqlite3_finalize(statement);
 }
@@ -409,12 +409,12 @@ void Model::loadObjects()
 }
 
 //Load viewports in current window, objects in each viewport, colourmaps for each object
-void Model::loadLinks(Win* win)
+void Model::loadLinks(Win* win, unsigned int winid)
 {
   //Select statment to get all viewports in window and all objects in viewports
   char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
-  sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE window_viewport.window_id=%d AND viewport.id=window_viewport.viewport_id AND viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id", win->id);
+  sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE window_viewport.window_id=%d AND viewport.id=window_viewport.viewport_id AND viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id", winid);
   sqlite3_stmt* statement = select(SQL, true); //Don't report errors as these tables are allowed to not exist
 
   int last_viewport = 0, last_object = 0;
