@@ -560,7 +560,7 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id >= 0 && id < amodel->objects.size()) return amodel->objects[id];
+  if (id > 0 && id <= amodel->objects.size()) return amodel->objects[id-1];
 
   //Otherwise lookup by name
   std::string what = parsed.get(key, idx);
@@ -595,7 +595,7 @@ int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int 
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id >= 0 && id < amodel->colourMaps.size()) return id;
+  if (id > 0 && id <= amodel->colourMaps.size()) return id-1;
 
   //Find by name match in all colour maps
   std::string what = parsed.get(key, idx);
@@ -2005,7 +2005,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (amodel->colourMaps[i])
         {
           std::ostringstream ss;
-          ss << std::setw(5) << i << " : " << amodel->colourMaps[i]->name;
+          ss << std::setw(5) << (i+1) << " : " << amodel->colourMaps[i]->name;
 
           displayText(ss.str(), ++offset);
           std::cerr << ss.str() << std::endl;
@@ -2170,7 +2170,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, lucRGBAData, &c.value);
       printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
-
       redraw(aobject);
       amodel->redraw(true); //Redraw & reload
     }

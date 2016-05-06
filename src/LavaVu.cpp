@@ -2907,7 +2907,7 @@ void LavaVu::displayObjectList(bool console)
     {
       std::ostringstream ss;
       ss << "   ";
-      ss << std::setw(5) << i << " : " << amodel->objects[i]->name;
+      ss << std::setw(5) << (i+1) << " : " << amodel->objects[i]->name;
       if (amodel->objects[i] == aobject) ss << "*";
       if (amodel->objects[i]->skip)
       {
