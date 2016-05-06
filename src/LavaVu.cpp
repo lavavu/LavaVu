@@ -50,7 +50,6 @@
 #include "Main/SDLViewer.h"
 #include "Main/X11Viewer.h"
 #include "Main/GlutViewer.h"
-#include "Main/OSMesaViewer.h"
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 
@@ -249,8 +248,6 @@ OpenGLViewer* createViewer()
 //Evil platform specific extension handling stuff
 #if defined _WIN32
   //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
-#elif defined HAVE_OSMESA
-  GetProcAddress = (getProcAddressFN)OSMesaGetProcAddress;
 #elif defined HAVE_X11  //not defined __APPLE__
   //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
   GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
@@ -268,14 +265,11 @@ OpenGLViewer* createViewer()
 #if defined HAVE_SDL || defined _WIN32
   if (!viewer) viewer = new SDLViewer();
 #endif
-#if defined HAVE_OSMESA
-  if (!viewer) viewer = new OSMesaViewer();
-#endif
 #if defined HAVE_CGL
   if (!viewer) viewer = new CocoaViewer();
   if (!viewer) viewer = new CGLViewer();
 #endif
-  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL, Cocoa, CGL or OSMesa)");
+  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
 
   return viewer;
 }

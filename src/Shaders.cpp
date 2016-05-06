@@ -61,20 +61,6 @@ bool Shader::version()
 {
   gl_version = (const char*)glGetString(GL_VERSION);
   if (!gl_version) return false;
-#ifndef _WIN32
-#ifndef GL_VERSION_2_1
-  debug_print("%s does not support OpenGL 2.1 shaders, please upgrade your OpenGL drivers!\n", gl_version);
-  program = 0;
-  return false;
-#else
-  if (strstr(gl_version, "Mesa 7.10.2"))
-  {
-    debug_print("FATAL SHADER ERROR: %s has a bug in glCompileShader, please upgrade your Mesa library!\n", gl_version);
-    program = 0;
-    return false;
-  }
-#endif
-#endif
   return true;
 }
 
