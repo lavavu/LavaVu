@@ -897,18 +897,24 @@ std::vector<std::string> Geometry::getDataLabels(DrawingObject* draw)
   //the index and label of the associated value data sets
   //(used for colouring and filtering)
   std::vector<std::string> list;
+  DrawingObject* last = NULL;
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    if (geom[i]->draw == draw)
+    if ((!draw || geom[i]->draw == draw) && geom[i]->draw != last)
     {
+      list.push_back("Data sets for: " + geom[i]->draw->name);
+      list.push_back("-----------------------------------------");
       for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {
         std::stringstream ss;
         ss << "[" << v << "] " << geom[i]->values[v]->label
-           << " (range) " << geom[i]->values[v]->minimum
-           << " to " << geom[i]->values[v]->maximum;
+           << " (range: " << geom[i]->values[v]->minimum
+           << " to " << geom[i]->values[v]->maximum << ")";
         list.push_back(ss.str());
       }
+      list.push_back("-----------------------------------------");
+      //No need to repeat for every element as they will all have the same data sets per object
+      last = geom[i]->draw;
     }
   }
   return list;

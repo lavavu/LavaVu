@@ -1984,7 +1984,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "          (dimmed objects are hidden or not in selected viewport)\n"
               "colourmaps : show colourmap list (onlt temporarily shown)\n"
               "elements : show geometry elements by id in terminal\n"
-              "data : show available data sets in selected object\n";
+              "data : show available data sets in selected object or all\n";
       return false;
     }
 
@@ -2011,11 +2011,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       viewer->swap();  //Immediate display
       return false;
     }
-    else if (parsed["list"] == "data" && aobject)
+    else if (parsed["list"] == "data")
     {
-      int offset = 2;
-      displayText("Data sets for: " + aobject->name + "\n-----------------------------------------", 1);
-      std::cerr << "Data sets for: " + aobject->name + "\n-----------------------------------------\n";
+      int offset = 0;
       std::vector<std::string> list;
       for (unsigned int i=0; i < Model::geometry.size(); i++)
       {
