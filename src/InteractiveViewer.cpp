@@ -1993,6 +1993,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Print available elements by id
       for (unsigned int i=0; i < Model::geometry.size(); i++)
         Model::geometry[i]->print();
+      viewer->swap();  //Immediate display
+      if (!norecord) record(false, cmd);
+      return false;
     }
     else if (parsed["list"] == "colourmaps")
     {
@@ -2009,6 +2012,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
       }
       viewer->swap();  //Immediate display
+      if (!norecord) record(false, cmd);
       return false;
     }
     else if (parsed["list"] == "data")
@@ -2025,6 +2029,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
       }
       viewer->swap();  //Immediate display
+      if (!norecord) record(false, cmd);
       return false;
     }
     else //if (parsed["list"] == "objects")
