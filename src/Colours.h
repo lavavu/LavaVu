@@ -58,9 +58,10 @@ union Colour
   Colour() : r(0), g(0), b(0), a(255) {}
   Colour(GLubyte r, GLubyte g, GLubyte b, GLubyte a=255) : r(r), g(g), b(b), a(a) {}
   Colour(json& jvalue, GLubyte red=0, GLubyte grn=0, GLubyte blu=0, GLubyte alpha=255);
-  Colour(const std::string& str) {fromString(str);}
+  Colour(const std::string& str);
 
   void fromRGBA(GLubyte R, GLubyte G, GLubyte B, GLubyte A=255) {r=R;g=G;b=B;a=A;}
+  void fromJSON(json& jvalue);
   void fromString(const std::string& str);
   void fromX11Colour(std::string x11colour);
   void fromHex(const std::string& hexName);
