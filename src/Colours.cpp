@@ -43,6 +43,27 @@ void Colour::toArray(float* array)
 
 Colour::Colour(json& jvalue, GLubyte red, GLubyte grn, GLubyte blu, GLubyte alpha) : r(red), g(grn), b(blu), a(alpha)
 {
+  fromJSON(jvalue);
+}
+
+
+Colour::Colour(const std::string& str)
+{
+  try
+  {
+    //First attempt to load as JSON string
+    json jval = json::parse(str);
+    fromJSON(jval);
+  }
+  catch (std::exception& e)
+  {
+    //Not valid JSON, assume other string value
+    fromString(str);
+  }
+}
+
+void Colour::fromJSON(json& jvalue)
+{
   //Will accept integer colour or [r,g,b,a] array or 
   // string containing x11 name or hex #rrggbb or html rgba(r,g,b,a) 
   if (jvalue.is_number())
