@@ -349,7 +349,7 @@ void LavaVu::defaults()
   recording = true;
 
   loop = false;
-  animate = false;
+  animate = 0;
   automate = false;
   quiet = false;
   repeat = 0;

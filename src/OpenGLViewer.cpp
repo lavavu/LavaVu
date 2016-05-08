@@ -36,12 +36,9 @@
 //OpenGLViewer class
 #include "OpenGLViewer.h"
 
-//Timer increment in ms
-#define TIMER_INC 50
-
 std::deque<std::string> OpenGLViewer::commands;
 pthread_mutex_t OpenGLViewer::cmd_mutex;
-int OpenGLViewer::idle = -1;
+int OpenGLViewer::idle = 0;
 int OpenGLViewer::displayidle = 0;
 bool OpenGLViewer::alphapng = false;
 std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
@@ -352,7 +349,7 @@ void OpenGLViewer::display()
 #else
       //This break causes server commands to back up and not all be processed in loop
       //However, animate "play" repeats forever without display if not enabled
-      if (timer > 0)
+      if (displayidle > 0)
         break;
 #endif
     }
@@ -494,15 +491,17 @@ std::string OpenGLViewer::image(const std::string& path)
   return retImg;
 }
 
-void OpenGLViewer::notIdle(int display)
+void OpenGLViewer::idleReset()
 {
-  //Reset the idle timer
+  //Reset idle timer to zero if active
   if (idle > 0) idle = 0;
-  if (display >= 0)
-  {
-    idle = 0;
-    displayidle = display;  //Idle redisplay timer
-  }
+}
+
+void OpenGLViewer::idleTimer(int display)
+{
+  //Start idle timer
+  idle = 0;
+  displayidle = display;
 }
 
 bool OpenGLViewer::pollInput()
@@ -526,16 +525,13 @@ bool OpenGLViewer::pollInput()
     }
   }
 
-  if (idle >= 0)
+  //Idle timer
+  idle += TIMER_INC;
+  if (displayidle > 0 && idle > displayidle)
   {
-    //Idle timer
-    idle += TIMER_INC;
-    if (displayidle > 0 && idle > displayidle)
-    {
-      OpenGLViewer::commands.push_back("idle");
-      idle = 0;
-      parsed = true;
-    }
+    OpenGLViewer::commands.push_back("idle");
+    idle = 0;
+    parsed = true;
   }
 
   pthread_mutex_unlock(&cmd_mutex);
