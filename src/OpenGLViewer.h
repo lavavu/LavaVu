@@ -37,6 +37,10 @@
 #ifndef OpenGLViewer__
 #define OpenGLViewer__
 
+//Timer increment in ms
+#define TIMER_INC 50
+#define TIMER_IDLE 1500
+
 #include "GraphicsUtil.h"
 #include "ApplicationInterface.h"
 #include "OutputInterface.h"
@@ -142,7 +146,8 @@ public:
     }
   }
 
-  void notIdle(int display=-1);
+  void idleReset();
+  void idleTimer(int display=TIMER_IDLE);
 
   void addOutput(OutputInterface* output)
   {

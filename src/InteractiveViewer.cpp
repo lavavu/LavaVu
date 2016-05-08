@@ -112,7 +112,7 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   static bool translated = false;
   bool redraw = false;
   int scroll = 0;
-  viewer->notIdle(); //Reset idle timer
+  viewer->idleReset(); //Reset idle timer
   if (down)
   {
     translated = false;
@@ -172,7 +172,7 @@ bool LavaVu::mouseMove(int x, int y)
   int dy = y - viewer->last_y;
   viewer->last_x = x;
   viewer->last_y = y;
-  viewer->notIdle(); //Reset idle timer
+  viewer->idleReset(); //Reset idle timer
 
   //For mice with no right button, ctrl+left
   if (viewer->keyState.ctrl && viewer->button == LeftButton)
@@ -243,7 +243,7 @@ bool LavaVu::mouseScroll(float scroll)
 
 bool LavaVu::keyPress(unsigned char key, int x, int y)
 {
-  viewer->notIdle(); //Reset idle timer
+  viewer->idleReset(); //Reset idle timer
   //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
   return parseChar(key);
 }
@@ -1589,7 +1589,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
     {
       //Play loop
-      if (animate < 1) animate = 50;
+      if (animate < 1) animate = TIMER_INC;
+      viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
       replay.clear();
       last_cmd = "next";
       replay.push_back(last_cmd);
@@ -1646,25 +1647,19 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Update display between each command\n\n"
               "Usage: animate rate\n\n"
-              "rate (integer) : animation timer to fire every (rate) msec, default 50\n"
+              "rate (integer) : animation timer to fire every (rate) msec (default: 50)\n"
               "When on if multiple commands are issued the frame is re-rendered at set framerate\n"
               "When off all commands will be processed before the display is updated\n";
       return false;
     }
 
     if (parsed.has(ival, "animate"))
-    {
       animate = ival;
-    }
     else if (animate > 0)
-    {
       animate = 0;
-    }
     else
-    {
-      animate = 50;
-    }
-    viewer->notIdle(animate); //Start idle redisplay timer
+      animate = TIMER_INC;
+    viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
     printMessage("Animate mode %d millseconds", animate);
     return true; //No record
   }
@@ -2796,7 +2791,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       sort_on_rotate = false;
       //Enables sort on timer
       aview->sort = true;
-      viewer->notIdle(1500); //Start idle redisplay timer
+      viewer->idleTimer(TIMER_IDLE); //Start idle redisplay timer (default 1.5 seconds)
       printMessage("Sort geometry on timer instead of rotation enabled");
     }
     else if (parsed["sort"] == "on")
@@ -2805,7 +2800,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       sort_on_rotate = true;
       //Disables sort on timer
       aview->sort = false;
-      viewer->notIdle(0); //Stop idle redisplay timer
+      viewer->idleTimer(0); //Stop/disable idle redisplay timer
       printMessage("Sort geometry on rotation enabled");
     }
   }
@@ -2827,7 +2822,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       repeat--;
       if (repeat == 0)
       {
-        viewer->notIdle(0); //Disable idle redisplay timer
+        viewer->idleTimer(0); //Disable idle redisplay timer
         replay.clear();
       }
       recording = state;
