@@ -50,8 +50,6 @@
 class Model
 {
 public:
-  static bool noload;
-  static bool pointspheres;
   static int now;
   //Current timestep geometry
   static std::vector<Geometry*> geometry;

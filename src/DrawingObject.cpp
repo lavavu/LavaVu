@@ -36,9 +36,10 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(std::string name, std::string props, unsigned int colourmap, unsigned int id) : dbid(id), name(name), skip(Model::noload)
+DrawingObject::DrawingObject(std::string name, std::string props, unsigned int colourmap, unsigned int id) : dbid(id), name(name)
 {
   colourMaps = NULL;
+  skip = Properties::global("noload");
 
   //Fix any names with spaces
   std::replace(name.begin(), name.end(), ' ', '_');

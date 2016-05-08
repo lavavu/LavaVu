@@ -320,7 +320,6 @@ void LavaVu::defaults()
   dump = lucExportNone;
   returndata = lucExportNone;
   dumpid = 0;
-  globalCam = false;
   status = true;
   writeimage = false;
   writemovie = 0;
@@ -330,19 +329,11 @@ void LavaVu::defaults()
   sort_on_rotate = true;
 #endif
   message[0] = '\0';
-  volres[0] = volres[1] = volres[2] = 256;
-  volss[0] = volss[1] = volss[2] = 1.0;
-  volmin[0] = volmin[1] = volmin[2] = 0.0;
-  volmax[0] = volmax[1] = volmax[2] = 1;
-  volchannels = 1;
   volume = NULL;
-  inscale[0] = inscale[1] = inscale[2] = 1.0;
 
   window = -1;
   tracersteps = 0;
   objectlist = false;
-  swapY = false;
-  trisplit = 0;
 
   //Interaction command prompt
   entry = "";
@@ -599,6 +590,32 @@ void LavaVu::defaults()
   Properties::defaults["renderserver"] = false;
   // | global | colour | Background colour RGB(A)
   Properties::defaults["background"] = {0, 0, 0, 255};
+  // | global | boolean | Disables initial loading of object data from database, only object names loaded, use the "load" command to subsequently load selected object data
+  Properties::defaults["noload"] = false;
+  // | global | boolean | Enable rendering points as proper 3d spherical meshes
+  Properties::defaults["pointspheres"] = false;
+  // | global | boolean | Enable transparent png output
+  Properties::defaults["pngalpha"] = false;
+  // | global | boolean | Enable loading custom shaders from working directory
+  Properties::defaults["localshaders"] = false;
+  // | global | boolean | Enable imported model y/z axis swap
+  Properties::defaults["swapyz"] = false;
+  // | global | integer | Imported model triangle subdivision level
+  Properties::defaults["trisplit"] = 0;
+  // | global | boolean | Enable global camera for all models (default is separate cam for each)
+  Properties::defaults["globalcam"] = false;
+  // | global | integer | Volume rendering output channels 1 (luminance) 3/4 (rgba)
+  Properties::defaults["volchannels"] = 1;
+  // | global | integer[3] | Volume rendering data voxel resolution X Y Z
+  Properties::defaults["volres"] = {256, 256, 256};
+  // | global | real[3] | Volume rendering min bound X Y Z
+  Properties::defaults["volmin"] = {0., 0., 0.};
+  // | global | real[3] | Volume rendering max bound X Y Z
+  Properties::defaults["volmax"] = {1., 1., 1.};
+  // | global | real[3] | Volume rendering subsampling X Y Z
+  Properties::defaults["volsubsample"] = {1., 1., 1.};
+  // | global | real[3] | Geometry input scaling X Y Z
+  Properties::defaults["inscale"] = {1., 1., 1.};
 
 #ifdef DEBUG
   //std::cerr << std::setw(2) << Properties::defaults << std::endl;
@@ -634,6 +651,7 @@ void LavaVu::arguments(std::vector<std::string> args)
   for (unsigned int i=0; i<args.size(); i++)
   {
     char x;
+    int num;
     std::istringstream ss(args[i]);
     ss >> x;
     //Switches can be before or after files but not between
@@ -675,10 +693,10 @@ void LavaVu::arguments(std::vector<std::string> args)
         if (args[i].length() > 2)
           ss >> Points::subSample;
         else
-          parseCommands("pointspheres");
+          Properties::globals["pointspheres"] = true;
         break;
       case 'N':
-        parseCommands("noload");
+        Properties::globals["noload"] = true;
         break;
       case 'A':
         Properties::globals["hideall"] = true;
@@ -698,26 +716,31 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 't':
         //Use alpha channel in png output
-        parseCommands("pngalpha");
+        Properties::globals["pngalpha"] = true;
         break;
       case 'y':
         //Swap y & z axis on import
-        parseCommands("swapyz");
+        Properties::globals["swapyz"] = true;
         break;
       case 'T':
         //Split triangles
-        ss >> trisplit;
+        ss >> num;
+        Properties::globals["trisplit"] = num;
         break;
       case 'C':
         //Global camera
-        parseCommands("globalcam");
+        Properties::globals["globalcam"] = true;
         break;
       case 'l':
         //Use local shader files (set shader path to current working directory)
-        parseCommands("localshaders");
+        Properties::globals["localshaders"] = true;
         break;
       case 'V':
-        ss >> volres[0] >> x >> volres[1] >> x >> volres[2];
+        {
+          float res[3];
+          ss >> res[0] >> x >> res[1] >> x >> res[2];
+          Properties::globals["volres"] = {res[0], res[1], res[2]};
+        }
         break;
       case 'd':
         if (args[i].length() > 2) ss >> dumpid;
@@ -1052,6 +1075,10 @@ void LavaVu::readRawVolume(FilePath& fn)
   file.close();
 
   //Define the bounding cube by corners
+  float volmin[3], volmax[3], volres[3];
+  Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
+  Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
+  Properties::toFloatArray(Properties::global("volres"), volres, 3);
   Model::volumes->add(vobj);
   Model::volumes->read(vobj, 1, lucVertexData, volmin);
   Model::volumes->read(vobj, 1, lucVertexData, volmax);
@@ -1073,6 +1100,8 @@ void LavaVu::readXrwVolume(FilePath& fn)
   std::vector<char> buffer;
   unsigned int size;
   unsigned int floatcount;
+  float volmin[3], volmax[3];
+  int volres[3];
 #ifdef USE_ZLIB
   if (fn.type != "xrwu")
   {
@@ -1137,6 +1166,8 @@ void LavaVu::readXrwVolume(FilePath& fn)
     printf("offset %ld\n", offset);
   }
 #endif
+  float inscale[3];
+  Properties::toFloatArray(Properties::global("inscale"), inscale, 3);
 
   //Scale geometry by input scaling factor
   for (int i=0; i<3; i++)
@@ -1168,19 +1199,25 @@ void LavaVu::readVolumeSlice(FilePath& fn)
   ImageFile image(fn);
   if (image.pixels)
   {
-    readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.bytesPerPixel, volchannels);
+    readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.bytesPerPixel);
   }
   else
     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
-void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel, int outChannels)
+void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel)
 {
   //Create volume object, or if static volume object exists, use it
+  int outChannels = Properties::global("volchannels");
   static int count = 0;
   DrawingObject *vobj = volume;
   if (!vobj)
   {
+    float volmin[3], volmax[3], volres[3], inscale[3];
+    Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
+    Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
+    Properties::toFloatArray(Properties::global("volres"), volres, 3);
+    Properties::toFloatArray(Properties::global("inscale"), inscale, 3);
     vobj = addObject(new DrawingObject(name, "static=1"));
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
@@ -1261,7 +1298,7 @@ void LavaVu::readVolumeTIFF(FilePath& fn)
             }
           }
 
-          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel, volchannels);
+          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel);
         }
         count++;
       }
@@ -1283,6 +1320,11 @@ void LavaVu::createDemoVolume()
   DrawingObject *vobj = volume;
   if (!vobj)
   {
+    float volmin[3], volmax[3], volres[3], inscale[3];
+    Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
+    Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
+    Properties::toFloatArray(Properties::global("volres"), volres, 3);
+    Properties::toFloatArray(Properties::global("inscale"), inscale, 3);
     vobj = new DrawingObject("volume", "density=50\n");
     addObject(vobj);
     //Scale geometry by input scaling factor
@@ -1605,6 +1647,7 @@ void LavaVu::readHeightMapImage(FilePath& fn)
 void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
 {
   level--;
+  bool swapY = Properties::global("swapyz");
   //float a_b[3], a_c[3], b_c[3];
   //vectorSubtract(a_b, a, b);
   //vectorSubtract(a_c, a, c);
@@ -1646,6 +1689,7 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
 void LavaVu::readOBJ(FilePath& fn)
 {
   //Use tiny_obj_loader to load a model
+  bool swapY = Properties::global("swapyz");
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string err;
@@ -1713,6 +1757,7 @@ void LavaVu::readOBJ(FilePath& fn)
     //Can be overridden by setting trisplit (-T#)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
+    int trisplit = Properties::global("trisplit");
     if (trisplit == 0)
     {
       GeomData* g = Model::triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
@@ -1776,6 +1821,7 @@ void LavaVu::readTecplot(FilePath& fn)
   //Demo colourmap
   ColourMap* colourMap = new ColourMap();
   unsigned int cmid = amodel->addColourMap(colourMap);
+  bool swapY = Properties::global("swapyz");
 
   //Colours: hex, abgr
   //unsigned int colours[] = {0x11224422, 0x44006600, 0xff00ff00,0xffff7733,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff};
@@ -3125,7 +3171,7 @@ void LavaVu::loadFile(FilePath& fn)
   }
 
   //Other files require an existing model
-  if (!amodel)
+  if (!amodel) //defaultModel();
   {
     //Defer until window open
     OpenGLViewer::commands.push_back("file " + fn.full);
@@ -3224,7 +3270,7 @@ void LavaVu::loadModel(FilePath& fn)
       amodel->windows.push_back(awin);
     }
     //Default view
-    if (globalCam && aview)
+    if (Properties::global("globalcam") && aview)
       awin->addView(aview);
     else
     {

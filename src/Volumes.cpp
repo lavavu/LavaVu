@@ -181,7 +181,7 @@ void Volumes::update()
       if (i==geom.size() || draw != geom[i]->draw)
       {
         slices[draw] = count;
-        debug_print("Reloading: %d slices in object %s\n", count, draw->name);
+        debug_print("Reloading: %d slices in object %s\n", count, draw->name.c_str());
         count = 0;
         if (i<geom.size()) draw = geom[i]->draw;
       }
@@ -240,7 +240,7 @@ void Volumes::update()
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
           }
         }
-        debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name, geom[i]->width, geom[i]->height, slices[current], bpv);
+        debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name.c_str(), geom[i]->width, geom[i]->height, slices[current], bpv);
 
         //Set the loaded texture
         geom[i]->texIdx = idx;

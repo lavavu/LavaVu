@@ -79,16 +79,11 @@ protected:
   std::string defaultScript;
 
   int viewset;
-  bool globalCam;
   bool sort_on_rotate;
   bool status;
   int fixedwidth, fixedheight;
   bool writeimage;
   int writemovie;
-  int volres[3];
-  float volmin[3], volmax[3];
-  float volss[3], inscale[3]; //Scaling as data loaded, only for volumes currently
-  int volchannels;
   DrawingObject *volume;
   int repeat;
 #ifdef HAVE_LIBAVCODEC
@@ -111,8 +106,6 @@ protected:
   int window;
   int tracersteps;
   bool objectlist;
-  bool swapY;
-  int trisplit;
 
   //Interaction: Key command entry
   std::string entry;
@@ -167,7 +160,7 @@ public:
   void readRawVolume(FilePath& fn);
   void readXrwVolume(FilePath& fn);
   void readVolumeSlice(FilePath& fn);
-  void readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel, int outChannels);
+  void readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel);
   void readVolumeTIFF(FilePath& fn);
   void createDemoModel();
   void createDemoVolume();
