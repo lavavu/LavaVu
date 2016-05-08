@@ -299,8 +299,13 @@ function getImageDataURL(img) {
 
 function defaultColourMaps() {
   //Add some default colourmaps
+
   if (!vis.colourmaps) vis.colourmaps = [];
   
+  //A bit of a hack, but avoids adding defaults if already present,
+  //if there are 5 other maps defined there is probably no need for defaults anyway
+  if (vis.colourmaps.length >= 5) return;
+
   vis.colourmaps.push({
     "name": "Grayscale",
     "minimum": 0, "maximum": 1, "log": 0,
@@ -1683,7 +1688,7 @@ Viewer.prototype.loadFile = function(source) {
     check.setAttribute('type', 'checkbox');
     check.setAttribute('name', 'object_' + name);
     check.setAttribute('id', 'object_' + name);
-    check.setAttribute('onchange', 'viewer.action("' + name + '", false, true, this);');
+    check.setAttribute('onchange', 'viewer.action(' + id + ', false, true, this);');
     div.appendChild(check);
 
     var label= document.createElement('label');
@@ -1987,14 +1992,17 @@ Viewer.prototype.setObjectProperties = function() {
   }
 }
 
-Viewer.prototype.action = function(name, reload, sort, el) {
+Viewer.prototype.action = function(id, reload, sort, el) {
   //Object checkbox clicked
   if (server) {
     var show = el.checked;
-    if (show)
-      sendCommand('show "' + name + '"');
-    else
-      sendCommand('hide "' + name + '"');
+    if (show) {
+      vis.objects[id].visible = true;
+      sendCommand('show ' + (id+1));
+    } else {
+      vis.objects[id].visible = false;
+      sendCommand('hide ' + (id+1));
+    }
     return;
   }
 
@@ -2348,4 +2356,7 @@ function resizeToWindow() {
   canvas.style.height = frame.style.height = "100%";
 }
 
-
+function connectWindow() {
+  sendCommand('renderserver=true');
+  window.location.reload();
+}
