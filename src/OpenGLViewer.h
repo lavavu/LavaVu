@@ -62,7 +62,6 @@ public:
   ApplicationInterface* app;
   static std::deque<std::string> commands;
   static pthread_mutex_t cmd_mutex;
-  static bool alphapng;
 
   GLboolean stereoBuffer, doubleBuffer;
   GLuint renderBuffer;

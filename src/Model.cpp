@@ -39,8 +39,6 @@
 std::vector<TimeStep*> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int TimeStep::cachesize = 0;
-bool Model::noload = false;
-bool Model::pointspheres = false;
 int Model::now = -1;
 
 //Static geometry containers, shared by all models for fast switching/drawing
@@ -981,7 +979,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       }
 
       //Create object and set parameters
-      if (type == lucPointType && pointspheres) type = lucShapeType;
+      if (type == lucPointType && Properties::global("pointspheres")) type = lucShapeType;
       //if (type == lucGridType) type = lucTriangleType;
       active = geometry[type];
 

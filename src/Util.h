@@ -293,6 +293,7 @@ public:
   }
 
   static json& global(const std::string& key);
+  static void toFloatArray(const json& val, float* array, unsigned int size);
 
   bool has(const std::string& key);
   json& operator[](const std::string& key);

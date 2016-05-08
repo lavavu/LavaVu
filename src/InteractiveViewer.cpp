@@ -785,21 +785,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     printMessage("Geometry cache set to %d timesteps", TimeStep::cachesize);
     return false;
   }
-  else if (parsed.exists("noload"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Disable initial loading of object data from database\n"
-              "When set only object names will be loaded, use the \"load\" command to\n"
-              "subsequently load selected object data\n\n";
-      return false;
-    }
-
-    Model::noload = !Model::noload;
-    printMessage("Database object loading is %s", Model::noload ? "ON":"OFF");
-    return false;
-  }
   else if (parsed.exists("verbose"))
   {
     if (gethelp)
@@ -817,149 +802,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       infostream = stderr;
     else
       infostream = NULL;
-    return false;
-  }
-  else if (parsed.exists("pngalpha"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Toggle transparent png output\n";
-      return false;
-    }
-    viewer->alphapng = !viewer->alphapng;
-    printMessage("Transparency in PNG output is %s", viewer->alphapng ? "ON":"OFF");
-    return false;
-  }
-  else if (parsed.exists("swapyz"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Set imported model y/z axis swap\n";
-      return false;
-    }
-    swapY = !swapY;
-    printMessage("Y/Z axis swap on OBJ load is %s", swapY ? "ON":"OFF");
-    return false;
-  }
-  else if (parsed.has(ival, "trisplit"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Set imported model triangle subdivision level\n";
-      return false;
-    }
-    trisplit = ival;
-    printMessage("Triangle subdivision level set to %d", trisplit);
-    return false;
-  }
-  else if (parsed.exists("globalcam"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Toggle global camera for all models (default is separate cam for each)\n";
-      return false;
-    }
-    globalCam = !globalCam;
-    printMessage("Global camera is %s", globalCam ? "ON":"OFF");
-    return false;
-  }
-  else if (parsed.exists("localshaders"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Toggle loading shaders from working directory\n";
-      return false;
-    }
-    Shader::path = "./";
-    std::cerr << "Ignoring shader path, using current directory\n";
-    printMessage("Using local shaders");
-    return false;
-  }
-  else if (parsed.has(ival, "volchannels"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Set volume rendering channels 1 (luminance) 3/4 (rgba)\n";
-      return false;
-    }
-    volchannels = ival;
-    printMessage("Volume output channels set to %d", volchannels);
-    return false;
-  }
-  else if (parsed.exists("volres"))
-  {
-    //TODO: GLOBAL PROPERTY??
-    if (gethelp)
-    {
-      help += "Set volume rendering data voxel resolution X Y Z\n";
-      return false;
-    }
-    parsed.has(volres[0], "volres", 0);
-    parsed.has(volres[1], "volres", 1);
-    parsed.has(volres[2], "volres", 2);
-    printMessage("Volume voxel resolution set to %d x %d x %d", volres[0], volres[1], volres[2]);
-    return false;
-  }
-  else if (parsed.exists("volmin"))
-  {
-    //TODO: GLOBAL PROPERTY??
-    if (gethelp)
-    {
-      help += "Set volume rendering min bound X Y Z\n";
-      return false;
-    }
-    parsed.has(volmin[0], "volmin", 0);
-    parsed.has(volmin[1], "volmin", 1);
-    parsed.has(volmin[2], "volmin", 2);
-    printMessage("Volume minimum bound set to %d x %d x %d", volmin[0], volmin[1], volmin[2]);
-    return false;
-  }
-  else if (parsed.exists("volmax"))
-  {
-    //TODO: GLOBAL PROPERTY??
-    if (gethelp)
-    {
-      help += "Set volume rendering max bound X Y Z\n";
-      return false;
-    }
-    parsed.has(volmax[0], "volmax", 0);
-    parsed.has(volmax[1], "volmax", 1);
-    parsed.has(volmax[2], "volmax", 2);
-    printMessage("Volume maximum bound set to %d x %d x %d", volmax[0], volmax[1], volmax[2]);
-    return false;
-  }
-  else if (parsed.has(fval, "inscale"))
-  {
-    //TODO: GLOBAL PROPERTY??
-    if (gethelp)
-    {
-      help += "Set scaling of input data X Y Z\n";
-      return false;
-    }
-    inscale[0] = fval;
-    if (!parsed.has(inscale[1], "inscale", 1)) inscale[1] = inscale[0];
-    if (!parsed.has(inscale[2], "inscale", 2)) inscale[2] = inscale[0];
-    printMessage("Geometry input scaling set to %f,%f,%f", inscale[0], inscale[1], inscale[2]);
-    return false;
-  }
-  else if (parsed.has(fval, "volsubsample"))
-  {
-    //TODO: GLOBAL PROPERTY??
-    if (gethelp)
-    {
-      help += "Set volume subsampling X Y Z\n";
-      return false;
-    }
-    parsed.has(volss[0], "volsubsample", 0);
-    parsed.has(volss[1], "volsubsample", 1);
-    parsed.has(volss[2], "volsubsample", 2);
-    printMessage("Volume sub-sampling set to %f x %f x %f", volss[0], volss[1], volss[2]);
     return false;
   }
   else if (parsed.exists("createvolume"))
@@ -996,19 +838,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     printMessage("Set global alpha to %.2f", opacity);
     if (amodel)
       amodel->redraw();
-    return false;
-  }
-  else if (parsed.exists("pointspheres"))
-  {
-    //TODO: GLOBAL PROPERTY
-    if (gethelp)
-    {
-      help += "Toggle rendering points as triangulated spheres\n";
-      return false;
-    }
-
-    Model::pointspheres = !Model::pointspheres;
-    printMessage("Points rendered as spheres is %s", Model::pointspheres ? "ON":"OFF");
     return false;
   }
   else if (parsed.exists("interactive"))
@@ -3173,8 +3002,7 @@ std::string LavaVu::helpCommand(std::string cmd)
      "pointsample", "border", "title", "scale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",
-     "cache", "noload", "verbose", "pngalpha", "swapyz", "trisplit", "globalcam", "localshaders", "pointspheres",
-     "toggle", "volchannels", "volres", "volmin", "volmax", "inscale", "volsubsample", "createvolume"}
+     "cache", "verbose", "toggle", "createvolume"}
   };
 
   help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";

@@ -70,7 +70,11 @@ std::string Shader::read_file(const char *fname)
   char filepath[FILE_PATH_MAX] = "";
   if (!fname) return std::string("");
 
-  if (Shader::path.length() > 0) strcpy(filepath, Shader::path.c_str());
+  if (Properties::global("localshaders"))
+    strcpy(filepath, "./");
+  else if (Shader::path.length() > 0)
+    strcpy(filepath, Shader::path.c_str());
+
   strcat(filepath, fname);
   debug_print("Shader loading: %s\n", filepath);
 

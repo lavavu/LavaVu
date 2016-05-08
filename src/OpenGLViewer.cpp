@@ -40,7 +40,6 @@ std::deque<std::string> OpenGLViewer::commands;
 pthread_mutex_t OpenGLViewer::cmd_mutex;
 int OpenGLViewer::idle = 0;
 int OpenGLViewer::displayidle = 0;
-bool OpenGLViewer::alphapng = false;
 std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
 
 //OpenGLViewer class implementation...
@@ -397,6 +396,7 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
 
 std::string OpenGLViewer::image(const std::string& path)
 {
+  bool alphapng = Properties::global("alphapng");
   int bpp = alphapng ? 4 : 3;
   int savewidth = width;
   int saveheight = height;

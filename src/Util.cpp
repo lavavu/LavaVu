@@ -94,6 +94,13 @@ json& Properties::global(const std::string& key)
   return defaults[key];
 }
 
+void Properties::toFloatArray(const json& val, float* array, unsigned int size)
+{
+  //Convert to a float array
+  for (unsigned int i=0; i<size; i++)
+    array[i] = val[i];
+}
+
 bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
 
 json& Properties::operator[](const std::string& key)
