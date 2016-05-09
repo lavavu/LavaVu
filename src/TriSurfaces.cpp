@@ -104,6 +104,7 @@ void TriSurfaces::update()
                        geom[t]->draw->properties["opaque"]);
   }
   if (total == 0) return;
+  if (drawelements == 0) return;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
@@ -703,7 +704,7 @@ void TriSurfaces::depthSort()
 void TriSurfaces::render()
 {
   clock_t t1,t2;
-  if (tricount == 0) return;
+  if (tricount == 0 || elements == 0) return;
   assert(tidx);
 
   //First, depth sort the triangles
@@ -726,7 +727,6 @@ void TriSurfaces::render()
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
   {
-    assert(elements);
     //DYNAMIC_DRAW is really really slow on Quadro K5000s in CAVE2, nVidia 340 drivers
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
@@ -767,7 +767,7 @@ void TriSurfaces::draw()
   //Draw, calls update when required
   Geometry::draw();
   GL_Error_Check;
-  if (drawcount == 0) return;
+  if (drawcount == 0 || elements == 0) return;
 
   //Re-render the triangles if view has rotated
   if (view->sort) render();
