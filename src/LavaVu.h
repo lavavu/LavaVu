@@ -228,7 +228,7 @@ public:
   DrawingObject* lookupObject(PropertyParser& parsed, const std::string& key, int idx=0);
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
-  std::string helpCommand(std::string cmd);
+  void helpCommand(std::string cmd);
   void record(bool mouse, std::string command);
   void dumpCSV(DrawingObject* obj=NULL);
   void jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
