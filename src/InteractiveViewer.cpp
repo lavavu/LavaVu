@@ -3029,7 +3029,7 @@ void LavaVu::helpCommand(std::string cmd)
     std::cout << "\n##Scripting command reference\n\n";
     for (unsigned int i=0; i<categories.size(); i++)
     {
-      std::cout <<  "\n###" + categories[i] + " commands:\n\n";
+      std::cout <<  "\n---\n###" + categories[i] + " commands:\n\n";
       for (unsigned int j=0; j<cmdlist[i].size(); j++)
       {
         help = "\n\n####" + cmdlist[i][j] + "\n\n";
