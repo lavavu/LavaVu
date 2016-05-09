@@ -36,7 +36,7 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(std::string name, std::string props, unsigned int colourmap, unsigned int id) : dbid(id), name(name)
+DrawingObject::DrawingObject(std::string name, std::string props, int colourmap, unsigned int id) : dbid(id), name(name)
 {
   colourMaps = NULL;
   skip = Properties::global("noload");
