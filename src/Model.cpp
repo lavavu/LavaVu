@@ -262,7 +262,7 @@ unsigned int Model::addColourMap(ColourMap* cmap)
 void Model::loadWindows()
 {
   //Load windows list from database and insert into models
-  sqlite3_stmt* statement = select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ from window");
+  sqlite3_stmt* statement = select("SELECT id,name,width,height,minX,minY,minZ,maxX,maxY,maxZ from window");
   //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
   //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
   while ( sqlite3_step(statement) == SQLITE_ROW)
@@ -271,21 +271,20 @@ void Model::loadWindows()
     std::string wtitle = std::string((char*)sqlite3_column_text(statement, 1));
     int width = sqlite3_column_int(statement, 2);
     int height = sqlite3_column_int(statement, 3);
-    int bg = sqlite3_column_int(statement, 4);
     float min[3], max[3];
     for (int i=0; i<3; i++)
     {
-      if (sqlite3_column_type(statement, 5+i) != SQLITE_NULL)
-        min[i] = (float)sqlite3_column_double(statement, 5+i);
+      if (sqlite3_column_type(statement, 4+i) != SQLITE_NULL)
+        min[i] = (float)sqlite3_column_double(statement, 4+i);
       else
         min[i] = HUGE_VAL;
-      if (sqlite3_column_type(statement, 8+i) != SQLITE_NULL)
-        max[i] = (float)sqlite3_column_double(statement, 8+i);
+      if (sqlite3_column_type(statement, 7+i) != SQLITE_NULL)
+        max[i] = (float)sqlite3_column_double(statement, 7+i);
       else
         max[i] = -HUGE_VAL;
     }
 
-    Win* win = new Win(width, height, bg, min, max);
+    Win* win = new Win(width, height, min, max);
     windows.push_back(win);
 
     //Link the window viewports, objects & colourmaps

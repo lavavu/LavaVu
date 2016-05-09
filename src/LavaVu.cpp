@@ -2408,7 +2408,7 @@ void LavaVu::resetViews(bool autozoom)
   viewer->title = title.str();
 
   if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
-  viewer->setBackground(awin->background.value); //Update background colour
+  viewer->setBackground(Colour(aview->properties["background"])); //Update background colour
 }
 
 //Called when view changed
@@ -3507,8 +3507,8 @@ void LavaVu::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   json objects = json::array();
   json views = json::array();
 
-  //TODO: convert this to a global prop too and store as rgba() string
-  properties["background"] = awin->background.toString();
+  //Save current bg colour as the global default
+  properties["background"] = viewer->background.toString();
 
   for (unsigned int v=0; v < awin->views.size(); v++)
   {
@@ -3665,10 +3665,6 @@ void LavaVu::jsonRead(std::string data)
   else
     views = imported["views"];
 
-  //TODO: get rid of this & store/get from property directly instead of Win class
-  awin->background = Colour(Properties::global("background"));
-  viewer->setBackground(awin->background.value); //Update background colour
-
   // Import views
   for (unsigned int v=0; v < views.size(); v++)
   {
@@ -3746,6 +3742,7 @@ void LavaVu::jsonRead(std::string data)
     amodel->objects[i]->properties.merge(objects[i]);
   }
 
+  viewer->setBackground(Colour(aview->properties["background"])); //Update background colour
   bool reload = (imported["reload"].is_boolean() && imported["reload"]);
   amodel->redraw(reload);
 }
