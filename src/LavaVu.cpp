@@ -2690,6 +2690,7 @@ void LavaVu::drawAxis()
   axis->setView(aview);
   static DrawingObject* aobj = NULL;
   if (!aobj) aobj = new DrawingObject("axis", "wireframe=false\nclip=false\n");
+  if (!aview->hasObject(aobj)) aview->addObject(aobj);
   axis->add(aobj);
 
   {
@@ -2750,6 +2751,7 @@ void LavaVu::drawRulers()
   rulers->clear();
   rulers->setView(aview);
   if (!obj) obj = new DrawingObject("rulers", "wireframe=false\nclip=false\nlit=false");
+  if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
   obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.5*aview->model_size;
@@ -2873,6 +2875,7 @@ void LavaVu::drawBorder()
   border->clear();
   border->setView(aview);
   if (!obj) obj = new DrawingObject("border", "clip=false\n");
+  if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
 
   //Check for boolean or numeric value for border
