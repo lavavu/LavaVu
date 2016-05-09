@@ -1006,6 +1006,7 @@ void abort_program(const char * s, ...)
 std::string getImageFilename(const std::string& basename)
 {
   std::string path = basename;
+  if (path.length() == 0) return path;
 #ifdef HAVE_LIBPNG
   //Write data to image file
   if (!strstr(basename.c_str(), ".png"))
