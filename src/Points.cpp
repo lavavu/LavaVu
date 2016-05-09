@@ -282,7 +282,7 @@ static uint32_t SEED_VAL = 123456789;
 void Points::render()
 {
   clock_t t1,t2,tt;
-  if (total == 0) return;
+  if (total == 0 || elements == 0) return;
 
   //First, depth sort the particles
   if (view->is3d && view->sort)
@@ -376,7 +376,7 @@ void Points::draw()
 {
   //Draw, update
   Geometry::draw();
-  if (drawcount == 0) return;
+  if (drawcount == 0 || elements == 0) return;
   GL_Error_Check;
 
   setState(0, prog); //Set global draw state (using first object)
