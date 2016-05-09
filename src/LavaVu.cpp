@@ -3173,21 +3173,19 @@ void LavaVu::loadFile(FilePath& fn)
     return;
   }
 
-  //Other files require an existing model
-  if (!amodel) //defaultModel();
-  {
-    //Defer until window open
-    OpenGLViewer::commands.push_back("file " + fn.full);
-    return;
-
-  }
-
   //JSON state file (doesn't load objects if any, only state)
   if (fn.type == "json")
   {
-    jsonReadFile(fn.full);
+    if (!amodel) 
+      //Defer until window open
+      OpenGLViewer::commands.push_back("file \"" + fn.full + "\"");
+    else
+      jsonReadFile(fn.full);
     return;
   }
+
+  //Other files require an existing model
+  if (!amodel) defaultModel();
 
   //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
   if (Properties::global("filestep")) parseCommands("newstep");
