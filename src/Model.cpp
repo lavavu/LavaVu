@@ -389,8 +389,12 @@ void Model::loadObjects()
   {
     int object_id = sqlite3_column_int(statement, 0);
     const char *otitle = (char*)sqlite3_column_text(statement, 1);
-    int colour = sqlite3_column_int(statement, 2);
-    float opacity = (float)sqlite3_column_double(statement, 3);
+    int colour = 0xff000000;
+    float opacity = -1;
+    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
+      colour = sqlite3_column_int(statement, 2);
+    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
+      opacity = (float)sqlite3_column_double(statement, 3);
 
     //Create drawing object and add to master list
     std::string props = "";
