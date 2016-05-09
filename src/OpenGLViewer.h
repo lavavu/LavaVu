@@ -132,9 +132,10 @@ public:
   void pixels(void* buffer, bool alpha=false, bool flip=false);
   std::string image(const std::string& path="");
 
-  void setBackground(int value)
+  void setBackground() {setBackground(background);}
+  void setBackground(const Colour& bgcol)
   {
-    background.value = value;
+    background = bgcol;
     inverse = background;
     inverse.invert();
     if (isopen)

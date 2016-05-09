@@ -55,7 +55,7 @@ OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(fal
   title = "LavaVu";
   output_path = "";
 
-  setBackground(0xff000000);
+  setBackground();
 
   downsample = 1;
 

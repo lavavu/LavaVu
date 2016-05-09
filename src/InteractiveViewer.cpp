@@ -926,9 +926,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   //Following commands require a model!
   if (!gethelp && (!amodel || !aview || !awin))
   {
-    std::cerr << "Model/View/Window required to execute command: " << cmd << std::endl;
     //Attempt to parse as property=value first
-    parsePropertySet(cmd);
+    if (parsePropertySet(cmd)) return true;
+    std::cerr << "Model/View/Window required to execute command: " << cmd << std::endl;
     return false;
   }
 
@@ -2276,36 +2276,39 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Set window background colour\n\n"
-              "> **Usage:** background value/white/black/grey/invert\n\n"
+              "> **Usage:** background colour/value/white/black/grey/invert\n\n"
+              "> colour (string) : any valid colour string  \n"
               "> value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white  \n"
               "> white/black/grey : sets background to specified value  \n"
               "> invert (or omitted value) : inverts current background colour  \n";
       return false;
     }
-
-    //TODO: fix this, should work as colour
-    if (parsed["background"] == "white")
-      awin->background.value = 0xffffffff;
-    else if (parsed["background"] == "black")
-      awin->background.value = 0xff000000;
-    else if (parsed["background"] == "grey")
-      awin->background.value = 0xff666666;
-    else if (parsed["background"] == "invert")
-      awin->background.invert();
+    
+    std::string val = parsed["background"];
+    if (val == "invert")
+    {
+      viewer->background.invert();
+    }
     else if (parsed.has(fval, "background"))
     {
-      awin->background.a = 255;
+      viewer->background.a = 255;
       if (fval <= 1.0) fval *= 255;
-      awin->background.r = awin->background.g = awin->background.b = fval;
+      viewer->background.r = viewer->background.g = viewer->background.b = fval;
+    }
+    else if (val.length() > 0)
+    {
+      parsePropertySet("background=" + parsed["background"]);
+      viewer->background = Colour(aview->properties["background"]);
     }
     else
     {
-      if (awin->background.r == 255 || awin->background.r == 0)
-        awin->background.value = 0xff666666;
+      if (viewer->background.r == 255 || viewer->background.r == 0)
+        viewer->background.value = 0xff666666;
       else
-        awin->background.value = 0xff000000;
+        viewer->background.value = 0xff000000;
     }
-    viewer->setBackground(awin->background.value);
+    aview->properties.data["background"] = viewer->background.toString();
+    viewer->setBackground();
     printMessage("Background colour set");
   }
   else if (parsed.exists("border"))
