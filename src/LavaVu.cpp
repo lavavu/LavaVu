@@ -2415,8 +2415,10 @@ void LavaVu::resetViews(bool autozoom)
 void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
   //Set a default viewport/camera if none
+  if (idx < 0) idx = 0;
   if (awin->views.size() == 0) 
   {
+    view = 0;
     aview = new View();
     awin->addView(aview);
     amodel->views.push_back(aview);
