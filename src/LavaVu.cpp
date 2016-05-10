@@ -308,8 +308,8 @@ void LavaVu::defaults()
 
   viewset = 0;
   view = -1;
+  model = -1;
   aview = NULL;
-  awin = NULL;
   amodel = NULL;
   aobject = NULL;
 
@@ -331,7 +331,6 @@ void LavaVu::defaults()
   message[0] = '\0';
   volume = NULL;
 
-  window = -1;
   tracersteps = 0;
   objectlist = false;
 
@@ -569,9 +568,10 @@ void LavaVu::defaults()
   // | view | real[3] | Global model scaling factors [x,y,z]
   Properties::defaults["scale"] = {1., 1., 1.};
   // | view | real[3] | Global model minimum bounds [x,y,z]
-  Properties::defaults["min"] = {0., 0., 0.};
+  Properties::defaults["min"] = {FLT_MAX, FLT_MAX, FLT_MAX};
   // | view | real[3] | Global model maximum bounds [x,y,z]
-  Properties::defaults["max"] = {1., 1., 1.};
+  Properties::defaults["max"] = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+  std::cout << std::setw(2) << Properties::defaults["min"] << Properties::defaults["max"] << std::endl;
   // | view | real | Near clipping plane position, adjusts where geometry close to the camera is clipped
   Properties::defaults["near"] = 0.1;
   // | view | real | Far clip plane position, adjusts where far geometry is clipped
@@ -580,6 +580,10 @@ void LavaVu::defaults()
   Properties::defaults["orientation"] = 1;
 
   //Global Properties
+  // | global | string | Title of window for caption area
+  Properties::defaults["wintitle"] = "LavaVu";
+  // | global | resolution[2] | Window resolution X,Y
+  Properties::defaults["resolution"] = {1024, 768};
   // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
   Properties::defaults["cachevolumes"] = false;
   // | global | boolean | Turn on to automatically add and switch to a new timestep after loading a data file
@@ -868,13 +872,13 @@ std::string LavaVu::run()
   if (writeimage || writemovie || dump > lucExportNone)
   {
     persist = false; //Disable persist
-    //Load vis data for each window and write image
+    //Load vis data for each model and write image
     if (!writeimage && !writemovie && dump != lucExportJSON && dump != lucExportJSONP)
       viewer->isopen = true; //Skip open
-    for (unsigned int win=0; win < windows.size(); win++)
+    for (unsigned int m=0; m < models.size(); m++)
     {
-      //Load the window data
-      loadWindow(win, startstep, true);
+      //Load the data
+      loadModelStep(m, startstep, true);
 
       //Bounds checks
       if (endstep < startstep) endstep = startstep;
@@ -890,11 +894,11 @@ std::string LavaVu::run()
 
         if (writeimage)
         {
-          std::cout << "... Writing image(s) for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
+          std::cout << "... Writing image(s) for model " << Properties::global("wintitle") << " Timesteps: " << startstep << " to " << endstep << std::endl;
         }
         if (writemovie)
         {
-          std::cout << "... Writing movie for window " << awin->name << " Timesteps: " << startstep << " to " << endstep << std::endl;
+          std::cout << "... Writing movie for model " << Properties::global("wintitle") << " Timesteps: " << startstep << " to " << endstep << std::endl;
           //Other formats?? avi/mpeg4?
           encodeVideo("", writemovie);
         }
@@ -915,9 +919,9 @@ std::string LavaVu::run()
     //Cache data if enabled
     cacheLoad();
 
-    //Load first window if not yet loaded
-    if (window < 0)
-      loadWindow(0, startstep, true);
+    //Load first model if not yet loaded
+    if (model < 0)
+      loadModelStep(0, startstep, true);
   }
 
   //If automation mode turned on, return at this point
@@ -955,7 +959,7 @@ void LavaVu::clearData(bool objects)
 {
   //Clear data
   if (amodel) amodel->clearObjects(true);
-  //Delete objects? only works for active view/window/model
+  //Delete objects? only works for active view/model
   if (objects)
   {
     if (aview) aview->objects.clear();
@@ -988,7 +992,6 @@ void LavaVu::cacheLoad()
     for (unsigned int m=0; m < models.size(); m++)
     {
       amodel = models[m];
-      awin = models[m]->windows[0];
       amodel->loadTimeSteps();
       amodel->now = -1;
       for (unsigned int i=0; i<amodel->timesteps.size(); i++)
@@ -1000,7 +1003,7 @@ void LavaVu::cacheLoad()
       //Cache final step
       amodel->cacheStep();
     }
-    window = -1;
+    model = -1;
   }
 }
 
@@ -1483,8 +1486,9 @@ void LavaVu::readHeightMap(FilePath& fn)
     downscale = 100000;
   }
 
-  float* min = awin->min;
-  float* max = awin->max;
+  float min[3], max[3];
+  Properties::toFloatArray(Properties::global("min"), min, 3);
+  Properties::toFloatArray(Properties::global("max"), max, 3);
   float range[3] = {0,0,0};
 
   min[0] = xmap;
@@ -1957,9 +1961,6 @@ void LavaVu::readTecplot(FilePath& fn)
             particles[pcount*3+outcoord] += value[e];
 
             count++;
-
-            //if (value[e] < awin->min[coord]) awin->min[coord] = value[e];
-            //if (value[e] > awin->max[coord]) awin->max[coord] = value[e];
           }
 
           for (int i=0; i<8; i++)
@@ -2275,8 +2276,8 @@ void LavaVu::createDemoModel()
 
 DrawingObject* LavaVu::addObject(DrawingObject* obj)
 {
-  if (!awin || awin->views.size() == 0) abort_program("No window/view defined!\n");
-  if (!aview) aview = awin->views[0];
+  if (!amodel || amodel->views.size() == 0) abort_program("No model/view defined!\n");
+  if (!aview) aview = amodel->views[0];
 
   //Add to the active viewport if not already present
   if (!aview->hasObject(obj))
@@ -2295,8 +2296,8 @@ void LavaVu::open(int width, int height)
     Model::geometry[i]->init();
 
   //Initialise all viewports to window size
-  for (unsigned int w=0; w<windows.size(); w++)
-    windows[w]->initViewports(width, height);
+  for (unsigned int v=0; v<amodel->views.size(); v++)
+    amodel->views[v]->port(width, height);
 
   reloadShaders();
 }
@@ -2355,7 +2356,7 @@ void LavaVu::close()
   for (unsigned int i=0; i < models.size(); i++)
     models[i]->close();
 
-  //Clear models - will delete contained views, windows, objects
+  //Clear models - will delete contained views, objects
   //Should free all allocated memory
   for (unsigned int i=0; i < models.size(); i++)
   {
@@ -2363,7 +2364,6 @@ void LavaVu::close()
     delete models[i];
   }
   models.clear();
-  windows.clear();
 
   //Clear geometry containers
   for (unsigned int i=0; i < Model::geometry.size(); i++)
@@ -2377,13 +2377,13 @@ void LavaVu::redraw(DrawingObject* obj)
     Model::geometry[i]->redrawObject(obj);
 }
 
-//Called when model loaded/changed, updates all views and window settings
+//Called when model loaded/changed, updates all views settings
 void LavaVu::resetViews(bool autozoom)
 {
   viewset = 0;
 
   //Setup view(s) for new model dimensions
-  for (unsigned int v=0; v < awin->views.size(); v++)
+  for (unsigned int v=0; v < amodel->views.size(); v++)
     viewSelect(v, true, autozoom);
 
   //Flag redraw required
@@ -2391,16 +2391,15 @@ void LavaVu::resetViews(bool autozoom)
 
   //Set viewer title
   std::stringstream title;
+  std::string name = Properties::global("wintitle");
   std::string vpt = aview->properties["title"];
   if (vpt.length() > 0)
   {
     title << aview->properties["title"];
-    title << " (" << awin->name << ")";
+    title << " (" << name << ")";
   }
-  else if (awin->name.length() > 0)
-    title << awin->name;
   else
-    title << "LavaVu";
+    title << name;
 
   if (amodel->timesteps.size() > 1)
     title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->stepInfo();
@@ -2416,28 +2415,32 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
   //Set a default viewport/camera if none
   if (idx < 0) idx = 0;
-  if (awin->views.size() == 0) 
+  if (amodel->views.size() == 0) 
   {
     view = 0;
     aview = new View();
-    awin->addView(aview);
     amodel->views.push_back(aview);
   }
   else
   {
     view = idx;
-    if (view < 0) view = awin->views.size() - 1;
-    if (view >= (int)awin->views.size()) view = 0;
+    if (view < 0) view = amodel->views.size() - 1;
+    if (view >= (int)amodel->views.size()) view = 0;
   }
 
-  aview = awin->views[view];
+  aview = amodel->views[view];
 
-  //Called when timestep/window changed (new model data)
+  float min[3], max[3];
+  std::cout << std::setw(2) << Properties::global("min") << Properties::global("max") << std::endl;
+  Properties::toFloatArray(Properties::global("min"), min, 3);
+  Properties::toFloatArray(Properties::global("max"), max, 3);
+
+  //Called when timestep/model changed (new model data)
   //Set model size from geometry / bounding box and apply auto zoom
   if (setBounds)
   {
-    float omin[3] = {awin->min[0], awin->min[1], awin->min[2]};
-    float omax[3] = {awin->max[0], awin->max[1], awin->max[2]};
+    float omin[3] = {min[0], min[1], min[2]};
+    float omax[3] = {max[0], max[1], max[2]};
 
     for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->setView(aview, omin, omax);
@@ -2447,15 +2450,15 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 
     // Apply initial autozoom if set (only applied based on provided dimensions)
     //if (autozoom && (int)aview->properties["zoomstep"] == 0)
-    //   aview->init(false, awin->min, awin->max);
+    //   aview->init(false, min, max);
 
     //Update the model bounding box - use window bounds if provided and sane in at least 2 dimensions
-    if (awin->max[0]-awin->min[0] > EPSILON && awin->max[1]-awin->min[1] > EPSILON)
+    if (max[0]-min[0] > EPSILON && max[1]-min[1] > EPSILON)
     {
-      debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from window\n",
-                  awin->min[0], awin->min[1], awin->min[2],
-                  awin->max[0], awin->max[1], awin->max[2]);
-      aview->init(false, awin->min, awin->max);
+      debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from global properties\n",
+                  min[0], min[1], min[2],
+                  max[0], max[1], max[2]);
+      aview->init(false, min, max);
     }
     else
     {
@@ -2469,8 +2472,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     clearMinMax(Geometry::min, Geometry::max);
     compareCoordMinMax(Geometry::min, Geometry::max, omin);
     compareCoordMinMax(Geometry::min, Geometry::max, omax);
-    compareCoordMinMax(Geometry::min, Geometry::max, awin->min);
-    compareCoordMinMax(Geometry::min, Geometry::max, awin->max);
+    compareCoordMinMax(Geometry::min, Geometry::max, min);
+    compareCoordMinMax(Geometry::min, Geometry::max, max);
     getCoordRange(Geometry::min, Geometry::max, Geometry::dims);
     debug_print("Calculated Actual bounds %f,%f,%f - %f,%f,%f \n",
                 Geometry::min[0], Geometry::min[1], Geometry::min[2],
@@ -2487,15 +2490,6 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->setView(aview);
   }
-}
-
-int LavaVu::viewFromPixel(int x, int y)
-{
-  // Select a viewport by mouse position, leave unchanged if pixel out of range
-  for (unsigned int v=0; v<awin->views.size(); v++)
-    //Viewport coords opposite to windowing system coords, flip y
-    if (awin->views[v]->hasPixel(x, viewer->height - y)) return v;
-  return view;
 }
 
 // Render
@@ -2518,10 +2512,10 @@ void LavaVu::display(void)
   GL_Error_Check;
 
   //Turn filtering of objects on/off
-  if (awin->views.size() > 1 || windows.size() > 1)
+  if (amodel->views.size() > 1 || models.size() > 1)
   {
-    for (unsigned int v=0; v<awin->views.size(); v++)
-      awin->views[v]->filtered = true;
+    for (unsigned int v=0; v<amodel->views.size(); v++)
+      amodel->views[v]->filtered = true;
   }
   else //Single viewport, always disable filter
     aview->filtered = false;
@@ -3163,10 +3157,10 @@ void LavaVu::loadFile(FilePath& fn)
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
     loadModel(fn);
-    //Load a window when first database loaded
-    if (!amodel || !aview || !awin) loadWindow(0, startstep, true);
+    //Load model when first database loaded
+    if (!amodel || !aview) loadModelStep(0, startstep, true);
     //Set loaded gldb as active model/window if there was already an active window
-    //if (window) loadWindow(windows.size()-1);
+    //if (model) loadModelStep(models.size()-1);
   }
   //Script files, can contain other files to load
   else if (fn.type == "script")
@@ -3226,11 +3220,8 @@ void LavaVu::defaultModel()
   amodel = new Model(fm);
   models.push_back(amodel);
 
-  //Set a default window, viewport/camera
-  awin = new Win();
-  windows.push_back(awin);
-  aview = awin->addView(new View());
-  amodel->windows.push_back(awin);
+  //Set a default view
+  aview = new View();
   amodel->views.push_back(aview);
 
   //Setup default colourmaps
@@ -3260,28 +3251,19 @@ void LavaVu::loadModel(FilePath& fn)
   amodel->loadViewports();
   amodel->loadWindows();
 
-  //No windows?
-  if (amodel->windows.size() == 0 || amodel->views.size() == 0)
+  //No views?
+  if (amodel->views.size() == 0)
   {
-    //Set a default window & viewport
-    if (amodel->windows.size())
-      awin = amodel->windows[0];
-    else
-    {
-      awin = new Win();
-      //Add window to model window list
-      amodel->windows.push_back(awin);
-    }
     //Default view
     if (Properties::global("globalcam") && aview)
-      awin->addView(aview);
+      amodel->views.push_back(aview);
     else
     {
-      aview = awin->addView(new View(fn.base));
+      aview = new View(fn.base);
       amodel->views.push_back(aview);
     }
 
-    //Add objects to window & viewport
+    //Add objects to viewport
     for (unsigned int o=0; o<amodel->objects.size(); o++)
     {
       //Model objects stored by object ID so can have gaps...
@@ -3291,18 +3273,9 @@ void LavaVu::loadModel(FilePath& fn)
     }
   }
 
-  //Select first window, default window name to model name
-  if (!awin) awin = amodel->windows[0];
-  if (awin->name.length() == 0) awin->name = amodel->file.base;
-
-  //Add all windows to global window list
-  int win = windows.size();
-  for (unsigned int w=0; w<amodel->windows.size(); w++)
-    windows.push_back(amodel->windows[w]);
-
-  //Use width of first window for now
-  //viewer->width = windows[0]->width;
-  //viewer->height = windows[0]->height;
+  //Set default window title to model name
+  std::string name = Properties::global("wintitle");
+  if (name.length() == 0) Properties::global("wintitle") = amodel->file.base;
 
   //Save path of first sucessfully loaded model
   if (dbpath && viewer->output_path.length() == 0)
@@ -3313,37 +3286,33 @@ void LavaVu::loadModel(FilePath& fn)
 
   if (viewer->isopen)
   {
-    loadWindow(win, 0);
+    model = 0; //models.size();
+    loadModelStep(model, 0);
     viewer->postdisplay = true;
   }
 }
 
-//Load model window at specified timestep
-bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
+//Load model data at specified timestep
+bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
-  if (!amodel) defaultModel();
-  if (window_idx == window && at_timestep >= 0 && at_timestep == amodel->now) return false; //No change
+  if (models.size() == 0) defaultModel();
+  if (model_idx == model && at_timestep >= 0 && at_timestep == amodel->now) return false; //No change
   if (at_timestep >= 0)
   {
-    //Cache selected step, then force new timestep set when window changes
+    //Cache selected step, then force new timestep set when model changes
     if (TimeStep::cachesize > 0) amodel->cacheStep();
     if (amodel->db) amodel->now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
   }
 
-  if (window_idx >= (int)windows.size()) return false;
+  if (model_idx >= (int)models.size()) return false;
 
-  //Save active window as selected
-  awin = windows[window_idx];
-  window = window_idx;
+  //Save active model as selected
+  amodel = models[model_idx];
+  model = model_idx;
 
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)
   {
-    // Ensure correct model is selected
-    for (unsigned int m=0; m < models.size(); m++)
-      for (unsigned int w=0; w < models[m]->windows.size(); w++)
-        if (models[m]->windows[w] == awin) amodel = models[m];
-
     //Reset new model data
     amodel->redraw(true);
     //if (amodel->objects.size() == 0) return false;
@@ -3355,21 +3324,23 @@ bool LavaVu::loadWindow(int window_idx, int at_timestep, bool autozoom)
         amodel->setTimeStep();
       else
         amodel->setTimeStep(amodel->nearestTimeStep(at_timestep));
-      debug_print("Loading vis '%s', timestep: %d\n", awin->name.c_str(), amodel->step());
+      if (verbose) std::cerr << "Loading vis '" << Properties::global("wintitle") << "', timestep: " << amodel->step() << std::endl;
     }
   }
 
   //Fixed width & height always override window settings
-  if (fixedwidth > 0) windows[window_idx]->width = fixedwidth;
-  if (fixedheight > 0) windows[window_idx]->height = fixedheight;
+  json res = Properties::global("resolution");
+  if (fixedwidth > 0) res[0] = fixedwidth;
+  if (fixedheight > 0) res[1] = fixedheight;
+  Properties::globals["resolution"] = res;
 
   //Not yet opened or resized?
   if (!viewer->isopen)
     //Open window at required size
-    viewer->open(windows[window_idx]->width, windows[window_idx]->height);
+    viewer->open(res[0], res[1]);
   else
     //Resize if necessary
-    viewer->setsize(awin->width, awin->height);
+    viewer->setsize(res[0], res[1]);
 
   //Flag a view update
   viewset = autozoom ? 2 : 1;
@@ -3390,7 +3361,11 @@ void LavaVu::encodeVideo(std::string filename, int fps)
 #ifdef HAVE_LIBAVCODEC
   if (!encoder)
   {
-    if (filename.length() == 0 && awin) filename = awin->name + ".mp4";
+    if (filename.length() == 0) 
+    {
+      filename = Properties::global("wintitle");
+      filename += ".mp4";
+    }
     if (filename.length() == 0) filename = "output.mp4";
     encoder = new VideoEncoder(filename.c_str(), viewer->width, viewer->height, fps);
   }
@@ -3475,13 +3450,14 @@ void LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
   char ext[6];
+  std::string name = Properties::global("wintitle");
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
   if (obj)
-    sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(),
+    sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), name.c_str(),
             obj->name.c_str(), amodel->stepInfo(), ext);
   else
-    sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), awin->name.c_str(), amodel->stepInfo(), ext);
+    sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), name.c_str(), amodel->stepInfo(), ext);
   jsonWriteFile(filename, obj, jsonp, objdata);
 }
 
@@ -3510,9 +3486,9 @@ void LavaVu::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   //Save current bg colour as the global default
   properties["background"] = viewer->background.toString();
 
-  for (unsigned int v=0; v < awin->views.size(); v++)
+  for (unsigned int v=0; v < amodel->views.size(); v++)
   {
-    View* view = awin->views[v];
+    View* view = amodel->views[v];
     json& vprops = view->properties.data;
 
     float rotate[4], translate[3], focus[3];
@@ -3668,7 +3644,7 @@ void LavaVu::jsonRead(std::string data)
   // Import views
   for (unsigned int v=0; v < views.size(); v++)
   {
-    if (v >= awin->views.size())
+    if (v >= amodel->views.size())
     {
       //TODO:
       //Insert a view based on previous in list (same objects)
@@ -3676,7 +3652,7 @@ void LavaVu::jsonRead(std::string data)
       //(This will enable adding views in the web interface)
       break;
     }
-    View* view = awin->views[v];
+    View* view = amodel->views[v];
 
     //Apply base properties with merge
     view->properties.merge(views[v]);

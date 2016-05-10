@@ -859,7 +859,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    loadWindow(0, 0, true);
+    loadModelStep(0, 0, true);
     resetViews(); //Forces bounding box update
     return false;
   }
@@ -924,11 +924,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
   //******************************************************************************
   //Following commands require a model!
-  if (!gethelp && (!amodel || !aview || !awin))
+  if (!gethelp && (!amodel || !aview))
   {
     //Attempt to parse as property=value first
     if (parsePropertySet(cmd)) return true;
-    std::cerr << "Model/View/Window required to execute command: " << cmd << std::endl;
+    std::cerr << "Model/View required to execute command: " << cmd << std::endl;
     return false;
   }
 
@@ -1281,20 +1281,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    if (window < 0) window = 0; //No window selection yet...
+    if (model < 0) model = 0; //No model selection yet...
     if (!parsed.has(ival, "model"))
     {
       if (parsed["model"] == "up")
-        ival = window-1;
+        ival = model-1;
       else if (parsed["model"] == "down")
-        ival = window+1;
+        ival = model+1;
       else
-        ival = window;
+        ival = model;
     }
-    if (ival < 0) ival = windows.size()-1;
-    if (ival >= (int)windows.size()) ival = 0;
-    if (!loadWindow(ival, amodel->step())) return false;  //Invalid
-    printMessage("Load model %d", window);
+    if (ival < 0) ival = models.size()-1;
+    if (ival >= (int)models.size()) ival = 0;
+    if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
+    printMessage("Load model %d", model);
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
   {
@@ -1900,8 +1900,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    //Restore original window data
-    if (window < 0 || !loadWindow(window)) return false;
+    //Restore original data
+    if (model < 0 || !loadModelStep(model)) return false;
   }
   else if (parsed.exists("zerocam"))
   {

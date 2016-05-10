@@ -98,10 +98,6 @@ Model::~Model()
   for(unsigned int i=0; i<views.size(); i++)
     if (views[i]) delete views[i];
 
-  //Clear windows
-  for(unsigned int i=0; i<windows.size(); i++)
-    if (windows[i]) delete windows[i];
-
   //Clear colourmaps
   for(unsigned int i=0; i<colourMaps.size(); i++)
     if (colourMaps[i]) delete colourMaps[i];
@@ -265,7 +261,8 @@ void Model::loadWindows()
   sqlite3_stmt* statement = select("SELECT id,name,width,height,minX,minY,minZ,maxX,maxY,maxZ from window");
   //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
   //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
-  while ( sqlite3_step(statement) == SQLITE_ROW)
+  //Single window only supported now, use viewports for multiple
+  if ( sqlite3_step(statement) == SQLITE_ROW)
   {
     int id = sqlite3_column_int(statement, 0);
     std::string wtitle = std::string((char*)sqlite3_column_text(statement, 1));
@@ -277,18 +274,20 @@ void Model::loadWindows()
       if (sqlite3_column_type(statement, 4+i) != SQLITE_NULL)
         min[i] = (float)sqlite3_column_double(statement, 4+i);
       else
-        min[i] = HUGE_VAL;
+        min[i] = FLT_MAX;
       if (sqlite3_column_type(statement, 7+i) != SQLITE_NULL)
         max[i] = (float)sqlite3_column_double(statement, 7+i);
       else
-        max[i] = -HUGE_VAL;
+        max[i] = -FLT_MAX;
     }
 
-    Win* win = new Win(width, height, min, max);
-    windows.push_back(win);
+    Properties::globals["wintitle"] = wtitle;
+    Properties::globals["resolution"] = {width, height};
+    Properties::globals["min"] = {min[0], min[1], min[2]};
+    Properties::globals["max"] = {max[0], max[1], max[2]};
 
     //Link the window viewports, objects & colourmaps
-    loadLinks(win, id);
+    loadLinks();
   }
   sqlite3_finalize(statement);
 }
@@ -410,12 +409,12 @@ void Model::loadObjects()
 }
 
 //Load viewports in current window, objects in each viewport, colourmaps for each object
-void Model::loadLinks(Win* win, unsigned int winid)
+void Model::loadLinks()
 {
   //Select statment to get all viewports in window and all objects in viewports
   char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
-  sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE window_viewport.window_id=%d AND viewport.id=window_viewport.viewport_id AND viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id", winid);
+  sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id");
   sqlite3_stmt* statement = select(SQL, true); //Don't report errors as these tables are allowed to not exist
 
   int last_viewport = 0, last_object = 0;
@@ -440,7 +439,6 @@ void Model::loadLinks(Win* win, unsigned int winid)
     view = views[viewport_id-1];
     if (last_viewport != viewport_id)
     {
-      win->addView(view);
       loadViewCamera(viewport_id);
       last_viewport = viewport_id;
       last_object = 0;  //Reset required, in case of single object which is shared between viewports
