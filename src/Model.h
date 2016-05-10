@@ -41,7 +41,6 @@
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
 #include "View.h"
-#include "Win.h"
 #include "Geometry.h"
 #include "TimeStep.h"
 
@@ -73,7 +72,6 @@ public:
   std::string apath;
   char prefix[10];   //attached db prefix
 
-  std::vector<Win*> windows;
   std::vector<View*> views;
   std::vector<DrawingObject*> objects;
   std::vector<ColourMap*> colourMaps;
@@ -90,7 +88,7 @@ public:
   void redraw(bool reload=false);
   unsigned int addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
-  void loadLinks(Win* win, unsigned int winid);
+  void loadLinks();
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps();

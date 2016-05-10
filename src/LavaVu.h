@@ -43,7 +43,6 @@
 #include "View.h"
 #include "ViewerApp.h"
 #include "Model.h"
-#include "Win.h"
 #include "VideoEncoder.h"
 
 #define MAX_MSG 256
@@ -95,7 +94,6 @@ protected:
 #endif
 
   std::vector<Model*> models;
-  std::vector<Win*> windows;
   std::vector<FilePath> files;
 
   // Loaded model parameters
@@ -103,7 +101,7 @@ protected:
   lucExportType dump;
   lucExportType returndata;
   int dumpid;
-  int window;
+  int model;
   int tracersteps;
   bool objectlist;
 
@@ -129,7 +127,6 @@ public:
   int view;
 
   Model* amodel; //Active model
-  Win* awin;     //Active window
   View* aview;   //Active viewport
   DrawingObject* aobject; //Selected object
 
@@ -190,10 +187,8 @@ public:
   virtual std::string requestData(std::string key);
   //***
 
-  void addWindow(Win* win);
   void resetViews(bool autozoom=false);
   void viewSelect(int idx, bool setBounds=false, bool autozoom=false);
-  int viewFromPixel(int x, int y);
 
   GeomData* getGeometry(DrawingObject* obj);
   void displayObjectList(bool console=true);
@@ -218,7 +213,7 @@ public:
   void loadFile(FilePath& fn);
   void defaultModel();
   void loadModel(FilePath& fn);
-  bool loadWindow(int window_idx, int at_timestep=-1, bool autozoom=false);
+  bool loadModelStep(int model_idx, int at_timestep=-1, bool autozoom=false);
   void cacheLoad();
   bool tryTimeStep(int ts);
 
