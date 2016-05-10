@@ -571,7 +571,6 @@ void LavaVu::defaults()
   Properties::defaults["min"] = {FLT_MAX, FLT_MAX, FLT_MAX};
   // | view | real[3] | Global model maximum bounds [x,y,z]
   Properties::defaults["max"] = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
-  std::cout << std::setw(2) << Properties::defaults["min"] << Properties::defaults["max"] << std::endl;
   // | view | real | Near clipping plane position, adjusts where geometry close to the camera is clipped
   Properties::defaults["near"] = 0.1;
   // | view | real | Far clip plane position, adjusts where far geometry is clipped
@@ -2431,7 +2430,6 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   aview = amodel->views[view];
 
   float min[3], max[3];
-  std::cout << std::setw(2) << Properties::global("min") << Properties::global("max") << std::endl;
   Properties::toFloatArray(Properties::global("min"), min, 3);
   Properties::toFloatArray(Properties::global("max"), max, 3);
 
