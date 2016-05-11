@@ -228,9 +228,7 @@ public:
   void dumpCSV(DrawingObject* obj=NULL);
   void jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
-  void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
   void jsonReadFile(std::string fn);
-  void jsonRead(std::string data);
 };
 
 #endif //LavaVu__

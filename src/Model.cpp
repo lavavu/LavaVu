@@ -334,7 +334,6 @@ void Model::loadViewports()
   //(id, title, x, y, near, far, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
   while (sqlite3_step(statement) == SQLITE_ROW)
   {
-    unsigned int viewport_id = (unsigned int)sqlite3_column_int(statement, 0);
     float x = (float)sqlite3_column_double(statement, 2);
     float y = (float)sqlite3_column_double(statement, 3);
     float nearc = (float)sqlite3_column_double(statement, 4);
@@ -1444,3 +1443,243 @@ void Model::backup(sqlite3 *fromDb, sqlite3* toDb)
     (void)sqlite3_backup_finish(pBackup);
   }
 }
+
+void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
+{
+  //Write new JSON format objects
+  // - globals are all stored on / sourced from Properties::globals
+  // - views[] list holds view properies (previously single instance in "options")
+  json exported;
+  json properties = Properties::globals;
+  json cmaps = json::array();
+  json outobjects = json::array();
+  json outviews = json::array();
+
+  //Save current bg colour as the global default
+  //properties["background"] = viewer->background.toString();
+
+  for (unsigned int v=0; v < views.size(); v++)
+  {
+    View* view = views[v];
+    json& vprops = view->properties.data;
+
+    float rotate[4], translate[3], focus[3];
+    view->getCamera(rotate, translate, focus);
+    json rot, trans, foc, scale, min, max;
+    for (int i=0; i<4; i++)
+    {
+      rot.push_back(rotate[i]);
+      if (i>2) break;
+      trans.push_back(translate[i]);
+      foc.push_back(focus[i]);
+      scale.push_back(view->scale[i]);
+      if (view->min[i] < HUGE_VAL && view->max[i] > -HUGE_VAL)
+      {
+        min.push_back(view->min[i]);
+        max.push_back(view->max[i]);
+      }
+    }
+
+    vprops["rotate"] = rot;
+    vprops["translate"] = trans;
+    vprops["focus"] = foc;
+    vprops["scale"] = scale;
+    vprops["min"] = min;
+    vprops["max"] = max;
+
+    vprops["near"] = view->near_clip;
+    vprops["far"] = view->far_clip;
+    vprops["orientation"] = view->orientation;
+
+    //Add the view
+    outviews.push_back(vprops);
+  }
+
+  for (unsigned int i = 0; i < colourMaps.size(); i++)
+  {
+    json cmap;
+    json colours;
+
+    for (unsigned int c=0; c < colourMaps[i]->colours.size(); c++)
+    {
+      json colour;
+      colour["position"] = colourMaps[i]->colours[c].position;
+      colour["colour"] = colourMaps[i]->colours[c].colour.toString();
+      colours.push_back(colour);
+    }
+
+    cmap["name"] = colourMaps[i]->name;
+    cmap["minimum"] = colourMaps[i]->minimum;
+    cmap["maximum"] = colourMaps[i]->maximum;
+    cmap["log"] = colourMaps[i]->log;
+    cmap["colours"] = colours;
+
+    cmaps.push_back(cmap);
+  }
+
+  //if (!viewer->visible) aview->filtered = false; //Disable viewport filtering
+  for (unsigned int i=0; i < objects.size(); i++)
+  {
+    if (!obj || objects[i] == obj)
+    {
+      //Only able to dump point/triangle based objects currently:
+      //TODO: fix to use sub-renderer output for others
+      //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
+
+      //Find colourmap
+      int colourmap = -1;
+      ColourMap* cmap = objects[i]->getColourMap();
+      if (cmap)
+      {
+        //Search vector to find index of selected map
+        std::vector<ColourMap*>::iterator it = find(colourMaps.begin(), colourMaps.end(), cmap);
+        if (it != colourMaps.end())
+          colourmap = (it - colourMaps.begin());
+      }
+
+      json obj = objects[i]->properties.data;
+      obj["name"] = objects[i]->name;
+      if (colourmap >= 0) obj["colourmap"] = colourmap;
+      if (!objdata)
+      {
+        if (Model::points->getVertexCount(objects[i]) > 0) obj["points"] = true;
+        if (Model::quadSurfaces->getVertexCount(objects[i]) > 0 ||
+            Model::triSurfaces->getVertexCount(objects[i]) > 0 ||
+            Model::vectors->getVertexCount(objects[i]) > 0 ||
+            Model::tracers->getVertexCount(objects[i]) > 0 ||
+            Model::shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
+        if (Model::lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
+        if (Model::volumes->getVertexCount(objects[i]) > 0) obj["volumes"] = true;
+
+        //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.getBool("points", false) << "," 
+        //          << obj.getBool("triangles", false) << "," << obj.getBool("volumes", false) << std::endl;
+        outobjects.push_back(obj);
+        continue;
+      }
+
+      for (int type=lucMinType; type<lucMaxType; type++)
+      {
+        //Collect vertex/normal/index/value data
+        //When extracting data, skip objects with no data returned...
+        //if (!Model::geometry[type]) continue;
+        Model::geometry[type]->jsonWrite(objects[i], obj);
+      }
+
+      //Save object if contains data
+      if (obj["points"].size() > 0 ||
+          obj["triangles"].size() > 0 ||
+          obj["lines"].size() > 0 ||
+          obj["volumes"].size() > 0)
+      {
+        outobjects.push_back(obj);
+      }
+    }
+  }
+
+  exported["properties"] = properties;
+  exported["views"] = outviews;
+  exported["colourmaps"] = cmaps;
+  exported["objects"] = outobjects;
+  exported["reload"] = true;
+
+  //Export with indentation
+  os << std::setw(2) << exported;
+}
+
+void Model::jsonRead(std::string data)
+{
+  json imported = json::parse(data);
+  Properties::globals = imported["properties"];
+  json inviews;
+  //If "options" exists (old format) read it as first view properties
+  if (imported.count("options") > 0)
+    inviews.push_back(imported["options"]);
+  else
+    inviews = imported["views"];
+
+  // Import views
+  for (unsigned int v=0; v < inviews.size(); v++)
+  {
+    if (v >= views.size())
+    {
+      //TODO:
+      //Insert a view based on previous in list (same objects)
+      //Apply new properties to that
+      //(This will enable adding views in the web interface)
+      break;
+    }
+
+    View* view = views[v];
+
+    //Apply base properties with merge
+    view->properties.merge(inviews[v]);
+
+    //TODO: Fix view to use all these properties directly
+    json rot, trans, foc, scale, min, max;
+    //Skip import cam if not provided
+    if (inviews[v].count("rotate") > 0)
+    {
+      rot = view->properties["rotate"];
+      trans = view->properties["translate"];
+      foc = view->properties["focus"];
+      scale = view->properties["scale"];
+      view->setRotation(rot[0], rot[1], rot[2], rot[3]);
+      view->setTranslation(trans[0], trans[1], trans[2]);
+      view->focus(foc[0], foc[1], foc[2]);
+      view->scale[0] = scale[0];
+      view->scale[1] = scale[1];
+      view->scale[2] = scale[2];
+    }
+    //min = aview->properties["min"];
+    //max = aview->properties["max"];
+    //view->init(false, newmin, newmax);
+    view->near_clip = view->properties["near"];
+    view->far_clip = view->properties["far"];
+    view->orientation = view->properties["orientation"];
+  }
+
+  // Import colourmaps
+  json cmaps = imported["colourmaps"];
+  for (unsigned int i=0; i < cmaps.size(); i++)
+  {
+    if (i >= colourMaps.size())
+      addColourMap();
+
+    json cmap = cmaps[i];
+    if (cmap["minimum"].is_number()) colourMaps[i]->minimum = cmap["minimum"];
+    if (cmap["maximum"].is_number()) colourMaps[i]->maximum = cmap["maximum"];
+    if (cmap["log"].is_boolean()) colourMaps[i]->log = cmap["log"];
+    json colours = cmap["colours"];
+    if (cmap["name"].is_string()) colourMaps[i]->name = cmap["name"];
+    //Replace colours
+    colourMaps[i]->colours.clear();
+    for (unsigned int c=0; c < colours.size(); c++)
+    {
+      json colour = colours[c];
+      Colour newcolour(colour["colour"]);
+      colourMaps[i]->addAt(newcolour, colour["position"]);
+    }
+  }
+
+  //Import objects
+  json inobjects = imported["objects"];
+  for (unsigned int i=0; i < inobjects.size(); i++)
+  {
+    if (i >= objects.size())
+    {
+      std::string name = inobjects[i]["name"];
+      addObject(new DrawingObject(name));
+    }
+    
+    //Merge properties
+    objects[i]->properties.merge(inobjects[i]);
+  }
+
+  //if (viewer && viewer->isopen)
+  //  viewer->setBackground(Colour(aview->properties["background"])); //Update background colour
+
+  bool reload = (imported["reload"].is_boolean() && imported["reload"]);
+  redraw(reload);
+}
+
+
