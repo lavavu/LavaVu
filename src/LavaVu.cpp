@@ -3253,7 +3253,7 @@ void LavaVu::loadModel(FilePath& fn)
   if (amodel->views.size() == 0)
   {
     //Default view
-    aview = new View(fn.base);
+    aview = new View();
     amodel->views.push_back(aview);
 
     //Add objects to viewport
