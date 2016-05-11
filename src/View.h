@@ -50,6 +50,29 @@
 #define RIGHT_HANDED 1
 #define LEFT_HANDED -1
 
+class Camera
+{
+public:
+  float rotate_centre[3];    // Centre of rotation
+  float focal_point[3];      // Focal point
+
+  float model_trans[3];
+  Quaternion rotation;
+
+  Camera(Camera* cam=NULL)
+  {
+    for (int i=0; i<3; i++)
+    {
+      rotate_centre[i]     = cam ? cam->rotate_centre[i] : 0.0;
+      focal_point[i]       = cam ? cam->focal_point[i]   : FLT_MIN;
+      model_trans[i]       = cam ? cam->model_trans[i]   : 0.0;
+      rotation[i]          = cam ? cam->rotation[i]      : 0.0;
+    }
+
+    rotation[3]            = cam ? cam->rotation[3]      : 1.0;
+  }
+};
+
 class View
 {
 public:
@@ -75,7 +98,6 @@ public:
   int width;        // Viewport height
   int height;       // Viewport width
 
-  std::string title;
   //View properties data...
   Properties properties;
 
@@ -89,13 +111,16 @@ public:
   int orientation;           // Right-handed (GL default) or Left-handed
   float min[3], max[3];
 private:
+  static Camera* globalcam;
+  Camera* localcam;
   bool initialised;
-  float rotate_centre[3];    // Centre of rotation
-  float focal_point[3];      // Focal point
+  float* rotate_centre;      // Centre of rotation
+  float* focal_point;        // Focal point
+
   float default_focus[3];    // Default Focal point
 
-  float model_trans[3];
-  Quaternion rotation;
+  float* model_trans;
+  Quaternion* rotation;
 
   float focal_length;        // Stereo zero parallex distance
   float scene_shift;         // Stereo projection shift (calculated from eye sep)
@@ -112,8 +137,7 @@ public:
   bool textscale;
   float scale2d;
 
-  View(std::string title = "", bool stereo_flag = false,
-       float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
+  View(float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
 
   ~View();
 
@@ -134,7 +158,7 @@ public:
   void rotate(float degreesX, float degreesY, float degreesZ);
   void applyRotation()
   {
-    rotation.apply();
+    rotation->apply();
   }
   void setScale(float x, float y, float z);
   std::string zoom(float factor);

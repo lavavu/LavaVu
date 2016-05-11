@@ -35,7 +35,9 @@
 
 #include "View.h"
 
-View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc, float farc)
+Camera* View::globalcam = NULL;
+
+View::View(float xf, float yf, float nearc, float farc)
 {
   // default view params
   near_clip = nearc;       //Near clip plane
@@ -58,32 +60,34 @@ View::View(std::string title, bool stereo_flag, float xf, float yf, float nearc,
 
   orientation = RIGHT_HANDED;
 
-  stereo = stereo_flag;
+  stereo = false;
   autozoom = false;
   filtered = true;
   scaled = true;
   initialised = false;
 
+  localcam = new Camera();
+
+  //Use the local cam by default
+  rotate_centre = localcam->rotate_centre;
+  focal_point = localcam->focal_point;
+  model_trans = localcam->model_trans;
+  rotation = &localcam->rotation;
+
   for (int i=0; i<3; i++)
   {
-    rotate_centre[i]     = 0.0;      // Centre of rotation
-    focal_point[i]       = FLT_MIN;  // Focal point
     default_focus[i]     = FLT_MIN;  // Default focal point
-    model_trans[i]       = 0.0;
     scale[i]             = 1.0;
     min[i]               = 0.0;
     max[i]               = 0.0;
   }
-  rotation.identity();
 
   is3d = true;
-
-  //Apply properties
-  properties.data["title"] = title;
 }
 
 View::~View()
 {
+  delete localcam;
 }
 
 void View::addObject(DrawingObject* obj)
@@ -204,7 +208,7 @@ std::string View::rotateString()
 {
   //Convert rotation to command string...
   std::ostringstream ss;
-  ss << "rotation " << rotation[0] << " " << rotation[1] << " " << rotation[2] << " " << rotation[3];
+  ss << "rotation " << rotation->x << " " << rotation->y << " " << rotation->z << " " << rotation->w;
   return ss.str();
 }
 
@@ -219,8 +223,11 @@ std::string View::translateString()
 void View::getCamera(float rotate[4], float translate[3], float focus[3])
 {
   //Convert translation & rotation to array...
-  //rotation.toEuler(rotate[0], rotate[1], rotate[2]);
-  for (int i=0; i<4; i++) rotate[i] = rotation[i];
+  //rotation->toEuler(rotate[0], rotate[1], rotate[2]);
+  rotate[0] = rotation->x;
+  rotate[1] = rotation->y;
+  rotate[2] = rotation->z;
+  rotate[3] = rotation->w;
   memcpy(translate, model_trans, sizeof(float) * 3);
   memcpy(focus, focal_point, sizeof(float) * 3);
 }
@@ -270,7 +277,10 @@ void View::translate(float x, float y, float z)
 
 void View::setRotation(float x, float y, float z, float w)
 {
-  rotation = Quaternion(x, y, z, w);
+  rotation->x = x;
+  rotation->y = y;
+  rotation->z = z;
+  rotation->w = w;
 }
 
 void View::rotate(float degrees, Vec3d axis)
@@ -278,7 +288,7 @@ void View::rotate(float degrees, Vec3d axis)
   Quaternion nrot;
   nrot.fromAxisAngle(axis, degrees);
   nrot.normalise();
-  rotation = nrot * rotation;
+  *rotation = nrot * *rotation;
 }
 
 void View::rotate(float degreesX, float degreesY, float degreesZ)
@@ -325,14 +335,14 @@ void View::reset()
     //   focal_point[i] = min[i] + dims[i] / 2.0f;
     rotate_centre[i] = focal_point[i];
   }
-  rotation.identity();
+  rotation->identity();
   rotated = true;   //Flag rotation
 }
 
 void View::print()
 {
   float xrot, yrot, zrot;
-  rotation.toEuler(xrot, yrot, zrot);
+  rotation->toEuler(xrot, yrot, zrot);
   printf("------------------------------\n");
   printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
   printf("Clip planes: near %f far %f\n", near_clip, far_clip);
@@ -440,6 +450,26 @@ void View::projection(int eye)
 
 void View::apply(bool use_fp)
 {
+  if (Properties::global("globalcam"))
+  {
+    if (!globalcam) 
+      globalcam = new Camera(localcam);
+
+    //Global camera override
+    rotate_centre = globalcam->rotate_centre;
+    focal_point = globalcam->focal_point;
+    model_trans = globalcam->model_trans;
+    rotation = &globalcam->rotation;
+  }
+  else
+  {
+    //Use the local cam by default
+    rotate_centre = localcam->rotate_centre;
+    focal_point = localcam->focal_point;
+    model_trans = localcam->model_trans;
+    rotation = &localcam->rotation;
+  }
+
   GL_Error_Check;
   // Setup view transforms
   glMatrixMode(GL_MODELVIEW);
@@ -463,7 +493,7 @@ void View::apply(bool use_fp)
   GL_Error_Check;
 
   // rotate model
-  rotation.apply();
+  rotation->apply();
   GL_Error_Check;
 
   // Adjust back for rotation centre
