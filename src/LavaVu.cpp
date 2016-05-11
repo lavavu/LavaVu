@@ -201,7 +201,7 @@ void loadVertices(std::vector< std::vector <float> > array)
   if (!container) return;
 
   //Load 3d vertices
-  for (int i=0; i < array.size(); i++)
+  for (unsigned int i=0; i < array.size(); i++)
     container->read(lvapp->aobject, 1, lucVertexData, &array[i][0]);
 }
 
@@ -218,7 +218,7 @@ void loadValues(std::vector <float> array)
   if (!container) return;
 
   //Load scalar values
-  for (int i=0; i < array.size(); i++)
+  for (unsigned int i=0; i < array.size(); i++)
     container->read(lvapp->aobject, 1, lucColourValueData, &array[i]);
 }
 
@@ -568,9 +568,9 @@ void LavaVu::defaults()
   // | view | real[3] | Global model scaling factors [x,y,z]
   Properties::defaults["scale"] = {1., 1., 1.};
   // | view | real[3] | Global model minimum bounds [x,y,z]
-  Properties::defaults["min"] = {FLT_MAX, FLT_MAX, FLT_MAX};
+  Properties::defaults["min"] = {0, 0, 0};
   // | view | real[3] | Global model maximum bounds [x,y,z]
-  Properties::defaults["max"] = {-FLT_MAX, -FLT_MAX, -FLT_MAX};
+  Properties::defaults["max"] = {0, 0, 0};
   // | view | real | Near clipping plane position, adjusts where geometry close to the camera is clipped
   Properties::defaults["near"] = 0.1;
   // | view | real | Far clip plane position, adjusts where far geometry is clipped
@@ -1692,7 +1692,6 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
 void LavaVu::readOBJ(FilePath& fn)
 {
   //Use tiny_obj_loader to load a model
-  bool swapY = Properties::global("swapyz");
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string err;
@@ -2439,6 +2438,9 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   {
     float omin[3] = {min[0], min[1], min[2]};
     float omax[3] = {max[0], max[1], max[2]};
+    //If no range, flag with +/-inf
+    for (int i=0; i<3; i++)
+      if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
 
     for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->setView(aview, omin, omax);
@@ -2450,7 +2452,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     //if (autozoom && (int)aview->properties["zoomstep"] == 0)
     //   aview->init(false, min, max);
 
-    //Update the model bounding box - use window bounds if provided and sane in at least 2 dimensions
+    //Update the model bounding box - use global bounds if provided and sane in at least 2 dimensions
     if (max[0]-min[0] > EPSILON && max[1]-min[1] > EPSILON)
     {
       debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from global properties\n",
@@ -2513,7 +2515,9 @@ void LavaVu::display(void)
   if (amodel->views.size() > 1 || models.size() > 1)
   {
     for (unsigned int v=0; v<amodel->views.size(); v++)
-      amodel->views[v]->filtered = true;
+      //Enable filtering only for views with an object list
+      if (amodel->views[v]->objects.size() > 0) 
+        amodel->views[v]->filtered = true;
   }
   else //Single viewport, always disable filter
     aview->filtered = false;

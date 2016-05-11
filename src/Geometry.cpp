@@ -276,7 +276,7 @@ void Geometry::remove(DrawingObject* draw)
       total -= geom[i]->count;
       delete geom[i];
       geom.erase(geom.begin()+i);
-      if (hidden.size() > i) hidden.erase(hidden.begin()+i);
+      if (hidden.size() > (unsigned int)i) hidden.erase(hidden.begin()+i);
     }
   }
 }
@@ -753,12 +753,9 @@ void Geometry::setView(View* vp, float* min, float* max)
     {
       if (geom[g]->draw == view->objects[o])
       {
-        for (unsigned int j=0; j<3; j++)
-        {
-          if (geom[g]->min[j] < min[j]) min[j] = geom[g]->min[j];
-          if (geom[g]->max[j] > max[j]) max[j] = geom[g]->max[j];
-        }
-        //printf("Applied bounding dims from object %d...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->id, geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+        compareCoordMinMax(min, max, geom[g]->min);
+        compareCoordMinMax(min, max, geom[g]->max);
+        //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name.c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
       }
     }
   }
