@@ -68,6 +68,38 @@ Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0
     //Reset static data
     geometry[i]->close();
   }
+
+  //Open database file
+  if (fn.full.length())
+  {
+    if (!open())
+    {
+      std::cerr << "Model database open failed: " << fn.full << std::endl;
+      return;
+    }
+
+    loadTimeSteps();
+    scanFiles(); //Scan for external timestep databases
+    loadColourMaps();
+    loadObjects();
+    loadViewports();
+    loadWindows();
+
+    //No views?
+    if (views.size() == 0)
+    {
+      //Default view
+      View* view = new View();
+      views.push_back(view);
+
+      //Add objects to viewport
+      for (unsigned int o=0; o<objects.size(); o++)
+      {
+        view->addObject(objects[o]);
+        loadLinks(objects[o]);
+      }
+    }
+  }
 }
 
 void Model::init()
@@ -308,11 +340,8 @@ void Model::loadViewports()
     float nearc = (float)sqlite3_column_double(statement, 4);
     float farc = (float)sqlite3_column_double(statement, 5);
 
-    //Create the view object
-    View* v = new View(x, y, nearc, farc);
-    //Add to list
-    if (views.size() < viewport_id) views.resize(viewport_id);
-    views[viewport_id-1] = v;
+    //Create the view object and add to list
+    views.push_back(new View(x, y, nearc, farc));
     debug_print("Loaded viewport at %f,%f\n", x, y);
   }
   sqlite3_finalize(statement);
@@ -424,15 +453,13 @@ void Model::loadLinks()
   {
     int viewport_id = sqlite3_column_int(statement, 0);
     int object_id = sqlite3_column_int(statement, 1);
-    int colourmap_id = sqlite3_column_int(statement, 3); //Linked colourmap id
+    unsigned int colourmap_id = sqlite3_column_int(statement, 3); //Linked colourmap id
 
     //Fields from object_colourmap
-    lucGeometryDataType colourmap_datatype = (lucGeometryDataType)sqlite3_column_int(statement, 4);
     if (!colourmap_id)
     {
       //Backwards compatibility with old db files
       colourmap_id = sqlite3_column_int(statement, 2);
-      colourmap_datatype = lucColourValueData;
     }
 
     //Get viewport
@@ -459,7 +486,6 @@ void Model::loadLinks()
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
       //Find colourmap by id == index
-      ColourMap* cmap = colourMaps[colourmap_id-1];
       //Add colourmap to drawing object
       draw->properties.data["colourmap"] = colourmap_id-1;
     }
@@ -481,12 +507,10 @@ void Model::loadLinks(DrawingObject* obj)
     unsigned int colourmap_id = sqlite3_column_int(statement, 2); //Linked colourmap id
 
     //Fields from object_colourmap
-    lucGeometryDataType colourmap_datatype = (lucGeometryDataType)sqlite3_column_int(statement, 3);
     if (!colourmap_id)
     {
       //Backwards compatibility with old db files
       colourmap_id = sqlite3_column_int(statement, 1);
-      colourmap_datatype = lucColourValueData;
     }
 
     //Add colour maps to drawing objects...
@@ -494,9 +518,7 @@ void Model::loadLinks(DrawingObject* obj)
     {
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
-      //Find colourmap by id == index
-      ColourMap* cmap = colourMaps[colourmap_id-1];
-      //Add colourmap to drawing object
+      //Add colourmap to drawing object by index
       obj->properties.data["colourmap"] = colourmap_id-1;
     }
   }
@@ -533,6 +555,13 @@ int Model::loadTimeSteps()
   }
   sqlite3_finalize(statement);
 
+  //Copy to static for use in Tracers etc
+  TimeStep::timesteps = timesteps;
+  return timesteps.size();
+}
+
+void Model::scanFiles()
+{
   //Check for other timesteps in external files if only 0 or 1 loaded
   if (timesteps.size() < 2)
   {
@@ -557,10 +586,6 @@ int Model::loadTimeSteps()
     //Prevent reloading
     debug_print("Scanning complete, found %d steps.\n", timesteps.size());
   }
-
-  //Copy to static for use in Tracers etc
-  TimeStep::timesteps = timesteps;
-  return timesteps.size();
 }
 
 void Model::loadColourMaps()
@@ -569,16 +594,12 @@ void Model::loadColourMaps()
 
   //New databases have only a colourmap table with colour data in properties
   sqlite3_stmt* statement = select("SELECT id,name,minimum,maximum,logscale,discrete,properties FROM colourmap");
-  int map_id = 0;
   double minimum;
   double maximum;
-  bool parsed = false;
   ColourMap* colourMap = NULL;
   while ( sqlite3_step(statement) == SQLITE_ROW)
   {
-    int id = sqlite3_column_int(statement, 0);
     char *cmname = (char*)sqlite3_column_text(statement, 1);
-
     minimum = sqlite3_column_double(statement, 2);
     maximum = sqlite3_column_double(statement, 3);
     int logscale = sqlite3_column_int(statement, 4);
@@ -685,7 +706,7 @@ bool Model::issue(const char* SQL, sqlite3* odb)
   char* zErrMsg;
   if (sqlite3_exec(odb, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
   {
-    debug_print("SQLite error: %s\n", zErrMsg);
+    std::cerr << "SQLite error: " << zErrMsg << std::endl;
     sqlite3_free(zErrMsg);
     return false;
   }
@@ -1273,7 +1294,8 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
       //Store the id
-      obj->dbid = sqlite3_last_insert_rowid(outdb);
+      if (obj)
+        obj->dbid = sqlite3_last_insert_rowid(outdb);
     }
   }
 
