@@ -3253,13 +3253,8 @@ void LavaVu::loadModel(FilePath& fn)
   if (amodel->views.size() == 0)
   {
     //Default view
-    if (Properties::global("globalcam") && aview)
-      amodel->views.push_back(aview);
-    else
-    {
-      aview = new View(fn.base);
-      amodel->views.push_back(aview);
-    }
+    aview = new View(fn.base);
+    amodel->views.push_back(aview);
 
     //Add objects to viewport
     for (unsigned int o=0; o<amodel->objects.size(); o++)
