@@ -3241,38 +3241,8 @@ void LavaVu::loadModel(FilePath& fn)
     close();
 
   //Open database file
-  Model* newmodel = new Model(fn);
-  if (!newmodel->open())
-  {
-    std::cerr << "Model database open failed\n";
-    return;
-  }
-
-  amodel = newmodel;
+  amodel = new Model(fn);
   models.push_back(amodel);
-
-  amodel->loadTimeSteps();
-  amodel->loadColourMaps();
-  amodel->loadObjects();
-  amodel->loadViewports();
-  amodel->loadWindows();
-
-  //No views?
-  if (amodel->views.size() == 0)
-  {
-    //Default view
-    aview = new View();
-    amodel->views.push_back(aview);
-
-    //Add objects to viewport
-    for (unsigned int o=0; o<amodel->objects.size(); o++)
-    {
-      //Model objects stored by object ID so can have gaps...
-      if (!amodel->objects[o]) continue;
-      aview->addObject(amodel->objects[o]);
-      amodel->loadLinks(amodel->objects[o]);
-    }
-  }
 
   //Set default window title to model name
   std::string name = Properties::global("wintitle");

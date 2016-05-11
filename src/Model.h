@@ -92,6 +92,7 @@ public:
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps();
+  void scanFiles();
   void loadViewports();
   void loadViewCamera(int viewport_id);
   void loadObjects();
