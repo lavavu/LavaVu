@@ -154,6 +154,7 @@ public:
   void mergeDatabases();
   int decompressGeometry(int timestep);
   void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);
+  void writeState(sqlite3* outdb=NULL);
   void writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress);
   void writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
   void deleteObject(unsigned int id);

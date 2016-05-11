@@ -58,8 +58,6 @@ View::View(float xf, float yf, float nearc, float farc)
   y = yf;
   w = h = 1.0f;
 
-  orientation = RIGHT_HANDED;
-
   stereo = false;
   autozoom = false;
   filtered = true;
@@ -299,11 +297,20 @@ void View::rotate(float degreesX, float degreesY, float degreesZ)
   rotate(degreesX, Vec3d(1,0,0));
 }
 
-void View::setScale(float x, float y, float z)
+void View::setScale(float x, float y, float z, bool replace)
 {
-  scale[0] *= x;
-  scale[1] *= y;
-  scale[2] *= z;
+  if (replace)
+  {
+    scale[0] = x;
+    scale[1] = y;
+    scale[2] = z;
+  }
+  else
+  {
+    scale[0] *= x;
+    scale[1] *= y;
+    scale[2] *= z;
+  }
 }
 
 std::string View::zoom(float factor)
@@ -450,6 +457,8 @@ void View::projection(int eye)
 
 void View::apply(bool use_fp)
 {
+  // Right-handed (GL default) or Left-handed
+  int orientation = properties["coordsystem"];
   if (Properties::global("globalcam"))
   {
     if (!globalcam) 
@@ -556,19 +565,14 @@ int View::direction()
   return model_trans[2] > 0 ? -1 : 1;
 }
 
-void View::setCoordSystem(int orientation)
-{
-  this->orientation = orientation;
-}
-
 int View::switchCoordSystem()
 {
-  if (orientation == RIGHT_HANDED)
-    setCoordSystem(LEFT_HANDED);
+  if (properties["coordsystem"] == LEFT_HANDED)
+    properties.data["coordsystem"] = RIGHT_HANDED;
   else
-    setCoordSystem(RIGHT_HANDED);
+    properties.data["coordsystem"] = LEFT_HANDED;
   rotated = true;   //Flag rotation
-  return orientation;
+  return properties["coordsystem"];
 }
 
 #define ADJUST 0.444444
