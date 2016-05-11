@@ -158,6 +158,9 @@ public:
   void writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
   void deleteObject(unsigned int id);
   void backup(sqlite3 *fromDb, sqlite3* toDb);
+
+  void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
+  void jsonRead(std::string data);
 };
 
 #endif //Model__

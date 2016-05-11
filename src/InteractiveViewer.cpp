@@ -640,7 +640,7 @@ bool LavaVu::parseCommands(std::string cmd)
   //Json 
   if (cmd.at(0) == '{')
   {
-    jsonRead(cmd);
+    amodel->jsonRead(cmd);
     return true;
   }
 
@@ -894,7 +894,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     return true;
   }
-  else if (parsed.exists("quit"))
+  else if (parsed.exists("quit") || parsed.exists("exit"))
   {
     if (gethelp)
     {
@@ -1653,7 +1653,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Switch between Right-handed and Lef-handed coordinate system  \n";
+      help += "> Switch between Right-handed and Left-handed coordinate system  \n";
       return false;
     }
 
