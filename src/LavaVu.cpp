@@ -187,6 +187,23 @@ void addObject(std::string name, std::string properties)
   lvapp->aobject->properties.parseSet(properties);
 }
 
+void loadState(std::string state)
+{
+  LavaVu* lvapp = (LavaVu*)app;
+  if (!lvapp->amodel) return;
+  lvapp->amodel->jsonRead(state);
+  lvapp->printProperties();
+}
+
+std::string getState()
+{
+  LavaVu* lvapp = (LavaVu*)app;
+  if (!lvapp->amodel) return "";
+  std::stringstream ss;
+  lvapp->amodel->jsonWrite(ss, 0, false);
+  return ss.str();
+}
+
 void loadVertices(std::vector< std::vector <float> > array)
 {
   LavaVu* lvapp = (LavaVu*)app;
@@ -576,7 +593,7 @@ void LavaVu::defaults()
   // | view | real | Far clip plane position, adjusts where far geometry is clipped
   Properties::defaults["far"] = 10.0;
   // | view | integer | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed
-  Properties::defaults["orientation"] = 1;
+  Properties::defaults["coordsystem"] = 1;
 
   //Global Properties
   // | global | string | Title of window for caption area
@@ -2687,7 +2704,7 @@ void LavaVu::drawAxis()
   aview->applyRotation();
   GL_Error_Check;
   // Switch coordinate system if applicable
-  glScalef(1.0, 1.0, 1.0 * aview->orientation);
+  glScalef(1.0, 1.0, 1.0 * (int)aview->properties["coordsystem"]);
 
   float Xpos[3] = {length/2, 0, 0};
   float Ypos[3] = {0, length/2, 0};

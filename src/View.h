@@ -108,7 +108,6 @@ public:
 
   // Dimensions
   float dims[3];
-  int orientation;           // Right-handed (GL default) or Left-handed
   float min[3], max[3];
 private:
   static Camera* globalcam;
@@ -160,7 +159,7 @@ public:
   {
     rotation->apply();
   }
-  void setScale(float x, float y, float z);
+  void setScale(float x, float y, float z, bool replace=true);
   std::string zoom(float factor);
   std::string zoomClip(float factor);
   void reset();
@@ -172,7 +171,6 @@ public:
 
   void projection(int eye);
   void apply(bool use_fp=true);
-  void setCoordSystem(int orientation);
   int switchCoordSystem();
   void zoomToFit(int margin=-1);
   bool scaleSwitch();

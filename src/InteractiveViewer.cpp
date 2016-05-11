@@ -760,13 +760,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> Export all settings as json state file that can be reloaded later\n\n"
               "> **Usage:** state [\"filename\"]\n\n"
-              "> file (string) : name of file to import (default: state.json)  \n";
+              "> file (string) : name of file to import  \n";
+              "> If filename omitted and database loaded, will save the state to db instead  \n";
       return false;
     }
 
     //Export json settings only (no object data)
     std::string what = parsed["state"];
-    jsonWriteFile(what, 0, false, false);
+    if (what.length() == 0 && amodel->db)
+    {
+      amodel->reopen(true);  //Open writable
+      amodel->writeState();
+    }
+    else
+      jsonWriteFile(what, 0, false, false);
     return false;
   }
   else if (parsed.has(ival, "cache"))
@@ -2356,14 +2363,39 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->print();
     return false;
   }
+  else if (parsed.has(fval, "modelscale"))
+  {
+    if (gethelp)
+    {
+      help += "> Set model scaling, replaces existing values\n\n"
+              "> **Usage:** scale xval yval zval\n\n"
+              "> xval (number) : scaling value applied to x axis\n\n"
+              "> yval (number) : scaling value applied to y axis  \n"
+              "> zval (number) : scaling value applied to z axis  \n";
+      return false;
+    }
+
+    float y, z;
+    if (parsed.has(y, "modelscale", 1) && parsed.has(z, "modelscale", 2))
+    {
+      aview->setScale(fval, y, z);
+      amodel->redraw();
+    }
+    else
+    {
+      //Scale everything
+      aview->setScale(fval, fval, fval);
+      amodel->redraw();
+    }
+  }
   else if (parsed.exists("scale"))
   {
     if (gethelp)
     {
-      help += "> Scale applicable objects up/down in size (points/vectors/shapes)\n\n"
+      help += "> Scale model or applicable objects\n\n"
               "> **Usage:** scale axis value\n\n"
               "> axis : x/y/z  \n"
-              "> value (number) : scaling value applied to all geometry on specified axis\n\n"
+              "> value (number) : scaling value applied to all geometry on specified axis (multiplies existing)\n\n"
               "> **Usage:** scale geometry_type value/up/down\n\n"
               "> geometry_type : points/vectors/tracers/shapes  \n"
               "> value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  \n"
@@ -2396,7 +2428,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(fval, 1, 1);
+          aview->setScale(fval, 1, 1, false); //Multiply by existing
           amodel->redraw();
         }
       }
@@ -2404,7 +2436,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, fval, 1);
+          aview->setScale(1, fval, 1, false); //Multiply by existing
           amodel->redraw();
         }
       }
@@ -2412,14 +2444,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, 1, fval);
+          aview->setScale(1, 1, fval, false); //Multiply by existing
           amodel->redraw();
         }
       }
       else if (what == "all" && parsed.has(fval, "scale", 1))
       {
         //Scale everything
-        aview->setScale(fval, fval, fval);
+        aview->setScale(fval, fval, fval, false); //Multiply by existing
         amodel->redraw();
       }
       else
@@ -3006,7 +3038,7 @@ void LavaVu::helpCommand(std::string cmd)
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers", "log",
      "antialias", "localise", "lockscale", "colourmap", "pointtype",
-     "pointsample", "border", "title", "scale"},
+     "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",
      "cache", "verbose", "toggle", "createvolume"}

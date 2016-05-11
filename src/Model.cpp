@@ -289,37 +289,51 @@ unsigned int Model::addColourMap(ColourMap* cmap)
 
 void Model::loadWindows()
 {
-  //Load windows list from database and insert into models
-  sqlite3_stmt* statement = select("SELECT id,name,width,height,minX,minY,minZ,maxX,maxY,maxZ from window");
-  //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
-  //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
-  //Single window only supported now, use viewports for multiple
-  if ( sqlite3_step(statement) == SQLITE_ROW)
+  //Load state from database if available
+  sqlite3_stmt* statement = select("SELECT data from state");
+  //Single entry only supported now
+  if (sqlite3_step(statement) == SQLITE_ROW)
   {
-    int id = sqlite3_column_int(statement, 0);
-    std::string wtitle = std::string((char*)sqlite3_column_text(statement, 1));
-    int width = sqlite3_column_int(statement, 2);
-    int height = sqlite3_column_int(statement, 3);
-    float min[3], max[3];
-    for (int i=0; i<3; i++)
+    const char *data = (const char*)sqlite3_column_text(statement, 0);
+    jsonRead(data);
+
+    //Load object links 
+    for (unsigned int o=0; o<objects.size(); o++)
+      loadLinks(objects[o]);
+  }
+  else //Old db uses window structure
+  {
+    //Load windows list from database and insert into models
+    statement = select("SELECT id,name,width,height,minX,minY,minZ,maxX,maxY,maxZ from window");
+    //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
+    //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
+    //Single window only supported now, use viewports for multiple
+    if (sqlite3_step(statement) == SQLITE_ROW)
     {
-      if (sqlite3_column_type(statement, 4+i) != SQLITE_NULL)
-        min[i] = (float)sqlite3_column_double(statement, 4+i);
-      else
-        min[i] = FLT_MAX;
-      if (sqlite3_column_type(statement, 7+i) != SQLITE_NULL)
-        max[i] = (float)sqlite3_column_double(statement, 7+i);
-      else
-        max[i] = -FLT_MAX;
+      std::string wtitle = std::string((char*)sqlite3_column_text(statement, 1));
+      int width = sqlite3_column_int(statement, 2);
+      int height = sqlite3_column_int(statement, 3);
+      float min[3], max[3];
+      for (int i=0; i<3; i++)
+      {
+        if (sqlite3_column_type(statement, 4+i) != SQLITE_NULL)
+          min[i] = (float)sqlite3_column_double(statement, 4+i);
+        else
+          min[i] = FLT_MAX;
+        if (sqlite3_column_type(statement, 7+i) != SQLITE_NULL)
+          max[i] = (float)sqlite3_column_double(statement, 7+i);
+        else
+          max[i] = -FLT_MAX;
+      }
+
+      Properties::globals["wintitle"] = wtitle;
+      Properties::globals["resolution"] = {width, height};
+      Properties::globals["min"] = {min[0], min[1], min[2]};
+      Properties::globals["max"] = {max[0], max[1], max[2]};
+
+      //Link the window viewports, objects & colourmaps
+      loadLinks();
     }
-
-    Properties::globals["wintitle"] = wtitle;
-    Properties::globals["resolution"] = {width, height};
-    Properties::globals["min"] = {min[0], min[1], min[2]};
-    Properties::globals["max"] = {max[0], max[1], max[2]};
-
-    //Link the window viewports, objects & colourmaps
-    loadLinks();
   }
   sqlite3_finalize(statement);
 }
@@ -396,8 +410,8 @@ void Model::loadViewCamera(int viewport_id)
     v->translate(translate[0], translate[1], translate[2]);
     v->rotate(rotate[0], rotate[1], rotate[2]);
     v->setScale(scale[0], scale[1], scale[2]);
-    v->setCoordSystem(orientation);
     v->properties.parseSet(std::string(vprops));
+    v->properties["coordsystem"] = orientation;
     //debug_print("Loaded \"%s\" at %f,%f\n");
   }
   sqlite3_finalize(statement);
@@ -1243,6 +1257,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   issue("drop table IF EXISTS object_colourmap", outdb);
   issue("drop table IF EXISTS colourmap", outdb);
   issue("drop table IF EXISTS object", outdb);
+  issue("drop table IF EXISTS state", outdb);
 
   // Create new tables when not present
   issue("create table IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
@@ -1319,7 +1334,34 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     writeObjects(outdb, obj, step(), compress);
   }
 
+  //Write state
+  writeState(outdb);
+
   issue("COMMIT", outdb);
+}
+
+void Model::writeState(sqlite3* outdb)
+{
+  //Write state
+  if (!outdb) outdb = db; //Use existing database
+  issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, data TEXT)", outdb);
+
+  std::stringstream ss;
+  jsonWrite(ss, 0, false);
+  std::string state = ss.str();
+  const char* SQLS = "insert into state (data) values (?)";
+  sqlite3_stmt* statement;
+
+  if (sqlite3_prepare_v2(outdb, SQLS, -1, &statement, NULL) != SQLITE_OK)
+    abort_program("SQL prepare error: (%s) %s\n", SQLS, sqlite3_errmsg(outdb));
+
+  if (sqlite3_bind_text(statement, 1, state.c_str(), state.length(), SQLITE_STATIC) != SQLITE_OK)
+    abort_program("SQL bind error: %s\n", sqlite3_errmsg(db));
+
+  if (sqlite3_step(statement) != SQLITE_DONE )
+    abort_program("SQL step error: (%s) %s\n", SQLS, sqlite3_errmsg(db));
+
+  sqlite3_finalize(statement);
 }
 
 void Model::writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress)
@@ -1489,7 +1531,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
     vprops["near"] = view->near_clip;
     vprops["far"] = view->far_clip;
-    vprops["orientation"] = view->orientation;
 
     //Add the view
     outviews.push_back(vprops);
@@ -1602,11 +1643,11 @@ void Model::jsonRead(std::string data)
   {
     if (v >= views.size())
     {
-      //TODO:
-      //Insert a view based on previous in list (same objects)
-      //Apply new properties to that
-      //(This will enable adding views in the web interface)
-      break;
+      //Insert a view
+      View* view = new View();
+      views.push_back(view);
+      //Insert all objects for now
+      view->objects = objects;
     }
 
     View* view = views[v];
@@ -1635,7 +1676,6 @@ void Model::jsonRead(std::string data)
     //view->init(false, newmin, newmax);
     view->near_clip = view->properties["near"];
     view->far_clip = view->properties["far"];
-    view->orientation = view->properties["orientation"];
   }
 
   // Import colourmaps
@@ -1665,6 +1705,7 @@ void Model::jsonRead(std::string data)
   json inobjects = imported["objects"];
   for (unsigned int i=0; i < inobjects.size(); i++)
   {
+    if (i >= objects.size()) continue; //No adding objects from json now
     if (i >= objects.size())
     {
       std::string name = inobjects[i]["name"];
