@@ -2428,20 +2428,24 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 
   aview = amodel->views[view];
 
-  float min[3], max[3];
-  Properties::toFloatArray(Properties::global("min"), min, 3);
-  Properties::toFloatArray(Properties::global("max"), max, 3);
-
   //Called when timestep/model changed (new model data)
   //Set model size from geometry / bounding box and apply auto zoom
+  //- View bounds used for camera calc and border (view->min/max)
+  //- Actual bounds used by geometry clipping etc (Geometry::min/max)
   if (setBounds)
   {
+    float min[3], max[3];
+    Properties::toFloatArray(Properties::global("min"), min, 3);
+    Properties::toFloatArray(Properties::global("max"), max, 3);
+    //If no range, flag invalid with +/-inf
+    for (int i=0; i<3; i++)
+      if (max[i]-min[i] <= EPSILON) max[i] = -(min[i] = HUGE_VAL);
+
+
     float omin[3] = {min[0], min[1], min[2]};
     float omax[3] = {max[0], max[1], max[2]};
-    //If no range, flag with +/-inf
-    for (int i=0; i<3; i++)
-      if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
 
+    //Expand bounds by all geometry objects
     for (unsigned int i=0; i < Model::geometry.size(); i++)
       Model::geometry[i]->setView(aview, omin, omax);
 
@@ -2468,7 +2472,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       aview->init(false, omin, omax);
     }
 
-    //Save actual bounding box max/min/range - it is possible for the view box to be smaller
+    //Update actual bounding box max/min/range - it is possible for the view box to be smaller
     clearMinMax(Geometry::min, Geometry::max);
     compareCoordMinMax(Geometry::min, Geometry::max, omin);
     compareCoordMinMax(Geometry::min, Geometry::max, omax);
