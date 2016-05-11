@@ -309,7 +309,7 @@ void Model::loadViewports()
     float farc = (float)sqlite3_column_double(statement, 5);
 
     //Create the view object
-    View* v = new View("", false, x, y, nearc, farc);
+    View* v = new View(x, y, nearc, farc);
     //Add to list
     if (views.size() < viewport_id) views.resize(viewport_id);
     views[viewport_id-1] = v;
