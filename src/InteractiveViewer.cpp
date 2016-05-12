@@ -567,7 +567,7 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
   std::transform(what.begin(), what.end(), what.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
   {
-    std::string namekey = amodel->objects[i]->name;
+    std::string namekey = amodel->objects[i]->name();
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
     if (namekey == what)
       //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
@@ -1377,7 +1377,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (list[c]->skip)
         {
           std::ostringstream ss;
-          ss << "load " << list[c]->name;
+          ss << "load " << list[c]->name();
           return parseCommands(ss.str());
         }
         else
@@ -1387,7 +1387,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           for (unsigned int i=0; i < Model::geometry.size(); i++)
             Model::geometry[i]->showObj(list[c], state);
           list[c]->properties.data["visible"] = state; //This allows hiding of objects without geometry (colourbars)
-          printMessage("%s object %s", action.c_str(), list[c]->name.c_str());
+          printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
           amodel->redraw();
         }
       }
@@ -1792,7 +1792,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       for (int c=0; c<list.size(); c++)
       {
         exportData(type, list[c]);
-        printMessage("Dumped object %s to %s", list[c]->name.c_str(), what.c_str());
+        printMessage("Dumped object %s to %s", list[c]->name().c_str(), what.c_str());
       }
     }
   }
@@ -1950,12 +1950,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (cmap >= 0)
       {
         obj->properties.data["colourmap"] = cmap;
-        printMessage("%s colourmap set to %s (%d)", obj->name.c_str(), amodel->colourMaps[cmap]->name.c_str(), cmap);
+        printMessage("%s colourmap set to %s (%d)", obj->name().c_str(), amodel->colourMaps[cmap]->name.c_str(), cmap);
       }
       else if (ival < 0 || what.length() == 0)
       {
         obj->properties.data["colourmap"] = -1;
-        printMessage("%s colourmap set to none", obj->name.c_str());
+        printMessage("%s colourmap set to none", obj->name().c_str());
       }
       else
       {
@@ -1999,13 +1999,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (geomdata)
       {
         geomdata->data[lucRGBAData]->read(1, &c.value);
-        printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
+        printMessage("%s colour appended %x", aobject->name().c_str(), c.value);
       }*/
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, lucRGBAData, &c.value);
-      printMessage("%s colour appended %x", aobject->name.c_str(), c.value);
+      printMessage("%s colour appended %x", aobject->name().c_str(), c.value);
       redraw(aobject);
       amodel->redraw(true); //Redraw & reload
     }
@@ -2027,7 +2027,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, lucColourValueData, &fval);
-      printMessage("%s value appended %f", aobject->name.c_str(), fval);
+      printMessage("%s value appended %f", aobject->name().c_str(), fval);
 
       redraw(aobject);
       amodel->redraw(true); //Redraw & reload
@@ -2072,7 +2072,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, dtype, xyz);
-      printMessage("%s %s appended", aobject->name.c_str(), action.c_str());
+      printMessage("%s %s appended", aobject->name().c_str(), action.c_str());
 
       redraw(aobject);
       amodel->redraw(true); //Redraw & reload
@@ -2136,7 +2136,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       int len = size/width;
       active->read(aobject, len, dtype, vals);
       delete[] vals;
-      printMessage("%s %s appended %d", aobject->name.c_str(), what.c_str(), len);
+      printMessage("%s %s appended %d", aobject->name().c_str(), what.c_str(), len);
 
       redraw(aobject);
       amodel->redraw(true); //Redraw & reload
@@ -2186,7 +2186,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           obj->properties.data["pointtype"] = (pt-1) % 5;
         else if (parsed.get("pointtype", next) == "down")
           obj->properties.data["pointtype"] = (pt+1) % 5;
-        printMessage("%s point type set to %d", obj->name.c_str(), (int)obj->properties["pointtype"]);
+        printMessage("%s point type set to %d", obj->name().c_str(), (int)obj->properties["pointtype"]);
         redraw(obj); //Full reload of this object only
         amodel->redraw();
       }
@@ -2475,7 +2475,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             obj->properties.data["scaling"] = sc * 1.5;
           else if (parsed.get("scale", next) == "down")
             obj->properties.data["scaling"] = sc / 1.5;
-          printMessage("%s scaling set to %f", obj->name.c_str(), (float)obj->properties["scaling"]);
+          printMessage("%s scaling set to %f", obj->name().c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
             Model::geometry[type]->redraw = true;
           redraw(obj); //Full reload of object by id
@@ -2552,7 +2552,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::vector<DrawingObject*> list = lookupObjects(parsed, "delete");
     for (int c=0; c<list.size(); c++)
     {
-      printMessage("%s deleted", list[c]->name.c_str());
+      printMessage("%s deleted", list[c]->name().c_str());
       //Delete geometry
       for (unsigned int i=0; i < Model::geometry.size(); i++)
         Model::geometry[i]->remove(list[c]);
@@ -2595,9 +2595,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       if (list[c]->dbid == 0) continue;
       amodel->deleteObject(list[c]->dbid);
-      printMessage("%s deleted from database", list[c]->name.c_str());
+      printMessage("%s deleted from database", list[c]->name().c_str());
       //Delete the loaded object data
-      parseCommand("delete " + list[c]->name);
+      parseCommand("delete " + list[c]->name());
     }
   }
   else if (parsed.exists("merge"))
@@ -2788,7 +2788,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       std::string type = parsed.get("add", 1);
       if (type.length() > 0) aobject->properties.data["geometry"] = type;
-      printMessage("Added object: %s", aobject->name.c_str());
+      printMessage("Added object: %s", aobject->name().c_str());
     }
   }
   else if (parsed.exists("select"))
@@ -2806,7 +2806,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     aobject = lookupObject(parsed, "select");
     if (aobject)
-      printMessage("Selected object: %s", aobject->name.c_str());
+      printMessage("Selected object: %s", aobject->name().c_str());
     else
       printMessage("Object selection cleared");
   }
@@ -2905,8 +2905,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::string name = parsed.get("name", next);
       if (name.length() > 0)
       {
-        obj->name = name;
-        printMessage("Renamed object: %s", obj->name.c_str());
+        obj->name() = name;
+        printMessage("Renamed object: %s", obj->name().c_str());
       }
     }
   }
@@ -2965,7 +2965,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       aobject->filterout = !aobject->filterout;
-      printMessage("Filters on object %s set to %s", aobject->name.c_str(), (aobject->filterout ? "OUT" : "IN"));
+      printMessage("Filters on object %s set to %s", aobject->name().c_str(), (aobject->filterout ? "OUT" : "IN"));
       amodel->redraw(true); //Force reload
     }
   }
@@ -2980,7 +2980,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Require a selected object
     if (aobject)
     {
-      printMessage("Filters cleared on object %s", aobject->name.c_str());
+      printMessage("Filters cleared on object %s", aobject->name().c_str());
       aobject->filters.clear();
       amodel->redraw(true); //Force reload
     }

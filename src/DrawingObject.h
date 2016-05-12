@@ -53,7 +53,6 @@ class DrawingObject
 {
 public:
   unsigned int dbid;
-  std::string name;
   bool skip;
   //Cached values for faster lookup
   float opacity;
@@ -76,6 +75,7 @@ public:
   ColourMap* getColourMap(const std::string& type="colourmap");
   int addTexture(std::string texfn="");
   TextureData* useTexture(int index);
+  std::string name() {return properties["name"];}
 };
 
 #endif //DrawingObject__

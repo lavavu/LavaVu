@@ -36,10 +36,12 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(std::string name, std::string props, int colourmap, unsigned int id) : dbid(id), name(name)
+DrawingObject::DrawingObject(std::string name, std::string props, int colourmap, unsigned int id) : dbid(id)
 {
   colourMaps = NULL;
   skip = Properties::global("noload");
+  //Name set in properties overrides that passed from database
+  properties.data["name"] = name;
 
   //Fix any names with spaces
   std::replace(name.begin(), name.end(), ' ', '_');

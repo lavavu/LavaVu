@@ -181,7 +181,7 @@ void Volumes::update()
       if (i==geom.size() || draw != geom[i]->draw)
       {
         slices[draw] = count;
-        debug_print("Reloading: %d slices in object %s\n", count, draw->name.c_str());
+        debug_print("Reloading: %d slices in object %s\n", count, draw->name().c_str());
         count = 0;
         if (i<geom.size()) draw = geom[i]->draw;
       }
@@ -240,7 +240,7 @@ void Volumes::update()
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
           }
         }
-        debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name.c_str(), geom[i]->width, geom[i]->height, slices[current], bpv);
+        debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv);
 
         //Set the loaded texture
         geom[i]->texIdx = idx;
@@ -418,7 +418,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip
       iw = width * xtiles;
       ih = ceil(slices[draw] / (float)xtiles) * height;
       if (ih == height) iw = width * slices[draw];
-      printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name.c_str(), width, height, slices[draw], iw, ih);
+      printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), width, height, slices[draw], iw, ih);
       GLubyte *image = new GLubyte[iw * ih];
       memset(image, 0, iw*ih*sizeof(GLubyte));
       int xoffset = 0, yoffset = 0;
@@ -465,7 +465,7 @@ void Volumes::pngWrite(DrawingObject* draw, int xtiles)
       GLubyte *image = getTiledImage(draw, iw, ih, true, xtiles);
       if (!image) return;
       char path[FILE_PATH_MAX];
-      sprintf(path, "%s.png", geom[i]->draw->name.c_str());
+      sprintf(path, "%s.png", geom[i]->draw->name().c_str());
       std::ofstream file(path, std::ios::binary);
       write_png(file, 1, iw, ih, image);
       delete[] image;
