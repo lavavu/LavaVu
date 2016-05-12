@@ -247,7 +247,7 @@ void Geometry::clear(bool all)
     unsigned int idx = i;
     if (all || !geom[i]->draw->properties["static"])
     {
-      //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name << std::endl;
+      //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name() << std::endl;
       delete geom[idx];
       if (!all) 
       {
@@ -258,7 +258,7 @@ void Geometry::clear(bool all)
     else
     {
       total += geom[i]->count;
-      //std::cout << " skipped deleting static geom: " << i << " : " << geom[i]->draw->name << std::endl;
+      //std::cout << " skipped deleting static geom: " << i << " : " << geom[i]->draw->name() << std::endl;
     }
   }
   if (all) geom.clear();
@@ -734,7 +734,7 @@ GeomData* Geometry::add(DrawingObject* draw)
   geom.push_back(geomdata);
   if (hidden.size() < geom.size()) hidden.push_back(allhidden);
   //if (allhidden) draw->properties.data["visible"] = false;
-  //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", draw->name.c_str(), geom.size(), geomdata, allhidden);
+  //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", draw->name().c_str(), geom.size(), geomdata, allhidden);
   return geomdata;
 }
 
@@ -754,7 +754,7 @@ void Geometry::setView(View* vp, float* min, float* max)
       {
         compareCoordMinMax(min, max, geom[g]->min);
         compareCoordMinMax(min, max, geom[g]->max);
-        //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name.c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+        //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
       }
     }
   }
@@ -791,7 +791,7 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
       //Default shallow copy
       *geomdata = *fixed;
       geomdata->fixedOffset = geomdata->values.size();
-      //std::cout << "FIXED DATA RECORDS LOADED FOR " << draw->name << ", " << geomdata->vertices.size() << " verts " << std::endl;
+      //std::cout << "FIXED DATA RECORDS LOADED FOR " << draw->name() << ", " << geomdata->vertices.size() << " verts " << std::endl;
     }
   }
 
@@ -813,7 +813,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     FloatValues* fv = new FloatValues();
     geomdata->data[dtype] = fv;
     geomdata->values.push_back(fv);
-    //debug_print("NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name.c_str(), dtype, geomdata->values.size(), fv);
+    //debug_print("NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name().c_str(), dtype, geomdata->values.size(), fv);
   }
 
   //Update the default type property on first read
@@ -854,7 +854,7 @@ GeomData* Geometry::fix(GeomData* fgeom)
   else if (geom.size() == 1)
   {
     fixed = geom[0];
-    //std::cout << "SET FIXED DATA RECORDS FOR " << fixed->draw->name << ", " << fixed->vertices.size() << " verts " << std::endl;
+    //std::cout << "SET FIXED DATA RECORDS FOR " << fixed->draw->name() << ", " << fixed->vertices.size() << " verts " << std::endl;
     geom.clear();
   }
   else
@@ -898,7 +898,7 @@ std::vector<std::string> Geometry::getDataLabels(DrawingObject* draw)
   {
     if ((!draw || geom[i]->draw == draw) && geom[i]->draw != last)
     {
-      list.push_back("Data sets for: " + geom[i]->draw->name);
+      list.push_back("Data sets for: " + geom[i]->draw->name());
       list.push_back("-----------------------------------------");
       for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {
@@ -941,7 +941,7 @@ void Geometry::toImage(unsigned int idx)
     }
   }
   //Write data to image file
-  sprintf(path, "%s.%05d", geom[idx]->draw->name.c_str(), idx);
+  sprintf(path, "%s.%05d", geom[idx]->draw->name().c_str(), idx);
   writeImage(image, width, height, path, false);
   delete[] image;
 }

@@ -1305,7 +1305,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   {
     if (!obj || objects[i] == obj)
     {
-      snprintf(SQL, SQL_QUERY_MAX, "insert into object (name, properties) values ('%s', '%s')", objects[i]->name.c_str(), objects[i]->properties.data.dump().c_str());
+      snprintf(SQL, SQL_QUERY_MAX, "insert into object (name, properties) values ('%s', '%s')", objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str());
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
       //Store the id
@@ -1393,7 +1393,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
     {
       if (!data[i]->data[data_type]) continue;
       std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
-                << data_type <<  ") for object : " << obj->dbid << " => " << obj->name << std::endl;
+                << data_type <<  ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       //Get the data block
       DataContainer* block = data[i]->data[data_type];
 
@@ -1580,7 +1580,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       }
 
       json obj = objects[i]->properties.data;
-      obj["name"] = objects[i]->name;
       if (colourmap >= 0) obj["colourmap"] = colourmap;
       if (!objdata)
       {

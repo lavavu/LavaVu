@@ -91,7 +91,7 @@ View::~View()
 void View::addObject(DrawingObject* obj)
 {
   objects.push_back(obj);
-  debug_print("Object '%s' added to viewport\n", obj->name.c_str());
+  debug_print("Object '%s' added to viewport\n", obj->name().c_str());
 }
 
 bool View::hasObject(DrawingObject* obj)

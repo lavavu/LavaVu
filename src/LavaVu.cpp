@@ -1042,7 +1042,7 @@ void LavaVu::parseProperty(std::string& data)
   if (aobject)
   {
     aobject->properties.parse(data);
-    if (verbose) std::cerr << "OBJECT " << std::setw(2) << aobject->name << ", DATA: " << aobject->properties.data << std::endl;
+    if (verbose) std::cerr << "OBJECT " << std::setw(2) << aobject->name() << ", DATA: " << aobject->properties.data << std::endl;
   }
   else if (aview && aview->properties.data.count(key) > 0)
   {
@@ -1061,7 +1061,7 @@ void LavaVu::printProperties()
 {
   //Show properties of selected object or view/globals
   if (aobject)
-    std::cerr << "OBJECT " << aobject->name << ", DATA: " << std::setw(2) << aobject->properties.data << std::endl;
+    std::cerr << "OBJECT " << aobject->name() << ", DATA: " << std::setw(2) << aobject->properties.data << std::endl;
   else
   {
     std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
@@ -2982,7 +2982,7 @@ void LavaVu::displayObjectList(bool console)
     {
       std::ostringstream ss;
       ss << "   ";
-      ss << std::setw(5) << (i+1) << " : " << amodel->objects[i]->name;
+      ss << std::setw(5) << (i+1) << " : " << amodel->objects[i]->name();
       if (amodel->objects[i] == aobject) ss << "*";
       if (amodel->objects[i]->skip)
       {
@@ -3426,11 +3426,11 @@ void LavaVu::dumpCSV(DrawingObject* obj)
         if (results.size() > 0)
         {
           char filename[FILE_PATH_MAX];
-          sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name.c_str(),
+          sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name().c_str(),
                   GeomData::names[type].c_str(), amodel->stepInfo());
           std::ofstream csv;
           csv.open(filename, std::ios::out | std::ios::trunc);
-          std::cout << " * Writing object " << amodel->objects[i]->name << " to " << filename << std::endl;
+          std::cout << " * Writing object " << amodel->objects[i]->name() << " to " << filename << std::endl;
           csv << results;
           csv.close();
         }
@@ -3449,7 +3449,7 @@ void LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   if (!jsonp) ext[4] = '\0';
   if (obj)
     sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), name.c_str(),
-            obj->name.c_str(), amodel->stepInfo(), ext);
+            obj->name().c_str(), amodel->stepInfo(), ext);
   else
     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), name.c_str(), amodel->stepInfo(), ext);
   jsonWriteFile(filename, obj, jsonp, objdata);
