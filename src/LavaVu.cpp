@@ -3281,7 +3281,7 @@ void LavaVu::loadModel(FilePath& fn)
 
   if (viewer->isopen)
   {
-    loadModelStep(0, 0);
+    loadModelStep(models.size()-1, 0);
     viewer->postdisplay = true;
   }
 }
