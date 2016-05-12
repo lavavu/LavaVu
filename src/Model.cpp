@@ -603,10 +603,11 @@ void Model::scanFiles()
 
 void Model::loadColourMaps()
 {
-  if (issue("select count(*) from colourvalue")) return loadColourMapsLegacy();
+  sqlite3_stmt* statement = select("select count(*) from colourvalue");
+  if (statement) return loadColourMapsLegacy();
 
   //New databases have only a colourmap table with colour data in properties
-  sqlite3_stmt* statement = select("SELECT id,name,minimum,maximum,logscale,discrete,properties FROM colourmap");
+  statement = select("SELECT id,name,minimum,maximum,logscale,discrete,properties FROM colourmap");
   double minimum;
   double maximum;
   ColourMap* colourMap = NULL;

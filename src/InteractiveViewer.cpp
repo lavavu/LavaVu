@@ -1305,20 +1305,21 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
   {
+    std::string action = parsed.exists("hide") ? "hide" : "show";
+
     if (gethelp)
     {
-      help += "> Hide/show objects/geometry types\n\n"
-              "> **Usage:** hide/show object\n\n"
-              "> object (integer/string) : the index or name of the object to hide/show (see: \"list objects\")  \n"
-              "> \n**Usage:** hide/show geometry_type id\n\n"
-              "> geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines  \n"
-              "> id (integer, optional) : id of geometry to hide/show  \n"
-              "> eg: 'hide points' will hide all objects containing point data  \n"
-              "> note: 'hide all' will hide all objects  \n";
+      help += "> " + action + " objects/geometry types\n\n"
+              "> **Usage:** " + action + " object\n\n"
+              "> object (integer/string) : the index or name of the object to " + action + " (see: \"list objects\")  \n"
+              "> \n**Usage:** " + action + " geometry_type id\n\n"
+              "> geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes  \n"
+              "> id (integer, optional) : id of geometry to " + action + "  \n"
+              "> eg: 'hide points' will " + action + " all objects containing point data  \n"
+              "> note: 'hide all' will " + action + " all objects  \n";
       return false;
     }
 
-    std::string action = parsed.exists("hide") ? "hide" : "show";
     std::string what = parsed[action];
 
     if (what == "all")

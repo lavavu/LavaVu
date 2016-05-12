@@ -748,7 +748,6 @@ void Geometry::setView(View* vp, float* min, float* max)
   //Apply geometry bounds from all object data within this viewport
   for (unsigned int o=0; o<view->objects.size(); o++)
   {
-    if (!view->objects[o]) continue;
     for (unsigned int g=0; g<geom.size(); g++)
     {
       if (geom[g]->draw == view->objects[o])
