@@ -567,7 +567,7 @@ int View::direction()
 
 int View::switchCoordSystem()
 {
-  if (properties["coordsystem"] == LEFT_HANDED)
+  if ((int)properties["coordsystem"] == LEFT_HANDED)
     properties.data["coordsystem"] = RIGHT_HANDED;
   else
     properties.data["coordsystem"] = LEFT_HANDED;
