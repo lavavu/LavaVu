@@ -2981,7 +2981,7 @@ void LavaVu::displayObjectList(bool console)
     if (amodel->objects[i])
     {
       std::ostringstream ss;
-      ss << "   ";
+      ss << "  ";
       ss << std::setw(5) << (i+1) << " : " << amodel->objects[i]->name();
       if (amodel->objects[i] == aobject) ss << "*";
       if (amodel->objects[i]->skip)
@@ -3005,7 +3005,7 @@ void LavaVu::displayObjectList(bool console)
         offset++;
         displayText(ss.str(), offset);
         if (c.value != viewer->background.value)
-          displayText("##", offset, &c);
+          displayText(std::string(1, 0x7f), offset, &c);
       }
       else
       {

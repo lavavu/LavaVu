@@ -41,7 +41,7 @@
 extern GLuint charLists;
 extern float font_charwidths[];
 
-#define GLYPHS 95
+#define GLYPHS 96
 #define LINE_HEIGHT 38.935547
 #define ASCENDER 32.000000
 #define DESCENDER -8.000000
