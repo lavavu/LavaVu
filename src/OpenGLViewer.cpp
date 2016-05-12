@@ -458,6 +458,8 @@ std::string OpenGLViewer::image(const std::string& path)
   // Read the pixels
   size_t size = w * h * bpp;
   GLubyte *image = new GLubyte[size];
+  //Ensure buffer large enough
+  assert(width/factor == w && height/factor == h);
 #ifdef HAVE_LIBPNG
   pixels(image, alphapng);
 #else
