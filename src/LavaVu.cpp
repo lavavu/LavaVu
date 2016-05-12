@@ -691,6 +691,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'z':
         //Downsample images
         ss >> viewer->downsample;
+        if (viewer->downsample < 1) viewer->downsample = 1;
         break;
       case 'p':
         //Web server enable
@@ -2901,6 +2902,7 @@ void LavaVu::drawBorder()
   if (!obj) obj = new DrawingObject("border", "clip=false\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
+  if (!aview->is3d) obj->properties.data["depthtest"] = false;
 
   //Check for boolean or numeric value for border
   float bordersize = 1.0;
@@ -3279,8 +3281,7 @@ void LavaVu::loadModel(FilePath& fn)
 
   if (viewer->isopen)
   {
-    model = 0; //models.size();
-    loadModelStep(model, 0);
+    loadModelStep(0, 0);
     viewer->postdisplay = true;
   }
 }
