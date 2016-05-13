@@ -326,7 +326,7 @@ void Model::loadWindows()
           max[i] = -FLT_MAX;
       }
 
-      Properties::globals["wintitle"] = wtitle;
+      Properties::globals["caption"] = wtitle;
       Properties::globals["resolution"] = {width, height};
       Properties::globals["min"] = {min[0], min[1], min[2]};
       Properties::globals["max"] = {max[0], max[1], max[2]};
@@ -1706,11 +1706,11 @@ void Model::jsonRead(std::string data)
   for (unsigned int i=0; i < inobjects.size(); i++)
   {
     if (i >= objects.size()) continue; //No adding objects from json now
-    if (i >= objects.size())
+    /*if (i >= objects.size())
     {
       std::string name = inobjects[i]["name"];
       addObject(new DrawingObject(name));
-    }
+    }*/
     
     //Merge properties
     objects[i]->properties.merge(inobjects[i]);
