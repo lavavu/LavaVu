@@ -459,7 +459,7 @@ void View::apply(bool use_fp)
 {
   // Right-handed (GL default) or Left-handed
   int orientation = properties["coordsystem"];
-  if (Properties::global("globalcam"))
+  if (properties["globalcam"])
   {
     if (!globalcam) 
       globalcam = new Camera(localcam);

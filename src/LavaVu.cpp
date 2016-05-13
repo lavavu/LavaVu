@@ -597,7 +597,7 @@ void LavaVu::defaults()
 
   //Global Properties
   // | global | string | Title of window for caption area
-  Properties::defaults["wintitle"] = "LavaVu";
+  Properties::defaults["caption"] = "LavaVu";
   // | global | resolution[2] | Window resolution X,Y
   Properties::defaults["resolution"] = {1024, 768};
   // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
@@ -911,11 +911,11 @@ std::string LavaVu::run()
 
         if (writeimage)
         {
-          std::cout << "... Writing image(s) for model " << Properties::global("wintitle") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+          std::cout << "... Writing image(s) for model " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
         }
         if (writemovie)
         {
-          std::cout << "... Writing movie for model " << Properties::global("wintitle") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+          std::cout << "... Writing movie for model " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
           //Other formats?? avi/mpeg4?
           encodeVideo("", writemovie);
         }
@@ -1504,8 +1504,8 @@ void LavaVu::readHeightMap(FilePath& fn)
   }
 
   float min[3], max[3];
-  Properties::toFloatArray(Properties::global("min"), min, 3);
-  Properties::toFloatArray(Properties::global("max"), max, 3);
+  Properties::toFloatArray(aview->properties["min"], min, 3);
+  Properties::toFloatArray(aview->properties["max"], max, 3);
   float range[3] = {0,0,0};
 
   min[0] = xmap;
@@ -2365,7 +2365,8 @@ void LavaVu::resize(int new_width, int new_height)
   }
 
   //Get resolution
-  Properties::globals["resolution"] = {viewer->width, viewer->height};
+  //Properties::globals["resolution"] = {viewer->width, viewer->height};
+  aview->properties.data["resolution"] = {viewer->width, viewer->height};
 
   amodel->redraw();
 }
@@ -2410,7 +2411,7 @@ void LavaVu::resetViews(bool autozoom)
 
   //Set viewer title
   std::stringstream title;
-  std::string name = Properties::global("wintitle");
+  std::string name = Properties::global("caption");
   std::string vpt = aview->properties["title"];
   if (vpt.length() > 0)
   {
@@ -2455,8 +2456,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   if (setBounds)
   {
     float min[3], max[3];
-    Properties::toFloatArray(Properties::global("min"), min, 3);
-    Properties::toFloatArray(Properties::global("max"), max, 3);
+    Properties::toFloatArray(aview->properties["min"], min, 3);
+    Properties::toFloatArray(aview->properties["max"], max, 3);
     //If no range, flag invalid with +/-inf
     for (int i=0; i<3; i++)
       if (max[i]-min[i] <= EPSILON) max[i] = -(min[i] = HUGE_VAL);
@@ -3269,8 +3270,8 @@ void LavaVu::loadModel(FilePath& fn)
   models.push_back(amodel);
 
   //Set default window title to model name
-  std::string name = Properties::global("wintitle");
-  if (name.length() == 0) Properties::global("wintitle") = amodel->file.base;
+  std::string name = Properties::global("caption");
+  if (name.length() == 0) Properties::global("caption") = amodel->file.base;
 
   //Save path of first sucessfully loaded model
   if (dbpath && viewer->output_path.length() == 0)
@@ -3318,15 +3319,18 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
         amodel->setTimeStep();
       else
         amodel->setTimeStep(amodel->nearestTimeStep(at_timestep));
-      if (verbose) std::cerr << "Loading vis '" << Properties::global("wintitle") << "', timestep: " << amodel->step() << std::endl;
+      if (verbose) std::cerr << "Loading vis '" << Properties::global("caption") << "', timestep: " << amodel->step() << std::endl;
     }
   }
 
   //Fixed width & height always override window settings
-  json res = Properties::global("resolution");
+  if (!aview) aview = amodel->views[0];
+  //json res = Properties::global("resolution");
+  json res = aview->properties["resolution"];
   if (fixedwidth > 0) res[0] = fixedwidth;
   if (fixedheight > 0) res[1] = fixedheight;
-  Properties::globals["resolution"] = res;
+  //Properties::globals["resolution"] = res;
+  aview->properties.data["resolution"] = res;
 
   //Not yet opened or resized?
   if (!viewer->isopen)
@@ -3357,7 +3361,7 @@ void LavaVu::encodeVideo(std::string filename, int fps)
   {
     if (filename.length() == 0) 
     {
-      filename = Properties::global("wintitle");
+      filename = Properties::global("caption");
       filename += ".mp4";
     }
     if (filename.length() == 0) filename = "output.mp4";
@@ -3444,7 +3448,7 @@ void LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
   char ext[6];
-  std::string name = Properties::global("wintitle");
+  std::string name = Properties::global("caption");
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
   if (obj)
