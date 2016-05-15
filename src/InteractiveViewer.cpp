@@ -1240,11 +1240,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(ival, "timestep"))
     {
       if (parsed["timestep"] == "up")
-        ival = amodel->now-1;
+        ival = Model::now-1;
       else if (parsed["timestep"] == "down")
-        ival = amodel->now+1;
+        ival = Model::now+1;
       else
-        ival = amodel->now;
+        ival = Model::now;
     }
     else //Convert to step idx
       ival = amodel->nearestTimeStep(ival);
@@ -1268,7 +1268,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Relative jump
-    if (amodel->setTimeStep(amodel->now+ival) >= 0)
+    if (amodel->setTimeStep(Model::now+ival) >= 0)
     {
       printMessage("Jump to timestep %d", amodel->step());
       resetViews(); //Update the viewports
@@ -1445,11 +1445,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    int old = amodel->now;
+    int old = Model::now;
     if (amodel->timesteps.size() < 2) return false;
-    amodel->setTimeStep(amodel->now+1);
+    amodel->setTimeStep(Model::now+1);
     //Allow loop back to start when using next command
-    if (amodel->now > 0 && amodel->now == old)
+    if (Model::now > 0 && Model::now == old)
       amodel->setTimeStep(0);
     resetViews(); //Update the viewports
 
@@ -2919,7 +2919,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     amodel->addTimeStep(amodel->step()+1);
-    amodel->setTimeStep(amodel->now+1);
+    amodel->setTimeStep(Model::now+1);
     //Don't record
     return false;
   }
