@@ -332,6 +332,7 @@ void LavaVu::defaults()
 
   files.clear();
 
+  Model::now = -1;
   startstep = -1;
   endstep = -1;
   dump = lucExportNone;
@@ -935,10 +936,6 @@ std::string LavaVu::run()
   {
     //Cache data if enabled
     cacheLoad();
-
-    //Load first model if not yet loaded
-    if (model < 0)
-      loadModelStep(0, startstep, true);
   }
 
   //If automation mode turned on, return at this point
@@ -1010,17 +1007,19 @@ void LavaVu::cacheLoad()
     {
       amodel = models[m];
       amodel->loadTimeSteps();
-      amodel->now = -1;
+      Model::now = -1;
       for (unsigned int i=0; i<amodel->timesteps.size(); i++)
       {
         amodel->setTimeStep(i);
-        if (amodel->now != (int)i) break; //Finished early using loadGeometry caching
+        if (Model::now != (int)i) break; //Finished early using loadGeometry caching
         debug_print("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
       }
       //Cache final step
       amodel->cacheStep();
     }
     model = -1;
+    //Load first model/step
+    loadModelStep(0, startstep, true);
   }
 }
 
@@ -1903,7 +1902,7 @@ void LavaVu::readTecplot(FilePath& fn)
         if (TimeStep::cachesize <= timestep) TimeStep::cachesize++;
         amodel->addTimeStep(timestep+1);
         amodel->setTimeStep(timestep+1);
-        timestep = amodel->now;
+        timestep = Model::now;
         std::cout << "TIMESTEP " << timestep << std::endl;
 
         //First step, init stuff
@@ -2197,7 +2196,7 @@ void LavaVu::readTecplot(FilePath& fn)
     //Always cache
     TimeStep::cachesize++;
     amodel->setTimeStep(0);
-        timestep = amodel->now = 0;
+    timestep = Model::now = 0;
   }
   else
     printMessage("Unable to open file: %s", fn.full.c_str());
@@ -3187,11 +3186,36 @@ void LavaVu::loadFile(FilePath& fn)
   //Database files always create their own Model object
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
-    loadModel(fn);
-    //Load model when first database loaded
-    if (!amodel || !aview) loadModelStep(0, startstep, true);
-    //Set loaded gldb as active model/window if there was already an active window
-    //if (model) loadModelStep(models.size()-1);
+    //Delete default model if empty
+    if (models.size() == 1 and amodel->objects.size() == 0)
+      close();
+
+    //Open database file
+    amodel = new Model(fn);
+    models.push_back(amodel);
+
+    //Set default window title to model name
+    std::string name = Properties::global("caption");
+    if (name.length() == 0) Properties::global("caption") = amodel->file.base;
+
+    //Save path of first sucessfully loaded model
+    if (dbpath && viewer->output_path.length() == 0)
+    {
+      viewer->output_path = fn.path;
+      debug_print("Output path set to %s\n", viewer->output_path.c_str());
+    }
+
+    //Load initial timestep when first database loaded
+    if (Model::now == -1)
+    {
+      loadModelStep(models.size()-1, startstep, true);
+    }
+    else if (viewer->isopen)
+    {
+      //If the viewer is open, view the loaded model at current timestep
+      loadModelStep(models.size()-1);
+      viewer->postdisplay = true;
+    }
   }
   //Script files, can contain other files to load
   else if (fn.type == "script")
@@ -3259,34 +3283,6 @@ void LavaVu::defaultModel()
   //amodel->initColourMaps();
 }
 
-void LavaVu::loadModel(FilePath& fn)
-{
-  //Delete default model if empty
-  if (models.size() == 1 and amodel->objects.size() == 0)
-    close();
-
-  //Open database file
-  amodel = new Model(fn);
-  models.push_back(amodel);
-
-  //Set default window title to model name
-  std::string name = Properties::global("caption");
-  if (name.length() == 0) Properties::global("caption") = amodel->file.base;
-
-  //Save path of first sucessfully loaded model
-  if (dbpath && viewer->output_path.length() == 0)
-  {
-    viewer->output_path = fn.path;
-    debug_print("Output path set to %s\n", viewer->output_path.c_str());
-  }
-
-  if (viewer->isopen)
-  {
-    loadModelStep(models.size()-1, 0);
-    viewer->postdisplay = true;
-  }
-}
-
 //Load model data at specified timestep
 bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
@@ -3296,7 +3292,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   {
     //Cache selected step, then force new timestep set when model changes
     if (TimeStep::cachesize > 0) amodel->cacheStep();
-    if (amodel->db) amodel->now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
+    if (amodel->db) Model::now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
   }
 
   if (model_idx >= (int)models.size()) return false;
