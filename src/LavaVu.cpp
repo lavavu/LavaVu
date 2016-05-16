@@ -3267,8 +3267,7 @@ void LavaVu::loadFile(FilePath& fn)
 void LavaVu::defaultModel()
 {
   //Adds a default model, window & viewport
-  FilePath fm = FilePath(":memory:");
-  amodel = new Model(fm);
+  amodel = new Model();
   models.push_back(amodel);
 
   //Set a default view
