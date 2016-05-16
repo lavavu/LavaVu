@@ -99,6 +99,7 @@ public:
   void loadColourMaps();
   void loadColourMapsLegacy();
 
+  Model();
   Model(FilePath& fn);
   void init();
   ~Model();

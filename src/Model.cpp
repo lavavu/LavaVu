@@ -53,6 +53,14 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
+Model::Model() : readonly(true), memory(false), attached(0), db(NULL)
+{
+  prefix[0] = '\0';
+
+  //Create new geometry containers
+  init();
+}
+
 Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0), db(NULL)
 {
   prefix[0] = '\0';
@@ -60,44 +68,32 @@ Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0
   //Create new geometry containers
   init();
 
-  for (unsigned int i=0; i < geometry.size(); i++)
+  //Open database file
+  if (!open())
   {
-    bool hideall = Properties::global("hideall");
-    if (hideall)
-      geometry[i]->hideShowAll(true);
-    //Reset static data
-    geometry[i]->close();
+    std::cerr << "Model database open failed: " << fn.full << std::endl;
+    return;
   }
 
-  //Open database file
-  if (fn.full.length())
+  loadTimeSteps();
+  scanFiles(); //Scan for external timestep databases
+  loadColourMaps();
+  loadObjects();
+  loadViewports();
+  loadWindows();
+
+  //No views?
+  if (views.size() == 0)
   {
-    if (!open())
+    //Default view
+    View* view = new View();
+    views.push_back(view);
+
+    //Add objects to viewport
+    for (unsigned int o=0; o<objects.size(); o++)
     {
-      std::cerr << "Model database open failed: " << fn.full << std::endl;
-      return;
-    }
-
-    loadTimeSteps();
-    scanFiles(); //Scan for external timestep databases
-    loadColourMaps();
-    loadObjects();
-    loadViewports();
-    loadWindows();
-
-    //No views?
-    if (views.size() == 0)
-    {
-      //Default view
-      View* view = new View();
-      views.push_back(view);
-
-      //Add objects to viewport
-      for (unsigned int o=0; o<objects.size(); o++)
-      {
-        view->addObject(objects[o]);
-        loadLinks(objects[o]);
-      }
+      view->addObject(objects[o]);
+      loadLinks(objects[o]);
     }
   }
 }
@@ -116,6 +112,15 @@ void Model::init()
   geometry[lucLineType] = lines = new Lines();
   geometry[lucShapeType] = shapes = new Shapes();
   debug_print("Created %d new geometry containers\n", geometry.size());
+
+  for (unsigned int i=0; i < geometry.size(); i++)
+  {
+    bool hideall = Properties::global("hideall");
+    if (hideall)
+      geometry[i]->hideShowAll(true);
+    //Reset static data
+    geometry[i]->close();
+  }
 }
 
 Model::~Model()
