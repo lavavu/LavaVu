@@ -868,6 +868,7 @@ std::string LavaVu::run()
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
+  Model::now = startstep;
 
   //Add default script
   if (defaultScript.length())
@@ -936,6 +937,10 @@ std::string LavaVu::run()
   {
     //Cache data if enabled
     cacheLoad();
+
+    //Load first model if not yet loaded
+    if (model < 0)
+      loadModelStep(0, startstep, true);
   }
 
   //If automation mode turned on, return at this point
@@ -1011,15 +1016,13 @@ void LavaVu::cacheLoad()
       for (unsigned int i=0; i<amodel->timesteps.size(); i++)
       {
         amodel->setTimeStep(i);
-        if (Model::now != (int)i) break; //Finished early using loadGeometry caching
+        if (Model::now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
         debug_print("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
       }
       //Cache final step
       amodel->cacheStep();
     }
     model = -1;
-    //Load first model/step
-    loadModelStep(0, startstep, true);
   }
 }
 
@@ -2457,13 +2460,13 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     float min[3], max[3];
     Properties::toFloatArray(aview->properties["min"], min, 3);
     Properties::toFloatArray(aview->properties["max"], max, 3);
-    //If no range, flag invalid with +/-inf
-    for (int i=0; i<3; i++)
-      if (max[i]-min[i] <= EPSILON) max[i] = -(min[i] = HUGE_VAL);
-
 
     float omin[3] = {min[0], min[1], min[2]};
     float omax[3] = {max[0], max[1], max[2]};
+
+    //If no range, flag invalid with +/-inf, will be expanded in setView
+    for (int i=0; i<3; i++)
+      if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
 
     //Expand bounds by all geometry objects
     for (unsigned int i=0; i < Model::geometry.size(); i++)
@@ -2471,10 +2474,6 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 
     //Set viewport based on window size
     aview->port(viewer->width, viewer->height);
-
-    // Apply initial autozoom if set (only applied based on provided dimensions)
-    //if (autozoom && (int)aview->properties["zoomstep"] == 0)
-    //   aview->init(false, min, max);
 
     //Update the model bounding box - use global bounds if provided and sane in at least 2 dimensions
     if (max[0]-min[0] > EPSILON && max[1]-min[1] > EPSILON)
@@ -3193,6 +3192,7 @@ void LavaVu::loadFile(FilePath& fn)
     //Open database file
     amodel = new Model(fn);
     models.push_back(amodel);
+    aview = amodel->views[0];
 
     //Set default window title to model name
     std::string name = Properties::global("caption");
@@ -3205,15 +3205,11 @@ void LavaVu::loadFile(FilePath& fn)
       debug_print("Output path set to %s\n", viewer->output_path.c_str());
     }
 
-    //Load initial timestep when first database loaded
-    if (Model::now == -1)
-    {
-      loadModelStep(models.size()-1, startstep, true);
-    }
-    else if (viewer->isopen)
+    if (viewer->isopen)
     {
       //If the viewer is open, view the loaded model at current timestep
-      loadModelStep(models.size()-1);
+      loadModelStep(models.size()-1, -1, true);
+      //loadModelStep(models.size()-1);
       viewer->postdisplay = true;
     }
   }
