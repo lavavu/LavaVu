@@ -56,6 +56,7 @@ public:
   void display();
   void swap();
   void execute();
+  void fullScreen();
 };
 
 #endif //COCOAViewer__
