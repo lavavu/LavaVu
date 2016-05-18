@@ -535,6 +535,11 @@ void CocoaWindow_Setsize(int width, int height)
   [newpool release];
 }
 
+void CocoaWindow_FullScreen()
+{
+  [window toggleFullScreen:nil];
+}
+
 void CocoaWindow_Close()
 {
   [pool drain];
@@ -595,5 +600,11 @@ void CocoaViewer::execute()
     CocoaWindow_Execute();
   else
     OpenGLViewer::execute();
+}
+
+void CocoaViewer::fullScreen()
+{
+  if (visible)
+    CocoaWindow_FullScreen();
 }
 #endif   //HAVE_CGL
