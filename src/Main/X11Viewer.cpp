@@ -237,7 +237,7 @@ void X11Viewer::execute()
       case ButtonPress:
         // XOR state of three mouse buttons to the mouseState variable
         button = (MouseButton)event.xbutton.button;
-        if (button <= RightButton) mouseState ^= (int)pow(2, button);
+        if (button <= RightButton) mouseState ^= (int)pow(2, (float)button);
         mousePress(button, true, event.xmotion.x, event.xmotion.y);
         break;
       case MotionNotify:
