@@ -2230,20 +2230,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //Apply image counter to default filename when multiple images output
       static int imagecounter = 0;
-      while (imagecounter < LONG_MAX)
-      {
-        std::stringstream outpath;
-        outpath << viewer->title;
-        if (imagecounter > 0)
-          outpath <<  "-" << imagecounter;
-        std::string fn = getImageFilename(outpath.str());
-        if (!std::ifstream(fn))
-        {
-          viewer->image(fn);
-          break;
-        }
-        imagecounter++;
-      }
+      std::stringstream outpath;
+      std::string title = Properties::global("caption");
+      outpath << title;
+      if (imagecounter > 0)
+        outpath <<  "-" << imagecounter;
+      std::string fn = getImageFilename(outpath.str());
+      viewer->image(fn);
+      imagecounter++;
     }
 
     if (viewer->outwidth > 0)
