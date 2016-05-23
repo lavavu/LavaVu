@@ -53,7 +53,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model() : readonly(true), memory(false), attached(0), db(NULL)
+Model::Model() : readonly(true), memorydb(false), attached(0), db(NULL)
 {
   prefix[0] = '\0';
 
@@ -61,7 +61,7 @@ Model::Model() : readonly(true), memory(false), attached(0), db(NULL)
   init();
 }
 
-Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0), db(NULL)
+Model::Model(FilePath& fn) : readonly(true), memorydb(false), file(fn), attached(0), db(NULL)
 {
   prefix[0] = '\0';
 
@@ -148,8 +148,12 @@ bool Model::open(bool write)
   char path[FILE_PATH_MAX];
   int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
   strcpy(path, file.full.c_str());
-  if (strstr(path, "file:")) flags = flags | SQLITE_OPEN_URI;
-  if (strstr(path, "mode=memory")) memory = true;
+  if (strstr(path, "file:")) 
+  {
+    flags = flags | SQLITE_OPEN_URI;
+    memorydb = true;
+  }
+  if (strstr(path, "mode=memory")) memorydb = true;
   debug_print("Opening db %s with flags %d\n", path, flags);
   if (sqlite3_open_v2(path, &db, flags, NULL))
   {
@@ -191,7 +195,7 @@ void Model::reopen(bool write)
 void Model::attach(int timestep)
 {
   //Detach any attached db file
-  if (memory) return;
+  if (memorydb) return;
   char SQL[SQL_QUERY_MAX];
   if (attached && attached != timestep)
   {
@@ -849,7 +853,7 @@ int Model::setTimeStep(int stepidx)
   if (timesteps.size() == 0 && !db)
   {
     now = -1;
-    return 0;
+    return -1;
   }
 
   if (stepidx < 0) stepidx = 0; //return -1;

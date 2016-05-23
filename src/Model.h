@@ -66,7 +66,7 @@ public:
   std::vector<TimeStep*> timesteps;
 
   bool readonly;
-  bool memory;
+  bool memorydb;
   FilePath file;
   int attached;
   std::string apath;
