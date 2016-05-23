@@ -3196,7 +3196,7 @@ void LavaVu::loadFile(FilePath& fn)
 
     //Set default window title to model name
     std::string name = Properties::global("caption");
-    if (name.length() == 0) Properties::global("caption") = amodel->file.base;
+    if (name == "LavaVu" && !amodel->memorydb) Properties::global("caption") = amodel->file.base;
 
     //Save path of first sucessfully loaded model
     if (dbpath && viewer->output_path.length() == 0)
