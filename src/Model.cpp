@@ -157,14 +157,8 @@ bool Model::open(bool write)
   debug_print("Opening db %s with flags %d\n", path, flags);
   if (sqlite3_open_v2(path, &db, flags, NULL))
   {
-    //Try 0th timestep of multi-file split database
-    sprintf(path, "%s%05d.%s", file.base.c_str(), 0, file.ext.c_str());
-    if (sqlite3_open_v2(path, &db, write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY, NULL))
-    {
-      // failed
-      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
-      return false;
-    }
+    debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
+    return false;
   }
   // success
   debug_print("Open database %s successful, SQLite version %s\n", path, sqlite3_libversion());
@@ -178,7 +172,7 @@ bool Model::open(bool write)
 
 void Model::reopen(bool write)
 {
-  if (!readonly) return;
+  if (!readonly || !db) return;
   if (db) sqlite3_close(db);
   open(write);
 
@@ -186,14 +180,15 @@ void Model::reopen(bool write)
   if (attached)
   {
     char SQL[SQL_QUERY_MAX];
-    sprintf(SQL, "attach database '%s' as t%d", apath.c_str(), attached);
+    sprintf(SQL, "attach database '%s' as t%d", timesteps[attached]->path.c_str(), attached);
     if (issue(SQL))
-      debug_print("Model %s found and re-attached\n", apath.c_str());
+      debug_print("Model %s found and re-attached\n", timesteps[attached]->path.c_str());
   }
 }
 
-void Model::attach(int timestep)
+void Model::attach(int stepidx)
 {
+  int timestep = timesteps[stepidx]->step;
   //Detach any attached db file
   if (memorydb) return;
   char SQL[SQL_QUERY_MAX];
@@ -213,31 +208,23 @@ void Model::attach(int timestep)
   //Attach n'th timestep database if available
   if (timestep > 0 && !attached)
   {
-    //Strip digits from end
-    size_t last_index = file.base.find_last_not_of("0123456789");
-    std::string basename = file.base.substr(0, last_index + 1);
-    char path[FILE_PATH_MAX];
-    FILE* fp;
-    sprintf(path, "%s%s%05d.%s", file.path.c_str(), basename.c_str(), timestep, file.ext.c_str());
-    fp = fopen(path, "r");
-    if (fp)
+    const std::string& path = timesteps[stepidx]->path;
+    if (path.length() > 0)
     {
-      fclose(fp);
-      sprintf(SQL, "attach database '%s' as t%d", path, timestep);
+      sprintf(SQL, "attach database '%s' as t%d", path.c_str(), timestep);
       if (issue(SQL))
       {
         sprintf(prefix, "t%d.", timestep);
-        debug_print("Model %s found and attached\n", path);
+        debug_print("Model %s found and attached\n", path.c_str());
         attached = timestep;
-        apath = path;
       }
       else
       {
-        debug_print("Model %s found but attach failed!\n", path);
+        debug_print("Model %s found but attach failed!\n", path.c_str());
       }
     }
     //else
-    //   debug_print("Model %s not found, loading from current db\n", path);
+    //   debug_print("Model %s not found, loading from current db\n", path.c_str());
   }
 }
 
@@ -585,29 +572,60 @@ int Model::loadTimeSteps()
 void Model::scanFiles()
 {
   //Check for other timesteps in external files if only 0 or 1 loaded
+  debug_print("Scanning for timesteps...\n");
+  //Strip any digits from end of filename to get base
+  std::string basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
+  //Scan all possible timesteps if none in db
   if (timesteps.size() < 2)
   {
-    //Strip digits from end
-    timesteps.clear();
-    size_t last_index = file.base.find_last_not_of("0123456789");
-    std::string basename = file.base.substr(0, last_index + 1);
-    char path[FILE_PATH_MAX];
-    FILE* fp;
-    debug_print("Scanning for timesteps...\n");
     for (unsigned int ts=0; ts<10000; ts++)
     {
-      sprintf(path, "%s%s%05d.%s", file.path.c_str(), basename.c_str(), ts, file.ext.c_str());
-      fp = fopen(path, "r");
-      if (fp)
+      //If no steps found after trying 100, give up
+      if (timesteps.size() < 2 && ts > 100) break;
+      int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+      for (int w = 5; w >= len; w--)
       {
-        fclose(fp);
-        debug_print("Found %d %s\n", ts, path);
-        timesteps.push_back(new TimeStep(ts, ts));
+        std::string path = checkFileStep(ts, basename);
+        if (path != file.full && path.length() > 0)
+        {
+          debug_print("Found step %d database\n", ts);
+          timesteps.push_back(new TimeStep(ts, ts, path));
+        }
       }
     }
-    //Prevent reloading
-    debug_print("Scanning complete, found %d steps.\n", timesteps.size());
   }
+  else
+  {
+    //Search for files matching the existing timestep entries
+    for (unsigned int idx=0; idx < timesteps.size(); idx++)
+    {
+      unsigned int ts = timesteps[idx]->step;
+      std::string path = checkFileStep(ts, basename);
+      if (path.length() > 0)
+      {
+        debug_print("Found step %d database\n", ts);
+        timesteps[idx]->path = path;
+      }
+    }
+  }
+
+  debug_print("Scanning complete, found %d steps.\n", timesteps.size());
+}
+
+std::string Model::checkFileStep(unsigned int ts, const std::string& basename)
+{
+  int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+  if (len < 3) len = 3; //Check for 3-5 digit numbers in filenames
+  for (int w = 5; w >= len; w--)
+  {
+    std::ostringstream ss;
+    ss << file.path << basename << std::setw(w) << std::setfill('0') << ts;
+    ss << "." << file.ext;
+    std::string path = ss.str();
+    if (FileExists(path))
+      return path;
+  }
+  return "";
 }
 
 void Model::loadColourMaps()
@@ -835,9 +853,6 @@ int Model::nearestTimeStep(int requested)
   //Reached end of list?
   if (idx == (int)timesteps.size()) idx--;
 
-  //Unchanged...
-  //if (requested >= now && timesteps[idx]->step == now) return 0;
-
   if (idx < 0) idx = 0;
   if (idx >= (int)timesteps.size()) idx = timesteps.size() - 1;
 
@@ -859,6 +874,9 @@ int Model::setTimeStep(int stepidx)
   if (stepidx < 0) stepidx = 0; //return -1;
   if (stepidx >= (int)timesteps.size())
     stepidx = timesteps.size()-1;
+
+  //Unchanged...
+  if (stepidx == now) return -1;
 
   //Cache currently loaded data
   if (TimeStep::cachesize > 0) cacheStep();
@@ -882,7 +900,7 @@ int Model::setTimeStep(int stepidx)
   if (!db) return 0;
 
   //Detach any attached db file and attach n'th timestep database if available
-  attach(step());
+  attach(now);
 
   int rows = 0;
   if (TimeStep::cachesize > 0)
