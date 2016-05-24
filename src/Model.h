@@ -48,7 +48,16 @@
 
 class Model
 {
+private:
+  bool readonly;
+  int attached;
+  char prefix[10];   //attached db prefix
+
 public:
+  FilePath file;
+  sqlite3 *db;
+  bool memorydb;
+
   static int now;
   //Current timestep geometry
   static std::vector<Geometry*> geometry;
@@ -64,25 +73,15 @@ public:
   static Volumes* volumes;
 
   std::vector<TimeStep*> timesteps;
-
-  bool readonly;
-  bool memorydb;
-  FilePath file;
-  int attached;
-  std::string apath;
-  char prefix[10];   //attached db prefix
-
   std::vector<View*> views;
   std::vector<DrawingObject*> objects;
   std::vector<ColourMap*> colourMaps;
-
-  sqlite3 *db;
 
   sqlite3_stmt* select(const char* SQL, bool silent=false);
   bool issue(const char* SQL, sqlite3* odb=NULL);
   bool open(bool write=false);
   void reopen(bool write=false);
-  void attach(int timestep);
+  void attach(int stepidx);
   void close();
   void clearObjects(bool all=false);
   void redraw(bool reload=false);
@@ -93,6 +92,7 @@ public:
   void clearTimeSteps();
   int loadTimeSteps();
   void scanFiles();
+  std::string checkFileStep(unsigned int ts, const std::string& basename);
   void loadViewports();
   void loadViewCamera(int viewport_id);
   void loadObjects();

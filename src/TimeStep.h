@@ -45,8 +45,9 @@ public:
   static int gap;
   int step;
   float time;
+  std::string path;
 
-  TimeStep(int step, float time) : step(step), time(time) {}
+  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path) {}
   TimeStep() : step(0), time(0) {}
 
   ~TimeStep()
