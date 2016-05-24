@@ -317,7 +317,7 @@ bool LavaVu::parseChar(unsigned char key)
     case 'i':
       return parseCommands("image");
     case 'j':
-      return parseCommands("localise");
+      return parseCommands("valuerange");
     case 'k':
       return parseCommands("lockscale");
     case 'u':
@@ -1750,18 +1750,22 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->properties.data["antialias"] = !aview->properties["antialias"];
     printMessage("Anti-aliasing %s", aview->properties["antialias"] ? "ON":"OFF");
   }
-  else if (parsed.exists("localise"))
+  else if (parsed.exists("valuerange"))
   {
     if (gethelp)
     {
-      help += "> Experimental: adjust colourmaps on each object to fit actual value range  \n";
+      help += "> Adjust colourmaps on each object to fit actual value range  \n";
       return false;
     }
 
-    //Find colour value min/max local to each geom element
-    for (int type=lucMinType; type<lucMaxType; type++)
-      Model::geometry[type]->localiseColourValues();
-    printMessage("ColourMap scales localised");
+    if (!aobject)
+      aobject = lookupObject(parsed, "valuerange");
+    if (aobject)
+    {
+      for (int type=lucMinType; type<lucMaxType; type++)
+        Model::geometry[type]->setValueRange(aobject);
+    }
+    printMessage("ColourMap scales set to local value range");
     amodel->redraw(true); //Colour change so force reload
   }
   else if (parsed.exists("export"))
@@ -3032,7 +3036,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"hide", "show", "delete", "load", "select", "add", "read", "name",
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers", "log",
-     "antialias", "localise", "lockscale", "colourmap", "pointtype",
+     "antialias", "valuerange", "lockscale", "colourmap", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",

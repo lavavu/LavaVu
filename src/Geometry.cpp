@@ -444,20 +444,20 @@ void Geometry::showObj(DrawingObject* draw, bool state)
   redraw = true;
 }
 
-void Geometry::localiseColourValues()
+void Geometry::setValueRange(DrawingObject* draw)
 {
-  for (unsigned int i = 0; i < geom.size(); i++)
+  for (auto g : geom)
   {
-    //Get local min and max for each element from colourValues
-    if (geom[i]->draw->getColourMap())
+    if (g->colourData() && (!draw || g->draw == draw))
     {
-      geom[i]->data[lucColourValueData]->minimum = HUGE_VAL;
-      geom[i]->data[lucColourValueData]->maximum = -HUGE_VAL;
-      for (unsigned int v=0; v < geom[i]->data[lucColourValueData]->size(); v++)
+      //Get local min and max for each element from colourValues
+      g->colourData()->minimum = HUGE_VAL;
+      g->colourData()->maximum = -HUGE_VAL;
+      for (unsigned int v=0; v < g->colourData()->size(); v++)
       {
         // Check min/max against each value
-        if (geom[i]->colourData(v) > geom[i]->colourData()->maximum) geom[i]->colourData()->maximum = geom[i]->colourData(v);
-        if (geom[i]->colourData(v) < geom[i]->colourData()->minimum) geom[i]->colourData()->minimum = geom[i]->colourData(v);
+        if (g->colourData(v) > g->colourData()->maximum) g->colourData()->maximum = g->colourData(v);
+        if (g->colourData(v) < g->colourData()->minimum) g->colourData()->minimum = g->colourData(v);
       }
     }
   }
