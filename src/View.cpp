@@ -81,6 +81,14 @@ View::View(float xf, float yf, float nearc, float farc)
   }
 
   is3d = true;
+
+  //View properties can only be set if exist, so copy defaults
+  std::string viewprops[] = {"title", "zoomstep", "margin", 
+                             "rulers", "rulerticks", "rulerwidth", 
+                             "fontscale", "border", "fillborder", "bordercolour", 
+                             "axis", "axislength", "timestep", "antialias", "shift"};
+  for (auto key : viewprops)
+    properties.data[key] = Properties::defaults[key];
 }
 
 View::~View()
@@ -749,9 +757,9 @@ void View::drawOverlay(Colour& colour)
   GL_Error_Check;
 
   //Title
-  if (properties.has("title"))
+  std::string title = properties["title"];
+  if (title.length())
   {
-    std::string title = properties["title"];
     float fontscale = PrintSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
       lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
