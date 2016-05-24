@@ -2100,22 +2100,29 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject && aobject->properties.has(what))
     {
       json data = aobject->properties[what];
-      if (!data.is_array() || data.size() == 0) return false;
       lucGeometryDataType dtype;
 
       int width = 3;
       if (what == "vertices")
         dtype = lucVertexData;
-      if (what == "normals")
+      else if (what == "normals")
         dtype = lucNormalData;
-      if (what == "vectors")
+      else if (what == "vectors")
         dtype = lucVectorData;
-      if (what == "colours")
+      else if (what == "colours")
       {
         dtype = lucRGBAData;
         width = 1;
+        if (data.is_string())
+        {
+          ColourMap cmap;
+          cmap.parse(data);
+          data = json::array();
+          for (unsigned int i=0; i<cmap.colours.size(); i++)
+            data.push_back((float)cmap.colours[i].colour.value);
+        }
       }
-      if (what == "values")
+      else if (what == "values")
       {
         dtype = lucColourValueData;
         width = 1;
@@ -2124,6 +2131,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
+      if (!data.is_array() || data.size() == 0) return false;
       int size = data.size();
       if (data[0].is_array()) size *= data[0].size();
       float* vals = new float[size];
@@ -2136,6 +2144,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           vals[i*3] = data[i][0];
           vals[i*3+1] = data[i][1];
           vals[i*3+2] = data[i][2];
+        }
+        else if (dtype == lucRGBAData)
+        {
+          Colour c(data[i]);
+          vals[i] = c.fvalue;
         }
         else
           vals[i] = data[i];
