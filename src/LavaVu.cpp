@@ -868,7 +868,7 @@ std::string LavaVu::run()
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
-  Model::now = startstep;
+  //Model::now = startstep;
 
   //Add default script
   if (defaultScript.length())
@@ -3207,9 +3207,10 @@ void LavaVu::loadFile(FilePath& fn)
 
     if (viewer->isopen)
     {
+      //If the viewer is open, view the loaded model at initial timestep
+      loadModelStep(models.size()-1, startstep, true);
       //If the viewer is open, view the loaded model at current timestep
-      loadModelStep(models.size()-1, -1, true);
-      //loadModelStep(models.size()-1);
+      //loadModelStep(models.size()-1, -1, true);
       viewer->postdisplay = true;
     }
   }
