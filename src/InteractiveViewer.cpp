@@ -1464,6 +1464,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    viewer->idleTimer(0); //Stop idle redisplay timer
     loop = false;
   }
   else if (parsed.has(ival, "images"))
@@ -1973,6 +1974,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
         if (what.length() > 0)
         {
+          if (amodel->colourMaps.size() == 0)
+            cmap = amodel->addColourMap();
           amodel->colourMaps[cmap]->loadPalette(what);
           //cmap->print();
           amodel->colourMaps[cmap]->calibrate(); //Recalibrate
