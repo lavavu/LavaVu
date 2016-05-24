@@ -560,7 +560,7 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id > 0 && id <= amodel->objects.size()) return amodel->objects[id-1];
+  if (id > 0 && id <= (int)amodel->objects.size()) return amodel->objects[id-1];
 
   //Otherwise lookup by name
   std::string what = parsed.get(key, idx);
@@ -595,7 +595,7 @@ int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int 
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id > 0 && id <= amodel->colourMaps.size()) return id-1;
+  if (id > 0 && id <= (int)amodel->colourMaps.size()) return id-1;
 
   //Find by name match in all colour maps
   std::string what = parsed.get(key, idx);
@@ -760,7 +760,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> Export all settings as json state file that can be reloaded later\n\n"
               "> **Usage:** state [\"filename\"]\n\n"
-              "> file (string) : name of file to import  \n";
+              "> file (string) : name of file to import  \n"
               "> If filename omitted and database loaded, will save the state to db instead  \n";
       return false;
     }
@@ -1372,7 +1372,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //Hide/show by name/ID match in all drawing objects
       std::vector<DrawingObject*> list = lookupObjects(parsed, action);
-      for (int c=0; c<list.size(); c++)
+      for (unsigned int c=0; c<list.size(); c++)
       {
         if (list[c]->skip)
         {
@@ -1578,12 +1578,27 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> Toggle a boolean property\n\n"
               "> **Usage:** toogle (property-name)\n\n"
-              "> property-name : name of global property to switch  \n";
+              "> property-name : name of property to switch  \n"
+              "> If an object is selected, will try there, then view, then global\n";
       return false;
     }
 
     std::string what = parsed["toggle"];
-    if (Properties::global(what).is_boolean())
+    if (aobject && aobject->properties.has(what) && aobject->properties[what].is_boolean())
+    {
+      bool current = aobject->properties[what];
+      aobject->properties.data[what] = !current;
+      amodel->redraw();
+      printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
+    }
+    else if (aview->properties.has(what) && aview->properties[what].is_boolean())
+    {
+      bool current = aview->properties[what];
+      aview->properties.data[what] = !current;
+      amodel->redraw();
+      printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
+    }
+    else if (Properties::globals.count(what) > 0 && Properties::global(what).is_boolean())
     {
       bool current = Properties::global(what);
       Properties::global(what) = !current;
@@ -1794,7 +1809,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else
     {
-      for (int c=0; c<list.size(); c++)
+      for (unsigned int c=0; c<list.size(); c++)
       {
         exportData(type, list[c]);
         printMessage("Dumped object %s to %s", list[c]->name().c_str(), what.c_str());
@@ -2562,9 +2577,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Delete drawing object by name/ID match
-    DrawingObject* obj = lookupObject(parsed, "delete");
     std::vector<DrawingObject*> list = lookupObjects(parsed, "delete");
-    for (int c=0; c<list.size(); c++)
+    for (unsigned int c=0; c<list.size(); c++)
     {
       printMessage("%s deleted", list[c]->name().c_str());
       //Delete geometry
@@ -2605,7 +2619,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::vector<DrawingObject*> list = lookupObjects(parsed, "deletedb");
-    for (int c=0; c<list.size(); c++)
+    for (unsigned int c=0; c<list.size(); c++)
     {
       if (list[c]->dbid == 0) continue;
       amodel->deleteObject(list[c]->dbid);
@@ -2638,7 +2652,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //Load drawing object by name/ID match
     std::vector<DrawingObject*> list = lookupObjects(parsed, "load");
-    for (int c=0; c<list.size(); c++)
+    for (unsigned int c=0; c<list.size(); c++)
     {
       if (list[c]->dbid == 0) continue;
       amodel->loadGeometry(list[c]->dbid);
