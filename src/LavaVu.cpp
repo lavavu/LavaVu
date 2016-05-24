@@ -590,9 +590,9 @@ void LavaVu::defaults()
   // | view | real[3] | Global model maximum bounds [x,y,z]
   Properties::defaults["max"] = {0, 0, 0};
   // | view | real | Near clipping plane position, adjusts where geometry close to the camera is clipped
-  Properties::defaults["near"] = 0.1;
+  Properties::defaults["near"] = 0.0;
   // | view | real | Far clip plane position, adjusts where far geometry is clipped
-  Properties::defaults["far"] = 10.0;
+  Properties::defaults["far"] = 0.0;
   // | view | integer | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed
   Properties::defaults["coordsystem"] = 1;
 
