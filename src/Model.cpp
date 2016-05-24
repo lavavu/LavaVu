@@ -876,7 +876,7 @@ int Model::setTimeStep(int stepidx)
     stepidx = timesteps.size()-1;
 
   //Unchanged...
-  if (stepidx == now) return -1;
+  if (now >= 0 && stepidx == now) return -1;
 
   //Cache currently loaded data
   if (TimeStep::cachesize > 0) cacheStep();
