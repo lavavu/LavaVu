@@ -123,7 +123,7 @@ public:
   bool generated;
   std::string label;
 
-  DataContainer() : next(0), minimum(0), maximum(0), datasize(1), offset(0), generated(false) {}
+  DataContainer() : next(0), minimum(0), maximum(1), datasize(1), offset(0), generated(false) {}
 
   //Pure virtual methods
   virtual void read(unsigned int n, const void* data) = 0;
@@ -304,7 +304,6 @@ public:
   void parseSet(const std::string& properties);
   void parse(const std::string& property, bool global=false);
   void merge(json& other);
-  void convertBools(std::vector<std::string> list);
 
 };
 
