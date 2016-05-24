@@ -239,7 +239,7 @@ public:
   bool show(unsigned int idx);
   void showObj(DrawingObject* draw, bool state);
   void redrawObject(DrawingObject* draw);
-  void localiseColourValues();
+  void setValueRange(DrawingObject* draw);
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void setState(unsigned int i, Shader* prog=NULL);
