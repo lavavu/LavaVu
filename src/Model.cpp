@@ -1318,8 +1318,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
       //Store the id
-      if (obj)
-        obj->dbid = sqlite3_last_insert_rowid(outdb);
+      objects[i]->dbid = sqlite3_last_insert_rowid(outdb);
     }
   }
 
