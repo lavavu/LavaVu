@@ -28,15 +28,22 @@ endif
 #Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
 ifeq ($(OS), Darwin)
+ifeq ($(COCOA), 1)
   #Mac OS X with Cocoa + CGL
   CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
   LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_CGL
+  APPLEOBJ=$(OPATH)/CocoaViewer.o
+else
+  #Mac OS X with GLUT by default as CocoaWindow has problems
+  CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc -stdlib=libc++
+  LIBS=-lc++ -ldl -lpthread -framework GLUT -framework OpenGL -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_GLUT
+endif
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
-  APPLEOBJ=$(OPATH)/CocoaViewer.o
 else
   #Linux with X11 (and optional GLUT, SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11
