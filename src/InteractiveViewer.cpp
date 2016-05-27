@@ -481,16 +481,28 @@ bool LavaVu::parseChar(unsigned char key)
     msg = true;
     break;
   case KEY_PAGEUP:
-    //Previous viewport
-    viewSelect(view-1);
-    printMessage("Set viewport to %d", view);
-    amodel->redraw();
+    //Previous figure?
+    if (amodel->views.size() < 2)
+      return parseCommands("figure up");
+    else
+    {
+      //Previous viewport
+      viewSelect(view-1);
+      printMessage("Set viewport to %d", view);
+      amodel->redraw();
+    }
     break;
   case KEY_PAGEDOWN:
-    //Next viewport
-    viewSelect(view+1);
-    printMessage("Set viewport to %d", view);
-    amodel->redraw();
+    //Next figure?
+    if (amodel->views.size() < 2)
+      return parseCommands("figure down");
+    else
+    {
+      //Next viewport
+      viewSelect(view+1);
+      printMessage("Set viewport to %d", view);
+      amodel->redraw();
+    }
     break;
   case KEY_HOME:
     break;
@@ -1302,6 +1314,35 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (ival >= (int)models.size()) ival = 0;
     if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
     printMessage("Load model %d", model);
+  }
+  else if (parsed.exists("figure"))
+  {
+    if (gethelp)
+    {
+      help += "> Set figure to view (when available)\n\n"
+              "> **Usage:** figure up/down/value\n\n"
+              "> value (integer/string) : the figure index or name to view  \n"
+              "> up : switch to previous figure if available  \n"
+              "> down : switch to next figure if available  \n";
+      return false;
+    }
+
+    if (!parsed.has(ival, "figure"))
+    {
+      if (parsed["figure"] == "up")
+        ival = amodel->figure-1;
+      else if (parsed["figure"] == "down")
+        ival = amodel->figure+1;
+      else
+      {
+        ival = -1;
+        for (unsigned int i=0; i<amodel->fignames.size(); i++)
+          if (amodel->fignames[i] == parsed["figure"]) ival = i;
+      }
+    }
+
+    amodel->loadFigure(ival);
+    printMessage("Load figure %d", amodel->figure);
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
   {
@@ -3058,7 +3099,7 @@ void LavaVu::helpCommand(std::string cmd)
   std::vector<std::string> categories = {"General", "Input", "Output", "View/Camera", "Object", "Display", "Scripting", "Miscellanious"};
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
-    {"file", "script"},
+    {"file", "script", "figure"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "camera",

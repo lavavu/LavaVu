@@ -58,6 +58,10 @@ public:
   sqlite3 *db;
   bool memorydb;
 
+  std::vector<std::string> fignames;
+  std::vector<std::string> figures;
+  int figure;
+
   static int now;
   //Current timestep geometry
   static std::vector<Geometry*> geometry;
@@ -103,6 +107,15 @@ public:
   Model(FilePath& fn);
   void init();
   ~Model();
+
+  void loadFigure(int fig)
+  {
+    if (figures.size() == 0) return;
+    if (fig >= (int)figures.size()) fig = 0;
+    if (fig < 0) fig = figures.size()-1;
+    figure = fig;
+    jsonRead(figures[figure]);
+  }
 
   void addObject(DrawingObject* obj)
   {

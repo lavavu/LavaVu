@@ -200,7 +200,14 @@ std::string getState()
   LavaVu* lvapp = (LavaVu*)app;
   if (!lvapp->amodel) return "";
   std::stringstream ss;
-  lvapp->amodel->jsonWrite(ss, 0, false);
+  ss << "[\n";
+  for (unsigned int s=0; s<lvapp->amodel->figures.size(); s++)
+  {
+    lvapp->amodel->loadFigure(s);
+    lvapp->amodel->jsonWrite(ss, 0, false);
+    if (s < lvapp->amodel->figures.size()-1) ss << ",\n";
+  }
+  ss << "]\n";
   return ss.str();
 }
 
