@@ -53,7 +53,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model() : readonly(true), memorydb(false), attached(0), db(NULL)
+Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false)
 {
   prefix[0] = '\0';
 
@@ -61,7 +61,7 @@ Model::Model() : readonly(true), memorydb(false), attached(0), db(NULL)
   init();
 }
 
-Model::Model(FilePath& fn) : readonly(true), memorydb(false), file(fn), attached(0), db(NULL)
+Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false)
 {
   prefix[0] = '\0';
 
@@ -1700,8 +1700,10 @@ void Model::jsonRead(std::string data)
     //min = aview->properties["min"];
     //max = aview->properties["max"];
     //view->init(false, newmin, newmax);
-    view->near_clip = view->properties["near"];
-    view->far_clip = view->properties["far"];
+    if (view->properties.has("near"))
+      view->near_clip = view->properties["near"];
+    if (view->properties.has("far"))
+      view->far_clip = view->properties["far"];
   }
 
   // Import colourmaps
