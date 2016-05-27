@@ -435,10 +435,10 @@ void Geometry::showObj(DrawingObject* draw, bool state)
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     //std::cerr << i << " owned by object " << geom[i]->draw->id << std::endl;
-    if (geom[i]->draw == draw)
+    if (!draw || geom[i]->draw == draw)
     {
-      hidden[i] = !state;
-      draw->properties.data["visible"] = state;
+      if (draw) hidden[i] = !state;
+      geom[i]->draw->properties.data["visible"] = state;
     }
   }
   redraw = true;
