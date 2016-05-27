@@ -991,18 +991,6 @@ void TextureLoader::load3D(int width, int height, int depth, void* data, int typ
   GL_Error_Check;
 }
 
-void abort_program(const char * s, ...)
-{
-  char buffer[2048];
-  va_list args;
-  va_start(args, s);
-  vsprintf(buffer, s, args);
-  va_end(args);
-  strcat(buffer, "\n");
-  fputs(buffer, stderr);
-  throw std::runtime_error(buffer);
-}
-
 std::string getImageFilename(const std::string& basename)
 {
   std::string path = basename;
