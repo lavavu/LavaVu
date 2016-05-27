@@ -34,6 +34,7 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 #include "View.h"
+#include "Model.h"
 
 Camera* View::globalcam = NULL;
 
@@ -416,6 +417,7 @@ void View::projection(int eye)
 {
   if (!initialised) return;
   float aspectRatio = width / (float)height;
+  //assert(near_clip != far_clip);
 
   // Perspective viewing frustum parameters
   float left, right, top, bottom;
@@ -760,6 +762,10 @@ void View::drawOverlay(Colour& colour)
   std::string title = properties["title"];
   if (title.length())
   {
+    //Timestep macro ##
+    size_t pos =  title.find("##");
+    if (pos != std::string::npos)
+      title.replace(pos, 2, std::to_string(Model::now));
     float fontscale = PrintSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
       lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
