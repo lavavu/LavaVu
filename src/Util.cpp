@@ -45,6 +45,18 @@ FILE* infostream = NULL;
 long membytes__ = 0;
 long mempeak__ = 0;
 
+void abort_program(const char * s, ...)
+{
+  char buffer[2048];
+  va_list args;
+  va_start(args, s);
+  vsprintf(buffer, s, args);
+  va_end(args);
+  strcat(buffer, "\n");
+  fputs(buffer, stderr);
+  throw std::runtime_error(buffer);
+}
+
 bool FileExists(const std::string& name)
 {
   FILE *file = fopen(name.c_str(), "r");
