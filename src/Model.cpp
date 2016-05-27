@@ -63,6 +63,7 @@ Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false)
 
 Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false)
 {
+  figure = 0;
   prefix[0] = '\0';
 
   //Create new geometry containers
@@ -140,6 +141,9 @@ Model::~Model()
     if (colourMaps[i]) delete colourMaps[i];
 
   if (db) sqlite3_close(db);
+
+  fignames.clear();
+  figures.clear();
 }
 
 bool Model::open(bool write)
@@ -286,14 +290,21 @@ unsigned int Model::addColourMap(ColourMap* cmap)
 void Model::loadWindows()
 {
   //Load state from database if available
-  sqlite3_stmt* statement = select("SELECT data from state");
-  //Single entry only supported now
-  if (sqlite3_step(statement) == SQLITE_ROW)
+  sqlite3_stmt* statement = select("SELECT name, data from state ORDER BY id");
+  while (sqlite3_step(statement) == SQLITE_ROW)
   {
-    const char *data = (const char*)sqlite3_column_text(statement, 0);
-    jsonRead(data);
+    const char *name = (const char*)sqlite3_column_text(statement, 0);
+    const char *data = (const char*)sqlite3_column_text(statement, 1);
+    fignames.push_back(name);
+    figures.push_back(data);
+  }
 
-    //Load object links 
+  if (figures.size() > 0)
+  {
+    //Load the most recently added (last entry)
+    loadFigure(figures.size()-1);
+
+    //Load object links (colourmaps)
     for (unsigned int o=0; o<objects.size(); o++)
       loadLinks(objects[o]);
   }
@@ -1371,22 +1382,23 @@ void Model::writeState(sqlite3* outdb)
 {
   //Write state
   if (!outdb) outdb = db; //Use existing database
-  issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, data TEXT)", outdb);
+  issue("create table if not exists state (id INTEGER PRIMARY KEY AS, name VARCHAR(256)C, data TEXT)", outdb);
 
   std::stringstream ss;
   jsonWrite(ss, 0, false);
   std::string state = ss.str();
-  const char* SQLS = "insert into state (data) values (?)";
+  char SQL[SQL_QUERY_MAX];
+  snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[figure].c_str());
   sqlite3_stmt* statement;
 
-  if (sqlite3_prepare_v2(outdb, SQLS, -1, &statement, NULL) != SQLITE_OK)
-    abort_program("SQL prepare error: (%s) %s\n", SQLS, sqlite3_errmsg(outdb));
+  if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
+    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
 
   if (sqlite3_bind_text(statement, 1, state.c_str(), state.length(), SQLITE_STATIC) != SQLITE_OK)
     abort_program("SQL bind error: %s\n", sqlite3_errmsg(db));
 
   if (sqlite3_step(statement) != SQLITE_DONE )
-    abort_program("SQL step error: (%s) %s\n", SQLS, sqlite3_errmsg(db));
+    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(db));
 
   sqlite3_finalize(statement);
 }
@@ -1648,6 +1660,9 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   exported["colourmaps"] = cmaps;
   exported["objects"] = outobjects;
   exported["reload"] = true;
+  exported["figure"] = fignames[figure];
+  if (timesteps.size() > 1)
+    exported["timesteps"] = timesteps[timesteps.size()-1]->step;
 
   //Export with indentation
   os << std::setw(2) << exported;
@@ -1731,7 +1746,14 @@ void Model::jsonRead(std::string data)
 
   //Import objects
   json inobjects = imported["objects"];
-  for (unsigned int i=0; i < inobjects.size(); i++)
+  //Before loading state, set all object visibility to hidden
+  //Only objects present in state data will be shown
+  //for (unsigned int i=0; i < geometry.size(); i++)
+  //  geometry[i]->showObj(NULL, false);
+
+  unsigned int len = objects.size();
+  if (len < inobjects.size()) len = inobjects.size();
+  for (unsigned int i=0; i < objects.size(); i++)
   {
     if (i >= objects.size()) continue; //No adding objects from json now
     /*if (i >= objects.size())
@@ -1739,6 +1761,12 @@ void Model::jsonRead(std::string data)
       std::string name = inobjects[i]["name"];
       addObject(new DrawingObject(name));
     }*/
+
+    if (i >= inobjects.size())
+    {
+      //Not in imported list, assume hidden
+      objects[i]->properties.data["visible"] = false;
+    }
     
     //Merge properties
     objects[i]->properties.merge(inobjects[i]);
