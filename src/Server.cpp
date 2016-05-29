@@ -70,7 +70,7 @@ void Server::open(int width, int height)
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.begin_request = &Server::request;
   if ((ctx = mg_start(&callbacks, NULL, options)) == NULL)
-    abort_program("%s\n", "Cannot start http server, fatal exit");
+    std::cerr << "HTTP server open failed" << std::endl;
 }
 
 void Server::resize(int new_width, int new_height)
@@ -101,7 +101,7 @@ bool Server::compare(GLubyte* image)
 void Server::display()
 {
   //Image serving can be disabled by global prop
-  if (!Properties::global("renderserver")) return;
+  if (!ctx || !Properties::global("renderserver")) return;
   if (quality == 0) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data
