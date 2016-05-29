@@ -638,13 +638,10 @@ void ColourMap::loadPalette(std::string data)
     {
       //Background?
       std::size_t pos = line.find("=") + 1;
-      if (pos == 11)
+      if (line.substr(0, pos) == "Background=")
       {
         Colour c(line.substr(pos));
-        background.r = c.rgba[0] / 255.0;
-        background.g = c.rgba[1] / 255.0;
-        background.b = c.rgba[2] / 255.0;
-        background.a = c.rgba[3];
+        background = c;
       }
     }
   }
