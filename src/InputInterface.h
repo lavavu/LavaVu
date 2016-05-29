@@ -46,7 +46,7 @@ public:
   //Poll function:
   // return false if no input
   // return true and command if input received
-  virtual bool read(std::string& data) = 0;
+  virtual bool get(std::string& data) = 0;
 
   InputInterface() {}
 };
@@ -57,7 +57,7 @@ class StdInput : public InputInterface
  public:
   StdInput() {}
 
-  virtual bool read(std::string& data)
+  virtual bool get(std::string& data)
   {
     //Check for input at stdin...
     bool parsed = false;
