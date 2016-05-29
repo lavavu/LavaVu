@@ -521,7 +521,7 @@ bool OpenGLViewer::pollInput()
   std::string cmd;
   for (unsigned int i=0; i<inputs.size(); i++)
   {
-    while (inputs[i]->read(cmd))
+    while (inputs[i]->get(cmd))
     {
       OpenGLViewer::commands.push_back(cmd);
       parsed = true;
