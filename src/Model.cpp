@@ -875,8 +875,8 @@ int Model::setTimeStep(int stepidx)
 {
   clock_t t1 = clock();
 
-  //Default timestep only and no db? Skip load
-  if (timesteps.size() == 0 && !db)
+  //Default timestep only? Skip load
+  if (timesteps.size() == 0)
   {
     now = -1;
     return -1;
@@ -895,7 +895,7 @@ int Model::setTimeStep(int stepidx)
   //Set the new timestep index
   TimeStep::timesteps = timesteps; //Set to current model timestep vector
   now = stepidx;
-  debug_print("TimeStep set to: %d\n", step());
+  debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
   if (restoreStep())
     return 0; //Cache hit successful return value
@@ -1388,6 +1388,11 @@ void Model::writeState(sqlite3* outdb)
   jsonWrite(ss, 0, false);
   std::string state = ss.str();
   char SQL[SQL_QUERY_MAX];
+
+  // Delete any state entry with same name
+  snprintf(SQL, SQL_QUERY_MAX,  "delete from state where name == '%s'", fignames[figure].c_str());
+  issue(SQL);
+
   snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[figure].c_str());
   sqlite3_stmt* statement;
 
@@ -1660,7 +1665,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   exported["colourmaps"] = cmaps;
   exported["objects"] = outobjects;
   exported["reload"] = true;
-  exported["figure"] = fignames[figure];
+  if (fignames.size() > figure)
+    exported["figure"] = fignames[figure];
   if (timesteps.size() > 1)
     exported["timesteps"] = timesteps[timesteps.size()-1]->step;
 
