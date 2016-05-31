@@ -306,9 +306,6 @@ LavaVu::LavaVu()
 
   defaultScript = "init.script";
 
-  fixedwidth = 0;
-  fixedheight = 0;
-
   axis = new TriSurfaces();
   rulers = new Lines();
   border = new QuadSurfaces();
@@ -679,7 +676,7 @@ void LavaVu::arguments(std::vector<std::string> args)
   for (unsigned int i=0; i<args.size(); i++)
   {
     char x;
-    int num;
+    int vars[2];
     std::istringstream ss(args[i]);
     ss >> x;
     //Switches can be before or after files but not between
@@ -715,7 +712,8 @@ void LavaVu::arguments(std::vector<std::string> args)
         ss >> Server::threads;
         break;
       case 'r':
-        ss >> fixedwidth >> x >> fixedheight;
+        ss >> vars[0] >> x >> vars[1];
+        Properties::globals["resolution"] = json::array({vars[0], vars[1]});
         break;
       case 'P':
         //Points initial sub-sampling
@@ -753,8 +751,8 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'T':
         //Split triangles
-        ss >> num;
-        Properties::globals["trisplit"] = num;
+        ss >> vars[0];
+        Properties::globals["trisplit"] = vars[0];
         break;
       case 'C':
         //Global camera
@@ -1057,12 +1055,14 @@ void LavaVu::parseProperty(std::string& data)
   {
     aview->properties.parse(data);
     if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
+    viewset = 2; //Force check for resize and autozoom
   }
   else
   {
     //Properties not found on view are set globally
     aview->properties.parse(data, true);
     if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
+    viewset = 2; //Force check for resize and autozoom
   }
 }
 
@@ -2373,9 +2373,9 @@ void LavaVu::resize(int new_width, int new_height)
     }
   }
 
-  //Get resolution
-  //Properties::globals["resolution"] = {viewer->width, viewer->height};
-  aview->properties.data["resolution"] = {viewer->width, viewer->height};
+  //Set resolution
+  //Properties::globals["resolution"] = {new_width, new_height};
+  aview->properties.data["resolution"] = {new_width, new_height};
 
   amodel->redraw();
 }
@@ -2532,7 +2532,20 @@ void LavaVu::display(void)
 
   //Viewport reset flagged
   if (viewset > 0)
+  {
+    //Resize if required
+    json res = aview->properties["resolution"];
+    if (res[0] != viewer->width || res[1] != viewer->height)
+    {
+      viewer->setsize(res[0], res[1]);
+      viewer->postdisplay = true;
+      aview->initialised = false; //Force initial autozoom
+      return;
+    }
+
+    //Update the viewports
     resetViews(viewset == 2);
+  }
 
   //Always redraw the active view, others only if flag set
   if (aview)
@@ -3322,14 +3335,8 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
     }
   }
 
-  //Fixed width & height always override window settings
   if (!aview) aview = amodel->views[0];
-  //json res = Properties::global("resolution");
   json res = aview->properties["resolution"];
-  if (fixedwidth > 0) res[0] = fixedwidth;
-  if (fixedheight > 0) res[1] = fixedheight;
-  //Properties::globals["resolution"] = res;
-  aview->properties.data["resolution"] = res;
 
   //Not yet opened or resized?
   if (!viewer->isopen)

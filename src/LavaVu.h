@@ -82,7 +82,6 @@ protected:
   int viewset;
   bool sort_on_rotate;
   bool status;
-  int fixedwidth, fixedheight;
   bool writeimage;
   int writemovie;
   DrawingObject *volume;

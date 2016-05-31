@@ -109,10 +109,10 @@ public:
   // Dimensions
   float dims[3];
   float min[3], max[3];
+  bool initialised;
 private:
   static Camera* globalcam;
   Camera* localcam;
-  bool initialised;
   float* rotate_centre;      // Centre of rotation
   float* focal_point;        // Focal point
 

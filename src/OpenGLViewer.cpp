@@ -412,9 +412,6 @@ std::string OpenGLViewer::image(const std::string& path)
   int w = outwidth ? outwidth : width;
   int h = outheight ? outheight : height;
 
-  //Make sure any status message cleared
-  display();
-
   //Redraw blended for output as transparent PNG
   if (alphapng)
     blend_mode = BLEND_PNG;
