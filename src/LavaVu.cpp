@@ -341,6 +341,7 @@ void LavaVu::defaults()
   //Clear any queued commands
   OpenGLViewer::commands.clear();
 
+  initfigure = -1;
   viewset = 0;
   view = -1;
   model = -1;
@@ -697,7 +698,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bfks, BDEFHKLMOXYZ
+      //Unused switches: bks, BDEFHKLMOXYZ
       switch (x)
       {
       case 'a':
@@ -706,6 +707,9 @@ void LavaVu::arguments(std::vector<std::string> args)
         //All actions to be performed by subsequent 
         //library calls
         automate = true;
+        break;
+      case 'f':
+        ss >> initfigure;
         break;
       case 'z':
         //Downsample images
@@ -919,30 +923,38 @@ std::string LavaVu::run()
       loadModelStep(m, startstep, true);
 
       //Bounds checks
-      if (endstep < startstep) endstep = startstep;
-      int final = amodel->lastStep();
-      if (endstep < final) final = endstep;
+      int last = amodel->lastStep();
+      if (endstep < startstep || endstep > last) endstep = last;
 
       if (writeimage || writemovie)
       {
-        resetViews(true);
-        viewer->display();
-        //Read input script from stdin on first timestep
-        viewer->pollInput();
-
-        if (writeimage)
+        //Loop through figures unless one set
+        for (unsigned int f=0; f < amodel->figures.size(); f++)
         {
-          std::cout << "... Writing image(s) for model " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
-        }
-        if (writemovie)
-        {
-          std::cout << "... Writing movie for model " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
-          //Other formats?? avi/mpeg4?
-          encodeVideo("", writemovie);
-        }
+          if (initfigure >= 0) f = initfigure;
+          amodel->loadFigure(f);
 
-        //Write output
-        writeSteps(writeimage, startstep, endstep);
+          resetViews(true);
+          viewer->display();
+          //Read input script from stdin on first timestep
+          viewer->pollInput();
+
+          if (writeimage)
+          {
+            std::cout << "... Writing image(s) for model/figure " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+          }
+          if (writemovie)
+          {
+            std::cout << "... Writing movie for model/figure " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+            //Other formats?? avi/mpeg4?
+            encodeVideo("", writemovie);
+          }
+
+          //Write output
+          writeSteps(writeimage, startstep, endstep);
+
+          if (initfigure >= 0) break;
+        }
       }
 
       //Export data
@@ -2457,18 +2469,9 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
   //Set a default viewport/camera if none
   if (idx < 0) idx = 0;
-  if (amodel->views.size() == 0) 
-  {
-    view = 0;
-    aview = new View();
-    amodel->views.push_back(aview);
-  }
-  else
-  {
-    view = idx;
-    if (view < 0) view = amodel->views.size() - 1;
-    if (view >= (int)amodel->views.size()) view = 0;
-  }
+  view = idx;
+  if (view < 0) view = amodel->views.size() - 1;
+  if (view >= (int)amodel->views.size()) view = 0;
 
   aview = amodel->views[view];
 
@@ -3225,8 +3228,11 @@ void LavaVu::loadFile(FilePath& fn)
 
     //Open database file
     amodel = new Model(fn);
+    if (!amodel) return;
     models.push_back(amodel);
-    aview = amodel->views[0];
+    aview = amodel->defaultView();
+    //Load initial figure
+    if (initfigure >= 0) amodel->loadFigure(initfigure);
 
     //Set default window title to model name
     std::string name = Properties::global("caption");
@@ -3306,8 +3312,7 @@ void LavaVu::defaultModel()
   models.push_back(amodel);
 
   //Set a default view
-  aview = new View();
-  amodel->views.push_back(aview);
+  aview = amodel->defaultView();
 
   //Setup default colourmaps
   //amodel->initColourMaps();
@@ -3366,11 +3371,6 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   return true;
 }
 
-void LavaVu::writeImages(int start, int end)
-{
-  writeSteps(true, start, end);
-}
-
 void LavaVu::encodeVideo(std::string filename, int fps)
 {
   //TODO: - make VideoEncoder use OutputInterface
@@ -3420,7 +3420,12 @@ void LavaVu::writeSteps(bool images, int start, int end)
       viewer->display();
 
       if (images)
-        parseCommand("image");
+      {
+        std::string title = Properties::global("caption");
+        std::ostringstream filess;
+        filess << title << '-' << std::setw(5) << std::setfill('0') << amodel->step();
+        viewer->image(getImageFilename(filess.str()));
+      }
 
 #ifdef HAVE_LIBAVCODEC
       //Always output to video encode if it exists
