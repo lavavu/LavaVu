@@ -211,6 +211,20 @@ std::string getState()
   return ss.str();
 }
 
+std::string getTimeSteps()
+{
+  LavaVu* lvapp = (LavaVu*)app;
+  if (!lvapp->amodel) return "";
+  json steps = json::array();
+  for (unsigned int s=0; s<lvapp->amodel->timesteps.size(); s++)
+  {
+    steps.push_back(lvapp->amodel->timesteps[s]->step);
+  }
+  std::stringstream ss;
+  ss << steps;
+  return ss.str();
+}
+
 void loadVertices(std::vector< std::vector <float> > array)
 {
   LavaVu* lvapp = (LavaVu*)app;
