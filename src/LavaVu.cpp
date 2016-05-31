@@ -2552,7 +2552,7 @@ void LavaVu::display(void)
   {
     //Resize if required
     json res = aview->properties["resolution"];
-    if (res[0] != viewer->width || res[1] != viewer->height)
+    if ((int)res[0] != viewer->width || (int)res[1] != viewer->height)
     {
       viewer->setsize(res[0], res[1]);
       viewer->postdisplay = true;
