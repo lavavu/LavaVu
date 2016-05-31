@@ -896,20 +896,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float w = 0, h = 0;
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
-      if (w != viewer->width && h != viewer->height)
-      {
-        if (viewer->isopen)
-        {
-          viewer->setsize(w, h);
-          resetViews(true);
-        }
-        else
-        {
-          //Window not yet open, can simply set the fixed size vars
-          fixedwidth = w;
-          fixedheight = h;
-        }
-      }
+      aview->properties.data["resolution"] = json::array({w, h});
+      viewset = 2; //Force check for resize and autozoom
     }
     return true;
   }
@@ -1342,6 +1330,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     amodel->loadFigure(ival);
+    viewset = 2; //Force check for resize and autozoom
+
     printMessage("Load figure %d", amodel->figure);
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
