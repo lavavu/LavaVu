@@ -81,6 +81,7 @@ protected:
   std::string defaultScript;
 
   int viewset;
+  int initfigure;
   bool sort_on_rotate;
   bool status;
   bool writeimage;
@@ -207,7 +208,6 @@ public:
   void drawBorder();
   void drawAxis();
 
-  void writeImages(int start, int end);
   void encodeVideo(std::string filename="", int fps=30);
   void writeSteps(bool images, int start, int end);
 

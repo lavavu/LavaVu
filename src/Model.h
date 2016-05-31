@@ -108,29 +108,10 @@ public:
   void init();
   ~Model();
 
-  void loadFigure(int fig)
-  {
-    if (figures.size() == 0) return;
-    if (fig >= (int)figures.size()) fig = 0;
-    if (fig < 0) fig = figures.size()-1;
-    figure = fig;
-    jsonRead(figures[figure]);
-  }
-
-  void addObject(DrawingObject* obj)
-  {
-    //Create master drawing object list entry
-    obj->colourMaps = &colourMaps;
-    objects.push_back(obj);
-  }
-
-
-  DrawingObject* findObject(unsigned int id)
-  {
-    for (unsigned int i=0; i<objects.size(); i++)
-      if (objects[i]->dbid == id) return objects[i];
-    return NULL;
-  }
+  void loadFigure(int fig);
+  void addObject(DrawingObject* obj);
+  DrawingObject* findObject(unsigned int id);
+  View* defaultView();
 
   //Timestep caching
   void deleteCache();

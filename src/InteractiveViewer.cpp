@@ -1498,7 +1498,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     viewer->idleTimer(0); //Stop idle redisplay timer
     loop = false;
   }
-  else if (parsed.has(ival, "images"))
+  else if (parsed.exists("images"))
   {
     if (gethelp)
     {
@@ -1508,7 +1508,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    writeImages(amodel->step(), ival);
+    //Default to writing from current to final step
+    int end = TimeStep::timesteps[TimeStep::timesteps.size()-1]->step;
+    if (parsed.has(ival, "images"))
+      end = ival;
+
+    writeSteps(true, amodel->step(), end);
   }
   else if (parsed.exists("animate"))
   {

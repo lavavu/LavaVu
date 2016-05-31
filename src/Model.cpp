@@ -63,26 +63,35 @@ Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false)
 
 Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false)
 {
-  figure = 0;
+  figure = -1;
   prefix[0] = '\0';
 
   //Create new geometry containers
   init();
 
   //Open database file
-  if (!open())
+  if (open())
+  {
+
+    loadTimeSteps();
+    scanFiles(); //Scan for external timestep databases
+    loadColourMaps();
+    loadObjects();
+    loadViewports();
+    loadWindows();
+  }
+  else
   {
     std::cerr << "Model database open failed: " << fn.full << std::endl;
-    return;
   }
 
-  loadTimeSteps();
-  scanFiles(); //Scan for external timestep databases
-  loadColourMaps();
-  loadObjects();
-  loadViewports();
-  loadWindows();
+  //Check for a view and create default if necessary
+  defaultView();
+}
 
+
+View* Model::defaultView()
+{
   //No views?
   if (views.size() == 0)
   {
@@ -97,6 +106,9 @@ Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), me
       loadLinks(objects[o]);
     }
   }
+
+  //Return first
+  return views[0];
 }
 
 void Model::init()
@@ -144,6 +156,40 @@ Model::~Model()
 
   fignames.clear();
   figures.clear();
+}
+
+void Model::loadFigure(int fig)
+{
+  //Save currently selected first
+  if (figure >= 0 && figures.size() > figure)
+  {
+    std::ostringstream json;
+    jsonWrite(json);
+    figures[figure] = json.str();
+  }
+  if (figures.size() == 0) return;
+  if (fig >= (int)figures.size()) fig = 0;
+  if (fig < 0) fig = figures.size()-1;
+  figure = fig;
+  jsonRead(figures[figure]);
+
+  //Set window caption
+  if (fignames[figure].length() > 0)
+    Properties::globals["caption"] = fignames[figure];
+}
+
+void  Model::addObject(DrawingObject* obj)
+{
+  //Create master drawing object list entry
+  obj->colourMaps = &colourMaps;
+  objects.push_back(obj);
+}
+
+DrawingObject*  Model::findObject(unsigned int id)
+{
+  for (unsigned int i=0; i<objects.size(); i++)
+    if (objects[i]->dbid == id) return objects[i];
+  return NULL;
 }
 
 bool Model::open(bool write)
@@ -302,6 +348,7 @@ void Model::loadWindows()
   if (figures.size() > 0)
   {
     //Load the most recently added (last entry)
+    //(so the previous state saved is restored on load)
     loadFigure(figures.size()-1);
 
     //Load object links (colourmaps)
@@ -1667,8 +1714,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   exported["reload"] = true;
   if (fignames.size() > figure)
     exported["figure"] = fignames[figure];
-  if (timesteps.size() > 1)
-    exported["timesteps"] = timesteps[timesteps.size()-1]->step;
 
   //Export with indentation
   os << std::setw(2) << exported;
