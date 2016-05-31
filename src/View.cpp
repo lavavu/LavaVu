@@ -764,8 +764,8 @@ void View::drawOverlay(Colour& colour)
   {
     //Timestep macro ##
     size_t pos =  title.find("##");
-    if (pos != std::string::npos)
-      title.replace(pos, 2, std::to_string(Model::now));
+    if (pos != std::string::npos && TimeStep::timesteps.size() >= Model::now)
+      title.replace(pos, 2, std::to_string(TimeStep::timesteps[Model::now]->step));
     float fontscale = PrintSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
       lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
