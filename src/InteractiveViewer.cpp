@@ -928,6 +928,18 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     encodeVideo("", ival);
     return false;
   }
+  else if (parsed.exists("scan"))
+  {
+    if (gethelp)
+    {
+      help += "> Rescan the current directory for timestep database files  \n"
+              "> based on currently loaded filename\n\n";
+      return false;
+    }
+
+    amodel->loadTimeSteps(true);
+    return false;
+  }
 
   //******************************************************************************
   //Following commands require a model!
@@ -1965,6 +1977,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Restore original data
+    amodel->loadTimeSteps();
     if (model < 0 || !loadModelStep(model)) return false;
   }
   else if (parsed.exists("zerocam"))
@@ -3094,7 +3107,7 @@ void LavaVu::helpCommand(std::string cmd)
   std::vector<std::string> categories = {"General", "Input", "Output", "View/Camera", "Object", "Display", "Scripting", "Miscellanious"};
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
-    {"file", "script", "figure"},
+    {"file", "script", "figure", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "camera",

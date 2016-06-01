@@ -53,7 +53,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false)
+Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
 
@@ -61,9 +61,8 @@ Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false)
   init();
 }
 
-Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false)
+Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false), figure(-1)
 {
-  figure = -1;
   prefix[0] = '\0';
 
   //Create new geometry containers
@@ -74,7 +73,6 @@ Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), me
   {
 
     loadTimeSteps();
-    scanFiles(); //Scan for external timestep databases
     loadColourMaps();
     loadObjects();
     loadViewports();
@@ -599,75 +597,76 @@ void Model::clearTimeSteps()
   timesteps.clear();
 }
 
-int Model::loadTimeSteps()
+int Model::loadTimeSteps(bool scan)
 {
-  if (!db) return timesteps.size();
+  //Strip any digits from end of filename to get base
+  basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
+
   //Don't reload timesteps when data has been cached
   if (TimeStep::cachesize > 0 && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
   TimeStep::gap = 0;
   int rows = 0;
   int last_step = 0;
-  sqlite3_stmt* statement = select("SELECT * FROM timestep");
-  //(id, time, dim_factor, units)
-  while ( sqlite3_step(statement) == SQLITE_ROW)
+
+  if (!scan && db)
   {
-    int step = sqlite3_column_int(statement, 0);
-    double time = sqlite3_column_double(statement, 1);
-    timesteps.push_back(new TimeStep(step, time));
-    //Save gap
-    if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
-    last_step = step;
-    rows++;
+    sqlite3_stmt* statement = select("SELECT * FROM timestep");
+    //(id, time, dim_factor, units)
+    while (sqlite3_step(statement) == SQLITE_ROW)
+    {
+      int step = sqlite3_column_int(statement, 0);
+      double time = sqlite3_column_double(statement, 1);
+      addTimeStep(step, time);
+      //Save gap
+      if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
+      last_step = step;
+
+      //Look for additional db file
+      std::string path = checkFileStep(step, basename);
+      if (path.length() > 0)
+      {
+        debug_print("Found step %d database\n", step);
+        timesteps[rows]->path = path;
+      }
+
+      rows++;
+    }
+    sqlite3_finalize(statement);
+
   }
-  sqlite3_finalize(statement);
 
-  //Copy to static for use in Tracers etc
-  TimeStep::timesteps = timesteps;
-  return timesteps.size();
-}
+  //Assume we have at least one current timestep, even if none in table
+  if (timesteps.size() == 0) addTimeStep();
 
-void Model::scanFiles()
-{
-  //Check for other timesteps in external files if only 0 or 1 loaded
-  debug_print("Scanning for timesteps...\n");
-  //Strip any digits from end of filename to get base
-  std::string basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
-  //Scan all possible timesteps if none in db
-  if (timesteps.size() < 2)
+  //Check for other timesteps in external files
+  if (scan || timesteps.size() == 1)
   {
+    debug_print("Scanning for timesteps...\n");
     for (unsigned int ts=0; ts<10000; ts++)
     {
       //If no steps found after trying 100, give up
       if (timesteps.size() < 2 && ts > 100) break;
       int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+      if (len < 3) len = 3;  //Check for 3-5 digit timestep
       for (int w = 5; w >= len; w--)
       {
         std::string path = checkFileStep(ts, basename);
         if (path != file.full && path.length() > 0)
         {
           debug_print("Found step %d database\n", ts);
-          timesteps.push_back(new TimeStep(ts, ts, path));
+          addTimeStep(ts, 0.0, path);
+          break;
         }
       }
     }
-  }
-  else
-  {
-    //Search for files matching the existing timestep entries
-    for (unsigned int idx=0; idx < timesteps.size(); idx++)
-    {
-      unsigned int ts = timesteps[idx]->step;
-      std::string path = checkFileStep(ts, basename);
-      if (path.length() > 0)
-      {
-        debug_print("Found step %d database\n", ts);
-        timesteps[idx]->path = path;
-      }
-    }
+    debug_print("Scanning complete, found %d steps.\n", timesteps.size());
   }
 
-  debug_print("Scanning complete, found %d steps.\n", timesteps.size());
+  //Copy to static for use in Tracers etc
+  if (infostream) std::cerr << timesteps.size() << " timesteps loaded\n";
+  TimeStep::timesteps = timesteps;
+  return timesteps.size();
 }
 
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename)
@@ -901,8 +900,8 @@ int Model::nearestTimeStep(int requested)
 {
   //Find closest matching timestep to requested, returns index
   int idx;
-  //if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
-  if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
+  if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
+  //if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
   //if (timesteps.size() == 1 && now >= 0 && ) return -1;  //Single timestep
 
   for (idx=0; idx < (int)timesteps.size(); idx++)
