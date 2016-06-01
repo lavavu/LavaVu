@@ -108,7 +108,7 @@ public:
   void init();
   ~Model();
 
-  void loadFigure(int fig);
+  bool loadFigure(int fig);
   void addObject(DrawingObject* obj);
   DrawingObject* findObject(unsigned int id);
   View* defaultView();
@@ -122,13 +122,13 @@ public:
   int step()
   {
     //Current actual step
-    return now < 0 || timesteps.size() == 0 ? -1 : timesteps[now]->step;
+    return now < 0 || timesteps.size() <= now ? -1 : timesteps[now]->step;
   }
 
   int stepInfo()
   {
     //Current actual step (returns 0 if none instead of -1 for output functions)
-    return now < 0 || timesteps.size() == 0 ? 0 : timesteps[now]->step;
+    return now < 0 || timesteps.size() <= now ? 0 : timesteps[now]->step;
   }
 
   int lastStep()
