@@ -55,6 +55,7 @@ private:
 
 public:
   FilePath file;
+  std::string basename;
   sqlite3 *db;
   bool memorydb;
 
@@ -94,8 +95,7 @@ public:
   void loadLinks();
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
-  int loadTimeSteps();
-  void scanFiles();
+  int loadTimeSteps(bool scan=false);
   std::string checkFileStep(unsigned int ts, const std::string& basename);
   void loadViewports();
   void loadViewCamera(int viewport_id);
@@ -139,9 +139,9 @@ public:
 
   bool hasTimeStep(int ts);
   int nearestTimeStep(int requested);
-  void addTimeStep(int step, double time=0.0)
+  void addTimeStep(int step=0, double time=0.0, const std::string& path="")
   {
-    timesteps.push_back(new TimeStep(step, time));
+    timesteps.push_back(new TimeStep(step, time, path));
   }
 
   int setTimeStep(int stepidx=now);
