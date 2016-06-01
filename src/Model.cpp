@@ -156,8 +156,9 @@ Model::~Model()
   figures.clear();
 }
 
-void Model::loadFigure(int fig)
+bool Model::loadFigure(int fig)
 {
+  if (fig < 0 || figures.size() == 0) return false;
   //Save currently selected first
   if (figure >= 0 && figures.size() > figure)
   {
@@ -165,7 +166,6 @@ void Model::loadFigure(int fig)
     jsonWrite(json);
     figures[figure] = json.str();
   }
-  if (figures.size() == 0) return;
   if (fig >= (int)figures.size()) fig = 0;
   if (fig < 0) fig = figures.size()-1;
   figure = fig;
@@ -174,6 +174,7 @@ void Model::loadFigure(int fig)
   //Set window caption
   if (fignames[figure].length() > 0)
     Properties::globals["caption"] = fignames[figure];
+  return true;
 }
 
 void  Model::addObject(DrawingObject* obj)
@@ -821,7 +822,7 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (TimeStep::cachesize == 0 || now < 0 || now >= (int)timesteps.size()) return;
+  if (TimeStep::cachesize == 0 || now < 0 || timesteps.size() <= now) return;
   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
   printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);

@@ -1296,7 +1296,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "> **Usage:** model up/down/value\n\n"
               "> value (integer) : the model index to view [1,n]  \n"
               "> up : switch to previous model if available  \n"
-              "> down : switch to next model if available  \n";
+              "> down : switch to next model if available  \n"
+              "> add : add a new model  \n";
       return false;
     }
 
@@ -1307,12 +1308,18 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         ival = model-1;
       else if (parsed["model"] == "down")
         ival = model+1;
+      else if (parsed["model"] == "add")
+      {
+        ival = models.size();
+        defaultModel();
+      }
       else
         ival = model;
     }
     if (ival < 0) ival = models.size()-1;
     if (ival >= (int)models.size()) ival = 0;
     if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
+    amodel->setTimeStep(Model::now); //Reselect ensures all loaded correctly
     printMessage("Load model %d", model);
   }
   else if (parsed.exists("figure"))
@@ -1341,9 +1348,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
     }
 
-    amodel->loadFigure(ival);
+    if (!amodel->loadFigure(ival)) return false; //Invalid
     viewset = 2; //Force check for resize and autozoom
-
     printMessage("Load figure %d", amodel->figure);
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
