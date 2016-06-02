@@ -34,6 +34,7 @@ Server::Server(OpenGLViewer* viewer) : viewer(viewer)
   jpeg = NULL;
   updated = false;
   client_id = 0;
+  ctx = NULL;
   // Initialize mutex and condition variable objects
   pthread_mutex_init(&cs_mutex, NULL);
   pthread_mutex_init(&viewer->cmd_mutex, NULL);
