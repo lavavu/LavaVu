@@ -148,7 +148,7 @@ void X11Viewer::setsize(int width, int height)
 
 void X11Viewer::show()
 {
-  if (!visible) return;
+  if (!visible || !Xdisplay) return;
   OpenGLViewer::show();
   XMapRaised( Xdisplay, win ); // Show the window
 
@@ -174,6 +174,7 @@ void X11Viewer::swap()
 
 void X11Viewer::execute()
 {
+  if (!Xdisplay) return;
   XEvent         event;
   MouseButton button;
   unsigned char key;
