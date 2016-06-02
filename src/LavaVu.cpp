@@ -744,7 +744,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (args[i].length() == 0) continue;
 
     //Model data file, load if exists and recognised
-    if (!FileExists(args[i]) || !loadFile(FilePath(args[i])))
+    if (!loadFile(FilePath(args[i])))
     {
       //Otherwise, attempt to run as script command, queue for when viewer is opened
       OpenGLViewer::commands.push_back(args[i]);
@@ -3088,8 +3088,12 @@ bool LavaVu::loadFile(const FilePath& fn)
 
     return true;
   }
+
+  //Following must exist (db can be memory)
+  if (!FileExists(fn.full)) return false;
+
   //Script files, can contain other files to load
-  else if (fn.type == "script")
+  if (fn.type == "script")
   {
     parseCommands("script " + fn.full);
     return true;
@@ -3307,7 +3311,7 @@ void LavaVu::dumpCSV(DrawingObject* obj)
   }
 }
 
-void LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
+std::string LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
 {
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
@@ -3321,6 +3325,7 @@ void LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   else
     sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), name.c_str(), amodel->stepInfo(), ext);
   jsonWriteFile(filename, obj, jsonp, objdata);
+  return std::string(filename);
 }
 
 void LavaVu::jsonWriteFile(std::string fn, DrawingObject* obj, bool jsonp, bool objdata)
@@ -3383,13 +3388,18 @@ std::string LavaVu::image(std::string filename, int width, int height)
   return result;
 }
 
-std::string LavaVu::web()
+std::string LavaVu::web(bool tofile)
 {
   if (!amodel) return "";
-  std::stringstream ss;
+  display(); //Forces view/window open
   Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
-  amodel->jsonWrite(ss, 0, true);
-  return ss.str();
+  if (!tofile)
+  {
+    std::stringstream ss;
+    amodel->jsonWrite(ss, 0, true);
+    return ss.str();
+  }
+  return jsonWriteFile(NULL, false, true);
 }
 
 void LavaVu::addObject(std::string name, std::string properties)
