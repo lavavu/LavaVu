@@ -38,7 +38,7 @@
 // Main function
 int main(int argc, char *argv[])
 {
-  std::cout << execute(argc, argv);
+  execute(argc, argv);
   return 0;
 }
 

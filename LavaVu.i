@@ -55,19 +55,64 @@
 namespace std {
 %template(Line)  vector <float>;
 %template(Array) vector < vector <float> >;
-}   
+}
 
-std::string execute(int argc, char **argv);
-void command(std::string cmd);
-std::string image(std::string filename="", int width=0, int height=0);
-void addObject(std::string name, std::string properties);
-void loadState(std::string state);
-std::string getState();
-std::string getTimeSteps();
-void loadVertices(std::vector< std::vector <float> > array);
-void loadValues(std::vector <float> array);
-void display();
-void clear();
-void kill();
+%pythoncode %{
+#Helper functions
+app = None
+defargs = []
+def load(args=["-a"], bin="LavaVu"):
+    global app
+    if not app:
+      app = LavaVu()
+    #Handle exceptions
+    try: 
+      execute([bin] + args, app)
+    except RuntimeError, e:
+        #Failed
+        print "LavaVu error: " + e
+        pass
+    return app
+%}
 
+void execute(int argc, char **argv, LavaVu* app);
+void execute(int argc, char **argv);
+
+class LavaVu
+{
+public:
+  Model* amodel;
+  View* aview;
+  DrawingObject* aobject;
+
+  LavaVu();
+  ~LavaVu();
+
+  void run();
+
+  bool parseCommands(std::string cmd);
+  std::string image(std::string filename="", int width=0, int height=0);
+  std::string web();
+  void addObject(std::string name, std::string properties);
+  void setState(std::string state);
+  std::string getStates();
+  std::string getTimeSteps();
+  void vertices(std::vector< std::vector <float> > array);
+  void values(std::vector <float> array);
+
+%pythoncode %{
+  def commands(self, cmds):
+      self.parseCommands(cmds)
+
+  def add(self, name="(unnamed)", props={}):
+      if self.amodel:
+          propstr = '\n'.join(['%s=%s' % (k,v) for k,v in props.iteritems()])
+          self.addObject(name, propstr)
+
+  def clear():
+      #Free model memory
+      self.close()
+
+%}
+};
 

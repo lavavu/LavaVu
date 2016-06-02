@@ -3,52 +3,53 @@ import sys
 sys.path.append('bin')
 import LavaVu
 
-LavaVu.execute(["LavaVu", "-a", "-S", "-v"])
-#LavaVu.execute(["LavaVu", "-a", "-S"])
+lv = LavaVu.load(["-a", "-S", "-v"])
 
-print LavaVu.image("initial")
+print lv.image("initial")
 
 #Points
-points = LavaVu.addObject("points", "colour=red\npointsize=10\nopacity=0.75\nstatic=1\ngeometry=points\n");
-LavaVu.loadVertices([[10, 2, 3], [0, 0, 0], [1, -5, -5]]);
-LavaVu.loadValues([1, 2, 3, 4, 5])
+points = lv.add("points", {"colour" : "red", "pointsize" : 10, "opacity" : 0.75, "static" : True, "geometry" : "points"})
+lv.vertices([[-1, -1, -1], [-1, 1, -1], [1, 1, -1], [1, -1, -1]]);
+lv.vertices([[-1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, 1]]);
+lv.values([1, 2, 3, 4, 5, 6, 7, 8])
 
 #Lines
-lines = LavaVu.addObject("lines", "colour=blue\nlink=true\ngeometry=lines\n");
-LavaVu.loadVertices([[10, 2, 3], [0, 0, 0], [1, -5, -5]]);
+lines = lv.add("lines", {"colour" : "blue", "link" : True, "geometry" : "lines"});
+lv.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]]);
 
-LavaVu.command("add vec vectors")
-LavaVu.command("colour=orange")
-LavaVu.command("vertices=[[2, 3, 0], [0, 0, 1], [-5, -5, 0.5], [0.5, 0.5, 5], [5, 5, 10]]")
-LavaVu.command("vectors=[0.5, 0.0, 0.5, 0.0, 0.5, 0.5, 0.0, 0.0, 0.5, 0.5, 0.5, 0.5, 0.0, 0.5, 0.5]")
-LavaVu.command("read vertices")
-LavaVu.command("read vectors")
+lv.commands("add vec vectors")
+lv.commands("vertices=[[0, 0, 0], [0, 0, 0], [0, 0, 0], [1, 1, 1], [-1, -1, -1]]")
+lv.commands("vectors=[1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1]")
+lv.commands("colours=red green blue white white")
+lv.commands("read vertices")
+lv.commands("read vectors")
+lv.commands("read colours")
 
 #This will trigger bounding box update so we can use min/max macros
-LavaVu.command("open")
+lv.commands("open")
 #LavaVu.display()
 
-LavaVu.command("add sealevel quads")
-LavaVu.command("colour=[0,204,255]")
-LavaVu.command("opacity=0.5")
-LavaVu.command("static=true")
-LavaVu.command("geomwidth=2")
-LavaVu.command("geomheight=2")
-LavaVu.command("cullface=false")
-LavaVu.command("vertex minX 0 minZ")
-LavaVu.command("vertex maxX 0 minZ")
-LavaVu.command("vertex minX 0 maxZ")
-LavaVu.command("vertex maxX 0 maxZ")
+lv.commands("add sealevel quads")
+lv.commands("colour=[0,204,255]")
+lv.commands("opacity=0.5")
+lv.commands("static=true")
+lv.commands("geomwidth=2")
+lv.commands("geomheight=2")
+lv.commands("cullface=false")
+lv.commands("vertex minX 0 minZ")
+lv.commands("vertex maxX 0 minZ")
+lv.commands("vertex minX 0 maxZ")
+lv.commands("vertex maxX 0 maxZ")
 
-LavaVu.command("rotate x 45")
-LavaVu.command("fit")
+lv.commands("rotate x 45")
+lv.commands("fit")
 
-print LavaVu.image("rotated")
+print lv.image("rotated")
 
 #Enter interative mode
-LavaVu.command("interactive")
+lv.commands("interactive")
 
-print LavaVu.image("final")
+print lv.image("final")
 
-#LavaVu.command("export")
-imagestr = LavaVu.image()
+#lv.commands("export")
+imagestr = lv.image()
