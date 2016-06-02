@@ -42,7 +42,6 @@
 #include "Include.h"
 #include "LavaVu.h"
 #include "Shaders.h"
-#include <typeinfo>
 #include "tiny_obj_loader.h"
 #include "Util.h"
 #include "Server.h"
@@ -55,14 +54,14 @@
 
 ViewerApp* app = NULL;
 
-std::string execute(int argc, char **argv)
+void execute(int argc, char **argv)
 {
   //Default entry point, create a LavaVu application and run
   if (!app) app = new LavaVu();
-  return execute(argc, argv, app);
+  execute(argc, argv, app);
 }
 
-std::string execute(int argc, char **argv, ViewerApp* myApp)
+void execute(int argc, char **argv, ViewerApp* myApp)
 {
   //Customisable entry point, create viewer and run provided application
   app = myApp;
@@ -70,76 +69,44 @@ std::string execute(int argc, char **argv, ViewerApp* myApp)
   //Read command line
   std::vector<std::string> args;
   for (int i=1; i<argc; i++)
-  {
-    //Help?
-    if (strstr(argv[i], "-?") || strstr(argv[i], "help"))
-    {
-      std::cout << "## Command line arguments\n\n";
-      std::cout << "|         | General options\n";
-      std::cout << "| ------- | ---------------\n";
-      std::cout << "| -#      | Any integer entered as a switch will be interpreted as the initial timestep to load. ";
-      std::cout << "Any following integer switch will be interpreted as the final timestep for output. ";
-      std::cout << "eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n";
-      std::cout << "| -c#     | caching, set # of timesteps to cache data in memory for\n";
-      std::cout << "| -P#     | subsample points, loading only every #'th\n";
-      std::cout << "| -A      | All objects hidden initially, use 'show object' to display\n";
-      std::cout << "| -N      | No load, deferred loading mode, use 'load object' to load & display from database\n";
-      std::cout << "| -S      | Skip default script, don't run init.script\n";
-      std::cout << "| -v      | Verbose output, debugging info displayed to console\n";
-      std::cout << "| -o      | Output mode: all commands entered dumped to standard output, ";
-      std::cout << "useful for redirecting to a script file.\n";
-      std::cout << "| -a      | Automation mode, don't activate event processing loop\n";
-      std::cout << "| -p#     | port, web server interface listen on port #\n";
-      std::cout << "| -q#     | quality, web server jpeg quality (0=don't serve images)\n";
-      std::cout << "| -n#     | number of threads to launch for web server #\n";
-      std::cout << "| -l      | use local shaders, locate in working directory not executable directory\n";
-      std::cout << "| -Q      | quiet mode, no status updates to screen\n";
-      std::cout << "\n";
-      std::cout << "|         | Model options\n";
-      std::cout << "| ------- | -------------\n";
-      std::cout << "| -C      | Global camera, each model shares the same camera view\n";
-      std::cout << "| -y      | Swap z/y axes of imported static models\n";
-      std::cout << "| -T#     | Subdivide imported static model triangles into #\n";
-      std::cout << "| -V#,#,# | Volume data resolution in X,Y,Z\n";
-      std::cout << "| -e      | Each data set loaded from non time varying source has new timestep inserted\n";
-      std::cout << "\n";
-      std::cout << "|         | Image/Video output\n";
-      std::cout << "| ------- | ------------------\n";
-      std::cout << "| -z#     | Render images # times larger and downsample for output\n";
-      std::cout << "| -i/w    | Write images of all loaded timesteps/windows then exit\n";
-      std::cout << "| -I/W    | Write images as above but using input database path as output path for images\n";
-      std::cout << "| -u      | Returns images encoded as string data (for library use)\n";
-      std::cout << "| -U      | Returns json model data encoded string (for library use)\n";
-      std::cout << "| -t      | Write transparent background png images (if supported)\n";
-      std::cout << "| -m#     | Write movies of all loaded timesteps/windows #=fps(30) (if supported)\n";
-      std::cout << "| -x#,#   | Set output image width, height (height will be calculated if omitted)\n";
-      std::cout << "\n";
-      std::cout << "|         | Data Export\n";
-      std::cout << "| ------- | -----------\n";
-      std::cout << "| -d#     | Export object id # to CSV vertices + values\n";
-      std::cout << "| -j#     | Export object id # to JSON, if # omitted will output all compatible objects\n";
-      std::cout << "| -g#     | Export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects\n";
-      std::cout << "| -G#     | Export object id # to GLDB (uncompressed), if # omitted will output all compatible objects\n";
-      std::cout << "\n";
-      std::cout << "|         | Window Settings\n";
-      std::cout << "| ------- | ---------------\n";
-      std::cout << "| -r#,#   | Resize initial viewer window width, height\n";
-      std::cout << "| -h      | hidden window, will exit after running any provided input script and output options\n";
-      return "";
-    }
-    if (strlen(argv[i]) > 0)
-      args.push_back(argv[i]);
-  }
+    args.push_back(argv[i]);
 
   if (!app->viewer)
   {
     //Create the viewer window
-    OpenGLViewer* viewer = createViewer();
+    OpenGLViewer* viewer = NULL;
+    
+    //Evil platform specific extension handling stuff
+#if defined _WIN32
+    //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
+#elif defined HAVE_X11  //not defined __APPLE__
+    //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+    GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
+#elif defined HAVE_GLUT and not defined __APPLE__
+    GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+#endif
+
+    //Create viewer window
+#if defined HAVE_X11
+    if (!viewer) viewer = new X11Viewer();
+#endif
+#if defined HAVE_GLUT
+    if (!viewer) viewer = new GlutViewer();
+#endif
+#if defined HAVE_SDL || defined _WIN32
+    if (!viewer) viewer = new SDLViewer();
+#endif
+#if defined HAVE_CGL
+    if (!viewer) viewer = new CocoaViewer();
+    if (!viewer) viewer = new CGLViewer();
+#endif
+    if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
+
     viewer->app = (ApplicationInterface*)app;
     app->viewer = viewer;
 
     //Shader path (default to program path if not set)
-    std::string xpath = GetBinaryPath(argv[0], "LavaVu");
+    std::string xpath = GetBinaryPath(argv[0], APPNAME__);
     if (Shader::path.length() == 0) Shader::path = xpath;
     //Set default web server path
     Server::htmlpath = xpath + "html";
@@ -158,158 +125,7 @@ std::string execute(int argc, char **argv, ViewerApp* myApp)
   app->arguments(args);
 
   //Run visualisation task
-  return app->run(); 
-}
-
-void command(std::string cmd)
-{
-  app->parseCommands(cmd);
-}
-
-std::string image(std::string filename, int width, int height)
-{
-  std::string result = "";
-  if (!app) abort_program("No application initialised!");
-  app->display();
-  //Set width/height override
-  app->viewer->outwidth = width;
-  app->viewer->outheight = height;
-  //Write image to file or return as string
-  result = app->viewer->image(getImageFilename(filename));
-  return result;
-}
-
-void addObject(std::string name, std::string properties)
-{
-  app->parseCommands("add " + name);
-  LavaVu* lvapp = (LavaVu*)app;
-  if (!lvapp->amodel) return;
-  lvapp->aobject->properties.parseSet(properties);
-}
-
-void loadState(std::string state)
-{
-  LavaVu* lvapp = (LavaVu*)app;
-  if (!lvapp->amodel) return;
-  lvapp->amodel->jsonRead(state);
-  lvapp->printProperties();
-}
-
-std::string getState()
-{
-  LavaVu* lvapp = (LavaVu*)app;
-  if (!lvapp->amodel) return "";
-  std::stringstream ss;
-  ss << "[\n";
-  for (unsigned int s=0; s<lvapp->amodel->figures.size(); s++)
-  {
-    lvapp->amodel->loadFigure(s);
-    lvapp->amodel->jsonWrite(ss, 0, false);
-    if (s < lvapp->amodel->figures.size()-1) ss << ",\n";
-  }
-  ss << "]\n";
-  return ss.str();
-}
-
-std::string getTimeSteps()
-{
-  LavaVu* lvapp = (LavaVu*)app;
-  if (!lvapp->amodel) return "";
-  json steps = json::array();
-  for (unsigned int s=0; s<lvapp->amodel->timesteps.size(); s++)
-  {
-    steps.push_back(lvapp->amodel->timesteps[s]->step);
-  }
-  std::stringstream ss;
-  ss << steps;
-  return ss.str();
-}
-
-void loadVertices(std::vector< std::vector <float> > array)
-{
-  LavaVu* lvapp = (LavaVu*)app;
-  if (!lvapp->amodel) return;
-
-  //Get selected object or create a new one
-  if (!lvapp->aobject) addObject("(unnamed)", "");
-
-  //Get the type to load (defaults to points)
-  std::string type = lvapp->aobject->properties["geometry"];
-  Geometry* container = lvapp->getGeometryType(type);
-  if (!container) return;
-
-  //Load 3d vertices
-  for (unsigned int i=0; i < array.size(); i++)
-    container->read(lvapp->aobject, 1, lucVertexData, &array[i][0]);
-}
-
-void loadValues(std::vector <float> array)
-{
-  LavaVu* lvapp = (LavaVu*)app;
-  if (!lvapp->amodel) return;
-  //Get selected object or create a new one
-  if (!lvapp->aobject) addObject("(unnamed)", "");
-
-  //Get the type to load (defaults to points)
-  std::string type = lvapp->aobject->properties["geometry"];
-  Geometry* container = lvapp->getGeometryType(type);
-  if (!container) return;
-
-  //Load scalar values
-  for (unsigned int i=0; i < array.size(); i++)
-    container->read(lvapp->aobject, 1, lucColourValueData, &array[i]);
-}
-
-void display()
-{
-  //Call display on app
-  app->display();
-}
-
-void clear()
-{
-  //Close any open models and free memory
-  app->close();
-}
-
-void kill()
-{
-  Server::Delete();
-  delete app->viewer;
-  app = NULL;
-}
-
-OpenGLViewer* createViewer()
-{
-  OpenGLViewer* viewer = NULL;
-
-//Evil platform specific extension handling stuff
-#if defined _WIN32
-  //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
-#elif defined HAVE_X11  //not defined __APPLE__
-  //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-  GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
-#elif defined HAVE_GLUT and not defined __APPLE__
-  GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-#endif
-
-  //Create viewer window
-#if defined HAVE_X11
-  if (!viewer) viewer = new X11Viewer();
-#endif
-#if defined HAVE_GLUT
-  if (!viewer) viewer = new GlutViewer();
-#endif
-#if defined HAVE_SDL || defined _WIN32
-  if (!viewer) viewer = new SDLViewer();
-#endif
-#if defined HAVE_CGL
-  if (!viewer) viewer = new CocoaViewer();
-  if (!viewer) viewer = new CGLViewer();
-#endif
-  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
-
-  return viewer;
+  app->run(); 
 }
 
 //Viewer class implementation...
@@ -349,13 +165,10 @@ void LavaVu::defaults()
   amodel = NULL;
   aobject = NULL;
 
-  files.clear();
-
   Model::now = -1;
   startstep = -1;
   endstep = -1;
   dump = lucExportNone;
-  returndata = lucExportNone;
   dumpid = 0;
   status = true;
   writeimage = false;
@@ -617,7 +430,7 @@ void LavaVu::defaults()
 
   //Global Properties
   // | global | string | Title of window for caption area
-  Properties::defaults["caption"] = "LavaVu";
+  Properties::defaults["caption"] = APPNAME__;
   // | global | resolution[2] | Window resolution X,Y
   Properties::defaults["resolution"] = {1024, 768};
   // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
@@ -664,6 +477,8 @@ void LavaVu::defaults()
 
 LavaVu::~LavaVu()
 {
+  Server::Delete();
+
   delete axis;
   delete rulers;
   delete border;
@@ -687,9 +502,65 @@ LavaVu::~LavaVu()
 void LavaVu::arguments(std::vector<std::string> args)
 {
   //Read command line switches
-  bool queueScript = false;
   for (unsigned int i=0; i<args.size(); i++)
   {
+    //Help?
+    if (args[i] == "-?" || args[i] == "-help")
+    {
+      std::cout << "## Command line arguments\n\n";
+      std::cout << "|         | General options\n";
+      std::cout << "| ------- | ---------------\n";
+      std::cout << "| -#      | Any integer entered as a switch will be interpreted as the initial timestep to load. ";
+      std::cout << "Any following integer switch will be interpreted as the final timestep for output. ";
+      std::cout << "eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n";
+      std::cout << "| -c#     | caching, set # of timesteps to cache data in memory for\n";
+      std::cout << "| -P#     | subsample points, loading only every #'th\n";
+      std::cout << "| -A      | All objects hidden initially, use 'show object' to display\n";
+      std::cout << "| -N      | No load, deferred loading mode, use 'load object' to load & display from database\n";
+      std::cout << "| -S      | Skip default script, don't run init.script\n";
+      std::cout << "| -v      | Verbose output, debugging info displayed to console\n";
+      std::cout << "| -o      | Output mode: all commands entered dumped to standard output, ";
+      std::cout << "useful for redirecting to a script file.\n";
+      std::cout << "| -a      | Automation mode, don't activate event processing loop\n";
+      std::cout << "| -p#     | port, web server interface listen on port #\n";
+      std::cout << "| -q#     | quality, web server jpeg quality (0=don't serve images)\n";
+      std::cout << "| -n#     | number of threads to launch for web server #\n";
+      std::cout << "| -l      | use local shaders, locate in working directory not executable directory\n";
+      std::cout << "| -Q      | quiet mode, no status updates to screen\n";
+      std::cout << "\n";
+      std::cout << "|         | Model options\n";
+      std::cout << "| ------- | -------------\n";
+      std::cout << "| -C      | Global camera, each model shares the same camera view\n";
+      std::cout << "| -y      | Swap z/y axes of imported static models\n";
+      std::cout << "| -T#     | Subdivide imported static model triangles into #\n";
+      std::cout << "| -V#,#,# | Volume data resolution in X,Y,Z\n";
+      std::cout << "| -e      | Each data set loaded from non time varying source has new timestep inserted\n";
+      std::cout << "\n";
+      std::cout << "|         | Image/Video output\n";
+      std::cout << "| ------- | ------------------\n";
+      std::cout << "| -z#     | Render images # times larger and downsample for output\n";
+      std::cout << "| -i/w    | Write images of all loaded timesteps/windows then exit\n";
+      std::cout << "| -I/W    | Write images as above but using input database path as output path for images\n";
+      std::cout << "| -u      | Returns images encoded as string data (for library use)\n";
+      std::cout << "| -U      | Returns json model data encoded string (for library use)\n";
+      std::cout << "| -t      | Write transparent background png images (if supported)\n";
+      std::cout << "| -m#     | Write movies of all loaded timesteps/windows #=fps(30) (if supported)\n";
+      std::cout << "| -x#,#   | Set output image width, height (height will be calculated if omitted)\n";
+      std::cout << "\n";
+      std::cout << "|         | Data Export\n";
+      std::cout << "| ------- | -----------\n";
+      std::cout << "| -d#     | Export object id # to CSV vertices + values\n";
+      std::cout << "| -j#     | Export object id # to JSON, if # omitted will output all compatible objects\n";
+      std::cout << "| -g#     | Export object id # to GLDB (zlib compressed), if # omitted will output all compatible objects\n";
+      std::cout << "| -G#     | Export object id # to GLDB (uncompressed), if # omitted will output all compatible objects\n";
+      std::cout << "\n";
+      std::cout << "|         | Window Settings\n";
+      std::cout << "| ------- | ---------------\n";
+      std::cout << "| -r#,#   | Resize initial viewer window width, height\n";
+      std::cout << "| -h      | hidden window, will exit after running any provided input script and output options\n";
+      exit(0);
+    }
+
     char x;
     int vars[2];
     std::istringstream ss(args[i]);
@@ -698,7 +569,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bks, BDEFHKLMOXYZ
+      //Unused switches: bksu, BDEFHKLMOUXYZ
       switch (x)
       {
       case 'a':
@@ -838,14 +709,6 @@ void LavaVu::arguments(std::vector<std::string> args)
         //Add new timesteps after loading files
         Properties::globals["filestep"] = true;
         break;
-      case 'u':
-        //Return encoded image string from run()
-        returndata = lucExportIMAGE;
-        break;
-      case 'U':
-        //Return encoded json string from run()
-        returndata = lucExportJSON;
-        break;
       default:
         //Attempt to interpret as timestep
         std::istringstream ss2(args[i]);
@@ -858,21 +721,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       //Clear non file arguments
       args[i].clear();
     }
-    else if (x == ':')
-    {
-      //Queue rest of commands to script
-      queueScript = true;
-    }
-    else if (queueScript)
-    {
-      //Queue script commands for when viewer is opened
-      OpenGLViewer::commands.push_back(args[i]);
-    }
-    else
-    {
-      //Model data file
-      files.push_back(args[i]);
-    }
   }
 
   //Output and exit modes?
@@ -881,13 +729,6 @@ void LavaVu::arguments(std::vector<std::string> args)
     viewer->visible = false;
     Server::port = 0;
   }
-}
-
-std::string LavaVu::run()
-{
-  std::string ret = "";
-  //If server running, always stay open (persist flag)
-  bool persist = Server::running();
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
@@ -895,21 +736,29 @@ std::string LavaVu::run()
 
   //Add default script
   if (defaultScript.length())
-    files.push_back(defaultScript);
+    args.push_back(defaultScript);
 
-  //Loads files, runs scripts
-  for (unsigned int m=0; m < files.size(); m++)
-    loadFile(files[m]);
-    //OpenGLViewer::commands.push_back("file " + files[m].full);
+  //Process remaining args: Loads files, runs scripts, execute script commands
+  for (unsigned int i=0; i<args.size(); i++)
+  {
+    if (args[i].length() == 0) continue;
+
+    //Model data file, load if exists and recognised
+    if (!FileExists(args[i]) || !loadFile(FilePath(args[i])))
+    {
+      //Otherwise, attempt to run as script command, queue for when viewer is opened
+      OpenGLViewer::commands.push_back(args[i]);
+    }
+  }
+}
+
+void LavaVu::run()
+{
+  //If server running, always stay open (persist flag)
+  bool persist = Server::running();
 
   //Require a model from here on, set a default
   if (!amodel) defaultModel();
-
-  //Moved to loadFile so called after all model data loads, not just first
-  //Reselect the active view after loading all data (resets model bounds)
-  //NOTE: sometimes we can reach this call before the GL context is created, hence the check
-  //if (viewer->isopen)
-  //  viewSelect(view, true, true);
 
   if (writeimage || writemovie || dump > lucExportNone)
   {
@@ -975,34 +824,17 @@ std::string LavaVu::run()
   }
 
   //If automation mode turned on, return at this point
-  if (automate) return ret;
+  if (automate) return;
 
-  //Return an image encoded as a base64 data url
-  if (returndata == lucExportIMAGE)
-  {
-    ret = viewer->image();
-  }
-  else if (returndata == lucExportJSON)
-  {
-    std::stringstream ss;
-    Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
-    amodel->jsonWrite(ss, 0, true);
-    ret = ss.str();
-  }
+  //Start event loop
+  if (persist || viewer->visible)
+    viewer->execute();
   else
   {
-    //Start event loop
-    if (persist || viewer->visible)
-      viewer->execute();
-    else
-    {
-      //Read input script from stdin on first timestep
-      viewer->pollInput();
-      viewer->display();
-    }
+    //Read input script from stdin on first timestep
+    viewer->pollInput();
+    viewer->display();
   }
-
-  return ret;
 }
 
 void LavaVu::clearData(bool objects)
@@ -1110,7 +942,7 @@ void LavaVu::printDefaultProperties()
   std::cerr << std::setw(2) << Properties::defaults << std::endl;
 }
 
-void LavaVu::readRawVolume(FilePath& fn)
+void LavaVu::readRawVolume(const FilePath& fn)
 {
   //raw format volume data
 
@@ -1143,7 +975,7 @@ void LavaVu::readRawVolume(FilePath& fn)
   Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
-void LavaVu::readXrwVolume(FilePath& fn)
+void LavaVu::readXrwVolume(const FilePath& fn)
 {
   //Xrw format volume data
 
@@ -1241,7 +1073,7 @@ void LavaVu::readXrwVolume(FilePath& fn)
   Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
-void LavaVu::readVolumeSlice(FilePath& fn)
+void LavaVu::readVolumeSlice(const FilePath& fn)
 {
   //png/jpg data
   static std::string path = "";
@@ -1260,7 +1092,7 @@ void LavaVu::readVolumeSlice(FilePath& fn)
     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
-void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel)
+void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel)
 {
   //Create volume object, or if static volume object exists, use it
   int outChannels = Properties::global("volchannels");
@@ -1316,7 +1148,7 @@ void LavaVu::readVolumeSlice(std::string& name, GLubyte* imageData, int width, i
   }
 }
 
-void LavaVu::readVolumeTIFF(FilePath& fn)
+void LavaVu::readVolumeTIFF(const FilePath& fn)
 {
 #ifdef HAVE_LIBTIFF
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
@@ -1472,7 +1304,7 @@ void LavaVu::createDemoVolume()
 #endif
 }
 
-void LavaVu::readHeightMap(FilePath& fn)
+void LavaVu::readHeightMap(const FilePath& fn)
 {
   int rows, cols, size = 2, subsample;
   int byteorder = 0;   //Little endian default
@@ -1653,7 +1485,7 @@ void LavaVu::readHeightMap(FilePath& fn)
   debug_print("Z min %f max %f range %f\n", min[2], max[2], range[2]);
 }
 
-void LavaVu::readHeightMapImage(FilePath& fn)
+void LavaVu::readHeightMapImage(const FilePath& fn)
 {
   ImageFile image(fn);
 
@@ -1742,7 +1574,7 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
   }
 }
 
-void LavaVu::readOBJ(FilePath& fn)
+void LavaVu::readOBJ(const FilePath& fn)
 {
   //Use tiny_obj_loader to load a model
   std::vector<tinyobj::shape_t> shapes;
@@ -1868,7 +1700,7 @@ void LavaVu::readOBJ(FilePath& fn)
   }
 }
 
-void LavaVu::readTecplot(FilePath& fn)
+void LavaVu::readTecplot(const FilePath& fn)
 {
   //Can only parse tecplot format type FEBRICK
   //http://paulbourke.net/dataformats/tp/
@@ -3208,7 +3040,7 @@ void LavaVu::drawScene()
   glUseProgram(0);
 }
 
-void LavaVu::loadFile(FilePath& fn)
+bool LavaVu::loadFile(const FilePath& fn)
 {
   //All files on command line plus init.script added to files list
   // - gldb files represent a Model
@@ -3228,7 +3060,7 @@ void LavaVu::loadFile(FilePath& fn)
 
     //Open database file
     amodel = new Model(fn);
-    if (!amodel) return;
+    if (!amodel) return false;
     models.push_back(amodel);
     aview = amodel->defaultView();
     //Load initial figure
@@ -3236,7 +3068,7 @@ void LavaVu::loadFile(FilePath& fn)
 
     //Set default window title to model name
     std::string name = Properties::global("caption");
-    if (name == "LavaVu" && !amodel->memorydb) Properties::global("caption") = amodel->file.base;
+    if (name == APPNAME__ && !amodel->memorydb) Properties::global("caption") = amodel->file.base;
 
     //Save path of first sucessfully loaded model
     if (dbpath && viewer->output_path.length() == 0)
@@ -3253,12 +3085,14 @@ void LavaVu::loadFile(FilePath& fn)
       //loadModelStep(models.size()-1, -1, true);
       viewer->postdisplay = true;
     }
+
+    return true;
   }
   //Script files, can contain other files to load
   else if (fn.type == "script")
   {
     parseCommands("script " + fn.full);
-    return;
+    return true;
   }
 
   //JSON state file (doesn't load objects if any, only state)
@@ -3269,7 +3103,7 @@ void LavaVu::loadFile(FilePath& fn)
       OpenGLViewer::commands.push_back("file \"" + fn.full + "\"");
     else
       jsonReadFile(fn.full);
-    return;
+    return true;
   }
 
   //Other files require an existing model
@@ -3298,11 +3132,16 @@ void LavaVu::loadFile(FilePath& fn)
   }
   else if (fn.type == "tiff" || fn.type == "tif")
     readVolumeTIFF(fn);
+  else
+    //Unknown type
+    return false;
 
   //Reselect the active view after loading any model data (resets model bounds)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
   if (viewer->isopen)
     viewSelect(view, true, true);
+
+  return true;
 }
 
 void LavaVu::defaultModel()
@@ -3529,3 +3368,101 @@ std::string LavaVu::requestData(std::string key)
   //std::cerr << result.str();
   return result.str();
 }
+
+//Python interface functions
+std::string LavaVu::image(std::string filename, int width, int height)
+{
+  if (!amodel) return "";
+  std::string result = "";
+  display();
+  //Set width/height override
+  viewer->outwidth = width;
+  viewer->outheight = height;
+  //Write image to file or return as string (base64 data url)
+  result = viewer->image(getImageFilename(filename));
+  return result;
+}
+
+std::string LavaVu::web()
+{
+  if (!amodel) return "";
+  std::stringstream ss;
+  Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
+  amodel->jsonWrite(ss, 0, true);
+  return ss.str();
+}
+
+void LavaVu::addObject(std::string name, std::string properties)
+{
+  if (!amodel) return;
+  parseCommands("add " + name);
+  aobject->properties.parseSet(properties);
+}
+
+void LavaVu::setState(std::string state)
+{
+  if (!amodel) return;
+  amodel->jsonRead(state);
+}
+
+std::string LavaVu::getStates()
+{
+  if (!amodel) return "";
+  std::stringstream ss;
+  ss << "[\n";
+  for (unsigned int s=0; s<amodel->figures.size(); s++)
+  {
+    amodel->loadFigure(s);
+    amodel->jsonWrite(ss, 0, false);
+    if (s < amodel->figures.size()-1) ss << ",\n";
+  }
+  ss << "]\n";
+  return ss.str();
+}
+
+std::string LavaVu::getTimeSteps()
+{
+  if (!amodel) return "";
+  json steps = json::array();
+  for (unsigned int s=0; s<amodel->timesteps.size(); s++)
+  {
+    steps.push_back(amodel->timesteps[s]->step);
+  }
+  std::stringstream ss;
+  ss << steps;
+  return ss.str();
+}
+
+void LavaVu::vertices(std::vector< std::vector <float> > array)
+{
+  //Get selected object or create a new one
+  if (!amodel) return;
+  if (!aobject) addObject("(unnamed)", "");
+
+  //Get the type to load (defaults to points)
+  std::string type = aobject->properties["geometry"];
+  Geometry* container = getGeometryType(type);
+  if (!container) return;
+
+  //Load 3d vertices
+  for (unsigned int i=0; i < array.size(); i++)
+    container->read(aobject, 1, lucVertexData, &array[i][0]);
+}
+
+void LavaVu::values(std::vector <float> array)
+{
+  //Get selected object or create a new one
+  if (!amodel) return;
+  if (!aobject) addObject("(unnamed)", "");
+
+  //Get the type to load (defaults to points)
+  std::string type = aobject->properties["geometry"];
+  Geometry* container = getGeometryType(type);
+  if (!container) return;
+
+  //Load scalar values
+  for (unsigned int i=0; i < array.size(); i++)
+    container->read(aobject, 1, lucColourValueData, &array[i]);
+}
+
+

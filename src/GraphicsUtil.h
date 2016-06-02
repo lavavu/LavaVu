@@ -580,7 +580,7 @@ public:
   int width, height, bytesPerPixel;
   GLubyte* pixels;
 
-  ImageFile(FilePath& fn)
+  ImageFile(const FilePath& fn)
   {
     //png/jpg data
     pixels = NULL;

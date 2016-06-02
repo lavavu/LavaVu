@@ -45,23 +45,14 @@
 #include "Model.h"
 #include "VideoEncoder.h"
 
+#ifndef APPNAME__
+#define APPNAME__ "LavaVu"
+#endif
+
 #define MAX_MSG 256
 
-std::string execute(int argc, char **argv);
-std::string execute(int argc, char **argv, ViewerApp* myApp);
-void command(std::string cmd);
-std::string image(std::string filename="", int width=0, int height=0);
-void addObject(std::string name, std::string properties);
-void loadState(std::string state);
-std::string getState();
-std::string getTimeSteps();
-void loadVertices(std::vector< std::vector <float> > array);
-void loadValues(std::vector <float> array);
-void display();
-void clear();
-void kill();
-
-OpenGLViewer* createViewer();
+void execute(int argc, char **argv);
+void execute(int argc, char **argv, ViewerApp* myApp);
 
 typedef enum
 {
@@ -97,12 +88,10 @@ protected:
 #endif
 
   std::vector<Model*> models;
-  std::vector<FilePath> files;
 
   // Loaded model parameters
   int startstep, endstep;
   lucExportType dump;
-  lucExportType returndata;
   int dumpid;
   int model;
   int tracersteps;
@@ -140,7 +129,7 @@ public:
   //Argument parser
   virtual void arguments(std::vector<std::string> args);
   //Execute function
-  std::string run();
+  void run();
   void clearData(bool objects=false);
 
   void exportData(lucExportType type, DrawingObject* obj=NULL);
@@ -153,15 +142,15 @@ public:
   void reloadShaders();
 
   void addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level);
-  void readHeightMap(FilePath& fn);
-  void readHeightMapImage(FilePath& fn);
-  void readOBJ(FilePath& fn);
-  void readTecplot(FilePath& fn);
-  void readRawVolume(FilePath& fn);
-  void readXrwVolume(FilePath& fn);
-  void readVolumeSlice(FilePath& fn);
-  void readVolumeSlice(std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel);
-  void readVolumeTIFF(FilePath& fn);
+  void readHeightMap(const FilePath& fn);
+  void readHeightMapImage(const FilePath& fn);
+  void readOBJ(const FilePath& fn);
+  void readTecplot(const FilePath& fn);
+  void readRawVolume(const FilePath& fn);
+  void readXrwVolume(const FilePath& fn);
+  void readVolumeSlice(const FilePath& fn);
+  void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel);
+  void readVolumeTIFF(const FilePath& fn);
   void createDemoModel();
   void createDemoVolume();
   void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
@@ -212,7 +201,7 @@ public:
   void writeSteps(bool images, int start, int end);
 
   //data loading
-  void loadFile(FilePath& fn);
+  bool loadFile(const FilePath& fn);
   void defaultModel();
   void loadModel(FilePath& fn);
   bool loadModelStep(int model_idx, int at_timestep=-1, bool autozoom=false);
@@ -231,6 +220,16 @@ public:
   void jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonReadFile(std::string fn);
+
+  //Python interface functions
+  std::string image(std::string filename="", int width=0, int height=0);
+  std::string web();
+  void addObject(std::string name, std::string properties);
+  void setState(std::string state);
+  std::string getStates();
+  std::string getTimeSteps();
+  void vertices(std::vector< std::vector <float> > array);
+  void values(std::vector <float> array);
 };
 
 #endif //LavaVu__

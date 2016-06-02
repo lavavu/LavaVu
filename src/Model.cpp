@@ -61,7 +61,7 @@ Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false), figure(
   init();
 }
 
-Model::Model(FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false), figure(-1)
+Model::Model(const FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
 
@@ -822,7 +822,7 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (TimeStep::cachesize == 0 || now < 0 || timesteps.size() <= now) return;
+  if (TimeStep::cachesize == 0 || now < 0 || (int)timesteps.size() <= now) return;
   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
   printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);
