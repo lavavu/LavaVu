@@ -60,16 +60,13 @@ namespace std {
 %pythoncode %{
 #Helper functions
 app = None
-defargs = []
-def load(args=["-a"], bin="LavaVu"):
+def load(args=["LavaVu", "-a"]):
     global app
     if not app:
       app = LavaVu()
-    #Handle exceptions
     try: 
-      execute([bin] + args, app)
+      execute(args, app)
     except RuntimeError, e:
-        #Failed
         print "LavaVu error: " + e
         pass
     return app
@@ -92,13 +89,14 @@ public:
 
   bool parseCommands(std::string cmd);
   std::string image(std::string filename="", int width=0, int height=0);
-  std::string web();
+  std::string web(bool tofile=false);
   void addObject(std::string name, std::string properties);
   void setState(std::string state);
   std::string getStates();
   std::string getTimeSteps();
   void vertices(std::vector< std::vector <float> > array);
   void values(std::vector <float> array);
+  void close();
 
 %pythoncode %{
   def commands(self, cmds):
@@ -109,8 +107,7 @@ public:
           propstr = '\n'.join(['%s=%s' % (k,v) for k,v in props.iteritems()])
           self.addObject(name, propstr)
 
-  def clear():
-      #Free model memory
+  def clear(self):
       self.close()
 
 %}

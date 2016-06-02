@@ -217,13 +217,13 @@ public:
   void helpCommand(std::string cmd);
   void record(bool mouse, std::string command);
   void dumpCSV(DrawingObject* obj=NULL);
-  void jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
+  std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonReadFile(std::string fn);
 
   //Python interface functions
   std::string image(std::string filename="", int width=0, int height=0);
-  std::string web();
+  std::string web(bool tofile=false);
   void addObject(std::string name, std::string properties);
   void setState(std::string state);
   std::string getStates();
