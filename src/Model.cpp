@@ -1588,8 +1588,9 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   json outobjects = json::array();
   json outviews = json::array();
 
-  //Save current bg colour as the global default
-  //properties["background"] = viewer->background.toString();
+  //Converts named colours to js readable
+  if (properties.count("background") > 0)
+    properties["background"] = Colour(properties["background"]).toString();
 
   for (unsigned int v=0; v < views.size(); v++)
   {
@@ -1622,6 +1623,10 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
     vprops["near"] = view->near_clip;
     vprops["far"] = view->far_clip;
+
+    //Converts named colours to js readable
+    if (vprops.count("background") > 0)
+      vprops["background"] = Colour(vprops["background"]).toString();
 
     //Add the view
     outviews.push_back(vprops);
@@ -1702,6 +1707,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
           obj["lines"].size() > 0 ||
           obj["volumes"].size() > 0)
       {
+
+        //Converts named colours to js readable
+        if (obj.count("colour") > 0)
+          obj["colour"] = Colour(obj["colour"]).toString();
+
         outobjects.push_back(obj);
       }
     }
