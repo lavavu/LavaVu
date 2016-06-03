@@ -11,6 +11,7 @@ var types = {'triangles' : "triangle", 'points' : "particle", 'lines' : "line", 
 var debug_on = false;
 
 function initPage(src, fn) {
+  var noui = false;
   var urlq = decodeURI(window.location.href);
   if (urlq.indexOf("?") > 0) {
     var parts = urlq.split("?"); //whole querystring before and after ?
@@ -42,6 +43,7 @@ function initPage(src, fn) {
     //IPython strips out ? args so have to check for this instead
     var parts = urlq.split("#"); //whole querystring before and after #
     ajaxReadFile(parts[1], initPage, false);
+    noui = true;
   }
 
   progress();
@@ -88,14 +90,21 @@ function initPage(src, fn) {
   canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
   defaultMouse = document.mouse = canvas.mouse;
 
-  //Create tool windows
-  params =     new Toolbox("params", 20, 20);
-  objectlist = new Toolbox("objectlist", 370, 20);
-  messages =   new Toolbox("messages", 400, 300);
-  properties = new Toolbox("properties", 720, 20);
+  if (!noui) {
+    //Create tool windows
+    params =     new Toolbox("params", 20, 20);
+    objectlist = new Toolbox("objectlist", 370, 20);
+    messages =   new Toolbox("messages", 400, 300);
+    properties = new Toolbox("properties", 720, 20);
 
-  params.show();
-  objectlist.show();
+    params.show();
+    objectlist.show();
+  } else {
+    params =     new Toolbox("params", -1, -1);
+    objectlist = new Toolbox("objectlist", -1, -1);
+    messages =   new Toolbox("messages", -1, -1);
+    properties = new Toolbox("properties", -1, -1);
+  }
 
   if (src) {
     viewer.loadFile(src);
@@ -796,14 +805,18 @@ function Toolbox(id, x, y) {
   this.mouse.moveUpdate = true;
   this.el.mouse = this.mouse;
   this.style = $S(id);
+  this.drag = false;
   if (x && y) {
     this.style.left = x + 'px';
     this.style.top = y + 'px';
+
+    if (x < 0 && y < 0)
+      this.style.width = this.style.height = 0;
+      this.style.overflow = "hidden";
   } else {
     this.style.left = ((window.innerWidth - this.el.offsetWidth) * 0.5) + 'px';
     this.style.top = ((window.innerHeight - this.el.offsetHeight) * 0.5) + 'px';
   }
-  this.drag = false;
 }
 
 Toolbox.prototype.toggle = function() {
@@ -1572,6 +1585,13 @@ Viewer.prototype.loadFile = function(source) {
     this.opacity = vis.properties.opacity || 1.0;
 
     this.applyBackground(vis.properties.background);
+
+    if (vis.properties.resolution[0] && vis.properties.resolution[1]) {
+      this.width = vis.properties.resolution[0];
+      this.height = vis.properties.resolution[1];
+      this.canvas.style.width = "";
+      this.canvas.style.height = "";
+    }
 
     //Copy global options to controls where applicable..
     $("bgColour").value = this.background.r;
