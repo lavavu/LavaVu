@@ -1652,7 +1652,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
-    else if (Properties::globals.count(what) > 0 && Properties::global(what).is_boolean())
+    else if (Properties::defaults.count(what) > 0 && Properties::global(what).is_boolean())
     {
       bool current = Properties::global(what);
       Properties::global(what) = !current;
