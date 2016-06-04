@@ -810,9 +810,11 @@ function Toolbox(id, x, y) {
     this.style.left = x + 'px';
     this.style.top = y + 'px';
 
-    if (x < 0 && y < 0)
+    if (x < 0 && y < 0) {
       this.style.width = this.style.height = 0;
       this.style.overflow = "hidden";
+      this.style.display = "none";
+    }
   } else {
     this.style.left = ((window.innerWidth - this.el.offsetWidth) * 0.5) + 'px';
     this.style.top = ((window.innerHeight - this.el.offsetHeight) * 0.5) + 'px';
@@ -1586,7 +1588,7 @@ Viewer.prototype.loadFile = function(source) {
 
     this.applyBackground(vis.properties.background);
 
-    if (vis.properties.resolution[0] && vis.properties.resolution[1]) {
+    if (vis.properties.resolution && vis.properties.resolution[0] && vis.properties.resolution[1]) {
       this.width = vis.properties.resolution[0];
       this.height = vis.properties.resolution[1];
       this.canvas.style.width = "";
