@@ -2270,8 +2270,11 @@ void LavaVu::resetViews(bool autozoom)
   viewset = 0;
 
   //Setup view(s) for new model dimensions
+  int curview = view;
   for (unsigned int v=0; v < amodel->views.size(); v++)
     viewSelect(v, true, autozoom);
+  //Restore active
+  viewSelect(curview);
 
   //Flag redraw required
   amodel->redraw();
