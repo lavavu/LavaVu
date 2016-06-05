@@ -734,7 +734,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Attempt to load external file
     FilePath file = FilePath(what);
     loadFile(file);
-    return false;
   }
   else if (parsed.exists("script"))
   {
@@ -764,7 +763,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (scriptfile != "init.script")
         printMessage("Unable to open file: %s", scriptfile.c_str());
     }
-    return false;
   }
   else if (parsed.exists("state"))
   {
@@ -786,7 +784,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else
       jsonWriteFile(what, 0, false, false);
-    return false;
   }
   else if (parsed.has(ival, "cache"))
   {
@@ -802,7 +799,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     TimeStep::cachesize = ival;
     printMessage("Geometry cache set to %d timesteps", TimeStep::cachesize);
-    return false;
   }
   else if (parsed.exists("verbose"))
   {
@@ -821,7 +817,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       infostream = stderr;
     else
       infostream = NULL;
-    return false;
   }
   else if (parsed.exists("createvolume"))
   {
@@ -834,7 +829,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Use this to load multiple volumes as timesteps into the same object
     volume = new DrawingObject("volume");
     printMessage("Created static volume object");
-    return false;
   }
   else if (parsed.has(fval, "alpha"))
   {
@@ -856,8 +850,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     Properties::globals["opacity"] = opacity;
     printMessage("Set global alpha to %.2f", opacity);
     if (amodel)
-      amodel->redraw();
-    return false;
+      amodel->redraw(true);
   }
   else if (parsed.exists("interactive"))
   {
@@ -868,7 +861,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     viewer->execute();
-    return false;
   }
   else if (parsed.exists("open"))
   {
@@ -880,7 +872,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     loadModelStep(0, 0, true);
     resetViews(); //Forces bounding box update
-    return false;
   }
   else if (parsed.exists("resize"))
   {
@@ -899,7 +890,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       aview->properties.data["resolution"] = json::array({w, h});
       viewset = 2; //Force check for resize and autozoom
     }
-    return true;
   }
   else if (parsed.exists("quit") || parsed.exists("exit"))
   {
@@ -910,7 +900,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     viewer->quitProgram = true;
-    return false;
   }
   else if (parsed.exists("record"))
   {
@@ -926,7 +915,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
     encodeVideo("", ival);
-    return false;
   }
   else if (parsed.exists("scan"))
   {
@@ -938,20 +926,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     amodel->loadTimeSteps(true);
-    return false;
   }
-
   //******************************************************************************
   //Following commands require a model!
-  if (!gethelp && (!amodel || !aview))
+  else if (!gethelp && (!amodel || !aview))
   {
     //Attempt to parse as property=value first
     if (parsePropertySet(cmd)) return true;
     std::cerr << "Model/View required to execute command: " << cmd << std::endl;
     return false;
   }
-
-  if (parsed.exists("rotation"))
+  else if (parsed.exists("rotation"))
   {
     if (gethelp)
     {
