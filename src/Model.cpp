@@ -1767,7 +1767,8 @@ void Model::jsonRead(std::string data)
       foc = view->properties["focus"];
       scale = view->properties["scale"];
       view->setRotation(rot[0], rot[1], rot[2], rot[3]);
-      view->setTranslation(trans[0], trans[1], trans[2]);
+      if (!(trans[0] == trans[1] == trans[2] == 0.0))
+        view->setTranslation(trans[0], trans[1], trans[2]);
       view->focus(foc[0], foc[1], foc[2]);
       view->scale[0] = scale[0];
       view->scale[1] = scale[1];
