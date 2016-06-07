@@ -480,7 +480,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
   update();  //Count slices etc...
   //Note: update() must be called first to fill slices[]
   //if (geom.size() == 1)
-  if (slices.size() == 0)
+  if (geom.size() > 0 && slices.size() == 0)
   {
     std::cerr << "Volume has no slices, cube export not yet supported, skipping\n";
     return;
