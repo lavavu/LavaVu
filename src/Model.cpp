@@ -1763,13 +1763,21 @@ void Model::jsonRead(std::string data)
     if (inviews[v].count("rotate") > 0)
     {
       rot = view->properties["rotate"];
-      trans = view->properties["translate"];
-      foc = view->properties["focus"];
-      scale = view->properties["scale"];
       view->setRotation(rot[0], rot[1], rot[2], rot[3]);
-      if (!(trans[0] == trans[1] == trans[2] == 0.0))
-        view->setTranslation(trans[0], trans[1], trans[2]);
+    }
+    if (inviews[v].count("translate") > 0)
+    {
+      trans = view->properties["translate"];
+      view->setTranslation(trans[0], trans[1], trans[2]);
+    }
+    if (inviews[v].count("focus") > 0)
+    {
+      foc = view->properties["focus"];
       view->focus(foc[0], foc[1], foc[2]);
+    }
+    if (inviews[v].count("scale") > 0)
+    {
+      scale = view->properties["scale"];
       view->scale[0] = scale[0];
       view->scale[1] = scale[1];
       view->scale[2] = scale[2];
