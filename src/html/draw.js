@@ -9,9 +9,9 @@ var params, messages, properties, objectlist;
 var server = false;
 var types = {'triangles' : "triangle", 'points' : "particle", 'lines' : "line", "border" : "line"};
 var debug_on = false;
+var noui = false;
 
 function initPage(src, fn) {
-  var noui = false;
   var urlq = decodeURI(window.location.href);
   if (urlq.indexOf("?") > 0) {
     var parts = urlq.split("?"); //whole querystring before and after ?
@@ -42,8 +42,16 @@ function initPage(src, fn) {
   } else if (!src && urlq.indexOf("#") > 0) {
     //IPython strips out ? args so have to check for this instead
     var parts = urlq.split("#"); //whole querystring before and after #
-    ajaxReadFile(parts[1], initPage, false);
     noui = true;
+    if (parts[1].indexOf(".json") > 0) {
+      //Load filename from url
+      ajaxReadFile(parts[1], initPage, false);
+      return;
+    }
+
+    //Load base64 encoded data from url
+    window.location.hash = ""
+    src = window.atob(parts[1]);
   }
 
   progress();
@@ -1633,6 +1641,8 @@ Viewer.prototype.loadFile = function(source) {
   //Process object data and convert base64 to Float32Array
   if (!source.exported) this.vertexCount = 0;
   for (var id in vis.objects) {
+    //Opacity bug fix hack
+    if (!vis.objects[id]['opacity']) vis.objects[id]['opacity'] = 1.0;
     var name = vis.objects[id].name;
     //Process points/triangles
     if (!source.exported) {
@@ -1742,6 +1752,8 @@ Viewer.prototype.loadFile = function(source) {
     }
   }
 
+  this.draw();
+  //Second call or window size not picked up (hack)
   this.draw();
 }
 
