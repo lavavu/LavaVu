@@ -2314,7 +2314,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   //Set model size from geometry / bounding box and apply auto zoom
   //- View bounds used for camera calc and border (view->min/max)
   //- Actual bounds used by geometry clipping etc (Geometry::min/max)
-  if (setBounds)
+  //NOTE: sometimes we can reach this call before the GL context is created, hence the check
+  if (viewer->isopen && setBounds)
   {
     float min[3], max[3];
     Properties::toFloatArray(aview->properties["min"], min, 3);
@@ -2380,6 +2381,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 // Render
 void LavaVu::display(void)
 {
+  if (!viewer->isopen) return;
   clock_t t1 = clock();
 
   //Viewport reset flagged
@@ -3065,7 +3067,11 @@ bool LavaVu::loadFile(const FilePath& fn)
     amodel = new Model(fn);
     if (!amodel) return false;
     models.push_back(amodel);
+
+    //Ensure default view selected
     aview = amodel->defaultView();
+    view = 0;
+
     //Load initial figure
     if (initfigure >= 0) amodel->loadFigure(initfigure);
 
@@ -3089,6 +3095,8 @@ bool LavaVu::loadFile(const FilePath& fn)
       viewer->postdisplay = true;
     }
 
+    //Reselect the active view after loading any model data (resets model bounds)
+    viewSelect(view, true, true);
     return true;
   }
 
@@ -3144,9 +3152,7 @@ bool LavaVu::loadFile(const FilePath& fn)
     return false;
 
   //Reselect the active view after loading any model data (resets model bounds)
-  //NOTE: sometimes we can reach this call before the GL context is created, hence the check
-  if (viewer->isopen)
-    viewSelect(view, true, true);
+  viewSelect(view, true, true);
 
   return true;
 }
@@ -3380,7 +3386,7 @@ std::string LavaVu::requestData(std::string key)
 //Python interface functions
 std::string LavaVu::image(std::string filename, int width, int height)
 {
-  if (!amodel) return "";
+  if (!amodel || !viewer->isopen) return "";
   std::string result = "";
   display();
   //Set width/height override
