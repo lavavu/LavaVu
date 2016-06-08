@@ -1213,7 +1213,7 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
 
   // initialize png I/O
   png_set_write_fn(pngWrite, (png_voidp)&stream, png_write_data, png_flush);
-  png_set_compression_level(pngWrite, Z_BEST_COMPRESSION);
+  png_set_compression_level(pngWrite, 6); //Much faster, not much larger
 
   //if (setjmp(png_jmpbuf(pngWrite)))
   //   abort_program("[write_png_file] Error writing header");
