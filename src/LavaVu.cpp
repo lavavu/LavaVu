@@ -157,7 +157,7 @@ void LavaVu::defaults()
   //Clear any queued commands
   OpenGLViewer::commands.clear();
 
-  initfigure = -1;
+  initfigure = 0;
   viewset = 0;
   view = -1;
   model = -1;
@@ -530,6 +530,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       std::cout << "\n";
       std::cout << "|         | Model options\n";
       std::cout << "| ------- | -------------\n";
+      std::cout << "| -f#     | Load initial figure number # [1-n]\n";
       std::cout << "| -C      | Global camera, each model shares the same camera view\n";
       std::cout << "| -y      | Swap z/y axes of imported static models\n";
       std::cout << "| -T#     | Subdivide imported static model triangles into #\n";
@@ -780,7 +781,7 @@ void LavaVu::run()
         //Loop through figures unless one set
         for (unsigned int f=0; f < amodel->figures.size(); f++)
         {
-          if (initfigure >= 0) f = initfigure;
+          if (initfigure != 0) f = initfigure-1;
           amodel->loadFigure(f);
 
           resetViews(true);
@@ -802,7 +803,7 @@ void LavaVu::run()
           //Write output
           writeSteps(writeimage, startstep, endstep);
 
-          if (initfigure >= 0) break;
+          if (initfigure != 0) break;
         }
       }
 
@@ -3073,7 +3074,7 @@ bool LavaVu::loadFile(const FilePath& fn)
     view = 0;
 
     //Load initial figure
-    if (initfigure >= 0) amodel->loadFigure(initfigure);
+    if (initfigure != 0) amodel->loadFigure(initfigure);
 
     //Set default window title to model name
     std::string name = Properties::global("caption");
