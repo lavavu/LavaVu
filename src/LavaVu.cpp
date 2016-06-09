@@ -773,8 +773,9 @@ void LavaVu::run()
       loadModelStep(m, startstep, true);
 
       //Bounds checks
+      if (endstep < startstep) endstep = startstep;
       int last = amodel->lastStep();
-      if (endstep < startstep || endstep > last) endstep = last;
+      if (endstep > last) endstep = last;
 
       if (writeimage || writemovie)
       {
