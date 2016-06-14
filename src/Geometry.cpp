@@ -1442,7 +1442,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   calcCircleCoords(segment_count);
 
   std::vector<unsigned int> indices;
-  for (j=0; j<=segment_count/2; j++)
+  for (j=0; j<segment_count/2; j++)
   {
     //Triangle strip vertices
     for (i=0; i<=segment_count; i++)
