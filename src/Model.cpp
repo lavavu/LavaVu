@@ -1420,8 +1420,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   }
 
   //Write state
-  if (figure >= 0)
-    writeState(outdb);
+  writeState(outdb);
 
   issue("COMMIT", outdb);
 }
@@ -1429,6 +1428,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 void Model::writeState(sqlite3* outdb)
 {
   //Write state
+  if (figure < 0) return;
   if (!outdb) outdb = db; //Use existing database
   issue("create table if not exists state (id INTEGER PRIMARY KEY AS, name VARCHAR(256)C, data TEXT)", outdb);
 
