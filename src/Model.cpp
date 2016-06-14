@@ -1420,7 +1420,8 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   }
 
   //Write state
-  writeState(outdb);
+  if (figure >= 0)
+    writeState(outdb);
 
   issue("COMMIT", outdb);
 }
