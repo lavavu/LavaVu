@@ -336,11 +336,11 @@ void LavaVu::defaults()
   Properties::defaults["scaletracers"] = 1.0;
 
   // | object(shape) | real | Shape width scaling factor
-  Properties::defaults["shapewidth"] = FLT_MIN;
+  Properties::defaults["shapewidth"] = 1.0;
   // | object(shape) | real | Shape height scaling factor
-  Properties::defaults["shapeheight"] = FLT_MIN;
+  Properties::defaults["shapeheight"] = 1.0;
   // | object(shape) | real | Shape length scaling factor
-  Properties::defaults["shapelength"] = FLT_MIN;
+  Properties::defaults["shapelength"] = 1.0;
   // | object(shape) | integer | Shape type: 0=ellipsoid, 1=cuboid
   Properties::defaults["shape"] = 0;
   // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
