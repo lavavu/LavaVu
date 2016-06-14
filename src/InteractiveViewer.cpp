@@ -1941,6 +1941,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    resetViews(); //Update the viewports
     aview->reset();     //Reset camera
     aview->init(true);  //Reset camera to default view of model
     printMessage("View reset");
