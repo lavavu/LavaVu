@@ -59,6 +59,7 @@ void execute(int argc, char **argv)
   //Default entry point, create a LavaVu application and run
   if (!app) app = new LavaVu();
   execute(argc, argv, app);
+  delete app;
 }
 
 void execute(int argc, char **argv, ViewerApp* myApp)
@@ -132,7 +133,7 @@ void execute(int argc, char **argv, ViewerApp* myApp)
 LavaVu::LavaVu()
 {
   viewer = NULL;
-  output = verbose = dbpath = false;
+  verbose = dbpath = false;
 
   defaultScript = "init.script";
 
@@ -186,7 +187,6 @@ void LavaVu::defaults()
 
   //Interaction command prompt
   entry = "";
-  recording = true;
 
   loop = false;
   animate = 0;
@@ -519,7 +519,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       std::cout << "| -N      | No load, deferred loading mode, use 'load object' to load & display from database\n";
       std::cout << "| -S      | Skip default script, don't run init.script\n";
       std::cout << "| -v      | Verbose output, debugging info displayed to console\n";
-      std::cout << "| -o      | Output mode: all commands entered dumped to standard output, ";
       std::cout << "useful for redirecting to a script file.\n";
       std::cout << "| -a      | Automation mode, don't activate event processing loop\n";
       std::cout << "| -p#     | port, web server interface listen on port #\n";
@@ -570,7 +569,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bksu, BDEFHKLMOUXYZ
+      //Unused switches: bkosu, BDEFHKLMOUXYZ
       switch (x)
       {
       case 'a':
@@ -620,10 +619,6 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'v':
         parseCommands("verbose on");
-        break;
-      case 'o':
-        //Set script output flag
-        output = true;
         break;
       case 'x':
         ss >> viewer->outwidth >> x >> viewer->outheight;
@@ -2229,7 +2224,7 @@ void LavaVu::resize(int new_width, int new_height)
     {
       std::ostringstream ss;
       ss << "resize " << new_width << " " << new_height;
-      record(true, ss.str());
+      history.push_back(ss.str());
     }
   }
 
@@ -2643,7 +2638,7 @@ void LavaVu::drawAxis()
   GL_Error_Check;
 
   //Restore info/error stream
-  if (verbose && !output) infostream = stderr;
+  if (verbose) infostream = stderr;
 }
 
 void LavaVu::drawRulers()
@@ -2689,7 +2684,7 @@ void LavaVu::drawRulers()
   rulers->draw();
 
   //Restore info/error stream
-  if (verbose && !output) infostream = stderr;
+  if (verbose) infostream = stderr;
 }
 
 void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
@@ -2831,7 +2826,7 @@ void LavaVu::drawBorder()
   border->draw();
 
   //Restore info/error stream
-  if (verbose && !output) infostream = stderr;
+  if (verbose) infostream = stderr;
 }
 
 GeomData* LavaVu::getGeometry(DrawingObject* obj)
@@ -2941,7 +2936,8 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
 void LavaVu::displayMessage()
 {
-  if (strlen(message))
+  //Skip if no message or recording frames to video
+  if (strlen(message) && !encoder)
   {
     //Set viewport to entire window
     aview->port(0, 0, viewer->width, viewer->height);

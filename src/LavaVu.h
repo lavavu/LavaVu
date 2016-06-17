@@ -68,7 +68,7 @@ typedef enum
 class LavaVu : public ViewerApp
 {
 protected:
-  bool output, verbose, hideall, dbpath;
+  bool verbose, hideall, dbpath;
   std::string defaultScript;
 
   int viewset;
@@ -110,7 +110,6 @@ protected:
 public:
   bool automate;
   bool quiet;
-  bool recording;
   bool loop;
   int animate;
   char message[MAX_MSG];
@@ -215,7 +214,6 @@ public:
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   void helpCommand(std::string cmd);
-  void record(bool mouse, std::string command);
   void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
