@@ -157,8 +157,8 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
     if (scroll) mouseScroll(scroll);
 
     //Update cam move in history
-    if (translated) record(true, aview->translateString());
-    if (aview->rotated) record(true, aview->rotateString());
+    if (translated) history.push_back(aview->translateString());
+    if (aview->rotated) history.push_back(aview->rotateString());
 
     viewer->button = NoButton;
   }
@@ -183,7 +183,7 @@ bool LavaVu::mouseMove(int x, int y)
   case LeftButton:
     if (viewer->keyState.alt || viewer->keyState.shift)
       //Mac glut scroll-wheel alternative
-      record(true, aview->zoom(-dy * 0.01));
+      history.push_back(aview->zoom(-dy * 0.01));
     else
     {
       // left = rotate
@@ -193,7 +193,7 @@ bool LavaVu::mouseMove(int x, int y)
   case RightButton:
     if (viewer->keyState.alt || viewer->keyState.shift)
       //Mac glut scroll-wheel alternative
-      record(true, aview->zoomClip(-dy * 0.001));
+      history.push_back(aview->zoomClip(-dy * 0.001));
     else
     {
       // right = translate
@@ -218,25 +218,25 @@ bool LavaVu::mouseScroll(float scroll)
   //Process wheel scrolling
   //CTRL+ALT+SHIFT = eye-separation adjust
   if (viewer->keyState.alt && viewer->keyState.shift && viewer->keyState.ctrl)
-    record(true, aview->adjustStereo(0, 0, scroll / 500.0));
+    history.push_back(aview->adjustStereo(0, 0, scroll / 500.0));
   //ALT+SHIFT = focal-length adjust
   if (viewer->keyState.alt && viewer->keyState.shift)
-    record(true, aview->adjustStereo(0, scroll * aview->model_size / 100.0, 0));
+    history.push_back(aview->adjustStereo(0, scroll * aview->model_size / 100.0, 0));
   //CTRL+SHIFT - fine adjust near clip-plane
   if (viewer->keyState.shift && viewer->keyState.ctrl)
-    record(true, aview->zoomClip(scroll * 0.001));
+    history.push_back(aview->zoomClip(scroll * 0.001));
   //SHIFT = move near clip-plane
   else if (viewer->keyState.shift)
-    record(true, aview->zoomClip(scroll * 0.01));
+    history.push_back(aview->zoomClip(scroll * 0.01));
   //ALT = adjust field of view (aperture)
   else if (viewer->keyState.alt)
-    record(true, aview->adjustStereo(scroll, 0, 0));
+    history.push_back(aview->adjustStereo(scroll, 0, 0));
   else if (viewer->keyState.ctrl)
     //Fast zoom
-    record(true, aview->zoom(scroll * 0.1));
+    history.push_back(aview->zoom(scroll * 0.1));
   //Default = slow zoom
   else
-    record(true, aview->zoom(scroll * 0.01));
+    history.push_back(aview->zoom(scroll * 0.01));
 
   return true;
 }
@@ -246,24 +246,6 @@ bool LavaVu::keyPress(unsigned char key, int x, int y)
   viewer->idleReset(); //Reset idle timer
   //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
   return parseChar(key);
-}
-
-void LavaVu::record(bool mouse, std::string command)
-{
-  command.erase(command.find_last_not_of("\n\r")+1);
-
-  if (!recording) return;
-  //This is to allow capture of history from stdout
-  if (output) std::cout << command << std::endl;
-  //std::cerr << command << std::endl;
-  history.push_back(command);
-  //Add to linehistory only if not a duplicate
-  if (!mouse)
-  {
-    int lend = linehistory.size()-1;
-    if (lend < 0 || command != linehistory[lend])
-      linehistory.push_back(command);
-  }
 }
 
 bool LavaVu::parseChar(unsigned char key)
@@ -446,9 +428,16 @@ bool LavaVu::parseChar(unsigned char key)
     }
     else
     {
+      //Add to linehistory if not a duplicate of previous entry
+      int lend = linehistory.size()-1;
+      if (lend < 0 || entry != linehistory[lend])
+        linehistory.push_back(entry);
+
+      //Execute
       response = parseCommands(entry);
+      //Clear
+      entry = "";
     }
-    entry = "";
     break;
   case KEY_DELETE:
   case KEY_BACKSPACE:  //Backspace
@@ -481,28 +470,18 @@ bool LavaVu::parseChar(unsigned char key)
     msg = true;
     break;
   case KEY_PAGEUP:
-    //Previous figure?
+    //Previous figure/view
     if (amodel->views.size() < 2)
       return parseCommands("figure up");
     else
-    {
-      //Previous viewport
-      viewSelect(view-1);
-      printMessage("Set viewport to %d", view);
-      amodel->redraw();
-    }
+      return parseCommands("view up");
     break;
   case KEY_PAGEDOWN:
-    //Next figure?
+    //Next figure/view
     if (amodel->views.size() < 2)
       return parseCommands("figure down");
     else
-    {
-      //Next viewport
-      viewSelect(view+1);
-      printMessage("Set viewport to %d", view);
-      amodel->redraw();
-    }
+      return parseCommands("view down");
     break;
   case KEY_HOME:
     break;
@@ -670,19 +649,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 {
   if (cmd.length() == 0) return false;
   bool redisplay = true;
-  bool norecord = false;
   PropertyParser parsed = PropertyParser();
   static std::string last_cmd = "";
   static std::string multiline = "";
 
   //Skip comments or empty lines
   if (cmd.length() == 0 || cmd.at(0) == '#') return false;
-  //Disable recording for command beginning with @
-  if (cmd.at(0) == '@')
-  {
-    norecord = true;
-    cmd = cmd.substr(1);
-  }
+
+  //Save in history
+  history.push_back(cmd);
 
   //If the command contains only one double-quote, append until another received before parsing as a single string
   size_t n = std::count(cmd.begin(), cmd.end(), '"');
@@ -813,7 +788,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     verbose = what != "off";
     printMessage("Verbose output is %s", verbose ? "ON":"OFF");
     //Set info/error stream
-    if (verbose && !output)
+    if (verbose)
       infostream = stderr;
     else
       infostream = NULL;
@@ -1337,6 +1312,32 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     viewset = 2; //Force check for resize and autozoom
     printMessage("Load figure %d", amodel->figure);
   }
+  else if (parsed.exists("view"))
+  {
+    if (gethelp)
+    {
+      help += "> Set view (when available)\n\n"
+              "> **Usage:** view up/down/value\n\n"
+              "> value (integer) : the view index to switch to  \n"
+              "> up : switch to previous view if available  \n"
+              "> down : switch to next view if available  \n";
+      return false;
+    }
+
+    if (!parsed.has(ival, "view"))
+    {
+      if (parsed["view"] == "up")
+        ival = view-1;
+      else if (parsed["view"] == "down")
+        ival = view+1;
+      else
+        ival = view;
+    }
+
+    viewSelect(ival);
+    printMessage("Set viewport to %d", view);
+    amodel->redraw();
+  }
   else if (parsed.exists("hide") || parsed.exists("show"))
   {
     std::string action = parsed.exists("hide") ? "hide" : "show";
@@ -1552,11 +1553,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    bool state = recording;
     //Repeat N commands from history
     if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
     {
-      recording = false;
       if (animate > 0 && repeat == 0)
       {
         repeat = ival;
@@ -1570,13 +1569,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             parseCommands(history[l]);
         }
       }
-      recording = state;
       return true; //Skip record
     }
     //Repeat last command N times
     else if (parsed.has(ival, "repeat"))
     {
-      recording = false;
       if (animate > 0)
       {
         repeat = ival;
@@ -1889,7 +1886,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       for (unsigned int i=0; i < Model::geometry.size(); i++)
         Model::geometry[i]->print();
       viewer->swap();  //Immediate display
-      if (!norecord) record(false, cmd);
       return false;
     }
     else if (parsed["list"] == "colourmaps")
@@ -1907,7 +1903,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
       }
       viewer->swap();  //Immediate display
-      if (!norecord) record(false, cmd);
       return false;
     }
     else if (parsed["list"] == "data")
@@ -1924,7 +1919,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
       }
       viewer->swap();  //Immediate display
-      if (!norecord) record(false, cmd);
       return false;
     }
     else //if (parsed["list"] == "objects")
@@ -2752,8 +2746,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Command playback
     if (repeat != 0)
     {
-      bool state = recording;
-      recording = false;
       //Playback
       for (unsigned int l=0; l<replay.size(); l++)
         parseCommands(replay[l]);
@@ -2763,7 +2755,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         viewer->idleTimer(0); //Disable idle redisplay timer
         replay.clear();
       }
-      recording = state;
     }
     return true; //Skip record
   }
@@ -3078,7 +3069,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
 
   last_cmd = cmd;
-  if (!norecord) record(false, cmd);
   if (animate && redisplay) viewer->postdisplay = true;
   return redisplay;
 }
@@ -3099,7 +3089,7 @@ void LavaVu::helpCommand(std::string cmd)
   std::vector<std::string> categories = {"General", "Input", "Output", "View/Camera", "Object", "Display", "Scripting", "Miscellanious"};
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
-    {"file", "script", "figure", "scan"},
+    {"file", "script", "figure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "camera",
