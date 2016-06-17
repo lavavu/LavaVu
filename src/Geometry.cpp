@@ -1084,6 +1084,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 
   // Length of the drawn vector = vector magnitude * scaling factor
   float length = scale * vec.magnitude();
+  if (length < FLT_EPSILON || std::isinf(length)) return;
 
   // Default shaft radius based on length of vector (2%)
   if (radius0 == 0) radius0 = length * RADIUS_DEFAULT_RATIO;
