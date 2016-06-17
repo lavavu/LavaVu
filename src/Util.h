@@ -290,6 +290,8 @@ public:
   Properties() 
   {
     defaults["default"] = false; //Fallback value
+    globals = json::object();
+    data = json::object();
   }
 
   static json& global(const std::string& key);
