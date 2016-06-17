@@ -114,6 +114,7 @@ void Lines::update()
     {
       int hasColours = geom[i]->colourCount();
       int colrange = hasColours ? geom[i]->count / hasColours : 1;
+      if (colrange < 1) colrange = 1;
       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
       Colour colour;
