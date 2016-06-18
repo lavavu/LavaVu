@@ -2314,9 +2314,6 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
   if (viewer->isopen && setBounds)
   {
-    //Forces generation of sub-object geometry
-    display();
-
     float min[3], max[3];
     Properties::toFloatArray(aview->properties["min"], min, 3);
     Properties::toFloatArray(aview->properties["max"], max, 3);

@@ -1935,10 +1935,29 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    resetViews(); //Update the viewports
     aview->reset();     //Reset camera
     aview->init(true);  //Reset camera to default view of model
     printMessage("View reset");
+  }
+  else if (parsed.exists("bounds"))
+  {
+    if (gethelp)
+    {
+      help += "> Recalculate the model bounding box from geometry  \n";
+      return false;
+    }
+
+    //Remove any existing fixed bounds
+    aview->properties.data.erase("min");
+    aview->properties.data.erase("max");
+    Properties::globals.erase("min");
+    Properties::globals.erase("max");
+    //Update the viewports and recalc bounding box
+    resetViews();
+    //Update fixed bounds
+    aview->properties.data["min"] = {aview->min[0], aview->min[1], aview->min[2]};
+    aview->properties.data["max"] = {aview->max[0], aview->max[1], aview->max[2]};
+    printMessage("View bounds update");
   }
   else if (parsed.exists("clear"))
   {
@@ -3092,7 +3111,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"file", "script", "figure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
-     "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "camera",
+     "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
     {"hide", "show", "delete", "load", "select", "add", "read", "name",
      "vertex", "normal", "vector", "value", "colour"},
