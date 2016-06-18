@@ -290,7 +290,7 @@ public:
   Properties() 
   {
     defaults["default"] = false; //Fallback value
-    globals = json::object();
+    if (globals.is_null()) globals = json::object();
     data = json::object();
   }
 
