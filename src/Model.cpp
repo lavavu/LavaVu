@@ -998,8 +998,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
     if (obj) obj->skip = false;
   }
 
-  //...timestep...
-  if (time_start >= 0 && time_stop >= 0)
+  //...timestep...(if ts db attached, assume all geometry is at current step)
+  if (time_start >= 0 && time_stop >= 0 && !attached)
   {
     if (strlen(objfilter) > 0)
       sprintf(filter, "%s AND timestep BETWEEN %d AND %d", objfilter, time_start, time_stop);
@@ -1082,7 +1082,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (!obj || obj->skip) continue;
 
       //Bulk load: switch timestep and cache if timestep changes!
-      if (step() != timestep)
+      if (step() != timestep && !attached) //Will not work with attached db
       {
         cacheStep();
         now = nearestTimeStep(timestep);
