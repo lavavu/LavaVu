@@ -1306,6 +1306,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         ival = -1;
         for (unsigned int i=0; i<amodel->fignames.size(); i++)
           if (amodel->fignames[i] == parsed["figure"]) ival = i;
+        //Not found? Create it
+        if (ival < 0)
+        {
+          amodel->fignames.push_back(parsed["figure"]);
+          std::stringstream ss;
+          amodel->jsonWrite(ss, 0, false);
+          amodel->figures.push_back(ss.str());
+          ival = amodel->figures.size()-1;
+        }
       }
     }
 
