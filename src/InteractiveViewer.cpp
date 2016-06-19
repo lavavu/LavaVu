@@ -739,19 +739,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         printMessage("Unable to open file: %s", scriptfile.c_str());
     }
   }
-  else if (parsed.exists("state"))
+  else if (parsed.exists("save"))
   {
     if (gethelp)
     {
       help += "> Export all settings as json state file that can be reloaded later\n\n"
-              "> **Usage:** state [\"filename\"]\n\n"
+              "> **Usage:** save [\"filename\"]\n\n"
               "> file (string) : name of file to import  \n"
-              "> If filename omitted and database loaded, will save the state to db instead  \n";
+              "> If filename omitted and database loaded, will save the state  \n";
+              "> to the active figure in the database instead  \n";
       return false;
     }
 
     //Export json settings only (no object data)
-    std::string what = parsed["state"];
+    std::string what = parsed["save"];
     if (what.length() == 0 && amodel->db)
     {
       amodel->reopen(true);  //Open writable
@@ -3109,7 +3110,7 @@ void LavaVu::helpCommand(std::string cmd)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
     {"file", "script", "figure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
+    {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
