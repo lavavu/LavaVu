@@ -229,9 +229,9 @@ void Model::reopen(bool write)
   if (attached)
   {
     char SQL[SQL_QUERY_MAX];
-    sprintf(SQL, "attach database '%s' as t%d", timesteps[attached]->path.c_str(), attached);
+    sprintf(SQL, "attach database '%s' as t%d", timesteps[now]->path.c_str(), attached);
     if (issue(SQL))
-      debug_print("Model %s found and re-attached\n", timesteps[attached]->path.c_str());
+      debug_print("Model %s found and re-attached\n", timesteps[now]->path.c_str());
   }
 }
 
@@ -808,6 +808,7 @@ bool Model::issue(const char* SQL, sqlite3* odb)
   if (sqlite3_exec(odb, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
   {
     std::cerr << "SQLite error: " << zErrMsg << std::endl;
+    std::cerr << " -- " << SQL << std::endl;
     sqlite3_free(zErrMsg);
     return false;
   }
@@ -1432,7 +1433,7 @@ void Model::writeState(sqlite3* outdb)
   //Write state
   if (figure < 0) return;
   if (!outdb) outdb = db; //Use existing database
-  issue("create table if not exists state (id INTEGER PRIMARY KEY AS, name VARCHAR(256)C, data TEXT)", outdb);
+  issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)", outdb);
 
   std::stringstream ss;
   jsonWrite(ss, 0, false);
@@ -1610,19 +1611,12 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       trans.push_back(translate[i]);
       foc.push_back(focus[i]);
       scale.push_back(view->scale[i]);
-      if (view->min[i] < HUGE_VAL && view->max[i] > -HUGE_VAL)
-      {
-        min.push_back(view->min[i]);
-        max.push_back(view->max[i]);
-      }
     }
 
     vprops["rotate"] = rot;
     vprops["translate"] = trans;
     vprops["focus"] = foc;
     vprops["scale"] = scale;
-    vprops["min"] = min;
-    vprops["max"] = max;
 
     vprops["near"] = view->near_clip;
     vprops["far"] = view->far_clip;
