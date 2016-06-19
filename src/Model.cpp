@@ -623,18 +623,17 @@ int Model::loadTimeSteps(bool scan)
       if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
       last_step = step;
 
-      //Look for additional db file
-      std::string path = checkFileStep(step, basename);
+      //Look for additional db file (minimum 3 digit padded step in names)
+      std::string path = checkFileStep(step, basename, 3);
       if (path.length() > 0)
       {
-        debug_print("Found step %d database\n", step);
+        debug_print("Found step %d database %s\n", step, path.c_str());
         timesteps[rows]->path = path;
       }
 
       rows++;
     }
     sqlite3_finalize(statement);
-
   }
 
   //Assume we have at least one current timestep, even if none in table
@@ -646,19 +645,21 @@ int Model::loadTimeSteps(bool scan)
     debug_print("Scanning for timesteps...\n");
     for (unsigned int ts=0; ts<10000; ts++)
     {
-      //If no steps found after trying 100, give up
+      //If no steps found after trying 100, give up scanning
       if (timesteps.size() < 2 && ts > 100) break;
       int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
-      if (len < 3) len = 3;  //Check for 3-5 digit timestep
-      for (int w = 5; w >= len; w--)
+      std::string path = checkFileStep(ts, basename);
+      if (path.length() > 0)
       {
-        std::string path = checkFileStep(ts, basename);
-        if (path != file.full && path.length() > 0)
+        debug_print("Found step %d database %s\n", ts, path.c_str());
+        if (path == file.full && timesteps.size() == 1)
         {
-          debug_print("Found step %d database\n", ts);
-          addTimeStep(ts, 0.0, path);
-          break;
+          //Update step if this is the initial db file
+          timesteps[0]->step = ts;
+          timesteps[0]->path = path;
         }
+        else
+          addTimeStep(ts, 0.0, path);
       }
     }
     debug_print("Scanning complete, found %d steps.\n", timesteps.size());
@@ -670,10 +671,11 @@ int Model::loadTimeSteps(bool scan)
   return timesteps.size();
 }
 
-std::string Model::checkFileStep(unsigned int ts, const std::string& basename)
+std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
 {
   int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
-  if (len < 3) len = 3; //Check for 3-5 digit numbers in filenames
+  //Lower limit of digits to look for, default 1-5
+  if (len < limit) len = limit;
   for (int w = 5; w >= len; w--)
   {
     std::ostringstream ss;

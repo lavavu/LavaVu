@@ -96,7 +96,7 @@ public:
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps(bool scan=false);
-  std::string checkFileStep(unsigned int ts, const std::string& basename);
+  std::string checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit=1);
   void loadViewports();
   void loadViewCamera(int viewport_id);
   void loadObjects();
