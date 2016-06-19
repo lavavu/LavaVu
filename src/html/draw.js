@@ -59,6 +59,15 @@ function initPage(src, fn) {
   var canvas = $('canvas');
   viewer =  new Viewer(canvas);
 
+  //Canvas event handling
+  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
+  //Following two settings should probably be defaults?
+  canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
+  //canvas.mouse.setDefault();
+
+  canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
+  defaultMouse = document.mouse = canvas.mouse;
+
   if (query && query.indexOf("server") >= 0) {
     //Switch to image frame
     setAll('', 'server');
@@ -88,15 +97,6 @@ function initPage(src, fn) {
     setAll('', 'client');
     $('frame').style.display = 'none';
   }
-
-  //Canvas event handling
-  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
-  //Following two settings should probably be defaults?
-  canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
-  //canvas.mouse.setDefault();
-
-  canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
-  defaultMouse = document.mouse = canvas.mouse;
 
   if (!noui) {
     //Create tool windows
@@ -1919,6 +1919,7 @@ Viewer.prototype.setProperties = function() {
   if (server) {
     //Export all data except views
     ajaxPost('/post', this.toString(true, false)); //, callback, progress, headers)
+    setTimeout(requestObjects, 100);
   } else {
     viewer.applyBackground(vis.properties.background);
     viewer.draw();
@@ -2023,6 +2024,7 @@ Viewer.prototype.setObjectProperties = function() {
   if (server) {
     //Export all data except views
     ajaxPost('/post', this.toString(true, true)); //, callback, progress, headers)
+    setTimeout(requestObjects, 100);
   }
 }
 
