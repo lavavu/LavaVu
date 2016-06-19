@@ -9,6 +9,7 @@ function keyPressCommand(event, el) {
     if (cmd.length == 0) cmd = "repeat";
     sendCommand('' + cmd);
     el.value = "";
+    setTimeout(requestObjects, 100);
   }
 }
 
@@ -133,6 +134,7 @@ function sendCommand(cmd) {
     cmdQueue = "";
   }
   requestData('/command=' + cmd);
+  //requestData('/command=' + cmd, parseRequest);
   if (cmdlog != null)
     cmdlog += cmd + "\n";
 }
@@ -178,6 +180,7 @@ function requestImage() {
   var http = new XMLHttpRequest();
   //Add count to url to prevent caching
   var url = '/image=' + client_id + '&' + count; count++;
+  console.log(url);
 
   http.onload = function() { 
     if(http.status == 200) {
@@ -214,5 +217,9 @@ function parseObjects(response) {
   //Get next frame (after brief timeout so we don't flood the server)
   if (imgtimer) clearTimeout(imgtimer);
   imgtimer = setTimeout(requestImage, 100);
+}
+
+function requestObjects() {
+  requestData('/objects', function(data) {viewer.loadFile(data);});
 }
 
