@@ -137,19 +137,8 @@ bool View::init(bool force, float* newmin, float* newmax)
   model_size = sqrt(dotProduct(dims,dims));
   if (model_size == 0 || !ISFINITE(model_size)) return false;
 
-  //Adjust clipping planes
-  if (near_clip == 0 || far_clip == 0)
-  {
-    //NOTE: Too much clip plane range can lead to depth buffer precision problems
-    //Near clip should be as far away as possible as greater precision reserved for near
-    float min_dist = model_size / 10.0;  //Estimate of min dist between viewer and geometry
-    float aspectRatio = 1.33;
-    if (width && height)
-      aspectRatio = width / (float)height;
-    near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
-    //near_clip = model_size / 5.0;
-    far_clip = model_size * 20.0;
-  }
+  //Check and calculate near/far clip planes
+  checkClip();
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
@@ -183,6 +172,25 @@ bool View::init(bool force, float* newmin, float* newmax)
   }
 
   return true;
+}
+
+void View::checkClip()
+{
+  //Adjust clipping planes
+  if (near_clip == 0 || far_clip == 0)
+  {
+    //NOTE: Too much clip plane range can lead to depth buffer precision problems
+    //Near clip should be as far away as possible as greater precision reserved for near
+    float min_dist = model_size / 10.0;  //Estimate of min dist between viewer and geometry
+    float aspectRatio = 1.33;
+    if (width && height)
+      aspectRatio = width / (float)height;
+    near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
+    //near_clip = model_size / 5.0;
+    far_clip = model_size * 20.0;
+    debug_print("Auto-corrected clip planes: near %f far %f.\n", near_clip, far_clip);
+    assert(near_clip > 0.0 && far_clip > 0.0);
+  }
 }
 
 void View::getMinMaxDistance(float* mindist, float* maxdist)
@@ -422,6 +430,9 @@ void View::projection(int eye)
   // Perspective viewing frustum parameters
   float left, right, top, bottom;
   float eye_separation, frustum_shift;
+
+  //Ensure clip planes valid
+  checkClip();
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
   //default is to set to distance to model front edge...
