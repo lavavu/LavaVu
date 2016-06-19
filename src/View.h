@@ -144,6 +144,7 @@ public:
   bool hasObject(DrawingObject* obj);
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
+  void checkClip();
   void getMinMaxDistance(float* mindist, float* maxdist);
   std::string rotateString();
   std::string translateString();
