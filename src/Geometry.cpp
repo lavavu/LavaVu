@@ -750,7 +750,7 @@ void Geometry::setView(View* vp, float* min, float* max)
   {
     for (unsigned int g=0; g<geom.size(); g++)
     {
-      if (geom[g]->draw == view->objects[o])
+      if (geom[g]->draw == view->objects[o] && view->objects[o]->properties["visible"])
       {
         compareCoordMinMax(min, max, geom[g]->min);
         compareCoordMinMax(min, max, geom[g]->max);
