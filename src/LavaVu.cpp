@@ -3071,7 +3071,7 @@ bool LavaVu::loadFile(const FilePath& fn)
     view = 0;
 
     //Load initial figure
-    if (initfigure != 0) amodel->loadFigure(initfigure);
+    if (initfigure != 0) amodel->loadFigure(initfigure-1);
 
     //Set default window title to model name
     std::string name = Properties::global("caption");
