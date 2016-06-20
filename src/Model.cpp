@@ -1782,9 +1782,9 @@ void Model::jsonRead(std::string data)
     //min = aview->properties["min"];
     //max = aview->properties["max"];
     //view->init(false, newmin, newmax);
-    if (view->properties.has("near") && view->properties["near"] > 0.0)
+    if (view->properties.has("near") && (float)view->properties["near"] > 0.0)
       view->near_clip = view->properties["near"];
-    if (view->properties.has("far") && view->properties["far"] > 0.0)
+    if (view->properties.has("far") && (float)view->properties["far"] > 0.0)
       view->far_clip = view->properties["far"];
   }
 
