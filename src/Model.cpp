@@ -1581,6 +1581,16 @@ void Model::backup(sqlite3 *fromDb, sqlite3* toDb)
   }
 }
 
+void Model::objectBounds(DrawingObject* draw, float* min, float* max)
+{
+  if (!min || !max) return;
+  for (int i=0; i<3; i++)
+    max[i] = -(min[i] = HUGE_VAL);
+  //Expand bounds by all geometry objects
+  for (unsigned int i=0; i < geometry.size(); i++)
+    geometry[i]->objectBounds(draw, min, max);
+}
+
 void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 {
   //Write new JSON format objects
@@ -1682,10 +1692,10 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
             Model::tracers->getVertexCount(objects[i]) > 0 ||
             Model::shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
         if (Model::lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
-        if (Model::volumes->getVertexCount(objects[i]) > 0) obj["volumes"] = true;
+        if (Model::volumes->getVertexCount(objects[i]) > 0) obj["volume"] = true;
 
         //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.getBool("points", false) << "," 
-        //          << obj.getBool("triangles", false) << "," << obj.getBool("volumes", false) << std::endl;
+        //          << obj.getBool("triangles", false) << "," << obj.getBool("volume", false) << std::endl;
         outobjects.push_back(obj);
         continue;
       }
@@ -1698,11 +1708,17 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
         Model::geometry[type]->jsonWrite(objects[i], obj);
       }
 
+      //Include the object bounding box for WebGL
+      float min[3], max[3];
+      objectBounds(objects[i], min, max);
+      obj["min"] = {min[0], min[1], min[2]};
+      obj["max"] = {max[0], max[1], max[2]};
+
       //Save object if contains data
       if (obj["points"].size() > 0 ||
           obj["triangles"].size() > 0 ||
           obj["lines"].size() > 0 ||
-          obj["volumes"].size() > 0)
+          obj["volume"].size() > 0)
       {
 
         //Converts named colours to js readable

@@ -1008,19 +1008,19 @@ std::string getImageFilename(const std::string& basename)
   return path;
 }
 
-bool writeImage(GLubyte *image, int width, int height, const std::string& path, bool transparent)
+bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp)
 {
 #ifdef HAVE_LIBPNG
   //Write data to image file
   std::ofstream file(path, std::ios::binary);
-  write_png(file, transparent ? 4 : 3, width, height, image);
+  write_png(file, bpp, width, height, image);
 #else
   //JPEG support with built in encoder
   // Fill in the compression parameter structure.
   jpge::params params;
   params.m_quality = 95;
   params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-  if (!compress_image_to_jpeg_file(path.c_str(), width, height, 3, image, params))
+  if (!compress_image_to_jpeg_file(path.c_str(), width, height, bpp, image, params))
   {
     fprintf(stderr, "[write_jpeg] File %s could not be saved\n", path.c_str());
     return false;

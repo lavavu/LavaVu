@@ -258,6 +258,7 @@ public:
   std::vector<std::string> getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
   void setView(View* vp, float* min=NULL, float* max=NULL);
+  void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);
   void setTexture(DrawingObject* draw, int idx);
@@ -418,8 +419,8 @@ public:
   virtual void update();
   virtual void draw();
   void render(int i);
-  GLubyte* getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip, int xtiles=16);
-  void pngWrite(DrawingObject* draw, int xtiles=16);
+  GLubyte* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& bpp, int xtiles=16);
+  void saveImage(DrawingObject* draw, int xtiles=16);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
