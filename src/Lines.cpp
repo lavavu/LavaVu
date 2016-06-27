@@ -43,6 +43,7 @@ Lines::Lines(bool all2Dflag)
   vbo = 0;
   linetotal = 0;
   all2d = all2Dflag;
+  any3d = false;
   //Create sub-renderers
   tris = new TriSurfaces();
   tris->internal = true;

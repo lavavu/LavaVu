@@ -39,7 +39,7 @@
 float Geometry::min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
 float Geometry::max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
 float Geometry::dims[3];
-std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volumes"};
+std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 int segments__ = 0;    // Saves segment count for circle based objects
 
@@ -748,14 +748,24 @@ void Geometry::setView(View* vp, float* min, float* max)
   //Apply geometry bounds from all object data within this viewport
   for (unsigned int o=0; o<view->objects.size(); o++)
   {
-    for (unsigned int g=0; g<geom.size(); g++)
+    if (view->objects[o]->properties["visible"])
     {
-      if (geom[g]->draw == view->objects[o] && view->objects[o]->properties["visible"])
-      {
-        compareCoordMinMax(min, max, geom[g]->min);
-        compareCoordMinMax(min, max, geom[g]->max);
-        //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
-      }
+      objectBounds(view->objects[o], min, max);
+      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+    }
+  }
+}
+
+void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
+{
+  if (!min || !max) return;
+  //Get geometry bounds from all object data
+  for (unsigned int g=0; g<geom.size(); g++)
+  {
+    if (geom[g]->draw == draw)
+    {
+      compareCoordMinMax(min, max, geom[g]->min);
+      compareCoordMinMax(min, max, geom[g]->max);
     }
   }
 }
@@ -879,10 +889,9 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 
 void Geometry::print()
 {
-  std::string types[lucMaxType+1] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "UNKNOWN"};
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    std::cout << types[type] << " [" << i << "] - "
+    std::cout << GeomData::names[type] << " [" << i << "] - "
               << (drawable(i) ? "shown" : "hidden") << std::endl;
   }
 }

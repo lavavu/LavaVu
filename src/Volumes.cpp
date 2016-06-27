@@ -74,6 +74,8 @@ void Volumes::draw()
   //clock_t t1,t2,tt;
   //t1 = tt = clock();
 
+  //Each object can only have one volume,
+  //but each volume can consist of separate slices or a single cube
   DrawingObject* current = NULL;
   for (unsigned int i=0; i<geom.size(); i++)
   {
@@ -355,6 +357,7 @@ void Volumes::render(int i)
   float pMatrix[16];
   float invPMatrix[16];
   glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
+
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
   glPushMatrix();
 #ifndef USE_OMEGALIB
@@ -404,14 +407,70 @@ void Volumes::render(int i)
   glActiveTexture(GL_TEXTURE0);
 }
 
-GLubyte* Volumes::getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip, int xtiles)
+GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& bpp, int xtiles)
 {
-  //if (geom.size() == 1)
-  //Note: update() must be called first to fill slices[]
-  if (slices.size() == 0) return NULL;
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
+  GLubyte *image = NULL;
+  unsigned int inc = slices[draw];
+  if (inc <= 0) inc = 1;
+  for (unsigned int i = 0; i < geom.size(); i += inc)
   {
-    if (geom[i]->draw == draw && drawable(i))
+    if (geom.size() == 1) //Single volume cube
+    {
+      int bpv;
+      float min = 0.f, range = 0.f;
+      if (geom[i]->colours.size() > 0)
+      {
+        //RGB/RGBA
+        bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+      }
+      else if (geom[i]->colourData())
+      {
+        //LUM BYTE/FLOAT
+        bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+        min = geom[i]->colourData()->minimum;
+        range = geom[i]->colourData()->maximum - min;
+      }
+      iw = geom[i]->width * xtiles;
+      ih = ceil(geom[i]->depth / (float)xtiles) * geom[i]->height;
+      if (ih == geom[i]->height) iw = geom[i]->width * geom[i]->depth;
+      int size = geom[i]->width * geom[i]->height;
+      printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), geom[i]->width, geom[i]->height, geom[i]->depth, iw, ih);
+      bpp = bpv;
+      image = new GLubyte[iw * ih * bpp];
+      memset(image, 0, iw*ih*sizeof(GLubyte));
+      int xoffset = 0, yoffset = 0;
+      for (unsigned int z=0; z<geom[i]->depth; z++)
+      {
+        for (int y=0; y<geom[i]->height; y++)
+        {
+          for (int x=0; x<geom[i]->width; x += 4/bpv)
+          {
+            if (bpv == 1) //Byte
+            {
+              Colour c;
+              c.fvalue = geom[i]->colourData(((z * size) + y * geom[i]->width + x)/4);
+              for (int p=0; p<4; p++)
+                image[iw * (y + yoffset) + x + xoffset + p] = ((c.rgba[p]/255.0) - min) / range * 255;
+            }
+            else if (bpv == 4) //Float
+            {
+              float val = geom[i]->colourData((z * size) + y * geom[i]->width + x);
+              image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
+            }
+          }
+        }
+
+        xoffset += geom[i]->width;
+        if (xoffset > iw-geom[i]->width)
+        {
+          xoffset = 0;
+          yoffset += geom[i]->height;
+        }
+      }
+      break;
+    }
+    //Slices: load selected index volume only
+    else if (index == i && geom[i]->draw == draw)
     {
       int width = geom[i]->width;
       int height = geom[i]->colourData()->size() / width;
@@ -419,7 +478,8 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip
       ih = ceil(slices[draw] / (float)xtiles) * height;
       if (ih == height) iw = width * slices[draw];
       printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), width, height, slices[draw], iw, ih);
-      GLubyte *image = new GLubyte[iw * ih];
+      bpp = 1; //Luminance
+      image = new GLubyte[iw * ih * bpp];
       memset(image, 0, iw*ih*sizeof(GLubyte));
       int xoffset = 0, yoffset = 0;
       for (unsigned int j=i; j<i+slices[draw]; j++)
@@ -433,10 +493,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip
           for (int x=0; x<width; x++)
           {
             float val = geom[j]->colourData(y * width + x);
-            if (flip)
-              image[iw * (ih - (y + yoffset) - 1) + x + xoffset] = (val - min) / range * 255;
-            else
-              image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
+            image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
           }
         }
 
@@ -447,98 +504,96 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip
           yoffset += height;
         }
       }
-      //Will only return one volume per id
-      return image;
+      break;
     }
   }
-  return NULL;
+#ifdef HAVE_LIBPNG
+  //Requires y-flip as uses opposite y origin to OpenGL
+  if (image)
+    RawImageFlip(image, iw, ih, bpp);
+#endif
+  return image;
 }
 
-void Volumes::pngWrite(DrawingObject* draw, int xtiles)
+void Volumes::saveImage(DrawingObject* draw, int xtiles)
 {
-#ifdef HAVE_LIBPNG
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
+  int count = 0;
+  unsigned int inc = slices[draw];
+  if (inc <= 0) inc = 1;
+  for (unsigned int i = 0; i < geom.size(); i += inc)
   {
     if (geom[i]->draw == draw && drawable(i))
     {
-      int iw, ih;
-      GLubyte *image = getTiledImage(draw, iw, ih, true, xtiles);
+      int iw, ih, bpp;
+      GLubyte *image = getTiledImage(draw, i, iw, ih, bpp, xtiles);
       if (!image) return;
       char path[FILE_PATH_MAX];
-      sprintf(path, "%s.png", geom[i]->draw->name().c_str());
-      std::ofstream file(path, std::ios::binary);
-      write_png(file, 1, iw, ih, image);
+      sprintf(path, "%s_%d", geom[i]->draw->name().c_str(), count++);
+      writeImage(image, iw, ih, getImageFilename(path), bpp);
       delete[] image;
-      return; //Only one volume per id
+      break;  //Done
     }
   }
-#endif
 }
 
 void Volumes::jsonWrite(DrawingObject* draw, json& obj)
 {
   update();  //Count slices etc...
   //Note: update() must be called first to fill slices[]
-  //if (geom.size() == 1)
-  if (geom.size() > 0 && slices.size() == 0)
-  {
-    std::cerr << "Volume has no slices, cube export not yet supported, skipping\n";
-    return;
-  }
-
-  json volumes;
-  if (obj.count("volumes")) volumes = obj["volumes"];
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
+  unsigned int inc = slices[draw];
+  if (inc <= 0) inc = 1;
+  for (unsigned int i = 0; i < geom.size(); i += inc)
   {
     if (geom[i]->draw == draw && drawable(i))
     {
       json data, vertices, volume;
-      //Height needs calculating from values data
-      int height = geom[i]->colourData()->size() / geom[i]->width;
+      int height = geom[i]->height;
+      //Height needs calculating from values data?
+      if (!geom[i]->depth)
+        height = geom[i]->colourData()->size() / geom[i]->width;
+
       /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
       printf("Exporting: %d width %d height %d depth %d\n", id, geom[i]->width, height, slices[draw]);
       int sliceSize = geom[i]->width * height;
-      float* volume = new float[sliceSize * slices[draw]];
+      float* vol = new float[sliceSize * slices[draw]];
       size_t offset = 0;
       for (int j=i; j<i+slices[draw]; j++)
       {
          size_t size = sliceSize * sizeof(float);
-         memcpy(volume + offset, geom[j]->colourData()->ref(), size);
+         memcpy(vol + offset, geom[j]->colourData()->ref(), size);
          offset += sliceSize;
       }*/
 
       //Get a tiled image for WebGL to use as a 2D texture...
-      int iw, ih;
-      GLubyte *image = getTiledImage(draw, iw, ih, false, 16); //16 * 256 = 4096^2 square texture
+      int iw, ih, bpp; //TODO: Support other pixel formats
+      GLubyte *image = getTiledImage(draw, i, iw, ih, bpp, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
+      std::string imagestr = getImageString(image, iw, ih, bpp);
+      delete[] image;
       json res, scale;
       res.push_back((int)geom[i]->width);
       res.push_back(height);
-      res.push_back(slices[draw]);
+      if (slices[draw])
+        res.push_back(slices[draw]);
+      else
+        res.push_back(geom[i]->depth);
       //Scaling factors
       scale.push_back(geom[i]->vertices[1][0] - geom[i]->vertices[0][0]);
       scale.push_back(geom[i]->vertices[1][1] - geom[i]->vertices[0][1]);
       scale.push_back(geom[i]->vertices[1][2] - geom[i]->vertices[0][2]);
-      data["res"] = res;
-      data["scale"] = scale;
-
-      vertices["size"] = 3;
-      vertices["count"] = (int)geom[i]->vertices.size();
-      vertices["data"] = base64_encode(reinterpret_cast<const unsigned char*>(&geom[i]->vertices.value[0]), geom[i]->vertices.size() * sizeof(float));
-      data["vertices"] = vertices;
+      volume["res"] = res;
+      volume["scale"] = scale;
 
       volume["size"] = 1;
       //volume["count"] = ;
-      volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(image), iw * ih * sizeof(GLubyte));
+      volume["url"] = imagestr;
       //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[draw] * sizeof(float)); //For 3D export
-      data["volume"] = volume;
+      obj["volume"] = volume;
 
-      delete[] image;
-      //pngWrite(id);
+      saveImage(draw);
 
-      volumes.push_back(data);
+      //Only one volume per object supported
+      break;
     }
   }
-
-  if (volumes.size() > 0) obj["volumes"] = volumes;
 }
