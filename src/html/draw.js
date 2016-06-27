@@ -5,9 +5,9 @@
 var vis = {};
 var view = 0; //Active view
 var viewer;
-var params, messages, properties, objectlist;
+var params, properties, objectlist;
 var server = false;
-var types = {'triangles' : "triangle", 'points' : "particle", 'lines' : "line", "border" : "line"};
+var types = {"triangles" : "triangle", "points" : "particle", "lines" : "line", "volume" : "volume", "border" : "line"};
 var debug_on = false;
 var noui = false;
 
@@ -56,7 +56,13 @@ function initPage(src, fn) {
 
   progress();
 
+  window.onresize = function() {viewer.drawTimed();};
+
   var canvas = $('canvas');
+  //this.canvas = document.createElement("canvas");
+  //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
+  //if (!parentEl) parentEl = document.body;
+  //parentEl.appendChild(this.canvas);
   viewer =  new Viewer(canvas);
 
   //Canvas event handling
@@ -102,7 +108,6 @@ function initPage(src, fn) {
     //Create tool windows
     params =     new Toolbox("params", 20, 20);
     objectlist = new Toolbox("objectlist", 370, 20);
-    messages =   new Toolbox("messages", 400, 300);
     properties = new Toolbox("properties", 720, 20);
 
     params.show();
@@ -110,7 +115,6 @@ function initPage(src, fn) {
   } else {
     params =     new Toolbox("params", -1, -1);
     objectlist = new Toolbox("objectlist", -1, -1);
-    messages =   new Toolbox("messages", -1, -1);
     properties = new Toolbox("properties", -1, -1);
   }
 
@@ -145,15 +149,6 @@ function progress(text) {
     $S('progressbar').width = 0;
     el.style.display = 'block';
   }
-}
-
-var rztimeout = null;
-function autoResize() {
-  if (rztimeout) clearTimeout(rztimeout);
-  //if (server)
-  //  rztimeout = setTimeout('resizeToWindow();', 500);
-  //else
-    rztimeout = setTimeout('viewer.draw();', 150);
 }
 
 function canvasMouseClick(event, mouse) {
@@ -388,39 +383,20 @@ function loadColourMaps() {
     var option = new Option(vis.colourmaps[i].name || ("ColourMap " + i), i);
     list.options[list.options.length] = option;
 
-     //Draw without UI elements
-     palette.draw(canvas, false);
-
-    //Get colour obj and store in array
-    var context = canvas.getContext('2d');  
-    if (!context) alert("getContext failed");
-    var pixels = context.getImageData(0, 0, 512, 1).data;
-    palette.cache = [];
-    for (var c=0; c<512; c++) {
-      var cstr = "rgba(" + pixels[c*4] + "," + pixels[c*4+1] + "," + pixels[c*4+2] + "," + pixels[c*4+3] + ")";
-      //OK.debug(c + " == " + cstr);
-      //var colour = new Colour(cstr);
-      palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
-    }
-
-    //Redraw UI
-    palette.draw(canvas, true);
+    paletteLoad(palette);
   }
   //Restore selection
   list.value = sel;
   if (viewer) viewer.setColourMap(sel);
 }
 
-/*function checkPointMinMax(x, y, z) {
-  if (x < vis.views[view].min[0]) vis.views[view].min[0] = x;
-  if (y < vis.views[view].min[1]) vis.views[view].min[1] = y;
-  if (z < vis.views[view].min[2]) vis.views[view].min[2] = z;
-  if (x > vis.views[view].max[0]) vis.views[view].max[0] = x;
-  if (y > vis.views[view].max[1]) vis.views[view].max[1] = y;
-  if (z > vis.views[view].max[2]) vis.views[view].max[2] = z;
-  //alert(min[0] + "," + min[1] + "," + min[2] + " -- " + max[0] + "," + max[1] + "," + max[2]);
-  //alert(offset + " : " + x + "," + y + "," + z);
-}*/
+function checkPointMinMax(coord) {
+  for (var i=0; i<3; i++) {
+    vis.views[view].min[i] = Math.min(coord[i], vis.views[view].min[i]);
+    vis.views[view].max[i] = Math.max(coord[i], vis.views[view].max[i]);
+  }
+  //console.log(JSON.stringify(vis.views[view].min) + " -- " + JSON.stringify(vis.views[view].max));
+}
 
 function objVertexColour(obj, data, idx) {
   return vertexColour(obj.colour, obj.opacity, obj.colourmap >= 0 ? vis.colourmaps[obj.colourmap] : null, data, idx);
@@ -457,8 +433,8 @@ function vertexColour(colour, opacity, colourmap, data, idx) {
         }
         //Scale to range [0,1]
         scaled = (val - min) / (max - min);
-        //Get colour pos [0-512)
-        pos =  Math.round(511 * scaled);
+        //Get colour pos [0-2047)
+        pos =  Math.round(2047 * scaled);
       }
       colour = colourmap.palette.cache[pos];
       //if (idx % 100 == 0) console.log(" : " + val + " min " + min + " max " + max + " pos = " + pos + " colour: " + colour);
@@ -591,71 +567,6 @@ function demoData(num)
      //verts.push(1.0);
   }
 
-/*
-  OK.debug("Generating demo triangles...");
-  verts = data.objects[1].triangles.vertices.data;
-  norms = data.objects[1].triangles.normals.data;
-  vals = data.objects[1].triangles.values.data;
-  var heightdata = generateHeight(101, 101);
-  var calcVert = function(i, j) {
-    return [min[0] + (dims[0] * i/100.0), min[1] + (dims[1] * j/100.0), heightdata[j*101+i]/200.0];
-  }
-  for(var i=0; i < 100; i++) 
-  {
-    for(var j=0; j < 100; j++) 
-    {
-      //var z = min[2] + (0.1 * dims[2] * Math.random());
-      var v1 = calcVert(i, j);
-      var v2 = calcVert(i, j+1);
-      var v3 = calcVert(i+1, j);
-      var v4 = calcVert(i+1, j+1);
-
-      //Vertices, normals & values
-      verts.push(v1[0]); verts.push(v1[1]); verts.push(v1[2]);
-      verts.push(v2[0]); verts.push(v2[1]); verts.push(v2[2]);
-      verts.push(v3[0]); verts.push(v3[1]); verts.push(v3[2]);
-      verts.push(v4[0]); verts.push(v4[1]); verts.push(v4[2]);
-      var normal = trinormal(v1, v3, v2);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]));
-      vals.push(Math.sqrt(v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]));
-      vals.push(Math.sqrt(v3[0]*v3[0] + v3[1]*v3[1] + v3[2]*v3[2]));
-      vals.push(Math.sqrt(v4[0]*v4[0] + v4[1]*v4[1] + v4[2]*v4[2]));
-
-      //Triangle 1
-      indices.push(
-      var normal = trinormal(v1, v3, v2);
-      verts.push(v1[0]); verts.push(v1[1]); verts.push(v1[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]));
-      //
-      verts.push(v2[0]); verts.push(v2[1]); verts.push(v2[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]));
-      //
-      verts.push(v3[0]); verts.push(v3[1]); verts.push(v3[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v3[0]*v3[0] + v3[1]*v3[1] + v3[2]*v3[2]));
-      //Triangle 2
-      var normal = trinormal(v4, v2, v3);
-      verts.push(v4[0]); verts.push(v4[1]); verts.push(v4[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v4[0]*v4[0] + v4[1]*v4[1] + v4[2]*v4[2]));
-      //
-      verts.push(v3[0]); verts.push(v3[1]); verts.push(v3[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v3[0]*v3[0] + v3[1]*v3[1] + v3[2]*v3[2]));
-      //
-      verts.push(v2[0]); verts.push(v2[1]); verts.push(v2[2]);
-      norms.push(normal[0]); norms.push(normal[1]); norms.push(normal[2]);
-      vals.push(Math.sqrt(v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]));
-    }
-  }
-*/
-
   var time = (new Date() - start) / 1000.0;
   OK.debug(time + " seconds to generate random data");
   viewer.loadFile(data);
@@ -668,25 +579,6 @@ function str2ab(str) {
     bufView[i] = str.charCodeAt(i);
   }
   return buf;
-}
-
-function generateHeight( width, height ) {
-  var size = width * height, data = new Float32Array(size),
-      perlin = new ImprovedNoise(), quality = 1, z = Math.random() * 100;
-
-  for ( var i = 0; i < size; i ++ ) {
-    data[ i ] = 0
-  }
-
-  for ( var j = 0; j < 4; j ++ ) {
-    for ( var i = 0; i < size; i ++ ) {
-      var x = i % width, y = ~~ ( i / width );
-      data[ i ] += Math.abs( perlin.noise( x / quality, y / quality, z ) * quality * 1.75 );
-    }
-    quality *= 5;
-  }
-
-  return data;
 }
 
 function crossProduct(a, b) {
@@ -838,10 +730,12 @@ Toolbox.prototype.toggle = function() {
 
 Toolbox.prototype.show = function() {
   this.style.visibility = 'visible';
+      this.style.overflow = 'visible';
 }
 
 Toolbox.prototype.hide = function() {
   this.style.visibility = 'hidden';
+      this.style.overflow = 'hidden';
 }
 
 //Mouse event handling
@@ -901,6 +795,14 @@ function Renderer(gl, type, colour, border) {
     this.uniforms = ["uColour", "uAlpha"]
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT];
+  } else if (type == "volume") {
+    //Volume renderer
+    this.attributes = ["aVertexPosition"],
+    this.uniforms = ["uVolume", "uTransferFunction", "uEnableColour", "uFilter",
+                     "uDensityFactor", "uPower", "uSaturation", "uBrightness", "uContrast", "uSamples",
+                     "uViewport", "uBBMin", "uBBMax", "uResolution", "uRange", "uDenMinMax",
+                     "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uInvPMatrix"];
+    this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT];
   }
 
   this.elementSize = 0;
@@ -921,6 +823,42 @@ Renderer.prototype.init = function() {
       vs = vis.shaders[this.type].vertex || vs;
     }
   }
+
+  if (this.type == "volume" && this.id) {
+    //Setup two-triangle rendering
+    viewer.webgl.init2dBuffers(this.gl.TEXTURE1); //Use 2nd texture unit
+
+    //Override texture params set in previous call
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+
+    //Load the volume texture image
+    viewer.webgl.loadTexture(this.image, this.gl.LINEAR);
+
+    //Calculated scaling
+    this.properties = vis.objects[this.id];
+    this.res = vis.objects[this.id].volume["res"];
+    this.dims = vis.objects[this.id].volume["scale"];
+    this.scaling = this.dims;
+    //Auto compensate for differences in resolution..
+    if (vis.objects[this.id].volume.autoscale) {
+      //Divide all by the highest res
+      var maxn = Math.max.apply(null, this.res);
+      this.scaling = [this.res[0] / maxn * this.dims[0], 
+                      this.res[1] / maxn * this.dims[1],
+                      this.res[2] / maxn * this.dims[2]];
+    }
+    this.tiles = [this.image.width / this.res[0],
+                  this.image.height / this.res[1]];
+    this.iscale = [1.0 / this.scaling[0], 1.0 / this.scaling[1], 1.0 / this.scaling[2]]
+      
+    var defines = "precision highp float;\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
+    defines += (!!window.MSInputMethodContext ? "#define IE11\n" : "#define NOT_IE11\n");
+    var maxSamples = 1024; //interactive ? 1024 : 256;
+    defines += "const int maxSamples = " + maxSamples + ";\n\n\n\n\n"; //Extra newlines so errors in main shader have correct line #
+    fs = defines + getSourceFromElement('volume-fs');
+  }
+
   //Compile the shaders
   this.program = new WebGLProgram(this.gl, vs, fs);
   if (this.program.errors) OK.debug(this.program.errors);
@@ -967,7 +905,7 @@ Renderer.prototype.loadElements = function() {
             //console.log(name + " " + skip + " : " + count + " - " + dat.centroids.length);
             for (var i=0; i<count; i++) {
               //this.positions.push(skip ? null : dat.centroids[i]);
-              if (skip)
+              if (skip || !dat.centroids)
                 this.positions.push(null);
               else if (dat.centroids.length == 1)
                 this.positions.push(dat.centroids[0]);
@@ -1338,29 +1276,13 @@ Renderer.prototype.draw = function() {
   this.reload = this.sort = false;
   viewer.canvas.mouse.disabled = false;
 
-  if (this.elements == 0) return;
+  if (this.elements == 0 && this.type != "volume") return;
 
   //Enable attributes
   for (var key in this.program.attributes)
     this.gl.enableVertexAttribArray(this.program.attributes[key]);
 
-  //Update palette
-  //colours.update();
-
-  //Gradient texture
-  //this.gl.activeTexture(this.gl.TEXTURE0);
-  //this.gl.bindTexture(this.gl.TEXTURE_2D, viewer.webgl.gradientTexture);
-  //this.gl.uniform1i(this.program.uniforms["palette"], 0);
-
-  //Options
-  //var cmap = $("colourmap").checked == true ? 1 : 0;
-  //this.gl.uniform1i(this.program.uniforms["colourmap"], cmap);
-
-  /*/Image texture
-  this.gl.activeTexture(this.gl.TEXTURE1);
-  this.gl.bindTexture(this.gl.TEXTURE_2D, this.webgl.texture);
-  this.gl.uniform1i(this.program.uniforms["texture"], 1);*/
-
+  //General uniform vars
   this.gl.uniform1f(this.program.uniforms["uAlpha"], viewer.opacity);
   if (this.colour)
     this.gl.uniform4f(this.program.uniforms["uColour"], this.colour.red/255.0, this.colour.green/255.0, this.colour.blue/255.0, this.colour.alpha);
@@ -1424,6 +1346,101 @@ Renderer.prototype.draw = function() {
     this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_INT, 0);
     desc = (this.elements / 2) + " lines";
     //this.gl.drawArrays(this.gl.LINES, 0, this.positions.length);
+
+  } else if (this.type == "volume") {
+    
+    //Volume render
+    //
+    //Problems:
+    //Clipping at back of box
+    //Lighting position?
+    //Uniform defaults
+
+    if (viewer.gradient.mapid != vis.objects[this.id].colourmap) {
+      //Map selected has changed, so update texture (used on initial render only)
+      paletteUpdate({}, vis.objects[this.id].colourmap);
+    }
+
+    //Setup volume camera
+    viewer.webgl.modelView.push();
+
+    //Copy props
+    this.properties = vis.objects[this.id];
+    this.resolution = vis.objects[this.id].volume["res"];
+    this.scaling = vis.objects[this.id].volume["scale"];
+  
+    //this.rayCamera();
+    {
+      //Apply translation to origin, any rotation and scaling
+      viewer.webgl.modelView.identity()
+      viewer.webgl.modelView.translate(viewer.translate)
+
+      // rotate model 
+      var rotmat = quat4.toMat4(viewer.rotate);
+      viewer.webgl.modelView.mult(rotmat);
+
+      //For a volume cube other than [0,0,0] - [1,1,1], need to translate/scale here...
+      viewer.webgl.modelView.translate([-this.scaling[0]*0.5, -this.scaling[1]*0.5, -this.scaling[2]*0.5]);  //Translate to origin
+      //Inverse of scaling
+      viewer.webgl.modelView.scale([this.iscale[0], this.iscale[1], this.iscale[2]]);
+
+      //Perspective matrix
+      viewer.webgl.setPerspective(viewer.fov, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 1000.0);
+
+      //Get inverted matrix for volume shader
+      this.invPMatrix = mat4.create(viewer.webgl.perspective.matrix);
+      mat4.inverse(this.invPMatrix);
+      //console.log(JSON.stringify(viewer.webgl.modelView));
+    }
+
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, viewer.webgl.textures[0]);
+
+    this.gl.activeTexture(this.gl.TEXTURE1);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, viewer.webgl.gradientTexture);
+
+    //Only render full quality when not interacting
+    //this.gl.uniform1i(this.program.uniforms["uSamples"], this.samples);
+    //TODO: better default handling here!
+    this.gl.uniform1i(this.program.uniforms["uSamples"], this.properties.samples || 256);
+    this.gl.uniform1i(this.program.uniforms["uVolume"], 0);
+    this.gl.uniform1i(this.program.uniforms["uTransferFunction"], 1);
+    this.gl.uniform1i(this.program.uniforms["uEnableColour"], this.properties.usecolourmap || 1);
+    this.gl.uniform1i(this.program.uniforms["uFilter"], this.properties.tricubicFilter || 0);
+    this.gl.uniform4fv(this.program.uniforms["uViewport"], new Float32Array([0, 0, this.gl.viewportWidth, this.gl.viewportHeight]));
+
+    var bbmin = [this.properties.xmin || 0.0, this.properties.ymin || 0.0, this.properties.zmin || 0.0];
+    var bbmax = [this.properties.xmax || 1.0, this.properties.ymax || 1.0, this.properties.zmax || 1.0];
+    this.gl.uniform3fv(this.program.uniforms["uBBMin"], new Float32Array(bbmin));
+    this.gl.uniform3fv(this.program.uniforms["uBBMax"], new Float32Array(bbmax));
+    this.gl.uniform3fv(this.program.uniforms["uResolution"], new Float32Array(this.resolution));
+
+    this.gl.uniform1f(this.program.uniforms["uDensityFactor"], this.properties.density);
+    // brightness and contrast
+    this.gl.uniform1f(this.program.uniforms["uSaturation"], this.properties.saturation || 1.0);
+    this.gl.uniform1f(this.program.uniforms["uBrightness"], this.properties.brightness || 0.0);
+    this.gl.uniform1f(this.program.uniforms["uContrast"], this.properties.contrast || 1.0);
+    this.gl.uniform1f(this.program.uniforms["uPower"], this.properties.power || 1.0);
+
+    this.gl.uniform1f(this.program.uniforms["uIsoValue"], this.properties.isovalue || 0.0);
+    var colour = new Colour(this.properties.colour);
+    colour.alpha = this.properties.isoalpha || 1.0;
+    this.gl.uniform4fv(this.program.uniforms["uIsoColour"], colour.rgbaGL());
+    this.gl.uniform1f(this.program.uniforms["uIsoSmooth"], this.properties.isosmooth || 1.0);
+    this.gl.uniform1i(this.program.uniforms["uIsoWalls"], this.properties.isowalls);
+
+    //Data value range (default only for now)
+    this.gl.uniform2fv(this.program.uniforms["uRange"], new Float32Array([0.0, 1.0]));
+    //Density clip range
+    this.gl.uniform2fv(this.program.uniforms["uDenMinMax"], new Float32Array([this.properties.mindensity || 0.0, this.properties.maxdensity || 1.0]));
+
+    //Draw two triangles
+    viewer.webgl.initDraw2d();
+    this.gl.uniformMatrix4fv(this.program.uniforms["uInvPMatrix"], false, this.invPMatrix);
+    viewer.webgl.setMatrices();
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, viewer.webgl.vertexPositionBuffer.numItems);
+
+    viewer.webgl.modelView.pop();
   }
 
   //Disable attribs
@@ -1493,6 +1510,7 @@ function Viewer(canvas) {
   this.translate = [0,0,0];
   this.rotate = quat4.create();
   quat4.identity(this.rotate);
+  this.fov = 45;
   this.focus = [0,0,0];
   this.centre = [0,0,0];
   this.near_clip = this.far_clip = 0.0;
@@ -1508,11 +1526,17 @@ function Viewer(canvas) {
   this.opacity = 1.0;
 
   //Create the renderers
+  this.renderers = [];
   if (this.gl) {
     this.points = new Renderer(this.gl, 'particle');
     this.triangles = new Renderer(this.gl, 'triangle');
     this.lines = new Renderer(this.gl, 'line');
     this.border = new Renderer(this.gl, 'line', 0xffffffff, true);
+
+    this.renderers.push(this.points);
+    this.renderers.push(this.triangles);
+    this.renderers.push(this.lines);
+    this.renderers.push(this.border);
 
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.depthFunc(this.gl.LEQUAL);
@@ -1559,7 +1583,7 @@ Viewer.prototype.loadFile = function(source) {
   OK.debug(time + " seconds to parse data");
 
   if (source.exported) {
-    if (!vis.views[view]) {OK.debug("Exported settings require loaded model"); return;}
+    if (!vis.views && !vis.views[view]) {OK.debug("Exported settings require loaded model"); return;}
     var old = this.toString();
     //Copy, overwriting if exists in source
     if (source.views[view].rotate) vis.views[view].rotate = source.views[view].rotate;
@@ -1579,11 +1603,21 @@ Viewer.prototype.loadFile = function(source) {
   }
 
   //Always set a bounding box
-  if (!source.views[view].min) source.views[view].min = [0, 0, 0];
-  if (!source.views[view].max) source.views[view].max = [1, 1, 1];
+  if (!vis.views[view].min || !vis.views[view].max) {
+    vis.views[view].min = [Infinity, Infinity, Infinity];
+    vis.views[view].max = [-Infinity, -Infinity, -Infinity];
+
+    //Get bounding box from objects?`
+    for (var id in vis.objects) {
+      //Apply object bounding box
+      checkPointMinMax(vis.objects[id].min);
+      checkPointMinMax(vis.objects[id].max);
+    }
+  }
 
   //Load some user options...
   loadColourMaps();
+
   if (vis.views[view]) {
     this.near_clip = vis.views[view].near || 0;
     this.far_clip = vis.views[view].far || 0;
@@ -1647,12 +1681,33 @@ Viewer.prototype.loadFile = function(source) {
     //Process points/triangles
     if (!source.exported) {
       for (var type in vis.objects[id]) {
-        if (["triangles", "points", "lines"].indexOf(type) < 0) continue;
+        if (["triangles", "points", "lines", "volume"].indexOf(type) < 0) continue;
         if (type == "triangles") this.hasTriangles = true;
         if (type == "points") this.hasPoints = true;
         if (type == "lines") this.hasLines = true;
+
+        if (type == "volume") { //Each volume object needs own renderer
+          this.hasVolumes = true;
+          var vren = new Renderer(this.gl, 'volume');
+          vren.id = id;
+          this.renderers.push(vren);
+          vren.image = new Image();
+          vren.image.src = vis.objects[id][type].url;
+          vren.image.onload = function(){ viewer.drawFrame(); viewer.draw(); };
+        }
+
+        //Get bounding box from objects?`
+        var usebb = false;
+        if (!vis.views[view].min || !vis.views[view].max) usebb = true;
+
         //Read vertices, values, normals, sizes, etc...
         for (var idx in vis.objects[id][type]) {
+          //Apply object bounding box
+          if (usebb && vis.objects[i][type].min)
+            checkPointMinMax(vis.objects[i][type].min);
+          if (usebb && vis.objects[i][type].max)
+            checkPointMinMax(vis.objects[i][type].max);
+
           //Only support following data types for now
           decodeBase64(id, type, idx, 'vertices');
           decodeBase64(id, type, idx, 'values');
@@ -1660,8 +1715,11 @@ Viewer.prototype.loadFile = function(source) {
           decodeBase64(id, type, idx, 'colours', 'integer');
           decodeBase64(id, type, idx, 'sizes');
           decodeBase64(id, type, idx, 'indices', 'integer');
-          OK.debug("Loaded " + vis.objects[id][type][idx].vertices.data.length/3 + " vertices from " + name);
-          this.vertexCount += vis.objects[id][type][idx].vertices.data.length/3;
+
+          if (vis.objects[id][type][idx].vertices) {
+            OK.debug("Loaded " + vis.objects[id][type][idx].vertices.data.length/3 + " vertices from " + name);
+            this.vertexCount += vis.objects[id][type][idx].vertices.data.length/3;
+          }
 
           //Create indices for cross-sections & lines
           if (type == 'lines' && !vis.objects[id][type][idx].indices) {
@@ -1752,9 +1810,14 @@ Viewer.prototype.loadFile = function(source) {
     }
   }
 
-  this.draw();
+  //this.draw();
   //Second call or window size not picked up (hack)
-  this.draw();
+  //this.draw();
+  //this.drawFrame();
+  if (!this.hasVolumes) {
+    this.drawFrame();
+    this.draw();
+  }
 }
 
 function Merge(obj1, obj2) {
@@ -1881,7 +1944,7 @@ Viewer.prototype.properties = function(id) {
   //Type specific options
   setAll(vis.objects[id].points ? 'block' : 'none', 'point-obj');
   setAll(vis.objects[id].triangles ? 'block' : 'none', 'surface-obj');
-  setAll(vis.objects[id].volumes ? 'block' : 'none', 'volume-obj');
+  setAll(vis.objects[id].volume ? 'block' : 'none', 'volume-obj');
   setAll(vis.objects[id].lines ? 'block' : 'none', 'line-obj');
 
   properties.show();
@@ -2045,9 +2108,10 @@ Viewer.prototype.action = function(id, reload, sort, el) {
   $('apply').disabled = false;
 
   for (var type in types) {
-    if (vis.objects[id][type])
+    if (vis.objects[id][type] && this[type]) {
       this[type].sort = sort;
       this[type].reload = reload;
+    }
   }
 }
 
@@ -2111,39 +2175,52 @@ function removeChildren(element) {
   }
 }
 
-paletteUpdate = function(obj) {
+paletteUpdate = function(obj, id) {
+  if (id != undefined) viewer.gradient.mapid = id;
   //Load colourmap change
-  if (!vis.colourmaps || viewer.gradient.mapid >= 0) return;
-  var canvas = $('palette');
-  var context = canvas.getContext('2d');  
-  if (!context) alert("getContext failed");
-
+  if (viewer.gradient.mapid < 0) return;
   var cmap = vis.colourmaps[viewer.gradient.mapid];
   if (!cmap) return;
 
-  //Get colour data and store in array
-  //Redraw without UI elements
-  cmap.palette.draw(canvas, false);
+  paletteLoad(cmap.palette);
+
   //Update colour data
   cmap.colours = cmap.palette.colours;
+      viewer.webgl.updateTexture(viewer.webgl.gradientTexture, gradient, viewer.gl.TEXTURE1);  //Use 2nd texture unit
+}
+
+paletteLoad = function(palette) {
+  //Update colours and cache
+  var canvas = $('palette');
+  var gradient = $('gradient');
+  var context = gradient.getContext('2d');  
+  if (!context) alert("getContext failed");
+
+  //Get colour data and store in array
+  //Redraw without UI elements
+  //palette.draw(canvas, false);
+  palette.draw(gradient, false);
   //Cache colour values
-  var pixels = context.getImageData(0, 0, 512, 1).data;
-  for (var c=0; c<512; c++)
-    cmap.palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
+  var pixels = context.getImageData(0, 0, 2048, 1).data;
+  palette.cache = [];
+  for (var c=0; c<2048; c++)
+    palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
 
   //Redraw UI
-  cmap.palette.draw(canvas, true);
+  palette.draw(canvas, true);
+}
+
+Viewer.prototype.drawTimed = function() {
+  if (this.drawTimer)
+    clearTimeout(this.drawTimer);
+  this.drawTimer = setTimeout(function () {viewer.drawFrame();}, 100 );
 }
 
 Viewer.prototype.draw = function(borderOnly) {
   //If requested draw border only (used while interacting)
   //Draw the full model on a timer
   viewer.drawFrame(borderOnly);
-  if (borderOnly && !server) {
-    if (this.drawTimer)
-      clearTimeout(this.drawTimer);
-    this.drawTimer = setTimeout(function () {viewer.drawFrame();}, 100 );
-  }
+  if (borderOnly && !server) viewer.drawTimed();
 }
 
 Viewer.prototype.drawFrame = function(borderOnly) {
@@ -2184,7 +2261,7 @@ Viewer.prototype.drawFrame = function(borderOnly) {
     if (this.gl) {
       this.gl.viewportWidth = this.width;
       this.gl.viewportHeight = this.height;
-      //this.webgl.viewport = new Viewport(0, 0, this.width, this.height);      
+      this.webgl.viewport = new Viewport(0, 0, this.width, this.height);      
     }
   }
   this.width = this.height = 0;
@@ -2192,14 +2269,14 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   var start = new Date();
 
   this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
-    //console.log(JSON.stringify(this.webgl.viewport));
+  //  console.log(JSON.stringify(this.webgl.viewport));
   //this.gl.clearColor(this.background.red/255, this.background.green/255, this.background.blue/255, server || document.mouse.isdown ? 0 : 1);
   this.gl.clearColor(this.background.red/255, this.background.green/255, this.background.blue/255, server ? 0 : 1);
   //this.gl.clearColor(this.background.red/255, this.background.green/255, this.background.blue/255, 0);
   //this.gl.clearColor(1, 1, 1, 0);
   this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-  this.webgl.setPerspective(45, this.gl.viewportWidth / this.gl.viewportHeight, this.near_clip, this.far_clip);
+  this.webgl.setPerspective(this.fov, this.gl.viewportWidth / this.gl.viewportHeight, this.near_clip, this.far_clip);
 
   //Apply translation to origin, any rotation and scaling (inverse of zoom factor)
   this.webgl.modelView.identity()
@@ -2231,18 +2308,17 @@ Viewer.prototype.drawFrame = function(borderOnly) {
       this.gl.frontFace(this.gl.CW);
 
   //Render objects
-  if (!borderOnly) {
-  //if (!borderOnly && !server) {
-    //Draw all
-    for (var type in types) {
-      //if (!document.mouse.isdown && !this.showBorder && type == 'border') continue;
-      if (type == 'border') continue;
-      this[type].draw();
+  for (var r in this.renderers) {
+    //if (!document.mouse.isdown && !this.showBorder && type == 'border') continue;
+    if (this.renderers[r].border) {
+      if (!borderOnly && !this.showBorder) continue;
+    } else {
+      if (borderOnly) continue;
     }
-  }
 
-  if (borderOnly || this.showBorder)
-    this.border.draw();
+    this.renderers[r].draw();
+    //console.log("Draw: " + r + " : " + this.renderers[r].type);
+  }
 
   /*/Save canvas image to background for display while interacting
   if (!borderOnly && !server) {

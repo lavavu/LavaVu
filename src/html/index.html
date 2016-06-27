@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" type="text/css" href="styles.css">
 <script type="text/javascript" src="gl-matrix-min.js"></script>
-<script type="text/javascript" src="OK-min.js"></script>
+<script type="text/javascript" src="OK.js"></script>
 <script type="text/javascript" src="draw.js"></script>
 <script type="text/javascript" src="server.js"></script>
 
@@ -38,6 +38,16 @@ precision highp float;
 <script id="line-fs" type="x-shader/x-fragment">
 precision highp float;
 //Line fragment shader
+</script>
+
+<script id="volume-vs" type="x-shader/x-vertex">
+precision highp float;
+//Volume vertex shader
+</script>
+
+<script id="volume-fs" type="x-shader/x-fragment">
+precision highp float;
+//Volume fragment shader
 </script>
 
 </head>
@@ -216,14 +226,6 @@ precision highp float;
   <span class="client">Update selected (visible) objects</span>
   <input id="apply" class="right client" type="button" value="Apply" onClick="viewer.apply();" disabled>
 </div>
-
-<div class="toolbox" id="messages"><div>
-  <div class="toolclose" onclick="window.messages.hide();">&times;</div>
-  <h3>Log</h3>
-  <input type="button" class="right" value="Clear" onClick="OK.clear()">
-  <div id="console" class="scroll">
-  </div>
-</div></div>
 
 <div class="toolbox" id="properties"><div>
   <div class="toolclose" onclick="window.properties.hide();">&times;</div>
