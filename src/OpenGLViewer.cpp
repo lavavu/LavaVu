@@ -373,12 +373,19 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 #ifdef GL_FRAMEBUFFER_EXT
-  if (fbo_enabled && fbo_frame > 0)
+  if (fbo_enabled && fbo_frame > 0 && downsample > 1)
   {
     glBindTexture(GL_TEXTURE_2D, fbo_texture);
     glGenerateMipmapEXT(GL_TEXTURE_2D);
     glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, buffer);
     GL_Error_Check;
+    if (flip)
+    {
+      float factor = pow(2, downsample-1);
+      unsigned int w = width/factor;
+      unsigned int h = height/factor;
+      RawImageFlip(buffer, w, h, alpha ? 4 : 3);
+    }
   }
   else
 #endif
@@ -386,11 +393,8 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
     //Read pixels from the specified render buffer
     glReadBuffer(renderBuffer);
     glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, buffer);
-  }
-
-  if (flip)
-  {
-    RawImageFlip(buffer, width, height, alpha ? 4 : 3);
+    if (flip)
+      RawImageFlip(buffer, width, height, alpha ? 4 : 3);
   }
 }
 
@@ -428,18 +432,15 @@ std::string OpenGLViewer::image(const std::string& path)
   if (w != width || h != height)
   {
 #ifdef GL_FRAMEBUFFER_EXT
-    //Switch to a framebuffer object
-    if (fbo_frame > 0)
-    {
-      fbo_enabled = true;
-      renderBuffer = GL_COLOR_ATTACHMENT0_EXT;
-      //glBindTexture(GL_TEXTURE_2D, fbo_texture);
-      glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_frame);
-    }
-
-    setsize(w, h);
+    //Create or resize a new fbo of required size
+    fbo(w, h);
+    resize(w, h); //Resized callback
 #else
-    setsize(w, h);
+    //setsize(w, h);
+    //outwidth/outheight only support if fbo available
+    std::cout << "FBO Support required to save image at different size to window\n";
+    w = width;
+    h = height;
 #endif
   }
 
@@ -470,7 +471,7 @@ std::string OpenGLViewer::image(const std::string& path)
   }
   else
   {
-    writeImage(image, w, h, path, alphapng);
+    writeImage(image, w, h, path, alphapng ? 4 : 3);
     retImg = path;
   }
 
@@ -481,10 +482,9 @@ std::string OpenGLViewer::image(const std::string& path)
   if (downsample > 1 || w != savewidth || h != saveheight)
   {
 #ifdef GL_FRAMEBUFFER_EXT
+    setsize(savewidth, saveheight);
     show();  //Disables fbo mode
     resize(savewidth, saveheight); //Resized callback
-#else
-    setsize(savewidth, saveheight);
 #endif
   }
 
