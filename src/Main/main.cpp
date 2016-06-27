@@ -38,7 +38,9 @@
 // Main function
 int main(int argc, char *argv[])
 {
-  execute(argc, argv);
+  LavaVu app(argv[0]);
+  std::vector<std::string> args(argv+1, argv+argc);
+  app.run(args);
   return 0;
 }
 
