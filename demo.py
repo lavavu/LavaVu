@@ -3,7 +3,8 @@ import sys
 sys.path.append('bin')
 import LavaVu
 
-lv = LavaVu.load(["-a", "-S", "-v"])
+lv = LavaVu.load(hidden=False) #Interactive - require visible window
+#lv = LavaVu.load()
 
 print lv.image("initial")
 
@@ -53,3 +54,5 @@ print lv.image("final")
 
 #lv.commands("export")
 imagestr = lv.image()
+
+lv = None

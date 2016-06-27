@@ -52,85 +52,8 @@
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 
-ViewerApp* app = NULL;
-
-void execute(int argc, char **argv)
-{
-  //Default entry point, create a LavaVu application and run
-  if (!app) app = new LavaVu();
-  execute(argc, argv, app);
-  delete app;
-}
-
-void execute(int argc, char **argv, ViewerApp* myApp)
-{
-  //Customisable entry point, create viewer and run provided application
-  app = myApp;
-
-  //Read command line
-  std::vector<std::string> args;
-  for (int i=1; i<argc; i++)
-    args.push_back(argv[i]);
-
-  if (!app->viewer)
-  {
-    //Create the viewer window
-    OpenGLViewer* viewer = NULL;
-    
-    //Evil platform specific extension handling stuff
-#if defined _WIN32
-    //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
-#elif defined HAVE_X11  //not defined __APPLE__
-    //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-    GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
-#elif defined HAVE_GLUT and not defined __APPLE__
-    GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-#endif
-
-    //Create viewer window
-#if defined HAVE_X11
-    if (!viewer) viewer = new X11Viewer();
-#endif
-#if defined HAVE_GLUT
-    if (!viewer) viewer = new GlutViewer();
-#endif
-#if defined HAVE_SDL || defined _WIN32
-    if (!viewer) viewer = new SDLViewer();
-#endif
-#if defined HAVE_CGL
-    if (!viewer) viewer = new CocoaViewer();
-    if (!viewer) viewer = new CGLViewer();
-#endif
-    if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
-
-    viewer->app = (ApplicationInterface*)app;
-    app->viewer = viewer;
-
-    //Shader path (default to program path if not set)
-    std::string xpath = GetBinaryPath(argv[0], APPNAME__);
-    if (Shader::path.length() == 0) Shader::path = xpath;
-    //Set default web server path
-    Server::htmlpath = xpath + "html";
-
-    //Add any output attachments to the viewer
-    if (Server::port > 0)
-      viewer->addOutput(Server::Instance(viewer));
-    static StdInput stdi;
-    viewer->addInput(&stdi);
-  }
-
-  //Reset defaults
-  app->defaults();
-
-  //App specific argument processing
-  app->arguments(args);
-
-  //Run visualisation task
-  app->run(); 
-}
-
 //Viewer class implementation...
-LavaVu::LavaVu()
+LavaVu::LavaVu(std::string binary)
 {
   viewer = NULL;
   verbose = dbpath = false;
@@ -141,7 +64,46 @@ LavaVu::LavaVu()
   rulers = new Lines();
   border = new QuadSurfaces();
 
-  defaults();
+  //Create the viewer window
+  //(Evil platform specific extension handling stuff)
+#if defined _WIN32
+  //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
+#elif defined HAVE_X11  //not defined __APPLE__
+  //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+  GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
+#elif defined HAVE_GLUT and not defined __APPLE__
+  GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+#endif
+
+  //Create viewer window
+#if defined HAVE_X11
+  if (!viewer) viewer = new X11Viewer();
+#endif
+#if defined HAVE_GLUT
+  if (!viewer) viewer = new GlutViewer();
+#endif
+#if defined HAVE_SDL || defined _WIN32
+  if (!viewer) viewer = new SDLViewer();
+#endif
+#if defined HAVE_CGL
+  if (!viewer) viewer = new CocoaViewer();
+  if (!viewer) viewer = new CGLViewer();
+#endif
+  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
+
+  viewer->app = (ApplicationInterface*)this;
+
+  //Shader path (default to program path if not set)
+  std::string xpath = GetBinaryPath(binary.c_str(), APPNAME__);
+  if (Shader::path.length() == 0) Shader::path = xpath;
+  //Set default web server path
+  Server::htmlpath = xpath + "html";
+
+  //Add any output attachments to the viewer
+  if (Server::port > 0)
+    viewer->addOutput(Server::Instance(viewer));
+  static StdInput stdi;
+  viewer->addInput(&stdi);
 }
 
 void LavaVu::defaults()
@@ -477,6 +439,8 @@ void LavaVu::defaults()
 
 LavaVu::~LavaVu()
 {
+  close();
+
   Server::Delete();
 
   delete axis;
@@ -485,18 +449,8 @@ LavaVu::~LavaVu()
 #ifdef HAVE_LIBAVCODEC
   if (encoder) delete encoder;
 #endif
-  //Kill all geom data
-  if (TimeStep::cachesize == 0)
-  {
-    for (unsigned int i=0; i < Model::geometry.size(); i++)
-      delete Model::geometry[i];
-  }
-
-  //Kill all models
-  for (unsigned int i=0; i < models.size(); i++)
-    delete models[i];
-
   debug_print("Peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
+  if (viewer) delete viewer;
 }
 
 void LavaVu::arguments(std::vector<std::string> args)
@@ -748,8 +702,14 @@ void LavaVu::arguments(std::vector<std::string> args)
   }
 }
 
-void LavaVu::run()
+void LavaVu::run(std::vector<std::string> args)
 {
+  //Reset defaults
+  defaults();
+
+  //App specific argument processing
+  arguments(args);
+
   //If server running, always stay open (persist flag)
   bool persist = Server::running();
 
@@ -2253,6 +2213,9 @@ void LavaVu::close()
   for (unsigned int i=0; i < Model::geometry.size(); i++)
     delete Model::geometry[i];
   Model::geometry.clear();
+
+  aview = NULL;
+  amodel = NULL;
 }
 
 void LavaVu::redraw(DrawingObject* obj)

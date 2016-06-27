@@ -51,9 +51,6 @@
 
 #define MAX_MSG 256
 
-void execute(int argc, char **argv);
-void execute(int argc, char **argv, ViewerApp* myApp);
-
 typedef enum
 {
   lucExportNone,
@@ -121,14 +118,14 @@ public:
   View* aview;   //Active viewport
   DrawingObject* aobject; //Selected object
 
-  LavaVu();
+  LavaVu(std::string binary=APPNAME__);
   void defaults();
   virtual ~LavaVu();
 
   //Argument parser
   virtual void arguments(std::vector<std::string> args);
   //Execute function
-  void run();
+  void run(std::vector<std::string> args={});
   void clearData(bool objects=false);
 
   void exportData(lucExportType type, DrawingObject* obj=NULL);
