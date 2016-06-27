@@ -17,6 +17,9 @@ CC=gcc
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
 CPPFLAGS = $(CFLAGS) -std=c++0x
+#For external dependencies
+EXTCFLAGS = -O3 -DNDEBUG -fPIC -Isrc
+EXTCPPFLAGS = $(EXTCFLAGS) -std=c++0x
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -122,13 +125,13 @@ $(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
-	$(CPP) $(CPPFLAGS) -o $@ -c $^ 
+	$(CPP) $(EXTCPPFLAGS) -o $@ -c $^ 
 
 $(OPATH)/mongoose.o : mongoose.c
-	$(CC) $(CFLAGS) -o $@ -c $^ 
+	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 $(OPATH)/sqlite3.o : sqlite3.c
-	$(CC) $(CFLAGS) -o $@ -c $^ 
+	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
