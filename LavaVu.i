@@ -33,8 +33,9 @@ namespace std {
 
 %pythoncode %{
 #Helper functions
-def load(app=None, args=[], binary="LavaVu", database=None, figure=None, startstep=None, endstep=None, 
-         port=0, verbose=False, interactive=False, hidden=True, quality=2, writeimage=False, res=None):
+def load(app=None, arglist=[], binary="LavaVu", database=None, figure=None, startstep=None, endstep=None, 
+         port=0, verbose=False, interactive=False, hidden=True, quality=2, writeimage=False, res=None, script=None):
+    args = [] + arglist
     #Convert options to args
     if verbose:
       args += ["-v"]
@@ -65,6 +66,8 @@ def load(app=None, args=[], binary="LavaVu", database=None, figure=None, startst
     #Save image and quit
     if writeimage:
       args += ["-I"]
+    if script and isinstance(script,list):
+      args += script
 
     if not app:
       app = LavaVu(binary)
