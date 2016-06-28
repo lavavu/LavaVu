@@ -147,7 +147,7 @@ public:
   void readVolumeSlice(const FilePath& fn);
   void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel);
   void readVolumeTIFF(const FilePath& fn);
-  void createDemoModel();
+  void createDemoModel(unsigned int numpoints);
   void createDemoVolume();
   void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
   DrawingObject* addObject(DrawingObject* obj);

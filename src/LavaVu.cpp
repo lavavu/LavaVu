@@ -431,6 +431,8 @@ void LavaVu::defaults()
   Properties::defaults["volsubsample"] = {1., 1., 1.};
   // | global | real[3] | Geometry input scaling X Y Z
   Properties::defaults["inscale"] = {1., 1., 1.};
+  // | global | integer | Point distance sub-sampling factor
+  Properties::defaults["pointdistsample"] = 0;
 
 #ifdef DEBUG
   //std::cerr << std::setw(2) << Properties::defaults << std::endl;
@@ -2027,7 +2029,7 @@ void LavaVu::readTecplot(const FilePath& fn)
     printMessage("Unable to open file: %s", fn.full.c_str());
 }
 
-void LavaVu::createDemoModel()
+void LavaVu::createDemoModel(unsigned int numpoints)
 {
   float RANGE = 2.f;
   float min[3] = {-RANGE,-RANGE,-RANGE};
@@ -2049,9 +2051,8 @@ void LavaVu::createDemoModel()
 
   //Add points object
   DrawingObject* obj = addObject(new DrawingObject("particles", "opacity=0.75\nstatic=1\nlit=0\n", cmid));
-  int NUMPOINTS = 200000;
-  int NUMSWARM = NUMPOINTS/4;
-  for (int i=0; i < NUMPOINTS; i++)
+  int pointsperswarm = numpoints/4; //4 swarms
+  for (int i=0; i < numpoints; i++)
   {
     float colour, ref[3];
     ref[0] = min[0] + (max[0] - min[0]) * frand;
@@ -2064,10 +2065,10 @@ void LavaVu::createDemoModel()
     Model::points->read(obj, 1, lucVertexData, ref);
     Model::points->read(obj, 1, lucColourValueData, &colour);
 
-    if (i % NUMSWARM == NUMSWARM-1)
+    if (i % pointsperswarm == pointsperswarm-1)
     {
       Model::points->setup(obj, lucColourValueData, 0, size, "demo colours");
-      if (i != NUMPOINTS-1)
+      if (i != numpoints-1)
         Model::points->add(obj);
     }
   }

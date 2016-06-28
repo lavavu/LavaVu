@@ -317,12 +317,16 @@ void Points::render()
   if (!ptr) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
   elements = 0;
+  int distSample = Properties::global("pointdistsample");
   for(int i=total-1; i>=0; i--)
   {
     if (hiddencache[pidx[i].geomid]) continue;
     // If subSampling, use a pseudo random distribution to select which particles to draw
     // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
     SEED_VAL = pidx[i].index; //Reset the seed for determinism based on index
+    //Distance based sub-sampling
+    if (distSample > 0)
+      subSample = 1 + distSample * pidx[i].distance / SORT_DIST_MAX; //[1,distSample]
     if (subSample > 1 && SHR3 % subSample > 0) continue;
     ptr[elements] = pidx[i].index;
     elements++;
@@ -332,7 +336,7 @@ void Points::render()
   }
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   t2 = clock();
-  debug_print("  %.4lf seconds to upload indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, subSample);
+  debug_print("  %.4lf seconds to upload %d indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, subSample);
   t1 = clock();
   GL_Error_Check;
 
