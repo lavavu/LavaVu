@@ -2957,7 +2957,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    createDemoModel();
+    if (!parsed.has(ival, "test")) ival = 200000;
+    createDemoModel(ival);
     resetViews();
   }
   else if (parsed.exists("voltest"))
