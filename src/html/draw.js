@@ -1602,17 +1602,12 @@ Viewer.prototype.loadFile = function(source) {
     defaultColourMaps();
   }
 
-  //Always set a bounding box
+  //Always set a bounding box, get from objects if not in view
+  var objbb = false;
   if (!vis.views[view].min || !vis.views[view].max) {
-    vis.views[view].min = [Infinity, Infinity, Infinity];
-    vis.views[view].max = [-Infinity, -Infinity, -Infinity];
-
-    //Get bounding box from objects?`
-    for (var id in vis.objects) {
-      //Apply object bounding box
-      checkPointMinMax(vis.objects[id].min);
-      checkPointMinMax(vis.objects[id].max);
-    }
+    vis.views[view].min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    vis.views[view].max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
+    objbb = true;
   }
 
   //Load some user options...
@@ -1658,9 +1653,6 @@ Viewer.prototype.loadFile = function(source) {
     $('zmax').value = $("zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
   }
 
-  this.updateDims(vis.views[view]);
-  //boundingBox(vis.views[view].min, vis.views[view].max);
-
   //Load objects and add to form
   var objdiv = $("objects");
   removeChildren(objdiv);
@@ -1686,7 +1678,8 @@ Viewer.prototype.loadFile = function(source) {
         if (type == "points") this.hasPoints = true;
         if (type == "lines") this.hasLines = true;
 
-        if (type == "volume") { //Each volume object needs own renderer
+        if (type == "volume" && vis.objects[id][type].url) {
+          //Single volume per object only, each volume needs own renderer
           this.hasVolumes = true;
           var vren = new Renderer(this.gl, 'volume');
           vren.id = id;
@@ -1696,18 +1689,14 @@ Viewer.prototype.loadFile = function(source) {
           vren.image.onload = function(){ viewer.drawFrame(); viewer.draw(); };
         }
 
-        //Get bounding box from objects?`
-        var usebb = false;
-        if (!vis.views[view].min || !vis.views[view].max) usebb = true;
+        //Apply object bounding box
+        if (objbb && vis.objects[id].min)
+          checkPointMinMax(vis.objects[id].min);
+        if (objbb && vis.objects[id].max)
+          checkPointMinMax(vis.objects[id].max);
 
         //Read vertices, values, normals, sizes, etc...
         for (var idx in vis.objects[id][type]) {
-          //Apply object bounding box
-          if (usebb && vis.objects[i][type].min)
-            checkPointMinMax(vis.objects[i][type].min);
-          if (usebb && vis.objects[i][type].max)
-            checkPointMinMax(vis.objects[i][type].max);
-
           //Only support following data types for now
           decodeBase64(id, type, idx, 'vertices');
           decodeBase64(id, type, idx, 'values');
@@ -1767,6 +1756,8 @@ Viewer.prototype.loadFile = function(source) {
         }
       }
     }
+
+    this.updateDims(vis.views[view]);
 
     var div= document.createElement('div');
     div.className = "object-control";

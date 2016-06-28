@@ -1683,6 +1683,13 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
       json obj = objects[i]->properties.data;
       if (colourmap >= 0) obj["colourmap"] = colourmap;
+
+      //Include the object bounding box for WebGL
+      float min[3], max[3];
+      objectBounds(objects[i], min, max);
+      obj["min"] = {min[0], min[1], min[2]};
+      obj["max"] = {max[0], max[1], max[2]};
+
       if (!objdata)
       {
         if (Model::points->getVertexCount(objects[i]) > 0) obj["points"] = true;
@@ -1707,12 +1714,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
         //if (!Model::geometry[type]) continue;
         Model::geometry[type]->jsonWrite(objects[i], obj);
       }
-
-      //Include the object bounding box for WebGL
-      float min[3], max[3];
-      objectBounds(objects[i], min, max);
-      obj["min"] = {min[0], min[1], min[2]};
-      obj["max"] = {max[0], max[1], max[2]};
 
       //Save object if contains data
       if (obj["points"].size() > 0 ||
