@@ -411,8 +411,6 @@ void LavaVu::defaults()
   Properties::defaults["pointspheres"] = false;
   // | global | boolean | Enable transparent png output
   Properties::defaults["pngalpha"] = false;
-  // | global | boolean | Enable loading custom shaders from working directory
-  Properties::defaults["localshaders"] = false;
   // | global | boolean | Enable imported model y/z axis swap
   Properties::defaults["swapyz"] = false;
   // | global | integer | Imported model triangle subdivision level
@@ -480,7 +478,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       std::cout << "| -p#     | port, web server interface listen on port #\n";
       std::cout << "| -q#     | quality, web server jpeg quality (0=don't serve images)\n";
       std::cout << "| -n#     | number of threads to launch for web server #\n";
-      std::cout << "| -l      | use local shaders, locate in working directory not executable directory\n";
       std::cout << "| -Q      | quiet mode, no status updates to screen\n";
       std::cout << "\n";
       std::cout << "|         | Model options\n";
@@ -525,7 +522,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bkosu, BDEFHKLMOUXYZ
+      //Unused switches: bklosu, BDEFHKLMOUXYZ
       switch (x)
       {
       case 'a':
@@ -598,10 +595,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'C':
         //Global camera
         Properties::globals["globalcam"] = true;
-        break;
-      case 'l':
-        //Use local shader files (set shader path to current working directory)
-        Properties::globals["localshaders"] = true;
         break;
       case 'V':
         {
