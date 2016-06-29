@@ -110,7 +110,12 @@ void Properties::toFloatArray(const json& val, float* array, unsigned int size)
 {
   //Convert to a float array
   for (unsigned int i=0; i<size; i++)
-    array[i] = val[i];
+  {
+    if (i >= val.size())
+      array[i] = 0.0; //Zero pad if too short
+    else
+      array[i] = val[i];
+  }
 }
 
 bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
