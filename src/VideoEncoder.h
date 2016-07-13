@@ -47,6 +47,13 @@ extern "C"
 #undef exit
 
 //Compatibility hacks for old versions of avcodec
+#if LIBAVCODEC_VERSION_MAJOR < 54
+#define AVPixelFormat PixelFormat
+#define AV_PIX_FMT_YUV420P PIX_FMT_YUV420P
+#define AV_PIX_FMT_YUV444P PIX_FMT_YUV444P
+#define AV_PIX_FMT_RGB24 PIX_FMT_RGB24
+#endif
+
 #if LIBAVCODEC_VERSION_MAJOR < 52 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR < 64)
 #define AVMEDIA_TYPE_VIDEO CODEC_TYPE_VIDEO
 #define AVMEDIA_TYPE_AUDIO CODEC_TYPE_AUDIO
@@ -104,7 +111,7 @@ protected:
   int frame_count, video_outbuf_size;
 
   AVStream* add_video_stream(enum AVCodecID codec_id);
-  AVFrame* alloc_picture(enum PixelFormat pix_fmt);
+  AVFrame* alloc_picture(enum AVPixelFormat pix_fmt);
   void open_video();
   void write_video_frame();
   void close_video();

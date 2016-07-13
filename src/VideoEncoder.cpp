@@ -219,7 +219,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
   st->time_base.den = fps; /* frames per second */
   c->time_base.num = 1;
   c->time_base.den = fps; /* frames per second */
-  c->pix_fmt = PIX_FMT_YUV420P;
+  c->pix_fmt = AV_PIX_FMT_YUV420P;
   c->gop_size = 4; /* Maximum distance between key-frames, low setting allows fine granularity seeking */
   //c->keyint_min = 4; /*Minimum distance between keyframes */
 
@@ -229,7 +229,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
   return st;
 }
 
-AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
+AVFrame *VideoEncoder::alloc_picture(enum AVPixelFormat pix_fmt)
 {
   AVFrame *picture;
   uint8_t *picture_buf;
@@ -253,7 +253,7 @@ AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
   //Fixes frame warnings?
   picture->width = width;
   picture->height = height;
-  picture->format = PIX_FMT_YUV420P;
+  picture->format = AV_PIX_FMT_YUV420P;
   return picture;
 }
 
@@ -298,7 +298,7 @@ void VideoEncoder::open_video()
   if (!picture) abort_program("Could not allocate picture");
 
   /* Only supporting YUV420P now */
-  assert(c->pix_fmt == PIX_FMT_YUV420P);
+  assert(c->pix_fmt == AV_PIX_FMT_YUV420P);
 }
 
 void VideoEncoder::write_video_frame()
