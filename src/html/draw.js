@@ -1082,12 +1082,12 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
         this.floats[this.offset] = dat.vertices.data[ids3[j]];
         this.floats[this.offset+1] = dat.vertices.data[ids3[j]+1];
         this.floats[this.offset+2] = dat.vertices.data[ids3[j]+2];
-        if (dat.normals.data.length == 3) {
+        if (dat.normals && dat.normals.data.length == 3) {
           //Single surface normal
           this.floats[this.offset+3] = dat.normals.data[0];
           this.floats[this.offset+4] = dat.normals.data[1];
           this.floats[this.offset+5] = dat.normals.data[2];
-        } else {
+        } else if (dat.normals) {
           this.floats[this.offset+3] = dat.normals.data[ids3[j]];
           this.floats[this.offset+4] = dat.normals.data[ids3[j]+1];
           this.floats[this.offset+5] = dat.normals.data[ids3[j]+2];
@@ -1313,8 +1313,6 @@ Renderer.prototype.draw = function() {
     this.gl.vertexAttribPointer(this.program.attributes["aVertexTexCoord"], 2, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]+1);
 
     //Set uniforms...
-    //var colour = new Colour(parseInt(vis.colourmaps[i].colours[j].colour), vis.colourmaps[i].colours[j].position));
-    //this.gl.uniform4f(this.program.uniforms["uColour"], 1.0, 1.0, 1.0, 0.0);
     //this.gl.enable(this.gl.CULL_FACE);
     //this.gl.cullFace(this.gl.BACK_FACE);
     
@@ -1550,6 +1548,7 @@ function Viewer(canvas) {
 
 Viewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
+  //console.log(source);
   if (document.mouse.isdown) return;
   var start = new Date();
   var updated = true;
@@ -1609,6 +1608,7 @@ Viewer.prototype.loadFile = function(source) {
     vis.views[view].max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
     objbb = true;
   }
+  //console.log(JSON.stringify(vis.views[view]));
 
   //Load some user options...
   loadColourMaps();
@@ -1801,10 +1801,6 @@ Viewer.prototype.loadFile = function(source) {
     }
   }
 
-  //this.draw();
-  //Second call or window size not picked up (hack)
-  //this.draw();
-  //this.drawFrame();
   if (!this.hasVolumes) {
     this.drawFrame();
     this.draw();
