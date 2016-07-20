@@ -89,20 +89,25 @@ extern "C"
 #define AV_CODEC_ID_H264 CODEC_ID_H264
 #endif
 
+#define VIDEO_HIGHQ 3
+#define VIDEO_MEDQ 2
+#define VIDEO_LOWQ 1
 class VideoEncoder
 {
 public:
   unsigned char* buffer;
 
-  VideoEncoder(const char *filename, int width, int height, int fps);
+  VideoEncoder(const char *filename, int width, int height, int fps, int quality=VIDEO_HIGHQ);
   ~VideoEncoder();
   void frame(int channels=3);
   AVOutputFormat *defaultCodec(const char *filename);
 
 protected:
   int width, height, fps;
+  int quality;
   AVFormatContext *oc;
   AVStream *video_st;
+  AVCodecContext *video_enc;
 #ifdef HAVE_SWSCALE
   SwsContext * ctx;
 #endif
