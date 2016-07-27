@@ -141,7 +141,6 @@ public:
   void readHeightMap(const FilePath& fn);
   void readHeightMapImage(const FilePath& fn);
   void readOBJ(const FilePath& fn);
-  void readTecplot(const FilePath& fn);
   void readRawVolume(const FilePath& fn);
   void readXrwVolume(const FilePath& fn);
   void readVolumeSlice(const FilePath& fn);
