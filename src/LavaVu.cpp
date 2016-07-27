@@ -287,6 +287,8 @@ void LavaVu::defaults()
   Properties::defaults["scalevectors"] = 1.0;
   // | object(vector) | real | Arrow fixed shaft radius, default is to calculate proportional to length
   Properties::defaults["radius"] = 0.0;
+  // | object(vector) | boolean | Automatically scale vectors based on maximum magnitude
+  Properties::defaults["autoscale"] = false;
 
   // | object(tracer) | integer | Number of time steps to trace particle path
   Properties::defaults["steps"] = 0;

@@ -82,7 +82,7 @@ void Vectors::update()
     //Dynamic range?
     float scaling = (float)props["scaling"] * (float)props["scalevectors"];
 
-    if (geom[i]->vectors.maximum > 0)
+    if (props["autoscale"] && geom[i]->vectors.maximum > 0)
     {
       debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n",
                   scaling, 1/geom[i]->vectors.maximum, scaling/geom[i]->vectors.maximum);
