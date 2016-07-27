@@ -473,27 +473,55 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
     else if (index == i && geom[i]->draw == draw)
     {
       int width = geom[i]->width;
-      int height = geom[i]->colourData()->size() / width;
+      bool hasColourVals = geom[i]->colourData();
+      int height = 0;
+      if (hasColourVals)
+      {
+        height = geom[i]->colourData()->size() / width;
+        bpp = 1; //Luminance
+      }
+      else
+      {
+        height = geom[i]->colours.size() / width;
+        bpp = 4; //RGBA
+      }
       iw = width * xtiles;
       ih = ceil(slices[draw] / (float)xtiles) * height;
       if (ih == height) iw = width * slices[draw];
       printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), width, height, slices[draw], iw, ih);
-      bpp = 1; //Luminance
       image = new GLubyte[iw * ih * bpp];
-      memset(image, 0, iw*ih*sizeof(GLubyte));
+      memset(image, 0, iw*ih*bpp*sizeof(GLubyte));
       int xoffset = 0, yoffset = 0;
       for (unsigned int j=i; j<i+slices[draw]; j++)
       {
         //printf("%d %d < %d\n", i, j, i+slices[draw]);
         //printf("SLICE %d OFFSETS %d,%d\n", j, xoffset, yoffset);
-        float min = geom[j]->colourData()->minimum;
-        float range = geom[j]->colourData()->maximum - min;
-        for (int y=0; y<height; y++)
+        if (hasColourVals)
         {
-          for (int x=0; x<width; x++)
+          float min = geom[j]->colourData()->minimum;
+          float range = geom[j]->colourData()->maximum - min;
+          for (int y=0; y<height; y++)
           {
-            float val = geom[j]->colourData(y * width + x);
-            image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
+            for (int x=0; x<width; x++)
+            {
+              float val = geom[j]->colourData(y * width + x);
+              image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
+            }
+          }
+        }
+        else
+        {
+          Colour c;
+          for (int y=0; y<height; y++)
+          {
+            for (int x=0; x<width; x++)
+            {
+              c.value = geom[j]->colours[y * width + x];
+              image[(iw * (y + yoffset) + x + xoffset)*4] = c.r;
+              image[(iw * (y + yoffset) + x + xoffset)*4+1] = c.g;
+              image[(iw * (y + yoffset) + x + xoffset)*4+2] = c.b;
+              image[(iw * (y + yoffset) + x + xoffset)*4+3] = c.a;
+            }
           }
         }
 
@@ -590,7 +618,8 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[draw] * sizeof(float)); //For 3D export
       obj["volume"] = volume;
 
-      saveImage(draw);
+      //Write image to disk (for debugging)
+      //saveImage(draw);
 
       //Only one volume per object supported
       break;
