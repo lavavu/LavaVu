@@ -720,8 +720,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     std::string what = parsed["file"];
     //Attempt to load external file
-    FilePath file = FilePath(what);
-    loadFile(file);
+    loadFile(what);
   }
   else if (parsed.exists("script"))
   {

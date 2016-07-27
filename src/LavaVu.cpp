@@ -691,7 +691,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (args[i].length() == 0) continue;
 
     //Model data file, load if exists and recognised
-    if (!loadFile(FilePath(args[i])))
+    if (!loadFile(args[i]))
     {
       //Otherwise, attempt to run as script command, queue for when viewer is opened
       OpenGLViewer::commands.push_back(args[i]);
@@ -2658,13 +2658,14 @@ void LavaVu::drawScene()
   glUseProgram(0);
 }
 
-bool LavaVu::loadFile(const FilePath& fn)
+bool LavaVu::loadFile(const std::string& file)
 {
   //All files on command line plus init.script added to files list
   // - gldb files represent a Model
   // - Non gldb data will be loaded into active Model
   // - If none exists, a default will be created
   // - Sequence matters! To display non-gldb data with model, load the gldb first
+  FilePath fn(file);
 
   //Load a file based on extension
   debug_print("Loading: %s\n", fn.full.c_str());
