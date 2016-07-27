@@ -49,6 +49,10 @@
 
 #define frand (rand() / (float) RAND_MAX)
 
+//Fast random int with fixed seed for deterministic random sample
+static uint32_t SEED_VAL = 123456789;
+#define SHR3 (SEED_VAL^=(SEED_VAL<<13), SEED_VAL^=(SEED_VAL>>17), SEED_VAL^=(SEED_VAL<<5))
+
 extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);

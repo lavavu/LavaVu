@@ -232,7 +232,7 @@ void Properties::parse(const std::string& property, bool global)
     }
     catch (std::exception& e)
     {
-      //std::cerr << "[" << key << "] " << data << " : " << e.what();
+      //std::cerr << e.what() << " : [" << key << "] => " << value;
       //Treat as a string value
       dest[key] = value;
     }
