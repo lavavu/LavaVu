@@ -602,6 +602,16 @@ int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int 
   return -1;
 }
 
+float LavaVu::parseCoord(const json& val)
+{
+  if (val.is_string())
+  {
+    std::string vstr = val;
+    return parseCoord(vstr);
+  }
+  return (float)val;
+}
+
 float LavaVu::parseCoord(const std::string& str)
 {
   //Return a coord value macro replacement for bounds if valid string
@@ -618,7 +628,10 @@ float LavaVu::parseCoord(const std::string& str)
     return aview->min[2];
   if (str == "maxZ")
     return aview->max[2];
-  return 0.0;
+  std::stringstream ss(str);
+  float val;
+  ss >> val;
+  return val;
 }
 
 bool LavaVu::parseCommands(std::string cmd)
@@ -1901,6 +1914,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (parsed["list"] == "colourmaps")
     {
       int offset = 0;
+      std::cerr << "ColourMaps:\n===========\n";
       for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
       {
         if (amodel->colourMaps[i])
@@ -2049,7 +2063,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           cmap = amodel->addColourMap();
           obj->properties.data["colourmap"] = cmap;
-          what = parsed.get("colourmap", next+1);
+          if (what == "add") what = parsed.get("colourmap", next);
         }
         if (what.length() > 0)
         {
@@ -2169,7 +2183,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Read data into selected object, appends to specified data array\n\n"
-              "> **Usage:** data type\n\n"
+              "> **Usage:** read type\n\n"
               "> type (string) : data type to load vertices/vectors/normals/values/colours  \n"
               "> Before using this command, store the data a json array in a property of same name\n\n";
       return false;
@@ -2194,6 +2208,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         width = 1;
         if (data.is_string())
         {
+          //Convert to colour values using colourmap parser
           ColourMap cmap;
           cmap.parse(data);
           data = json::array();
@@ -2220,9 +2235,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           if (width != 3) return false;
           //Support 2d array for vertex/vector/normal
-          vals[i*3] = data[i][0];
-          vals[i*3+1] = data[i][1];
-          vals[i*3+2] = data[i][2];
+          vals[i*3] = parseCoord(data[i][0]);
+          vals[i*3+1] = parseCoord(data[i][1]);
+          vals[i*3+2] = parseCoord(data[i][2]);
         }
         else if (dtype == lucRGBAData)
         {
@@ -2230,8 +2245,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           vals[i] = c.fvalue;
         }
         else
-          vals[i] = data[i];
+          vals[i] = parseCoord(data[i]);
       }
+
       int len = size/width;
       active->read(aobject, len, dtype, vals);
       delete[] vals;

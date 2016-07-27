@@ -167,6 +167,7 @@ public:
   virtual bool mouseScroll(float scroll);
   virtual bool keyPress(unsigned char key, int x, int y);
 
+  float parseCoord(const json& val);
   float parseCoord(const std::string& str);
   virtual bool parseCommands(std::string cmd);
   bool parseCommand(std::string cmd, bool gethelp=false);
