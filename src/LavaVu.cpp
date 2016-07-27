@@ -1095,7 +1095,33 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   }
   else
   {
-    Model::volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
+    if (bytesPerPixel < 4)
+    {
+      //Convert LUM/RGB to RGBA
+      GLubyte* rgba = new GLubyte[width*height*4];
+      for (int y=0; y<height; y++)
+      {
+        for (int x=0; x<width; x++)
+        {
+          if (bytesPerPixel == 1)
+          {
+            rgba[(y*width+x)*4] = rgba[(y*width+x)*4+1] = rgba[(y*width+x)*4+2] = imageData[y*width+x];
+            rgba[(y*width+x)*4+3] = 255;
+          }
+          if (bytesPerPixel == 3)
+          {
+            rgba[(y*width+x)*4] = imageData[(y*width+x)*3];
+            rgba[(y*width+x)*4+1] = imageData[(y*width+x)*3+1];
+            rgba[(y*width+x)*4+2] = imageData[(y*width+x)*3+2];
+            rgba[(y*width+x)*4+3] = 255;
+          }
+        }
+      }
+      Model::volumes->read(vobj, width*height, lucRGBAData, rgba, width, height);
+      delete[] rgba;
+    }
+    else
+      Model::volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
     std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
   }
 }
