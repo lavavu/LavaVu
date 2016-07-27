@@ -277,8 +277,6 @@ void Points::depthSort()
 }
 
 //Reloads points into display list or VBO, required after data update and depth sort
-static uint32_t SEED_VAL = 123456789;
-#define SHR3 (SEED_VAL^=(SEED_VAL<<13), SEED_VAL^=(SEED_VAL>>17), SEED_VAL^=(SEED_VAL<<5))
 void Points::render()
 {
   clock_t t1,t2,tt;
