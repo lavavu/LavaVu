@@ -2751,7 +2751,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "> **Usage:** sort on/off/timer\n\n"
               "> on : (default) sort after model rotation  \n"
               "> off : no sorting  \n"
-              "> timer : sort after 1.5 second timeout  \n";
+              "> timer : sort after 1.5 second timeout  \n"
+              "> If no options passed, flags re-sort required  \n";
       return false;
     }
 
@@ -2780,6 +2781,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       viewer->idleTimer(0); //Stop/disable idle redisplay timer
       printMessage("Sort geometry on rotation enabled");
     }
+    else
+      //Flag rotated
+      aview->rotated = true;
   }
   else if (parsed.exists("idle"))
   {
