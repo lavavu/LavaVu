@@ -3029,10 +3029,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     amodel->addTimeStep(amodel->step()+1);
     amodel->setTimeStep(Model::now+1);
+
     //Don't record
     return false;
   }
-  else if (parsed.exists("filter"))
+  else if (parsed.exists("filter") || parsed.exists("filterout"))
   {
     if (gethelp)
     {
@@ -3049,32 +3050,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Require a selected object
     if (aobject)
     {
-      //TODO: implement a json representation for web ui
-      Filter filter;
-      filter.dataIdx = parsed.Int("filter", 0);
-      parsed.has(filter.minimum, "filter", 1);
-      parsed.has(filter.maximum, "filter", 2);
+      json filter;
+      filter["index"] = parsed.Int("filter", 0);
+      float min, max;
+      parsed.has(min, "filter", 1);
+      parsed.has(max, "filter", 2);
+      filter["minimum"] = min;
+      filter["maximum"] = max;
       //Range keyword defines a filter applied over the range of available values not literal values
       //eg: 0.1-0.9 will filter out the lowest and highest 10% of values
-      filter.range = (parsed.get("filter", 3) == "range");
-      aobject->filters.push_back(filter);
-      printMessage("%s filter on value index %d from %f to %f", (filter.range ? "Range" : "Value"), filter.dataIdx, filter.minimum, filter.maximum);
-      amodel->redraw(true); //Force reload
-    }
-  }
-  else if (parsed.exists("filterout"))
-  {
-    if (gethelp)
-    {
-      help += "> Toggle filters on selected object to filter set data range out or in  \n";
-      return false;
-    }
-
-    //Require a selected object
-    if (aobject)
-    {
-      aobject->filterout = !aobject->filterout;
-      printMessage("Filters on object %s set to %s", aobject->name().c_str(), (aobject->filterout ? "OUT" : "IN"));
+      bool range = (parsed.get("filter", 3) == "range");
+      filter["range"] = range;
+      if (parsed.exists("filterout")) filter["out"] = true;
+      aobject->properties.data["filters"].push_back(filter);
+      printMessage("%s filter on value index %d from %f to %f", (range ? "Range" : "Value"), (int)filter["index"], min, max);
       amodel->redraw(true); //Force reload
     }
   }
@@ -3090,7 +3079,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       printMessage("Filters cleared on object %s", aobject->name().c_str());
-      aobject->filters.clear();
+      aobject->properties["filters"] = json::array();
       amodel->redraw(true); //Force reload
     }
   }
