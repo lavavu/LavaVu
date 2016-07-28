@@ -42,6 +42,7 @@ float Geometry::dims[3];
 std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 int segments__ = 0;    // Saves segment count for circle based objects
+std::vector<Geometry*> TimeStep::fixed; //Defined here as no TimeStep.cpp
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -249,7 +250,7 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
 }
 
 Geometry::Geometry() : view(NULL), elements(-1), flat2d(false),
-                       fixed(NULL), allhidden(false), internal(false), 
+                       allhidden(false), internal(false), 
                        type(lucMinType), total(0), redraw(true)
 {
 }
@@ -826,15 +827,6 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
     //No store yet or loading vertices and already have required amount, new object required...
     //Create new data store, save in drawing object and Geometry list
     geomdata = add(draw);
-
-    //After creating new store, insert any fixed geometry records
-    if (fixed) 
-    {
-      //Default shallow copy
-      *geomdata = *fixed;
-      geomdata->fixedOffset = geomdata->values.size();
-      //std::cout << "FIXED DATA RECORDS LOADED FOR " << draw->name() << ", " << geomdata->vertices.size() << " verts " << std::endl;
-    }
   }
 
   read(geomdata, n, dtype, data, width, height, depth);
@@ -855,7 +847,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     FloatValues* fv = new FloatValues();
     geomdata->data[dtype] = fv;
     geomdata->values.push_back(fv);
-    //debug_print("NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name().c_str(), dtype, geomdata->values.size(), fv);
+    //debug_print(" -- NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name().c_str(), dtype, geomdata->values.size(), fv);
   }
 
   //Update the default type property on first read
@@ -883,27 +875,20 @@ void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minim
   geomdata->data[dtype]->setup(minimum, maximum, label);
 }
 
-
-GeomData* Geometry::fix(GeomData* fgeom)
+void Geometry::insertFixed(Geometry* fixed)
 {
-  //Fixed geomdata (static over timesteps)
-  //If fgeom provided, simply save as the fixed data
-  //If not, move own data into fixed and clear
-  if (fgeom)
+  if (geom.size() > 0) return; //Not permitted to load fixed data if any existing data loaded already
+  for (unsigned int i=0; i<fixed->geom.size(); i++)
   {
-    fixed = fgeom;
+    GeomData* varying = NULL;
+    if (geom.size() == i)
+      add(fixed->geom[i]->draw); //Insert new if not enough records
+    //Create a shallow copy of member content
+    *geom[i] = *fixed->geom[i];
+    //Set offset where fixed data ends (so we can avoid clearing it)
+    geom[i]->fixedOffset = geom[i]->values.size();
+    //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count << " verts " << " = " << geom[i]->count << " offset = " << geom[i]->fixedOffset << " == " << fixed->geom[i]->values.size() << std::endl;
   }
-  else if (geom.size() == 1)
-  {
-    fixed = geom[0];
-    //std::cout << "SET FIXED DATA RECORDS FOR " << fixed->draw->name() << ", " << fixed->vertices.size() << " verts " << std::endl;
-    geom.clear();
-  }
-  else
-  {
-    std::cout << "Unexpected: multiple fixed geometry containers\n";
-  }
-  return fixed;
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)

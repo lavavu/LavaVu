@@ -594,7 +594,11 @@ void Model::loadLinks(DrawingObject* obj)
 void Model::clearTimeSteps()
 {
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
+  {
+    //Clear the store first on current timestep to avoid deleting active (double free)
+    if (idx == now) timesteps[idx]->cache.clear();
     delete timesteps[idx];
+  }
   timesteps.clear();
 }
 
@@ -815,6 +819,17 @@ bool Model::issue(const char* SQL, sqlite3* odb)
   return true;
 }
 
+void Model::freeze()
+{
+  //Freeze fixed geometry
+  TimeStep::freeze(geometry);
+
+  //Need new geometry containers after freeze
+  //(Or new data will be appended to the frozen containers!)
+  init();
+  timesteps[now]->loadFixed(geometry);
+}
+
 void Model::deleteCache()
 {
   if (TimeStep::cachesize == 0) return;
@@ -923,6 +938,7 @@ int Model::nearestTimeStep(int requested)
 //Load data at specified timestep
 int Model::setTimeStep(int stepidx)
 {
+  int rows = 0;
   clock_t t1 = clock();
 
   //Default timestep only? Skip load
@@ -947,30 +963,35 @@ int Model::setTimeStep(int stepidx)
   now = stepidx;
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
-  if (restoreStep())
-    return 0; //Cache hit successful return value
+  if (!restoreStep())
+  {
+    //Create new geometry containers if required
+    if (geometry.size() == 0) init();
 
-  //Create new geometry containers if required
-  if (geometry.size() == 0) init();
+    //Clear any existing geometry
+    clearObjects();
 
-  //Clear any existing geometry
-  clearObjects();
+    //Import fixed data first
+    if (now > 0) 
+      timesteps[now]->loadFixed(geometry);
 
-  //Attempt to load from cache first
-  //if (restoreStep(now)) return 0; //Cache hit successful return value
-  if (!db) return 0;
+    //Attempt to load from cache first
+    //if (restoreStep(now)) return 0; //Cache hit successful return value
+    if (db)
+    {
+      //Detach any attached db file and attach n'th timestep database if available
+      attach(now);
 
-  //Detach any attached db file and attach n'th timestep database if available
-  attach(now);
+      if (TimeStep::cachesize > 0)
+        //Attempt caching all geometry from database at start
+        rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
+      else
+        rows += loadGeometry();
 
-  int rows = 0;
-  if (TimeStep::cachesize > 0)
-    //Attempt caching all geometry from database at start
-    rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
-  else
-    rows += loadGeometry();
+      debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
+    }
+  }
 
-  debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
   return rows;
 }
 
