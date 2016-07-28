@@ -185,7 +185,7 @@ void Points::loadVertices()
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
-      if (geom[s]->filter(i)) continue;
+      //if (geom[s]->filter(i)) continue;
       pidx[index].id = i;
       pidx[index].index = index;
       pidx[index].geomid = s;
@@ -319,6 +319,7 @@ void Points::render()
   for(int i=total-1; i>=0; i--)
   {
     if (hiddencache[pidx[i].geomid]) continue;
+    if (geom[pidx[i].geomid]->filter(pidx[i].id)) continue;
     // If subSampling, use a pseudo random distribution to select which particles to draw
     // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
     SEED_VAL = pidx[i].index; //Reset the seed for determinism based on index
