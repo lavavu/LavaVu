@@ -36,7 +36,7 @@
 #ifndef Model__
 #define Model__
 
-#include "sqlite3/src/sqlite3.h"
+#include "sqlite3/sqlite3.h"
 
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
