@@ -3047,6 +3047,9 @@ std::string LavaVu::getStates()
     amodel->jsonWrite(ss, 0, false);
     if (s < amodel->figures.size()-1) ss << ",\n";
   }
+  //Export current state only if no figures
+  if (amodel->figures.size() == 0)
+    amodel->jsonWrite(ss, 0, false);
   ss << "]\n";
   return ss.str();
 }
