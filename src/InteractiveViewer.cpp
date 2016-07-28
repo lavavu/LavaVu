@@ -758,7 +758,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       help += "> Export all settings as json state file that can be reloaded later\n\n"
               "> **Usage:** save [\"filename\"]\n\n"
               "> file (string) : name of file to import  \n"
-              "> If filename omitted and database loaded, will save the state  \n";
+              "> If filename omitted and database loaded, will save the state  \n"
               "> to the active figure in the database instead  \n";
       return false;
     }
@@ -818,14 +818,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     volume = new DrawingObject("volume");
     printMessage("Created static volume object");
   }
-  else if (parsed.has(fval, "alpha"))
+  else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
   {
     if (gethelp)
     {
       help += "> Set global transparency value\n\n"
-              "> **Usage:** alpha value\n\n"
-              "> value (integer > 1) : sets alpha as integer in range [1,255] where 255 is fully opaque  \n"
-              "> value (number [0,1]) : sets alpha as real number in range [0,1] where 1.0 is fully opaque  \n";
+              "> **Usage:** opacity/alpha value\n\n"
+              "> value (integer > 1) : sets opacity as integer in range [1,255] where 255 is fully opaque  \n"
+              "> value (number [0,1]) : sets opacity as real number in range [0,1] where 1.0 is fully opaque  \n";
       return false;
     }
 
@@ -836,7 +836,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       opacity = fval;
     Properties::globals["opacity"] = opacity;
-    printMessage("Set global alpha to %.2f", opacity);
+    printMessage("Set global opacity to %.2f", opacity);
     if (amodel)
       amodel->redraw(true);
   }
