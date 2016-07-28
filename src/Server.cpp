@@ -17,7 +17,7 @@ Server* Server::_self = NULL; //Static
 //Defaults
 int Server::port = 8080;
 int Server::quality = 90;
-int Server::threads = 4;
+int Server::threads = 2;
 std::string Server::htmlpath = "html";
 
 Server* Server::Instance(OpenGLViewer* viewer)
