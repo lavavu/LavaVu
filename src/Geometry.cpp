@@ -199,6 +199,8 @@ bool GeomData::filter(unsigned int idx)
       ridx = idx;
       if (range > 1) ridx = idx / range;
       value = values[filterCache[i].dataIdx]->value[ridx];
+      //if (idx%1000==0) std::cout << min << " < " << value << " < " << max << std::endl;
+      
       //"out" flag indicates values between the filter range are skipped
       if (filterCache[i].out)
       {
@@ -210,7 +212,6 @@ bool GeomData::filter(unsigned int idx)
       else
       {
         //Filter out values unless between specified ranges (allows combining filters)
-        //std::cout << min << " < " << filterValue << " < " << max << std::endl;
         if (value < min || value > max)
           return true;
       }

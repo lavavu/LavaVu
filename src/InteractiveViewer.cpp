@@ -3051,17 +3051,22 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       json filter;
-      filter["index"] = parsed.Int("filter", 0);
+      std::string action = "filter";
+      if (parsed.exists("filterout"))
+      {
+        action = "filterout";
+        filter["out"] = true;
+      }
+      filter["index"] = parsed.Int(action, 0);
       float min, max;
-      parsed.has(min, "filter", 1);
-      parsed.has(max, "filter", 2);
+      parsed.has(min, action, 1);
+      parsed.has(max, action, 2);
       filter["minimum"] = min;
       filter["maximum"] = max;
       //Range keyword defines a filter applied over the range of available values not literal values
       //eg: 0.1-0.9 will filter out the lowest and highest 10% of values
-      bool range = (parsed.get("filter", 3) == "range");
+      bool range = (parsed.get(action, 3) == "range");
       filter["range"] = range;
-      if (parsed.exists("filterout")) filter["out"] = true;
       aobject->properties.data["filters"].push_back(filter);
       printMessage("%s filter on value index %d from %f to %f", (range ? "Range" : "Value"), (int)filter["index"], min, max);
       amodel->redraw(true); //Force reload
