@@ -153,11 +153,9 @@ void LavaVu::defaults()
   loop = false;
   animate = 0;
   automate = false;
-  quiet = false;
   repeat = 0;
-#ifdef HAVE_LIBAVCODEC
   encoder = NULL;
-#endif
+
   //Setup default properties
   //(Comments formatted to be parsed into documentation)
   
@@ -395,7 +393,7 @@ void LavaVu::defaults()
   //Global Properties
   // | global | string | Title of window for caption area
   Properties::defaults["caption"] = APPNAME__;
-  // | global | resolution[2] | Window resolution X,Y
+  // | global | integer[2] | Window resolution X,Y
   Properties::defaults["resolution"] = {1024, 768};
   // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
   Properties::defaults["cachevolumes"] = false;
@@ -800,8 +798,8 @@ void LavaVu::clearData(bool objects)
   {
     if (aview) aview->objects.clear();
     if (amodel) amodel->objects.clear();
-    aobject = NULL;
   }
+  aobject = NULL;
 }
 
 void LavaVu::exportData(lucExportType type, DrawingObject* obj)
@@ -1868,6 +1866,7 @@ void LavaVu::close()
 
   aview = NULL;
   amodel = NULL;
+  aobject = NULL;
 }
 
 void LavaVu::redraw(DrawingObject* obj)
@@ -2458,7 +2457,6 @@ GeomData* LavaVu::getGeometry(DrawingObject* obj)
 void LavaVu::displayObjectList(bool console)
 {
   //Print available objects by id to screen and stderr
-  if (quiet) return;
   int offset = 0;
   if (console) std::cerr << "------------------------------------------" << std::endl;
   for (unsigned int i=0; i < amodel->objects.size(); i++)
