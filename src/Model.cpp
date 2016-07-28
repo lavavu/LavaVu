@@ -1711,6 +1711,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       obj["min"] = {min[0], min[1], min[2]};
       obj["max"] = {max[0], max[1], max[2]};
 
+      //Texture ? Export first only, as external file for now
+      //TODO: dataurl using getImageString(image, iw, ih, bpp)
+      if (objects[i]->textures.size() > 0)
+        obj["texture"] = objects[i]->textures[0]->fn.full;
+
       if (!objdata)
       {
         if (Model::points->getVertexCount(objects[i]) > 0) obj["points"] = true;
