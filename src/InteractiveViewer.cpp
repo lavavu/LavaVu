@@ -921,7 +921,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     //Attempt to parse as property=value first
     if (parsePropertySet(cmd)) return true;
-    std::cerr << "Model/View required to execute command: " << cmd << std::endl;
+    if (verbose) std::cerr << "Model/View required to execute command: " << cmd << ", deferred" << std::endl;
+    //Add to the queue to be processed once open
+    OpenGLViewer::commands.push_back(cmd);
     return false;
   }
   else if (parsed.exists("rotation"))
