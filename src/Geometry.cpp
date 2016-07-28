@@ -878,6 +878,7 @@ void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minim
 void Geometry::insertFixed(Geometry* fixed)
 {
   if (geom.size() > 0) return; //Not permitted to load fixed data if any existing data loaded already
+
   for (unsigned int i=0; i<fixed->geom.size(); i++)
   {
     GeomData* varying = NULL;
@@ -889,6 +890,10 @@ void Geometry::insertFixed(Geometry* fixed)
     geom[i]->fixedOffset = geom[i]->values.size();
     //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count << " verts " << " = " << geom[i]->count << " offset = " << geom[i]->fixedOffset << " == " << fixed->geom[i]->values.size() << std::endl;
   }
+
+  //Update total
+  total += fixed->total;
+  //std::cout << fixed->total << " + NEW TOTAL == " << total << std::endl;
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)
