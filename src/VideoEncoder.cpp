@@ -118,12 +118,14 @@ VideoEncoder::~VideoEncoder()
   /* free the streams */
   for(unsigned int i = 0; i < oc->nb_streams; i++)
   {
-    //av_freep(&oc->streams[i]->codec);
+    avcodec_close(oc->streams[i]->codec);
     av_freep(&oc->streams[i]);
   }
 
+#ifdef HAVE_SWSCALE
   if (ctx)
     sws_freeContext(ctx);
+#endif
 
   /* close the output file */
   avio_close(oc->pb);
@@ -246,11 +248,8 @@ AVFrame *VideoEncoder::alloc_picture(enum AVPixelFormat pix_fmt)
   AVFrame *picture;
   uint8_t *picture_buf;
   int size;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-  picture = avcodec_alloc_frame();
-#else
+
   picture = av_frame_alloc();
-#endif
   if (!picture)
     return NULL;
   size = avpicture_get_size(pix_fmt, width, height);
