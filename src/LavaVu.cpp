@@ -687,8 +687,9 @@ void LavaVu::arguments(std::vector<std::string> args)
     //Model data file, load if exists and recognised
     if (!loadFile(args[i]))
     {
-      //Otherwise, attempt to run as script command, queue for when viewer is opened
-      OpenGLViewer::commands.push_back(args[i]);
+      //Otherwise, attempt to run as script command
+      //(will be queued for when viewer is opened if invalid before)
+      parseCommand(args[i]);
     }
   }
 }
