@@ -227,6 +227,8 @@ void LavaVu::defaults()
   Properties::defaults["ymax"] = FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum z
   Properties::defaults["zmax"] = FLT_MAX;
+  // | object | object | Filter list
+  Properties::defaults["filters"] = json::array();
 
   // | object | integer [0,n] | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)
   Properties::defaults["glyphs"] = 2;

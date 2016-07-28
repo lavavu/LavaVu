@@ -151,41 +151,67 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     colour.a = draw->opacity * 255;
 }
 
+//Returns true if vertex is to be filtered (don't display)
 bool GeomData::filter(unsigned int idx)
 {
-  for (unsigned int i=0; i < draw->filters.size(); i++)
+  //On the first index, cache the filter data
+  if (idx == 0)
   {
-    Filter& filter = draw->filters[i];
-    if (values.size() <= filter.dataIdx || !values[filter.dataIdx]) continue;
-    int size = values[filter.dataIdx]->size();
-    int range = size ? count / size : 1;
-    if (filter.dataIdx >= 0 && size > 0)
+    //The cache stores filter values so we can avoid 
+    //hitting the json store for every vertex (very slow)
+    filterCache.clear();
+    json filters = draw->properties["filters"];
+    for (unsigned int i=0; i < filters.size(); i++)
+    {
+      filterCache.push_back(Filter());
+      filterCache[i].dataIdx = filters[i]["index"];
+      filterCache[i].minimum = filters[i]["minimum"];
+      filterCache[i].maximum = filters[i]["maximum"];
+      filterCache[i].range = filters[i]["range"];
+      filterCache[i].out = filters[i]["out"];
+    }
+  }
+
+  //Iterate all the filters,
+  // - if a value matches a filter condition return true (filtered)
+  // - if no filters hit, returns false
+  float value, min, max;
+  int size, range;
+  unsigned int ridx;
+  for (unsigned int i=0; i < filterCache.size(); i++)
+  {
+    if (values.size() <= filterCache[i].dataIdx || !values[filterCache[i].dataIdx]) continue;
+    size = values[filterCache[i].dataIdx]->size();
+    if (filterCache[i].dataIdx >= 0 && size > 0)
     {
       //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
-      float filterValue;
-      float min = filter.minimum;
-      float max = filter.maximum;
-      if (filter.range)
+      min = filterCache[i].minimum;
+      max = filterCache[i].maximum;
+      if (filterCache[i].range)
       {
-        //Range type filter over available values
-        float valrange = values[filter.dataIdx]->maximum - values[filter.dataIdx]->minimum;
-        min = values[filter.dataIdx]->minimum + min * valrange;
-        max = values[filter.dataIdx]->minimum + max * valrange;
+        //Range type filters map over available values on [0,1] => [min,max]
+        value = values[filterCache[i].dataIdx]->maximum - values[filterCache[i].dataIdx]->minimum;
+        min = values[filterCache[i].dataIdx]->minimum + min * value;
+        max = values[filterCache[i].dataIdx]->minimum + max * value;
       }
-      unsigned int ridx = idx / range;
-      //Have values but not enough for per-vertex, spread over range (eg: per triangle)
-      filterValue = values[filter.dataIdx]->value[ridx];
-      if (draw->filterout)
+      //Have values but not enough for per-vertex? spread over range (eg: per triangle)
+      range = count / size;
+      ridx = idx;
+      if (range > 1) ridx = idx / range;
+      value = values[filterCache[i].dataIdx]->value[ridx];
+      //"out" flag indicates values between the filter range are skipped
+      if (filterCache[i].out)
       {
         //Filter out values between specified ranges (allows filtering separate sections)
-        if (filterValue >= min && filterValue <= max) 
+        if (value >= min && value <= max) 
           return true;
       }
+      //Default is to filter out values NOT in the filter range
       else
       {
         //Filter out values unless between specified ranges (allows combining filters)
         //std::cout << min << " < " << filterValue << " < " << max << std::endl;
-        if (filterValue < min || filterValue > max)
+        if (value < min || value > max)
           return true;
       }
     }
@@ -914,7 +940,8 @@ std::vector<std::string> Geometry::getDataLabels(DrawingObject* draw)
         std::stringstream ss;
         ss << "[" << v << "] " << geom[i]->values[v]->label
            << " (range: " << geom[i]->values[v]->minimum
-           << " to " << geom[i]->values[v]->maximum << ")";
+           << " to " << geom[i]->values[v]->maximum << ")"
+           << " -- " << geom[i]->values[v]->size() << "";
         list.push_back(ss.str());
       }
       list.push_back("-----------------------------------------");

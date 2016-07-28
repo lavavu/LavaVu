@@ -48,6 +48,15 @@
 
 #define SORT_DIST_MAX 65535
 
+typedef struct
+{
+  unsigned int dataIdx;
+  float minimum;
+  float maximum;
+  bool range;
+  bool out;
+} Filter;
+
 //Types based on triangle renderer
 #define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
@@ -85,6 +94,7 @@ public:
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   int texIdx;    //Texture index to use
   unsigned int fixedOffset; //Offset to end of fixed value data
+  std::vector<Filter> filterCache;
 
   float distance;
 

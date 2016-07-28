@@ -58,7 +58,6 @@ DrawingObject::DrawingObject(std::string name, std::string props, int colourmap,
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
   properties.data["visible"] = true;
-  filterout = false;
   colourIdx = 0; //Default colouring data is first value block
   setup();
 }
