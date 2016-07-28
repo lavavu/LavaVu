@@ -108,9 +108,12 @@ void GeomData::mapToColour(Colour& colour, float value)
 int GeomData::colourCount()
 {
   //Return number of colour values or RGBA colours
-  //TODO: Use colourIdx?
-  int hasColours = data[lucColourValueData] ? data[lucColourValueData]->size() : 0;
-  if (hasColours == 0) hasColours = colours.size();
+  int hasColours = colours.size();
+  if (values.size() > draw->colourIdx)
+  {
+    FloatValues* fv = values[draw->colourIdx];
+    hasColours = fv->size();
+  }
   return hasColours;
 }
 
