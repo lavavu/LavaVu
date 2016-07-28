@@ -427,8 +427,14 @@ void LavaVu::defaults()
   Properties::defaults["volsubsample"] = {1., 1., 1.};
   // | global | real[3] | Geometry input scaling X Y Z
   Properties::defaults["inscale"] = {1., 1., 1.};
+  // | global | integer | Point render sub-sampling factor
+  Properties::defaults["pointsubsample"] = 0;
   // | global | integer | Point distance sub-sampling factor
   Properties::defaults["pointdistsample"] = 0;
+  // | global | boolean | Point size/type attributes can be applied per object (requires more GPU ram)
+  Properties::defaults["pointattribs"] = true;
+  // | global | boolean | Point distance size attenuation (points shrink when further from viewer ie: perspective)
+  Properties::defaults["pointattenuate"] = true;
 
 #ifdef DEBUG
   //std::cerr << std::setw(2) << Properties::defaults << std::endl;
@@ -466,7 +472,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       std::cout << "Any following integer switch will be interpreted as the final timestep for output. ";
       std::cout << "eg: -10 -20 will run all output commands on timestep 10 to 20 inclusive\n";
       std::cout << "| -c#     | caching, set # of timesteps to cache data in memory for\n";
-      std::cout << "| -P#     | subsample points, loading only every #'th\n";
       std::cout << "| -A      | All objects hidden initially, use 'show object' to display\n";
       std::cout << "| -N      | No load, deferred loading mode, use 'load object' to load & display from database\n";
       std::cout << "| -S      | Skip default script, don't run init.script\n";
@@ -520,7 +525,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bklosu, BDEFHKLMOUXYZ
+      //Unused switches: bklosu, BDEFHKLMOPUXYZ
       switch (x)
       {
       case 'a':
@@ -554,13 +559,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'r':
         ss >> vars[0] >> x >> vars[1];
         Properties::globals["resolution"] = json::array({vars[0], vars[1]});
-        break;
-      case 'P':
-        //Points initial sub-sampling
-        if (args[i].length() > 2)
-          ss >> Points::subSample;
-        else
-          Properties::globals["pointspheres"] = true;
         break;
       case 'N':
         Properties::globals["noload"] = true;

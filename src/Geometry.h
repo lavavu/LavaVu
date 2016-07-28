@@ -397,8 +397,6 @@ class Points : public Geometry
   PIndex *swap;
 public:
   static Shader* prog;
-  static unsigned int subSample;
-  bool attenuate;
   static GLuint indexvbo, vbo;
 
   Points();

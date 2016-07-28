@@ -36,7 +36,6 @@
 #include "GraphicsUtil.h"
 #include "Geometry.h"
 
-unsigned int Points::subSample = 1;
 Shader* Points::prog = NULL;
 GLuint Points::indexvbo = 0;
 GLuint Points::vbo = 0;
@@ -44,7 +43,6 @@ GLuint Points::vbo = 0;
 Points::Points() : Geometry()
 {
   type = lucPointType;
-  attenuate = true;
   pidx = swap = NULL;
 }
 
@@ -127,10 +125,12 @@ void Points::loadVertices()
   if (pidx == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
   if (geom.size() == 0) return;
 
-  //Calculates normals, deletes duplicate verts, adds triangles to sorting array
-
   // VBO - copy normals/colours/positions to buffer object for quick display
-  int datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
+  int datasize;
+  if (Properties::global("pointattribs"))
+    datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
+  else
+    datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
   if (!vbo) glGenBuffers(1, &vbo);
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -182,6 +182,7 @@ void Points::loadVertices()
     //float opacity = props["opacity"];
     //if (opacity > 0.0 && opacity < 1.0) alpha *= opacity;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
+    bool attribs = Properties::global("pointattribs");
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
@@ -209,13 +210,17 @@ void Points::loadVertices()
           geom[s]->getColour(c, i);
         memcpy(ptr, &c, sizeof(Colour));
         ptr += sizeof(Colour);
-        //Copies settings (size + smooth)
-        float psize = psize0;
-        if (geom[s]->data[lucSizeData]) psize *= geom[s]->valueData(lucSizeData, i);
-        memcpy(ptr, &psize, sizeof(float));
-        ptr += sizeof(float);
-        memcpy(ptr, &ptype, sizeof(float));
-        ptr += sizeof(float);
+        //Optional per-object size/type
+        if (attribs)
+        {
+          //Copies settings (size + smooth)
+          float psize = psize0;
+          if (geom[s]->data[lucSizeData]) psize *= geom[s]->valueData(lucSizeData, i);
+          memcpy(ptr, &psize, sizeof(float));
+          ptr += sizeof(float);
+          memcpy(ptr, &ptype, sizeof(float));
+          ptr += sizeof(float);
+        }
       }
 
       index++;
@@ -299,6 +304,7 @@ void Points::render()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   //Initialise particle buffer
+  int subSample = Properties::global("pointsubsample");
   if (glIsBuffer(indexvbo))
   {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
@@ -335,7 +341,10 @@ void Points::render()
   }
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   t2 = clock();
-  debug_print("  %.4lf seconds to upload %d indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, subSample);
+  if (subSample)
+    debug_print("  %.4lf seconds to upload %d indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, subSample);
+  else
+    debug_print("  %.4lf seconds to upload %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
   t1 = clock();
   GL_Error_Check;
 
@@ -380,6 +389,8 @@ void Points::draw()
   //Draw, update
   Geometry::draw();
   if (drawcount == 0 || elements == 0) return;
+  clock_t t0 = clock();
+  double time;
   GL_Error_Check;
 
   setState(0, prog); //Set global draw state (using first object)
@@ -401,18 +412,25 @@ void Points::draw()
 
   //Point size distance attenuation (disabled for 2d models)
   float scale0 = (float)geom[0]->draw->properties["scalepoints"] * view->scale2d; //Include 2d scale factor
-  if (view->is3d && attenuate) //Adjust scaling by model size when using distance size attenuation
+  if (view->is3d && Properties::global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
+  {
     prog->setUniform("uPointScale", scale0 * view->model_size);
+    prog->setUniform("uPointDist", 1);
+  }
   else
+  {
     prog->setUniform("uPointScale", scale0);
+    prog->setUniform("uPointDist", 0);
+  }
   prog->setUniformi("uPointType", getPointType());
-  prog->setUniform("uPointDist", (view->is3d && attenuate ? 1 : 0));
 
   glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   GL_Error_Check;
 
   // Draw using vertex buffer object
-  int stride = 5 * sizeof(float) + sizeof(Colour);
+  int stride = 3 * sizeof(float) + sizeof(Colour);
+  if (Properties::global("pointattribs"))
+    stride += 2 * sizeof(float);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
@@ -424,9 +442,9 @@ void Points::draw()
     glEnableClientState(GL_COLOR_ARRAY);
 
     //Generic vertex attributes, "aSize", "aPointType"
-    GLint aSize = 0, aPointType = 0;
-    if (prog && prog->program)
+    if (Properties::global("pointattribs"))
     {
+      GLint aSize = 0, aPointType = 0;
       aSize = prog->attribs["aSize"];
       if (aSize >= 0)
       {
@@ -439,16 +457,24 @@ void Points::draw()
         glEnableVertexAttribArray(aPointType);
         glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(4*sizeof(float)+sizeof(Colour)));
       }
-    }
 
-    //Draw the points
-    glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+      //Draw the points
+      glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
 
-    if (prog && prog->program)
-    {
       if (aSize >= 0) glDisableVertexAttribArray(aSize);
       if (aPointType >= 0) glDisableVertexAttribArray(aPointType);
     }
+    else
+    {
+      //Use generic default values
+      glVertexAttrib1f(prog->attribs["aPointType"], -1.0);
+      glVertexAttrib1f(prog->attribs["aSize"], 1.0);
+      GL_Error_Check;
+
+      //Draw the points
+      glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+    }
+
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
   }
@@ -462,7 +488,12 @@ void Points::draw()
   glDisable(GL_TEXTURE_2D);
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
+
+  time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
+  if (time > 0.05)
+    debug_print("%.4lf seconds to draw points\n", time);
   GL_Error_Check;
+
   labels();
 }
 

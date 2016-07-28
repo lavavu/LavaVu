@@ -2318,14 +2318,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     if (parsed.has(ival, "pointsample"))
-      Points::subSample = ival;
+      Properties::globals["pointsubsample"] = ival;
     else if (parsed["pointsample"] == "up")
-      Points::subSample /= 2;
+      Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") / 2;
     else if (parsed["pointsample"] == "down")
-      Points::subSample *= 2;
-    if (Points::subSample < 1) Points::subSample = 1;
+      Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") * 2;
+    if ((int)Properties::global("pointsubsample") < 1) Properties::globals["pointsubsample"] = 1;
     Model::points->redraw = true;
-    printMessage("Point sampling %d", Points::subSample);
+    printMessage("Point sampling %d", (int)Properties::global("pointsubsample"));
   }
   else if (parsed.exists("image"))
   {
