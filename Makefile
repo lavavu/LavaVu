@@ -88,7 +88,7 @@ endif
 #Source search paths
 vpath %.cpp src:src/Main:src:src/jpeg
 vpath %.h src/Main:src:src/jpeg:src/sqlite3
-vpath %.c src/mongoose:src/sqlite3/src
+vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cpp)
