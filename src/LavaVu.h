@@ -106,7 +106,6 @@ protected:
 
 public:
   bool automate;
-  bool quiet;
   bool loop;
   int animate;
   char message[MAX_MSG];
