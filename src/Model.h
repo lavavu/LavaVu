@@ -113,6 +113,9 @@ public:
   DrawingObject* findObject(unsigned int id);
   View* defaultView();
 
+  //Data fix
+  void freeze();
+
   //Timestep caching
   void deleteCache();
   void cacheStep();

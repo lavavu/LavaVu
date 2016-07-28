@@ -213,6 +213,7 @@ struct vertexIdSort
 //Container class for a list of geometry objects
 class Geometry
 {
+  friend class TimeStep; //Allow private access from TimeStep
 protected:
   View* view;
   std::vector<GeomData*> geom;
@@ -222,7 +223,6 @@ protected:
   int elements;
   int drawcount;
   bool flat2d; //Flag for flat surfaces in 2d
-  GeomData* fixed; //Pointer to fixed data
 
 public:
   //Store the actual maximum bounding box
@@ -262,7 +262,7 @@ public:
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label="Default");
-  GeomData* fix(GeomData* fgeom=NULL);
+  void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
   void print();
   std::vector<std::string> getDataLabels(DrawingObject* draw);
