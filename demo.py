@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import sys
-sys.path.append('bin')
 import LavaVu
 
 lv = LavaVu.load(hidden=False) #Interactive - require visible window
@@ -34,8 +32,7 @@ lv.commands("add sealevel quads")
 lv.commands("colour=[0,204,255]")
 lv.commands("opacity=0.5")
 lv.commands("static=true")
-lv.commands("geomwidth=2")
-lv.commands("geomheight=2")
+lv.commands("dims=[2,2]")
 lv.commands("cullface=false")
 lv.commands("vertex minX 0 minZ")
 lv.commands("vertex maxX 0 minZ")
