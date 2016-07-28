@@ -110,6 +110,7 @@ public:
   int animate;
   char message[MAX_MSG];
   std::string help;
+  std::string binpath;
 
   int view;
 
@@ -218,12 +219,13 @@ public:
   //Python interface functions
   std::string image(std::string filename="", int width=0, int height=0);
   std::string web(bool tofile=false);
-  void addObject(std::string name, std::string properties);
+  std::string addObject(std::string name, std::string properties);
   void setState(std::string state);
   std::string getStates();
   std::string getTimeSteps();
-  void vertices(std::vector< std::vector <float> > array);
-  void values(std::vector <float> array);
+  void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData);
+  void loadScalars(std::vector <float> array, lucGeometryDataType type=lucColourValueData, std::string label="", float minimum=0, float maximum=0);
+  void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData);
 };
 
 #endif //LavaVu__

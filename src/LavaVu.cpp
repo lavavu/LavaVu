@@ -94,10 +94,10 @@ LavaVu::LavaVu(std::string binary)
   viewer->app = (ApplicationInterface*)this;
 
   //Shader path (default to program path if not set)
-  std::string xpath = GetBinaryPath(binary.c_str(), APPNAME__);
-  if (Shader::path.length() == 0) Shader::path = xpath;
+  binpath = GetBinaryPath(binary.c_str(), APPNAME__);
+  if (Shader::path.length() == 0) Shader::path = binpath;
   //Set default web server path
-  Server::htmlpath = xpath + "html";
+  Server::htmlpath = binpath + "html";
 
   //Add any output attachments to the viewer
   if (Server::port > 0)
@@ -3019,11 +3019,15 @@ std::string LavaVu::web(bool tofile)
   return jsonWriteFile(NULL, false, true);
 }
 
-void LavaVu::addObject(std::string name, std::string properties)
+std::string LavaVu::addObject(std::string name, std::string properties)
 {
-  if (!amodel) return;
+  if (!amodel) return "";
   parseCommands("add " + name);
   aobject->properties.parseSet(properties);
+  //Return props of active object
+  std::stringstream ss;
+    amodel->jsonWrite(ss, aobject, false);
+  return ss.str();
 }
 
 void LavaVu::setState(std::string state)
@@ -3060,36 +3064,63 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
-void LavaVu::vertices(std::vector< std::vector <float> > array)
+void LavaVu::loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type)
 {
   //Get selected object or create a new one
-  if (!amodel) return;
-  if (!aobject) addObject("(unnamed)", "");
+  if (!amodel || !aobject) return;
 
   //Get the type to load (defaults to points)
-  std::string type = aobject->properties["geometry"];
-  Geometry* container = getGeometryType(type);
+  std::string gtype = aobject->properties["geometry"];
+  Geometry* container = getGeometryType(gtype);
   if (!container) return;
 
   //Load 3d vertices
   for (unsigned int i=0; i < array.size(); i++)
-    container->read(aobject, 1, lucVertexData, &array[i][0]);
+    container->read(aobject, 1, type, &array[i][0]);
 }
 
-void LavaVu::values(std::vector <float> array)
+void LavaVu::loadScalars(std::vector <float> array, lucGeometryDataType type, std::string label, float minimum, float maximum)
 {
   //Get selected object or create a new one
-  if (!amodel) return;
-  if (!aobject) addObject("(unnamed)", "");
+  if (!amodel || !aobject) return;
 
   //Get the type to load (defaults to points)
-  std::string type = aobject->properties["geometry"];
-  Geometry* container = getGeometryType(type);
+  std::string gtype = aobject->properties["geometry"];
+  Geometry* container = getGeometryType(gtype);
+  if (!container) return;
+
+  //Load scalar values
+  float min = HUGE_VALF;
+  float max = -HUGE_VALF;
+  for (unsigned int i=0; i < array.size(); i++)
+  {
+    container->read(aobject, 1, type, &array[i]);
+    if (array[i] > max) max = array[i];
+    if (array[i] < min) min = array[i];
+  }
+
+  if (minimum == maximum)
+  {
+    minimum = min;
+    maximum = max;
+  }
+
+  //Setup
+  container->setup(aobject, type, minimum, maximum, label);
+}
+
+void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type)
+{
+  //Get selected object or create a new one
+  if (!amodel || !aobject) return;
+
+  //Get the type to load (defaults to points)
+  std::string gtype = aobject->properties["geometry"];
+  Geometry* container = getGeometryType(gtype);
   if (!container) return;
 
   //Load scalar values
   for (unsigned int i=0; i < array.size(); i++)
-    container->read(aobject, 1, lucColourValueData, &array[i]);
+    container->read(aobject, 1, type, &array[i]);
 }
-
 
