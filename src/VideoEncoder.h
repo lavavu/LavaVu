@@ -46,6 +46,14 @@ extern "C"
 }
 #undef exit
 
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 52, 0))
+#define avcodec_free_context av_freep
+#endif
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,45,101)
+#define av_frame_alloc avcodec_alloc_frame
+#endif
+
 //Compatibility hacks for old versions of avcodec
 #if LIBAVCODEC_VERSION_MAJOR < 54
 #define AVPixelFormat PixelFormat
