@@ -64,7 +64,7 @@ ColourMap::ColourMap(const char* name, bool log, bool discrete,
 void ColourMap::parse(std::string colourMapString)
 {
   noValues = false;
-  const char *breakChars = " \t\n;,";
+  const char *breakChars = " \t\n;";
   char *charPtr;
   char colourStr[64];
   char *colourString = new char[colourMapString.size()+1];
