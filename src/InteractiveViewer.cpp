@@ -3086,7 +3086,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       printMessage("Filters cleared on object %s", aobject->name().c_str());
-      aobject->properties["filters"] = json::array();
+      aobject->properties.data.erase("filters");
       amodel->redraw(true); //Force reload
     }
   }
