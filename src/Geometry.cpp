@@ -57,10 +57,9 @@ void GeomData::label(std::string& labeltext)
   labels.push_back(labeltext);
 }
 
-const char* GeomData::getLabels()
+std::string GeomData::getLabels()
 {
-  if (labelptr) free(labelptr);
-  labelptr = NULL;
+  std::stringstream ss;
   if (labels.size())
   {
     //Get total length
@@ -71,9 +70,9 @@ const char* GeomData::getLabels()
     labelptr[0] = '\0';
     //Copy labels
     for (unsigned int i=0; i < labels.size(); i++)
-      sprintf(labelptr, "%s%s\n", labelptr, labels[i].c_str());
+      ss << labels[i] << std::endl;
   }
-  return (const char*)labelptr;
+  return ss.str();
 }
 
 //Utility functions, calibrate colourmaps and get colours
@@ -81,6 +80,12 @@ void GeomData::colourCalibrate()
 {
   //Cache colour lookups
   draw->setup();
+
+  json colourBy = draw->properties["colourby"];
+  if (colourBy.is_string())
+    draw->colourIdx = valuesLookup(colourBy);
+  else if (colourBy.is_number())
+    draw->colourIdx = colourBy;
 
   //Check for sane range
   if (draw->colourIdx >= values.size()) draw->colourIdx = 0;
@@ -155,6 +160,15 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     colour.a = draw->opacity * 255;
 }
 
+unsigned int GeomData::valuesLookup(const std::string& label)
+{
+  //Lookup index from label
+  for (unsigned int j=0; j < values.size(); j++)
+    if (values[j]->label == label)
+      return j;
+  return 0;
+}
+
 //Returns true if vertex is to be filtered (don't display)
 bool GeomData::filter(unsigned int idx)
 {
@@ -168,11 +182,22 @@ bool GeomData::filter(unsigned int idx)
     for (unsigned int i=0; i < filters.size(); i++)
     {
       filterCache.push_back(Filter());
-      filterCache[i].dataIdx = filters[i]["index"];
+      json filterBy = filters[i]["by"];
+      if (filterBy.is_string())
+        filterCache[i].dataIdx = valuesLookup(filterBy);
+      else if (filterBy.is_number())
+        filterCache[i].dataIdx = filterBy;
       filterCache[i].minimum = filters[i]["minimum"];
       filterCache[i].maximum = filters[i]["maximum"];
       filterCache[i].range = filters[i]["range"];
       filterCache[i].out = filters[i]["out"];
+      if (filterCache[i].minimum > filterCache[i].maximum)
+      {
+        //Swap and change to an out filter
+        filterCache[i].minimum = filters[i]["maximum"];
+        filterCache[i].maximum = filters[i]["minimum"];
+        filterCache[i].out = !filterCache[i].out;
+      }
     }
   }
 
@@ -409,6 +434,8 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
             el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(geom[index]->data[data_type]->ref(0)), length);
           else
           {
+            //TODO: Support export of custom value data (not with pre-defined label)
+            //      include minimum/maximum/label fields
             json values;
             for (unsigned int j=0; j<geom[index]->data[data_type]->size(); j++)
             {
@@ -909,6 +936,17 @@ void Geometry::label(DrawingObject* draw, const char* labels)
     geomdata->label(line);
 }
 
+void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
+{
+  //Get passed object's most recently added data store and add vertex labels (newline separated)
+  GeomData* geomdata = getObjectStore(draw);
+  if (!geomdata) return;
+
+  //Load from vector 
+  for (auto line : labels)
+    geomdata->label(line);
+}
+
 void Geometry::print()
 {
   for (unsigned int i = 0; i < geom.size(); i++)
@@ -918,29 +956,27 @@ void Geometry::print()
   }
 }
 
-std::vector<std::string> Geometry::getDataLabels(DrawingObject* draw)
+json Geometry::getDataLabels(DrawingObject* draw)
 {
   //Iterate through all geometry of given object(id) and print
   //the index and label of the associated value data sets
   //(used for colouring and filtering)
-  std::vector<std::string> list;
+  json list = json::array();
   DrawingObject* last = NULL;
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     if ((!draw || geom[i]->draw == draw) && geom[i]->draw != last)
     {
-      list.push_back("Data sets for: " + geom[i]->draw->name());
-      list.push_back("-----------------------------------------");
       for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {
         std::stringstream ss;
-        ss << "[" << v << "] " << geom[i]->values[v]->label
-           << " (range: " << geom[i]->values[v]->minimum
-           << " to " << geom[i]->values[v]->maximum << ")"
-           << " -- " << geom[i]->values[v]->size() << "";
-        list.push_back(ss.str());
+        json entry;
+        entry["label"] = geom[i]->values[v]->label;
+        entry["minimum"] = geom[i]->values[v]->minimum;
+        entry["maximum"] = geom[i]->values[v]->maximum;
+        entry["size"] = geom[i]->values[v]->size();
+        list.push_back(entry);
       }
-      list.push_back("-----------------------------------------");
       //No need to repeat for every element as they will all have the same data sets per object
       last = geom[i]->draw;
     }
@@ -982,7 +1018,7 @@ void Geometry::setTexture(DrawingObject* draw, int idx)
 {
   GeomData* geomdata = getObjectStore(draw);
   geomdata->texIdx = idx;
-  //printf("SET TEXTURE: %p\n", idx);
+  //std::cout << "SET TEXTURE: " << idx << " ON " << draw->name() << std::endl;
   //Must be opaque to draw with own texture
   geomdata->opaque = true;
 }

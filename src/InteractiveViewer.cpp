@@ -1934,15 +1934,29 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       int offset = 0;
       std::vector<std::string> list;
+      if (aobject)
+      {
+        displayText("Data sets for: " + aobject->name(), ++offset);
+        std::cout << ("Data sets for: " + aobject->name()) << std::endl;
+      }
+      displayText("-----------------------------------------", ++offset);
+      std::cout << "-----------------------------------------" << std::endl;
       for (unsigned int i=0; i < Model::geometry.size(); i++)
       {
-        list = Model::geometry[i]->getDataLabels(aobject);
+        json list = Model::geometry[i]->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
-          displayText(list[l], ++offset);
-          std::cerr << list[l] << std::endl;
+          std::stringstream ss;
+          ss << "[" << l << "] " << list[l]["label"]
+           << " (range: " << list[l]["minimum"]
+           << " to " << list[l]["maximum"] << ")"
+           << " -- " << list[l]["size"] << "";
+          displayText(ss.str(), ++offset);
+          std::cerr << ss.str() << std::endl;
         }
       }
+      displayText("-----------------------------------------", ++offset);
+      std::cout << "-----------------------------------------" << std::endl;
       viewer->swap();  //Immediate display
       return false;
     }
