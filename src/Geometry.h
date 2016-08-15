@@ -150,11 +150,12 @@ public:
   void checkPointMinMax(float *coord);
 
   void label(std::string& labeltext);
-  const char* getLabels();
+  std::string getLabels();
   void colourCalibrate();
   void mapToColour(Colour& colour, float value);
   int colourCount();
   void getColour(Colour& colour, unsigned int idx);
+  unsigned int valuesLookup(const std::string& label);
   bool filter(unsigned int idx);
   FloatValues* colourData();
   float colourData(unsigned int idx);
@@ -264,8 +265,9 @@ public:
   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label="Default");
   void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
+  void label(DrawingObject* draw, std::vector<std::string> labels);
   void print();
-  std::vector<std::string> getDataLabels(DrawingObject* draw);
+  json getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
   void setView(View* vp, float* min=NULL, float* max=NULL);
   void objectBounds(DrawingObject* draw, float* min, float* max);
