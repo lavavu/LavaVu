@@ -255,6 +255,8 @@ void LavaVu::defaults()
 
   // | object(surface) | boolean | If opaque flag is set skips depth sorting step and allows individual surface properties to be applied
   Properties::defaults["opaque"] = false;
+  // | object(surface) | boolean | Disable this flag to skip the mesh optimisation step
+  Properties::defaults["optimise"] = true;
 
   // | object(volume) | real | Power used when applying transfer function, 1.0=linear mapping
   Properties::defaults["power"] = 1.0;

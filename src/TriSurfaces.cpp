@@ -244,12 +244,15 @@ void TriSurfaces::loadMesh()
       geom[index]->vertices = Coord3DValues();
       geom[index]->normals = Coord3DValues();
       geom[index]->indices = UIntValues();
-      int i = 0;
       geom[index]->count = 0;
+      geom[index]->data[lucVertexData] = &geom[index]->vertices;
+      geom[index]->data[lucNormalData] = &geom[index]->normals;
+      geom[index]->data[lucIndexData] = &geom[index]->indices;
+      bool optimise = false; //TODO: Property
       for (unsigned int v=0; v<verts.size(); v++)
       {
         //Re-write optimised data with unique vertices only
-        if (verts[v].id == verts[v].ref)
+        if (!optimise || verts[v].id == verts[v].ref)
         {
           //Reference id == self, not a duplicate
           //Normalise final vector
@@ -259,12 +262,13 @@ void TriSurfaces::loadMesh()
           if (vertColour && verts[v].vcount > 1)
             geom[index]->colourData()->value[verts[v].id] /= verts[v].vcount;
 
+          //Save an index lookup entry (Grid indices loaded in previous step)
+          indices[verts[v].id] = vertices.size();
+
           //Replace verts & normals
           vertices.push_back(Vec3d(verts[v].vert));
           read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
 
-          //Save an index lookup entry (Grid indices loaded in previous step)
-          indices[verts[v].id] = i++;
           unique++;
         }
         else
@@ -274,7 +278,7 @@ void TriSurfaces::loadMesh()
         }
       }
       //Read replacement vertices
-      read(geom[index], i, lucVertexData, &vertices[0]);
+      read(geom[index], vertices.size(), lucVertexData, &vertices[0]);
     }
 
     t2 = clock();
@@ -456,8 +460,11 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   clock_t t1,t2;
   t1 = clock();
   debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->vertices.size()/3);
+  //Vertex elimination currently only works for per-vertex colouring, 
+  // if less colour values provided, must precalc own indices to skip this step 
   unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours == geom[index]->vertices.size()/3);
+  if (hasColours && !vertColour) std::cout << "WARNING: Not enough colour values for per-vertex normalisation!\n";
   //Calculate face normals for each triangle and copy to each face vertex
   for (unsigned int v=0; v<verts.size(); v += 3)
   {
@@ -482,9 +489,11 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   //Now have list of vertices sorted by vertex pos
   //Search for duplicates and replace references to normals
   int match = 0;
+  int dupcount = 0;
+  bool optimise = false; //TODO: Property
   for(unsigned int v=1; v<verts.size(); v++)
   {
-    if (verts[match] == verts[v])
+    if (optimise && verts[match] == verts[v])
     {
       // If the angle between a given face normal and the face normal
       // associated with the first triangle in the list of triangles for the
@@ -501,6 +510,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
       {
         //Found a duplicate, replace reference idx (original retained in "id")
         verts[v].ref = verts[match].ref;
+        dupcount++;
 
         //Add this normal to matched normal
         normals[verts[match].id] += normals[verts[v].id];
@@ -520,7 +530,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
     }
   }
   t2 = clock();
-  debug_print("  %.4lf seconds to replace duplicates\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to replace duplicates (%d/%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, dupcount, verts.size());
   t1 = clock();
 }
 
