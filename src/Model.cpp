@@ -483,22 +483,28 @@ void Model::loadObjects()
   {
     int object_id = sqlite3_column_int(statement, 0);
     const char *otitle = (char*)sqlite3_column_text(statement, 1);
-    int colour = 0xff000000;
-    float opacity = -1;
-    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
-      colour = sqlite3_column_int(statement, 2);
-    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
-      opacity = (float)sqlite3_column_double(statement, 3);
 
     //Create drawing object and add to master list
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
     DrawingObject* obj = new DrawingObject(otitle, props, -1, object_id);
+
+    //Convert old colour/opacity from hard coded fields if provided
+    int colour = 0x00000000;
+    float opacity = -1;
+    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
+    {
+      colour = sqlite3_column_int(statement, 2);
+      if (!obj->properties.has("colour")) obj->properties.data["colour"] = colour;
+    }
+    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
+    {
+      opacity = (float)sqlite3_column_double(statement, 3);
+      if (!obj->properties.has("opacity")) obj->properties.data["opacity"] = opacity;
+    }
+
     addObject(obj);
-    //Convert old colour/opacity from hard coded fields
-    if (!obj->properties.has("opacity") && opacity >= 0.0) obj->properties.data["opacity"] = opacity;
-    if (!obj->properties.has("colour")) obj->properties.data["colour"] = colour;
   }
   sqlite3_finalize(statement);
 }
@@ -808,10 +814,10 @@ bool Model::issue(const char* SQL, sqlite3* odb)
   if (!odb) odb = db; //Use existing database
   // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
   //debug_print("Issuing: %s\n", SQL);
-  char* zErrMsg;
+  char* zErrMsg = NULL;
   if (sqlite3_exec(odb, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
   {
-    std::cerr << "SQLite error: " << zErrMsg << std::endl;
+    std::cerr << "SQLite error: " << (zErrMsg ? zErrMsg : "(no error msg)") << std::endl;
     std::cerr << " -- " << SQL << std::endl;
     sqlite3_free(zErrMsg);
     return false;
@@ -1381,33 +1387,12 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   issue(
     "create table colourmap (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), minimum REAL, maximum REAL, logscale INTEGER, discrete INTEGER, centreValue REAL, properties VARCHAR(2048))", outdb);
 
+  //Write state
+  writeState(outdb);
+
   issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
 
   char SQL[SQL_QUERY_MAX];
-
-  //Write colour maps
-  for (unsigned int i = 0; i < colourMaps.size(); i++)
-  {
-    ColourMap* cm = colourMaps[i];
-
-    //Convert colour/values to properties string
-    std::stringstream colours;
-    std::stringstream positions;
-    for (unsigned int c=0; c< cm->colours.size(); c++)
-    {
-      colours << cm->colours[c].position; // * (cm->maximum - cm->minimum) + cm->minimum);
-      colours << "=rgba(" << (int)cm->colours[c].colour.r;
-      colours << "," << (int)cm->colours[c].colour.g;
-      colours << "," << (int)cm->colours[c].colour.b;
-      colours << "," << (cm->colours[c].colour.a/255.0) << ")\n";
-    }
-    cm->properties.data["colours"] = colours.str();
-
-    //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
-    snprintf(SQL, SQL_QUERY_MAX, "insert into colourmap (name, minimum, maximum, logscale, discrete, properties) values ('%s', %g, %g, %d, %d, '%s')", cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
-    //printf("%s\n", SQL);
-    if (!issue(SQL, outdb)) return;
-  }
 
   //Write objects
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1443,27 +1428,35 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     writeObjects(outdb, obj, step(), compress);
   }
 
-  //Write state
-  writeState(outdb);
-
   issue("COMMIT", outdb);
 }
 
 void Model::writeState(sqlite3* outdb)
 {
   //Write state
-  if (figure < 0) return;
   if (!outdb) outdb = db; //Use existing database
   issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)", outdb);
 
   std::stringstream ss;
   jsonWrite(ss, 0, false);
   std::string state = ss.str();
+
+  //Add default figure
+  if (figure < 0)
+  {
+    figure = 0;
+    if (figures.size() == 0)
+    {
+      fignames.push_back("default");
+      figures.push_back(state);
+    }
+  }
+
   char SQL[SQL_QUERY_MAX];
 
   // Delete any state entry with same name
   snprintf(SQL, SQL_QUERY_MAX,  "delete from state where name == '%s'", fignames[figure].c_str());
-  issue(SQL);
+  issue(SQL, outdb);
 
   snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[figure].c_str());
   sqlite3_stmt* statement;
@@ -1506,9 +1499,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
   {
     for (data_type=0; data_type<data[i]->data.size(); data_type++)
     {
-      if (!data[i]->data[data_type]) continue;
-      std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
-                << data_type <<  ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
+      if (!data[i]->data[data_type] || data[i]->data[data_type]->size() == 0) continue;
+      std::cerr << "Writing geometry (type[" << data_type << "] * " << data[i]->data[data_type]->size()
+                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       //Get the data block
       DataContainer* block = data[i]->data[data_type];
 
@@ -1556,11 +1549,13 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
         abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
       }
 
-      /* Setup text data for insert */
-      const char* labels = data[i]->getLabels();
-      if (labels)
+      /* Setup text data for insert (on vertex block only) */
+      std::string labels = data[i]->getLabels().c_str();
+      if (data_type == lucVertexData && labels.length() > 0)
       {
-        if (sqlite3_bind_text(statement, 1, labels, strlen(labels), SQLITE_STATIC) != SQLITE_OK)
+        if (sqlite3_bind_text(statement, 1, labels.c_str(), labels.length(), SQLITE_STATIC) != SQLITE_OK)
+        //const char* clabels = labels.c_str();
+        //if (sqlite3_bind_text(statement, 1, clabels, strlen(clabels), SQLITE_STATIC) != SQLITE_OK)
           abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
       }
 
@@ -1662,6 +1657,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
   {
+    //json cmap = colourMaps[i]->properties.data;
     json cmap;
     json colours;
 
@@ -1691,19 +1687,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       //TODO: fix to use sub-renderer output for others
       //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
 
-      //Find colourmap
-      int colourmap = -1;
-      ColourMap* cmap = objects[i]->getColourMap();
-      if (cmap)
-      {
-        //Search vector to find index of selected map
-        std::vector<ColourMap*>::iterator it = find(colourMaps.begin(), colourMaps.end(), cmap);
-        if (it != colourMaps.end())
-          colourmap = (it - colourMaps.begin());
-      }
-
       json obj = objects[i]->properties.data;
-      if (colourmap >= 0) obj["colourmap"] = colourmap;
 
       //Include the object bounding box for WebGL
       float min[3], max[3];
@@ -1726,6 +1710,20 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
             Model::shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
         if (Model::lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
         if (Model::volumes->getVertexCount(objects[i]) > 0) obj["volume"] = true;
+
+        //Data labels
+        json dict;
+        for (unsigned int j=0; j < Model::geometry.size(); j++)
+        {
+          json list = Model::geometry[j]->getDataLabels(objects[i]);
+          std::string key;
+          for (auto dataobj : list)
+          {
+            key = dataobj["label"];
+            dict[key] = dataobj;
+          }
+        }
+        obj["data"] = dict;
 
         //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.getBool("points", false) << "," 
         //          << obj.getBool("triangles", false) << "," << obj.getBool("volume", false) << std::endl;
