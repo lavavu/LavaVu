@@ -72,6 +72,7 @@ protected:
   int initfigure;
   bool sort_on_rotate;
   bool status;
+  bool objectlist;
   bool writeimage;
   int writemovie;
   DrawingObject *volume;
@@ -92,7 +93,6 @@ protected:
   int dumpid;
   int model;
   int tracersteps;
-  bool objectlist;
 
   //Interaction: Key command entry
   std::string entry;

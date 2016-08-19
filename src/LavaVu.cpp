@@ -35,7 +35,6 @@
 
 //TODO/FIX:
 //Value data types independent from geometry types?
-//Timestep inconsistencies in tecplot load
 //Merge WebGL/standard shader code
 
 //Viewer class
@@ -2123,10 +2122,10 @@ void LavaVu::display(void)
     aview->projection(EYE_CENTRE);
     drawSceneBlended();
   }
+#endif
 
   //Print current info message (displayed for one frame only)
   if (status) displayMessage();
-#endif
 
   //Clear the rotation flag
   if (aview->sort) aview->rotated = false;
@@ -2460,42 +2459,39 @@ void LavaVu::displayObjectList(bool console)
   if (console) std::cerr << "------------------------------------------" << std::endl;
   for (unsigned int i=0; i < amodel->objects.size(); i++)
   {
-    if (amodel->objects[i])
+    std::ostringstream ss;
+    ss << "  ";
+    ss << std::setw(5) << (i+1) << " : " << amodel->objects[i]->name();
+    if (amodel->objects[i] == aobject) ss << "*";
+    if (amodel->objects[i]->skip)
     {
-      std::ostringstream ss;
-      ss << "  ";
-      ss << std::setw(5) << (i+1) << " : " << amodel->objects[i]->name();
-      if (amodel->objects[i] == aobject) ss << "*";
-      if (amodel->objects[i]->skip)
-      {
-        if (console) std::cerr << "[ no data  ]" << ss.str() << std::endl;
-        Colour c;
-        c.value = 0xff222288;
-        displayText(ss.str(), ++offset, &c);
-      }
-      else if (amodel->objects[i]->properties["visible"])
-      {
-        if (console) std::cerr << "[          ]" << ss.str() << std::endl;
-        //Use object colour if provided, unless matches background
-        Colour c;
-        GeomData* geomdata = getGeometry(amodel->objects[i]);
-        if (geomdata)
-          geomdata->getColour(c, 0);
-        else
-          c = amodel->objects[i]->properties.getColour("colour", 0, 0, 0, 255);
-        c.a = 255;
-        offset++;
-        displayText(ss.str(), offset);
-        if (c.value != viewer->background.value)
-          displayText(std::string(1, 0x7f), offset, &c);
-      }
+      if (console) std::cerr << "[ no data  ]" << ss.str() << std::endl;
+      Colour c;
+      c.value = 0xff222288;
+      displayText(ss.str(), ++offset, &c);
+    }
+    else if (amodel->objects[i]->properties["visible"])
+    {
+      if (console) std::cerr << "[          ]" << ss.str() << std::endl;
+      //Use object colour if provided, unless matches background
+      Colour c;
+      GeomData* geomdata = getGeometry(amodel->objects[i]);
+      if (geomdata)
+        geomdata->getColour(c, 0);
       else
-      {
-        if (console) std::cerr << "[  hidden  ]" << ss.str() << std::endl;
-        Colour c;
-        c.value = 0xff888888;
-        displayText(ss.str(), ++offset, &c);
-      }
+        c = amodel->objects[i]->properties.getColour("colour", 0, 0, 0, 255);
+      c.a = 255;
+      offset++;
+      displayText(ss.str(), offset);
+      if (c.value != viewer->background.value)
+        displayText(std::string(1, 0x7f), offset, &c);
+    }
+    else
+    {
+      if (console) std::cerr << "[  hidden  ]" << ss.str() << std::endl;
+      Colour c;
+      c.value = 0xff888888;
+      displayText(ss.str(), ++offset, &c);
     }
   }
   if (console) std::cerr << "------------------------------------------" << std::endl;
