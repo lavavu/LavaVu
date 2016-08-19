@@ -71,8 +71,6 @@ protected:
   int viewset;
   int initfigure;
   bool sort_on_rotate;
-  bool status;
-  bool objectlist;
   bool writeimage;
   int writemovie;
   DrawingObject *volume;
@@ -108,6 +106,8 @@ public:
   bool automate;
   bool loop;
   int animate;
+  bool status;
+  bool objectlist;
   char message[MAX_MSG];
   std::string help;
   std::string binpath;
