@@ -317,7 +317,7 @@ public:
   }
 
   /* Convert from Axis Angle */
-  void fromAxisAngle(Vec3d& v, float angle)
+  void fromAxisAngle(const Vec3d& v, float angle)
   {
     angle *= 0.5f * DEG2RAD;
     float sinAngle = sin(angle);

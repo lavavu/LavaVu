@@ -1141,10 +1141,11 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
   rvector.normalise();
   float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
   //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
-  if (rangle > 0.0)
+  if (rangle == 180.0)
+    rot.fromAxisAngle(Vec3d(0, 0, rvector.z), rangle);
+  else if (rangle > 0.0)
   {
-    Vec3d rvec = Vec3d(-rvector.y, rvector.x, 0);
-    rot.fromAxisAngle(rvec, rangle);
+    rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
   }
 
   // Negative scale? Flip vector
