@@ -61,17 +61,12 @@ Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false), figure(
   init();
 }
 
-Model::Model(const FilePath& fn) : readonly(true), attached(0), file(fn), db(NULL), memorydb(false), figure(-1)
+void Model::load(const FilePath& fn)
 {
-  prefix[0] = '\0';
-
-  //Create new geometry containers
-  init();
-
   //Open database file
+  file = fn;
   if (open())
   {
-
     loadTimeSteps();
     loadColourMaps();
     loadObjects();
@@ -82,9 +77,6 @@ Model::Model(const FilePath& fn) : readonly(true), attached(0), file(fn), db(NUL
   {
     std::cerr << "Model database open failed: " << fn.full << std::endl;
   }
-
-  //Check for a view and create default if necessary
-  defaultView();
 }
 
 
@@ -833,6 +825,7 @@ void Model::freeze()
   //Need new geometry containers after freeze
   //(Or new data will be appended to the frozen containers!)
   init();
+  if (timesteps.size() == 0) addTimeStep();
   timesteps[now]->loadFixed(geometry);
 }
 
@@ -961,6 +954,9 @@ int Model::setTimeStep(int stepidx)
   //Unchanged...
   if (now >= 0 && stepidx == now) return -1;
 
+  //Setting initial step?
+  bool first = (now < 0);
+
   //Cache currently loaded data
   if (TimeStep::cachesize > 0) cacheStep();
 
@@ -974,8 +970,12 @@ int Model::setTimeStep(int stepidx)
     //Create new geometry containers if required
     if (geometry.size() == 0) init();
 
-    //Clear any existing geometry
-    clearObjects();
+    if (first)
+      //Freeze any existing geometry as non time-varying when first step loaded
+      freeze();
+    else
+      //Normally just clear any existing geometry
+      clearObjects();
 
     //Import fixed data first
     if (now > 0) 
