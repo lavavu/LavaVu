@@ -104,7 +104,7 @@ public:
   void loadColourMapsLegacy();
 
   Model();
-  Model(const FilePath& fn);
+  void load(const FilePath& fn);
   void init();
   ~Model();
 

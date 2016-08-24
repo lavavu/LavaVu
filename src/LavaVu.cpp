@@ -2666,14 +2666,15 @@ bool LavaVu::loadFile(const std::string& file)
   //Database files always create their own Model object
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
-    //Delete default model if empty
-    if (models.size() == 1 and amodel->objects.size() == 0)
-      close();
+    //Open database file, if a non-db model already loaded, load into that
+    if (models.size() == 0 || amodel && amodel->db)
+    {
+      amodel = new Model();
+      models.push_back(amodel);
+    }
 
-    //Open database file
-    amodel = new Model(fn);
-    if (!amodel) return false;
-    models.push_back(amodel);
+    //Load objects from db
+    amodel->load(fn);
 
     //Ensure default view selected
     aview = amodel->defaultView();
