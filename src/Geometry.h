@@ -53,8 +53,9 @@ typedef struct
   unsigned int dataIdx;
   float minimum;
   float maximum;
-  bool range;
+  bool map;
   bool out;
+  bool inclusive;
 } Filter;
 
 //Types based on triangle renderer

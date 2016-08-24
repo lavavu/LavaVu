@@ -181,22 +181,33 @@ bool GeomData::filter(unsigned int idx)
     json filters = draw->properties["filters"];
     for (unsigned int i=0; i < filters.size(); i++)
     {
+      float min = filters[i]["minimum"];
+      float max = filters[i]["maximum"];
+      if (min == max) continue; //Skip
+
+      int j = filterCache.size();
       filterCache.push_back(Filter());
       json filterBy = filters[i]["by"];
       if (filterBy.is_string())
-        filterCache[i].dataIdx = valuesLookup(filterBy);
+        filterCache[j].dataIdx = valuesLookup(filterBy);
       else if (filterBy.is_number())
-        filterCache[i].dataIdx = filterBy;
-      filterCache[i].minimum = filters[i]["minimum"];
-      filterCache[i].maximum = filters[i]["maximum"];
-      filterCache[i].range = filters[i]["range"];
-      filterCache[i].out = filters[i]["out"];
-      if (filterCache[i].minimum > filterCache[i].maximum)
+        filterCache[j].dataIdx = filterBy;
+      filterCache[j].map = filters[i]["map"];
+      filterCache[j].out = filters[i]["out"];
+      filterCache[j].inclusive = filters[i]["inclusive"];
+      if (min > max)
       {
         //Swap and change to an out filter
-        filterCache[i].minimum = filters[i]["maximum"];
-        filterCache[i].maximum = filters[i]["minimum"];
-        filterCache[i].out = !filterCache[i].out;
+        filterCache[j].minimum = max;
+        filterCache[j].maximum = min;
+        filterCache[j].out = !filterCache[j].out;
+        //Also flip the inclusive flag
+        filterCache[j].inclusive = !filterCache[j].inclusive;
+      }
+      else
+      {
+        filterCache[j].minimum = min;
+        filterCache[j].maximum = max;
       }
     }
   }
@@ -213,34 +224,50 @@ bool GeomData::filter(unsigned int idx)
     size = values[filterCache[i].dataIdx]->size();
     if (filterCache[i].dataIdx >= 0 && size > 0)
     {
-      //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
-      min = filterCache[i].minimum;
-      max = filterCache[i].maximum;
-      if (filterCache[i].range)
-      {
-        //Range type filters map over available values on [0,1] => [min,max]
-        value = values[filterCache[i].dataIdx]->maximum - values[filterCache[i].dataIdx]->minimum;
-        min = values[filterCache[i].dataIdx]->minimum + min * value;
-        max = values[filterCache[i].dataIdx]->minimum + max * value;
-      }
       //Have values but not enough for per-vertex? spread over range (eg: per triangle)
       range = count / size;
       ridx = idx;
       if (range > 1) ridx = idx / range;
-      value = values[filterCache[i].dataIdx]->value[ridx];
-      //if (idx%1000==0) std::cout << min << " < " << value << " < " << max << std::endl;
+
+      //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
+      min = filterCache[i].minimum;
+      max = filterCache[i].maximum;
+      if (filterCache[i].map)
+      {
+        //Range type filters map over available values on [0,1] => [min,max]
+        //If a colourmap is provided, that is used to get the values (allows log maps)
+        //Otherwise they come directly from the data 
+        ColourMap* cmap = draw->getColourMap();
+        if (cmap)
+          value = cmap->scaleValue(values[filterCache[i].dataIdx]->value[ridx]);
+        else
+        {
+          value = values[filterCache[i].dataIdx]->maximum - values[filterCache[i].dataIdx]->minimum;
+          min = values[filterCache[i].dataIdx]->minimum + min * value;
+          max = values[filterCache[i].dataIdx]->minimum + max * value;
+          value = values[filterCache[i].dataIdx]->value[ridx];
+        }
+      }
+      else
+        value = values[filterCache[i].dataIdx]->value[ridx];
+
+      //if (idx%10000==0) std::cout << min << " < " << value << " < " << max << std::endl;
       
-      //"out" flag indicates values between the filter range are skipped
+      //"out" flag indicates values between the filter range are skipped - exclude
       if (filterCache[i].out)
       {
         //Filter out values between specified ranges (allows filtering separate sections)
-        if (value >= min && value <= max) 
+        if (filterCache[i].inclusive && value >= min && value <= max) 
+          return true;
+        if (value > min && value < max) 
           return true;
       }
-      //Default is to filter out values NOT in the filter range
+      //Default is to filter values NOT in the filter range - include those that are
       else
       {
         //Filter out values unless between specified ranges (allows combining filters)
+        if (filterCache[i].inclusive && (value <= min || value >= max))
+          return true;
         if (value < min || value > max)
           return true;
       }
@@ -718,13 +745,6 @@ void Geometry::labels()
       {
         float* p = geom[i]->vertices[j];
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
-        //geom[i]->getColour(colour, j);
-        colour = geom[i]->draw->colour;
-        //Multiply opacity by global override level if set
-        //if (GeomData::opacity > 0.0)
-        //  colour.a *= GeomData::opacity;
-        glColor4ubv(colour.rgba);
-        PrintSetColour(colour.value);
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
