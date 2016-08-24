@@ -563,7 +563,7 @@ void RawImageFlip(void* image, int width, int height, int bpp);
 
 std::string getImageFilename(const std::string& basename);
 bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp=3);
-std::string getImageString(GLubyte *image, int width, int height, int bpp);
+std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg=false);
 
 #ifdef HAVE_LIBPNG
 //PNG utils
