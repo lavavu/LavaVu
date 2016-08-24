@@ -3055,10 +3055,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> Set a data filter on selected object\n\n"
               "> **Usage:** filter index min max [range]\n\n"
-              "> index (integer) : the index of the data set to filter on (see: \"list objects\")  \n"
+              "> index (integer) : the index of the data set to filter on (see: \"list data\")  \n"
               "> min (number) : the minimum value of the range to filter in or out  \n"
               "> max (number) : the maximum value of the range to filter in or out  \n"
-              "> range (literal) : add range keyword for min/max [0,1] on available data range  \n"
+              "> map (literal) : add map keyword for min/max [0,1] on available data range  \n"
               ">                   eg: 0.1-0.9 will filter the lowest and highest 10% of values  \n";
       return false;
     }
@@ -3073,7 +3073,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         action = "filterout";
         filter["out"] = true;
       }
-      filter["index"] = parsed.Int(action, 0);
+      filter["by"] = parsed.Int(action, 0);
       float min, max;
       parsed.has(min, action, 1);
       parsed.has(max, action, 2);
@@ -3081,10 +3081,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       filter["maximum"] = max;
       //Range keyword defines a filter applied over the range of available values not literal values
       //eg: 0.1-0.9 will filter out the lowest and highest 10% of values
-      bool range = (parsed.get(action, 3) == "range");
-      filter["range"] = range;
+      bool map = (parsed.get(action, 3) == "map");
+      filter["map"] = map;
+      filter["inclusive"] = false;
       aobject->properties.data["filters"].push_back(filter);
-      printMessage("%s filter on value index %d from %f to %f", (range ? "Range" : "Value"), (int)filter["index"], min, max);
+      printMessage("%s filter on value index %d from %f to %f", (map ? "Map" : "Value"), (int)filter["index"], min, max);
       amodel->redraw(true); //Force reload
     }
   }
