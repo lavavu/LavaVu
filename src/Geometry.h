@@ -228,7 +228,8 @@ protected:
 public:
   //Store the actual maximum bounding box
   static float min[3], max[3], dims[3];
-  bool allhidden, internal;
+  bool allhidden, internal, unscale;
+  Vec3d iscale; //Factors for un-scaling
   lucGeometryType type;   //Holds the object type
   unsigned int total;     //Total entries of all objects in container
   bool redraw;    //Redraw from scratch flag

@@ -67,6 +67,9 @@ void Tracers::update()
   lines->setView(view);
   tris->clear();
   tris->setView(view);
+  Vec3d scale(view->scale);
+  tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
+  tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
   for (unsigned int i=0; i<geom.size(); i++)
   {
     Properties& props = geom[i]->draw->properties;
@@ -222,8 +225,8 @@ void Tracers::draw()
 
   // Undo any scaling factor for tracer drawing...
   glPushMatrix();
-  if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
-    glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+  if (tris->unscale)
+    glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
 
   tris->draw();
 
