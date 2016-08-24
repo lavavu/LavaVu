@@ -708,7 +708,9 @@ void Model::loadColourMaps()
     int logscale = sqlite3_column_int(statement, 4);
     int discrete = sqlite3_column_int(statement, 5);
     char *props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(cmname, logscale, discrete, minimum, maximum, props ? props : "");
+    colourMap = new ColourMap(cmname, minimum, maximum, props ? props : "");
+    if (logscale) colourMap->properties.data["logscale"] = true;
+    if (discrete) colourMap->properties.data["discrete"] = true;
     colourMaps.push_back(colourMap);
   }
 
@@ -755,8 +757,10 @@ void Model::loadColourMapsLegacy()
       int discrete = sqlite3_column_int(statement, 4);
       char *props = NULL;
       if (!old) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(cmname ? cmname : idname, logscale, discrete, minimum, maximum, props ? props : "");
+      colourMap = new ColourMap(cmname ? cmname : idname, minimum, maximum, props ? props : "");
       colourMaps.push_back(colourMap);
+      if (logscale) colourMap->properties.data["logscale"] = true;
+      if (discrete) colourMap->properties.data["discrete"] = true;
       //Colours already parsed from properties?
       if (colourMap->colours.size() > 0) parsed = true;
       else parsed = false;
@@ -1657,9 +1661,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
   {
-    //json cmap = colourMaps[i]->properties.data;
-    json cmap;
+    json cmap = colourMaps[i]->properties.data;
     json colours;
+
+    if (!colourMaps[i]->calibrated)
+      colourMaps[i]->calibrate();
 
     for (unsigned int c=0; c < colourMaps[i]->colours.size(); c++)
     {
@@ -1670,9 +1676,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
     }
 
     cmap["name"] = colourMaps[i]->name;
-    cmap["minimum"] = colourMaps[i]->minimum;
-    cmap["maximum"] = colourMaps[i]->maximum;
-    cmap["log"] = colourMaps[i]->log;
     cmap["colours"] = colours;
 
     cmaps.push_back(cmap);
@@ -1836,10 +1839,9 @@ void Model::jsonRead(std::string data)
     if (i >= colourMaps.size())
       addColourMap();
 
-    json cmap = cmaps[i];
-    if (cmap["minimum"].is_number()) colourMaps[i]->minimum = cmap["minimum"];
-    if (cmap["maximum"].is_number()) colourMaps[i]->maximum = cmap["maximum"];
-    if (cmap["log"].is_boolean()) colourMaps[i]->log = cmap["log"];
+    //Replace properties with imported
+    json cmap = colourMaps[i]->properties.data = cmaps[i];
+
     json colours = cmap["colours"];
     if (cmap["name"].is_string()) colourMaps[i]->name = cmap["name"];
     //Replace colours
