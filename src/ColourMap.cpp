@@ -45,9 +45,9 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
   return os << cv.value << " --> " << cv.position << "=" << cv.colour;
 }
 
-ColourMap::ColourMap(const char* name, bool log, bool discrete,
+ColourMap::ColourMap(const char* name,
                      float min, float max, std::string props)
-  : minimum(min), maximum(max), log(log), discrete(discrete),
+  : minimum(min), maximum(max),
     calibrated(false), noValues(false)
 {
   precalc = new Colour[samples];
@@ -58,7 +58,11 @@ ColourMap::ColourMap(const char* name, bool log, bool discrete,
   properties.parseSet(props);
 
   if (properties.has("colours"))
+  {
     loadPalette(properties["colours"]);
+    //Erase the colour list? Keep it for now for export
+    //properties.data.erase("colours");
+  }
 }
 
 void ColourMap::parse(std::string colourMapString)
@@ -92,6 +96,9 @@ void ColourMap::parse(std::string colourMapString)
     charPtr = strtok(NULL, breakChars);
   }
   delete[] colourString;
+
+  //Ensure at least two colours
+  while (colours.size() < 2) add(0xff000000);
 }
 
 void ColourMap::addAt(Colour& colour, float position)
@@ -146,16 +153,11 @@ void ColourMap::add(float *components, float pvalue)
   add(colour.value, pvalue);
 }
 
-bool ColourMap::isLog()
-{
-  return ColourMap::logscales < 2 && (log || ColourMap::logscales == 1);
-}
-
 void ColourMap::calc()
 {
   if (!colours.size()) return;
   //Precalculate colours
-  if (isLog())
+  if (properties["logscale"])
     for (int cv=0; cv<samples; cv++)
       precalc[cv] = get(pow(10, log10(minimum) + range * (float)cv/(samples-1)));
   else
@@ -174,7 +176,7 @@ void ColourMap::calibrate(float min, float max)
 
   minimum = min;
   maximum = max;
-  if (isLog())
+  if (properties["logscale"])
   {
     if (minimum <= FLT_MIN) minimum =  FLT_MIN;
     if (maximum <= FLT_MIN) maximum =  FLT_MIN;
@@ -242,10 +244,12 @@ void ColourMap::calibrate(float min, float max)
 //Calibration from a geom data set, also copies scaling data fields
 void ColourMap::calibrate(FloatValues* dataValues)
 {
-  if (properties["dynamic"])
+  float range[2];
+  Properties::toFloatArray(properties["range"], range, 2);
+  if (range[0] == range[1])
     calibrate(dataValues->minimum, dataValues->maximum);
   else
-    calibrate();
+    calibrate(range[0], range[1]);
 }
 
 void ColourMap::calibrate()
@@ -255,10 +259,11 @@ void ColourMap::calibrate()
 
 Colour ColourMap::getfast(float value)
 {
+return get(value);
   //NOTE: value caching DOES NOT WORK for log scales!
   //If this is causing slow downs in future, need a better method
   int c = 0;
-  if (isLog())
+  if (properties["logscale"])
     c = (int)((samples-1) * ((log10(value) - log10(minimum)) / range));
   else
     c = (int)((samples-1) * ((value - minimum) / range));
@@ -282,7 +287,7 @@ float ColourMap::scaleValue(float value)
   if (value <= min) return 0.0;
   if (value >= max) return 1.0;
 
-  if (isLog())
+  if (properties["logscale"])
   {
     value = log10(value);
     min = log10(minimum);
@@ -318,7 +323,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
     float interpolate = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);
 
     //printf(" interpolate %f above %f below %f\n", interpolate, colours[i].position, colours[i-1].position);
-    if (discrete)
+    if (properties["discrete"])
     {
       //No interpolation
       if (interpolate < 0.5)
@@ -375,7 +380,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   glDisable(GL_CULL_FACE);
   int count = colours.size();
   int idx, xpos;
-  if (discrete)
+  if (properties["discrete"])
   {
     glShadeModel(GL_FLAT);
     glBegin(GL_QUAD_STRIP);
@@ -421,6 +426,8 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   glColor4ubv(printColour.rgba);
   float tickValue;
   int ticks = properties["ticks"];
+  json tickValues = properties["tickvalues"];
+  if (tickValues.size() > ticks) ticks = tickValues.size();
   bool printTicks = properties["printticks"];
   std::string units = properties["units"];
   bool scientific = properties["scientific"];
@@ -431,7 +438,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   else glLineWidth(0.5);
 
   //Always show at least two ticks on a log scale
-  if (isLog() && ticks < 2) ticks = 2;
+  if (properties["logscale"] && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
   float fontscale = PrintSetFont(properties);
@@ -455,15 +462,11 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
     }
     else
     {
-      char label[10];
-      sprintf(label, "tick%d", i);
-      tickValue = properties.getFloat(label, FLT_MIN);
-
       /* Calculate tick position */
-      if (tickValue == FLT_MIN)  /* No fixed value provided */
+      if (i > tickValues.size())  /* No fixed value provided */
       {
         /* First get scaled position 0-1 */
-        if (isLog())
+        if (properties["logscale"])
         {
           /* Space ticks based on a logarithmic scale of log(1) to log(11)
              shows non-linearity while keeping ticks spaced apart enough to read labels */
@@ -475,7 +478,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
           scaledPos = (float)i / (ticks+1);
 
         /* Compute the tick value */
-        if (isLog())
+        if (properties["logscale"])
         {
           /* Reverse calc to find tick value at calculated position 0-1: */
           tickValue = log10(minimum) + scaledPos
@@ -493,6 +496,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
       {
         /* User specified value */
         /* Calculate scaled position from value */
+        tickValue = tickValues[i-1];
         scaledPos = scaleValue(tickValue);
       }
 
@@ -652,6 +656,9 @@ void ColourMap::loadPalette(std::string data)
     //delete texture;
     //texture = NULL;
   }
+
+  //Ensure at least two colours
+  while (colours.size() < 2) add(0xff000000);
 }
 
 void ColourMap::print()

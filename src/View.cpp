@@ -730,6 +730,9 @@ void View::drawOverlay(Colour& colour)
   {
     //Only when flagged as colour bar
     ColourMap* cmap = objects[i]->getColourMap();
+    //Use the first available colourmap by default
+    if (!cmap && objects[i]->colourMaps && objects[i]->colourMaps->size() > 0)
+      cmap = (*objects[i]->colourMaps)[0];
     if (!objects[i] || !objects[i]->properties["colourbar"] ||
         !objects[i]->properties["visible"] || !cmap) continue;
     int pos = objects[i]->properties["position"];

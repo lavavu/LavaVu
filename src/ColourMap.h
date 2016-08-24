@@ -68,12 +68,11 @@ public:
   float minimum;
   float maximum;
   float range;
-  bool log, discrete;
   bool calibrated;
   bool noValues; //Use position data only
   TextureData* texture;
 
-  ColourMap(const char* name="", bool log=false, bool discrete=false, float min=0, float max=1, std::string props="");
+  ColourMap(const char* name="", float min=0, float max=1, std::string props="");
   ~ColourMap()
   {
     if (texture) delete texture;
@@ -88,7 +87,6 @@ public:
   void add(unsigned int* colours, int count);
   void add(unsigned int colour, float pvalue);
   void add(float *components, float pvalue);
-  bool isLog();
   void calc();
   void calibrate(float min, float max);
   void calibrate(FloatValues* dataValues);

@@ -69,7 +69,6 @@ Hold [shift] and use the scroll wheel to move the clip plane in and out.  \n\
 [B]          Background colour grey\n\
 [c]          Camera info: output to console current camera parameters\n\
 [f]          Frame border ON/OFF\n\
-[g]          Colour map log scales override DEFAULT/ON/OFF\n\
 [i]          Take screen-shot and save as png/jpeg image file\n\
 [j]          Localise colour scales, minimum and maximum calibrated to each object drawn\n\
 [k]          Lock colour scale calibrations to current values ON/OFF\n\
@@ -292,8 +291,6 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("list elements");
     case 'f':
       return parseCommands("border");
-    case 'g':
-      return parseCommands("log");
     case 'h':
       return parseCommands("history");
     case 'i':
@@ -1774,25 +1771,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->properties.data["rulers"] = !aview->properties["rulers"];
     printMessage("Rulers %s", aview->properties["rulers"] ? "ON" : "OFF");
   }
-  else if (parsed.exists("log"))
-  {
-    if (gethelp)
-    {
-      help += "> Over-ride colourmap settings to use log scales  \n"
-              "> Cycles between ON/OFF/DEFAULT  \n"
-              "> (default uses original settings for each colourmap)  \n";
-      return false;
-    }
-
-    ColourMap::logscales = (ColourMap::logscales + 1) % 3;
-    bool state = ColourMap::lock;
-    ColourMap::lock = false;
-    for (unsigned int i=0; i<amodel->colourMaps.size(); i++)
-      amodel->colourMaps[i]->calibrate();
-    ColourMap::lock = state;  //restore setting
-    printMessage("Log scales are %s", ColourMap::logscales  == 0 ? "DEFAULT": ( ColourMap::logscales  == 1 ? "ON" : "OFF"));
-    amodel->redraw(true); //Redraw with forced reload
-  }
   else if (parsed.exists("help"))
   {
     if (gethelp)
@@ -1840,15 +1818,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    if (!aobject)
-      aobject = lookupObject(parsed, "valuerange");
-    if (aobject)
+    DrawingObject* obj = aobject;
+    if (!obj)
+      obj = lookupObject(parsed, "valuerange");
+    if (obj)
     {
       for (int type=lucMinType; type<lucMaxType; type++)
-        Model::geometry[type]->setValueRange(aobject);
+        Model::geometry[type]->setValueRange(obj);
+      printMessage("ColourMap scales set to local value range");
+      amodel->redraw(true); //Colour change so force reload
     }
-    printMessage("ColourMap scales set to local value range");
-    amodel->redraw(true); //Colour change so force reload
   }
   else if (parsed.exists("export"))
   {
@@ -2056,6 +2035,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Set colourmap on object by name/ID match
     DrawingObject* obj = aobject;
     int next = 0;
+    parsed.has(ival, "colourmap"); //Get id if any
     if (!obj)
     {
       obj = lookupObject(parsed, "colourmap");
@@ -2078,22 +2058,32 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       else
       {
-        //No cmap id, parse a colourmap string (must be single line or enclosed in "")
+        //No cmap id, parse a colourmap string
         cmap = obj->properties["colourmap"];
-        if (what == "add" || cmap < 0)
+        if (what == "add")
         {
           cmap = amodel->addColourMap();
           obj->properties.data["colourmap"] = cmap;
-          if (what == "add") what = parsed.get("colourmap", next);
+          if (what == "add")
+            what = parsed.getall("colourmap", next+1);
+          else
+            what = "";
         }
+        else
+          what = parsed.getall("colourmap", next);
+
         if (what.length() > 0)
         {
-          if (amodel->colourMaps.size() == 0)
+          //Add new map if none set on object
+          json current = obj->properties["colourmap"];
+          if (current.is_number() && current >= 0 && amodel->colourMaps.size() > 0)
+            cmap = current;
+          else
             cmap = amodel->addColourMap();
           amodel->colourMaps[cmap]->loadPalette(what);
           //cmap->print();
-          amodel->colourMaps[cmap]->calibrate(); //Recalibrate
-          amodel->colourMaps[cmap]->calc(); //Recalculate cached colours
+          obj->properties.data["colourmap"] = cmap;
+          //amodel->colourMaps[cmap]->calibrate(); //Recalibrate
         }
       }
       redraw(obj);
@@ -3173,7 +3163,7 @@ void LavaVu::helpCommand(std::string cmd)
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
     {"hide", "show", "delete", "load", "select", "add", "read", "name",
      "vertex", "normal", "vector", "value", "colour"},
-    {"background", "alpha", "axis", "scaling", "rulers", "log",
+    {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "lockscale", "colourmap", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},

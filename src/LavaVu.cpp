@@ -319,6 +319,8 @@ void LavaVu::defaults()
   Properties::defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
   // | colourbar | integer | Number of additional tick marks to draw besides start and end
   Properties::defaults["ticks"] = 0;
+  // | colourbar | float[] | Values of intermediate tick marks
+  Properties::defaults["tickvalues"] = json::array();
   // | colourbar | boolean | Set to false to disable drawing of tick values
   Properties::defaults["printticks"] = true;
   // | colourbar | string | Units to print with tick values
@@ -338,8 +340,8 @@ void LavaVu::defaults()
   Properties::defaults["discrete"] = false;
   // | colourmap | colours | Colour list, see [Colour map lists] for more information
   Properties::defaults["colours"] = "";
-  // | colourmap | boolean | Automatically calculate colourmap min/max range based on available data range
-  Properties::defaults["dynamic"] = true;
+  // | colourmap | real[2] | Fixed scale range, default is to automatically calculate range based on data min/max
+  Properties::defaults["range"] = {0.0, 0.0};
 
   // | view | string | Title to display at top centre of view
   Properties::defaults["title"] = "";
