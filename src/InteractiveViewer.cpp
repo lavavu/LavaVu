@@ -555,12 +555,18 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
 
   //Otherwise lookup by name
   std::string what = parsed.get(key, idx);
-  std::transform(what.begin(), what.end(), what.begin(), ::tolower);
+  return lookupObject(what);
+}
+
+DrawingObject* LavaVu::lookupObject(std::string& name)
+{
+  //Lookup by name only
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
   {
     std::string namekey = amodel->objects[i]->name();
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what)
+    if (namekey == name)
       //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
       return amodel->objects[i];
   }

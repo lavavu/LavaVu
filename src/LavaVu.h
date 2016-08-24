@@ -207,6 +207,7 @@ public:
   //Interactive command & script processing
   bool parseChar(unsigned char key);
   Geometry* getGeometryType(std::string what);
+  DrawingObject* lookupObject(std::string& name);
   DrawingObject* lookupObject(PropertyParser& parsed, const std::string& key, int idx=0);
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
