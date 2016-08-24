@@ -2488,7 +2488,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model scaling, replaces existing values\n\n"
+      help += "> Set model scaling, multiples by existing values\n\n"
               "> **Usage:** scale xval yval zval\n\n"
               "> xval (number) : scaling value applied to x axis\n\n"
               "> yval (number) : scaling value applied to y axis  \n"
@@ -2499,13 +2499,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float y, z;
     if (parsed.has(y, "modelscale", 1) && parsed.has(z, "modelscale", 2))
     {
-      aview->setScale(fval, y, z);
+      aview->setScale(fval, y, z, false);
       amodel->redraw();
     }
     else
     {
       //Scale everything
-      aview->setScale(fval, fval, fval);
+      aview->setScale(fval, fval, fval, false);
       amodel->redraw();
     }
   }
@@ -2549,7 +2549,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(fval, 1, 1, false); //Multiply by existing
+          aview->setScale(fval, 1, 1, true); //Replace existing
           amodel->redraw();
         }
       }
@@ -2557,7 +2557,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, fval, 1, false); //Multiply by existing
+          aview->setScale(1, fval, 1, true); //Replace existing
           amodel->redraw();
         }
       }
@@ -2565,14 +2565,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, 1, fval, false); //Multiply by existing
+          aview->setScale(1, 1, fval, true); //Replace existing
           amodel->redraw();
         }
       }
       else if (what == "all" && parsed.has(fval, "scale", 1))
       {
         //Scale everything
-        aview->setScale(fval, fval, fval, false); //Multiply by existing
+        aview->setScale(fval, fval, fval, true); //Replace existing
         amodel->redraw();
       }
       else
