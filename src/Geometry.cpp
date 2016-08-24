@@ -275,7 +275,7 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
 }
 
 Geometry::Geometry() : view(NULL), elements(-1), flat2d(false),
-                       allhidden(false), internal(false), 
+                       allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true)
 {
 }
@@ -890,7 +890,21 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     total += n;
 
     //Update bounds on single vertex reads
-    if (n == 1 && type != lucLabelType) geomdata->checkPointMinMax((float*)data);
+    //(Skip this for internally generated geometry and labels)
+    if (n == 1 && type != lucLabelType)
+    {
+      if (unscale)
+      {
+        //Some internal geom is pre-scaled by any global scaling factors to avoid distortion,
+        //so we need to undo scaling before applying to bounding box.
+        float* arr = (float*)data;
+        static std::array<float,3> unscaled;
+        unscaled = {arr[0]*iscale[0], arr[1]*iscale[1], arr[2]*iscale[2]};
+        geomdata->checkPointMinMax(unscaled.data());
+      }
+      else
+        geomdata->checkPointMinMax((float*)data);
+    }
   }
 }
 
@@ -1319,37 +1333,27 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count)
 {
   float length = 0;
-  float vector[3];
-  float pos[3];
+  Vec3d vector, pos;
 
   assert(coord0 && coord1);
 
-  //Scale end coord
-  coord1[0] *= scale[0];
-  coord1[1] *= scale[1];
-  coord1[2] *= scale[2];
-
-  //Scale start coord
-  coord0[0] *= scale[0];
-  coord0[1] *= scale[1];
-  coord0[2] *= scale[2];
+  //Scale start/end coords
+  Vec3d start = Vec3d(coord0[0] * scale[0], coord0[1] * scale[1], coord0[2] * scale[2]);
+  Vec3d end   = Vec3d(coord1[0] * scale[0], coord1[1] * scale[1], coord1[2] * scale[2]);
 
   // Obtain a vector between the two points
-  vectorSubtract(vector, coord1, coord0);
+  vector = end - start;
 
   // Get centre position on vector between two coords
-  pos[0] = coord0[0] + vector[0] * 0.5;
-  pos[1] = coord0[1] + vector[1] * 0.5;
-  pos[2] = coord0[2] + vector[2] * 0.5;
+  pos = start + vector * 0.5;
 
   // Get length
-  length = sqrt(dotProduct(vector,vector));
+  length = vector.magnitude();
 
   //Exceeds max length? Draw endpoint only
   if (maxLength > 0.f && length > maxLength)
   {
-    Vec3d centre(coord1);
-    drawSphere(draw, centre, radius0, segment_count);
+    drawSphere(draw, end, radius0, segment_count);
     return;
   }
 
@@ -1363,16 +1367,12 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     {
       // Adjust length
       float length_adj = arrowHeadSize * radius1 * 2.0 / length;
-      vector[0] *= length_adj;
-      vector[1] *= length_adj;
-      vector[2] *= length_adj;
+      vector *= length_adj;
       // Adjust to centre position
-      pos[0] = coord0[0] + vector[0] * 0.5;
-      pos[1] = coord0[1] + vector[1] * 0.5;
-      pos[2] = coord0[2] + vector[2] * 0.5;
+      pos = start + vector * 0.5;
     }
     // Draw the vector arrow
-    drawVector(draw, pos, vector, 1.0, radius0, radius1, arrowHeadSize, segment_count);
+    drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, arrowHeadSize, segment_count);
 
   }
   else
@@ -1382,7 +1382,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     //if (length > radius1 * 0.30)
     {
       // Join last set of points with this set
-      drawVector(draw, pos, vector, 1.0, radius0, radius1, 0.0, segment_count);
+      drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, 0.0, segment_count);
 //         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
 //          Vec3d centre(pos);
 //         drawSphere(geom, centre, radius, segment_count);

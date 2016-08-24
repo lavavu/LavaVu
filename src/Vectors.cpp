@@ -66,6 +66,11 @@ void Vectors::update()
   tris->clear();
   tris->setView(view);
   int tot = 0;
+  Vec3d scale(view->scale);
+  tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
+  tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+  float minL = view->model_size * 0.01; //Minimum length for visibility
+  Colour colour;
   for (unsigned int i=0; i<geom.size(); i++)
   {
     if (geom[i]->vectors.size() < geom[i]->count) continue;
@@ -99,26 +104,27 @@ void Vectors::update()
 
     if (scaling <= 0) scaling = 1.0;
 
-    float minL = view->model_size * 0.01; //Minimum length for visibility
-
-    Colour colour;
     geom[i]->colourCalibrate();
     bool flat = props["flat"] || quality < 1;
 
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
       if (!drawable(i) || geom[i]->filter(v)) continue;
-      //Scale position & vector manually (as global scaling is disabled to avoid distorting glyphs)
       Vec3d pos(geom[i]->vertices[v]);
       Vec3d vec(geom[i]->vectors[v]);
-      if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
+      geom[i]->getColour(colour, v);
+
+      //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
+      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
+      //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
+      lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+
+      //Scale position & vector manually (global scaling is disabled to avoid distorting glyphs)
+      if (tris->unscale)
       {
-        Vec3d scale(view->scale);
         pos *= scale;
         vec *= scale;
       }
-
-      geom[i]->getColour(colour, v);
 
       if (!flat && vec.magnitude() * scaling >= minL)
       {
@@ -126,10 +132,6 @@ void Vectors::update()
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
         tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
       }
-      //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
-      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
-      //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
-      lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
 
     }
 
@@ -151,8 +153,8 @@ void Vectors::draw()
 
   // Undo any scaling factor for arrow drawing...
   glPushMatrix();
-  if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
-    glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+  if (tris->unscale)
+    glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
 
   tris->draw();
 
