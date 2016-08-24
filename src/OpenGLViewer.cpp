@@ -398,9 +398,10 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
   }
 }
 
-std::string OpenGLViewer::image(const std::string& path)
+std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 {
-  bool alphapng = Properties::global("alphapng");
+  //Use statics for global props to avoid lookup each time
+  static bool alphapng = !jpeg && Properties::global("alphapng");
   int bpp = alphapng ? 4 : 3;
   int savewidth = width;
   int saveheight = height;
@@ -459,15 +460,16 @@ std::string OpenGLViewer::image(const std::string& path)
   //Ensure buffer large enough
   assert(width/factor == w && height/factor == h);
 #ifdef HAVE_LIBPNG
-  pixels(image, alphapng);
-#else
-  pixels(image, false, true);
+  if (!jpeg)
+    pixels(image, alphapng);
+  else
 #endif
+    pixels(image, false, true);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
   {
-    retImg = getImageString(image, w, h, bpp);
+    retImg = getImageString(image, w, h, bpp, jpeg);
   }
   else
   {
