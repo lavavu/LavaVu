@@ -431,6 +431,19 @@ public:
     return std::string("");
   }
 
+  std::string getall(std::string key, unsigned int idx=0)
+  {
+    if (ignoreCase)
+      std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    std::string all = "";
+    if (props.find(key) != props.end())
+    {
+      for (; idx < props[key].size(); idx++)
+        all += props[key][idx] + " ";
+    }
+    return all;
+  }
+
   bool exists(std::string key)
   {
     if (ignoreCase)

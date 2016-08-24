@@ -1750,14 +1750,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set title heading to following text, use double quotes for titles with spaces  \n";
+      help += "> Set title heading to following text  \n";
       return false;
     }
-    //Hide or set title
-    if (cmd.length() > 6)
-      aview->properties.data["title"] = parsed["title"];
-    else
-      aview->properties.data["title"] = "";
+
+    aview->properties.data["title"] = parsed.getall("title", 0);
   }
   else if (parsed.exists("rulers"))
   {
