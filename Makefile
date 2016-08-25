@@ -16,7 +16,7 @@ CC=gcc
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
-CPPFLAGS = $(CFLAGS) -std=c++0x
+CPPFLAGS = $(CFLAGS) -std=c++0x -I/usr/local/include
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -58,7 +58,7 @@ endif
 ifdef LIBDIR
   LIBS+= -L$(LIBDIR) -Wl,-rpath=$(LIBDIR)
 endif
-
+LIBS+= -L/usr/local/lib -lboost_filesystem -lboost_system 
 #Other optional components
 ifeq ($(VIDEO), 1)
   CFLAGS += -DHAVE_LIBAVCODEC -DHAVE_SWSCALE
@@ -93,6 +93,8 @@ OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
 OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
+
+
 default: install
 
 install: paths $(PROGRAM)
@@ -105,6 +107,8 @@ paths:
 	mkdir -p $(OPATH)
 	mkdir -p $(PREFIX)
 	mkdir -p $(PREFIX)/html
+
+
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(INC)
@@ -132,7 +136,7 @@ swig: $(PREFIX)/$(LIBNAME)
 	#touch bin/__init__.py
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
 	$(CPP) -o $(PREFIX)/_$(PROGNAME).so $(LIBBUILD) $(OPATH)/LavaVu_wrap.os `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
-
+ 
 docs:
 	python docparse.py
 	bin/LavaVu -S -h -p0 : docs:interaction quit > docs/Interaction.md
@@ -140,7 +144,7 @@ docs:
 	bin/LavaVu -? > docs/Commandline-Arguments.md
 
 clean:
-	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
+	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(PREFIX)/$(LIBNAME)
 	/bin/rm $(PREFIX)/html/*
 	/bin/rm $(PREFIX)/*.vert
 	/bin/rm $(PREFIX)/*.frag

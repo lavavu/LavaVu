@@ -39,7 +39,7 @@
 
 #ifndef TINY_OBJ_LOADER_H
 #define TINY_OBJ_LOADER_H
-
+#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
@@ -163,6 +163,13 @@ void LoadMtl(std::map<std::string, int> &material_map, // [output]
 #include <map>
 #include <fstream>
 #include <sstream>
+#include "boost/filesystem.hpp"
+
+#include <unistd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/stat.h>
+namespace fs = boost::filesystem;
 
 #include "tiny_obj_loader.h"
 
@@ -821,7 +828,7 @@ bool MaterialFileReader::operator()(const std::string &matId,
   } else {
     filepath = matId;
   }
-
+ 
   std::ifstream matIStream(filepath.c_str());
   LoadMtl(matMap, materials, matIStream);
   if (!matIStream) {
@@ -832,6 +839,118 @@ bool MaterialFileReader::operator()(const std::string &matId,
   }
   return true;
 }
+#include <unistd.h>
+#include <limits.h>
+
+std::string
+  get_fullpath(const char* filename) {
+  char buff[PATH_MAX];
+  ssize_t len = ::readlink(filename, buff, sizeof(buff)-1);
+  if (len != -1) {
+    buff[len] = '\0';
+    return std::string(buff);
+  }
+  
+  /* handle error condition */
+  return  std::string(filename);
+ }
+
+std::string get_fullpath_(const char* filename){
+  fs::path p(filename);
+  std::cout <<"LoadObj: "<< p << " checking file ...\n";
+  std::cout << "Current path: "<< fs::current_path() << '\n';
+  try{
+    if (fs::exists(p))    // does p actually exist?
+      {
+        if (fs::is_regular_file(p))        // is p a regular file?
+          std::cout << p << " size is " << fs::file_size(p) << '\n';
+        else if (fs::is_directory(p))      // is p a directory?
+          std::cout << p << "is a directory\n";
+        else if (fs::is_symlink(p))
+          std::cout << p.c_str() << " is a symlink\n";
+        else
+          std::cout << p << "exists, but is neither a regular file nor a directory\n";
+      }
+    else {
+      std::cout << p << " does not exist\n";
+      if (fs::is_symlink(p))
+        {  std::cout << p.c_str() << " is a symlink\n";
+          fs::path q= fs::read_symlink(p);
+          if (fs::exists(q))
+            std::cout << q << " does not exist\n";
+          else
+            std::cout << q << " exists as the target of " << p << "\n";
+        }
+    }
+  } catch (const fs::filesystem_error& ex)
+      {
+        if(ex.code() == boost::system::errc::permission_denied)
+          std::cout << "Search permission is denied for a dir  "
+                    << "in the path prefix of " << p << "\n";
+        std::cout << ex.what() << '\n';
+      }
+  /*
+  try{
+  if (boost::filesystem::exists(p) && (boost::filesystem::is_symlink(p)))
+  std::cout << p.c_str() << " is a symlink\n";
+  } catch(const boost::filesystem::filesystem_error& e)
+  {
+  if(e.code() == boost::system::errc::permission_denied)
+  std::cout << "Search permission is denied for a dir  "
+  << "in the path prefix of " << p << "\n";
+  else
+  std::cout << "is_directory(" << p << ") failed with "
+  << e.code().message() << '\n';
+  }
+
+  //  if (boost::filesystem::exists(p.stem())
+     std::cout << p.stem() << " is its parent dir \n";
+
+     std::cout << boost::filesystem::weakly_canonical(p,ec) << " is its canonical\n";   
+     std::cout << boost::filesystem::absolute(p) << " is its absolute\n";
+     std::cout << boost::filesystem::system_complete(p) << " is its sys complete\n";
+
+   } catch(const boost::filesystem::filesystem_error& e)
+      {
+    if(e.code() == boost::system::errc::permission_denied)
+      std::cout << "Search permission is denied for one of the directories "
+                << "in the path prefix of " << p << "\n";
+    else
+      std::cout << "is_directory(" << p << ") failed with "
+                << e.code().message() << '\n';
+  }
+  */
+     /*
+      boost::filesystem::path q=boost::filesystem::read_symlink(p);
+     if ( boost::filesystem::exists(p)) std::cout << q.c_str() << " is the target symlink\n";
+      std::cout << boost::filesystem::canonical(q) << " is qs canonical\n";
+       std::cout << boost::filesystem::absolute(q) << " is qs absolute\n";
+      std::cout << boost::filesystem::system_complete(q) << " is qs sys complete\n";
+
+      if (! boost::filesystem::exists(p)){
+
+        std::stringstream ss;
+        ss << "WARN: Obj file [ " << filename
+           << " ] -> symlink [" << p
+           << "]  not found.";
+        err += ss.str();
+      }
+      else
+        filename = boost::filesystem::absolute(q,p.stem()).c_str();
+    }
+  else
+    filename =  boost::filesystem::system_complete(p).c_str();
+
+  */
+
+
+
+
+
+
+ }
+
+
 
 bool LoadObj(std::vector<shape_t> &shapes,       // [output]
              std::vector<material_t> &materials, // [output]
@@ -841,8 +960,8 @@ bool LoadObj(std::vector<shape_t> &shapes,       // [output]
   shapes.clear();
 
   std::stringstream errss;
-
-  std::ifstream ifs(filename);
+  
+  std::ifstream ifs(get_fullpath_(filename));
   if (!ifs) {
     errss << "Cannot open file [" << filename << "]" << std::endl;
     err = errss.str();
