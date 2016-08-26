@@ -48,6 +48,16 @@
 
 #define SORT_DIST_MAX 65535
 
+typedef struct
+{
+  unsigned int dataIdx;
+  float minimum;
+  float maximum;
+  bool map;
+  bool out;
+  bool inclusive;
+} Filter;
+
 //Types based on triangle renderer
 #define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
@@ -85,6 +95,7 @@ public:
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   int texIdx;    //Texture index to use
   unsigned int fixedOffset; //Offset to end of fixed value data
+  std::vector<Filter> filterCache;
 
   float distance;
 
@@ -140,11 +151,12 @@ public:
   void checkPointMinMax(float *coord);
 
   void label(std::string& labeltext);
-  const char* getLabels();
+  std::string getLabels();
   void colourCalibrate();
   void mapToColour(Colour& colour, float value);
   int colourCount();
   void getColour(Colour& colour, unsigned int idx);
+  unsigned int valuesLookup(const std::string& label);
   bool filter(unsigned int idx);
   FloatValues* colourData();
   float colourData(unsigned int idx);
@@ -203,6 +215,7 @@ struct vertexIdSort
 //Container class for a list of geometry objects
 class Geometry
 {
+  friend class TimeStep; //Allow private access from TimeStep
 protected:
   View* view;
   std::vector<GeomData*> geom;
@@ -212,12 +225,12 @@ protected:
   int elements;
   int drawcount;
   bool flat2d; //Flag for flat surfaces in 2d
-  GeomData* fixed; //Pointer to fixed data
 
 public:
   //Store the actual maximum bounding box
   static float min[3], max[3], dims[3];
-  bool allhidden, internal;
+  bool allhidden, internal, unscale;
+  Vec3d iscale; //Factors for un-scaling
   lucGeometryType type;   //Holds the object type
   unsigned int total;     //Total entries of all objects in container
   bool redraw;    //Redraw from scratch flag
@@ -239,7 +252,7 @@ public:
   bool show(unsigned int idx);
   void showObj(DrawingObject* draw, bool state);
   void redrawObject(DrawingObject* draw);
-  void localiseColourValues();
+  void setValueRange(DrawingObject* draw);
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void setState(unsigned int i, Shader* prog=NULL);
@@ -252,12 +265,14 @@ public:
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label="Default");
-  GeomData* fix(GeomData* fgeom=NULL);
+  void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
+  void label(DrawingObject* draw, std::vector<std::string> labels);
   void print();
-  std::vector<std::string> getDataLabels(DrawingObject* draw);
+  json getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
   void setView(View* vp, float* min=NULL, float* max=NULL);
+  void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);
   void setTexture(DrawingObject* draw, int idx);
@@ -386,8 +401,6 @@ class Points : public Geometry
   PIndex *swap;
 public:
   static Shader* prog;
-  static unsigned int subSample;
-  bool attenuate;
   static GLuint indexvbo, vbo;
 
   Points();
@@ -418,8 +431,8 @@ public:
   virtual void update();
   virtual void draw();
   void render(int i);
-  GLubyte* getTiledImage(DrawingObject* draw, int& iw, int& ih, bool flip, int xtiles=16);
-  void pngWrite(DrawingObject* draw, int xtiles=16);
+  GLubyte* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& bpp, int xtiles=16);
+  void saveImage(DrawingObject* draw, int xtiles=16);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 

@@ -15,8 +15,13 @@ CPP=g++
 CC=gcc
 
 #Default flags
-CFLAGS = $(FLAGS) -fPIC -Isrc
-CPPFLAGS = $(CFLAGS) -std=c++0x -I/usr/local/include
+CFLAGS = $(FLAGS) -fPIC -Isrc -I/usr/local/include
+
+CPPFLAGS = $(CFLAGS) -std=c++0x 
+#For external dependencies
+EXTCFLAGS = -O3 -DNDEBUG -fPIC -Isrc
+EXTCPPFLAGS = $(EXTCFLAGS) -std=c++0x
+
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -28,15 +33,22 @@ endif
 #Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
 ifeq ($(OS), Darwin)
+ifeq ($(COCOA), 1)
   #Mac OS X with Cocoa + CGL
   CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
   LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_CGL
+  APPLEOBJ=$(OPATH)/CocoaViewer.o
+else
+  #Mac OS X with GLUT by default as CocoaWindow has problems
+  CFLAGS += -FGLUT -FOpenGL -I/usr/include/malloc -stdlib=libc++
+  LIBS=-lc++ -ldl -lpthread -framework GLUT -framework OpenGL -lm -lz
+  DEFINES += -DUSE_FONTS -DHAVE_GLUT
+endif
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
-  APPLEOBJ=$(OPATH)/CocoaViewer.o
 else
   #Linux with X11 (and optional GLUT, SDL)
   LIBS=-ldl -lpthread -lm -lGL -lz -lX11
@@ -78,7 +90,7 @@ endif
 #Source search paths
 vpath %.cpp src:src/Main:src:src/jpeg
 vpath %.h src/Main:src:src/jpeg:src/sqlite3
-vpath %.c src/mongoose:src/sqlite3/src
+vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cpp)
@@ -119,13 +131,13 @@ $(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
-	$(CPP) $(CPPFLAGS) -o $@ -c $^ 
+	$(CPP) $(EXTCPPFLAGS) -o $@ -c $^ 
 
 $(OPATH)/mongoose.o : mongoose.c
-	$(CC) $(CFLAGS) -o $@ -c $^ 
+	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 $(OPATH)/sqlite3.o : sqlite3.c
-	$(CC) $(CFLAGS) -o $@ -c $^ 
+	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
@@ -133,7 +145,6 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 swig: $(PREFIX)/$(LIBNAME)
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i
 	mv LavaVu.py bin
-	#touch bin/__init__.py
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
 	$(CPP) -o $(PREFIX)/_$(PROGNAME).so $(LIBBUILD) $(OPATH)/LavaVu_wrap.os `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
  

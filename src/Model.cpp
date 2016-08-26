@@ -53,7 +53,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model() : readonly(true), memory(false), attached(0), db(NULL)
+Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
 
@@ -61,27 +61,27 @@ Model::Model() : readonly(true), memory(false), attached(0), db(NULL)
   init();
 }
 
-Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0), db(NULL)
+void Model::load(const FilePath& fn)
 {
-  prefix[0] = '\0';
-
-  //Create new geometry containers
-  init();
-
   //Open database file
-  if (!open())
+  file = fn;
+  if (open())
+  {
+    loadTimeSteps();
+    loadColourMaps();
+    loadObjects();
+    loadViewports();
+    loadWindows();
+  }
+  else
   {
     std::cerr << "Model database open failed: " << fn.full << std::endl;
-    return;
   }
+}
 
-  loadTimeSteps();
-  scanFiles(); //Scan for external timestep databases
-  loadColourMaps();
-  loadObjects();
-  loadViewports();
-  loadWindows();
 
+View* Model::defaultView()
+{
   //No views?
   if (views.size() == 0)
   {
@@ -96,6 +96,9 @@ Model::Model(FilePath& fn) : readonly(true), memory(false), file(fn), attached(0
       loadLinks(objects[o]);
     }
   }
+
+  //Return first
+  return views[0];
 }
 
 void Model::init()
@@ -140,6 +143,44 @@ Model::~Model()
     if (colourMaps[i]) delete colourMaps[i];
 
   if (db) sqlite3_close(db);
+
+  fignames.clear();
+  figures.clear();
+}
+
+bool Model::loadFigure(int fig)
+{
+  if (fig < 0 || figures.size() == 0) return false;
+  //Save currently selected first
+  if (figure >= 0 && figures.size() > figure)
+  {
+    std::ostringstream json;
+    jsonWrite(json);
+    figures[figure] = json.str();
+  }
+  if (fig >= (int)figures.size()) fig = 0;
+  if (fig < 0) fig = figures.size()-1;
+  figure = fig;
+  jsonRead(figures[figure]);
+
+  //Set window caption
+  if (fignames[figure].length() > 0)
+    Properties::globals["caption"] = fignames[figure];
+  return true;
+}
+
+void  Model::addObject(DrawingObject* obj)
+{
+  //Create master drawing object list entry
+  obj->colourMaps = &colourMaps;
+  objects.push_back(obj);
+}
+
+DrawingObject*  Model::findObject(unsigned int id)
+{
+  for (unsigned int i=0; i<objects.size(); i++)
+    if (objects[i]->dbid == id) return objects[i];
+  return NULL;
 }
 
 bool Model::open(bool write)
@@ -148,19 +189,17 @@ bool Model::open(bool write)
   char path[FILE_PATH_MAX];
   int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
   strcpy(path, file.full.c_str());
-  if (strstr(path, "file:")) flags = flags | SQLITE_OPEN_URI;
-  if (strstr(path, "mode=memory")) memory = true;
+  if (strstr(path, "file:")) 
+  {
+    flags = flags | SQLITE_OPEN_URI;
+    memorydb = true;
+  }
+  if (strstr(path, "mode=memory")) memorydb = true;
   debug_print("Opening db %s with flags %d\n", path, flags);
   if (sqlite3_open_v2(path, &db, flags, NULL))
   {
-    //Try 0th timestep of multi-file split database
-    sprintf(path, "%s%05d.%s", file.base.c_str(), 0, file.ext.c_str());
-    if (sqlite3_open_v2(path, &db, write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY, NULL))
-    {
-      // failed
-      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
-      return false;
-    }
+    debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
+    return false;
   }
   // success
   debug_print("Open database %s successful, SQLite version %s\n", path, sqlite3_libversion());
@@ -174,7 +213,7 @@ bool Model::open(bool write)
 
 void Model::reopen(bool write)
 {
-  if (!readonly) return;
+  if (!readonly || !db) return;
   if (db) sqlite3_close(db);
   open(write);
 
@@ -182,16 +221,17 @@ void Model::reopen(bool write)
   if (attached)
   {
     char SQL[SQL_QUERY_MAX];
-    sprintf(SQL, "attach database '%s' as t%d", apath.c_str(), attached);
+    sprintf(SQL, "attach database '%s' as t%d", timesteps[now]->path.c_str(), attached);
     if (issue(SQL))
-      debug_print("Model %s found and re-attached\n", apath.c_str());
+      debug_print("Model %s found and re-attached\n", timesteps[now]->path.c_str());
   }
 }
 
-void Model::attach(int timestep)
+void Model::attach(int stepidx)
 {
+  int timestep = timesteps[stepidx]->step;
   //Detach any attached db file
-  if (memory) return;
+  if (memorydb) return;
   char SQL[SQL_QUERY_MAX];
   if (attached && attached != timestep)
   {
@@ -209,31 +249,23 @@ void Model::attach(int timestep)
   //Attach n'th timestep database if available
   if (timestep > 0 && !attached)
   {
-    //Strip digits from end
-    size_t last_index = file.base.find_last_not_of("0123456789");
-    std::string basename = file.base.substr(0, last_index + 1);
-    char path[FILE_PATH_MAX];
-    FILE* fp;
-    sprintf(path, "%s%s%05d.%s", file.path.c_str(), basename.c_str(), timestep, file.ext.c_str());
-    fp = fopen(path, "r");
-    if (fp)
+    const std::string& path = timesteps[stepidx]->path;
+    if (path.length() > 0)
     {
-      fclose(fp);
-      sprintf(SQL, "attach database '%s' as t%d", path, timestep);
+      sprintf(SQL, "attach database '%s' as t%d", path.c_str(), timestep);
       if (issue(SQL))
       {
         sprintf(prefix, "t%d.", timestep);
-        debug_print("Model %s found and attached\n", path);
+        debug_print("Model %s found and attached\n", path.c_str());
         attached = timestep;
-        apath = path;
       }
       else
       {
-        debug_print("Model %s found but attach failed!\n", path);
+        debug_print("Model %s found but attach failed!\n", path.c_str());
       }
     }
     //else
-    //   debug_print("Model %s not found, loading from current db\n", path);
+    //   debug_print("Model %s not found, loading from current db\n", path.c_str());
   }
 }
 
@@ -295,14 +327,22 @@ unsigned int Model::addColourMap(ColourMap* cmap)
 void Model::loadWindows()
 {
   //Load state from database if available
-  sqlite3_stmt* statement = select("SELECT data from state");
-  //Single entry only supported now
-  if (sqlite3_step(statement) == SQLITE_ROW)
+  sqlite3_stmt* statement = select("SELECT name, data from state ORDER BY id");
+  while (sqlite3_step(statement) == SQLITE_ROW)
   {
-    const char *data = (const char*)sqlite3_column_text(statement, 0);
-    jsonRead(data);
+    const char *name = (const char*)sqlite3_column_text(statement, 0);
+    const char *data = (const char*)sqlite3_column_text(statement, 1);
+    fignames.push_back(name);
+    figures.push_back(data);
+  }
 
-    //Load object links 
+  if (figures.size() > 0)
+  {
+    //Load the most recently added (last entry)
+    //(so the previous state saved is restored on load)
+    loadFigure(figures.size()-1);
+
+    //Load object links (colourmaps)
     for (unsigned int o=0; o<objects.size(); o++)
       loadLinks(objects[o]);
   }
@@ -435,22 +475,28 @@ void Model::loadObjects()
   {
     int object_id = sqlite3_column_int(statement, 0);
     const char *otitle = (char*)sqlite3_column_text(statement, 1);
-    int colour = 0xff000000;
-    float opacity = -1;
-    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
-      colour = sqlite3_column_int(statement, 2);
-    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
-      opacity = (float)sqlite3_column_double(statement, 3);
 
     //Create drawing object and add to master list
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
     DrawingObject* obj = new DrawingObject(otitle, props, -1, object_id);
+
+    //Convert old colour/opacity from hard coded fields if provided
+    int colour = 0x00000000;
+    float opacity = -1;
+    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
+    {
+      colour = sqlite3_column_int(statement, 2);
+      if (!obj->properties.has("colour")) obj->properties.data["colour"] = colour;
+    }
+    if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
+    {
+      opacity = (float)sqlite3_column_double(statement, 3);
+      if (!obj->properties.has("opacity")) obj->properties.data["opacity"] = opacity;
+    }
+
     addObject(obj);
-    //Convert old colour/opacity from hard coded fields
-    if (!obj->properties.has("opacity") && opacity >= 0.0) obj->properties.data["opacity"] = opacity;
-    if (!obj->properties.has("colour")) obj->properties.data["colour"] = colour;
   }
   sqlite3_finalize(statement);
 }
@@ -546,64 +592,102 @@ void Model::loadLinks(DrawingObject* obj)
 void Model::clearTimeSteps()
 {
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
+  {
+    //Clear the store first on current timestep to avoid deleting active (double free)
+    if (idx == now) timesteps[idx]->cache.clear();
     delete timesteps[idx];
+  }
   timesteps.clear();
 }
 
-int Model::loadTimeSteps()
+int Model::loadTimeSteps(bool scan)
 {
-  if (!db) return timesteps.size();
+  //Strip any digits from end of filename to get base
+  basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
+
   //Don't reload timesteps when data has been cached
   if (TimeStep::cachesize > 0 && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
   TimeStep::gap = 0;
   int rows = 0;
   int last_step = 0;
-  sqlite3_stmt* statement = select("SELECT * FROM timestep");
-  //(id, time, dim_factor, units)
-  while ( sqlite3_step(statement) == SQLITE_ROW)
+
+  if (!scan && db)
   {
-    int step = sqlite3_column_int(statement, 0);
-    double time = sqlite3_column_double(statement, 1);
-    timesteps.push_back(new TimeStep(step, time));
-    //Save gap
-    if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
-    last_step = step;
-    rows++;
+    sqlite3_stmt* statement = select("SELECT * FROM timestep");
+    //(id, time, dim_factor, units)
+    while (sqlite3_step(statement) == SQLITE_ROW)
+    {
+      int step = sqlite3_column_int(statement, 0);
+      double time = sqlite3_column_double(statement, 1);
+      addTimeStep(step, time);
+      //Save gap
+      if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
+      last_step = step;
+
+      //Look for additional db file (minimum 3 digit padded step in names)
+      std::string path = checkFileStep(step, basename, 3);
+      if (path.length() > 0)
+      {
+        debug_print("Found step %d database %s\n", step, path.c_str());
+        timesteps[rows]->path = path;
+      }
+
+      rows++;
+    }
+    sqlite3_finalize(statement);
   }
-  sqlite3_finalize(statement);
+
+  //Assume we have at least one current timestep, even if none in table
+  if (timesteps.size() == 0) addTimeStep();
+
+  //Check for other timesteps in external files
+  if (scan || timesteps.size() == 1)
+  {
+    debug_print("Scanning for timesteps...\n");
+    for (unsigned int ts=0; ts<10000; ts++)
+    {
+      //If no steps found after trying 100, give up scanning
+      if (timesteps.size() < 2 && ts > 100) break;
+      int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+      std::string path = checkFileStep(ts, basename);
+      if (path.length() > 0)
+      {
+        debug_print("Found step %d database %s\n", ts, path.c_str());
+        if (path == file.full && timesteps.size() == 1)
+        {
+          //Update step if this is the initial db file
+          timesteps[0]->step = ts;
+          timesteps[0]->path = path;
+        }
+        else
+          addTimeStep(ts, 0.0, path);
+      }
+    }
+    debug_print("Scanning complete, found %d steps.\n", timesteps.size());
+  }
 
   //Copy to static for use in Tracers etc
+  if (infostream) std::cerr << timesteps.size() << " timesteps loaded\n";
   TimeStep::timesteps = timesteps;
   return timesteps.size();
 }
 
-void Model::scanFiles()
+std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
 {
-  //Check for other timesteps in external files if only 0 or 1 loaded
-  if (timesteps.size() < 2)
+  int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+  //Lower limit of digits to look for, default 1-5
+  if (len < limit) len = limit;
+  for (int w = 5; w >= len; w--)
   {
-    //Strip digits from end
-    timesteps.clear();
-    size_t last_index = file.base.find_last_not_of("0123456789");
-    std::string basename = file.base.substr(0, last_index + 1);
-    char path[FILE_PATH_MAX];
-    FILE* fp;
-    debug_print("Scanning for timesteps...\n");
-    for (unsigned int ts=0; ts<10000; ts++)
-    {
-      sprintf(path, "%s%s%05d.%s", file.path.c_str(), basename.c_str(), ts, file.ext.c_str());
-      fp = fopen(path, "r");
-      if (fp)
-      {
-        fclose(fp);
-        debug_print("Found %d %s\n", ts, path);
-        timesteps.push_back(new TimeStep(ts, ts));
-      }
-    }
-    //Prevent reloading
-    debug_print("Scanning complete, found %d steps.\n", timesteps.size());
+    std::ostringstream ss;
+    ss << file.path << basename << std::setw(w) << std::setfill('0') << ts;
+    ss << "." << file.ext;
+    std::string path = ss.str();
+    if (FileExists(path))
+      return path;
   }
+  return "";
 }
 
 void Model::loadColourMaps()
@@ -624,7 +708,9 @@ void Model::loadColourMaps()
     int logscale = sqlite3_column_int(statement, 4);
     int discrete = sqlite3_column_int(statement, 5);
     char *props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(cmname, logscale, discrete, minimum, maximum, props ? props : "");
+    colourMap = new ColourMap(cmname, minimum, maximum, props ? props : "");
+    if (logscale) colourMap->properties.data["logscale"] = true;
+    if (discrete) colourMap->properties.data["discrete"] = true;
     colourMaps.push_back(colourMap);
   }
 
@@ -671,8 +757,10 @@ void Model::loadColourMapsLegacy()
       int discrete = sqlite3_column_int(statement, 4);
       char *props = NULL;
       if (!old) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(cmname ? cmname : idname, logscale, discrete, minimum, maximum, props ? props : "");
+      colourMap = new ColourMap(cmname ? cmname : idname, minimum, maximum, props ? props : "");
       colourMaps.push_back(colourMap);
+      if (logscale) colourMap->properties.data["logscale"] = true;
+      if (discrete) colourMap->properties.data["discrete"] = true;
       //Colours already parsed from properties?
       if (colourMap->colours.size() > 0) parsed = true;
       else parsed = false;
@@ -722,14 +810,27 @@ bool Model::issue(const char* SQL, sqlite3* odb)
   if (!odb) odb = db; //Use existing database
   // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
   //debug_print("Issuing: %s\n", SQL);
-  char* zErrMsg;
+  char* zErrMsg = NULL;
   if (sqlite3_exec(odb, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
   {
-    std::cerr << "SQLite error: " << zErrMsg << std::endl;
+    std::cerr << "SQLite error: " << (zErrMsg ? zErrMsg : "(no error msg)") << std::endl;
+    std::cerr << " -- " << SQL << std::endl;
     sqlite3_free(zErrMsg);
     return false;
   }
   return true;
+}
+
+void Model::freeze()
+{
+  //Freeze fixed geometry
+  TimeStep::freeze(geometry);
+
+  //Need new geometry containers after freeze
+  //(Or new data will be appended to the frozen containers!)
+  init();
+  if (timesteps.size() == 0) addTimeStep();
+  timesteps[now]->loadFixed(geometry);
 }
 
 void Model::deleteCache()
@@ -742,7 +843,7 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (TimeStep::cachesize == 0 || now < 0 || now >= (int)timesteps.size()) return;
+  if (TimeStep::cachesize == 0 || now < 0 || (int)timesteps.size() <= now) return;
   if (timesteps[now]->cache.size() > 0) return; //Already cached this step
 
   printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);
@@ -821,8 +922,8 @@ int Model::nearestTimeStep(int requested)
 {
   //Find closest matching timestep to requested, returns index
   int idx;
-  //if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
-  if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
+  if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
+  //if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
   //if (timesteps.size() == 1 && now >= 0 && ) return -1;  //Single timestep
 
   for (idx=0; idx < (int)timesteps.size(); idx++)
@@ -830,9 +931,6 @@ int Model::nearestTimeStep(int requested)
 
   //Reached end of list?
   if (idx == (int)timesteps.size()) idx--;
-
-  //Unchanged...
-  //if (requested >= now && timesteps[idx]->step == now) return 0;
 
   if (idx < 0) idx = 0;
   if (idx >= (int)timesteps.size()) idx = timesteps.size() - 1;
@@ -843,18 +941,25 @@ int Model::nearestTimeStep(int requested)
 //Load data at specified timestep
 int Model::setTimeStep(int stepidx)
 {
+  int rows = 0;
   clock_t t1 = clock();
 
-  //Default timestep only and no db? Skip load
-  if (timesteps.size() == 0 && !db)
+  //Default timestep only? Skip load
+  if (timesteps.size() == 0)
   {
     now = -1;
-    return 0;
+    return -1;
   }
 
   if (stepidx < 0) stepidx = 0; //return -1;
   if (stepidx >= (int)timesteps.size())
     stepidx = timesteps.size()-1;
+
+  //Unchanged...
+  if (now >= 0 && stepidx == now) return -1;
+
+  //Setting initial step?
+  bool first = (now < 0);
 
   //Cache currently loaded data
   if (TimeStep::cachesize > 0) cacheStep();
@@ -862,32 +967,41 @@ int Model::setTimeStep(int stepidx)
   //Set the new timestep index
   TimeStep::timesteps = timesteps; //Set to current model timestep vector
   now = stepidx;
-  debug_print("TimeStep set to: %d\n", step());
+  debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
-  if (restoreStep())
-    return 0; //Cache hit successful return value
+  if (!restoreStep())
+  {
+    //Create new geometry containers if required
+    if (geometry.size() == 0) init();
 
-  //Create new geometry containers if required
-  if (geometry.size() == 0) init();
+    if (first)
+      //Freeze any existing geometry as non time-varying when first step loaded
+      freeze();
+    else
+      //Normally just clear any existing geometry
+      clearObjects();
 
-  //Clear any existing geometry
-  clearObjects();
+    //Import fixed data first
+    if (now > 0) 
+      timesteps[now]->loadFixed(geometry);
 
-  //Attempt to load from cache first
-  //if (restoreStep(now)) return 0; //Cache hit successful return value
-  if (!db) return 0;
+    //Attempt to load from cache first
+    //if (restoreStep(now)) return 0; //Cache hit successful return value
+    if (db)
+    {
+      //Detach any attached db file and attach n'th timestep database if available
+      attach(now);
 
-  //Detach any attached db file and attach n'th timestep database if available
-  attach(step());
+      if (TimeStep::cachesize > 0)
+        //Attempt caching all geometry from database at start
+        rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
+      else
+        rows += loadGeometry();
 
-  int rows = 0;
-  if (TimeStep::cachesize > 0)
-    //Attempt caching all geometry from database at start
-    rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
-  else
-    rows += loadGeometry();
+      debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
+    }
+  }
 
-  debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
   return rows;
 }
 
@@ -918,8 +1032,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
     if (obj) obj->skip = false;
   }
 
-  //...timestep...
-  if (time_start >= 0 && time_stop >= 0)
+  //...timestep...(if ts db attached, assume all geometry is at current step)
+  if (time_start >= 0 && time_stop >= 0 && !attached)
   {
     if (strlen(objfilter) > 0)
       sprintf(filter, "%s AND timestep BETWEEN %d AND %d", objfilter, time_start, time_stop);
@@ -1002,7 +1116,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (!obj || obj->skip) continue;
 
       //Bulk load: switch timestep and cache if timestep changes!
-      if (step() != timestep)
+      if (step() != timestep && !attached) //Will not work with attached db
       {
         cacheStep();
         now = nearestTimeStep(timestep);
@@ -1277,33 +1391,12 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   issue(
     "create table colourmap (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), minimum REAL, maximum REAL, logscale INTEGER, discrete INTEGER, centreValue REAL, properties VARCHAR(2048))", outdb);
 
+  //Write state
+  writeState(outdb);
+
   issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
 
   char SQL[SQL_QUERY_MAX];
-
-  //Write colour maps
-  for (unsigned int i = 0; i < colourMaps.size(); i++)
-  {
-    ColourMap* cm = colourMaps[i];
-
-    //Convert colour/values to properties string
-    std::stringstream colours;
-    std::stringstream positions;
-    for (unsigned int c=0; c< cm->colours.size(); c++)
-    {
-      colours << cm->colours[c].position; // * (cm->maximum - cm->minimum) + cm->minimum);
-      colours << "=rgba(" << (int)cm->colours[c].colour.r;
-      colours << "," << (int)cm->colours[c].colour.g;
-      colours << "," << (int)cm->colours[c].colour.b;
-      colours << "," << (cm->colours[c].colour.a/255.0) << ")\n";
-    }
-    cm->properties.data["colours"] = colours.str();
-
-    //if (cm->id < 0) continue; //TODO: Hard-coded maps are written and double up
-    snprintf(SQL, SQL_QUERY_MAX, "insert into colourmap (name, minimum, maximum, logscale, discrete, properties) values ('%s', %g, %g, %d, %d, '%s')", cm->name.c_str(), cm->minimum, cm->maximum, cm->log, cm->discrete, cm->properties.data.dump().c_str());
-    //printf("%s\n", SQL);
-    if (!issue(SQL, outdb)) return;
-  }
 
   //Write objects
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1314,8 +1407,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
       //printf("%s\n", SQL);
       if (!issue(SQL, outdb)) return;
       //Store the id
-      if (obj)
-        obj->dbid = sqlite3_last_insert_rowid(outdb);
+      objects[i]->dbid = sqlite3_last_insert_rowid(outdb);
     }
   }
 
@@ -1340,9 +1432,6 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     writeObjects(outdb, obj, step(), compress);
   }
 
-  //Write state
-  writeState(outdb);
-
   issue("COMMIT", outdb);
 }
 
@@ -1350,22 +1439,40 @@ void Model::writeState(sqlite3* outdb)
 {
   //Write state
   if (!outdb) outdb = db; //Use existing database
-  issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, data TEXT)", outdb);
+  issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)", outdb);
 
   std::stringstream ss;
   jsonWrite(ss, 0, false);
   std::string state = ss.str();
-  const char* SQLS = "insert into state (data) values (?)";
+
+  //Add default figure
+  if (figure < 0)
+  {
+    figure = 0;
+    if (figures.size() == 0)
+    {
+      fignames.push_back("default");
+      figures.push_back(state);
+    }
+  }
+
+  char SQL[SQL_QUERY_MAX];
+
+  // Delete any state entry with same name
+  snprintf(SQL, SQL_QUERY_MAX,  "delete from state where name == '%s'", fignames[figure].c_str());
+  issue(SQL, outdb);
+
+  snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[figure].c_str());
   sqlite3_stmt* statement;
 
-  if (sqlite3_prepare_v2(outdb, SQLS, -1, &statement, NULL) != SQLITE_OK)
-    abort_program("SQL prepare error: (%s) %s\n", SQLS, sqlite3_errmsg(outdb));
+  if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
+    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
 
   if (sqlite3_bind_text(statement, 1, state.c_str(), state.length(), SQLITE_STATIC) != SQLITE_OK)
     abort_program("SQL bind error: %s\n", sqlite3_errmsg(db));
 
   if (sqlite3_step(statement) != SQLITE_DONE )
-    abort_program("SQL step error: (%s) %s\n", SQLS, sqlite3_errmsg(db));
+    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(db));
 
   sqlite3_finalize(statement);
 }
@@ -1396,9 +1503,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
   {
     for (data_type=0; data_type<data[i]->data.size(); data_type++)
     {
-      if (!data[i]->data[data_type]) continue;
-      std::cerr << "Writing geometry (" << data[i]->data[data_type]->size() << " : "
-                << data_type <<  ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
+      if (!data[i]->data[data_type] || data[i]->data[data_type]->size() == 0) continue;
+      std::cerr << "Writing geometry (type[" << data_type << "] * " << data[i]->data[data_type]->size()
+                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       //Get the data block
       DataContainer* block = data[i]->data[data_type];
 
@@ -1446,11 +1553,13 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
         abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
       }
 
-      /* Setup text data for insert */
-      const char* labels = data[i]->getLabels();
-      if (labels)
+      /* Setup text data for insert (on vertex block only) */
+      std::string labels = data[i]->getLabels().c_str();
+      if (data_type == lucVertexData && labels.length() > 0)
       {
-        if (sqlite3_bind_text(statement, 1, labels, strlen(labels), SQLITE_STATIC) != SQLITE_OK)
+        if (sqlite3_bind_text(statement, 1, labels.c_str(), labels.length(), SQLITE_STATIC) != SQLITE_OK)
+        //const char* clabels = labels.c_str();
+        //if (sqlite3_bind_text(statement, 1, clabels, strlen(clabels), SQLITE_STATIC) != SQLITE_OK)
           abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
       }
 
@@ -1492,6 +1601,16 @@ void Model::backup(sqlite3 *fromDb, sqlite3* toDb)
   }
 }
 
+void Model::objectBounds(DrawingObject* draw, float* min, float* max)
+{
+  if (!min || !max) return;
+  for (int i=0; i<3; i++)
+    max[i] = -(min[i] = HUGE_VAL);
+  //Expand bounds by all geometry objects
+  for (unsigned int i=0; i < geometry.size(); i++)
+    geometry[i]->objectBounds(draw, min, max);
+}
+
 void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 {
   //Write new JSON format objects
@@ -1503,8 +1622,9 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   json outobjects = json::array();
   json outviews = json::array();
 
-  //Save current bg colour as the global default
-  //properties["background"] = viewer->background.toString();
+  //Converts named colours to js readable
+  if (properties.count("background") > 0)
+    properties["background"] = Colour(properties["background"]).toString();
 
   for (unsigned int v=0; v < views.size(); v++)
   {
@@ -1521,22 +1641,19 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       trans.push_back(translate[i]);
       foc.push_back(focus[i]);
       scale.push_back(view->scale[i]);
-      if (view->min[i] < HUGE_VAL && view->max[i] > -HUGE_VAL)
-      {
-        min.push_back(view->min[i]);
-        max.push_back(view->max[i]);
-      }
     }
 
     vprops["rotate"] = rot;
     vprops["translate"] = trans;
     vprops["focus"] = foc;
     vprops["scale"] = scale;
-    vprops["min"] = min;
-    vprops["max"] = max;
 
     vprops["near"] = view->near_clip;
     vprops["far"] = view->far_clip;
+
+    //Converts named colours to js readable
+    if (vprops.count("background") > 0)
+      vprops["background"] = Colour(vprops["background"]).toString();
 
     //Add the view
     outviews.push_back(vprops);
@@ -1544,8 +1661,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
   {
-    json cmap;
+    json cmap = colourMaps[i]->properties.data;
     json colours;
+
+    if (!colourMaps[i]->calibrated)
+      colourMaps[i]->calibrate();
 
     for (unsigned int c=0; c < colourMaps[i]->colours.size(); c++)
     {
@@ -1556,9 +1676,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
     }
 
     cmap["name"] = colourMaps[i]->name;
-    cmap["minimum"] = colourMaps[i]->minimum;
-    cmap["maximum"] = colourMaps[i]->maximum;
-    cmap["log"] = colourMaps[i]->log;
     cmap["colours"] = colours;
 
     cmaps.push_back(cmap);
@@ -1573,19 +1690,19 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       //TODO: fix to use sub-renderer output for others
       //"Labels", "Points", "Grid", "Triangles", "Vectors", "Tracers", "Lines", "Shapes", "Volumes"
 
-      //Find colourmap
-      int colourmap = -1;
-      ColourMap* cmap = objects[i]->getColourMap();
-      if (cmap)
-      {
-        //Search vector to find index of selected map
-        std::vector<ColourMap*>::iterator it = find(colourMaps.begin(), colourMaps.end(), cmap);
-        if (it != colourMaps.end())
-          colourmap = (it - colourMaps.begin());
-      }
-
       json obj = objects[i]->properties.data;
-      if (colourmap >= 0) obj["colourmap"] = colourmap;
+
+      //Include the object bounding box for WebGL
+      float min[3], max[3];
+      objectBounds(objects[i], min, max);
+      obj["min"] = {min[0], min[1], min[2]};
+      obj["max"] = {max[0], max[1], max[2]};
+
+      //Texture ? Export first only, as external file for now
+      //TODO: dataurl using getImageString(image, iw, ih, bpp)
+      if (objects[i]->textures.size() > 0)
+        obj["texture"] = objects[i]->textures[0]->fn.full;
+
       if (!objdata)
       {
         if (Model::points->getVertexCount(objects[i]) > 0) obj["points"] = true;
@@ -1595,10 +1712,24 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
             Model::tracers->getVertexCount(objects[i]) > 0 ||
             Model::shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
         if (Model::lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
-        if (Model::volumes->getVertexCount(objects[i]) > 0) obj["volumes"] = true;
+        if (Model::volumes->getVertexCount(objects[i]) > 0) obj["volume"] = true;
+
+        //Data labels
+        json dict;
+        for (unsigned int j=0; j < Model::geometry.size(); j++)
+        {
+          json list = Model::geometry[j]->getDataLabels(objects[i]);
+          std::string key;
+          for (auto dataobj : list)
+          {
+            key = dataobj["label"];
+            dict[key] = dataobj;
+          }
+        }
+        obj["data"] = dict;
 
         //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.getBool("points", false) << "," 
-        //          << obj.getBool("triangles", false) << "," << obj.getBool("volumes", false) << std::endl;
+        //          << obj.getBool("triangles", false) << "," << obj.getBool("volume", false) << std::endl;
         outobjects.push_back(obj);
         continue;
       }
@@ -1615,8 +1746,13 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       if (obj["points"].size() > 0 ||
           obj["triangles"].size() > 0 ||
           obj["lines"].size() > 0 ||
-          obj["volumes"].size() > 0)
+          obj["volume"].size() > 0)
       {
+
+        //Converts named colours to js readable
+        if (obj.count("colour") > 0)
+          obj["colour"] = Colour(obj["colour"]).toString();
+
         outobjects.push_back(obj);
       }
     }
@@ -1627,6 +1763,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   exported["colourmaps"] = cmaps;
   exported["objects"] = outobjects;
   exported["reload"] = true;
+  if (fignames.size() > figure)
+    exported["figure"] = fignames[figure];
 
   //Export with indentation
   os << std::setw(2) << exported;
@@ -1666,12 +1804,21 @@ void Model::jsonRead(std::string data)
     if (inviews[v].count("rotate") > 0)
     {
       rot = view->properties["rotate"];
-      trans = view->properties["translate"];
-      foc = view->properties["focus"];
-      scale = view->properties["scale"];
       view->setRotation(rot[0], rot[1], rot[2], rot[3]);
+    }
+    if (inviews[v].count("translate") > 0)
+    {
+      trans = view->properties["translate"];
       view->setTranslation(trans[0], trans[1], trans[2]);
+    }
+    if (inviews[v].count("focus") > 0)
+    {
+      foc = view->properties["focus"];
       view->focus(foc[0], foc[1], foc[2]);
+    }
+    if (inviews[v].count("scale") > 0)
+    {
+      scale = view->properties["scale"];
       view->scale[0] = scale[0];
       view->scale[1] = scale[1];
       view->scale[2] = scale[2];
@@ -1679,8 +1826,10 @@ void Model::jsonRead(std::string data)
     //min = aview->properties["min"];
     //max = aview->properties["max"];
     //view->init(false, newmin, newmax);
-    view->near_clip = view->properties["near"];
-    view->far_clip = view->properties["far"];
+    if (view->properties.has("near") && (float)view->properties["near"] > 0.0)
+      view->near_clip = view->properties["near"];
+    if (view->properties.has("far") && (float)view->properties["far"] > 0.0)
+      view->far_clip = view->properties["far"];
   }
 
   // Import colourmaps
@@ -1690,10 +1839,9 @@ void Model::jsonRead(std::string data)
     if (i >= colourMaps.size())
       addColourMap();
 
-    json cmap = cmaps[i];
-    if (cmap["minimum"].is_number()) colourMaps[i]->minimum = cmap["minimum"];
-    if (cmap["maximum"].is_number()) colourMaps[i]->maximum = cmap["maximum"];
-    if (cmap["log"].is_boolean()) colourMaps[i]->log = cmap["log"];
+    //Replace properties with imported
+    json cmap = colourMaps[i]->properties.data = cmaps[i];
+
     json colours = cmap["colours"];
     if (cmap["name"].is_string()) colourMaps[i]->name = cmap["name"];
     //Replace colours
@@ -1708,7 +1856,14 @@ void Model::jsonRead(std::string data)
 
   //Import objects
   json inobjects = imported["objects"];
-  for (unsigned int i=0; i < inobjects.size(); i++)
+  //Before loading state, set all object visibility to hidden
+  //Only objects present in state data will be shown
+  //for (unsigned int i=0; i < geometry.size(); i++)
+  //  geometry[i]->showObj(NULL, false);
+
+  unsigned int len = objects.size();
+  if (len < inobjects.size()) len = inobjects.size();
+  for (unsigned int i=0; i < objects.size(); i++)
   {
     if (i >= objects.size()) continue; //No adding objects from json now
     /*if (i >= objects.size())
@@ -1716,6 +1871,12 @@ void Model::jsonRead(std::string data)
       std::string name = inobjects[i]["name"];
       addObject(new DrawingObject(name));
     }*/
+
+    if (i >= inobjects.size())
+    {
+      //Not in imported list, assume hidden
+      objects[i]->properties.data["visible"] = false;
+    }
     
     //Merge properties
     objects[i]->properties.merge(inobjects[i]);

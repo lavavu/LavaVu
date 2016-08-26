@@ -45,8 +45,16 @@ public:
   static int gap;
   int step;
   float time;
+  std::string path;
 
-  TimeStep(int step, float time) : step(step), time(time) {}
+  //Fixed data
+  static std::vector<Geometry*> fixed;
+
+  //Cached data
+  static int cachesize;
+  std::vector<Geometry*> cache;
+
+  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path) {}
   TimeStep() : step(0), time(0) {}
 
   ~TimeStep()
@@ -56,9 +64,23 @@ public:
       delete cache[i];
   }
 
-  //Cached data
-  static int cachesize;
-  std::vector<Geometry*> cache;
+  static void freeze(std::vector<Geometry*> &data)
+  {
+    fixed = data;
+
+    //if (fixed.size() > 0) 
+    //  for (Geometry* g : data)
+    //    for (GeomData* d : g->geom)
+    //      std::cout << "Fixing [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
+  }
+
+  void loadFixed(std::vector<Geometry*> &data)
+  {
+    //Insert fixed geometry records
+    if (fixed.size() > 0) 
+      for (unsigned int i=0; i<data.size(); i++)
+        data[i]->insertFixed(fixed[i]);
+  }
 
   void write(std::vector<Geometry*> &data)
   {
@@ -67,6 +89,11 @@ public:
     //   data[i]->close();
 
     cache = data;
+
+    //for (Geometry* g : cache)
+    //  for (GeomData* d : g->geom)
+    //    if (d->count)
+    //      std::cout << "Cached [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
   }
 
   void read(std::vector<Geometry*> &data)
@@ -78,6 +105,11 @@ public:
     }
 
     data = cache;
+
+    //for (Geometry* g : cache)
+    //  for (GeomData* d : g->geom)
+    //    if (d->count)
+    //      std::cout << "Cache Load [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
   }
 };
 

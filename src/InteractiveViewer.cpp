@@ -69,7 +69,6 @@ Hold [shift] and use the scroll wheel to move the clip plane in and out.  \n\
 [B]          Background colour grey\n\
 [c]          Camera info: output to console current camera parameters\n\
 [f]          Frame border ON/OFF\n\
-[g]          Colour map log scales override DEFAULT/ON/OFF\n\
 [i]          Take screen-shot and save as png/jpeg image file\n\
 [j]          Localise colour scales, minimum and maximum calibrated to each object drawn\n\
 [k]          Lock colour scale calibrations to current values ON/OFF\n\
@@ -157,8 +156,8 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
     if (scroll) mouseScroll(scroll);
 
     //Update cam move in history
-    if (translated) record(true, aview->translateString());
-    if (aview->rotated) record(true, aview->rotateString());
+    if (translated) history.push_back(aview->translateString());
+    if (aview->rotated) history.push_back(aview->rotateString());
 
     viewer->button = NoButton;
   }
@@ -183,7 +182,7 @@ bool LavaVu::mouseMove(int x, int y)
   case LeftButton:
     if (viewer->keyState.alt || viewer->keyState.shift)
       //Mac glut scroll-wheel alternative
-      record(true, aview->zoom(-dy * 0.01));
+      history.push_back(aview->zoom(-dy * 0.01));
     else
     {
       // left = rotate
@@ -193,7 +192,7 @@ bool LavaVu::mouseMove(int x, int y)
   case RightButton:
     if (viewer->keyState.alt || viewer->keyState.shift)
       //Mac glut scroll-wheel alternative
-      record(true, aview->zoomClip(-dy * 0.001));
+      history.push_back(aview->zoomClip(-dy * 0.001));
     else
     {
       // right = translate
@@ -218,25 +217,25 @@ bool LavaVu::mouseScroll(float scroll)
   //Process wheel scrolling
   //CTRL+ALT+SHIFT = eye-separation adjust
   if (viewer->keyState.alt && viewer->keyState.shift && viewer->keyState.ctrl)
-    record(true, aview->adjustStereo(0, 0, scroll / 500.0));
+    history.push_back(aview->adjustStereo(0, 0, scroll / 500.0));
   //ALT+SHIFT = focal-length adjust
   if (viewer->keyState.alt && viewer->keyState.shift)
-    record(true, aview->adjustStereo(0, scroll * aview->model_size / 100.0, 0));
+    history.push_back(aview->adjustStereo(0, scroll * aview->model_size / 100.0, 0));
   //CTRL+SHIFT - fine adjust near clip-plane
   if (viewer->keyState.shift && viewer->keyState.ctrl)
-    record(true, aview->zoomClip(scroll * 0.001));
+    history.push_back(aview->zoomClip(scroll * 0.001));
   //SHIFT = move near clip-plane
   else if (viewer->keyState.shift)
-    record(true, aview->zoomClip(scroll * 0.01));
+    history.push_back(aview->zoomClip(scroll * 0.01));
   //ALT = adjust field of view (aperture)
   else if (viewer->keyState.alt)
-    record(true, aview->adjustStereo(scroll, 0, 0));
+    history.push_back(aview->adjustStereo(scroll, 0, 0));
   else if (viewer->keyState.ctrl)
     //Fast zoom
-    record(true, aview->zoom(scroll * 0.1));
+    history.push_back(aview->zoom(scroll * 0.1));
   //Default = slow zoom
   else
-    record(true, aview->zoom(scroll * 0.01));
+    history.push_back(aview->zoom(scroll * 0.01));
 
   return true;
 }
@@ -246,24 +245,6 @@ bool LavaVu::keyPress(unsigned char key, int x, int y)
   viewer->idleReset(); //Reset idle timer
   //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
   return parseChar(key);
-}
-
-void LavaVu::record(bool mouse, std::string command)
-{
-  command.erase(command.find_last_not_of("\n\r")+1);
-
-  if (!recording) return;
-  //This is to allow capture of history from stdout
-  if (output) std::cout << command << std::endl;
-  //std::cerr << command << std::endl;
-  history.push_back(command);
-  //Add to linehistory only if not a duplicate
-  if (!mouse)
-  {
-    int lend = linehistory.size()-1;
-    if (lend < 0 || command != linehistory[lend])
-      linehistory.push_back(command);
-  }
 }
 
 bool LavaVu::parseChar(unsigned char key)
@@ -310,14 +291,12 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("list elements");
     case 'f':
       return parseCommands("border");
-    case 'g':
-      return parseCommands("log");
     case 'h':
       return parseCommands("history");
     case 'i':
       return parseCommands("image");
     case 'j':
-      return parseCommands("localise");
+      return parseCommands("valuerange");
     case 'k':
       return parseCommands("lockscale");
     case 'u':
@@ -446,9 +425,16 @@ bool LavaVu::parseChar(unsigned char key)
     }
     else
     {
+      //Add to linehistory if not a duplicate of previous entry
+      int lend = linehistory.size()-1;
+      if (lend < 0 || entry != linehistory[lend])
+        linehistory.push_back(entry);
+
+      //Execute
       response = parseCommands(entry);
+      //Clear
+      entry = "";
     }
-    entry = "";
     break;
   case KEY_DELETE:
   case KEY_BACKSPACE:  //Backspace
@@ -481,16 +467,18 @@ bool LavaVu::parseChar(unsigned char key)
     msg = true;
     break;
   case KEY_PAGEUP:
-    //Previous viewport
-    viewSelect(view-1);
-    printMessage("Set viewport to %d", view);
-    amodel->redraw();
+    //Previous figure/view
+    if (amodel->views.size() < 2)
+      return parseCommands("figure up");
+    else
+      return parseCommands("view up");
     break;
   case KEY_PAGEDOWN:
-    //Next viewport
-    viewSelect(view+1);
-    printMessage("Set viewport to %d", view);
-    amodel->redraw();
+    //Next figure/view
+    if (amodel->views.size() < 2)
+      return parseCommands("figure down");
+    else
+      return parseCommands("view down");
     break;
   case KEY_HOME:
     break;
@@ -560,16 +548,22 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id > 0 && id <= amodel->objects.size()) return amodel->objects[id-1];
+  if (id > 0 && id <= (int)amodel->objects.size()) return amodel->objects[id-1];
 
   //Otherwise lookup by name
   std::string what = parsed.get(key, idx);
-  std::transform(what.begin(), what.end(), what.begin(), ::tolower);
+  return lookupObject(what);
+}
+
+DrawingObject* LavaVu::lookupObject(std::string& name)
+{
+  //Lookup by name only
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
   {
     std::string namekey = amodel->objects[i]->name();
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what)
+    if (namekey == name)
       //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
       return amodel->objects[i];
   }
@@ -595,7 +589,7 @@ int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int 
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id > 0 && id <= amodel->colourMaps.size()) return id-1;
+  if (id > 0 && id <= (int)amodel->colourMaps.size()) return id-1;
 
   //Find by name match in all colour maps
   std::string what = parsed.get(key, idx);
@@ -609,6 +603,16 @@ int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int 
       return i;
   }
   return -1;
+}
+
+float LavaVu::parseCoord(const json& val)
+{
+  if (val.is_string())
+  {
+    std::string vstr = val;
+    return parseCoord(vstr);
+  }
+  return (float)val;
 }
 
 float LavaVu::parseCoord(const std::string& str)
@@ -627,7 +631,10 @@ float LavaVu::parseCoord(const std::string& str)
     return aview->min[2];
   if (str == "maxZ")
     return aview->max[2];
-  return 0.0;
+  std::stringstream ss(str);
+  float val;
+  ss >> val;
+  return val;
 }
 
 bool LavaVu::parseCommands(std::string cmd)
@@ -658,19 +665,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 {
   if (cmd.length() == 0) return false;
   bool redisplay = true;
-  bool norecord = false;
   PropertyParser parsed = PropertyParser();
   static std::string last_cmd = "";
   static std::string multiline = "";
 
   //Skip comments or empty lines
   if (cmd.length() == 0 || cmd.at(0) == '#') return false;
-  //Disable recording for command beginning with @
-  if (cmd.at(0) == '@')
-  {
-    norecord = true;
-    cmd = cmd.substr(1);
-  }
+
+  //Save in history
+  history.push_back(cmd);
 
   //If the command contains only one double-quote, append until another received before parsing as a single string
   size_t n = std::count(cmd.begin(), cmd.end(), '"');
@@ -720,9 +723,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     std::string what = parsed["file"];
     //Attempt to load external file
-    FilePath file = FilePath(what);
-    loadFile(file);
-    return false;
+    loadFile(what);
   }
   else if (parsed.exists("script"))
   {
@@ -752,21 +753,21 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (scriptfile != "init.script")
         printMessage("Unable to open file: %s", scriptfile.c_str());
     }
-    return false;
   }
-  else if (parsed.exists("state"))
+  else if (parsed.exists("save"))
   {
     if (gethelp)
     {
       help += "> Export all settings as json state file that can be reloaded later\n\n"
-              "> **Usage:** state [\"filename\"]\n\n"
-              "> file (string) : name of file to import  \n";
-              "> If filename omitted and database loaded, will save the state to db instead  \n";
+              "> **Usage:** save [\"filename\"]\n\n"
+              "> file (string) : name of file to import  \n"
+              "> If filename omitted and database loaded, will save the state  \n"
+              "> to the active figure in the database instead  \n";
       return false;
     }
 
     //Export json settings only (no object data)
-    std::string what = parsed["state"];
+    std::string what = parsed["save"];
     if (what.length() == 0 && amodel->db)
     {
       amodel->reopen(true);  //Open writable
@@ -774,7 +775,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else
       jsonWriteFile(what, 0, false, false);
-    return false;
   }
   else if (parsed.has(ival, "cache"))
   {
@@ -790,7 +790,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     TimeStep::cachesize = ival;
     printMessage("Geometry cache set to %d timesteps", TimeStep::cachesize);
-    return false;
   }
   else if (parsed.exists("verbose"))
   {
@@ -805,11 +804,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     verbose = what != "off";
     printMessage("Verbose output is %s", verbose ? "ON":"OFF");
     //Set info/error stream
-    if (verbose && !output)
+    if (verbose)
       infostream = stderr;
     else
       infostream = NULL;
-    return false;
   }
   else if (parsed.exists("createvolume"))
   {
@@ -822,16 +820,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Use this to load multiple volumes as timesteps into the same object
     volume = new DrawingObject("volume");
     printMessage("Created static volume object");
-    return false;
   }
-  else if (parsed.has(fval, "alpha"))
+  else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
   {
     if (gethelp)
     {
       help += "> Set global transparency value\n\n"
-              "> **Usage:** alpha value\n\n"
-              "> value (integer > 1) : sets alpha as integer in range [1,255] where 255 is fully opaque  \n"
-              "> value (number [0,1]) : sets alpha as real number in range [0,1] where 1.0 is fully opaque  \n";
+              "> **Usage:** opacity/alpha value\n\n"
+              "> value (integer > 1) : sets opacity as integer in range [1,255] where 255 is fully opaque  \n"
+              "> value (number [0,1]) : sets opacity as real number in range [0,1] where 1.0 is fully opaque  \n";
       return false;
     }
 
@@ -842,10 +839,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       opacity = fval;
     Properties::globals["opacity"] = opacity;
-    printMessage("Set global alpha to %.2f", opacity);
+    printMessage("Set global opacity to %.2f", opacity);
     if (amodel)
-      amodel->redraw();
-    return false;
+      amodel->redraw(true);
   }
   else if (parsed.exists("interactive"))
   {
@@ -856,7 +852,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     viewer->execute();
-    return false;
   }
   else if (parsed.exists("open"))
   {
@@ -868,7 +863,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     loadModelStep(0, 0, true);
     resetViews(); //Forces bounding box update
-    return false;
   }
   else if (parsed.exists("resize"))
   {
@@ -884,22 +878,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float w = 0, h = 0;
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
-      if (w != viewer->width && h != viewer->height)
-      {
-        if (viewer->isopen)
-        {
-          viewer->setsize(w, h);
-          resetViews(true);
-        }
-        else
-        {
-          //Window not yet open, can simply set the fixed size vars
-          fixedwidth = w;
-          fixedheight = h;
-        }
-      }
+      aview->properties.data["resolution"] = json::array({w, h});
+      viewset = 2; //Force check for resize and autozoom
     }
-    return true;
   }
   else if (parsed.exists("quit") || parsed.exists("exit"))
   {
@@ -910,7 +891,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     viewer->quitProgram = true;
-    return false;
   }
   else if (parsed.exists("record"))
   {
@@ -926,20 +906,30 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
     encodeVideo("", ival);
-    return false;
   }
+  else if (parsed.exists("scan"))
+  {
+    if (gethelp)
+    {
+      help += "> Rescan the current directory for timestep database files  \n"
+              "> based on currently loaded filename\n\n";
+      return false;
+    }
 
+    amodel->loadTimeSteps(true);
+  }
   //******************************************************************************
   //Following commands require a model!
-  if (!gethelp && (!amodel || !aview))
+  else if (!gethelp && (!amodel || !aview))
   {
     //Attempt to parse as property=value first
     if (parsePropertySet(cmd)) return true;
-    std::cerr << "Model/View required to execute command: " << cmd << std::endl;
+    if (verbose) std::cerr << "Model/View required to execute command: " << cmd << ", deferred" << std::endl;
+    //Add to the queue to be processed once open
+    OpenGLViewer::commands.push_back(cmd);
     return false;
   }
-
-  if (parsed.exists("rotation"))
+  else if (parsed.exists("rotation"))
   {
     if (gethelp)
     {
@@ -1284,7 +1274,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "> **Usage:** model up/down/value\n\n"
               "> value (integer) : the model index to view [1,n]  \n"
               "> up : switch to previous model if available  \n"
-              "> down : switch to next model if available  \n";
+              "> down : switch to next model if available  \n"
+              "> add : add a new model  \n";
       return false;
     }
 
@@ -1295,13 +1286,84 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         ival = model-1;
       else if (parsed["model"] == "down")
         ival = model+1;
+      else if (parsed["model"] == "add")
+      {
+        ival = models.size();
+        defaultModel();
+      }
       else
         ival = model;
     }
     if (ival < 0) ival = models.size()-1;
     if (ival >= (int)models.size()) ival = 0;
     if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
+    amodel->setTimeStep(Model::now); //Reselect ensures all loaded correctly
     printMessage("Load model %d", model);
+  }
+  else if (parsed.exists("figure"))
+  {
+    if (gethelp)
+    {
+      help += "> Set figure to view (when available)\n\n"
+              "> **Usage:** figure up/down/value\n\n"
+              "> value (integer/string) : the figure index or name to view  \n"
+              "> up : switch to previous figure if available  \n"
+              "> down : switch to next figure if available  \n";
+      return false;
+    }
+
+    if (!parsed.has(ival, "figure"))
+    {
+      if (parsed["figure"] == "up")
+        ival = amodel->figure-1;
+      else if (parsed["figure"] == "down")
+        ival = amodel->figure+1;
+      else
+      {
+        ival = -1;
+        for (unsigned int i=0; i<amodel->fignames.size(); i++)
+          if (amodel->fignames[i] == parsed["figure"]) ival = i;
+        //Not found? Create it
+        if (ival < 0)
+        {
+          amodel->fignames.push_back(parsed["figure"]);
+          std::stringstream ss;
+          amodel->jsonWrite(ss, 0, false);
+          amodel->figures.push_back(ss.str());
+          ival = amodel->figures.size()-1;
+        }
+      }
+    }
+
+    if (!amodel->loadFigure(ival)) return false; //Invalid
+    viewset = 2; //Force check for resize and autozoom
+    printMessage("Load figure %d", amodel->figure);
+  }
+  else if (parsed.exists("view"))
+  {
+    if (gethelp)
+    {
+      help += "> Set view (when available)\n\n"
+              "> **Usage:** view up/down/value\n\n"
+              "> value (integer) : the view index to switch to  \n"
+              "> up : switch to previous view if available  \n"
+              "> down : switch to next view if available  \n";
+      return false;
+    }
+
+    if (!parsed.has(ival, "view"))
+    {
+      if (parsed["view"] == "up")
+        ival = view-1;
+      else if (parsed["view"] == "down")
+        ival = view+1;
+      else
+        ival = view;
+    }
+
+    viewSelect(ival);
+    printMessage("Set viewport to %d", view);
+    amodel->redraw();
   }
   else if (parsed.exists("hide") || parsed.exists("show"))
   {
@@ -1372,7 +1434,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //Hide/show by name/ID match in all drawing objects
       std::vector<DrawingObject*> list = lookupObjects(parsed, action);
-      for (int c=0; c<list.size(); c++)
+      for (unsigned int c=0; c<list.size(); c++)
       {
         if (list[c]->skip)
         {
@@ -1464,9 +1526,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    viewer->idleTimer(0); //Stop idle redisplay timer
     loop = false;
   }
-  else if (parsed.has(ival, "images"))
+  else if (parsed.exists("images"))
   {
     if (gethelp)
     {
@@ -1476,7 +1539,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    writeImages(amodel->step(), ival);
+    //Default to writing from current to final step
+    int end = TimeStep::timesteps[TimeStep::timesteps.size()-1]->step;
+    if (parsed.has(ival, "images"))
+      end = ival;
+
+    writeSteps(true, amodel->step(), end);
   }
   else if (parsed.exists("animate"))
   {
@@ -1512,11 +1580,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    bool state = recording;
     //Repeat N commands from history
     if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
     {
-      recording = false;
       if (animate > 0 && repeat == 0)
       {
         repeat = ival;
@@ -1530,13 +1596,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             parseCommands(history[l]);
         }
       }
-      recording = state;
       return true; //Skip record
     }
     //Repeat last command N times
     else if (parsed.has(ival, "repeat"))
     {
-      recording = false;
       if (animate > 0)
       {
         repeat = ival;
@@ -1577,12 +1641,27 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> Toggle a boolean property\n\n"
               "> **Usage:** toogle (property-name)\n\n"
-              "> property-name : name of global property to switch  \n";
+              "> property-name : name of property to switch  \n"
+              "> If an object is selected, will try there, then view, then global\n";
       return false;
     }
 
     std::string what = parsed["toggle"];
-    if (Properties::global(what).is_boolean())
+    if (aobject && aobject->properties.has(what) && aobject->properties[what].is_boolean())
+    {
+      bool current = aobject->properties[what];
+      aobject->properties.data[what] = !current;
+      amodel->redraw();
+      printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
+    }
+    else if (aview->properties.has(what) && aview->properties[what].is_boolean())
+    {
+      bool current = aview->properties[what];
+      aview->properties.data[what] = !current;
+      amodel->redraw();
+      printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
+    }
+    else if (Properties::defaults.count(what) > 0 && Properties::global(what).is_boolean())
     {
       bool current = Properties::global(what);
       Properties::global(what) = !current;
@@ -1671,14 +1750,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set title heading to following text, use double quotes for titles with spaces  \n";
+      help += "> Set title heading to following text  \n";
       return false;
     }
-    //Hide or set title
-    if (cmd.length() > 6)
-      aview->properties.data["title"] = parsed["title"];
-    else
-      aview->properties.data["title"] = "";
+
+    aview->properties.data["title"] = parsed.getall("title", 0);
   }
   else if (parsed.exists("rulers"))
   {
@@ -1691,25 +1767,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Show/hide rulers
     aview->properties.data["rulers"] = !aview->properties["rulers"];
     printMessage("Rulers %s", aview->properties["rulers"] ? "ON" : "OFF");
-  }
-  else if (parsed.exists("log"))
-  {
-    if (gethelp)
-    {
-      help += "> Over-ride colourmap settings to use log scales  \n"
-              "> Cycles between ON/OFF/DEFAULT  \n"
-              "> (default uses original settings for each colourmap)  \n";
-      return false;
-    }
-
-    ColourMap::logscales = (ColourMap::logscales + 1) % 3;
-    bool state = ColourMap::lock;
-    ColourMap::lock = false;
-    for (unsigned int i=0; i<amodel->colourMaps.size(); i++)
-      amodel->colourMaps[i]->calibrate();
-    ColourMap::lock = state;  //restore setting
-    printMessage("Log scales are %s", ColourMap::logscales  == 0 ? "DEFAULT": ( ColourMap::logscales  == 1 ? "ON" : "OFF"));
-    amodel->redraw(true); //Redraw with forced reload
   }
   else if (parsed.exists("help"))
   {
@@ -1750,19 +1807,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->properties.data["antialias"] = !aview->properties["antialias"];
     printMessage("Anti-aliasing %s", aview->properties["antialias"] ? "ON":"OFF");
   }
-  else if (parsed.exists("localise"))
+  else if (parsed.exists("valuerange"))
   {
     if (gethelp)
     {
-      help += "> Experimental: adjust colourmaps on each object to fit actual value range  \n";
+      help += "> Adjust colourmaps on each object to fit actual value range  \n";
       return false;
     }
 
-    //Find colour value min/max local to each geom element
-    for (int type=lucMinType; type<lucMaxType; type++)
-      Model::geometry[type]->localiseColourValues();
-    printMessage("ColourMap scales localised");
-    amodel->redraw(true); //Colour change so force reload
+    DrawingObject* obj = aobject;
+    if (!obj)
+      obj = lookupObject(parsed, "valuerange");
+    if (obj)
+    {
+      for (int type=lucMinType; type<lucMaxType; type++)
+        Model::geometry[type]->setValueRange(obj);
+      printMessage("ColourMap scales set to local value range");
+      amodel->redraw(true); //Colour change so force reload
+    }
   }
   else if (parsed.exists("export"))
   {
@@ -1789,7 +1851,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else
     {
-      for (int c=0; c<list.size(); c++)
+      for (unsigned int c=0; c<list.size(); c++)
       {
         exportData(type, list[c]);
         printMessage("Dumped object %s to %s", list[c]->name().c_str(), what.c_str());
@@ -1830,12 +1892,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       for (unsigned int i=0; i < Model::geometry.size(); i++)
         Model::geometry[i]->print();
       viewer->swap();  //Immediate display
-      if (!norecord) record(false, cmd);
       return false;
     }
     else if (parsed["list"] == "colourmaps")
     {
       int offset = 0;
+      std::cerr << "ColourMaps:\n===========\n";
       for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
       {
         if (amodel->colourMaps[i])
@@ -1848,24 +1910,36 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         }
       }
       viewer->swap();  //Immediate display
-      if (!norecord) record(false, cmd);
       return false;
     }
     else if (parsed["list"] == "data")
     {
       int offset = 0;
       std::vector<std::string> list;
+      if (aobject)
+      {
+        displayText("Data sets for: " + aobject->name(), ++offset);
+        std::cout << ("Data sets for: " + aobject->name()) << std::endl;
+      }
+      displayText("-----------------------------------------", ++offset);
+      std::cout << "-----------------------------------------" << std::endl;
       for (unsigned int i=0; i < Model::geometry.size(); i++)
       {
-        list = Model::geometry[i]->getDataLabels(aobject);
+        json list = Model::geometry[i]->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
-          displayText(list[l], ++offset);
-          std::cerr << list[l] << std::endl;
+          std::stringstream ss;
+          ss << "[" << l << "] " << list[l]["label"]
+           << " (range: " << list[l]["minimum"]
+           << " to " << list[l]["maximum"] << ")"
+           << " -- " << list[l]["size"] << "";
+          displayText(ss.str(), ++offset);
+          std::cerr << ss.str() << std::endl;
         }
       }
+      displayText("-----------------------------------------", ++offset);
+      std::cout << "-----------------------------------------" << std::endl;
       viewer->swap();  //Immediate display
-      if (!norecord) record(false, cmd);
       return false;
     }
     else //if (parsed["list"] == "objects")
@@ -1885,6 +1959,26 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->reset();     //Reset camera
     aview->init(true);  //Reset camera to default view of model
     printMessage("View reset");
+  }
+  else if (parsed.exists("bounds"))
+  {
+    if (gethelp)
+    {
+      help += "> Recalculate the model bounding box from geometry  \n";
+      return false;
+    }
+
+    //Remove any existing fixed bounds
+    aview->properties.data.erase("min");
+    aview->properties.data.erase("max");
+    Properties::globals.erase("min");
+    Properties::globals.erase("max");
+    //Update the viewports and recalc bounding box
+    resetViews();
+    //Update fixed bounds
+    aview->properties.data["min"] = {aview->min[0], aview->min[1], aview->min[2]};
+    aview->properties.data["max"] = {aview->max[0], aview->max[1], aview->max[2]};
+    printMessage("View bounds update");
   }
   else if (parsed.exists("clear"))
   {
@@ -1909,6 +2003,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Restore original data
+    amodel->loadTimeSteps();
     if (model < 0 || !loadModelStep(model)) return false;
   }
   else if (parsed.exists("zerocam"))
@@ -1937,6 +2032,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Set colourmap on object by name/ID match
     DrawingObject* obj = aobject;
     int next = 0;
+    parsed.has(ival, "colourmap"); //Get id if any
     if (!obj)
     {
       obj = lookupObject(parsed, "colourmap");
@@ -1959,20 +2055,32 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       else
       {
-        //No cmap id, parse a colourmap string (must be single line or enclosed in "")
+        //No cmap id, parse a colourmap string
         cmap = obj->properties["colourmap"];
-        if (what == "add" || cmap < 0)
+        if (what == "add")
         {
           cmap = amodel->addColourMap();
           obj->properties.data["colourmap"] = cmap;
-          what = parsed.get("colourmap", next+1);
+          if (what == "add")
+            what = parsed.getall("colourmap", next+1);
+          else
+            what = "";
         }
+        else
+          what = parsed.getall("colourmap", next);
+
         if (what.length() > 0)
         {
+          //Add new map if none set on object
+          json current = obj->properties["colourmap"];
+          if (current.is_number() && current >= 0 && amodel->colourMaps.size() > 0)
+            cmap = current;
+          else
+            cmap = amodel->addColourMap();
           amodel->colourMaps[cmap]->loadPalette(what);
           //cmap->print();
-          amodel->colourMaps[cmap]->calibrate(); //Recalibrate
-          amodel->colourMaps[cmap]->calc(); //Recalculate cached colours
+          obj->properties.data["colourmap"] = cmap;
+          //amodel->colourMaps[cmap]->calibrate(); //Recalibrate
         }
       }
       redraw(obj);
@@ -2083,7 +2191,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Read data into selected object, appends to specified data array\n\n"
-              "> **Usage:** data type\n\n"
+              "> **Usage:** read type\n\n"
               "> type (string) : data type to load vertices/vectors/normals/values/colours  \n"
               "> Before using this command, store the data a json array in a property of same name\n\n";
       return false;
@@ -2093,22 +2201,30 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject && aobject->properties.has(what))
     {
       json data = aobject->properties[what];
-      if (!data.is_array() || data.size() == 0) return false;
       lucGeometryDataType dtype;
 
       int width = 3;
       if (what == "vertices")
         dtype = lucVertexData;
-      if (what == "normals")
+      else if (what == "normals")
         dtype = lucNormalData;
-      if (what == "vectors")
+      else if (what == "vectors")
         dtype = lucVectorData;
-      if (what == "colours")
+      else if (what == "colours")
       {
         dtype = lucRGBAData;
         width = 1;
+        if (data.is_string())
+        {
+          //Convert to colour values using colourmap parser
+          ColourMap cmap;
+          cmap.parse(data);
+          data = json::array();
+          for (unsigned int i=0; i<cmap.colours.size(); i++)
+            data.push_back((float)cmap.colours[i].colour.value);
+        }
       }
-      if (what == "values")
+      else if (what == "values")
       {
         dtype = lucColourValueData;
         width = 1;
@@ -2117,6 +2233,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
+      if (!data.is_array() || data.size() == 0) return false;
       int size = data.size();
       if (data[0].is_array()) size *= data[0].size();
       float* vals = new float[size];
@@ -2126,13 +2243,19 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           if (width != 3) return false;
           //Support 2d array for vertex/vector/normal
-          vals[i*3] = data[i][0];
-          vals[i*3+1] = data[i][1];
-          vals[i*3+2] = data[i][2];
+          vals[i*3] = parseCoord(data[i][0]);
+          vals[i*3+1] = parseCoord(data[i][1]);
+          vals[i*3+2] = parseCoord(data[i][2]);
+        }
+        else if (dtype == lucRGBAData)
+        {
+          Colour c(data[i]);
+          vals[i] = c.fvalue;
         }
         else
-          vals[i] = data[i];
+          vals[i] = parseCoord(data[i]);
       }
+
       int len = size/width;
       active->read(aobject, len, dtype, vals);
       delete[] vals;
@@ -2204,14 +2327,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     if (parsed.has(ival, "pointsample"))
-      Points::subSample = ival;
+      Properties::globals["pointsubsample"] = ival;
     else if (parsed["pointsample"] == "up")
-      Points::subSample /= 2;
+      Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") / 2;
     else if (parsed["pointsample"] == "down")
-      Points::subSample *= 2;
-    if (Points::subSample < 1) Points::subSample = 1;
+      Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") * 2;
+    if ((int)Properties::global("pointsubsample") < 1) Properties::globals["pointsubsample"] = 1;
     Model::points->redraw = true;
-    printMessage("Point sampling %d", Points::subSample);
+    printMessage("Point sampling %d", (int)Properties::global("pointsubsample"));
   }
   else if (parsed.exists("image"))
   {
@@ -2230,20 +2353,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //Apply image counter to default filename when multiple images output
       static int imagecounter = 0;
-      while (imagecounter < LONG_MAX)
-      {
-        std::stringstream outpath;
-        outpath << viewer->title;
-        if (imagecounter > 0)
-          outpath <<  "-" << imagecounter;
-        std::string fn = getImageFilename(outpath.str());
-        if (!std::ifstream(fn))
-        {
-          viewer->image(fn);
-          break;
-        }
-        imagecounter++;
-      }
+      std::stringstream outpath;
+      std::string title = Properties::global("caption");
+      outpath << title;
+      if (imagecounter > 0)
+        outpath <<  "-" << imagecounter;
+      std::string fn = getImageFilename(outpath.str());
+      viewer->image(fn);
+      imagecounter++;
     }
 
     if (viewer->outwidth > 0)
@@ -2368,7 +2485,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model scaling, replaces existing values\n\n"
+      help += "> Set model scaling, multiples by existing values\n\n"
               "> **Usage:** scale xval yval zval\n\n"
               "> xval (number) : scaling value applied to x axis\n\n"
               "> yval (number) : scaling value applied to y axis  \n"
@@ -2379,13 +2496,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float y, z;
     if (parsed.has(y, "modelscale", 1) && parsed.has(z, "modelscale", 2))
     {
-      aview->setScale(fval, y, z);
+      aview->setScale(fval, y, z, false);
       amodel->redraw();
     }
     else
     {
       //Scale everything
-      aview->setScale(fval, fval, fval);
+      aview->setScale(fval, fval, fval, false);
       amodel->redraw();
     }
   }
@@ -2429,7 +2546,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(fval, 1, 1, false); //Multiply by existing
+          aview->setScale(fval, 1, 1, true); //Replace existing
           amodel->redraw();
         }
       }
@@ -2437,7 +2554,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, fval, 1, false); //Multiply by existing
+          aview->setScale(1, fval, 1, true); //Replace existing
           amodel->redraw();
         }
       }
@@ -2445,14 +2562,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, 1, fval, false); //Multiply by existing
+          aview->setScale(1, 1, fval, true); //Replace existing
           amodel->redraw();
         }
       }
       else if (what == "all" && parsed.has(fval, "scale", 1))
       {
         //Scale everything
-        aview->setScale(fval, fval, fval, false); //Multiply by existing
+        aview->setScale(fval, fval, fval, true); //Replace existing
         amodel->redraw();
       }
       else
@@ -2548,9 +2665,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Delete drawing object by name/ID match
-    DrawingObject* obj = lookupObject(parsed, "delete");
     std::vector<DrawingObject*> list = lookupObjects(parsed, "delete");
-    for (int c=0; c<list.size(); c++)
+    for (unsigned int c=0; c<list.size(); c++)
     {
       printMessage("%s deleted", list[c]->name().c_str());
       //Delete geometry
@@ -2591,7 +2707,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::vector<DrawingObject*> list = lookupObjects(parsed, "deletedb");
-    for (int c=0; c<list.size(); c++)
+    for (unsigned int c=0; c<list.size(); c++)
     {
       if (list[c]->dbid == 0) continue;
       amodel->deleteObject(list[c]->dbid);
@@ -2624,7 +2740,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //Load drawing object by name/ID match
     std::vector<DrawingObject*> list = lookupObjects(parsed, "load");
-    for (int c=0; c<list.size(); c++)
+    for (unsigned int c=0; c<list.size(); c++)
     {
       if (list[c]->dbid == 0) continue;
       amodel->loadGeometry(list[c]->dbid);
@@ -2643,7 +2759,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "> **Usage:** sort on/off/timer\n\n"
               "> on : (default) sort after model rotation  \n"
               "> off : no sorting  \n"
-              "> timer : sort after 1.5 second timeout  \n";
+              "> timer : sort after 1.5 second timeout  \n"
+              "> If no options passed, flags re-sort required  \n";
       return false;
     }
 
@@ -2672,6 +2789,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       viewer->idleTimer(0); //Stop/disable idle redisplay timer
       printMessage("Sort geometry on rotation enabled");
     }
+    else
+      //Flag rotated
+      aview->rotated = true;
   }
   else if (parsed.exists("idle"))
   {
@@ -2683,8 +2803,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Command playback
     if (repeat != 0)
     {
-      bool state = recording;
-      recording = false;
       //Playback
       for (unsigned int l=0; l<replay.size(); l++)
         parseCommands(replay[l]);
@@ -2694,7 +2812,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         viewer->idleTimer(0); //Disable idle redisplay timer
         replay.clear();
       }
-      recording = state;
     }
     return true; //Skip record
   }
@@ -2868,7 +2985,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    createDemoModel();
+    if (!parsed.has(ival, "test")) ival = 200000;
+    createDemoModel(ival);
     resetViews();
   }
   else if (parsed.exists("voltest"))
@@ -2920,19 +3038,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     amodel->addTimeStep(amodel->step()+1);
     amodel->setTimeStep(Model::now+1);
+
     //Don't record
     return false;
   }
-  else if (parsed.exists("filter"))
+  else if (parsed.exists("filter") || parsed.exists("filterout"))
   {
     if (gethelp)
     {
       help += "> Set a data filter on selected object\n\n"
               "> **Usage:** filter index min max [range]\n\n"
-              "> index (integer) : the index of the data set to filter on (see: \"list objects\")  \n"
+              "> index (integer) : the index of the data set to filter on (see: \"list data\")  \n"
               "> min (number) : the minimum value of the range to filter in or out  \n"
               "> max (number) : the maximum value of the range to filter in or out  \n"
-              "> range (literal) : add range keyword for min/max [0,1] on available data range  \n"
+              "> map (literal) : add map keyword for min/max [0,1] on available data range  \n"
               ">                   eg: 0.1-0.9 will filter the lowest and highest 10% of values  \n";
       return false;
     }
@@ -2940,32 +3059,26 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Require a selected object
     if (aobject)
     {
-      //TODO: implement a json representation for web ui
-      Filter filter;
-      filter.dataIdx = parsed.Int("filter", 0);
-      parsed.has(filter.minimum, "filter", 1);
-      parsed.has(filter.maximum, "filter", 2);
+      json filter;
+      std::string action = "filter";
+      if (parsed.exists("filterout"))
+      {
+        action = "filterout";
+        filter["out"] = true;
+      }
+      filter["by"] = parsed.Int(action, 0);
+      float min, max;
+      parsed.has(min, action, 1);
+      parsed.has(max, action, 2);
+      filter["minimum"] = min;
+      filter["maximum"] = max;
       //Range keyword defines a filter applied over the range of available values not literal values
       //eg: 0.1-0.9 will filter out the lowest and highest 10% of values
-      filter.range = (parsed.get("filter", 3) == "range");
-      aobject->filters.push_back(filter);
-      printMessage("%s filter on value index %d from %f to %f", (filter.range ? "Range" : "Value"), filter.dataIdx, filter.minimum, filter.maximum);
-      amodel->redraw(true); //Force reload
-    }
-  }
-  else if (parsed.exists("filterout"))
-  {
-    if (gethelp)
-    {
-      help += "> Toggle filters on selected object to filter set data range out or in  \n";
-      return false;
-    }
-
-    //Require a selected object
-    if (aobject)
-    {
-      aobject->filterout = !aobject->filterout;
-      printMessage("Filters on object %s set to %s", aobject->name().c_str(), (aobject->filterout ? "OUT" : "IN"));
+      bool map = (parsed.get(action, 3) == "map");
+      filter["map"] = map;
+      filter["inclusive"] = false;
+      aobject->properties.data["filters"].push_back(filter);
+      printMessage("%s filter on value index %d from %f to %f", (map ? "Map" : "Value"), (int)filter["index"], min, max);
       amodel->redraw(true); //Force reload
     }
   }
@@ -2981,9 +3094,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       printMessage("Filters cleared on object %s", aobject->name().c_str());
-      aobject->filters.clear();
+      aobject->properties.data.erase("filters");
       amodel->redraw(true); //Force reload
     }
+  }
+  else if (parsed.exists("freeze"))
+  {
+    if (gethelp)
+    {
+      help += "> Fix currently loaded geometry as not time-varying\n\n"
+              "> This data will then exist for all time steps\n";
+      return false;
+    }
+
+    amodel->freeze();
   }
   else
   {
@@ -3003,13 +3127,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else
     {
-      std::cerr << "# Unrecognised command: \"" << cmd << "\"" << std::endl;
+      if (verbose) std::cerr << "# Unrecognised command or file not found: \"" << cmd << "\"" << std::endl;
       return false;  //Invalid
     }
   }
 
   last_cmd = cmd;
-  if (!norecord) record(false, cmd);
   if (animate && redisplay) viewer->postdisplay = true;
   return redisplay;
 }
@@ -3030,15 +3153,15 @@ void LavaVu::helpCommand(std::string cmd)
   std::vector<std::string> categories = {"General", "Input", "Output", "View/Camera", "Object", "Display", "Scripting", "Miscellanious"};
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
-    {"file", "script"},
-    {"image", "images", "outwidth", "outheight", "movie", "export", "state"},
+    {"file", "script", "figure", "view", "scan"},
+    {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
-     "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "camera",
+     "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
     {"hide", "show", "delete", "load", "select", "add", "read", "name",
      "vertex", "normal", "vector", "value", "colour"},
-    {"background", "alpha", "axis", "scaling", "rulers", "log",
-     "antialias", "localise", "lockscale", "colourmap", "pointtype",
+    {"background", "alpha", "axis", "scaling", "rulers",
+     "antialias", "valuerange", "lockscale", "colourmap", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",

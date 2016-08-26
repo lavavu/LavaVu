@@ -61,6 +61,7 @@ void compareCoordMinMax(float* min, float* max, float *coord)
 {
   for (int i=0; i<3; i++)
   {
+    if (std::isnan(coord[i]) || std::isinf(coord[i])) return;
     if (coord[i] > max[i] && coord[i] < HUGE_VAL)
     {
       max[i] = coord[i];
@@ -991,22 +992,10 @@ void TextureLoader::load3D(int width, int height, int depth, void* data, int typ
   GL_Error_Check;
 }
 
-void abort_program(const char * s, ...)
-{
-  char buffer[2048];
-  va_list args;
-  va_start(args, s);
-  vsprintf(buffer, s, args);
-  va_end(args);
-  strcat(buffer, "\n");
-  fputs(buffer, stderr);
-  throw std::runtime_error(buffer);
-}
-
 std::string getImageFilename(const std::string& basename)
 {
+  if (basename.length() == 0) return basename;
   std::string path = basename;
-  if (path.length() == 0) return path;
 #ifdef HAVE_LIBPNG
   //Write data to image file
   if (!strstr(basename.c_str(), ".png"))
@@ -1019,19 +1008,19 @@ std::string getImageFilename(const std::string& basename)
   return path;
 }
 
-bool writeImage(GLubyte *image, int width, int height, const std::string& path, bool transparent)
+bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp)
 {
 #ifdef HAVE_LIBPNG
   //Write data to image file
   std::ofstream file(path, std::ios::binary);
-  write_png(file, transparent ? 4 : 3, width, height, image);
+  write_png(file, bpp, width, height, image);
 #else
   //JPEG support with built in encoder
   // Fill in the compression parameter structure.
   jpge::params params;
   params.m_quality = 95;
   params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-  if (!compress_image_to_jpeg_file(path.c_str(), width, height, 3, image, params))
+  if (!compress_image_to_jpeg_file(path.c_str(), width, height, bpp, image, params))
   {
     fprintf(stderr, "[write_jpeg] File %s could not be saved\n", path.c_str());
     return false;
@@ -1041,33 +1030,40 @@ bool writeImage(GLubyte *image, int width, int height, const std::string& path, 
   return true;
 }
 
-std::string getImageString(GLubyte *image, int width, int height, int bpp)
+std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg)
 {
+  std::string encoded;
 #ifdef HAVE_LIBPNG
-  // Write png to stringstream
-  std::stringstream ss;
-  write_png(ss, bpp, width, height, image);
-  //Base64 encode!
-  std::string str = ss.str();
-  std::string encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
-#else
-  // Writes JPEG image to memory buffer.
-  // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
-  // If return value is true, jpeg_bytes will be set to the size of the compressed data.
-  int jpeg_bytes = width * height * bpp;
-  unsigned char* jpeg = new unsigned char[jpeg_bytes];
-  // Fill in the compression parameter structure.
-  jpge::params params;
-  params.m_quality = 95;
-  params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-  if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, width, height, bpp, (const unsigned char *)image, params))
-    debug_print("JPEG compressed, size %d\n", jpeg_bytes);
+  if (!jpeg)
+  {
+    // Write png to stringstream
+    std::stringstream ss;
+    write_png(ss, bpp, width, height, image);
+    //Base64 encode!
+    std::string str = ss.str();
+    encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
+  }
   else
-    abort_program("JPEG compress error\n");
-  //Base64 encode!
-  std::string encoded = "data:image/jpeg;base64," + base64_encode(reinterpret_cast<const unsigned char*>(jpeg), jpeg_bytes);
-  delete[] jpeg;
 #endif
+  {
+    // Writes JPEG image to memory buffer.
+    // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
+    // If return value is true, jpeg_bytes will be set to the size of the compressed data.
+    int jpeg_bytes = width * height * bpp;
+    unsigned char* jpeg = new unsigned char[jpeg_bytes];
+    // Fill in the compression parameter structure.
+    jpge::params params;
+    params.m_quality = 95;
+    params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
+    if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, width, height, bpp, (const unsigned char *)image, params))
+      debug_print("JPEG compressed, size %d\n", jpeg_bytes);
+    else
+      abort_program("JPEG compress error\n");
+    //Base64 encode!
+    encoded = "data:image/jpeg;base64," + base64_encode(reinterpret_cast<const unsigned char*>(jpeg), jpeg_bytes);
+    delete[] jpeg;
+  }
+
   return encoded;
 }
 
@@ -1225,7 +1221,7 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
 
   // initialize png I/O
   png_set_write_fn(pngWrite, (png_voidp)&stream, png_write_data, png_flush);
-  png_set_compression_level(pngWrite, Z_BEST_COMPRESSION);
+  png_set_compression_level(pngWrite, 6); //Much faster, not much larger
 
   //if (setjmp(png_jmpbuf(pngWrite)))
   //   abort_program("[write_png_file] Error writing header");

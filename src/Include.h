@@ -26,6 +26,7 @@
 #include <deque>
 #include <iomanip>
 #include <climits>
+#include <typeinfo>
 
 //C headers
 #include <assert.h>

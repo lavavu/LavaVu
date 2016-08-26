@@ -39,9 +39,10 @@
 float Geometry::min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
 float Geometry::max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
 float Geometry::dims[3];
-std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volumes"};
+std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 int segments__ = 0;    // Saves segment count for circle based objects
+std::vector<Geometry*> TimeStep::fixed; //Defined here as no TimeStep.cpp
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -56,10 +57,9 @@ void GeomData::label(std::string& labeltext)
   labels.push_back(labeltext);
 }
 
-const char* GeomData::getLabels()
+std::string GeomData::getLabels()
 {
-  if (labelptr) free(labelptr);
-  labelptr = NULL;
+  std::stringstream ss;
   if (labels.size())
   {
     //Get total length
@@ -70,9 +70,9 @@ const char* GeomData::getLabels()
     labelptr[0] = '\0';
     //Copy labels
     for (unsigned int i=0; i < labels.size(); i++)
-      sprintf(labelptr, "%s%s\n", labelptr, labels[i].c_str());
+      ss << labels[i] << std::endl;
   }
-  return (const char*)labelptr;
+  return ss.str();
 }
 
 //Utility functions, calibrate colourmaps and get colours
@@ -80,6 +80,12 @@ void GeomData::colourCalibrate()
 {
   //Cache colour lookups
   draw->setup();
+
+  json colourBy = draw->properties["colourby"];
+  if (colourBy.is_string())
+    draw->colourIdx = valuesLookup(colourBy);
+  else if (colourBy.is_number())
+    draw->colourIdx = colourBy;
 
   //Check for sane range
   if (draw->colourIdx >= values.size()) draw->colourIdx = 0;
@@ -108,9 +114,12 @@ void GeomData::mapToColour(Colour& colour, float value)
 int GeomData::colourCount()
 {
   //Return number of colour values or RGBA colours
-  //TODO: Use colourIdx?
-  int hasColours = data[lucColourValueData] ? data[lucColourValueData]->size() : 0;
-  if (hasColours == 0) hasColours = colours.size();
+  int hasColours = colours.size();
+  if (values.size() > draw->colourIdx)
+  {
+    FloatValues* fv = values[draw->colourIdx];
+    hasColours = fv->size();
+  }
   return hasColours;
 }
 
@@ -151,41 +160,115 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     colour.a = draw->opacity * 255;
 }
 
+unsigned int GeomData::valuesLookup(const std::string& label)
+{
+  //Lookup index from label
+  for (unsigned int j=0; j < values.size(); j++)
+    if (values[j]->label == label)
+      return j;
+  return 0;
+}
+
+//Returns true if vertex is to be filtered (don't display)
 bool GeomData::filter(unsigned int idx)
 {
-  for (unsigned int i=0; i < draw->filters.size(); i++)
+  //On the first index, cache the filter data
+  if (idx == 0)
   {
-    Filter& filter = draw->filters[i];
-    if (values.size() <= filter.dataIdx || !values[filter.dataIdx]) continue;
-    int size = values[filter.dataIdx]->size();
-    int range = size ? count / size : 1;
-    if (filter.dataIdx >= 0 && size > 0)
+    //The cache stores filter values so we can avoid 
+    //hitting the json store for every vertex (very slow)
+    filterCache.clear();
+    json filters = draw->properties["filters"];
+    for (unsigned int i=0; i < filters.size(); i++)
     {
-      //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
-      float filterValue;
-      float min = filter.minimum;
-      float max = filter.maximum;
-      if (filter.range)
+      float min = filters[i]["minimum"];
+      float max = filters[i]["maximum"];
+      if (min == max) continue; //Skip
+
+      int j = filterCache.size();
+      filterCache.push_back(Filter());
+      json filterBy = filters[i]["by"];
+      if (filterBy.is_string())
+        filterCache[j].dataIdx = valuesLookup(filterBy);
+      else if (filterBy.is_number())
+        filterCache[j].dataIdx = filterBy;
+      filterCache[j].map = filters[i]["map"];
+      filterCache[j].out = filters[i]["out"];
+      filterCache[j].inclusive = filters[i]["inclusive"];
+      if (min > max)
       {
-        //Range type filter over available values
-        float valrange = values[filter.dataIdx]->maximum - values[filter.dataIdx]->minimum;
-        min = values[filter.dataIdx]->minimum + min * valrange;
-        max = values[filter.dataIdx]->minimum + max * valrange;
-      }
-      unsigned int ridx = idx / range;
-      //Have values but not enough for per-vertex, spread over range (eg: per triangle)
-      filterValue = values[filter.dataIdx]->value[ridx];
-      if (draw->filterout)
-      {
-        //Filter out values between specified ranges (allows filtering separate sections)
-        if (filterValue >= min && filterValue <= max) 
-          return true;
+        //Swap and change to an out filter
+        filterCache[j].minimum = max;
+        filterCache[j].maximum = min;
+        filterCache[j].out = !filterCache[j].out;
+        //Also flip the inclusive flag
+        filterCache[j].inclusive = !filterCache[j].inclusive;
       }
       else
       {
+        filterCache[j].minimum = min;
+        filterCache[j].maximum = max;
+      }
+    }
+  }
+
+  //Iterate all the filters,
+  // - if a value matches a filter condition return true (filtered)
+  // - if no filters hit, returns false
+  float value, min, max;
+  int size, range;
+  unsigned int ridx;
+  for (unsigned int i=0; i < filterCache.size(); i++)
+  {
+    if (values.size() <= filterCache[i].dataIdx || !values[filterCache[i].dataIdx]) continue;
+    size = values[filterCache[i].dataIdx]->size();
+    if (filterCache[i].dataIdx >= 0 && size > 0)
+    {
+      //Have values but not enough for per-vertex? spread over range (eg: per triangle)
+      range = count / size;
+      ridx = idx;
+      if (range > 1) ridx = idx / range;
+
+      //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
+      min = filterCache[i].minimum;
+      max = filterCache[i].maximum;
+      if (filterCache[i].map)
+      {
+        //Range type filters map over available values on [0,1] => [min,max]
+        //If a colourmap is provided, that is used to get the values (allows log maps)
+        //Otherwise they come directly from the data 
+        ColourMap* cmap = draw->getColourMap();
+        if (cmap)
+          value = cmap->scaleValue(values[filterCache[i].dataIdx]->value[ridx]);
+        else
+        {
+          value = values[filterCache[i].dataIdx]->maximum - values[filterCache[i].dataIdx]->minimum;
+          min = values[filterCache[i].dataIdx]->minimum + min * value;
+          max = values[filterCache[i].dataIdx]->minimum + max * value;
+          value = values[filterCache[i].dataIdx]->value[ridx];
+        }
+      }
+      else
+        value = values[filterCache[i].dataIdx]->value[ridx];
+
+      //if (idx%10000==0) std::cout << min << " < " << value << " < " << max << std::endl;
+      
+      //"out" flag indicates values between the filter range are skipped - exclude
+      if (filterCache[i].out)
+      {
+        //Filter out values between specified ranges (allows filtering separate sections)
+        if (filterCache[i].inclusive && value >= min && value <= max) 
+          return true;
+        if (value > min && value < max) 
+          return true;
+      }
+      //Default is to filter values NOT in the filter range - include those that are
+      else
+      {
         //Filter out values unless between specified ranges (allows combining filters)
-        //std::cout << min << " < " << filterValue << " < " << max << std::endl;
-        if (filterValue < min || filterValue > max)
+        if (filterCache[i].inclusive && (value <= min || value >= max))
+          return true;
+        if (value < min || value > max)
           return true;
       }
     }
@@ -219,7 +302,7 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
 }
 
 Geometry::Geometry() : view(NULL), elements(-1), flat2d(false),
-                       fixed(NULL), allhidden(false), internal(false), 
+                       allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true)
 {
 }
@@ -378,6 +461,8 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
             el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(geom[index]->data[data_type]->ref(0)), length);
           else
           {
+            //TODO: Support export of custom value data (not with pre-defined label)
+            //      include minimum/maximum/label fields
             json values;
             for (unsigned int j=0; j<geom[index]->data[data_type]->size(); j++)
             {
@@ -435,29 +520,29 @@ void Geometry::showObj(DrawingObject* draw, bool state)
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     //std::cerr << i << " owned by object " << geom[i]->draw->id << std::endl;
-    if (geom[i]->draw == draw)
+    if (!draw || geom[i]->draw == draw)
     {
-      hidden[i] = !state;
-      draw->properties.data["visible"] = state;
+      if (draw) hidden[i] = !state;
+      geom[i]->draw->properties.data["visible"] = state;
     }
   }
   redraw = true;
 }
 
-void Geometry::localiseColourValues()
+void Geometry::setValueRange(DrawingObject* draw)
 {
-  for (unsigned int i = 0; i < geom.size(); i++)
+  for (auto g : geom)
   {
-    //Get local min and max for each element from colourValues
-    if (geom[i]->draw->getColourMap())
+    if (g->colourData() && (!draw || g->draw == draw))
     {
-      geom[i]->data[lucColourValueData]->minimum = HUGE_VAL;
-      geom[i]->data[lucColourValueData]->maximum = -HUGE_VAL;
-      for (unsigned int v=0; v < geom[i]->data[lucColourValueData]->size(); v++)
+      //Get local min and max for each element from colourValues
+      g->colourData()->minimum = HUGE_VAL;
+      g->colourData()->maximum = -HUGE_VAL;
+      for (unsigned int v=0; v < g->colourData()->size(); v++)
       {
         // Check min/max against each value
-        if (geom[i]->colourData(v) > geom[i]->colourData()->maximum) geom[i]->colourData()->maximum = geom[i]->colourData(v);
-        if (geom[i]->colourData(v) < geom[i]->colourData()->minimum) geom[i]->colourData()->minimum = geom[i]->colourData(v);
+        if (g->colourData(v) > g->colourData()->maximum) g->colourData()->maximum = g->colourData(v);
+        if (g->colourData(v) < g->colourData()->minimum) g->colourData()->minimum = g->colourData(v);
       }
     }
   }
@@ -660,13 +745,6 @@ void Geometry::labels()
       {
         float* p = geom[i]->vertices[j];
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
-        //geom[i]->getColour(colour, j);
-        colour = geom[i]->draw->colour;
-        //Multiply opacity by global override level if set
-        //if (GeomData::opacity > 0.0)
-        //  colour.a *= GeomData::opacity;
-        glColor4ubv(colour.rgba);
-        PrintSetColour(colour.value);
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
@@ -748,14 +826,24 @@ void Geometry::setView(View* vp, float* min, float* max)
   //Apply geometry bounds from all object data within this viewport
   for (unsigned int o=0; o<view->objects.size(); o++)
   {
-    for (unsigned int g=0; g<geom.size(); g++)
+    if (view->objects[o]->properties["visible"])
     {
-      if (geom[g]->draw == view->objects[o])
-      {
-        compareCoordMinMax(min, max, geom[g]->min);
-        compareCoordMinMax(min, max, geom[g]->max);
-        //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
-      }
+      objectBounds(view->objects[o], min, max);
+      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+    }
+  }
+}
+
+void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
+{
+  if (!min || !max) return;
+  //Get geometry bounds from all object data
+  for (unsigned int g=0; g<geom.size(); g++)
+  {
+    if (geom[g]->draw == draw)
+    {
+      compareCoordMinMax(min, max, geom[g]->min);
+      compareCoordMinMax(min, max, geom[g]->max);
     }
   }
 }
@@ -771,9 +859,11 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
   //Allow spec width/height/depth in properties
   if (!geomdata || geomdata->count == 0)
   {
-    if (width == 0) width = draw->properties["geomwidth"];
-    if (height == 0) height = draw->properties["geomheight"];
-    if (depth == 0) depth = draw->properties["geomdepth"];
+    float dims[3];
+    Properties::toFloatArray(draw->properties["dims"], dims, 3);
+    if (width == 0) width = dims[0];
+    if (height == 0) height = dims[1];
+    if (depth == 0) depth = dims[2];
   }
 
   //Objects with a specified width & height: detect new data store when required (full)
@@ -784,15 +874,6 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
     //No store yet or loading vertices and already have required amount, new object required...
     //Create new data store, save in drawing object and Geometry list
     geomdata = add(draw);
-
-    //After creating new store, insert any fixed geometry records
-    if (fixed) 
-    {
-      //Default shallow copy
-      *geomdata = *fixed;
-      geomdata->fixedOffset = geomdata->values.size();
-      //std::cout << "FIXED DATA RECORDS LOADED FOR " << draw->name() << ", " << geomdata->vertices.size() << " verts " << std::endl;
-    }
   }
 
   read(geomdata, n, dtype, data, width, height, depth);
@@ -813,7 +894,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     FloatValues* fv = new FloatValues();
     geomdata->data[dtype] = fv;
     geomdata->values.push_back(fv);
-    //debug_print("NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name().c_str(), dtype, geomdata->values.size(), fv);
+    //debug_print(" -- NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name().c_str(), dtype, geomdata->values.size(), fv);
   }
 
   //Update the default type property on first read
@@ -829,7 +910,21 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     total += n;
 
     //Update bounds on single vertex reads
-    if (n == 1 && type != lucLabelType) geomdata->checkPointMinMax((float*)data);
+    //(Skip this for internally generated geometry and labels)
+    if (n == 1 && type != lucLabelType)
+    {
+      if (unscale)
+      {
+        //Some internal geom is pre-scaled by any global scaling factors to avoid distortion,
+        //so we need to undo scaling before applying to bounding box.
+        float* arr = (float*)data;
+        static std::array<float,3> unscaled;
+        unscaled = {arr[0]*iscale[0], arr[1]*iscale[1], arr[2]*iscale[2]};
+        geomdata->checkPointMinMax(unscaled.data());
+      }
+      else
+        geomdata->checkPointMinMax((float*)data);
+    }
   }
 }
 
@@ -841,27 +936,25 @@ void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minim
   geomdata->data[dtype]->setup(minimum, maximum, label);
 }
 
-
-GeomData* Geometry::fix(GeomData* fgeom)
+void Geometry::insertFixed(Geometry* fixed)
 {
-  //Fixed geomdata (static over timesteps)
-  //If fgeom provided, simply save as the fixed data
-  //If not, move own data into fixed and clear
-  if (fgeom)
+  if (geom.size() > 0) return; //Not permitted to load fixed data if any existing data loaded already
+
+  for (unsigned int i=0; i<fixed->geom.size(); i++)
   {
-    fixed = fgeom;
+    GeomData* varying = NULL;
+    if (geom.size() == i)
+      add(fixed->geom[i]->draw); //Insert new if not enough records
+    //Create a shallow copy of member content
+    *geom[i] = *fixed->geom[i];
+    //Set offset where fixed data ends (so we can avoid clearing it)
+    geom[i]->fixedOffset = geom[i]->values.size();
+    //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count << " verts " << " = " << geom[i]->count << " offset = " << geom[i]->fixedOffset << " == " << fixed->geom[i]->values.size() << std::endl;
   }
-  else if (geom.size() == 1)
-  {
-    fixed = geom[0];
-    //std::cout << "SET FIXED DATA RECORDS FOR " << fixed->draw->name() << ", " << fixed->vertices.size() << " verts " << std::endl;
-    geom.clear();
-  }
-  else
-  {
-    std::cout << "Unexpected: multiple fixed geometry containers\n";
-  }
-  return fixed;
+
+  //Update total
+  total += fixed->total;
+  //std::cout << fixed->total << " + NEW TOTAL == " << total << std::endl;
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)
@@ -877,38 +970,47 @@ void Geometry::label(DrawingObject* draw, const char* labels)
     geomdata->label(line);
 }
 
+void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
+{
+  //Get passed object's most recently added data store and add vertex labels (newline separated)
+  GeomData* geomdata = getObjectStore(draw);
+  if (!geomdata) return;
+
+  //Load from vector 
+  for (auto line : labels)
+    geomdata->label(line);
+}
+
 void Geometry::print()
 {
-  std::string types[lucMaxType+1] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "UNKNOWN"};
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    std::cout << types[type] << " [" << i << "] - "
+    std::cout << GeomData::names[type] << " [" << i << "] - "
               << (drawable(i) ? "shown" : "hidden") << std::endl;
   }
 }
 
-std::vector<std::string> Geometry::getDataLabels(DrawingObject* draw)
+json Geometry::getDataLabels(DrawingObject* draw)
 {
   //Iterate through all geometry of given object(id) and print
   //the index and label of the associated value data sets
   //(used for colouring and filtering)
-  std::vector<std::string> list;
+  json list = json::array();
   DrawingObject* last = NULL;
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     if ((!draw || geom[i]->draw == draw) && geom[i]->draw != last)
     {
-      list.push_back("Data sets for: " + geom[i]->draw->name());
-      list.push_back("-----------------------------------------");
       for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {
         std::stringstream ss;
-        ss << "[" << v << "] " << geom[i]->values[v]->label
-           << " (range: " << geom[i]->values[v]->minimum
-           << " to " << geom[i]->values[v]->maximum << ")";
-        list.push_back(ss.str());
+        json entry;
+        entry["label"] = geom[i]->values[v]->label;
+        entry["minimum"] = geom[i]->values[v]->minimum;
+        entry["maximum"] = geom[i]->values[v]->maximum;
+        entry["size"] = geom[i]->values[v]->size();
+        list.push_back(entry);
       }
-      list.push_back("-----------------------------------------");
       //No need to repeat for every element as they will all have the same data sets per object
       last = geom[i]->draw;
     }
@@ -950,7 +1052,7 @@ void Geometry::setTexture(DrawingObject* draw, int idx)
 {
   GeomData* geomdata = getObjectStore(draw);
   geomdata->texIdx = idx;
-  //printf("SET TEXTURE: %p\n", idx);
+  //std::cout << "SET TEXTURE: " << idx << " ON " << draw->name() << std::endl;
   //Must be opaque to draw with own texture
   geomdata->opaque = true;
 }
@@ -1059,10 +1161,11 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
   rvector.normalise();
   float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
   //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
-  if (rangle > 0.0)
+  if (rangle == 180.0)
+    rot.fromAxisAngle(Vec3d(0, 0, rvector.z), rangle);
+  else if (rangle > 0.0)
   {
-    Vec3d rvec = Vec3d(-rvector.y, rvector.x, 0);
-    rot.fromAxisAngle(rvec, rangle);
+    rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
   }
 
   // Negative scale? Flip vector
@@ -1084,6 +1187,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 
   // Length of the drawn vector = vector magnitude * scaling factor
   float length = scale * vec.magnitude();
+  if (length < FLT_EPSILON || std::isinf(length)) return;
 
   // Default shaft radius based on length of vector (2%)
   if (radius0 == 0) radius0 = length * RADIUS_DEFAULT_RATIO;
@@ -1250,37 +1354,27 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count)
 {
   float length = 0;
-  float vector[3];
-  float pos[3];
+  Vec3d vector, pos;
 
   assert(coord0 && coord1);
 
-  //Scale end coord
-  coord1[0] *= scale[0];
-  coord1[1] *= scale[1];
-  coord1[2] *= scale[2];
-
-  //Scale start coord
-  coord0[0] *= scale[0];
-  coord0[1] *= scale[1];
-  coord0[2] *= scale[2];
+  //Scale start/end coords
+  Vec3d start = Vec3d(coord0[0] * scale[0], coord0[1] * scale[1], coord0[2] * scale[2]);
+  Vec3d end   = Vec3d(coord1[0] * scale[0], coord1[1] * scale[1], coord1[2] * scale[2]);
 
   // Obtain a vector between the two points
-  vectorSubtract(vector, coord1, coord0);
+  vector = end - start;
 
   // Get centre position on vector between two coords
-  pos[0] = coord0[0] + vector[0] * 0.5;
-  pos[1] = coord0[1] + vector[1] * 0.5;
-  pos[2] = coord0[2] + vector[2] * 0.5;
+  pos = start + vector * 0.5;
 
   // Get length
-  length = sqrt(dotProduct(vector,vector));
+  length = vector.magnitude();
 
   //Exceeds max length? Draw endpoint only
   if (maxLength > 0.f && length > maxLength)
   {
-    Vec3d centre(coord1);
-    drawSphere(draw, centre, radius0, segment_count);
+    drawSphere(draw, end, radius0, segment_count);
     return;
   }
 
@@ -1294,16 +1388,12 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     {
       // Adjust length
       float length_adj = arrowHeadSize * radius1 * 2.0 / length;
-      vector[0] *= length_adj;
-      vector[1] *= length_adj;
-      vector[2] *= length_adj;
+      vector *= length_adj;
       // Adjust to centre position
-      pos[0] = coord0[0] + vector[0] * 0.5;
-      pos[1] = coord0[1] + vector[1] * 0.5;
-      pos[2] = coord0[2] + vector[2] * 0.5;
+      pos = start + vector * 0.5;
     }
     // Draw the vector arrow
-    drawVector(draw, pos, vector, 1.0, radius0, radius1, arrowHeadSize, segment_count);
+    drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, arrowHeadSize, segment_count);
 
   }
   else
@@ -1313,7 +1403,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     //if (length > radius1 * 0.30)
     {
       // Join last set of points with this set
-      drawVector(draw, pos, vector, 1.0, radius0, radius1, 0.0, segment_count);
+      drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, 0.0, segment_count);
 //         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
 //          Vec3d centre(pos);
 //         drawSphere(geom, centre, radius, segment_count);
@@ -1433,7 +1523,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 {
   int i,j;
   Vec3d edge, pos, normal;
-  //float tex[2];
+  float tex[2];
 
   if (radii.x < 0) radii.x = -radii.x;
   if (radii.y < 0) radii.y = -radii.y;
@@ -1442,7 +1532,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   calcCircleCoords(segment_count);
 
   std::vector<unsigned int> indices;
-  for (j=0; j<=segment_count/2; j++)
+  for (j=0; j<segment_count/2; j++)
   {
     //Triangle strip vertices
     for (i=0; i<=segment_count; i++)
@@ -1453,28 +1543,28 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
       pos = centre + rot * (radii * edge);
 
-      //tex[0] = i/(float)segment_count;
-      //tex[1] = 2*(j+1)/(float)segment_count;
+      tex[0] = i/(float)segment_count;
+      tex[1] = 2*(j+1)/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       read(draw, 1, lucVertexData, pos.ref());
       normal = rot * -edge;
       read(draw, 1, lucNormalData, normal.ref());
-      //read(draw, 1, lucTexCoordData, tex);
+      read(draw, 1, lucTexCoordData, tex);
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
       pos = centre + rot * (radii * edge);
 
-      //tex[0] = i/(float)segment_count;
-      //tex[1] = 2*j/(float)segment_count;
+      tex[0] = i/(float)segment_count;
+      tex[1] = 2*j/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       read(draw, 1, lucVertexData, pos.ref());
       normal = rot * -edge;
       read(draw, 1, lucNormalData, normal.ref());
-      //read(draw, 1, lucTexCoordData, tex);
+      read(draw, 1, lucTexCoordData, tex);
 
       //Triangle strip indices
       if (i > 0)

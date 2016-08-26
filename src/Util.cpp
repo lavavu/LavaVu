@@ -45,6 +45,18 @@ FILE* infostream = NULL;
 long membytes__ = 0;
 long mempeak__ = 0;
 
+void abort_program(const char * s, ...)
+{
+  char buffer[2048];
+  va_list args;
+  va_start(args, s);
+  vsprintf(buffer, s, args);
+  va_end(args);
+  strcat(buffer, "\n");
+  fputs(buffer, stderr);
+  throw std::runtime_error(buffer);
+}
+
 bool FileExists(const std::string& name)
 {
   FILE *file = fopen(name.c_str(), "r");
@@ -98,7 +110,12 @@ void Properties::toFloatArray(const json& val, float* array, unsigned int size)
 {
   //Convert to a float array
   for (unsigned int i=0; i<size; i++)
-    array[i] = val[i];
+  {
+    if (i >= val.size())
+      array[i] = 0.0; //Zero pad if too short
+    else
+      array[i] = val[i];
+  }
 }
 
 bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
@@ -215,7 +232,7 @@ void Properties::parse(const std::string& property, bool global)
     }
     catch (std::exception& e)
     {
-      //std::cerr << "[" << key << "] " << data << " : " << e.what();
+      //std::cerr << e.what() << " : [" << key << "] => " << value;
       //Treat as a string value
       dest[key] = value;
     }

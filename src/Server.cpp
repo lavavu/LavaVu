@@ -17,7 +17,7 @@ Server* Server::_self = NULL; //Static
 //Defaults
 int Server::port = 8080;
 int Server::quality = 90;
-int Server::threads = 4;
+int Server::threads = 2;
 std::string Server::htmlpath = "html";
 
 Server* Server::Instance(OpenGLViewer* viewer)
@@ -34,6 +34,7 @@ Server::Server(OpenGLViewer* viewer) : viewer(viewer)
   jpeg = NULL;
   updated = false;
   client_id = 0;
+  ctx = NULL;
   // Initialize mutex and condition variable objects
   pthread_mutex_init(&cs_mutex, NULL);
   pthread_mutex_init(&viewer->cmd_mutex, NULL);
@@ -70,7 +71,7 @@ void Server::open(int width, int height)
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.begin_request = &Server::request;
   if ((ctx = mg_start(&callbacks, NULL, options)) == NULL)
-    abort_program("%s\n", "Cannot start http server, fatal exit");
+    std::cerr << "HTTP server open failed" << std::endl;
 }
 
 void Server::resize(int new_width, int new_height)
@@ -101,7 +102,7 @@ bool Server::compare(GLubyte* image)
 void Server::display()
 {
   //Image serving can be disabled by global prop
-  if (!Properties::global("renderserver")) return;
+  if (!ctx || !Properties::global("renderserver")) return;
   if (quality == 0) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data

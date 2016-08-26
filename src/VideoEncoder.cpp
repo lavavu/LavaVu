@@ -30,7 +30,7 @@
 #include "VideoEncoder.h"
 #include "GraphicsUtil.h"
 
-VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps) : width(width), height(height), fps(fps)
+VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps, int quality) : width(width), height(height), fps(fps), quality(quality)
 {
   debug_print("Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
   frame_count = 0;
@@ -54,6 +54,8 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps)
   /* add the audio and video streams using the default format codecs
      and initialize the codecs */
   video_st = NULL;
+  video_enc = NULL;
+  assert(oc->oformat->video_codec != AV_CODEC_ID_NONE);
   if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
     video_st = add_video_stream(oc->oformat->video_codec);
 
@@ -61,7 +63,7 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps)
 
 #ifdef HAVE_SWSCALE
   //Get swscale context to convert RGB to YUV(420/422)
-  ctx = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, video_st->codec->pix_fmt, 0, 0, 0, 0);
+  ctx = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, video_enc->pix_fmt, 0, 0, 0, 0);
 #endif
 
 #if LIBAVFORMAT_VERSION_MAJOR <= 52
@@ -110,12 +112,20 @@ VideoEncoder::~VideoEncoder()
   if (video_st)
     close_video();
 
+  if (video_enc)
+    avcodec_free_context(&video_enc);
+
   /* free the streams */
   for(unsigned int i = 0; i < oc->nb_streams; i++)
   {
-    av_freep(&oc->streams[i]->codec);
+    avcodec_close(oc->streams[i]->codec);
     av_freep(&oc->streams[i]);
   }
+
+#ifdef HAVE_SWSCALE
+  if (ctx)
+    sws_freeContext(ctx);
+#endif
 
   /* close the output file */
   avio_close(oc->pb);
@@ -142,7 +152,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 #endif
   if (!st) abort_program("Could not alloc stream");
 
-  c = st->codec;
+  c = video_enc = st->codec = avcodec_alloc_context3(avcodec_find_encoder(codec_id));
   c->codec_id = codec_id;
   c->codec_type = AVMEDIA_TYPE_VIDEO;
 
@@ -156,7 +166,6 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->profile = FF_PROFILE_H264_MAIN; //BASELINE;
     c->flags |= CODEC_FLAG_LOOP_FILTER;
 
-    c->coder_type = 0;
     c->me_cmp |= 1; // cmp=+chroma, where CHROMA = 1
     c->me_subpel_quality = 7; //9, 7, 0
     c->me_range = 16;
@@ -164,24 +173,33 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->scenechange_threshold = 40;
     c->i_quant_factor = 0.71;
     c->qcompress = 0.6; // qcomp=0.5
-    c->qmin = 2;        //10 default
-    c->qmax = 31;       //51 default
-    //Higher quality!
+
+    switch (quality)
+    {
+    case VIDEO_LOWQ:
+      //Default (high comrpession, lower quality)
+      c->qmin = 10;
+      c->qmax = 51;
+      break;
+    case VIDEO_MEDQ:
+      //Medium quality
+      c->qmin = 2;
+      c->qmax = 31;
+      break;
+    case VIDEO_HIGHQ:
+      //Higher quality!
       c->qmin = 1;
       c->qmax = 4;
+      break;
+    }
 
     c->max_qdiff = 4;
     c->refs = 3; // reference frames
 
     c->max_b_frames = 2; //16; //2; //Default
     c->b_frame_strategy = 1;
-    c->chromaoffset = 0;
-    c->thread_count = 1;
 
-    //c->trellis = 1/0;
-    //c->level = 13/41; //?????
-
-    //Do we need to do this or just let it be calculated?
+    //Do we need to set this or just let it be based on quality settings?
     //c->bit_rate = (int)(3200000.f * 0.80f);
     //c->bit_rate_tolerance = (int)(3200000.f * 0.20f);
   }
@@ -199,9 +217,6 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
          the motion of the chroma plane does not match the luma plane. */
       c->mb_decision = 2;
     }
-    // some formats want stream headers to be separate
-    if(oc->oformat->flags & AVFMT_GLOBALHEADER)
-      c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
     //MPEG needs a higher bitrate for quality
     c->bit_rate = (int)(16000000.f * 0.80f);
@@ -214,31 +229,27 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
    timebase should be 1/framerate and timestamp increments should be
    identically 1. */
   std::cout << "Attempting to set framerate to " << fps << " fps " << std::endl;
-  //This doesn't seem to work
-  st->time_base.num = 1;
-  st->time_base.den = fps; /* frames per second */
-  c->time_base.num = 1;
-  c->time_base.den = fps; /* frames per second */
-  c->pix_fmt = PIX_FMT_YUV420P;
+  st->time_base = (AVRational){ 1, fps };
+  c->time_base = st->time_base;
+  c->pix_fmt = AV_PIX_FMT_YUV420P;
   c->gop_size = 4; /* Maximum distance between key-frames, low setting allows fine granularity seeking */
+  //c->gop_size      = 12; /* emit one intra frame every twelve frames at most */
   //c->keyint_min = 4; /*Minimum distance between keyframes */
 
+  // some formats want stream headers to be separate
   if (oc->oformat->flags & AVFMT_GLOBALHEADER)
     c->flags |= CODEC_FLAG_GLOBAL_HEADER;
 
   return st;
 }
 
-AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
+AVFrame *VideoEncoder::alloc_picture(enum AVPixelFormat pix_fmt)
 {
   AVFrame *picture;
   uint8_t *picture_buf;
   int size;
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-  picture = avcodec_alloc_frame();
-#else
+
   picture = av_frame_alloc();
-#endif
   if (!picture)
     return NULL;
   size = avpicture_get_size(pix_fmt, width, height);
@@ -253,7 +264,7 @@ AVFrame *VideoEncoder::alloc_picture(enum PixelFormat pix_fmt)
   //Fixes frame warnings?
   picture->width = width;
   picture->height = height;
-  picture->format = PIX_FMT_YUV420P;
+  picture->format = AV_PIX_FMT_YUV420P;
   return picture;
 }
 
@@ -262,7 +273,7 @@ void VideoEncoder::open_video()
   AVCodec *codec;
   AVCodecContext *c;
 
-  c = video_st->codec;
+  c = video_enc;
 
   /* find the video encoder */
   codec = avcodec_find_encoder(c->codec_id);
@@ -297,14 +308,18 @@ void VideoEncoder::open_video()
   picture = alloc_picture(c->pix_fmt);
   if (!picture) abort_program("Could not allocate picture");
 
+    /* copy the stream parameters to the muxer */
+    //if (avcodec_parameters_from_context(video_st->codecpar, video_enc) < 0)
+    //    abort_program("Could not copy the stream parameters\n");
+
   /* Only supporting YUV420P now */
-  assert(c->pix_fmt == PIX_FMT_YUV420P);
+  assert(c->pix_fmt == AV_PIX_FMT_YUV420P);
 }
 
 void VideoEncoder::write_video_frame()
 {
   int ret = 0;
-  AVCodecContext *c = video_st->codec;
+  AVCodecContext *c = video_enc;
   AVPacket pkt;
   av_init_packet(&pkt);
 
@@ -344,7 +359,7 @@ void VideoEncoder::write_video_frame()
 
 void VideoEncoder::close_video()
 {
-  avcodec_close(video_st->codec);
+  //avcodec_close(video_enc);
   av_free(picture->data[0]);
   av_free(picture);
   av_free(video_outbuf);
@@ -431,7 +446,7 @@ void VideoEncoder::frame(int channels)
 #endif
 
   /* Calculate PTS for h264 */
-  picture->pts = video_st->codec->frame_number;
+  picture->pts = video_enc->frame_number;
 
   /* write video frames */
   write_video_frame();

@@ -58,6 +58,9 @@ void Shapes::update()
   //Convert shapes to triangles
   tris->clear();
   tris->setView(view);
+  Vec3d scale(view->scale);
+  tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
+  tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
   for (unsigned int i=0; i<geom.size(); i++)
   {
     Properties& props = geom[i]->draw->properties;
@@ -102,7 +105,7 @@ void Shapes::update()
       {
         if (dims[c] != FLT_MIN) sdims[c] *= dims[c];
         //Apply scaling, also inverse of model scaling to avoid distorting glyphs
-        sdims[c] *= scaling * (float)props["scaleshapes"] / view->scale[c];
+        sdims[c] *= scaling * (float)props["scaleshapes"] * tris->iscale[c];
       }
 
       //Setup orientation using alignment vector
@@ -151,8 +154,8 @@ void Shapes::draw()
   GL_Error_Check;
   // Undo any scaling factor for arrow drawing...
   glPushMatrix();
-  if (view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0)
-    glScalef(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
+  if (tris->unscale)
+    glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
 
   tris->draw();
 

@@ -59,7 +59,7 @@ public:
   //Execution function - this will be called by main()/initViewer()
   virtual void defaults() {}
   virtual void arguments(std::vector<std::string> args) {}
-  virtual std::string run() = 0;
+  virtual void run(std::vector<std::string> args) = 0;
 
   // Placeholder virtual functions for window management
   virtual void open(int width, int height) {}

@@ -47,10 +47,6 @@ DrawingObject::DrawingObject(std::string name, std::string props, int colourmap,
   std::replace(name.begin(), name.end(), ' ', '_');
 
   properties.parseSet(props);
-  //Adjust types of some old props
-  //properties.convertBools({"static", "lit", "cullface", "wireframe", "flat", "depthtest", "clip", "colourbar", "link", 
-  //                        "tubes", "opaque", "isowalls", "tricubicfilter", "taper", "fade", "printticks", 
-  //                        "printunits", "scientific"});
 
   //Sets the default colour map idx if provided, newer databases provide separately
   properties.data["colourmap"] = colourmap;
@@ -58,7 +54,6 @@ DrawingObject::DrawingObject(std::string name, std::string props, int colourmap,
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
   properties.data["visible"] = true;
-  filterout = false;
   colourIdx = 0; //Default colouring data is first value block
   setup();
 }
@@ -72,20 +67,18 @@ DrawingObject::~DrawingObject()
 void DrawingObject::setup()
 {
   //Cache values for faster lookups during draw calls
-  colour = properties.getColour("colour");
+  colour = properties["colour"];
   opacity = 1.0;
   if (properties.has("opacity"))
     opacity = properties["opacity"];
   //Convert values (1,255] -> [0,1]
   if (opacity > 1.0) opacity /= 255.0;
-
-  colourIdx = properties["colourby"];
 }
 
 
 ColourMap* DrawingObject::getColourMap(const std::string& type)
 {
-  //Lookup colourmap by id from property "colourmap", TODO: "opacitymap"
+  //Lookup colourmap by mapid from property "colourmap" / "opacitymap"
   int mapid = properties[type];
   if (mapid >= 0 && mapid < colourMaps->size()) return (*colourMaps)[mapid];
   return NULL;

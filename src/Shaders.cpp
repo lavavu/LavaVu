@@ -70,9 +70,8 @@ std::string Shader::read_file(const char *fname)
   char filepath[FILE_PATH_MAX] = "";
   if (!fname) return std::string("");
 
-  if (Properties::global("localshaders"))
-    strcpy(filepath, "./");
-  else if (Shader::path.length() > 0)
+  //If shader found locally in working directory, use it instead
+  if (Shader::path.length() > 0 && !FileExists(fname))
     strcpy(filepath, Shader::path.c_str());
 
   strcat(filepath, fname);

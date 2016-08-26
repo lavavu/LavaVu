@@ -43,6 +43,7 @@ Lines::Lines(bool all2Dflag)
   vbo = 0;
   linetotal = 0;
   all2d = all2Dflag;
+  any3d = false;
   //Create sub-renderers
   tris = new TriSurfaces();
   tris->internal = true;
@@ -114,6 +115,7 @@ void Lines::update()
     {
       int hasColours = geom[i]->colourCount();
       int colrange = hasColours ? geom[i]->count / hasColours : 1;
+      if (colrange < 1) colrange = 1;
       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
       Colour colour;
@@ -168,7 +170,9 @@ void Lines::update()
       geom[i]->draw->properties.data["lit"] = true; //Override lit
       //Draw as 3d cylinder sections
       int quality = 4 * (int)props["glyphs"];
-      float scaling = (float)props["scaling"] * (float)props["scalelines"];
+      float scaling = props["scalelines"];
+      //Don't apply object scaling to internal lines objects
+      if (!internal) scaling *= (float)props["scaling"];
       float radius = scaling*0.1;
       float* oldpos = NULL;
       Colour colour;
@@ -250,7 +254,9 @@ void Lines::draw()
         setState(i, prog);
 
         //Lines specific state
-        float scaling = (float)props["scaling"] * (float)props["scalelines"];
+        float scaling = props["scalelines"];
+        //Don't apply object scaling to internal lines objects
+        if (!internal) scaling *= (float)props["scaling"];
         float lineWidth = (float)props["linewidth"] * scaling * view->scale2d; //Include 2d scale factor
         if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);

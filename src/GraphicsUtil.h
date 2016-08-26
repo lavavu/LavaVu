@@ -317,7 +317,7 @@ public:
   }
 
   /* Convert from Axis Angle */
-  void fromAxisAngle(Vec3d& v, float angle)
+  void fromAxisAngle(const Vec3d& v, float angle)
   {
     angle *= 0.5f * DEG2RAD;
     float sinAngle = sin(angle);
@@ -562,8 +562,8 @@ void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrow
 void RawImageFlip(void* image, int width, int height, int bpp);
 
 std::string getImageFilename(const std::string& basename);
-bool writeImage(GLubyte *image, int width, int height, const std::string& path, bool transparent);
-std::string getImageString(GLubyte *image, int width, int height, int bpp);
+bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp=3);
+std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg=false);
 
 #ifdef HAVE_LIBPNG
 //PNG utils
@@ -580,7 +580,7 @@ public:
   int width, height, bytesPerPixel;
   GLubyte* pixels;
 
-  ImageFile(FilePath& fn)
+  ImageFile(const FilePath& fn)
   {
     //png/jpg data
     pixels = NULL;

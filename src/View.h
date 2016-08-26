@@ -109,10 +109,10 @@ public:
   // Dimensions
   float dims[3];
   float min[3], max[3];
+  bool initialised;
 private:
   static Camera* globalcam;
   Camera* localcam;
-  bool initialised;
   float* rotate_centre;      // Centre of rotation
   float* focal_point;        // Focal point
 
@@ -144,6 +144,7 @@ public:
   bool hasObject(DrawingObject* obj);
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
+  void checkClip();
   void getMinMaxDistance(float* mindist, float* maxdist);
   std::string rotateString();
   std::string translateString();

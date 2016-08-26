@@ -36,7 +36,7 @@
 #ifndef Model__
 #define Model__
 
-#include "sqlite3/src/sqlite3.h"
+#include "sqlite3/sqlite3.h"
 
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
@@ -48,7 +48,21 @@
 
 class Model
 {
+private:
+  bool readonly;
+  int attached;
+  char prefix[10];   //attached db prefix
+
 public:
+  FilePath file;
+  std::string basename;
+  sqlite3 *db;
+  bool memorydb;
+
+  std::vector<std::string> fignames;
+  std::vector<std::string> figures;
+  int figure;
+
   static int now;
   //Current timestep geometry
   static std::vector<Geometry*> geometry;
@@ -64,25 +78,15 @@ public:
   static Volumes* volumes;
 
   std::vector<TimeStep*> timesteps;
-
-  bool readonly;
-  bool memory;
-  FilePath file;
-  int attached;
-  std::string apath;
-  char prefix[10];   //attached db prefix
-
   std::vector<View*> views;
   std::vector<DrawingObject*> objects;
   std::vector<ColourMap*> colourMaps;
-
-  sqlite3 *db;
 
   sqlite3_stmt* select(const char* SQL, bool silent=false);
   bool issue(const char* SQL, sqlite3* odb=NULL);
   bool open(bool write=false);
   void reopen(bool write=false);
-  void attach(int timestep);
+  void attach(int stepidx);
   void close();
   void clearObjects(bool all=false);
   void redraw(bool reload=false);
@@ -91,8 +95,8 @@ public:
   void loadLinks();
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
-  int loadTimeSteps();
-  void scanFiles();
+  int loadTimeSteps(bool scan=false);
+  std::string checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit=1);
   void loadViewports();
   void loadViewCamera(int viewport_id);
   void loadObjects();
@@ -100,24 +104,17 @@ public:
   void loadColourMapsLegacy();
 
   Model();
-  Model(FilePath& fn);
+  void load(const FilePath& fn);
   void init();
   ~Model();
 
-  void addObject(DrawingObject* obj)
-  {
-    //Create master drawing object list entry
-    obj->colourMaps = &colourMaps;
-    objects.push_back(obj);
-  }
+  bool loadFigure(int fig);
+  void addObject(DrawingObject* obj);
+  DrawingObject* findObject(unsigned int id);
+  View* defaultView();
 
-
-  DrawingObject* findObject(unsigned int id)
-  {
-    for (unsigned int i=0; i<objects.size(); i++)
-      if (objects[i]->dbid == id) return objects[i];
-    return NULL;
-  }
+  //Data fix
+  void freeze();
 
   //Timestep caching
   void deleteCache();
@@ -128,13 +125,13 @@ public:
   int step()
   {
     //Current actual step
-    return now < 0 || timesteps.size() == 0 ? -1 : timesteps[now]->step;
+    return now < 0 || (int)timesteps.size() <= now ? -1 : timesteps[now]->step;
   }
 
   int stepInfo()
   {
     //Current actual step (returns 0 if none instead of -1 for output functions)
-    return now < 0 || timesteps.size() == 0 ? 0 : timesteps[now]->step;
+    return now < 0 || (int)timesteps.size() <= now ? 0 : timesteps[now]->step;
   }
 
   int lastStep()
@@ -145,9 +142,9 @@ public:
 
   bool hasTimeStep(int ts);
   int nearestTimeStep(int requested);
-  void addTimeStep(int step, double time=0.0)
+  void addTimeStep(int step=0, double time=0.0, const std::string& path="")
   {
-    timesteps.push_back(new TimeStep(step, time));
+    timesteps.push_back(new TimeStep(step, time, path));
   }
 
   int setTimeStep(int stepidx=now);
@@ -160,6 +157,7 @@ public:
   void writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
   void deleteObject(unsigned int id);
   void backup(sqlite3 *fromDb, sqlite3* toDb);
+  void objectBounds(DrawingObject* draw, float* min, float* max);
 
   void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
   void jsonRead(std::string data);

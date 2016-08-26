@@ -61,7 +61,7 @@ if platform.system() == 'Darwin':
   srcs += Glob(src_dir + '/Main/CocoaViewer.mm')
 objs = env.SharedObject(srcs)
 #build SQLite3 source (named object prevents clash)
-sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/src/sqlite3.c'])
+sqlite3 = env.SharedObject('sqlite3-c', ['src/sqlite3/sqlite3.c'])
 
 #Create renderer shared library
 #Add pthreads & dl (required for sqlite3)

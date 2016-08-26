@@ -49,6 +49,10 @@
 
 #define frand (rand() / (float) RAND_MAX)
 
+//Fast random int with fixed seed for deterministic random sample
+static uint32_t SEED_VAL = 123456789;
+#define SHR3 (SEED_VAL^=(SEED_VAL<<13), SEED_VAL^=(SEED_VAL>>17), SEED_VAL^=(SEED_VAL<<5))
+
 extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);
@@ -123,7 +127,7 @@ public:
   bool generated;
   std::string label;
 
-  DataContainer() : next(0), minimum(0), maximum(0), datasize(1), offset(0), generated(false) {}
+  DataContainer() : next(0), minimum(0), maximum(1), datasize(1), offset(0), generated(false) {}
 
   //Pure virtual methods
   virtual void read(unsigned int n, const void* data) = 0;
@@ -290,6 +294,8 @@ public:
   Properties() 
   {
     defaults["default"] = false; //Fallback value
+    if (globals.is_null()) globals = json::object();
+    data = json::object();
   }
 
   static json& global(const std::string& key);
@@ -304,7 +310,6 @@ public:
   void parseSet(const std::string& properties);
   void parse(const std::string& property, bool global=false);
   void merge(json& other);
-  void convertBools(std::vector<std::string> list);
 
 };
 
@@ -424,6 +429,19 @@ public:
         return props[key][idx];
     }
     return std::string("");
+  }
+
+  std::string getall(std::string key, unsigned int idx=0)
+  {
+    if (ignoreCase)
+      std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    std::string all = "";
+    if (props.find(key) != props.end())
+    {
+      for (; idx < props[key].size(); idx++)
+        all += props[key][idx] + " ";
+    }
+    return all;
   }
 
   bool exists(std::string key)

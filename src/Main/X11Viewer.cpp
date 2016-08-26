@@ -87,21 +87,20 @@ void X11Viewer::open(int w, int h)
   {
     //********************** Create Display *****************************
     Xdisplay = XOpenDisplay(NULL);
+    debug_print("Opening default X display\n");
     if (Xdisplay == NULL)
     {
-      fprintf(stderr, "In func %s: Function XOpenDisplay(NULL) returned NULL\n", __func__);
-
       // Second Try
+      debug_print("Failed, trying %s\n", displayName);
       Xdisplay = XOpenDisplay(displayName);
       if (Xdisplay == NULL)
       {
-        fprintf(stderr, "In func %s: Function XOpenDisplay(%s) didn't work.\n", __func__ , displayName);
-
         // Third Try
+        debug_print("Failed, trying :0.0\n");
         Xdisplay = XOpenDisplay(":0.0");
         if (Xdisplay == NULL)
         {
-          fprintf(stderr, "In func %s: Function XOpenDisplay(\":0.0\") returned NULL\n", __func__);
+          abort_program("Failed to open X display\n");
           return;
         }
       }
@@ -110,7 +109,7 @@ void X11Viewer::open(int w, int h)
     // Check to make sure display we've just opened has a glx extension
     if (!glXQueryExtension(Xdisplay, NULL, NULL))
     {
-      fprintf(stderr, "In func %s: X server has no OpenGL GLX extension\n", __func__);
+      abort_program("X display has no OpenGL GLX extension\n");
       return;
     }
 
@@ -140,7 +139,7 @@ void X11Viewer::open(int w, int h)
 
 void X11Viewer::setsize(int width, int height)
 {
-  if (width == 0 || height == 0) return;
+  if (width == 0 || height == 0 || !Xdisplay) return;
   XResizeWindow(Xdisplay, win, width, height);
   //Call base class setsize
   OpenGLViewer::setsize(width, height);
@@ -148,7 +147,7 @@ void X11Viewer::setsize(int width, int height)
 
 void X11Viewer::show()
 {
-  if (!visible) return;
+  if (!visible || !Xdisplay) return;
   OpenGLViewer::show();
   XMapRaised( Xdisplay, win ); // Show the window
 
@@ -161,6 +160,7 @@ void X11Viewer::show()
 
 void X11Viewer::display()
 {
+  if (!Xdisplay) return;
   OpenGLViewer::display();
   swap();
 }
@@ -174,6 +174,7 @@ void X11Viewer::swap()
 
 void X11Viewer::execute()
 {
+  if (!Xdisplay) return;
   XEvent         event;
   MouseButton button;
   unsigned char key;

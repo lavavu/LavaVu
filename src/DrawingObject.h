@@ -40,14 +40,6 @@
 #ifndef DrawingObject__
 #define DrawingObject__
 
-typedef struct
-{
-  unsigned int dataIdx;
-  float minimum;
-  float maximum;
-  bool range;
-} Filter;
-
 //Holds parameters for a drawing object
 class DrawingObject
 {
@@ -57,9 +49,6 @@ public:
   //Cached values for faster lookup
   float opacity;
   Colour colour;
-  //TODO: store these in json props
-  std::vector<Filter> filters;
-  bool filterout;
   unsigned int colourIdx;
   std::vector<ColourMap*> * colourMaps; // Reference to model colour map list
 

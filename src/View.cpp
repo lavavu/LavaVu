@@ -34,6 +34,7 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 #include "View.h"
+#include "Model.h"
 
 Camera* View::globalcam = NULL;
 
@@ -81,6 +82,14 @@ View::View(float xf, float yf, float nearc, float farc)
   }
 
   is3d = true;
+
+  //View properties can only be set if exist, so copy defaults
+  std::string viewprops[] = {"title", "zoomstep", "margin", 
+                             "rulers", "rulerticks", "rulerwidth", 
+                             "fontscale", "border", "fillborder", "bordercolour", 
+                             "axis", "axislength", "timestep", "antialias", "shift"};
+  for (auto key : viewprops)
+    properties.data[key] = Properties::defaults[key];
 }
 
 View::~View()
@@ -128,19 +137,8 @@ bool View::init(bool force, float* newmin, float* newmax)
   model_size = sqrt(dotProduct(dims,dims));
   if (model_size == 0 || !ISFINITE(model_size)) return false;
 
-  //Adjust clipping planes
-  if (near_clip == 0 || far_clip == 0)
-  {
-    //NOTE: Too much clip plane range can lead to depth buffer precision problems
-    //Near clip should be as far away as possible as greater precision reserved for near
-    float min_dist = model_size / 10.0;  //Estimate of min dist between viewer and geometry
-    float aspectRatio = 1.33;
-    if (width && height)
-      aspectRatio = width / (float)height;
-    near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
-    //near_clip = model_size / 5.0;
-    far_clip = model_size * 20.0;
-  }
+  //Check and calculate near/far clip planes
+  checkClip();
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
@@ -174,6 +172,25 @@ bool View::init(bool force, float* newmin, float* newmax)
   }
 
   return true;
+}
+
+void View::checkClip()
+{
+  //Adjust clipping planes
+  if (near_clip == 0 || far_clip == 0)
+  {
+    //NOTE: Too much clip plane range can lead to depth buffer precision problems
+    //Near clip should be as far away as possible as greater precision reserved for near
+    float min_dist = model_size / 10.0;  //Estimate of min dist between viewer and geometry
+    float aspectRatio = 1.33;
+    if (width && height)
+      aspectRatio = width / (float)height;
+    near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
+    //near_clip = model_size / 5.0;
+    far_clip = model_size * 20.0;
+    debug_print("Auto-corrected clip planes: near %f far %f.\n", near_clip, far_clip);
+    assert(near_clip > 0.0 && far_clip > 0.0);
+  }
 }
 
 void View::getMinMaxDistance(float* mindist, float* maxdist)
@@ -408,10 +425,14 @@ void View::projection(int eye)
 {
   if (!initialised) return;
   float aspectRatio = width / (float)height;
+  //assert(near_clip != far_clip);
 
   // Perspective viewing frustum parameters
   float left, right, top, bottom;
   float eye_separation, frustum_shift;
+
+  //Ensure clip planes valid
+  checkClip();
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
   //default is to set to distance to model front edge...
@@ -709,6 +730,9 @@ void View::drawOverlay(Colour& colour)
   {
     //Only when flagged as colour bar
     ColourMap* cmap = objects[i]->getColourMap();
+    //Use the first available colourmap by default
+    if (!cmap && objects[i]->colourMaps && objects[i]->colourMaps->size() > 0)
+      cmap = (*objects[i]->colourMaps)[0];
     if (!objects[i] || !objects[i]->properties["colourbar"] ||
         !objects[i]->properties["visible"] || !cmap) continue;
     int pos = objects[i]->properties["position"];
@@ -749,9 +773,13 @@ void View::drawOverlay(Colour& colour)
   GL_Error_Check;
 
   //Title
-  if (properties.has("title"))
+  std::string title = properties["title"];
+  if (title.length())
   {
-    std::string title = properties["title"];
+    //Timestep macro ##
+    size_t pos =  title.find("##");
+    if (pos != std::string::npos && TimeStep::timesteps.size() >= Model::now)
+      title.replace(pos, 2, std::to_string(TimeStep::timesteps[Model::now]->step));
     float fontscale = PrintSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
       lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title

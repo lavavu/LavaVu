@@ -46,7 +46,22 @@ extern "C"
 }
 #undef exit
 
+#if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 52, 0))
+#define avcodec_free_context av_freep
+#endif
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,45,101)
+#define av_frame_alloc avcodec_alloc_frame
+#endif
+
 //Compatibility hacks for old versions of avcodec
+#if LIBAVCODEC_VERSION_MAJOR < 54
+#define AVPixelFormat PixelFormat
+#define AV_PIX_FMT_YUV420P PIX_FMT_YUV420P
+#define AV_PIX_FMT_YUV444P PIX_FMT_YUV444P
+#define AV_PIX_FMT_RGB24 PIX_FMT_RGB24
+#endif
+
 #if LIBAVCODEC_VERSION_MAJOR < 52 || (LIBAVCODEC_VERSION_MAJOR == 52 && LIBAVCODEC_VERSION_MINOR < 64)
 #define AVMEDIA_TYPE_VIDEO CODEC_TYPE_VIDEO
 #define AVMEDIA_TYPE_AUDIO CODEC_TYPE_AUDIO
@@ -82,20 +97,25 @@ extern "C"
 #define AV_CODEC_ID_H264 CODEC_ID_H264
 #endif
 
+#define VIDEO_HIGHQ 3
+#define VIDEO_MEDQ 2
+#define VIDEO_LOWQ 1
 class VideoEncoder
 {
 public:
   unsigned char* buffer;
 
-  VideoEncoder(const char *filename, int width, int height, int fps);
+  VideoEncoder(const char *filename, int width, int height, int fps, int quality=VIDEO_HIGHQ);
   ~VideoEncoder();
   void frame(int channels=3);
   AVOutputFormat *defaultCodec(const char *filename);
 
 protected:
   int width, height, fps;
+  int quality;
   AVFormatContext *oc;
   AVStream *video_st;
+  AVCodecContext *video_enc;
 #ifdef HAVE_SWSCALE
   SwsContext * ctx;
 #endif
@@ -104,7 +124,7 @@ protected:
   int frame_count, video_outbuf_size;
 
   AVStream* add_video_stream(enum AVCodecID codec_id);
-  AVFrame* alloc_picture(enum PixelFormat pix_fmt);
+  AVFrame* alloc_picture(enum AVPixelFormat pix_fmt);
   void open_video();
   void write_video_frame();
   void close_video();
