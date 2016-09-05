@@ -1150,6 +1150,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 {
   std::vector<unsigned int> indices;
   Vec3d vec(vector);
+  Vec3d translate(pos);
 
   //Setup orientation using alignment vector
   Quaternion rot;
@@ -1162,18 +1163,17 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
   float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
   //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
   if (rangle == 180.0)
-    rot.fromAxisAngle(Vec3d(0, 0, rvector.z), rangle);
+  {
+    rot.y = 1;
+    rot.w = 0.0;
+  }
   else if (rangle > 0.0)
   {
     rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
   }
 
-  // Negative scale? Flip vector
-  if (scale < 0)
-  {
-    scale = 0 - scale;
-    vec = Vec3d() - vec;
-  }
+  //Scale vector
+  vec *= scale;
 
   // Previous implementation was head_scale as a ratio of length [0,1],
   // now uses ratio to radius (> 1), so adjust if < 1
@@ -1186,7 +1186,8 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
   // Render a 3d arrow, cone with base for head, cylinder for shaft
 
   // Length of the drawn vector = vector magnitude * scaling factor
-  float length = scale * vec.magnitude();
+  float length = vec.magnitude();
+  float halflength = length*0.5;
   if (length < FLT_EPSILON || std::isinf(length)) return;
 
   // Default shaft radius based on length of vector (2%)
@@ -1197,20 +1198,16 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
 
   // Vector is centered on pos[x,y,z]
   // Translate to the point of arrow -> position + vector/2
-  Vec3d translate = Vec3d(pos[0] + scale * 0.5f * vec[0],
-                          pos[1] + scale * 0.5f * vec[1],
-                          pos[2] + scale * 0.5f * vec[2]);
-
   float headD = head_radius*2;
   //Output is lines only if using very low quality setting
   if (segment_count < 4)
   {
     // Draw Line
-    Vec3d vertex0 = Vec3d(0,0,-length);
+    Vec3d vertex0 = Vec3d(0,0,-halflength);
     Vec3d vertex = translate + rot * vertex0;
     read(draw, 1, lucVertexData, vertex.ref());
-    vertex0.z = 0;
-    vertex = translate + vertex0;
+    vertex0.z = halflength;
+    vertex = translate + rot * vertex0;
     read(draw, 1, lucVertexData, vertex.ref());
     return;
   }
@@ -1222,7 +1219,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       int vertex_index = getVertexIdx(draw);
 
       // Base of shaft
-      Vec3d vertex0 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -length); // z = Shaft length to base of head
+      Vec3d vertex0 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -halflength); // z = Shaft length to base of head
       Vec3d vertex = translate + rot * vertex0;
 
       //Read triangle vertex, normal
@@ -1232,7 +1229,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       read(draw, 1, lucNormalData, normal.ref());
 
       // Top of shaft
-      Vec3d vertex1 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -headD);
+      Vec3d vertex1 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -headD+halflength);
       vertex = translate + rot * vertex1;
 
       //Read triangle vertex, normal
@@ -1266,13 +1263,14 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
     int v;
     // Pinnacle vertex is at point of arrow
     int pt = getVertexIdx(draw);
-    Vec3d pinnacle = Vec3d(0, 0, 0);
+    Vec3d pinnacle = translate + rot * Vec3d(0, 0, halflength);
 
     // First pair of vertices on circle define a triangle when combined with pinnacle
     // First normal is between first and last triangle normals 1/|\seg-1
 
     //Read triangle vertex, normal
-    Vec3d vertex = translate + pinnacle;;
+    //Vec3d vertex = translate + pinnacle;;
+    Vec3d vertex = pinnacle;;
 
     Vec3d normal = rot * Vec3d(0.0f, 0.0f, 1.0f);
     normal.normalise();
@@ -1283,7 +1281,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       int vertex_index = getVertexIdx(draw);
 
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = translate + rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
+      Vec3d vertex1 = translate + rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD+halflength);
 
       //Calculate normal at base
       Vec3d normal1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], 0);
@@ -1312,7 +1310,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
     // Flatten cone for circle base -> set common point to share z-coord
     // Centre of base circle, normal facing back along arrow
     pt = getVertexIdx(draw);
-    pinnacle = rot * Vec3d(0,0,-headD);
+    pinnacle = rot * Vec3d(0,0,-headD+halflength);
     vertex = translate + pinnacle;
     normal = rot * Vec3d(0.0f, 0.0f, -1.0f);
     //Read triangle vertex, normal
@@ -1324,7 +1322,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
     {
       int vertex_index = getVertexIdx(draw);
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD);
+      Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD+halflength);
 
       vertex1 = translate + vertex1;
 
