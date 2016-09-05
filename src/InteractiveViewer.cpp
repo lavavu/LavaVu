@@ -851,6 +851,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    viewer->quitProgram = false;
     viewer->execute();
   }
   else if (parsed.exists("open"))
@@ -2839,7 +2840,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     viewer->keyState.ctrl = modifiers.find('C')+1;
     viewer->keyState.alt = modifiers.find('A')+1;
 
-    //printf("%s button %d x %d y %d\n", action.c_str(), button, x, y);
+    //printf("%s button %d x %d y %d spin %d modkeys %s\n", action.c_str(), button, x, y, spin, modifiers.c_str());
 
     //viewer->button = (MouseButton)button; //if (viewer->keyState.ctrl && viewer->button == LeftButton)
     // XOR state of three mouse buttons to the mouseState variable
@@ -2900,7 +2901,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string name = parsed["add"];
-    aobject = addObject(new DrawingObject(name));
+    addObject(name);
     if (aobject)
     {
       std::string type = parsed.get("add", 1);

@@ -2994,17 +2994,17 @@ std::string LavaVu::requestData(std::string key)
 }
 
 //Python interface functions
-std::string LavaVu::image(std::string filename, int width, int height)
+std::string LavaVu::image(std::string filename, int width, int height, bool frame)
 {
   if (!amodel || !viewer->isopen) return "";
-  std::string result = "";
   display();
   //Set width/height override
   viewer->outwidth = width;
   viewer->outheight = height;
-  //Write image to file or return as string (base64 data url)
-  result = viewer->image(getImageFilename(filename));
-  return result;
+  //Always jpeg encode to string for frame output
+  if (frame) return viewer->image("", true);
+  //Otherwise write image to file or return as string (base64 data url)
+  return viewer->image(getImageFilename(filename));
 }
 
 std::string LavaVu::web(bool tofile)
@@ -3021,26 +3021,76 @@ std::string LavaVu::web(bool tofile)
   return jsonWriteFile(NULL, false, true);
 }
 
-std::string LavaVu::addObject(std::string name, std::string properties)
+void LavaVu::addObject(std::string name, std::string properties)
 {
-  if (!amodel) return "";
-  parseCommands("add " + name);
-  aobject->properties.parseSet(properties);
-  //Return props of active object
+  if (!amodel) return;
+  aobject = addObject(new DrawingObject(name));
+  if (properties.length()) setObject(name, properties);
+}
+
+void LavaVu::setObject(std::string name, std::string properties)
+{
+  if (!amodel) return;
+  if (name.length() > 0)
+    aobject = lookupObject(name);
+  if (!aobject) return;
+  json imported = json::parse(properties);
+  aobject->properties.merge(imported);
+}
+
+std::string LavaVu::getObject(std::string name)
+{
+  if (!amodel) return "{}";
+  DrawingObject* object;
+  if (name.length() > 0)
+    object = lookupObject(name);
+  if (!object) return "{}";
   std::stringstream ss;
-    amodel->jsonWrite(ss, aobject, false);
-  return ss.str();
+  //Export object state
+  amodel->jsonWrite(ss, object, false);
+  json data = json::parse(ss.str());
+  return data["objects"][0].dump();
+}
+
+int LavaVu::colourMap(std::string name, std::string colours)
+{
+  if (!amodel) return -1;
+
+  for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
+  {
+    if (name ==  amodel->colourMaps[i]->name)
+    {
+      amodel->colourMaps[i]->loadPalette(colours);
+      return i;
+    }
+  }
+
+  //Add a new colourmap if not found
+  ColourMap* cmap = new ColourMap(name.c_str(), 0, 1);
+  cmap->loadPalette(colours);
+  amodel->colourMaps.push_back(cmap);
+  return amodel->colourMaps.size()-1;
 }
 
 void LavaVu::setState(std::string state)
 {
   if (!amodel) return;
   amodel->jsonRead(state);
+  display();
 }
 
-std::string LavaVu::getStates()
+std::string LavaVu::getState()
 {
-  if (!amodel) return "";
+  if (!amodel) return "{}";
+  std::stringstream ss;
+  //Export current state
+  amodel->jsonWrite(ss, 0, false);
+  return ss.str();
+}
+
+std::string LavaVu::getFigures()
+{
+  if (!amodel) return "[]";
   std::stringstream ss;
   ss << "[\n";
   for (unsigned int s=0; s<amodel->figures.size(); s++)
@@ -3058,7 +3108,7 @@ std::string LavaVu::getStates()
 
 std::string LavaVu::getTimeSteps()
 {
-  if (!amodel) return "";
+  if (!amodel) return "[]";
   json steps = json::array();
   for (unsigned int s=0; s<amodel->timesteps.size(); s++)
   {
@@ -3127,5 +3177,18 @@ void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType 
   //Load scalar values
   for (unsigned int i=0; i < array.size(); i++)
     container->read(aobject, 1, type, &array[i]);
+}
+
+void LavaVu::labels(std::vector <std::string> labels)
+{
+  //Get selected object or create a new one
+  if (!amodel || !aobject) return;
+
+  //Get the type to load (defaults to points)
+  std::string gtype = aobject->properties["geometry"];
+  Geometry* container = getGeometryType(gtype);
+  if (!container) return;
+
+  container->label(aobject, labels);
 }
 
