@@ -324,6 +324,8 @@ void Geometry::clear(bool all)
   total = 0;
   elements = -1;
   redraw = true;
+  if (internal) all = true; //Always clear all sub-geometry
+
   //iterate geom and delete all GeomData entries
   for (int i = geom.size()-1; i>=0; i--)
   {
