@@ -35,6 +35,9 @@
 
 #include "ColourMap.h"
 
+//Safe log function for scaling
+#define LOG10(val) (val > FLT_MIN ? log10(val) : log10(FLT_MIN))
+
 //Init static data
 bool ColourMap::lock = false;
 int ColourMap::logscales = 0;
@@ -177,13 +180,7 @@ void ColourMap::calibrate(float min, float max)
   minimum = min;
   maximum = max;
   if (properties["logscale"])
-  {
-    if (minimum <= FLT_MIN) minimum =  FLT_MIN;
-    if (maximum <= FLT_MIN) maximum =  FLT_MIN;
-    //if (minimum == FLT_MIN || maximum == FLT_MIN )
-    //   debug_print("WARNING: Field used for logscale colourmap possibly contains non-positive values. \n");
-    range = log10(maximum) - log10(minimum);
-  }
+    range = LOG10(maximum) - LOG10(minimum);
   else
     range = maximum - minimum;
 
@@ -235,9 +232,9 @@ void ColourMap::calibrate(float min, float max)
   //Calc values now colours have been added
   calc();
 
-  //debug_print("ColourMap calibrated min %f, max %f, range %f ==> %d colours\n", minimum, maximum, range, colours.size());
+  debug_print("ColourMap calibrated min %f, max %f, range %f ==> %d colours\n", minimum, maximum, range, colours.size());
   //for (int i=0; i < colours.size(); i++)
-  //   debug_print(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
+  //   printf(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
   calibrated = true;
 }
 
@@ -259,19 +256,17 @@ void ColourMap::calibrate()
 
 Colour ColourMap::getfast(float value)
 {
-return get(value);
   //NOTE: value caching DOES NOT WORK for log scales!
   //If this is causing slow downs in future, need a better method
   int c = 0;
   if (properties["logscale"])
-    c = (int)((samples-1) * ((log10(value) - log10(minimum)) / range));
+    c = (int)((samples-1) * ((LOG10(value) - LOG10(minimum)) / range));
   else
     c = (int)((samples-1) * ((value - minimum) / range));
   if (c > samples - 1) c = samples - 1;
   if (c < 0) c = 0;
-  //Colour uc = get(value);
-  //std::cerr << value << " range : " << range << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
-  //std::cerr << log10(value) << " range : " << range << " : Lmin " << log10(minimum) << ", max " << log10(maximum) << ", pos " << c << ", Colour " << precalc[c] << " uncached " << uc << std::endl;
+  //std::cerr << value << " range : " << range << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << get(value) << std::endl;
+  //std::cerr << LOG10(value) << " range : " << range << " : Lmin " << LOG10(minimum) << ", max " << LOG10(maximum) << ", pos " << c << ", Colour " << precalc[c] << " uncached " << get(value) << std::endl;
   return precalc[c];
 }
 
@@ -289,9 +284,9 @@ float ColourMap::scaleValue(float value)
 
   if (properties["logscale"])
   {
-    value = log10(value);
-    min = log10(minimum);
-    max = log10(maximum);
+    value = LOG10(value);
+    min = LOG10(minimum);
+    max = LOG10(maximum);
   }
 
   //Scale to range [0,1]
@@ -471,7 +466,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
           /* Space ticks based on a logarithmic scale of log(1) to log(11)
              shows non-linearity while keeping ticks spaced apart enough to read labels */
           float tickpos = 1.0f + (float)i * (10.0f / (ticks+1));
-          scaledPos = (log10(tickpos) / log10(11.0f));
+          scaledPos = (LOG10(tickpos) / LOG10(11.0f));
         }
         else
           /* Default linear scale evenly spaced ticks */
@@ -481,8 +476,8 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
         if (properties["logscale"])
         {
           /* Reverse calc to find tick value at calculated position 0-1: */
-          tickValue = log10(minimum) + scaledPos
-                      * (log10(maximum) - log10(minimum));
+          tickValue = LOG10(minimum) + scaledPos
+                      * (LOG10(maximum) - LOG10(minimum));
           tickValue = pow( 10.0f, tickValue );
         }
         else
