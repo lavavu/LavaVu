@@ -218,15 +218,20 @@ public:
   void jsonReadFile(std::string fn);
 
   //Python interface functions
-  std::string image(std::string filename="", int width=0, int height=0);
+  std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
-  std::string addObject(std::string name, std::string properties);
+  void addObject(std::string name, std::string properties="");
+  void setObject(std::string name, std::string properties);
+  int colourMap(std::string name, std::string colours="");
+  std::string getObject(std::string name);
   void setState(std::string state);
-  std::string getStates();
+  std::string getState();
+  std::string getFigures();
   std::string getTimeSteps();
   void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData);
   void loadScalars(std::vector <float> array, lucGeometryDataType type=lucColourValueData, std::string label="", float minimum=0, float maximum=0);
   void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData);
+  void labels(std::vector <std::string> labels);
 };
 
 #endif //LavaVu__
