@@ -337,7 +337,7 @@ void LavaVu::defaults()
   Properties::defaults["border"] = 1.0; //Conflict with global, overridden below
 
   // | colourmap | boolean | Set to true to use log scales
-  Properties::defaults["log"] = false;
+  Properties::defaults["logscale"] = false;
   // | colourmap | boolean | Set to true to apply colours as discrete values rather than gradient
   Properties::defaults["discrete"] = false;
   // | colourmap | colours | Colour list, see [Colour map lists] for more information
