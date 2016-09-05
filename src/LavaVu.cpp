@@ -163,6 +163,8 @@ void LavaVu::defaults()
   Properties::defaults["font"] = "vector";
   // | all | real | Font scaling, note that only the vector font scales well
   Properties::defaults["fontscale"] = 1.0;
+  // | all | colour | Font colour RGB(A)
+  Properties::defaults["fontcolour"] = {0, 0, 0, 0};
 
   //Object defaults
   // | object | string | Name of object
