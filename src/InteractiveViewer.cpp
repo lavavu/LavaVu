@@ -2074,8 +2074,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           //Add new map if none set on object
           json current = obj->properties["colourmap"];
-          if (current.is_number() && current >= 0 && amodel->colourMaps.size() > 0)
-            cmap = current;
+          if (current.is_number() && (int)current >= 0 && amodel->colourMaps.size() > 0)
+            cmap = (int)current;
           else
             cmap = amodel->addColourMap();
           amodel->colourMaps[cmap]->loadPalette(what);
