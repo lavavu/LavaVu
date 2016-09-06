@@ -105,13 +105,11 @@ void Volumes::update()
 
   Geometry::update();
 
+  if (!geom.size()) return;
+
   int maxtex;
   glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &maxtex);
-  debug_print("Max 3D texture size %d\n", maxtex);
-
-  //Count slices in each volume
-  //printf("Total slices: %d\n", geom.size());
-  if (!geom.size()) return;
+  debug_print("Volume slices: %d, Max 3D texture size %d\n", geom.size(), maxtex);
 
   //Padding!
   glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
@@ -145,16 +143,20 @@ void Volumes::update()
         bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
         if (bpv == 3)
           current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGB);
-        if (bpv == 4)
+        else if (bpv == 4)
           current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGBA);
+        else
+          abort_program("Invalid volume bpv %d", bpv);
       }
       else if (geom[i]->colourData())
       {
         bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
         if (bpv == 1)
           current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_BYTE);
-        if (bpv == 4)
+        else if (bpv == 4)
           current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
+        else
+          abort_program("Invalid volume bpv %d", bpv);
       }
       debug_print("volume 0 width %d height %d depth %d (bpv %d)\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
       //Set the loaded texture
@@ -219,12 +221,14 @@ void Volumes::update()
             for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
-          if (bpv == 4)
+          else if (bpv == 4)
           {
             current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGBA);
             for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
+          else
+            abort_program("Invalid volume bpv %d", bpv);
         }
         else if (geom[i]->colourData())
         {
@@ -235,12 +239,14 @@ void Volumes::update()
             for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->colourData()->ref());
           }
-          if (bpv == 4)
+          else if (bpv == 4)
           {
             current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_FLOAT);
             for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
           }
+          else
+            abort_program("Invalid volume bpv %d", bpv);
         }
         debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv);
 

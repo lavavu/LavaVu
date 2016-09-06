@@ -116,7 +116,7 @@ public:
   std::vector<DataContainer*> data;
   std::vector<FloatValues*> values;
 
-  GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), labelptr(NULL), opaque(false)
+  GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false)
   {
     //opaque = false; //true; //Always true for now (need to check colourmap, opacity and global opacity)
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
@@ -262,8 +262,8 @@ public:
   std::vector<GeomData*> getAllObjects(DrawingObject* draw);
   GeomData* getObjectStore(DrawingObject* draw);
   GeomData* add(DrawingObject* draw);
-  GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
-  void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=1);
+  GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
+  void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
   void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label="Default");
   void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
