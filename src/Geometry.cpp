@@ -479,7 +479,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
         }
       }
 
-      //for grid surfaces...
+      //for grid surfaces... TODO: Should just use dims prop, directly exported
       if (geom[index]->width) data["width"] = (int)geom[index]->width;
       if (geom[index]->height) data["height"] = (int)geom[index]->height;
 
@@ -871,7 +871,7 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
   //Objects with a specified width & height: detect new data store when required (full)
   if (!geomdata || (dtype == lucVertexData &&
                     geomdata->width > 0 && geomdata->height > 0 &&
-                    geomdata->width * geomdata->height * geomdata->depth == geomdata->count))
+                    geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1) == geomdata->count))
   {
     //No store yet or loading vertices and already have required amount, new object required...
     //Create new data store, save in drawing object and Geometry list
@@ -888,7 +888,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
   //Set width & height if provided
   if (width) geomdata->width = width;
   if (height) geomdata->height = height;
-  geomdata->depth = depth;
+  if (depth) geomdata->depth = depth;
 
   //Create value store if required
   if (!geomdata->data[dtype])
