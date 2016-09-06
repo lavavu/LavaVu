@@ -61,7 +61,8 @@ void compareCoordMinMax(float* min, float* max, float *coord)
 {
   for (int i=0; i<3; i++)
   {
-    if (std::isnan(coord[i]) || std::isinf(coord[i])) return;
+    assert(!std::isnan(coord[i]));
+    if (std::isinf(coord[i])) return;
     if (coord[i] > max[i] && coord[i] < HUGE_VAL)
     {
       max[i] = coord[i];
