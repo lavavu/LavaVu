@@ -348,7 +348,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 #define RECT2(x0, y0, x1, y1, swap) swap ? glRecti(y0, x0, y1, x1) : glRecti(x0, y0, x1, y1);
 #define VERT2(x, y, swap) swap ? glVertex2i(y, x) : glVertex2i(x, y);
 
-void ColourMap::draw(Properties& properties, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
+void ColourMap::draw(Properties& colourbarprops, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
 {
   glPushAttrib(GL_ENABLE_BIT);
   int pixel_I;
@@ -420,15 +420,15 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   //Labels / tick marks
   glColor4ubv(printColour.rgba);
   float tickValue;
-  int ticks = properties["ticks"];
-  json tickValues = properties["tickvalues"];
+  int ticks = colourbarprops["ticks"];
+  json tickValues = colourbarprops["tickvalues"];
   if (tickValues.size() > ticks) ticks = tickValues.size();
-  bool printTicks = properties["printticks"];
-  std::string units = properties["units"];
-  bool scientific = properties["scientific"];
-  int precision = properties["precision"];
-  float scaleval = properties["scalevalue"];
-  float border = properties.getFloat("border", 1.0); //Use getFloat or will load global border prop as default
+  bool printTicks = colourbarprops["printticks"];
+  std::string units = colourbarprops["units"];
+  bool scientific = colourbarprops["scientific"];
+  int precision = colourbarprops["precision"];
+  float scaleval = colourbarprops["scalevalue"];
+  float border = colourbarprops.getFloat("border", 1.0); //Use getFloat or will load global border prop as default
   if (border > 0) glLineWidth(border-0.5);
   else glLineWidth(0.5);
 
@@ -436,7 +436,7 @@ void ColourMap::draw(Properties& properties, int startx, int starty, int length,
   if (properties["logscale"] && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
-  float fontscale = PrintSetFont(properties);
+  float fontscale = PrintSetFont(colourbarprops);
   for (int i = 0; i < ticks+2; i++)
   {
     /* Get tick value */
