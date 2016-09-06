@@ -174,8 +174,9 @@ void X11Viewer::swap()
 
 void X11Viewer::execute()
 {
-  if (!Xdisplay) return;
-  XEvent         event;
+  visible = true;
+  if (!Xdisplay) open(width, height);
+  XEvent event;
   MouseButton button;
   unsigned char key;
   KeySym keysym;
