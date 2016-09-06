@@ -248,7 +248,7 @@ void TriSurfaces::loadMesh()
       geom[index]->data[lucVertexData] = &geom[index]->vertices;
       geom[index]->data[lucNormalData] = &geom[index]->normals;
       geom[index]->data[lucIndexData] = &geom[index]->indices;
-      bool optimise = false; //TODO: Property
+      bool optimise = geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
       {
         //Re-write optimised data with unique vertices only
@@ -490,7 +490,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   //Search for duplicates and replace references to normals
   int match = 0;
   int dupcount = 0;
-  bool optimise = false; //TODO: Property
+  bool optimise = geom[index]->draw->properties["optimise"];
   for(unsigned int v=1; v<verts.size(); v++)
   {
     if (optimise && verts[match] == verts[v])
