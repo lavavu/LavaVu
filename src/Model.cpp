@@ -88,11 +88,15 @@ View* Model::defaultView()
     //Default view
     View* view = new View();
     views.push_back(view);
+  }
 
-    //Add objects to viewport
+  //No objects?
+  if (views[0]->objects.size() == 0)
+  {
+    //Add all objects to first viewport
     for (unsigned int o=0; o<objects.size(); o++)
     {
-      view->addObject(objects[o]);
+      views[0]->addObject(objects[o]);
       loadLinks(objects[o]);
     }
   }
@@ -169,7 +173,7 @@ bool Model::loadFigure(int fig)
   return true;
 }
 
-void  Model::addObject(DrawingObject* obj)
+void Model::addObject(DrawingObject* obj)
 {
   //Create master drawing object list entry
   obj->colourMaps = &colourMaps;
@@ -488,12 +492,12 @@ void Model::loadObjects()
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
     {
       colour = sqlite3_column_int(statement, 2);
-      if (!obj->properties.has("colour")) obj->properties.data["colour"] = colour;
+      if (colour > 0 && !obj->properties.has("colour")) obj->properties.data["colour"] = colour;
     }
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
     {
       opacity = (float)sqlite3_column_double(statement, 3);
-      if (!obj->properties.has("opacity")) obj->properties.data["opacity"] = opacity;
+      if (opacity > 0 && !obj->properties.has("opacity")) obj->properties.data["opacity"] = opacity;
     }
 
     addObject(obj);
