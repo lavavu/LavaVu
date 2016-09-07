@@ -127,14 +127,6 @@ void Volumes::update()
     DrawingObject* current = geom[i]->draw;
     if (geom[i]->texIdx < 0)
     {
-#if 0
-      //Dump raw
-      FILE* pFile;
-      pFile = fopen("volume.raw", "wb");
-      fwrite(geom[i]->colourData()->ref(), 1, sizeof(float) * geom[i]->colourData()->size(), pFile);
-      fclose(pFile);
-      std::cerr << "Wrote raw volume\n";
-#endif
       //Determine type of data then load the texture
       int idx = current->addTexture(); //Add a new texture container
       unsigned int bpv = 0;
@@ -162,10 +154,6 @@ void Volumes::update()
       //Set the loaded texture
       geom[i]->texIdx = idx;
     }
-
-    //Setup gradient texture from colourmap
-    ColourMap* cmap = geom[i]->draw->getColourMap();
-    if (cmap) cmap->loadTexture();
   }
   else
   {
@@ -219,13 +207,15 @@ void Volumes::update()
           {
             current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGB);
             for (unsigned int j=i; j<i+slices[current]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGB, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
+                              GL_RGB, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
           else if (bpv == 4)
           {
             current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGBA);
             for (unsigned int j=i; j<i+slices[current]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
+                              GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
           }
           else
             abort_program("Invalid volume bpv %d", bpv);
@@ -237,17 +227,20 @@ void Volumes::update()
           {
             current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_BYTE);
             for (unsigned int j=i; j<i+slices[current]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->colourData()->ref());
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
+                              GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->colourData()->ref());
           }
           else if (bpv == 4)
           {
             current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_FLOAT);
             for (unsigned int j=i; j<i+slices[current]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
+              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
+                              GL_LUMINANCE, GL_FLOAT, geom[j]->colourData()->ref());
           }
           else
             abort_program("Invalid volume bpv %d", bpv);
         }
+
         debug_print("current %s width %d height %d depth %d (bpv %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv);
 
         //Set the loaded texture
@@ -293,6 +286,8 @@ void Volumes::render(int i)
   //User settings
   int cmapid = props["colourmap"];
   ColourMap* cmap = geom[i]->draw->getColourMap();
+    //Setup gradient texture from colourmap if not yet loaded
+    if (cmap && !cmap->texture) cmap->loadTexture();
   bool hasColourMap = cmap && cmapid >= 0;
   //Use per-object clip box if set, otherwise use global clip
   /*
@@ -319,14 +314,15 @@ void Volumes::render(int i)
   glUniform1i(prog->uniforms["uSamples"], props["samples"]);
   float opacity = props["opacity"], density = props["density"];
   glUniform1f(prog->uniforms["uDensityFactor"], density * opacity);
-  glUniform1f(prog->uniforms["uIsoValue"], props["isovalue"]);
   Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
-  colour.a = 255.0 * props.getFloat("isoalpha", colour.a/255.0);
+  float isoalpha = props["isoalpha"];
+  //Default isoalpha shows surface only if isovalue set
+  if (props.has("isovalue") && isoalpha == 0.0) isoalpha = 1.0;
+  colour.a = 255.0 * isoalpha * (colour.a/255.0);
   colour.setUniform(prog->uniforms["uIsoColour"]);
   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
   glUniform1i(prog->uniforms["uIsoWalls"], (bool)props["isowalls"]);
   glUniform1i(prog->uniforms["uFilter"], (bool)props["tricubicfilter"]);
-  //density min max
   float dminmax[2] = {props["dminclip"],
                       props["dmaxclip"]};
   glUniform2fv(prog->uniforms["uDenMinMax"], 1, dminmax);
@@ -335,12 +331,19 @@ void Volumes::render(int i)
   //Field data requires normalisation to [0,1]
   //Pass minimum,maximum in place of colourmap calibrate
   float range[2] = {0.0, 1.0};
+  float isoval = props["isovalue"];
   if (geom[i]->colourData())
   {
     range[0] = geom[i]->colourData()->minimum;
     range[1] = geom[i]->colourData()->maximum;
+    //For non float type, normalise isovalue to range [0,1] to match data
+    if (geom[i]->draw->textures[geom[i]->draw->textures.size()-1]->type != VOLUME_FLOAT)
+      isoval = (isoval - range[0]) / (range[1] - range[0]);
+    //std::cout << "IsoValue " << isoval << std::endl;
+    //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
   }
   glUniform2fv(prog->uniforms["uRange"], 1, range);
+  glUniform1f(prog->uniforms["uIsoValue"], isoval);
   GL_Error_Check;
 
   //Gradient texture
@@ -411,6 +414,9 @@ void Volumes::render(int i)
   glPopAttrib();
   GL_Error_Check;
   glActiveTexture(GL_TEXTURE0);
+
+  //Calibrate colourmap on data now so if colour bar drawn it will have correct range
+  geom[i]->colourCalibrate();
 }
 
 GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& bpp, int xtiles)

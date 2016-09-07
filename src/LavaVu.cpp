@@ -268,7 +268,7 @@ void LavaVu::defaults()
   // | object(volume) | real | Isovalue for dynamic isosurface
   Properties::defaults["isovalue"] = 0.0;
   // | object(volume) | real [0,1] | Transparency value for isosurface
-  Properties::defaults["isoalpha"] = 1.0;
+  Properties::defaults["isoalpha"] = 0.0;
   // | object(volume) | real | Isosurface smoothing factor for normal calculation
   Properties::defaults["isosmooth"] = 0.1;
   // | object(volume) | boolean | Connect isosurface enclosed area with walls
@@ -2661,7 +2661,7 @@ bool LavaVu::loadFile(const std::string& file)
   // - gldb files represent a Model
   // - Non gldb data will be loaded into active Model
   // - If none exists, a default will be created
-  // - Sequence matters! To display non-gldb data with model, load the gldb first
+  // - gldb data will be loaded into active model iff it is not a gldb model
   FilePath fn(file);
 
   //Load a file based on extension

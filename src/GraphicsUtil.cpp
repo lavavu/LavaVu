@@ -954,8 +954,10 @@ int TextureLoader::build(GLubyte* imageData, GLenum format)
   return 1;
 }
 
-void TextureLoader::load3D(int width, int height, int depth, void* data, int type)
+void TextureLoader::load3D(int width, int height, int depth, void* data, int voltype)
 {
+  //Save the type
+  type = voltype;
   GL_Error_Check;
   //Create the texture
   if (!texture) texture = new TextureData();
