@@ -610,6 +610,7 @@ public:
   }
 };
 
+#define VOLUME_NONE 0
 #define VOLUME_FLOAT 1
 #define VOLUME_BYTE 2
 #define VOLUME_RGB 3
@@ -641,8 +642,9 @@ public:
   FilePath fn;       // Source data
   bool mipmaps;
   TextureData* texture;
+  int type;
 
-  TextureLoader(std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL) {}
+  TextureLoader(std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
 
   TextureData* use();
   void load();
@@ -651,7 +653,7 @@ public:
   int loadJPEG();
   int loadTIFF();
   int build(GLubyte* imageData, GLenum format);
-  void load3D(int width, int height, int depth, void* data, int type);
+  void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
 
   ~TextureLoader()
   {

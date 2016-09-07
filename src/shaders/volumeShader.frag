@@ -165,8 +165,6 @@ void main()
     int samples = int(ceil(travel));
     float range = uRange.y - uRange.x;
     if (range <= 0.0) range = 1.0;
-    //Scale isoValue
-    float isoValue = uRange.x + uIsoValue * range;
   
     //Raymarch, front to back
     for (int i=0; i < maxSamples; ++i)
@@ -186,7 +184,7 @@ void main()
 #define ISOSURFACE
 #ifdef ISOSURFACE
         //Passed through isosurface?
-        if (isoValue > uRange.x && ((!inside && density >= isoValue) || (inside && density < isoValue)))
+        if (uIsoColour.a > 0.0 && ((!inside && density >= uIsoValue) || (inside && density < uIsoValue)))
         {
           inside = !inside;
           //Find closer to exact position by iteration
@@ -199,7 +197,7 @@ void main()
             exact = (b + a) * 0.5;
             pos = rayDirection * exact + rayOrigin;
             density = tex3D(pos);
-            if (density - isoValue < 0.0)
+            if (density - uIsoValue < 0.0)
               b = exact;
             else
               a = exact;
