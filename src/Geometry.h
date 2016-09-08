@@ -263,8 +263,9 @@ public:
   GeomData* getObjectStore(DrawingObject* draw);
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
+  GeomData* read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, std::string label);
   void read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
-  void setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label="Default");
+  void setup(DrawingObject* draw);
   void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
   void label(DrawingObject* draw, std::vector<std::string> labels);

@@ -926,7 +926,6 @@ void LavaVu::readRawVolume(const FilePath& fn)
   //Ensure count rounded up when storing bytes in float container
   int floatcount = ceil((float)(size) / sizeof(float));
   Model::volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
-  Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
 void LavaVu::readXrwVolume(const FilePath& fn)
@@ -1024,7 +1023,6 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   Model::volumes->read(vobj, 1, lucVertexData, volmax);
 
   Model::volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
-  Model::volumes->setup(vobj, lucColourValueData, 0, 1);
 }
 
 void LavaVu::readVolumeSlice(const FilePath& fn)
@@ -1090,7 +1088,6 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     //Ensure count rounded up when storing bytes in float container
     int floatcount = ceil((float)(width * height) / sizeof(float));
     Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height); //, count);
-    Model::volumes->setup(vobj, lucColourValueData, 0, 1);
     //std::cout << "SLICE LOAD: " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
 
     delete[] luminance;
@@ -1276,7 +1273,6 @@ void LavaVu::createDemoVolume()
       int floatcount = ceil((float)(width * height) / sizeof(float));
       //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, depth);
       Model::volumes->read(vobj, floatcount, lucColourValueData, (float*)imageData, width, height, depth);
-      Model::volumes->setup(vobj, lucColourValueData, 0, 1);
       std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
     }
   }
@@ -1454,7 +1450,6 @@ void LavaVu::readHeightMap(const FilePath& fn)
     vertex[2] -= ydim * subsample;
   }
   file.close();
-  Model::geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
 
   range[1] = max[1] - min[1];
   debug_print("Sampled %d values, min height %f max height %f\n", (sx / subsample) * (sz / subsample), min[1], max[1]);
@@ -1508,8 +1503,6 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
       Model::geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
     }
   }
-
-  Model::geometry[geomtype]->setup(obj, lucColourValueData, min[1], max[1]);
 }
 
 void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
@@ -1714,14 +1707,10 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
     Model::points->read(obj, 1, lucVertexData, ref);
-    Model::points->read(obj, 1, lucColourValueData, &colour);
+    Model::points->read(obj, 1, lucColourValueData, &colour, "demo colours");
 
-    if (i % pointsperswarm == pointsperswarm-1)
-    {
-      Model::points->setup(obj, lucColourValueData, 0, size, "demo colours");
-      if (i != numpoints-1)
+    if (i % pointsperswarm == pointsperswarm-1 && i != numpoints-1)
         Model::points->add(obj);
-    }
   }
 
   //Add lines
@@ -1739,8 +1728,6 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     Model::lines->read(obj, 1, lucVertexData, ref);
     Model::lines->read(obj, 1, lucColourValueData, &colour);
   }
-
-  Model::lines->setup(obj, lucColourValueData, 0, size, "demo colours");
 
   //Add some quads (using tri surface mode)
   {
@@ -1930,6 +1917,9 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
   if (viewer->isopen && setBounds)
   {
+    //Auto-calc data ranges
+    amodel->setup();
+
     float min[3], max[3];
     Properties::toFloatArray(aview->properties["min"], min, 3);
     Properties::toFloatArray(aview->properties["max"], max, 3);
@@ -3145,23 +3135,7 @@ void LavaVu::loadScalars(std::vector <float> array, lucGeometryDataType type, st
   if (!container) return;
 
   //Load scalar values
-  float min = HUGE_VALF;
-  float max = -HUGE_VALF;
-  for (unsigned int i=0; i < array.size(); i++)
-  {
-    container->read(aobject, 1, type, &array[i]);
-    if (array[i] > max) max = array[i];
-    if (array[i] < min) min = array[i];
-  }
-
-  if (minimum == maximum)
-  {
-    minimum = min;
-    maximum = max;
-  }
-
-  //Setup
-  container->setup(aobject, type, minimum, maximum, label);
+  container->read(aobject, array.size(), type, &array[0], label);
 }
 
 void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type)
@@ -3175,8 +3149,9 @@ void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType 
   if (!container) return;
 
   //Load scalar values
-  for (unsigned int i=0; i < array.size(); i++)
-    container->read(aobject, 1, type, &array[i]);
+  //for (unsigned int i=0; i < array.size(); i++)
+  //  container->read(aobject, 1, type, &array[i]);
+  container->read(aobject, array.size(), type, &array[0]);
 }
 
 void LavaVu::labels(std::vector <std::string> labels)

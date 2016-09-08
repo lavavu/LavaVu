@@ -127,7 +127,7 @@ public:
   bool generated;
   std::string label;
 
-  DataContainer() : next(0), minimum(0), maximum(1), datasize(1), offset(0), generated(false) {}
+  DataContainer() : next(0), minimum(0), maximum(1), datasize(1), offset(0), generated(false), label("Default") {}
 
   //Pure virtual methods
   virtual void read(unsigned int n, const void* data) = 0;

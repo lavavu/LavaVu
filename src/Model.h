@@ -89,6 +89,7 @@ public:
   void attach(int stepidx);
   void close();
   void clearObjects(bool all=false);
+  void setup();
   void redraw(bool reload=false);
   unsigned int addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
