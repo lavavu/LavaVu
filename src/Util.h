@@ -137,13 +137,12 @@ public:
   virtual void erase(int start, int end) = 0;
   virtual void* ref(unsigned i=0) = 0;
 
-  void setup(float min, float max, std::string labelstr="")
+  void setup(float min, float max)
   {
     //if (min < minimum) minimum = min;
     //if (max > maximum) maximum = max;
     minimum = min;
     maximum = max;
-    label = labelstr;
   }
 
   unsigned int size()
