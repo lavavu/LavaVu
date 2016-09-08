@@ -292,6 +292,21 @@ void Model::clearObjects(bool all)
   }
 }
 
+void Model::setup()
+{
+  //Setup min/max on all object data
+  for (unsigned int i=0; i < objects.size(); i++)
+  {
+    Model::points->setup(objects[i]);
+    Model::quadSurfaces->setup(objects[i]);
+    Model::triSurfaces->setup(objects[i]);
+    Model::vectors->setup(objects[i]);
+    Model::tracers->setup(objects[i]);
+    Model::shapes->setup(objects[i]);
+    Model::lines->setup(objects[i]);
+    Model::volumes->setup(objects[i]);
+  }
+}
 void Model::redraw(bool reload)
 {
   //Flag redraw on all objects...
@@ -1191,7 +1206,6 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
         //Read data block
         GeomData* g = active->read(obj, items, data_type, data, width, height, depth);
-        active->setup(obj, data_type, minimum, maximum);
         if (labels) active->label(obj, labels);
 
         //Where min/max vertex provided, load

@@ -295,6 +295,7 @@ FloatValues* GeomData::valueData(lucGeometryDataType type)
       return values[d];
   return NULL;
 }
+
 float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
 {
   FloatValues* fv = valueData(type);
@@ -883,6 +884,13 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
   return geomdata; //Return data store pointer
 }
 
+GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, std::string label)
+{
+  //Read & set label - for value data
+  GeomData* geomdata = read(draw, n, dtype, data);
+  geomdata->data[dtype]->label = label;
+}
+
 void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   //Set width & height if provided
@@ -930,12 +938,51 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
   }
 }
 
-void Geometry::setup(DrawingObject* draw, lucGeometryDataType dtype, float minimum, float maximum, std::string label)
+void Geometry::setup(DrawingObject* draw)
 {
-  //Get passed object's most recently added data store and setup draw data
-  GeomData* geomdata = getObjectStore(draw);
-  if (!geomdata) return;
-  geomdata->data[dtype]->setup(minimum, maximum, label);
+  //Scan all data for min/max
+  std::vector<float> minimums;
+  std::vector<float> maximums;
+
+  for (unsigned int i=0; i<geom.size(); i++)
+  {
+    if (geom[i]->draw == draw)
+    {
+      for (unsigned int d=0; d<geom[i]->values.size(); d++)
+      {
+        //Store max/min per value index
+        if (minimums.size() <= d)
+        {
+          minimums.push_back(HUGE_VAL);
+          maximums.push_back(-HUGE_VAL);
+        }
+
+        FloatValues* flvals = geom[i]->values[d];
+        FloatValues& fvals = *flvals;
+        for (unsigned int c=0; c < fvals.size(); c++)
+        {
+          if (fvals[c] < minimums[d])
+            minimums[d] = fvals[c];
+          if (fvals[c] > maximums[d])
+            maximums[d] = fvals[c];
+        }
+      }
+    }
+  }
+
+  for (unsigned int i=0; i<geom.size(); i++)
+  {
+    if (geom[i]->draw == draw)
+    {
+      for (unsigned int d=0; d<geom[i]->values.size(); d++)
+      {
+        if (minimums[d] > maximums[d]) continue;
+        //std::cout << "Updating data range for " << draw->name() << " == " << minimums[d] << " - " << maximums[d] << std::endl;
+        FloatValues* fvals = geom[i]->values[d];
+        fvals->setup(minimums[d], maximums[d]); //, label);
+      }
+    }
+  }
 }
 
 void Geometry::insertFixed(Geometry* fixed)
