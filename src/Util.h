@@ -240,6 +240,12 @@ class UIntValues : public DataValues<unsigned int>
   UIntValues() {}
 };
 
+class UCharValues : public DataValues<unsigned char>
+{
+ public:
+  UCharValues() {}
+};
+
 class Coord3DValues : public FloatValues
 {
 public:

@@ -132,6 +132,7 @@ void Volumes::update()
       unsigned int bpv = 0;
       if (geom[i]->colours.size() > 0)
       {
+        //TODO: test, how can this ever be bpv=3? Colours is always 4 byte unsigned
         bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
         if (bpv == 3)
           current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGB);
@@ -140,15 +141,17 @@ void Volumes::update()
         else
           abort_program("Invalid volume bpv %d", bpv);
       }
+      else if (geom[i]->luminance.size() > 0)
+      {
+        bpv = 1;
+        assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height * geom[i]->depth);
+        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->luminance.ref(), VOLUME_BYTE);
+      }
       else if (geom[i]->colourData())
       {
-        bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
-        if (bpv == 1)
-          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_BYTE);
-        else if (bpv == 4)
-          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
-        else
-          abort_program("Invalid volume bpv %d", bpv);
+        bpv = 4;
+        assert(4 * geom[i]->colourData()->size() == geom[i]->width * geom[i]->height * geom[i]->depth);
+        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
       }
       debug_print("volume 0 width %d height %d depth %d (bpv %d)\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
       //Set the loaded texture
@@ -286,8 +289,9 @@ void Volumes::render(int i)
   //User settings
   int cmapid = props["colourmap"];
   ColourMap* cmap = geom[i]->draw->getColourMap();
-    //Setup gradient texture from colourmap if not yet loaded
-    if (cmap && !cmap->texture) cmap->loadTexture();
+  //if (cmap) cmap->calibrate(0, 1);
+  //Setup gradient texture from colourmap if not yet loaded
+  if (cmap && !cmap->texture) cmap->loadTexture();
   bool hasColourMap = cmap && cmapid >= 0;
   //Use per-object clip box if set, otherwise use global clip
   /*

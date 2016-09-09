@@ -112,6 +112,7 @@ public:
   UIntValues indices;
   UIntValues colours;
   Coord2DValues texCoords;
+  UCharValues luminance;
 
   std::vector<DataContainer*> data;
   std::vector<FloatValues*> values;
@@ -126,6 +127,7 @@ public:
     data[lucIndexData] = &indices;
     data[lucRGBAData] = &colours;
     data[lucTexCoordData] = &texCoords;
+    data[lucLuminanceData] = &luminance;
 
     texIdx = -1;
 
