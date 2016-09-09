@@ -36,6 +36,7 @@ typedef enum
   lucRGBAData,
   lucTexCoordData,
   lucSizeData,
+  lucLuminanceData,
   lucMaxDataType
 } lucGeometryDataType;
 

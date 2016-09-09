@@ -923,9 +923,8 @@ void LavaVu::readRawVolume(const FilePath& fn)
   Model::volumes->add(vobj);
   Model::volumes->read(vobj, 1, lucVertexData, volmin);
   Model::volumes->read(vobj, 1, lucVertexData, volmax);
-  //Ensure count rounded up when storing bytes in float container
-  int floatcount = ceil((float)(size) / sizeof(float));
-  Model::volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
+  //Now using a container designed for byte data, TODO: support RGB/RGBA raw load?
+  Model::volumes->read(vobj, size, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
 }
 
 void LavaVu::readXrwVolume(const FilePath& fn)
