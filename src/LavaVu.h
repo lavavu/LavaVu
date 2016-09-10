@@ -36,6 +36,7 @@
 #ifndef LavaVu__
 #define LavaVu__
 
+#include "State.h"
 #include "Util.h"
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
@@ -65,6 +66,7 @@ typedef enum
 class LavaVu : public ViewerApp
 {
 protected:
+  State state;
   bool verbose, hideall, dbpath;
   std::string defaultScript;
 

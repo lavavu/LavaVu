@@ -38,6 +38,7 @@
 
 #include "sqlite3/sqlite3.h"
 
+#include "State.h"
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
 #include "View.h"
@@ -54,6 +55,7 @@ private:
   char prefix[10];   //attached db prefix
 
 public:
+  State& state;
   FilePath file;
   std::string basename;
   sqlite3 *db;
@@ -63,7 +65,6 @@ public:
   std::vector<std::string> figures;
   int figure;
 
-  static int now;
   //Current timestep geometry
   static std::vector<Geometry*> geometry;
   //Type specific geometry pointers
@@ -104,7 +105,7 @@ public:
   void loadColourMaps();
   void loadColourMapsLegacy();
 
-  Model();
+  Model(State& state);
   void load(const FilePath& fn);
   void init();
   ~Model();
@@ -126,13 +127,13 @@ public:
   int step()
   {
     //Current actual step
-    return now < 0 || (int)timesteps.size() <= now ? -1 : timesteps[now]->step;
+    return state.now < 0 || (int)timesteps.size() <= state.now ? -1 : timesteps[state.now]->step;
   }
 
   int stepInfo()
   {
     //Current actual step (returns 0 if none instead of -1 for output functions)
-    return now < 0 || (int)timesteps.size() <= now ? 0 : timesteps[now]->step;
+    return state.now < 0 || (int)timesteps.size() <= state.now ? 0 : timesteps[state.now]->step;
   }
 
   int lastStep()
@@ -148,7 +149,7 @@ public:
     timesteps.push_back(new TimeStep(step, time, path));
   }
 
-  int setTimeStep(int stepidx=now);
+  int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
   void mergeDatabases();
   int decompressGeometry(int timestep);

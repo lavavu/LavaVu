@@ -1231,11 +1231,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(ival, "timestep"))
     {
       if (parsed["timestep"] == "up")
-        ival = Model::now-1;
+        ival = state.now-1;
       else if (parsed["timestep"] == "down")
-        ival = Model::now+1;
+        ival = state.now+1;
       else
-        ival = Model::now;
+        ival = state.now;
     }
     else //Convert to step idx
       ival = amodel->nearestTimeStep(ival);
@@ -1259,7 +1259,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Relative jump
-    if (amodel->setTimeStep(Model::now+ival) >= 0)
+    if (amodel->setTimeStep(state.now+ival) >= 0)
     {
       printMessage("Jump to timestep %d", amodel->step());
       resetViews(); //Update the viewports
@@ -1298,7 +1298,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (ival < 0) ival = models.size()-1;
     if (ival >= (int)models.size()) ival = 0;
     if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
-    amodel->setTimeStep(Model::now); //Reselect ensures all loaded correctly
+    amodel->setTimeStep(state.now); //Reselect ensures all loaded correctly
     printMessage("Load model %d", model);
   }
   else if (parsed.exists("figure"))
@@ -1508,11 +1508,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    int old = Model::now;
+    int old = state.now;
     if (amodel->timesteps.size() < 2) return false;
-    amodel->setTimeStep(Model::now+1);
+    amodel->setTimeStep(state.now+1);
     //Allow loop back to start when using next command
-    if (Model::now > 0 && Model::now == old)
+    if (state.now > 0 && state.now == old)
       amodel->setTimeStep(0);
     resetViews(); //Update the viewports
 
@@ -3038,7 +3038,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     amodel->addTimeStep(amodel->step()+1);
-    amodel->setTimeStep(Model::now+1);
+    amodel->setTimeStep(state.now+1);
 
     //Don't record
     return false;
