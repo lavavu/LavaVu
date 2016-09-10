@@ -763,7 +763,7 @@ void LavaVu::run(std::vector<std::string> args)
       }
 
       //Export data
-      Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
+      state.triSurfaces->loadMesh();  //Optimise triangle meshes before export
       DrawingObject* obj = NULL;
       if (dumpid > 0) obj = amodel->findObject(dumpid);
       exportData(dump, obj);
@@ -922,11 +922,11 @@ void LavaVu::readRawVolume(const FilePath& fn)
   Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
   Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
   Properties::toFloatArray(Properties::global("volres"), volres, 3);
-  Model::volumes->add(vobj);
-  Model::volumes->read(vobj, 1, lucVertexData, volmin);
-  Model::volumes->read(vobj, 1, lucVertexData, volmax);
+  state.volumes->add(vobj);
+  state.volumes->read(vobj, 1, lucVertexData, volmin);
+  state.volumes->read(vobj, 1, lucVertexData, volmax);
   //Now using a container designed for byte data, TODO: support RGB/RGBA raw load?
-  Model::volumes->read(vobj, size, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
+  state.volumes->read(vobj, size, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
 }
 
 void LavaVu::readXrwVolume(const FilePath& fn)
@@ -1019,11 +1019,11 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   }
 
   //Define the bounding cube by corners
-  Model::volumes->add(vobj);
-  Model::volumes->read(vobj, 1, lucVertexData, volmin);
-  Model::volumes->read(vobj, 1, lucVertexData, volmax);
+  state.volumes->add(vobj);
+  state.volumes->read(vobj, 1, lucVertexData, volmin);
+  state.volumes->read(vobj, 1, lucVertexData, volmax);
 
-  Model::volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
+  state.volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
 }
 
 void LavaVu::readVolumeSlice(const FilePath& fn)
@@ -1067,12 +1067,12 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
       if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
     }
     //Define the bounding cube by corners
-    Model::volumes->add(vobj);
-    Model::volumes->read(vobj, 1, lucVertexData, volmin);
-    Model::volumes->read(vobj, 1, lucVertexData, volmax);
+    state.volumes->add(vobj);
+    state.volumes->read(vobj, 1, lucVertexData, volmin);
+    state.volumes->read(vobj, 1, lucVertexData, volmax);
   }
   else
-    Model::volumes->add(vobj);
+    state.volumes->add(vobj);
 
   //Save static volume for loading multiple slices
   volume = vobj;
@@ -1088,7 +1088,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
 
     //Ensure count rounded up when storing bytes in float container
     int floatcount = ceil((float)(width * height) / sizeof(float));
-    Model::volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height); //, count);
+    state.volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height); //, count);
     //std::cout << "SLICE LOAD: " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
 
     delete[] luminance;
@@ -1117,11 +1117,11 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           }
         }
       }
-      Model::volumes->read(vobj, width*height, lucRGBAData, rgba, width, height);
+      state.volumes->read(vobj, width*height, lucRGBAData, rgba, width, height);
       delete[] rgba;
     }
     else
-      Model::volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
+      state.volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
     std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
   }
 }
@@ -1200,8 +1200,8 @@ void LavaVu::createDemoVolume()
       if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
     }
     //Define the bounding cube by corners
-    Model::volumes->read(vobj, 1, lucVertexData, volmin);
-    Model::volumes->read(vobj, 1, lucVertexData, volmax);
+    state.volumes->read(vobj, 1, lucVertexData, volmin);
+    state.volumes->read(vobj, 1, lucVertexData, volmax);
   }
 
 #if 1
@@ -1233,8 +1233,8 @@ void LavaVu::createDemoVolume()
         }
       }
 
-      if (z > 0) Model::volumes->add(vobj);
-      Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
+      if (z > 0) state.volumes->add(vobj);
+      state.volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
       std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
     }
   }
@@ -1270,10 +1270,10 @@ void LavaVu::createDemoVolume()
         }
       }
 
-      //if (z > 0) Model::volumes->add(vobj);
+      //if (z > 0) state.volumes->add(vobj);
       int floatcount = ceil((float)(width * height) / sizeof(float));
-      //Model::volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, depth);
-      Model::volumes->read(vobj, floatcount, lucColourValueData, (float*)imageData, width, height, depth);
+      //state.volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, depth);
+      state.volumes->read(vobj, floatcount, lucColourValueData, (float*)imageData, width, height, depth);
       std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
     }
   }
@@ -1441,9 +1441,9 @@ void LavaVu::readHeightMap(const FilePath& fn)
       if (vertex[1] > max[1]) max[1] = vertex[1];
 
       //Add grid point
-      Model::geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
+      state.geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
       //Colour by height
-      Model::geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+      state.geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
 
       vertex[0] += xdim * subsample;
     }
@@ -1499,9 +1499,9 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
       if (vertex[1] > max[1]) max[1] = vertex[1];
 
       //Add grid point
-      Model::geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
+      state.geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
       //Colour by height
-      Model::geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+      state.geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
     }
   }
 }
@@ -1530,9 +1530,9 @@ void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int 
     }
 
     //Read the triangle
-    Model::triSurfaces->read(obj, 1, lucVertexData, a);
-    Model::triSurfaces->read(obj, 1, lucVertexData, b);
-    Model::triSurfaces->read(obj, 1, lucVertexData, c);
+    state.triSurfaces->read(obj, 1, lucVertexData, a);
+    state.triSurfaces->read(obj, 1, lucVertexData, b);
+    state.triSurfaces->read(obj, 1, lucVertexData, c);
   }
   else
   {
@@ -1580,7 +1580,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
 
     //Add new triangles data store to object
-    Model::triSurfaces->add(tobj);
+    state.triSurfaces->add(tobj);
 
     if (shapes[i].mesh.material_ids.size() > 0)
     {
@@ -1597,7 +1597,7 @@ void LavaVu::readOBJ(const FilePath& fn)
             texpath = fn.path + "/" + texpath;
 
           //Add per-object texture
-          Model::triSurfaces->setTexture(tobj, tobj->addTexture(texpath));
+          state.triSurfaces->setTexture(tobj, tobj->addTexture(texpath));
           //if (tobj->properties["texturefile"].ToString("").length() == 0)
           //  tobj->properties.data["texturefile"] = texpath;
         }
@@ -1609,7 +1609,7 @@ void LavaVu::readOBJ(const FilePath& fn)
           c.b = materials[id].diffuse[2] * 255;
           c.a = materials[id].dissolve * 255;
           if (c.a == 0.0) c.a = 255;
-          Model::triSurfaces->read(tobj, 1, lucRGBAData, &c.value);
+          state.triSurfaces->read(tobj, 1, lucRGBAData, &c.value);
         }
       }
     }
@@ -1621,10 +1621,10 @@ void LavaVu::readOBJ(const FilePath& fn)
     int trisplit = Properties::global("trisplit");
     if (trisplit == 0)
     {
-      GeomData* g = Model::triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
-      Model::triSurfaces->read(tobj, shapes[i].mesh.indices.size(), lucIndexData, &shapes[i].mesh.indices[0]);
+      GeomData* g = state.triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
+      state.triSurfaces->read(tobj, shapes[i].mesh.indices.size(), lucIndexData, &shapes[i].mesh.indices[0]);
       if (shapes[i].mesh.normals.size() > 0)
-        Model::triSurfaces->read(tobj, shapes[i].mesh.normals.size()/3, lucNormalData, &shapes[i].mesh.normals[0]);
+        state.triSurfaces->read(tobj, shapes[i].mesh.normals.size()/3, lucNormalData, &shapes[i].mesh.normals[0]);
       for (size_t f = 0; f < shapes[i].mesh.positions.size(); f += 3)
         g->checkPointMinMax(&shapes[i].mesh.positions[f]);
     }
@@ -1643,7 +1643,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     }
 
     if (shapes[i].mesh.texcoords.size())
-      Model::triSurfaces->read(tobj, shapes[i].mesh.texcoords.size()/2, lucTexCoordData, &shapes[i].mesh.texcoords[0]);
+      state.triSurfaces->read(tobj, shapes[i].mesh.texcoords.size()/2, lucTexCoordData, &shapes[i].mesh.texcoords[0]);
 
     printf("shape[%ld].vertices: %ld\n", i, shapes[i].mesh.positions.size());
     printf("shape[%ld].texcoords: %ld\n", i, shapes[i].mesh.texcoords.size());
@@ -1707,11 +1707,11 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     //Demo colourmap value: distance from model origin
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-    Model::points->read(obj, 1, lucVertexData, ref);
-    Model::points->read(obj, 1, lucColourValueData, &colour, "demo colours");
+    state.points->read(obj, 1, lucVertexData, ref);
+    state.points->read(obj, 1, lucColourValueData, &colour, "demo colours");
 
     if (i % pointsperswarm == pointsperswarm-1 && i != numpoints-1)
-        Model::points->add(obj);
+        state.points->add(obj);
   }
 
   //Add lines
@@ -1726,8 +1726,8 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     //Demo colourmap value: distance from model origin
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-    Model::lines->read(obj, 1, lucVertexData, ref);
-    Model::lines->read(obj, 1, lucColourValueData, &colour);
+    state.lines->read(obj, 1, lucVertexData, ref);
+    state.lines->read(obj, 1, lucColourValueData, &colour);
   }
 
   //Add some quads (using tri surface mode)
@@ -1745,7 +1745,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
       Colour c;
       c.value = (0xff000000 | 0xff<<(8*i));
       obj->properties.data["colour"] = c.toJson();
-      Model::triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
+      state.triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
     }
   }
 
@@ -1772,8 +1772,8 @@ DrawingObject* LavaVu::addObject(DrawingObject* obj)
 void LavaVu::open(int width, int height)
 {
   //Init geometry containers
-  for (unsigned int i=0; i < Model::geometry.size(); i++)
-    Model::geometry[i]->init();
+  for (unsigned int i=0; i < state.geometry.size(); i++)
+    state.geometry[i]->init();
 
   //Initialise all viewports to window size
   for (unsigned int v=0; v<amodel->views.size(); v++)
@@ -1850,9 +1850,9 @@ void LavaVu::close()
   models.clear();
 
   //Clear geometry containers
-  for (unsigned int i=0; i < Model::geometry.size(); i++)
-    delete Model::geometry[i];
-  Model::geometry.clear();
+  for (unsigned int i=0; i < state.geometry.size(); i++)
+    delete state.geometry[i];
+  state.geometry.clear();
 
   aview = NULL;
   amodel = NULL;
@@ -1861,8 +1861,8 @@ void LavaVu::close()
 
 void LavaVu::redraw(DrawingObject* obj)
 {
-  for (unsigned int i=0; i < Model::geometry.size(); i++)
-    Model::geometry[i]->redrawObject(obj);
+  for (unsigned int i=0; i < state.geometry.size(); i++)
+    state.geometry[i]->redrawObject(obj);
 }
 
 //Called when model loaded/changed, updates all views settings
@@ -1933,8 +1933,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
 
     //Expand bounds by all geometry objects
-    for (unsigned int i=0; i < Model::geometry.size(); i++)
-      Model::geometry[i]->setView(aview, omin, omax);
+    for (unsigned int i=0; i < state.geometry.size(); i++)
+      state.geometry[i]->setView(aview, omin, omax);
 
     //Set viewport based on window size
     aview->port(viewer->width, viewer->height);
@@ -1974,8 +1974,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   else
   {
     //Set view on geometry objects only, no boundary check
-    for (unsigned int i=0; i < Model::geometry.size(); i++)
-      Model::geometry[i]->setView(aview);
+    for (unsigned int i=0; i < state.geometry.size(); i++)
+      state.geometry[i]->setView(aview);
   }
 
   //Update background colour
@@ -2441,7 +2441,7 @@ GeomData* LavaVu::getGeometry(DrawingObject* obj)
   GeomData* geomdata = NULL;
   for (int type=lucMinType; type<lucMaxType; type++)
   {
-    geomdata = Model::geometry[type]->getObjectStore(obj);
+    geomdata = state.geometry[type]->getObjectStore(obj);
     if (geomdata) break;
   }
   return geomdata;
@@ -2630,15 +2630,15 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
-  Model::triSurfaces->draw();
-  Model::quadSurfaces->draw();
-  Model::points->draw();
-  Model::vectors->draw();
-  Model::tracers->draw();
-  Model::shapes->draw();
-  Model::labels->draw();
-  Model::volumes->draw();
-  Model::lines->draw();
+  state.triSurfaces->draw();
+  state.quadSurfaces->draw();
+  state.points->draw();
+  state.vectors->draw();
+  state.tracers->draw();
+  state.shapes->draw();
+  state.labels->draw();
+  state.volumes->draw();
+  state.lines->draw();
 
 #ifndef USE_OMEGALIB
   drawBorder();
@@ -2907,7 +2907,7 @@ void LavaVu::dumpCSV(DrawingObject* obj)
       for (int type=lucMinType; type<lucMaxType; type++)
       {
         std::ostringstream ss;
-        Model::geometry[type]->dump(ss, amodel->objects[i]);
+        state.geometry[type]->dump(ss, amodel->objects[i]);
 
         std::string results = ss.str();
         if (results.size() > 0)
@@ -3007,7 +3007,7 @@ std::string LavaVu::web(bool tofile)
 {
   if (!amodel) return "";
   display(); //Forces view/window open
-  Model::triSurfaces->loadMesh();  //Optimise triangle meshes before export
+  state.triSurfaces->loadMesh();  //Optimise triangle meshes before export
   if (!tofile)
   {
     std::stringstream ss;

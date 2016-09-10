@@ -65,19 +65,6 @@ public:
   std::vector<std::string> figures;
   int figure;
 
-  //Current timestep geometry
-  static std::vector<Geometry*> geometry;
-  //Type specific geometry pointers
-  static Geometry* labels;
-  static Points* points;
-  static Vectors* vectors;
-  static Tracers* tracers;
-  static QuadSurfaces* quadSurfaces;
-  static TriSurfaces* triSurfaces;
-  static Lines* lines;
-  static Shapes* shapes;
-  static Volumes* volumes;
-
   std::vector<TimeStep*> timesteps;
   std::vector<View*> views;
   std::vector<DrawingObject*> objects;
