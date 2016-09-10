@@ -100,8 +100,6 @@ public:
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);
   void print();
-
-  static bool lock;
 };
 
 #endif //ColourMap__

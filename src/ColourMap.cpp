@@ -38,8 +38,6 @@
 //Safe log function for scaling
 #define LOG10(val) (val > FLT_MIN ? log10(val) : log10(FLT_MIN))
 
-//Init static data
-bool ColourMap::lock = false;
 int ColourMap::samples = 4096;
 
 std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
@@ -174,7 +172,7 @@ void ColourMap::calibrate(float min, float max)
   //No colours?
   if (colours.size() == 0) return;
   //Skip calibration when locked
-  if (ColourMap::lock) return;
+  if (properties["locked"]) return;
 
   minimum = min;
   maximum = max;
