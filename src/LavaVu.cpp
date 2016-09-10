@@ -119,6 +119,9 @@ void LavaVu::defaults()
   //Clear any queued commands
   OpenGLViewer::commands.clear();
 
+  //Reset state
+  state = State();
+
   initfigure = 0;
   viewset = 0;
   view = -1;
@@ -127,7 +130,6 @@ void LavaVu::defaults()
   amodel = NULL;
   aobject = NULL;
 
-  Model::now = -1;
   startstep = -1;
   endstep = -1;
   dump = lucExportNone;
@@ -678,7 +680,7 @@ void LavaVu::arguments(std::vector<std::string> args)
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
-  //Model::now = startstep;
+  //state.now = startstep;
 
   //Add default script
   if (defaultScript.length())
@@ -829,11 +831,11 @@ void LavaVu::cacheLoad()
     {
       amodel = models[m];
       amodel->loadTimeSteps();
-      Model::now = -1;
+      state.now = -1;
       for (unsigned int i=0; i<amodel->timesteps.size(); i++)
       {
         amodel->setTimeStep(i);
-        if (Model::now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
+        if (state.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
         debug_print("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
       }
       //Cache final step
@@ -2603,7 +2605,12 @@ void LavaVu::drawSceneBlended()
     break;
   }
 #ifndef USE_OMEGALIB
-  aview->drawOverlay(viewer->inverse);
+  std::string title = aview->properties["title"];
+  //Timestep macro ##
+  size_t pos =  title.find("##");
+  if (pos != std::string::npos && TimeStep::timesteps.size() >= state.now)
+    title.replace(pos, 2, std::to_string(TimeStep::timesteps[state.now]->step));
+  aview->drawOverlay(viewer->inverse, title);
   drawAxis();
 #endif
 }
@@ -2662,7 +2669,7 @@ bool LavaVu::loadFile(const std::string& file)
     //Open database file, if a non-db model already loaded, load into that
     if (models.size() == 0 || amodel && amodel->db)
     {
-      amodel = new Model();
+      amodel = new Model(state);
       models.push_back(amodel);
     }
 
@@ -2759,7 +2766,7 @@ bool LavaVu::loadFile(const std::string& file)
 void LavaVu::defaultModel()
 {
   //Adds a default model, window & viewport
-  amodel = new Model();
+  amodel = new Model(state);
   models.push_back(amodel);
 
   //Set a default view
@@ -2773,12 +2780,12 @@ void LavaVu::defaultModel()
 bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
   if (models.size() == 0) defaultModel();
-  if (model_idx == model && at_timestep >= 0 && at_timestep == amodel->now) return false; //No change
+  if (model_idx == model && at_timestep >= 0 && at_timestep == state.now) return false; //No change
   if (at_timestep >= 0)
   {
     //Cache selected step, then force new timestep set when model changes
     if (TimeStep::cachesize > 0) amodel->cacheStep();
-    if (amodel->db) Model::now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
+    if (amodel->db) state.now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
   }
 
   if (model_idx >= (int)models.size()) return false;
@@ -2798,7 +2805,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
     if (amodel->db)
     {
       if (at_timestep < 0)
-        amodel->setTimeStep();
+        amodel->setTimeStep(state.now);
       else
         amodel->setTimeStep(amodel->nearestTimeStep(at_timestep));
       if (verbose) std::cerr << "Loading vis '" << Properties::global("caption") << "', timestep: " << amodel->step() << std::endl;

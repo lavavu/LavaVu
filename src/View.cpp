@@ -711,7 +711,7 @@ void View::zoomToFit(int margin)
   }
 }
 
-void View::drawOverlay(Colour& colour)
+void View::drawOverlay(Colour& colour, std::string& title)
 {
 #ifdef PDF_CAPTURE
   return;   //Skip overlay
@@ -773,18 +773,12 @@ void View::drawOverlay(Colour& colour)
   GL_Error_Check;
 
   //Title
-  std::string title = properties["title"];
   if (title.length())
   {
-    //Timestep macro ##
-    size_t pos =  title.find("##");
-    if (pos != std::string::npos && TimeStep::timesteps.size() >= Model::now)
-      title.replace(pos, 2, std::to_string(TimeStep::timesteps[Model::now]->step));
     float fontscale = PrintSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
       lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
     Print(0.5 * (w - PrintWidth(title.c_str())), h - 3 - PrintWidth("W"), title.c_str());
-
   }
 
   GL_Error_Check;

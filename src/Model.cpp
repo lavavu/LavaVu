@@ -39,7 +39,6 @@
 std::vector<TimeStep*> TimeStep::timesteps; //Active model timesteps
 int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
 int TimeStep::cachesize = 0;
-int Model::now = -1;
 
 //Static geometry containers, shared by all models for fast switching/drawing
 std::vector<Geometry*> Model::geometry;
@@ -53,7 +52,7 @@ Lines* Model::lines = NULL;
 Shapes* Model::shapes = NULL;
 Volumes* Model::volumes = NULL;
 
-Model::Model() : readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
+Model::Model(State& state) : state(state), readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
 
@@ -225,9 +224,9 @@ void Model::reopen(bool write)
   if (attached)
   {
     char SQL[SQL_QUERY_MAX];
-    sprintf(SQL, "attach database '%s' as t%d", timesteps[now]->path.c_str(), attached);
+    sprintf(SQL, "attach database '%s' as t%d", timesteps[state.now]->path.c_str(), attached);
     if (issue(SQL))
-      debug_print("Model %s found and re-attached\n", timesteps[now]->path.c_str());
+      debug_print("Model %s found and re-attached\n", timesteps[state.now]->path.c_str());
   }
 }
 
@@ -613,7 +612,7 @@ void Model::clearTimeSteps()
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
   {
     //Clear the store first on current timestep to avoid deleting active (double free)
-    if (idx == now) timesteps[idx]->cache.clear();
+    if (idx == state.now) timesteps[idx]->cache.clear();
     delete timesteps[idx];
   }
   timesteps.clear();
@@ -849,7 +848,7 @@ void Model::freeze()
   //(Or new data will be appended to the frozen containers!)
   init();
   if (timesteps.size() == 0) addTimeStep();
-  timesteps[now]->loadFixed(geometry);
+  timesteps[state.now]->loadFixed(geometry);
 }
 
 void Model::deleteCache()
@@ -862,15 +861,15 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (TimeStep::cachesize == 0 || now < 0 || (int)timesteps.size() <= now) return;
-  if (timesteps[now]->cache.size() > 0) return; //Already cached this step
+  if (TimeStep::cachesize == 0 || state.now < 0 || (int)timesteps.size() <= state.now) return;
+  if (timesteps[state.now]->cache.size() > 0) return; //Already cached this step
 
-  printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), now, file.base.c_str(), membytes__/1000000.0f);
+  printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), state.now, file.base.c_str(), membytes__/1000000.0f);
 
   //Copy all elements
   if (membytes__ > 0)
   {
-    timesteps[now]->write(geometry);
+    timesteps[state.now]->write(geometry);
     debug_print("~~~ Cached step, at: %d\n", step());
     geometry.clear();
   }
@@ -896,13 +895,13 @@ void Model::cacheStep()
 
 bool Model::restoreStep()
 {
-  if (now < 0 || TimeStep::cachesize == 0) return false;
-  if (timesteps[now]->cache.size() == 0)
+  if (state.now < 0 || TimeStep::cachesize == 0) return false;
+  if (timesteps[state.now]->cache.size() == 0)
     return false; //Nothing cached this step
 
   //Load the cache and save loaded timestep
-  timesteps[now]->read(geometry);
-  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), now, file.base.c_str());
+  timesteps[state.now]->read(geometry);
+  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), state.now, file.base.c_str());
 
   //Switch geometry containers
   labels = geometry[lucLabelType];
@@ -943,7 +942,7 @@ int Model::nearestTimeStep(int requested)
   int idx;
   if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
   //if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
-  //if (timesteps.size() == 1 && now >= 0 && ) return -1;  //Single timestep
+  //if (timesteps.size() == 1 && state.now >= 0 && ) return -1;  //Single timestep
 
   for (idx=0; idx < (int)timesteps.size(); idx++)
     if (timesteps[idx]->step >= requested) break;
@@ -966,7 +965,7 @@ int Model::setTimeStep(int stepidx)
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
   {
-    now = -1;
+    state.now = -1;
     return -1;
   }
 
@@ -975,17 +974,17 @@ int Model::setTimeStep(int stepidx)
     stepidx = timesteps.size()-1;
 
   //Unchanged...
-  if (now >= 0 && stepidx == now) return -1;
+  if (state.now >= 0 && stepidx == state.now) return -1;
 
   //Setting initial step?
-  bool first = (now < 0);
+  bool first = (state.now < 0);
 
   //Cache currently loaded data
   if (TimeStep::cachesize > 0) cacheStep();
 
   //Set the new timestep index
   TimeStep::timesteps = timesteps; //Set to current model timestep vector
-  now = stepidx;
+  state.now = stepidx;
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
   if (!restoreStep())
@@ -1001,15 +1000,15 @@ int Model::setTimeStep(int stepidx)
       clearObjects();
 
     //Import fixed data first
-    if (now > 0) 
-      timesteps[now]->loadFixed(geometry);
+    if (state.now > 0) 
+      timesteps[state.now]->loadFixed(geometry);
 
     //Attempt to load from cache first
-    //if (restoreStep(now)) return 0; //Cache hit successful return value
+    //if (restoreStep(state.now)) return 0; //Cache hit successful return value
     if (db)
     {
       //Detach any attached db file and attach n'th timestep database if available
-      attach(now);
+      attach(state.now);
 
       if (TimeStep::cachesize > 0)
         //Attempt caching all geometry from database at start
@@ -1138,7 +1137,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (step() != timestep && !attached) //Will not work with attached db
       {
         cacheStep();
-        now = nearestTimeStep(timestep);
+        state.now = nearestTimeStep(timestep);
         debug_print("TimeStep set to: %d, rows %d\n", step(), rows);
       }
 

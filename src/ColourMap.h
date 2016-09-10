@@ -102,7 +102,6 @@ public:
   void print();
 
   static bool lock;
-  static int logscales;
 };
 
 #endif //ColourMap__

@@ -178,7 +178,7 @@ public:
   int direction();
 
   //Utility functions
-  void drawOverlay(Colour& colour);
+  void drawOverlay(Colour& colour, std::string& title);
 };
 
 #endif //View__

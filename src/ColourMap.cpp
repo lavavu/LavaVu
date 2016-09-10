@@ -40,7 +40,6 @@
 
 //Init static data
 bool ColourMap::lock = false;
-int ColourMap::logscales = 0;
 int ColourMap::samples = 4096;
 
 std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
