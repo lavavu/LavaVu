@@ -322,17 +322,18 @@ void Points::render()
   //Reverse order farthest to nearest
   elements = 0;
   int distSample = Properties::global("pointdistsample");
+  uint32_t SEED;
   for(int i=total-1; i>=0; i--)
   {
     if (hiddencache[pidx[i].geomid]) continue;
     if (geom[pidx[i].geomid]->filter(pidx[i].id)) continue;
     // If subSampling, use a pseudo random distribution to select which particles to draw
     // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
-    SEED_VAL = pidx[i].index; //Reset the seed for determinism based on index
+    SEED = pidx[i].index; //Reset the seed for determinism based on index
     //Distance based sub-sampling
     if (distSample > 0)
       subSample = 1 + distSample * pidx[i].distance / SORT_DIST_MAX; //[1,distSample]
-    if (subSample > 1 && SHR3 % subSample > 0) continue;
+    if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
     ptr[elements] = pidx[i].index;
     elements++;
     //printf("%d distance %d idx %d swarm %d vertex ", i, pidx[i].distance, pidx[i].id, pidx[i].geomid);
