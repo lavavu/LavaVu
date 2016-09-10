@@ -376,43 +376,43 @@ bool LavaVu::parseChar(unsigned char key)
       switch (ck)
       {
       case 'p':   //Points
-        if (Model::points->allhidden)
+        if (state.points->allhidden)
           response = parseCommands("show points");
         else
           response = parseCommands("hide points");
         break;
       case 'v':   //Vectors
-        if (Model::vectors->allhidden)
+        if (state.vectors->allhidden)
           response = parseCommands("show vectors");
         else
           response = parseCommands("hide vectors");
         break;
       case 't':   //Tracers
-        if (Model::tracers->allhidden)
+        if (state.tracers->allhidden)
           response = parseCommands("show tracers");
         else
           response = parseCommands("hide tracers");
         break;
       case 'u':   //TriSurfaces
-        if (Model::triSurfaces->allhidden)
+        if (state.triSurfaces->allhidden)
           response = parseCommands("show triangles");
         else
           response = parseCommands("hide triangles");
         break;
       case 'q':   //QuadSurfaces
-        if (Model::quadSurfaces->allhidden)
+        if (state.quadSurfaces->allhidden)
           response = parseCommands("show quads");
         else
           response = parseCommands("hide quads");
         break;
       case 's':   //Shapes
-        if (Model::shapes->allhidden)
+        if (state.shapes->allhidden)
           response = parseCommands("show shapes");
         else
           response = parseCommands("hide shapes");
         break;
       case 'l':   //Lines
-        if (Model::lines->allhidden)
+        if (state.lines->allhidden)
           response = parseCommands("show lines");
         else
           response = parseCommands("hide lines");
@@ -524,23 +524,23 @@ bool LavaVu::parseChar(unsigned char key)
 Geometry* LavaVu::getGeometryType(std::string what)
 {
   if (what == "points")
-    return Model::points;
+    return state.points;
   if (what == "labels")
-    return Model::labels;
+    return state.labels;
   if (what == "vectors")
-    return Model::vectors;
+    return state.vectors;
   if (what == "tracers")
-    return Model::tracers;
+    return state.tracers;
   if (what == "triangles")
-    return Model::triSurfaces;
+    return state.triSurfaces;
   if (what == "quads")
-    return Model::quadSurfaces;
+    return state.quadSurfaces;
   if (what == "shapes")
-    return Model::shapes;
+    return state.shapes;
   if (what == "lines")
-    return Model::lines;
+    return state.lines;
   if (what == "volumes")
-    return Model::volumes;
+    return state.volumes;
   return NULL;
 }
 
@@ -1387,8 +1387,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (what == "all")
     {
-      for (unsigned int i=0; i < Model::geometry.size(); i++)
-        Model::geometry[i]->hideShowAll(action == "hide");
+      for (unsigned int i=0; i < state.geometry.size(); i++)
+        state.geometry[i]->hideShowAll(action == "hide");
       return true;
     }
 
@@ -1446,10 +1446,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         else
         {
           //Hide/show all data for this object
-          bool state = (action == "show");
-          for (unsigned int i=0; i < Model::geometry.size(); i++)
-            Model::geometry[i]->showObj(list[c], state);
-          list[c]->properties.data["visible"] = state; //This allows hiding of objects without geometry (colourbars)
+          bool vis = (action == "show");
+          for (unsigned int i=0; i < state.geometry.size(); i++)
+            state.geometry[i]->showObj(list[c], vis);
+          list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
           printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
           amodel->redraw();
         }
@@ -1679,7 +1679,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //for (int type=lucMinType; type<lucMaxType; type++)
-    //   Model::geometry[type]->redraw = true;
+    //   state.geometry[type]->redraw = true;
     amodel->redraw(true); //Redraw & reload
     printMessage("Redrawing all objects");
   }
@@ -1822,7 +1822,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (obj)
     {
       for (int type=lucMinType; type<lucMaxType; type++)
-        Model::geometry[type]->setValueRange(obj);
+        state.geometry[type]->setValueRange(obj);
       printMessage("ColourMap scales set to local value range");
       amodel->redraw(true); //Colour change so force reload
     }
@@ -1890,8 +1890,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed["list"] == "elements")
     {
       //Print available elements by id
-      for (unsigned int i=0; i < Model::geometry.size(); i++)
-        Model::geometry[i]->print();
+      for (unsigned int i=0; i < state.geometry.size(); i++)
+        state.geometry[i]->print();
       viewer->swap();  //Immediate display
       return false;
     }
@@ -1924,9 +1924,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       displayText("-----------------------------------------", ++offset);
       std::cout << "-----------------------------------------" << std::endl;
-      for (unsigned int i=0; i < Model::geometry.size(); i++)
+      for (unsigned int i=0; i < state.geometry.size(); i++)
       {
-        json list = Model::geometry[i]->getDataLabels(aobject);
+        json list = state.geometry[i]->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
           std::stringstream ss;
@@ -2334,7 +2334,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (parsed["pointsample"] == "down")
       Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") * 2;
     if ((int)Properties::global("pointsubsample") < 1) Properties::globals["pointsubsample"] = 1;
-    Model::points->redraw = true;
+    state.points->redraw = true;
     printMessage("Point sampling %d", (int)Properties::global("pointsubsample"));
   }
   else if (parsed.exists("image"))
@@ -2595,7 +2595,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             obj->properties.data["scaling"] = sc / 1.5;
           printMessage("%s scaling set to %f", obj->name().c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
-            Model::geometry[type]->redraw = true;
+            state.geometry[type]->redraw = true;
           redraw(obj); //Full reload of object by id
           amodel->redraw();
         }
@@ -2671,8 +2671,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       printMessage("%s deleted", list[c]->name().c_str());
       //Delete geometry
-      for (unsigned int i=0; i < Model::geometry.size(); i++)
-        Model::geometry[i]->remove(list[c]);
+      for (unsigned int i=0; i < state.geometry.size(); i++)
+        state.geometry[i]->remove(list[c]);
       //Delete from model obj list
       for (unsigned int i=0; i<amodel->objects.size(); i++)
       {
