@@ -346,6 +346,8 @@ void LavaVu::defaults()
   Properties::defaults["colours"] = "";
   // | colourmap | real[2] | Fixed scale range, default is to automatically calculate range based on data min/max
   Properties::defaults["range"] = {0.0, 0.0};
+  // | colourmap | boolean | Set to true to lock colourmap ranges to current values
+  Properties::defaults["locked"] = false;
 
   // | view | string | Title to display at top centre of view
   Properties::defaults["title"] = "";

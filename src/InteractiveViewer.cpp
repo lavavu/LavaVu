@@ -297,8 +297,6 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("image");
     case 'j':
       return parseCommands("valuerange");
-    case 'k':
-      return parseCommands("lockscale");
     case 'u':
       return parseCommands("toggle cullface");
     case 'w':
@@ -1859,20 +1857,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
     }
   }
-  else if (parsed.exists("lockscale"))
-  {
-    if (gethelp)
-    {
-      help += "> Enable/disable colourmap lock  \n"
-              "> When locked, dynamic range colourmaps will keep current values  \n"
-              "> when switching between timesteps instead of being re-calibrated  \n";
-      return false;
-    }
-
-    ColourMap::lock = !ColourMap::lock;
-    printMessage("ColourMap scale locking %s", ColourMap::lock ? "ON":"OFF");
-    amodel->redraw(true); //Colour change so force reload
-  }
   else if (parsed.exists("list"))
   {
     if (gethelp)
@@ -3162,7 +3146,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"hide", "show", "delete", "load", "select", "add", "read", "name",
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers",
-     "antialias", "valuerange", "lockscale", "colourmap", "pointtype",
+     "antialias", "valuerange", "colourmap", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",
