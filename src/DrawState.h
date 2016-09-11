@@ -16,12 +16,11 @@ public:
   float *x_coords, *y_coords;  // Saves arrays of x,y points on circle for set segment count
   int segments = 0;    // Saves segment count for circle based objects
 
+
 //TriSurfaces, Lines, Points, Volumes
-  Shader* prog;
-//Lines
-  bool tubes;
+  Shader* prog[lucMaxType];
 //Points
-  GLuint indexvbo, vbo;
+  GLuint pindexvbo, pvbo;
 
 //Properties
   json globals;
@@ -30,7 +29,7 @@ public:
 //Font?!!
 //
 
-  DrawState()
+  DrawState() : prog()
   {
     gap = 0;
 
@@ -46,10 +45,11 @@ public:
     y_coords = NULL;
     segments = 0;    // Saves segment count for circle based objects
 
-    prog = NULL;
-
     defaults["default"] = false; //Fallback value
     if (globals.is_null()) globals = json::object();
+
+    pindexvbo = 0;
+    pvbo = 0;
 
   }
 

@@ -35,8 +35,6 @@
 
 #include "Geometry.h"
 
-Shader* TriSurfaces::prog = NULL;
-
 TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(drawstate)
 {
   type = lucTriangleType;
@@ -808,7 +806,7 @@ void TriSurfaces::draw()
       if (hiddencache[index]) continue;
       if (geom[index]->opaque)
       {
-        setState(index, prog); //Set draw state settings for this object
+        setState(index, drawstate.prog[lucTriangleType]); //Set draw state settings for this object
         //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
         glDrawRangeElements(GL_TRIANGLES, 0, elements, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
@@ -823,7 +821,7 @@ void TriSurfaces::draw()
 
     //Set draw state settings for first non-opaque object
     //NOTE: per-object textures do not work with transparency!
-    setState(tridx, prog);
+    setState(tridx, drawstate.prog[lucTriangleType]);
 
     //Draw remaining elements (transparent, depth sorted)
     //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);

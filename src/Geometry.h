@@ -313,7 +313,6 @@ class TriSurfaces : public Geometry
 protected:
   std::vector<Distance> surf_sort;
 public:
-  static Shader* prog;
   GLuint indexvbo, vbo;
 
   TriSurfaces(DrawState& drawstate, bool flat2Dflag=false);
@@ -340,8 +339,6 @@ class Lines : public Geometry
   bool all2d, any3d;
   std::vector<unsigned int> counts;
 public:
-  static Shader* prog;
-  static bool tubes;
   Lines(DrawState& drawstate, bool all2Dflag=false);
   ~Lines();
   virtual void close();
@@ -404,9 +401,6 @@ class Points : public Geometry
   PIndex *pidx;
   PIndex *swap;
 public:
-  static Shader* prog;
-  static GLuint indexvbo, vbo;
-
   Points(DrawState& drawstate);
   ~Points();
   virtual void init();
@@ -425,7 +419,6 @@ public:
 class Volumes : public Geometry
 {
 public:
-  static Shader* prog;
   GLuint colourTexture;
   std::map<DrawingObject*, int> slices;
 
