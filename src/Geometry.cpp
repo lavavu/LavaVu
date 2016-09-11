@@ -35,13 +35,8 @@
 
 #include "Geometry.h"
 
-//Init static data
-float Geometry::min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
-float Geometry::max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
-float Geometry::dims[3];
+//Init static, names list
 std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
-float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
-int segments__ = 0;    // Saves segment count for circle based objects
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -382,11 +377,11 @@ void Geometry::compareMinMax(float* min, float* max)
     compareCoordMinMax(min, max, geom[i]->min);
     compareCoordMinMax(min, max, geom[i]->max);
     //Also update global min/max
-    compareCoordMinMax(Geometry::min, Geometry::max, geom[i]->min);
-    compareCoordMinMax(Geometry::min, Geometry::max, geom[i]->max);
+    compareCoordMinMax(drawstate.min, drawstate.max, geom[i]->min);
+    compareCoordMinMax(drawstate.min, drawstate.max, geom[i]->max);
   }
   //Update global bounding box size
-  getCoordRange(Geometry::min, Geometry::max, Geometry::dims);
+  getCoordRange(drawstate.min, drawstate.max, drawstate.dims);
 }
 
 void Geometry::dump(std::ostream& csv, DrawingObject* draw)
@@ -675,12 +670,12 @@ void Geometry::setState(unsigned int i, Shader* prog)
       float clipMax[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
       if (geom[i]->draw->properties["clip"])
       {
-        clipMin[0] = (float)geom[i]->draw->properties["xmin"] * Geometry::dims[0] + Geometry::min[0];
-        clipMin[1] = (float)geom[i]->draw->properties["ymin"] * Geometry::dims[1] + Geometry::min[1];
-        clipMin[2] = (float)geom[i]->draw->properties["zmin"] * Geometry::dims[2] + Geometry::min[2];
-        clipMax[0] = (float)geom[i]->draw->properties["xmax"]* Geometry::dims[0] + Geometry::min[0];
-        clipMax[1] = (float)geom[i]->draw->properties["ymax"]* Geometry::dims[1] + Geometry::min[1];
-        clipMax[2] = (float)geom[i]->draw->properties["zmax"]* Geometry::dims[2] + Geometry::min[2];
+        clipMin[0] = (float)geom[i]->draw->properties["xmin"] * drawstate.dims[0] + drawstate.min[0];
+        clipMin[1] = (float)geom[i]->draw->properties["ymin"] * drawstate.dims[1] + drawstate.min[1];
+        clipMin[2] = (float)geom[i]->draw->properties["zmin"] * drawstate.dims[2] + drawstate.min[2];
+        clipMax[0] = (float)geom[i]->draw->properties["xmax"]* drawstate.dims[0] + drawstate.min[0];
+        clipMax[1] = (float)geom[i]->draw->properties["ymax"]* drawstate.dims[1] + drawstate.min[1];
+        clipMax[2] = (float)geom[i]->draw->properties["zmax"]* drawstate.dims[2] + drawstate.min[2];
       }
 
       glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
@@ -1155,37 +1150,6 @@ void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *des
   }
 }
 
-// Calculates a set of points on a unit circle for a given number of segments__
-// Used to optimised rendering circular objects when segment count isn't changed
-void calcCircleCoords(int segment_count)
-{
-  // Recalc required? Only done first time called and when segment count changes
-  GLfloat angle;
-  float angle_inc = 2*M_PI / (float)segment_count;
-  int idx;
-  if (segments__ == segment_count) return;
-
-  // Calculate unit circle points when divided into specified segments__
-  // and store in static variable to re-use every time a vector with the
-  // same segment count is drawn
-  segments__ = segment_count;
-  if (x_coords_ != NULL) delete[] x_coords_;
-  if (y_coords_ != NULL) delete[] y_coords_;
-
-  x_coords_ = new float[segment_count + 1];
-  y_coords_ = new float[segment_count + 1];
-
-  // Loop around in a circle and specify even points along the circle
-  // as the vertices for the triangle fan cone, cone base and arrow shaft
-  for (idx = 0; idx <= segments__; idx++)
-  {
-    angle = angle_inc * (float)idx;
-    // Calculate x and y position of the next vertex and cylinder normals (unit circle coords)
-    x_coords_[idx] = sin(angle);
-    y_coords_[idx] = cos(angle);
-  }
-}
-
 //////////////////////////////////
 // Draws a 3d vector
 // pos: centre position at which to draw vector
@@ -1230,7 +1194,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
     head_scale = 0.5 * head_scale / RADIUS_DEFAULT_RATIO; // Convert from fraction of length to multiple of radius
 
   // Get circle coords
-  calcCircleCoords(segment_count);
+  drawstate.cacheCircleCoords(segment_count);
 
   // Render a 3d arrow, cone with base for head, cylinder for shaft
 
@@ -1268,17 +1232,17 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       int vertex_index = getVertexIdx(draw);
 
       // Base of shaft
-      Vec3d vertex0 = Vec3d(radius0 * x_coords_[v], radius0 * y_coords_[v], -halflength); // z = Shaft length to base of head
+      Vec3d vertex0 = Vec3d(radius0 * drawstate.x_coords[v], radius0 * drawstate.y_coords[v], -halflength); // z = Shaft length to base of head
       Vec3d vertex = translate + rot * vertex0;
 
       //Read triangle vertex, normal
       read(draw, 1, lucVertexData, vertex.ref());
-      Vec3d normal = rot * Vec3d(x_coords_[v], y_coords_[v], 0);
+      Vec3d normal = rot * Vec3d(drawstate.x_coords[v], drawstate.y_coords[v], 0);
       //normal.normalise();
       read(draw, 1, lucNormalData, normal.ref());
 
       // Top of shaft
-      Vec3d vertex1 = Vec3d(radius1 * x_coords_[v], radius1 * y_coords_[v], -headD+halflength);
+      Vec3d vertex1 = Vec3d(radius1 * drawstate.x_coords[v], radius1 * drawstate.y_coords[v], -headD+halflength);
       vertex = translate + rot * vertex1;
 
       //Read triangle vertex, normal
@@ -1330,10 +1294,10 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
       int vertex_index = getVertexIdx(draw);
 
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = translate + rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD+halflength);
+      Vec3d vertex1 = translate + rot * Vec3d(head_radius * drawstate.x_coords[v], head_radius * drawstate.y_coords[v], -headD+halflength);
 
       //Calculate normal at base
-      Vec3d normal1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], 0);
+      Vec3d normal1 = rot * Vec3d(head_radius * drawstate.x_coords[v], head_radius * drawstate.y_coords[v], 0);
       normal1.normalise();
 
       //Duplicate pinnacle vertex as each facet needs a different normal
@@ -1371,7 +1335,7 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
     {
       int vertex_index = getVertexIdx(draw);
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = rot * Vec3d(head_radius * x_coords_[v], head_radius * y_coords_[v], -headD+halflength);
+      Vec3d vertex1 = rot * Vec3d(head_radius * drawstate.x_coords[v], head_radius * drawstate.y_coords[v], -headD+halflength);
 
       vertex1 = translate + vertex1;
 
@@ -1576,7 +1540,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   if (radii.y < 0) radii.y = -radii.y;
   if (radii.z < 0) radii.z = -radii.z;
   if (segment_count < 0) segment_count = -segment_count;
-  calcCircleCoords(segment_count);
+  drawstate.cacheCircleCoords(segment_count);
 
   std::vector<unsigned int> indices;
   for (j=0; j<segment_count/2; j++)
@@ -1587,7 +1551,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       int vertex_index = getVertexIdx(draw);
       // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
       int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
-      edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
+      edge = Vec3d(drawstate.y_coords[circ_index] * drawstate.y_coords[i], drawstate.x_coords[circ_index], drawstate.y_coords[circ_index] * drawstate.x_coords[i]);
       pos = centre + rot * (radii * edge);
 
       tex[0] = i/(float)segment_count;
@@ -1601,7 +1565,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
-      edge = Vec3d(y_coords_[circ_index] * y_coords_[i], x_coords_[circ_index], y_coords_[circ_index] * x_coords_[i]);
+      edge = Vec3d(drawstate.y_coords[circ_index] * drawstate.y_coords[i], drawstate.x_coords[circ_index], drawstate.y_coords[circ_index] * drawstate.x_coords[i]);
       pos = centre + rot * (radii * edge);
 
       tex[0] = i/(float)segment_count;

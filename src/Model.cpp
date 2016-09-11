@@ -1540,9 +1540,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
       for (int c=0; c<3; c++)
       {
         if (ISFINITE(data[i]->min[c])) min[c] = data[i]->min[c];
-        else data[i]->min[c] = Geometry::min[c];
+        else data[i]->min[c] = state.drawstate.min[c];
         if (ISFINITE(data[i]->max[c])) max[c] = data[i]->max[c];
-        else data[i]->max[c] = Geometry::max[c];
+        else data[i]->max[c] = state.drawstate.max[c];
 
       }
 

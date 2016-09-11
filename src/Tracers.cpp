@@ -96,7 +96,7 @@ void Tracers::update()
     int end = datasteps-1;
     int start = end - range + 1;
     if (start < 0) start = 0;
-    debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d max %d)\n", particles, start, end, timesteps, datasteps, max);
+    debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d)\n", particles, start, end, timesteps, datasteps);
 
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;

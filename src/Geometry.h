@@ -62,8 +62,6 @@ typedef struct
 //Types based on triangle renderer
 #define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
-extern float *x_coords_, *y_coords_;  // Saves arrays of x,y points on circle for set segment count
-
 // Point indices + distance for sorting
 typedef struct
 {
@@ -234,7 +232,6 @@ protected:
 public:
   DrawState& drawstate;
   //Store the actual maximum bounding box
-  static float min[3], max[3], dims[3];
   bool allhidden, internal, unscale;
   Vec3d iscale; //Factors for un-scaling
   lucGeometryType type;   //Holds the object type
