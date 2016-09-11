@@ -29,13 +29,8 @@ public:
   Volumes* volumes;
 
 //TimeStep
-  //std::vector<TimeStep*> timesteps; //Active model timesteps
-  //int gap;
   std::vector<Geometry*> fixed;     //Static geometry
   int cachesize;
-
-//Shaders
-  std::string path;
 
 //OpenGLViewer
   int idle;
@@ -58,15 +53,8 @@ public:
     shapes = NULL;
     volumes = NULL;
 
-    //timesteps; //Active model timesteps
-    //gap = 0;
     cachesize = 0;
     now = -1;
-
-    path = "";
-#ifdef SHADER_PATH
-    path = SHADER_PATH;
-#endif
 
     idle = 0;
     displayidle = 0;

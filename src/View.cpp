@@ -36,9 +36,7 @@
 #include "View.h"
 #include "Model.h"
 
-Camera* View::globalcam = NULL;
-
-View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : properties(drawstate.globals, drawstate.defaults)
+View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : drawstate(drawstate), properties(drawstate.globals, drawstate.defaults)
 {
   // default view params
   near_clip = nearc;       //Near clip plane
@@ -482,14 +480,14 @@ void View::apply(bool use_fp)
   int orientation = properties["coordsystem"];
   if (properties["globalcam"])
   {
-    if (!globalcam) 
-      globalcam = new Camera(localcam);
+    if (!drawstate.globalcam) 
+      drawstate.globalcam = new Camera(localcam);
 
     //Global camera override
-    rotate_centre = globalcam->rotate_centre;
-    focal_point = globalcam->focal_point;
-    model_trans = globalcam->model_trans;
-    rotation = &globalcam->rotation;
+    rotate_centre = drawstate.globalcam->rotate_centre;
+    focal_point = drawstate.globalcam->focal_point;
+    model_trans = drawstate.globalcam->model_trans;
+    rotation = &drawstate.globalcam->rotation;
   }
   else
   {
