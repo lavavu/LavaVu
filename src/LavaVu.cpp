@@ -408,8 +408,6 @@ void LavaVu::defaults()
   state.drawstate.defaults["filestep"] = false;
   // | global | boolean | Turn on to set initial state of all loaded objects to hidden
   state.drawstate.defaults["hideall"] = false;
-  // | global | boolean | Set to enable image serving to browser
-  state.drawstate.defaults["renderserver"] = false;
   // | global | colour | Background colour RGB(A)
   state.drawstate.defaults["background"] = {0, 0, 0, 255};
   // | global | boolean | Disables initial loading of object data from database, only object names loaded, use the "load" command to subsequently load selected object data
@@ -559,7 +557,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'q':
         //Web server JPEG quality
         ss >> Server::quality;
-        if (Server::quality > 0) state.drawstate.globals["renderserver"] = true;
+        if (Server::quality > 0) Server::render = true;
         break;
       case 'n':
         //Web server threads

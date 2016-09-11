@@ -34,6 +34,7 @@ protected:
 public:
   static int port, threads, quality;
   static std::string htmlpath;
+  static bool render;
 
   unsigned char* jpeg;
   int jpeg_bytes;

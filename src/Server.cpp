@@ -18,6 +18,7 @@ Server* Server::_self = NULL; //Static
 int Server::port = 8080;
 int Server::quality = 90;
 int Server::threads = 2;
+bool Server::render = false;
 std::string Server::htmlpath = "html";
 
 Server* Server::Instance(OpenGLViewer* viewer)
@@ -102,8 +103,7 @@ bool Server::compare(GLubyte* image)
 void Server::display()
 {
   //Image serving can be disabled by global prop
-  return;
-  //if (!ctx || !Properties::global("renderserver")) return;
+  if (!ctx || !render) return;
   if (quality == 0) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data
@@ -335,6 +335,11 @@ int Server::request(struct mg_connection *conn)
     OpenGLViewer::commands.push_back("mouse " + data);
     _self->viewer->postdisplay = true;
     pthread_mutex_unlock(&_self->viewer->cmd_mutex);
+  }
+  else if (strstr(request_info->uri, "/rendermode") != NULL)
+  {
+    //Enable/disable image serving
+    Server::render = !Server::render;
   }
   else
   {
