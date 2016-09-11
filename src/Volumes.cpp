@@ -37,7 +37,7 @@
 
 Shader* Volumes::prog = NULL;
 
-Volumes::Volumes() : Geometry()
+Volumes::Volumes(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucVolumeType;
 }

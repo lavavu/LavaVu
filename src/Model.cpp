@@ -36,10 +36,6 @@
 //Model class
 #include "Model.h"
 
-std::vector<TimeStep*> TimeStep::timesteps; //Active model timesteps
-int TimeStep::gap = 0;  //Here for now, probably should be in separate TimeStep.cpp
-int TimeStep::cachesize = 0;
-
 Model::Model(State& state) : state(state), readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
@@ -96,15 +92,15 @@ void Model::init()
 {
   //Create new geometry containers
   state.geometry.resize(lucMaxType);
-  state.geometry[lucLabelType] = state.labels = new Geometry();
-  state.geometry[lucPointType] = state.points = new Points();
-  state.geometry[lucVectorType] = state.vectors = new Vectors();
-  state.geometry[lucTracerType] = state.tracers = new Tracers();
-  state.geometry[lucGridType] = state.quadSurfaces = new QuadSurfaces(true);
-  state.geometry[lucVolumeType] = state.volumes = new Volumes();
-  state.geometry[lucTriangleType] = state.triSurfaces = new TriSurfaces(true);
-  state.geometry[lucLineType] = state.lines = new Lines();
-  state.geometry[lucShapeType] = state.shapes = new Shapes();
+  state.geometry[lucLabelType] = state.labels = new Geometry(state.drawstate);
+  state.geometry[lucPointType] = state.points = new Points(state.drawstate);
+  state.geometry[lucVectorType] = state.vectors = new Vectors(state.drawstate);
+  state.geometry[lucTracerType] = state.tracers = new Tracers(state.drawstate);
+  state.geometry[lucGridType] = state.quadSurfaces = new QuadSurfaces(state.drawstate, true);
+  state.geometry[lucVolumeType] = state.volumes = new Volumes(state.drawstate);
+  state.geometry[lucTriangleType] = state.triSurfaces = new TriSurfaces(state.drawstate, true);
+  state.geometry[lucLineType] = state.lines = new Lines(state.drawstate);
+  state.geometry[lucShapeType] = state.shapes = new Shapes(state.drawstate);
   debug_print("Created %d new geometry containers\n", state.geometry.size());
 
   for (unsigned int i=0; i < state.geometry.size(); i++)
@@ -612,9 +608,9 @@ int Model::loadTimeSteps(bool scan)
   basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
 
   //Don't reload timesteps when data has been cached
-  if (TimeStep::cachesize > 0 && timesteps.size() > 0) return timesteps.size();
+  if (state.cachesize > 0 && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
-  TimeStep::gap = 0;
+  state.drawstate.gap = 0;
   int rows = 0;
   int last_step = 0;
 
@@ -628,7 +624,7 @@ int Model::loadTimeSteps(bool scan)
       double time = sqlite3_column_double(statement, 1);
       addTimeStep(step, time);
       //Save gap
-      if (step - last_step > TimeStep::gap) TimeStep::gap = step - last_step;
+      if (step - last_step > state.drawstate.gap) state.drawstate.gap = step - last_step;
       last_step = step;
 
       //Look for additional db file (minimum 3 digit padded step in names)
@@ -675,7 +671,7 @@ int Model::loadTimeSteps(bool scan)
 
   //Copy to static for use in Tracers etc
   if (infostream) std::cerr << timesteps.size() << " timesteps loaded\n";
-  TimeStep::timesteps = timesteps;
+  state.drawstate.timesteps = timesteps;
   return timesteps.size();
 }
 
@@ -830,18 +826,18 @@ bool Model::issue(const char* SQL, sqlite3* odb)
 void Model::freeze()
 {
   //Freeze fixed geometry
-  TimeStep::freeze(state.geometry);
+  state.fixed = state.geometry;
 
   //Need new geometry containers after freeze
   //(Or new data will be appended to the frozen containers!)
   init();
   if (timesteps.size() == 0) addTimeStep();
-  timesteps[state.now]->loadFixed(state.geometry);
+  state.loadFixed();
 }
 
 void Model::deleteCache()
 {
-  if (TimeStep::cachesize == 0) return;
+  if (state.cachesize == 0) return;
   debug_print("~~~ Cache emptied\n");
   //cache.clear();
 }
@@ -849,7 +845,7 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (TimeStep::cachesize == 0 || state.now < 0 || (int)timesteps.size() <= state.now) return;
+  if (state.cachesize == 0 || state.now < 0 || (int)timesteps.size() <= state.now) return;
   if (timesteps[state.now]->cache.size() > 0) return; //Already cached this step
 
   printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), state.now, file.base.c_str(), membytes__/1000000.0f);
@@ -883,7 +879,7 @@ void Model::cacheStep()
 
 bool Model::restoreStep()
 {
-  if (state.now < 0 || TimeStep::cachesize == 0) return false;
+  if (state.now < 0 || state.cachesize == 0) return false;
   if (timesteps[state.now]->cache.size() == 0)
     return false; //Nothing cached this step
 
@@ -968,10 +964,10 @@ int Model::setTimeStep(int stepidx)
   bool first = (state.now < 0);
 
   //Cache currently loaded data
-  if (TimeStep::cachesize > 0) cacheStep();
+  if (state.cachesize > 0) cacheStep();
 
   //Set the new timestep index
-  TimeStep::timesteps = timesteps; //Set to current model timestep vector
+  state.drawstate.timesteps = timesteps; //Set to current model timestep vector
   state.now = stepidx;
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
@@ -989,7 +985,7 @@ int Model::setTimeStep(int stepidx)
 
     //Import fixed data first
     if (state.now > 0) 
-      timesteps[state.now]->loadFixed(state.geometry);
+      state.loadFixed();
 
     //Attempt to load from cache first
     //if (restoreStep(state.now)) return 0; //Cache hit successful return value
@@ -998,7 +994,7 @@ int Model::setTimeStep(int stepidx)
       //Detach any attached db file and attach n'th timestep database if available
       attach(state.now);
 
-      if (TimeStep::cachesize > 0)
+      if (state.cachesize > 0)
         //Attempt caching all geometry from database at start
         rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
       else

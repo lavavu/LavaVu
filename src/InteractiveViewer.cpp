@@ -786,8 +786,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    TimeStep::cachesize = ival;
-    printMessage("Geometry cache set to %d timesteps", TimeStep::cachesize);
+    state.cachesize = ival;
+    printMessage("Geometry cache set to %d timesteps", state.cachesize);
   }
   else if (parsed.exists("verbose"))
   {
@@ -1539,7 +1539,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Default to writing from current to final step
-    int end = TimeStep::timesteps[TimeStep::timesteps.size()-1]->step;
+    int end = state.drawstate.timesteps[state.drawstate.timesteps.size()-1]->step;
     if (parsed.has(ival, "images"))
       end = ival;
 

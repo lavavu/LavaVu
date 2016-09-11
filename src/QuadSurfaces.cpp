@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-QuadSurfaces::QuadSurfaces(bool flat2Dflag) : TriSurfaces()
+QuadSurfaces::QuadSurfaces(DrawState& drawstate, bool flat2Dflag) : TriSurfaces(drawstate)
 {
   type = lucGridType;
   flat2d = flat2Dflag;

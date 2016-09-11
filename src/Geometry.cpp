@@ -42,7 +42,6 @@ float Geometry::dims[3];
 std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
 float *x_coords_ = NULL, *y_coords_ = NULL;  // Saves arrays of x,y points on circle for set segment count
 int segments__ = 0;    // Saves segment count for circle based objects
-std::vector<Geometry*> TimeStep::fixed; //Defined here as no TimeStep.cpp
 
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
@@ -302,7 +301,8 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
   return fv ? fv->value[idx] : HUGE_VALF;
 }
 
-Geometry::Geometry() : view(NULL), elements(-1), flat2d(false),
+Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate), 
+                       view(NULL), elements(-1), flat2d(false),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true)
 {

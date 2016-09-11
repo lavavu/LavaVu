@@ -37,7 +37,7 @@
 
 Shader* TriSurfaces::prog = NULL;
 
-TriSurfaces::TriSurfaces(bool flat2Dflag) : Geometry()
+TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(drawstate)
 {
   type = lucTriangleType;
   tricount = 0;
