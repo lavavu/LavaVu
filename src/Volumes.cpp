@@ -35,8 +35,6 @@
 
 #include "Geometry.h"
 
-Shader* Volumes::prog = NULL;
-
 Volumes::Volumes(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucVolumeType;
@@ -85,7 +83,7 @@ void Volumes::draw()
     {
       current = geom[i]->draw;
 
-      setState(i, prog); //Set draw state settings for this object
+      setState(i, drawstate.prog[lucVolumeType]); //Set draw state settings for this object
       render(i);
 
       GL_Error_Check;
@@ -273,8 +271,8 @@ void Volumes::render(int i)
                    geom[i]->vertices[1][2] - geom[i]->vertices[0][2]
                   };
 
-  assert(prog);
   GL_Error_Check;
+  Shader* prog = drawstate.prog[lucVolumeType];
 
   //Uniform variables
   Properties& props = geom[i]->draw->properties;

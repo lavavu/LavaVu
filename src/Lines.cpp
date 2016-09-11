@@ -35,8 +35,6 @@
 
 #include "Geometry.h"
 
-Shader* Lines::prog = NULL;
-
 Lines::Lines(DrawState& drawstate, bool all2Dflag) : Geometry(drawstate)
 {
   type = lucLineType;
@@ -251,7 +249,7 @@ void Lines::draw()
       if (drawable(i) && props.getBool("flat", true) && !props["tubes"])
       {
         //Set draw state
-        setState(i, prog);
+        setState(i, drawstate.prog[lucLineType]);
 
         //Lines specific state
         float scaling = props["scalelines"];

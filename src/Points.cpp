@@ -36,10 +36,6 @@
 #include "GraphicsUtil.h"
 #include "Geometry.h"
 
-Shader* Points::prog = NULL;
-GLuint Points::indexvbo = 0;
-GLuint Points::vbo = 0;
-
 Points::Points(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucPointType;
@@ -53,17 +49,17 @@ Points::~Points()
 
 void Points::close()
 {
-  if (vbo)
-    glDeleteBuffers(1, &vbo);
-  if (indexvbo)
-    glDeleteBuffers(1, &indexvbo);
+  if (drawstate.pvbo)
+    glDeleteBuffers(1, &drawstate.pvbo);
+  if (drawstate.pindexvbo)
+    glDeleteBuffers(1, &drawstate.pindexvbo);
   if (pidx)
     delete[] pidx;
   if (swap)
     delete[] swap;
 
-  vbo = 0;
-  indexvbo = 0;
+  drawstate.pvbo = 0;
+  drawstate.pindexvbo = 0;
   pidx = swap = NULL;
 
   Geometry::close();
@@ -93,7 +89,7 @@ void Points::update()
     if (!hiddencache[i]) drawelements += geom[i]->count; //Count drawable
   }
 
-  //Ensure vbo recreated if total changed
+  //Ensure drawstate.pvbo recreated if total changed
   if (elements < 0 || total != last_total)
     //if (true)
   {
@@ -131,13 +127,13 @@ void Points::loadVertices()
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
-  if (!vbo) glGenBuffers(1, &vbo);
+  if (!drawstate.pvbo) glGenBuffers(1, &drawstate.pvbo);
 
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
   //Initialise point buffer
-  if (glIsBuffer(vbo))
+  if (glIsBuffer(drawstate.pvbo))
   {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
     glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_STREAM_DRAW);
     debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
   }
@@ -147,14 +143,14 @@ void Points::loadVertices()
   GL_Error_Check;
 
   unsigned char *p = NULL, *ptr = NULL;
-  if (glIsBuffer(vbo))
+  if (glIsBuffer(drawstate.pvbo))
   {
     ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     GL_Error_Check;
     if (!p) abort_program("glMapBuffer failed");
   }
   else ptr = NULL;
-  //else abort_program("vbo fail");
+  //else abort_program("drawstate.pvbo fail");
 
 //////////////////////////////////////////////////
   t1 = clock();
@@ -228,7 +224,7 @@ void Points::loadVertices()
 
   }
   t2 = clock();
-  debug_print("  %.4lf seconds to update particles into sort array and vbo\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to update particles into sort array and drawstate.pvbo\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
   if (ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -297,15 +293,15 @@ void Points::render()
   tt = t1 = clock();
 
   // Index buffer object for quick display
-  if (!indexvbo)
-    glGenBuffers(1, &indexvbo);
+  if (!drawstate.pindexvbo)
+    glGenBuffers(1, &drawstate.pindexvbo);
 
   //Always set data size again in case changed
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawstate.pindexvbo);
   GL_Error_Check;
   //Initialise particle buffer
   int subSample = Properties::global("pointsubsample");
-  if (glIsBuffer(indexvbo))
+  if (glIsBuffer(drawstate.pindexvbo))
   {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_STATIC_DRAW);
@@ -394,6 +390,7 @@ void Points::draw()
   double time;
   GL_Error_Check;
 
+  Shader* prog = drawstate.prog[lucPointType];
   setState(0, prog); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
@@ -432,9 +429,9 @@ void Points::draw()
   int stride = 3 * sizeof(float) + sizeof(Colour);
   if (Properties::global("pointattribs"))
     stride += 2 * sizeof(float);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-  if (elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
+  glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawstate.pindexvbo);
+  if (elements > 0 && glIsBuffer(drawstate.pvbo) && glIsBuffer(drawstate.pindexvbo))
   {
     //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
     glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only

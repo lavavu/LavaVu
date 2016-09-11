@@ -923,7 +923,7 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
         //Some internal geom is pre-scaled by any global scaling factors to avoid distortion,
         //so we need to undo scaling before applying to bounding box.
         float* arr = (float*)data;
-        static std::array<float,3> unscaled;
+        std::array<float,3> unscaled;
         unscaled = {arr[0]*iscale[0], arr[1]*iscale[1], arr[2]*iscale[2]};
         geomdata->checkPointMinMax(unscaled.data());
       }

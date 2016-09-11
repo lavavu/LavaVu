@@ -1787,33 +1787,33 @@ void LavaVu::open(int width, int height)
 void LavaVu::reloadShaders()
 {
   //Point shaders
-  if (Points::prog) delete Points::prog;
-  Points::prog = new Shader("pointShader.vert", "pointShader.frag");
+  if (state.drawstate.prog[lucPointType]) delete state.drawstate.prog[lucPointType];
+  state.drawstate.prog[lucPointType] = new Shader("pointShader.vert", "pointShader.frag");
   const char* pUniforms[14] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", "uTextured", "uTexture", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
-  Points::prog->loadUniforms(pUniforms, 14);
+  state.drawstate.prog[lucPointType]->loadUniforms(pUniforms, 14);
   const char* pAttribs[2] = {"aSize", "aPointType"};
-  Points::prog->loadAttribs(pAttribs, 2);
+  state.drawstate.prog[lucPointType]->loadAttribs(pAttribs, 2);
 
   //Line shaders
-  if (Lines::prog) delete Lines::prog;
-  Lines::prog = new Shader("lineShader.vert", "lineShader.frag");
+  if (state.drawstate.prog[lucLineType]) delete state.drawstate.prog[lucLineType];
+  state.drawstate.prog[lucLineType] = new Shader("lineShader.vert", "lineShader.frag");
   const char* lUniforms[6] = {"uOpacity", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation"};
-  Lines::prog->loadUniforms(lUniforms, 6);
+  state.drawstate.prog[lucLineType]->loadUniforms(lUniforms, 6);
 
   //Triangle shaders
-  if (TriSurfaces::prog) delete TriSurfaces::prog;
-  TriSurfaces::prog = new Shader("triShader.vert", "triShader.frag");
+  if (state.drawstate.prog[lucTriangleType]) delete state.drawstate.prog[lucTriangleType];
+  state.drawstate.prog[lucTriangleType] = new Shader("triShader.vert", "triShader.frag");
   const char* tUniforms[13] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
-  TriSurfaces::prog->loadUniforms(tUniforms, 13);
-  QuadSurfaces::prog = TriSurfaces::prog;
+  state.drawstate.prog[lucTriangleType]->loadUniforms(tUniforms, 13);
+  state.drawstate.prog[lucGridType] = state.drawstate.prog[lucTriangleType];
 
   //Volume ray marching shaders
-  if (Volumes::prog) delete Volumes::prog;
-  Volumes::prog = new Shader("volumeShader.vert", "volumeShader.frag");
+  if (state.drawstate.prog[lucVolumeType]) delete state.drawstate.prog[lucVolumeType];
+  state.drawstate.prog[lucVolumeType] = new Shader("volumeShader.vert", "volumeShader.frag");
   const char* vUniforms[24] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange", "uDenMinMax"};
-  Volumes::prog->loadUniforms(vUniforms, 24);
+  state.drawstate.prog[lucVolumeType]->loadUniforms(vUniforms, 24);
   const char* vAttribs[1] = {"aVertexPosition"};
-  Volumes::prog->loadAttribs(vAttribs, 1);
+  state.drawstate.prog[lucVolumeType]->loadAttribs(vAttribs, 1);
 }
 
 void LavaVu::resize(int new_width, int new_height)
