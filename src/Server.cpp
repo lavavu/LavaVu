@@ -102,7 +102,8 @@ bool Server::compare(GLubyte* image)
 void Server::display()
 {
   //Image serving can be disabled by global prop
-  if (!ctx || !Properties::global("renderserver")) return;
+  return;
+  //if (!ctx || !Properties::global("renderserver")) return;
   if (quality == 0) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data

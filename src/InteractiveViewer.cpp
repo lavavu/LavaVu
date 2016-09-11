@@ -816,7 +816,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Use this to load multiple volumes as timesteps into the same object
-    volume = new DrawingObject("volume");
+    volume = new DrawingObject(state.drawstate, "volume");
     printMessage("Created static volume object");
   }
   else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
@@ -830,13 +830,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    float opacity = Properties::global("opacity");
+    float opacity = state.drawstate.global("opacity");
     if (opacity == 0.0) opacity = 1.0;
     if (fval > 1.0)
       opacity = fval / 255.0;
     else
       opacity = fval;
-    Properties::globals["opacity"] = opacity;
+    state.drawstate.globals["opacity"] = opacity;
     printMessage("Set global opacity to %.2f", opacity);
     if (amodel)
       amodel->redraw(true);
@@ -1660,10 +1660,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
-    else if (Properties::defaults.count(what) > 0 && Properties::global(what).is_boolean())
+    else if (state.drawstate.defaults.count(what) > 0 && state.drawstate.global(what).is_boolean())
     {
-      bool current = Properties::global(what);
-      Properties::global(what) = !current;
+      bool current = state.drawstate.global(what);
+      state.drawstate.global(what) = !current;
       amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
@@ -1956,8 +1956,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Remove any existing fixed bounds
     aview->properties.data.erase("min");
     aview->properties.data.erase("max");
-    Properties::globals.erase("min");
-    Properties::globals.erase("max");
+    state.drawstate.globals.erase("min");
+    state.drawstate.globals.erase("max");
     //Update the viewports and recalc bounding box
     resetViews();
     //Update fixed bounds
@@ -2202,7 +2202,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (data.is_string())
         {
           //Convert to colour values using colourmap parser
-          ColourMap cmap;
+          ColourMap cmap(state.drawstate);
           cmap.parse(data);
           data = json::array();
           for (unsigned int i=0; i<cmap.colours.size(); i++)
@@ -2267,13 +2267,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (what == "all")
     {
       int pt = 1;
-      if (Properties::globals.count("pointtype") > 0)
-        pt = Properties::globals["pointtype"];
+      if (state.drawstate.globals.count("pointtype") > 0)
+        pt = state.drawstate.globals["pointtype"];
       if (parsed.has(ival, "pointtype", 1))
-        Properties::globals["pointtype"] = ival % 5;
+        state.drawstate.globals["pointtype"] = ival % 5;
       else
-        Properties::globals["pointtype"] = (pt+1) % 5;
-      printMessage("Point type %d", (int)Properties::globals["pointtype"]);
+        state.drawstate.globals["pointtype"] = (pt+1) % 5;
+      printMessage("Point type %d", (int)state.drawstate.globals["pointtype"]);
     }
     else
     {
@@ -2312,14 +2312,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     if (parsed.has(ival, "pointsample"))
-      Properties::globals["pointsubsample"] = ival;
+      state.drawstate.globals["pointsubsample"] = ival;
     else if (parsed["pointsample"] == "up")
-      Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") / 2;
+      state.drawstate.globals["pointsubsample"] = (int)state.drawstate.global("pointsubsample") / 2;
     else if (parsed["pointsample"] == "down")
-      Properties::globals["pointsubsample"] = (int)Properties::global("pointsubsample") * 2;
-    if ((int)Properties::global("pointsubsample") < 1) Properties::globals["pointsubsample"] = 1;
+      state.drawstate.globals["pointsubsample"] = (int)state.drawstate.global("pointsubsample") * 2;
+    if ((int)state.drawstate.global("pointsubsample") < 1) state.drawstate.globals["pointsubsample"] = 1;
     state.points->redraw = true;
-    printMessage("Point sampling %d", (int)Properties::global("pointsubsample"));
+    printMessage("Point sampling %d", (int)state.drawstate.global("pointsubsample"));
   }
   else if (parsed.exists("image"))
   {
@@ -2339,7 +2339,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Apply image counter to default filename when multiple images output
       static int imagecounter = 0;
       std::stringstream outpath;
-      std::string title = Properties::global("caption");
+      std::string title = state.drawstate.global("caption");
       outpath << title;
       if (imagecounter > 0)
         outpath <<  "-" << imagecounter;
@@ -2514,15 +2514,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       std::string key = "scale" + what;
       float scale = 1.0;
-      if (Properties::globals.count(key) > 0) scale = Properties::globals[key];
+      if (state.drawstate.globals.count(key) > 0) scale = state.drawstate.globals[key];
       if (parsed.has(fval, "scale", 1))
-        Properties::globals[key] = fval;
+        state.drawstate.globals[key] = fval;
       else if (parsed.get("scale", 1) == "up")
-        Properties::globals[key] = scale * 1.5;
+        state.drawstate.globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
-        Properties::globals[key] = scale / 1.5;
+        state.drawstate.globals[key] = scale / 1.5;
       active->redraw = true;
-      printMessage("%s scaling set to %f", what.c_str(), (float)Properties::globals[key]);
+      printMessage("%s scaling set to %f", what.c_str(), (float)state.drawstate.globals[key]);
     }
     else
     {

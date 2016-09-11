@@ -645,7 +645,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
   {
     prog->use();
     //prog->setUniformf("uOpacity", geom[i]->draw->properties["opacity"]);
-    prog->setUniformf("uOpacity", Properties::global("opacity"));  //Use global opacity only here
+    prog->setUniformf("uOpacity", drawstate.global("opacity"));  //Use global opacity only here
     prog->setUniformi("uLighting", lighting);
     prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
     prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);

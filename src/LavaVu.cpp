@@ -116,7 +116,7 @@ void LavaVu::defaults()
   OpenGLViewer::commands.clear();
 
   //Reset state
-  state = State();
+  //state = State();
 
   axis = new TriSurfaces(state.drawstate);
   rulers = new Lines(state.drawstate);
@@ -162,291 +162,291 @@ void LavaVu::defaults()
   
   //Labels/text
   // | all | string | Font typeface vector/small/fixed/sans/serif
-  Properties::defaults["font"] = "vector";
+  state.drawstate.defaults["font"] = "vector";
   // | all | real | Font scaling, note that only the vector font scales well
-  Properties::defaults["fontscale"] = 1.0;
+  state.drawstate.defaults["fontscale"] = 1.0;
   // | all | colour | Font colour RGB(A)
-  Properties::defaults["fontcolour"] = {0, 0, 0, 0};
+  state.drawstate.defaults["fontcolour"] = {0, 0, 0, 0};
 
   //Object defaults
   // | object | string | Name of object
-  Properties::defaults["name"] = "";
+  state.drawstate.defaults["name"] = "";
   // | object | boolean | Set to false to hide object
-  Properties::defaults["visible"] = true;
+  state.drawstate.defaults["visible"] = true;
   // | object | boolean | Set to true if object remains static regardless of timestep
-  Properties::defaults["static"] = false;
+  state.drawstate.defaults["static"] = false;
   // | object | string | Geometry type to load when adding new data
-  Properties::defaults["geometry"] = "points";
+  state.drawstate.defaults["geometry"] = "points";
   // | object | boolean | Apply lighting to object
-  Properties::defaults["lit"] = true;
+  state.drawstate.defaults["lit"] = true;
   // | object | boolean | Cull back facing polygons of object surfaces
-  Properties::defaults["cullface"] = false;
+  state.drawstate.defaults["cullface"] = false;
   // | object | boolean | Render object surfaces as wireframe
-  Properties::defaults["wireframe"] = false;
+  state.drawstate.defaults["wireframe"] = false;
   // | object | boolean | Renders surfaces as flat shaded, lines/vectors as 2d, faster but no 3d or lighting
-  Properties::defaults["flat"] = false;
+  state.drawstate.defaults["flat"] = false;
   // | object | boolean | Set to false to disable depth test when drawing object so always drawn regardless of 3d position
-  Properties::defaults["depthtest"] = true;
+  state.drawstate.defaults["depthtest"] = true;
   // | object | integer[3] | width/height/depth override for geometry
-  Properties::defaults["dims"] = {0, 0, 0};
+  state.drawstate.defaults["dims"] = {0, 0, 0};
 
   // | object | colour | Object colour RGB(A)
-  Properties::defaults["colour"] = {0, 0, 0, 255};
+  state.drawstate.defaults["colour"] = {0, 0, 0, 255};
   // | object | integer | id of the colourmap to use
-  Properties::defaults["colourmap"] = -1;
+  state.drawstate.defaults["colourmap"] = -1;
   // | object | integer | id of opacity colourmap to use
-  Properties::defaults["opacitymap"] = -1;
+  state.drawstate.defaults["opacitymap"] = -1;
   // | object | real [0,1] | Opacity of object where 0 is transparent and 1 is opaque
-  Properties::defaults["opacity"] = 1.0;
+  state.drawstate.defaults["opacity"] = 1.0;
   // | object | real [-1,1] | Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)
-  Properties::defaults["brightness"] = 0.0;
+  state.drawstate.defaults["brightness"] = 0.0;
   // | object | real [0,2] | Contrast of object from 0 (none, grey) to 2 (max)
-  Properties::defaults["contrast"] = 1.0;
+  state.drawstate.defaults["contrast"] = 1.0;
   // | object | real [0,2] | Saturation of object from 0 (greyscale) to 2 (fully saturated)
-  Properties::defaults["saturation"] = 1.0;
+  state.drawstate.defaults["saturation"] = 1.0;
 
   // | object | real [0,1] | Ambient lighting level (background constant light)
-  Properties::defaults["ambient"] = 0.4;
+  state.drawstate.defaults["ambient"] = 0.4;
   // | object | real [0,1] | Diffuse lighting level (shading light/dark)
-  Properties::defaults["diffuse"] = 0.8;
+  state.drawstate.defaults["diffuse"] = 0.8;
   // | object | real [0,1] | Sepcular highlight lighting level (spot highlights)
-  Properties::defaults["specular"] = 0.0;
+  state.drawstate.defaults["specular"] = 0.0;
 
   // | object | boolean | Allow object to be clipped
-  Properties::defaults["clip"] = true;
+  state.drawstate.defaults["clip"] = true;
   // | object | real [0,1] | Object clipping, minimum x
-  Properties::defaults["xmin"] = -FLT_MAX;
+  state.drawstate.defaults["xmin"] = -FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum y
-  Properties::defaults["ymin"] = -FLT_MAX;
+  state.drawstate.defaults["ymin"] = -FLT_MAX;
   // | object | real [0,1] | Object clipping, minimum z
-  Properties::defaults["zmin"] = -FLT_MAX;
+  state.drawstate.defaults["zmin"] = -FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum x
-  Properties::defaults["xmax"] = FLT_MAX;
+  state.drawstate.defaults["xmax"] = FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum y
-  Properties::defaults["ymax"] = FLT_MAX;
+  state.drawstate.defaults["ymax"] = FLT_MAX;
   // | object | real [0,1] | Object clipping, maximum z
-  Properties::defaults["zmax"] = FLT_MAX;
+  state.drawstate.defaults["zmax"] = FLT_MAX;
   // | object | object | Filter list
-  Properties::defaults["filters"] = json::array();
+  state.drawstate.defaults["filters"] = json::array();
 
   // | object | integer [0,n] | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)
-  Properties::defaults["glyphs"] = 2;
+  state.drawstate.defaults["glyphs"] = 2;
   // | object | real | Object scaling factor
-  Properties::defaults["scaling"] = 1.0;
+  state.drawstate.defaults["scaling"] = 1.0;
   // | object | string | External texture image file path to load and apply to surface or points
-  Properties::defaults["texturefile"] = "";
+  state.drawstate.defaults["texturefile"] = "";
   // | object | integer [0,n] | Index of data set to colour object by (requires colour map)
-  Properties::defaults["colourby"] = 0;
+  state.drawstate.defaults["colourby"] = 0;
 
   // | object(line) | real | Line length limit, can be used to skip drawing line segments that cross periodic boundary
-  Properties::defaults["limit"] = 0;
+  state.drawstate.defaults["limit"] = 0;
   // | object(line) | boolean | To chain line vertices into longer lines set to true
-  Properties::defaults["link"] = false;
+  state.drawstate.defaults["link"] = false;
   // | object(line) | real | Line scaling multiplier, applies to all line objects
-  Properties::defaults["scalelines"] = 1.0;
+  state.drawstate.defaults["scalelines"] = 1.0;
   // | object(line) | real | Line width scaling
-  Properties::defaults["linewidth"] = 1.0;
+  state.drawstate.defaults["linewidth"] = 1.0;
   // | object(line) | boolean | Draw lines as 3D tubes
-  Properties::defaults["tubes"] = false;
+  state.drawstate.defaults["tubes"] = false;
 
   // | object(point) | real | Point size scaling
-  Properties::defaults["pointsize"] = 1.0;
+  state.drawstate.defaults["pointsize"] = 1.0;
   // | object(point) | integer/string | Point type 0/blur, 1/smooth, 2/sphere, 3/shiny, 4/flat
-  Properties::defaults["pointtype"] = 1;
+  state.drawstate.defaults["pointtype"] = 1;
   // | object(point) | real | Point scaling multiplier, applies to all points objects
-  Properties::defaults["scalepoints"] = 1.0;
+  state.drawstate.defaults["scalepoints"] = 1.0;
 
   // | object(surface) | boolean | If opaque flag is set skips depth sorting step and allows individual surface properties to be applied
-  Properties::defaults["opaque"] = false;
+  state.drawstate.defaults["opaque"] = false;
   // | object(surface) | boolean | Disable this flag to skip the mesh optimisation step
-  Properties::defaults["optimise"] = true;
+  state.drawstate.defaults["optimise"] = true;
 
   // | object(volume) | real | Power used when applying transfer function, 1.0=linear mapping
-  Properties::defaults["power"] = 1.0;
+  state.drawstate.defaults["power"] = 1.0;
   // | object(volume) | integer | Number of samples to take per ray cast, higher = better quality, slower
-  Properties::defaults["samples"] = 256;
+  state.drawstate.defaults["samples"] = 256;
   // | object(volume) | real | Density multiplier for volume data
-  Properties::defaults["density"] = 5.0;
+  state.drawstate.defaults["density"] = 5.0;
   // | object(volume) | real | Isovalue for dynamic isosurface
-  Properties::defaults["isovalue"] = 0.0;
+  state.drawstate.defaults["isovalue"] = 0.0;
   // | object(volume) | real [0,1] | Transparency value for isosurface
-  Properties::defaults["isoalpha"] = 0.0;
+  state.drawstate.defaults["isoalpha"] = 0.0;
   // | object(volume) | real | Isosurface smoothing factor for normal calculation
-  Properties::defaults["isosmooth"] = 0.1;
+  state.drawstate.defaults["isosmooth"] = 0.1;
   // | object(volume) | boolean | Connect isosurface enclosed area with walls
-  Properties::defaults["isowalls"] = true;
+  state.drawstate.defaults["isowalls"] = true;
   // | object(volume) | boolean | Apply a tricubic filter for increased smoothness
-  Properties::defaults["tricubicfilter"] = false;
+  state.drawstate.defaults["tricubicfilter"] = false;
   // | object(volume) | real | Minimum density value to map, lower discarded
-  Properties::defaults["dminclip"] = 0.0;
+  state.drawstate.defaults["dminclip"] = 0.0;
   // | object(volume) | real | Maximum density value to map, higher discarded
-  Properties::defaults["dmaxclip"] = 1.0;
+  state.drawstate.defaults["dmaxclip"] = 1.0;
 
   // | object(vector) | real | Arrow head size as a multiple of width
-  Properties::defaults["arrowhead"] = 2.0;
+  state.drawstate.defaults["arrowhead"] = 2.0;
   // | object(vector) | real | Vector scaling multiplier, applies to all vector objects
-  Properties::defaults["scalevectors"] = 1.0;
+  state.drawstate.defaults["scalevectors"] = 1.0;
   // | object(vector) | real | Arrow fixed shaft radius, default is to calculate proportional to length
-  Properties::defaults["radius"] = 0.0;
+  state.drawstate.defaults["radius"] = 0.0;
   // | object(vector) | boolean | Automatically scale vectors based on maximum magnitude
-  Properties::defaults["autoscale"] = false;
+  state.drawstate.defaults["autoscale"] = false;
 
   // | object(tracer) | integer | Number of time steps to trace particle path
-  Properties::defaults["steps"] = 0;
+  state.drawstate.defaults["steps"] = 0;
   // | object(tracer) | boolean | Taper width of tracer arrow up as we get closer to current timestep
-  Properties::defaults["taper"] = true;
+  state.drawstate.defaults["taper"] = true;
   // | object(tracer) | boolean | Fade opacity of tracer arrow in from transparent as we get closer to current timestep
-  Properties::defaults["fade"] = false;
+  state.drawstate.defaults["fade"] = false;
   // | object(tracer) | real | Tracer scaling multiplier, applies to all tracer objects
-  Properties::defaults["scaletracers"] = 1.0;
+  state.drawstate.defaults["scaletracers"] = 1.0;
 
   // | object(shape) | real | Shape width scaling factor
-  Properties::defaults["shapewidth"] = 1.0;
+  state.drawstate.defaults["shapewidth"] = 1.0;
   // | object(shape) | real | Shape height scaling factor
-  Properties::defaults["shapeheight"] = 1.0;
+  state.drawstate.defaults["shapeheight"] = 1.0;
   // | object(shape) | real | Shape length scaling factor
-  Properties::defaults["shapelength"] = 1.0;
+  state.drawstate.defaults["shapelength"] = 1.0;
   // | object(shape) | integer | Shape type: 0=ellipsoid, 1=cuboid
-  Properties::defaults["shape"] = 0;
+  state.drawstate.defaults["shape"] = 0;
   // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
-  Properties::defaults["scaleshapes"] = 1.0;
+  state.drawstate.defaults["scaleshapes"] = 1.0;
 
   // | colourbar | boolean | Indicates object is a colourbar
-  Properties::defaults["colourbar"] = false;
+  state.drawstate.defaults["colourbar"] = false;
   // | colourbar | integer | Align position of colour bar, 1=towards left/bottom, 0=centre, -1=towards right/top
-  Properties::defaults["position"] = 0;
+  state.drawstate.defaults["position"] = 0;
   // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
-  Properties::defaults["align"] = "bottom";
+  state.drawstate.defaults["align"] = "bottom";
   // | colourbar | real [0,1] | Length of colour bar as ratio of screen width or height
-  Properties::defaults["lengthfactor"] = 0.8;
+  state.drawstate.defaults["lengthfactor"] = 0.8;
   // | colourbar | integer | Width of colour bar in pixels
-  Properties::defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
+  state.drawstate.defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
   // | colourbar | integer | Number of additional tick marks to draw besides start and end
-  Properties::defaults["ticks"] = 0;
+  state.drawstate.defaults["ticks"] = 0;
   // | colourbar | float[] | Values of intermediate tick marks
-  Properties::defaults["tickvalues"] = json::array();
+  state.drawstate.defaults["tickvalues"] = json::array();
   // | colourbar | boolean | Set to false to disable drawing of tick values
-  Properties::defaults["printticks"] = true;
+  state.drawstate.defaults["printticks"] = true;
   // | colourbar | string | Units to print with tick values
-  Properties::defaults["units"] = "";
+  state.drawstate.defaults["units"] = "";
   // | colourbar | boolean | Set to true to use scientific exponential notation for tick values
-  Properties::defaults["scientific"] = false;
+  state.drawstate.defaults["scientific"] = false;
   // | colourbar | integer | Number of significant decimal digits to show
-  Properties::defaults["precision"] = 2;
+  state.drawstate.defaults["precision"] = 2;
   // | colourbar | real | Multiplier to scale tick values
-  Properties::defaults["scalevalue"] = 1.0;
+  state.drawstate.defaults["scalevalue"] = 1.0;
   // | colourbar | integer | Border width to draw around colour bar
-  Properties::defaults["border"] = 1.0; //Conflict with global, overridden below
+  state.drawstate.defaults["border"] = 1.0; //Conflict with global, overridden below
 
   // | colourmap | boolean | Set to true to use log scales
-  Properties::defaults["logscale"] = false;
+  state.drawstate.defaults["logscale"] = false;
   // | colourmap | boolean | Set to true to apply colours as discrete values rather than gradient
-  Properties::defaults["discrete"] = false;
+  state.drawstate.defaults["discrete"] = false;
   // | colourmap | colours | Colour list, see [Colour map lists] for more information
-  Properties::defaults["colours"] = "";
+  state.drawstate.defaults["colours"] = "";
   // | colourmap | real[2] | Fixed scale range, default is to automatically calculate range based on data min/max
-  Properties::defaults["range"] = {0.0, 0.0};
+  state.drawstate.defaults["range"] = {0.0, 0.0};
   // | colourmap | boolean | Set to true to lock colourmap ranges to current values
-  Properties::defaults["locked"] = false;
+  state.drawstate.defaults["locked"] = false;
 
   // | view | string | Title to display at top centre of view
-  Properties::defaults["title"] = "";
+  state.drawstate.defaults["title"] = "";
   // | view | integer | When to apply camera auto-zoom to fit model to window, -1=never, 0=first timestep only, 1=every timestep
-  Properties::defaults["zoomstep"] = -1;
+  state.drawstate.defaults["zoomstep"] = -1;
   // | view | integer | Margin in pixels to leave around edge of model when to applying camera auto-zoom
-  Properties::defaults["margin"] = 20; //Also colourbar
+  state.drawstate.defaults["margin"] = 20; //Also colourbar
   // | view | boolean | Draw rulers around object axes
-  Properties::defaults["rulers"] = false;
+  state.drawstate.defaults["rulers"] = false;
   // | view | integer | Number of tick marks to display on rulers
-  Properties::defaults["rulerticks"] = 5;
+  state.drawstate.defaults["rulerticks"] = 5;
   // | view | real | Width of ruler lines
-  Properties::defaults["rulerwidth"] = 1.5;
+  state.drawstate.defaults["rulerwidth"] = 1.5;
   // | view | integer | Border width around model boundary, 0=disabled
-  Properties::defaults["border"] = 1.0;
+  state.drawstate.defaults["border"] = 1.0;
   // | view | boolean | Draw filled background box around model boundary
-  Properties::defaults["fillborder"] = false;
+  state.drawstate.defaults["fillborder"] = false;
   // | view | colour | Colour of model boundary border
-  Properties::defaults["bordercolour"] = "grey";
+  state.drawstate.defaults["bordercolour"] = "grey";
   // | view | boolean | Draw X/Y/Z legend showing model axes orientation
-  Properties::defaults["axis"] = true;
+  state.drawstate.defaults["axis"] = true;
   // | view | real | Axis legend scaling factor
-  Properties::defaults["axislength"] = 0.1;
+  state.drawstate.defaults["axislength"] = 0.1;
   // | view | boolean | Draw a timestep label at top right of view - CURRENTLY NOT IMPLEMENTED
-  Properties::defaults["timestep"] = false;
+  state.drawstate.defaults["timestep"] = false;
   // | view | boolean | Enable multisample anti-aliasing, only works with interactive viewing
-  Properties::defaults["antialias"] = true; //Should be global
+  state.drawstate.defaults["antialias"] = true; //Should be global
   // | view | integer | Apply a shift to object depth sort index by this amount multiplied by id, improves visualising objects drawn at same depth
-  Properties::defaults["shift"] = 0;
+  state.drawstate.defaults["shift"] = 0;
   //View: Camera
   // | view | real[4] | Camera rotation quaternion [x,y,z,w]
-  Properties::defaults["rotate"] = {0., 0., 0., 1.};
+  state.drawstate.defaults["rotate"] = {0., 0., 0., 1.};
   // | view | real[3] | Camera translation [x,y,z]
-  Properties::defaults["translate"] = {0., 0., 0.};
+  state.drawstate.defaults["translate"] = {0., 0., 0.};
   // | view | real[3] | Camera focal point [x,y,z]
-  Properties::defaults["focus"] = {0., 0., 0.};
+  state.drawstate.defaults["focus"] = {0., 0., 0.};
   // | view | real[3] | Global model scaling factors [x,y,z]
-  Properties::defaults["scale"] = {1., 1., 1.};
+  state.drawstate.defaults["scale"] = {1., 1., 1.};
   // | view | real[3] | Global model minimum bounds [x,y,z]
-  Properties::defaults["min"] = {0, 0, 0};
+  state.drawstate.defaults["min"] = {0, 0, 0};
   // | view | real[3] | Global model maximum bounds [x,y,z]
-  Properties::defaults["max"] = {0, 0, 0};
+  state.drawstate.defaults["max"] = {0, 0, 0};
   // | view | real | Near clipping plane position, adjusts where geometry close to the camera is clipped
-  Properties::defaults["near"] = 0.0;
+  state.drawstate.defaults["near"] = 0.0;
   // | view | real | Far clip plane position, adjusts where far geometry is clipped
-  Properties::defaults["far"] = 0.0;
+  state.drawstate.defaults["far"] = 0.0;
   // | view | integer | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed
-  Properties::defaults["coordsystem"] = 1;
+  state.drawstate.defaults["coordsystem"] = 1;
 
   //Global Properties
   // | global | string | Title of window for caption area
-  Properties::defaults["caption"] = APPNAME__;
+  state.drawstate.defaults["caption"] = APPNAME__;
   // | global | integer[2] | Window resolution X,Y
-  Properties::defaults["resolution"] = {1024, 768};
+  state.drawstate.defaults["resolution"] = {1024, 768};
   // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
-  Properties::defaults["cachevolumes"] = false;
+  state.drawstate.defaults["cachevolumes"] = false;
   // | global | boolean | Turn on to automatically add and switch to a new timestep after loading a data file
-  Properties::defaults["filestep"] = false;
+  state.drawstate.defaults["filestep"] = false;
   // | global | boolean | Turn on to set initial state of all loaded objects to hidden
-  Properties::defaults["hideall"] = false;
+  state.drawstate.defaults["hideall"] = false;
   // | global | boolean | Set to enable image serving to browser
-  Properties::defaults["renderserver"] = false;
+  state.drawstate.defaults["renderserver"] = false;
   // | global | colour | Background colour RGB(A)
-  Properties::defaults["background"] = {0, 0, 0, 255};
+  state.drawstate.defaults["background"] = {0, 0, 0, 255};
   // | global | boolean | Disables initial loading of object data from database, only object names loaded, use the "load" command to subsequently load selected object data
-  Properties::defaults["noload"] = false;
+  state.drawstate.defaults["noload"] = false;
   // | global | boolean | Enable rendering points as proper 3d spherical meshes
-  Properties::defaults["pointspheres"] = false;
+  state.drawstate.defaults["pointspheres"] = false;
   // | global | boolean | Enable transparent png output
-  Properties::defaults["pngalpha"] = false;
+  state.drawstate.defaults["pngalpha"] = false;
   // | global | boolean | Enable imported model y/z axis swap
-  Properties::defaults["swapyz"] = false;
+  state.drawstate.defaults["swapyz"] = false;
   // | global | integer | Imported model triangle subdivision level
-  Properties::defaults["trisplit"] = 0;
+  state.drawstate.defaults["trisplit"] = 0;
   // | global | boolean | Enable global camera for all models (default is separate cam for each)
-  Properties::defaults["globalcam"] = false;
+  state.drawstate.defaults["globalcam"] = false;
   // | global | integer | Volume rendering output channels 1 (luminance) 3/4 (rgba)
-  Properties::defaults["volchannels"] = 1;
+  state.drawstate.defaults["volchannels"] = 1;
   // | global | integer[3] | Volume rendering data voxel resolution X Y Z
-  Properties::defaults["volres"] = {256, 256, 256};
+  state.drawstate.defaults["volres"] = {256, 256, 256};
   // | global | real[3] | Volume rendering min bound X Y Z
-  Properties::defaults["volmin"] = {0., 0., 0.};
+  state.drawstate.defaults["volmin"] = {0., 0., 0.};
   // | global | real[3] | Volume rendering max bound X Y Z
-  Properties::defaults["volmax"] = {1., 1., 1.};
+  state.drawstate.defaults["volmax"] = {1., 1., 1.};
   // | global | real[3] | Volume rendering subsampling X Y Z
-  Properties::defaults["volsubsample"] = {1., 1., 1.};
+  state.drawstate.defaults["volsubsample"] = {1., 1., 1.};
   // | global | real[3] | Geometry input scaling X Y Z
-  Properties::defaults["inscale"] = {1., 1., 1.};
+  state.drawstate.defaults["inscale"] = {1., 1., 1.};
   // | global | integer | Point render sub-sampling factor
-  Properties::defaults["pointsubsample"] = 0;
+  state.drawstate.defaults["pointsubsample"] = 0;
   // | global | integer | Point distance sub-sampling factor
-  Properties::defaults["pointdistsample"] = 0;
+  state.drawstate.defaults["pointdistsample"] = 0;
   // | global | boolean | Point size/type attributes can be applied per object (requires more GPU ram)
-  Properties::defaults["pointattribs"] = true;
+  state.drawstate.defaults["pointattribs"] = true;
   // | global | boolean | Point distance size attenuation (points shrink when further from viewer ie: perspective)
-  Properties::defaults["pointattenuate"] = true;
+  state.drawstate.defaults["pointattenuate"] = true;
 
 #ifdef DEBUG
-  //std::cerr << std::setw(2) << Properties::defaults << std::endl;
+  //std::cerr << std::setw(2) << state.drawstate.defaults << std::endl;
 #endif
 }
 
@@ -559,7 +559,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'q':
         //Web server JPEG quality
         ss >> Server::quality;
-        if (Server::quality > 0) Properties::globals["renderserver"] = true;
+        if (Server::quality > 0) state.drawstate.globals["renderserver"] = true;
         break;
       case 'n':
         //Web server threads
@@ -567,13 +567,13 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'r':
         ss >> vars[0] >> x >> vars[1];
-        Properties::globals["resolution"] = json::array({vars[0], vars[1]});
+        state.drawstate.globals["resolution"] = json::array({vars[0], vars[1]});
         break;
       case 'N':
-        Properties::globals["noload"] = true;
+        state.drawstate.globals["noload"] = true;
         break;
       case 'A':
-        Properties::globals["hideall"] = true;
+        state.drawstate.globals["hideall"] = true;
         break;
       case 'v':
         parseCommands("verbose on");
@@ -586,26 +586,26 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 't':
         //Use alpha channel in png output
-        Properties::globals["pngalpha"] = true;
+        state.drawstate.globals["pngalpha"] = true;
         break;
       case 'y':
         //Swap y & z axis on import
-        Properties::globals["swapyz"] = true;
+        state.drawstate.globals["swapyz"] = true;
         break;
       case 'T':
         //Split triangles
         ss >> vars[0];
-        Properties::globals["trisplit"] = vars[0];
+        state.drawstate.globals["trisplit"] = vars[0];
         break;
       case 'C':
         //Global camera
-        Properties::globals["globalcam"] = true;
+        state.drawstate.globals["globalcam"] = true;
         break;
       case 'V':
         {
           float res[3];
           ss >> res[0] >> x >> res[1] >> x >> res[2];
-          Properties::globals["volres"] = {res[0], res[1], res[2]};
+          state.drawstate.globals["volres"] = {res[0], res[1], res[2]};
         }
         break;
       case 'd':
@@ -657,7 +657,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'e':
         //Add new timesteps after loading files
-        Properties::globals["filestep"] = true;
+        state.drawstate.globals["filestep"] = true;
         break;
       default:
         //Attempt to interpret as timestep
@@ -748,11 +748,11 @@ void LavaVu::run(std::vector<std::string> args)
 
           if (writeimage)
           {
-            std::cout << "... Writing image(s) for model/figure " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+            std::cout << "... Writing image(s) for model/figure " << state.drawstate.global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
           }
           if (writemovie)
           {
-            std::cout << "... Writing movie for model/figure " << Properties::global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+            std::cout << "... Writing movie for model/figure " << state.drawstate.global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
             //Other formats?? avi/mpeg4?
             encodeVideo("", writemovie);
           }
@@ -877,7 +877,7 @@ void LavaVu::parseProperty(std::string& data)
   {
     //Properties not found on view are set globally
     aview->properties.parse(data, true);
-    if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
+    if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << state.drawstate.globals << std::endl;
     viewset = 2; //Force check for resize and autozoom
   }
 }
@@ -890,14 +890,14 @@ void LavaVu::printProperties()
   else
   {
     std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
-    std::cerr << "GLOBAL: " << std::setw(2) << Properties::globals << std::endl;
+    std::cerr << "GLOBAL: " << std::setw(2) << state.drawstate.globals << std::endl;
   }
 }
 
 void LavaVu::printDefaultProperties()
 {
   //Show default properties
-  std::cerr << std::setw(2) << Properties::defaults << std::endl;
+  std::cerr << std::setw(2) << state.drawstate.defaults << std::endl;
 }
 
 void LavaVu::readRawVolume(const FilePath& fn)
@@ -906,7 +906,7 @@ void LavaVu::readRawVolume(const FilePath& fn)
 
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
-  if (!vobj) vobj = new DrawingObject(fn.base);
+  if (!vobj) vobj = new DrawingObject(state.drawstate, fn.base);
   addObject(vobj);
 
   std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
@@ -921,9 +921,9 @@ void LavaVu::readRawVolume(const FilePath& fn)
 
   //Define the bounding cube by corners
   float volmin[3], volmax[3], volres[3];
-  Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
-  Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
-  Properties::toFloatArray(Properties::global("volres"), volres, 3);
+  Properties::toFloatArray(state.drawstate.global("volmin"), volmin, 3);
+  Properties::toFloatArray(state.drawstate.global("volmax"), volmax, 3);
+  Properties::toFloatArray(state.drawstate.global("volres"), volres, 3);
   state.volumes->add(vobj);
   state.volumes->read(vobj, 1, lucVertexData, volmin);
   state.volumes->read(vobj, 1, lucVertexData, volmax);
@@ -937,7 +937,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
 
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
-  if (!vobj) vobj = new DrawingObject(fn.base);
+  if (!vobj) vobj = new DrawingObject(state.drawstate, fn.base);
   addObject(vobj);
 
   std::vector<char> buffer;
@@ -1010,7 +1010,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   }
 #endif
   float inscale[3];
-  Properties::toFloatArray(Properties::global("inscale"), inscale, 3);
+  Properties::toFloatArray(state.drawstate.global("inscale"), inscale, 3);
 
   //Scale geometry by input scaling factor
   for (int i=0; i<3; i++)
@@ -1050,17 +1050,17 @@ void LavaVu::readVolumeSlice(const FilePath& fn)
 void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel)
 {
   //Create volume object, or if static volume object exists, use it
-  int outChannels = Properties::global("volchannels");
+  int outChannels = state.drawstate.global("volchannels");
   static int count = 0;
   DrawingObject *vobj = volume;
   if (!vobj)
   {
     float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
-    Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
-    Properties::toFloatArray(Properties::global("volres"), volres, 3);
-    Properties::toFloatArray(Properties::global("inscale"), inscale, 3);
-    vobj = addObject(new DrawingObject(name, "static=1"));
+    Properties::toFloatArray(state.drawstate.global("volmin"), volmin, 3);
+    Properties::toFloatArray(state.drawstate.global("volmax"), volmax, 3);
+    Properties::toFloatArray(state.drawstate.global("volres"), volres, 3);
+    Properties::toFloatArray(state.drawstate.global("inscale"), inscale, 3);
+    vobj = addObject(new DrawingObject(state.drawstate, name, "static=1"));
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
     {
@@ -1188,11 +1188,11 @@ void LavaVu::createDemoVolume()
   if (!vobj)
   {
     float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toFloatArray(Properties::global("volmin"), volmin, 3);
-    Properties::toFloatArray(Properties::global("volmax"), volmax, 3);
-    Properties::toFloatArray(Properties::global("volres"), volres, 3);
-    Properties::toFloatArray(Properties::global("inscale"), inscale, 3);
-    vobj = new DrawingObject("volume", "density=50\n");
+    Properties::toFloatArray(state.drawstate.global("volmin"), volmin, 3);
+    Properties::toFloatArray(state.drawstate.global("volmax"), volmax, 3);
+    Properties::toFloatArray(state.drawstate.global("volres"), volres, 3);
+    Properties::toFloatArray(state.drawstate.global("inscale"), inscale, 3);
+    vobj = new DrawingObject(state.drawstate, "volume", "density=50\n");
     addObject(vobj);
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
@@ -1371,7 +1371,7 @@ void LavaVu::readHeightMap(const FilePath& fn)
   //opacity [0,1]
   DrawingObject *obj;
   std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
-  obj = addObject(new DrawingObject(fn.base, props));
+  obj = addObject(new DrawingObject(state.drawstate, fn.base, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
 
@@ -1482,7 +1482,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   std::string texfile = fn.base + "-texture." + fn.ext;
   DrawingObject *obj;
   std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
-  obj = addObject(new DrawingObject(fn.base, props));
+  obj = addObject(new DrawingObject(state.drawstate, fn.base, props));
 
   Vec3d vertex;
 
@@ -1511,7 +1511,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
 void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
 {
   level--;
-  bool swapY = Properties::global("swapyz");
+  bool swapY = state.drawstate.global("swapyz");
   //float a_b[3], a_c[3], b_c[3];
   //vectorSubtract(a_b, a, b);
   //vectorSubtract(a_c, a, c);
@@ -1569,7 +1569,7 @@ void LavaVu::readOBJ(const FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(fn.base, "static=1\ncolour=[128,128,128]\n"));
+  if (!tobj) tobj = addObject(new DrawingObject(state.drawstate, fn.base, "static=1\ncolour=[128,128,128]\n"));
 
   for (size_t i = 0; i < shapes.size(); i++)
   {
@@ -1620,7 +1620,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     //Can be overridden by setting trisplit (-T#)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
-    int trisplit = Properties::global("trisplit");
+    int trisplit = state.drawstate.global("trisplit");
     if (trisplit == 0)
     {
       GeomData* g = state.triSurfaces->read(tobj, shapes[i].mesh.positions.size()/3, lucVertexData, &shapes[i].mesh.positions[0]);
@@ -1686,7 +1686,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   viewer->title = "Test Pattern";
 
   //Demo colourmap, distance from model origin
-  ColourMap* colourMap = new ColourMap();
+  ColourMap* colourMap = new ColourMap(state.drawstate);
   unsigned int cmid = amodel->addColourMap(colourMap);
   //Colours: hex, abgr
   unsigned int colours[] = {0xff33bb66,0xff00ff00,0xffff3333,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff,0xff000000};
@@ -1694,10 +1694,10 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   colourMap->calibrate(0, size);
 
   //Add colour bar display
-  addObject(new DrawingObject("colour-bar", "colourbar=1\n", cmid));
+  addObject(new DrawingObject(state.drawstate, "colour-bar", "colourbar=1\n", cmid));
 
   //Add points object
-  DrawingObject* obj = addObject(new DrawingObject("particles", "opacity=0.75\nstatic=1\nlit=0\n", cmid));
+  DrawingObject* obj = addObject(new DrawingObject(state.drawstate, "particles", "opacity=0.75\nstatic=1\nlit=0\n", cmid));
   int pointsperswarm = numpoints/4; //4 swarms
   for (int i=0; i < numpoints; i++)
   {
@@ -1717,7 +1717,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   }
 
   //Add lines
-  obj = addObject(new DrawingObject("line-segments", "static=1\nlit=0\n", cmid));
+  obj = addObject(new DrawingObject(state.drawstate, "line-segments", "static=1\nlit=0\n", cmid));
   for (int i=0; i < 50; i++)
   {
     float colour, ref[3];
@@ -1743,7 +1743,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     {
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
-      obj = addObject(new DrawingObject(label, "opacity=0.5\nstatic=1\n"));
+      obj = addObject(new DrawingObject(state.drawstate, label, "opacity=0.5\nstatic=1\n"));
       Colour c;
       c.value = (0xff000000 | 0xff<<(8*i));
       obj->properties.data["colour"] = c.toJson();
@@ -1831,7 +1831,7 @@ void LavaVu::resize(int new_width, int new_height)
   }
 
   //Set resolution
-  //Properties::globals["resolution"] = {new_width, new_height};
+  //state.drawstate.globals["resolution"] = {new_width, new_height};
   aview->properties.data["resolution"] = {new_width, new_height};
 
   amodel->redraw();
@@ -1884,7 +1884,7 @@ void LavaVu::resetViews(bool autozoom)
 
   //Set viewer title
   std::stringstream title;
-  std::string name = Properties::global("caption");
+  std::string name = state.drawstate.global("caption");
   std::string vpt = aview->properties["title"];
   if (vpt.length() > 0)
   {
@@ -2193,7 +2193,7 @@ void LavaVu::drawAxis()
   axis->clear();
   axis->setView(aview);
   static DrawingObject* aobj = NULL;
-  if (!aobj) aobj = new DrawingObject("axis", "wireframe=false\nclip=false\n");
+  if (!aobj) aobj = new DrawingObject(state.drawstate, "axis", "wireframe=false\nclip=false\n");
   if (!aview->hasObject(aobj)) aview->addObject(aobj);
   axis->add(aobj);
 
@@ -2254,7 +2254,7 @@ void LavaVu::drawRulers()
   static DrawingObject* obj = NULL;
   rulers->clear();
   rulers->setView(aview);
-  if (!obj) obj = new DrawingObject("rulers", "wireframe=false\nclip=false\nlit=false");
+  if (!obj) obj = new DrawingObject(state.drawstate, "rulers", "wireframe=false\nclip=false\nlit=false");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
@@ -2378,7 +2378,7 @@ void LavaVu::drawBorder()
   static DrawingObject* obj = NULL;
   border->clear();
   border->setView(aview);
-  if (!obj) obj = new DrawingObject("border", "clip=false\n");
+  if (!obj) obj = new DrawingObject(state.drawstate, "border", "clip=false\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
   if (!aview->is3d) obj->properties.data["depthtest"] = false;
@@ -2686,8 +2686,8 @@ bool LavaVu::loadFile(const std::string& file)
     if (initfigure != 0) amodel->loadFigure(initfigure-1);
 
     //Set default window title to model name
-    std::string name = Properties::global("caption");
-    if (name == APPNAME__ && !amodel->memorydb) Properties::global("caption") = amodel->file.base;
+    std::string name = state.drawstate.global("caption");
+    if (name == APPNAME__ && !amodel->memorydb) state.drawstate.global("caption") = amodel->file.base;
 
     //Save path of first sucessfully loaded model
     if (dbpath && viewer->output_path.length() == 0)
@@ -2735,7 +2735,7 @@ bool LavaVu::loadFile(const std::string& file)
   if (!amodel) defaultModel();
 
   //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
-  if (Properties::global("filestep")) parseCommands("newstep");
+  if (state.drawstate.global("filestep")) parseCommands("newstep");
 
   //Load other data by type
   if (fn.type == "dem")
@@ -2810,7 +2810,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
         amodel->setTimeStep(state.now);
       else
         amodel->setTimeStep(amodel->nearestTimeStep(at_timestep));
-      if (verbose) std::cerr << "Loading vis '" << Properties::global("caption") << "', timestep: " << amodel->step() << std::endl;
+      if (verbose) std::cerr << "Loading vis '" << state.drawstate.global("caption") << "', timestep: " << amodel->step() << std::endl;
     }
   }
 
@@ -2841,7 +2841,7 @@ void LavaVu::encodeVideo(std::string filename, int fps)
   {
     if (filename.length() == 0) 
     {
-      filename = Properties::global("caption");
+      filename = state.drawstate.global("caption");
       filename += ".mp4";
     }
     if (filename.length() == 0) filename = "output.mp4";
@@ -2881,7 +2881,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
 
       if (images)
       {
-        std::string title = Properties::global("caption");
+        std::string title = state.drawstate.global("caption");
         std::ostringstream filess;
         filess << title << '-' << std::setw(5) << std::setfill('0') << amodel->step();
         viewer->image(getImageFilename(filess.str()));
@@ -2933,7 +2933,7 @@ std::string LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
   char ext[6];
-  std::string name = Properties::global("caption");
+  std::string name = state.drawstate.global("caption");
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
   if (obj)
@@ -3022,7 +3022,7 @@ std::string LavaVu::web(bool tofile)
 void LavaVu::addObject(std::string name, std::string properties)
 {
   if (!amodel) return;
-  aobject = addObject(new DrawingObject(name));
+  aobject = addObject(new DrawingObject(state.drawstate, name));
   if (properties.length()) setObject(name, properties);
 }
 
@@ -3064,7 +3064,7 @@ int LavaVu::colourMap(std::string name, std::string colours)
   }
 
   //Add a new colourmap if not found
-  ColourMap* cmap = new ColourMap(name.c_str(), 0, 1);
+  ColourMap* cmap = new ColourMap(state.drawstate, name.c_str(), 0, 1);
   cmap->loadPalette(colours);
   amodel->colourMaps.push_back(cmap);
   return amodel->colourMaps.size()-1;

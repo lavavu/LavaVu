@@ -69,7 +69,7 @@ View* Model::defaultView()
   if (views.size() == 0)
   {
     //Default view
-    View* view = new View();
+    View* view = new View(state.drawstate);
     views.push_back(view);
   }
 
@@ -105,7 +105,7 @@ void Model::init()
 
   for (unsigned int i=0; i < state.geometry.size(); i++)
   {
-    bool hideall = Properties::global("hideall");
+    bool hideall = state.drawstate.global("hideall");
     if (hideall)
       state.geometry[i]->hideShowAll(true);
     //Reset static data
@@ -152,7 +152,7 @@ bool Model::loadFigure(int fig)
 
   //Set window caption
   if (fignames[figure].length() > 0)
-    Properties::globals["caption"] = fignames[figure];
+    state.drawstate.globals["caption"] = fignames[figure];
   return true;
 }
 
@@ -316,7 +316,7 @@ unsigned int Model::addColourMap(ColourMap* cmap)
   if (!cmap)
   {
     //Create a default greyscale map
-    cmap = new ColourMap();
+    cmap = new ColourMap(state.drawstate);
     unsigned int colours[] = {0xff000000, 0xffffffff};
     cmap->add(colours, 2);
   }
@@ -373,10 +373,10 @@ void Model::loadWindows()
           max[i] = -FLT_MAX;
       }
 
-      Properties::globals["caption"] = wtitle;
-      Properties::globals["resolution"] = {width, height};
-      Properties::globals["min"] = {min[0], min[1], min[2]};
-      Properties::globals["max"] = {max[0], max[1], max[2]};
+      state.drawstate.globals["caption"] = wtitle;
+      state.drawstate.globals["resolution"] = {width, height};
+      state.drawstate.globals["min"] = {min[0], min[1], min[2]};
+      state.drawstate.globals["max"] = {max[0], max[1], max[2]};
 
       //Link the window viewports, objects & colourmaps
       loadLinks();
@@ -401,7 +401,7 @@ void Model::loadViewports()
     float farc = (float)sqlite3_column_double(statement, 5);
 
     //Create the view object and add to list
-    views.push_back(new View(x, y, nearc, farc));
+    views.push_back(new View(state.drawstate, x, y, nearc, farc));
     debug_print("Loaded viewport at %f,%f\n", x, y);
   }
   sqlite3_finalize(statement);
@@ -482,7 +482,7 @@ void Model::loadObjects()
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
-    DrawingObject* obj = new DrawingObject(otitle, props, -1, object_id);
+    DrawingObject* obj = new DrawingObject(state.drawstate, otitle, props, -1, object_id);
 
     //Convert old colour/opacity from hard coded fields if provided
     int colour = 0x00000000;
@@ -710,7 +710,7 @@ void Model::loadColourMaps()
     int logscale = sqlite3_column_int(statement, 4);
     int discrete = sqlite3_column_int(statement, 5);
     char *props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(cmname, minimum, maximum, props ? props : "");
+    colourMap = new ColourMap(state.drawstate, cmname, minimum, maximum, props ? props : "");
     if (logscale) colourMap->properties.data["logscale"] = true;
     if (discrete) colourMap->properties.data["discrete"] = true;
     colourMaps.push_back(colourMap);
@@ -759,7 +759,7 @@ void Model::loadColourMapsLegacy()
       int discrete = sqlite3_column_int(statement, 4);
       char *props = NULL;
       if (!old) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(cmname ? cmname : idname, minimum, maximum, props ? props : "");
+      colourMap = new ColourMap(state.drawstate, cmname ? cmname : idname, minimum, maximum, props ? props : "");
       colourMaps.push_back(colourMap);
       if (logscale) colourMap->properties.data["logscale"] = true;
       if (discrete) colourMap->properties.data["discrete"] = true;
@@ -1136,7 +1136,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       }
 
       //Create object and set parameters
-      if (type == lucPointType && Properties::global("pointspheres")) type = lucShapeType;
+      if (type == lucPointType && state.drawstate.global("pointspheres")) type = lucShapeType;
       //if (type == lucGridType) type = lucTriangleType;
       active = state.geometry[type];
 
@@ -1615,10 +1615,10 @@ void Model::objectBounds(DrawingObject* draw, float* min, float* max)
 void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 {
   //Write new JSON format objects
-  // - globals are all stored on / sourced from Properties::globals
+  // - globals are all stored on / sourced from state.drawstate.globals
   // - views[] list holds view properies (previously single instance in "options")
   json exported;
-  json properties = Properties::globals;
+  json properties = state.drawstate.globals;
   json cmaps = json::array();
   json outobjects = json::array();
   json outviews = json::array();
@@ -1774,7 +1774,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 void Model::jsonRead(std::string data)
 {
   json imported = json::parse(data);
-  Properties::globals = imported["properties"];
+  state.drawstate.globals = imported["properties"];
   json inviews;
   //If "options" exists (old format) read it as first view properties
   if (imported.count("options") > 0)
@@ -1788,7 +1788,7 @@ void Model::jsonRead(std::string data)
     if (v >= views.size())
     {
       //Insert a view
-      View* view = new View();
+      View* view = new View(state.drawstate);
       views.push_back(view);
       //Insert all objects for now
       view->objects = objects;
@@ -1870,7 +1870,7 @@ void Model::jsonRead(std::string data)
     /*if (i >= objects.size())
     {
       std::string name = inobjects[i]["name"];
-      addObject(new DrawingObject(name));
+      addObject(new DrawingObject(state.drawstate, name));
     }*/
 
     if (i >= inobjects.size())

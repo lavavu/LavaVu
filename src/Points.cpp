@@ -123,7 +123,7 @@ void Points::loadVertices()
 
   // VBO - copy normals/colours/positions to buffer object for quick display
   int datasize;
-  if (Properties::global("pointattribs"))
+  if (drawstate.global("pointattribs"))
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
@@ -178,7 +178,7 @@ void Points::loadVertices()
     //float opacity = props["opacity"];
     //if (opacity > 0.0 && opacity < 1.0) alpha *= opacity;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
-    bool attribs = Properties::global("pointattribs");
+    bool attribs = drawstate.global("pointattribs");
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
@@ -300,7 +300,7 @@ void Points::render()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawstate.pindexvbo);
   GL_Error_Check;
   //Initialise particle buffer
-  int subSample = Properties::global("pointsubsample");
+  int subSample = drawstate.global("pointsubsample");
   if (glIsBuffer(drawstate.pindexvbo))
   {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
@@ -317,7 +317,7 @@ void Points::render()
   if (!ptr) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
   elements = 0;
-  int distSample = Properties::global("pointdistsample");
+  int distSample = drawstate.global("pointdistsample");
   uint32_t SEED;
   for(int i=total-1; i>=0; i--)
   {
@@ -351,7 +351,7 @@ void Points::render()
 
 int Points::getPointType(int index)
 {
-  json& pointtype = Properties::global("pointtype");
+  json& pointtype = drawstate.global("pointtype");
   int ptype = -1;
   if (index != -1)
   {
@@ -410,7 +410,7 @@ void Points::draw()
 
   //Point size distance attenuation (disabled for 2d models)
   float scale0 = (float)geom[0]->draw->properties["scalepoints"] * view->scale2d; //Include 2d scale factor
-  if (view->is3d && Properties::global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
+  if (view->is3d && drawstate.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
   {
     prog->setUniform("uPointScale", scale0 * view->model_size);
     prog->setUniform("uPointDist", 1);
@@ -427,7 +427,7 @@ void Points::draw()
 
   // Draw using vertex buffer object
   int stride = 3 * sizeof(float) + sizeof(Colour);
-  if (Properties::global("pointattribs"))
+  if (drawstate.global("pointattribs"))
     stride += 2 * sizeof(float);
   glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawstate.pindexvbo);
@@ -440,7 +440,7 @@ void Points::draw()
     glEnableClientState(GL_COLOR_ARRAY);
 
     //Generic vertex attributes, "aSize", "aPointType"
-    if (Properties::global("pointattribs"))
+    if (drawstate.global("pointattribs"))
     {
       GLint aSize = 0, aPointType = 0;
       aSize = prog->attribs["aSize"];

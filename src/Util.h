@@ -291,18 +291,15 @@ public:
 class Properties
 {
 public:
-  static json globals;
-  static json defaults;
+  json& globals;
+  json& defaults;
   json data;
 
-  Properties() 
+  Properties(json& globals, json& defaults) : globals(globals), defaults(defaults)
   {
-    defaults["default"] = false; //Fallback value
-    if (globals.is_null()) globals = json::object();
     data = json::object();
   }
 
-  static json& global(const std::string& key);
   static void toFloatArray(const json& val, float* array, unsigned int size);
 
   bool has(const std::string& key);

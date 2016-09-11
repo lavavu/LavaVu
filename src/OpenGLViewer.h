@@ -145,7 +145,8 @@ public:
       glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
     }
     //Update default foreground colour
-    Properties::defaults["colour"] = {inverse.r, inverse.g, inverse.b, 255};
+    if (!app) return;
+    app->state.drawstate.defaults["colour"] = {inverse.r, inverse.g, inverse.b, 255};
   }
 
   void idleReset();

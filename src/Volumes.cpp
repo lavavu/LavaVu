@@ -51,7 +51,7 @@ void Volumes::close()
   //Iterate geom and delete textures
   //"cachevolumes" property allows switching this behaviour off for faster switching
   //requries enough GPU ram to store all volumes
-  if (Properties::global("cachevolumes")) return;
+  if (drawstate.global("cachevolumes")) return;
   for (unsigned int i=0; i<geom.size(); i++)
   {
     if (geom[i]->texIdx >= 0)
