@@ -2456,6 +2456,6 @@ function resizeToWindow() {
 }
 
 function connectWindow() {
-  sendCommand('renderserver=true');
+  requestData('/render');
   window.location.reload();
 }
