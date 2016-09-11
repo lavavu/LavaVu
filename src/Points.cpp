@@ -40,7 +40,7 @@ Shader* Points::prog = NULL;
 GLuint Points::indexvbo = 0;
 GLuint Points::vbo = 0;
 
-Points::Points() : Geometry()
+Points::Points(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucPointType;
   pidx = swap = NULL;

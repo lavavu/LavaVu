@@ -35,11 +35,11 @@
 
 #include "Geometry.h"
 
-Shapes::Shapes() : Geometry()
+Shapes::Shapes(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucShapeType;
   //Create sub-renderers
-  tris = new TriSurfaces();
+  tris = new TriSurfaces(drawstate);
   tris->internal = true;
 }
 

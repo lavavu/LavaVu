@@ -37,7 +37,7 @@
 
 Shader* Lines::prog = NULL;
 
-Lines::Lines(bool all2Dflag)
+Lines::Lines(DrawState& drawstate, bool all2Dflag) : Geometry(drawstate)
 {
   type = lucLineType;
   vbo = 0;
@@ -45,7 +45,7 @@ Lines::Lines(bool all2Dflag)
   all2d = all2Dflag;
   any3d = false;
   //Create sub-renderers
-  tris = new TriSurfaces();
+  tris = new TriSurfaces(drawstate);
   tris->internal = true;
 }
 

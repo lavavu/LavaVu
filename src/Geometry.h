@@ -33,6 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+#include "DrawState.h"
 #include "Util.h"
 #include "GraphicsUtil.h"
 #include "DrawingObject.h"
@@ -214,6 +215,8 @@ struct vertexIdSort
   }
 };
 
+class DrawState;
+
 //Container class for a list of geometry objects
 class Geometry
 {
@@ -229,6 +232,7 @@ protected:
   bool flat2d; //Flag for flat surfaces in 2d
 
 public:
+  DrawState& drawstate;
   //Store the actual maximum bounding box
   static float min[3], max[3], dims[3];
   bool allhidden, internal, unscale;
@@ -237,7 +241,7 @@ public:
   unsigned int total;     //Total entries of all objects in container
   bool redraw;    //Redraw from scratch flag
 
-  Geometry();
+  Geometry(DrawState& drawstate);
   virtual ~Geometry();
 
   void clear(bool all=false); //Called before new data loaded
@@ -315,7 +319,7 @@ public:
   static Shader* prog;
   GLuint indexvbo, vbo;
 
-  TriSurfaces(bool flat2Dflag=false);
+  TriSurfaces(DrawState& drawstate, bool flat2Dflag=false);
   ~TriSurfaces();
   virtual void close();
   virtual void update();
@@ -341,7 +345,7 @@ class Lines : public Geometry
 public:
   static Shader* prog;
   static bool tubes;
-  Lines(bool all2Dflag=false);
+  Lines(DrawState& drawstate, bool all2Dflag=false);
   ~Lines();
   virtual void close();
   virtual void update();
@@ -354,7 +358,7 @@ class Vectors : public Geometry
   Lines* lines;
   TriSurfaces* tris;
 public:
-  Vectors();
+  Vectors(DrawState& drawstate);
   ~Vectors();
   virtual void close();
   virtual void update();
@@ -367,7 +371,7 @@ class Tracers : public Geometry
   Lines* lines;
   TriSurfaces* tris;
 public:
-  Tracers();
+  Tracers(DrawState& drawstate);
   ~Tracers();
   virtual void close();
   virtual void update();
@@ -378,7 +382,7 @@ public:
 class QuadSurfaces : public TriSurfaces
 {
 public:
-  QuadSurfaces(bool flat2Dflag=false);
+  QuadSurfaces(DrawState& drawstate, bool flat2Dflag=false);
   ~QuadSurfaces();
   virtual void update();
   virtual void render();
@@ -390,7 +394,7 @@ class Shapes : public Geometry
 {
   TriSurfaces* tris;
 public:
-  Shapes();
+  Shapes(DrawState& drawstate);
   ~Shapes();
   virtual void close();
   virtual void update();
@@ -406,7 +410,7 @@ public:
   static Shader* prog;
   static GLuint indexvbo, vbo;
 
-  Points();
+  Points(DrawState& drawstate);
   ~Points();
   virtual void init();
   virtual void close();
@@ -428,7 +432,7 @@ public:
   GLuint colourTexture;
   std::map<DrawingObject*, int> slices;
 
-  Volumes();
+  Volumes(DrawState& drawstate);
   ~Volumes();
   virtual void close();
   virtual void update();

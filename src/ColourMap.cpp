@@ -38,6 +38,7 @@
 //Safe log function for scaling
 #define LOG10(val) (val > FLT_MIN ? log10(val) : log10(FLT_MIN))
 
+//This can stay global as never actually modified, if it needs to be then move to State
 int ColourMap::samples = 4096;
 
 std::ostream & operator<<(std::ostream &os, const ColourVal& cv)

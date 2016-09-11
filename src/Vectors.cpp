@@ -35,12 +35,12 @@
 
 #include "Geometry.h"
 
-Vectors::Vectors() : Geometry()
+Vectors::Vectors(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucVectorType;
   //Create sub-renderers
-  lines = new Lines(true); //Only used for 2d lines
-  tris = new TriSurfaces();
+  lines = new Lines(drawstate, true); //Only used for 2d lines
+  tris = new TriSurfaces(drawstate);
   tris->internal = lines->internal = true;
 }
 

@@ -1,8 +1,8 @@
 #ifndef State__
 #define State__
 
+#include "DrawState.h"
 #include "Geometry.h"
-#include "TimeStep.h"
 #include "OutputInterface.h"
 #include "InputInterface.h"
 
@@ -10,6 +10,9 @@
 class State
 {
 public:
+//DrawState
+  DrawState drawstate;
+
 //Model
   int now;
   //Current timestep geometry
@@ -26,9 +29,9 @@ public:
   Volumes* volumes;
 
 //TimeStep
-  std::vector<TimeStep*> timesteps; //Active model timesteps
-  int gap;
-  std::vector<Geometry*> fixed;
+  //std::vector<TimeStep*> timesteps; //Active model timesteps
+  //int gap;
+  std::vector<Geometry*> fixed;     //Static geometry
   int cachesize;
 
 //Shaders
@@ -41,14 +44,6 @@ public:
   std::vector<InputInterface*> inputs; //Additional input attachments
   std::deque<std::string> commands;
   pthread_mutex_t cmd_mutex;
-
-//Properties
-  json globals;
-  json defaults;
-
-//ColourMap
-  int samples;
-  bool lock;
 
   State()
   {
@@ -63,8 +58,8 @@ public:
     shapes = NULL;
     volumes = NULL;
 
-    timesteps; //Active model timesteps
-    gap = 0;
+    //timesteps; //Active model timesteps
+    //gap = 0;
     cachesize = 0;
     now = -1;
 
@@ -77,18 +72,15 @@ public:
     displayidle = 0;
     /* Init mutex */
     pthread_mutex_init(&cmd_mutex, NULL);
-    //Clear static data
-    //inputs.clear();
-    //outputs.clear();
-    //commands.clear();
-
-    defaults["default"] = false; //Fallback value
-    if (globals.is_null()) globals = json::object();
-
-    bool lock = false;
-    int samples = 4096;
   }
 
+  void loadFixed()
+  {
+    //Insert fixed geometry records
+    if (fixed.size() > 0) 
+      for (unsigned int i=0; i<geometry.size(); i++)
+        geometry[i]->insertFixed(fixed[i]);
+  }
 };
 
 #endif // State__

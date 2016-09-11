@@ -59,10 +59,6 @@ LavaVu::LavaVu(std::string binary)
 
   defaultScript = "init.script";
 
-  axis = new TriSurfaces();
-  rulers = new Lines();
-  border = new QuadSurfaces();
-
   //Create the viewer window
   //(Evil platform specific extension handling stuff)
 #if defined _WIN32
@@ -121,6 +117,10 @@ void LavaVu::defaults()
 
   //Reset state
   state = State();
+
+  axis = new TriSurfaces(state.drawstate);
+  rulers = new Lines(state.drawstate);
+  border = new QuadSurfaces(state.drawstate);
 
   initfigure = 0;
   viewset = 0;
@@ -582,7 +582,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         ss >> viewer->outwidth >> x >> viewer->outheight;
         break;
       case 'c':
-        ss >> TimeStep::cachesize;
+        ss >> state.cachesize;
         break;
       case 't':
         //Use alpha channel in png output
@@ -826,7 +826,7 @@ void LavaVu::exportData(lucExportType type, DrawingObject* obj)
 
 void LavaVu::cacheLoad()
 {
-  if (amodel->db && TimeStep::cachesize > 0) //>= amodel->timesteps.size())
+  if (amodel->db && state.cachesize > 0) //>= amodel->timesteps.size())
   {
     debug_print("Caching all geometry data...\n");
     for (unsigned int m=0; m < models.size(); m++)
@@ -2610,8 +2610,8 @@ void LavaVu::drawSceneBlended()
   std::string title = aview->properties["title"];
   //Timestep macro ##
   size_t pos =  title.find("##");
-  if (pos != std::string::npos && TimeStep::timesteps.size() >= state.now)
-    title.replace(pos, 2, std::to_string(TimeStep::timesteps[state.now]->step));
+  if (pos != std::string::npos && state.drawstate.timesteps.size() >= state.now)
+    title.replace(pos, 2, std::to_string(state.drawstate.timesteps[state.now]->step));
   aview->drawOverlay(viewer->inverse, title);
   drawAxis();
 #endif
@@ -2786,7 +2786,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   if (at_timestep >= 0)
   {
     //Cache selected step, then force new timestep set when model changes
-    if (TimeStep::cachesize > 0) amodel->cacheStep();
+    if (state.cachesize > 0) amodel->cacheStep();
     if (amodel->db) state.now = -1; //NOTE: fixed for non-db models or will set initial timestep as -1 instead of 0
   }
 
