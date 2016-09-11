@@ -112,7 +112,7 @@ public:
   float min[3], max[3];
   bool initialised;
 private:
-  static Camera* globalcam;
+  DrawState& drawstate;
   Camera* localcam;
   float* rotate_centre;      // Centre of rotation
   float* focal_point;        // Focal point
