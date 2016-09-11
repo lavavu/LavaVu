@@ -1,3 +1,5 @@
+class DrawState;
+
 #ifndef DrawState__
 #define DrawState__
 
@@ -7,6 +9,10 @@
 class DrawState
 {
 public:
+//Properties
+  json globals;
+  json defaults;
+
 //TimeStep
   std::vector<TimeStep*> timesteps; //Active model timesteps
   int gap;
@@ -22,15 +28,17 @@ public:
 //Points
   GLuint pindexvbo, pvbo;
 
-//Properties
-  json globals;
-  json defaults;
+//View
+  Camera* globalcam = NULL;
 
 //Font?!!
 //
 
   DrawState() : prog()
   {
+    defaults["default"] = false; //Fallback value
+    if (globals.is_null()) globals = json::object();
+
     gap = 0;
 
     for (int i=0; i<3; i++)
@@ -45,12 +53,14 @@ public:
     y_coords = NULL;
     segments = 0;    // Saves segment count for circle based objects
 
-    defaults["default"] = false; //Fallback value
-    if (globals.is_null()) globals = json::object();
-
     pindexvbo = 0;
     pvbo = 0;
+  }
 
+  json& global(const std::string& key)
+  {
+    if (globals.count(key) > 0 && !globals[key].is_null()) return globals[key];
+    return defaults[key];
   }
 
   // Calculates a set of points on a unit circle for a given number of segments

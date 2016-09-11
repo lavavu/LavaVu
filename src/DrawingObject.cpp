@@ -36,10 +36,11 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(std::string name, std::string props, int colourmap, unsigned int id) : dbid(id)
+DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, int colourmap, unsigned int id)
+  : properties(drawstate.globals, drawstate.defaults), dbid(id)
 {
   colourMaps = NULL;
-  skip = Properties::global("noload");
+  skip = drawstate.global("noload");
   //Name set in properties overrides that passed from database
   properties.data["name"] = name;
 

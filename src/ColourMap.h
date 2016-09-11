@@ -38,6 +38,9 @@
 
 #include "Util.h"
 #include "GraphicsUtil.h"
+#include "DrawState.h"
+
+class DrawState;
 
 class ColourVal
 {
@@ -72,7 +75,7 @@ public:
   bool noValues; //Use position data only
   TextureData* texture;
 
-  ColourMap(const char* name="", float min=0, float max=1, std::string props="");
+  ColourMap(DrawState& drawstate, const char* name="", float min=0, float max=1, std::string props="");
   ~ColourMap()
   {
     if (texture) delete texture;

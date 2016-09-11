@@ -66,7 +66,6 @@ typedef enum
 class LavaVu : public ViewerApp
 {
 protected:
-  State state;
   bool verbose, hideall, dbpath;
   std::string defaultScript;
 

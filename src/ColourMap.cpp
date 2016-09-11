@@ -46,9 +46,10 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
   return os << cv.value << " --> " << cv.position << "=" << cv.colour;
 }
 
-ColourMap::ColourMap(const char* name,
+ColourMap::ColourMap(DrawState& drawstate, const char* name,
                      float min, float max, std::string props)
-  : minimum(min), maximum(max),
+  : properties(drawstate.globals, drawstate.defaults),
+    minimum(min), maximum(max),
     calibrated(false), noValues(false)
 {
   precalc = new Colour[samples];

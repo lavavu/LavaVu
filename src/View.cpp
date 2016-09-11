@@ -38,7 +38,7 @@
 
 Camera* View::globalcam = NULL;
 
-View::View(float xf, float yf, float nearc, float farc)
+View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : properties(drawstate.globals, drawstate.defaults)
 {
   // default view params
   near_clip = nearc;       //Near clip plane
@@ -89,7 +89,7 @@ View::View(float xf, float yf, float nearc, float farc)
                              "fontscale", "border", "fillborder", "bordercolour", 
                              "axis", "axislength", "timestep", "antialias", "shift"};
   for (auto key : viewprops)
-    properties.data[key] = Properties::defaults[key];
+    properties.data[key] = drawstate.defaults[key];
 }
 
 View::~View()

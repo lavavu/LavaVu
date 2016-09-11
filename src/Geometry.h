@@ -213,8 +213,6 @@ struct vertexIdSort
   }
 };
 
-class DrawState;
-
 //Container class for a list of geometry objects
 class Geometry
 {

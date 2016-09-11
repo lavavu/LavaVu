@@ -45,6 +45,7 @@ std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachment
 //OpenGLViewer class implementation...
 OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
 {
+  app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;
 
   timer = 0;
@@ -54,8 +55,6 @@ OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(fal
 
   title = "LavaVu";
   output_path = "";
-
-  setBackground();
 
   downsample = 1;
 
@@ -77,6 +76,8 @@ OpenGLViewer::~OpenGLViewer()
 
 void OpenGLViewer::open(int w, int h)
 {
+  setBackground();
+
   //Open window, called before window manager open
   //Set width and height
 
@@ -401,7 +402,7 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
 std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 {
   //Use statics for global props to avoid lookup each time
-  static bool alphapng = !jpeg && Properties::global("alphapng");
+  static bool alphapng = !jpeg && app->state.drawstate.global("alphapng");
   int bpp = alphapng ? 4 : 3;
   int savewidth = width;
   int saveheight = height;

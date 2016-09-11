@@ -36,6 +36,8 @@
 #ifndef ApplicationInterface__
 #define ApplicationInterface__
 
+#include "State.h"
+
 //Mouse/keyboard input definitions
 typedef enum
 {
@@ -58,6 +60,7 @@ typedef struct
 class ApplicationInterface
 {
 public:
+  State state;
 
   virtual void open(int width, int height) = 0;
   virtual void close() = 0;

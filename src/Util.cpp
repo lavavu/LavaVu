@@ -37,9 +37,6 @@
 #include <string.h>
 #include <math.h>
 
-json Properties::globals;
-json Properties::defaults;
-
 FILE* infostream = NULL;
 
 long membytes__ = 0;
@@ -98,12 +95,6 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
     xpath.parse(argv0);
   }
   return xpath.path;
-}
-
-json& Properties::global(const std::string& key)
-{
-  if (globals.count(key) > 0 && !globals[key].is_null()) return globals[key];
-  return defaults[key];
 }
 
 void Properties::toFloatArray(const json& val, float* array, unsigned int size)

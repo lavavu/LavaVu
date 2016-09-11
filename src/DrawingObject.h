@@ -36,9 +36,12 @@
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
 #include "ViewerTypes.h"
+#include "DrawState.h"
 
 #ifndef DrawingObject__
 #define DrawingObject__
+
+class ColourMap;
 
 //Holds parameters for a drawing object
 class DrawingObject
@@ -57,7 +60,7 @@ public:
   //Texture list
   std::vector<TextureLoader*> textures;
 
-  DrawingObject(std::string name="", std::string props="", int colourmap=-1, unsigned int id=0);
+  DrawingObject(DrawState& drawstate, std::string name="", std::string props="", int colourmap=-1, unsigned int id=0);
   ~DrawingObject();
 
   void setup();
