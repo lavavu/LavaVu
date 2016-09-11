@@ -1752,8 +1752,8 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   }
 
   //Set model bounds...
-  //Geometry::checkPointMinMax(min);
-  //Geometry::checkPointMinMax(max);
+  //state.drawstate.checkPointMinMax(min);
+  //state.drawstate.checkPointMinMax(max);
 }
 
 DrawingObject* LavaVu::addObject(DrawingObject* obj)
@@ -1916,7 +1916,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   //Called when timestep/model changed (new model data)
   //Set model size from geometry / bounding box and apply auto zoom
   //- View bounds used for camera calc and border (view->min/max)
-  //- Actual bounds used by geometry clipping etc (Geometry::min/max)
+  //- Actual bounds used by geometry clipping etc (state.drawstate.min/max)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
   if (viewer->isopen && setBounds)
   {
@@ -1958,15 +1958,15 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     }
 
     //Update actual bounding box max/min/range - it is possible for the view box to be smaller
-    clearMinMax(Geometry::min, Geometry::max);
-    compareCoordMinMax(Geometry::min, Geometry::max, omin);
-    compareCoordMinMax(Geometry::min, Geometry::max, omax);
-    compareCoordMinMax(Geometry::min, Geometry::max, min);
-    compareCoordMinMax(Geometry::min, Geometry::max, max);
-    getCoordRange(Geometry::min, Geometry::max, Geometry::dims);
+    clearMinMax(state.drawstate.min, state.drawstate.max);
+    compareCoordMinMax(state.drawstate.min, state.drawstate.max, omin);
+    compareCoordMinMax(state.drawstate.min, state.drawstate.max, omax);
+    compareCoordMinMax(state.drawstate.min, state.drawstate.max, min);
+    compareCoordMinMax(state.drawstate.min, state.drawstate.max, max);
+    getCoordRange(state.drawstate.min, state.drawstate.max, state.drawstate.dims);
     debug_print("Calculated Actual bounds %f,%f,%f - %f,%f,%f \n",
-                Geometry::min[0], Geometry::min[1], Geometry::min[2],
-                Geometry::max[0], Geometry::max[1], Geometry::max[2]);
+                state.drawstate.min[0], state.drawstate.min[1], state.drawstate.min[2],
+                state.drawstate.max[0], state.drawstate.max[1], state.drawstate.max[2]);
 
     // Apply step autozoom if set (applied based on detected bounding box)
     int zstep = aview->properties["zoomstep"];
