@@ -76,14 +76,13 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
     while (std::getline(path, line, ':'))
     {
       std::stringstream pathentry;
-      pathentry << line << "/" << argv0;
+      pathentry << line << "/" << progname;
       std::string pstr = pathentry.str();
       const char* pathstr = pstr.c_str();
 #ifdef _WIN32
-      if (strstr(pathstr, ".exe"))
-#else
-      if (access(pathstr, X_OK) == 0)
+      strcat(pathstr, ".exe");
 #endif
+      if (access(pathstr, X_OK) == 0)
       {
         xpath.parse(pathstr);
         break;
