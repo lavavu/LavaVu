@@ -84,6 +84,10 @@ LavaVu::LavaVu(std::string binary)
   if (!viewer) viewer = new CocoaViewer();
   if (!viewer) viewer = new CGLViewer();
 #endif
+#if defined HAVE_GLCONTEXT
+  //Assumes an OpenGL context is already provided
+  if (!viewer) viewer = new OpenGLViewer();
+#endif
   if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
 
   viewer->app = (ApplicationInterface*)this;
@@ -443,6 +447,9 @@ void LavaVu::defaults()
   // | global | boolean | Point distance size attenuation (points shrink when further from viewer ie: perspective)
   state.drawstate.defaults["pointattenuate"] = true;
 
+  //LavaVR specific
+  state.drawstate.defaults["sweep"] = false;
+  state.drawstate.defaults["navspeed"] = 0;
 #ifdef DEBUG
   //std::cerr << std::setw(2) << state.drawstate.defaults << std::endl;
 #endif
@@ -1991,6 +1998,7 @@ void LavaVu::display(void)
   //Viewport reset flagged
   if (viewset > 0)
   {
+#ifndef USE_OMEGALIB
     //Resize if required
     json res = aview->properties["resolution"];
     if ((int)res[0] != viewer->width || (int)res[1] != viewer->height)
@@ -2000,7 +2008,7 @@ void LavaVu::display(void)
       aview->initialised = false; //Force initial autozoom
       return;
     }
-
+#endif
     //Update the viewports
     resetViews(viewset == 2);
   }
