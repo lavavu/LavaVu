@@ -925,7 +925,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsePropertySet(cmd)) return true;
     if (verbose) std::cerr << "Model/View required to execute command: " << cmd << ", deferred" << std::endl;
     //Add to the queue to be processed once open
-    OpenGLViewer::commands.push_back(cmd);
+    viewer->commands.push_back(cmd);
     return false;
   }
   else if (parsed.exists("rotation"))
@@ -1494,7 +1494,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       replay.push_back(last_cmd);
       repeat = -1; //Infinite
       loop = true;
-      OpenGLViewer::commands.push_back(std::string("next"));
+      viewer->commands.push_back(std::string("next"));
     }
     return true;  //Skip record
   }
@@ -1515,7 +1515,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     resetViews(); //Update the viewports
 
     if (loop)
-      OpenGLViewer::commands.push_back(std::string("next"));
+      viewer->commands.push_back(std::string("next"));
   }
   else if (parsed.exists("stop"))
   {
