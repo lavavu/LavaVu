@@ -42,6 +42,11 @@ public:
 
   State()
   {
+    reset();
+  }
+
+  void reset()
+  {
     //Active geometry containers, shared by all models for fast switching/drawing
     labels = NULL;
     points = NULL;
@@ -60,6 +65,8 @@ public:
     displayidle = 0;
     /* Init mutex */
     pthread_mutex_init(&cmd_mutex, NULL);
+
+    drawstate.reset();
   }
 
   void loadFixed()

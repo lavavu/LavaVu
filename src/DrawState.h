@@ -36,6 +36,11 @@ public:
 
   DrawState() : prog()
   {
+    reset();
+  }
+
+  void reset()
+  {
     defaults["default"] = false; //Fallback value
     if (globals.is_null()) globals = json::object();
 
