@@ -36,6 +36,7 @@
 #include "Util.h"
 #include <string.h>
 #include <math.h>
+#include <sys/stat.h>
 
 FILE* infostream = NULL;
 
@@ -68,32 +69,36 @@ bool FileExists(const std::string& name)
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {
   //Try the PATH env var if argv0 contains no path info
-  FilePath xpath;
+  std::string bpath = "";
   if (!argv0 || strlen(argv0) == 0 || strcmp(argv0, progname) == 0)
   {
     std::stringstream path(getenv("PATH"));
-    std::string line;
-    while (std::getline(path, line, ':'))
+    std::string pathentry;
+    while (std::getline(path, pathentry, ':'))
     {
-      std::stringstream pathentry;
-      pathentry << line << "/" << progname;
-      std::string pstr = pathentry.str();
-      const char* pathstr = pstr.c_str();
+      std::string pstr = pathentry + "/" + progname;
 #ifdef _WIN32
-      strcat(pathstr, ".exe");
+      pstr += ".exe";
 #endif
-      if (access(pathstr, X_OK) == 0)
+      if (access(pstr.c_str(), X_OK) == 0)
       {
-        xpath.parse(pathstr);
-        break;
+        //Need to make sure it's a regular file, not directory
+        struct stat st_buf;
+        if (stat(pstr.c_str(), &st_buf) == 0 && S_ISREG(st_buf.st_mode))
+        {
+          std::cout << "Found app in $PATH: " << pstr << std::endl;
+          bpath = pathentry + "/";
+        }
       }
     }
   }
   else
   {
+    FilePath xpath;
     xpath.parse(argv0);
+    bpath = xpath.path;
   }
-  return xpath.path;
+  return bpath;
 }
 
 void Properties::toFloatArray(const json& val, float* array, unsigned int size)
