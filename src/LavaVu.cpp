@@ -120,7 +120,7 @@ void LavaVu::defaults()
   OpenGLViewer::commands.clear();
 
   //Reset state
-  //state = State();
+  state.reset();
 
   axis = new TriSurfaces(state.drawstate);
   rulers = new Lines(state.drawstate);
