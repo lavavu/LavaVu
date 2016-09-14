@@ -36,17 +36,12 @@
 //OpenGLViewer class
 #include "OpenGLViewer.h"
 
-std::deque<std::string> OpenGLViewer::commands;
-pthread_mutex_t OpenGLViewer::cmd_mutex;
-int OpenGLViewer::idle = 0;
-int OpenGLViewer::displayidle = 0;
-std::vector<InputInterface*> OpenGLViewer::inputs; //Additional input attachments
-
 //OpenGLViewer class implementation...
 OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
 {
   app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;
+  idle = displayidle = 0;
 
   timer = 0;
   visible = true;
@@ -60,10 +55,6 @@ OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(fal
 
   /* Init mutex */
   pthread_mutex_init(&cmd_mutex, NULL);
-
-  //Clear static data
-  inputs.clear();
-  outputs.clear();
 }
 
 OpenGLViewer::~OpenGLViewer()
@@ -305,7 +296,7 @@ void OpenGLViewer::execute()
   while (!quitProgram)
   {
     //New frame? call display
-    if (postdisplay || OpenGLViewer::pollInput())
+    if (postdisplay || pollInput())
       display();
 #ifdef _WIN32
     Sleep(TIMER_INC);
@@ -321,12 +312,12 @@ void OpenGLViewer::display()
   postdisplay = false;
   //Parse stored commands first...
   bool idling = false;
-  while (OpenGLViewer::commands.size() > 0)
+  while (commands.size() > 0)
   {
     //Critical section
     pthread_mutex_lock(&cmd_mutex);
-    std::string cmd = OpenGLViewer::commands.front();
-    OpenGLViewer::commands.pop_front();
+    std::string cmd = commands.front();
+    commands.pop_front();
     pthread_mutex_unlock(&cmd_mutex);
 
     //Idle posted?
@@ -510,8 +501,8 @@ void OpenGLViewer::idleTimer(int display)
 bool OpenGLViewer::pollInput()
 {
   //Delete parsed commands from front of queue
-  //while (OpenGLViewer::commands.front().length() == 0)
-  // OpenGLViewer::commands.pop_front();
+  //while (commands.front().length() == 0)
+  // commands.pop_front();
   pthread_mutex_lock(&cmd_mutex);
 
   //Check for input at stdin...
@@ -523,7 +514,7 @@ bool OpenGLViewer::pollInput()
   {
     while (inputs[i]->get(cmd))
     {
-      OpenGLViewer::commands.push_back(cmd);
+      commands.push_back(cmd);
       parsed = true;
     }
   }
@@ -532,7 +523,7 @@ bool OpenGLViewer::pollInput()
   idle += TIMER_INC;
   if (displayidle > 0 && idle > displayidle)
   {
-    OpenGLViewer::commands.push_back("idle");
+    commands.push_back("idle");
     idle = 0;
     parsed = true;
   }

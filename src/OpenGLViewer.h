@@ -53,15 +53,15 @@ private:
 protected:
   int timer;
 
-  static int idle;
-  static int displayidle; //Redisplay when idle for # milliseconds
+  int idle;
+  int displayidle; //Redisplay when idle for # milliseconds
   std::vector<OutputInterface*> outputs; //Additional output attachments
-  static std::vector<InputInterface*> inputs; //Additional input attachments
+  std::vector<InputInterface*> inputs; //Additional input attachments
 
 public:
   ApplicationInterface* app;
-  static std::deque<std::string> commands;
-  static pthread_mutex_t cmd_mutex;
+  std::deque<std::string> commands;
+  pthread_mutex_t cmd_mutex;
 
   GLboolean stereoBuffer, doubleBuffer;
   GLuint renderBuffer;
@@ -157,12 +157,12 @@ public:
     outputs.push_back(output);
   }
 
-  static void addInput(InputInterface* input)
+  void addInput(InputInterface* input)
   {
     inputs.push_back(input);
   }
 
-  static bool pollInput(void);
+  bool pollInput(void);
 };
 
 #endif //OpenGLViewer__

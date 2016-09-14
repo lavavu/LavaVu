@@ -24,7 +24,6 @@ protected:
   // Thread sync
   pthread_mutex_t cs_mutex;
   pthread_cond_t condition_var;
-  std::deque<std::string> commands;
 
   int client_id;
   bool updated;

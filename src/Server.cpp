@@ -38,7 +38,6 @@ Server::Server(OpenGLViewer* viewer) : viewer(viewer)
   ctx = NULL;
   // Initialize mutex and condition variable objects
   pthread_mutex_init(&cs_mutex, NULL);
-  pthread_mutex_init(&viewer->cmd_mutex, NULL);
   pthread_cond_init (&condition_var, NULL);
 }
 
@@ -294,9 +293,9 @@ int Server::request(struct mg_connection *conn)
     //Push command onto queue to be processed in the viewer thread
     pthread_mutex_lock(&_self->viewer->cmd_mutex);
     if (amp != std::string::npos)
-      OpenGLViewer::commands.push_back(data.substr(equals+1, amp-equals-1));
+      _self->viewer->commands.push_back(data.substr(equals+1, amp-equals-1));
     else
-      OpenGLViewer::commands.push_back(data.substr(equals+1));
+      _self->viewer->commands.push_back(data.substr(equals+1));
     debug_print("CMD: %s\n", data.substr(equals+1).c_str());
     _self->viewer->postdisplay = true;
     pthread_mutex_unlock(&_self->viewer->cmd_mutex);
@@ -313,7 +312,7 @@ int Server::request(struct mg_connection *conn)
       pthread_mutex_lock(&_self->viewer->cmd_mutex);
       //Seems post data string can exceed data length or be missing terminator
       if (strlen(post_data) > post_data_len) post_data[post_data_len] = 0;
-      OpenGLViewer::commands.push_back(std::string(post_data));
+      _self->viewer->commands.push_back(std::string(post_data));
       _self->viewer->postdisplay = true;
       pthread_mutex_unlock(&_self->viewer->cmd_mutex);
     }
@@ -323,7 +322,7 @@ int Server::request(struct mg_connection *conn)
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
     std::string data = request_info->uri+1;
     pthread_mutex_lock(&_self->viewer->cmd_mutex);
-    OpenGLViewer::commands.push_back("key " + data);
+    _self->viewer->commands.push_back("key " + data);
     _self->viewer->postdisplay = true;
     pthread_mutex_unlock(&_self->viewer->cmd_mutex);
   }
@@ -332,7 +331,7 @@ int Server::request(struct mg_connection *conn)
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty response, prevent XML errors
     std::string data = request_info->uri+1;
     pthread_mutex_lock(&_self->viewer->cmd_mutex);
-    OpenGLViewer::commands.push_back("mouse " + data);
+    _self->viewer->commands.push_back("mouse " + data);
     _self->viewer->postdisplay = true;
     pthread_mutex_unlock(&_self->viewer->cmd_mutex);
   }

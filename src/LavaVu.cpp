@@ -98,7 +98,7 @@ LavaVu::LavaVu(std::string binary)
   //Set default web server path
   Server::htmlpath = binpath + "html";
 
-  //Add any output attachments to the viewer
+  //Add any input/output attachments to the viewer
   if (Server::port > 0)
     viewer->addOutput(Server::Instance(viewer));
   static StdInput stdi;
@@ -117,7 +117,7 @@ void LavaVu::defaults()
   }
 
   //Clear any queued commands
-  OpenGLViewer::commands.clear();
+  viewer->commands.clear();
 
   //Reset state
   state.reset();
@@ -2731,7 +2731,7 @@ bool LavaVu::loadFile(const std::string& file)
   {
     if (!amodel) 
       //Defer until window open
-      OpenGLViewer::commands.push_back("file \"" + fn.full + "\"");
+      viewer->commands.push_back("file \"" + fn.full + "\"");
     else
       jsonReadFile(fn.full);
     return true;

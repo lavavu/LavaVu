@@ -89,7 +89,7 @@ void Points::update()
     if (!hiddencache[i]) drawelements += geom[i]->count; //Count drawable
   }
 
-  //Ensure drawstate.pvbo recreated if total changed
+  //Ensure vbo recreated if total changed
   if (elements < 0 || total != last_total)
     //if (true)
   {
@@ -150,7 +150,7 @@ void Points::loadVertices()
     if (!p) abort_program("glMapBuffer failed");
   }
   else ptr = NULL;
-  //else abort_program("drawstate.pvbo fail");
+  //else abort_program("vbo fail");
 
 //////////////////////////////////////////////////
   t1 = clock();
@@ -224,7 +224,7 @@ void Points::loadVertices()
 
   }
   t2 = clock();
-  debug_print("  %.4lf seconds to update particles into sort array and drawstate.pvbo\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to update particles into sort array and vbo\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
   if (ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
