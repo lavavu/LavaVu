@@ -2722,6 +2722,11 @@ class basic_json
             {
                 return static_cast<T>(m_value.number_float);
             }
+            //OK - cast bool and null as number
+            //case value_t::boolean:
+            //    return static_cast<T>(m_value.boolean ? 1 : 0);
+            //case value_t::null:
+            //    return static_cast<T>(0);
 
             default:
             {
@@ -2733,9 +2738,13 @@ class basic_json
     /// get a boolean (explicit)
     constexpr boolean_t get_impl(boolean_t*) const
     {
-        return is_boolean()
-               ? m_value.boolean
-               : throw std::domain_error("type must be boolean, but is " + type_name());
+        //OK: Modified to support returning numeric values as bools
+        if (is_boolean()) return m_value.boolean;
+        if (is_number_integer()) return m_value.number_integer != 0;
+        if (is_number_unsigned()) return m_value.number_unsigned != 0;
+        if (is_number_float()) return m_value.number_float != 0.;
+        if (is_null()) return false;
+        throw std::domain_error("type must be boolean/numeric, but is " + type_name());
     }
 
     /// get a pointer to the value (object)
