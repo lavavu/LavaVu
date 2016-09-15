@@ -101,7 +101,7 @@ OBJS = $(notdir $(OBJ))
 #Add object path
 OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 #Additional library objects (no cpp extension so not included above)
-OBJ2 = $(OPATH)/tiny_obj_loader.o $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
+OBJ2 = $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 default: install
 
@@ -124,9 +124,6 @@ $(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
 	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(APPLEOBJ) $(LIBS)
 	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
-$(OPATH)/tiny_obj_loader.o : tiny_obj_loader.cc
-	$(CPP) $(EXTCPPFLAGS) -o $@ -c $^ 
-
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
@@ -142,7 +139,7 @@ swig: $(PREFIX)/$(LIBNAME)
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
 	$(CPP) -o $(PREFIX)/_$(PROGNAME).so $(LIBBUILD) $(OPATH)/LavaVu_wrap.os `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
-docs:
+docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
 	bin/LavaVu -S -h -p0 : docs:interaction quit > docs/Interaction.md
 	bin/LavaVu -S -h -p0 : docs:scripting quit > docs/Scripting-Commands-Reference.md
