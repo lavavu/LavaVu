@@ -78,61 +78,61 @@ precision highp float;
     <tr>
       <td>X min</td>
       <td>
-         <input id="xmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
-         <output for="xmin" id="xmin-out">0</output>
+         <input id="global-xmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-xmin" id="global-xmin-out">0</output>
       </td>
     </tr>
     <tr>
       <td>X max</td>
       <td>
-         <input id="xmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
-         <output for="xmax" id="xmax-out">0</output>
+         <input id="global-xmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-xmax" id="global-xmax-out">0</output>
       </td>
     </tr>
     <tr>
       <td>Y min</td>
       <td>
-         <input id="ymin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
-         <output for="ymin" id="ymin-out">0</output>
+         <input id="global-ymin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-ymin" id="global-ymin-out">0</output>
       </td>
     </tr>
     <tr>
       <td>Y max</td>
       <td>
-         <input id="ymax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
-         <output for="ymax" id="ymax-out">0</output>
+         <input id="global-ymax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-ymax" id="global-ymax-out">0</output>
       </td>
     </tr>
     <tr>
       <td>Z min</td>
       <td>
-         <input id="zmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
-         <output for="zmin" id="zmin-out">0</output>
+         <input id="global-zmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-zmin" id="global-zmin-out">0</output>
       </td>
     </tr>
     <tr>
       <td>Z max</td>
       <td>
-         <input id="zmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
-         <output for="zmax" id="zmax-out">0</output>
+         <input id="global-zmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-zmax" id="global-zmax-out">0</output>
       </td>
     </tr>
     <tr><td>Brightness</td>
        <td>
-          <input id="brightness" type="range" min="-1" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
-          <output for="brightness" id="brightness-out">0</output>
+          <input id="global-brightness" type="range" min="-1" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+          <output for="global-brightness" id="global-brightness-out">0</output>
        </td>
     </tr>
     <tr><td>Contrast</td>
        <td>
-          <input id="contrast" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
-          <output for="contrast" id="contrast-out">1</output>
+          <input id="global-contrast" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
+          <output for="global-contrast" id="global-contrast-out">1</output>
        </td>
     </tr>
     <tr><td>Saturation</td>
        <td>
-          <input id="saturation" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
-          <output for="saturation" id="saturation-out">1</output>
+          <input id="global-saturation" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
+          <output for="global-saturation" id="global-saturation-out">1</output>
        </td>
     </tr>
     <tr><td>Point Scaling</td>
@@ -143,8 +143,8 @@ precision highp float;
     </tr>
     <tr><td>Opacity</td>
        <td>
-          <input id="globalAlpha" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();"/>
-          <output for="globalAlpha" id="globalAlpha-out">1</output>
+          <input id="global-opacity" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();"/>
+          <output for="global-opacity" id="global-opacity-out">1</output>
        </td>
     </tr>
     <tr><td>Point Type</td><td>

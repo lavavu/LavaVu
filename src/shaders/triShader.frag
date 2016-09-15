@@ -17,8 +17,6 @@ uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 
-#define HUGEVAL 1e20
-
 void main(void)
 {
   //Clip planes in X/Y/Z (shift seems to be required on nvidia)

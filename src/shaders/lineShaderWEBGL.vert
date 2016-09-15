@@ -5,7 +5,7 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
 uniform vec4 uColour;
-uniform float uAlpha;
+uniform float uOpacity;
 
 varying vec4 vColour;
 
@@ -16,7 +16,7 @@ void main(void)
   if (uColour.a > 0.0)
     vColour = uColour;
   else
-    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uAlpha);
+    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
 }
 
 
