@@ -39,6 +39,11 @@
 #include "Util.h"
 #include "Colours.h"
 
+#ifdef USE_FONTS
+#include  "font.h"
+#include  "FontSans.h"
+#endif
+
 #define GL_Error_Check \
   { \
     GLenum error = GL_NO_ERROR; \
@@ -524,27 +529,59 @@ bool gluInvertMatrixf(const float m[16], float invOut[16]);
 
 void Viewport2d(int width, int height);
 
-//3d fonts
-float PrintSetFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
-void PrintSetColour(int colour, bool XOR=false);
-void PrintString(const char* str);
-void Printf(int x, int y, const char *fmt, ...);
-void Print(int x, int y, const char *str);
-void Print3d(double x, double y, double z, const char *str);
-void Print3dBillboard(double x, double y, double z, const char *str, int align=-1);
-int PrintWidth(const char *string);
-void DeleteFont();
+class FontManager
+{
+public:
+  Colour fontColour;
+  unsigned int fontbase, fonttexture;
+  int fontcharset;
+  float fontscale;
+  GLuint charLists;
 
-//Bitmap texture fonts
-void lucPrintString(const char* str);
-void lucPrint(int x, int y, const char* str);
-void lucPrint3d(double x, double y, double z, const char *str, bool alignRight=false);
-void lucSetFontCharset(int charset);
-void lucSetFontScale(float scale);
-int lucPrintWidth(const char *string);
-void lucSetupRasterFont();
-void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx);
-void lucDeleteFont();
+  FontManager()
+  {
+    //Vector font
+    fontcharset = FONT_DEFAULT;
+    fontscale = 1.0;
+    charLists = 0;
+
+    //Fixed (bitmap) fonts
+    fontbase = 0;
+    fonttexture = 0;
+  }
+
+  ~FontManager()
+  {
+#ifdef USE_FONTS
+    // Delete fonts
+    if (charLists > 0) glDeleteLists(charLists, GLYPHS);
+
+    // Delete fixed fonts
+    if (fontbase > 0) glDeleteLists(fontbase, BMP_GLYPHS);
+    if (fonttexture) glDeleteTextures(1, &fonttexture);
+#endif
+  }
+
+  //3d fonts
+  float printSetFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
+  void printSetColour(int colour, bool XOR=false);
+  void printString(const char* str);
+  void printf(int x, int y, const char *fmt, ...);
+  void print(int x, int y, const char *str);
+  void print3d(double x, double y, double z, const char *str);
+  void print3dBillboard(double x, double y, double z, const char *str, int align=-1);
+  int printWidth(const char *string);
+
+  //Bitmap texture fonts
+  void rasterPrintString(const char* str);
+  void rasterPrint(int x, int y, const char* str);
+  void rasterPrint3d(double x, double y, double z, const char *str, bool alignRight=false);
+  void rasterSetFontCharset(int charset);
+  void rasterSetFontScale(float scale);
+  int rasterPrintWidth(const char *string);
+  void rasterSetupFonts();
+  void rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx);
+};
 
 void drawCuboid(float pos[3], float width, float height, float depth, bool filled=true, float linewidth=1.0f);
 void drawCuboid(float min[3], float max[3], bool filled=true, float linewidth=1.0f);
@@ -553,7 +590,6 @@ void vectorNormalise(float vector[3]);
 void normalToPlane( float normal[3], float pos0[3], float pos1[3], float pos2[3]);
 float triAngle(float v0[3], float v1[3], float v2[3]);
 
-void calcCircleCoords(int segment_count);
 void drawSphere_(float centre[3], float radius, int segment_count, Colour* colour);
 void drawEllipsoid_(float centre[3], float radiusX, float radiusY, float radiusZ, int segment_count, Colour* colour);
 void drawVector3d_( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);

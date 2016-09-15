@@ -42,20 +42,9 @@
 #include <string.h>
 #include <math.h>
 
-#ifdef USE_FONTS
-#include  "font.h"
-#include  "FontSans.h"
-#endif
-
 #ifdef HAVE_GL2PS
 #include <gl2ps.h>
 #endif
-
-Colour fontColour;
-
-unsigned int fontbase = 0, fonttexture;
-int fontcharset = FONT_DEFAULT;
-float fontscale = 1.0;
 
 void compareCoordMinMax(float* min, float* max, float *coord)
 {
@@ -254,7 +243,7 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
-float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier2d)
+float FontManager::printSetFont(Properties& properties, std::string def, float scaling, float multiplier2d)
 {
   //fixed, small, sans, serif, vector
 #ifdef USE_OMEGALIB
@@ -271,29 +260,29 @@ float PrintSetFont(Properties& properties, std::string def, float scaling, float
   Colour colour = Colour(properties["fontcolour"]);
   if (colour.a == 0.0)
     colour = Colour(properties["colour"]);
-  PrintSetColour(colour.value);
+  printSetColour(colour.value);
 
   //Bitmap fonts
   if (fonttype == "fixed")
-    lucSetFontCharset(FONT_FIXED);
+    rasterSetFontCharset(FONT_FIXED);
   else if (fonttype == "sans")
-    lucSetFontCharset(FONT_NORMAL);
+    rasterSetFontCharset(FONT_NORMAL);
   else if (fonttype == "serif")
-    lucSetFontCharset(FONT_SERIF);
+    rasterSetFontCharset(FONT_SERIF);
   else if (fonttype == "vector")
   {
-    lucSetFontCharset(FONT_VECTOR);
+    rasterSetFontCharset(FONT_VECTOR);
     return -fontscale;
   }
   else  //Default (small)
-    lucSetFontCharset(FONT_SMALL);
+    rasterSetFontCharset(FONT_SMALL);
 
   //For non-vector fonts
   fontscale *= multiplier2d;
   return fontscale;
 }
 
-void PrintSetColour(int colour, bool XOR)
+void FontManager::printSetColour(int colour, bool XOR)
 {
   if (XOR)
   {
@@ -311,10 +300,10 @@ void PrintSetColour(int colour, bool XOR)
   glColor4ubv(fontColour.rgba);
 }
 
-void PrintString(const char* str)
+void FontManager::printString(const char* str)
 {
   if (charLists == 0 || !glIsList(charLists+1))   // Load font if not yet done
-    GenerateFontCharacters();
+    charLists = GenerateFontCharacters();
 
   fontColour.rgba[3] = 255;
   glColor4ubv(fontColour.rgba);
@@ -325,7 +314,7 @@ void PrintString(const char* str)
 }
 
 char buffer[4096];
-void Printf(int x, int y, const char *fmt, ...)
+void FontManager::printf(int x, int y, const char *fmt, ...)
 {
   va_list ap;                 // Pointer to arguments list
   if (fmt == NULL) return;    // No format string
@@ -333,36 +322,36 @@ void Printf(int x, int y, const char *fmt, ...)
   vsprintf(buffer, fmt, ap);    // Convert symbols
   va_end(ap);
 
-  Print(x, y, buffer);   // Print result string
+  print(x, y, buffer);   // FontManager::print result string
 }
 
-void Print(int x, int y, const char *str)
+void FontManager::print(int x, int y, const char *str)
 {
-  if (fontcharset > FONT_VECTOR) return lucPrint(x, y, str);
+  if (fontcharset > FONT_VECTOR) return rasterPrint(x, y, str);
   glPushMatrix();
   glTranslated(x, y, 0);
   glScaled(fontscale, fontscale, 1.0);
-  PrintString(str);
+  printString(str);
   glPopMatrix();
 }
 
-void Print3d(double x, double y, double z, const char *str)
+void FontManager::print3d(double x, double y, double z, const char *str)
 {
-  if (fontcharset > FONT_VECTOR) return lucPrint3d(x, y, z, str);
+  if (fontcharset > FONT_VECTOR) return rasterPrint3d(x, y, z, str);
   glPushMatrix();
   glTranslated(x, y, z);
   glScaled(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
-  PrintString(str);
+  printString(str);
   glPopMatrix();
 }
 
-void Print3dBillboard(double x, double y, double z, const char *str, int align)
+void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align)
 {
-  if (fontcharset > FONT_VECTOR) return lucPrint3d(x, y, z, str, align > -1);
+  if (fontcharset > FONT_VECTOR) return rasterPrint3d(x, y, z, str, align > -1);
   float modelview[16];
   int i,j;
 
-  float sw = FONT_SCALE_3D * PrintWidth(str);
+  float sw = FONT_SCALE_3D * printWidth(str);
   //Default align = -1 (Left)
   if (align == 1) x -= sw;     //Right
   if (align == 0) x -= sw*0.5; //Centre
@@ -390,16 +379,16 @@ void Print3dBillboard(double x, double y, double z, const char *str, int align)
   glLoadMatrixf(modelview);
 
   glScaled(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
-  PrintString(str);
+  printString(str);
 
   // restores the modelview matrix
   glPopMatrix();
 }
 
 // String width calc
-int PrintWidth(const char *string)
+int FontManager::printWidth(const char *string)
 {
-  if (fontcharset > FONT_VECTOR) return lucPrintWidth(string);
+  if (fontcharset > FONT_VECTOR) return rasterPrintWidth(string);
   // Sum character widths in string
   int i, len = 0, slen = strlen(string);
   for (i = 0; i < slen; i++)
@@ -410,18 +399,11 @@ int PrintWidth(const char *string)
   return fontscale * w;
 }
 
-void DeleteFont()
-{
-  // Delete fonts
-  if (charLists > 0) glDeleteLists(charLists, GLYPHS);
-  charLists = 0;
-}
-
 //Bitmap font stuff
-void lucPrintString(const char* str)
+void FontManager::rasterPrintString(const char* str)
 {
   if (fontbase == 0)                        /* Load font if not yet done */
-    lucSetupRasterFont();
+    rasterSetupFonts();
 
   if (fontcharset > FONT_SERIF || fontcharset < FONT_FIXED)      /* Character set valid? */
     fontcharset = FONT_FIXED;
@@ -445,7 +427,7 @@ void lucPrintString(const char* str)
   glPopAttrib();
 }
 
-void lucPrint(int x, int y, const char *str)
+void FontManager::rasterPrint(int x, int y, const char *str)
 {
 #ifdef HAVE_GL2PS
   int mode;
@@ -477,11 +459,11 @@ void lucPrint(int x, int y, const char *str)
   glPushMatrix();
   //glLoadIdentity();
   glTranslated(x, y-bmpfont_charheights[fontcharset], 0);
-  lucPrintString(str);
+  rasterPrintString(str);
   glPopMatrix();
 }
 
-void lucPrint3d(double x, double y, double z, const char *str, bool alignRight)
+void FontManager::rasterPrint3d(double x, double y, double z, const char *str, bool alignRight)
 {
   /* Calculate projected screen coords in viewport */
   float pos[3];
@@ -495,12 +477,12 @@ void lucPrint3d(double x, double y, double z, const char *str, bool alignRight)
   glAlphaFunc(GL_GREATER, 0.25);
   glEnable(GL_ALPHA_TEST);
 
-  /* Print at calculated position, compensating for viewport offset */
+  /* FontManager::print at calculated position, compensating for viewport offset */
   int xs, ys;
   xs = (int)(pos[0]) - viewportArray[0];
-  if (alignRight) xs -= lucPrintWidth(str);
+  if (alignRight) xs -= rasterPrintWidth(str);
   ys = (int)(pos[1]) - viewportArray[1]; //(viewportArray[3] - (yPos - viewportArray[1]));
-  lucPrint(xs, ys, str);
+  rasterPrint(xs, ys, str);
 
   /* Restore state */
   Viewport2d(0, 0);
@@ -509,18 +491,18 @@ void lucPrint3d(double x, double y, double z, const char *str, bool alignRight)
   glDisable(GL_ALPHA_TEST);
 }
 
-void lucSetFontCharset(int charset)
+void FontManager::rasterSetFontCharset(int charset)
 {
   fontcharset = charset;
 }
 
-void lucSetFontScale(float scale)
+void FontManager::rasterSetFontScale(float scale)
 {
   fontscale = scale;
 }
 
 /* String width calc */
-int lucPrintWidth(const char *string)
+int FontManager::rasterPrintWidth(const char *string)
 {
   /* Sum character widths in string */
   int i, len = 0, slen = strlen(string);
@@ -532,7 +514,7 @@ int lucPrintWidth(const char *string)
   return w;
 }
 
-void lucSetupRasterFont()
+void FontManager::rasterSetupFonts()
 {
   /* Load font bitmaps and Convert To Textures */
   int i, j;
@@ -560,11 +542,11 @@ void lucSetupRasterFont()
   fontbase = glGenLists(BMP_GLYPHS);
 
   /* Build font display lists */
-  lucBuildFont(16, 16, 0, 384);      /* 16x16 glyphs, 16 columns - 4 fonts */
+  rasterBuildFont(16, 16, 0, 384);      /* 16x16 glyphs, 16 columns - 4 fonts */
   delete [] pixel_data;
 }
 
-void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx)
+void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx)
 {
   /* Build font display lists */
   int i;
@@ -599,40 +581,31 @@ void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx)
   yoffset = cy + glyphY;
 }
 
-void lucDeleteFont()
-{
-  /* Delete fonts */
-  if (fontbase > 0) glDeleteLists(fontbase, BMP_GLYPHS);
-  fontbase = 0;
-  if (fonttexture) glDeleteTextures(1, &fonttexture);
-  fonttexture = 0;
-}
-#else
-float PrintSetFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return 0.0;}
-void PrintSetColour(int colour, bool XOR) {}
-void PrintString(const char* str) {}
-void Printf(int x, int y, const char *fmt, ...) {}
-void Print(int x, int y, const char *str) {}
-void Print3d(double x, double y, double z, const char *str) {}
-void Print3dBillboard(double x, double y, double z, const char *str, int align) {}
-int PrintWidth(const char *string)
+
+#else //USE_FONTS
+float FontManager::printSetFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return 0.0;}
+void FontManager::printSetColour(int colour, bool XOR) {}
+void FontManager::printString(const char* str) {}
+void FontManager::printf(int x, int y, const char *fmt, ...) {}
+void FontManager::print(int x, int y, const char *str) {}
+void FontManager::print3d(double x, double y, double z, const char *str) {}
+void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align) {}
+int FontManager::printWidth(const char *string)
 {
   return 0;
 }
-void DeleteFont() {}
-void lucPrintString(const char* str) {}
-void lucPrint(int x, int y, const char *str) {}
-void lucPrint3d(double x, double y, double z, const char *str, bool alignRight) {}
-void lucSetFontCharset(int charset) {}
-void lucSetFontScale(float scale) {}
-int lucPrintWidth(const char *string)
+void FontManager::rasterPrintString(const char* str) {}
+void FontManager::rasterPrint(int x, int y, const char *str) {}
+void FontManager::rasterPrint3d(double x, double y, double z, const char *str, bool alignRight) {}
+void FontManager::rasterSetFontCharset(int charset) {}
+void FontManager::rasterSetFontScale(float scale) {}
+int FontManager::rasterPrintWidth(const char *string)
 {
   return 0;
 }
-void lucSetupRasterFont() {}
-void lucBuildFont(int glyphsize, int columns, int startidx, int stopidx) {}
-void lucDeleteFont() {}
-#endif
+void FontManager::rasterSetupFonts() {}
+void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx) {}
+#endif //USE_FONTS
 
 //Vector ops
 

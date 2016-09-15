@@ -31,8 +31,8 @@ public:
 //View
   Camera* globalcam = NULL;
 
-//Font?!!
-//
+  //Fonts
+  FontManager fonts;
 
   DrawState() : prog()
   {
