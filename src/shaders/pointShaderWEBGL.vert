@@ -7,7 +7,7 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
 uniform float uPointScale;
-uniform float uAlpha;
+uniform float uOpacity;
 uniform vec4 uColour;
 
 varying vec4 vColour;
@@ -22,7 +22,7 @@ void main(void)
   if (uColour.a > 0.0)
     vColour = uColour;
   else
-    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uAlpha);
+    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
   // calculate window-space point size
   float eyeDist = length(mvPosition);
   float size = max(1.0, aVertexSize);

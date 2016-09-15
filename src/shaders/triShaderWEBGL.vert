@@ -10,13 +10,11 @@ uniform mat4 uNMatrix;
 
 uniform vec4 uColour;
 
-uniform float uAlpha;
-
 varying vec4 vColour;
 varying vec3 vNormal;
 varying vec3 vPosEye;
 varying vec2 vTexCoord;
-varying vec3 vert;
+varying vec3 vVertex;
 
 varying float vObjectID;
 
@@ -30,11 +28,11 @@ void main(void)
   if (uColour.a > 0.0)
     vColour = uColour;
   else
-    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uAlpha);
+    vColour = aVertexColour;
 
   vTexCoord = aVertexTexCoord;
   vObjectID = aVertexObjectID;
-  vert = aVertexPosition;
+  vVertex = aVertexPosition;
 }
 
 
