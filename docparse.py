@@ -13,7 +13,7 @@ def readFile(filename):
 f = open("docs/Property-Reference.md", "w")
 f.write("\n##Property reference\n\n")
 
-src = readFile("src/LavaVu.cpp").split("\n")
+src = readFile("src/DrawState.h").split("\n")
 gotComment = False
 lastScope = ""
 tokens = []
@@ -44,7 +44,7 @@ for line in src:
         f.write("|" + default.ljust(14) + "")
         f.write("|" + desc + "|\n")
 
-    elif line.startswith("  // |"):
+    elif line.startswith("    // |"):
         gotComment = True
         tokens = line.split(' | ')
 
