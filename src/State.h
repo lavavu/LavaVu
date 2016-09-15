@@ -32,6 +32,9 @@ public:
   std::vector<Geometry*> fixed;     //Static geometry
   int cachesize;
 
+  //Mutex for thread safe updates
+  std::mutex mutex;
+
   State()
   {
     reset();

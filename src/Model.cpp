@@ -1617,6 +1617,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   //Write new JSON format objects
   // - globals are all stored on / sourced from state.drawstate.globals
   // - views[] list holds view properies (previously single instance in "options")
+  std::lock_guard<std::mutex> guard(state.mutex);
   json exported;
   json properties = state.drawstate.globals;
   json cmaps = json::array();
@@ -1773,6 +1774,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
 void Model::jsonRead(std::string data)
 {
+  std::lock_guard<std::mutex> guard(state.mutex);
+  
   json imported = json::parse(data);
   state.drawstate.globals = imported["properties"];
   json inviews;
