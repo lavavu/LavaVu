@@ -12,6 +12,8 @@
 #include "base64.h"
 #include "jpeg/jpge.h"
 
+#define MAX_POST_LEN 32767
+
 Server* Server::_self = NULL; //Static
 
 //Defaults
@@ -303,19 +305,25 @@ int Server::request(struct mg_connection *conn)
   else if (strstr(request_info->uri, "/post") != NULL)
   {
     //mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-    char post_data[32000];
+    char post_data[MAX_POST_LEN+1] = {0};
     int post_data_len = mg_read(conn, post_data, sizeof(post_data));
+    if (post_data_len > MAX_POST_LEN)
+    {
+      std::cerr << "ERROR! Post data truncated, skipping\n";
+      post_data_len = 0;
+    }
     //printf("%d\n%s\n", post_data_len, post_data);
     if (post_data_len)
     {
       //Push command onto queue to be processed in the viewer thread
       pthread_mutex_lock(&_self->viewer->cmd_mutex);
       //Seems post data string can exceed data length or be missing terminator
-      if (strlen(post_data) > post_data_len) post_data[post_data_len] = 0;
+      post_data[post_data_len] = 0;
       _self->viewer->commands.push_back(std::string(post_data));
       _self->viewer->postdisplay = true;
       pthread_mutex_unlock(&_self->viewer->cmd_mutex);
     }
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty OK response required
   }
   else if (strstr(request_info->uri, "/key=") != NULL)
   {
@@ -335,10 +343,12 @@ int Server::request(struct mg_connection *conn)
     _self->viewer->postdisplay = true;
     pthread_mutex_unlock(&_self->viewer->cmd_mutex);
   }
-  else if (strstr(request_info->uri, "/rendermode") != NULL)
+  else if (strstr(request_info->uri, "/render") != NULL)
   {
     //Enable/disable image serving
     Server::render = !Server::render;
+    std::cerr << "Image serving  " << (Server::render ? "ENABLED" : "DISABLED") << std::endl;
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty OK response required
   }
   else
   {
