@@ -32,16 +32,9 @@ namespace std {
 %pythoncode %{
 import json
 #Helper functions
-instance = None
 def load(app=None, arglist=[], binary="LavaVu", database=None, figure=None, startstep=None, endstep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=True,
          quality=2, writeimage=False, res=None, script=None):
-  #Destroy any active instance
-  global instance
-  if instance:
-    _LavaVu.delete_LavaVu(instance)
-    instance = None
-
   #Convert options to args
   args = [] + arglist
   if verbose:
@@ -82,28 +75,26 @@ def load(app=None, arglist=[], binary="LavaVu", database=None, figure=None, star
   if not app:
     app = LavaVu(binary)
   app.run(args)
-
-  #Save active instance and return
-  instance = app
   return app
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj():
-  def __init__(self, idict, *args, **kwargs):
+  def __init__(self, idict, instance, *args, **kwargs):
     self.dict = idict
+    self.instance = instance
     self.name = str(self.dict["name"])
 
   def get(self):
     #Retrieve updated props
-    props = json.loads(instance.getObject(self.name))
+    props = json.loads(self.instance.getObject(self.name))
     self.dict.clear()
     self.dict.update(props)
     self.name = str(self.dict["name"])
 
   def set(self):
     #Send updated props
-    instance.setObject(self.name, json.dumps(self.dict))
+    self.instance.setObject(self.name, json.dumps(self.dict))
     self.get()
 
   def __getitem__(self, key):
@@ -139,7 +130,7 @@ class Obj():
   def filter(self, label, values, out=False, map=False):
     #Pass a tuple for exclusive range (min < val < max), list for inclusive range (min <= val <= max)
     filter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
-    if isinstance(values, list):
+    if isself.instance(values, list):
       filter["inclusive"] = True
     self["filters"].append(filter)
     self.set()
@@ -150,47 +141,48 @@ class Obj():
     return json.dumps(self.dict["data"])
 
   def vertices(self, data):
-    instance.parseCommands("select " + self.name)
-    instance.loadVectors(data, lucVertexData)
+    self.instance.parseCommands("select " + self.name)
+    self.instance.loadVectors(data, lucVertexData)
 
   def vectors(self, data):
-    instance.parseCommands("select " + self.name)
-    instance.loadVectors(data, lucVectorData)
+    self.instance.parseCommands("select " + self.name)
+    self.instance.loadVectors(data, lucVectorData)
 
   def values(self, data, type=lucColourValueData, label="", min=0., max=0.):
-    instance.parseCommands("select " + self.name)
-    instance.loadScalars(data, type, label, min, max)
+    self.instance.parseCommands("select " + self.name)
+    self.instance.loadScalars(data, type, label, min, max)
 
   def colours(self, data):
-    instance.parseCommands("select " + self.name)
-    instance.parseCommands("colours=" + str(data))
-    instance.parseCommands("read colours")
+    self.instance.parseCommands("select " + self.name)
+    self.instance.parseCommands("colours=" + str(data))
+    self.instance.parseCommands("read colours")
 
   def indices(self, data):
-    instance.parseCommands("select " + self.name)
-    instance.loadUnsigned(data, lucIndexData)
+    self.instance.parseCommands("select " + self.name)
+    self.instance.loadUnsigned(data, lucIndexData)
 
   def labels(self, data):
-    instance.parseCommands("select " + self.name)
-    instance.labels(data)
+    self.instance.parseCommands("select " + self.name)
+    self.instance.labels(data)
 
   #Property control interface
   #...TODO...
 
 #Wrapper dict+list of objects
 class Objects(dict):
-  def __init__(self):
+  def __init__(self, instance):
+    self.instance = instance
     pass
 
   def update(self):
     idx = 0
     self.list = []
-    for obj in instance.state["objects"]:
+    for obj in self.instance.state["objects"]:
       if obj["name"] in self:
         self[obj["name"]].get()
         self.list.append(self[obj["name"]])
       else:
-        o = Obj(obj)
+        o = Obj(obj, self.instance)
         self[obj["name"]] = o
         self.list.append(o)
 
@@ -214,6 +206,8 @@ public:
 
   bool loadFile(const std::string& file);
   bool parseCommands(std::string cmd);
+  void render();
+  void init();
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
   void defaultModel();
@@ -274,7 +268,7 @@ public:
     #Import state from lavavu
     self.state = json.loads(self.getState())
     if not isinstance(self.objects, Objects):
-      self.objects = Objects()
+      self.objects = Objects(self)
     self.objects.update()
 
   def set(self):

@@ -219,6 +219,8 @@ public:
   void jsonReadFile(std::string fn);
 
   //Python interface functions
+  void render();
+  void init();
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
   void addObject(std::string name, std::string properties="");

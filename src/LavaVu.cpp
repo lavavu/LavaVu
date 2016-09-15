@@ -2768,6 +2768,20 @@ std::string LavaVu::requestData(std::string key)
 }
 
 //Python interface functions
+void LavaVu::render()
+{
+  if (!amodel || !viewer->isopen) return;
+  //Just render a frame
+  viewer->display();
+}
+
+void LavaVu::init()
+{
+  if (viewer->isopen) return;
+  viewer->open();
+  viewer->init();
+}
+
 std::string LavaVu::image(std::string filename, int width, int height, bool frame)
 {
   if (!amodel || !viewer->isopen) return "";
