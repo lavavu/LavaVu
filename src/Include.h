@@ -27,6 +27,8 @@
 #include <iomanip>
 #include <climits>
 #include <typeinfo>
+#include <thread>
+#include <mutex>
 
 //C headers
 #include <assert.h>

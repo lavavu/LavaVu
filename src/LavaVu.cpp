@@ -1993,6 +1993,10 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 void LavaVu::display(void)
 {
   if (!viewer->isopen) return;
+
+  //Lock the state mutex, prevent updates while drawing
+  std::lock_guard<std::mutex> guard(state.mutex);
+
   clock_t t1 = clock();
 
   //Viewport reset flagged
