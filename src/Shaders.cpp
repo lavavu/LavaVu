@@ -152,7 +152,7 @@ void Shader::print_log(const char *action, GLuint obj)
     glGetProgramInfoLog(obj, maxLength, &infologLength, infoLog);
 
   if (infologLength > 0)
-    debug_print("%s:\n%s\n", action, infoLog);
+    fprintf(stderr, "%s:\n%s\n", action, infoLog);
 
   delete[] infoLog;
 }

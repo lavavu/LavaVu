@@ -52,35 +52,37 @@ void main(void)
    //Discard if transparent
    if (alpha < 0.01) discard;
 
+   float diffuse = 1.0;
+   vec3 specular = vec3(0.0,0.0,0.0);
    if (pointType < 2)
    {
       if (pointType == 0)
-         gl_FragColor.a = alpha * 1.0-sqrt(R);  //Gaussian
+         alpha *= 1.0-sqrt(R);  //Gaussian
       else
-         gl_FragColor.a = alpha * 1.0-R;      //Linear
-      return;
+         alpha *= 1.0-R;      //Linear
    }
-
-   N.z = sqrt(1.0-R);
-
-   //Calculate diffuse lighting
-   vec3 lightDir = normalize(vec3(0.1,-0.1,2) - vPosEye);
-   float diffuse = max(0.0, dot(lightDir, N));
-
-   //Compute the specular term
-   vec3 specular = vec3(0.0,0.0,0.0);
-   if (pointType == 3 && diffuse > 0.0)
+   else
    {
-      float shininess = 200; //Size of highlight
-      vec3 specolour = vec3(1.0, 1.0, 1.0);   //Color of light
-      //Normalize the half-vector
-      //vec3 halfVector = normalize(vPosEye + lightDir);
-      vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
-      //Compute cosine (dot product) with the normal
-      float NdotHV = max(dot(N, halfVector), 0.0);
-      specular = specolour * pow(NdotHV, shininess);
-      //specular = vec3(1.0, 0.0, 0.0);
-   }
+     N.z = sqrt(1.0-R);
+
+     //Calculate diffuse lighting
+     vec3 lightDir = normalize(vec3(0.1,-0.1,2) - vPosEye);
+     diffuse = max(0.0, dot(lightDir, N));
+
+     //Compute the specular term
+     if (pointType == 3 && diffuse > 0.0)
+     {
+        float shininess = 200; //Size of highlight
+        vec3 specolour = vec3(1.0, 1.0, 1.0);   //Color of light
+        //Normalize the half-vector
+        //vec3 halfVector = normalize(vPosEye + lightDir);
+        vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
+        //Compute cosine (dot product) with the normal
+        float NdotHV = max(dot(N, halfVector), 0.0);
+        specular = specolour * pow(NdotHV, shininess);
+        //specular = vec3(1.0, 0.0, 0.0);
+     }
+  }
 
   vec4 colour = vec4(gl_FragColor.rgb * diffuse + specular, alpha);
 
