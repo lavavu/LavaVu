@@ -347,7 +347,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 #define RECT2(x0, y0, x1, y1, swap) swap ? glRecti(y0, x0, y1, x1) : glRecti(x0, y0, x1, y1);
 #define VERT2(x, y, swap) swap ? glVertex2i(y, x) : glVertex2i(x, y);
 
-void ColourMap::draw(Properties& colourbarprops, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
+void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
 {
   glPushAttrib(GL_ENABLE_BIT);
   int pixel_I;
@@ -435,7 +435,7 @@ void ColourMap::draw(Properties& colourbarprops, int startx, int starty, int len
   if (properties["logscale"] && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
-  float fontscale = PrintSetFont(colourbarprops);
+  float fontscale = drawstate.fonts.printSetFont(colourbarprops);
   for (int i = 0; i < ticks+2; i++)
   {
     /* Get tick value */
@@ -528,17 +528,17 @@ void ColourMap::draw(Properties& colourbarprops, int startx, int starty, int len
       if (fontscale > 0.0)
       {
         if (vertical)
-          lucPrint(starty + height + 10, xpos,  string);
+          drawstate.fonts.rasterPrint(starty + height + 10, xpos,  string);
         else
-          lucPrint(xpos - (int) (0.5 * (float)lucPrintWidth(string)),  starty - 10, string);
+          drawstate.fonts.rasterPrint(xpos - (int) (0.5 * (float)drawstate.fonts.rasterPrintWidth(string)),  starty - 10, string);
       }
       else
       {
         glEnable(GL_MULTISAMPLE);
         if (vertical)
-          Print(starty + height + 10, xpos - (int) (0.5 * (float)PrintWidth("W")),  string);
+          drawstate.fonts.print(starty + height + 10, xpos - (int) (0.5 * (float)drawstate.fonts.printWidth("W")),  string);
         else
-          Print(xpos - (int) (0.5 * (float)PrintWidth(string)),  starty - 5 - PrintWidth("W"), string);
+          drawstate.fonts.print(xpos - (int) (0.5 * (float)drawstate.fonts.printWidth(string)),  starty - 5 - drawstate.fonts.printWidth("W"), string);
         glDisable(GL_MULTISAMPLE);
       }
     }

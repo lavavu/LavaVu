@@ -764,7 +764,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
     last_y = starty;
     last_margin = margin;
 
-    cmap->draw(objects[i]->properties, startx, starty, length, bar_height, colour, vertical);
+    cmap->draw(drawstate, objects[i]->properties, startx, starty, length, bar_height, colour, vertical);
     GL_Error_Check;
   }
 
@@ -773,10 +773,10 @@ void View::drawOverlay(Colour& colour, std::string& title)
   //Title
   if (title.length())
   {
-    float fontscale = PrintSetFont(properties, "vector", 1.0);
+    float fontscale = drawstate.fonts.printSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
-      lucSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
-    Print(0.5 * (w - PrintWidth(title.c_str())), h - 3 - PrintWidth("W"), title.c_str());
+      drawstate.fonts.rasterSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
+    drawstate.fonts.print(0.5 * (w - drawstate.fonts.printWidth(title.c_str())), h - 3 - drawstate.fonts.printWidth("W"), title.c_str());
   }
 
   GL_Error_Check;

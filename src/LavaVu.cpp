@@ -1817,6 +1817,7 @@ void LavaVu::display(void)
 
   // Clear viewport
   glDrawBuffer(viewer->renderBuffer);
+  GL_Error_Check;
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   // View transform
@@ -2001,13 +2002,13 @@ void LavaVu::drawAxis()
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
-  lucSetFontCharset(FONT_VECTOR);
-  lucSetFontScale(length*6.0);
-  PrintSetColour(viewer->inverse.value);
-  Print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
-  Print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
+  state.drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
+  state.drawstate.fonts.rasterSetFontScale(length*6.0);
+  state.drawstate.fonts.printSetColour(viewer->inverse.value);
+  state.drawstate.fonts.print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
+  state.drawstate.fonts.print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
   if (aview->is3d)
-    Print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], "Z");
+    state.drawstate.fonts.print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], "Z");
 
   glPopAttrib();
 
@@ -2071,8 +2072,8 @@ void LavaVu::drawRulers()
 void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
 {
   // Draw rulers with optional tick marks
-  //float fontscale = PrintSetFont(properties, "vector", 0.05*model_size*textscale);
-  //float fontscale = PrintSetFont(aview->properties, "vector", 1.0, 0.08*aview->model_size);
+  //float fontscale = state.drawstate.fonts.printSetFont(properties, "vector", 0.05*model_size*textscale);
+  //float fontscale = state.drawstate.fonts.printSetFont(aview->properties, "vector", 1.0, 0.08*aview->model_size);
 
   float vec[3];
   float length;
@@ -2293,22 +2294,22 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   }
 
   //Shadow
-  PrintSetColour(scol);
-  lucSetFontCharset(FONT_VECTOR);
-  lucSetFontScale(scale);
+  state.drawstate.fonts.printSetColour(scol);
+  state.drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
+  state.drawstate.fonts.rasterSetFontScale(scale);
 
-  Print(xpos+1, ypos-1, str.c_str());
+  state.drawstate.fonts.print(xpos+1, ypos-1, str.c_str());
 
   //Use provided text colour or calculated
   if (colour)
-    PrintSetColour(colour->value);
+    state.drawstate.fonts.printSetColour(colour->value);
   else
-    PrintSetColour(tcol);
+    state.drawstate.fonts.printSetColour(tcol);
 
-  Print(xpos, ypos, str.c_str());
+  state.drawstate.fonts.print(xpos, ypos, str.c_str());
 
   //Revert to normal colour
-  PrintSetColour(viewer->inverse.value);
+  state.drawstate.fonts.printSetColour(viewer->inverse.value);
 }
 
 void LavaVu::displayMessage()
@@ -2770,7 +2771,6 @@ std::string LavaVu::requestData(std::string key)
 std::string LavaVu::image(std::string filename, int width, int height, bool frame)
 {
   if (!amodel || !viewer->isopen) return "";
-  display();
   //Set width/height override
   viewer->outwidth = width;
   viewer->outheight = height;

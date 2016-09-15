@@ -10,10 +10,10 @@
 class State
 {
 public:
-//DrawState
+  //DrawState
   DrawState drawstate;
 
-//Model
+  //Model
   int now;
   //Current timestep geometry
   std::vector<Geometry*> geometry;
@@ -28,7 +28,7 @@ public:
   Shapes* shapes;
   Volumes* volumes;
 
-//TimeStep
+  //TimeStep
   std::vector<Geometry*> fixed;     //Static geometry
   int cachesize;
 

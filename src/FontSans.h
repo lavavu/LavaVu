@@ -36,7 +36,7 @@
 #ifndef FontSans__
 #define FontSans__
 
-#include "GraphicsUtil.h"
+#include "Include.h"
 
 extern GLuint charLists;
 extern float font_charwidths[];
@@ -46,6 +46,6 @@ extern float font_charwidths[];
 #define ASCENDER 32.000000
 #define DESCENDER -8.000000
 
-void GenerateFontCharacters();
+GLuint GenerateFontCharacters();
 
 #endif //FontSans__

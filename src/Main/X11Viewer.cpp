@@ -161,6 +161,7 @@ void X11Viewer::show()
 void X11Viewer::display()
 {
   if (!Xdisplay) return;
+  glXMakeCurrent(Xdisplay, win, glxcontext);
   OpenGLViewer::display();
   swap();
 }
@@ -186,6 +187,7 @@ void X11Viewer::execute()
   bool redisplay = true;
 
   //Ensure window visible for interaction
+  downsample = 1; //Disable any downsampled output mode
   show();
 
   //Get file descriptor of the X11 display

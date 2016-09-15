@@ -60,9 +60,6 @@ OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(fal
 OpenGLViewer::~OpenGLViewer()
 {
   animate(0);
-
-  DeleteFont();
-  lucDeleteFont();
 }
 
 void OpenGLViewer::open(int w, int h)
@@ -120,8 +117,8 @@ void OpenGLViewer::init()
   //Smooth shading
   glShadeModel(GL_SMOOTH);
 
-  //Font textures (bitmap fonts)
-  lucSetupRasterFont();
+  //Font setup
+  app->state.drawstate.fonts.rasterSetupFonts();
 
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
@@ -273,8 +270,6 @@ void OpenGLViewer::resize(int new_width, int new_height)
 void OpenGLViewer::close()
 {
   // cleanup opengl memory - required before resize if context destroyed, then call open after resize
-  DeleteFont();
-  lucDeleteFont();
 #ifdef GL_FRAMEBUFFER_EXT
   if (fbo_texture) glDeleteTextures(1, &fbo_texture);
   if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
@@ -392,6 +387,8 @@ void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
 
 std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 {
+  //Ensure correct GL context selected first
+  display();
   //Use statics for global props to avoid lookup each time
   static bool alphapng = !jpeg && app->state.drawstate.global("alphapng");
   int bpp = alphapng ? 4 : 3;

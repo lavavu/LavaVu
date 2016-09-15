@@ -140,7 +140,7 @@ public:
     inverse.invert();
     if (isopen)
     {
-      PrintSetColour(inverse.value);
+      app->state.drawstate.fonts.printSetColour(inverse.value);
       //Set clear colour
       glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
     }
