@@ -332,7 +332,7 @@ void getKeyModifiers(NSEvent* event)
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  if (_viewer->postdisplay || OpenGLViewer::pollInput())
+  if (_viewer->postdisplay || _viewer->pollInput())
     redisplay = true;
 
   //NSLog(@"Update");
