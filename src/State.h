@@ -18,6 +18,7 @@ public:
   //Current timestep geometry
   std::vector<Geometry*> geometry;
   //Type specific geometry pointers
+  //(TODO: container class for a set of geometry)
   Geometry* labels;
   Points* points;
   Vectors* vectors;
@@ -28,6 +29,10 @@ public:
   Shapes* shapes;
   Volumes* volumes;
 
+  DrawingObject* borderobj;
+  DrawingObject* axisobj;
+  DrawingObject* rulerobj;
+
   //TimeStep
   std::vector<Geometry*> fixed;     //Static geometry
   int cachesize;
@@ -37,7 +42,8 @@ public:
 
   State()
   {
-    reset();
+    borderobj = axisobj = rulerobj = NULL;
+    //reset(); //Called by LavaVu::defaults instead
   }
 
   void reset()
@@ -52,6 +58,11 @@ public:
     lines = NULL;
     shapes = NULL;
     volumes = NULL;
+
+    if (borderobj) delete borderobj;
+    if (axisobj) delete axisobj;
+    if (rulerobj) delete rulerobj;
+    borderobj = axisobj = rulerobj = NULL;
 
     cachesize = 0;
     now = -1;
