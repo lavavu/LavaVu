@@ -1007,11 +1007,19 @@ void Geometry::label(DrawingObject* draw, const char* labels)
   GeomData* geomdata = getObjectStore(draw);
   if (!geomdata) return;
 
-  //Split by newlines
-  std::istringstream iss(labels);
-  std::string line;
-  while(std::getline(iss, line))
-    geomdata->label(line);
+  //Clear if NULL
+  if (labels == NULL)
+  {
+    geomdata->labels.clear();
+  }
+  else
+  {
+    //Split by newlines
+    std::istringstream iss(labels);
+    std::string line;
+    while(std::getline(iss, line))
+      geomdata->label(line);
+  }
 }
 
 void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
