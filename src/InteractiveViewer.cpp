@@ -2250,6 +2250,33 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->redraw(true); //Redraw & reload
     }
   }
+
+  else if (parsed.exists("label"))
+  {
+    if (gethelp)
+    {
+      help += "> Label vertices of selected object\n\n"
+              "> **Usage:** label \"labels\"\n\n"
+              "> labels (string) : list of newline separated label data\n\n";
+      return false;
+    }
+
+    if (aobject)
+    {
+      std::string data = parsed["label"];
+      lucGeometryDataType dtype;
+      //Use the "geometry" property to get the type to read into
+      std::string gtype = aobject->properties["geometry"];
+      Geometry* active = getGeometryType(gtype);
+      //Clear first
+      active->label(aobject, NULL);
+      //Set new labels
+      active->label(aobject, data.c_str());
+      printMessage("%s labelled", aobject->name().c_str());
+      redraw(aobject);
+      amodel->redraw(true); //Redraw & reload
+    }
+  }
   else if (parsed.exists("pointtype"))
   {
     if (gethelp)
@@ -3143,7 +3170,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
-    {"hide", "show", "delete", "load", "select", "add", "read", "name",
+    {"hide", "show", "delete", "load", "select", "add", "read", "label", "name",
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "colourmap", "pointtype",
