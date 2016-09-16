@@ -540,6 +540,16 @@ public:
 
   FontManager()
   {
+    clear();
+  }
+
+  ~FontManager()
+  {
+    reset();
+  }
+
+  void clear()
+  {
     //Vector font
     fontcharset = FONT_DEFAULT;
     fontscale = 1.0;
@@ -550,7 +560,7 @@ public:
     fonttexture = 0;
   }
 
-  ~FontManager()
+  void reset()
   {
 #ifdef USE_FONTS
     // Delete fonts
@@ -560,6 +570,7 @@ public:
     if (fontbase > 0) glDeleteLists(fontbase, BMP_GLYPHS);
     if (fonttexture) glDeleteTextures(1, &fonttexture);
 #endif
+    clear();
   }
 
   //3d fonts

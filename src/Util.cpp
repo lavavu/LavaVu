@@ -117,17 +117,14 @@ bool Properties::has(const std::string& key) {return data.count(key) > 0 && !dat
 
 json& Properties::operator[](const std::string& key)
 {
-  //std::cout << key << std::endl;
+  //std::cout << key << " : " << data.count(key) << std::endl;
   //std::cout << key << " :: DATA\n" << data << std::endl;
   //std::cout << key << " :: DEFAULTS\n" << defaults << std::endl;
-  json& val = defaults["default"];
   if (data.count(key))
-    val = data[key];
+    return data[key];
   else if (globals.count(key))
-    val = globals[key];
-  else
-    val = defaults[key];
-  return val;
+    return globals[key];
+  return defaults[key];
 }
 
 //Functions to get values with provided defaults

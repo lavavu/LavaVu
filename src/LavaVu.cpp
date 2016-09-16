@@ -55,6 +55,9 @@
 LavaVu::LavaVu(std::string binary)
 {
   viewer = NULL;
+  axis = NULL;
+  border = NULL;
+  rulers = NULL;
   verbose = dbpath = false;
 
   defaultScript = "init.script";
@@ -168,9 +171,6 @@ LavaVu::~LavaVu()
 
   Server::Delete();
 
-  delete axis;
-  delete rulers;
-  delete border;
 #ifdef HAVE_LIBAVCODEC
   if (encoder) delete encoder;
 #endif
@@ -1629,6 +1629,10 @@ void LavaVu::close()
   aview = NULL;
   amodel = NULL;
   aobject = NULL;
+
+  if (axis) delete axis;
+  if (rulers) delete rulers;
+  if (border) delete border;
 }
 
 void LavaVu::redraw(DrawingObject* obj)
@@ -1968,7 +1972,7 @@ void LavaVu::drawAxis()
 
   axis->clear();
   axis->setView(aview);
-  static DrawingObject* aobj = NULL;
+  DrawingObject* aobj = state.axisobj;
   if (!aobj) aobj = new DrawingObject(state.drawstate, "axis", "wireframe=false\nclip=false\n");
   if (!aview->hasObject(aobj)) aview->addObject(aobj);
   axis->add(aobj);
@@ -2027,7 +2031,7 @@ void LavaVu::drawRulers()
 {
   if (!aview->properties["rulers"]) return;
   infostream = NULL;
-  static DrawingObject* obj = NULL;
+  DrawingObject* obj = state.rulerobj;
   rulers->clear();
   rulers->setView(aview);
   if (!obj) obj = new DrawingObject(state.drawstate, "rulers", "wireframe=false\nclip=false\nlit=false");
@@ -2151,7 +2155,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
 
 void LavaVu::drawBorder()
 {
-  static DrawingObject* obj = NULL;
+  DrawingObject* obj = state.borderobj;
   border->clear();
   border->setView(aview);
   if (!obj) obj = new DrawingObject(state.drawstate, "border", "clip=false\n");

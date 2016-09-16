@@ -36,13 +36,13 @@ public:
 
   DrawState() : prog()
   {
-    reset();
+    //reset(); //Called by State::reset instead
   }
 
   void reset()
   {
-    defaults["default"] = false; //Fallback value
-    if (globals.is_null()) globals = json::object();
+    defaults = json::object();
+    globals = json::object();
 
     gap = 0;
 
@@ -60,6 +60,8 @@ public:
 
     pindexvbo = 0;
     pvbo = 0;
+
+    fonts.reset();
 
     //Setup default properties
     //(Comments formatted to be parsed into documentation)
