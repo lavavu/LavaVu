@@ -46,7 +46,7 @@ Uint32 sdl_timer(Uint32 interval, void* param)
 {
   // Create a user event and post
   SDLViewer* self = (SDLViewer*) param;
-  if (self->postdisplay || OpenGLViewer::pollInput())
+  if (self->postdisplay || pollInput())
   {
     SDL_Event event;// = {SDL_USEREVENT, 1, 0, 0};
     event.type = SDL_USEREVENT;
