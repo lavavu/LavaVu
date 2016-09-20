@@ -210,7 +210,7 @@ void X11Viewer::execute()
       if (select(x11_fd+1, &in_fds, 0, 0, &tv) == 0)
       {
         //Timer fired
-        if (postdisplay || OpenGLViewer::pollInput())
+        if (postdisplay || pollInput())
           display();
       }
     }
