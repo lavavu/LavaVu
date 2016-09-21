@@ -36,10 +36,10 @@
 //Model class
 #include "Model.h"
 
-Model::Model(State& state) : state(state), readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
+Model::Model(DrawState& drawstate) : drawstate(drawstate), readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
-
+  
   //Create new geometry containers
   init();
 }
@@ -69,7 +69,7 @@ View* Model::defaultView()
   if (views.size() == 0)
   {
     //Default view
-    View* view = new View(state.drawstate);
+    View* view = new View(drawstate);
     views.push_back(view);
   }
 
@@ -91,25 +91,26 @@ View* Model::defaultView()
 void Model::init()
 {
   //Create new geometry containers
-  state.geometry.resize(lucMaxType);
-  state.geometry[lucLabelType] = state.labels = new Geometry(state.drawstate);
-  state.geometry[lucPointType] = state.points = new Points(state.drawstate);
-  state.geometry[lucVectorType] = state.vectors = new Vectors(state.drawstate);
-  state.geometry[lucTracerType] = state.tracers = new Tracers(state.drawstate);
-  state.geometry[lucGridType] = state.quadSurfaces = new QuadSurfaces(state.drawstate, true);
-  state.geometry[lucVolumeType] = state.volumes = new Volumes(state.drawstate);
-  state.geometry[lucTriangleType] = state.triSurfaces = new TriSurfaces(state.drawstate, true);
-  state.geometry[lucLineType] = state.lines = new Lines(state.drawstate);
-  state.geometry[lucShapeType] = state.shapes = new Shapes(state.drawstate);
-  debug_print("Created %d new geometry containers\n", state.geometry.size());
+  geometry.clear();
+  geometry.resize(lucMaxType);
+  geometry[lucLabelType] = labels = new Geometry(drawstate);
+  geometry[lucPointType] = points = new Points(drawstate);
+  geometry[lucVectorType] = vectors = new Vectors(drawstate);
+  geometry[lucTracerType] = tracers = new Tracers(drawstate);
+  geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate, true);
+  geometry[lucVolumeType] = volumes = new Volumes(drawstate);
+  geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate, true);
+  geometry[lucLineType] = lines = new Lines(drawstate);
+  geometry[lucShapeType] = shapes = new Shapes(drawstate);
+  debug_print("Created %d new geometry containers\n", geometry.size());
 
-  for (unsigned int i=0; i < state.geometry.size(); i++)
+  for (unsigned int i=0; i < geometry.size(); i++)
   {
-    bool hideall = state.drawstate.global("hideall");
+    bool hideall = drawstate.global("hideall");
     if (hideall)
-      state.geometry[i]->hideShowAll(true);
+      geometry[i]->hideShowAll(true);
     //Reset static data
-    state.geometry[i]->close();
+    geometry[i]->close();
   }
 }
 
@@ -152,7 +153,7 @@ bool Model::loadFigure(int fig)
 
   //Set window caption
   if (fignames[figure].length() > 0)
-    state.drawstate.globals["caption"] = fignames[figure];
+    drawstate.globals["caption"] = fignames[figure];
   return true;
 }
 
@@ -208,9 +209,9 @@ void Model::reopen(bool write)
   if (attached)
   {
     char SQL[SQL_QUERY_MAX];
-    sprintf(SQL, "attach database '%s' as t%d", timesteps[state.now]->path.c_str(), attached);
+    sprintf(SQL, "attach database '%s' as t%d", timesteps[drawstate.now]->path.c_str(), attached);
     if (issue(SQL))
-      debug_print("Model %s found and re-attached\n", timesteps[state.now]->path.c_str());
+      debug_print("Model %s found and re-attached\n", timesteps[drawstate.now]->path.c_str());
   }
 }
 
@@ -258,20 +259,34 @@ void Model::attach(int stepidx)
 
 void Model::close()
 {
-  for (unsigned int i=0; i < state.geometry.size(); i++)
-    state.geometry[i]->close();
+  for (unsigned int i=0; i < geometry.size(); i++)
+  {
+    geometry[i]->close();
+    delete geometry[i];
+  }
+  geometry.clear();
+
+  labels = NULL;
+  points = NULL;
+  vectors = NULL;
+  tracers = NULL;
+  quadSurfaces = NULL;
+  triSurfaces = NULL;
+  lines = NULL;
+  shapes = NULL;
+  volumes = NULL;
 }
 
 void Model::clearObjects(bool all)
 {
-  if (membytes__ > 0 && state.geometry.size() > 0)
+  if (membytes__ > 0 && geometry.size() > 0)
     debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", membytes__/1000000.0f);
 
   //Clear containers...
-  for (unsigned int i=0; i < state.geometry.size(); i++)
+  for (unsigned int i=0; i < geometry.size(); i++)
   {
-    state.geometry[i]->redraw = true;
-    state.geometry[i]->clear(all);
+    geometry[i]->redraw = true;
+    geometry[i]->clear(all);
   }
 }
 
@@ -280,27 +295,28 @@ void Model::setup()
   //Setup min/max on all object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    state.points->setup(objects[i]);
-    state.quadSurfaces->setup(objects[i]);
-    state.triSurfaces->setup(objects[i]);
-    state.vectors->setup(objects[i]);
-    state.tracers->setup(objects[i]);
-    state.shapes->setup(objects[i]);
-    state.lines->setup(objects[i]);
-    state.volumes->setup(objects[i]);
+    points->setup(objects[i]);
+    quadSurfaces->setup(objects[i]);
+    triSurfaces->setup(objects[i]);
+    vectors->setup(objects[i]);
+    tracers->setup(objects[i]);
+    shapes->setup(objects[i]);
+    lines->setup(objects[i]);
+    volumes->setup(objects[i]);
   }
 }
+
 void Model::redraw(bool reload)
 {
   //Flag redraw on all objects...
-  for (unsigned int i=0; i < state.geometry.size(); i++)
+  for (unsigned int i=0; i < geometry.size(); i++)
   {
     if (reload) 
       //Flag redraw and clear element count to force colour reload...
-      state.geometry[i]->reset();
+      geometry[i]->reset();
     else
       //Just flag a redraw, will only be reloaded if vertex count changed
-      state.geometry[i]->redraw = true;
+      geometry[i]->redraw = true;
   }
 
 
@@ -316,7 +332,7 @@ unsigned int Model::addColourMap(ColourMap* cmap)
   if (!cmap)
   {
     //Create a default greyscale map
-    cmap = new ColourMap(state.drawstate);
+    cmap = new ColourMap(drawstate);
     unsigned int colours[] = {0xff000000, 0xffffffff};
     cmap->add(colours, 2);
   }
@@ -373,10 +389,10 @@ void Model::loadWindows()
           max[i] = -FLT_MAX;
       }
 
-      state.drawstate.globals["caption"] = wtitle;
-      state.drawstate.globals["resolution"] = {width, height};
-      state.drawstate.globals["min"] = {min[0], min[1], min[2]};
-      state.drawstate.globals["max"] = {max[0], max[1], max[2]};
+      drawstate.globals["caption"] = wtitle;
+      drawstate.globals["resolution"] = {width, height};
+      drawstate.globals["min"] = {min[0], min[1], min[2]};
+      drawstate.globals["max"] = {max[0], max[1], max[2]};
 
       //Link the window viewports, objects & colourmaps
       loadLinks();
@@ -401,7 +417,7 @@ void Model::loadViewports()
     float farc = (float)sqlite3_column_double(statement, 5);
 
     //Create the view object and add to list
-    views.push_back(new View(state.drawstate, x, y, nearc, farc));
+    views.push_back(new View(drawstate, x, y, nearc, farc));
     debug_print("Loaded viewport at %f,%f\n", x, y);
   }
   sqlite3_finalize(statement);
@@ -482,7 +498,7 @@ void Model::loadObjects()
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
-    DrawingObject* obj = new DrawingObject(state.drawstate, otitle, props, -1, object_id);
+    DrawingObject* obj = new DrawingObject(drawstate, otitle, props, -1, object_id);
 
     //Convert old colour/opacity from hard coded fields if provided
     int colour = 0x00000000;
@@ -596,7 +612,7 @@ void Model::clearTimeSteps()
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
   {
     //Clear the store first on current timestep to avoid deleting active (double free)
-    if (idx == state.now) timesteps[idx]->cache.clear();
+    if (idx == drawstate.now) timesteps[idx]->cache.clear();
     delete timesteps[idx];
   }
   timesteps.clear();
@@ -608,9 +624,9 @@ int Model::loadTimeSteps(bool scan)
   basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
 
   //Don't reload timesteps when data has been cached
-  if (state.cachesize > 0 && timesteps.size() > 0) return timesteps.size();
+  if (drawstate.cachesize > 0 && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
-  state.drawstate.gap = 0;
+  drawstate.gap = 0;
   int rows = 0;
   int last_step = 0;
 
@@ -624,7 +640,7 @@ int Model::loadTimeSteps(bool scan)
       double time = sqlite3_column_double(statement, 1);
       addTimeStep(step, time);
       //Save gap
-      if (step - last_step > state.drawstate.gap) state.drawstate.gap = step - last_step;
+      if (step - last_step > drawstate.gap) drawstate.gap = step - last_step;
       last_step = step;
 
       //Look for additional db file (minimum 3 digit padded step in names)
@@ -671,8 +687,16 @@ int Model::loadTimeSteps(bool scan)
 
   //Copy to static for use in Tracers etc
   if (infostream) std::cerr << timesteps.size() << " timesteps loaded\n";
-  state.drawstate.timesteps = timesteps;
+  drawstate.timesteps = timesteps;
   return timesteps.size();
+}
+
+void Model::loadFixed()
+{
+  //Insert fixed geometry records
+  if (fixed.size() > 0) 
+    for (unsigned int i=0; i<geometry.size(); i++)
+      geometry[i]->insertFixed(fixed[i]);
 }
 
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
@@ -710,7 +734,7 @@ void Model::loadColourMaps()
     int logscale = sqlite3_column_int(statement, 4);
     int discrete = sqlite3_column_int(statement, 5);
     char *props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(state.drawstate, cmname, minimum, maximum, props ? props : "");
+    colourMap = new ColourMap(drawstate, cmname, minimum, maximum, props ? props : "");
     if (logscale) colourMap->properties.data["logscale"] = true;
     if (discrete) colourMap->properties.data["discrete"] = true;
     colourMaps.push_back(colourMap);
@@ -759,7 +783,7 @@ void Model::loadColourMapsLegacy()
       int discrete = sqlite3_column_int(statement, 4);
       char *props = NULL;
       if (!old) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(state.drawstate, cmname ? cmname : idname, minimum, maximum, props ? props : "");
+      colourMap = new ColourMap(drawstate, cmname ? cmname : idname, minimum, maximum, props ? props : "");
       colourMaps.push_back(colourMap);
       if (logscale) colourMap->properties.data["logscale"] = true;
       if (discrete) colourMap->properties.data["discrete"] = true;
@@ -826,18 +850,18 @@ bool Model::issue(const char* SQL, sqlite3* odb)
 void Model::freeze()
 {
   //Freeze fixed geometry
-  state.fixed = state.geometry;
+  fixed = geometry;
 
   //Need new geometry containers after freeze
   //(Or new data will be appended to the frozen containers!)
   init();
   if (timesteps.size() == 0) addTimeStep();
-  state.loadFixed();
+  loadFixed();
 }
 
 void Model::deleteCache()
 {
-  if (state.cachesize == 0) return;
+  if (drawstate.cachesize == 0) return;
   debug_print("~~~ Cache emptied\n");
   //cache.clear();
 }
@@ -845,17 +869,17 @@ void Model::deleteCache()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (state.cachesize == 0 || state.now < 0 || (int)timesteps.size() <= state.now) return;
-  if (timesteps[state.now]->cache.size() > 0) return; //Already cached this step
+  if (drawstate.cachesize == 0 || drawstate.now < 0 || (int)timesteps.size() <= drawstate.now) return;
+  if (timesteps[drawstate.now]->cache.size() > 0) return; //Already cached this step
 
-  printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), state.now, file.base.c_str(), membytes__/1000000.0f);
+  printf("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), drawstate.now, file.base.c_str(), membytes__/1000000.0f);
 
   //Copy all elements
   if (membytes__ > 0)
   {
-    timesteps[state.now]->write(state.geometry);
+    timesteps[drawstate.now]->write(geometry);
     debug_print("~~~ Cached step, at: %d\n", step());
-    state.geometry.clear();
+    geometry.clear();
   }
   else
     debug_print("~~~ Nothing to cache\n");
@@ -879,24 +903,24 @@ void Model::cacheStep()
 
 bool Model::restoreStep()
 {
-  if (state.now < 0 || state.cachesize == 0) return false;
-  if (timesteps[state.now]->cache.size() == 0)
+  if (drawstate.now < 0 || drawstate.cachesize == 0) return false;
+  if (timesteps[drawstate.now]->cache.size() == 0)
     return false; //Nothing cached this step
 
   //Load the cache and save loaded timestep
-  timesteps[state.now]->read(state.geometry);
-  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), state.now, file.base.c_str());
+  timesteps[drawstate.now]->read(geometry);
+  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, file.base.c_str());
 
   //Switch geometry containers
-  state.labels = state.geometry[lucLabelType];
-  state.points = (Points*)state.geometry[lucPointType];
-  state.vectors = (Vectors*)state.geometry[lucVectorType];
-  state.tracers = (Tracers*)state.geometry[lucTracerType];
-  state.quadSurfaces = (QuadSurfaces*)state.geometry[lucGridType];
-  state.volumes = (Volumes*)state.geometry[lucVolumeType];
-  state.triSurfaces = (TriSurfaces*)state.geometry[lucTriangleType];
-  state.lines = (Lines*)state.geometry[lucLineType];
-  state.shapes = (Shapes*)state.geometry[lucShapeType];
+  labels = geometry[lucLabelType];
+  points = (Points*)geometry[lucPointType];
+  vectors = (Vectors*)geometry[lucVectorType];
+  tracers = (Tracers*)geometry[lucTracerType];
+  quadSurfaces = (QuadSurfaces*)geometry[lucGridType];
+  volumes = (Volumes*)geometry[lucVolumeType];
+  triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
+  lines = (Lines*)geometry[lucLineType];
+  shapes = (Shapes*)geometry[lucShapeType];
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
   redraw(true);  //Force reload
@@ -926,7 +950,7 @@ int Model::nearestTimeStep(int requested)
   int idx;
   if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
   //if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
-  //if (timesteps.size() == 1 && state.now >= 0 && ) return -1;  //Single timestep
+  //if (timesteps.size() == 1 && drawstate.now >= 0 && ) return -1;  //Single timestep
 
   for (idx=0; idx < (int)timesteps.size(); idx++)
     if (timesteps[idx]->step >= requested) break;
@@ -949,7 +973,7 @@ int Model::setTimeStep(int stepidx)
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
   {
-    state.now = -1;
+    drawstate.now = -1;
     return -1;
   }
 
@@ -958,23 +982,23 @@ int Model::setTimeStep(int stepidx)
     stepidx = timesteps.size()-1;
 
   //Unchanged...
-  if (state.now >= 0 && stepidx == state.now) return -1;
+  if (drawstate.now >= 0 && stepidx == drawstate.now) return -1;
 
   //Setting initial step?
-  bool first = (state.now < 0);
+  bool first = (drawstate.now < 0);
 
   //Cache currently loaded data
-  if (state.cachesize > 0) cacheStep();
+  if (drawstate.cachesize > 0) cacheStep();
 
   //Set the new timestep index
-  state.drawstate.timesteps = timesteps; //Set to current model timestep vector
-  state.now = stepidx;
+  drawstate.timesteps = timesteps; //Set to current model timestep vector
+  drawstate.now = stepidx;
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
   if (!restoreStep())
   {
     //Create new geometry containers if required
-    if (state.geometry.size() == 0) init();
+    if (geometry.size() == 0) init();
 
     if (first)
       //Freeze any existing geometry as non time-varying when first step loaded
@@ -984,17 +1008,17 @@ int Model::setTimeStep(int stepidx)
       clearObjects();
 
     //Import fixed data first
-    if (state.now > 0) 
-      state.loadFixed();
+    if (drawstate.now > 0) 
+      loadFixed();
 
     //Attempt to load from cache first
     //if (restoreStep(state.now)) return 0; //Cache hit successful return value
     if (db)
     {
       //Detach any attached db file and attach n'th timestep database if available
-      attach(state.now);
+      attach(drawstate.now);
 
-      if (state.cachesize > 0)
+      if (drawstate.cachesize > 0)
         //Attempt caching all geometry from database at start
         rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
       else
@@ -1121,12 +1145,12 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (step() != timestep && !attached) //Will not work with attached db
       {
         cacheStep();
-        state.now = nearestTimeStep(timestep);
+        drawstate.now = nearestTimeStep(timestep);
         debug_print("TimeStep set to: %d, rows %d\n", step(), rows);
       }
 
       //Create new geometry containers if required
-      if (state.geometry.size() == 0) init();
+      if (geometry.size() == 0) init();
 
       if (type == lucTracerType)
       {
@@ -1136,9 +1160,9 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       }
 
       //Create object and set parameters
-      if (type == lucPointType && state.drawstate.global("pointspheres")) type = lucShapeType;
+      if (type == lucPointType && drawstate.global("pointspheres")) type = lucShapeType;
       //if (type == lucGridType) type = lucTriangleType;
-      active = state.geometry[type];
+      active = geometry[type];
 
       if (recurseTracers && type == lucTracerType)
       {
@@ -1496,7 +1520,7 @@ void Model::writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool comp
 
 void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compressdata)
 {
-  std::vector<GeomData*> data = state.geometry[type]->getAllObjects(obj);
+  std::vector<GeomData*> data = geometry[type]->getAllObjects(obj);
   //Loop through and write out all object data
   char SQL[SQL_QUERY_MAX];
   unsigned int i, data_type;
@@ -1540,9 +1564,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
       for (int c=0; c<3; c++)
       {
         if (ISFINITE(data[i]->min[c])) min[c] = data[i]->min[c];
-        else data[i]->min[c] = state.drawstate.min[c];
+        else data[i]->min[c] = drawstate.min[c];
         if (ISFINITE(data[i]->max[c])) max[c] = data[i]->max[c];
-        else data[i]->max[c] = state.drawstate.max[c];
+        else data[i]->max[c] = drawstate.max[c];
 
       }
 
@@ -1608,18 +1632,18 @@ void Model::objectBounds(DrawingObject* draw, float* min, float* max)
   for (int i=0; i<3; i++)
     max[i] = -(min[i] = HUGE_VAL);
   //Expand bounds by all geometry objects
-  for (unsigned int i=0; i < state.geometry.size(); i++)
-    state.geometry[i]->objectBounds(draw, min, max);
+  for (unsigned int i=0; i < geometry.size(); i++)
+    geometry[i]->objectBounds(draw, min, max);
 }
 
 void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 {
   //Write new JSON format objects
-  // - globals are all stored on / sourced from state.drawstate.globals
+  // - globals are all stored on / sourced from drawstate.globals
   // - views[] list holds view properies (previously single instance in "options")
-  std::lock_guard<std::mutex> guard(state.mutex);
+  std::lock_guard<std::mutex> guard(drawstate.mutex);
   json exported;
-  json properties = state.drawstate.globals;
+  json properties = drawstate.globals;
   json cmaps = json::array();
   json outobjects = json::array();
   json outviews = json::array();
@@ -1707,20 +1731,20 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
       if (!objdata)
       {
-        if (state.points->getVertexCount(objects[i]) > 0) obj["points"] = true;
-        if (state.quadSurfaces->getVertexCount(objects[i]) > 0 ||
-            state.triSurfaces->getVertexCount(objects[i]) > 0 ||
-            state.vectors->getVertexCount(objects[i]) > 0 ||
-            state.tracers->getVertexCount(objects[i]) > 0 ||
-            state.shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
-        if (state.lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
-        if (state.volumes->getVertexCount(objects[i]) > 0) obj["volume"] = true;
+        if (points->getVertexCount(objects[i]) > 0) obj["points"] = true;
+        if (quadSurfaces->getVertexCount(objects[i]) > 0 ||
+            triSurfaces->getVertexCount(objects[i]) > 0 ||
+            vectors->getVertexCount(objects[i]) > 0 ||
+            tracers->getVertexCount(objects[i]) > 0 ||
+            shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
+        if (lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
+        if (volumes->getVertexCount(objects[i]) > 0) obj["volume"] = true;
 
         //Data labels
         json dict;
-        for (unsigned int j=0; j < state.geometry.size(); j++)
+        for (unsigned int j=0; j < geometry.size(); j++)
         {
-          json list = state.geometry[j]->getDataLabels(objects[i]);
+          json list = geometry[j]->getDataLabels(objects[i]);
           std::string key;
           for (auto dataobj : list)
           {
@@ -1740,8 +1764,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       {
         //Collect vertex/normal/index/value data
         //When extracting data, skip objects with no data returned...
-        //if (!state.geometry[type]) continue;
-        state.geometry[type]->jsonWrite(objects[i], obj);
+        //if (!geometry[type]) continue;
+        geometry[type]->jsonWrite(objects[i], obj);
       }
 
       //Save object if contains data
@@ -1774,10 +1798,10 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
 void Model::jsonRead(std::string data)
 {
-  std::lock_guard<std::mutex> guard(state.mutex);
+  std::lock_guard<std::mutex> guard(drawstate.mutex);
   
   json imported = json::parse(data);
-  state.drawstate.globals = imported["properties"];
+  drawstate.globals = imported["properties"];
   json inviews;
   //If "options" exists (old format) read it as first view properties
   if (imported.count("options") > 0)
@@ -1791,7 +1815,7 @@ void Model::jsonRead(std::string data)
     if (v >= views.size())
     {
       //Insert a view
-      View* view = new View(state.drawstate);
+      View* view = new View(drawstate);
       views.push_back(view);
       //Insert all objects for now
       view->objects = objects;
@@ -1873,7 +1897,7 @@ void Model::jsonRead(std::string data)
     /*if (i >= objects.size())
     {
       std::string name = inobjects[i]["name"];
-      addObject(new DrawingObject(state.drawstate, name));
+      addObject(new DrawingObject(drawstate, name));
     }*/
 
     if (i >= inobjects.size())

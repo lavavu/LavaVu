@@ -38,7 +38,7 @@
 
 #include "sqlite3/sqlite3.h"
 
-#include "State.h"
+#include "DrawState.h"
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
 #include "View.h"
@@ -55,7 +55,7 @@ private:
   char prefix[10];   //attached db prefix
 
 public:
-  State& state;
+  DrawState& drawstate;
   FilePath file;
   std::string basename;
   sqlite3 *db;
@@ -70,6 +70,24 @@ public:
   std::vector<DrawingObject*> objects;
   std::vector<ColourMap*> colourMaps;
 
+  std::vector<Geometry*> fixed;     //Static geometry
+  //Current timestep geometry
+  std::vector<Geometry*> geometry;
+  //Type specific geometry pointers
+  //(TODO: container class for a set of geometry)
+  Geometry* labels;
+  Points* points;
+  Vectors* vectors;
+  Tracers* tracers;
+  QuadSurfaces* quadSurfaces;
+  TriSurfaces* triSurfaces;
+  Lines* lines;
+  Shapes* shapes;
+  Volumes* volumes;
+
+  DrawingObject* borderobj;
+  DrawingObject* axisobj;
+  DrawingObject* rulerobj;
   sqlite3_stmt* select(const char* SQL, bool silent=false);
   bool issue(const char* SQL, sqlite3* odb=NULL);
   bool open(bool write=false);
@@ -85,6 +103,7 @@ public:
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps(bool scan=false);
+  void loadFixed();
   std::string checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit=1);
   void loadViewports();
   void loadViewCamera(int viewport_id);
@@ -92,7 +111,7 @@ public:
   void loadColourMaps();
   void loadColourMapsLegacy();
 
-  Model(State& state);
+  Model(DrawState& drawstate);
   void load(const FilePath& fn);
   void init();
   ~Model();
@@ -114,13 +133,13 @@ public:
   int step()
   {
     //Current actual step
-    return state.now < 0 || (int)timesteps.size() <= state.now ? -1 : timesteps[state.now]->step;
+    return drawstate.now < 0 || (int)timesteps.size() <= drawstate.now ? -1 : timesteps[drawstate.now]->step;
   }
 
   int stepInfo()
   {
     //Current actual step (returns 0 if none instead of -1 for output functions)
-    return state.now < 0 || (int)timesteps.size() <= state.now ? 0 : timesteps[state.now]->step;
+    return drawstate.now < 0 || (int)timesteps.size() <= drawstate.now ? 0 : timesteps[drawstate.now]->step;
   }
 
   int lastStep()
