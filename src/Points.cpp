@@ -103,7 +103,6 @@ void Points::update()
 
   //Initial depth sort & render
   view->sort = true;
-  render();
 }
 
 void Points::loadVertices()

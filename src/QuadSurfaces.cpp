@@ -216,7 +216,8 @@ void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned
 void QuadSurfaces::draw()
 {
   GL_Error_Check;
-  if (view->sort) redraw = true; //Recalc cross section order
+  if (view->is3d && view->sort)
+    redraw = true; //Recalc cross section order
 
   //Draw, calls update when required
   Geometry::draw();

@@ -121,9 +121,8 @@ void TriSurfaces::update()
   //When objects hidden/shown drawable count changes, so need to reallocate
   elements = drawelements;
 
-  //Initial depth sort & render
+  //Initial depth sort flag
   view->sort = true;
-  render();
 }
 
 void TriSurfaces::loadMesh()

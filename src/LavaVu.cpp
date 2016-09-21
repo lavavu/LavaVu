@@ -145,9 +145,7 @@ void LavaVu::defaults()
   writeimage = false;
   writemovie = 0;
 #ifdef USE_OMEGALIB
-  sort_on_rotate = false;
-#else
-  sort_on_rotate = true;
+  drawstate.globals["sort"] = 0;
 #endif
   message[0] = '\0';
   volume = NULL;
@@ -1782,8 +1780,11 @@ void LavaVu::display(void)
   //Always redraw the active view, others only if flag set
   if (aview)
   {
-    if (!viewer->mouseState && sort_on_rotate && aview->rotated)
+    if (!viewer->mouseState && drawstate.global("sort") < 0 && aview->rotated)
+    {
       aview->sort = true;
+      aview->rotated = false;
+    }
   }
 
   viewSelect(view);
@@ -1896,9 +1897,6 @@ void LavaVu::display(void)
 
   //Print current info message (displayed for one frame only)
   if (status) displayMessage();
-
-  //Clear the rotation flag
-  if (aview->sort) aview->rotated = false;
 
   //Display object list if enabled
   if (objectlist)
