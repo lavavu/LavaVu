@@ -297,9 +297,9 @@ float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
 }
 
 Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate), 
-                       view(NULL), elements(-1), flat2d(false),
+                       view(NULL), elements(0), flat2d(false),
                        allhidden(false), internal(false), unscale(false),
-                       type(lucMinType), total(0), redraw(true)
+                       type(lucMinType), total(0), redraw(true), reload(true)
 {
 }
 
@@ -312,14 +312,13 @@ Geometry::~Geometry()
 //Virtuals to implement
 void Geometry::close() //Called on quit or gl context destroy
 {
-  elements = -1;
+  reload = true;
 }
 
 void Geometry::clear(bool all)
 {
   total = 0;
-  elements = -1;
-  redraw = true;
+  reload = true;
   if (internal) all = true; //Always clear all sub-geometry
 
   //iterate geom and delete all GeomData entries
@@ -348,8 +347,7 @@ void Geometry::clear(bool all)
 
 void Geometry::remove(DrawingObject* draw)
 {
-  elements = -1;
-  redraw = true;
+  reload = true;
   for (int i = geom.size()-1; i>=0; i--)
   {
     if (draw == geom[i]->draw)
@@ -360,12 +358,6 @@ void Geometry::remove(DrawingObject* draw)
       if (hidden.size() > (unsigned int)i) hidden.erase(hidden.begin()+i);
     }
   }
-}
-
-void Geometry::reset()
-{
-  elements = -1;
-  redraw = true;
 }
 
 void Geometry::compareMinMax(float* min, float* max)
@@ -552,8 +544,7 @@ void Geometry::redrawObject(DrawingObject* draw)
   {
     if (geom[i]->draw == draw)
     {
-      elements = -1; //Force reload data
-      redraw = true;
+      reload = true;
       return;
     }
   }
@@ -561,7 +552,7 @@ void Geometry::redrawObject(DrawingObject* draw)
 
 void Geometry::init() //Called on GL init
 {
-  redraw = true;
+  reload = true;
 }
 
 void Geometry::setState(unsigned int i, Shader* prog)
@@ -711,7 +702,7 @@ void Geometry::draw()  //Display saved geometry
   //Have something to update?
   if (newcount)
   {
-    if (redraw || newcount != drawcount)
+    if (reload || redraw || newcount != drawcount)
       update();
 
     labels();

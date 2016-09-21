@@ -105,8 +105,8 @@ void QuadSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  //To force, use Geometry->reset() which sets elements to -1
-  if (elements < 0 || elements != quadverts)
+  //To force, set geometry->reload = true
+  if (reload || elements != quadverts)
   {
     //Clear buffers
     close();
