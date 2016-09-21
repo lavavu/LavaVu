@@ -312,7 +312,7 @@ void Model::redraw(bool reload)
   for (unsigned int i=0; i < geometry.size(); i++)
   {
     if (reload) 
-      //Flag redraw and clear element count to force colour reload...
+      //Full data reload...
       geometry[i]->reload = true;
     else
       //Just flag a redraw, will only be reloaded if vertex count changed
@@ -1000,6 +1000,9 @@ int Model::setTimeStep(int stepidx)
     //Create new geometry containers if required
     if (geometry.size() == 0) init();
 
+    //Already loaded
+    if (timesteps[drawstate.now]->loaded) return -1;
+
     if (first)
       //Freeze any existing geometry as non time-varying when first step loaded
       freeze();
@@ -1023,6 +1026,9 @@ int Model::setTimeStep(int stepidx)
         rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
       else
         rows += loadGeometry();
+
+      //Flag loaded
+      timesteps[drawstate.now]->loaded = true;
 
       debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
     }

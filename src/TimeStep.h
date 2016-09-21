@@ -44,11 +44,12 @@ public:
   int step;
   float time;
   std::string path;
+  bool loaded;
 
   //Cached data
   std::vector<Geometry*> cache;
 
-  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path) {}
+  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path), loaded(false) {}
   TimeStep() : step(0), time(0) {}
 
   ~TimeStep()
@@ -77,6 +78,7 @@ public:
     for (unsigned int i=0; i < data.size(); i++)
     {
       //Release any graphics memory
+      //TODO: setting to skip this? Would cache all data on gpu too
       data[i]->close();
     }
 
