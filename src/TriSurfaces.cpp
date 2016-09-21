@@ -106,8 +106,8 @@ void TriSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  //To force, use Geometry->reset() which sets elements to -1
-  if (elements < 0 || !tidx || tcount != total)
+  //To force, set geometry->reload = true
+  if (reload || !tidx || tcount != total)
   {
     //Clear buffers
     //close();

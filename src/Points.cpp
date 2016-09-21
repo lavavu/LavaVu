@@ -90,8 +90,8 @@ void Points::update()
   }
 
   //Ensure vbo recreated if total changed
-  if (elements < 0 || total != last_total)
-    //if (true)
+  //To force update, set geometry->reload = true
+  if (reload || total != last_total)
   {
     loadVertices();
   }

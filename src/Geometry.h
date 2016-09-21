@@ -234,14 +234,14 @@ public:
   Vec3d iscale; //Factors for un-scaling
   lucGeometryType type;   //Holds the object type
   unsigned int total;     //Total entries of all objects in container
-  bool redraw;    //Redraw from scratch flag
+  bool redraw;    //Redraw flag
+  bool reload;    //Reload and redraw flag
 
   Geometry(DrawState& drawstate);
   virtual ~Geometry();
 
   void clear(bool all=false); //Called before new data loaded
   void remove(DrawingObject* draw);
-  void reset(); //Called before new data loaded when caching previous data
   virtual void close(); //Called on quit & before gl context recreated
 
   void compareMinMax(float* min, float* max);

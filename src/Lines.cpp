@@ -60,6 +60,8 @@ void Lines::close()
 void Lines::update()
 {
   //Skip update if count hasn't changed
+  //To force update, set geometry->reload = true
+  if (reload) elements = 0;
   if (elements > 0 && (linetotal == (unsigned int)elements || total == 0)) return;
 
   tris->clear();
