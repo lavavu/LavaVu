@@ -313,7 +313,7 @@ void Model::redraw(bool reload)
   {
     if (reload) 
       //Flag redraw and clear element count to force colour reload...
-      geometry[i]->reset();
+      geometry[i]->reload = true;
     else
       //Just flag a redraw, will only be reloaded if vertex count changed
       geometry[i]->redraw = true;
