@@ -2779,39 +2779,44 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed["sort"] == "off")
     {
       //Disables all sorting
-      sort_on_rotate = false;
-      aview->sort = false;
+      drawstate.globals["sort"] = 0;
       printMessage("Geometry sorting has been disabled");
     }
     else if (parsed["sort"] == "timer")
     {
-      //Disables sort on rotate mode
-      sort_on_rotate = false;
       //Enables sort on timer
-      aview->sort = true;
+      //Disables sort on rotate mode
+      drawstate.globals["sort"] = TIMER_IDLE;
       viewer->idleTimer(TIMER_IDLE); //Start idle redisplay timer (default 1.5 seconds)
       printMessage("Sort geometry on timer instead of rotation enabled");
     }
     else if (parsed["sort"] == "on")
     {
       //Enables sort on rotate mode
-      sort_on_rotate = true;
       //Disables sort on timer
-      aview->sort = false;
+      drawstate.globals["sort"] = -1;
       viewer->idleTimer(0); //Stop/disable idle redisplay timer
       printMessage("Sort geometry on rotation enabled");
     }
     else
-      //Flag rotated
-      aview->rotated = true;
+    {
+      //User requested sort
+      aview->sort = true;
+      aview->rotated = false;
+    }
   }
   else if (parsed.exists("idle"))
   {
     //Internal usage, no help
     if (gethelp) return false;
 
-    if (!sort_on_rotate && aview->rotated)
+    //Timer sort?
+    if (drawstate.global("sort") > 0 && aview->rotated)
+    {
       aview->sort = true;
+      aview->rotated = false;
+    }
+
     //Command playback
     if (repeat != 0)
     {

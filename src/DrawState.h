@@ -368,6 +368,8 @@ public:
     defaults["pointattribs"] = true;
     // | global | boolean | Point distance size attenuation (points shrink when further from viewer ie: perspective)
     defaults["pointattenuate"] = true;
+    // | global | integer | Automatic depth sorting, -1=on, 0=disabled, >0=timer
+    defaults["sort"] = 1;
 
     //LavaVR specific
     defaults["sweep"] = false;
