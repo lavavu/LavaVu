@@ -301,7 +301,6 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("toggle cullface");
     case 'w':
       parseCommands("toggle wireframe");
-      amodel->redraw(true);
       return true;
     case 'o':
       return parseCommands("list objects");
@@ -1650,21 +1649,18 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       bool current = aobject->properties[what];
       aobject->properties.data[what] = !current;
-      amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
     else if (aview->properties.has(what) && aview->properties[what].is_boolean())
     {
       bool current = aview->properties[what];
       aview->properties.data[what] = !current;
-      amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
     else if (drawstate.defaults.count(what) > 0 && drawstate.global(what).is_boolean())
     {
       bool current = drawstate.global(what);
       drawstate.global(what) = !current;
-      amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
   }
@@ -1678,7 +1674,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //for (int type=lucMinType; type<lucMaxType; type++)
     //   amodel->geometry[type]->redraw = true;
-    amodel->redraw(true); //Redraw & reload
+    amodel->redraw(); //Redraw only
     printMessage("Redrawing all objects");
   }
   else if (parsed.exists("fullscreen"))
@@ -1991,6 +1987,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     amodel->loadTimeSteps();
     amodel->timesteps[drawstate.now]->loaded = false;
     if (model < 0 || !loadModelStep(model, amodel->step())) return false;
+    amodel->redraw(true); //Redraw & reload
   }
   else if (parsed.exists("zerocam"))
   {
