@@ -2570,9 +2570,8 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)
   {
-    //Reset new model data
-    amodel->redraw(true);
-    //if (amodel->objects.size() == 0) return false;
+    //Redraw model data
+    amodel->redraw();
 
     //Set timestep and load geometry at that step
     if (amodel->db)

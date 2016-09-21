@@ -923,7 +923,8 @@ bool Model::restoreStep()
   shapes = (Shapes*)geometry[lucShapeType];
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
-  redraw(true);  //Force reload
+  //Redraw display
+  redraw();
   return true;
 }
 
