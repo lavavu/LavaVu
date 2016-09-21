@@ -1989,7 +1989,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //Restore original data
     amodel->loadTimeSteps();
-    if (model < 0 || !loadModelStep(model)) return false;
+    amodel->timesteps[drawstate.now]->loaded = false;
+    if (model < 0 || !loadModelStep(model, amodel->step())) return false;
   }
   else if (parsed.exists("zerocam"))
   {
