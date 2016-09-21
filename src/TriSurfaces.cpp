@@ -39,6 +39,7 @@ TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(draws
 {
   type = lucTriangleType;
   tricount = 0;
+  idxcount = 0;
   vbo = 0;
   indexvbo = 0;
   tidx = NULL;
@@ -721,6 +722,11 @@ void TriSurfaces::render()
     debug_print("Depth sorting %d triangles...\n", tricount);
     depthSort();
   }
+  else if (idxcount == elements)
+  {
+    //Nothing has changed, skip
+    return;
+  }
 
   t1 = clock();
 
@@ -751,13 +757,13 @@ void TriSurfaces::render()
   GL_Error_Check;
   if (!p) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
-  elements = 0;
+  idxcount = 0;
   assert(tricount <= total); //Or will overflow tidx buffer
   for(int i=tricount-1; i>=0; i--)
     //for(int i=0; i<tricount; i++)
   {
     if (hiddencache[tidx[i].geomid]) continue;
-    elements += 3;
+    idxcount += 3;
     assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
     //Copies index bytes
     memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
