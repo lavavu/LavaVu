@@ -710,6 +710,7 @@ void Geometry::draw()  //Display saved geometry
 
   drawcount = newcount;
   redraw = false;
+  reload = false;
   GL_Error_Check;
 
 }
