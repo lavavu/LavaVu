@@ -48,19 +48,24 @@ endif
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
   LIBLINK=-Wl,-rpath $(APREFIX)
 else
-  #Linux with X11 (and optional GLUT, SDL)
-  LIBS=-ldl -lpthread -lm -lGL -lz -lX11
-  DEFINES += -DUSE_FONTS -DHAVE_X11
+  #Linux 
+  LIBS=-ldl -lpthread -lm -lGL -lz
+  DEFINES += -DUSE_FONTS
   LIBEXT=so
   LIBBUILD=-shared
   LIBLINK=-Wl,-rpath=$(APREFIX)
 ifeq ($(GLUT), 1)
+  #GLUT optional
   LIBS+= -lglut
   DEFINES += -DHAVE_GLUT
-endif
-ifeq ($(SDL), 1)
+else ifeq ($(SDL), 1)
+  #SDL optional
   LIBS+= -lSDL
   DEFINES += -DHAVE_SDL
+else
+  #X11 default
+  LIBS+= -lX11
+  DEFINES += -DHAVE_X11
 endif
 endif
 

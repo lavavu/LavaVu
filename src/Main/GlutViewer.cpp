@@ -176,7 +176,7 @@ void GlutViewer::glut_display(void)
 
 void GlutViewer::glut_timer(int value)
 {
-  if (self->postdisplay || pollInput())
+  if (self->postdisplay || self->pollInput())
     glutPostRedisplay();
 
   //Have to force quit in GLUT as we don't control event loop
