@@ -9,26 +9,38 @@ class DrawState;
 class DrawState
 {
 public:
-//Properties
+  //Properties
   json globals;
   json defaults;
 
-//TimeStep
+  //Model
+  int now;
+
+  DrawingObject* borderobj;
+  DrawingObject* axisobj;
+  DrawingObject* rulerobj;
+
+  //TimeStep
+  int cachesize;
+
+  //Mutex for thread safe updates
+  std::mutex mutex;
+
+  //TimeStep
   std::vector<TimeStep*> timesteps; //Active model timesteps
   int gap;
 
-//Geometry
+  //Geometry
   float min[3], max[3], dims[3];
   float *x_coords, *y_coords;  // Saves arrays of x,y points on circle for set segment count
   int segments = 0;    // Saves segment count for circle based objects
 
-
-//TriSurfaces, Lines, Points, Volumes
+  //TriSurfaces, Lines, Points, Volumes
   Shader* prog[lucMaxType];
-//Points
+  //Points
   GLuint pindexvbo, pvbo;
 
-//View
+  //View
   Camera* globalcam = NULL;
 
   //Fonts
@@ -36,6 +48,7 @@ public:
 
   DrawState() : prog()
   {
+    borderobj = axisobj = rulerobj = NULL;
     //reset(); //Called by State::reset instead
   }
 
@@ -44,6 +57,13 @@ public:
     defaults = json::object();
     globals = json::object();
 
+    if (borderobj) delete borderobj;
+    if (axisobj) delete axisobj;
+    if (rulerobj) delete rulerobj;
+    borderobj = axisobj = rulerobj = NULL;
+
+    cachesize = 0;
+    now = -1;
     gap = 0;
 
     for (int i=0; i<3; i++)

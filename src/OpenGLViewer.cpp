@@ -118,7 +118,7 @@ void OpenGLViewer::init()
   glShadeModel(GL_SMOOTH);
 
   //Font setup
-  app->state.drawstate.fonts.rasterSetupFonts();
+  app->drawstate.fonts.rasterSetupFonts();
 
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
@@ -390,7 +390,7 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
   //Ensure correct GL context selected first
   display();
   //Use statics for global props to avoid lookup each time
-  static bool alphapng = !jpeg && app->state.drawstate.global("alphapng");
+  static bool alphapng = !jpeg && app->drawstate.global("alphapng");
   int bpp = alphapng ? 4 : 3;
   int savewidth = width;
   int saveheight = height;

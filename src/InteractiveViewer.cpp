@@ -374,43 +374,43 @@ bool LavaVu::parseChar(unsigned char key)
       switch (ck)
       {
       case 'p':   //Points
-        if (state.points->allhidden)
+        if (amodel->points->allhidden)
           response = parseCommands("show points");
         else
           response = parseCommands("hide points");
         break;
       case 'v':   //Vectors
-        if (state.vectors->allhidden)
+        if (amodel->vectors->allhidden)
           response = parseCommands("show vectors");
         else
           response = parseCommands("hide vectors");
         break;
       case 't':   //Tracers
-        if (state.tracers->allhidden)
+        if (amodel->tracers->allhidden)
           response = parseCommands("show tracers");
         else
           response = parseCommands("hide tracers");
         break;
       case 'u':   //TriSurfaces
-        if (state.triSurfaces->allhidden)
+        if (amodel->triSurfaces->allhidden)
           response = parseCommands("show triangles");
         else
           response = parseCommands("hide triangles");
         break;
       case 'q':   //QuadSurfaces
-        if (state.quadSurfaces->allhidden)
+        if (amodel->quadSurfaces->allhidden)
           response = parseCommands("show quads");
         else
           response = parseCommands("hide quads");
         break;
       case 's':   //Shapes
-        if (state.shapes->allhidden)
+        if (amodel->shapes->allhidden)
           response = parseCommands("show shapes");
         else
           response = parseCommands("hide shapes");
         break;
       case 'l':   //Lines
-        if (state.lines->allhidden)
+        if (amodel->lines->allhidden)
           response = parseCommands("show lines");
         else
           response = parseCommands("hide lines");
@@ -522,23 +522,23 @@ bool LavaVu::parseChar(unsigned char key)
 Geometry* LavaVu::getGeometryType(std::string what)
 {
   if (what == "points")
-    return state.points;
+    return amodel->points;
   if (what == "labels")
-    return state.labels;
+    return amodel->labels;
   if (what == "vectors")
-    return state.vectors;
+    return amodel->vectors;
   if (what == "tracers")
-    return state.tracers;
+    return amodel->tracers;
   if (what == "triangles")
-    return state.triSurfaces;
+    return amodel->triSurfaces;
   if (what == "quads")
-    return state.quadSurfaces;
+    return amodel->quadSurfaces;
   if (what == "shapes")
-    return state.shapes;
+    return amodel->shapes;
   if (what == "lines")
-    return state.lines;
+    return amodel->lines;
   if (what == "volumes")
-    return state.volumes;
+    return amodel->volumes;
   return NULL;
 }
 
@@ -786,8 +786,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    state.cachesize = ival;
-    printMessage("Geometry cache set to %d timesteps", state.cachesize);
+    drawstate.cachesize = ival;
+    printMessage("Geometry cache set to %d timesteps", drawstate.cachesize);
   }
   else if (parsed.exists("verbose"))
   {
@@ -816,7 +816,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Use this to load multiple volumes as timesteps into the same object
-    volume = new DrawingObject(state.drawstate, "volume");
+    volume = new DrawingObject(drawstate, "volume");
     printMessage("Created static volume object");
   }
   else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
@@ -830,13 +830,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    float opacity = state.drawstate.global("opacity");
+    float opacity = drawstate.global("opacity");
     if (opacity == 0.0) opacity = 1.0;
     if (fval > 1.0)
       opacity = fval / 255.0;
     else
       opacity = fval;
-    state.drawstate.globals["opacity"] = opacity;
+    drawstate.globals["opacity"] = opacity;
     printMessage("Set global opacity to %.2f", opacity);
     if (amodel)
       amodel->redraw(true);
@@ -1229,11 +1229,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(ival, "timestep"))
     {
       if (parsed["timestep"] == "up")
-        ival = state.now-1;
+        ival = drawstate.now-1;
       else if (parsed["timestep"] == "down")
-        ival = state.now+1;
+        ival = drawstate.now+1;
       else
-        ival = state.now;
+        ival = drawstate.now;
     }
     else //Convert to step idx
       ival = amodel->nearestTimeStep(ival);
@@ -1257,7 +1257,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Relative jump
-    if (amodel->setTimeStep(state.now+ival) >= 0)
+    if (amodel->setTimeStep(drawstate.now+ival) >= 0)
     {
       printMessage("Jump to timestep %d", amodel->step());
       resetViews(); //Update the viewports
@@ -1296,7 +1296,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (ival < 0) ival = models.size()-1;
     if (ival >= (int)models.size()) ival = 0;
     if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
-    amodel->setTimeStep(state.now); //Reselect ensures all loaded correctly
+    amodel->setTimeStep(drawstate.now); //Reselect ensures all loaded correctly
     printMessage("Load model %d", model);
   }
   else if (parsed.exists("figure"))
@@ -1385,8 +1385,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (what == "all")
     {
-      for (unsigned int i=0; i < state.geometry.size(); i++)
-        state.geometry[i]->hideShowAll(action == "hide");
+      for (unsigned int i=0; i < amodel->geometry.size(); i++)
+        amodel->geometry[i]->hideShowAll(action == "hide");
       return true;
     }
 
@@ -1445,8 +1445,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           //Hide/show all data for this object
           bool vis = (action == "show");
-          for (unsigned int i=0; i < state.geometry.size(); i++)
-            state.geometry[i]->showObj(list[c], vis);
+          for (unsigned int i=0; i < amodel->geometry.size(); i++)
+            amodel->geometry[i]->showObj(list[c], vis);
           list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
           printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
           amodel->redraw();
@@ -1506,11 +1506,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    int old = state.now;
+    int old = drawstate.now;
     if (amodel->timesteps.size() < 2) return false;
-    amodel->setTimeStep(state.now+1);
+    amodel->setTimeStep(drawstate.now+1);
     //Allow loop back to start when using next command
-    if (state.now > 0 && state.now == old)
+    if (drawstate.now > 0 && drawstate.now == old)
       amodel->setTimeStep(0);
     resetViews(); //Update the viewports
 
@@ -1539,7 +1539,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Default to writing from current to final step
-    int end = state.drawstate.timesteps[state.drawstate.timesteps.size()-1]->step;
+    int end = drawstate.timesteps[drawstate.timesteps.size()-1]->step;
     if (parsed.has(ival, "images"))
       end = ival;
 
@@ -1660,10 +1660,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
-    else if (state.drawstate.defaults.count(what) > 0 && state.drawstate.global(what).is_boolean())
+    else if (drawstate.defaults.count(what) > 0 && drawstate.global(what).is_boolean())
     {
-      bool current = state.drawstate.global(what);
-      state.drawstate.global(what) = !current;
+      bool current = drawstate.global(what);
+      drawstate.global(what) = !current;
       amodel->redraw();
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
@@ -1677,7 +1677,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //for (int type=lucMinType; type<lucMaxType; type++)
-    //   state.geometry[type]->redraw = true;
+    //   amodel->geometry[type]->redraw = true;
     amodel->redraw(true); //Redraw & reload
     printMessage("Redrawing all objects");
   }
@@ -1820,7 +1820,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (obj)
     {
       for (int type=lucMinType; type<lucMaxType; type++)
-        state.geometry[type]->setValueRange(obj);
+        amodel->geometry[type]->setValueRange(obj);
       printMessage("ColourMap scales set to local value range");
       amodel->redraw(true); //Colour change so force reload
     }
@@ -1874,8 +1874,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed["list"] == "elements")
     {
       //Print available elements by id
-      for (unsigned int i=0; i < state.geometry.size(); i++)
-        state.geometry[i]->print();
+      for (unsigned int i=0; i < amodel->geometry.size(); i++)
+        amodel->geometry[i]->print();
       viewer->swap();  //Immediate display
       return false;
     }
@@ -1908,9 +1908,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       displayText("-----------------------------------------", ++offset);
       std::cout << "-----------------------------------------" << std::endl;
-      for (unsigned int i=0; i < state.geometry.size(); i++)
+      for (unsigned int i=0; i < amodel->geometry.size(); i++)
       {
-        json list = state.geometry[i]->getDataLabels(aobject);
+        json list = amodel->geometry[i]->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
           std::stringstream ss;
@@ -1956,8 +1956,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Remove any existing fixed bounds
     aview->properties.data.erase("min");
     aview->properties.data.erase("max");
-    state.drawstate.globals.erase("min");
-    state.drawstate.globals.erase("max");
+    drawstate.globals.erase("min");
+    drawstate.globals.erase("max");
     //Update the viewports and recalc bounding box
     resetViews();
     //Update fixed bounds
@@ -2202,7 +2202,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (data.is_string())
         {
           //Convert to colour values using colourmap parser
-          ColourMap cmap(state.drawstate);
+          ColourMap cmap(drawstate);
           cmap.parse(data);
           data = json::array();
           for (unsigned int i=0; i<cmap.colours.size(); i++)
@@ -2294,13 +2294,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (what == "all")
     {
       int pt = 1;
-      if (state.drawstate.globals.count("pointtype") > 0)
-        pt = state.drawstate.globals["pointtype"];
+      if (drawstate.globals.count("pointtype") > 0)
+        pt = drawstate.globals["pointtype"];
       if (parsed.has(ival, "pointtype", 1))
-        state.drawstate.globals["pointtype"] = ival % 5;
+        drawstate.globals["pointtype"] = ival % 5;
       else
-        state.drawstate.globals["pointtype"] = (pt+1) % 5;
-      printMessage("Point type %d", (int)state.drawstate.globals["pointtype"]);
+        drawstate.globals["pointtype"] = (pt+1) % 5;
+      printMessage("Point type %d", (int)drawstate.globals["pointtype"]);
     }
     else
     {
@@ -2339,14 +2339,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     if (parsed.has(ival, "pointsample"))
-      state.drawstate.globals["pointsubsample"] = ival;
+      drawstate.globals["pointsubsample"] = ival;
     else if (parsed["pointsample"] == "up")
-      state.drawstate.globals["pointsubsample"] = (int)state.drawstate.global("pointsubsample") / 2;
+      drawstate.globals["pointsubsample"] = (int)drawstate.global("pointsubsample") / 2;
     else if (parsed["pointsample"] == "down")
-      state.drawstate.globals["pointsubsample"] = (int)state.drawstate.global("pointsubsample") * 2;
-    if ((int)state.drawstate.global("pointsubsample") < 1) state.drawstate.globals["pointsubsample"] = 1;
-    state.points->redraw = true;
-    printMessage("Point sampling %d", (int)state.drawstate.global("pointsubsample"));
+      drawstate.globals["pointsubsample"] = (int)drawstate.global("pointsubsample") * 2;
+    if ((int)drawstate.global("pointsubsample") < 1) drawstate.globals["pointsubsample"] = 1;
+    amodel->points->redraw = true;
+    printMessage("Point sampling %d", (int)drawstate.global("pointsubsample"));
   }
   else if (parsed.exists("image"))
   {
@@ -2366,7 +2366,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Apply image counter to default filename when multiple images output
       static int imagecounter = 0;
       std::stringstream outpath;
-      std::string title = state.drawstate.global("caption");
+      std::string title = drawstate.global("caption");
       outpath << title;
       if (imagecounter > 0)
         outpath <<  "-" << imagecounter;
@@ -2541,15 +2541,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       std::string key = "scale" + what;
       float scale = 1.0;
-      if (state.drawstate.globals.count(key) > 0) scale = state.drawstate.globals[key];
+      if (drawstate.globals.count(key) > 0) scale = drawstate.globals[key];
       if (parsed.has(fval, "scale", 1))
-        state.drawstate.globals[key] = fval;
+        drawstate.globals[key] = fval;
       else if (parsed.get("scale", 1) == "up")
-        state.drawstate.globals[key] = scale * 1.5;
+        drawstate.globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
-        state.drawstate.globals[key] = scale / 1.5;
+        drawstate.globals[key] = scale / 1.5;
       active->redraw = true;
-      printMessage("%s scaling set to %f", what.c_str(), (float)state.drawstate.globals[key]);
+      printMessage("%s scaling set to %f", what.c_str(), (float)drawstate.globals[key]);
     }
     else
     {
@@ -2606,7 +2606,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             obj->properties.data["scaling"] = sc / 1.5;
           printMessage("%s scaling set to %f", obj->name().c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
-            state.geometry[type]->redraw = true;
+            amodel->geometry[type]->redraw = true;
           redraw(obj); //Full reload of object by id
           amodel->redraw();
         }
@@ -2682,8 +2682,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       printMessage("%s deleted", list[c]->name().c_str());
       //Delete geometry
-      for (unsigned int i=0; i < state.geometry.size(); i++)
-        state.geometry[i]->remove(list[c]);
+      for (unsigned int i=0; i < amodel->geometry.size(); i++)
+        amodel->geometry[i]->remove(list[c]);
       //Delete from model obj list
       for (unsigned int i=0; i<amodel->objects.size(); i++)
       {
@@ -3049,7 +3049,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     amodel->addTimeStep(amodel->step()+1);
-    amodel->setTimeStep(state.now+1);
+    amodel->setTimeStep(drawstate.now+1);
 
     //Don't record
     return false;
