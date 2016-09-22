@@ -59,6 +59,7 @@ void Tracers::close()
 
 void Tracers::update()
 {
+  if (!reload && drawstate.global("gpucache")) return;
   //Convert tracers to triangles
   //All tracers stored as single vertex/value block
   //Contains vertex/value for every tracer particle at each timestep

@@ -58,6 +58,7 @@ void Vectors::close()
 
 void Vectors::update()
 {
+  if (!reload && drawstate.global("gpucache")) return;
   //Convert vectors to triangles
   clock_t t1,tt;
   tt=clock();

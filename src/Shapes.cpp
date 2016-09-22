@@ -55,6 +55,7 @@ void Shapes::close()
 
 void Shapes::update()
 {
+  if (!reload && drawstate.global("gpucache")) return;
   //Convert shapes to triangles
   tris->clear();
   tris->setView(view);
