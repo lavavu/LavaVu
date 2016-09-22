@@ -1985,7 +1985,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //Restore original data
     amodel->loadTimeSteps();
-    amodel->timesteps[drawstate.now]->loaded = false;
     if (model < 0 || !loadModelStep(model, amodel->step())) return false;
     amodel->redraw(true); //Redraw & reload
   }
