@@ -127,6 +127,7 @@ public:
 
   //Timestep caching
   void deleteCache();
+  void cacheLoad();
   void cacheStep();
   bool restoreStep();
   void printCache();

@@ -483,7 +483,13 @@ void LavaVu::run(std::vector<std::string> args)
   else
   {
     //Cache data if enabled
-    cacheLoad();
+    if (drawstate.cachesize > 0) //>= amodel->timesteps.size())
+    {
+      debug_print("Caching all geometry data...\n");
+      for (auto m : models)
+        m->cacheLoad();
+      model = -1;
+    }
 
     //Load first model if not yet loaded
     if (model < 0)
@@ -531,29 +537,6 @@ void LavaVu::exportData(lucExportType type, DrawingObject* obj)
     amodel->writeDatabase("exported.gldb", obj, true);
   else if (type == lucExportCSV)
     dumpCSV(obj);
-}
-
-void LavaVu::cacheLoad()
-{
-  if (amodel->db && drawstate.cachesize > 0) //>= amodel->timesteps.size())
-  {
-    debug_print("Caching all geometry data...\n");
-    for (unsigned int m=0; m < models.size(); m++)
-    {
-      amodel = models[m];
-      amodel->loadTimeSteps();
-      drawstate.now = -1;
-      for (unsigned int i=0; i<amodel->timesteps.size(); i++)
-      {
-        amodel->setTimeStep(i);
-        if (drawstate.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
-        debug_print("Cached time %d : %d/%d (%s)\n", amodel->step(), i+1, amodel->timesteps.size(), amodel->file.base.c_str());
-      }
-      //Cache final step
-      amodel->cacheStep();
-    }
-    model = -1;
-  }
 }
 
 //Property containers now using json

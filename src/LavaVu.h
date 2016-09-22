@@ -201,7 +201,6 @@ public:
   void defaultModel();
   void loadModel(FilePath& fn);
   bool loadModelStep(int model_idx, int at_timestep=-1, bool autozoom=false);
-  void cacheLoad();
   bool tryTimeStep(int ts);
 
   //Interactive command & script processing
