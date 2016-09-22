@@ -1531,8 +1531,7 @@ DrawingObject* LavaVu::addObject(DrawingObject* obj)
   if (!aview) aview = amodel->views[0];
 
   //Add to the active viewport if not already present
-  if (!aview->hasObject(obj))
-    aview->addObject(obj);
+  aview->addObject(obj);
 
   //Add to model master list
   amodel->addObject(obj);
