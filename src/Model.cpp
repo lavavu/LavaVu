@@ -634,6 +634,7 @@ int Model::loadTimeSteps(bool scan)
   int rows = 0;
   int last_step = 0;
 
+  //Scan for additional timestep files with corrosponding entries in timestep table
   if (!scan && db)
   {
     sqlite3_stmt* statement = select("SELECT * FROM timestep");
@@ -663,8 +664,9 @@ int Model::loadTimeSteps(bool scan)
   //Assume we have at least one current timestep, even if none in table
   if (timesteps.size() == 0) addTimeStep();
 
-  //Check for other timesteps in external files
-  if (scan || timesteps.size() == 1)
+  //Check for other timesteps in external files without table data
+  //(only run this if explicitly requested with "scan command")
+  if (scan) // || timesteps.size() == 1)
   {
     debug_print("Scanning for timesteps...\n");
     for (unsigned int ts=0; ts<10000; ts++)
