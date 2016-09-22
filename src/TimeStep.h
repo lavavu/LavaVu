@@ -44,12 +44,11 @@ public:
   int step;
   float time;
   std::string path;
-  bool loaded;
 
   //Cached data
   std::vector<Geometry*> cache;
 
-  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path), loaded(false) {}
+  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path) {}
   TimeStep() : step(0), time(0) {}
 
   ~TimeStep()
@@ -73,13 +72,16 @@ public:
     //      std::cout << "Cached [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
   }
 
-  void read(std::vector<Geometry*> &data)
+  void read(std::vector<Geometry*> &data, bool clear=true)
   {
-    for (unsigned int i=0; i < data.size(); i++)
+    //Disable clearing to cache all data on gpu too
+    if (clear)
     {
-      //Release any graphics memory
-      //TODO: setting to skip this? Would cache all data on gpu too
-      data[i]->close();
+      for (unsigned int i=0; i < data.size(); i++)
+      {
+        //Release any graphics memory
+        data[i]->close();
+      }
     }
 
     data = cache;

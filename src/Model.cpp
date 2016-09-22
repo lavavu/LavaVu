@@ -36,7 +36,7 @@
 //Model class
 #include "Model.h"
 
-Model::Model(DrawState& drawstate) : drawstate(drawstate), readonly(true), attached(0), db(NULL), memorydb(false), figure(-1)
+Model::Model(DrawState& drawstate) : drawstate(drawstate), readonly(true), attached(0), now(-1), db(NULL), memorydb(false), figure(-1)
 {
   prefix[0] = '\0';
   
@@ -612,7 +612,7 @@ void Model::clearTimeSteps()
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
   {
     //Clear the store first on current timestep to avoid deleting active (double free)
-    if (idx == drawstate.now) timesteps[idx]->cache.clear();
+    if (idx == now) timesteps[idx]->cache.clear();
     delete timesteps[idx];
   }
   timesteps.clear();
@@ -908,7 +908,7 @@ bool Model::restoreStep()
     return false; //Nothing cached this step
 
   //Load the cache and save loaded timestep
-  timesteps[drawstate.now]->read(geometry);
+  timesteps[drawstate.now]->read(geometry, drawstate.global("gpucache"));
   debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, file.base.c_str());
 
   //Switch geometry containers
@@ -974,7 +974,7 @@ int Model::setTimeStep(int stepidx)
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
   {
-    drawstate.now = -1;
+    drawstate.now = now = -1;
     return -1;
   }
 
@@ -983,26 +983,27 @@ int Model::setTimeStep(int stepidx)
     stepidx = timesteps.size()-1;
 
   //Unchanged...
-  if (drawstate.now >= 0 && stepidx == drawstate.now) return -1;
+  if (now >= 0 && stepidx == now && drawstate.now == now) return -1;
 
   //Setting initial step?
-  bool first = (drawstate.now < 0);
+  bool first = (now < 0);
 
   //Cache currently loaded data
   if (drawstate.cachesize > 0) cacheStep();
 
+  //Clear loaded flag on timestep leaving
+  //if (drawstate.now >= 0) timesteps[drawstate.now]->loaded = false;
+
   //Set the new timestep index
+  debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, drawstate.now, stepidx);
   drawstate.timesteps = timesteps; //Set to current model timestep vector
-  drawstate.now = stepidx;
+  drawstate.now = now = stepidx;
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
   if (!restoreStep())
   {
     //Create new geometry containers if required
     if (geometry.size() == 0) init();
-
-    //Already loaded
-    if (timesteps[drawstate.now]->loaded) return -1;
 
     if (first)
       //Freeze any existing geometry as non time-varying when first step loaded
@@ -1012,7 +1013,7 @@ int Model::setTimeStep(int stepidx)
       clearObjects();
 
     //Import fixed data first
-    if (drawstate.now > 0) 
+    if (drawstate.now >= 0) 
       loadFixed();
 
     //Attempt to load from cache first
@@ -1027,9 +1028,6 @@ int Model::setTimeStep(int stepidx)
         rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
       else
         rows += loadGeometry();
-
-      //Flag loaded
-      timesteps[drawstate.now]->loaded = true;
 
       debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
     }
@@ -1152,7 +1150,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (step() != timestep && !attached) //Will not work with attached db
       {
         cacheStep();
-        drawstate.now = nearestTimeStep(timestep);
+        drawstate.now = now = nearestTimeStep(timestep);
         debug_print("TimeStep set to: %d, rows %d\n", step(), rows);
       }
 
