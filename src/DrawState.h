@@ -370,6 +370,8 @@ public:
     defaults["pointattenuate"] = true;
     // | global | integer | Automatic depth sorting, -1=on, 0=disabled, >0=timer
     defaults["sort"] = 1;
+    // | global | boolean | Cache timestep varying data on gpu as well as ram (will only work for small models)
+    defaults["gpucache"] = false;
 
     //LavaVR specific
     defaults["sweep"] = false;

@@ -52,7 +52,8 @@ class Model
 private:
   bool readonly;
   int attached;
-  char prefix[10];   //attached db prefix
+  char prefix[10];    //attached db prefix
+  int now;            //Loaded step per model
 
 public:
   DrawState& drawstate;
@@ -133,13 +134,13 @@ public:
   int step()
   {
     //Current actual step
-    return drawstate.now < 0 || (int)timesteps.size() <= drawstate.now ? -1 : timesteps[drawstate.now]->step;
+    return now < 0 || (int)timesteps.size() <= now ? -1 : timesteps[now]->step;
   }
 
   int stepInfo()
   {
     //Current actual step (returns 0 if none instead of -1 for output functions)
-    return drawstate.now < 0 || (int)timesteps.size() <= drawstate.now ? 0 : timesteps[drawstate.now]->step;
+    return now < 0 || (int)timesteps.size() <= now ? 0 : timesteps[now]->step;
   }
 
   int lastStep()
