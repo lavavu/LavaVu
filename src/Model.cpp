@@ -866,6 +866,21 @@ void Model::deleteCache()
   //cache.clear();
 }
 
+void Model::cacheLoad()
+{
+  for (unsigned int i=0; i<timesteps.size(); i++)
+  {
+    setTimeStep(i);
+    printf("%d == %d?\n", drawstate.now, i);
+    if (drawstate.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
+    debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), file.base.c_str());
+  }
+  //Cache final step
+  cacheStep();
+  //Clear current step to ensure selected is loaded from cache
+  drawstate.now = -1;
+}
+
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
