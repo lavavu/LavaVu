@@ -1754,8 +1754,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
 
       //Texture ? Export first only, as external file for now
       //TODO: dataurl using getImageString(image, iw, ih, bpp)
-      if (objects[i]->textures.size() > 0)
-        obj["texture"] = objects[i]->textures[0]->fn.full;
+      if (objects[i]->textures.size() > 0 && obj.count("texturefile") == 0)
+        obj["texturefile"] = objects[i]->textures[0]->fn.full;
 
       if (!objdata)
       {
