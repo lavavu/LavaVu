@@ -1555,10 +1555,10 @@ Viewer.prototype.loadFile = function(source) {
     //Process points/triangles
     if (!source.exported) {
       //Texure loading
-      if (vis.objects[id].texture) {
+      if (vis.objects[id].texturefile) {
         this.hasTexture = true;
         vis.objects[id].image = new Image();
-        vis.objects[id].image.src = vis.objects[id].texture;
+        vis.objects[id].image.src = vis.objects[id].texturefile;
         vis.objects[id].image.onload = function() {
           // Flip the image's Y axis to match the WebGL texture coordinate space.
           viewer.webgl.gl.activeTexture(viewer.webgl.gl.TEXTURE0);
