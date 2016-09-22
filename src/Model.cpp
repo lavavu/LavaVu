@@ -929,7 +929,7 @@ bool Model::restoreStep()
     return false; //Nothing cached this step
 
   //Load the cache and save loaded timestep
-  timesteps[drawstate.now]->read(geometry, drawstate.global("gpucache"));
+  timesteps[drawstate.now]->read(geometry, !drawstate.global("gpucache"));
   debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, file.base.c_str());
 
   //Switch geometry containers
