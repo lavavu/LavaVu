@@ -1166,7 +1166,9 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (!obj || obj->skip) continue;
 
       //Bulk load: switch timestep and cache if timestep changes!
-      if (step() != timestep && !attached) //Will not work with attached db
+      // - disabled when loading multiple tracer steps (recursive load)
+      // - disabled when using attached databases (cached in loop via cacheLoad())
+      if (recurseTracers && step() != timestep && !attached)
       {
         cacheStep();
         drawstate.now = now = nearestTimeStep(timestep);
