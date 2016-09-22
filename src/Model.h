@@ -97,6 +97,7 @@ public:
   void close();
   void clearObjects(bool all=false);
   void setup();
+  void redraw(DrawingObject* obj);
   void redraw(bool reload=false);
   unsigned int addColourMap(ColourMap* cmap=NULL);
   void loadWindows();

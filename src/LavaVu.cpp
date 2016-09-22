@@ -1608,12 +1608,6 @@ void LavaVu::close()
   if (border) delete border;
 }
 
-void LavaVu::redraw(DrawingObject* obj)
-{
-  for (unsigned int i=0; i < amodel->geometry.size(); i++)
-    amodel->geometry[i]->redrawObject(obj);
-}
-
 //Called when model loaded/changed, updates all views settings
 void LavaVu::resetViews(bool autozoom)
 {
