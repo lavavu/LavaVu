@@ -85,10 +85,7 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
         //Need to make sure it's a regular file, not directory
         struct stat st_buf;
         if (stat(pstr.c_str(), &st_buf) == 0 && S_ISREG(st_buf.st_mode))
-        {
-          std::cout << "Found app in $PATH: " << pstr << std::endl;
           bpath = pathentry + "/";
-        }
       }
     }
   }
