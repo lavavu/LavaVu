@@ -284,10 +284,7 @@ void Model::clearObjects(bool all)
 
   //Clear containers...
   for (unsigned int i=0; i < geometry.size(); i++)
-  {
-    geometry[i]->redraw = true;
     geometry[i]->clear(all);
-  }
 }
 
 void Model::setup()
@@ -306,6 +303,16 @@ void Model::setup()
   }
 }
 
+void Model::redraw(DrawingObject* obj)
+{
+  //Full data reload on selected object only
+  for (unsigned int i=0; i < geometry.size(); i++)
+    geometry[i]->redrawObject(obj);
+
+  for (unsigned int i = 0; i < colourMaps.size(); i++)
+    colourMaps[i]->calibrated = false;
+}
+
 void Model::redraw(bool reload)
 {
   //Flag redraw on all objects...
@@ -319,11 +326,8 @@ void Model::redraw(bool reload)
       geometry[i]->redraw = true;
   }
 
-
   for (unsigned int i = 0; i < colourMaps.size(); i++)
-  {
     colourMaps[i]->calibrated = false;
-  }
 }
 
 //Adds colourmap
