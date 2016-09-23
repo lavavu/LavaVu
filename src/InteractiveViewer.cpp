@@ -2798,7 +2798,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp) return false;
 
     //Timer sort?
-    if (drawstate.global("sort") > 0 && aview->rotated)
+    if ((int)drawstate.global("sort") > 0 && aview->rotated)
     {
       aview->sort = true;
       aview->rotated = false;
