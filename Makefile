@@ -139,8 +139,7 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
 swig: $(PREFIX)/$(LIBNAME)
-	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVu.i
-	mv LavaVu.py bin
+	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVu.i
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVu_wrap.cxx -o $(OPATH)/LavaVu_wrap.os
 	$(CPP) -o $(PREFIX)/_$(PROGNAME).so $(LIBBUILD) $(OPATH)/LavaVu_wrap.os `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 

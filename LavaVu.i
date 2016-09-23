@@ -75,6 +75,9 @@ def load(app=None, arglist=[], binary="LavaVu", database=None, figure=None, star
   if not app:
     app = LavaVu(binary)
   app.run(args)
+  if database:
+    #Load objects/state
+    app.get()
   return app
 
 #Wrapper class for drawing object
