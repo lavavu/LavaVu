@@ -105,6 +105,9 @@ void TriSurfaces::update()
   if (total == 0) return;
   if (drawelements == 0) return;
 
+  //When objects hidden/shown drawable count changes, so need to reallocate
+  elements = drawelements;
+
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //To force, set geometry->reload = true
@@ -120,9 +123,6 @@ void TriSurfaces::update()
     //Initial render
     render();
   }
-
-  //When objects hidden/shown drawable count changes, so need to reallocate
-  elements = drawelements;
 }
 
 void TriSurfaces::loadMesh()
