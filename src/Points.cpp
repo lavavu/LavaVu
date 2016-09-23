@@ -94,15 +94,15 @@ void Points::update()
   if (reload || total != last_total)
   {
     loadVertices();
+
+    //Initial depth sort & render
+    view->sort = true;
   }
 
   //When objects hidden/shown drawable count changes, so need to reallocate
   elements = drawelements;
 
   last_total = total;
-
-  //Initial depth sort & render
-  view->sort = true;
 }
 
 void Points::loadVertices()

@@ -116,13 +116,13 @@ void TriSurfaces::update()
     loadMesh();
     //Send the data to the GPU via VBO
     loadBuffers();
+
+    //Initial render
+    render();
   }
 
   //When objects hidden/shown drawable count changes, so need to reallocate
   elements = drawelements;
-
-  //Initial depth sort flag
-  view->sort = true;
 }
 
 void TriSurfaces::loadMesh()
