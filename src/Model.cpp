@@ -884,7 +884,7 @@ void Model::cacheLoad()
   //Cache final step
   cacheStep();
   //Clear current step to ensure selected is loaded from cache
-  drawstate.now = -1;
+  drawstate.now = now = -1;
 }
 
 void Model::cacheStep()
@@ -1011,9 +1011,6 @@ int Model::setTimeStep(int stepidx)
 
   //Cache currently loaded data
   if (drawstate.cachesize > 0) cacheStep();
-
-  //Clear loaded flag on timestep leaving
-  //if (drawstate.now >= 0) timesteps[drawstate.now]->loaded = false;
 
   //Set the new timestep index
   debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, drawstate.now, stepidx);
