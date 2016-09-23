@@ -1672,8 +1672,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    //for (int type=lucMinType; type<lucMaxType; type++)
-    //   amodel->geometry[type]->redraw = true;
     amodel->redraw(); //Redraw only
     printMessage("Redrawing all objects");
   }
@@ -1984,9 +1982,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Restore original data
-    amodel->loadTimeSteps();
-    if (model < 0 || !loadModelStep(model, amodel->step())) return false;
+    if (amodel->db)
+      amodel->loadTimeSteps();
     amodel->redraw(true); //Redraw & reload
+    if (model < 0 || !loadModelStep(model, amodel->step())) return false;
   }
   else if (parsed.exists("zerocam"))
   {
@@ -3052,7 +3051,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Set a data filter on selected object\n\n"
-              "> **Usage:** filter index min max [range]\n\n"
+              "> **Usage:** filter index min max [map]\n\n"
               "> index (integer) : the index of the data set to filter on (see: \"list data\")  \n"
               "> min (number) : the minimum value of the range to filter in or out  \n"
               "> max (number) : the maximum value of the range to filter in or out  \n"
@@ -3083,7 +3082,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       filter["map"] = map;
       filter["inclusive"] = false;
       aobject->properties.data["filters"].push_back(filter);
-      printMessage("%s filter on value index %d from %f to %f", (map ? "Map" : "Value"), (int)filter["index"], min, max);
+      printMessage("%s filter on value index %d from %f to %f", (map ? "Map" : "Value"), (int)filter["by"], min, max);
       amodel->redraw(aobject);
     }
   }
