@@ -1640,7 +1640,10 @@ void LavaVu::resetViews(bool autozoom)
 
   viewer->title = title.str();
 
-  if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
+  if (viewer->isopen && viewer->visible) viewer->show(); //Update title etc
+
+  //Force re-sort
+  aview->rotated = true;
 }
 
 //Called when view changed
