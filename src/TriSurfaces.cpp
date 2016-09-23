@@ -95,7 +95,7 @@ void TriSurfaces::update()
     total += tris;
     hiddencache[t] = !drawable(t); //Save flags
     if (!hiddencache[t]) drawelements += tris*3; //Count drawable
-    debug_print("Surface %d, triangles %d hidden? %s\n", t, tris, (hiddencache[t] ? "yes" : "no"));
+    debug_print("Surface %d %s, triangles %d hidden? %s\n", t, geom[t]->draw->name().c_str(), tris, (hiddencache[t] ? "yes" : "no"));
 
     //Per-object wireframe works only when drawing opaque objects
     //(can't set per-objects properties when all triangles collected and sorted)
@@ -111,6 +111,7 @@ void TriSurfaces::update()
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //To force, set geometry->reload = true
+  if (redraw) idxcount = 0;
   if (reload || !tidx || tcount != total)
   {
     //Clear buffers
@@ -724,6 +725,7 @@ void TriSurfaces::render()
   else if (idxcount == elements)
   {
     //Nothing has changed, skip
+    debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
     return;
   }
 
@@ -771,7 +773,7 @@ void TriSurfaces::render()
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   GL_Error_Check;
   t2 = clock();
-  debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, tricount);
+  debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, tricount);
   t1 = clock();
 }
 
@@ -783,7 +785,7 @@ void TriSurfaces::draw()
   if (drawcount == 0 || elements == 0) return;
 
   //Re-render the triangles if view has rotated
-  if (view->sort) render();
+  if (view->sort || idxcount != elements) render();
 
   // Draw using vertex buffer object
   clock_t t0 = clock();
