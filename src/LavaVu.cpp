@@ -1759,7 +1759,7 @@ void LavaVu::display(void)
   //Always redraw the active view, others only if flag set
   if (aview)
   {
-    if (!viewer->mouseState && drawstate.global("sort") < 0 && aview->rotated)
+    if (!viewer->mouseState && (int)drawstate.global("sort") < 0 && aview->rotated)
     {
       aview->sort = true;
       aview->rotated = false;
