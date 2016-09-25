@@ -243,8 +243,8 @@ class Control(object):
             actions.append({"call" : setter, "args" : []})
 
         #Get value from target if not provided
-        if not value:
-          if target and property and property in target:
+        if not value and property:
+          if target and property in target:
             value = target[property]
         self.value = value
 
