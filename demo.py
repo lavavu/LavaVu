@@ -6,7 +6,7 @@ debug = False
 def second_viewer():
     #return
     global debug
-    lv2 = lavavu.load(verbose=debug, hidden=False) #Interactive - require visible window
+    lv2 = lavavu.Viewer(verbose=debug, hidden=False) #Interactive - require visible window
     lines2 = lv2.add("lines", {"colour" : "blue", "link" : True, "geometry" : "lines"});
     lines2.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]]);
     lv2.test()
@@ -14,7 +14,7 @@ def second_viewer():
     #lv2.interactive()
     return lv2
 
-lv = lavavu.load(verbose=debug, hidden=False) #Interactive - require visible window
+lv = lavavu.Viewer(verbose=debug, hidden=False) #Interactive - require visible window
 #lv = lavavu.load()
 
 lv2 = second_viewer()
