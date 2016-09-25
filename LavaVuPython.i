@@ -2,7 +2,7 @@
 * LavaVu python interface
 **~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*/
 
-%module LavaVu
+%module LavaVuPython
 %include <std_string.i>
 %include <std_vector.i>
 
@@ -36,7 +36,7 @@ def load(app=None, arglist=[], binary="LavaVu", database=None, figure=None, star
          port=0, verbose=False, interactive=False, hidden=True, cache=True,
          quality=2, writeimage=False, res=None, script=None):
   #Convert options to args
-  args = [] + arglist
+  args = ["-S"] + arglist
   if verbose:
     args += ["-v"]
   #Automation: scripted mode, no interaction
