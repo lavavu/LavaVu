@@ -275,11 +275,11 @@ class Control(object):
             if command == None:
                 command = "redraw"
             actions.append({"call" : setter, "args" : [target, property, command]})
-            if not self.label
+            if not self.label:
                 self.label = property
         elif command:
             actions.append({"call" : commandsetter, "args" : [command]})
-            if not self.label
+            if not self.label:
                 self.label = command
         else:
             #Assume derived class will fill out the action
