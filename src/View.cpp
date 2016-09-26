@@ -315,6 +315,9 @@ void View::rotate(float degreesX, float degreesY, float degreesZ)
 
 void View::setScale(float x, float y, float z, bool replace)
 {
+  if (x <= 0.0) x = 1.0;
+  if (y <= 0.0) y = 1.0;
+  if (z <= 0.0) z = 1.0;
   if (replace)
   {
     scale[0] = x;
