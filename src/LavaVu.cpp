@@ -2053,13 +2053,6 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
   float length;
   vectorSubtract(vec, end, start);
 
-  vec[0] *= aview->scale[0];
-  vec[1] *= aview->scale[1];
-  vec[2] *= aview->scale[2];
-  start[0] *= aview->scale[0];
-  start[1] *= aview->scale[1];
-  start[2] *= aview->scale[2];
-
   // Length of the drawn vector = vector magnitude
   length = sqrt(dotProduct(vec,vec));
   if (length <= FLT_MIN) return;
