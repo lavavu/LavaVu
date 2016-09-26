@@ -1,11 +1,40 @@
 import lavavu
-#TODO: js added for every control, should be an external script which is included once only
 js = """
 <script type="text/Javascript">
 
 var IPython = parent.IPython;
 var kernel = IPython.notebook.kernel;
-var img = document.getElementById('imgtarget');
+
+var img;
+
+window.addEventListener('mouseup', mouseUp);
+
+function set_target(id, viewer_id) {
+  //Takes image element and viewer id
+  //Setups up events and displays output to image
+  //Switches to specified viewer id on mouseover
+  el = document.getElementById(id);
+
+  img = el;
+
+  if (img && !img.listening) {
+    img.addEventListener('mousedown', mouseDown);
+    img.ondragstart = function() { return false; };
+    img.addEventListener("wheel", mouseWheel);
+    img.addEventListener("contextmenu", function(e) { e.preventDefault(); e.stopPropagation(); return false;});
+    //Re-capture viewer on hover
+    img.addEventListener("mouseover", function(e) {if (img != this) {recapture(viewer_id); set_target(id); }});
+    img.listening = true;
+  }
+
+  //Initial image
+  get_image();
+}
+
+function recapture(id) {
+  kernel.execute("lavavu.viewer = lavavu.control.viewers[" + id + "]");
+  get_image();
+}
 
 var mouse = {};
 mouse.timer = null;
@@ -13,23 +42,6 @@ mouse.wheelTimer = null;
 mouse.spin = 0;
 mouse.modifiers = "";
 mouse.down = false;
-
-if (img) {
-  //Ensure cleaned up
-  window.removeEventListener("mouseup", mouseUp);
-  img.removeEventListener("wheel", mouseWheel);
-  img.removeEventListener('mousedown', mouseDown);
-
-  img.addEventListener('mousedown', mouseDown);
-  img.ondragstart = function() { return false; };
-  window.addEventListener('mouseup', mouseUp);
-  //window.addEventListener('mousemove', mouseMove);
-  img.addEventListener("wheel", mouseWheel);
-  img.addEventListener("contextmenu", function(e) { e.preventDefault(); e.stopPropagation(); return false;})
-
-  //Initial image
-  get_image();
-}
 
 function keyModifiers(e) {
   var modifiers = "";
@@ -43,9 +55,8 @@ function keyModifiers(e) {
 }
 
 function mouseUp(e) {
+  if (!img) return;
   window.removeEventListener('mousemove', mouseMove, true);
-  //if (mouse.target === img || mouse.moving) {
-  //alert(mouse.down);
   if (mouse.down) { //mouse.moving) {
     mouse.down = false;
     var button = e.button+1;
@@ -74,6 +85,7 @@ function mouseDown(e) {
 }
 
 function mouseMove(e) {
+  if (!img) return;
   //if (!mouse.down) return true;
   var x = e.clientX;
   var y = e.clientY;
@@ -95,6 +107,7 @@ function mouseWheel(e) {
 }
 
 function imgDrag(x, y, button){
+  if (!img) return;
   kernel.execute('lavavu.viewer.mouse("mouse=move,modifiers=' + mouse.modifiers + 'button=' + button + ',x=' + x + ',y=' + y + '")');
   if (!mouse.timer)
     kernel.execute('lavavu.viewer.mouse("mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + x + ',y=' + y + '")');
@@ -107,7 +120,7 @@ function imgZoom(factor){
   mouse.wheelTimer = null;
 }
 
-imgTimer = null;
+var imgTimer = null;
 function get_frame() {
   if (imgTimer) clearTimeout(imgTimer);
   imgTimer = setTimeout(function () {get_image();}, 20);
@@ -118,7 +131,6 @@ function get_image(cmd) {
   var callbacks = {'output' : function(out) {
       data = out.content.data['text/plain']
       data = data.substring(1, data.length-1)
-      //var img = document.getElementById('imgtarget');
       if (img) img.src = data;
     }
   };
@@ -152,16 +164,33 @@ style = """
 </style>
 """
 
-def viewer():
+def viewer(html=None, style=""):
     try:
-      if __IPYTHON__:
-        from IPython.display import display,Image,HTML
-        display(HTML("<img id=imgtarget></img>" + js))
+        if __IPYTHON__:
+            from IPython.display import display,Image,HTML,Javascript
+            viewerid = len(viewers)
+            if viewerid == 0:
+                #Add the control script first time through
+                display(HTML(js))
+            viewers.append(lavavu.viewer)
+            style += "user-select: none; user-drag: none; -moz-user-select: none; -moz-user-drag: none; -webkit-user-select: none; -webkit-user-drag: none;"
+            imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '"></img>'
+            #Optional template
+            if html:
+                htnl = html.replace("~~~TARGET~~~", imgsrc)
+            else:
+                html = imgsrc
+            #Display the inline html
+            display(HTML(html))
+            #Execute javascript to set the output target to added image (also pass the viewer id)
+            display(Javascript('set_target("imgtarget_' + str(viewerid) + '", ' + str(viewerid) + ');'))
     except NameError, ImportError:
         pass
 
 #Register of controls and their actions
 actions = []
+#Register of viewers
+viewers = []
 
 def action(id, value):
     if len(actions) > id:
@@ -195,29 +224,30 @@ class Panel(object):
         for i in range(len(self.controls)):
             html += '<p>' + self.controls[i].label + ':</p>'
             html += self.controls[i].controls()
-            html += '<img id="imgtarget" draggable=false style="float: right; user-select: none; user-drag: none; -moz-user-select: none; -moz-user-drag: none; -webkit-user-select: none; -webkit-user-drag: none;"></img>'
+        html += "~~~TARGET~~~"
         html += '</div>'
-        return html + js
+        return html
 
     def display(self):
         html = self.html()
-        try:
-          if __IPYTHON__:
-            from IPython.display import display,Image,HTML
-            display(HTML(html + js))
-            #self.export()
-            #display(HTML('<iframe src="control.html" style="border: none; width:100%; height:500px"></iframe>'))
-        except NameError, ImportError:
-          return html + js
+        viewer(html, "float: right;")
+        #try:
+        #  if __IPYTHON__:
+        #    from IPython.display import display,Image,HTML,Javascript
+        #    display(HTML(html))
+        #    #self.export()
+        #    #display(HTML('<iframe src="control.html" style="border: none; width:100%; height:500px"></iframe>'))
+        #except NameError, ImportError:
+        #  return html
 
     def export(self, filename="control.html"):
-        #Save panel UI in external html file
+        #Save panel UI in external html file, todo: add js
         actionjs = '<script type="text/Javascript">'
         #for act in actions:
         #    as
         actionjs += '</script>'
         hfile = open(filename, "w")
-        hfile.write('<html><head</head><body>' + js + self.html() + '</body></html>')
+        hfile.write('<html><head</head><body>' + self.html() + '</body></html>')
         hfile.close()
 
 class Control(object):
@@ -267,9 +297,9 @@ class Control(object):
         try:
           if __IPYTHON__:
             from IPython.display import display,Image,HTML
-            display(HTML(html + js))
+            display(HTML(html))
         except NameError, ImportError:
-          return html + js
+          return html
 
     def controls(self, type='number', attribs={}, onchange=""):
         html =  '<input type="' + type + '" '
