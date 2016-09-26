@@ -182,11 +182,14 @@ def viewer(html=None, style=""):
                 #Add the control script first time through
                 display(HTML(js))
             viewers.append(lavavu.viewer)
-            style += "user-select: none; user-drag: none; -moz-user-select: none; -moz-user-drag: none; -webkit-user-select: none; -webkit-user-drag: none;"
+            style += "border: 1px solid #aaa; "
+            style += "user-select: none; user-drag: none; "
+            style += "-moz-user-select: none; -moz-user-drag: none; "
+            style += "-webkit-user-select: none; -webkit-user-drag: none; "
             imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '" ></img>'
             #Optional template
             if html:
-                htnl = html.replace("~~~TARGET~~~", imgsrc)
+                html = html.replace("~~~TARGET~~~", imgsrc)
             else:
                 html = imgsrc
             #Display the inline html
@@ -221,8 +224,9 @@ def commandsetter(command, value):
     return command + " " + str(value) + "\nredraw"
 
 class Panel(object):
-    def __init__(self):
+    def __init__(self, showviewer=True):
         self.controls = []
+        self.showviewer = showviewer
 
     def add(self, ctrl):
         self.controls.append(ctrl)
@@ -230,24 +234,26 @@ class Panel(object):
     def html(self):
         html = '<div style="padding:0px; margin: 0px;">'
         html += style
+        if self.showviewer: html += "~~~TARGET~~~"
         for i in range(len(self.controls)):
-            html += '<p>' + self.controls[i].label + ':</p>'
+            if self.controls[i].label: html += '<p>' + self.controls[i].label + ':</p>'
             html += self.controls[i].controls()
-        html += "~~~TARGET~~~"
         html += '</div>'
         return html
 
-    def display(self):
+    def show(self):
         html = self.html()
-        viewer(html, "float: right;")
-        #try:
-        #  if __IPYTHON__:
-        #    from IPython.display import display,Image,HTML,Javascript
-        #    display(HTML(html))
-        #    #self.export()
-        #    #display(HTML('<iframe src="control.html" style="border: none; width:100%; height:500px"></iframe>'))
-        #except NameError, ImportError:
-        #  return html
+        if self.showviewer:
+            viewer(html, "float: right; ")
+        else:
+            try:
+                if __IPYTHON__:
+                    from IPython.display import display,Image,HTML,Javascript
+                    display(HTML(html))
+                    #self.export()
+                    #display(HTML('<iframe src="control.html" style="border: none; width:100%; height:500px"></iframe>'))
+            except NameError, ImportError:
+                return html
 
     def export(self, filename="control.html"):
         #Save panel UI in external html file, todo: add js
@@ -261,7 +267,7 @@ class Panel(object):
 
 class Control(object):
 
-    def __init__(self, label="", target=None, property=None, command=None, value=None):
+    def __init__(self, target=None, property=None, command=None, value=None, label=None):
         if not target:
             target = lavavu.viewer
         self.label = label
@@ -275,15 +281,18 @@ class Control(object):
             if command == None:
                 command = "redraw"
             actions.append({"call" : setter, "args" : [target, property, command]})
-            if not self.label:
-                self.label = property
+            if not isinstance(label,str):
+                self.label = property.capitalize()
         elif command:
             actions.append({"call" : commandsetter, "args" : [command]})
-            if not self.label:
-                self.label = command
+            if not isinstance(label,str):
+                self.label = command.capitalize()
         else:
             #Assume derived class will fill out the action
             actions.append({"call" : setter, "args" : []})
+
+        if not self.label:
+            self.label = ""
 
         #Get value from target if not provided
         if not value and property:
@@ -305,6 +314,7 @@ class Control(object):
         #Show only this control with a border
         html = '<div>'
         html += style
+        if self.label: html += '<p>' + self.label + ':</p>'
         html += self.controls()
         html += '</div>'
         try:
@@ -343,9 +353,9 @@ class Checkbox(Control):
 
 class Range(Control):
 
-    def __init__(self, label="", target=None, property=None, command=None, value=None, range=(0.,1.), step=None):
+    def __init__(self, target=None, property=None, command=None, value=None, label="", range=(0.,1.), step=None):
 
-        super(Range, self).__init__(label, target, property, command, value)
+        super(Range, self).__init__(target, property, command, value, label)
 
         self.range = range
         self.step = step
@@ -382,7 +392,7 @@ class TimeStepper(Range):
         return html
 
 class Filter(object):
-    def __init__(self, label, target, filteridx, range=None, step=None):
+    def __init__(self, target, filteridx, label, range=None, step=None):
         self.label = label
         self.filter = target["filters"][filteridx]
 
@@ -410,7 +420,7 @@ class ObjectList(Control):
         super(ObjectList, self).__init__(label="Objects", *args, **kwargs)
         self.objctrls = []
         for obj in lavavu.viewer.objects.list:
-            self.objctrls.append(Checkbox(obj["name"], obj, "visible")) 
+            self.objctrls.append(Checkbox(obj, "visible", label=obj["name"])) 
 
     def controls(self):
         html = ""
