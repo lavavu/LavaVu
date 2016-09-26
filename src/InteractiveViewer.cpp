@@ -2530,7 +2530,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       float scale = 1.0;
       if (drawstate.globals.count(key) > 0) scale = drawstate.globals[key];
       if (parsed.has(fval, "scale", 1))
-        drawstate.globals[key] = fval;
+        drawstate.globals[key] = fval > 0.0 ? fval : 1.0;
       else if (parsed.get("scale", 1) == "up")
         drawstate.globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
@@ -2586,7 +2586,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           float sc = obj->properties["scaling"];
           if (sc <= 0.0) sc = 1.0;
           if (parsed.has(fval, "scale", next))
-            obj->properties.data["scaling"] = fval;
+            obj->properties.data["scaling"] = fval > 0.0 ? fval : 1.0;
           else if (parsed.get("scale", next) == "up")
             obj->properties.data["scaling"] = sc * 1.5;
           else if (parsed.get("scale", next) == "down")
