@@ -117,9 +117,6 @@ void OpenGLViewer::init()
   //Smooth shading
   glShadeModel(GL_SMOOTH);
 
-  //Font setup
-  app->drawstate.fonts.rasterSetupFonts();
-
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
 

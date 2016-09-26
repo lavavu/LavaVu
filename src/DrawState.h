@@ -49,7 +49,7 @@ public:
   DrawState() : prog()
   {
     borderobj = axisobj = rulerobj = NULL;
-    //reset(); //Called by State::reset instead
+    //reset();
   }
 
   void reset()
@@ -61,6 +61,8 @@ public:
     if (axisobj) delete axisobj;
     if (rulerobj) delete rulerobj;
     borderobj = axisobj = rulerobj = NULL;
+
+    fonts.reset();
 
     cachesize = 0;
     now = -1;
