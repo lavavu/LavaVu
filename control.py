@@ -164,6 +164,15 @@ style = """
 </style>
 """
 
+def display():
+    #Simply update the active viewer image, if any
+    try:
+        if __IPYTHON__:
+            from IPython.display import display,Image,HTML,Javascript
+            display(Javascript('get_image();'))
+    except NameError, ImportError:
+        pass
+
 def viewer(html=None, style=""):
     try:
         if __IPYTHON__:
@@ -174,7 +183,7 @@ def viewer(html=None, style=""):
                 display(HTML(js))
             viewers.append(lavavu.viewer)
             style += "user-select: none; user-drag: none; -moz-user-select: none; -moz-user-drag: none; -webkit-user-select: none; -webkit-user-drag: none;"
-            imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '"></img>'
+            imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '" ></img>'
             #Optional template
             if html:
                 htnl = html.replace("~~~TARGET~~~", imgsrc)
@@ -266,8 +275,12 @@ class Control(object):
             if command == None:
                 command = "redraw"
             actions.append({"call" : setter, "args" : [target, property, command]})
+            if not self.label
+                self.label = property
         elif command:
             actions.append({"call" : commandsetter, "args" : [command]})
+            if not self.label
+                self.label = command
         else:
             #Assume derived class will fill out the action
             actions.append({"call" : setter, "args" : []})
