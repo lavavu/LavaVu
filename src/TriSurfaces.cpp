@@ -106,12 +106,12 @@ void TriSurfaces::update()
   if (drawelements == 0) return;
 
   //When objects hidden/shown drawable count changes, so need to reallocate
+  if (redraw || elements != drawelements) idxcount = 0;
   elements = drawelements;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //To force, set geometry->reload = true
-  if (redraw) idxcount = 0;
   if (reload || !tidx || tcount != total)
   {
     //Clear buffers
@@ -139,7 +139,9 @@ void TriSurfaces::loadMesh()
   //Create sorting array
   if (tidx) delete[] tidx;
   tidx = new TIndex[total];
-  if (tidx == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(TIndex) * total);
+  if (swap) delete[] swap;
+  swap = new TIndex[total];
+  if (tidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(TIndex) * total);
 
   //Calculate normals, delete duplicate verts, add triangles to sorting array
 
@@ -284,7 +286,6 @@ void TriSurfaces::loadMesh()
     debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC);
     t1 = clock();
 
-    t1 = clock();
     //Loop from previous tricount to current tricount
     int idx=0;
     for (unsigned int t = (tricount - triverts / 3); t < tricount; t++)
@@ -644,31 +645,18 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
 //Depth sort the triangles before drawing, called whenever the viewing angle has changed
 void TriSurfaces::depthSort()
 {
+  if (tricount == 0 || elements == 0) return;
   clock_t t1,t2;
   t1 = clock();
   assert(tidx);
 
-  //Sort is much faster without allocate, so keep buffer until size changes
-  static long last_size = 0;
-  int size = tricount*sizeof(TIndex);
-  if (size != last_size || !swap)
-  {
-    if (swap) delete[] swap;
-    swap = new TIndex[tricount];
-    if (swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", size);
-  }
-  last_size = size;
-
   //Calculate min/max distances from view plane
   float maxdist, mindist;
   view->getMinMaxDistance(&mindist, &maxdist);
-  //printMatrix(modelView);
-  //printf("MINDIST %f MAXDIST %f\n", mindist, maxdist);
   int shift = view->properties["shift"]; //.ToInt(0);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (SORT_DIST_MAX-1.0) / (maxdist - mindist);
-  if (tricount == 0) return;
   unsigned int opaqueCount = 0;
   float fdistance;
   for (unsigned int i = 0; i < tricount; i++)
@@ -705,7 +693,7 @@ void TriSurfaces::depthSort()
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
   radix_sort<TIndex>(tidx, swap, tricount, 2);
   t2 = clock();
-  debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to sort %d triangles\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount);
   t1 = clock();
 }
 
@@ -719,7 +707,6 @@ void TriSurfaces::render()
   //First, depth sort the triangles
   if (view->is3d && view->sort)
   {
-    debug_print("Depth sorting %d triangles...\n", tricount);
     depthSort();
   }
   else if (idxcount == elements)
