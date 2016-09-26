@@ -1,5 +1,6 @@
 #LavaVu python interface: viewer utils & wrapper
 import control
+import json
 
 enabled = True
 viewer = None
@@ -35,9 +36,6 @@ colourMaps["smoothheat"] = "#440088 #831bb9 #c66f5d #ebbf56 #ffff88"
 #Paraview cool-warm (diverging)
 colourMaps["coolwarm"] = "#3b4cc0 #7396f5 #b0cbfc #dcdcdc #f6bfa5 #ea7b60 #b50b27"
 #colourMaps["coolwarm"] = "#4860d1 #87a9fc #a7c5fd #dcdcdc #f2c8b4 #ee8669 #d95847"
-
-#Helper functions
-import json
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
@@ -396,6 +394,7 @@ class Viewer(object):
 
 
 #Create a default global viewer, not ideal but currently needed for control interface
+#TODO: manage this better, only open viewer when explicitly requested
 if enabled:
     viewer = Viewer()
 
