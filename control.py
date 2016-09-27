@@ -236,7 +236,10 @@ class Panel(object):
         html += style
         if self.showviewer: html += "~~~TARGET~~~"
         for i in range(len(self.controls)):
-            if self.controls[i].label: html += '<p>' + self.controls[i].label + ':</p>'
+            if self.controls[i].label and not isinstance(self.controls[i], Checkbox):
+                html += '<p>' + self.controls[i].label + ':</p>'
+            else:
+                html += '<br>'
             html += self.controls[i].controls()
         html += '</div>'
         return html
@@ -281,11 +284,11 @@ class Control(object):
             if command == None:
                 command = "redraw"
             actions.append({"call" : setter, "args" : [target, property, command]})
-            if not isinstance(label,str):
+            if label == None:
                 self.label = property.capitalize()
         elif command:
             actions.append({"call" : commandsetter, "args" : [command]})
-            if not isinstance(label,str):
+            if label == None:
                 self.label = command.capitalize()
         else:
             #Assume derived class will fill out the action
@@ -353,7 +356,7 @@ class Checkbox(Control):
 
 class Range(Control):
 
-    def __init__(self, target=None, property=None, command=None, value=None, label="", range=(0.,1.), step=None):
+    def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None):
 
         super(Range, self).__init__(target, property, command, value, label)
 
@@ -392,9 +395,13 @@ class TimeStepper(Range):
         return html
 
 class Filter(object):
-    def __init__(self, target, filteridx, label, range=None, step=None):
+    def __init__(self, target, filteridx, label=None, range=None, step=None):
         self.label = label
         self.filter = target["filters"][filteridx]
+
+        #Default label - data set name
+        if label == None:
+            self.label = self.filter['by'].capitalize()
 
         #Get the default range limits from the matching data source
         self.data = target["data"][self.filter['by']]
