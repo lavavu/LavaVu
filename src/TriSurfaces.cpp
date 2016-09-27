@@ -156,6 +156,10 @@ void TriSurfaces::loadMesh()
     //Save initial offset
     GLuint voffset = unique;
 
+    //Calibrate colour maps on range for this surface
+    //(also required for filtering by map)
+    geom[index]->colourCalibrate();
+
     //Has index data, simply load the triangles
     if (geom[index]->indices.size() > 0)
     {
@@ -228,9 +232,6 @@ void TriSurfaces::loadMesh()
 
     //Now have list of vertices sorted by vertex pos with summed normals and references of duplicates replaced
     t1 = clock();
-
-    //Calibrate colour maps on range for this surface
-    geom[index]->colourCalibrate();
 
     if (grid)
     {
@@ -751,6 +752,7 @@ void TriSurfaces::render()
     //for(int i=0; i<tricount; i++)
   {
     if (hiddencache[tidx[i].geomid]) continue;
+    //if (!internal && geom[tidx[i].geomid]->filter(tidx[i].index[0])) continue; //If first vertex filtered, skip whole tri
     idxcount += 3;
     assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
     //Copies index bytes
@@ -773,6 +775,8 @@ void TriSurfaces::draw()
 
   //Re-render the triangles if view has rotated
   if (view->sort || idxcount != elements) render();
+  //After render(), elements holds unfiltered count, idxcount is filtered
+  elements = idxcount;
 
   // Draw using vertex buffer object
   clock_t t0 = clock();
