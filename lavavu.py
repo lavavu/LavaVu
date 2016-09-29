@@ -192,17 +192,22 @@ class Viewer(object):
         if script and isinstance(script,list):
           args += script
 
-        if not app:
-            self.app = LavaVu(binary)
-        else:
-            self.app = app
-        self.app.run(args)
-        if database:
-            #Load objects/state
-            self.get()
-        #Save last created in global
-        global viewer
-        viewer = self
+        try:
+            if not app:
+                self.app = LavaVu(binary)
+            else:
+                self.app = app
+            self.app.run(args)
+            if database:
+                #Load objects/state
+                self.get()
+            #Save last created in global
+            global viewer
+            viewer = self
+        except RuntimeError:
+            print "WARNING: LavaVu encountered an error, disabling inline visualisation for now"
+            global enabled
+            enabled = False
 
     #dict methods
     def __getitem__(self, key):
