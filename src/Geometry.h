@@ -67,16 +67,14 @@ typedef struct
 {
   unsigned short distance;
   GLuint index; //global index
-  int id; //id in geom element
-  unsigned short geomid; //WARNING: Limits max elements to 65535
+  float* vertex; //Pointer to vertex
 } PIndex;
 
 typedef struct
 {
   unsigned short distance;
   GLuint index[3]; //global indices
-  float centroid[3];
-  unsigned short geomid; //WARNING: Limits max elements to 65535
+  float* vertex; //Pointer to vertex to calc distance from (usually centroid)
 } TIndex;
 
 //Geometry object data store
@@ -221,8 +219,6 @@ protected:
   View* view;
   std::vector<GeomData*> geom;
   std::vector<bool> hidden;
-  //Cached hidden states (including object/viewport setting)
-  std::vector<bool> hiddencache;
   int elements;
   int drawcount;
   bool flat2d; //Flag for flat surfaces in 2d
@@ -309,6 +305,7 @@ class TriSurfaces : public Geometry
   unsigned int tricount;
   unsigned int idxcount;
   std::vector<unsigned int> counts;
+  std::vector<Vec3d> centroids;
 protected:
   std::vector<Distance> surf_sort;
 public:
@@ -320,7 +317,8 @@ public:
   virtual void update();
   void loadMesh();
   void loadBuffers();
-  void setTriangle(int index, float* v1, float* v2, float* v3, int idx1=0, int idx2=0, int idx3=0);
+  void loadList();
+  void centroid(float* v1, float* v2, float* v3);
   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
   void calcGridNormals(int i, std::vector<Vec3d> &normals);
   void calcGridIndices(int i, std::vector<GLuint> &indices);
@@ -399,6 +397,7 @@ class Points : public Geometry
 {
   PIndex *pidx;
   PIndex *swap;
+  unsigned int idxcount;
 public:
   Points(DrawState& drawstate);
   ~Points();
@@ -406,6 +405,7 @@ public:
   virtual void close();
   virtual void update();
   void loadVertices();
+  void loadList();
   void depthSort();
   void render();
   int getPointType(int index=-1);

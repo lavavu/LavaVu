@@ -101,10 +101,6 @@ void Volumes::update()
   clock_t t2,tt;
   tt = clock();
 
-  Geometry::update();
-
-  if (!geom.size()) return;
-
   int maxtex;
   glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &maxtex);
   debug_print("Volume slices: %d, Max 3D texture size %d\n", geom.size(), maxtex);

@@ -40,6 +40,7 @@ Points::Points(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucPointType;
   pidx = swap = NULL;
+  idxcount = 0;
 }
 
 Points::~Points()
@@ -72,37 +73,19 @@ void Points::init()
 
 void Points::update()
 {
-  Geometry::update();
-
-  // Update particles..
-  static unsigned int last_total = 0;
-
-  //if (geom.size() == 0) return;
-  if (total == 0)
-    return;
-
-  hiddencache.resize(geom.size());
-  int drawelements = 0;
-  for (unsigned int i = 0; i < geom.size(); i++)
-  {
-    hiddencache[i] = !drawable(i); //Save flags
-    if (!hiddencache[i]) drawelements += geom[i]->count; //Count drawable
-  }
-
   //Ensure vbo recreated if total changed
   //To force update, set geometry->reload = true
-  if (reload || total != last_total)
-  {
+  if (reload || !pidx)
     loadVertices();
 
-    //Initial depth sort & render
-    view->sort = true;
-  }
+  //Initial depth sort & render
+  view->sort = true;
 
-  //When objects hidden/shown drawable count changes, so need to reallocate
-  elements = drawelements;
+  //Always reload indices if redraw flagged
+  if (redraw) idxcount = 0;
 
-  last_total = total;
+  //Reload the sort array
+  loadList(); 
 }
 
 void Points::loadVertices()
@@ -110,15 +93,6 @@ void Points::loadVertices()
   debug_print("Reloading %d particles...\n", total);
   // Update points...
   clock_t t1,t2;
-
-  //Reset data structures
-  //close();
-
-  //Create sorting array
-  if (pidx) delete[] pidx;
-  pidx = new PIndex[total];
-  if (pidx == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
-  if (geom.size() == 0) return;
 
   // VBO - copy normals/colours/positions to buffer object for quick display
   int datasize;
@@ -156,7 +130,6 @@ void Points::loadVertices()
   //debug_print("Reloading %d particles...(size %f)\n", (int)ceil(total / (float)subSample), scale);
 
   //Get eye distances and copy all particles into sorting array
-  int index = 0;
   for (unsigned int s = 0; s < geom.size(); s++)
   {
     debug_print("Swarm %d, points %d hidden? %s\n", s, geom[s]->count, (hidden[s] ? "yes" : "no"));
@@ -181,12 +154,6 @@ void Points::loadVertices()
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
-      //if (geom[s]->filter(i)) continue;
-      pidx[index].id = i;
-      pidx[index].index = index;
-      pidx[index].geomid = s;
-      pidx[index].distance = 0;
-
       //Copy data to VBO entry
       Colour c;
       if (ptr)
@@ -217,37 +184,56 @@ void Points::loadVertices()
           ptr += sizeof(float);
         }
       }
-
-      index++;
     }
 
   }
   t2 = clock();
-  debug_print("  %.4lf seconds to update particles into sort array and vbo\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to update %d particles into vbo\n", total, (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
   if (ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
   GL_Error_Check;
 }
 
+void Points::loadList()
+{
+  // Update points sorting list...
+  clock_t t1,t2;
+  t1 = clock();
+
+  //Create sorting array
+  if (pidx) delete[] pidx;
+  pidx = new PIndex[total];
+  if (swap) delete[] swap;
+  swap = new PIndex[total];
+  if (pidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
+  if (geom.size() == 0) return;
+  elements = 0;
+  int offset = 0;
+  for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count, s++)
+  {
+    if (!drawable(s)) continue;
+    for (unsigned int i = 0; i < geom[s]->count; i ++)
+    {
+      if (geom[s]->filter(i)) continue;
+      pidx[elements].index = offset + i;
+      pidx[elements].vertex = geom[s]->vertices[i];
+      pidx[elements].distance = 0;
+      elements++;
+    }
+  }
+  t2 = clock();
+  debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", elements, total, (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+}
 
 //Depth sort the particles before drawing, called whenever the viewing angle has changed
 void Points::depthSort()
 {
   clock_t t1,t2;
   t1 = clock();
-  if (total == 0) return;
-
-  //Sort is much faster without allocate, so keep buffer until size changes
-  static long last_size = 0;
-  int size = total*sizeof(PIndex);
-  if (size != last_size || !swap)
-  {
-    if (swap) delete[] swap;
-    swap = new PIndex[total];
-    if (swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)\n", size);
-  }
-  last_size = size;
+  if (elements == 0) return;
+  int size = elements*sizeof(PIndex);
 
   //Calculate min/max distances from view plane
   float maxdist, mindist;
@@ -256,10 +242,10 @@ void Points::depthSort()
   //Update eye distances, clamping int distance to integer between 0 and SORT_DIST_MAX
   float multiplier = (float)SORT_DIST_MAX / (maxdist - mindist);
   float fdistance;
-  for (unsigned int i = 0; i < total; i++)
+  for (unsigned int i = 0; i < elements; i++)
   {
     //Distance from viewing plane is -eyeZ
-    fdistance = eyeDistance(view->modelView, geom[pidx[i].geomid]->vertices[pidx[i].id]);
+    fdistance = eyeDistance(view->modelView, pidx[i].vertex);
     pidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
   }
   t2 = clock();
@@ -267,11 +253,11 @@ void Points::depthSort()
   t1 = clock();
 
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
-  radix_sort<PIndex>(pidx, swap, total, 2);
-  //radix_sort(pidx, total, sizeof(PIndex), 2);
+  radix_sort<PIndex>(pidx, swap, elements, 2);
+  //radix_sort(pidx, elements, sizeof(PIndex), 2);
   //qsort(pidx, geom.size(), sizeof(PIndex), compare);
   t2 = clock();
-  debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to sort %d points\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
   t1 = clock();
   GL_Error_Check;
 }
@@ -281,12 +267,19 @@ void Points::render()
 {
   clock_t t1,t2,tt;
   if (total == 0 || elements == 0) return;
+  assert(pidx);
 
   //First, depth sort the particles
   if (view->is3d && view->sort)
   {
-    debug_print("Depth sorting %d particles...\n", total);
+    debug_print("Depth sorting %d of %d particles...\n", elements, total);
     depthSort();
+  }
+  else if (idxcount == elements)
+  {
+    //Nothing has changed, skip
+    debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
+    return;
   }
 
   tt = t1 = clock();
@@ -304,7 +297,7 @@ void Points::render()
   {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-    debug_print("  %d byte IBO created for %d indices\n", total * sizeof(GLuint), total);
+    debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
   }
   else
     abort_program("IBO creation failed!\n");
@@ -315,13 +308,12 @@ void Points::render()
   GLuint *ptr = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
   if (!ptr) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
-  elements = 0;
   int distSample = drawstate.global("pointdistsample");
   uint32_t SEED;
-  for(int i=total-1; i>=0; i--)
+  idxcount = 0;
+  for(int i=elements-1; i>=0; i--)
+  //for(int i=total-1; i>=0; i--)
   {
-    if (hiddencache[pidx[i].geomid]) continue;
-    if (geom[pidx[i].geomid]->filter(pidx[i].id)) continue;
     // If subSampling, use a pseudo random distribution to select which particles to draw
     // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
     SEED = pidx[i].index; //Reset the seed for determinism based on index
@@ -329,18 +321,15 @@ void Points::render()
     if (distSample > 0)
       subSample = 1 + distSample * pidx[i].distance / SORT_DIST_MAX; //[1,distSample]
     if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
-    ptr[elements] = pidx[i].index;
-    elements++;
-    //printf("%d distance %d idx %d swarm %d vertex ", i, pidx[i].distance, pidx[i].id, pidx[i].geomid);
-    //printVertex(geom[pidx[i].geomid]->vertices[pidx[i].id]);
-    //printf("\n");
+    ptr[idxcount] = pidx[i].index;
+    idxcount++;
   }
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   t2 = clock();
   if (subSample)
-    debug_print("  %.4lf seconds to upload %d indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, subSample);
+    debug_print("  %.4lf seconds to upload %d indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, subSample);
   else
-    debug_print("  %.4lf seconds to upload %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
+    debug_print("  %.4lf seconds to upload %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
   t1 = clock();
   GL_Error_Check;
 
@@ -393,7 +382,9 @@ void Points::draw()
   setState(0, prog); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
-  if (view->sort) render();
+  if (view->sort || idxcount != elements) render();
+  //After render(), elements holds unfiltered count, idxcount is filtered
+  elements = idxcount;
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   glEnable(GL_POINT_SPRITE);
