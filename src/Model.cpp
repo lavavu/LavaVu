@@ -1252,47 +1252,19 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
             }
           }
 
-          //Detect null dims data due to bugs in dimension output
+          //Apply dims if provided
           if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
           {
             g->checkPointMinMax(min);
             g->checkPointMinMax(max);
           }
-          else
-          {
-            //Slow way, detects bounding box by checking each vertex
-            for (int p=0; p < items*3; p += 3)
-              g->checkPointMinMax((float*)data + p);
-
-            debug_print("No bounding dims provided for object %d, calculated for %d vertices...%f,%f,%f - %f,%f,%f\n", obj->dbid, items, g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
-
-            //Fix for future loads
-#ifdef ALTER_DB
-            reopen(true);  //Open writable
-            sprintf(SQL, "UPDATE %sgeometry SET minX = '%f', minY = '%f', minZ = '%f', maxX = '%f', maxY = '%f', maxZ = '%f' WHERE id==%d;",
-                    prefix, id, obj->min[0], obj->min[1], obj->min[2], obj->max[0], obj->max[1], obj->max[2]);
-            printf("%s\n", SQL);
-            issue(SQL);
-#endif
-          }
         }
 
-
-
         if (buffer) delete[] buffer;
-#if 0
-        char* types[8] = {"", "POINTS", "GRID", "TRIANGLES", "VECTORS", "TRACERS", "LINES", "SHAPES"};
-        if (data_type == lucVertexData)
-          printf("[object %d time %d] Read %d vertices into %s object (idx %d) %d x %d\n",
-                 object_id, timestep, items, types[type], active->size()-1, width, height);
-        else printf("[object %d time %d] Read %d values of dtype %d into %s object (idx %d) min %f max %f\n",
-                      object_id, timestep, items, data_type, types[type], active->size()-1, minimum, maximum);
-        if (labels) printf(labels);
-#endif
       }
     }
     else if (ret != SQLITE_DONE)
-      printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
+      fprintf(stderr, "Database file problem, sqlite_step returned: %d (%d)\n", ret, (ret>>8));
   }
   while (ret == SQLITE_ROW);
 
