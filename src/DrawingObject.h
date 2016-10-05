@@ -60,7 +60,7 @@ public:
   //Texture list
   std::vector<TextureLoader*> textures;
 
-  DrawingObject(DrawState& drawstate, std::string name="", std::string props="", int colourmap=-1, unsigned int id=0);
+  DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
   void setup();

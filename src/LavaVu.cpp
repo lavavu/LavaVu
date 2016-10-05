@@ -1446,10 +1446,12 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   colourMap->calibrate(0, size);
 
   //Add colour bar display
-  addObject(new DrawingObject(drawstate, "colour-bar", "colourbar=1\n", cmid));
+  DrawingObject* cmap = addObject(new DrawingObject(drawstate, "colour-bar", "colourbar=1\n"));
+  cmap->properties.data["colourmap"] = cmid;
 
   //Add points object
-  DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nstatic=1\nlit=0\n", cmid));
+  DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nstatic=1\nlit=0\n"));
+  obj->properties.data["colourmap"] = cmid;
   int pointsperswarm = numpoints/4; //4 swarms
   for (int i=0; i < numpoints; i++)
   {
@@ -1469,7 +1471,8 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   }
 
   //Add lines
-  obj = addObject(new DrawingObject(drawstate, "line-segments", "static=1\nlit=0\n", cmid));
+  obj = addObject(new DrawingObject(drawstate, "line-segments", "static=1\nlit=0\n"));
+  obj->properties.data["colourmap"] = cmid;
   for (int i=0; i < 50; i++)
   {
     float colour, ref[3];
