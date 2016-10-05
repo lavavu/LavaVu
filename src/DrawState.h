@@ -303,8 +303,8 @@ public:
     defaults["timestep"] = false;
     // | view | boolean | Enable multisample anti-aliasing, only works with interactive viewing
     defaults["antialias"] = true; //Should be global
-    // | view | integer | Apply a shift to object depth sort index by this amount multiplied by id, improves visualising objects drawn at same depth
-    defaults["shift"] = 0;
+    // | view | real | Apply a shift to object depth sort index by this amount multiplied by id, improves visualising objects drawn at same depth
+    defaults["shift"] = 0.;
     //View: Camera
     // | view | real[4] | Camera rotation quaternion [x,y,z,w]
     defaults["rotate"] = {0., 0., 0., 1.};
