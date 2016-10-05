@@ -391,6 +391,7 @@ void TriSurfaces::loadBuffers()
   if (!p) abort_program("VBO setup failed");
 
   //Buffer data for all vertices
+  int vshift = view->properties["shift"];
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     t1=tt=clock();
@@ -408,6 +409,9 @@ void TriSurfaces::loadBuffers()
     bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
     debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
     float zero[3] = {0,0,0};
+    float shift = vshift * 0.0001 * index * view->model_size;
+    if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip built in objects
+    std::array<float,3> shiftvert;
     for (unsigned int v=0; v < geom[index]->count; v++)
     {
       if (colrange <= 1)
@@ -420,10 +424,20 @@ void TriSurfaces::loadBuffers()
           geom[index]->getColour(colour, cidx);
       }
 
+      int vshift = view->properties["shift"];
+      float* vert = geom[index]->vertices[v];
+      if (shift > 0)
+      {
+        //Shift vertices
+        shiftvert = {vert[0] + shift, vert[1] + shift, vert[2] + shift};
+        vert = shiftvert.data();
+        //if (v%1000==0) printf("SHIFTING %d (%d) by %f (%d)\n", geom[index]->draw->dbid, index, shift, vshift);
+      }
+
       //Write vertex data to vbo
       assert((unsigned int)(ptr-p) < bsize);
       //Copies vertex bytes
-      memcpy(ptr, &geom[index]->vertices[v][0], sizeof(float) * 3);
+      memcpy(ptr, vert, sizeof(float) * 3);
       ptr += sizeof(float) * 3;
       //Copies normal bytes
       if (normals)
