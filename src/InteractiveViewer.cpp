@@ -2746,7 +2746,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     //Update the views
     resetViews(false);
-    amodel->redraw(); //Redraw
+    amodel->redraw(true); //Redraw & reload
     //Delete the cache as object list changed
     amodel->deleteCache();
   }
