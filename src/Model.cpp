@@ -505,16 +505,15 @@ void Model::loadObjects()
     DrawingObject* obj = new DrawingObject(drawstate, otitle, props, object_id);
 
     //Convert old colour/opacity from hard coded fields if provided
-    int colour = 0x00000000;
-    float opacity = -1;
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
     {
-      colour = sqlite3_column_int(statement, 2);
-      if (colour > 0 && !obj->properties.has("colour")) obj->properties.data["colour"] = colour;
+      Colour cobj;
+      cobj.value = sqlite3_column_int(statement, 2);
+      if (cobj.value != 0 && !obj->properties.has("colour")) obj->properties.data["colour"] = cobj.toJson();
     }
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
     {
-      opacity = (float)sqlite3_column_double(statement, 3);
+      float opacity = (float)sqlite3_column_double(statement, 3);
       if (opacity > 0 && !obj->properties.has("opacity")) obj->properties.data["opacity"] = opacity;
     }
 
