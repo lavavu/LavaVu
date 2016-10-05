@@ -54,15 +54,12 @@ void QuadSurfaces::update()
   float maxdist, mindist;
   view->getMinMaxDistance(&mindist, &maxdist);
 
-  Geometry::update();
-
   tt=clock();
   if (geom.size() == 0) return;
 
   //Get element/quad count
   debug_print("Reloading and sorting %d quad surfaces...\n", geom.size());
   total = 0;
-  hiddencache.resize(geom.size());
   surf_sort.clear();
   int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
@@ -71,8 +68,8 @@ void QuadSurfaces::update()
     quadverts += quads * 4;
     total += geom[i]->count; //Actual vertices
 
-    hiddencache[i] = !drawable(i); //Save flags
-    debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hiddencache[i] ? "yes" : "no"));
+    bool hidden = !drawable(i); //Save flags
+    debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hidden ? "yes" : "no"));
 
     //Get corners of strip
     float* posmin = geom[i]->vertices[0];
@@ -246,7 +243,7 @@ void QuadSurfaces::draw()
     {
       unsigned int id = surf_sort[i].id;
       //if (!drawable(id)) continue;
-      if (hiddencache[id]) continue;
+      if (!drawable(id)) continue;
 
       //Get the offset
       unsigned int start = 0;

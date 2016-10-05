@@ -700,7 +700,7 @@ void Geometry::draw()  //Display saved geometry
 
   GL_Error_Check;
   //Have something to update?
-  if (newcount)
+  if (newcount && total > 0)
   {
     if (reload || redraw || newcount != drawcount)
       update();
@@ -815,13 +815,9 @@ void Geometry::setView(View* vp, float* min, float* max)
   //Iterate the selected viewport's drawing objects
   //Apply geometry bounds from all object data within this viewport
   for (unsigned int o=0; o<view->objects.size(); o++)
-  {
     if (view->objects[o]->properties["visible"])
-    {
       objectBounds(view->objects[o], min, max);
-      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
-    }
-  }
+  //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
 }
 
 void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
@@ -834,6 +830,7 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
     {
       compareCoordMinMax(min, max, geom[g]->min);
       compareCoordMinMax(min, max, geom[g]->max);
+      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
     }
   }
 }
@@ -906,9 +903,8 @@ void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const 
     geomdata->count += n;
     total += n;
 
-    //Update bounds on single vertex reads
-    //(Skip this for internally generated geometry and labels)
-    if (n == 1 && type != lucLabelType)
+    //Update bounds on single vertex reads (except labels)
+    if (n == 1 && type != lucLabelType) // && !internal)
     {
       if (unscale)
       {
