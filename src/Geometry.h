@@ -148,6 +148,7 @@ public:
   }
 
   void checkPointMinMax(float *coord);
+  void calcBounds();
 
   void label(std::string& labeltext);
   std::string getLabels();

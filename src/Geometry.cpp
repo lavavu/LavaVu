@@ -45,6 +45,13 @@ void GeomData::checkPointMinMax(float *coord)
   compareCoordMinMax(min, max, coord);
 }
 
+void GeomData::calcBounds()
+{
+  //Loop through vertices and calculate bounds automatically for all elements
+  for (unsigned int j=0; j < count; j++)
+    checkPointMinMax(vertices[j]);
+}
+
 void GeomData::label(std::string& labeltext)
 {
   //Adds a vertex label
@@ -826,11 +833,24 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
   //Get geometry bounds from all object data
   for (unsigned int g=0; g<geom.size(); g++)
   {
+    //If no range, must calculate
+    for (int i=0; i<3; i++)
+    {
+      if (std::isinf(geom[g]->max[i]) || std::isinf(geom[g]->min[i]))
+      {
+        geom[g]->calcBounds();
+        //debug_print("No bounding dims provided for object %s (el %d), calculated ...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), g, 
+        //            geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+        break;
+      }
+    }
+
     if (geom[g]->draw == draw)
     {
       compareCoordMinMax(min, max, geom[g]->min);
       compareCoordMinMax(min, max, geom[g]->max);
-      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), 
+      //       geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
     }
   }
 }
