@@ -391,7 +391,7 @@ void TriSurfaces::loadBuffers()
   if (!p) abort_program("VBO setup failed");
 
   //Buffer data for all vertices
-  int vshift = view->properties["shift"];
+  float vshift = view->properties["shift"];
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     t1=tt=clock();
@@ -424,7 +424,6 @@ void TriSurfaces::loadBuffers()
           geom[index]->getColour(colour, cidx);
       }
 
-      int vshift = view->properties["shift"];
       float* vert = geom[index]->vertices[v];
       if (shift > 0)
       {
