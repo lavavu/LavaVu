@@ -1640,7 +1640,7 @@ void LavaVu::resetViews(bool autozoom)
 
   viewer->title = title.str();
 
-  if (viewer->isopen && viewer->visible)  viewer->show(); //Update title etc
+  if (viewer->isopen && viewer->visible) viewer->show(); //Update title etc
 }
 
 //Called when view changed
@@ -1940,7 +1940,7 @@ void LavaVu::drawAxis()
   axis->clear();
   axis->setView(aview);
   DrawingObject* aobj = drawstate.axisobj;
-  if (!aobj) aobj = new DrawingObject(drawstate, "axis", "wireframe=false\nclip=false\n");
+  if (!aobj) aobj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\n");
   if (!aview->hasObject(aobj)) aview->addObject(aobj);
   axis->add(aobj);
 
@@ -2001,7 +2001,7 @@ void LavaVu::drawRulers()
   DrawingObject* obj = drawstate.rulerobj;
   rulers->clear();
   rulers->setView(aview);
-  if (!obj) obj = new DrawingObject(drawstate, "rulers", "wireframe=false\nclip=false\nlit=false");
+  if (!obj) obj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nlit=false");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
@@ -2127,7 +2127,7 @@ void LavaVu::drawBorder()
   DrawingObject* obj = drawstate.borderobj;
   border->clear();
   border->setView(aview);
-  if (!obj) obj = new DrawingObject(drawstate, "border", "clip=false\n");
+  if (!obj) obj = new DrawingObject(drawstate, "", "clip=false\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
   if (!aview->is3d) obj->properties.data["depthtest"] = false;
