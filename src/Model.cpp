@@ -164,7 +164,7 @@ void Model::addObject(DrawingObject* obj)
   objects.push_back(obj);
 }
 
-DrawingObject*  Model::findObject(unsigned int id)
+DrawingObject* Model::findObject(unsigned int id)
 {
   for (unsigned int i=0; i<objects.size(); i++)
     if (objects[i]->dbid == id) return objects[i];
@@ -502,7 +502,7 @@ void Model::loadObjects()
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
-    DrawingObject* obj = new DrawingObject(drawstate, otitle, props, -1, object_id);
+    DrawingObject* obj = new DrawingObject(drawstate, otitle, props, object_id);
 
     //Convert old colour/opacity from hard coded fields if provided
     int colour = 0x00000000;

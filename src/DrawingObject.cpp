@@ -36,7 +36,7 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, int colourmap, unsigned int id)
+DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, unsigned int id)
   : properties(drawstate.globals, drawstate.defaults), dbid(id)
 {
   colourMaps = NULL;
@@ -48,9 +48,6 @@ DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string
   std::replace(name.begin(), name.end(), ' ', '_');
 
   properties.parseSet(props);
-
-  //Sets the default colour map idx if provided, newer databases provide separately
-  properties.data["colourmap"] = colourmap;
 
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
