@@ -86,8 +86,9 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
                              "rulers", "rulerticks", "rulerwidth", 
                              "fontscale", "border", "fillborder", "bordercolour", 
                              "axis", "axislength", "timestep", "antialias", "shift"};
+  //Gets current value (either global or default)
   for (auto key : viewprops)
-    properties.data[key] = drawstate.defaults[key];
+    properties.data[key] = drawstate.global(key);
 }
 
 View::~View()
@@ -121,6 +122,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     if (!ISFINITE(newmin[i]) || !ISFINITE(newmax[i])) return false;
 
     //If bounds changed, reset focal point to default
+    //(causes jitter when switching timesteps - do we really want this?)
     if (min[i] != newmin[i] || max[i] != newmax[i]) focal_point[i] = default_focus[i];
 
     min[i] = newmin[i];
