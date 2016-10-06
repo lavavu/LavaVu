@@ -144,7 +144,7 @@ void Volumes::update()
       else if (geom[i]->colourData())
       {
         bpv = 4;
-        assert(4 * geom[i]->colourData()->size() == geom[i]->width * geom[i]->height * geom[i]->depth);
+        assert(geom[i]->colourData()->size() == geom[i]->width * geom[i]->height * geom[i]->depth);
         current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
       }
       debug_print("volume 0 width %d height %d depth %d (bpv %d)\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
