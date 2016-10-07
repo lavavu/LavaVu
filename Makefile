@@ -79,9 +79,9 @@ ifeq ($(VIDEO), 1)
   CFLAGS += -DHAVE_LIBAVCODEC -DHAVE_SWSCALE
   LIBS += -lavcodec -lavutil -lavformat -lswscale
 endif
-#Default libpng enabled 
-PNG ?= 1
-ifeq ($(PNG), 1)
+#Default libpng disabled, use built in png support
+LIBPNG ?= 0
+ifeq ($(LIBPNG), 1)
   CFLAGS += -DHAVE_LIBPNG
   LIBS += -lpng
 else
@@ -93,12 +93,12 @@ ifeq ($(TIFF), 1)
 endif
 
 #Source search paths
-vpath %.cpp src:src/Main:src:src/jpeg
-vpath %.h src/Main:src:src/jpeg:src/sqlite3
+vpath %.cpp src:src/Main:src:src/jpeg:src/png
+vpath %.h src/Main:src:src/jpeg:src/png:src/sqlite3
 vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
 
-SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cpp)
+SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cpp) $(wildcard src/png/*.cpp)
 
 INC := $(wildcard src/*.h)
 #INC := $(SRC:%.cpp=%.h)

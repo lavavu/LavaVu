@@ -2347,7 +2347,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     std::string filename = parsed["image"];
     if (filename.length() > 0)
-      viewer->image(getImageFilename(filename));
+      viewer->image(filename);
     else
     {
       //Apply image counter to default filename when multiple images output
@@ -2357,8 +2357,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       outpath << title;
       if (imagecounter > 0)
         outpath <<  "-" << imagecounter;
-      std::string fn = getImageFilename(outpath.str());
-      viewer->image(fn);
+      viewer->image(outpath.str());
       imagecounter++;
     }
 

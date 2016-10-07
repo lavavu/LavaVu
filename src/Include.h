@@ -57,6 +57,7 @@
 //Utils
 #include "jpeg/jpge.h"
 #include "jpeg/jpgd.h"
+#include "png/lodepng.h"
 #include "json.hpp"
 // for convenience
 using json = nlohmann::json;

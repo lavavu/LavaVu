@@ -2625,7 +2625,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
         std::string title = drawstate.global("caption");
         std::ostringstream filess;
         filess << title << '-' << std::setw(5) << std::setfill('0') << amodel->step();
-        viewer->image(getImageFilename(filess.str()));
+        viewer->image(filess.str());
       }
 
 #ifdef HAVE_LIBAVCODEC
@@ -2756,7 +2756,7 @@ std::string LavaVu::image(std::string filename, int width, int height, bool fram
   //Always jpeg encode to string for frame output
   if (frame) return viewer->image("", true);
   //Otherwise write image to file or return as string (base64 data url)
-  return viewer->image(getImageFilename(filename));
+  return viewer->image(filename);
 }
 
 std::string LavaVu::web(bool tofile)

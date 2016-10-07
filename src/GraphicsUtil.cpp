@@ -826,6 +826,9 @@ int TextureLoader::loadPNG()
   }
   imageData = (GLubyte*)read_png(file, texture->bpp, texture->width, texture->height);
 
+  //Requires flip on load for OpenGL
+  RawImageFlip(imageData, texture->width, texture->height, texture->bpp/8);
+
   file.close();
 
   return build(imageData, texture->bpp == 24 ? GL_RGB : GL_RGBA);
@@ -836,6 +839,7 @@ int TextureLoader::loadJPEG()
   int width, height, bytesPerPixel;
   GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
 
+  //Requires flip on load for OpenGL
   RawImageFlip(imageData, width, height, 3);
 
   texture->width = width;
@@ -976,50 +980,53 @@ void TextureLoader::load3D(int width, int height, int depth, void* data, int vol
   GL_Error_Check;
 }
 
-std::string getImageFilename(const std::string& basename)
-{
-  if (basename.length() == 0) return basename;
-  std::string path = basename;
-#ifdef HAVE_LIBPNG
-  //Write data to image file
-  if (!strstr(basename.c_str(), ".png"))
-    path += ".png";
-#else
-  //JPEG support with built in encoder
-  if (!strstr(basename.c_str(), ".jpg") && !strstr(basename.c_str(), ".jpeg"))
-    path += ".jpg";
-#endif
-  return path;
-}
-
 bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp)
 {
-#ifdef HAVE_LIBPNG
-  //Write data to image file
-  std::ofstream file(path, std::ios::binary);
-  write_png(file, bpp, width, height, image);
-#else
-  //JPEG support with built in encoder
-  // Fill in the compression parameter structure.
-  jpge::params params;
-  params.m_quality = 95;
-  params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-  if (!compress_image_to_jpeg_file(path.c_str(), width, height, bpp, image, params))
+  FilePath filepath(path);
+  if (filepath.type == "png")
   {
-    fprintf(stderr, "[write_jpeg] File %s could not be saved\n", path.c_str());
-    return false;
-  }
+    //Write data to image file
+    std::ofstream file(filepath.full, std::ios::binary);
+    //Requires y-flip as uses opposite y origin to OpenGL (except for libpng)
+#ifndef HAVE_LIBPNG
+    RawImageFlip(image, width, height, bpp);
 #endif
-  debug_print("[%s] File successfully written\n", path.c_str());
+    write_png(file, bpp, width, height, image);
+  }
+  else if (filepath.type == "jpeg" || filepath.type == "jpg")
+  {
+    //JPEG support with built in encoder
+    // Fill in the compression parameter structure.
+    //Requires y-flip as uses opposite y origin to OpenGL
+    RawImageFlip(image, width, height, bpp);
+
+    jpge::params params;
+    params.m_quality = 95;
+    params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
+    if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, bpp, image, params))
+    {
+      fprintf(stderr, "[write_jpeg] File %s could not be saved\n", filepath.full.c_str());
+      return false;
+    }
+  }
+  else
+  {
+    std::string newpath = path + ".png";
+    return writeImage(image, width, height, newpath, bpp);
+  }
+  debug_print("[%s] File successfully written\n", filepath.full.c_str());
   return true;
 }
 
 std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg)
 {
   std::string encoded;
-#ifdef HAVE_LIBPNG
   if (!jpeg)
   {
+#ifndef HAVE_LIBPNG
+    //Requires y-flip as uses opposite y origin to OpenGL
+    RawImageFlip(image, width, height, bpp);
+#endif
     // Write png to stringstream
     std::stringstream ss;
     write_png(ss, bpp, width, height, image);
@@ -1028,8 +1035,9 @@ std::string getImageString(GLubyte *image, int width, int height, int bpp, bool 
     encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
   }
   else
-#endif
   {
+    //Requires y-flip as uses opposite y origin to OpenGL
+    RawImageFlip(image, width, height, bpp);
     // Writes JPEG image to memory buffer.
     // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
     // If return value is true, jpeg_bytes will be set to the size of the compressed data.
@@ -1228,4 +1236,49 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
   delete[] row_pointers;
 }
 
-#endif //HAVE_LIBPNG
+#else //HAVE_LIBPNG
+void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
+{
+  bpp = 32;
+  int channels = 4;
+  int bit_depth = 8;
+  //Read the stream
+  std::string s(std::istreambuf_iterator<char>(stream), {});
+  unsigned char* buffer = 0;
+  unsigned status = lodepng_decode32(&buffer, &width, &height, (const unsigned char*)s.c_str(), s.length());
+  if (status != 0)
+  {
+    fprintf(stderr, "[read_png_file] decode failed");
+    return NULL;
+  }
+  debug_print("Reading PNG: %d x %d, depth %d, channels %d\n", width, height, bit_depth, channels);
+  size_t size = width*height*channels;
+  GLubyte* pixels = new GLubyte[size];
+  memcpy(pixels, buffer, size);
+  free(buffer);
+  return pixels;
+}
+
+void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
+{
+  int bit_depth = 8;
+  int channels = bpp/bit_depth;
+
+  unsigned char* buffer;
+  size_t buffersize;
+  unsigned status = 0;
+  if (bpp = 24)
+    status = lodepng_encode24(&buffer, &buffersize, (const unsigned char*)data, width, height);
+  else
+    status = lodepng_encode32(&buffer, &buffersize, (const unsigned char*)data, width, height);
+  if (status != 0)
+  {
+    fprintf(stderr, "[write_png_file] encode failed");
+    return;
+  }
+  debug_print("Writing PNG: %d x %d, depth %d, channels %d\n", width, height, bit_depth, channels);
+  stream.write((const char*)buffer, buffersize);
+  free(buffer);
+}
+
+#endif //!HAVE_LIBPNG

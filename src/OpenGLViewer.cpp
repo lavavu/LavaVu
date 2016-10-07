@@ -445,12 +445,7 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
   GLubyte *image = new GLubyte[size];
   //Ensure buffer large enough
   assert(width/factor == w && height/factor == h);
-#ifdef HAVE_LIBPNG
-  if (!jpeg)
-    pixels(image, alphapng);
-  else
-#endif
-    pixels(image, false, true);
+  pixels(image, alphapng);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)

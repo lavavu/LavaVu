@@ -545,11 +545,6 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       break;
     }
   }
-#ifdef HAVE_LIBPNG
-  //Requires y-flip as uses opposite y origin to OpenGL
-  if (image)
-    RawImageFlip(image, iw, ih, bpp);
-#endif
   return image;
 }
 
@@ -567,7 +562,7 @@ void Volumes::saveImage(DrawingObject* draw, int xtiles)
       if (!image) return;
       char path[FILE_PATH_MAX];
       sprintf(path, "%s_%d", geom[i]->draw->name().c_str(), count++);
-      writeImage(image, iw, ih, getImageFilename(path), bpp);
+      writeImage(image, iw, ih, path, bpp);
       delete[] image;
       break;  //Done
     }

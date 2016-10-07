@@ -608,17 +608,12 @@ void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrow
 
 void RawImageFlip(void* image, int width, int height, int bpp);
 
-std::string getImageFilename(const std::string& basename);
 bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp=3);
 std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg=false);
 
-#ifdef HAVE_LIBPNG
 //PNG utils
 void write_png(std::ostream& stream, int bpp, int width, int height, void* data);
 void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height);
-#else
-#define read_png(stream, bpp, width, height) NULL
-#endif
 
 //Generic image loader (only png/jpg supported)
 class ImageFile
