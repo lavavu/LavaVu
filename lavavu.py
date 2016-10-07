@@ -2,7 +2,6 @@
 import control
 import json
 
-enabled = True
 viewer = None
 
 #Attempt to import swig module
@@ -12,8 +11,8 @@ try:
     sys.path.append(os.path.join(os.path.dirname(control.__file__), 'bin'))
     from LavaVuPython import *
 except:
-    print "WARNING: LavaVu not found, inline visualisation disabled"
-    enabled = False
+    print "LavaVu module not found!"
+    raise
 
 #Some preset colourmaps
 # aim to reduce banding artifacts by being either 
@@ -204,10 +203,9 @@ class Viewer(object):
             #Save last created in global
             global viewer
             viewer = self
-        except RuntimeError:
-            print "WARNING: LavaVu encountered an error, disabling inline visualisation for now"
-            global enabled
-            enabled = False
+        except RuntimeError,e:
+            print "LavaVu error: " + str(e)
+            pass
 
     #dict methods
     def __getitem__(self, key):
@@ -400,6 +398,5 @@ class Viewer(object):
 
 #Create a default global viewer, not ideal but currently needed for control interface
 #TODO: manage this better, only open viewer when explicitly requested
-if enabled:
-    viewer = Viewer()
+viewer = Viewer()
 
