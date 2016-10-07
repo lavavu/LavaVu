@@ -2623,7 +2623,14 @@ void LavaVu::writeSteps(bool images, int start, int end)
       std::cout << "... Writing timestep: " << amodel->step() << std::endl;
       //Update the views
       resetViews(true);
-      viewer->display();
+
+      //Loop through all viewports and display each
+      for (unsigned int v=0; v<amodel->views.size(); v++)
+      {
+        viewSelect(v);
+        amodel->redraw(true);
+        viewer->display();
+      }
 
       if (images)
       {

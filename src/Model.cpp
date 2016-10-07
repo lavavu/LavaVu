@@ -435,16 +435,35 @@ void Model::loadViewports()
   //(id, title, x, y, near, far, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
   while (sqlite3_step(statement) == SQLITE_ROW)
   {
-    float x = (float)sqlite3_column_double(statement, 2);
-    float y = (float)sqlite3_column_double(statement, 3);
-    float nearc = (float)sqlite3_column_double(statement, 4);
-    float farc = (float)sqlite3_column_double(statement, 5);
+    float x = (float)sqlite3_column_double(statement, 1);
+    float y = (float)sqlite3_column_double(statement, 2);
+    float nearc = (float)sqlite3_column_double(statement, 3);
+    float farc = (float)sqlite3_column_double(statement, 4);
 
     //Create the view object and add to list
     views.push_back(new View(drawstate, x, y, nearc, farc));
-    debug_print("Loaded viewport at %f,%f\n", x, y);
   }
   sqlite3_finalize(statement);
+
+  //Calculate viewport scaling ( x,y width,height )
+  for (unsigned int v=0; v<views.size(); v++)
+  {
+    float nextx = 1.0, nexty = 1.0;
+   
+    //Find next largest x & y positions
+    if (v+1 < views.size() && views[v+1]->x > views[v]->x)
+       nextx = views[v+1]->x;
+
+    for (unsigned int vv=v+1; vv<views.size(); vv++)
+    {
+       if (views[vv]->y > views[v]->y && views[vv]->y < nexty)
+          nexty = views[vv]->y;
+    }
+
+    views[v]->w = nextx - views[v]->x;
+    views[v]->h = nexty - views[v]->y;
+    debug_print("-- Viewport %d at %f,%f %f x %f\n", v, views[v]->x, views[v]->y, views[v]->w, views[v]->h);
+  }
 }
 
 //Load and apply viewport camera settings
