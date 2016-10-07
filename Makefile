@@ -79,6 +79,8 @@ ifeq ($(VIDEO), 1)
   CFLAGS += -DHAVE_LIBAVCODEC -DHAVE_SWSCALE
   LIBS += -lavcodec -lavutil -lavformat -lswscale
 endif
+#Default libpng enabled 
+PNG ?= 1
 ifeq ($(PNG), 1)
   CFLAGS += -DHAVE_LIBPNG
   LIBS += -lpng
