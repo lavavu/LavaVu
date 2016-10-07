@@ -103,7 +103,7 @@ void TriSurfaces::update()
   if (drawelements == 0) return;
 
   //When objects hidden/shown drawable count changes, so need to reallocate
-  if (redraw || elements != drawelements) idxcount = 0;
+  if (elements != drawelements) idxcount = 0;
   elements = drawelements;
 
   //Only reload the vbo data when required
@@ -123,15 +123,15 @@ void TriSurfaces::update()
     //render();
   }
 
-  loadList();
+  //Reload the list if count changes
+  if (tricount == 0 || tricount*3 != idxcount)
+    loadList();
 
-  if (redraw)
+  if (reload || idxcount == 0)
   {
     idxcount = 0;
     view->sort = true;
   }
-
-  //render();
 }
 
 void TriSurfaces::loadMesh()
