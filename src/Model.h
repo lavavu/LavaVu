@@ -119,6 +119,7 @@ public:
   ~Model();
 
   bool loadFigure(int fig);
+  int addFigure(const std::string& name="", const std::string& state="");
   void addObject(DrawingObject* obj);
   DrawingObject* findObject(unsigned int id);
   View* defaultView();

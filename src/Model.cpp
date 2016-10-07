@@ -157,6 +157,22 @@ bool Model::loadFigure(int fig)
   return true;
 }
 
+
+int Model::addFigure(const std::string& name, const std::string& state)
+{
+  fignames.push_back(name);
+  if (state.length())
+    figures.push_back(state);
+  else
+  {
+    std::stringstream ss;
+    jsonWrite(ss, 0, false);
+    std::string state = ss.str();
+    figures.push_back(state);
+  }
+  return figures.size()-1;
+}
+
 void Model::addObject(DrawingObject* obj)
 {
   //Create master drawing object list entry
@@ -354,8 +370,7 @@ void Model::loadWindows()
   {
     const char *name = (const char*)sqlite3_column_text(statement, 0);
     const char *data = (const char*)sqlite3_column_text(statement, 1);
-    fignames.push_back(name);
-    figures.push_back(data);
+    addFigure(name, data);
   }
 
   if (figures.size() > 0)
@@ -1461,19 +1476,12 @@ void Model::writeState(sqlite3* outdb)
   if (!outdb) outdb = db; //Use existing database
   issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)", outdb);
 
-  std::stringstream ss;
-  jsonWrite(ss, 0, false);
-  std::string state = ss.str();
-
   //Add default figure
   if (figure < 0)
   {
     figure = 0;
     if (figures.size() == 0)
-    {
-      fignames.push_back("default");
-      figures.push_back(state);
-    }
+      figure = addFigure("default");
   }
 
   char SQL[SQL_QUERY_MAX];
@@ -1488,7 +1496,7 @@ void Model::writeState(sqlite3* outdb)
   if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
     abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
 
-  if (sqlite3_bind_text(statement, 1, state.c_str(), state.length(), SQLITE_STATIC) != SQLITE_OK)
+  if (sqlite3_bind_text(statement, 1, figures[figure].c_str(), figures[figure].length(), SQLITE_STATIC) != SQLITE_OK)
     abort_program("SQL bind error: %s\n", sqlite3_errmsg(db));
 
   if (sqlite3_step(statement) != SQLITE_DONE )

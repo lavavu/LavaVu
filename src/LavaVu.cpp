@@ -438,13 +438,16 @@ void LavaVu::run(std::vector<std::string> args)
       loadModelStep(m, startstep, true);
 
       //Bounds checks
-      if (endstep < startstep) endstep = startstep;
       int last = amodel->lastStep();
+      if (endstep < 0) endstep = last;
+      if (endstep < startstep) endstep = startstep;
       if (endstep > last) endstep = last;
+      debug_print("StartStep %d EndStep %d\n", startstep, endstep);
 
       if (writeimage || writemovie)
       {
         //Loop through figures unless one set
+        if (amodel->figures.size() == 0) amodel->addFigure();
         for (unsigned int f=0; f < amodel->figures.size(); f++)
         {
           if (initfigure != 0) f = initfigure-1;
@@ -457,11 +460,13 @@ void LavaVu::run(std::vector<std::string> args)
 
           if (writeimage)
           {
-            std::cout << "... Writing image(s) for model/figure " << drawstate.global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+            std::cout << "... Writing image(s) for model/figure " << drawstate.global("caption")
+                      << " Timesteps: " << startstep << " to " << endstep << std::endl;
           }
           if (writemovie)
           {
-            std::cout << "... Writing movie for model/figure " << drawstate.global("caption") << " Timesteps: " << startstep << " to " << endstep << std::endl;
+            std::cout << "... Writing movie for model/figure " << drawstate.global("caption")
+                      << " Timesteps: " << startstep << " to " << endstep << std::endl;
             //Other formats?? avi/mpeg4?
             encodeVideo("", writemovie);
           }
