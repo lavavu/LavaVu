@@ -386,7 +386,7 @@ void Model::loadWindows()
   else //Old db uses window structure
   {
     //Load windows list from database and insert into models
-    statement = select("SELECT id,name,width,height,minX,minY,minZ,maxX,maxY,maxZ from window");
+    statement = select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ from window");
     //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
     //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
     //Single window only supported now, use viewports for multiple
@@ -395,15 +395,17 @@ void Model::loadWindows()
       std::string wtitle = std::string((char*)sqlite3_column_text(statement, 1));
       int width = sqlite3_column_int(statement, 2);
       int height = sqlite3_column_int(statement, 3);
+      Colour colour;
+      colour.value = sqlite3_column_int(statement, 4);
       float min[3], max[3];
       for (int i=0; i<3; i++)
       {
-        if (sqlite3_column_type(statement, 4+i) != SQLITE_NULL)
-          min[i] = (float)sqlite3_column_double(statement, 4+i);
+        if (sqlite3_column_type(statement, 5+i) != SQLITE_NULL)
+          min[i] = (float)sqlite3_column_double(statement, 5+i);
         else
           min[i] = FLT_MAX;
-        if (sqlite3_column_type(statement, 7+i) != SQLITE_NULL)
-          max[i] = (float)sqlite3_column_double(statement, 7+i);
+        if (sqlite3_column_type(statement, 8+i) != SQLITE_NULL)
+          max[i] = (float)sqlite3_column_double(statement, 8+i);
         else
           max[i] = -FLT_MAX;
       }
@@ -412,6 +414,9 @@ void Model::loadWindows()
       drawstate.globals["resolution"] = {width, height};
       drawstate.globals["min"] = {min[0], min[1], min[2]};
       drawstate.globals["max"] = {max[0], max[1], max[2]};
+      //Support legacy colour field
+      if (colour.value != 0 && !drawstate.globals.count("colour"))
+        drawstate.globals["background"] = colour.toJson();
 
       //Link the window viewports, objects & colourmaps
       loadLinks();
