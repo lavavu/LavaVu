@@ -663,21 +663,33 @@ void Geometry::setState(unsigned int i, Shader* prog)
 
     if (prog->uniforms["uClipMin"])
     {
-      //TODO: Also enable clip for lines (will require line shader)
-      float clipMin[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
-      float clipMax[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
+      Vec3d clipMin = Vec3d(-HUGE_VALF, -HUGE_VALF, -HUGE_VALF);
+      Vec3d clipMax = Vec3d(HUGE_VALF, HUGE_VALF, HUGE_VALF);
       if (geom[i]->draw->properties["clip"])
       {
-        clipMin[0] = (float)geom[i]->draw->properties["xmin"] * drawstate.dims[0] + drawstate.min[0];
-        clipMin[1] = (float)geom[i]->draw->properties["ymin"] * drawstate.dims[1] + drawstate.min[1];
-        clipMin[2] = (float)geom[i]->draw->properties["zmin"] * drawstate.dims[2] + drawstate.min[2];
-        clipMax[0] = (float)geom[i]->draw->properties["xmax"]* drawstate.dims[0] + drawstate.min[0];
-        clipMax[1] = (float)geom[i]->draw->properties["ymax"]* drawstate.dims[1] + drawstate.min[1];
-        clipMax[2] = (float)geom[i]->draw->properties["zmax"]* drawstate.dims[2] + drawstate.min[2];
+        clipMin = Vec3d((float)geom[i]->draw->properties["xmin"],
+                        (float)geom[i]->draw->properties["ymin"],
+                        (float)geom[i]->draw->properties["zmin"]);
+        clipMax = Vec3d((float)geom[i]->draw->properties["xmax"],
+                        (float)geom[i]->draw->properties["ymax"],
+                        (float)geom[i]->draw->properties["zmax"]);
+        if (geom[i]->draw->properties["clipmap"])
+        {
+          Vec3d dims(drawstate.dims);
+          Vec3d dmin(drawstate.min);
+          clipMin *= dims;
+          clipMin += dmin;
+          clipMax *= dims;
+          clipMax += dmin;
+        }
+        //printf("Dimensions %f,%f,%f - %f,%f,%f\n", drawstate.min[0], drawstate.min[1], 
+        //       drawstate.min[2], drawstate.max[0], drawstate.max[1], drawstate.max[2]);
+        //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(), 
+        //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
       }
 
-      glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin);
-      glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax);
+      glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin.ref());
+      glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax.ref());
     }
   }
   GL_Error_Check;

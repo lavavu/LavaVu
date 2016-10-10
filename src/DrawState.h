@@ -142,6 +142,8 @@ public:
 
     // | object | boolean | Allow object to be clipped
     defaults["clip"] = true;
+    // | object | boolean | Clipping mapped to range normalised [0,1]
+    defaults["clipmap"] = true;
     // | object | real [0,1] | Object clipping, minimum x
     defaults["xmin"] = -FLT_MAX;
     // | object | real [0,1] | Object clipping, maximum y
