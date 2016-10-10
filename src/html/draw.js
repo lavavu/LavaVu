@@ -1502,38 +1502,39 @@ Viewer.prototype.loadFile = function(source) {
     this.orientation = vis.views[view].orientation || 1;
     this.showBorder = vis.views[view].border == undefined ? true : vis.views[view].border > 0;
     this.axes = vis.views[view].axis == undefined ? true : vis.views[view].axis;
-    this.pointScale = vis.properties.scalepoints || 1.0;
-    this.pointType = vis.properties.pointtype >= -1 ? vis.properties.pointtype : 0;
-
-    this.applyBackground(vis.properties.background);
-
-    if (vis.properties.resolution && vis.properties.resolution[0] && vis.properties.resolution[1]) {
-      this.width = vis.properties.resolution[0];
-      this.height = vis.properties.resolution[1];
-      this.canvas.style.width = "";
-      this.canvas.style.height = "";
-    }
-
-    //Copy global options to controls where applicable..
-    $("bgColour").value = this.background.r;
-    $("pointScale-out").value = (this.pointScale || 1.0);
-    $("pointScale").value = $("pointScale-out").value * 10.0;
-    $("border").checked = this.showBorder;
-    $("axes").checked = this.axes;
-    $("globalPointType").value = this.pointType;
-
-    $("global-opacity").value = $("global-opacity-out").value = (vis.properties.opacity || 1.0).toFixed(2);
-    $('global-brightness').value = $("global-brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
-    $('global-contrast').value = $("global-contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
-    $('global-saturation').value = $("global-saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
-
-    $('global-xmin').value = $("global-xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
-    $('global-xmax').value = $("global-xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
-    $('global-ymin').value = $("global-ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
-    $('global-ymax').value = $("global-ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
-    $('global-zmin').value = $("global-zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
-    $('global-zmax').value = $("global-zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
   }
+
+  this.pointScale = vis.properties.scalepoints || 1.0;
+  this.pointType = vis.properties.pointtype; // > 0 ? vis.properties.pointtype : 0;
+
+  this.applyBackground(vis.properties.background);
+
+  if (vis.properties.resolution && vis.properties.resolution[0] && vis.properties.resolution[1]) {
+    this.width = vis.properties.resolution[0];
+    this.height = vis.properties.resolution[1];
+    this.canvas.style.width = "";
+    this.canvas.style.height = "";
+  }
+
+  //Copy global options to controls where applicable..
+  $("bgColour").value = this.background.r;
+  $("pointScale-out").value = (this.pointScale || 1.0);
+  $("pointScale").value = $("pointScale-out").value * 10.0;
+  $("border").checked = this.showBorder;
+  $("axes").checked = this.axes;
+  $("globalPointType").value = this.pointType;
+
+  $("global-opacity").value = $("global-opacity-out").value = (vis.properties.opacity || 1.0).toFixed(2);
+  $('global-brightness').value = $("global-brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
+  $('global-contrast').value = $("global-contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
+  $('global-saturation').value = $("global-saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
+
+  $('global-xmin').value = $("global-xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
+  $('global-xmax').value = $("global-xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
+  $('global-ymin').value = $("global-ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
+  $('global-ymax').value = $("global-ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
+  $('global-zmin').value = $("global-zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
+  $('global-zmax').value = $("global-zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
 
   //Load objects and add to form
   var objdiv = $("objects");
@@ -1727,7 +1728,7 @@ Viewer.prototype.toString = function(nocam, reload) {
   var exp = {"objects"    : this.exportObjects(), 
              "colourmaps" : this.exportColourMaps(),
              "views"      : this.exportViews(nocam),
-             "properties" : this.exportProperties()};
+             "properties" : vis.properties};
 
   exp.exported = true;
   exp.reload = reload ? true : false;
@@ -1735,14 +1736,6 @@ Viewer.prototype.toString = function(nocam, reload) {
   if (nocam) return JSON.stringify(exp);
   //Export with 2 space indentation
   return JSON.stringify(exp, undefined, 2);
-}
-
-Viewer.prototype.exportProperties = function() {
-  vis.properties.scalepoints = this.pointScale;
-  vis.properties.pointtype = this.pointType;
-  //vis.properties.background = this.background.html();
-  //this.applyBackground(vis.properties.background);
-  return vis.properties;
 }
 
 Viewer.prototype.exportViews = function(nocam) {
@@ -1841,8 +1834,9 @@ Viewer.prototype.setProperties = function() {
     vis.properties[name] = $('global-' + fieldname + '-out').value = parseFloat($('global-' + fieldname).value);
   }
 
-  viewer.pointScale = $('pointScale-out').value = $('pointScale').value / 10.0;
-  viewer.pointType = parseInt($('globalPointType').value);
+  viewer.pointScale = vis.properties.scalepoints = $('pointScale-out').value = $('pointScale').value / 10.0;
+  if ($('globalPointType').value)
+    viewer.pointType = vis.properties.pointtype = parseInt($('globalPointType').value);
   viewer.showBorder = $("border").checked;
   viewer.axes = $("axes").checked;
   var c = $("bgColour").value;
