@@ -1710,8 +1710,12 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     clearMinMax(drawstate.min, drawstate.max);
     compareCoordMinMax(drawstate.min, drawstate.max, omin);
     compareCoordMinMax(drawstate.min, drawstate.max, omax);
-    compareCoordMinMax(drawstate.min, drawstate.max, min);
-    compareCoordMinMax(drawstate.min, drawstate.max, max);
+    //Apply viewport/global dims if valid
+    if (min[0] != max[0] && min[1] != max[1])
+    {
+      compareCoordMinMax(drawstate.min, drawstate.max, min);
+      compareCoordMinMax(drawstate.min, drawstate.max, max);
+    }
     getCoordRange(drawstate.min, drawstate.max, drawstate.dims);
     debug_print("Calculated Actual bounds %f,%f,%f - %f,%f,%f \n",
                 drawstate.min[0], drawstate.min[1], drawstate.min[2],
