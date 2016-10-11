@@ -2161,23 +2161,24 @@ void LavaVu::drawBorder()
     obj->properties.data["cullface"] = true;
   }
 
+  Vec3d minvert = Vec3d(aview->min);
+  Vec3d maxvert = Vec3d(aview->max);
   if (aview->is3d)
   {
     // Draw model bounding box with optional filled background surface
-    Vec3d minvert = Vec3d(aview->min);
-    Vec3d maxvert = Vec3d(aview->max);
     Quaternion qrot;
     //Min/max swapped to draw inverted box, see through to back walls
     border->drawCuboid(obj, maxvert, minvert, qrot, true);
   }
   else
   {
+    minvert.z = maxvert.z = 0;
     Vec3d vert1 = Vec3d(aview->max[0], aview->min[1], 0);
-    Vec3d vert3 = Vec3d(aview->min[0], aview->max[1], 0);
-    border->read(obj, 1, lucVertexData, aview->min, 2, 2);
+    Vec3d vert2 = Vec3d(aview->min[0], aview->max[1], 0);
+    border->read(obj, 1, lucVertexData, minvert.ref(), 2, 2);
     border->read(obj, 1, lucVertexData, vert1.ref());
-    border->read(obj, 1, lucVertexData, vert3.ref());
-    border->read(obj, 1, lucVertexData, aview->max);
+    border->read(obj, 1, lucVertexData, vert2.ref());
+    border->read(obj, 1, lucVertexData, maxvert.ref());
   }
 
   border->update();
