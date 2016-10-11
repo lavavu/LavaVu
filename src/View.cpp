@@ -50,7 +50,6 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
   height = 0;             //Viewport height
-  textscale = false;
   scale2d = 1.0;
 
   x = xf;
@@ -764,7 +763,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
     //if (border > 0) glLineWidth(border*textscale*0.75); else glLineWidth(textscale*0.75);
 
     std::string font = objects[i]->properties["font"];
-    if (textscale && font != "vector")
+    if (scale2d != 1.0 && font != "vector")
       objects[i]->properties.data["font"] = "vector"; //Force vector font if downsampling
 
     last_y = starty;

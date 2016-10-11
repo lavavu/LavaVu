@@ -258,8 +258,8 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'z':
         //Downsample images
-        ss >> viewer->downsample;
-        if (viewer->downsample < 1) viewer->downsample = 1;
+        ss >> vars[0];
+        viewer->downSample(vars[0]);
         break;
       case 'p':
         //Web server enable
@@ -1758,8 +1758,7 @@ void LavaVu::viewApply(int idx)
   GL_Error_Check;
 
   //Scale text and 2d elements when downsampling output image
-  aview->textscale = viewer->downsample > 1;
-  aview->scale2d = pow(2, viewer->downsample-1);
+  aview->scale2d = viewer->scale2d();
 
   //Set viewport based on window size
   aview->port(viewer->width, viewer->height);

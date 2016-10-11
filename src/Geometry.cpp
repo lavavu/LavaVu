@@ -740,7 +740,7 @@ void Geometry::labels()
   for (unsigned int i=0; i < geom.size(); i++)
   {
     std::string font = geom[i]->draw->properties["font"];
-    if (view->textscale && font != "vector")
+    if (view->scale2d != 1.0 && font != "vector")
       geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
     drawstate.fonts.printSetFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
 

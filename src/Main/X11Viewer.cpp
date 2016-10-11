@@ -187,7 +187,7 @@ void X11Viewer::execute()
   bool redisplay = true;
 
   //Ensure window visible for interaction
-  downsample = 1; //Disable any downsampled output mode
+  fbo.downsample = 1; //Disable any downsampled output mode
   show();
 
   //Get file descriptor of the X11 display

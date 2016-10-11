@@ -36,6 +36,158 @@
 //OpenGLViewer class
 #include "OpenGLViewer.h"
 
+// FBO buffers
+GLubyte* FrameBuffer::pixels(GLubyte* image, bool alpha, bool flip)
+{
+  // Read the pixels
+  assert(width && height);
+  int bpp = alpha ? 4 : 3;
+  if (!image)
+    image = new GLubyte[width * height * bpp];
+
+  if (!target) target = GL_BACK;
+  GLint type = alpha ? GL_RGBA : GL_RGB;
+
+  //Read pixels from the specified render target
+  glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
+  GL_Error_Check;
+  glReadBuffer(target);
+  GL_Error_Check;
+  glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image);
+  GL_Error_Check;
+  if (flip)
+    RawImageFlip(image, width, height, alpha ? 4 : 3);
+  GL_Error_Check;
+  return image;
+}
+
+bool FBO::create(int w, int h)
+{
+#ifdef GL_FRAMEBUFFER_EXT
+  //Re-render at specified output size (in a framebuffer object if available)
+  if (downsample > 1)
+  {
+    float factor = pow(2, downsample-1);
+    w *= factor;
+    h *= factor;
+  }
+  //Skip if already created at this size
+  if (enabled && frame > 0 && width==w && height==h) return false;
+  width = w;
+  height = h;
+  destroy();
+
+  // create a texture to use as the backbuffer
+  glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+  //glActiveTexture(GL_TEXTURE2);
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  if (downsample > 1)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  else
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // make sure this is the same color format as the screen
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+  // Depth buffer
+  glGenRenderbuffersEXT(1, &depth);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, width, height);
+  //glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX, width, height);
+  /*
+  // initialize packed depth-stencil renderbuffer
+  glGenRenderbuffersEXT(1, &depth);
+  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth);
+  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, width, height);
+  */
+
+  // Attach backbuffer texture, depth & stencil
+  glGenFramebuffersEXT(1, &frame);
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame);
+  //Depth attachment
+  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
+  //Depth & Stencil attachments
+  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
+  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
+  //Image buffer texture attachment
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture, 0);
+  GL_Error_Check;
+
+  if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+  {
+    debug_print("FBO setup failed\n");
+    enabled = false;
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  }
+  else
+  {
+    // Override buffers
+    debug_print("FBO setup completed successfully %d x %d (downsampling %d)\n", width, height, downsample);
+    enabled = true;
+    target = GL_COLOR_ATTACHMENT0_EXT;
+    glDrawBuffer(target);
+  }
+#else
+  // Framebuffer objects not supported
+  enabled = false;
+#endif
+  glBindTexture(GL_TEXTURE_2D, 0);
+  GL_Error_Check;
+  return enabled;
+}
+
+void FBO::destroy()
+{
+#ifdef GL_FRAMEBUFFER_EXT
+  if (texture) glDeleteTextures(1, &texture);
+  if (depth) glDeleteRenderbuffersEXT(1, &depth);
+  if (frame) glDeleteFramebuffersEXT(1, &frame);
+  GL_Error_Check;
+#endif
+}
+
+void FBO::disable()
+{
+//Show a previously hidden window
+#ifdef GL_FRAMEBUFFER_EXT
+  debug_print("FBO disabled\n");
+  enabled = false;
+  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glDrawBuffer(GL_BACK);
+#endif
+}
+
+GLubyte* FBO::pixels(GLubyte* image, bool alpha, bool flip)
+{
+  if (!enabled || frame == 0 || downsample < 2)
+    return FrameBuffer::pixels(image, alpha, flip);
+
+#ifdef GL_FRAMEBUFFER_EXT
+  //Output width
+  float factor = 1.0/pow(2, downsample-1);
+  unsigned int w = width*factor;
+  unsigned int h = height*factor;
+  int bpp = alpha ? 4 : 3;
+  if (!image)
+    image = new GLubyte[w * h * bpp];
+
+  // Read the pixels from mipmap image
+  GLint type = alpha ? GL_RGBA : GL_RGB;
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glGenerateMipmapEXT(GL_TEXTURE_2D);
+  glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image);
+  GL_Error_Check;
+
+  if (flip)
+    RawImageFlip(image, w, h, alpha ? 4 : 3);
+  GL_Error_Check;
+#endif
+  return image;
+}
+
 //OpenGLViewer class implementation...
 OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
 {
@@ -45,13 +197,9 @@ OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(fal
 
   timer = 0;
   visible = true;
-  fbo_enabled = false;
-  fbo_texture = fbo_depth = fbo_frame = 0;
 
   title = "LavaVu";
   output_path = "";
-
-  downsample = 1;
 
   /* Init mutex */
   pthread_mutex_init(&cmd_mutex, NULL);
@@ -69,13 +217,8 @@ void OpenGLViewer::open(int w, int h)
   //Open window, called before window manager open
   //Set width and height
 
-  //Always use the output width when set for hidden window
-  fbo_enabled = !visible; //Always use fbo for hidden window
-  if (!visible && outwidth > 0 && outwidth != w)
-  {
-    h = outheight;
-    w = outwidth;
-  }
+  fbo.enabled = !visible; //Always use fbo for hidden window
+
   //Set width/height or use defaults
   width = w > 0 ? w : 1024;
   height = h > 0 ? h : 768;
@@ -99,10 +242,6 @@ void OpenGLViewer::init()
   glGetBooleanv(GL_STEREO, &stereoBuffer);
   glGetBooleanv(GL_DOUBLEBUFFER, &doubleBuffer);
 
-  //Set buffers
-  if (doubleBuffer) renderBuffer = GL_BACK;
-  else renderBuffer = GL_FRONT;
-
   debug_print("Stereo %d Double-buffer %d RGBA Mode = %d, Alpha bits = %d, Depth bits = %d, Stencil bits = %d, Accum bits = %d, Texture units %d, SampleBuffers %d, Samples %d\n", stereoBuffer, doubleBuffer, b, i, d, s, a, u, sb, ss);
 
   //Load OpenGL extensions
@@ -120,13 +259,9 @@ void OpenGLViewer::init()
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
 
-  //Init fbo
-  if (fbo_enabled) fbo(width, height);
-
   // Clear full window buffer
   glViewport(0, 0, width, height);
   glScissor(0, 0, width, height);
-  glDrawBuffer(renderBuffer);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   //Call the application open function
@@ -150,101 +285,15 @@ void OpenGLViewer::show()
   if (!isopen || !visible) return;
 
   //Show a previously hidden window
-#ifdef GL_FRAMEBUFFER_EXT
-  if (fbo_enabled)
-  {
-    debug_print("FBO disabled\n");
-    fbo_enabled = false;
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    //glBindTexture(GL_TEXTURE_2D, 0);
-    if (doubleBuffer) renderBuffer = GL_BACK;
-    else renderBuffer = GL_FRONT;
-  }
-#endif
-}
-
-// FBO buffers
-void OpenGLViewer::fbo(int w, int h)
-{
-#ifdef GL_FRAMEBUFFER_EXT
-  width = w;
-  height = h;
-  if (fbo_texture) glDeleteTextures(1, &fbo_texture);
-  if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
-  if (fbo_frame) glDeleteFramebuffersEXT(1, &fbo_frame);
-  GL_Error_Check;
-
-  // create a texture to use as the backbuffer
-  glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-  //glActiveTexture(GL_TEXTURE2);
-  glGenTextures(1, &fbo_texture);
-  glBindTexture(GL_TEXTURE_2D, fbo_texture);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  if (downsample > 1)
-  {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  }
-  else
-  {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  }
-  // make sure this is the same color format as the screen
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-  // Depth buffer
-  glGenRenderbuffersEXT(1, &fbo_depth);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fbo_depth);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, width, height);
-  //glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX, width, height);
-  /*
-  // initialize packed depth-stencil renderbuffer
-  glGenRenderbuffersEXT(1, &fbo_depth);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, fbo_depth);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, width, height);
-  */
-
-  // Attach backbuffer texture, depth & stencil
-  glGenFramebuffersEXT(1, &fbo_frame);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo_frame);
-  //Depth attachment
-  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fbo_depth);
-  //Depth & Stencil attachments
-  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fbo_depth);
-  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, fbo_depth);
-  //Image buffer texture attachment
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, fbo_texture, 0);
-  GL_Error_Check;
-
-  if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
-  {
-    debug_print("FBO setup failed\n");
-    fbo_enabled = false;
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-  }
-  else
-  {
-    // Override buffers
-    debug_print("FBO setup completed successfully %d x %d\n", width, height);
-    fbo_enabled = true;
-    renderBuffer = GL_COLOR_ATTACHMENT0_EXT;
-    //Reset the viewer size
-    resize(width, height);
-  }
-#else
-  // Framebuffer objects not supported
-  fbo_enabled = false;
-  visible = true;   //Have to use visible window if available
-#endif
-  glBindTexture(GL_TEXTURE_2D, 0);
-  GL_Error_Check;
+  if (fbo.enabled) fbo.disable();
 }
 
 void OpenGLViewer::setsize(int w, int h)
 {
   //Resize fbo
-  if (fbo_enabled) fbo(w, h);
+  if (fbo.enabled && fbo.create(w, h))
+    //Reset the viewer size
+    resize(w, h);
 }
 
 void OpenGLViewer::resize(int new_width, int new_height)
@@ -267,11 +316,8 @@ void OpenGLViewer::resize(int new_width, int new_height)
 void OpenGLViewer::close()
 {
   // cleanup opengl memory - required before resize if context destroyed, then call open after resize
-#ifdef GL_FRAMEBUFFER_EXT
-  if (fbo_texture) glDeleteTextures(1, &fbo_texture);
-  if (fbo_depth) glDeleteRenderbuffersEXT(1, &fbo_depth);
-  if (fbo_frame) glDeleteFramebuffersEXT(1, &fbo_frame);
-#endif
+  fbo.destroy();
+
   //Call the application close function
   app->close();
   isopen = false;
@@ -349,37 +395,12 @@ void OpenGLViewer::display()
   }
 }
 
-void OpenGLViewer::pixels(void* buffer, bool alpha, bool flip)
+GLubyte* OpenGLViewer::pixels(GLubyte* image, bool alpha, bool flip)
 {
-  GLint type = alpha ? GL_RGBA : GL_RGB;
-
-  //No row padding required
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-
-#ifdef GL_FRAMEBUFFER_EXT
-  if (fbo_enabled && fbo_frame > 0 && downsample > 1)
-  {
-    glBindTexture(GL_TEXTURE_2D, fbo_texture);
-    glGenerateMipmapEXT(GL_TEXTURE_2D);
-    glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, buffer);
-    GL_Error_Check;
-    if (flip)
-    {
-      float factor = pow(2, downsample-1);
-      unsigned int w = width/factor;
-      unsigned int h = height/factor;
-      RawImageFlip(buffer, w, h, alpha ? 4 : 3);
-    }
-  }
+  if (fbo.enabled)
+    return fbo.pixels(image, alpha, flip);
   else
-#endif
-  {
-    //Read pixels from the specified render buffer
-    glReadBuffer(renderBuffer);
-    glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, buffer);
-    if (flip)
-      RawImageFlip(buffer, width, height, alpha ? 4 : 3);
-  }
+    return FrameBuffer::pixels(image, alpha, flip);
 }
 
 std::string OpenGLViewer::image(const std::string& path, bool jpeg)
@@ -388,10 +409,18 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
   display();
   //Use statics for global props to avoid lookup each time
   static bool alphapng = !jpeg && app->drawstate.global("alphapng");
-  int bpp = alphapng ? 4 : 3;
+  int bpp = 3;
+  if (alphapng)
+  {
+    bpp = 4;
+    //Redraw blended output for transparent PNG
+    blend_mode = BLEND_PNG;
+  }
+  std::string retImg;
+
+  //Save the size
   int savewidth = width;
   int saveheight = height;
-  std::string retImg;
 
   if (outwidth && !outheight)
   {
@@ -400,52 +429,30 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
     outheight = outwidth * ratio;
   }
 
+  //Use out dims if defined
   int w = outwidth ? outwidth : width;
   int h = outheight ? outheight : height;
 
-  //Redraw blended for output as transparent PNG
-  if (alphapng)
-    blend_mode = BLEND_PNG;
-
-  //Re-render at specified output size (in a framebuffer object if available)
-  float factor = pow(2, downsample-1);
-  if (downsample > 1)
+  if (!fbo.enabled)
   {
-    w *= factor;
-    h *= factor;
-  }
-
-  //Resize necessary?
-  if (w != width || h != height)
-  {
-#ifdef GL_FRAMEBUFFER_EXT
-    //Create or resize a new fbo of required size
-    fbo(w, h);
-    resize(w, h); //Resized callback
-#else
-    //setsize(w, h);
     //outwidth/outheight only support if fbo available
-    std::cout << "FBO Support required to save image at different size to window\n";
+    //std::cout << "FBO Support required to save image at different size to window\n";
     w = width;
     h = height;
-#endif
+  }
+  else
+  {
+    //Activate fbo if enabled
+    fbo.create(w, h);
+    //Use the fbo size
+    width = fbo.width;
+    height = fbo.height;
   }
 
   display();
 
-  if (downsample > 1)
-  {
-    //Saved image will be in original size
-    w /= factor;
-    h /= factor;
-  }
-
   // Read the pixels
-  size_t size = w * h * bpp;
-  GLubyte *image = new GLubyte[size];
-  //Ensure buffer large enough
-  assert(width/factor == w && height/factor == h);
-  pixels(image, alphapng);
+  GLubyte* image = pixels(NULL, alphapng);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
@@ -454,7 +461,7 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
   }
   else
   {
-    writeImage(image, w, h, path, alphapng ? 4 : 3);
+    writeImage(image, w, h, path, bpp);
     retImg = path;
   }
 
@@ -462,15 +469,8 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 
   //Restore settings
   blend_mode = BLEND_NORMAL;
-  if (downsample > 1 || w != savewidth || h != saveheight)
-  {
-#ifdef GL_FRAMEBUFFER_EXT
-    setsize(savewidth, saveheight);
-    show();  //Disables fbo mode
-    resize(savewidth, saveheight); //Resized callback
-#endif
-  }
-
+  width = savewidth;
+  height = saveheight;
   return retImg;
 }
 

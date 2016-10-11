@@ -111,10 +111,8 @@ void Server::display()
   if (pthread_mutex_trylock(&cs_mutex) == 0)
   {
     //CRITICAL SECTION
-    size_t size = viewer->width * viewer->height * 3;
-    GLubyte *image = new GLubyte[size];
     // Read the pixels (flipped)
-    viewer->pixels(image, false, true);
+    GLubyte *image = viewer->pixels(NULL, false, true);
 
     if (!compare(image))
     {

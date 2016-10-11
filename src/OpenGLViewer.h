@@ -46,7 +46,44 @@
 #include "OutputInterface.h"
 #include "InputInterface.h"
 
-class OpenGLViewer : public ApplicationInterface
+class FrameBuffer
+{
+public:
+  int width, height;
+  GLuint target = 0;
+
+  FrameBuffer() : width(0), height(0) {}
+  virtual GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
+};
+
+class FBO : public FrameBuffer
+{
+public:
+  bool enabled;
+  GLuint frame;
+  GLuint texture;
+  GLuint depth;
+  int downsample;
+
+  FBO() : FrameBuffer()
+  {
+    enabled = false;
+    texture = depth = frame = 0;
+    downsample = 1;
+  }
+
+  ~FBO()
+  {
+    destroy();
+  }
+
+  bool create(int w, int h);
+  void destroy();
+  void disable();
+  GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
+};
+
+class OpenGLViewer : public ApplicationInterface, public FrameBuffer
 {
 private:
 
@@ -57,6 +94,7 @@ protected:
   int displayidle; //Redisplay when idle for # milliseconds
   std::vector<OutputInterface*> outputs; //Additional output attachments
   std::vector<InputInterface*> inputs; //Additional input attachments
+  FBO fbo;
 
 public:
   ApplicationInterface* app;
@@ -64,17 +102,12 @@ public:
   pthread_mutex_t cmd_mutex;
 
   GLboolean stereoBuffer, doubleBuffer;
-  GLuint renderBuffer;
   bool visible;
   bool stereo;
   bool fullscreen;
   bool postdisplay; //Flag to request a frame when animating
   bool quitProgram;
   bool isopen;   //Set when window is first opened
-
-  bool fbo_enabled;
-  GLuint fbo_frame, fbo_texture, fbo_depth;
-  int downsample;
 
   int mouseState;
   ShiftState keyState;
@@ -88,13 +121,9 @@ public:
   int outwidth, outheight;
   std::string title;
   std::string output_path;
-  int width;
-  int height;
 
   OpenGLViewer();
   virtual ~OpenGLViewer();
-
-  void fbo(int width, int height);
 
   //Window app management - called by derived classes, in turn call application interface virtuals
   virtual void open(int width=0, int height=0);
@@ -129,8 +158,11 @@ public:
   virtual void execute();
 
   virtual void fullScreen() {}
-  void pixels(void* buffer, bool alpha=false, bool flip=false);
+  GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
   std::string image(const std::string& path="", bool jpeg=false);
+
+  float scale2d() {return pow(2, fbo.downsample-1);}
+  void downSample(int q) { fbo.downsample = q < 1 ? 1 : q; }
 
   void setBackground() {setBackground(background);}
   void setBackground(const Colour& bgcol)
