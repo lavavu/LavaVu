@@ -505,8 +505,10 @@ void LavaVu::run(std::vector<std::string> args)
   if (automate) return;
 
   //Start event loop
-  if (persist || viewer->visible)
+  if (viewer->visible)
     viewer->execute();
+  else if (persist)
+    viewer->OpenGLViewer::execute();
   else
   {
     //Read input script from stdin on first timestep
