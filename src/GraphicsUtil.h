@@ -44,14 +44,20 @@
 #include  "FontSans.h"
 #endif
 
+#ifdef DEBUG
 #define GL_Error_Check \
   { \
+    char buffer[2048]; \
     GLenum error = GL_NO_ERROR; \
     while ((error = glGetError()) != GL_NO_ERROR) { \
-      printf("OpenGL error [ %s : %d ] \"%s\".\n",  \
+      sprintf(buffer, "OpenGL error [ %s : %d ] \"%s\".\n",  \
             __FILE__, __LINE__, glErrorString(error)); \
+      throw std::runtime_error(buffer); \
     } \
   }
+#else
+#define GL_Error_Check
+#endif
 
 #define STRINGIFY(A) #A
 
