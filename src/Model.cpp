@@ -428,6 +428,11 @@ void Model::loadWindows()
 //Load model viewports
 void Model::loadViewports()
 {
+  //Clear existing views
+  for(unsigned int i=0; i<views.size(); i++)
+    delete views[i];
+  views.clear();
+
   sqlite3_stmt* statement;
   statement = select("SELECT id,x,y,near,far FROM viewport ORDER BY y,x", true);
 
