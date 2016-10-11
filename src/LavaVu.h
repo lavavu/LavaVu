@@ -176,6 +176,7 @@ public:
 
   void resetViews(bool autozoom=false);
   void viewSelect(int idx, bool setBounds=false, bool autozoom=false);
+  void viewApply(int idx);
 
   GeomData* getGeometry(DrawingObject* obj);
   void displayObjectList(bool console=true);

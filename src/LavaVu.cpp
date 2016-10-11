@@ -1739,6 +1739,37 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   viewer->setBackground(Colour(aview->properties["background"]));
 }
 
+void LavaVu::viewApply(int idx)
+{
+  viewSelect(idx);
+  // View transform
+  
+  //std::string title = aview->properties["title"];
+  //printf("### Displaying viewport %d %s at %d,%d %d x %d (%f %f, %fx%f)\n", idx, title.c_str(), 
+  //       aview->xpos, aview->ypos, aview->width, aview->height, aview->x, aview->y, aview->w, aview->h);
+
+  if (aview->autozoom)
+  {
+    aview->projection(EYE_CENTRE);
+    aview->zoomToFit();
+  }
+  else
+    aview->apply();
+  GL_Error_Check;
+
+  //Scale text and 2d elements when downsampling output image
+  aview->textscale = viewer->downsample > 1;
+  aview->scale2d = pow(2, viewer->downsample-1);
+
+  //Set viewport based on window size
+  aview->port(viewer->width, viewer->height);
+  GL_Error_Check;
+
+  // Clear viewport
+  GL_Error_Check;
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 // Render
 void LavaVu::display(void)
 {
@@ -1777,9 +1808,6 @@ void LavaVu::display(void)
     }
   }
 
-  viewSelect(view);
-  GL_Error_Check;
-
   //Turn filtering of objects on/off
   if (amodel->views.size() > 1 || models.size() > 1)
   {
@@ -1791,36 +1819,16 @@ void LavaVu::display(void)
   else //Single viewport, always disable filter
     aview->filtered = false;
 
-  //Scale text and 2d elements when downsampling output image
-  aview->textscale = viewer->downsample > 1;
-  aview->scale2d = pow(2, viewer->downsample-1);
-
 #ifdef USE_OMEGALIB
+  viewApply(view);
   drawSceneBlended();
 #else
 
-  //Set viewport based on window size
-  aview->port(viewer->width, viewer->height);
-  GL_Error_Check;
-
-  // Clear viewport
-  glDrawBuffer(viewer->renderBuffer);
-  GL_Error_Check;
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-  // View transform
-  //debug_print("### Displaying viewport %s at %d,%d %d x %d\n", aview->title.c_str(), (int)(viewer->width * aview->x), (int)(viewer->height * aview->y), (int)(viewer->width * aview->w), (int)(viewer->height * aview->h));
-  if (aview->autozoom)
-  {
-    aview->projection(EYE_CENTRE);
-    aview->zoomToFit();
-  }
-  else
-    aview->apply();
-  GL_Error_Check;
-
   if (aview->stereo)
   {
+    viewApply(view);
+    GL_Error_Check;
+
     bool sideBySide = false;
     if (viewer->stereoBuffer)
     {
@@ -1879,9 +1887,20 @@ void LavaVu::display(void)
   }
   else
   {
-    // Default non-stereo render
-    aview->projection(EYE_CENTRE);
-    drawSceneBlended();
+    //Loop through all viewports and display each
+    int selview = view;
+    for (unsigned int v=0; v<amodel->views.size(); v++)
+    {
+      viewApply(v);
+      GL_Error_Check;
+
+      // Default non-stereo render
+      aview->projection(EYE_CENTRE);
+      drawSceneBlended();
+    }
+
+    if (view != selview)
+    viewSelect(selview);
   }
 #endif
 
@@ -2630,14 +2649,6 @@ void LavaVu::writeSteps(bool images, int start, int end)
       std::cout << "... Writing timestep: " << amodel->step() << std::endl;
       //Update the views
       resetViews(true);
-
-      //Loop through all viewports and display each
-      for (unsigned int v=0; v<amodel->views.size(); v++)
-      {
-        viewSelect(v);
-        amodel->redraw(true);
-        viewer->display();
-      }
 
       if (images)
       {
