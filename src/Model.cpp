@@ -120,15 +120,15 @@ Model::~Model()
 
   //Clear drawing objects
   for(unsigned int i=0; i<objects.size(); i++)
-    if (objects[i]) delete objects[i];
+    delete objects[i];
 
   //Clear views
   for(unsigned int i=0; i<views.size(); i++)
-    if (views[i]) delete views[i];
+    delete views[i];
 
   //Clear colourmaps
   for(unsigned int i=0; i<colourMaps.size(); i++)
-    if (colourMaps[i]) delete colourMaps[i];
+    delete colourMaps[i];
 
   if (db) sqlite3_close(db);
 
