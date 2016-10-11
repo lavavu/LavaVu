@@ -711,27 +711,24 @@ void Geometry::draw()  //Display saved geometry
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (drawable(i))
-    {
       newcount++;
-      break;
-    }
   }
 
-  GL_Error_Check;
   //Have something to update?
-  if (newcount && total > 0)
+  if (total > 0)
   {
     if (reload || redraw || newcount != drawcount)
+    {
       update();
+      reload = false;
+    }
 
     labels();
   }
 
   drawcount = newcount;
   redraw = false;
-  reload = false;
   GL_Error_Check;
-
 }
 
 void Geometry::labels()
