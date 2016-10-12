@@ -233,6 +233,10 @@ public:
   void loadScalars(std::vector <float> array, lucGeometryDataType type=lucColourValueData, std::string label="", float minimum=0, float maximum=0);
   void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData);
   void labels(std::vector <std::string> labels);
+  //For testing via python
+  std::vector<float> imageArray(std::string path="", int depth=3);
+  float imageDiff(std::string path1, std::string path2="");
+
 };
 
 #endif //LavaVu__

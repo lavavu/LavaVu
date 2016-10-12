@@ -2958,3 +2958,78 @@ void LavaVu::labels(std::vector <std::string> labels)
   container->label(aobject, labels);
 }
 
+std::vector<float> LavaVu::imageArray(std::string path, int depth)
+{
+  //Return an image as a vector of floats
+  //- first 3 values are width,height,depth
+  //- read from disk if path provided
+  //- read from framebuffer otherwise
+  GLubyte* image = NULL;
+  int width = 0, height = 0;
+  if (path.length() > 0)
+  {
+    //Use the texture loader to read image
+    ImageLoader tex(path);
+    image = tex.read();
+    width = tex.texture->width;
+    height = tex.texture->height;
+    depth = tex.texture->bpp/8;
+  }
+  else
+  {
+    //Get current image from framebuffer
+    image = viewer->pixels(NULL, width, height, depth==4);
+  }
+
+  if (!image) return std::vector<float>();
+
+  //Size in pixels
+  int size = width*height;
+  int step = (width*height)/size;
+  std::vector<float> data(3+size*depth);
+  //Add dims
+  data[0] = width;
+  data[1] = height;
+  data[2] = depth;
+  //Load data
+  float r255 = 1.0/255.0;
+  for (int i=0; i<size*depth; i++)
+    data[i+3] = image[i] * r255;
+  //Free byte data
+  delete[] image;
+  return data;
+}
+
+float LavaVu::imageDiff(std::string path1, std::string path2)
+{
+  std::vector<float> image1 = imageArray(path1);
+  //Request matching depth (if second image from framebuffer)
+  int depth = image1[2];
+  std::vector<float> image2 = imageArray(path2, depth);
+
+  //Images are different dimensions or colour depths?
+  if (image1.size() != image2.size() ||
+      image1[0] != image2[0] ||
+      image1[1] != image2[1] ||
+      image1[2] != image2[2])
+  {
+    std::cout << "Image metrics differ: " << std::endl;
+    std::cout << " - " << image1[0] << " x " << image1[1] << " : " << image1[2] << std::endl;
+    std::cout << " - " << image2[0] << " x " << image2[1] << " : " << image2[2] << std::endl;
+    return 1.0;
+  }
+
+  //Calculate euclidean distance
+  int pixels = image1.size() - 3;
+  float dist = 0.0;
+  for (int i=3; i<image1.size(); i++)
+  {
+    float diff = image1[i] - image2[i];
+    dist += diff * diff;
+  }
+  dist = sqrt(dist);
+
+  float maxdist = sqrt(pixels*depth); //pixels*components
+  return dist / maxdist;
+}
+

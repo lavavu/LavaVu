@@ -20,10 +20,11 @@
     }
 }
 
-namespace std {
+namespace std 
+{
 %template(Line)  vector <float>;
 %template(ULine) vector <unsigned int> ;
-%template(Array) vector < vector <float> >;
+%template(Array) vector <vector <float> >;
 %template(List) vector <string>;
 }
 
@@ -62,6 +63,8 @@ public:
   void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData);
   void labels(std::vector <std::string> labels);
   void close();
+  std::vector<float> imageArray(std::string path);
+  float imageDiff(std::string path1, std::string path2="");
 
 };
 
