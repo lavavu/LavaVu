@@ -988,7 +988,7 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
   GL_Error_Check;
 }
 
-bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp)
+std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp)
 {
   FilePath filepath(path);
   if (filepath.type == "png")
@@ -1014,7 +1014,7 @@ bool writeImage(GLubyte *image, int width, int height, const std::string& path, 
     if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, bpp, image, params))
     {
       fprintf(stderr, "[write_jpeg] File %s could not be saved\n", filepath.full.c_str());
-      return false;
+      return "";
     }
   }
   else
@@ -1023,7 +1023,7 @@ bool writeImage(GLubyte *image, int width, int height, const std::string& path, 
     return writeImage(image, width, height, newpath, bpp);
   }
   debug_print("[%s] File successfully written\n", filepath.full.c_str());
-  return true;
+  return path;
 }
 
 std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg)

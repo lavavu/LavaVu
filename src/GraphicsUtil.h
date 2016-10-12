@@ -614,7 +614,7 @@ void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrow
 
 void RawImageFlip(void* image, int width, int height, int bpp);
 
-bool writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp=3);
+std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp=3);
 std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg=false);
 
 //PNG utils

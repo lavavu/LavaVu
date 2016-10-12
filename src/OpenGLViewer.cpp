@@ -472,14 +472,9 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
-  {
     retImg = getImageString(image, outwidth, outheight, bpp, jpeg);
-  }
   else
-  {
-    writeImage(image, outwidth, outheight, path, bpp);
-    retImg = path;
-  }
+    retImg = writeImage(image, outwidth, outheight, path, bpp);
 
   delete[] image;
 
