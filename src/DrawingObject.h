@@ -58,7 +58,7 @@ public:
   //Object properties data...
   Properties properties;
   //Texture list
-  std::vector<TextureLoader*> textures;
+  std::vector<ImageLoader*> textures;
 
   DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();

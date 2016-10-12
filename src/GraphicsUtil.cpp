@@ -689,7 +689,7 @@ void RawImageFlip(void* image, int width, int height, int bpp)
   delete[] temp;
 }
 
-TextureData* TextureLoader::use()
+TextureData* ImageLoader::use()
 {
   load();
 
@@ -717,7 +717,7 @@ TextureData* TextureLoader::use()
   return NULL;
 }
 
-void TextureLoader::load()
+void ImageLoader::load()
 {
   //Already loaded
   if (texture) return;
@@ -725,19 +725,30 @@ void TextureLoader::load()
   //No file, requires manual load
   if (fn.full.length() == 0) return;
 
-  texture = new TextureData();
-
   //Load texture file
+  GLubyte* imageData = read();
+  //Build texture
+  build(imageData);
+  //Dispose of data
+  delete[] imageData;
+}
+
+GLubyte* ImageLoader::read()
+{
+  //Load image file
+  texture = new TextureData();
+  GLubyte* imageData = NULL;
   if (fn.type == "jpg" || fn.type == "jpeg")
-    loadJPEG();
+    imageData = loadJPEG();
   if (fn.type == "png")
-    loadPNG();
+    imageData = loadPNG();
   if (fn.type == "ppm")
-    loadPPM();
+    imageData = loadPPM();
+  return imageData;
 }
 
 // Loads a PPM image
-int TextureLoader::loadPPM()
+GLubyte* ImageLoader::loadPPM()
 {
   bool readTag = false, readWidth = false, readHeight = false, readColourCount = false;
   char stringBuffer[241];
@@ -810,11 +821,10 @@ int TextureLoader::loadPPM()
   for (int j = texture->height - 1 ; j >= 0 ; j--)
     if (fread(&imageData[texture->width * j * bytesPerPixel], bytesPerPixel, texture->width, imageFile) < texture->width) abort_program("PPM Read Error");
   fclose(imageFile);
-
-  return build(imageData, GL_RGB);
+  return imageData;
 }
 
-int TextureLoader::loadPNG()
+GLubyte* ImageLoader::loadPNG()
 {
   GLubyte *imageData;
 
@@ -831,10 +841,10 @@ int TextureLoader::loadPNG()
 
   file.close();
 
-  return build(imageData, texture->bpp == 24 ? GL_RGB : GL_RGBA);
+  return imageData;
 }
 
-int TextureLoader::loadJPEG()
+GLubyte* ImageLoader::loadJPEG()
 {
   int width, height, bytesPerPixel;
   GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
@@ -846,12 +856,12 @@ int TextureLoader::loadJPEG()
   texture->height = height;
   texture->bpp = 24;
 
-  return build(imageData, GL_RGB);
+  return imageData;
 }
 
-int TextureLoader::loadTIFF()
+GLubyte* ImageLoader::loadTIFF()
 {
-  int texid = 0;
+  GLubyte* imageData = NULL;
 #ifdef HAVE_LIBTIFF
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)
@@ -864,7 +874,8 @@ int TextureLoader::loadTIFF()
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
     npixels = width * height;
 
-    imageData = (GLubyte*)_TIFFmalloc(npixels * 4 * sizeof(GLubyte));
+    //imageData = (GLubyte*)_TIFFmalloc(npixels * 4 * sizeof(GLubyte));
+    imageData = new GLubyte[npixels * 4 * sizeof(GLubyte)];   // Reserve Memory
     if (imageData)
     {
       if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
@@ -873,20 +884,20 @@ int TextureLoader::loadTIFF()
         texture->width = width;
         texture->height = height;
         texture->bpp = 32;
-        texid = build(imageData, GL_RGBA);
       }
-      _TIFFfree(imageData);
+      //_TIFFfree(imageData);
     }
     TIFFClose(tif);
   }
 #else
   abort_program("[Load Texture] Require libTIFF to load TIFF images\n");
 #endif
-  return texid;
+  return imageData;
 }
 
-int TextureLoader::build(GLubyte* imageData, GLenum format)
+int ImageLoader::build(GLubyte* imageData)
 {
+  GLenum format = texture->bpp == 24 ? GL_RGB : GL_RGBA;
   //Build texture from raw data
   glActiveTexture(GL_TEXTURE0 + texture->unit);
   glBindTexture(GL_TEXTURE_2D, texture->id);
@@ -925,13 +936,10 @@ int TextureLoader::build(GLubyte* imageData, GLenum format)
     break;
   }
 
-  //Dispose of data
-  delete[] imageData;
-
   return 1;
 }
 
-void TextureLoader::load3D(int width, int height, int depth, void* data, int voltype)
+void ImageLoader::load3D(int width, int height, int depth, void* data, int voltype)
 {
   //Save the type
   type = voltype;

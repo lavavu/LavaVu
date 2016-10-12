@@ -684,7 +684,7 @@ public:
   }
 };
 
-class TextureLoader
+class ImageLoader
 {
 public:
   FilePath fn;       // Source data
@@ -692,18 +692,19 @@ public:
   TextureData* texture;
   int type;
 
-  TextureLoader(std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
+  ImageLoader(std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
 
   TextureData* use();
   void load();
-  int loadPPM();
-  int loadPNG();
-  int loadJPEG();
-  int loadTIFF();
-  int build(GLubyte* imageData, GLenum format);
+  GLubyte* read();
+  GLubyte* loadPPM();
+  GLubyte* loadPNG();
+  GLubyte* loadJPEG();
+  GLubyte* loadTIFF();
+  int build(GLubyte* imageData);
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
 
-  ~TextureLoader()
+  ~ImageLoader()
   {
     if (texture) delete texture;
   }

@@ -88,7 +88,7 @@ int DrawingObject::addTexture(std::string texfn)
   // - will add the texture loader object but not load the file yet
   //If not:
   // - will add an empty texture loader object that must be manually filled
-  textures.push_back(new TextureLoader(texfn));
+  textures.push_back(new ImageLoader(texfn));
   return textures.size() - 1;
 }
 
