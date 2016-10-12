@@ -159,6 +159,7 @@ public:
 
   virtual void fullScreen() {}
   GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
+  GLubyte* pixels(GLubyte* image, int& w, int& h, bool alpha=false, bool flip=false);
   std::string image(const std::string& path="", bool jpeg=false);
 
   float scale2d() {return pow(2, fbo.downsample-1);}

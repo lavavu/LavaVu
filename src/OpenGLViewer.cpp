@@ -403,12 +403,61 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, bool alpha, bool flip)
     return FrameBuffer::pixels(image, alpha, flip);
 }
 
-std::string OpenGLViewer::image(const std::string& path, bool jpeg)
+GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, bool alpha, bool flip)
 {
+  //Save current viewer size
+  int savewidth = width;
+  int saveheight = height;
+
+  if (w && !h)
+  {
+    //Calculate output height based on ratio
+    float ratio = height / (float)width;
+    h = w * ratio;
+  }
+
+  //Use out dims if defined
+  if (!w) w = width;
+  if (!h) h = height;
+
   //Ensure correct GL context selected first
   display();
-  //Use statics for global props to avoid lookup each time
-  static bool alphapng = !jpeg && app->drawstate.global("alphapng");
+
+  if (!fbo.enabled)
+  {
+    //outwidth/outheight only support if fbo available
+    //std::cout << "FBO Support required to save image at different size to window\n";
+    w = width;
+    h = height;
+    image = FrameBuffer::pixels(image, alpha, flip);
+  }
+  else
+  {
+    //Activate fbo if enabled
+    fbo.create(w, h);
+
+    if (fbo.width != width || fbo.height != height)
+    {
+      //Use the fbo size for output
+      width = fbo.width;
+      height = fbo.height;
+      //Re-render at new size
+      display();
+    }
+
+    image = fbo.pixels(image, alpha, flip);
+
+    //Restore dims
+    width = savewidth;
+    height = saveheight;
+  }
+
+  return image;
+}
+
+std::string OpenGLViewer::image(const std::string& path, bool jpeg)
+{
+  bool alphapng = !jpeg && app->drawstate.global("alphapng");
   int bpp = 3;
   if (alphapng)
   {
@@ -418,50 +467,17 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
   }
   std::string retImg;
 
-  //Save the size
-  int savewidth = width;
-  int saveheight = height;
-
-  if (outwidth && !outheight)
-  {
-    //Calculate outheight based on ratio
-    float ratio = height / (float)width;
-    outheight = outwidth * ratio;
-  }
-
-  //Use out dims if defined
-  int w = outwidth ? outwidth : width;
-  int h = outheight ? outheight : height;
-
-  if (!fbo.enabled)
-  {
-    //outwidth/outheight only support if fbo available
-    //std::cout << "FBO Support required to save image at different size to window\n";
-    w = width;
-    h = height;
-  }
-  else
-  {
-    //Activate fbo if enabled
-    fbo.create(w, h);
-    //Use the fbo size
-    width = fbo.width;
-    height = fbo.height;
-  }
-
-  display();
-
   // Read the pixels
-  GLubyte* image = pixels(NULL, alphapng);
+  GLubyte* image = pixels(NULL, outwidth, outheight, alphapng, false);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
   {
-    retImg = getImageString(image, w, h, bpp, jpeg);
+    retImg = getImageString(image, outwidth, outheight, bpp, jpeg);
   }
   else
   {
-    writeImage(image, w, h, path, bpp);
+    writeImage(image, outwidth, outheight, path, bpp);
     retImg = path;
   }
 
@@ -469,8 +485,6 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 
   //Restore settings
   blend_mode = BLEND_NORMAL;
-  width = savewidth;
-  height = saveheight;
   return retImg;
 }
 
