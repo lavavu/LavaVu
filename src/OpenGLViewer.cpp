@@ -438,14 +438,12 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
     //Activate fbo if enabled
     fbo.create(w, h);
 
-    if (fbo.width != width || fbo.height != height)
-    {
-      //Use the fbo size for output
-      width = fbo.width;
-      height = fbo.height;
-      //Re-render at new size
-      display();
-    }
+    //Use the fbo size for output
+    width = fbo.width;
+    height = fbo.height;
+
+    //Re-render to fbo first
+    display();
 
     image = fbo.pixels(image, channels, flip);
 
