@@ -3006,7 +3006,7 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   return data;
 }
 
-float LavaVu::imageDiff(std::string path1, std::string path2)
+float LavaVu::imageDiff(std::string path1, std::string path2, int downsample)
 {
   //std::cout << "Comparing " << path1 << " & " << path2 << std::endl;
   //int channels = 3;
@@ -3030,17 +3030,72 @@ float LavaVu::imageDiff(std::string path1, std::string path2)
     return 1.0;
   }
 
-  //Calculate euclidean distance
-  int pixels = image1.size() - 3;
-  float dist = 0.0;
+  //Calculate Mean Squared Error
+  float sum = 0;
+  float imgsize;
+  if (downsample > 1)
+  {
+    //Average downsample
+    int qdims[2] = {width/downsample, height/downsample};
+    int qsize = qdims[0] * qdims[1] * channels;
+    std::vector<float> compare1(qsize);
+    std::vector<float> compare2(qsize);
+    int oidx = 0;
+    for (int i = 0; i < height; i+=downsample)
+    {
+      for (int j = 0; j < width; j+=downsample)
+      {
+        for (int k = 0; k < channels; k++)
+        {
+          //Get average of surrounding pixels
+          compare1[oidx] = compare2[oidx] = 0;
+          int samples = 0;
+          for (int x = i-downsample; x <= i+downsample; x++)
+          {
+            for (int y = j-downsample; y <= j+downsample; y++)
+            {
+              int idx = (x*width + y)*channels + k + 3;
+              if (x >= 0 && x < height && y >= 0 && y < width)
+              {
+                compare1[oidx] += image1[idx];
+                compare2[oidx] += image2[idx];
+                samples++;
+              }
+            }
+          }
+
+          assert(oidx < qsize);
+          compare1[oidx] /= samples;
+          compare2[oidx] /= samples;
+          oidx++;
+        }
+      }
+    }
+
+    //Mean squared error on downsampled images
+    for (int i=0; i<qsize; i++)
+    {
+      float diff = compare1[i] - compare2[i];
+      sum += diff*diff;
+    }
+    imgsize = qsize;
+  }
+  else
+  {
+    //Mean squared error on raw images
+    imgsize = image1.size() - 3;
     for (int i=3; i<image1.size(); i++)
     {
       float diff = image1[i] - image2[i];
-    dist += diff * diff;
+      sum += diff*diff;
     }
-  dist = sqrt(dist);
+  }
 
-  float maxdist = sqrt(pixels*channels); //pixels*components
-  return dist / maxdist;
+  float MSE = sum / imgsize;
+  //float RMSE = sqrt(sum) / sqrt(imgsize);
+  //printf("MSE %f  = sum %f / imgsize %f\n", MSE, sum, imgsize);
+  //printf("RMSE %f = sqrt(sum) %f / sqrt(imgsize) %f\n", RMSE, sqrt(sum), sqrt(imgsize));
+  //return RMSE;
+  return MSE;
 }
 
