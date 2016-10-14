@@ -405,3 +405,41 @@ class Viewer(object):
                 print "WebGL output error: " + str(e)
                 pass
 
+    def testimages(self, imagelist, tolerance=0.001, expectedPath='expected/', outputPath='./'):
+        results = []
+        for f in imagelist:
+            outfile = outputPath+f
+            expfile = expectedPath+f
+            results.append(self.testimage(outfile, expfile, tolerance))
+        #Combined result
+        overallResult = all(results)
+        if not overallResult:
+            raise RuntimeError("Image tests failed due to one or more image comparisons above tolerance level!")
+        print "-------------\nTests Passed!\n-------------"
+
+    def testimage(self, outfile, expfile, tolerance=0.001):
+        if len(expfile) and not os.path.exists(expfile):
+            print "Test skipped, Reference image '%s' not found!" % expfile
+            return 0
+        if len(outfile) and not os.path.exists(outfile):
+            raise RuntimeError("Generated image '%s' not found!" % outfile)
+
+        diff = self.imageDiff(outfile, expfile)
+        result = diff <= tolerance
+        if not result:
+            print "FAIL: %s Image comp errors %f, not"\
+                  " within tolerance %g of reference image."\
+                % (outfile, diff, tolerance)
+        else:
+            print "PASS: %s Image comp errors %f, within tolerance %f"\
+                  " of ref image."\
+                % (outfile, diff, tolerance)
+        return result
+
+    def clearimages(self, imagelist):
+        try:
+            for f in imagelist:
+                os.remove(f)
+        except:
+            pass
+
