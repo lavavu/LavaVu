@@ -1616,6 +1616,10 @@ void LavaVu::close()
   if (axis) delete axis;
   if (rulers) delete rulers;
   if (border) delete border;
+
+  axis = NULL;
+  border = NULL;
+  rulers = NULL;
 }
 
 //Called when model loaded/changed, updates all views settings
