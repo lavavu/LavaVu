@@ -2965,6 +2965,7 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   //- read from disk if path provided
   //- read from framebuffer otherwise
   GLubyte* image = NULL;
+  int outchannels = channels;
   if (path.length() > 0)
   {
     //Use the texture loader to read image
@@ -2972,14 +2973,14 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     image = tex.read();
     width = tex.texture->width;
     height = tex.texture->height;
-    channels = tex.texture->channels;
+    outchannels = tex.texture->channels;
     //printf("Reading file %d x %d @ %d\n", width, height, channels);
   }
   else
   {
     //Get current image from framebuffer
-    image = viewer->pixels(NULL, width, height, channels);
-    //printf("Reading framebuffer %d x %d @ %d\n", width, height, channels);
+    image = viewer->pixels(NULL, width, height, outchannels);
+    //printf("Reading framebuffer %d x %d @ %d\n", width, height, outchannels);
   }
 
   if (!image) return std::vector<float>();
@@ -2993,8 +2994,13 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   data[2] = channels;
   //Load data
   float r255 = 1.0/255.0;
-  for (int i=0; i<size*channels; i++)
-    data[i+3] = image[i] * r255;
+  bool skipalpha = outchannels > channels;
+  int idx=3;
+  for (int i=0; i<size*outchannels; i++)
+  {
+    if (skipalpha && i%4==3) continue;
+    data[idx++] = image[i] * r255;
+  }
   //Free byte data
   delete[] image;
   return data;
