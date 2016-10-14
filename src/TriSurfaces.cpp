@@ -76,12 +76,10 @@ void TriSurfaces::update()
   if (geom.size() == 0) return;
 
   //Get triangle count
-  total = 0;
-  unsigned int tcount = 0;
+  unsigned int lastcount = total;
   int drawelements = 0;
   for (unsigned int t = 0; t < geom.size(); t++)
   {
-    tcount += geom[t]->indices.size() / 3;
     int tris;
     if (geom[t]->indices.size() > 0)
       tris = geom[t]->indices.size() / 3;
@@ -108,14 +106,14 @@ void TriSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  //To force, set geometry->reload = true
-  if (reload || !tidx || tcount != total)
+  if (lastcount != total && reload || !tidx)
   {
     //Clear buffers
     //close();
-    //Load & optimise the mesh data (on first load and if new meshes added)
-    if (!tidx || tcount != total)
+    //Load & optimise the mesh data (on first load and if total changes)
+    if (!tidx || lastcount != total)
       loadMesh();
+
     //Send the data to the GPU via VBO
     loadBuffers();
 
