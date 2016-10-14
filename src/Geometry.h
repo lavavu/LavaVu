@@ -428,7 +428,7 @@ public:
   virtual void update();
   virtual void draw();
   void render(int i);
-  GLubyte* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& bpp, int xtiles=16);
+  GLubyte* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles=16);
   void saveImage(DrawingObject* draw, int xtiles=16);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };

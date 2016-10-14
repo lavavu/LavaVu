@@ -53,7 +53,7 @@ public:
   GLuint target = 0;
 
   FrameBuffer() : width(0), height(0) {}
-  virtual GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
+  virtual GLubyte* pixels(GLubyte* image, int channels=3, bool flip=false);
 };
 
 class FBO : public FrameBuffer
@@ -80,7 +80,7 @@ public:
   bool create(int w, int h);
   void destroy();
   void disable();
-  GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
+  GLubyte* pixels(GLubyte* image, int channels=3, bool flip=false);
 };
 
 class OpenGLViewer : public ApplicationInterface, public FrameBuffer
@@ -158,8 +158,8 @@ public:
   virtual void execute();
 
   virtual void fullScreen() {}
-  GLubyte* pixels(GLubyte* image, bool alpha=false, bool flip=false);
-  GLubyte* pixels(GLubyte* image, int& w, int& h, bool alpha=false, bool flip=false);
+  GLubyte* pixels(GLubyte* image, int channels=3, bool flip=false);
+  GLubyte* pixels(GLubyte* image, int& w, int& h, int channels=3, bool flip=false);
   std::string image(const std::string& path="", bool jpeg=false);
 
   float scale2d() {return pow(2, fbo.downsample-1);}

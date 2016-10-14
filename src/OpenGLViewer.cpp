@@ -37,16 +37,15 @@
 #include "OpenGLViewer.h"
 
 // FBO buffers
-GLubyte* FrameBuffer::pixels(GLubyte* image, bool alpha, bool flip)
+GLubyte* FrameBuffer::pixels(GLubyte* image, int channels, bool flip)
 {
   // Read the pixels
   assert(width && height);
-  int bpp = alpha ? 4 : 3;
   if (!image)
-    image = new GLubyte[width * height * bpp];
+    image = new GLubyte[width * height * channels];
 
   if (!target) target = GL_BACK;
-  GLint type = alpha ? GL_RGBA : GL_RGB;
+  GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
 
   //Read pixels from the specified render target
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
@@ -56,7 +55,7 @@ GLubyte* FrameBuffer::pixels(GLubyte* image, bool alpha, bool flip)
   glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image);
   GL_Error_Check;
   if (flip)
-    RawImageFlip(image, width, height, alpha ? 4 : 3);
+    RawImageFlip(image, width, height, channels);
   GL_Error_Check;
   return image;
 }
@@ -71,8 +70,10 @@ bool FBO::create(int w, int h)
     w *= factor;
     h *= factor;
   }
+
   //Skip if already created at this size
   if (enabled && frame > 0 && width==w && height==h) return false;
+
   width = w;
   height = h;
   destroy();
@@ -160,29 +161,28 @@ void FBO::disable()
 #endif
 }
 
-GLubyte* FBO::pixels(GLubyte* image, bool alpha, bool flip)
+GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
 {
   if (!enabled || frame == 0 || downsample < 2)
-    return FrameBuffer::pixels(image, alpha, flip);
+    return FrameBuffer::pixels(image, channels, flip);
 
 #ifdef GL_FRAMEBUFFER_EXT
   //Output width
   float factor = 1.0/pow(2, downsample-1);
   unsigned int w = width*factor;
   unsigned int h = height*factor;
-  int bpp = alpha ? 4 : 3;
   if (!image)
-    image = new GLubyte[w * h * bpp];
+    image = new GLubyte[w * h * channels];
 
   // Read the pixels from mipmap image
-  GLint type = alpha ? GL_RGBA : GL_RGB;
+  GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
   glBindTexture(GL_TEXTURE_2D, texture);
   glGenerateMipmapEXT(GL_TEXTURE_2D);
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image);
   GL_Error_Check;
 
   if (flip)
-    RawImageFlip(image, w, h, alpha ? 4 : 3);
+    RawImageFlip(image, w, h, channels);
   GL_Error_Check;
 #endif
   return image;
@@ -395,16 +395,18 @@ void OpenGLViewer::display()
   }
 }
 
-GLubyte* OpenGLViewer::pixels(GLubyte* image, bool alpha, bool flip)
+GLubyte* OpenGLViewer::pixels(GLubyte* image, int channels, bool flip)
 {
+  assert(isopen);
   if (fbo.enabled)
-    return fbo.pixels(image, alpha, flip);
+    return fbo.pixels(image, channels, flip);
   else
-    return FrameBuffer::pixels(image, alpha, flip);
+    return FrameBuffer::pixels(image, channels, flip);
 }
 
-GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, bool alpha, bool flip)
+GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool flip)
 {
+  assert(isopen);
   //Save current viewer size
   int savewidth = width;
   int saveheight = height;
@@ -429,7 +431,7 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, bool alpha, bool f
     //std::cout << "FBO Support required to save image at different size to window\n";
     w = width;
     h = height;
-    image = FrameBuffer::pixels(image, alpha, flip);
+    image = FrameBuffer::pixels(image, channels, flip);
   }
   else
   {
@@ -445,7 +447,7 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, bool alpha, bool f
       display();
     }
 
-    image = fbo.pixels(image, alpha, flip);
+    image = fbo.pixels(image, channels, flip);
 
     //Restore dims
     width = savewidth;
@@ -457,24 +459,25 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, bool alpha, bool f
 
 std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 {
+  assert(isopen);
   bool alphapng = !jpeg && app->drawstate.global("alphapng");
-  int bpp = 3;
+  int channels = 3;
   if (alphapng)
   {
-    bpp = 4;
+    channels = 4;
     //Redraw blended output for transparent PNG
     blend_mode = BLEND_PNG;
   }
   std::string retImg;
 
   // Read the pixels
-  GLubyte* image = pixels(NULL, outwidth, outheight, alphapng, false);
+  GLubyte* image = pixels(NULL, outwidth, outheight, channels, false);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
-    retImg = getImageString(image, outwidth, outheight, bpp, jpeg);
+    retImg = getImageString(image, outwidth, outheight, channels, jpeg);
   else
-    retImg = writeImage(image, outwidth, outheight, path, bpp);
+    retImg = writeImage(image, outwidth, outheight, path, channels);
 
   delete[] image;
 

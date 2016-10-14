@@ -112,7 +112,7 @@ void Server::display()
   {
     //CRITICAL SECTION
     // Read the pixels (flipped)
-    GLubyte *image = viewer->pixels(NULL, false, true);
+    GLubyte *image = viewer->pixels(NULL, 3, true);
 
     if (!compare(image))
     {

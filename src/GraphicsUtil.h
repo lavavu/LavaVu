@@ -612,20 +612,20 @@ void drawEllipsoid_(float centre[3], float radiusX, float radiusY, float radiusZ
 void drawVector3d_( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);
 void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
-void RawImageFlip(void* image, int width, int height, int bpp);
+void RawImageFlip(void* image, int width, int height, int channels);
 
-std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp=3);
-std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg=false);
+std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels=3);
+std::string getImageString(GLubyte *image, int width, int height, int channels, bool jpeg=false);
 
 //PNG utils
-void write_png(std::ostream& stream, int bpp, int width, int height, void* data);
-void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height);
+void write_png(std::ostream& stream, int channels, int width, int height, void* data);
+void* read_png(std::istream& stream, GLuint& channels, GLuint& width, GLuint& height);
 
 //Generic image loader (only png/jpg supported)
 class ImageFile
 {
 public:
-  int width, height, bytesPerPixel;
+  int width, height, channels;
   GLubyte* pixels;
 
   ImageFile(const FilePath& fn)
@@ -635,20 +635,20 @@ public:
     if (fn.type == "png")
     {
 #ifdef HAVE_LIBPNG
-      GLuint uwidth, uheight, ubpp;
+      GLuint uwidth, uheight, uchannels;
       std::ifstream file(fn.full.c_str(), std::ios::binary);
       if (!file) abort_program("Cannot open '%s'\n", fn.full.c_str());
-      pixels = (GLubyte*)read_png(file, ubpp, uwidth, uheight);
+      pixels = (GLubyte*)read_png(file, uchannels, uwidth, uheight);
       file.close();
-      bytesPerPixel = ubpp/8;
+      channels = uchannels;
       width = uwidth;
       height = uheight;
 #endif
     }
     else if (fn.type == "jpg" || fn.type == "jpeg")
     {
-      pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
-      bytesPerPixel = 3;
+      pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, 3);
+      channels = 3;
     }
   }
 
@@ -667,14 +667,14 @@ public:
 class TextureData  //Texture image data
 {
 public:
-  GLuint   bpp;      // Image Color Depth In Bits Per Pixel.
+  GLuint   channels; // Image Colour Depth.
   GLuint   width;    // Image Width
   GLuint   height;   // Image Height
   GLuint   depth;    // Image Depth
   GLuint   id;       // Texture ID Used To Select A Texture
   int      unit;
 
-  TextureData() : bpp(0), width(0), height(0), depth(0), unit(0)
+  TextureData() : channels(0), width(0), height(0), depth(0), unit(0)
   {
     glGenTextures(1, &id);
   }

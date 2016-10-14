@@ -741,13 +741,13 @@ void LavaVu::readVolumeSlice(const FilePath& fn)
   ImageFile image(fn);
   if (image.pixels)
   {
-    readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.bytesPerPixel);
+    readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.channels);
   }
   else
     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
-void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel)
+void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels)
 {
   //Create volume object, or if static volume object exists, use it
   int outChannels = drawstate.global("volchannels");
@@ -786,18 +786,18 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     GLubyte* luminance = new GLubyte[width*height];
     for (int y=0; y<height; y++)
       for (int x=0; x<width; x++)
-        luminance[y*width+x] = imageData[(y*width+x)*bytesPerPixel];
+        luminance[y*width+x] = imageData[(y*width+x)*channels];
 
     //Ensure count rounded up when storing bytes in float container
     int floatcount = ceil((float)(width * height) / sizeof(float));
     amodel->volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height); //, count);
-    //std::cout << "SLICE LOAD: " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+    //std::cout << "SLICE LOAD: " << width << "," << height << " channels: " << channels << std::endl;
 
     delete[] luminance;
   }
   else
   {
-    if (bytesPerPixel < 4)
+    if (channels < 4)
     {
       //Convert LUM/RGB to RGBA
       GLubyte* rgba = new GLubyte[width*height*4];
@@ -805,12 +805,12 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
       {
         for (int x=0; x<width; x++)
         {
-          if (bytesPerPixel == 1)
+          if (channels == 1)
           {
             rgba[(y*width+x)*4] = rgba[(y*width+x)*4+1] = rgba[(y*width+x)*4+2] = imageData[y*width+x];
             rgba[(y*width+x)*4+3] = 255;
           }
-          if (bytesPerPixel == 3)
+          if (channels == 3)
           {
             rgba[(y*width+x)*4] = imageData[(y*width+x)*3];
             rgba[(y*width+x)*4+1] = imageData[(y*width+x)*3+1];
@@ -824,7 +824,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     }
     else
       amodel->volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
-    std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+    std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " channels: " << channels << std::endl;
   }
 }
 
@@ -836,13 +836,13 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
   {
     unsigned int width, height;
     size_t npixels;
-    int bytesPerPixel = 4;
+    int channels = 4;
     GLubyte* imageData;
     int count = 0;
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
     npixels = width * height;
-    imageData = (GLubyte*)_TIFFmalloc(npixels * bytesPerPixel * sizeof(GLubyte));
+    imageData = (GLubyte*)_TIFFmalloc(npixels * channels * sizeof(GLubyte));
     if (imageData)
     {
       int w = width * volss[0];
@@ -860,12 +860,12 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
             for (int x=0; x<w; x ++)
             {
               assert((bp-buffer) < w * h);
-              memcpy(bp, &imageData[(y*width+x)*bytesPerPixel], 4);
+              memcpy(bp, &imageData[(y*width+x)*channels], 4);
               bp++;
             }
           }
 
-          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, bytesPerPixel);
+          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, channels);
         }
         count++;
       }
@@ -909,10 +909,10 @@ void LavaVu::createDemoVolume()
 #if 1
   unsigned int width = 256, height = 256, depth = 256, block = 24;
   size_t npixels = width*height;
-  int bytesPerPixel = 4;
+  int channels = 4;
   GLubyte* imageData;
   npixels = width * height;
-  imageData = (GLubyte*)malloc(npixels * bytesPerPixel * sizeof(GLubyte));
+  imageData = (GLubyte*)malloc(npixels * channels * sizeof(GLubyte));
   if (imageData)
   {
     bool val;
@@ -937,18 +937,18 @@ void LavaVu::createDemoVolume()
 
       if (z > 0) amodel->volumes->add(vobj);
       amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
-      std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+      std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
     }
   }
 #else
   unsigned int size;
   unsigned int width = 256, height = 256, depth = 256, block = 24;
   size_t npixels = width*height;
-  int bytesPerPixel = 1;
+  int channels = 1;
   GLubyte* imageData;
   int count = 0;
   npixels = width * height;
-  imageData = (GLubyte*)malloc(npixels * bytesPerPixel * sizeof(GLubyte));
+  imageData = (GLubyte*)malloc(npixels * channels * sizeof(GLubyte));
   if (imageData)
   {
     bool val;
@@ -976,7 +976,7 @@ void LavaVu::createDemoVolume()
       int floatcount = ceil((float)(width * height) / sizeof(float));
       //amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height, depth);
       amodel->volumes->read(vobj, floatcount, lucColourValueData, (float*)imageData, width, height, depth);
-      std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " bpp: " << bytesPerPixel << std::endl;
+      std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
     }
   }
   free(imageData);
@@ -1193,7 +1193,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
     for (int x=0; x<image.width; x++)
     {
       vertex[0] = x;
-      vertex[1] = heightrange * image.pixels[(z*image.width+x)*image.bytesPerPixel] / 255.0;
+      vertex[1] = heightrange * image.pixels[(z*image.width+x)*image.channels] / 255.0;
 
       float colourval = vertex[1];
 
@@ -1919,7 +1919,7 @@ void LavaVu::display(void)
 #ifdef HAVE_LIBAVCODEC
   if (encoder)
   {
-    viewer->pixels(encoder->buffer, false, true);
+    viewer->pixels(encoder->buffer, 3, true);
     //bitrate settings?
     encoder->frame();
   }
@@ -2661,7 +2661,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
       //Always output to video encode if it exists
       if (encoder)
       {
-        viewer->pixels(encoder->buffer, false, true);
+        viewer->pixels(encoder->buffer, 3, true);
         //bitrate settings?
         encoder->frame();
       }
@@ -2958,14 +2958,13 @@ void LavaVu::labels(std::vector <std::string> labels)
   container->label(aobject, labels);
 }
 
-std::vector<float> LavaVu::imageArray(std::string path, int depth)
+std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int channels)
 {
   //Return an image as a vector of floats
-  //- first 3 values are width,height,depth
+  //- first 3 values are width,height,channels
   //- read from disk if path provided
   //- read from framebuffer otherwise
   GLubyte* image = NULL;
-  int width = 0, height = 0;
   if (path.length() > 0)
   {
     //Use the texture loader to read image
@@ -2973,27 +2972,28 @@ std::vector<float> LavaVu::imageArray(std::string path, int depth)
     image = tex.read();
     width = tex.texture->width;
     height = tex.texture->height;
-    depth = tex.texture->bpp/8;
+    channels = tex.texture->channels;
+    //printf("Reading file %d x %d @ %d\n", width, height, channels);
   }
   else
   {
     //Get current image from framebuffer
-    image = viewer->pixels(NULL, width, height, depth==4);
+    image = viewer->pixels(NULL, width, height, channels);
+    //printf("Reading framebuffer %d x %d @ %d\n", width, height, channels);
   }
 
   if (!image) return std::vector<float>();
 
   //Size in pixels
   int size = width*height;
-  int step = (width*height)/size;
-  std::vector<float> data(3+size*depth);
+  std::vector<float> data(3+size*channels);
   //Add dims
   data[0] = width;
   data[1] = height;
-  data[2] = depth;
+  data[2] = channels;
   //Load data
   float r255 = 1.0/255.0;
-  for (int i=0; i<size*depth; i++)
+  for (int i=0; i<size*channels; i++)
     data[i+3] = image[i] * r255;
   //Free byte data
   delete[] image;
@@ -3002,18 +3002,23 @@ std::vector<float> LavaVu::imageArray(std::string path, int depth)
 
 float LavaVu::imageDiff(std::string path1, std::string path2)
 {
+  //std::cout << "Comparing " << path1 << " & " << path2 << std::endl;
+  //int channels = 3;
   std::vector<float> image1 = imageArray(path1);
-  //Request matching depth (if second image from framebuffer)
-  int depth = image1[2];
-  std::vector<float> image2 = imageArray(path2, depth);
+  //Request matching channels (if second image from framebuffer)
+  int channels = image1[2];
+  int width = image1[0];
+  int height = image1[1];
+  std::vector<float> image2 = imageArray(path2, width, height, channels);
 
-  //Images are different dimensions or colour depths?
+  //Images are different dimensions or colour channelss?
   if (image1.size() != image2.size() ||
       image1[0] != image2[0] ||
       image1[1] != image2[1] ||
       image1[2] != image2[2])
   {
     std::cout << "Image metrics differ: " << std::endl;
+    std::cout << " - " << path1 << " != " << path2 << std::endl;
     std::cout << " - " << image1[0] << " x " << image1[1] << " : " << image1[2] << std::endl;
     std::cout << " - " << image2[0] << " x " << image2[1] << " : " << image2[2] << std::endl;
     return 1.0;
@@ -3022,14 +3027,14 @@ float LavaVu::imageDiff(std::string path1, std::string path2)
   //Calculate euclidean distance
   int pixels = image1.size() - 3;
   float dist = 0.0;
-  for (int i=3; i<image1.size(); i++)
-  {
-    float diff = image1[i] - image2[i];
+    for (int i=3; i<image1.size(); i++)
+    {
+      float diff = image1[i] - image2[i];
     dist += diff * diff;
-  }
+    }
   dist = sqrt(dist);
 
-  float maxdist = sqrt(pixels*depth); //pixels*components
+  float maxdist = sqrt(pixels*channels); //pixels*components
   return dist / maxdist;
 }
 

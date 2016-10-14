@@ -672,9 +672,9 @@ float triAngle(float v0[3], float v1[3], float v2[3])
   return acos(dotProduct(e0,e1));
 }
 
-void RawImageFlip(void* image, int width, int height, int bpp)
+void RawImageFlip(void* image, int width, int height, int channels)
 {
-  int scanline = bpp * width;
+  int scanline = channels * width;
   GLubyte* ptr1 = (GLubyte*)image;
   GLubyte* ptr2 = ptr1 + scanline * (height-1);
   GLubyte* temp = new GLubyte[scanline];
@@ -753,7 +753,6 @@ GLubyte* ImageLoader::loadPPM()
   bool readTag = false, readWidth = false, readHeight = false, readColourCount = false;
   char stringBuffer[241];
   int ppmType, colourCount;
-  GLuint bytesPerPixel, imageSize;
   GLubyte *imageData;
 
   FILE* imageFile = fopen(fn.full.c_str(), "rb");
@@ -812,14 +811,13 @@ GLubyte* ImageLoader::loadPPM()
   // Only allow PPM images of type P6 and with 256 colours
   if ( ppmType != 6 || colourCount != 255 ) abort_program("Unable to load PPM Texture file, incorrect format");
 
-  texture->bpp = 24;
-  bytesPerPixel = texture->bpp/8; //bits to bytes
-  imageSize = texture->width*texture->height*bytesPerPixel;
-  imageData = new GLubyte[imageSize];   // Reserve Memory
+  texture->channels = 3;
+  imageData = new GLubyte[texture->width*texture->height*texture->channels];
 
   //Flip scanlines vertically
   for (int j = texture->height - 1 ; j >= 0 ; j--)
-    if (fread(&imageData[texture->width * j * bytesPerPixel], bytesPerPixel, texture->width, imageFile) < texture->width) abort_program("PPM Read Error");
+    if (fread(&imageData[texture->width * j * texture->channels], texture->channels, texture->width, imageFile) < texture->width) 
+      abort_program("PPM Read Error");
   fclose(imageFile);
   return imageData;
 }
@@ -834,10 +832,10 @@ GLubyte* ImageLoader::loadPNG()
     debug_print("Cannot open '%s'\n", fn.full.c_str());
     return 0;
   }
-  imageData = (GLubyte*)read_png(file, texture->bpp, texture->width, texture->height);
+  imageData = (GLubyte*)read_png(file, texture->channels, texture->width, texture->height);
 
   //Requires flip on load for OpenGL
-  RawImageFlip(imageData, texture->width, texture->height, texture->bpp/8);
+  RawImageFlip(imageData, texture->width, texture->height, texture->channels);
 
   file.close();
 
@@ -846,15 +844,15 @@ GLubyte* ImageLoader::loadPNG()
 
 GLubyte* ImageLoader::loadJPEG()
 {
-  int width, height, bytesPerPixel;
-  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &bytesPerPixel, 3);
+  int width, height, channels;
+  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, 3);
 
   //Requires flip on load for OpenGL
   RawImageFlip(imageData, width, height, 3);
 
   texture->width = width;
   texture->height = height;
-  texture->bpp = 24;
+  texture->channels = channels;
 
   return imageData;
 }
@@ -874,18 +872,16 @@ GLubyte* ImageLoader::loadTIFF()
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
     npixels = width * height;
 
-    //imageData = (GLubyte*)_TIFFmalloc(npixels * 4 * sizeof(GLubyte));
-    imageData = new GLubyte[npixels * 4 * sizeof(GLubyte)];   // Reserve Memory
+    texture->channels = 4;
+    imageData = new GLubyte[npixels * texture->channels * sizeof(GLubyte)];   // Reserve Memory
     if (imageData)
     {
       if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
       {
-        //RawImageFlip(imageData, width, height, 3);
+        //RawImageFlip(imageData, width, height, texture->channels);
         texture->width = width;
         texture->height = height;
-        texture->bpp = 32;
       }
-      //_TIFFfree(imageData);
     }
     TIFFClose(tif);
   }
@@ -897,7 +893,7 @@ GLubyte* ImageLoader::loadTIFF()
 
 int ImageLoader::build(GLubyte* imageData)
 {
-  GLenum format = texture->bpp == 24 ? GL_RGB : GL_RGBA;
+  GLenum format = texture->channels == 3 ? GL_RGB : GL_RGBA;
   //Build texture from raw data
   glActiveTexture(GL_TEXTURE0 + texture->unit);
   glBindTexture(GL_TEXTURE_2D, texture->id);
@@ -916,21 +912,21 @@ int ImageLoader::build(GLubyte* imageData)
 
   //Load the texture data based on bits per pixel
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  switch (texture->bpp)
+  switch (texture->channels)
   {
-  case 8:
+  case 1:
     if (!format) format = GL_ALPHA;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
     break;
-  case 16:
+  case 2:
     if (!format) format = GL_LUMINANCE_ALPHA;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
     break;
-  case 24:
+  case 3:
     if (!format) format = GL_BGR;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
     break;
-  case 32:
+  case 4:
     if (!format) format = GL_BGRA;
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
     break;
@@ -988,7 +984,7 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
   GL_Error_Check;
 }
 
-std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int bpp)
+std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels)
 {
   FilePath filepath(path);
   if (filepath.type == "png")
@@ -997,21 +993,21 @@ std::string writeImage(GLubyte *image, int width, int height, const std::string&
     std::ofstream file(filepath.full, std::ios::binary);
     //Requires y-flip as uses opposite y origin to OpenGL (except for libpng)
 #ifndef HAVE_LIBPNG
-    RawImageFlip(image, width, height, bpp);
+    RawImageFlip(image, width, height, channels);
 #endif
-    write_png(file, bpp, width, height, image);
+    write_png(file, channels, width, height, image);
   }
   else if (filepath.type == "jpeg" || filepath.type == "jpg")
   {
     //JPEG support with built in encoder
     // Fill in the compression parameter structure.
     //Requires y-flip as uses opposite y origin to OpenGL
-    RawImageFlip(image, width, height, bpp);
+    RawImageFlip(image, width, height, channels);
 
     jpge::params params;
     params.m_quality = 95;
     params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-    if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, bpp, image, params))
+    if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, channels, image, params))
     {
       fprintf(stderr, "[write_jpeg] File %s could not be saved\n", filepath.full.c_str());
       return "";
@@ -1020,24 +1016,24 @@ std::string writeImage(GLubyte *image, int width, int height, const std::string&
   else
   {
     std::string newpath = path + ".png";
-    return writeImage(image, width, height, newpath, bpp);
+    return writeImage(image, width, height, newpath, channels);
   }
   debug_print("[%s] File successfully written\n", filepath.full.c_str());
   return path;
 }
 
-std::string getImageString(GLubyte *image, int width, int height, int bpp, bool jpeg)
+std::string getImageString(GLubyte *image, int width, int height, int channels, bool jpeg)
 {
   std::string encoded;
   if (!jpeg)
   {
 #ifndef HAVE_LIBPNG
     //Requires y-flip as uses opposite y origin to OpenGL
-    RawImageFlip(image, width, height, bpp);
+    RawImageFlip(image, width, height, channels);
 #endif
     // Write png to stringstream
     std::stringstream ss;
-    write_png(ss, bpp, width, height, image);
+    write_png(ss, channels, width, height, image);
     //Base64 encode!
     std::string str = ss.str();
     encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
@@ -1045,17 +1041,17 @@ std::string getImageString(GLubyte *image, int width, int height, int bpp, bool 
   else
   {
     //Requires y-flip as uses opposite y origin to OpenGL
-    RawImageFlip(image, width, height, bpp);
+    RawImageFlip(image, width, height, channels);
     // Writes JPEG image to memory buffer.
     // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
     // If return value is true, jpeg_bytes will be set to the size of the compressed data.
-    int jpeg_bytes = width * height * bpp;
+    int jpeg_bytes = width * height * channels;
     unsigned char* jpeg = new unsigned char[jpeg_bytes];
     // Fill in the compression parameter structure.
     jpge::params params;
     params.m_quality = 95;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-    if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, width, height, bpp, (const unsigned char *)image, params))
+    if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, width, height, channels, (const unsigned char *)image, params))
       debug_print("JPEG compressed, size %d\n", jpeg_bytes);
     else
       abort_program("JPEG compress error\n");
@@ -1089,13 +1085,12 @@ static void png_flush(png_structp png_ptr)
   stream->flush();
 }
 
-void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
+void* read_png(std::istream& stream, GLuint& channels, GLuint& width, GLuint& height)
 {
   char header[8];   // 8 is the maximum size that can be checked
   unsigned int y;
 
   png_byte color_type;
-  png_byte bit_depth;
 
   png_structp png_ptr;
   png_infop info_ptr;
@@ -1127,20 +1122,16 @@ void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
 
   png_uint_32 imgWidth =  png_get_image_width(png_ptr, info_ptr);
   png_uint_32 imgHeight = png_get_image_height(png_ptr, info_ptr);
-  //bits per CHANNEL! note: not per pixel!
-  png_uint_32 bitdepth   = png_get_bit_depth(png_ptr, info_ptr);
   //Number of channels
-  png_uint_32 channels   = png_get_channels(png_ptr, info_ptr);
+  channels   = png_get_channels(png_ptr, info_ptr);
   width = imgWidth;
   height = imgHeight;
-  bit_depth = bitdepth;
   //Row bytes
   png_uint_32 rowbytes  = png_get_rowbytes(png_ptr, info_ptr);
 
   color_type = png_get_color_type(png_ptr, info_ptr);
-  bpp = bitdepth * channels;
 
-  debug_print("Reading PNG: %d x %d, colour type %d, depth %d, channels %d\n", width, height, color_type, bit_depth, channels);
+  debug_print("Reading PNG: %d x %d, colour type %d, channels %d\n", width, height, color_type, channels);
 
   png_set_interlace_handling(png_ptr);
   png_read_update_info(png_ptr, info_ptr);
@@ -1166,7 +1157,7 @@ void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
   return pixels;
 }
 
-void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
+void write_png(std::ostream& stream, int channels, int width, int height, void* data)
 {
   int colour_type;
   png_bytep      pixels       = (png_bytep) data;
@@ -1185,12 +1176,12 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
   }
 
   //Setup for different write modes
-  if (bpp > 3)
+  if (channels > 3)
   {
     colour_type = PNG_COLOR_TYPE_RGB_ALPHA;
     rowStride = width * 4;
   }
-  else if (bpp == 3)
+  else if (channels == 3)
   {
     colour_type = PNG_COLOR_TYPE_RGB;
     rowStride = width * 3;  // Don't need to pad lines! pack alignment is set to 1
@@ -1245,21 +1236,19 @@ void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
 }
 
 #else //HAVE_LIBPNG
-void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
+void* read_png(std::istream& stream, GLuint& channels, GLuint& width, GLuint& height)
 {
-  bpp = 32;
-  int channels = 4;
-  int bit_depth = 8;
   //Read the stream
   std::string s(std::istreambuf_iterator<char>(stream), {});
   unsigned char* buffer = 0;
+  channels = 4; //Always loads RGBA
   unsigned status = lodepng_decode32(&buffer, &width, &height, (const unsigned char*)s.c_str(), s.length());
   if (status != 0)
   {
     fprintf(stderr, "[read_png_file] decode failed");
     return NULL;
   }
-  debug_print("Reading PNG: %d x %d, depth %d, channels %d\n", width, height, bit_depth, channels);
+  debug_print("Reading PNG: %d x %d, channels %d\n", width, height, channels);
   size_t size = width*height*channels;
   GLubyte* pixels = new GLubyte[size];
   memcpy(pixels, buffer, size);
@@ -1267,24 +1256,23 @@ void* read_png(std::istream& stream, GLuint& bpp, GLuint& width, GLuint& height)
   return pixels;
 }
 
-void write_png(std::ostream& stream, int bpp, int width, int height, void* data)
+void write_png(std::ostream& stream, int channels, int width, int height, void* data)
 {
-  int bit_depth = 8;
-  int channels = bpp/bit_depth;
-
   unsigned char* buffer;
   size_t buffersize;
   unsigned status = 0;
-  if (bpp = 24)
+  if (channels == 3)
     status = lodepng_encode24(&buffer, &buffersize, (const unsigned char*)data, width, height);
-  else
+  else if (channels == 4)
     status = lodepng_encode32(&buffer, &buffersize, (const unsigned char*)data, width, height);
+  else
+    abort_program("Invalid channels %d\n", channels);
   if (status != 0)
   {
     fprintf(stderr, "[write_png_file] encode failed");
     return;
   }
-  debug_print("Writing PNG: %d x %d, depth %d, channels %d\n", width, height, bit_depth, channels);
+  debug_print("Writing PNG: %d x %d, channels %d\n", width, height, channels);
   stream.write((const char*)buffer, buffersize);
   free(buffer);
 }
