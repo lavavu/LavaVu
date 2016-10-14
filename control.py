@@ -2,8 +2,17 @@ import lavavu
 js = """
 <script type="text/Javascript">
 
-var IPython = parent.IPython;
-var kernel = IPython.notebook.kernel;
+var kernel;
+if (parent.IPython) {
+  kernel = parent.IPython.notebook.kernel;
+  //This ensures we have imported the lavavu module in notebook scope
+  //required for control event pass-back
+  //(NOTE: this looks a bit hacky because it is, but also because commands must be one liners)
+  kernel.execute('lavavu = None if not "lavavu" in globals() else lavavu');
+  kernel.execute('import sys');
+  kernel.execute('modules = dict(sys.modules)');
+  kernel.execute('for m in modules: lavavu = modules[m].lavavu if "lavavu" in dir(modules[m]) else lavavu');
+}
 
 var img;
 
@@ -32,8 +41,20 @@ function set_target(id, viewer_id) {
 }
 
 function recapture(id) {
+  if (!kernel) return;
   kernel.execute("lavavu.viewer = lavavu.control.viewers[" + id + "]");
   get_image();
+}
+
+function execute(cmd) {
+  if (kernel) {
+    kernel.execute('lavavu.viewer.commands("' + cmd + '")');
+  } else {
+    var url = "http://localhost:8080/command="
+    x = new XMLHttpRequest();
+    x.open('GET', url + cmd, true);
+    x.send();
+  }
 }
 
 var mouse = {};
@@ -66,7 +87,7 @@ function mouseUp(e) {
       mouse.timer = null;
       imgDrag(e.clientX, e.clientY, button);
     } else {
-      kernel.execute('lavavu.viewer.mouse("mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + e.clientX + ',y=' + e.clientY + '")');
+      execute('mouse mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + e.clientX + ',y=' + e.clientY);
       get_frame();
     }
     e.preventDefault();
@@ -79,7 +100,7 @@ function mouseDown(e) {
   mouse.down = true;
   var button = e.button+1;
   mouse.modifiers = keyModifiers(e);
-  kernel.execute('lavavu.viewer.mouse("mouse=down,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + e.clientX + ',y=' + e.clientY + '")');
+  execute('mouse mouse=down,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + e.clientX + ',y=' + e.clientY);
   e.preventDefault();
   return false;
 }
@@ -108,14 +129,14 @@ function mouseWheel(e) {
 
 function imgDrag(x, y, button){
   if (!img) return;
-  kernel.execute('lavavu.viewer.mouse("mouse=move,modifiers=' + mouse.modifiers + 'button=' + button + ',x=' + x + ',y=' + y + '")');
+  execute('mouse mouse=move,modifiers=' + mouse.modifiers + 'button=' + button + ',x=' + x + ',y=' + y);
   if (!mouse.timer)
-    kernel.execute('lavavu.viewer.mouse("mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + x + ',y=' + y + '")');
+    execute('mouse mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + x + ',y=' + y);
   get_frame();
 }
 
 function imgZoom(factor){
-  kernel.execute('lavavu.viewer.mouse("mouse=scroll,modifiers=' + mouse.modifiers + ',spin=' + factor + '")');
+  execute('mouse mouse=scroll,modifiers=' + mouse.modifiers + ',spin=' + factor);
   get_frame();
   mouse.wheelTimer = null;
 }
@@ -134,19 +155,28 @@ function get_image(cmd) {
       if (img) img.src = data;
     }
   };
-  kernel.execute('lavavu.viewer.frame((640, 480))', {iopub: callbacks}, {silent: false});
+  if (kernel) {
+    kernel.execute('lavavu.viewer.frame((640, 480))', {iopub: callbacks}, {silent: false});
+  }
+  //else
+  //  alert('TODO: html get image');
 }
 
-function set_prop(obj, val) {
-  console.log('set: ' + obj)
-  kernel.execute(obj + " = " + str(val));
+function set_prop(obj, prop, val) {
+  execute("select " + obj);
+  execute(prop + "=" + val);
   get_image();
 }
 
 function do_action(id, val) {
   //alert("lavavu.control.action(" + id + "," + val + ")")
-  kernel.execute("cmds = lavavu.control.action(" + id + "," + val + ")");
-  kernel.execute("if len(cmds): lavavu.viewer.parseCommands(cmds)");
+  if (kernel) {
+    kernel.execute("cmds = lavavu.control.action(" + id + "," + val + ")");
+    kernel.execute("if len(cmds): lavavu.viewer.parseCommands(cmds)");
+  } else {
+    //HTML control actions via http
+    actions[id](val);
+  }
   get_image();
 }
 
@@ -164,40 +194,87 @@ style = """
 </style>
 """
 
+output = ""
+
+def export():
+    #Dump all output to control.html
+    import os
+    filename = os.path.join(lavavu.viewer.app.binpath, "html/control.html")
+
+    #Process actions
+    actionjs = '<script type="text/Javascript">'
+    actionjs += 'var actions = [];'
+    for act in actions:
+        print act["args"]
+        if act["call"] == setter:
+            print "SETTER: "
+            if len(act["args"]) == 0:
+                print "Empty action"
+                #Add a dummy function
+                actionjs += 'actions.push(function(value) {});'
+            elif isinstance(act["args"][0], lavavu.Obj):
+                name = act["args"][0]["name"]
+                prop = act["args"][1]
+                print "  OBJ : " + name + " : " + prop
+                actionjs += 'actions.push(function(value) {set_prop("' + name + '", "' + prop + '", value);});'
+            elif isinstance(act["args"][0], lavavu.Viewer):
+                print "  GLOB "
+        elif act["call"] == commandsetter:
+            print "COMMAND"
+        elif act["call"] == filtersetter:
+            print "FILTER"
+
+    actionjs += '</script>'
+
+    hfile = open(filename, "w")
+    hfile.write('<html><head>' + js + actionjs + '</head><body>' + output + '</body></html>')
+    hfile.close()
+
 def display():
     #Simply update the active viewer image, if any
     try:
         if __IPYTHON__:
-            from IPython.display import display,Image,HTML,Javascript
+            from IPython.display import display,Javascript
             display(Javascript('get_image();'))
     except NameError, ImportError:
         pass
 
-def viewer(html=None, style=""):
+def render(html):
     try:
         if __IPYTHON__:
-            from IPython.display import display,Image,HTML,Javascript
-            viewerid = len(viewers)
+            from IPython.display import display,HTML
+            display(HTML(html))
+    except NameError, ImportError:
+        global output
+        output += html
+        export()
+
+def viewer(html=None, style=""):
+    viewerid = len(viewers)
+    style += "border: 1px solid #aaa; "
+    style += "user-select: none; user-drag: none; "
+    style += "-moz-user-select: none; -moz-user-drag: none; "
+    style += "-webkit-user-select: none; -webkit-user-drag: none; "
+    imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '" ></img>'
+    #Optional template
+    if html:
+        html = html.replace("~~~TARGET~~~", imgsrc)
+    else:
+        html = imgsrc
+
+    try:
+        if __IPYTHON__:
+            from IPython.display import display,HTML,Javascript
             if viewerid == 0:
                 #Add the control script first time through
                 display(HTML(js))
             viewers.append(lavavu.viewer)
-            style += "border: 1px solid #aaa; "
-            style += "user-select: none; user-drag: none; "
-            style += "-moz-user-select: none; -moz-user-drag: none; "
-            style += "-webkit-user-select: none; -webkit-user-drag: none; "
-            imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '" ></img>'
-            #Optional template
-            if html:
-                html = html.replace("~~~TARGET~~~", imgsrc)
-            else:
-                html = imgsrc
             #Display the inline html
             display(HTML(html))
             #Execute javascript to set the output target to added image (also pass the viewer id)
             display(Javascript('set_target("imgtarget_' + str(viewerid) + '", ' + str(viewerid) + ');'))
     except NameError, ImportError:
-        pass
+        render(html)
 
 #Register of controls and their actions
 actions = []
@@ -218,7 +295,7 @@ def filtersetter(target, index, property, value):
     f = target["filters"]
     f[index][property] = value
     target["filters"] = f
-    return "reload"
+    return "redraw"
 
 def commandsetter(command, value):
     return command + " " + str(value) + "\nredraw"
@@ -249,24 +326,7 @@ class Panel(object):
         if self.showviewer:
             viewer(html, "float: right; ")
         else:
-            try:
-                if __IPYTHON__:
-                    from IPython.display import display,Image,HTML,Javascript
-                    display(HTML(html))
-                    #self.export()
-                    #display(HTML('<iframe src="control.html" style="border: none; width:100%; height:500px"></iframe>'))
-            except NameError, ImportError:
-                return html
-
-    def export(self, filename="control.html"):
-        #Save panel UI in external html file, todo: add js
-        actionjs = '<script type="text/Javascript">'
-        #for act in actions:
-        #    as
-        actionjs += '</script>'
-        hfile = open(filename, "w")
-        hfile.write('<html><head</head><body>' + self.html() + '</body></html>')
-        hfile.close()
+            render(html)
 
 class Control(object):
 
@@ -306,13 +366,6 @@ class Control(object):
     def onchange(self):
         return "; do_action(" + str(self.id) + ", this.value);"
 
-    #cmd = ""
-    #if self.url: #eg: http://localhost:8080/command=
-    #    cmd += "x = new XMLHttpRequest();"
-    #    cmd += "x.open('GET', '" + self.url + this.value + "', true);"
-    #    cmd += "x.send();"
-    #return cmd
-
     def show(self):
         #Show only this control with a border
         html = '<div>'
@@ -320,12 +373,7 @@ class Control(object):
         if self.label: html += '<p>' + self.label + ':</p>'
         html += self.controls()
         html += '</div>'
-        try:
-          if __IPYTHON__:
-            from IPython.display import display,Image,HTML
-            display(HTML(html))
-        except NameError, ImportError:
-          return html
+        render(html)
 
     def controls(self, type='number', attribs={}, onchange=""):
         html =  '<input type="' + type + '" '
