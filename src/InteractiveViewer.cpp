@@ -905,17 +905,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(ival, "record")) ival = 30;
     encodeVideo("", ival);
   }
-  else if (parsed.exists("scan"))
-  {
-    if (gethelp)
-    {
-      help += "> Rescan the current directory for timestep database files  \n"
-              "> based on currently loaded filename\n\n";
-      return false;
-    }
-
-    amodel->loadTimeSteps(true);
-  }
   //******************************************************************************
   //Following commands require a model!
   else if (!gethelp && (!amodel || !aview))
@@ -926,6 +915,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Add to the queue to be processed once open
     viewer->commands.push_back(cmd);
     return false;
+  }
+  else if (parsed.exists("scan"))
+  {
+    if (gethelp)
+    {
+      help += "> Rescan the current directory for timestep database files  \n"
+              "> based on currently loaded filename\n\n";
+      return false;
+    }
+
+    amodel->loadTimeSteps(true);
   }
   else if (parsed.exists("rotation"))
   {
