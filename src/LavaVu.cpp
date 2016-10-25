@@ -58,6 +58,7 @@ LavaVu::LavaVu(std::string binary)
   axis = NULL;
   border = NULL;
   rulers = NULL;
+  encoder = NULL;
   verbose = dbpath = false;
 
   defaultScript = "init.script";
@@ -172,7 +173,7 @@ LavaVu::~LavaVu()
 #ifdef HAVE_LIBAVCODEC
   if (encoder) delete encoder;
 #endif
-  debug_print("Peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
+  debug_print("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
   if (viewer) delete viewer;
 }
 
