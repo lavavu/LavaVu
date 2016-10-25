@@ -1842,7 +1842,6 @@ void LavaVu::display(void)
     aview->filtered = false;
 
 #ifdef USE_OMEGALIB
-  viewApply(view);
   drawSceneBlended();
 #else
 
