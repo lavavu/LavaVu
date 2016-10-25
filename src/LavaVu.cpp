@@ -785,15 +785,27 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   {
     //Convert to luminance (just using red channel now, other options in future)
     GLubyte* luminance = new GLubyte[width*height];
+    GLubyte byte;
     for (int y=0; y<height; y++)
+    {
       for (int x=0; x<width; x++)
-        luminance[y*width+x] = imageData[(y*width+x)*channels];
+      {
+        //If input data rgb/rgba take highest of R/G/B
+        //TODO: to a proper greyscale conversion
+        byte = imageData[(y*width+x)*channels];
+        if (channels == 3 || channels == 4)
+        {
+          if (imageData[(y*width+x)*channels+1] > byte)
+            byte = imageData[(y*width+x)*channels+1];
+          if (imageData[(y*width+x)*channels+2] > byte)
+            byte = imageData[(y*width+x)*channels+2];
+        }
+        luminance[y*width+x] = byte;
+      }
+    }
 
-    //Ensure count rounded up when storing bytes in float container
-    int floatcount = ceil((float)(width * height) / sizeof(float));
-    amodel->volumes->read(vobj, floatcount, lucColourValueData, luminance, width, height); //, count);
-    //std::cout << "SLICE LOAD: " << width << "," << height << " channels: " << channels << std::endl;
-
+    //Now using a container designed for byte data, TODO: support RGB/RGBA raw load?
+    amodel->volumes->read(vobj, width * height, lucLuminanceData, luminance, width, height);
     delete[] luminance;
   }
   else
@@ -825,8 +837,8 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     }
     else
       amodel->volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
-    std::cout << "SLICE LOAD " << count << " : " << width << "," << height << " channels: " << channels << std::endl;
   }
+  std::cout << "Slice loaded " << count << " : " << width << "," << height << " channels: " << channels << std::endl;
 }
 
 void LavaVu::readVolumeTIFF(const FilePath& fn)
@@ -846,15 +858,21 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
     imageData = (GLubyte*)_TIFFmalloc(npixels * channels * sizeof(GLubyte));
     if (imageData)
     {
+      float volss[3];
+      Properties::toFloatArray(drawstate.global("volsubsample"), volss, 3);
       int w = width * volss[0];
       int h = height * volss[1];
       GLuint* buffer = new GLuint[w*h];
+      int d = TIFFNumberOfDirectories(tif);
+      int dd = d*volss[2];
+      int ddd = d/dd;
       do
       {
         if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
         {
           //Add new store for each slice
           //Subsample
+          if (count % ddd != 0) {count++; continue;}
           GLuint* bp = buffer;
           for (int y=0; y<h; y ++)
           {

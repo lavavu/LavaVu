@@ -217,6 +217,19 @@ void Volumes::update()
           else
             abort_program("Invalid volume bpv %d", bpv);
         }
+        else if (geom[i]->luminance.size() > 0)
+        {
+          //NOTE: This results in the data being loaded to the RED channel only
+          bpv = 1;
+          assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height);
+          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_BYTE);
+          for (unsigned int j=i; j<i+slices[current]; j++)
+          {
+            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width/4, geom[i]->height, 1, 
+                            GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->luminance.ref());
+                            //GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->luminance.ref());
+          }
+        }
         else if (geom[i]->colourData())
         {
           bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height);
