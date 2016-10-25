@@ -1753,8 +1753,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       //Include the object bounding box for WebGL
       float min[3], max[3];
       objectBounds(objects[i], min, max);
-      obj["min"] = {min[0], min[1], min[2]};
-      obj["max"] = {max[0], max[1], max[2]};
+      if (min[0] < max[0] && min[1] < max[1])
+      {
+        obj["min"] = {min[0], min[1], min[2]};
+        obj["max"] = {max[0], max[1], max[2]};
+      }
 
       //Texture ? Export first only, as external file for now
       //TODO: dataurl using getImageString(image, iw, ih, channels)
