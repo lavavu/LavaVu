@@ -2548,7 +2548,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(fval, 1, 1, true); //Replace existing
+          aview->setScale(fval, aview->scale[1], aview->scale[2], true); //Replace existing
           amodel->redraw();
         }
       }
@@ -2556,7 +2556,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, fval, 1, true); //Replace existing
+          aview->setScale(aview->scale[0], fval, aview->scale[2], true); //Replace existing
           amodel->redraw();
         }
       }
@@ -2564,7 +2564,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         if (parsed.has(fval, "scale", 1))
         {
-          aview->setScale(1, 1, fval, true); //Replace existing
+          aview->setScale(aview->scale[0], aview->scale[1], fval, true); //Replace existing
           amodel->redraw();
         }
       }
