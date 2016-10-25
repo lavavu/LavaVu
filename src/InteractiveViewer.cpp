@@ -3089,6 +3089,36 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->redraw(aobject);
     }
   }
+  else if (parsed.exists("filtermin") || parsed.exists("filtermax"))
+  {
+    std::string action = parsed.exists("filtermin") ? "filtermin" : "filtermax";
+    if (gethelp)
+    {
+      help += "> Modify a data filter on selected object\n\n"
+              "> **Usage:** " + action + " index value\n\n"
+              "> index (integer) : the index filter to set [0 - N-1] where N = # of filters added  \n"
+              "> value (number) : the " + (action == "filtermin" ? "minimum" : "maximum") + " value of the range to filter in or out  \n";
+      return false;
+    }
+
+    //Require a selected object
+    if (aobject)
+    {
+      json& filters = aobject->properties["filters"];
+      int idx = parsed.Int(action, 0);
+      if (filters.size() <= idx) return false;
+      json& filter = filters[idx];
+      float val;
+      parsed.has(val, action, 1);
+      if (action == "filtermin")
+        filter["minimum"] = val;
+      else
+        filter["maximum"] = val;
+      printMessage("Filter %d set from %f to %f", idx, (float)filter["minimum"], (float)filter["maximum"]);
+      amodel->redraw(aobject);
+    }
+  }
+
   else if (parsed.exists("clearfilters"))
   {
     if (gethelp)
@@ -3171,7 +3201,7 @@ void LavaVu::helpCommand(std::string cmd)
      "antialias", "valuerange", "colourmap", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
-    {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "clearfilters",
+    {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
      "cache", "verbose", "toggle", "createvolume"}
   };
 
