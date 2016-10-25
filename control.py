@@ -137,7 +137,9 @@ def loadscripts(onload="", viewer=None, html=""):
             from IPython.display import display,HTML,Javascript
             #Create link to web content directory
             if not os.path.isdir("html"):
-                os.symlink(os.path.join(binpath, 'html'), 'html')
+                htmldir = os.path.join(binpath, 'html')
+                #print "Creating symlink: ./html => " + htmldir
+                os.symlink(htmldir, 'html')
             #Stylesheet, shaders and inline html
             display(HTML('<link rel="stylesheet" type="text/css" href="html/control.css">\n' + fragmentShader + vertexShader + html))
             #Load external scripts via require.js

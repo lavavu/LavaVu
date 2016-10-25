@@ -9,16 +9,17 @@ import os
 try:
     sys.path.append(os.path.join(os.path.dirname(control.__file__), 'bin'))
     from LavaVuPython import *
-    #Import javascript for controls
-    control.loadscripts()
     #Temporarily create a viewer to get binpath
     tempapp = LavaVu("LavaVu")
-    #Ensure viewer can actually be opened
-    tempapp.run(['-h', '-a', '-p0'])
     control.binpath = tempapp.binpath
+    #Import javascript for controls (requires binpath)
+    control.loadscripts()
+    #Ensure viewer can actually be opened, 
+    #if not, better to catch errors here and disable
+    tempapp.run(['-h', '-a', '-p0'])
     tempapp = None
 except Exception,e:
-    print "LavaVu module not found or unable to open! " + str(e)
+    print "LavaVu visualisation module load failed: " + str(e)
     raise
 
 #Some preset colourmaps
@@ -363,6 +364,7 @@ class Viewer(object):
         return json.loads(self.app.getTimeSteps())
 
     def frame(self, resolution=None):
+            self.set() #Sync state first
             #Jpeg encoded frame data
             if not resolution: resolution = self.res
             return self.app.image("", resolution[0], resolution[1], True);
@@ -406,9 +408,6 @@ class Viewer(object):
                     from IPython.display import display,Image,HTML
                     #Write files to disk first, can be passed directly on url but is slow for large datasets
                     filename = "input.json"
-                    #Create link to web content directory
-                    if not os.path.isdir("html"):
-                        os.symlink(os.path.join(self.app.binpath, 'html'), 'html')
                     text_file = open("html/" + filename, "w")
                     text_file.write(self.web());
                     text_file.close()

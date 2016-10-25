@@ -3,15 +3,12 @@ var kernel;
 //Maintain a list of interactor instances opened by id
 instances = [];
 
-//TODO: remove this?
-//initLoad(); //Ensure lavavu module in IPython notebook scope
-
 function initLoad() {
   if (parent.IPython) {
     kernel = parent.IPython.notebook.kernel;
     //This ensures we have imported the lavavu module in notebook scope
     //required for control event pass-back
-    //(NOTE: this looks a bit hacky because it is, but also because kernel.execute commands must be one liners)
+    //(NOTE: this looks a bit hacky because it is, but it seems kernel.execute loops only work as a one liners)
     kernel.execute('lavavu = None if not "lavavu" in globals() else lavavu');
     kernel.execute('import sys');
     kernel.execute('modules = dict(sys.modules)');
@@ -84,10 +81,6 @@ function WindowInteractor(id) {
 
 WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
   //console.log("execute: " + cmd);
-  //Ensure correct viewer selected
-  //if (viewer_id != undefined)
-  //  recapture(viewer_id);
-
   if (kernel) {
     kernel.execute('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
     this.get_image();
@@ -117,17 +110,19 @@ WindowInteractor.prototype.set_prop = function(obj, prop, val) {
 }
 
 WindowInteractor.prototype.do_action = function(id, val) {
-  //this.recapture();
   if (kernel) {
-    /*var callbacks = {'output' : function(out) {
+    kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
+    kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
+    /*/Debug callback
+    var callbacks = {'output' : function(out) {
         if (!out.content.data) return;
         data = out.content.data['text/plain']
           alert(data);
       }
     };*/
-    kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
+    //kernel.execute('str(lavavu.control.actions[' + id + '])', {iopub: callbacks}, {silent: false});
+    //kernel.execute('str(lavavu.control.actions[' + id + ']["args"][0])', {iopub: callbacks}, {silent: false});
     //kernel.execute('cmds', {iopub: callbacks}, {silent: false});
-    kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
     this.get_image();
   } else {
     //HTML control actions via http

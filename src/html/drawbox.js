@@ -497,8 +497,8 @@ Viewer.prototype.updateDims = function(view) {
   this.border.updateBuffers(this.vis.views[this.view]);
 
   //console.log("DIMS: " + min[0] + " to " + max[0] + "," + min[1] + " to " + max[1] + "," + min[2] + " to " + max[2]);
-  console.log("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
-  console.log("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
+  //console.log("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
+  //console.log("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
 }
 
 
