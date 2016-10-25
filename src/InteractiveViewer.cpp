@@ -661,6 +661,10 @@ bool LavaVu::parseCommands(std::string cmd)
 bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 {
   if (cmd.length() == 0) return false;
+  //Trim leading whitespace
+  size_t pos = cmd.find_first_not_of(" \t\n\r");
+  if (std::string::npos != pos) cmd = cmd.substr(pos);
+  //std::cout << "CMD: " << cmd << std::endl;
   bool redisplay = true;
   PropertyParser parsed = PropertyParser();
   static std::string last_cmd = "";
