@@ -5,14 +5,20 @@ import math
 import sys
 import os
 
-viewer = None
-
 #Attempt to import swig module
 try:
     sys.path.append(os.path.join(os.path.dirname(control.__file__), 'bin'))
     from LavaVuPython import *
-except:
-    print "LavaVu module not found!"
+    #Import javascript for controls
+    control.loadscripts()
+    #Temporarily create a viewer to get binpath
+    tempapp = LavaVu("LavaVu")
+    #Ensure viewer can actually be opened
+    tempapp.run(['-h', '-a', '-p0'])
+    control.binpath = tempapp.binpath
+    tempapp = None
+except Exception,e:
+    print "LavaVu module not found or unable to open! " + str(e)
     raise
 
 #Some preset colourmaps
@@ -147,17 +153,34 @@ class Objects(dict):
         self.list.append(o)
 
   def __str__(self):
-    return '\n'.join(self.keys())
+    return '[' + ', '.join(self.keys()) + ']'
 
 class Viewer(object):
     app = None
-    binary = "bin/LavaVu"
-    control = None
+    binary = ""
+    res = (640,480)
 
-    def __init__(self, reuse=False, arglist=None, binary="LavaVu", database=None, figure=None, timestep=None, 
-         port=8080, verbose=False, interactive=False, hidden=True, cache=False,
-         quality=2, writeimage=False, res=None, script=None, initscript=False):
+    def __init__(self, reuse=False, binary="LavaVu", *args, **kwargs):
         self.binary = binary
+        try:
+            #TODO: re-using instance causes multiple interactive viewer instances to die
+            #ensure not doing this doesn't cause issues (will leak memory if many created)
+            #Create a new instance, always if cache disabled (reuse)
+            if not self.app or not reuse:
+                self.app = LavaVu(binary)
+            #    print "Launching LavaVu, instance: " + str(id(self.app))
+            #else:
+            #    print "Re-using LavaVu, instance: " + str(id(self.app))
+            self.setup(*args, **kwargs)
+        except RuntimeError,e:
+            print "LavaVu Init error: " + str(e)
+            pass
+        #Copy control module ref
+        self.control = control
+
+    def setup(self, arglist=None, database=None, figure=None, timestep=None, 
+         port=0, verbose=False, interactive=False, hidden=True, cache=False,
+         quality=2, writeimage=False, res=None, script=None, initscript=False):
         #Convert options to args
         args = []
         if not initscript:
@@ -192,6 +215,7 @@ class Viewer(object):
         #Output resolution
         if res != None and isinstance(res,tuple):
           args += ["-x" + str(res[0]) + "," + str(res[1])]
+          self.res = res
         #Save image and quit
         if writeimage:
           args += ["-I"]
@@ -199,24 +223,14 @@ class Viewer(object):
           args += script
         if arglist:
             args += arglist
-        print args
 
         try:
-            #Create a new instance unless requested to use cached
-            if not self.app or not reuse:
-                self.app = LavaVu(binary)
             self.app.run(args)
             if database:
                 #Load objects/state
                 self.get()
-            #Save last created in global
-            global viewer
-            viewer = self
-            #Save a link to control module
-            global control
-            self.control = control
         except RuntimeError,e:
-            print "LavaVu error: " + str(e)
+            print "LavaVu Run error: " + str(e)
             pass
 
     #dict methods
@@ -348,8 +362,9 @@ class Viewer(object):
     def timesteps(self):
         return json.loads(self.app.getTimeSteps())
 
-    def frame(self, resolution=(640,480)):
+    def frame(self, resolution=None):
             #Jpeg encoded frame data
+            if not resolution: resolution = self.res
             return self.app.image("", resolution[0], resolution[1], True);
 
     def display(self, resolution=(640,480)):
@@ -442,4 +457,23 @@ class Viewer(object):
                 os.remove(f)
         except:
             pass
+
+    def serve(self):
+        try:
+            import server
+            os.chdir(os.path.join(self.app.binpath, "html"))
+            server.serve(self)
+        except Exception,e:
+            print "LavaVu error: " + str(e)
+            print "Web Server failed to run"
+            pass
+
+    def window(self):
+        #Only allow a single interactive viewer instance
+        if not isinstance(self.winid, int):
+            self.winid = control.window(self)
+
+    def redisplay(self):
+        if not isinstance(self.winid, int):
+            control.redisplay(self.winid)
 

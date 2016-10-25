@@ -1,241 +1,123 @@
-import lavavu
-js = """
-<script type="text/Javascript">
+import os
+import time
+output = ""
 
-var kernel;
-if (parent.IPython) {
-  kernel = parent.IPython.notebook.kernel;
-  //This ensures we have imported the lavavu module in notebook scope
-  //required for control event pass-back
-  //(NOTE: this looks a bit hacky because it is, but also because commands must be one liners)
-  kernel.execute('lavavu = None if not "lavavu" in globals() else lavavu');
-  kernel.execute('import sys');
-  kernel.execute('modules = dict(sys.modules)');
-  kernel.execute('for m in modules: lavavu = modules[m].lavavu if "lavavu" in dir(modules[m]) else lavavu');
+#Register of controls and their actions
+actions = []
+#Register of windows (viewer instances)
+windows = []
+
+
+vertexShader = """
+<script id="line-vs" type="x-shader/x-vertex">
+precision highp float;
+//Line vertex shader
+attribute vec3 aVertexPosition;
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+uniform vec4 uColour;
+varying vec4 vColour;
+void main(void)
+{
+  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+  gl_Position = uPMatrix * mvPosition;
+  vColour = uColour;
 }
-
-var img;
-
-window.addEventListener('mouseup', mouseUp);
-
-function set_target(id, viewer_id) {
-  //Takes image element and viewer id
-  //Setups up events and displays output to image
-  //Switches to specified viewer id on mouseover
-  el = document.getElementById(id);
-
-  img = el;
-
-  if (img && !img.listening) {
-    img.addEventListener('mousedown', mouseDown);
-    img.ondragstart = function() { return false; };
-    img.addEventListener("wheel", mouseWheel);
-    img.addEventListener("contextmenu", function(e) { e.preventDefault(); e.stopPropagation(); return false;});
-    //Re-capture viewer on hover
-    img.addEventListener("mouseover", function(e) {if (img != this) {recapture(viewer_id); set_target(id); }});
-    img.listening = true;
-  }
-
-  //Initial image
-  get_image();
-}
-
-function recapture(id) {
-  if (!kernel) return;
-  kernel.execute("lavavu.viewer = lavavu.control.viewers[" + id + "]");
-  get_image();
-}
-
-function execute(cmd) {
-  if (kernel) {
-    kernel.execute('lavavu.viewer.commands("' + cmd + '")');
-  } else {
-    var url = "http://localhost:8080/command="
-    x = new XMLHttpRequest();
-    x.open('GET', url + cmd, true);
-    x.send();
-  }
-}
-
-var mouse = {};
-mouse.timer = null;
-mouse.wheelTimer = null;
-mouse.spin = 0;
-mouse.modifiers = "";
-mouse.down = false;
-
-function keyModifiers(e) {
-  var modifiers = "";
-  if (e.ctrlKey)
-    modifiers += "C";
-  if (e.altKey)
-    modifiers += "A";
-  if (e.shiftKey)
-    modifiers += "S";
-  return modifiers;
-}
-
-function mouseUp(e) {
-  if (!img) return;
-  window.removeEventListener('mousemove', mouseMove, true);
-  if (mouse.down) { //mouse.moving) {
-    mouse.down = false;
-    var button = e.button+1;
-    mouse.modifiers = keyModifiers(e);
-    if (mouse.timer) {
-      clearTimeout(mouse.timer)
-      mouse.timer = null;
-      imgDrag(e.clientX, e.clientY, button);
-    } else {
-      execute('mouse mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + e.clientX + ',y=' + e.clientY);
-      get_frame();
-    }
-    e.preventDefault();
-    return false;
-  }
-}
-
-function mouseDown(e) {
-  window.addEventListener('mousemove', mouseMove, true);
-  mouse.down = true;
-  var button = e.button+1;
-  mouse.modifiers = keyModifiers(e);
-  execute('mouse mouse=down,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + e.clientX + ',y=' + e.clientY);
-  e.preventDefault();
-  return false;
-}
-
-function mouseMove(e) {
-  if (!img) return;
-  //if (!mouse.down) return true;
-  var x = e.clientX;
-  var y = e.clientY;
-  var button = e.button+1;
-  mouse.modifiers = keyModifiers(e);
-  if (mouse.timer) clearTimeout(mouse.timer)
-  mouse.timer = setTimeout(function () {imgDrag(x, y, button);}, 10);
-  e.preventDefault();
-  return false;
-}
-
-function mouseWheel(e) {
-  mouse.modifiers = keyModifiers(e);
-  if (mouse.wheelTimer) clearTimeout(mouse.wheelTimer)
-  mouse.wheelTimer = setTimeout(function () {imgZoom(mouse.spin); mouse.spin = 0;}, 10);
-  mouse.spin -= e.deltaY
-  e.preventDefault();
-  return false;
-}
-
-function imgDrag(x, y, button){
-  if (!img) return;
-  execute('mouse mouse=move,modifiers=' + mouse.modifiers + 'button=' + button + ',x=' + x + ',y=' + y);
-  if (!mouse.timer)
-    execute('mouse mouse=up,modifiers=' + mouse.modifiers + ',button=' + button + ',x=' + x + ',y=' + y);
-  get_frame();
-}
-
-function imgZoom(factor){
-  execute('mouse mouse=scroll,modifiers=' + mouse.modifiers + ',spin=' + factor);
-  get_frame();
-  mouse.wheelTimer = null;
-}
-
-var imgTimer = null;
-function get_frame() {
-  if (imgTimer) clearTimeout(imgTimer);
-  imgTimer = setTimeout(function () {get_image();}, 20);
-}
-
-function get_image(cmd) {
-  //console.log('get')
-  var callbacks = {'output' : function(out) {
-      data = out.content.data['text/plain']
-      data = data.substring(1, data.length-1)
-      if (img) img.src = data;
-    }
-  };
-  if (kernel) {
-    kernel.execute('lavavu.viewer.frame((640, 480))', {iopub: callbacks}, {silent: false});
-  }
-  //else
-  //  alert('TODO: html get image');
-}
-
-function set_prop(obj, prop, val) {
-  execute("select " + obj);
-  execute(prop + "=" + val);
-  get_image();
-}
-
-function do_action(id, val) {
-  //alert("lavavu.control.action(" + id + "," + val + ")")
-  if (kernel) {
-    kernel.execute("cmds = lavavu.control.action(" + id + "," + val + ")");
-    kernel.execute("if len(cmds): lavavu.viewer.parseCommands(cmds)");
-  } else {
-    //HTML control actions via http
-    actions[id](val);
-  }
-  get_image();
-}
-
 </script>
 """
 
-style = """
-<style scoped>
-  input { display: inline; }
-  input[type=range] { width: 200px; }
-  input[type=button] { width: 120px; }
-  input[type=number] { width: 120px; height: 28px; border-radius: 0; border: 1px dotted #999;}
-  pre { display: inline; }
-  p  { color: gray; margin: 0px}
-</style>
+fragmentShader = """
+<script id="line-fs" type="x-shader/x-fragment">
+precision highp float;
+varying vec4 vColour;
+void main(void)
+{
+  gl_FragColor = vColour;
+}
+</script>
 """
 
-output = ""
+#LavaVu location
+binpath = ""
 
 def export():
     #Dump all output to control.html
     import os
-    filename = os.path.join(lavavu.viewer.app.binpath, "html/control.html")
+    filename = os.path.join(binpath, "html/control.html")
 
     #Process actions
-    actionjs = '<script type="text/Javascript">'
-    actionjs += 'var actions = [];'
+    actionjs = 'var actions = [];\n'
     for act in actions:
-        print act["args"]
-        if act["call"] == setter:
-            print "SETTER: "
-            if len(act["args"]) == 0:
-                print "Empty action"
-                #Add a dummy function
-                actionjs += 'actions.push(function(value) {});'
-            elif isinstance(act["args"][0], lavavu.Obj):
+        #Default placeholder action
+        actfunction = ''
+        actcmd = None
+        if len(act["args"]) == 0:
+            #No action
+            pass
+        elif act["call"] == setter:
+            #Set a property
+            target = act["args"][0]
+            # - Globally
+            if hasattr(target, "binpath"):
+                prop = act["args"][1]
+                actfunction = 'select; ' + prop + '=" + value + "'
+                if len(act["args"]) > 2:
+                    actcmd = act["args"][2]
+            # - On an object
+            else:
                 name = act["args"][0]["name"]
                 prop = act["args"][1]
-                print "  OBJ : " + name + " : " + prop
-                actionjs += 'actions.push(function(value) {set_prop("' + name + '", "' + prop + '", value);});'
-            elif isinstance(act["args"][0], lavavu.Viewer):
-                print "  GLOB "
-        elif act["call"] == commandsetter:
-            print "COMMAND"
-        elif act["call"] == filtersetter:
-            print "FILTER"
+                actfunction = 'select ' + name + '; ' + prop + '=" + value + "'
+                if len(act["args"]) > 2:
+                    actcmd = act["args"][2]
 
-    actionjs += '</script>'
+        #Run a command with a value argument
+        elif act["call"] == commandsetter:
+            cmd = act["args"][0]
+            if len(act["args"]) > 1:
+                actcmd = act["args"][1]
+            actfunction = cmd + ' " + value + "'
+        #Set a filter range
+        elif act["call"] == filtersetter:
+            name = act["args"][0]["name"]
+            index = act["args"][1]
+            prop = act["args"][2]
+            cmd = "filtermin" if prop == "minimum" else "filtermax"
+            actfunction = 'select ' + name + '; ' + cmd + ' ' + str(index) + ' " + value + "; redraw'
+
+        #Append additional command (eg: reload)
+        if actcmd:
+          actfunction += ";" + actcmd
+        actfunction = 'wi.execute("' + actfunction + '", true);'
+        #Add to actions list
+        actionjs += 'actions.push(function(value) {' + actfunction + '});\n'
 
     hfile = open(filename, "w")
-    hfile.write('<html><head>' + js + actionjs + '</head><body>' + output + '</body></html>')
+    hfile.write('<html>\n<head>\n')
+    hfile.write('<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">\n');
+    hfile.write('<script type="text/Javascript" src="control.js"></script>\n')
+    hfile.write('<script type="text/Javascript" src="drawbox.js"></script>\n')
+    hfile.write('<script type="text/Javascript" src="OK-min.js"></script>\n')
+    hfile.write('<script type="text/Javascript" src="gl-matrix-min.js"></script>\n')
+    hfile.write('<link rel="stylesheet" type="text/css" href="control.css">\n')
+    hfile.write(fragmentShader);
+    hfile.write(vertexShader);
+    hfile.write('<script type="text/Javascript">\n')
+    hfile.write(actionjs)
+    hfile.write('function init() {wi = new WindowInteractor(0);}\n')
+    hfile.write('</script>\n')
+    hfile.write('</head>\n<body onload="init();">\n')
+    hfile.write(output)
+    hfile.write('</body>\n</html>\n')
     hfile.close()
+    filename = os.path.join(binpath, "html/control.html")
 
-def display():
+def redisplay(id):
     #Simply update the active viewer image, if any
     try:
         if __IPYTHON__:
             from IPython.display import display,Javascript
-            display(Javascript('get_image();'))
+            display(Javascript('redisplay(' + str(id) + ');'))
     except NameError, ImportError:
         pass
 
@@ -249,37 +131,56 @@ def render(html):
         output += html
         export()
 
-def viewer(html=None, style=""):
-    viewerid = len(viewers)
-    style += "border: 1px solid #aaa; "
-    style += "user-select: none; user-drag: none; "
-    style += "-moz-user-select: none; -moz-user-drag: none; "
-    style += "-webkit-user-select: none; -webkit-user-drag: none; "
-    imgsrc = '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="' + style + '" ></img>'
-    #Optional template
-    if html:
-        html = html.replace("~~~TARGET~~~", imgsrc)
-    else:
-        html = imgsrc
-
+def loadscripts(onload="", viewer=None, html=""):
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML,Javascript
-            if viewerid == 0:
-                #Add the control script first time through
-                display(HTML(js))
-            viewers.append(lavavu.viewer)
-            #Display the inline html
-            display(HTML(html))
-            #Execute javascript to set the output target to added image (also pass the viewer id)
-            display(Javascript('set_target("imgtarget_' + str(viewerid) + '", ' + str(viewerid) + ');'))
+            #Create link to web content directory
+            if not os.path.isdir("html"):
+                os.symlink(os.path.join(binpath, 'html'), 'html')
+            #Stylesheet, shaders and inline html
+            display(HTML('<link rel="stylesheet" type="text/css" href="html/control.css">\n' + fragmentShader + vertexShader + html))
+            #Load external scripts via require.js
+            #Append onload code to the callback to init after scripts loaded
+            js = """
+            require.config({baseUrl: 'html',
+                            paths: {'control': ["control"],
+                                    'ok': ["OK-min"],
+                                    'gl-matrix': ["gl-matrix-min"],
+                                    'drawbox': ["drawbox"]
+                                   }
+                           }
+                          );
+
+            require(["control", "ok", "gl-matrix", "drawbox"], function() {
+                console.log("Loaded scripts");
+                ---ONLOAD---
+                return {};
+            });
+            """
+            js = js.replace('---ONLOAD---', onload);
+            display(Javascript(js))
+    except NameError, ImportError:
+        pass
+
+def window(viewer, html="", align="left"):
+    viewerid = len(windows)
+
+    html += '<div style="position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">'
+    html += '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="border: 1px solid #aaa;"></img>'
+    html += '</div>'
+
+    #Append the viewer ref
+    windows.append(viewer)
+    #print "Viewer appended " + str(id(viewer)) + " app= " + str(id(viewer.app)) + " # " + str(len(windows))
+    try:
+        if __IPYTHON__:
+            #Script init and create windowinteractor
+            loadscripts('var wi = new WindowInteractor(' + str(viewerid) + ');', viewer, html)
     except NameError, ImportError:
         render(html)
-
-#Register of controls and their actions
-actions = []
-#Register of viewers
-viewers = []
+    #Return the ID
+    return viewerid
 
 def action(id, value):
     if len(actions) > id:
@@ -301,38 +202,37 @@ def commandsetter(command, value):
     return command + " " + str(value) + "\nredraw"
 
 class Panel(object):
-    def __init__(self, showviewer=True):
+    def __init__(self, viewer, showwin=True):
+        self.viewer = viewer
         self.controls = []
-        self.showviewer = showviewer
+        self.showwin = showwin
 
     def add(self, ctrl):
         self.controls.append(ctrl)
 
     def html(self):
-        html = '<div style="padding:0px; margin: 0px;">'
-        html += style
-        if self.showviewer: html += "~~~TARGET~~~"
+        html = ''
         for i in range(len(self.controls)):
             if self.controls[i].label and not isinstance(self.controls[i], Checkbox):
-                html += '<p>' + self.controls[i].label + ':</p>'
+                html += '<p>' + self.controls[i].label + ':</p>\n'
             else:
-                html += '<br>'
+                html += '<br>\n'
             html += self.controls[i].controls()
-        html += '</div>'
         return html
 
     def show(self):
-        html = self.html()
-        if self.showviewer:
-            viewer(html, "float: right; ")
+        viewerid = len(windows)
+        #Add control wrapper with the viewer id as a custom attribute
+        html = '<div data-id="' + str(viewerid) + '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
+        html += self.html() + '</div>\n'
+        if self.showwin:
+            window(self.viewer, html, "right")
         else:
             render(html)
 
 class Control(object):
 
-    def __init__(self, target=None, property=None, command=None, value=None, label=None):
-        if not target:
-            target = lavavu.viewer
+    def __init__(self, target, property=None, command=None, value=None, label=None):
         self.label = label
 
         #Get id and add to register
@@ -358,21 +258,23 @@ class Control(object):
             self.label = ""
 
         #Get value from target if not provided
-        if not value and property:
+        if value == None and property != None:
           if target and property in target:
             value = target[property]
         self.value = value
 
     def onchange(self):
-        return "; do_action(" + str(self.id) + ", this.value);"
+        return "; do_action(" + str(self.id) + ", this.value, this);"
 
     def show(self):
-        #Show only this control with a border
-        html = '<div>'
-        html += style
-        if self.label: html += '<p>' + self.label + ':</p>'
+        #Show only this control
+        viewerid = len(windows)-1 #Just use the most recently added interactor instance
+        if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
+        html = '<div data-id="' + str(viewerid) + '" style="float: left;" class="lvctrl">\n'
+        #html += style
+        if self.label: html += '<p>' + self.label + ':</p>\n'
         html += self.controls()
-        html += '</div>'
+        html += '</div>\n'
         render(html)
 
     def controls(self, type='number', attribs={}, onchange=""):
@@ -382,7 +284,7 @@ class Control(object):
         html += 'value="' + str(self.value) + '" '
         onchange += self.onchange();
         html += 'onchange="' + onchange + '" '
-        html += '>'
+        html += '>\n'
         return html
 
 class Checkbox(Control):
@@ -394,13 +296,13 @@ class Checkbox(Control):
     def controls(self):
         attribs = {}
         if self.value: attribs = {"checked" : "checked"};
-        html = "<label>"
+        html = "<label>\n"
         html += super(Checkbox, self).controls('checkbox', attribs)
-        html += " " + self.label + "</label>"
+        html += " " + self.label + "</label>\n"
         return html
 
     def onchange(self):
-        return "; do_action(" + str(self.id) + ", this.checked ? 1 : 0);"
+        return "; do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
 
 class Range(Control):
 
@@ -424,12 +326,12 @@ class Range(Control):
         return html
 
 class TimeStepper(Range):
-    def __init__(self, timesteps, *args, **kwargs):
+    def __init__(self, viewer, *args, **kwargs):
 
         #Acts as a command setter with some additional controls
-        super(TimeStepper, self).__init__(label="Timestep", command="timestep", *args, **kwargs)
+        super(TimeStepper, self).__init__(target=viewer, label="Timestep", command="timestep", *args, **kwargs)
 
-        self.timesteps = timesteps
+        self.timesteps = viewer.timesteps()
         self.range = (self.timesteps[0], self.timesteps[-1])
         self.step = 1;
         self.value = 0;
@@ -438,8 +340,9 @@ class TimeStepper(Range):
         attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step};
         html = Control.controls(self, 'number', attribs, onchange='this.nextElementSibling.value=this.value; ')
         html += Control.controls(self, 'range', attribs, onchange='this.previousElementSibling.value=this.value; ')
-        html += """<button onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()">&larr;</button>"""
-        html += """<button onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()">&rarr;</button>"""
+        html += '<br>\n'
+        html += '<input type="button" onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()" value="&larr;" />\n'
+        html += '<input type="button" onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()" value="&rarr;" />\n'
         return html
 
 class Filter(object):
@@ -468,18 +371,18 @@ class Filter(object):
         actions[self.ctrlmax.id] = {"call" : filtersetter, "args" : [target, filteridx, "maximum"]}
 
     def controls(self):
-        return self.ctrlmin.controls() + "<br>" + self.ctrlmax.controls()
+        return self.ctrlmin.controls() + "<br>\n" + self.ctrlmax.controls()
 
 class ObjectList(Control):
-    def __init__(self, *args, **kwargs):
-        super(ObjectList, self).__init__(label="Objects", *args, **kwargs)
+    def __init__(self, viewer, *args, **kwargs):
+        super(ObjectList, self).__init__(target=viewer, label="Objects", *args, **kwargs)
         self.objctrls = []
-        for obj in lavavu.viewer.objects.list:
+        for obj in viewer.objects.list:
             self.objctrls.append(Checkbox(obj, "visible", label=obj["name"])) 
 
     def controls(self):
         html = ""
         for ctrl in self.objctrls:
-            html += ctrl.controls() + "<br>"
+            html += ctrl.controls() + "<br>\n"
         return html
 
