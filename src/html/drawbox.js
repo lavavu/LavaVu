@@ -9,7 +9,7 @@ function initBox(el, cmd_callback) {
   //canvas.style.cssText = "position: absolute; z-index: 0; margin: 0px; padding: 0px; border: none; display: block;"
   //canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: auto; top: 0; left: 0; bottom: 0; right: 0; z-index: 51; border: none;"
   canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: 0px; padding: 0px; top: 0; left: 0; bottom: 0; right: 0; z-index: 51; border: none;"
-  viewer =  new Viewer(canvas);
+  viewer = new Viewer(canvas);
 
   //Canvas event handling
   canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
@@ -34,18 +34,18 @@ function updateBox(viewer, loaderfn) {
 }
 
 function canvasMouseClick(event, mouse) {
-  if (event.target.viewer.rotating)
-    event.target.viewer.command('' + event.target.viewer.getRotationString());
+  if (mouse.element.viewer.rotating)
+    mouse.element.viewer.command('' + mouse.element.viewer.getRotationString());
   else
-    event.target.viewer.command('' + event.target.viewer.getTranslationString());
+    mouse.element.viewer.command('' + mouse.element.viewer.getTranslationString());
 
-  if (event.target.viewer.rotating) {
-    event.target.viewer.rotating = false;
-    //event.target.viewer.reload = true;
+  if (mouse.element.viewer.rotating) {
+    mouse.element.viewer.rotating = false;
+    //mouse.element.viewer.reload = true;
   }
 
   //Clear the webgl box
-  event.target.viewer.clear();
+  mouse.element.viewer.clear();
 
   return false;
 }
@@ -55,8 +55,8 @@ function canvasMouseDown(event, mouse) {
 }
 
 function canvasMouseMove(event, mouse) {
-  if (!mouse.isdown || !event.target.viewer) return true;
-  event.target.viewer.rotating = false;
+  if (!mouse.isdown || !mouse.element.viewer) return true;
+  mouse.element.viewer.rotating = false;
 
   //Switch buttons for translate/rotate
   var button = mouse.button;
@@ -65,22 +65,22 @@ function canvasMouseMove(event, mouse) {
   switch (button)
   {
     case 0:
-      event.target.viewer.rotateY(mouse.deltaX/5);
-      event.target.viewer.rotateX(mouse.deltaY/5);
-      event.target.viewer.rotating = true;
+      mouse.element.viewer.rotateY(mouse.deltaX/5);
+      mouse.element.viewer.rotateX(mouse.deltaY/5);
+      mouse.element.viewer.rotating = true;
       break;
     case 1:
-      event.target.viewer.rotateZ(Math.sqrt(mouse.deltaX*mouse.deltaX + mouse.deltaY*mouse.deltaY)/5);
-      event.target.viewer.rotating = true;
+      mouse.element.viewer.rotateZ(Math.sqrt(mouse.deltaX*mouse.deltaX + mouse.deltaY*mouse.deltaY)/5);
+      mouse.element.viewer.rotating = true;
       break;
     case 2:
-      var adjust = event.target.viewer.modelsize / 1000;   //1/1000th of size
-      event.target.viewer.translate[0] += mouse.deltaX * adjust;
-      event.target.viewer.translate[1] -= mouse.deltaY * adjust;
+      var adjust = mouse.element.viewer.modelsize / 1000;   //1/1000th of size
+      mouse.element.viewer.translate[0] += mouse.deltaX * adjust;
+      mouse.element.viewer.translate[1] -= mouse.deltaY * adjust;
       break;
   }
 
-  event.target.viewer.draw(true);
+  mouse.element.viewer.draw();
 
   return false;
 }
@@ -95,16 +95,16 @@ function canvasMouseWheel(event, mouse) {
     if (window.navigator.platform.indexOf("Mac") >= 0)
       factor *= 0.1;
     if (zoomClipTimer) clearTimeout(zoomClipTimer);
-    zoomClipTimer = setTimeout(function () {event.target.viewer.zoomClip(factor);}, 100 );
+    zoomClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
   } else {
     var factor = event.spin * 0.05;
     if (window.navigator.platform.indexOf("Mac") >= 0)
       factor *= 0.1;
     if (zoomTimer) clearTimeout(zoomTimer);
     zoomFactor += factor;
-    zoomTimer = setTimeout(function () {event.target.viewer.zoom(zoomFactor); zoomFactor = 0;}, 100 );
+    zoomTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomFactor); zoomFactor = 0;}, 100 );
     //Clear the box after a second
-    setTimeout(function() {event.target.viewer.clear();}, 1000);
+    setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
@@ -112,9 +112,9 @@ function canvasMouseWheel(event, mouse) {
 function canvasMousePinch(event, mouse) {
   if (event.distance != 0) {
     var factor = event.distance * 0.0001;
-    event.target.viewer.zoom(factor);
+    mouse.element.viewer.zoom(factor);
     //Clear the box after a second
-    setTimeout(function() {event.target.viewer.clear();}, 1000);
+    setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
@@ -221,13 +221,13 @@ Renderer.prototype.draw = function(webgl) {
 //This object holds the viewer details and calls the renderers
 function Viewer(canvas) {
   this.canvas = canvas;
+  if (!canvas) {alert("Invalid Canvas"); return;}
   try {
     this.webgl = new WebGL(this.canvas, {antialias: true, premultipliedAlpha: false});
     this.gl = this.webgl.gl;
   } catch(e) {
     //No WebGL
-    console.log(e);
-    if (!this.webgl) canvas.style.display = 'none';
+    console.log("No WebGL: " + e);
   }
 
   this.vis = {};
@@ -244,6 +244,8 @@ function Viewer(canvas) {
   this.modelsize = 1;
   this.scale = [1, 1, 1];
   this.orientation = 1.0; //1.0 for RH, -1.0 for LH
+
+  if (!this.gl) return;
 
   //Create the renderers
   this.border = new Renderer(this.gl, [0.5,0.5,0.5,1]);
@@ -311,19 +313,19 @@ Viewer.prototype.loadFile = function(source) {
   this.updateDims(this.vis.views[this.view]);
 
   //Update display
+  if (!this.gl) return;
   this.draw();
   this.clear();
 }
 
 
 Viewer.prototype.clear = function() {
+  if (!this.gl) return;
   this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 }
 
 Viewer.prototype.draw = function() {
   if (!this.canvas) return;
-
-  if (!this.gl) return;
 
   //Get the dimensions from the current canvas
   if (this.width != this.canvas.offsetWidth || this.height != this.canvas.offsetHeight) {
@@ -332,10 +334,13 @@ Viewer.prototype.draw = function() {
     //Need to set this too for some reason
     this.canvas.width = this.width;
     this.canvas.height = this.height;
-    this.gl.viewportWidth = this.width;
-    this.gl.viewportHeight = this.height;
-    this.webgl.viewport = new Viewport(0, 0, this.width, this.height);      
+    if (this.gl) {
+      this.gl.viewportWidth = this.width;
+      this.gl.viewportHeight = this.height;
+      this.webgl.viewport = new Viewport(0, 0, this.width, this.height);
+    }
   }
+  if (!this.gl) return;
 
   this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
   //this.gl.clearColor(1, 1, 1, 0);
@@ -493,12 +498,13 @@ Viewer.prototype.updateDims = function(view) {
 
   }
 
-  //Create the bounding box vertex buffer
-  this.border.updateBuffers(this.vis.views[this.view]);
-
   //console.log("DIMS: " + min[0] + " to " + max[0] + "," + min[1] + " to " + max[1] + "," + min[2] + " to " + max[2]);
   //console.log("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
   //console.log("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
-}
 
+  if (!this.gl) return;
+ 
+  //Create the bounding box vertex buffer
+  this.border.updateBuffers(this.vis.views[this.view]);
+}
 
