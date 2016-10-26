@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import lavavu
 import os
@@ -16,12 +17,17 @@ if len(sys.argv) < 3:
 filePath = sys.argv[1] #cmds.fileDialog()
 dbPath = sys.argv[2]
 #Optional subsample arg
-subsample = 0
+subsample = 1
 if len(sys.argv) > 3:
   subsample = int(sys.argv[3])
 
 inbytes = os.path.getsize(filePath)
+#All floats
 num = inbytes / (4 * 6) # x y z r g b
+#All doubles, rgba
+#num = inbytes / (8 * 7) # x y z r g b a
+#Float vert, byte colour
+#num = inbytes / (4 * 3 + 4) # x y z r g b a
 
 #Create vis object (points)
 points = lavavu.Points('points', None, size=1, props="colour=white")
@@ -36,6 +42,7 @@ bbmax = [float("-inf"),float("-inf"),float("-inf")]
 db.timestep()
 
 #Loop over lines in input file
+rgba = None
 with open(filePath, 'rb') as infile:
   #Read & Write saved data
   points.write(db) #Write the object only
@@ -45,6 +52,15 @@ with open(filePath, 'rb') as infile:
       print str(p) + " / " + str(num)
       sys.stdout.flush()
     vert = struct.unpack('f'*3, infile.read(3*4))
+    #vert = struct.unpack('d'*3, infile.read(3*8))
+    #RBGA byte * 4
+    #rgba = struct.unpack('B'*4, infile.read(4))
+    #RGBA float * 4
+    #rgb = struct.unpack('f'*4, infile.read(4*4))
+    #RGBA double * 4
+    #rgb = struct.unpack('d'*4, infile.read(4*8))
+    #rgba = [int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255), int(rgb[3]*255)]
+    #RGB float * 3
     rgb = struct.unpack('f'*3, infile.read(3*4))
     rgba = [int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255), 0xff]
     #Subsample?
@@ -52,10 +68,15 @@ with open(filePath, 'rb') as infile:
     points.addVertex(vert[0], vert[1], vert[2])
     points.addColour(rgba)
 
-  print "Writing " + str(int(num/subsample)) + " points to database"
-  sys.stdout.flush()
-  #Close and write database to disk
-  #points.write(db)
+    #Write every 10 million
+    if p%10000000 == 0:
+        print "Writing points to database"
+        points.write(db, compress=True)
+
+print "Writing " + str(int(num/subsample)) + " points to database"
+sys.stdout.flush()
+#Close and write database to disk
+#points.write(db)
   points.write(db, compress=True)
   db.close()
 
