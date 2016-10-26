@@ -36,15 +36,21 @@ function do_action(id, val, element) {
 }
 
 function redisplay(id) {
-  //If instance doesn't exist yet, try again in 0.5 seconds... probably no longer needed
-  //if (id+1 > instances.length) {console.log("Invalid ID " + (id+1) + ' > ' + instances.length); setTimeout(redisplay, 500); return;}
-  if (id+1 > instances.length) {console.log("Invalid ID " + (id+1) + ' > ' + instances.length); return;}
-  if (!instances[id]) {console.log("NO DISPLAY INSTANCE: [" + id + "] " + instances[id]); return;}
+  //If instance doesn't exist yet, try again in 0.5 seconds... only seems to be needed in chrome
+  if (id+1 > instances.length || !instances[id] || instances[id].box === undefined) {
+    console.log("Delaying redisplay " + id);
+    setTimeout(function() {redisplay(id);}, 500); 
+    if (id+1 > instances.length) console.log(" -- Invalid ID " + (id+1) + ' > ' + instances.length);
+    else if (!instances[id]) console.log(" -- No instance: [" + id + "] " + instances[id]);
+    else if (!instances[id].box) console.log(" -- No box viewer: [" + id + "] " + instances[id]);
+    return;
+  }
+
   //Call get_image
   instances[id].get_image();
     //Update the box size by getting state
-    //var that = this;
-    //updateBox(that.box, function(onget) {that.get_state(onget);});
+    var that = instances[id];
+    updateBox(that.box, function(onget) {that.get_state(onget);});
 }
 
 function WindowInteractor(id) {
@@ -53,8 +59,8 @@ function WindowInteractor(id) {
   //Check instances list valid, wipe if adding initial interactor
   if (!instances || id==0) instances = [];
   //Store self in list and save id
-  this.id = instances.length;
-  instances.push(this);
+  this.id = id;
+  instances[id] = this;
   
   console.log("New interactor: " + this.id + " : " + instances.length + " :: " + instances[this.id]);
   //Interactor class, handles javascript side of window control
@@ -93,7 +99,6 @@ WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
       if (img) img.src = url;
     } else {
       var url = BASEURL + "/command=" + cmd + "?" + new Date().getTime()
-      //console.log(url);
       x = new XMLHttpRequest();
       x.open('GET', url, true);
       x.send();
