@@ -390,7 +390,8 @@ void Volumes::render(int i)
   //State...
   glPushAttrib(GL_ENABLE_BIT);
   glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  //Blending for premultiplied alpha
+  glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
   glDisable(GL_DEPTH_TEST);  //No depth testing to allow multi-pass blend!
   glDisable(GL_MULTISAMPLE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -409,6 +410,8 @@ void Volumes::render(int i)
   glPopAttrib();
   GL_Error_Check;
   glActiveTexture(GL_TEXTURE0);
+  //Restore default blending mode
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   //Calibrate colourmap on data now so if colour bar drawn it will have correct range
   geom[i]->colourCalibrate();
