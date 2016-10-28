@@ -360,8 +360,8 @@ public:
     defaults["volmin"] = {0., 0., 0.};
     // | global | real[3] | Volume rendering max bound X Y Z
     defaults["volmax"] = {1., 1., 1.};
-    // | global | real[3] | Volume rendering subsampling X Y Z
-    defaults["volsubsample"] = {1., 1., 1.};
+    // | global | int[3] | Volume rendering subsampling factor X Y Z
+    defaults["volsubsample"] = {1, 1, 1};
     // | global | real[3] | Geometry input scaling X Y Z
     defaults["inscale"] = {1., 1., 1.};
     // | global | integer | Point render sub-sampling factor

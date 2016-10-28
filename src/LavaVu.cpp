@@ -754,6 +754,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   int outChannels = drawstate.global("volchannels");
   static int count = 0;
   DrawingObject *vobj = volume;
+  json volss = drawstate.global("volsubsample");
   if (!vobj)
   {
     float volmin[3], volmax[3], volres[3], inscale[3];
@@ -781,17 +782,25 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   volume = vobj;
   count++;
 
+  //Setup sub-sampling
+  int w = ceil(width / (float)volss[0]);
+  int h = ceil(height / (float)volss[1]);
+  int wstep = volss[0];
+  int hstep = volss[1];
+
+  int offset=0;
   if (outChannels == 1)
   {
     //Convert to luminance (just using red channel now, other options in future)
-    GLubyte* luminance = new GLubyte[width*height];
+    GLubyte* luminance = new GLubyte[w*h];
     GLubyte byte;
-    for (int y=0; y<height; y++)
+    for (int y=0; y<height; y+=hstep)
     {
-      for (int x=0; x<width; x++)
+      for (int x=0; x<width; x+=wstep)
       {
         //If input data rgb/rgba take highest of R/G/B
-        //TODO: to a proper greyscale conversion
+        //TODO: to a proper greyscale conversion or allow channel select
+        assert(offset < w*h);
         byte = imageData[(y*width+x)*channels];
         if (channels == 3 || channels == 4)
         {
@@ -800,45 +809,54 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           if (imageData[(y*width+x)*channels+2] > byte)
             byte = imageData[(y*width+x)*channels+2];
         }
-        luminance[y*width+x] = byte;
+        luminance[offset++] = byte;
       }
     }
 
-    //Now using a container designed for byte data, TODO: support RGB/RGBA raw load?
-    amodel->volumes->read(vobj, width * height, lucLuminanceData, luminance, width, height);
+    //Now using a container designed for byte data
+    amodel->volumes->read(vobj, w * h, lucLuminanceData, luminance, w, h);
     delete[] luminance;
   }
   else
   {
-    if (channels < 4)
+    if (channels < 4 || w != width || h != height)
     {
       //Convert LUM/RGB to RGBA
-      GLubyte* rgba = new GLubyte[width*height*4];
-      for (int y=0; y<height; y++)
+      GLubyte* rgba = new GLubyte[w*h*4];
+      int count = 0;
+      for (int y=0; y<height; y+=hstep)
       {
-        for (int x=0; x<width; x++)
+        for (int x=0; x<width; x+=wstep)
         {
+          assert(offset+3 < w*h*4);
           if (channels == 1)
           {
-            rgba[(y*width+x)*4] = rgba[(y*width+x)*4+1] = rgba[(y*width+x)*4+2] = imageData[y*width+x];
-            rgba[(y*width+x)*4+3] = 255;
+            rgba[offset++] = imageData[y*width+x];
+            rgba[offset++] = imageData[y*width+x];
+            rgba[offset++] = imageData[y*width+x];
+            rgba[offset++] = 255;
           }
-          if (channels == 3)
+          else if (channels >= 3)
           {
-            rgba[(y*width+x)*4] = imageData[(y*width+x)*3];
-            rgba[(y*width+x)*4+1] = imageData[(y*width+x)*3+1];
-            rgba[(y*width+x)*4+2] = imageData[(y*width+x)*3+2];
-            rgba[(y*width+x)*4+3] = 255;
+            rgba[offset++] = imageData[(y*width+x)*channels];
+            rgba[offset++] = imageData[(y*width+x)*channels+1];
+            rgba[offset++] = imageData[(y*width+x)*channels+2];
+            //if (x%16==0&&y%16==0) printf("RGBA %d %d %d\n", rgba[offset-3], rgba[offset-2], rgba[offset-1]);
+            if (channels == 4)
+              rgba[offset++] = imageData[(y*width+x)*channels+3];
+            else
+              rgba[offset++] = 255;
           }
         }
       }
-      amodel->volumes->read(vobj, width*height, lucRGBAData, rgba, width, height);
+      amodel->volumes->read(vobj, w*h, lucRGBAData, rgba, w, h);
       delete[] rgba;
     }
-    else
-      amodel->volumes->read(vobj, width*height, lucRGBAData, imageData, width, height); //, count);
+    else //Already in the correct format/layout with no sub-sampling, load directly
+      amodel->volumes->read(vobj, width*height, lucRGBAData, imageData, width, height);
   }
-  std::cout << "Slice loaded " << count << " : " << width << "," << height << " channels: " << channels << std::endl;
+  std::cout << "Slice loaded " << count << " : " << width << "," << height << " channels: " << outChannels
+            << " ==> " << w << "," << h << " channels: " << outChannels << std::endl;
 }
 
 void LavaVu::readVolumeTIFF(const FilePath& fn)
@@ -858,33 +876,30 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
     imageData = (GLubyte*)_TIFFmalloc(npixels * channels * sizeof(GLubyte));
     if (imageData)
     {
-      float volss[3];
-      Properties::toFloatArray(drawstate.global("volsubsample"), volss, 3);
-      int w = width * volss[0];
-      int h = height * volss[1];
-      GLuint* buffer = new GLuint[w*h];
+      json volss = drawstate.global("volsubsample");
+      GLuint* buffer = new GLuint[width*height];
       int d = TIFFNumberOfDirectories(tif);
-      int dd = d*volss[2];
-      int ddd = d/dd;
+      int ds = volss[2];
+      std::cout << "TIFF contains " << d << " pages, sub-sampling z " << ds << std::endl;
       do
       {
         if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
         {
           //Add new store for each slice
           //Subsample
-          if (count % ddd != 0) {count++; continue;}
+          if (count % ds != 0) {count++; continue;}
           GLuint* bp = buffer;
-          for (int y=0; y<h; y ++)
+          for (int y=0; y<height; y++)
           {
-            for (int x=0; x<w; x ++)
+            for (int x=0; x<width; x++)
             {
-              assert((bp-buffer) < w * h);
+              assert((bp-buffer) < width * height);
               memcpy(bp, &imageData[(y*width+x)*channels], 4);
               bp++;
             }
           }
 
-          readVolumeSlice(fn.base, (GLubyte*)buffer, w, h, channels);
+          readVolumeSlice(fn.base, (GLubyte*)buffer, width, height, channels);
         }
         count++;
       }
