@@ -376,6 +376,8 @@ public:
     defaults["sort"] = -1;
     // | global | boolean | Cache timestep varying data on gpu as well as ram (will only work for small models)
     defaults["gpucache"] = false;
+    // | global | boolean | Compress volume textures where possible
+    defaults["compresstextures"] = false;
 
     //LavaVR specific
     defaults["sweep"] = false;

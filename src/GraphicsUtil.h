@@ -663,6 +663,8 @@ public:
 #define VOLUME_BYTE 2
 #define VOLUME_RGB 3
 #define VOLUME_RGBA 4
+#define VOLUME_BYTE_COMPRESSED 5
+#define VOLUME_RGBA_COMPRESSED 6
 
 class TextureData  //Texture image data
 {

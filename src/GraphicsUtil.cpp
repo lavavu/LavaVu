@@ -974,11 +974,17 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
   case VOLUME_BYTE:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
     break;
+  case VOLUME_BYTE_COMPRESSED:
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_COMPRESSED_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    break;
   case VOLUME_RGB:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     break;
   case VOLUME_RGBA:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    break;
+  case VOLUME_RGBA_COMPRESSED:
+    glTexImage3D(GL_TEXTURE_3D, 0,  GL_COMPRESSED_RGBA, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     break;
   }
   GL_Error_Check;

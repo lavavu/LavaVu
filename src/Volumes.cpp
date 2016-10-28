@@ -112,6 +112,8 @@ void Volumes::update()
   //TODO: filtering
   //Read all colourvalues, apply filter to each and store in filtered block before loading into texture
 
+  bool compress = drawstate.global("compresstextures");
+
   //Single volume cube
   if (geom.size() == 1)
   {
@@ -123,27 +125,21 @@ void Volumes::update()
     {
       //Determine type of data then load the texture
       int idx = current->addTexture(); //Add a new texture container
-      unsigned int bpv = 0;
+      unsigned int bpv = 4;
       if (geom[i]->colours.size() > 0)
       {
-        //TODO: test, how can this ever be bpv=3? Colours is always 4 byte unsigned
-        bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
-        if (bpv == 3)
-          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGB);
-        else if (bpv == 4)
-          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), VOLUME_RGBA);
-        else
-          abort_program("Invalid volume bpv %d", bpv);
+        int type = compress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
+        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), type);
       }
       else if (geom[i]->luminance.size() > 0)
       {
         bpv = 1;
+        int type = compress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
         assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height * geom[i]->depth);
-        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->luminance.ref(), VOLUME_BYTE);
+        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->luminance.ref(), type);
       }
       else if (geom[i]->colourData())
       {
-        bpv = 4;
         assert(geom[i]->colourData()->size() == geom[i]->width * geom[i]->height * geom[i]->depth);
         current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
       }
@@ -195,39 +191,26 @@ void Volumes::update()
 
         //Init/allocate/bind texture
         int idx = current->addTexture(); //Add a new texture container
-        unsigned int bpv = 0;
+        unsigned int bpv = 4;
         GL_Error_Check;
         if (geom[i]->colours.size() > 0)
         {
-          bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height);
-          if (bpv == 3)
-          {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGB);
-            for (unsigned int j=i; j<i+slices[current]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
-                              GL_RGB, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
-          }
-          else if (bpv == 4)
-          {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_RGBA);
-            for (unsigned int j=i; j<i+slices[current]; j++)
-              glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
-                              GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
-          }
-          else
-            abort_program("Invalid volume bpv %d", bpv);
+          int type = compress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
+          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, type);
+          for (unsigned int j=i; j<i+slices[current]; j++)
+            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
+                            GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->colours.ref());
         }
         else if (geom[i]->luminance.size() > 0)
         {
-          //NOTE: This results in the data being loaded to the RED channel only
           bpv = 1;
+          int type = compress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
           assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height);
-          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_BYTE);
+          current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, type);
           for (unsigned int j=i; j<i+slices[current]; j++)
           {
-            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width/4, geom[i]->height, 1, 
-                            GL_RGBA, GL_UNSIGNED_BYTE, geom[j]->luminance.ref());
-                            //GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->luminance.ref());
+            glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
+                            GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->luminance.ref());
           }
         }
         else if (geom[i]->colourData())
@@ -235,7 +218,8 @@ void Volumes::update()
           bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height);
           if (bpv == 1)
           {
-            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, VOLUME_BYTE);
+            int type = compress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
+            current->textures[idx]->load3D(geom[i]->width, geom[i]->height, slices[current], NULL, type);
             for (unsigned int j=i; j<i+slices[current]; j++)
               glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, j-i, geom[i]->width, geom[i]->height, 1, 
                               GL_LUMINANCE, GL_UNSIGNED_BYTE, geom[j]->colourData()->ref());
