@@ -885,7 +885,6 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
       {
         if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
         {
-          //Add new store for each slice
           //Subsample
           if (count % ds != 0) {count++; continue;}
           GLuint* bp = buffer;

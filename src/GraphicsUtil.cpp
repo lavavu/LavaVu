@@ -990,6 +990,33 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
   GL_Error_Check;
 }
 
+void ImageLoader::load3Dslice(int slice, void* data)
+{
+  GL_Error_Check;
+  switch (type)
+  {
+  case VOLUME_FLOAT:
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
+                    GL_LUMINANCE, GL_FLOAT, data);
+    break;
+  case VOLUME_BYTE:
+  case VOLUME_BYTE_COMPRESSED:
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
+                    GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    break;
+  case VOLUME_RGB:
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
+                    GL_RGB, GL_UNSIGNED_BYTE, data);
+    break;
+  case VOLUME_RGBA:
+  case VOLUME_RGBA_COMPRESSED:
+    glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
+                    GL_RGBA, GL_UNSIGNED_BYTE, data);
+    break;
+  }
+  GL_Error_Check;
+}
+
 std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels)
 {
   FilePath filepath(path);

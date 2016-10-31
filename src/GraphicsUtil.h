@@ -705,6 +705,7 @@ public:
   GLubyte* loadTIFF();
   int build(GLubyte* imageData);
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
+  void load3Dslice(int slice, void* data);
 
   ~ImageLoader()
   {
