@@ -53,6 +53,7 @@ public:
   GLuint target = 0;
 
   FrameBuffer() : width(0), height(0) {}
+  virtual ~FrameBuffer() {}
   virtual GLubyte* pixels(GLubyte* image, int channels=3, bool flip=false);
 };
 
@@ -72,7 +73,7 @@ public:
     downsample = 1;
   }
 
-  ~FBO()
+  virtual ~FBO()
   {
     destroy();
   }
