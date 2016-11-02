@@ -170,7 +170,7 @@ unsigned int GeomData::valuesLookup(const std::string& label)
   return 0;
 }
 
-//Returns true if vertex is to be filtered (don't display)
+//Returns true if vertex/voxel is to be filtered (don't display)
 bool GeomData::filter(unsigned int idx)
 {
   //On the first index, cache the filter data
@@ -883,9 +883,10 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   }
 
   //Objects with a specified width & height: detect new data store when required (full)
-  if (!geomdata || (dtype == lucVertexData &&
-                    geomdata->width > 0 && geomdata->height > 0 &&
-                    geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1) == geomdata->count))
+  //if (!geomdata || (dtype == lucVertexData &&
+  if (!geomdata || geomdata->width > 0 && geomdata->height > 0 &&
+                   geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1)
+                == geomdata->data[dtype]->size() / geomdata->data[dtype]->datasize)
   {
     //No store yet or loading vertices and already have required amount, new object required...
     //Create new data store, save in drawing object and Geometry list
