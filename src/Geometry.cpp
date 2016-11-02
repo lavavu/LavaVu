@@ -865,7 +865,7 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
 }
 
 //Read geometry data from storage
-GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
+GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   draw->skip = false;  //Enable object (has data now)
   GeomData* geomdata;
@@ -897,14 +897,14 @@ GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, 
   return geomdata; //Return data store pointer
 }
 
-GeomData* Geometry::read(DrawingObject* draw, int n, lucGeometryDataType dtype, const void* data, std::string label)
+GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, std::string label)
 {
   //Read & set label - for value data
   GeomData* geomdata = read(draw, n, dtype, data);
   geomdata->data[dtype]->label = label;
 }
 
-void Geometry::read(GeomData* geomdata, int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
+void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   //Set width & height if provided
   if (width) geomdata->width = width;
