@@ -1164,6 +1164,13 @@ void* read_png(std::istream& stream, GLuint& channels, GLuint& width, GLuint& he
 
   color_type = png_get_color_type(png_ptr, info_ptr);
 
+  if (color_type == PNG_COLOR_TYPE_PALETTE)
+  {
+    //Convert paletted to RGB
+    png_set_palette_to_rgb(png_ptr);
+    channels = 3;
+  }
+
   debug_print("Reading PNG: %d x %d, colour type %d, channels %d\n", width, height, color_type, channels);
 
   png_set_interlace_handling(png_ptr);
@@ -1182,8 +1189,8 @@ void* read_png(std::istream& stream, GLuint& channels, GLuint& width, GLuint& he
 
   png_read_image(png_ptr, row_pointers);
 
-  png_destroy_info_struct(png_ptr, &info_ptr);
   png_destroy_read_struct(&png_ptr, &info_ptr,(png_infopp)0);
+  png_destroy_info_struct(png_ptr, &info_ptr);
 
   delete[] row_pointers;
 
