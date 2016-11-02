@@ -822,6 +822,18 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     volume = new DrawingObject(drawstate, "volume");
     printMessage("Created static volume object");
   }
+  else if (parsed.exists("clearvolume"))
+  {
+    if (gethelp)
+    {
+      help += "> Clear global static volume object, any future volume loads will create a new object automatically  \n";
+      return false;
+    }
+
+    //Use this to load multiple image-stack volumes as separate objects
+    volume = NULL;
+    printMessage("Cleared static volume object");
+  }
   else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
   {
     if (gethelp)
