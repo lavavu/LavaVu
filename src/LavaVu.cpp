@@ -642,7 +642,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   addObject(vobj);
 
   std::vector<char> buffer;
-  unsigned int size;
+  unsigned int bytes = 0;
   float volmin[3], volmax[3];
   int volres[3];
 #ifdef USE_ZLIB
@@ -652,21 +652,21 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     gzread(f, (char*)volres, sizeof(int)*3);
     gzread(f, (char*)volmax, sizeof(float)*3);
     volmin[0] = volmin[1] = volmin[2] = 0;
-    size = volres[0]*volres[1]*volres[2];
-    buffer.resize(size);
+    bytes = volres[0]*volres[1]*volres[2];
+    buffer.resize(bytes);
     int chunk = 100000000; //Read in 100MB chunks
     int len, err;
     unsigned int offset = 0;
     do
     {
-      if (chunk+offset > size) chunk = size - offset; //Last chunk?
+      if (chunk+offset > bytes) chunk = bytes - offset; //Last chunk?
       debug_print("Offset %ld Chunk %ld\n", offset, chunk);
       len = gzread(f, &buffer[offset], chunk);
       if (len != chunk) abort_program("gzread err: %s\n", gzerror(f, &err));
 
       offset += chunk;
     }
-    while (offset < size);
+    while (offset < bytes);
     gzclose(f);
   }
   else
@@ -674,15 +674,15 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   {
     std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
     file.seekg(0, std::ios::end);
-    size = file.tellg();
+    bytes = file.tellg();
     file.seekg(0, std::ios::beg);
     file.read((char*)volres, sizeof(int)*3);
     file.read((char*)volmax, sizeof(float)*3);
     volmin[0] = volmin[1] = volmin[2] = 0;
-    size -= sizeof(int)*3 + sizeof(float)*3;
-    if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
-    buffer.resize(size);
-    file.read(&buffer[0], size);
+    bytes -= sizeof(int)*3 + sizeof(float)*3;
+    if (!file.is_open() || bytes <= 0) abort_program("File error %s\n", fn.full.c_str());
+    buffer.resize(bytes);
+    file.read(&buffer[0], bytes);
     file.close();
   }
 
@@ -716,8 +716,8 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   amodel->volumes->add(vobj);
   amodel->volumes->read(vobj, 1, lucVertexData, volmin);
   amodel->volumes->read(vobj, 1, lucVertexData, volmax);
-
-  amodel->volumes->read(vobj, size, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
+  printf("Loading %u bytes, res %d %d %d\n", bytes, volres[0], volres[1], volres[2]);
+  amodel->volumes->read(vobj, bytes, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
 }
 
 void LavaVu::readVolumeSlice(const FilePath& fn)

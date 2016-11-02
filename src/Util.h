@@ -121,7 +121,7 @@ public:
   unsigned int next;
   float minimum;
   float maximum;
-  int datasize;
+  unsigned int datasize;
   unsigned int offset;
   bool generated;
   std::string label;
@@ -134,7 +134,7 @@ public:
   virtual void resize(unsigned long size) = 0;
   virtual void clear() = 0;
   virtual void setOffset() = 0;
-  virtual void erase(int start, int end) = 0;
+  virtual void erase(unsigned int start, unsigned int end) = 0;
   virtual void* ref(unsigned i=0) = 0;
 
   void setup(float min, float max)
@@ -167,8 +167,8 @@ public:
 
   virtual void read(unsigned int n, const void* data)
   {
-    int size = next + n;
-    int oldsize = value.size();
+    unsigned int size = next + n;
+    unsigned int oldsize = value.size();
     if (oldsize < size)
     {
       //Always at least double size for efficiency
@@ -205,7 +205,7 @@ public:
 
   void clear()
   {
-    int count = value.size();
+    unsigned int count = value.size();
     if (count == 0) return;
     value.clear();
     offset = 0;
@@ -220,7 +220,7 @@ public:
     offset = value.size();
   }
 
-  void erase(int start, int end)
+  void erase(unsigned int start, unsigned int end)
   {
     //erase elements:
     value.erase(value.begin()+start, value.begin()+end);
