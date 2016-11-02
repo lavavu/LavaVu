@@ -4,6 +4,7 @@ import json
 import math
 import sys
 import os
+import glob
 
 #Attempt to import swig module
 try:
@@ -355,6 +356,14 @@ class Viewer(object):
         #Update properties and return wrapper object
         obj = self.objects.list[-1] #Use last in list, most recently added
         self.app.setObject(obj.name, json.dumps(properties))
+        return obj
+    
+    def files(self, filespec, name=None, properties={}):
+        #Load list of files with glob
+        filelist = glob.glob(filespec)
+        obj = None
+        for infile in sorted(filelist):
+            obj = self.file(infile)
         return obj
 
     def clear(self):
