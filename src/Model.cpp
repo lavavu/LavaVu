@@ -658,8 +658,8 @@ void Model::clearTimeSteps()
 {
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
   {
-    //Clear the store first on current timestep to avoid deleting active (double free)
-    if (idx == now) timesteps[idx]->cache.clear();
+    //Clear the store first to avoid deleting active (double free)
+    timesteps[idx]->cache.clear();
     delete timesteps[idx];
   }
   timesteps.clear();
