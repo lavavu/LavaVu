@@ -1820,7 +1820,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       for (int type=lucMinType; type<lucMaxType; type++)
         amodel->geometry[type]->setValueRange(obj);
       printMessage("ColourMap scales set to local value range");
-      amodel->redraw(aobject); //Colour change so force reload
+      //Colour change so force full reload
+      amodel->reload(aobject);
     }
   }
   else if (parsed.exists("export"))
@@ -1980,15 +1981,26 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Reload all data of current model/timestep from database  \n"
-              "> (If no database, will still reload window)  \n";
+      help += "> Reload all data of current model/timestep from database  \n\n"
+              "> **Usage:** reload [object_id]\n\n"
+              "> If an object is selected, reload will apply to that object only  \n"
+              "> (If no database, will still reload data to gpu)  \n";
       return false;
     }
+
+    DrawingObject* obj = aobject;
+    if (!obj)
+      obj = lookupObject(parsed, "reload");
 
     //Restore original data
     if (amodel->db)
       amodel->loadTimeSteps();
-    amodel->redraw(true); //Redraw & reload
+
+    if (obj)
+      amodel->reload(obj); //Redraw & reload specific
+    else
+      amodel->redraw(true); //Redraw & reload all
+
     if (model < 0 || !loadModelStep(model, amodel->step())) return false;
   }
   else if (parsed.exists("zerocam"))
@@ -2068,7 +2080,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           //amodel->colourMaps[cmap]->calibrate(); //Recalibrate
         }
       }
-      amodel->redraw(obj);
+      //Full object reload if colours updated
+      amodel->reload(obj);
     }
   }
   else if (parsed.exists("colour"))
@@ -2098,7 +2111,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, lucRGBAData, &c.value);
       printMessage("%s colour appended %x", aobject->name().c_str(), c.value);
-      amodel->redraw(aobject);
+      //Full object reload if colours updated
+      amodel->reload(aobject);
     }
   }
   else if (parsed.exists("value"))
@@ -2119,7 +2133,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, lucColourValueData, &fval);
       printMessage("%s value appended %f", aobject->name().c_str(), fval);
-      amodel->redraw(aobject);
     }
   }
   else if (parsed.exists("vertex") || parsed.exists("vector") || parsed.exists("normal"))
@@ -2162,7 +2175,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       Geometry* active = getGeometryType(gtype);
       active->read(aobject, 1, dtype, xyz);
       printMessage("%s %s appended", aobject->name().c_str(), action.c_str());
-      amodel->redraw(aobject);
+      //Full object reload if colours updated
+      amodel->reload(aobject);
     }
   }
   else if (parsed.exists("read"))
@@ -2239,7 +2253,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       active->read(aobject, len, dtype, vals);
       delete[] vals;
       printMessage("%s %s appended %d", aobject->name().c_str(), what.c_str(), len);
-      amodel->redraw(aobject);
+      //Full object reload as data changed
+      amodel->reload(aobject);
     }
   }
 
@@ -2265,7 +2280,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Set new labels
       active->label(aobject, data.c_str());
       printMessage("%s labelled", aobject->name().c_str());
-      amodel->redraw(aobject);
+      //Full object reload as data changed
+      //amodel->reload(aobject);
     }
   }
   else if (parsed.exists("pointtype"))
@@ -2313,7 +2329,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         else if (parsed.get("pointtype", next) == "down")
           obj->properties.data["pointtype"] = (pt+1) % 5;
         printMessage("%s point type set to %d", obj->name().c_str(), (int)obj->properties["pointtype"]);
-        amodel->redraw(obj); //Full reload of this object only
+        //Full object reload as data changed
+        amodel->reload(obj);
         amodel->redraw();
       }
     }
@@ -2597,7 +2614,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           printMessage("%s scaling set to %f", obj->name().c_str(), (float)obj->properties["scaling"]);
           for (int type=lucMinType; type<lucMaxType; type++)
             amodel->geometry[type]->redraw = true;
-          amodel->redraw(obj); //Full reload of object by id
+          //Full object reload as data changed - required for points but not others, comment for now
+          //amodel->reload(obj);
           amodel->redraw();
         }
       }
@@ -3086,7 +3104,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       filter["inclusive"] = false;
       aobject->properties.data["filters"].push_back(filter);
       printMessage("%s filter on value index %d from %f to %f", (map ? "Map" : "Value"), (int)filter["by"], min, max);
-      amodel->redraw(aobject);
+      //Full data reload
+      amodel->reload(aobject);
     }
   }
   else if (parsed.exists("filtermin") || parsed.exists("filtermax"))
@@ -3115,7 +3134,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       else
         filter["maximum"] = val;
       printMessage("Filter %d set from %f to %f", idx, (float)filter["minimum"], (float)filter["maximum"]);
-      amodel->redraw(aobject);
+      //Full data reload
+      amodel->reload(aobject);
     }
   }
 
@@ -3132,7 +3152,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       printMessage("Filters cleared on object %s", aobject->name().c_str());
       aobject->properties.data.erase("filters");
-      amodel->redraw(aobject);
+      //Full data reload
+      amodel->reload(aobject);
     }
   }
   else if (parsed.exists("freeze"))
@@ -3180,7 +3201,8 @@ bool LavaVu::parsePropertySet(std::string cmd)
   json jval;
   if (found == std::string::npos) return false;
   parseProperty(cmd);
-  if (aobject) amodel->redraw(aobject);
+  //Don't force full data reload on property set!
+  //if (aobject) amodel->redraw(aobject);
   return true;
 }
 
@@ -3202,7 +3224,7 @@ void LavaVu::helpCommand(std::string cmd)
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
-     "cache", "verbose", "toggle", "createvolume"}
+     "cache", "verbose", "toggle", "createvolume", "clearvolume"}
   };
 
   //Verbose command help

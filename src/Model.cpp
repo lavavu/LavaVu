@@ -319,7 +319,7 @@ void Model::setup()
   }
 }
 
-void Model::redraw(DrawingObject* obj)
+void Model::reload(DrawingObject* obj)
 {
   //Full data reload on selected object only
   for (unsigned int i=0; i < geometry.size(); i++)
