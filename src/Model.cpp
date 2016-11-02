@@ -175,6 +175,24 @@ int Model::addFigure(const std::string& name, const std::string& state)
 
 void Model::addObject(DrawingObject* obj)
 {
+  //Check for duplicate names / objects
+  bool found = false;
+  do
+  {
+    found = false;
+    for (auto o : objects)
+    {
+      //Duplicate object, skip
+      if (o == obj) return;
+      //Duplicate name, add underscore until not a duplicate
+      if (o->name() == obj->name())
+      {
+        found = true;
+        obj->properties.data["name"] = obj->name() + "_";
+      }
+    }
+  } while (found);
+
   //Create master drawing object list entry
   obj->colourMaps = &colourMaps;
   objects.push_back(obj);
