@@ -162,7 +162,6 @@ public:
   int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
   void mergeDatabases();
-  int decompressGeometry(int timestep);
   void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);
   void writeState(sqlite3* outdb=NULL);
   void writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress);

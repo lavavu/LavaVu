@@ -129,6 +129,7 @@ public:
   DataContainer() : next(0), minimum(0), maximum(1), datasize(1), offset(0), generated(false), label("Default") {}
 
   //Pure virtual methods
+  virtual unsigned int bytes() = 0;
   virtual void read(unsigned int n, const void* data) = 0;
   virtual void resize(unsigned long size) = 0;
   virtual void clear() = 0;
@@ -161,6 +162,8 @@ public:
   {
     if (value.size()) clear();
   }
+
+  unsigned int bytes() {return sizeof(dtype)*value.size();}
 
   virtual void read(unsigned int n, const void* data)
   {

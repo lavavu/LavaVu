@@ -1248,10 +1248,10 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       else
       {
         unsigned char* buffer = NULL;
-        if (bytes != (unsigned int)(count * sizeof(float)))
+        if (bytes != (unsigned int)(count * GeomData::byteSize(data_type)))
         {
           //Decompress!
-          unsigned long dst_len = (unsigned long)(count * sizeof(float));
+          unsigned long dst_len = (unsigned long)(count * GeomData::byteSize(data_type));
           unsigned long uncomp_len = dst_len;
           unsigned long cmp_len = bytes;
           buffer = new unsigned char[dst_len];
@@ -1332,97 +1332,6 @@ void Model::mergeDatabases()
       issue(SQL);
     }
   }
-}
-
-int Model::decompressGeometry(int timestep)
-{
-  if (!db) return 0;
-  reopen(true);  //Open writable
-  clock_t t1 = clock();
-  //Load geometry
-  char SQL[SQL_QUERY_MAX];
-
-  sprintf(SQL, "SELECT id,count,data FROM %sgeometry WHERE timestep=%d ORDER BY idx,rank", prefix, timestep);
-  sqlite3_stmt* statement = select(SQL, true);
-
-  if (!statement) return 0;
-  int rows = 0;
-  int tbytes = 0;
-  int ret;
-  do
-  {
-    ret = sqlite3_step(statement);
-    if (ret == SQLITE_ROW)
-    {
-      rows++;
-      int count = sqlite3_column_int(statement, 1);
-      const void *data = sqlite3_column_blob(statement, 2);
-      unsigned int bytes = sqlite3_column_bytes(statement, 2);
-
-      unsigned char* buffer = NULL;
-      if (bytes != (unsigned int)(count * sizeof(float)))
-      {
-        //Decompress!
-        unsigned long dst_len = (unsigned long )(count * sizeof(float));
-        unsigned long uncomp_len = dst_len;
-        unsigned long cmp_len = bytes;
-        buffer = new unsigned char[dst_len];
-        if (!buffer)
-          abort_program("Out of memory!\n");
-
-#ifdef USE_ZLIB
-        int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
-        if (res != Z_OK || dst_len != uncomp_len)
-#else
-        int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
-        if (!res)
-#endif
-        {
-          abort_program("uncompress() failed! error code %d\n", res);
-          //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
-        }
-        data = buffer; //Replace data pointer
-        bytes = uncomp_len;
-#ifdef ALTER_DB
-        //UNCOMPRESSED
-        sqlite3_stmt* statement2;
-        snprintf(SQL, SQL_QUERY_MAX, "UPDATE %sgeometry SET data = ? WHERE id==%d;", prefix, id);
-        printf("%s\n", SQL);
-        /* Prepare statement... */
-        if (sqlite3_prepare_v2(db, SQL, -1, &statement2, NULL) != SQLITE_OK)
-        {
-          printf("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(db));
-          abort(); //Database errors fatal?
-          return 0;
-        }
-        /* Setup blob data for insert */
-        if (sqlite3_bind_blob(statement2, 1, buffer, bytes, SQLITE_STATIC) != SQLITE_OK)
-        {
-          printf("SQL bind error: %s\n", sqlite3_errmsg(db));
-          abort(); //Database errors fatal?
-        }
-        /* Execute statement */
-        if (sqlite3_step(statement2) != SQLITE_DONE )
-        {
-          printf("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(db));
-          abort(); //Database errors fatal?
-        }
-        sqlite3_finalize(statement2);
-#endif
-      }
-
-      if (buffer) delete[] buffer;
-
-    }
-    else if (ret != SQLITE_DONE)
-      printf("DB STEP FAIL %d %d\n", ret, (ret>>8));
-  }
-  while (ret == SQLITE_ROW);
-
-  sqlite3_finalize(statement);
-  debug_print("... modified %d rows, %d bytes, %.4lf seconds\n", rows, tbytes, (clock()-t1)/(double)CLOCKS_PER_SEC);
-
-  return rows;
 }
 
 void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
@@ -1558,17 +1467,16 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
   unsigned int i, data_type;
   for (i=0; i<data.size(); i++)
   {
-    for (data_type=0; data_type<data[i]->data.size(); data_type++)
+    for (data_type=0; data_type < data[i]->data.size(); data_type++)
     {
-      if (!data[i]->data[data_type] || data[i]->data[data_type]->size() == 0) continue;
-      std::cerr << "Writing geometry (type[" << data_type << "] * " << data[i]->data[data_type]->size()
-                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       //Get the data block
       DataContainer* block = data[i]->data[data_type];
-
+      if (!block || block->size() == 0) continue;
+      std::cerr << "Writing geometry (type[" << data_type << "] * " << block->size()
+                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
       sqlite3_stmt* statement;
       unsigned char* buffer = (unsigned char*)block->ref(0);
-      unsigned long src_len = block->size() * sizeof(float);
+      unsigned long src_len = block->bytes();
       // Compress the data if enabled and > 1kb
       unsigned long cmp_len = 0;
       if (compressdata &&  src_len > 1000)

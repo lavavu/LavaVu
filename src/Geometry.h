@@ -110,9 +110,19 @@ public:
   UIntValues colours;
   Coord2DValues texCoords;
   UCharValues luminance;
+  UCharValues rgb;
 
   std::vector<DataContainer*> data;
   std::vector<FloatValues*> values;
+
+  static unsigned int byteSize(lucGeometryDataType type)
+  {
+    if (type == lucIndexData || type == lucRGBAData)
+      return sizeof(unsigned int);
+    if (type == lucLuminanceData || type == lucRGBData)
+      return sizeof(unsigned char);
+    return sizeof(float);
+  }
 
   GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false)
   {
@@ -125,6 +135,7 @@ public:
     data[lucRGBAData] = &colours;
     data[lucTexCoordData] = &texCoords;
     data[lucLuminanceData] = &luminance;
+    data[lucRGBData] = &rgb;
 
     texIdx = -1;
 
