@@ -603,7 +603,7 @@ void LavaVu::printDefaultProperties()
 
 void LavaVu::readRawVolume(const FilePath& fn)
 {
-  //raw format volume data
+  //Raw float volume data
 
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
@@ -643,7 +643,6 @@ void LavaVu::readXrwVolume(const FilePath& fn)
 
   std::vector<char> buffer;
   unsigned int size;
-  unsigned int floatcount;
   float volmin[3], volmax[3];
   int volres[3];
 #ifdef USE_ZLIB
@@ -654,11 +653,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     gzread(f, (char*)volmax, sizeof(float)*3);
     volmin[0] = volmin[1] = volmin[2] = 0;
     size = volres[0]*volres[1]*volres[2];
-    //Ensure a multiple of 4 bytes
-    floatcount = ceil(size / 4.0);
-    size = floatcount * 4;
     buffer.resize(size);
-    std::cout << "SIZE " << size << " Bytes, " << floatcount << " Floats, rounded up: " << (floatcount*4) << " Bytes, Actual: " << buffer.size() << "\n";
     int chunk = 100000000; //Read in 100MB chunks
     int len, err;
     unsigned int offset = 0;
@@ -685,10 +680,6 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     file.read((char*)volmax, sizeof(float)*3);
     volmin[0] = volmin[1] = volmin[2] = 0;
     size -= sizeof(int)*3 + sizeof(float)*3;
-    //Ensure a multiple of 4 bytes
-    floatcount = ceil(size / 4.0);
-    //std::cout << "SIZE " << size << " Bytes, " << floatcount << " Floats, rounded up: " << (floatcount*4) << " Bytes\n";
-    size = floatcount * 4;
     if (!file.is_open() || size <= 0) abort_program("File error %s\n", fn.full.c_str());
     buffer.resize(size);
     file.read(&buffer[0], size);
@@ -726,7 +717,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   amodel->volumes->read(vobj, 1, lucVertexData, volmin);
   amodel->volumes->read(vobj, 1, lucVertexData, volmax);
 
-  amodel->volumes->read(vobj, floatcount, lucColourValueData, &buffer[0], volres[0], volres[1], volres[2]);
+  amodel->volumes->read(vobj, size, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
 }
 
 void LavaVu::readVolumeSlice(const FilePath& fn)
