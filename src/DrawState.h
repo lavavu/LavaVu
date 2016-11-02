@@ -211,6 +211,12 @@ public:
     defaults["dminclip"] = 0.0;
     // | object(volume) | real | Maximum density value to map, higher discarded
     defaults["dmaxclip"] = 1.0;
+    // | object(volume) | boolean | Compress volume textures where possible
+    defaults["compresstextures"] = false;
+    // | object(volume) | int[3] | Volume texture size limit (for crop)
+    defaults["texturesize"] = {0, 0, 0};
+    // | object(volume) | int[3] | Volume texture offset (for crop)
+    defaults["textureoffset"] = {0, 0, 0};
 
     // | object(vector) | real | Arrow head size as a multiple of width
     defaults["arrowhead"] = 2.0;
@@ -376,8 +382,6 @@ public:
     defaults["sort"] = -1;
     // | global | boolean | Cache timestep varying data on gpu as well as ram (will only work for small models)
     defaults["gpucache"] = false;
-    // | global | boolean | Compress volume textures where possible
-    defaults["compresstextures"] = false;
 
     //LavaVR specific
     defaults["sweep"] = false;

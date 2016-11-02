@@ -551,6 +551,9 @@ void Geometry::redrawObject(DrawingObject* draw)
   {
     if (geom[i]->draw == draw)
     {
+      debug_print("Reloading object: %s\n", draw->name().c_str());
+      //Flag reload of texture
+      if (geom[i]->texIdx >= 0) draw->textures[geom[i]->texIdx]->texture->width = 0;
       reload = true;
       return;
     }

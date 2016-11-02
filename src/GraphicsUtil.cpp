@@ -689,6 +689,22 @@ void RawImageFlip(void* image, int width, int height, int channels)
   delete[] temp;
 }
 
+GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outwidth, int outheight, int offsetx, int offsety)
+{
+  int scanline = channels * width;
+  int outscanline = channels * outwidth;
+  GLubyte* crop = new GLubyte[outscanline*outheight];
+  GLubyte* ptr1 = (GLubyte*)image + offsety*scanline + offsetx*channels;
+  GLubyte* ptr2 = crop;
+  for (int y=offsety; y<offsety+outheight; y++)
+  {
+    memcpy(ptr2, ptr1, outscanline);
+    ptr1 += scanline;
+    ptr2 += outscanline;
+  }
+  return crop;
+}
+
 TextureData* ImageLoader::use()
 {
   load();
@@ -878,7 +894,7 @@ GLubyte* ImageLoader::loadTIFF()
     {
       if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
       {
-        //RawImageFlip(imageData, width, height, texture->channels);
+        RawImageFlip(imageData, width, height, texture->channels);
         texture->width = width;
         texture->height = height;
       }
@@ -980,6 +996,9 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
   case VOLUME_RGB:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     break;
+  case VOLUME_RGB_COMPRESSED:
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_COMPRESSED_RGB, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    break;
   case VOLUME_RGBA:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, width, height, depth, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     break;
@@ -1005,6 +1024,7 @@ void ImageLoader::load3Dslice(int slice, void* data)
                     GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
     break;
   case VOLUME_RGB:
+  case VOLUME_RGB_COMPRESSED:
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
                     GL_RGB, GL_UNSIGNED_BYTE, data);
     break;

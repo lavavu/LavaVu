@@ -613,6 +613,7 @@ void drawVector3d_( float pos[3], float vector[3], float scale, float radius, fl
 void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
 void RawImageFlip(void* image, int width, int height, int channels);
+GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outwidth, int outheight, int offsetx=0, int offsety=0);
 
 std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels=3);
 std::string getImageString(GLubyte *image, int width, int height, int channels, bool jpeg=false);
@@ -664,7 +665,8 @@ public:
 #define VOLUME_RGB 3
 #define VOLUME_RGBA 4
 #define VOLUME_BYTE_COMPRESSED 5
-#define VOLUME_RGBA_COMPRESSED 6
+#define VOLUME_RGB_COMPRESSED 6
+#define VOLUME_RGBA_COMPRESSED 7
 
 class TextureData  //Texture image data
 {
