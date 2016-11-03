@@ -37,13 +37,13 @@ void main(void)
 </script>
 """
 
-#LavaVu location
-binpath = ""
+#Static HTML location
+htmlpath = ""
 
 def export():
+    if not htmlpath: return
     #Dump all output to control.html
-    import os
-    filename = os.path.join(binpath, "html/control.html")
+    filename = os.path.join(htmlpath, "control.html")
 
     #Process actions
     actionjs = 'var actions = [];\n'
@@ -110,7 +110,7 @@ def export():
     hfile.write(output)
     hfile.write('</body>\n</html>\n')
     hfile.close()
-    filename = os.path.join(binpath, "html/control.html")
+    filename = os.path.join(htmlpath, "control.html")
 
 def redisplay(id):
     #Simply update the active viewer image, if any
@@ -122,6 +122,7 @@ def redisplay(id):
         pass
 
 def render(html):
+    if not htmlpath: return
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML
@@ -132,14 +133,14 @@ def render(html):
         export()
 
 def loadscripts(onload="", viewer=None, html=""):
+    if not htmlpath: return
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML,Javascript
             #Create link to web content directory
             if not os.path.isdir("html"):
-                htmldir = os.path.join(binpath, 'html')
                 #print "Creating symlink: ./html => " + htmldir
-                os.symlink(htmldir, 'html')
+                os.symlink(htmlpath, 'html')
             #Stylesheet, shaders and inline html
             display(HTML('<link rel="stylesheet" type="text/css" href="html/control.css">\n' + fragmentShader + vertexShader + html))
             #Load external scripts via require.js
@@ -166,6 +167,7 @@ def loadscripts(onload="", viewer=None, html=""):
         pass
 
 def window(viewer, html="", align="left"):
+    if not htmlpath: return
     viewerid = len(windows)
 
     html += '<div style="position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">'
@@ -223,6 +225,7 @@ class Panel(object):
         return html
 
     def show(self):
+        if not htmlpath: return
         viewerid = len(windows)
         #Add control wrapper with the viewer id as a custom attribute
         html = '<div data-id="' + str(viewerid) + '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
@@ -269,6 +272,7 @@ class Control(object):
         return "; do_action(" + str(self.id) + ", this.value, this);"
 
     def show(self):
+        if not htmlpath: return
         #Show only this control
         viewerid = len(windows)-1 #Just use the most recently added interactor instance
         if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
