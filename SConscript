@@ -53,6 +53,7 @@ env.Command(bin_dir + '/html/index.html', 'src/html/index.html', code_base + "/b
 srcs = Glob(src_dir + '/*.cpp')
 srcs += [src_dir + '/mongoose/mongoose.c']
 srcs += [src_dir + '/miniz/miniz.c']
+srcs += [src_dir + '/png/lodepng.cpp']
 srcs += [src_dir + '/jpeg/jpge.cpp']
 srcs += [src_dir + '/jpeg/jpgd.cpp']
 srcs += Glob(src_dir + '/Main/*Viewer.cpp')
