@@ -143,6 +143,7 @@ public:
   void readOBJ(const FilePath& fn);
   void readRawVolume(const FilePath& fn);
   void readXrwVolume(const FilePath& fn);
+  void readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float min[2], float max[3], int channels=1);
   void readVolumeSlice(const FilePath& fn);
   void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel);
   void readVolumeTIFF(const FilePath& fn);

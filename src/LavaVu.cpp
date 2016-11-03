@@ -604,12 +604,6 @@ void LavaVu::printDefaultProperties()
 void LavaVu::readRawVolume(const FilePath& fn)
 {
   //Raw float volume data
-
-  //Create volume object, or if static volume object exists, use it
-  DrawingObject *vobj = volume;
-  if (!vobj) vobj = new DrawingObject(drawstate, fn.base);
-  addObject(vobj);
-
   std::fstream file(fn.full.c_str(), std::ios::in | std::ios::binary);
   file.seekg(0, std::ios::end);
   std::streamsize size = file.tellg();
@@ -620,27 +614,17 @@ void LavaVu::readRawVolume(const FilePath& fn)
   file.read(&buffer[0], size);
   file.close();
 
-  //Define the bounding cube by corners
   float volmin[3], volmax[3], volres[3];
   Properties::toFloatArray(drawstate.global("volmin"), volmin, 3);
   Properties::toFloatArray(drawstate.global("volmax"), volmax, 3);
   Properties::toFloatArray(drawstate.global("volres"), volres, 3);
-  amodel->volumes->add(vobj);
-  amodel->volumes->read(vobj, 1, lucVertexData, volmin);
-  amodel->volumes->read(vobj, 1, lucVertexData, volmax);
-  //Now using a container designed for byte data, TODO: support RGB/RGBA raw load?
-  amodel->volumes->read(vobj, size, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
+
+  readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volmin, volmax);
 }
 
 void LavaVu::readXrwVolume(const FilePath& fn)
 {
   //Xrw format volume data
-
-  //Create volume object, or if static volume object exists, use it
-  DrawingObject *vobj = volume;
-  if (!vobj) vobj = new DrawingObject(drawstate, fn.base);
-  addObject(vobj);
-
   std::vector<char> buffer;
   unsigned int bytes = 0;
   float volmin[3], volmax[3];
@@ -686,21 +670,6 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     file.close();
   }
 
-#if 0
-  //Dump slices
-  size_t offset = 0;
-  char path[FILE_PATH_MAX];
-  for (int slice=0; slice<volres[2]; slice++)
-  {
-    //Write data to image file
-    sprintf(path, "slice-%03da.png", slice);
-    std::ofstream file(path, std::ios::binary);
-    write_png(file, 1, volres[0], volres[1], &buffer[offset]);
-    file.close();
-    offset += volres[0] * volres[1];
-    printf("offset %ld\n", offset);
-  }
-#endif
   float inscale[3];
   Properties::toFloatArray(drawstate.global("inscale"), inscale, 3);
 
@@ -712,12 +681,57 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
   }
 
-  //Define the bounding cube by corners
-  amodel->volumes->add(vobj);
-  amodel->volumes->read(vobj, 1, lucVertexData, volmin);
-  amodel->volumes->read(vobj, 1, lucVertexData, volmax);
-  printf("Loading %u bytes, res %d %d %d\n", bytes, volres[0], volres[1], volres[2]);
-  amodel->volumes->read(vobj, bytes, lucLuminanceData, &buffer[0], volres[0], volres[1], volres[2]);
+  readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volmin, volmax);
+}
+
+void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float min[2], float max[3], int channels)
+{
+  //Loads full volume, optionally as slices
+  bool splitslices = drawstate.global("slicevolumes");
+  bool dumpslices = drawstate.global("slicedump");
+  if (splitslices || dumpslices)
+  {
+    //Slicing is slower but allows sub-sampling and cropping
+    GLubyte* ptr = data;
+    int slicesize = width * height;
+    json volss = drawstate.global("volsubsample");
+    int ss = volss[2];
+    char path[FILE_PATH_MAX];
+    for (int slice=0; slice<depth; slice++)
+    {
+      if (dumpslices)
+      {
+        //Write data to image file
+        sprintf(path, "slice-%03d.png", slice);
+        std::cout << path << std::endl;
+        std::ofstream file(path, std::ios::binary);
+        write_png(file, 1, width, height, ptr);
+        file.close();
+      }
+      else if (slice % ss == 0) //Depth sub-sampling
+      {
+        readVolumeSlice(fn.base, ptr, width, height, channels);
+      }
+      ptr += slicesize;
+    }
+  }
+  else
+  {
+    //Create volume object, or if static volume object exists, use it
+    DrawingObject *vobj = volume;
+    if (!vobj) vobj = new DrawingObject(drawstate, fn.base);
+    addObject(vobj);
+
+    //Define the bounding cube by corners
+    amodel->volumes->add(vobj);
+    amodel->volumes->read(vobj, 1, lucVertexData, min);
+    amodel->volumes->read(vobj, 1, lucVertexData, max);
+
+    //Load full cube
+    int bytes = channels * width * height * depth;
+    printf("Loading %u bytes, res %d %d %d\n", bytes, width, height, depth);
+    amodel->volumes->read(vobj, bytes, lucLuminanceData, data, width, height, depth);
+  }
 }
 
 void LavaVu::readVolumeSlice(const FilePath& fn)

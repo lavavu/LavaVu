@@ -368,6 +368,10 @@ public:
     defaults["volmax"] = {1., 1., 1.};
     // | global | int[3] | Volume rendering subsampling factor X Y Z
     defaults["volsubsample"] = {1, 1, 1};
+    // | global | boolean | Convert full volume data sets to slices (allows cropping and sub-sampling)
+    defaults["slicevolumes"] = false;
+    // | global | boolean | Export full volume data sets to slices
+    defaults["slicedump"] = false;
     // | global | real[3] | Geometry input scaling X Y Z
     defaults["inscale"] = {1., 1., 1.};
     // | global | integer | Point render sub-sampling factor

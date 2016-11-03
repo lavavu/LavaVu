@@ -175,8 +175,18 @@ void Volumes::update()
       if (geom[i]->texIdx < 0 || current->textures[geom[i]->texIdx]->texture->width == 0) //Width set to 0 to flag reload
       {
         if (!geom[i]->height)
-          //No height? Calculate from values data (assumes float data (4 bpv))
-          geom[i]->height = geom[i]->colourData()->size() / geom[i]->width; // * 4;
+        {
+          //No height? Calculate from values data
+          if (geom[i]->colourData())
+            //(assumes float luminance data (4 bpv))
+            geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
+          else if (geom[i]->colours.size() > 0)
+            geom[i]->height = geom[i]->colours.size() / geom[i]->width;
+          else if (geom[i]->luminance.size() > 0)
+            geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
+          else if (geom[i]->rgb.size() > 0)
+            geom[i]->height = geom[i]->rgb.size() / geom[i]->width / 3;
+        }
 
         //Texture crop?
         json texsize = current->properties["texturesize"];
@@ -244,7 +254,6 @@ void Volumes::update()
           //Byte luminance
           bpv = 1;
           type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
-          printf("COMPRESS %d ? %d : %d ==> %d\n", texcompress, VOLUME_BYTE_COMPRESSED, VOLUME_BYTE, type);
           assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height);
           current->textures[idx]->load3D(dims[0], dims[1], dims[2], NULL, type);
           for (unsigned int j=i; j<i+slices[current]; j++)
