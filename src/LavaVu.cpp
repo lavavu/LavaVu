@@ -2864,7 +2864,8 @@ void LavaVu::setState(std::string state)
 {
   if (!amodel) return;
   amodel->jsonRead(state);
-  display();
+  //Why? This should be explicitly called or we can't set properties without display side effects
+  //display();
 }
 
 std::string LavaVu::getState()
