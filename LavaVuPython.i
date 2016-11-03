@@ -30,9 +30,16 @@ namespace std
 
 %include "src/ViewerTypes.h"
 
+class OpenGLViewer
+{
+  public:
+    bool quitProgram;
+};
+
 class LavaVu
 {
 public:
+  OpenGLViewer* viewer;
   Model* amodel;
   View* aview;
   DrawingObject* aobject;
