@@ -259,11 +259,6 @@ void OpenGLViewer::init()
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
 
-  // Clear full window buffer
-  glViewport(0, 0, width, height);
-  glScissor(0, 0, width, height);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
   //Call the application open function
   app->open(width, height);
 
