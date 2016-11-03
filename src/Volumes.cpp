@@ -195,12 +195,12 @@ void Volumes::update()
         bool crop = false;
         for (int d=0; d<3; d++)
         {
-          if (texsize[d] > 0 && texsize[d] < dims[d]) 
+          if ((int)texsize[d] > 0 && (int)texsize[d] < dims[d]) 
           {
             dims[d] = texsize[d];
             crop = true;
           }
-          if (texoffset[d] > 0) crop = true;
+          if ((int)texoffset[d] > 0) crop = true;
           //Check within tex limits
           assert(dims[d] <= (unsigned)maxtex);
         }
