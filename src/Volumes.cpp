@@ -300,7 +300,6 @@ void Volumes::update()
         }
 
         debug_print("current %s width %d height %d depth %d (bpv %d type %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv, type);
-        printf("current %s width %d height %d depth %d (bpv %d type %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv, type);
 
         //Set the loaded texture
         geom[i]->texIdx = idx;

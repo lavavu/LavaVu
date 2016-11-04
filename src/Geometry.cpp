@@ -867,7 +867,6 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
   }
 }
 
-//Read geometry data from storage
 GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   draw->skip = false;  //Enable object (has data now)
@@ -885,17 +884,21 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
     if (depth == 0) depth = dims[2];
   }
 
-  //Objects with a specified width & height: detect new data store when required (full)
-  //if (!geomdata || (dtype == lucVertexData &&
-  if (!geomdata || geomdata->width > 0 && geomdata->height > 0 &&
-                   geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1)
-                == geomdata->data[dtype]->size() / geomdata->data[dtype]->datasize)
+  //If dimensions specified, check if full dataset loaded
+  bool loaded = false;
+  if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
   {
-    //No store yet or loading vertices and already have required amount, new object required...
-    //Create new data store, save in drawing object and Geometry list
-    geomdata = add(draw);
+    unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
+    loaded = size == geomdata->data[dtype]->size() / geomdata->data[dtype]->datasize;
+    //if (loaded) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
+    //                   geomdata->data[dtype]->datasize, geomdata->data[dtype]->size() / geomdata->data[dtype]->datasize);
   }
 
+  //Create new data store if required, save in drawing object and Geometry list
+  if (!geomdata || loaded)
+    geomdata = add(draw);
+
+  //Now ready to load geometry data into store
   read(geomdata, n, dtype, data, width, height, depth);
 
   return geomdata; //Return data store pointer
