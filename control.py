@@ -1,5 +1,6 @@
 import os
 import time
+import json
 output = ""
 
 #Register of controls and their actions
@@ -46,7 +47,7 @@ def export():
     filename = os.path.join(htmlpath, "control.html")
 
     #Process actions
-    actionjs = 'var actions = [];\n'
+    actionjs = '<script type="text/Javascript">\nvar actions = [];\n'
     for act in actions:
         #Default placeholder action
         actfunction = ''
@@ -54,7 +55,7 @@ def export():
         if len(act["args"]) == 0:
             #No action
             pass
-        elif act["call"] == setter:
+        elif act["type"] == "PROPERTY":
             #Set a property
             target = act["args"][0]
             # - Globally
@@ -72,18 +73,22 @@ def export():
                     actcmd = act["args"][2]
 
         #Run a command with a value argument
-        elif act["call"] == commandsetter:
+        elif act["type"] == "COMMAND":
             cmd = act["args"][0]
             if len(act["args"]) > 1:
                 actcmd = act["args"][1]
             actfunction = cmd + ' " + value + "'
         #Set a filter range
-        elif act["call"] == filtersetter:
+        elif act["type"] == "FILTER":
             name = act["args"][0]["name"]
             index = act["args"][1]
             prop = act["args"][2]
             cmd = "filtermin" if prop == "minimum" else "filtermax"
             actfunction = 'select ' + name + '; ' + cmd + ' ' + str(index) + ' " + value + "; redraw'
+        #Set a colourmap
+        elif act["type"] == "COLOURMAP":
+            id = act["args"][0].id
+            actfunction = 'colourmap ' + str(id) + ' \\"" + value + "\\"' #Reload?
 
         #Append additional command (eg: reload)
         if actcmd:
@@ -92,23 +97,23 @@ def export():
         #Add to actions list
         actionjs += 'actions.push(function(value) {' + actfunction + '});\n'
 
+    #Add init and finish
+    actionjs += 'function init() {wi = new WindowInteractor(0);}\n</script>'
     hfile = open(filename, "w")
-    hfile.write('<html>\n<head>\n')
-    hfile.write('<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">\n');
-    hfile.write('<script type="text/Javascript" src="control.js"></script>\n')
-    hfile.write('<script type="text/Javascript" src="drawbox.js"></script>\n')
-    hfile.write('<script type="text/Javascript" src="OK-min.js"></script>\n')
-    hfile.write('<script type="text/Javascript" src="gl-matrix-min.js"></script>\n')
-    hfile.write('<link rel="stylesheet" type="text/css" href="control.css">\n')
-    hfile.write(fragmentShader);
-    hfile.write(vertexShader);
-    hfile.write('<script type="text/Javascript">\n')
-    hfile.write(actionjs)
-    hfile.write('function init() {wi = new WindowInteractor(0);}\n')
-    hfile.write('</script>\n')
-    hfile.write('</head>\n<body onload="init();">\n')
-    hfile.write(output)
-    hfile.write('</body>\n</html>\n')
+    hfile.write("""
+    <html>
+    <head>
+    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    <script type="text/Javascript" src="control.js"></script>
+    <script type="text/Javascript" src="drawbox.js"></script>
+    <script type="text/Javascript" src="OK-min.js"></script>
+    <script type="text/Javascript" src="gl-matrix-min.js"></script>
+    <link rel="stylesheet" type="text/css" href="control.css">
+    """ + fragmentShader + vertexShader + actionjs + """
+    </head>
+    <body onload="init();">""" + output + """
+    </body>
+    </html>""")
     hfile.close()
     filename = os.path.join(htmlpath, "control.html")
 
@@ -161,7 +166,7 @@ def loadscripts(onload="", viewer=None, html=""):
                 return {};
             });
             """
-            js = js.replace('---ONLOAD---', onload);
+            js = js.replace('---ONLOAD---', onload)
             display(Javascript(js))
     except NameError, ImportError:
         pass
@@ -170,9 +175,9 @@ def window(viewer, html="", align="left"):
     if not htmlpath: return
     viewerid = len(windows)
 
-    html += '<div style="position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">'
-    html += '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="border: 1px solid #aaa;"></img>'
-    html += '</div>'
+    html += '<div style="position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">\n'
+    html += '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="border: 1px solid #aaa;">\n'
+    html += '</div>\n'
 
     #Append the viewer ref
     windows.append(viewer)
@@ -187,23 +192,67 @@ def window(viewer, html="", align="left"):
     return viewerid
 
 def action(id, value):
-    if len(actions) > id:
-        #Pass the arguments list as function args
-        return actions[id]["call"](*actions[id]["args"], value=value)
+    #return str(id) + " : " + str(value)
+    #Execute actions from IPython
+    global actions
+    if len(actions) <= id:
+        return "#NoAction " + str(id)
+
+    args = actions[id]["args"]
+    act = actions[id]["type"]
+
+    if act == "PROPERTY":
+        #Set a property
+        if len(args) < 3: return "#args<3"
+        target = args[0]
+        property = args[1]
+        command = args[2]
+
+        target[property] = value
+        return command
+
+    elif act == "COMMAND":
+        if len(args) < 1: return "#args<1"
+        #Run a command with a value argument
+        command = args[0]
+        return command + " " + str(value) + "\nredraw"
+
+    elif act == "FILTER":
+        if len(args) < 3: return "#args<3"
+        #Set a filter range
+        target = args[0]
+        index = args[1]
+        property = args[2]
+
+        f = target["filters"]
+        f[index][property] = value
+        target["filters"] = f
+        return "redraw"
+
+    elif act == "COLOURMAP":
+        if len(args) < 1: return "#args<1"
+        #Set a colourmap
+        target = args[0]
+        #index = args[1]
+
+        return 'colourmap ' + str(target.id) + ' "' + value + '"'
+        """
+        map = json.loads(value)
+        f = target["colourmaps"]
+        maps = target.instance["colourmaps"]
+        maps[index] = value
+        #print value
+        target.instance["colourmaps"] = maps
+        return "reload"
+        """
+
     return ""
 
-def setter(target, property, command, value):
-    target[property] = value
-    return command
-
-def filtersetter(target, index, property, value):
-    f = target["filters"]
-    f[index][property] = value
-    target["filters"] = f
-    return "redraw"
-
-def commandsetter(command, value):
-    return command + " " + str(value) + "\nredraw"
+lastid = 0
+def uniqueid():
+    global lastid
+    lastid += 1
+    return str(lastid)
 
 class Panel(object):
     def __init__(self, viewer, showwin=True):
@@ -236,7 +285,6 @@ class Panel(object):
             render(html)
 
 class Control(object):
-
     def __init__(self, target, property=None, command=None, value=None, label=None):
         self.label = label
 
@@ -248,16 +296,16 @@ class Control(object):
             #Default action after property set is redraw, can be set to provided
             if command == None:
                 command = "redraw"
-            actions.append({"call" : setter, "args" : [target, property, command]})
+            actions.append({"type" : "PROPERTY", "args" : [target, property, command]})
             if label == None:
                 self.label = property.capitalize()
         elif command:
-            actions.append({"call" : commandsetter, "args" : [command]})
+            actions.append({"type" : "COMMAND", "args" : [command]})
             if label == None:
                 self.label = command.capitalize()
         else:
             #Assume derived class will fill out the action
-            actions.append({"call" : setter, "args" : []})
+            actions.append({"type" : "PROPERTY", "args" : []})
 
         if not self.label:
             self.label = ""
@@ -269,16 +317,16 @@ class Control(object):
         self.value = value
 
     def onchange(self):
-        return "; do_action(" + str(self.id) + ", this.value, this);"
+        return "do_action(" + str(self.id) + ", this.value, this);"
 
     def show(self):
         if not htmlpath: return
         #Show only this control
         viewerid = len(windows)-1 #Just use the most recently added interactor instance
         if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
-        html = '<div data-id="' + str(viewerid) + '" style="float: left;" class="lvctrl">\n'
-        #html += style
-        if self.label: html += '<p>' + self.label + ':</p>\n'
+        html = '<div data-id="' + str(viewerid) + '" style="" class="lvctrl">\n'
+        #html = '<div data-id="' + str(viewerid) + '" style="float: left;" class="lvctrl">\n'
+        if len(self.label): html += '<p>' + self.label + ':</p>\n'
         html += self.controls()
         html += '</div>\n'
         render(html)
@@ -294,9 +342,7 @@ class Control(object):
         return html
 
 class Checkbox(Control):
-
     def __init__(self, *args, **kwargs):
-
         super(Checkbox, self).__init__(*args, **kwargs)
 
     def controls(self):
@@ -311,9 +357,7 @@ class Checkbox(Control):
         return "; do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
 
 class Range(Control):
-
     def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None):
-
         super(Range, self).__init__(target, property, command, value, label)
 
         self.range = range
@@ -331,9 +375,86 @@ class Range(Control):
         html += super(Range, self).controls('range', attribs, onchange='this.previousElementSibling.value=this.value; ')
         return html
 
+class Command(Control):
+    def __init__(self, *args, **kwargs):
+        super(Command, self).__init__(command=" ", label="Command", *args, **kwargs)
+
+    def controls(self):
+        html = """
+        <input type="text" value="" 
+        onkeypress="if (event.keyCode == 13) { var cmd=this.value.trim(); 
+        do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };">\n
+        """
+        return html.replace('---ID---', str(self.id))
+
+class Colour(Control):
+    def __init__(self, *args, **kwargs):
+        super(Colour, self).__init__(command="", *args, **kwargs)
+
+    def controls(self):
+        html = """
+        <div><div class="colourbg checkerboard">
+          <div id="colour_---ELID---" class="colour" onclick="
+            var col = new Colour();
+            var offset = findElementPos(this);
+            var el = this;
+            var savefn = function(val) {
+              var col = new Colour(0);
+              col.setHSV(val);
+              el.style.backgroundColor = col.html();
+              do_action(---ID---, col.html(), el);
+            }
+            el.picker = new ColourPicker(savefn);
+            el.picker.pick(col, offset[0], offset[1]);">
+            </div>
+        </div></div>
+        <script>
+        var el = document.getElementById("colour_---ELID---");
+        //Set the initial colour
+        var col = new Colour('---VALUE---');
+        el.style.backgroundColor = col.html();
+        </script>
+        """
+        html = html.replace('---VALUE---', str(self.value))
+        html = html.replace('---ELID---', uniqueid())
+        return html.replace('---ID---', str(self.id))
+
+class ColourMap(Control):
+    def __init__(self, target, *args, **kwargs):
+        super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
+        #Get and save the map id of target object
+        maps = target.instance.state["colourmaps"]
+        if self.value >= len(maps)-1:
+            self.map = maps[self.value]
+        #Replace action on the control
+        actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
+
+    def controls(self):
+        html = """
+        <canvas id="palette_---ELID---" width="512" height="24" class="palette checkerboard">
+        </canvas>
+        <script>
+        var el = document.getElementById("palette_---ELID---");
+        if (!el.gradient) {
+          //Create the gradient editor
+          el.gradient = new GradientEditor(el, function(obj, id) {
+              //Gradient updated
+              console.log("PALETTE: " + obj.palette);
+              //do_action(---ID---, obj.palette, el);
+              do_action(---ID---, obj.palette.toString(), el);
+            }
+          , true); //Enable premultiply
+          //Load the initial colourmap
+          el.gradient.read(---COLOURMAP---);
+        }
+        </script>
+        """
+        html = html.replace('---COLOURMAP---', json.dumps(self.map["colours"]))
+        html = html.replace('---ELID---', uniqueid())
+        return html.replace('---ID---', str(self.id))
+
 class TimeStepper(Range):
     def __init__(self, viewer, *args, **kwargs):
-
         #Acts as a command setter with some additional controls
         super(TimeStepper, self).__init__(target=viewer, label="Timestep", command="timestep", *args, **kwargs)
 
@@ -346,9 +467,10 @@ class TimeStepper(Range):
         attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step};
         html = Control.controls(self, 'number', attribs, onchange='this.nextElementSibling.value=this.value; ')
         html += Control.controls(self, 'range', attribs, onchange='this.previousElementSibling.value=this.value; ')
-        html += '<br>\n'
-        html += '<input type="button" onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()" value="&larr;" />\n'
-        html += '<input type="button" onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()" value="&rarr;" />\n'
+        html += """<br>
+        <input type="button" onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()" value="&larr;" />
+        <input type="button" onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()" value="&rarr;" />
+        """
         return html
 
 class Filter(object):
@@ -373,8 +495,8 @@ class Filter(object):
         self.ctrlmax = Range(step=step, range=range, value=self.filter["maximum"])
 
         #Replace actions on the controls
-        actions[self.ctrlmin.id] = {"call" : filtersetter, "args" : [target, filteridx, "minimum"]}
-        actions[self.ctrlmax.id] = {"call" : filtersetter, "args" : [target, filteridx, "maximum"]}
+        actions[self.ctrlmin.id] = {"type" : "FILTER", "args" : [target, filteridx, "minimum"]}
+        actions[self.ctrlmax.id] = {"type" : "FILTER", "args" : [target, filteridx, "maximum"]}
 
     def controls(self):
         return self.ctrlmin.controls() + "<br>\n" + self.ctrlmax.controls()

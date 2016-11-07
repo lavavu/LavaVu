@@ -8,7 +8,7 @@ function initBox(el, cmd_callback) {
   el.parentElement.appendChild(canvas);
   //canvas.style.cssText = "position: absolute; z-index: 0; margin: 0px; padding: 0px; border: none; display: block;"
   //canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: auto; top: 0; left: 0; bottom: 0; right: 0; z-index: 51; border: none;"
-  canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: 0px; padding: 0px; top: 0; left: 0; bottom: 0; right: 0; z-index: 51; border: none;"
+  canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: 0px; padding: 0px; top: 0; left: 0; bottom: 0; right: 0; z-index: 11; border: none;"
   viewer = new Viewer(canvas);
 
   //Canvas event handling
