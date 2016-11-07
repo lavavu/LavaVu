@@ -150,16 +150,17 @@ class Objects(dict):
     pass
 
   def update(self):
-    idx = 0
     self.list = []
     for obj in self.instance.state["objects"]:
-      if obj["name"] in self:
-        self[obj["name"]].get()
-        self.list.append(self[obj["name"]])
-      else:
-        o = Obj(obj, self.instance)
-        self[obj["name"]] = o
-        self.list.append(o)
+        if obj["name"] in self:
+            self[obj["name"]].get()
+            self.list.append(self[obj["name"]])
+        else:
+            o = Obj(obj, self.instance)
+            self[obj["name"]] = o
+            self.list.append(o)
+        #Save the id number
+        self.list[-1].id = len(self.list)
 
   def __str__(self):
     return '[' + ', '.join(self.keys()) + ']'
