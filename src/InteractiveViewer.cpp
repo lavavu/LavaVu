@@ -586,7 +586,7 @@ int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int 
 {
   //Try index(id) first
   int id = parsed.Int(key, -1, idx);
-  if (id > 0 && id <= (int)amodel->colourMaps.size()) return id-1;
+  if (id > 0 && id <= (int)amodel->colourMaps.size()) return -1;
 
   //Find by name match in all colour maps
   std::string what = parsed.get(key, idx);
@@ -2041,8 +2041,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Set colourmap on object by name/ID match
     DrawingObject* obj = aobject;
     int next = 0;
-    parsed.has(ival, "colourmap"); //Get id if any
-    if (!obj)
+    //Select by id, or active as fallback
+    if (!obj || parsed.has(ival, "colourmap"))
     {
       obj = lookupObject(parsed, "colourmap");
       next++;
@@ -2087,12 +2087,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           else
             cmap = amodel->addColourMap();
           amodel->colourMaps[cmap]->loadPalette(what);
-          //cmap->print();
+          //amodel->colourMaps[cmap]->print();
           obj->properties.data["colourmap"] = cmap;
           //amodel->colourMaps[cmap]->calibrate(); //Recalibrate
         }
       }
       //Full object reload if colours updated
+      //NOTE: This will not reload other objects using the same colourmap
       amodel->reload(obj);
     }
   }
