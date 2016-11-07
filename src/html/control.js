@@ -1,4 +1,3 @@
-var BASEURL = "http://localhost:9999"
 var kernel;
 //Maintain a list of interactor instances opened by id
 instances = [];
@@ -14,6 +13,12 @@ function initLoad() {
     kernel.execute('modules = dict(sys.modules)');
     kernel.execute('for m in modules: lavavu = modules[m].lavavu if "lavavu" in dir(modules[m]) else lavavu');
   }
+}
+
+function getUrl() {
+  var loc = window.location;
+  var baseUrl = loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "");
+  return baseUrl;
 }
 
 function do_action(id, val, element) {
@@ -92,13 +97,15 @@ WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
     this.get_image();
   } else {
     //HTTP interface
+    //Replace newlines with semi-colon first
+    cmd = cmd.replace(/\n/g,';');
     if (instant) {
-      var url = BASEURL + "/icommand=" + cmd + "?" + new Date().getTime();
+      var url = getUrl() + "/icommand=" + cmd + "?" + new Date().getTime();
       img = document.getElementById('imgtarget_0');
       img.onload = null;
       if (img) img.src = url;
     } else {
-      var url = BASEURL + "/command=" + cmd + "?" + new Date().getTime()
+      var url = getUrl() + "/command=" + cmd + "?" + new Date().getTime()
       x = new XMLHttpRequest();
       x.open('GET', url, true);
       x.send();
@@ -116,16 +123,23 @@ WindowInteractor.prototype.set_prop = function(obj, prop, val) {
 
 WindowInteractor.prototype.do_action = function(id, val) {
   if (kernel) {
+    //Non-numeric, add quotes and strip newlines
+    if (typeof(val) == 'string' && ("" + parseFloat(val) !== val)) {
+      val = val.replace(/\n/g,';');
+      val = '"' + val + '"';
+    }
     kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
     kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
     /*/Debug callback
     var callbacks = {'output' : function(out) {
-        if (!out.content.data) return;
+        if (!out.content.data) {alert("NO DATA"); return;}
         data = out.content.data['text/plain']
-          alert(data);
+          alert("RESULT: " + data);
       }
     };*/
+    //kernel.execute('len(lavavu.control.actions)', {iopub: callbacks}, {silent: false});
     //kernel.execute('str(lavavu.control.actions[' + id + '])', {iopub: callbacks}, {silent: false});
+    //kernel.execute('lavavu.control.action(' + id + ',' + val + ')', {iopub: callbacks}, {silent: false});
     //kernel.execute('str(lavavu.control.actions[' + id + ']["args"][0])', {iopub: callbacks}, {silent: false});
     //kernel.execute('cmds', {iopub: callbacks}, {silent: false});
     this.get_image();
@@ -160,7 +174,7 @@ WindowInteractor.prototype.get_image = function(onload) {
     kernel.execute('lavavu.control.windows[' + this.id + '].frame()', {iopub: callbacks}, {silent: false});
   } else {
     //if (!this.img) this.img = document.getElementById('imgtarget_0');
-    var url = BASEURL + "/image?" + new Date().getTime();
+    var url = getUrl() + "/image?" + new Date().getTime();
     if (this.img) {
       this.img.onload = onload;
       this.img.src = url;
@@ -182,7 +196,7 @@ WindowInteractor.prototype.get_state = function(onget) {
     kernel.execute('lavavu.control.windows[' + this.id + '].getState()', {iopub: callbacks}, {silent: false});
   }
   else {
-    var url = BASEURL + "/getstate"
+    var url = getUrl() + "/getstate"
     x = new XMLHttpRequest();
     x.onload = function() { 
       if(x.status == 200)
