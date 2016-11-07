@@ -53,6 +53,7 @@ public:
 
   //Function implementations
   void open(int width, int height);
+  void display();
   void execute();
 };
 

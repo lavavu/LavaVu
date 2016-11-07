@@ -103,7 +103,6 @@ protected:
   QuadSurfaces* border;
 
 public:
-  bool automate;
   bool loop;
   int animate;
   bool status;

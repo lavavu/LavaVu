@@ -170,7 +170,7 @@ class Viewer(object):
     binary = ""
     res = (640,480)
 
-    def __init__(self, reuse=False, binary="LavaVu", *args, **kwargs):
+    def __init__(self, reuse=False, binary="bin/LavaVu", *args, **kwargs):
         self.binary = binary
         try:
             #TODO: re-using instance causes multiple interactive viewer instances to die

@@ -93,6 +93,14 @@ void CGLViewer::open(int w, int h)
   OpenGLViewer::init();
 }
 
+void CGLViewer::display()
+{
+  if (!context) return;
+  // Set the current window's context as active
+  CGLSetCurrentContext(context);
+  OpenGLViewer::display();
+}
+
 void CGLViewer::execute()
 {
   // Set the current window's context as active

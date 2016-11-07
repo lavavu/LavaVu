@@ -13,6 +13,8 @@ public:
   json globals;
   json defaults;
 
+  bool automate;
+
   //Model
   int now;
 
@@ -56,6 +58,8 @@ public:
   {
     defaults = json::object();
     globals = json::object();
+
+    automate = false;
 
     if (borderobj) delete borderobj;
     if (axisobj) delete axisobj;

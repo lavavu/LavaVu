@@ -159,7 +159,6 @@ void LavaVu::defaults()
 
   loop = false;
   animate = 0;
-  automate = false;
   repeat = 0;
   encoder = NULL;
 }
@@ -252,7 +251,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         //return from run() immediately after loading
         //All actions to be performed by subsequent 
         //library calls
-        automate = true;
+        drawstate.automate = true;
         break;
       case 'f':
         ss >> initfigure;
@@ -503,7 +502,7 @@ void LavaVu::run(std::vector<std::string> args)
   }
 
   //If automation mode turned on, return at this point
-  if (automate) return;
+  if (drawstate.automate) return;
 
   //Start event loop
   if (viewer->visible)

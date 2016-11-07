@@ -33,11 +33,13 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+//NOTE: in hidden window and -a "automate" mode
+//CGLWindow is used instead of CocoaWindow as Cocoa requires event loop
+//Only single CocoaWindow can be opened due to use of globals
 #ifdef HAVE_CGL
 
 #include "CocoaViewer.h"
 
-OpenGLViewer* _viewer = NULL;
 bool redisplay = true;
 
 #import <Cocoa/Cocoa.h>
@@ -54,6 +56,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   bool running;
   NSRect windowRect;
   NSRecursiveLock* appLock;
+  OpenGLViewer* viewer;
 }
 @end
 
@@ -148,7 +151,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSLog(@"GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   //Call Viewer OpenGL init
-  _viewer->init();
+  viewer->init();
 
   // End temp
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
@@ -164,13 +167,13 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   return YES;
 }
 
-void getKeyModifiers(NSEvent* event)
+- (void)getKeyModifiers:(NSEvent*) event
 {
   //Save shift states
   int modifiers = [event modifierFlags];
-  _viewer->keyState.shift = (modifiers & NSShiftKeyMask);
-  _viewer->keyState.ctrl = (modifiers & NSControlKeyMask);
-  _viewer->keyState.alt = (modifiers & NSAlternateKeyMask);
+  viewer->keyState.shift = (modifiers & NSShiftKeyMask);
+  viewer->keyState.ctrl = (modifiers & NSControlKeyMask);
+  viewer->keyState.alt = (modifiers & NSAlternateKeyMask);
 }
 
 - (void)mouseMoved:(NSEvent*) event
@@ -186,9 +189,9 @@ void getKeyModifiers(NSEvent* event)
 {
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
-  getKeyModifiers(event);
+  [self getKeyModifiers:event];
   //Only works for left-drag
-  redisplay = _viewer->mouseMove((int)point.x, _viewer->height-(int)point.y);
+  redisplay = viewer->mouseMove((int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Mouse pos: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -199,10 +202,10 @@ void getKeyModifiers(NSEvent* event)
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   //MouseButton button = event.deltaY < 0 ? WheelUp : WheelDown;
   //redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
-  getKeyModifiers(event);
+  [self getKeyModifiers:event];
   float delta = [event deltaY] / 5.0;
   if (delta != 0)
-    redisplay = _viewer->mouseScroll(delta);
+    redisplay = viewer->mouseScroll(delta);
   //NSLog(@"Mouse wheel at: %lf, %lf. Delta: %lf", point.x, point.y, [event deltaY]);
   [appLock unlock];
 }
@@ -212,8 +215,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = LeftButton;
-  _viewer->mouseState ^= (int)pow(2, button);
-  redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
+  viewer->mouseState ^= (int)pow(2, button);
+  redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Left mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -223,8 +226,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = LeftButton;
-  _viewer->mouseState = 0;
-  redisplay = _viewer->mousePress(button, false, (int)point.x, _viewer->height-(int)point.y);
+  viewer->mouseState = 0;
+  redisplay = viewer->mousePress(button, false, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Left mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -234,8 +237,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = RightButton;
-  _viewer->mouseState ^= (int)pow(2, button);
-  redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
+  viewer->mouseState ^= (int)pow(2, button);
+  redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -245,8 +248,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = RightButton;
-  _viewer->mouseState = 0;
-  redisplay = _viewer->mousePress(button, false, (int)point.x, _viewer->height-(int)point.y);
+  viewer->mouseState = 0;
+  redisplay = viewer->mousePress(button, false, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Right mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -256,8 +259,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = MiddleButton;
-  _viewer->mouseState ^= (int)pow(2, button);
-  redisplay = _viewer->mousePress(button, true, (int)point.x, _viewer->height-(int)point.y);
+  viewer->mouseState ^= (int)pow(2, button);
+  redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Middle mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -267,8 +270,8 @@ void getKeyModifiers(NSEvent* event)
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = MiddleButton;
-  _viewer->mouseState = 0;
-  redisplay = _viewer->mousePress(button, false, (int)point.x, _viewer->height-(int)point.y);
+  viewer->mouseState = 0;
+  redisplay = viewer->mousePress(button, false, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Middle mouse up: %lf, %lf", point.x, point.y);
   [appLock unlock];
 }
@@ -306,7 +309,7 @@ void getKeyModifiers(NSEvent* event)
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   NSString *keyChars = [event charactersIgnoringModifiers];
   unichar keyChar = 0;
-  getKeyModifiers(event);
+  [self getKeyModifiers:event];
   if ( [keyChars length] == 1 ) {
     unsigned char key = [keyChars characterAtIndex:0];
     if ([event keyCode] == 126) key = KEY_UP;
@@ -318,7 +321,7 @@ void getKeyModifiers(NSEvent* event)
     else if ([event keyCode] == 115) key = KEY_HOME;
     else if ([event keyCode] == 119) key = KEY_END;
 
-    redisplay = _viewer->keyPress(key, (int)point.x, _viewer->height-(int)point.y);
+    redisplay = viewer->keyPress(key, (int)point.x, viewer->height-(int)point.y);
     //redisplay = true;
   }
   [appLock unlock];
@@ -332,12 +335,12 @@ void getKeyModifiers(NSEvent* event)
   [[self openGLContext] makeCurrentContext];
   CGLLockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  if (_viewer->postdisplay || _viewer->pollInput())
+  if (viewer->postdisplay || viewer->pollInput())
     redisplay = true;
 
   //NSLog(@"Update");
   if (redisplay)
-    _viewer->display();
+    viewer->display();
   redisplay = false;
 
   // EndTemp
@@ -345,7 +348,7 @@ void getKeyModifiers(NSEvent* event)
   CGLFlushDrawable((CGLContextObj)[[self openGLContext] CGLContextObj]);
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
-  if (_viewer->quitProgram)   // Update loop returns false
+  if (viewer->quitProgram)   // Update loop returns false
   {
     [NSApp terminate:self];
   }
@@ -372,8 +375,8 @@ void getKeyModifiers(NSEvent* event)
   CGLContextObj cglContext = (CGLContextObj)[[self openGLContext] CGLContextObj];
   CGLSetParameter(cglContext, kCGLCPSurfaceBackingSize, dim);
 
-  _viewer->resize(size.width, size.height);
-  _viewer->postdisplay = true;
+  viewer->resize(size.width, size.height);
+  viewer->postdisplay = true;
  
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
   [appLock unlock];
@@ -426,11 +429,33 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef displayLink, const CV
   return result;
 }
 
+//GLOBALS - until fixed this prevents > 1 instance of visible CocoaWindow
 NSAutoreleasePool * pool;
 NSWindow * window;
 
-void CocoaWindow_Open()
+CocoaViewer::CocoaViewer() : CGLViewer()
 {
+  //Default to visible
+  visible = true;
+}
+
+CocoaViewer::~CocoaViewer()
+{
+  [pool drain];
+}
+
+void CocoaViewer::open(int w, int h)
+{
+  if (!visible || app->drawstate.automate) 
+  {
+    //Use CGL viewer for offscreen/automated
+    CGLViewer::open(w, h);
+  }
+  else
+  {
+    //Call base class open to set width/height
+    OpenGLViewer::open(w, h);
+
   // Autorelease Pool:
   // Objects declared in this scope will be automatically
   // released at the end of it, when the pool is "drained".
@@ -448,7 +473,7 @@ void CocoaWindow_Open()
 
   // Window bounds (x, y, width, height)
   NSRect screenRect = [[NSScreen mainScreen] frame];
-  NSRect viewRect = NSMakeRect(0, 0, _viewer->width, _viewer->height);
+  NSRect viewRect = NSMakeRect(0, 0, width, height);
   NSRect windowRect = NSMakeRect(NSMidX(screenRect) - NSMidX(viewRect),
                                  NSMidY(screenRect) - NSMidY(viewRect),
                                  viewRect.size.width,
@@ -488,6 +513,7 @@ void CocoaWindow_Open()
   // Create app delegate to handle system events
   CView* view = [[[CView alloc] initWithFrame:windowRect] autorelease];
   view->windowRect = windowRect;
+  view->viewer = this;
   [window setAcceptsMouseMovedEvents:YES];
   [window setContentView:view];
   [window setDelegate:view];
@@ -502,80 +528,37 @@ void CocoaWindow_Open()
 
   // Show window
   [window orderFrontRegardless];
-}
 
-void CocoaWindow_Execute()
-{
-  //Run event loop
-  _viewer->postdisplay = true;
-  [NSApp run];
-}
-
-void CocoaWindow_Setsize(int width, int height)
-{
-  //Doing this in pool fixes warnings, but could still be threading issues here
-  //causing intermittant problems...
-  NSAutoreleasePool * newpool = [[NSAutoreleasePool alloc] init];
-
-  //Resize to specified size
-  NSSize size = [ [ window contentView ] frame ].size;
-  NSRect frame = [window frame];
-
-  if (size.width != width && size.height != height)
-  {
-    //Calc and add frame decoration sizes
-    float xdiff = frame.size.width - size.width;
-    float ydiff = frame.size.height - size.height;
-
-    frame.size.width = width + xdiff;
-    frame.size.height = height + ydiff;
-
-    [window setFrame:frame display:YES animate:NO];
-  }
-  [newpool release];
-}
-
-void CocoaWindow_FullScreen()
-{
-  [window toggleFullScreen:nil];
-}
-
-void CocoaWindow_Close()
-{
-  [pool drain];
-}
-
-CocoaViewer::CocoaViewer() : CGLViewer()
-{
-  _viewer = this;
-  visible = true; //override
-}
-
-CocoaViewer::~CocoaViewer()
-{
-  CocoaWindow_Close();
-}
-
-void CocoaViewer::open(int w, int h)
-{
-  if (!visible) 
-  {
-    //Use CGL viewer for offscreen
-    CGLViewer::open(w, h);
-  }
-  else
-  {
-    //Call base class open to set width/height
-    OpenGLViewer::open(w, h);
-    CocoaWindow_Open();
   }
 }
 
 void CocoaViewer::setsize(int width, int height)
 {
   OpenGLViewer::setsize(width, height);
+
   if (visible)
-    CocoaWindow_Setsize(width, height);
+  {
+    //Doing this in pool fixes warnings, but could still be threading issues here
+    //causing intermittant problems...
+    NSAutoreleasePool * newpool = [[NSAutoreleasePool alloc] init];
+
+    //Resize to specified size
+    NSSize size = [ [ window contentView ] frame ].size;
+    NSRect frame = [window frame];
+
+    if (size.width != width && size.height != height)
+    {
+      //Calc and add frame decoration sizes
+      float xdiff = frame.size.width - size.width;
+      float ydiff = frame.size.height - size.height;
+
+      frame.size.width = width + xdiff;
+      frame.size.height = height + ydiff;
+
+      [window setFrame:frame display:YES animate:NO];
+    }
+    [newpool release];
+  }
 }
 
 void CocoaViewer::show()
@@ -585,6 +568,7 @@ void CocoaViewer::show()
 
 void CocoaViewer::display()
 {
+  //[[self openGLContext] makeCurrentContext];
   OpenGLViewer::display();
   //swap();
 }
@@ -596,8 +580,17 @@ void CocoaViewer::swap()
 
 void CocoaViewer::execute()
 {
+  postdisplay = true;
+  if (app->drawstate.automate) 
+  {
+    app->drawstate.automate = false;
+    visible = true;
+    open(width, height);
+  }
+
+  //Run event loop
   if (visible) 
-    CocoaWindow_Execute();
+    [NSApp run];
   else
     OpenGLViewer::execute();
 }
@@ -605,6 +598,6 @@ void CocoaViewer::execute()
 void CocoaViewer::fullScreen()
 {
   if (visible)
-    CocoaWindow_FullScreen();
+    [window toggleFullScreen:nil];
 }
 #endif   //HAVE_CGL
