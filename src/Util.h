@@ -163,7 +163,7 @@ public:
     if (value.size()) clear();
   }
 
-  unsigned int bytes() {return sizeof(dtype)*value.size();}
+  unsigned int bytes() {return sizeof(dtype)*size();}
 
   virtual void read(unsigned int n, const void* data)
   {
