@@ -771,6 +771,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed["save"];
     if (what.length() == 0 && amodel->db)
     {
+      amodel->storeFigure(); //Save the state
       amodel->reopen(true);  //Open writable
       amodel->writeState();
     }

@@ -140,12 +140,7 @@ bool Model::loadFigure(int fig)
 {
   if (fig < 0 || figures.size() == 0) return false;
   //Save currently selected first
-  if (figure >= 0 && figures.size() > figure)
-  {
-    std::ostringstream json;
-    jsonWrite(json);
-    figures[figure] = json.str();
-  }
+  storeFigure();
   if (fig >= (int)figures.size()) fig = 0;
   if (fig < 0) fig = figures.size()-1;
   figure = fig;
@@ -157,6 +152,16 @@ bool Model::loadFigure(int fig)
   return true;
 }
 
+void Model::storeFigure()
+{
+  //Save current state in current selected figure
+  if (figure >= 0 && figures.size() > figure)
+  {
+    std::ostringstream json;
+    jsonWrite(json);
+    figures[figure] = json.str();
+  }
+}
 
 int Model::addFigure(const std::string& name, const std::string& state)
 {
@@ -1491,7 +1496,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
       DataContainer* block = data[i]->data[data_type];
       if (!block || block->size() == 0) continue;
       std::cerr << "Writing geometry (type[" << data_type << "] * " << block->size()
-                << ") for object : " << obj->dbid << " => " << obj->name() << std::endl;
+                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       sqlite3_stmt* statement;
       unsigned char* buffer = (unsigned char*)block->ref(0);
       unsigned long src_len = block->bytes();
@@ -1547,6 +1552,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
       }
 
       /* Setup blob data for insert */
+      debug_print("Writing %lu bytes\n", src_len);
       if (sqlite3_bind_blob(statement, 2, buffer, src_len, SQLITE_STATIC) != SQLITE_OK)
         abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
 
