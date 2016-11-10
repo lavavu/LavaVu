@@ -33,7 +33,7 @@ function initPage(src, fn) {
         script.src = query;
         document.body.appendChild(script);
       } else {
-        $S('fileupload').display = "none";
+        document.getElementById('fileupload').style.display = "none";
         progress("Downloading model data from server...");
         ajaxReadFile(query, initPage, false, updateProgress);
       }
@@ -58,7 +58,7 @@ function initPage(src, fn) {
 
   window.onresize = function() {viewer.drawTimed();};
 
-  var canvas = $('canvas');
+  var canvas = document.getElementById('canvas');
   //this.canvas = document.createElement("canvas");
   //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
   //if (!parentEl) parentEl = document.body;
@@ -82,7 +82,7 @@ function initPage(src, fn) {
     server = true;
 
     //if (!viewer.gl) {
-      //img = $('frame');
+      //img = document.getElementById('frame');
       //Image canvas event handling
       //img.mouse = new Mouse(img, new MouseEventHandler(serverMouseClick, serverMouseWheel, serverMouseMove, serverMouseDown));
     //}
@@ -101,7 +101,7 @@ function initPage(src, fn) {
   } else {
     setAll('none', 'server');
     setAll('', 'client');
-    $('frame').style.display = 'none';
+    document.getElementById('frame').style.display = 'none';
   }
 
   if (!noui) {
@@ -124,7 +124,7 @@ function initPage(src, fn) {
     var source = getSourceFromElement('source');
     if (source) {
       //Preloaded data
-      $S('fileupload').display = "none";
+      document.getElementById('fileupload').style.display = "none";
       viewer.loadFile(source);
     } else {
       //Demo objects
@@ -139,14 +139,14 @@ function loadData(data) {
 }
 
 function progress(text) {
-  var el = $('progress');
+  var el = document.getElementById('progress');
   if (el.style.display == 'block' || text == undefined)
     //el.style.display = 'none';
-    setTimeout("$('progress').style.display = 'none';", 150);
+    setTimeout("document.getElementById('progress').style.display = 'none';", 150);
   else {
-    $('progressmessage').innerHTML = text;
-    $('progressstatus').innerHTML = "";
-    $S('progressbar').width = 0;
+    document.getElementById('progressmessage').innerHTML = text;
+    document.getElementById('progressstatus').innerHTML = "";
+    document.getElementById('progressbar').style.width = 0;
     el.style.display = 'block';
   }
 }
@@ -165,7 +165,7 @@ function canvasMouseClick(event, mouse) {
     //viewer.reload = true;
     sortTimer();
   }
-  if ($("immsort").checked == true) {
+  if (document.getElementById("immsort").checked == true) {
     //No timers
     viewer.draw();
     viewer.rotated = true; 
@@ -176,7 +176,7 @@ function canvasMouseClick(event, mouse) {
 }
 
 function sortTimer(ifexists) {
-  if ($("immsort").checked == true) {
+  if (document.getElementById("immsort").checked == true) {
     //No timers
     return;
   }
@@ -187,7 +187,7 @@ function sortTimer(ifexists) {
     //No existing timer? Don't start a new one
     return;
   }
-  var element = $("sort");
+  var element = document.getElementById("sort");
   element.style.display = 'block';
   viewer.timer = setTimeout(function() {viewer.rotated = true; element.onclick.apply(element);}, 2000);
 }
@@ -204,7 +204,7 @@ function canvasMouseMove(event, mouse) {
 
   //Switch buttons for translate/rotate
   var button = mouse.button;
-  if ($('tmode').checked)
+  if (document.getElementById('tmode').checked)
     button = Math.abs(button-2);
 
   //console.log(mouse.deltaX + "," + mouse.deltaY);
@@ -233,7 +233,7 @@ function canvasMouseMove(event, mouse) {
     viewer.draw(true);
   //Draw border while interacting (automatically on for models > 500K vertices)
   //Hold shift to switch from default behaviour
-  else if ($("interactive").checked == true)
+  else if (document.getElementById("interactive").checked == true)
     viewer.draw();
   else
     viewer.draw(!event.shiftKey);
@@ -373,9 +373,9 @@ function defaultColourMaps() {
 function loadColourMaps() {
   //Load colourmaps
   if (!vis.colourmaps) return;
-  var list = $('colourmap-presets');
+  var list = document.getElementById('colourmap-presets');
   var sel = list.value;
-  var canvas = $('palette');
+  var canvas = document.getElementById('palette');
   list.options.length = 1; //Remove all except "None"
   for (var i=0; i<vis.colourmaps.length; i++) {
     var palette = new Palette(vis.colourmaps[i].colours);
@@ -556,11 +556,11 @@ function msb_radix_sort(arr, begin, end, bit) {
  */
 function Toolbox(id, x, y) {
   //Mouse processing:
-  this.el = $(id);
+  this.el = document.getElementById(id);
   this.mouse = new Mouse(this.el, this);
   this.mouse.moveUpdate = true;
   this.el.mouse = this.mouse;
-  this.style = $S(id);
+  this.style = this.el.style;
   this.drag = false;
   if (x && y) {
     this.style.left = x + 'px';
@@ -742,7 +742,7 @@ Renderer.prototype.loadElements = function() {
     //Add visible element positions
     for (var id in vis.objects) {
       var name = vis.objects[id].name;
-      var skip = !$('object_' + name).checked;
+      var skip = !document.getElementById('object_' + name).checked;
       if (this.type == "particle") {
         if (vis.objects[id].points) {
           for (var e in vis.objects[id].points) {
@@ -1050,7 +1050,7 @@ Renderer.prototype.updateBuffers = function() {
 
     /*/Auto 50% subsample when > 1M particles
     var subsample = 1;
-    if ($("subsample").checked == true && newParticles > 1000000) {
+    if (document.getElementById("subsample").checked == true && newParticles > 1000000) {
       subsample = Math.round(newParticles/1000000 + 0.5);
       OK.debug("Subsampling at " + (100/subsample) + "% (" + subsample + ") to " + Math.floor(newParticles / subsample));
     }*/
@@ -1379,11 +1379,11 @@ function Viewer(canvas) {
   } catch(e) {
     //No WebGL
     OK.debug(e);
-    if (!this.webgl) $('canvas').style.display = 'none';
+    if (!this.webgl) document.getElementById('canvas').style.display = 'none';
   }
 
   //Default colour editor
-  this.gradient = new GradientEditor($('palette'), paletteUpdate);
+  this.gradient = new GradientEditor(document.getElementById('palette'), paletteUpdate);
 
   this.width = 0; //Auto resize
   this.height = 0;
@@ -1401,8 +1401,8 @@ function Viewer(canvas) {
   this.orientation = 1.0; //1.0 for RH, -1.0 for LH
   this.background = new Colour(0xff404040);
   document.body.style.background = this.background.html();
-  $("bgColour").value = '';
-  this.showBorder = $("border").checked;
+  document.getElementById("bgColour").value = '';
+  this.showBorder = document.getElementById("border").checked;
   this.pointScale = 1.0;
   this.pointType = 0;
 
@@ -1517,27 +1517,27 @@ Viewer.prototype.loadFile = function(source) {
   }
 
   //Copy global options to controls where applicable..
-  $("bgColour").value = this.background.r;
-  $("pointScale-out").value = (this.pointScale || 1.0);
-  $("pointScale").value = $("pointScale-out").value * 10.0;
-  $("border").checked = this.showBorder;
-  $("axes").checked = this.axes;
-  $("globalPointType").value = this.pointType;
+  document.getElementById("bgColour").value = this.background.r;
+  document.getElementById("pointScale-out").value = (this.pointScale || 1.0);
+  document.getElementById("pointScale").value = document.getElementById("pointScale-out").value * 10.0;
+  document.getElementById("border").checked = this.showBorder;
+  document.getElementById("axes").checked = this.axes;
+  document.getElementById("globalPointType").value = this.pointType;
 
-  $("global-opacity").value = $("global-opacity-out").value = (vis.properties.opacity || 1.0).toFixed(2);
-  $('global-brightness').value = $("global-brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
-  $('global-contrast').value = $("global-contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
-  $('global-saturation').value = $("global-saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
+  document.getElementById("global-opacity").value = document.getElementById("global-opacity-out").value = (vis.properties.opacity || 1.0).toFixed(2);
+  document.getElementById('global-brightness').value = document.getElementById("global-brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
+  document.getElementById('global-contrast').value = document.getElementById("global-contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
+  document.getElementById('global-saturation').value = document.getElementById("global-saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
 
-  $('global-xmin').value = $("global-xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
-  $('global-xmax').value = $("global-xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
-  $('global-ymin').value = $("global-ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
-  $('global-ymax').value = $("global-ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
-  $('global-zmin').value = $("global-zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
-  $('global-zmax').value = $("global-zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
+  document.getElementById('global-xmin').value = document.getElementById("global-xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
+  document.getElementById('global-xmax').value = document.getElementById("global-xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
+  document.getElementById('global-ymin').value = document.getElementById("global-ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
+  document.getElementById('global-ymax').value = document.getElementById("global-ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
+  document.getElementById('global-zmin').value = document.getElementById("global-zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
+  document.getElementById('global-zmax').value = document.getElementById("global-zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
 
   //Load objects and add to form
-  var objdiv = $("objects");
+  var objdiv = document.getElementById("objects");
   removeChildren(objdiv);
 
   //Decode into Float buffers and replace original base64 data
@@ -1686,7 +1686,7 @@ Viewer.prototype.loadFile = function(source) {
   OK.debug(time + " seconds to import data");
 
   //Default to interactive render if vertex count < 0.5 M
-  $("interactive").checked = (this.vertexCount <= 500000);
+  document.getElementById("interactive").checked = (this.vertexCount <= 500000);
 
   //TODO: loaded custom shader is not replaced by default when new model loaded...
   for (var type in types) {
@@ -1792,17 +1792,17 @@ Viewer.prototype.exportFile = function() {
 Viewer.prototype.properties = function(id) {
   //Properties button clicked... Copy to controls
   properties.id = id;
-  $('obj_name').innerHTML = vis.objects[id].name;
+  document.getElementById('obj_name').innerHTML = vis.objects[id].name;
   this.setColourMap(vis.objects[id].colourmap);
 
-  function loadProp(name, def) {$(name + '-out').value = $(name).value = vis.objects[id][name] ? parseFloat(vis.objects[id][name].toFixed(2)) : def;}
+  function loadProp(name, def) {document.getElementById(name + '-out').value = document.getElementById(name).value = vis.objects[id][name] ? parseFloat(vis.objects[id][name].toFixed(2)) : def;}
 
   loadProp('opacity', 1.0);
-  $('pointSize').value = vis.objects[id].pointsize ? vis.objects[id].pointsize : 10.0;
-  $('pointType').value = vis.objects[id].pointtype ? vis.objects[id].pointtype : -1;
+  document.getElementById('pointSize').value = vis.objects[id].pointsize ? vis.objects[id].pointsize : 10.0;
+  document.getElementById('pointType').value = vis.objects[id].pointtype ? vis.objects[id].pointtype : -1;
 
-  $('wireframe').checked = vis.objects[id].wireframe;
-  $('cullface').checked = vis.objects[id].cullface;
+  document.getElementById('wireframe').checked = vis.objects[id].wireframe;
+  document.getElementById('cullface').checked = vis.objects[id].cullface;
 
   loadProp('density', 5);
   loadProp('power', 1.0);
@@ -1812,11 +1812,11 @@ Viewer.prototype.properties = function(id) {
   loadProp('isoalpha', 1.0);
   loadProp('dminclip', 0.0);
   loadProp('dmaxclip', 1.0);
-  $('isowalls').checked = vis.objects[id].isowalls;
-  $('isofilter').checked = vis.objects[id].isofilter;
+  document.getElementById('isowalls').checked = vis.objects[id].isowalls;
+  document.getElementById('isofilter').checked = vis.objects[id].isofilter;
 
   var c = new Colour(vis.objects[id].colour);
-  $S('colour_set').backgroundColor = c.html();
+  document.getElementById('colour_set').style.backgroundColor = c.html();
 
   //Type specific options
   setAll(vis.objects[id].points ? 'block' : 'none', 'point-obj');
@@ -1831,15 +1831,15 @@ Viewer.prototype.properties = function(id) {
 Viewer.prototype.setProperties = function() {
   function setProp(name, fieldname) {
     if (fieldname == undefined) fieldname = name;
-    vis.properties[name] = $('global-' + fieldname + '-out').value = parseFloat($('global-' + fieldname).value);
+    vis.properties[name] = document.getElementById('global-' + fieldname + '-out').value = parseFloat(document.getElementById('global-' + fieldname).value);
   }
 
-  viewer.pointScale = vis.properties.scalepoints = $('pointScale-out').value = $('pointScale').value / 10.0;
-  if ($('globalPointType').value)
-    viewer.pointType = vis.properties.pointtype = parseInt($('globalPointType').value);
-  viewer.showBorder = $("border").checked;
-  viewer.axes = $("axes").checked;
-  var c = $("bgColour").value;
+  viewer.pointScale = vis.properties.scalepoints = document.getElementById('pointScale-out').value = document.getElementById('pointScale').value / 10.0;
+  if (document.getElementById('globalPointType').value)
+    viewer.pointType = vis.properties.pointtype = parseInt(document.getElementById('globalPointType').value);
+  viewer.showBorder = document.getElementById("border").checked;
+  viewer.axes = document.getElementById("axes").checked;
+  var c = document.getElementById("bgColour").value;
   if (c != "") {
     var cc = Math.round(255*c);
     //vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
@@ -1870,8 +1870,8 @@ Viewer.prototype.setProperties = function() {
 Viewer.prototype.setTimeStep = function() {
   //TODO: To implement this accurately, need to get timestep range from server
   //For now just do a jump and reset slider to middle
-  var timejump = $("timestep").value - 50.0;
-  $("timestep").value = 50;
+  var timejump = document.getElementById("timestep").value - 50.0;
+  document.getElementById("timestep").value = 50;
   if (server) {
     //Issue server commands
     sendCommand('jump ' + timejump);
@@ -1906,7 +1906,7 @@ Viewer.prototype.addColourMap = function() {
   loadColourMaps();
 
   //Select newly added
-  var list = $('colourmap-presets');
+  var list = document.getElementById('colourmap-presets');
   viewer.setColourMap(list.options.length-2)
 }
 
@@ -1915,15 +1915,15 @@ Viewer.prototype.setColourMap = function(id) {
   vis.objects[properties.id].colourmap = parseInt(id);
   if (id === undefined) id = -1;
   //Set new colourmap on active object
-  $('colourmap-presets').value = id;
+  document.getElementById('colourmap-presets').value = id;
   if (id < 0) {
-    $('palette').style.display = 'none';
-    $('log').style.display = 'none';
+    document.getElementById('palette').style.display = 'none';
+    document.getElementById('log').style.display = 'none';
   } else {
     //Draw palette UI
-    $('logscale').checked = vis.colourmaps[id].logscale;
-    $('log').style.display = 'block';
-    $('palette').style.display = 'block';
+    document.getElementById('logscale').checked = vis.colourmaps[id].logscale;
+    document.getElementById('log').style.display = 'block';
+    document.getElementById('palette').style.display = 'block';
     viewer.gradient.palette = vis.colourmaps[id].palette;
     viewer.gradient.mapid = id; //Save the id
     viewer.gradient.update();
@@ -1933,11 +1933,11 @@ Viewer.prototype.setColourMap = function(id) {
 Viewer.prototype.setObjectProperties = function() {
   //Copy from controls
   var id = properties.id;
-  function setProp(name) {vis.objects[id][name] = $(name + '-out').value = parseFloat($(name).value);}
-  vis.objects[id].pointsize = $('pointSize-out').value = $('pointSize').value / 10.0;
-  vis.objects[id].pointtype = parseInt($('pointType').value);
-  vis.objects[id].wireframe = $('wireframe').checked;
-  vis.objects[id].cullface = $('cullface').checked;
+  function setProp(name) {vis.objects[id][name] = document.getElementById(name + '-out').value = parseFloat(document.getElementById(name).value);}
+  vis.objects[id].pointsize = document.getElementById('pointSize-out').value = document.getElementById('pointSize').value / 10.0;
+  vis.objects[id].pointtype = parseInt(document.getElementById('pointType').value);
+  vis.objects[id].wireframe = document.getElementById('wireframe').checked;
+  vis.objects[id].cullface = document.getElementById('cullface').checked;
   setProp('opacity');
   setProp('density');
   setProp('power');
@@ -1947,12 +1947,12 @@ Viewer.prototype.setObjectProperties = function() {
   setProp('isoalpha');
   setProp('dminclip');
   setProp('dmaxclip');
-  vis.objects[id].isowalls = $('isowalls').checked;
-  vis.objects[id].isofilter = $('isofilter').checked;
-  var colour = new Colour($('colour_set').style.backgroundColor);
+  vis.objects[id].isowalls = document.getElementById('isowalls').checked;
+  vis.objects[id].isofilter = document.getElementById('isofilter').checked;
+  var colour = new Colour(document.getElementById('colour_set').style.backgroundColor);
   vis.objects[id].colour = colour.html();
   if (vis.objects[id].colourmap >= 0)
-    vis.colourmaps[vis.objects[id].colourmap].logscale = $('logscale').checked;
+    vis.colourmaps[vis.objects[id].colourmap].logscale = document.getElementById('logscale').checked;
 
   //Flag reload on WebGL objects
   for (var type in types) {
@@ -1983,7 +1983,7 @@ Viewer.prototype.action = function(id, reload, sort, el) {
     return;
   }
 
-  $('apply').disabled = false;
+  document.getElementById('apply').disabled = false;
 
   for (var type in types) {
     if (vis.objects[id][type] && this[type]) {
@@ -1994,7 +1994,7 @@ Viewer.prototype.action = function(id, reload, sort, el) {
 }
 
 Viewer.prototype.apply = function() {
-  $('apply').disabled = true;
+  document.getElementById('apply').disabled = true;
   this.draw();
 }
 
@@ -2069,8 +2069,8 @@ paletteUpdate = function(obj, id) {
 
 paletteLoad = function(palette) {
   //Update colours and cache
-  var canvas = $('palette');
-  var gradient = $('gradient');
+  var canvas = document.getElementById('palette');
+  var gradient = document.getElementById('gradient');
   var context = gradient.getContext('2d');  
   if (!context) alert("getContext failed");
 
@@ -2113,15 +2113,15 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   //Show screenshot while interacting or if using server
   //if (server || borderOnly)
   if (server) {
-    $("frame").style.display = 'block';
-    var frame = $('frame');
+    document.getElementById("frame").style.display = 'block';
+    var frame = document.getElementById('frame');
     this.width = frame.offsetWidth;
     this.height = frame.offsetHeight;
     this.canvas.style.width = this.width + "px";
     this.canvas.style.height = this.height + "px";
   }
   else
-    $("frame").style.display = 'none';
+    document.getElementById("frame").style.display = 'none';
   
   if (!this.gl) return;
 
@@ -2201,8 +2201,8 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   /*/Save canvas image to background for display while interacting
   if (!borderOnly && !server) {
     if (document.mouse.isdown || !("frame").src) {
-      //$("frame").src = $('canvas').toDataURL("image/png");
-      //$('canvas').toBlob(function (blob) {$("frame").src =  URL.createObjectURL(blob);});
+      //document.getElementById("frame").src = document.getElementById('canvas').toDataURL("image/png");
+      //document.getElementById('canvas').toBlob(function (blob) {document.getElementById("frame").src =  URL.createObjectURL(blob);});
       this.border.draw();
     }
   }*/
@@ -2338,10 +2338,10 @@ Viewer.prototype.updateDims = function(view) {
 }
 
 function resizeToWindow() {
-  //var canvas = $('canvas');
+  //var canvas = document.getElementById('canvas');
   //if (canvas.width < window.innerWidth || canvas.height < window.innerHeight)
     sendCommand('resize ' + window.innerWidth + " " + window.innerHeight);
-  var frame = $('frame');
+  var frame = document.getElementById('frame');
   canvas.style.width = frame.style.width = "100%";
   canvas.style.height = frame.style.height = "100%";
 }

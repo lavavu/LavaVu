@@ -205,7 +205,7 @@ precision highp float;
     <hr>
     <input type="button" class="server" value="Resize" onclick="resizeToWindow();">
     <input type="button" class="server" value="Connect" onclick="connectWindow();">
-    <input type="button" value="Import" onclick="$('fileupload').click();">
+    <input type="button" value="Import" onclick="document.getElementById('fileupload').click();">
     <input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)" style="display: none;">
     <input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();">
     <hr>
@@ -232,7 +232,7 @@ precision highp float;
   <h3><span id="obj_name"></span> properties</h3>
   <hr>
   <div id="props">
-    <input id="opacity" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Opacity
+    <input id="opacity" type="range" min="0" max="1" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Opacity
     <output for="opacity" id="opacity-out">1</output>
     <br>
     <!--input id="brightness" type="range" min="-100" max="100" value="0">Brightness<br>
@@ -240,7 +240,7 @@ precision highp float;
     <input id="saturation" type="range" min="0" max="200" value="100">Saturation<br-->
     <!-- Particle controls -->
     <div class="point-obj">
-       <input id="pointSize" type="range" min="1" max="100" value="10" step="1" oninput="$(this.id+'-out').value = this.value/10.0;">
+       <input id="pointSize" type="range" min="1" max="100" value="10" step="1" oninput="document.getElementById(this.id+'-out').value = this.value/10.0;">
        Point Size
        <output for="pointSize" id="pointSize-out">1</output>
     </div>
@@ -261,35 +261,35 @@ precision highp float;
     </div>
     <!-- Volume controls -->
     <div class="volume-obj">
-       <input id="density" type="range" min="0" max="100" value="10" step="1" oninput="$(this.id+'-out').value = this.value;">Density
+       <input id="density" type="range" min="0" max="100" value="10" step="1" oninput="document.getElementById(this.id+'-out').value = this.value;">Density
        <output for="" id="density-out">10</output>
     </div>
     <div class="volume-obj">
-       <input id="power" type="range" min="0.01" max="5" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Power
+       <input id="power" type="range" min="0.01" max="5" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Power
        <output for="power" id="power-out">1</output>
     </div>
     <div class="volume-obj">
-       <input id="samples" type="range" min="32" max="2048" value="256" step="1" oninput="$(this.id+'-out').value = this.value;">Samples
+       <input id="samples" type="range" min="32" max="2048" value="256" step="1" oninput="document.getElementById(this.id+'-out').value = this.value;">Samples
        <output for="samples" id="samples-out">1</output>
     </div>
     <div class="volume-obj">
-       <input id="isovalue" type="range" min="0" max="1" value="0" step="0.01" oninput="$(this.id+'-out').value = this.value;">Isovalue
+       <input id="isovalue" type="range" min="0" max="1" value="0" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Isovalue
        <output for="isovalue" id="isovalue-out">0</output>
     </div>
     <div class="volume-obj">
-       <input id="isosmooth" type="range" min="0.1" max="3" value="0.1" step="0.1" oninput="$(this.id+'-out').value = this.value;">Isosmooth
+       <input id="isosmooth" type="range" min="0.1" max="3" value="0.1" step="0.1" oninput="document.getElementById(this.id+'-out').value = this.value;">Isosmooth
        <output for="isosmooth" id="isosmooth-out">0.1</output>
     </div>
     <div class="volume-obj">
-       <input id="isoalpha" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Isoalpha
+       <input id="isoalpha" type="range" min="0" max="1" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Isoalpha
        <output for="isoalpha" id="isoalpha-out">1</output>
     </div>
     <div class="volume-obj">
-       <input id="dminclip" type="range" min="0" max="1" value="0" step="0.01" oninput="$(this.id+'-out').value = this.value;">Density Clip Min
+       <input id="dminclip" type="range" min="0" max="1" value="0" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Density Clip Min
        <output for="dminclip" id="dminclip-out">0</output>
     </div>
     <div class="volume-obj">
-       <input id="dmaxclip" type="range" min="0" max="1" value="1" step="0.01" oninput="$(this.id+'-out').value = this.value;">Density Clip Max
+       <input id="dmaxclip" type="range" min="0" max="1" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Density Clip Max
        <output for="dmaxclip" id="dmaxclip-out">1</output>
     </div>
     <div class="volume-obj">

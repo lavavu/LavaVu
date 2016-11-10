@@ -65,7 +65,7 @@ function serverMouseClick(event, mouse) {
 }
 
 function serverMouseDown(event, mouse) {
-  if ($('tmode').checked)
+  if (document.getElementById('tmode').checked)
     var button = Math.abs(mouse.button-2)+1;
   else 
     var button = mouse.button+1;
