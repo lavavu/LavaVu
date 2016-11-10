@@ -428,10 +428,8 @@ void Volumes::render(int i)
 
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
   glPushMatrix();
-#ifndef USE_OMEGALIB
   //Get modelview without focal point / rotation centre adjustment
   view->apply(false);
-#endif
   //Object rotation/translation
   if (geom[i]->draw->properties.has("translate"))
   {
