@@ -1198,8 +1198,11 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   //Create a height map grid
   std::string texfile = fn.base + "-texture." + fn.ext;
   DrawingObject *obj;
-  std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
+  std::string props = "static=1\ncullface=0\ntexturefile=" + texfile + "\n";
   obj = addObject(new DrawingObject(drawstate, fn.base, props));
+
+  //Default colourmap
+  obj->properties.data["colourmap"] = colourMap("elevation", "darkgreen yellow brown");
 
   Vec3d vertex;
 
@@ -2539,15 +2542,15 @@ bool LavaVu::loadFile(const std::string& file)
     readRawVolume(fn);
   else if (fn.type == "xrw" || fn.type == "xrwu")
     readXrwVolume(fn);
-  else if (fn.type == "jpg" || fn.type == "jpeg" || fn.type == "png")
+  else if (fn.type == "jpg" || fn.type == "jpeg" || fn.type == "png" || fn.type == "tif" || fn.type == "tiff")
   {
-    if (fn.base.find("heightmap") != std::string::npos)
+    if (fn.base.find("heightmap") != std::string::npos || fn.base.find("_dem") != std::string::npos)
       readHeightMapImage(fn);
+    else if (fn.type == "tiff" || fn.type == "tif")
+      readVolumeTIFF(fn);
     else
       readVolumeSlice(fn);
   }
-  else if (fn.type == "tiff" || fn.type == "tif")
-    readVolumeTIFF(fn);
   else
     //Unknown type
     return false;
@@ -2987,14 +2990,14 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   //- read from framebuffer otherwise
   GLubyte* image = NULL;
   int outchannels = channels;
+  ImageFile* img = NULL;
   if (path.length() > 0)
   {
-    //Use the texture loader to read image
-    ImageLoader tex(path);
-    image = tex.read();
-    width = tex.texture->width;
-    height = tex.texture->height;
-    outchannels = tex.texture->channels;
+    img = new ImageFile(path);
+    width = img->width;
+    height = img->height;
+    outchannels = img->channels;
+    image = img->pixels;
     //printf("Reading file %d x %d @ %d\n", width, height, channels);
   }
   else
@@ -3022,8 +3025,11 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     if (skipalpha && i%4==3) continue;
     data[idx++] = image[i] * r255;
   }
-  //Free byte data
-  delete[] image;
+  //Free image data
+  if (img)
+    delete img;
+  else
+    delete[] image;
   return data;
 }
 

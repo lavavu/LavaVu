@@ -760,6 +760,8 @@ GLubyte* ImageLoader::read()
     imageData = loadPNG();
   if (fn.type == "ppm")
     imageData = loadPPM();
+  if (fn.type == "tif" || fn.type == "tiff")
+    imageData = loadTIFF();
   return imageData;
 }
 
@@ -880,14 +882,12 @@ GLubyte* ImageLoader::loadTIFF()
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)
   {
-    unsigned int width, height;
+    unsigned int width, height, channels;
     size_t npixels;
-    GLubyte* imageData;
-
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
+    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
     npixels = width * height;
-
     texture->channels = 4;
     imageData = new GLubyte[npixels * texture->channels * sizeof(GLubyte)];   // Reserve Memory
     if (imageData)
@@ -899,7 +899,7 @@ GLubyte* ImageLoader::loadTIFF()
         texture->height = height;
       }
     }
-    TIFFClose(tif);
+    //TIFFClose(tif);
   }
 #else
   abort_program("[Load Texture] Require libTIFF to load TIFF images\n");

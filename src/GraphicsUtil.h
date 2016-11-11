@@ -622,43 +622,6 @@ std::string getImageString(GLubyte *image, int width, int height, int channels, 
 void write_png(std::ostream& stream, int channels, int width, int height, void* data);
 void* read_png(std::istream& stream, GLuint& channels, GLuint& width, GLuint& height);
 
-//Generic image loader (only png/jpg supported)
-class ImageFile
-{
-public:
-  int width, height, channels;
-  GLubyte* pixels;
-
-  ImageFile(const FilePath& fn)
-  {
-    //png/jpg data
-    pixels = NULL;
-    if (fn.type == "png")
-    {
-#ifdef HAVE_LIBPNG
-      GLuint uwidth, uheight, uchannels;
-      std::ifstream file(fn.full.c_str(), std::ios::binary);
-      if (!file) abort_program("Cannot open '%s'\n", fn.full.c_str());
-      pixels = (GLubyte*)read_png(file, uchannels, uwidth, uheight);
-      file.close();
-      channels = uchannels;
-      width = uwidth;
-      height = uheight;
-#endif
-    }
-    else if (fn.type == "jpg" || fn.type == "jpeg")
-    {
-      pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, 3);
-      channels = 3;
-    }
-  }
-
-  ~ImageFile()
-  {
-    if (pixels) delete[] pixels;
-  }
-};
-
 #define VOLUME_NONE 0
 #define VOLUME_FLOAT 1
 #define VOLUME_BYTE 2
@@ -691,12 +654,12 @@ public:
 class ImageLoader
 {
 public:
-  FilePath fn;       // Source data
+  FilePath fn;
   bool mipmaps;
   TextureData* texture;
   int type;
 
-  ImageLoader(std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
+  ImageLoader(const std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
 
   TextureData* use();
   void load();
@@ -714,5 +677,29 @@ public:
     if (texture) delete texture;
   }
 };
+
+class ImageFile
+{
+public:
+  int width, height, channels;
+  GLubyte* pixels;
+
+  ImageFile(const FilePath& fn)
+  {
+    //Use the texture loader to read any supported image
+    ImageLoader tex(fn.full);
+    pixels = tex.read();
+    width = tex.texture->width;
+    height = tex.texture->height;
+    channels = tex.texture->channels;
+  }
+
+  ~ImageFile()
+  {
+    if (pixels) delete[] pixels;
+  }
+};
+
+
 
 #endif //GraphicsUtil__
