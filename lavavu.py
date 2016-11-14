@@ -296,9 +296,8 @@ class Viewer(object):
 
     def commands(self, cmds):
         if isinstance(cmds, list):
-            self.app.parseCommands('\n'.join(cmds))
-        else:
-            self.app.parseCommands(cmds)
+            cmds = '\n'.join(cmds)
+        self.app.parseCommands(cmds)
         #Always sync the state after running commands
         self.get()
 
@@ -477,11 +476,13 @@ class Viewer(object):
     def serve(self):
         try:
             import server
-            os.chdir(os.path.join(self.app.binpath, "html"))
+            os.chdir(control.htmlpath)
             server.serve(self)
         except Exception,e:
             print "LavaVu error: " + str(e)
             print "Web Server failed to run"
+            import traceback
+            traceback.print_exc()
             pass
 
     def window(self):
