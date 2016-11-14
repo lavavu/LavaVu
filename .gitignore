@@ -14,4 +14,4 @@ cave/Makefile
 *.pyc
 output/*
 log/*
-
+LavaVuPython_wrap.cxx
