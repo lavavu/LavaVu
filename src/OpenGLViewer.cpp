@@ -146,7 +146,6 @@ void FBO::destroy()
   if (texture) glDeleteTextures(1, &texture);
   if (depth) glDeleteRenderbuffersEXT(1, &depth);
   if (frame) glDeleteFramebuffersEXT(1, &frame);
-  GL_Error_Check;
 #endif
 }
 
@@ -258,6 +257,10 @@ void OpenGLViewer::init()
 
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
+
+  //Create and use fbo at this point if enabled
+  if (fbo.enabled)
+    fbo.create(width, height);
 
   // Clear full window buffer
   glViewport(0, 0, width, height);
