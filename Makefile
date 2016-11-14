@@ -7,8 +7,7 @@ LIBNAME = lib$(PROGNAME).$(LIBEXT)
 INDEX = $(PREFIX)/html/index.html
 
 #Object files path
-#OPATH = /tmp
-OPATH = tmp
+OPATH = /tmp
 
 #Compilers
 CPP=g++
@@ -21,6 +20,9 @@ CPPFLAGS = $(CFLAGS) -std=c++0x
 EXTCFLAGS = -O3 -DNDEBUG -fPIC -Isrc
 EXTCPPFLAGS = $(EXTCFLAGS) -std=c++0x
 SWIGFLAGS=
+
+#Default to X11 enabled unless explicitly disabled
+X11 ?= 1
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -64,10 +66,13 @@ else ifeq ($(SDL), 1)
   #SDL optional
   LIBS+= -lSDL
   DEFINES += -DHAVE_SDL
-else
+else ifeq ($(X11), 1)
   #X11 default
   LIBS+= -lX11
   DEFINES += -DHAVE_X11
+else
+  #Assume providing own context
+  DEFINES += -DHAVE_GLCONTEXT
 endif
 endif
 
