@@ -20,6 +20,7 @@ CPPFLAGS = $(CFLAGS) -std=c++0x
 #For external dependencies
 EXTCFLAGS = -O3 -DNDEBUG -fPIC -Isrc
 EXTCPPFLAGS = $(EXTCFLAGS) -std=c++0x
+SWIGFLAGS=
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
@@ -31,6 +32,7 @@ endif
 #Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
 ifeq ($(OS), Darwin)
+SWIGFLAGS= -undefined suppress -flat_namespace
 ifeq ($(COCOA), 1)
   #Mac OS X with Cocoa + CGL
   CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
@@ -143,7 +145,7 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 swig: $(PREFIX)/$(LIBNAME)
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVuPython_wrap.cxx -o $(OPATH)/LavaVuPython_wrap.os
-	$(CPP) -o $(PREFIX)/_$(PROGNAME)Python.so $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os -undefined suppress -flat_namespace `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CPP) -o $(PREFIX)/_$(PROGNAME)Python.so $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
