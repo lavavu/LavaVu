@@ -899,7 +899,7 @@ GLubyte* ImageLoader::loadTIFF()
         texture->height = height;
       }
     }
-    //TIFFClose(tif);
+    TIFFClose(tif);
   }
 #else
   abort_program("[Load Texture] Require libTIFF to load TIFF images\n");
