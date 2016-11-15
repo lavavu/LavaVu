@@ -3126,3 +3126,14 @@ float LavaVu::imageDiff(std::string path1, std::string path2, int downsample)
   return MSE;
 }
 
+
+void LavaVu::queueCommands(std::string cmds)
+{
+  //Thread safe command processing
+  //Push command onto queue to be processed in the viewer thread
+  pthread_mutex_lock(&viewer->cmd_mutex);
+  viewer->commands.push_back(cmds);
+  debug_print("QCMD: %s\n", cmds.c_str());
+  viewer->postdisplay = true;
+  pthread_mutex_unlock(&viewer->cmd_mutex);
+}

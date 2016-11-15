@@ -236,6 +236,7 @@ public:
   //For testing via python
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=3);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);
+  void queueCommands(std::string cmds);
 
 };
 
