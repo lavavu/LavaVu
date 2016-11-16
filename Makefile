@@ -4,6 +4,7 @@ APREFIX = $(realpath $(PREFIX))
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBNAME = lib$(PROGNAME).$(LIBEXT)
+SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.$(LIBEXT)
 INDEX = $(PREFIX)/html/index.html
 
 #Object files path
@@ -74,6 +75,12 @@ else
   #Assume providing own context
   DEFINES += -DHAVE_GLCONTEXT
 endif
+endif
+
+#Extra defines passed
+DEFINES += $(DEFS)
+ifdef SHADER_PATH
+DEFINES += -DSHADER_PATH=\"$(SHADER_PATH)\"
 endif
 
 #Add a libpath (useful for linking specific libGL)
@@ -147,10 +154,12 @@ $(OPATH)/sqlite3.o : sqlite3.c
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
-swig: $(PREFIX)/$(LIBNAME)
+swig: $(SWIGLIB)
+
+$(SWIGLIB) : LavaVuPython.i
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVuPython_wrap.cxx -o $(OPATH)/LavaVuPython_wrap.os
-	$(CPP) -o $(PREFIX)/_$(PROGNAME)Python.so $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CPP) -o $(PREFIX)/_$(PROGNAME)Python.$(LIBEXT) $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
