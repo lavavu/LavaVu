@@ -8,10 +8,6 @@
 #define __STDC_CONSTANT_MACROS
 #include <stdint.h>
 
-#if defined USE_OMEGALIB
-#include <omegaGl.h>
-#endif
-
 #define ISFINITE(val) (!std::isnan(val) && !std::isinf(val))
 
 //C++ STL
