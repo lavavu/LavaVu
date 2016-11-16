@@ -39,8 +39,6 @@
 View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : drawstate(drawstate), properties(drawstate.globals, drawstate.defaults)
 {
   // default view params
-  near_clip = nearc;       //Near clip plane
-  far_clip = farc;       //Far clip plane
   eye_sep_ratio = 0.03f;  //Eye separation ratio to focal length
   fov = 45.0f; //60.0     //Field of view - important to adjust for stereo viewing
   focal_length = focal_length_adj = 0.0; //Stereo zero parallex distance adjustment
@@ -88,6 +86,9 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   //Gets current value (either global or default)
   for (auto key : viewprops)
     properties.data[key] = drawstate.global(key);
+
+  //Clip planes
+  checkClip(nearc, farc);
 }
 
 View::~View()
@@ -138,14 +139,16 @@ bool View::init(bool force, float* newmin, float* newmax)
   if (model_size == 0 || !ISFINITE(model_size)) return false;
 
   //Check and calculate near/far clip planes
-  checkClip();
+  float near_clip = properties["near"];
+  float far_clip = properties["far"];
+  checkClip(near_clip, far_clip);
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
   debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s\n",
               model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"));
 
-  //Auto-cam etc should only be procesed once...and only when viewport size has been set
+  //Auto-cam etc should only be processed once... and only when viewport size has been set
   if ((force || !initialised) && width > 0 && height > 0)
   {
     //Only flag correctly initialised after focal point set (have model bounds)
@@ -164,7 +167,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
     debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
     debug_print("   Rotate Origin: %f,%f,%f\n", rotate_centre[0], rotate_centre[1], rotate_centre[2]);
-    debug_print("   Clip planes: near %f far %f. Focal length %f Eye separation ratio: %f\n", near_clip, far_clip, focal_length, eye_sep_ratio);
+    debug_print("   Clip planes: near %f far %f. Focal length %f Eye separation ratio: %f\n", (float)properties["near"], (float)properties["far"], focal_length, eye_sep_ratio);
     debug_print("   Translate: %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
 
     //Apply changes to view
@@ -174,7 +177,7 @@ bool View::init(bool force, float* newmin, float* newmax)
   return true;
 }
 
-void View::checkClip()
+void View::checkClip(float& near_clip, float& far_clip)
 {
   //Adjust clipping planes
   if (near_clip == 0 || far_clip == 0)
@@ -185,12 +188,20 @@ void View::checkClip()
     float aspectRatio = 1.33;
     if (width && height)
       aspectRatio = width / (float)height;
-    near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
-    //near_clip = model_size / 5.0;
-    far_clip = model_size * 20.0;
+    if (near_clip == 0)
+      near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
+     //near_clip = model_size / 5.0;
+    if (far_clip == 0)
+      far_clip = model_size * 20.0;
     debug_print("Auto-corrected clip planes: near %f far %f.\n", near_clip, far_clip);
     assert(near_clip > 0.0 && far_clip > 0.0);
   }
+
+  if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
+
+  //Update properties
+  properties.data["near"] = near_clip;
+  properties.data["far"] = far_clip;
 }
 
 void View::getMinMaxDistance(float* mindist, float* maxdist)
@@ -344,9 +355,11 @@ std::string View::zoom(float factor)
 
 std::string View::zoomClip(float factor)
 {
+  float near_clip = properties["near"];
+  float far_clip = properties["far"];
   near_clip += factor * model_size;
-  if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
-  //debug_print("Near clip = %f\n", near_clip);
+  checkClip(near_clip, far_clip);
+  //Returns command to set in history
   std::ostringstream ss;
   ss << "nearclip " << near_clip;
   return ss.str();
@@ -372,7 +385,7 @@ void View::print()
   rotation->toEuler(xrot, yrot, zrot);
   printf("------------------------------\n");
   printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
-  printf("Clip planes: near %f far %f\n", near_clip, far_clip);
+  printf("Clip planes: near %f far %f\n", (float)properties["near"], (float)properties["far"]);
   printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n",
          model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -428,14 +441,15 @@ void View::projection(int eye)
 {
   if (!initialised) return;
   float aspectRatio = width / (float)height;
-  //assert(near_clip != far_clip);
 
   // Perspective viewing frustum parameters
   float left, right, top, bottom;
   float eye_separation, frustum_shift;
 
   //Ensure clip planes valid
-  checkClip();
+  float near_clip = properties["near"];
+  float far_clip = properties["far"];
+  checkClip(near_clip, far_clip);
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
   //default is to set to distance to model front edge...

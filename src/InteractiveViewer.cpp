@@ -1217,7 +1217,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    aview->near_clip = fval;
+    aview->properties.data["near"] = fval;
   }
   else if (parsed.has(fval, "farclip"))
   {
@@ -1229,7 +1229,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    aview->far_clip = fval;
+    aview->properties.data["far"] = fval;
   }
   else if (parsed.exists("timestep"))  //Absolute
   {

@@ -87,9 +87,6 @@ public:
   bool sort;
 
   // view params
-  float near_clip;  // Near clip
-  float far_clip;   // Far clip
-
   float x;          // X offset [0,1]
   float y;          // Y offset [0,1]
   float w;          // Width ratio [0,1]
@@ -144,7 +141,7 @@ public:
   bool hasObject(DrawingObject* obj);
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
-  void checkClip();
+  void checkClip(float& near_clip, float& far_clip);
   void getMinMaxDistance(float* mindist, float* maxdist);
   std::string rotateString();
   std::string translateString();

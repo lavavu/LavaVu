@@ -1638,9 +1638,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
     vprops["focus"] = foc;
     vprops["scale"] = scale;
 
-    vprops["near"] = view->near_clip;
-    vprops["far"] = view->far_clip;
-
     //Converts named colours to js readable
     if (vprops.count("background") > 0)
       vprops["background"] = Colour(vprops["background"]).toString();
@@ -1821,10 +1818,6 @@ void Model::jsonRead(std::string data)
     //min = aview->properties["min"];
     //max = aview->properties["max"];
     //view->init(false, newmin, newmax);
-    if (view->properties.has("near") && (float)view->properties["near"] > 0.0)
-      view->near_clip = view->properties["near"];
-    if (view->properties.has("far") && (float)view->properties["far"] > 0.0)
-      view->far_clip = view->properties["far"];
   }
 
   // Import colourmaps
