@@ -105,8 +105,10 @@ LavaVu::LavaVu(std::string binary)
   //Add any input/output attachments to the viewer
   if (Server::port > 0)
     viewer->addOutput(Server::Instance(viewer));
+#ifndef USE_OMEGALIB
   static StdInput stdi;
   viewer->addInput(&stdi);
+#endif
 }
 
 void LavaVu::defaults()
