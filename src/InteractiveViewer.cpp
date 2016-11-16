@@ -561,10 +561,8 @@ DrawingObject* LavaVu::lookupObject(std::string& name)
     std::string namekey = amodel->objects[i]->name();
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
     if (namekey == name)
-      //std::cerr << "Found by " << (namekey == what ? " NAME : " : " ID: ") << what << " -- " << id << std::endl;
       return amodel->objects[i];
   }
-  //std::cerr << "Not found, returning " << (nodefault ? "NULL" : "DEFAULT : ") << aobject << std::endl;
   return NULL;
 }
 
@@ -2962,9 +2960,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     aobject = lookupObject(parsed, "select");
     if (aobject)
-      printMessage("Selected object: %s", aobject->name().c_str());
+      printf("Selected object: %s", aobject->name().c_str());
     else
-      printMessage("Object selection cleared");
+      printf("Object selection cleared");
   }
   else if (parsed.exists("shaders"))
   {
@@ -3062,7 +3060,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::string name = parsed.get("name", next);
       if (name.length() > 0)
       {
-        obj->name() = name;
+        obj->properties.data["name"] = name;
         printMessage("Renamed object: %s", obj->name().c_str());
       }
     }
