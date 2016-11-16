@@ -88,7 +88,8 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
     properties.data[key] = drawstate.global(key);
 
   //Clip planes
-  checkClip(nearc, farc);
+  properties.data["near"] = nearc;
+  properties.data["far"] = farc;
 }
 
 View::~View()
