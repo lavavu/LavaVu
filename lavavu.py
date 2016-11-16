@@ -190,7 +190,7 @@ class Viewer(object):
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
-         quality=2, writeimage=False, res=None, script=None, initscript=False):
+         quality=2, writeimage=False, res=None, script=None, initscript=False, usequeue=False):
         #Convert options to args
         args = []
         if not initscript:
@@ -233,6 +233,7 @@ class Viewer(object):
           args += script
         if arglist:
             args += arglist
+        self.queue = usequeue
 
         try:
             self.app.run(args)
@@ -297,7 +298,10 @@ class Viewer(object):
     def commands(self, cmds):
         if isinstance(cmds, list):
             cmds = '\n'.join(cmds)
-        self.app.parseCommands(cmds)
+        if self.queue: #Thread safe queue requested
+            self.app.queueCommands(cmds)
+        else:
+            self.app.parseCommands(cmds)
         #Always sync the state after running commands
         self.get()
 
