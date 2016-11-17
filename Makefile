@@ -8,7 +8,7 @@ SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
 INDEX = $(PREFIX)/html/index.html
 
 #Object files path
-OPATH = /tmp
+OPATH ?= /tmp
 
 #Compilers
 CPP=g++

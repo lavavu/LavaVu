@@ -45,7 +45,7 @@ public:
   DrawingObject* aobject;
   std::string binpath;
 
-  LavaVu(std::string binary="");
+  LavaVu(std::string binpath);
   ~LavaVu();
 
   void run(std::vector<std::string> args={});
