@@ -11,22 +11,15 @@ try:
     #This file should be found one dir above bin dir containing built modules
     binpath = os.path.join(os.path.dirname(control.__file__), 'bin')
     sys.path.append(binpath)
-    #Import the C++ module and get it's full path
     import LavaVuPython
-    #Temporarily create a viewer to test working correctly
     libpath = os.path.abspath(os.path.dirname(LavaVuPython.__file__))
-    tempapp = LavaVuPython.LavaVu(libpath)
-    #Expect html files in same path as viewer binary
-    control.htmlpath = os.path.join(tempapp.binpath, "html")
+    #Expect html files in same path as viewer lib
+    control.htmlpath = os.path.join(libpath, "html")
     if not os.path.isdir(control.htmlpath):
         control.htmlpath = None
         print("Can't locate html dir, interactive view disabled")
     #Import javascript for controls (requires htmlpath)
     control.loadscripts()
-    #Ensure viewer can actually be opened, 
-    #if not, better to catch errors here and disable
-    tempapp.run(['-h', '-a', '-p0'])
-    tempapp = None
 except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
