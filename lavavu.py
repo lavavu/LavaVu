@@ -365,6 +365,9 @@ class Viewer(object):
         self.get()
 
         #Update properties and return wrapper object
+        if len(self.objects.list) == 0:
+            print "WARNING: No object created after loading: " + filename
+            return None
         obj = self.objects.list[-1] #Use last in list, most recently added
         self.app.setObject(obj.name, json.dumps(properties))
         return obj
