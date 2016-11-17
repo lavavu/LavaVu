@@ -18,6 +18,9 @@ try:
     tempapp = LavaVuPython.LavaVu(libpath)
     #Expect html files in same path as viewer binary
     control.htmlpath = os.path.join(tempapp.binpath, "html")
+    if not os.path.isdir(control.htmlpath):
+        control.htmlpath = None
+        print("Can't locate html dir, interactive view disabled")
     #Import javascript for controls (requires htmlpath)
     control.loadscripts()
     #Ensure viewer can actually be opened, 
