@@ -4,7 +4,7 @@ APREFIX = $(realpath $(PREFIX))
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBNAME = lib$(PROGNAME).$(LIBEXT)
-SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.$(LIBEXT)
+SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
 INDEX = $(PREFIX)/html/index.html
 
 #Object files path
@@ -159,7 +159,7 @@ swig: $(SWIGLIB)
 $(SWIGLIB) : LavaVuPython.i
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVuPython_wrap.cxx -o $(OPATH)/LavaVuPython_wrap.os
-	$(CPP) -o $(PREFIX)/_$(PROGNAME)Python.$(LIBEXT) $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
