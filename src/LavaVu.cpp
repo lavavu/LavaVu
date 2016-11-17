@@ -102,9 +102,7 @@ LavaVu::LavaVu(std::string binary)
   //Set default web server path
   Server::htmlpath = binpath + "html";
 
-  //Add any input/output attachments to the viewer
-  if (Server::port > 0)
-    viewer->addOutput(Server::Instance(viewer));
+  //Add default console input attachment to viewer
 #ifndef USE_OMEGALIB
   static StdInput stdi;
   viewer->addInput(&stdi);
@@ -421,6 +419,10 @@ void LavaVu::run(std::vector<std::string> args)
 
   //App specific argument processing
   arguments(args);
+
+  //Add server attachments to the viewer
+  if (Server::port > 0)
+    viewer->addOutput(Server::Instance(viewer));
 
   //If server running, always stay open (persist flag)
   bool persist = Server::running();
