@@ -411,6 +411,9 @@ class Viewer(object):
     def timesteps(self):
         return json.loads(self.app.getTimeSteps())
 
+    def addstep(self):
+        return self.app.parseCommands("newstep")
+
     def frame(self, resolution=None):
         #self.set() #Sync state first?
         #Jpeg encoded frame data
