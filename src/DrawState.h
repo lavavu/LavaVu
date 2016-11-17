@@ -22,9 +22,6 @@ public:
   DrawingObject* axisobj;
   DrawingObject* rulerobj;
 
-  //TimeStep
-  int cachesize;
-
   //Mutex for thread safe updates
   std::mutex mutex;
 
@@ -68,7 +65,6 @@ public:
 
     fonts.reset();
 
-    cachesize = 0;
     now = -1;
     gap = 0;
 
@@ -388,6 +384,8 @@ public:
     defaults["pointattenuate"] = true;
     // | global | integer | Automatic depth sorting, -1=on, 0=disabled, >0=timer
     defaults["sort"] = -1;
+    // | global | boolean | Cache timestep varying data in ram
+    defaults["cache"] = false;
     // | global | boolean | Cache timestep varying data on gpu as well as ram (will only work for small models)
     defaults["gpucache"] = false;
 

@@ -776,21 +776,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       jsonWriteFile(what, 0, false, false);
   }
-  else if (parsed.has(ival, "cache"))
-  {
-    if (gethelp)
-    {
-      help += "> Set the timestep cache size  \n"
-              "> When cache enabled, timestep data will be loaded into memory for faster access  \n"
-              "> (currently any size > 0 attempts to cache all steps)\n\n"
-              "> **Usage:** cache size\n\n"
-              "> size (integer) : number of timesteps, 0 to disable  \n";
-      return false;
-    }
-
-    drawstate.cachesize = ival;
-    printMessage("Geometry cache set to %d timesteps", drawstate.cachesize);
-  }
   else if (parsed.exists("verbose"))
   {
     if (gethelp)
@@ -3236,7 +3221,7 @@ void LavaVu::helpCommand(std::string cmd)
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
-     "cache", "verbose", "toggle", "createvolume", "clearvolume"}
+     "verbose", "toggle", "createvolume", "clearvolume"}
   };
 
   //Verbose command help

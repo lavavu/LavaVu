@@ -291,7 +291,8 @@ void LavaVu::arguments(std::vector<std::string> args)
         ss >> viewer->outwidth >> x >> viewer->outheight;
         break;
       case 'c':
-        ss >> drawstate.cachesize;
+        ss >> vars[0];
+        if (vars[0]) drawstate.globals["cache"] = true;
         break;
       case 't':
         //Use alpha channel in png output
@@ -492,7 +493,7 @@ void LavaVu::run(std::vector<std::string> args)
   else
   {
     //Cache data if enabled
-    if (drawstate.cachesize > 0) //>= amodel->timesteps.size())
+    if (drawstate.global("cache")) //>= amodel->timesteps.size())
     {
       debug_print("Caching all geometry data...\n");
       for (auto m : models)
@@ -2586,7 +2587,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   if (at_timestep >= 0)
   {
     //Cache selected step, then force new timestep set when model changes
-    if (drawstate.cachesize > 0) amodel->cacheStep();
+    if (drawstate.global("cache")) amodel->cacheStep();
   }
 
   if (model_idx >= (int)models.size()) return false;
