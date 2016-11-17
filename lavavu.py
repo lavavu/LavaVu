@@ -8,22 +8,16 @@ import glob
 
 #Attempt to import swig module
 try:
+    #This file should be found one dir above bin dir containing built modules
     binpath = os.path.join(os.path.dirname(control.__file__), 'bin')
     sys.path.append(binpath)
-    from LavaVuPython import *
+    #Import the C++ module and get it's full path
+    import LavaVuPython
+    print LavaVuPython.__file__
     #Temporarily create a viewer to test working correctly
-    tempapp = LavaVu("bin/LavaVu")
-    #Expect html files in same path as viewer binary (if known)
+    tempapp = LavaVuPython.LavaVu(os.path.abspath(os.path.dirname(LavaVuPython.__file__)))
+    #Expect html files in same path as viewer binary
     control.htmlpath = os.path.join(tempapp.binpath, "html")
-    #Otherwise assume same directory as this module
-    if not os.path.isdir(control.htmlpath):
-        control.htmlpath = os.path.join(binpath, "html")
-        if not os.path.isdir(control.htmlpath):
-            control.htmlpath = None
-            print("Can't locate html dir, interactive view disabled")
-    #Convert to absolute path
-    control.htmlpath = os.path.abspath(control.htmlpath)
-    print control.htmlpath
     #Import javascript for controls (requires htmlpath)
     control.loadscripts()
     #Ensure viewer can actually be opened, 
@@ -121,13 +115,13 @@ class Obj():
 
     def vertices(self, data):
         self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadVectors(data, lucVertexData)
+        self.instance.app.loadVectors(data, LavaVuPython.lucVertexData)
 
     def vectors(self, data):
         self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadVectors(data, lucVectorData)
+        self.instance.app.loadVectors(data, LavaVuPython.lucVectorData)
 
-    def values(self, data, type=lucColourValueData, label="", min=0., max=0.):
+    def values(self, data, type=LavaVuPython.lucColourValueData, label="", min=0., max=0.):
         self.instance.app.parseCommands("select " + self.name)
         self.instance.app.loadScalars(data, type, label, min, max)
 
@@ -138,7 +132,7 @@ class Obj():
 
     def indices(self, data):
         self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadUnsigned(data, lucIndexData)
+        self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData)
 
     def labels(self, data):
         self.instance.app.parseCommands("select " + self.name)
@@ -181,7 +175,7 @@ class Viewer(object):
             #ensure not doing this doesn't cause issues (will leak memory if many created)
             #Create a new instance, always if cache disabled (reuse)
             if not self.app or not reuse:
-                self.app = LavaVu(binary)
+                self.app = LavaVuPython.LavaVu(binary)
             #    print "Launching LavaVu, instance: " + str(id(self.app))
             #else:
             #    print "Re-using LavaVu, instance: " + str(id(self.app))

@@ -98,8 +98,11 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
 
   //Convert to absolute path
   char *real_path = realpath(bpath.c_str(), NULL);
-  bpath = std::string(real_path) + "/";
-  free(real_path);
+  if (real_path) 
+  {
+    bpath = std::string(real_path) + "/";
+    free(real_path);
+  }
   return bpath;
 }
 
