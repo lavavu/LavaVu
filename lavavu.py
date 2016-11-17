@@ -18,10 +18,12 @@ try:
     #Otherwise assume same directory as this module
     if not os.path.isdir(control.htmlpath):
         control.htmlpath = os.path.join(binpath, "html")
-        print control.htmlpath
         if not os.path.isdir(control.htmlpath):
             control.htmlpath = None
             print("Can't locate html dir, interactive view disabled")
+    #Convert to absolute path
+    control.htmlpath = os.path.abspath(control.htmlpath)
+    print control.htmlpath
     #Import javascript for controls (requires htmlpath)
     control.loadscripts()
     #Ensure viewer can actually be opened, 
