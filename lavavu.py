@@ -8,15 +8,17 @@ import glob
 
 #Attempt to import swig module
 try:
-    sys.path.append(os.path.join(os.path.dirname(control.__file__), 'bin'))
+    binpath = os.path.join(os.path.dirname(control.__file__), 'bin')
+    sys.path.append(binpath)
     from LavaVuPython import *
     #Temporarily create a viewer to test working correctly
-    tempapp = LavaVu("LavaVu")
+    tempapp = LavaVu("bin/LavaVu")
     #Expect html files in same path as viewer binary (if known)
     control.htmlpath = os.path.join(tempapp.binpath, "html")
     #Otherwise assume same directory as this module
     if not os.path.isdir(control.htmlpath):
-        control.htmlpath = os.path.join(os.path.dirname(control.__file__), "html")
+        control.htmlpath = os.path.join(binpath, "html")
+        print control.htmlpath
         if not os.path.isdir(control.htmlpath):
             control.htmlpath = None
             print("Can't locate html dir, interactive view disabled")
