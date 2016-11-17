@@ -1,17 +1,19 @@
 # use glob syntax.
 syntax: glob
-
 bin/*
-tmp/*
-cave/CMakeFiles/*
-cave/CMakeCache.txt
-cave/cmake_install.cmake
-cave/Makefile
 *.log
-*.eqc
 *.o
 *~
+*.json
+*.gldb
+*.csv
+*.png
+*.swp
 *.pyc
-output/*
-log/*
+*.orig
+test/*
+archive/*
+Images/*
+html/*
+.ipynb_checkpoints/*
 LavaVuPython_wrap.cxx
