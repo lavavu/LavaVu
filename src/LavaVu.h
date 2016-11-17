@@ -117,7 +117,7 @@ public:
   View* aview;   //Active viewport
   DrawingObject* aobject; //Selected object
 
-  LavaVu(std::string binary=APPNAME__);
+  LavaVu(std::string binpath);
   void defaults();
   virtual ~LavaVu();
 

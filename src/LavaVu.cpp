@@ -52,7 +52,7 @@
 #include "Main/CocoaViewer.h"
 
 //Viewer class implementation...
-LavaVu::LavaVu(std::string binary)
+LavaVu::LavaVu(std::string binpath) : binpath(binpath)
 {
   viewer = NULL;
   axis = NULL;
@@ -97,7 +97,7 @@ LavaVu::LavaVu(std::string binary)
   viewer->app = (ApplicationInterface*)this;
 
   //Shader path (default to program path if not set)
-  binpath = GetBinaryPath(binary.c_str(), APPNAME__);
+  if (binpath.back() != '/') binpath += "/";
   if (Shader::path.length() == 0) Shader::path = binpath;
   //Set default web server path
   Server::htmlpath = binpath + "html";

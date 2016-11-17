@@ -13,9 +13,9 @@ try:
     sys.path.append(binpath)
     #Import the C++ module and get it's full path
     import LavaVuPython
-    print LavaVuPython.__file__
     #Temporarily create a viewer to test working correctly
-    tempapp = LavaVuPython.LavaVu(os.path.abspath(os.path.dirname(LavaVuPython.__file__)))
+    libpath = os.path.abspath(os.path.dirname(LavaVuPython.__file__))
+    tempapp = LavaVuPython.LavaVu(libpath)
     #Expect html files in same path as viewer binary
     control.htmlpath = os.path.join(tempapp.binpath, "html")
     #Import javascript for controls (requires htmlpath)
@@ -27,6 +27,37 @@ try:
 except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
+
+#Type lookups
+geomtypes={}
+geomtypes["label"] = geomtypes["min"] = LavaVuPython.lucLabelType
+geomtypes["point"] = LavaVuPython.lucPointType
+geomtypes["grid"] = LavaVuPython.lucGridType
+geomtypes["triangle"] = LavaVuPython.lucTriangleType
+geomtypes["vector"] = LavaVuPython.lucVectorType
+geomtypes["tracer"] = LavaVuPython.lucTracerType
+geomtypes["line"] = LavaVuPython.lucLineType
+geomtypes["shape"] = LavaVuPython.lucShapeType
+geomtypes["volume"] = geomtypes["max"] = LavaVuPython.lucVolumeType
+
+datatypes={}
+datatypes["vertex"] = datatypes["min"] = LavaVuPython.lucVertexData
+datatypes["normal"] = LavaVuPython.lucNormalData
+datatypes["vector"] = LavaVuPython.lucVectorData
+datatypes["value"] = LavaVuPython.lucColourValueData
+datatypes["opacity"] = LavaVuPython.lucOpacityValueData
+datatypes["red"] = LavaVuPython.lucRedValueData
+datatypes["green"] = LavaVuPython.lucGreenValueData
+datatypes["blue"] = LavaVuPython.lucBlueValueData
+datatypes["index"] = LavaVuPython.lucIndexData
+datatypes["width"] = LavaVuPython.lucXWidthData
+datatypes["height"] = LavaVuPython.lucYHeightData
+datatypes["length"] = LavaVuPython.lucZLengthData
+datatypes["rgba"] = LavaVuPython.lucRGBAData
+datatypes["texcoord"] = LavaVuPython.lucTexCoordData
+datatypes["size"] = LavaVuPython.lucSizeData
+datatypes["luminance"] = LavaVuPython.lucLuminanceData
+datatypes["rgb"] = datatypes["max"] = LavaVuPython.lucRGBData
 
 #Some preset colourmaps
 # aim to reduce banding artifacts by being either 

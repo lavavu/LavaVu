@@ -38,7 +38,8 @@
 // Main function
 int main(int argc, char *argv[])
 {
-  LavaVu app(argv[0]);
+  //Pass binary path, from argv[0] or $PATH
+  LavaVu app(GetBinaryPath(argv[0], APPNAME__));
   std::vector<std::string> args(argv+1, argv+argc);
   app.run(args);
   return 0;
