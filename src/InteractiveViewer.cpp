@@ -2960,9 +2960,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     aobject = lookupObject(parsed, "select");
     if (aobject)
-      printf("Selected object: %s", aobject->name().c_str());
+      printMessage("Selected object: %s", aobject->name().c_str());
     else
-      printf("Object selection cleared");
+      printMessage("Object selection cleared");
   }
   else if (parsed.exists("shaders"))
   {
