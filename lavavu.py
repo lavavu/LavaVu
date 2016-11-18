@@ -7,12 +7,14 @@ import os
 import glob
 
 #Attempt to import swig module
+libpath = "bin"
 try:
     #This file should be found one dir above bin dir containing built modules
     binpath = os.path.join(os.path.dirname(control.__file__), 'bin')
     sys.path.append(binpath)
     import LavaVuPython
-    libpath = os.path.abspath(os.path.dirname(LavaVuPython.__file__))
+    modpath = os.path.abspath(os.path.dirname(control.__file__))
+    libpath = os.path.join(modpath, "bin")
     #Expect html files in same path as viewer lib
     control.htmlpath = os.path.join(libpath, "html")
     if not os.path.isdir(control.htmlpath):
@@ -192,17 +194,15 @@ class Objects(dict):
 
 class Viewer(object):
     app = None
-    binary = ""
     res = (640,480)
 
-    def __init__(self, reuse=False, binary="bin/LavaVu", *args, **kwargs):
-        self.binary = binary
+    def __init__(self, reuse=False, *args, **kwargs):
         try:
             #TODO: re-using instance causes multiple interactive viewer instances to die
             #ensure not doing this doesn't cause issues (will leak memory if many created)
             #Create a new instance, always if cache disabled (reuse)
             if not self.app or not reuse:
-                self.app = LavaVuPython.LavaVu(binary)
+                self.app = LavaVuPython.LavaVu(libpath)
             #    print "Launching LavaVu, instance: " + str(id(self.app))
             #else:
             #    print "Re-using LavaVu, instance: " + str(id(self.app))
