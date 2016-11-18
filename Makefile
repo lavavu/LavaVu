@@ -168,8 +168,8 @@ docs: src/LavaVu.cpp src/DrawState.h
 	bin/LavaVu -? > docs/Commandline-Arguments.md
 
 clean:
-	/bin/rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
-	/bin/rm $(PREFIX)/html/*
-	/bin/rm $(PREFIX)/*.vert
-	/bin/rm $(PREFIX)/*.frag
+	-rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
+	-rm $(PREFIX)/html/*
+	-rm $(PREFIX)/*.vert
+	-rm $(PREFIX)/*.frag
 
