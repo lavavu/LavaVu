@@ -15,13 +15,6 @@ try:
     import LavaVuPython
     modpath = os.path.abspath(os.path.dirname(control.__file__))
     libpath = os.path.join(modpath, "bin")
-    #Expect html files in same path as viewer lib
-    control.htmlpath = os.path.join(libpath, "html")
-    if not os.path.isdir(control.htmlpath):
-        control.htmlpath = None
-        print("Can't locate html dir, interactive view disabled")
-    #Import javascript for controls (requires htmlpath)
-    control.loadscripts()
 except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
@@ -196,17 +189,23 @@ class Viewer(object):
     app = None
     res = (640,480)
 
-    def __init__(self, reuse=False, *args, **kwargs):
+    def __init__(self, reuse=False, binpath=libpath, *args, **kwargs):
         try:
             #TODO: re-using instance causes multiple interactive viewer instances to die
-            #ensure not doing this doesn't cause issues (will leak memory if many created)
+            #ensure not doing this doesn't cause issues (could leak memory if many created)
             #Create a new instance, always if cache disabled (reuse)
             if not self.app or not reuse:
-                self.app = LavaVuPython.LavaVu(libpath)
+                self.app = LavaVuPython.LavaVu(binpath)
             #    print "Launching LavaVu, instance: " + str(id(self.app))
             #else:
             #    print "Re-using LavaVu, instance: " + str(id(self.app))
             self.setup(*args, **kwargs)
+
+            #Control setup, expect html files in same path as viewer binary
+            control.htmlpath = os.path.join(binpath, "html")
+            if not os.path.isdir(control.htmlpath):
+                control.htmlpath = None
+                print("Can't locate html dir, interactive view disabled")
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
             pass
@@ -521,9 +520,8 @@ class Viewer(object):
             pass
 
     def window(self):
-        #Only allow a single interactive viewer instance
-        if not isinstance(self.winid, int):
-            self.winid = control.window(self)
+        #Interactive viewer instance
+        return control.window(self)
 
     def redisplay(self):
         if isinstance(self.winid, int):
