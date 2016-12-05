@@ -30,7 +30,8 @@ else:
    bin_dir = os.path.join(env['prefix'], "bin");
    rpath = [os.path.join(env['prefix'], "lib")]
 
-cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('SHADER_PATH', '"\\"' + bin_dir + '/\\""')] + [('USE_FONTS')]
+cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('USE_FONTS')]
+#cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('SHADER_PATH', '"\\"' + bin_dir + '/\\""')] + [('USE_FONTS')]
 #cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('SHADER_PATH', '"\\"' + bin_dir + '/\\""')] + [('USE_FONTS')] + [('USE_ZLIB')]
 env['CPPDEFINES'] += cpp_defs
 
