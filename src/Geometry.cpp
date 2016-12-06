@@ -293,12 +293,12 @@ bool GeomData::filter(unsigned int idx)
 
 FloatValues* GeomData::colourData() 
 {
-  return values.size() ? values[draw->colourIdx] : NULL;
+  return values.size() && values.size() > draw->colourIdx ? values[draw->colourIdx] : NULL;
 }
 
 float GeomData::colourData(unsigned int idx) 
 {
-  if (values.size() == 0) return HUGE_VALF;
+  if (values.size() == 0 || values.size() <= draw->colourIdx) return HUGE_VALF;
   FloatValues* fv = values[draw->colourIdx];
   return fv->value[idx];
 }
