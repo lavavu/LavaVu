@@ -391,7 +391,7 @@ class Viewer(object):
             obj = self.file(infile, kwargs)
         return obj
 
-    def colourmap(self, name="default", data):
+    def colourmap(self, name, data):
         datastr = data
         if isinstance(data, list):
             #Convert list map to string format
