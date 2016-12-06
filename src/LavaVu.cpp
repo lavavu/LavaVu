@@ -2833,30 +2833,25 @@ std::string LavaVu::web(bool tofile)
 void LavaVu::addObject(std::string name, std::string properties)
 {
   if (!amodel) return;
-  aobject = addObject(new DrawingObject(drawstate, name));
+  DrawingObject* obj = addObject(new DrawingObject(drawstate, name));
   if (properties.length()) setObject(name, properties);
 }
 
 void LavaVu::setObject(std::string name, std::string properties)
 {
-  if (!amodel) return;
-  if (name.length() > 0)
-    aobject = lookupObject(name);
-  if (!aobject) return;
+  DrawingObject* obj = lookupObject(name, aobject);
+  if (!obj) return;
   json imported = json::parse(properties);
-  aobject->properties.merge(imported);
+  obj->properties.merge(imported);
 }
 
 std::string LavaVu::getObject(std::string name)
 {
-  if (!amodel) return "{}";
-  DrawingObject* object;
-  if (name.length() > 0)
-    object = lookupObject(name);
-  if (!object) return "{}";
-  std::stringstream ss;
+  DrawingObject* obj = lookupObject(name, aobject);
+  if (!obj) return "{}";
   //Export object state
-  amodel->jsonWrite(ss, object, false);
+  std::stringstream ss;
+  amodel->jsonWrite(ss, obj, false);
   json data = json::parse(ss.str());
   return data["objects"][0].dump();
 }
