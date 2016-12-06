@@ -1679,8 +1679,12 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
     vprops["translate"] = trans;
     vprops["focus"] = foc;
     vprops["scale"] = scale;
-    vprops["min"] = min;
-    vprops["max"] = max;
+    //Can't set min/max properties from auto calc or will override future bounding box calc,
+    //useful to get the calculated bounding box, so export as "bounds"
+    json bounds;
+    bounds["min"] = min;
+    bounds["max"] = max;
+    vprops["bounds"] = bounds;
 
     //Converts named colours to js readable
     if (vprops.count("background") > 0)
