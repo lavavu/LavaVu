@@ -188,8 +188,6 @@ def window(viewer, html="", align="left"):
             loadscripts('var wi = new WindowInteractor(' + str(viewerid) + ');', viewer, html)
     except NameError, ImportError:
         render(html)
-    #Return the ID
-    return viewerid
 
 def action(id, value):
     #return str(id) + " : " + str(value)

@@ -2929,62 +2929,58 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
-void LavaVu::loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type)
+void LavaVu::loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type, const std::string& name)
 {
-  //Get selected object or create a new one
-  if (!amodel || !aobject) return;
-
-  //Get the type to load (defaults to points)
-  std::string gtype = aobject->properties["geometry"];
-  Geometry* container = getGeometryType(gtype);
-  if (!container) return;
-
-  //Load 3d vertices
-  for (unsigned int i=0; i < array.size(); i++)
-    container->read(aobject, 1, type, &array[i][0]);
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+  {
+    //Load 3d vertices
+    for (unsigned int i=0; i < array.size(); i++)
+      container->read(obj, 1, type, &array[i][0]);
+  }
 }
 
-void LavaVu::loadValues(std::vector <float> array, std::string label, float minimum, float maximum)
+void LavaVu::loadValues(std::vector <float> array, std::string label, const std::string& name)
 {
-  //Get selected object or create a new one
-  if (!amodel || !aobject) return;
-
-  //Get the type to load (defaults to points)
-  std::string gtype = aobject->properties["geometry"];
-  Geometry* container = getGeometryType(gtype);
-  if (!container) return;
-
-  //Load scalar values
-  container->read(aobject, array.size(), &array[0], label);
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+    //Load scalar values
+    container->read(obj, array.size(), &array[0], label);
 }
 
-void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type)
+void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type, const std::string& name)
 {
-  //Get selected object or create a new one
-  if (!amodel || !aobject) return;
-
-  //Get the type to load (defaults to points)
-  std::string gtype = aobject->properties["geometry"];
-  Geometry* container = getGeometryType(gtype);
-  if (!container) return;
-
-  //Load scalar values
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+    container->read(obj, array.size(), type, &array[0]);
   //for (unsigned int i=0; i < array.size(); i++)
-  //  container->read(aobject, 1, type, &array[i]);
-  container->read(aobject, array.size(), type, &array[0]);
+  //  container->read(obj, 1, type, &array[i]);
 }
 
-void LavaVu::labels(std::vector <std::string> labels)
+void LavaVu::loadColours(std::vector <std::string> list, const std::string& name)
 {
-  //Get selected object or create a new one
-  if (!amodel || !aobject) return;
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+  {
+    for (auto item : list)
+    {
+      //Use colour constructor to parse string colours
+      Colour c(item);
+      container->read(obj, 1, lucRGBAData, &c);
+    }
+  }
+}
 
-  //Get the type to load (defaults to points)
-  std::string gtype = aobject->properties["geometry"];
-  Geometry* container = getGeometryType(gtype);
-  if (!container) return;
-
-  container->label(aobject, labels);
+void LavaVu::labels(std::vector <std::string> labels, const std::string& name)
+{
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+    container->label(obj, labels);
 }
 
 std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int channels)

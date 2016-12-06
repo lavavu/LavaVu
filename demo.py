@@ -7,8 +7,8 @@ def second_viewer():
     #return
     global debug
     lv2 = lavavu.Viewer(verbose=debug, hidden=False) #Interactive - require visible window
-    lines2 = lv2.add("lines", {"colour" : "blue", "link" : True, "geometry" : "lines"});
-    lines2.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]]);
+    lines2 = lv2.add("lines", colour="blue", link=True, geometry="lines")
+    lines2.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]])
     lv2.test()
     lv2.init()
     #lv2.interactive()
@@ -22,14 +22,13 @@ lv2 = second_viewer()
 print lv.image("initial")
 
 #Points
-points = lv.add("points", {"colour" : "red", "pointsize" : 10, "opacity" : 0.75, "static" : True, "geometry" : "points"})
-points.vertices([[-1, -1, -1], [-1, 1, -1], [1, 1, -1], [1, -1, -1]]);
-points.vertices([[-1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, 1]]);
+points = lv.points(colour="red", pointsize=10, opacity=0.75, static=True, vertices=[[-1, -1, -1], [-1, 1, -1], [1, 1, -1], [1, -1, -1]])
+points.vertices([[-1, -1, 1], [-1, 1, 1], [1, 1, 1], [1, -1, 1]])
 points.values([1, 2, 3, 4, 5, 6, 7, 8])
 
 #Lines
-lines = lv.add("lines", {"colour" : "blue", "link" : True, "geometry" : "lines"});
-lines.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]]);
+lines = lv.add("lines", colour="blue", link=True, geometry="lines")
+lines.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]])
 
 lv.select()
 lv("add vec vectors")
@@ -41,7 +40,8 @@ lv("read vectors")
 lv("read colours")
 
 #This will trigger bounding box update so we can use min/max macros
-lv.open()
+#lv.open()
+lv.bounds()
 #lv.init()
 
 lv.select()
@@ -78,3 +78,11 @@ print lv.image("final")
 imagestr = lv2.image()
 
 #lv = None
+"""
+lv.window()
+cmd = lv.control.Command(lv)
+cmd.show()
+c = lv.control.Colour(lv, "background")
+c.show()
+lv.serve()
+"""

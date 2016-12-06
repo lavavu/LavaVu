@@ -206,9 +206,10 @@ public:
   //Interactive command & script processing
   bool parseChar(unsigned char key);
   Geometry* getGeometryType(std::string what);
-  DrawingObject* lookupObject(std::string& name);
   DrawingObject* lookupObject(PropertyParser& parsed, const std::string& key, int idx=0);
+  DrawingObject* lookupObject(const std::string& name, DrawingObject* def=NULL);
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
+  Geometry* lookupObjectContainer(DrawingObject* obj);
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   void helpCommand(std::string cmd);
   void dumpCSV(DrawingObject* obj=NULL);
@@ -229,10 +230,11 @@ public:
   std::string getState();
   std::string getFigures();
   std::string getTimeSteps();
-  void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData);
-  void loadValues(std::vector <float> array, std::string label="", float minimum=0, float maximum=0);
-  void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData);
-  void labels(std::vector <std::string> labels);
+  void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData, const std::string& name="");
+  void loadValues(std::vector <float> array, std::string label="", const std::string& name="");
+  void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData, const std::string& name="");
+  void loadColours(std::vector <std::string> list, const std::string& name);
+  void labels(std::vector <std::string> labels, const std::string& name="");
   //For testing via python
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=3);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);

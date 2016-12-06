@@ -536,7 +536,7 @@ Geometry* LavaVu::getGeometryType(std::string what)
     return amodel->shapes;
   if (what == "lines")
     return amodel->lines;
-  if (what == "volumes")
+  if (what == "volume")
     return amodel->volumes;
   return NULL;
 }
@@ -544,6 +544,7 @@ Geometry* LavaVu::getGeometryType(std::string what)
 DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& key, int idx)
 {
   //Try index(id) first
+  if (!amodel) return NULL;
   int id = parsed.Int(key, -1, idx);
   if (id > 0 && id <= (int)amodel->objects.size()) return amodel->objects[id-1];
 
@@ -552,18 +553,20 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
   return lookupObject(what);
 }
 
-DrawingObject* LavaVu::lookupObject(std::string& name)
+DrawingObject* LavaVu::lookupObject(const std::string& name, DrawingObject* def)
 {
   //Lookup by name only
-  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+  if (!amodel) return NULL;
+  std::string lname = name;
+  std::transform(lname.begin(), lname.end(), lname.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
   {
     std::string namekey = amodel->objects[i]->name();
     std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == name)
+    if (namekey == lname)
       return amodel->objects[i];
   }
-  return NULL;
+  return def;
 }
 
 std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const std::string& key, int start)
@@ -578,6 +581,15 @@ std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const 
       break;
   }
   return list;
+}
+
+Geometry* LavaVu::lookupObjectContainer(DrawingObject* obj)
+{
+  //Get the container type to load into from property  (defaults to points)
+  if (!obj) return NULL;
+  std::string gtype = obj->properties["geometry"];
+  Geometry* container = getGeometryType(gtype);
+  return container;
 }
 
 int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int idx)
@@ -2180,6 +2192,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.exists("read"))
   {
+    //Deprecate? This data loading stuff is better done through python interface
     if (gethelp)
     {
       help += "> Read data into selected object, appends to specified data array\n\n"

@@ -105,32 +105,46 @@ class Obj():
         return json.dumps(self.dict["data"])
 
     def vertices(self, data):
-        self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadVectors(data, LavaVuPython.lucVertexData)
+        self.instance.app.loadVectors(data, LavaVuPython.lucVertexData, self.name)
+
+    def normals(self, data):
+        self.instance.app.loadVectors(data, LavaVuPython.lucNormalData, self.name)
 
     def vectors(self, data):
-        self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadVectors(data, LavaVuPython.lucVectorData)
+        self.instance.app.loadVectors(data, LavaVuPython.lucVectorData, self.name)
 
-    def values(self, data, label="", min=0., max=0.):
-        self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadValues(data, label, min, max)
+    def values(self, data, label=""):
+        self.instance.app.loadValues(data, label, self.name)
 
     def colours(self, data):
-        self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.parseCommands("colours=" + str(data))
-        self.instance.app.parseCommands("read colours")
+        if isinstance(data, str):
+            data = data.split()
+        self.instance.app.loadColours(data, self.name)
 
     def indices(self, data):
-        self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData)
+        self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData, self.name)
 
     def labels(self, data):
-        self.instance.app.parseCommands("select " + self.name)
         self.instance.app.labels(data)
 
-    #Property control interface
-    #...TODO...
+    def colourMap(self, data):
+        datastr = data
+        if isinstance(data, list):
+            #Convert list map to string format
+            datastr = ""
+            for item in data:
+                if isinstance(item, list) or isinstance(item, tuple):
+                    datastr += str(item[0]) + '=' + str(item[1]) + '\n'
+                else:
+                    datastr += item + '\n'
+        elif data in colourMaps.keys():
+            #Use a predefined map by name
+            datastr = colourMaps[data]
+        data = datastr
+        #Load colourmap and set property on this object
+        cmap = self.instance.app.colourMap('default', data)
+        self["colourmap"] = cmap
+        return cmap
 
 #Wrapper dict+list of objects
 class Objects(dict):
@@ -322,7 +336,7 @@ class Viewer(object):
             self.commands(argstr)
         return any_method
 
-    def add(self, name, properties={}):
+    def add(self, name, **kwargs):
         if not self.app.amodel:
             self.defaultModel()
 
@@ -330,27 +344,35 @@ class Viewer(object):
             print "Object exists: " + name
             return self.objects[name]
 
-        #Adds a new object
-        self.app.addObject(name, json.dumps(properties))
+        #Strip data keys from kwargs and put aside for loading
+        datasets = {}
+        for key in kwargs.keys():
+            if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
+                datasets[key] = kwargs.pop(key, None)
+
+        #Adds a new object, all other args passed to properties dict
+        self.app.addObject(name, json.dumps(kwargs))
 
         #Get state and update object list
         self.get()
+        obj = self.objects.list[-1]
 
         #Read any property data sets (allows object creation and load with single prop dict)
-        for key in properties:
-            if key in ["vertices", "normals", "vectors", "colours", "values"]:
-                self.app.parseCommands("read " + key)
+        for key in datasets:
+            #Get the load function matching the data set (eg: vertices() ) and call on data
+            func = getattr(obj, key)
+            func(datasets[key])
 
         #Return wrapper obj
-        return self.objects.list[-1]
+        return obj
 
     #Shortcut for adding specific geometry types
-    def addType(self, typename, name=None, properties={}):
+    def addType(self, typename, name=None, **kwargs):
         if not name: name = typename
-        properties["geometry"] = typename
-        return self.add(name, properties)
+        kwargs["geometry"] = typename
+        return self.add(name, **kwargs)
 
-    def file(self, filename, name=None, properties={}):
+    def file(self, filename, name=None, **kwargs):
         if not self.app.amodel:
             self.app.defaultModel()
 
@@ -361,8 +383,6 @@ class Viewer(object):
         #Load a new object from file
         #self.app.loadFile(filename)
         self.app.parseCommands("file " + filename)
-        if name:
-            properties["name"] = name
 
         #Get state and update object list
         self.get()
@@ -372,15 +392,15 @@ class Viewer(object):
             print "WARNING: No object created after loading: " + filename
             return None
         obj = self.objects.list[-1] #Use last in list, most recently added
-        self.app.setObject(obj.name, json.dumps(properties))
+        self.app.setObject(obj.name, json.dumps(kwargs))
         return obj
     
-    def files(self, filespec, name=None, properties={}):
+    def files(self, filespec, name=None, **kwargs):
         #Load list of files with glob
         filelist = glob.glob(filespec)
         obj = None
         for infile in sorted(filelist):
-            obj = self.file(infile)
+            obj = self.file(infile, kwargs)
         return obj
 
     def clear(self):
@@ -500,7 +520,7 @@ class Viewer(object):
 
     def window(self):
         #Interactive viewer instance
-        return control.window(self)
+        control.window(self)
 
     def redisplay(self):
         if isinstance(self.winid, int):

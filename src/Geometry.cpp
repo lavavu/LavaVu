@@ -929,7 +929,6 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   return geomdata; //Return data store pointer
 }
 
-//GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
 GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
 {
   //Read into given label - for value data only

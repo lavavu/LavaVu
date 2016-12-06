@@ -1671,12 +1671,16 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
       trans.push_back(translate[i]);
       foc.push_back(focus[i]);
       scale.push_back(view->scale[i]);
+      min.push_back(view->min[i]);
+      max.push_back(view->max[i]);
     }
 
     vprops["rotate"] = rot;
     vprops["translate"] = trans;
     vprops["focus"] = foc;
     vprops["scale"] = scale;
+    vprops["min"] = min;
+    vprops["max"] = max;
 
     //Converts named colours to js readable
     if (vprops.count("background") > 0)
