@@ -178,8 +178,8 @@ void Tracers::update()
           {
             lines->read(geom[i]->draw, 1, lucVertexData, oldpos);
             lines->read(geom[i]->draw, 1, lucVertexData, pos);
-            lines->read(geom[i]->draw, 1, lucRGBAData, &oldColour.fvalue);
-            lines->read(geom[i]->draw, 1, lucRGBAData, &colour.fvalue);
+            lines->read(geom[i]->draw, 1, lucRGBAData, &oldColour);
+            lines->read(geom[i]->draw, 1, lucRGBAData, &colour);
           }
           else
           {
@@ -196,7 +196,7 @@ void Tracers::update()
               //(Every second vertex is at top of shaft, first quality*2 are shaft verts)
               Colour& col = oldColour;
               if (c%2==1 || c > quality*2) col = colour;
-              tris->read(geom[i]->draw, 1, lucRGBAData, &col.fvalue);
+              tris->read(geom[i]->draw, 1, lucRGBAData, &col);
             }
           }
         }

@@ -525,14 +525,14 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
         {
           for (int x=0; x<geom[i]->width; x += 4/bpv)
           {
-            if (bpv == 1) //Byte
+            /*if (bpv == 1) //Byte, DEPRECATED, now stored in own type as uchar
             {
               Colour c;
               c.fvalue = geom[i]->colourData(((z * size) + y * geom[i]->width + x)/4);
               for (int p=0; p<4; p++)
                 image[iw * (y + yoffset) + x + xoffset + p] = ((c.rgba[p]/255.0) - min) / range * 255;
             }
-            else if (bpv == 4) //Float
+            else*/ if (bpv == 4) //Float
             {
               float val = geom[i]->colourData((z * size) + y * geom[i]->width + x);
               image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
