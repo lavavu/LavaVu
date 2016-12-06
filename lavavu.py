@@ -117,8 +117,11 @@ class Obj():
         self.instance.app.loadValues(data, label, self.name)
 
     def colours(self, data):
+        #Convert to list of strings
         if isinstance(data, str):
             data = data.split()
+        for i in range(len(data)):
+            if not isinstance(data[i], str): data[i] = str(data[i])
         self.instance.app.loadColours(data, self.name)
 
     def indices(self, data):
@@ -369,8 +372,7 @@ class Viewer(object):
             return self.objects[name]
 
         #Load a new object from file
-        #self.app.loadFile(filename)
-        self.app.parseCommands("file " + filename)
+        self.app.loadFile(filename)
 
         #Get state and update object list
         self.get()
