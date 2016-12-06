@@ -127,22 +127,9 @@ class Obj():
     def labels(self, data):
         self.instance.app.labels(data)
 
-    def colourMap(self, data):
-        datastr = data
-        if isinstance(data, list):
-            #Convert list map to string format
-            datastr = ""
-            for item in data:
-                if isinstance(item, list) or isinstance(item, tuple):
-                    datastr += str(item[0]) + '=' + str(item[1]) + '\n'
-                else:
-                    datastr += item + '\n'
-        elif data in colourMaps.keys():
-            #Use a predefined map by name
-            datastr = colourMaps[data]
-        data = datastr
+    def colourmap(self, data):
         #Load colourmap and set property on this object
-        cmap = self.instance.app.colourMap('default', data)
+        cmap = self.instance.colourmap(self.name + '-default', data)
         self["colourmap"] = cmap
         return cmap
 
@@ -328,7 +315,7 @@ class Viewer(object):
             #Check for add object by geom type shortcut
             if key in ["labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"]:
                 #Allows calling add by geometry type, eg: obj = lavavu.lines()
-                return self.addType(key, *args, **kwargs)
+                return self.addtype(key, *args, **kwargs)
             #Otherwise, pass args as command string
             argstr = key
             for arg in args:
@@ -367,7 +354,8 @@ class Viewer(object):
         return obj
 
     #Shortcut for adding specific geometry types
-    def addType(self, typename, name=None, **kwargs):
+    def addtype(self, typename, name=None, **kwargs):
+        #Set name to typename if none provided
         if not name: name = typename
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
@@ -402,6 +390,23 @@ class Viewer(object):
         for infile in sorted(filelist):
             obj = self.file(infile, kwargs)
         return obj
+
+    def colourmap(self, name="default", data):
+        datastr = data
+        if isinstance(data, list):
+            #Convert list map to string format
+            datastr = ""
+            for item in data:
+                if isinstance(item, list) or isinstance(item, tuple):
+                    datastr += str(item[0]) + '=' + str(item[1]) + '\n'
+                else:
+                    datastr += item + '\n'
+        elif data in colourMaps.keys():
+            #Use a predefined map by name
+            datastr = colourMaps[data]
+        data = datastr
+        #Load colourmap
+        return self.app.colourMap(name, data)
 
     def clear(self):
         self.close()
