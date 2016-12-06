@@ -82,23 +82,23 @@ void GeomData::colourCalibrate()
   //Cache colour lookups
   draw->setup();
 
-  json colourBy = draw->properties["colourby"];
-  if (colourBy.is_string())
-    draw->colourIdx = valuesLookup(colourBy);
-  else if (colourBy.is_number())
-    draw->colourIdx = colourBy;
-
-  //Check for sane range
-  if (draw->colourIdx >= values.size()) draw->colourIdx = 0;
+  //Get the value index
+  draw->colourIdx = valuesLookup(draw->properties["colourby"]);
 
   //Calibrate colour maps on ranges for related data
   ColourMap* cmap = draw->getColourMap();
   if (cmap && values.size() > draw->colourIdx)
     cmap->calibrate(values[draw->colourIdx]);
-  //TODO: hard coded to lucOpacityValueData, should also be referenced by an editable index
+
+  //Calibrate opacity map if provided
   ColourMap* omap = draw->getColourMap("opacitymap");
-  if (omap && data[lucOpacityValueData])
-    omap->calibrate(valueData(lucOpacityValueData));
+  if (omap)
+  {
+    //Get the value index
+    draw->opacityIdx = valuesLookup(draw->properties["opacityby"]);
+    if (values.size() > draw->opacityIdx)
+      omap->calibrate(valueData(draw->opacityIdx));
+  }
 }
 
 //Get colour using specified colourValue
@@ -129,11 +129,12 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
   ColourMap* cmap = draw->getColourMap();
-  if (cmap && data[lucColourValueData])
+  FloatValues* values = colourData();
+  if (cmap && values)
   {
-    if (data[lucColourValueData]->size() == 1) idx = 0;  //Single colour value only provided
-    //assert(idx < data[lucColourValueData]->size());
-    if (idx >= data[lucColourValueData]->size()) idx = data[lucColourValueData]->size() - 1;
+    if (values->size() == 1) idx = 0;  //Single colour value only provided
+    //assert(idx < values->size());
+    if (idx >= values->size()) idx = values->size() - 1;
     colour = cmap->getfast(colourData(idx));
   }
   else if (colours.size() > 0)
@@ -150,24 +151,41 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
 
   //Set opacity using own value map...
   ColourMap* omap = draw->getColourMap("opacitymap");
-  if (omap && data[lucOpacityValueData])
+  if (omap && values->size() > draw->opacityIdx)
   {
-    Colour cc = omap->getfast(valueData(lucOpacityValueData, idx));
+    Colour cc = omap->getfast(valueData(draw->opacityIdx, idx));
     colour.a = cc.a;
   }
 
-  //Set opacity to drawing object override level if set
+  //Apply opacity from drawing object override level if set
   if (draw->opacity > 0.0 && draw->opacity < 1.0)
-    colour.a = draw->opacity * 255;
+    colour.a *= draw->opacity;
 }
 
-unsigned int GeomData::valuesLookup(const std::string& label)
+unsigned int GeomData::valuesLookup(const json& by)
 {
-  //Lookup index from label
-  for (unsigned int j=0; j < values.size(); j++)
-    if (values[j]->label == label)
-      return j;
-  return 0;
+  //Gets a valid value index by property, either actual index or string label
+  unsigned int valueIdx = MAX_DATA_ARRAYS+1;
+  if (by.is_string())
+  {
+    //Lookup index from label
+    std::string label = by;
+    for (unsigned int j=0; j < values.size(); j++)
+    {
+      if (values[j]->label == label)
+      {
+        valueIdx = j;
+        break;
+      }
+    }
+  }
+  else if (by.is_number())
+    valueIdx = by;
+
+  //Check for sane range
+  if (valueIdx >= values.size()) valueIdx = MAX_DATA_ARRAYS+1;
+
+  return valueIdx;
 }
 
 //Returns true if vertex/voxel is to be filtered (don't display)
@@ -188,11 +206,7 @@ bool GeomData::filter(unsigned int idx)
 
       int j = filterCache.size();
       filterCache.push_back(Filter());
-      json filterBy = filters[i]["by"];
-      if (filterBy.is_string())
-        filterCache[j].dataIdx = valuesLookup(filterBy);
-      else if (filterBy.is_number())
-        filterCache[j].dataIdx = filterBy;
+      filterCache[j].dataIdx = valuesLookup(filters[i]["by"]);
       filterCache[j].map = filters[i]["map"];
       filterCache[j].out = filters[i]["out"];
       filterCache[j].inclusive = filters[i]["inclusive"];
@@ -289,17 +303,15 @@ float GeomData::colourData(unsigned int idx)
   return fv->value[idx];
 }
 
-FloatValues* GeomData::valueData(lucGeometryDataType type)
+FloatValues* GeomData::valueData(unsigned int vidx)
 {
-  for (unsigned int d=0; d<values.size(); d++)
-    if (data[type] == values[d])
-      return values[d];
-  return NULL;
+  if (values.size() <= vidx) return NULL;
+  return values[vidx];
 }
 
-float GeomData::valueData(lucGeometryDataType type, unsigned int idx)
+float GeomData::valueData(unsigned int vidx, unsigned int idx)
 {
-  FloatValues* fv = valueData(type);
+  FloatValues* fv = valueData(vidx);
   return fv ? fv->value[idx] : HUGE_VALF;
 }
 
@@ -392,8 +404,8 @@ void Geometry::dump(std::ostream& csv, DrawingObject* draw)
       if (type == lucVolumeType)
       {
         //Dump colourValue data only
-        std::cout << "Collected " << geom[i]->data[lucColourValueData]->size() << " values (" << i << ")" << std::endl;
-        for (unsigned int c=0; c < geom[i]->data[lucColourValueData]->size(); c++)
+        std::cout << "Collected " << geom[i]->colourData()->size() << " values (" << i << ")" << std::endl;
+        for (unsigned int c=0; c < geom[i]->colourData()->size(); c++)
         {
           csv << geom[i]->colourData(c) << std::endl;
         }
@@ -407,7 +419,7 @@ void Geometry::dump(std::ostream& csv, DrawingObject* draw)
         {
           csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
 
-          if (geom[i]->colourData() && geom[i]->data[lucColourValueData]->size() == geom[i]->count)
+          if (geom[i]->colourData() && geom[i]->colourData()->size() == geom[i]->count)
             csv << ',' << geom[i]->colourData(v);
           if (geom[i]->vectors.size() > v)
             csv << ',' << geom[i]->vectors[v][0] << ',' <<  geom[i]->vectors[v][1] << ',' << geom[i]->vectors[v][2];
@@ -427,16 +439,18 @@ void Geometry::jsonWrite(DrawingObject* draw, json& obj)
 void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
 {
   //Export all geometry to json
-  int dsizes[lucMaxDataType] = {3, 3, 3,
+  //TODO: json model needs to store value data separately by label
+  int dsizes[lucMaxDataType+1] = {3, 3, 3,
                                 1, 1, 1, 1, 1,
                                 1, 1, 1, 1,
-                                1, 2
+                                1, 2, 1, 1, 1
                                };
-  const char* labels[lucMaxDataType] = {"vertices", "normals", "vectors",
-                                        "values", "opacities", "red", "green", "blue",
-                                        "indices", "widths", "heights", "lengths",
-                                        "colours", "texcoords"
-                                       };
+  const char* labels[lucMaxDataType+1] = {"vertices", "normals", "vectors",
+                                          "values", "opacities", "red", "green", "blue",
+                                          "indices", "widths", "heights", "lengths",
+                                          "colours", "texcoords", "sizes", 
+                                          "luminance", "rgb", "values"
+                                         };
 
   for (unsigned int index = 0; index < geom.size(); index++)
   {
@@ -444,12 +458,23 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
     {
       std::cerr << "Collecting data, " << geom[index]->count << " vertices (" << index << ")" << std::endl;
       json data;
-      for (int data_type=lucMinDataType; data_type<lucMaxDataType; data_type++)
+      for (int data_type=lucMinDataType; data_type<=lucMaxDataType; data_type++)
       {
-        if (!geom[index]->data[data_type]) continue;
+        DataContainer* dat = geom[index]->data[data_type];
+        if (!dat)
+        {
+          //Check in values and use if label matches
+          for (auto vals : geom[index]->values)
+          {
+            if (vals->label == labels[data_type])
+              dat = vals;
+          }
+        }
+        if (!dat) continue;
         json el;
 
         unsigned int length = geom[index]->data[data_type]->size() * sizeof(float);
+
         if (length > 0)
         {
           el["size"] = dsizes[data_type];
@@ -869,7 +894,7 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
 
 GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
-  draw->skip = false;  //Enable object (has data now)
+  draw->skip = false;  //Enable object (has geometry now)
   GeomData* geomdata;
   //Get passed object's most recently added data store
   geomdata = getObjectStore(draw);
@@ -904,11 +929,38 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   return geomdata; //Return data store pointer
 }
 
-GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, std::string label)
+//GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
+GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
 {
-  //Read & set label - for value data
-  GeomData* geomdata = read(draw, n, dtype, data);
-  geomdata->data[dtype]->label = label;
+  //Read into given label - for value data only
+
+  //Get passed object's most recently added data store
+  GeomData* geomdata = getObjectStore(draw);
+  //Create new data store if required, save in drawing object and Geometry list
+  if (!geomdata)
+    geomdata = add(draw);
+
+  //Find labelled value store
+  FloatValues* store = NULL;
+  for (auto vals : geomdata->values)
+  {
+    if (vals->label == label)
+      store = vals;
+  }
+
+  //Create value store if required
+  if (!store)
+  {
+    store = new FloatValues();
+    geomdata->values.push_back(store);
+    store->label = label;
+    //debug_print(" -- NEW VALUE STORE CREATED FOR %s label %s count %d ptr %p\n", geomdata->draw->name().c_str(), label.c_str(), geomdata->values.size(), store);
+  }
+
+  //Read the data
+  if (n > 0) store->read(n, data);
+
+  return geomdata; //Return data store pointer
 }
 
 void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
@@ -917,15 +969,6 @@ void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtyp
   if (width) geomdata->width = width;
   if (height) geomdata->height = height;
   if (depth) geomdata->depth = depth;
-
-  //Create value store if required
-  if (!geomdata->data[dtype])
-  {
-    FloatValues* fv = new FloatValues();
-    geomdata->data[dtype] = fv;
-    geomdata->values.push_back(fv);
-    //debug_print(" -- NEW VALUE STORE CREATED FOR %s type %d count %d ptr %p\n", geomdata->draw->name().c_str(), dtype, geomdata->values.size(), fv);
-  }
 
   //Update the default type property on first read
   if (geomdata->count == 0 && !geomdata->draw->properties.has("geometry"))
@@ -1101,7 +1144,7 @@ void Geometry::toImage(unsigned int idx)
   int width = geom[idx]->width;
   if (width == 0) width = 256;
   int height = geom[idx]->height;
-  if (height == 0) height = geom[idx]->data[lucColourValueData]->size() / width;
+  if (height == 0) height = geom[idx]->colourData()->size() / width;
   char path[FILE_PATH_MAX];
   int pixel = 3;
   GLubyte *image = new GLubyte[width * height * pixel];
@@ -1110,7 +1153,7 @@ void Geometry::toImage(unsigned int idx)
   {
     for (int x=0; x<width; x++)
     {
-      //printf("%f\n", geom[idx]->data[lucColourValueData][y * width + x]);
+      //printf("%f\n", geom[idx]->colourData()[y * width + x]);
       Colour c;
       geom[idx]->getColour(c, y * width + x);
       image[y * width*pixel + x*pixel + 0] = c.r;

@@ -53,6 +53,7 @@ DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
   properties.data["visible"] = true;
   colourIdx = 0; //Default colouring data is first value block
+  opacityIdx = 1;
   setup();
 }
 

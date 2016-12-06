@@ -2117,18 +2117,20 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Add a float value to selected object, appends to value array\n\n"
-              "> **Usage:** value val\n\n"
+              "> **Usage:** value val label\n\n"
+              "> label (string) : name of data set to append to  \n"
               "> val (number) : value to append  \n";
       return false;
     }
 
     //Add values to object
-    if (aobject && parsed.has(fval, "value"))
+    std::string what = parsed["value"];
+    if (aobject && parsed.has(fval, "value", 1))
     {
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
-      active->read(aobject, 1, lucColourValueData, &fval);
+      active->read(aobject, 1, &fval, what);
       printMessage("%s value appended %f", aobject->name().c_str(), fval);
     }
   }
@@ -2247,7 +2249,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
 
       int len = size/width;
-      active->read(aobject, len, dtype, vals);
+      if (dtype == lucColourValueData)
+        active->read(aobject, len, vals, "values");
+      else
+        active->read(aobject, len, dtype, vals);
       delete[] vals;
       printMessage("%s %s appended %d", aobject->name().c_str(), what.c_str(), len);
       //Full object reload as data changed

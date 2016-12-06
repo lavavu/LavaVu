@@ -90,15 +90,19 @@ void Shapes::update()
     Colour colour;
     geom[i]->colourCalibrate();
 
+    unsigned int idxW = geom[i]->valuesLookup(geom[i]->draw->properties["widthby"]);
+    unsigned int idxH = geom[i]->valuesLookup(geom[i]->draw->properties["heightby"]);
+    unsigned int idxL = geom[i]->valuesLookup(geom[i]->draw->properties["lengthby"]);
+
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
       if (!drawable(i) || geom[i]->filter(v)) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
       Vec3d sdims = Vec3d(dims[0], dims[1], dims[2]);
-      if (geom[i]->data[lucXWidthData]) sdims[0] = geom[i]->valueData(lucXWidthData, v);
-      if (geom[i]->data[lucYHeightData]) sdims[1] = geom[i]->valueData(lucYHeightData, v);
+      if (geom[i]->valueData(idxW)) sdims[0] = geom[i]->valueData(idxW, v);
+      if (geom[i]->valueData(idxH)) sdims[1] = geom[i]->valueData(idxH, v);
       else sdims[1] = sdims[0];
-      if (geom[i]->data[lucZLengthData]) sdims[2] = geom[i]->valueData(lucZLengthData, v);
+      if (geom[i]->valueData(idxL)) sdims[2] = geom[i]->valueData(idxL, v);
       else sdims[2] = sdims[1];
 
       //Multiply by constant scaling factors if present

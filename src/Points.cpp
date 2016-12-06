@@ -137,39 +137,27 @@ void Points::loadVertices()
     //Calibrate colourMap
     geom[s]->colourCalibrate();
 
-    //Cache values if possible, getColour() is slow!
     Properties& props = geom[s]->draw->properties;
-    ColourMap* cmap = geom[s]->draw->getColourMap();
     float psize0 = props["pointsize"];
     float scaling = props["scaling"];
     psize0 *= scaling;
-    //TODO: this duplicates code in getColour,
-    // try to optimise getColour better instead
-    //Set opacity to drawing object/geometry override level if set
-    float alpha = props["opacity"];
-    //float opacity = props["opacity"];
-    //if (opacity > 0.0 && opacity < 1.0) alpha *= opacity;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
     bool attribs = drawstate.global("pointattribs");
+    unsigned int sizeidx = geom[s]->valuesLookup(geom[s]->draw->properties["sizeby"]);
+    bool usesize = geom[s]->valueData(sizeidx) != NULL;
+    //std::cout << geom[s]->draw->properties["sizeby"] << " : " << sizeidx << " : " << usesize << std::endl;
+    Colour c;
 
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
       //Copy data to VBO entry
-      Colour c;
       if (ptr)
       {
         assert((unsigned int)(ptr-p) < total * datasize);
         //Copies vertex bytes
         memcpy(ptr, geom[s]->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
-        //Copies colour bytes
-        if (cmap && geom[s]->colourData())
-        {
-          c = cmap->getfast(geom[s]->colourData(i));
-          if (alpha > 0.0) c.a *= alpha;
-        }
-        else
-          geom[s]->getColour(c, i);
+        geom[s]->getColour(c, i);
         memcpy(ptr, &c, sizeof(Colour));
         ptr += sizeof(Colour);
         //Optional per-object size/type
@@ -177,7 +165,7 @@ void Points::loadVertices()
         {
           //Copies settings (size + smooth)
           float psize = psize0;
-          if (geom[s]->data[lucSizeData]) psize *= geom[s]->valueData(lucSizeData, i);
+          if (usesize) psize *= geom[s]->valueData(sizeidx, i);
           memcpy(ptr, &psize, sizeof(float));
           ptr += sizeof(float);
           memcpy(ptr, &ptype, sizeof(float));

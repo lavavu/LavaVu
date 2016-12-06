@@ -53,6 +53,7 @@ public:
   float opacity;
   Colour colour;
   unsigned int colourIdx;
+  unsigned int opacityIdx;
   std::vector<ColourMap*> * colourMaps; // Reference to model colour map list
 
   //Object properties data...

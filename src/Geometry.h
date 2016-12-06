@@ -167,12 +167,13 @@ public:
   void mapToColour(Colour& colour, float value);
   int colourCount();
   void getColour(Colour& colour, unsigned int idx);
-  unsigned int valuesLookup(const std::string& label);
+  unsigned int valuesLookup(const json& by);
   bool filter(unsigned int idx);
   FloatValues* colourData();
   float colourData(unsigned int idx);
-  FloatValues* valueData(lucGeometryDataType type);
-  float valueData(lucGeometryDataType type, unsigned int idx);
+  FloatValues* valueData(unsigned int vidx);
+  FloatValues* valueData(const json& prop);
+  float valueData(unsigned int vidx, unsigned int idx);
 };
 
 
@@ -272,7 +273,7 @@ public:
   GeomData* getObjectStore(DrawingObject* draw);
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
-  GeomData* read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, std::string label);
+  GeomData* read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
   void read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
   void setup(DrawingObject* draw);
   void insertFixed(Geometry* fixed);

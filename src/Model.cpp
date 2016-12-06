@@ -1302,7 +1302,47 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
         if (data_type == lucVertexData && recurseTracers) active->add(obj);
 
         //Read data block
-        GeomData* g = active->read(obj, items, data_type, data, width, height, depth);
+        GeomData* g;
+        //Convert legacy value types to use data labels
+        //TODO: allow label set in database (via property on geometry record?)
+        switch (data_type)
+        {
+          case lucColourValueData:
+            g = active->read(obj, items, data, "colours");
+            break;
+          case lucOpacityValueData:
+            g = active->read(obj, items, data, "opacities");
+            break;
+          case lucRedValueData:
+            g = active->read(obj, items, data, "red");
+            break;
+          case lucGreenValueData:
+            g = active->read(obj, items, data, "green");
+            break;
+          case lucBlueValueData:
+            g = active->read(obj, items, data, "blue");
+            break;
+          case lucXWidthData:
+            g = active->read(obj, items, data, "widths");
+            break;
+          case lucYHeightData:
+            g = active->read(obj, items, data, "heights");
+            break;
+          case lucZLengthData:
+            g = active->read(obj, items, data, "lengths");
+            break;
+          case lucSizeData:
+            g = active->read(obj, items, data, "sizes");
+            break;
+          case lucMaxDataType:
+            g = active->read(obj, items, data, "values");
+            break;
+          default:
+            //Non-value data
+            g = active->read(obj, items, data_type, data, width, height, depth);
+        }
+
+        //Set geom labels if any
         if (labels) active->label(obj, labels);
 
         //Where min/max vertex provided, load

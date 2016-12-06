@@ -1167,7 +1167,7 @@ void LavaVu::readHeightMap(const FilePath& fn)
       //Add grid point
       amodel->geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
       //Colour by height
-      amodel->geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+      amodel->geometry[geomtype]->read(obj, 1, &colourval, "height");
 
       vertex[0] += xdim * subsample;
     }
@@ -1228,7 +1228,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
       //Add grid point
       amodel->geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
       //Colour by height
-      amodel->geometry[geomtype]->read(obj, 1, lucColourValueData, &colourval);
+      amodel->geometry[geomtype]->read(obj, 1, &colourval, "height");
     }
   }
 }
@@ -1496,7 +1496,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
     amodel->points->read(obj, 1, lucVertexData, ref);
-    amodel->points->read(obj, 1, lucColourValueData, &colour, "demo colours");
+    amodel->points->read(obj, 1, &colour, "demo colours");
 
     if (i % pointsperswarm == pointsperswarm-1 && i != numpoints-1)
         amodel->points->add(obj);
@@ -1516,7 +1516,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
     amodel->lines->read(obj, 1, lucVertexData, ref);
-    amodel->lines->read(obj, 1, lucColourValueData, &colour);
+    amodel->lines->read(obj, 1, &colour, "demo colours");
   }
 
   //Add some quads (using tri surface mode)
@@ -2944,7 +2944,7 @@ void LavaVu::loadVectors(std::vector< std::vector <float> > array, lucGeometryDa
     container->read(aobject, 1, type, &array[i][0]);
 }
 
-void LavaVu::loadScalars(std::vector <float> array, lucGeometryDataType type, std::string label, float minimum, float maximum)
+void LavaVu::loadValues(std::vector <float> array, std::string label, float minimum, float maximum)
 {
   //Get selected object or create a new one
   if (!amodel || !aobject) return;
@@ -2955,7 +2955,7 @@ void LavaVu::loadScalars(std::vector <float> array, lucGeometryDataType type, st
   if (!container) return;
 
   //Load scalar values
-  container->read(aobject, array.size(), type, &array[0], label);
+  container->read(aobject, array.size(), &array[0], label);
 }
 
 void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type)

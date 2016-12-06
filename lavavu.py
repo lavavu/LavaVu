@@ -19,37 +19,6 @@ except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
 
-#Type lookups
-geomtypes={}
-geomtypes["label"] = geomtypes["min"] = LavaVuPython.lucLabelType
-geomtypes["point"] = LavaVuPython.lucPointType
-geomtypes["grid"] = LavaVuPython.lucGridType
-geomtypes["triangle"] = LavaVuPython.lucTriangleType
-geomtypes["vector"] = LavaVuPython.lucVectorType
-geomtypes["tracer"] = LavaVuPython.lucTracerType
-geomtypes["line"] = LavaVuPython.lucLineType
-geomtypes["shape"] = LavaVuPython.lucShapeType
-geomtypes["volume"] = geomtypes["max"] = LavaVuPython.lucVolumeType
-
-datatypes={}
-datatypes["vertex"] = datatypes["min"] = LavaVuPython.lucVertexData
-datatypes["normal"] = LavaVuPython.lucNormalData
-datatypes["vector"] = LavaVuPython.lucVectorData
-datatypes["value"] = LavaVuPython.lucColourValueData
-datatypes["opacity"] = LavaVuPython.lucOpacityValueData
-datatypes["red"] = LavaVuPython.lucRedValueData
-datatypes["green"] = LavaVuPython.lucGreenValueData
-datatypes["blue"] = LavaVuPython.lucBlueValueData
-datatypes["index"] = LavaVuPython.lucIndexData
-datatypes["width"] = LavaVuPython.lucXWidthData
-datatypes["height"] = LavaVuPython.lucYHeightData
-datatypes["length"] = LavaVuPython.lucZLengthData
-datatypes["rgba"] = LavaVuPython.lucRGBAData
-datatypes["texcoord"] = LavaVuPython.lucTexCoordData
-datatypes["size"] = LavaVuPython.lucSizeData
-datatypes["luminance"] = LavaVuPython.lucLuminanceData
-datatypes["rgb"] = datatypes["max"] = LavaVuPython.lucRGBData
-
 #Some preset colourmaps
 # aim to reduce banding artifacts by being either 
 # - isoluminant
@@ -143,9 +112,9 @@ class Obj():
         self.instance.app.parseCommands("select " + self.name)
         self.instance.app.loadVectors(data, LavaVuPython.lucVectorData)
 
-    def values(self, data, type=LavaVuPython.lucColourValueData, label="", min=0., max=0.):
+    def values(self, data, label="", min=0., max=0.):
         self.instance.app.parseCommands("select " + self.name)
-        self.instance.app.loadScalars(data, type, label, min, max)
+        self.instance.app.loadValues(data, label, min, max)
 
     def colours(self, data):
         self.instance.app.parseCommands("select " + self.name)
@@ -342,6 +311,10 @@ class Viewer(object):
             method = getattr(self.app, key, None)
             if method and callable(method):
                 return method(*args, **kwargs)
+            #Check for add object by geom type shortcut
+            if key in ["labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"]:
+                #Allows calling add by geometry type, eg: obj = lavavu.lines()
+                return self.addType(key, *args, **kwargs)
             #Otherwise, pass args as command string
             argstr = key
             for arg in args:
@@ -370,6 +343,12 @@ class Viewer(object):
 
         #Return wrapper obj
         return self.objects.list[-1]
+
+    #Shortcut for adding specific geometry types
+    def addType(self, typename, name=None, properties={}):
+        if not name: name = typename
+        properties["geometry"] = typename
+        return self.add(name, properties)
 
     def file(self, filename, name=None, properties={}):
         if not self.app.amodel:

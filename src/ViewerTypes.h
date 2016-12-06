@@ -24,18 +24,18 @@ typedef enum
   lucVertexData = lucMinDataType,
   lucNormalData,
   lucVectorData,
-  lucColourValueData,
-  lucOpacityValueData,
-  lucRedValueData,
-  lucGreenValueData,
-  lucBlueValueData,
+  lucColourValueData,   //Legacy
+  lucOpacityValueData,  //Legacy
+  lucRedValueData,      //Legacy
+  lucGreenValueData,    //Legacy
+  lucBlueValueData,     //Legacy
   lucIndexData,
-  lucXWidthData,
-  lucYHeightData,
-  lucZLengthData,
+  lucXWidthData,        //Legacy
+  lucYHeightData,       //Legacy
+  lucZLengthData,       //Legacy
   lucRGBAData,
   lucTexCoordData,
-  lucSizeData,
+  lucSizeData,          //Legacy
   lucLuminanceData,
   lucRGBData,
   lucMaxDataType

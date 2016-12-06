@@ -167,6 +167,8 @@ public:
     defaults["texturefile"] = "";
     // | object | integer [0,n] | Index of data set to colour object by (requires colour map)
     defaults["colourby"] = 0;
+    // | object | integer [0,n] | Index of data set to apply transparency to object by (requires opacity map)
+    defaults["opacityby"] = 1;
 
     // | object(line) | real | Line length limit, can be used to skip drawing line segments that cross periodic boundary
     defaults["limit"] = 0;
@@ -185,6 +187,8 @@ public:
     defaults["pointtype"] = 1;
     // | object(point) | real | Point scaling multiplier, applies to all points objects
     defaults["scalepoints"] = 1.0;
+    // | object(point) | integer [0,n] | Index of data set to apply to point sizes
+    defaults["sizeby"] = 1;
 
     // | object(surface) | boolean | If opaque flag is set skips depth sorting step and allows individual surface properties to be applied
     defaults["opaque"] = false;
@@ -246,6 +250,12 @@ public:
     defaults["shape"] = 0;
     // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
     defaults["scaleshapes"] = 1.0;
+    // | object(shape) | integer [0,n] | Index of data set to apply to shape widths
+    defaults["widthby"] = 1;
+    // | object(shape) | integer [0,n] | Index of data set to apply to shape heights
+    defaults["heightby"] = 2;
+    // | object(shape) | integer [0,n] | Index of data set to apply to shape lengths
+    defaults["lengthby"] = 3;
 
     // | colourbar | boolean | Indicates object is a colourbar
     defaults["colourbar"] = false;

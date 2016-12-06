@@ -66,7 +66,7 @@ public:
   std::string getFigures();
   std::string getTimeSteps();
   void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData);
-  void loadScalars(std::vector <float> array, lucGeometryDataType type=lucColourValueData, std::string label="", float minimum=0, float maximum=0);
+  void loadValues(std::vector <float> array, std::string label="", float minimum=0, float maximum=0);
   void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData);
   void labels(std::vector <std::string> labels);
   void close();
