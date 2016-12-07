@@ -556,7 +556,7 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
 DrawingObject* LavaVu::lookupObject(const std::string& name, DrawingObject* def)
 {
   //Lookup by name only
-  if (!amodel) return NULL;
+  if (!amodel || name.length() == 0) return NULL;
   std::string lname = name;
   std::transform(lname.begin(), lname.end(), lname.begin(), ::tolower);
   for (unsigned int i=0; i<amodel->objects.size(); i++)
@@ -2940,7 +2940,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string name = parsed["add"];
-    addObject(name);
+    aobject = addObject(new DrawingObject(drawstate, name));
     if (aobject)
     {
       std::string type = parsed.get("add", 1);

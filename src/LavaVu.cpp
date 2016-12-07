@@ -1537,10 +1537,6 @@ void LavaVu::createDemoModel(unsigned int numpoints)
       amodel->triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
     }
   }
-
-  //Set model bounds...
-  //drawstate.checkPointMinMax(min);
-  //drawstate.checkPointMinMax(max);
 }
 
 DrawingObject* LavaVu::addObject(DrawingObject* obj)
@@ -2830,17 +2826,15 @@ std::string LavaVu::web(bool tofile)
   return jsonWriteFile(NULL, false, true);
 }
 
-void LavaVu::addObject(std::string name, std::string properties)
-{
-  if (!amodel) return;
-  DrawingObject* obj = addObject(new DrawingObject(drawstate, name));
-  if (properties.length()) setObject(name, properties);
-}
-
 void LavaVu::setObject(std::string name, std::string properties)
 {
-  DrawingObject* obj = lookupObject(name, aobject);
-  if (!obj) return;
+  if (!amodel) defaultModel();
+  DrawingObject* obj = lookupObject(name);
+  if (!obj) 
+  {
+    if (name.length() == 0) name = "default";
+    obj = addObject(new DrawingObject(drawstate, name));
+  }
   json imported = json::parse(properties);
   obj->properties.merge(imported);
 }

@@ -47,18 +47,20 @@ class Obj():
     def __init__(self, idict, instance, *args, **kwargs):
         self.dict = idict
         self.instance = instance
-        self.name = str(self.dict["name"])
+
+    def name(self):
+        return str(self.dict["name"])
 
     def get(self):
         #Retrieve updated props
-        props = json.loads(self.instance.app.getObject(self.name))
+        props = json.loads(self.instance.app.getObject(self.name()))
         self.dict.clear()
         self.dict.update(props)
-        self.name = str(self.dict["name"])
+        self.origname = self.name() #Store original for lookup in case name changed in dict
 
     def set(self):
-        #Send updated props
-        self.instance.app.setObject(self.name, json.dumps(self.dict))
+        #Send updated props (via original name)
+        self.instance.setupobject(self.origname, self.dict)
         self.get()
 
     def __getitem__(self, key):
@@ -105,16 +107,16 @@ class Obj():
         return json.dumps(self.dict["data"])
 
     def vertices(self, data):
-        self.instance.app.loadVectors(data, LavaVuPython.lucVertexData, self.name)
+        self.instance.app.loadVectors(data, LavaVuPython.lucVertexData, self.name())
 
     def normals(self, data):
-        self.instance.app.loadVectors(data, LavaVuPython.lucNormalData, self.name)
+        self.instance.app.loadVectors(data, LavaVuPython.lucNormalData, self.name())
 
     def vectors(self, data):
-        self.instance.app.loadVectors(data, LavaVuPython.lucVectorData, self.name)
+        self.instance.app.loadVectors(data, LavaVuPython.lucVectorData, self.name())
 
     def values(self, data, label=""):
-        self.instance.app.loadValues(data, label, self.name)
+        self.instance.app.loadValues(data, label, self.name())
 
     def colours(self, data):
         #Convert to list of strings
@@ -122,19 +124,25 @@ class Obj():
             data = data.split()
         for i in range(len(data)):
             if not isinstance(data[i], str): data[i] = str(data[i])
-        self.instance.app.loadColours(data, self.name)
+        self.instance.app.loadColours(data, self.name())
 
     def indices(self, data):
-        self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData, self.name)
+        self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData, self.name())
 
     def labels(self, data):
         self.instance.app.labels(data)
 
     def colourmap(self, data):
         #Load colourmap and set property on this object
-        cmap = self.instance.colourmap(self.name + '-default', data)
+        cmap = self.instance.colourmap(self.name() + '-default', data)
         self["colourmap"] = cmap
         return cmap
+    
+    def file(self, *args, **kwargs):
+        #Load file with this object selected (import)
+        self.instance.select('"' + self.name() + '"')
+        self.instance.file(*args, name=self.name(), **kwargs)
+        self.instance.select()
 
 #Wrapper dict+list of objects
 class Objects(dict):
@@ -326,26 +334,19 @@ class Viewer(object):
             self.commands(argstr)
         return any_method
 
-    def add(self, name, **kwargs):
-        if not self.app.amodel:
-            self.defaultModel()
-
-        if isinstance(self.objects, Objects) and name in self.objects:
-            print "Object exists: " + name
-            return self.objects[name]
-
+    def setupobject(self, name, **kwargs):
         #Strip data keys from kwargs and put aside for loading
+        print name
         datasets = {}
         for key in kwargs.keys():
             if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
                 datasets[key] = kwargs.pop(key, None)
 
-        #Adds a new object, all other args passed to properties dict
-        self.app.addObject(name, json.dumps(kwargs))
+        #Call function to add/setup the object, all other args passed to properties dict
+        self.app.setObject(name, json.dumps(kwargs))
 
-        #Get state and update object list
-        self.get()
-        obj = self.objects.list[-1]
+        #Get the created/update object
+        obj = self.getobject(name)
 
         #Read any property data sets (allows object creation and load with single prop dict)
         for key in datasets:
@@ -356,6 +357,14 @@ class Viewer(object):
         #Return wrapper obj
         return obj
 
+    def add(self, name, **kwargs):
+        if isinstance(self.objects, Objects) and name in self.objects:
+            print "Object exists: " + name
+            return self.objects[name]
+
+        #Adds a new object, all other args passed to properties dict
+        return self.setupobject(name, **kwargs)
+
     #Shortcut for adding specific geometry types
     def addtype(self, typename, name=None, **kwargs):
         #Set name to typename if none provided
@@ -363,27 +372,33 @@ class Viewer(object):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
+    def getobject(self, name=None):
+        #Return object by name or last in list if none provided
+        #Get state and update object list
+        self.get()
+        if len(self.objects.list) == 0:
+            print "WARNING: No objects"
+            return None
+        #If name passed, find this object in updated list, if not just use the last
+        obj = None
+        if name:
+            for obj in self.objects.list:
+                if obj["name"] == name: break
+                obj = None
+        if not obj:
+            obj = self.objects.list[-1]
+
+        return obj
+
     def file(self, filename, name=None, **kwargs):
-        if not self.app.amodel:
-            self.app.defaultModel()
-
-        if isinstance(self.objects, Objects) and name in self.objects:
-            print "Object exists: " + name
-            return self.objects[name]
-
         #Load a new object from file
         self.app.loadFile(filename)
 
-        #Get state and update object list
-        self.get()
+        #Get object
+        obj = self.getobject(name)
 
-        #Update properties and return wrapper object
-        if len(self.objects.list) == 0:
-            print "WARNING: No object created after loading: " + filename
-            return None
-        obj = self.objects.list[-1] #Use last in list, most recently added
-        self.app.setObject(obj.name, json.dumps(kwargs))
-        return obj
+        #Setups up new object, all other args passed to properties dict
+        return self.setupobject(obj.name(), **kwargs)
     
     def files(self, filespec, name=None, **kwargs):
         #Load list of files with glob
