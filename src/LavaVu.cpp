@@ -2399,6 +2399,7 @@ void LavaVu::drawSceneBlended()
     // Additive blending
     //glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_SRC_ALPHA);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    //glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     //Render!
     drawScene();
     break;
@@ -2988,13 +2989,14 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     height = img->height;
     outchannels = img->channels;
     image = img->pixels;
-    //printf("Reading file %d x %d @ %d\n", width, height, channels);
+    //printf("Reading file %d x %d @ %d (actual %d)\n", width, height, channels, outchannels);
   }
   else
   {
     //Get current image from framebuffer
     image = viewer->pixels(NULL, width, height, outchannels);
     //printf("Reading framebuffer %d x %d @ %d\n", width, height, outchannels);
+    viewer->blend_mode = BLEND_NORMAL;
   }
 
   if (!image) return std::vector<float>();

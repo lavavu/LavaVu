@@ -235,7 +235,7 @@ public:
   void loadColours(std::vector <std::string> list, const std::string& name);
   void labels(std::vector <std::string> labels, const std::string& name="");
   //For testing via python
-  std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=3);
+  std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=4);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);
   void queueCommands(std::string cmds);
 

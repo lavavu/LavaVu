@@ -425,6 +425,9 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
   if (!w) w = width;
   if (!h) h = height;
 
+  //Redraw blended output for transparent PNG
+  if (channels == 4) blend_mode = BLEND_PNG;
+
   //Ensure correct GL context selected first
   display();
 
@@ -455,20 +458,20 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
     height = saveheight;
   }
 
+  //Restore settings
+  blend_mode = BLEND_NORMAL;
+
   return image;
 }
 
 std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 {
   assert(isopen);
-  bool alphapng = !jpeg && app->drawstate.global("alphapng");
+  FilePath filepath(path);
+  if (filepath.type == "jpeg" || filepath.type == "jpg") jpeg = true;
+  bool alphapng = !jpeg && app->drawstate.global("pngalpha");
   int channels = 3;
-  if (alphapng)
-  {
-    channels = 4;
-    //Redraw blended output for transparent PNG
-    blend_mode = BLEND_PNG;
-  }
+  if (alphapng) channels = 4;
   std::string retImg;
 
   // Read the pixels
@@ -482,8 +485,6 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 
   delete[] image;
 
-  //Restore settings
-  blend_mode = BLEND_NORMAL;
   return retImg;
 }
 
