@@ -511,14 +511,19 @@ class Viewer(object):
 
         diff = self.imageDiff(outfile, expfile)
         result = diff <= tolerance
+        reset = '\033[0m'
+        red = '\033[91m'
+        green = '\033[92m'
+        failed = red + 'FAIL' + reset
+        passed = green + 'PASS' + reset
         if not result:
-            print "FAIL: %s Image comp errors %f, not"\
+            print "%s: %s Image comp errors %f, not"\
                   " within tolerance %g of reference image."\
-                % (outfile, diff, tolerance)
+                % (failed, outfile, diff, tolerance)
         else:
-            print "PASS: %s Image comp errors %f, within tolerance %f"\
+            print "%s: %s Image comp errors %f, within tolerance %f"\
                   " of ref image."\
-                % (outfile, diff, tolerance)
+                % (passed, outfile, diff, tolerance)
         return result
 
     def clearimages(self, imagelist):
