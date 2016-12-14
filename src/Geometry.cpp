@@ -86,12 +86,12 @@ void GeomData::colourCalibrate()
   draw->colourIdx = valuesLookup(draw->properties["colourby"]);
 
   //Calibrate colour maps on ranges for related data
-  ColourMap* cmap = draw->getColourMap();
+  ColourMap* cmap = draw->colourMap;
   if (cmap && values.size() > draw->colourIdx)
     cmap->calibrate(values[draw->colourIdx]);
 
   //Calibrate opacity map if provided
-  ColourMap* omap = draw->getColourMap("opacitymap");
+  ColourMap* omap = draw->opacityMap;
   if (omap)
   {
     //Get the value index
@@ -104,12 +104,12 @@ void GeomData::colourCalibrate()
 //Get colour using specified colourValue
 void GeomData::mapToColour(Colour& colour, float value)
 {
-  ColourMap* cmap = draw->getColourMap();
+  ColourMap* cmap = draw->colourMap;
   if (cmap) colour = cmap->getfast(value);
 
-  //Set opacity to drawing object override level if set
+  //Apply opacity from drawing object override level if set
   if (draw->opacity > 0.0 && draw->opacity < 1.0)
-    colour.a = draw->opacity * 255;
+    colour.a *= draw->opacity;
 }
 
 int GeomData::colourCount()
@@ -128,13 +128,13 @@ int GeomData::colourCount()
 void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
-  ColourMap* cmap = draw->getColourMap();
-  FloatValues* values = colourData();
-  if (cmap && values)
+  ColourMap* cmap = draw->colourMap;
+  FloatValues* vals = colourData();
+  if (cmap && vals)
   {
-    if (values->size() == 1) idx = 0;  //Single colour value only provided
+    if (vals->size() == 1) idx = 0;  //Single colour value only provided
     //assert(idx < values->size());
-    if (idx >= values->size()) idx = values->size() - 1;
+    if (idx >= vals->size()) idx = vals->size() - 1;
     colour = cmap->getfast(colourData(idx));
   }
   else if (colours.size() > 0)
@@ -144,14 +144,21 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     //assert(idx < colours.size());
     colour.value = colours[idx];
   }
+  else if (luminance.size() > 0)
+  {
+    if (idx >= luminance.size()) idx = luminance.size() - 1;
+    colour.r = colour.g = colour.b = luminance[idx];
+    colour.a = 255;
+  }
   else
   {
     colour = draw->colour;
   }
 
   //Set opacity using own value map...
-  ColourMap* omap = draw->getColourMap("opacitymap");
-  if (omap && values->size() > draw->opacityIdx)
+  ColourMap* omap = draw->opacityMap;
+  vals = valueData(draw->opacityIdx);
+  if (omap && vals->size() > draw->opacityIdx)
   {
     Colour cc = omap->getfast(valueData(draw->opacityIdx, idx));
     colour.a = cc.a;
@@ -252,7 +259,7 @@ bool GeomData::filter(unsigned int idx)
         //Range type filters map over available values on [0,1] => [min,max]
         //If a colourmap is provided, that is used to get the values (allows log maps)
         //Otherwise they come directly from the data 
-        ColourMap* cmap = draw->getColourMap();
+        ColourMap* cmap = draw->colourMap;
         if (cmap)
           value = cmap->scaleValue(values[filterCache[i].dataIdx]->value[ridx]);
         else

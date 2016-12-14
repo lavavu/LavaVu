@@ -55,6 +55,8 @@ public:
   unsigned int colourIdx;
   unsigned int opacityIdx;
   std::vector<ColourMap*> * colourMaps; // Reference to model colour map list
+  ColourMap* colourMap; //Cached references
+  ColourMap* opacityMap;
 
   //Object properties data...
   Properties properties;
@@ -65,7 +67,6 @@ public:
   ~DrawingObject();
 
   void setup();
-  ColourMap* getColourMap(const std::string& type="colourmap");
   int addTexture(std::string texfn="");
   TextureData* useTexture(int index);
   std::string name() {return properties["name"];}

@@ -51,9 +51,11 @@ DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string
 
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
+
   properties.data["visible"] = true;
   colourIdx = 0; //Default colouring data is first value block
   opacityIdx = 1;
+  colourMap = opacityMap = NULL;
   setup();
 }
 
@@ -72,15 +74,12 @@ void DrawingObject::setup()
     opacity = properties["opacity"];
   //Convert values (1,255] -> [0,1]
   if (opacity > 1.0) opacity /= 255.0;
-}
-
-
-ColourMap* DrawingObject::getColourMap(const std::string& type)
-{
-  //Lookup colourmap by mapid from property "colourmap" / "opacitymap"
-  int mapid = properties[type];
-  if (mapid >= 0 && mapid < colourMaps->size()) return (*colourMaps)[mapid];
-  return NULL;
+  //Cache colourmaps
+  colourMap = opacityMap = NULL;
+  int cmapid = properties["colourmap"];
+  if (cmapid >= 0 && cmapid < colourMaps->size()) colourMap = (*colourMaps)[cmapid];
+  int omapid = properties["opacitymap"];
+  if (omapid >= 0 && omapid < colourMaps->size()) opacityMap = (*colourMaps)[omapid];
 }
 
 int DrawingObject::addTexture(std::string texfn)

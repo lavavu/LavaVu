@@ -101,7 +101,7 @@ void Tracers::update()
 
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;
-    ColourMap* cmap = geom[i]->draw->getColourMap();
+    ColourMap* cmap = geom[i]->draw->colourMap;
     if (cmap && !geom[i]->colourData())
     {
       timecolour = true;

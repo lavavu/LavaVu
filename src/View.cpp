@@ -751,7 +751,8 @@ void View::drawOverlay(Colour& colour, std::string& title)
   {
     //Only when flagged as colour bar
     if (!objects[i]->properties["colourbar"] || !objects[i]->properties["visible"]) continue;
-    ColourMap* cmap = objects[i]->getColourMap();
+    objects[i]->setup(); //Required to cache colouring values
+    ColourMap* cmap = objects[i]->colourMap;
     //Use the first available colourmap by default
     if (!cmap && objects[i]->colourMaps && objects[i]->colourMaps->size() > 0)
       cmap = (*objects[i]->colourMaps)[0];

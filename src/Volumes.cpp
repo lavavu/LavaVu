@@ -310,7 +310,7 @@ void Volumes::update()
       }
 
       //Setup gradient texture from colourmap
-      ColourMap* cmap = geom[i]->draw->getColourMap();
+      ColourMap* cmap = geom[i]->draw->colourMap;
       if (cmap) cmap->loadTexture();
     }
   }
@@ -343,7 +343,7 @@ void Volumes::render(int i)
 
   //User settings
   int cmapid = props["colourmap"];
-  ColourMap* cmap = geom[i]->draw->getColourMap();
+  ColourMap* cmap = geom[i]->draw->colourMap;
   //if (cmap) cmap->calibrate(0, 1);
   //Setup gradient texture from colourmap if not yet loaded
   if (cmap && !cmap->texture) cmap->loadTexture();
