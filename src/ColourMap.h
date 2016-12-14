@@ -98,7 +98,7 @@ public:
   Colour get(float value);
   float scaleValue(float value);
   Colour getFromScaled(float scaledValue);
-  void draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int height, Colour& printColour, bool vertical);
+  void draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical);
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);

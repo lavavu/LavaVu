@@ -263,10 +263,8 @@ public:
     defaults["position"] = 0;
     // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
     defaults["align"] = "bottom";
-    // | colourbar | real [0,1] | Length of colour bar as ratio of screen width or height
-    defaults["lengthfactor"] = 0.8;
-    // | colourbar | integer | Width of colour bar in pixels
-    defaults["width"] = 10; //Note: conflict with shape width below, overridden in View.cpp
+    // | colourbar | real [0,1] | Fixed dimensions of colour bar (shortest dimension first) in pixels (> 1) or ratio of screen width or height (< 1)
+    defaults["size"] = {0, 0};
     // | colourbar | integer | Number of additional tick marks to draw besides start and end
     defaults["ticks"] = 0;
     // | colourbar | float[] | Values of intermediate tick marks
@@ -281,8 +279,10 @@ public:
     defaults["precision"] = 2;
     // | colourbar | real | Multiplier to scale tick values
     defaults["scalevalue"] = 1.0;
-    // | colourbar | integer | Border width to draw around colour bar
-    defaults["border"] = 1.0; //Conflict with global, overridden below
+    // | colourbar | integer | Outline width to draw around colour bar
+    defaults["outline"] = 1.0;
+    // | colourbar | integer | Margin in pixels to edge of viewport
+    defaults["offset"] = 0;
 
     // | colourmap | boolean | Set to true to use log scales
     defaults["logscale"] = false;
@@ -300,7 +300,7 @@ public:
     // | view | integer | When to apply camera auto-zoom to fit model to window, -1=never, 0=first timestep only, 1=every timestep
     defaults["zoomstep"] = -1;
     // | view | integer | Margin in pixels to leave around edge of model when to applying camera auto-zoom
-    defaults["margin"] = 20; //Also colourbar
+    defaults["margin"] = 20;
     // | view | boolean | Draw rulers around object axes
     defaults["rulers"] = false;
     // | view | integer | Number of tick marks to display on rulers

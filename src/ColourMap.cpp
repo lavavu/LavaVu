@@ -347,40 +347,43 @@ Colour ColourMap::getFromScaled(float scaledValue)
 #define RECT2(x0, y0, x1, y1, swap) swap ? glRecti(y0, x0, y1, x1) : glRecti(x0, y0, x1, y1);
 #define VERT2(x, y, swap) swap ? glVertex2i(y, x) : glVertex2i(x, y);
 
-void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int height, Colour& printColour, bool vertical)
+void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
 {
   glPushAttrib(GL_ENABLE_BIT);
-  int pixel_I;
-  Colour colour;
   glDisable(GL_MULTISAMPLE);
 
   if (!calibrated) calibrate(minimum, maximum);
 
   //Draw background (checked)
-  colour.value = 0xff444444;
-  for ( pixel_I = 0 ; pixel_I < length ; pixel_I += height*0.5 )
+  Colour colour;
+  for (int pixel_J = 0; pixel_J < breadth; pixel_J += 5)
   {
-    int end = startx + pixel_I + height;
-    if (end > startx + length) end = startx + length;
+    colour.value = 0xff666666;
+    if (pixel_J % 2 == 1) colour.invert();
+    for (int pixel_I = 0 ; pixel_I < length ; pixel_I += 5)
+    {
+      int end = startx + pixel_I + breadth;
+      if (end > startx + length) end = startx + length;
+      int endy = starty + pixel_J + 5;
+      if (endy > starty + breadth) endy = starty + breadth;
 
-    glColor4ubv(colour.rgba);
-    RECT2( startx + pixel_I, starty, end, starty + height*0.5, vertical);
-    colour.invert();
-    glColor4ubv(colour.rgba);
-    RECT2( startx + pixel_I, starty + height*0.5, end, starty + height, vertical);
+      glColor4ubv(colour.rgba);
+      RECT2(startx + pixel_I, starty + pixel_J, end, endy, vertical);
+      colour.invert();
+    }
   }
 
   // Draw Colour Bar
   glDisable(GL_CULL_FACE);
   int count = colours.size();
   int idx, xpos;
-  if (properties["discrete"])
+  if (colourbarprops["discrete"])
   {
     glShadeModel(GL_FLAT);
     glBegin(GL_QUAD_STRIP);
     xpos = startx;
     VERT2(xpos, starty, vertical);
-    VERT2(xpos, starty + height, vertical);
+    VERT2(xpos, starty + breadth, vertical);
     for (idx = 1; idx < count+1; idx++)
     {
       int oldx = xpos;
@@ -389,13 +392,13 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
       if (idx == count)
       {
         VERT2(xpos, starty, vertical);
-        VERT2(xpos, starty + height, vertical);
+        VERT2(xpos, starty + breadth, vertical);
       }
       else
       {
         xpos = startx + length * colours[idx].position;
         VERT2(oldx + 0.5 * (xpos - oldx), starty, vertical);
-        VERT2(oldx + 0.5 * (xpos - oldx), starty + height, vertical);
+        VERT2(oldx + 0.5 * (xpos - oldx), starty + breadth, vertical);
       }
     }
     glEnd();
@@ -411,7 +414,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
       glColor4ubv(colour.rgba);
       xpos = startx + length * colours[idx].position;
       VERT2(xpos, starty, vertical);
-      VERT2(xpos, starty + height, vertical);
+      VERT2(xpos, starty + breadth, vertical);
     }
     glEnd();
   }
@@ -427,9 +430,11 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   bool scientific = colourbarprops["scientific"];
   int precision = colourbarprops["precision"];
   float scaleval = colourbarprops["scalevalue"];
-  float border = colourbarprops.getFloat("border", 1.0); //Use getFloat or will load global border prop as default
-  if (border > 0) glLineWidth(border-0.5);
-  else glLineWidth(0.5);
+  float border = colourbarprops["outline"];
+  if (border > 1)
+    glLineWidth(border-0.5);
+  else
+    glLineWidth(0.5); //zero line width invalid
 
   //Always show at least two ticks on a log scale
   if (properties["logscale"] && ticks < 2) ticks = 2;
@@ -503,10 +508,17 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
     /* Draws the tick */
     int offset = 0;
-    if (vertical) offset = height+5;
+    if (vertical) offset = breadth+5;
+    int ts = starty-5+offset;
+    int te = starty+offset;
+    if (border > 0 && scaledPos != 0.5 && (i==0 || i==ticks+1))
+      if (vertical) ts-=breadth; else te+=breadth; //Full breadth ticks at ends
+    //Gap tweak
+    if (i==0) xpos += (vertical ? 0 : 1);
+    if (i==ticks+1) xpos -= (vertical ? 1 : 0);
     glBegin(GL_LINES);
-    VERT2(xpos, starty-5+offset, vertical);
-    VERT2(xpos, starty+offset, vertical);
+      VERT2(xpos, ts, vertical);
+      VERT2(xpos, te, vertical);
     glEnd();
 
     /* Always print end values, print others if flag set */
@@ -528,7 +540,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
       if (fontscale > 0.0)
       {
         if (vertical)
-          drawstate.fonts.rasterPrint(starty + height + 10, xpos,  string);
+          drawstate.fonts.rasterPrint(starty + breadth + 10, xpos,  string);
         else
           drawstate.fonts.rasterPrint(xpos - (int) (0.5 * (float)drawstate.fonts.rasterPrintWidth(string)),  starty - 10, string);
       }
@@ -536,7 +548,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
       {
         glEnable(GL_MULTISAMPLE);
         if (vertical)
-          drawstate.fonts.print(starty + height + 10, xpos - (int) (0.5 * (float)drawstate.fonts.printWidth("W")),  string);
+          drawstate.fonts.print(starty + breadth + 10, xpos - (int) (0.5 * (float)drawstate.fonts.printWidth("W")),  string);
         else
           drawstate.fonts.print(xpos - (int) (0.5 * (float)drawstate.fonts.printWidth(string)),  starty - 5 - drawstate.fonts.printWidth("W"), string);
         glDisable(GL_MULTISAMPLE);
@@ -544,12 +556,17 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
     }
   }
 
-  // Draw Box around colour bar
+  // Draw Box around colour bar (left/right sides drawn by ticks)
   if (border > 0)
   {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    RECT2(startx, starty, startx + length, starty + height, vertical);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBegin(GL_LINES);
+     VERT2(startx, starty, vertical);
+     VERT2(startx + length, starty, vertical);
+    glEnd();
+    glBegin(GL_LINES);
+     VERT2(startx + length, starty + breadth, vertical);
+     VERT2(startx, starty + breadth, vertical);
+    glEnd();
   }
 
   glEnable(GL_MULTISAMPLE);

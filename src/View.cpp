@@ -743,48 +743,73 @@ void View::drawOverlay(Colour& colour, std::string& title)
   //Colour bars
   GL_Error_Check;
   float last_y = 0;
-  float last_margin = 0;
+  int AOFF = 35; //A=x for horizontal, y for vertical
+  int BOFF = 20; //B=y for horizontal, x for vertical
+  int margin_defaults[4] = {BOFF, BOFF, AOFF, AOFF}; //top, bottom, right, left
+  int offsets[4] = {1, 1, 1, 1};
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
+    if (!objects[i]->properties["colourbar"] || !objects[i]->properties["visible"]) continue;
     ColourMap* cmap = objects[i]->getColourMap();
     //Use the first available colourmap by default
     if (!cmap && objects[i]->colourMaps && objects[i]->colourMaps->size() > 0)
       cmap = (*objects[i]->colourMaps)[0];
-    if (!objects[i] || !objects[i]->properties["colourbar"] ||
-        !objects[i]->properties["visible"] || !cmap) continue;
+    if (!cmap) continue;
+
     int pos = objects[i]->properties["position"];
     std::string align = objects[i]->properties["align"];
     int ww = w, hh = h;
     bool vertical = false;
     bool opposite = (align == "left" || align == "bottom");
+    int idx = 0;
+    if (opposite) idx += 1;
     if (align == "left" || align == "right")
     {
+      idx += 2;
       vertical = true;
+      //Centre positioning only makes sense for horizontal bar
+      if (pos == 0) pos = -1;
       ww = h;
       hh = w;
     }
 
-    int margin = objects[i]->properties["margin"];
-    int length = ww * (float)objects[i]->properties["lengthfactor"];
-    int bar_height = objects[i]->properties.getInt("width", 10); //Conflict with shape width
-    int startx = (ww - length) / 2;
-    if (pos == 1) startx = margin;
-    if (pos == -1) startx = ww - margin - length;
-    int starty = margin;
-    if (last_margin == margin) starty += last_y + margin;   //Auto-increase y margin if same value
-    if (!opposite) starty = hh - starty - bar_height;
-    //float border = properties["border", 1.0);
-    //if (border > 0) glLineWidth(border*textscale*0.75); else glLineWidth(textscale*0.75);
+    int margin_B = objects[i]->properties["offset"];
+    int margin_A = margin_B;
+    if (margin_B == 0)
+    {
+      //Auto-increase default margins as used
+      margin_B = offsets[idx] * margin_defaults[idx];
+      margin_A = margin_defaults[idx];
+      offsets[idx] += 2;
+    }
+
+    //Dimensions, default is to calculate automatically
+    json size = objects[i]->properties["size"];
+    float breadth = size[0];
+    float length = size[1];
+    if (length == 0)
+      length = vertical ? 0.5 : 0.8;
+    if (breadth == 0)
+      breadth = vertical ? 20 : 10;
+    //If dims < 1.0 assume they are a ratio of window size
+    if (length < 1.0) length = ww * length;
+    if (breadth < 1.0) breadth = hh * breadth;
+    
+    int start_A = (ww - length) / 2;
+    if (pos == 1) start_A = margin_A;
+    if (pos == -1) start_A = ww - margin_A - length;
+    int start_B = margin_B;
+
+    if (!opposite) start_B = hh - start_B - breadth;
 
     std::string font = objects[i]->properties["font"];
     if (scale2d != 1.0 && font != "vector")
       objects[i]->properties.data["font"] = "vector"; //Force vector font if downsampling
 
-    last_y = starty;
-    last_margin = margin;
+    last_y = start_B;
 
-    cmap->draw(drawstate, objects[i]->properties, startx, starty, length, bar_height, colour, vertical);
+    cmap->draw(drawstate, objects[i]->properties, start_A, start_B, length, breadth, colour, vertical);
     GL_Error_Check;
   }
 
