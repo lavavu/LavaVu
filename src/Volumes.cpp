@@ -457,7 +457,6 @@ void Volumes::render(int i)
   glEnable(GL_BLEND);
   //Blending for premultiplied alpha
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-  glDisable(GL_DEPTH_TEST);  //No depth testing to allow multi-pass blend!
   glDisable(GL_MULTISAMPLE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

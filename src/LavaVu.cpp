@@ -2428,6 +2428,7 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
+  amodel->volumes->draw();
   amodel->triSurfaces->draw();
   amodel->quadSurfaces->draw();
   amodel->points->draw();
@@ -2435,7 +2436,6 @@ void LavaVu::drawScene()
   amodel->tracers->draw();
   amodel->shapes->draw();
   amodel->labels->draw();
-  amodel->volumes->draw();
   amodel->lines->draw();
 
 #ifndef USE_OMEGALIB

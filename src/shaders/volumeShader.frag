@@ -9,8 +9,8 @@
 #version 120
 //precision highp float;
 
-//Defined dynamically before compile...
 const int maxSamples = 2048;
+const float depthT = 0.95; //Transmissivity threshold below which depth write applied
 
 uniform sampler3D uVolume;
 uniform sampler2D uTransferFunction;
@@ -167,6 +167,7 @@ void main()
     if (range <= 0.0) range = 1.0;
   
     //Raymarch, front to back
+    vec3 depthHit = rayStart;
     for (int i=0; i < maxSamples; ++i)
     {
       //Render samples until we pass out back of cube or fully opaque
@@ -180,6 +181,9 @@ void main()
       {
         //Get density 
         float density = tex3D(pos);
+
+        //Set the depth point to where transmissivity drops below threshold
+        if (T > depthT) depthHit = pos;
 
 #define ISOSURFACE
 #ifdef ISOSURFACE
@@ -260,15 +264,22 @@ void main()
     colour = mix(intensity, colour, uSaturation);
     colour = mix(AvgLumin, colour, uContrast);
 
-    if (T > 0.95) discard;
+    //TODO: alpha threshold uniform?
+    //if (T > 0.95) discard;
     gl_FragColor = vec4(colour, 1.0 - T);
 
-#ifdef WRITE_DEPTH
-    /* Write the depth !Not supported in WebGL without extension */
-    vec4 clip_space_pos = uPMatrix * uMVMatrix * vec4(rayStart, 1.0);
-    float ndc_depth = clip_space_pos.z / clip_space_pos.w;
-    float depth = (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
-                     gl_DepthRange.near + gl_DepthRange.far) / 2.0;
+    // Write the depth (!Not supported in WebGL without extension)
+    float depth = 1.0; //Default to far limit
+    if (T < depthT)
+    {
+      vec4 clip_space_pos = uPMatrix * uMVMatrix * vec4(depthHit, 1.0);
+      //Get in normalised device coords [-1,1]
+      float ndc_depth = clip_space_pos.z / clip_space_pos.w;
+      //Convert to depth range, default [0,1] but may have been modified
+      depth = 0.5 * ndc_depth + 0.5;
+      //depth = 0.5 * (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
+      //                        gl_DepthRange.near + gl_DepthRange.far);
+    }
+
     gl_FragDepth = depth;
-#endif
 }
