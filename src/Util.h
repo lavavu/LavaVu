@@ -117,16 +117,17 @@ extern long mempeak__;
 
 class DataContainer
 {
-public:
+protected:
   unsigned int next;
-  float minimum;
-  float maximum;
   unsigned int datasize;
   unsigned int offset;
   bool generated;
+public:
+  float minimum;
+  float maximum;
   std::string label;
 
-  DataContainer() : next(0), minimum(0), maximum(1), datasize(1), offset(0), generated(false), label("Default") {}
+  DataContainer() : next(0), datasize(1), offset(0), generated(false), minimum(0), maximum(1), label("Default") {}
 
   //Pure virtual methods
   virtual unsigned int bytes() = 0;
@@ -147,9 +148,21 @@ public:
 
   unsigned int size()
   {
+    //Returns size in base data type
     return next;
   }
 
+  unsigned int count()
+  {
+    //Returns size in data units
+    return next / datasize;
+  }
+
+  unsigned int unitsize()
+  {
+    //Returns size of data units
+    return datasize;
+  }
 };
 
 template <class dtype> class DataValues : public DataContainer
@@ -158,10 +171,7 @@ public:
   std::vector<dtype> value;
 
   DataValues() {}
-  virtual ~DataValues()
-  {
-    if (value.size()) clear();
-  }
+  virtual ~DataValues() {};
 
   unsigned int bytes() {return sizeof(dtype)*size();}
 

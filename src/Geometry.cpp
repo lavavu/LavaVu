@@ -921,9 +921,9 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
   {
     unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
-    loaded = size == geomdata->data[dtype]->size() / geomdata->data[dtype]->datasize;
+    loaded = size == geomdata->data[dtype]->count();
     //if (loaded) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
-    //                   geomdata->data[dtype]->datasize, geomdata->data[dtype]->size() / geomdata->data[dtype]->datasize);
+    //                   geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
   }
 
   //Create new data store if required, save in drawing object and Geometry list
