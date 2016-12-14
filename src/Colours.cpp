@@ -141,7 +141,7 @@ void Colour::fromString(const std::string& str)
     //Parses X11 colour names or hex #RRGGBB with
     // optional alpha indicated by colon then value [0,1]
     float opacity = 1.0;
-    unsigned int pos = str.find(":");
+    size_t pos = str.find(":");
     std::string sstr = str;
     if (pos != std::string::npos)
     {

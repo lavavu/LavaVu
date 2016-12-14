@@ -237,7 +237,7 @@ bool GeomData::filter(unsigned int idx)
   {
     if (values.size() <= filterCache[i].dataIdx || !values[filterCache[i].dataIdx]) continue;
     size = values[filterCache[i].dataIdx]->size();
-    if (filterCache[i].dataIdx >= 0 && size > 0)
+    if (filterCache[i].dataIdx < MAX_DATA_ARRAYS && size > 0)
     {
       //Have values but not enough for per-vertex? spread over range (eg: per triangle)
       range = count / size;

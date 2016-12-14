@@ -171,9 +171,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 {
   //Save shift states
   int modifiers = [event modifierFlags];
-  viewer->keyState.shift = (modifiers & NSShiftKeyMask);
-  viewer->keyState.ctrl = (modifiers & NSControlKeyMask);
-  viewer->keyState.alt = (modifiers & NSAlternateKeyMask);
+  viewer->keyState.shift = (modifiers & NSEventModifierFlagShift);
+  viewer->keyState.ctrl = (modifiers & NSEventModifierFlagControl);
+  viewer->keyState.alt = (modifiers & NSEventModifierFlagOption);
 }
 
 - (void)mouseMoved:(NSEvent*) event
@@ -469,7 +469,7 @@ void CocoaViewer::open(int w, int h)
   // Create a window:
 
   // Style flags
-  NSUInteger windowStyle = NSTitledWindowMask  | NSClosableWindowMask | NSResizableWindowMask | NSMiniaturizableWindowMask;
+  NSUInteger windowStyle = NSWindowStyleMaskTitled  | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
 
   // Window bounds (x, y, width, height)
   NSRect screenRect = [[NSScreen mainScreen] frame];
@@ -514,6 +514,9 @@ void CocoaViewer::open(int w, int h)
   CView* view = [[[CView alloc] initWithFrame:windowRect] autorelease];
   view->windowRect = windowRect;
   view->viewer = this;
+
+  [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
+
   [window setAcceptsMouseMovedEvents:YES];
   [window setContentView:view];
   [window setDelegate:view];
