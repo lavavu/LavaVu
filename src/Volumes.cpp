@@ -38,15 +38,19 @@
 Volumes::Volumes(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucVolumeType;
+  //Create sub-renderers
+  tris = new TriSurfaces(drawstate);
+  tris->internal = true;
 }
 
 Volumes::~Volumes()
 {
-
+  delete tris;
 }
 
 void Volumes::close()
 {
+  tris->close();
   Geometry::close();
   //Iterate geom and delete textures
   //"cachevolumes" property allows switching this behaviour off for faster switching
@@ -97,6 +101,19 @@ void Volumes::draw()
 
 void Volumes::update()
 {
+  tris->clear();
+  tris->setView(view);
+
+  //Use triangle renderer for two triangles to display volume shader output
+  if (geom.size() > 0)
+  {
+    //Load 2 fullscreen triangles
+    float verts[18] = {-1,-1, 0,   -1, 1, 0,   1,-1, 0,   -1, 1, 0,   1, 1, 0,   1,-1, 0};
+    tris->read(geom[0]->draw, 6, lucVertexData, verts);
+    tris->update();
+    tris->render();
+  }
+
   clock_t t2,tt;
   tt = clock();
 
@@ -461,14 +478,16 @@ void Volumes::render(int i)
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   //Draw two triangles to fill screen
-  glBegin(GL_TRIANGLES);
-  glVertex2f(-1, -1);
-  glVertex2f(-1, 1);
-  glVertex2f(1, -1);
-  glVertex2f(-1,  1);
-  glVertex2f( 1, 1);
-  glVertex2f(1, -1);
-  glEnd();
+  int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
+  glBindBuffer(GL_ARRAY_BUFFER, tris->vbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tris->indexvbo);
+  glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glDrawElements(GL_TRIANGLES, tris->elements, GL_UNSIGNED_INT, (GLvoid*)0);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  GL_Error_Check;
 
   glEnable(GL_MULTISAMPLE);
   glPopAttrib();

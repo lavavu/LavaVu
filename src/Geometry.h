@@ -316,6 +316,7 @@ public:
 
 class TriSurfaces : public Geometry
 {
+  friend class Volumes; //Allow private access from Volumes
   TIndex *tidx;
   TIndex *swap;
   unsigned int tricount;
@@ -433,6 +434,7 @@ public:
 
 class Volumes : public Geometry
 {
+  TriSurfaces* tris;
 public:
   GLuint colourTexture;
   std::map<DrawingObject*, int> slices;
