@@ -59,7 +59,8 @@ public:
   void defaultModel();
   void setObject(std::string name, std::string properties);
   std::string getObject(std::string name);
-  int colourMap(std::string name, std::string colours="");
+  int colourMap(std::string name, std::string colours="", float min=0., float max=1.);
+  std::string colourBar(std::string objname);
   void setState(std::string state);
   std::string getState();
   std::string getFigures();

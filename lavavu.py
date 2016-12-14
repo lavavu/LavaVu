@@ -144,6 +144,15 @@ class Obj():
         self.instance.file(*args, name=self.name(), **kwargs)
         self.instance.select()
 
+    def colourbar(self, name=None, **kwargs):
+        #Create a new colourbar for this object
+        name = self.instance.app.colourBar(self.name())
+        if len(name) == 0: return
+        #Update list
+        self.get()
+        #Setups up new object, all other args passed to properties dict
+        self.instance.setupobject(name, **kwargs)
+
 #Wrapper dict+list of objects
 class Objects(dict):
   def __init__(self, instance):
@@ -336,7 +345,6 @@ class Viewer(object):
 
     def setupobject(self, name, **kwargs):
         #Strip data keys from kwargs and put aside for loading
-        print name
         datasets = {}
         for key in kwargs.keys():
             if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:

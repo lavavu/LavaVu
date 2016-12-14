@@ -958,6 +958,12 @@ void LavaVu::createDemoVolume()
     Properties::toFloatArray(drawstate.global("inscale"), inscale, 3);
     vobj = new DrawingObject(drawstate, "volume", "density=50\n");
     addObject(vobj);
+
+    //Demo colourmap, depth 
+    vobj->properties.data["colourmap"] = colourMap("volume", "#3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
+    //Add colour bar display
+    colourBar(vobj);
+
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
     {
@@ -1469,21 +1475,13 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   float size = sqrt(dotProduct(dims,dims));
   viewer->title = "Test Pattern";
 
-  //Demo colourmap, distance from model origin
-  ColourMap* colourMap = new ColourMap(drawstate);
-  unsigned int cmid = amodel->addColourMap(colourMap);
-  //Colours: hex, abgr
-  unsigned int colours[] = {0xff33bb66,0xff00ff00,0xffff3333,0xffffff00,0xff77ffff,0xff0088ff,0xff0000ff,0xff000000};
-  colourMap->add(colours, 8);
-  colourMap->calibrate(0, size);
-
-  //Add colour bar display
-  DrawingObject* cmap = addObject(new DrawingObject(drawstate, "colour-bar", "colourbar=1\n"));
-  cmap->properties.data["colourmap"] = cmid;
-
   //Add points object
   DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nstatic=1\nlit=0\n"));
-  obj->properties.data["colourmap"] = cmid;
+  //Demo colourmap, distance from model origin
+  int cmap = colourMap("particles", "#66bb33 #00ff00 #3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000", 0, size);
+  obj->properties.data["colourmap"] = cmap;
+  //Add colour bar display
+  colourBar(obj);
   int pointsperswarm = numpoints/4; //4 swarms
   for (int i=0; i < numpoints; i++)
   {
@@ -1504,7 +1502,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
 
   //Add lines
   obj = addObject(new DrawingObject(drawstate, "line-segments", "static=1\nlit=0\n"));
-  obj->properties.data["colourmap"] = cmid;
+  obj->properties.data["colourmap"] = cmap;
   for (int i=0; i < 50; i++)
   {
     float colour, ref[3];
@@ -2851,7 +2849,7 @@ std::string LavaVu::getObject(std::string name)
   return data["objects"][0].dump();
 }
 
-int LavaVu::colourMap(std::string name, std::string colours)
+int LavaVu::colourMap(std::string name, std::string colours, float min, float max)
 {
   if (!amodel) return -1;
 
@@ -2865,10 +2863,26 @@ int LavaVu::colourMap(std::string name, std::string colours)
   }
 
   //Add a new colourmap if not found
-  ColourMap* cmap = new ColourMap(drawstate, name.c_str(), 0, 1);
+  ColourMap* cmap = new ColourMap(drawstate, name.c_str(), min, max);
   cmap->loadPalette(colours);
   amodel->colourMaps.push_back(cmap);
   return amodel->colourMaps.size()-1;
+}
+
+DrawingObject* LavaVu::colourBar(DrawingObject* obj)
+{
+  //Add colour bar display to specified object
+  DrawingObject* cbar = addObject(new DrawingObject(drawstate, obj->name() + "_colourbar", "colourbar=1\n"));
+  cbar->properties.data["colourmap"] = obj->properties["colourmap"];
+  return cbar;
+}
+
+std::string LavaVu::colourBar(std::string objname)
+{
+  DrawingObject* obj = lookupObject(objname, aobject);
+  if (!obj) return "";
+  DrawingObject* cbar = colourBar(obj);
+  return cbar->name();
 }
 
 void LavaVu::setState(std::string state)

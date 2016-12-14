@@ -216,6 +216,7 @@ public:
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonReadFile(std::string fn);
+  DrawingObject* colourBar(DrawingObject* obj);
 
   //Python interface functions
   void render();
@@ -223,7 +224,8 @@ public:
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
   void setObject(std::string name, std::string properties);
-  int colourMap(std::string name, std::string colours="");
+  int colourMap(std::string name, std::string colours="", float min=0., float max=1.);
+  std::string colourBar(std::string objname);
   std::string getObject(std::string name);
   void setState(std::string state);
   std::string getState();

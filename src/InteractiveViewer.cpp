@@ -2093,6 +2093,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->reload(obj);
     }
   }
+  else if (parsed.exists("colourbar"))
+  {
+    if (gethelp)
+    {
+      help += "> Add a colour bar display to selected object\n\n"
+              "> **Usage:** colourbar [alignment] [size]\n\n"
+              "> alignment (string) : viewport alignment (left/right/top/bottom)  \n";
+      return false;
+    }
+
+    if (aobject)
+    {
+      DrawingObject* cbar = colourBar(aobject);
+      std::string align = parsed["colourbar"];
+      if (align.length())
+        cbar->properties.data["align"] = align;
+    }
+  }
   else if (parsed.exists("colour"))
   {
     if (gethelp)
@@ -3235,7 +3253,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"hide", "show", "delete", "load", "select", "add", "read", "label", "name",
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers",
-     "antialias", "valuerange", "colourmap", "pointtype",
+     "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
