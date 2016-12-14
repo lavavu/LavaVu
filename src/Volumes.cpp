@@ -54,11 +54,10 @@ void Volumes::close()
   if (drawstate.global("cachevolumes")) return;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    if (geom[i]->texIdx >= 0)
+    if (geom[i]->texture)
     {
-      delete geom[i]->draw->textures[geom[i]->texIdx];
-      geom[i]->draw->textures[geom[i]->texIdx] = NULL;
-      geom[i]->texIdx = -1;
+      delete geom[i]->texture;
+      geom[i]->texture = NULL;
     }
   }
 }
@@ -112,208 +111,202 @@ void Volumes::update()
   //TODO: filtering
   //Read all colourvalues, apply filter to each and store in filtered block before loading into texture
 
-  //Single volume cube - TODO: support more than 1 by counting volumes before load
-  if (geom.size() == 1)
+  //Count and group 2D slices
+  slices.clear();
+  DrawingObject* draw = geom[0]->draw;
+  unsigned int count = 0;
+  for (unsigned int i=0; i<=geom.size(); i++)
   {
-    int i = 0;
-    if (!drawable(i)) return;
-
-    DrawingObject* current = geom[i]->draw;
-    bool texcompress = current->properties["compresstextures"];
-    if (geom[i]->texIdx < 0 || current->textures[geom[i]->texIdx]->texture->width == 0) //Width set to 0 to flag reload
+    if (i==geom.size() || draw != geom[i]->draw)
     {
-      //Determine type of data then load the texture
-      int idx = geom[i]->texIdx;
-      if (idx < 0) idx = current->addTexture(); //Add a new texture container
-      unsigned int bpv = 4;
-      if (geom[i]->colours.size() > 0)
-      {
-        int type = texcompress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
-        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), type);
-      }
-      else if (geom[i]->luminance.size() > 0)
-      {
-        bpv = 1;
-        int type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
-        assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height * geom[i]->depth);
-        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->luminance.ref(), type);
-      }
-      else if (geom[i]->colourData())
-      {
-        assert(geom[i]->colourData()->size() == geom[i]->width * geom[i]->height * geom[i]->depth);
-        current->textures[idx]->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
-      }
-      debug_print("volume 0 width %d height %d depth %d (bpv %d)\n", geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
-      //Set the loaded texture
-      geom[i]->texIdx = idx;
+      slices[draw] = count;
+      if (count == 1)
+        printf("Reloading: cube in object %s\n", draw->name().c_str());
+      else
+        printf("Reloading: %d slices in object %s\n", count, draw->name().c_str());
+      count = 0;
+      if (i<geom.size()) draw = geom[i]->draw;
     }
+    count++;
   }
-  else
+
+  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
-    //Collection of 2D slices
-    slices.clear();
-    DrawingObject* draw = geom[0]->draw;
-    unsigned int count = 0;
-    for (unsigned int i=0; i<=geom.size(); i++)
-    {
-      if (i==geom.size() || draw != geom[i]->draw)
-      {
-        slices[draw] = count;
-        debug_print("Reloading: %d slices in object %s\n", count, draw->name().c_str());
-        count = 0;
-        if (i<geom.size()) draw = geom[i]->draw;
-      }
-      count++;
-    }
+    if (!drawable(i)) continue;
 
-    for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
+    //Single volume cube
+    if (geom[i]->depth > 1)
     {
-      if (!drawable(i)) continue;
-
       DrawingObject* current = geom[i]->draw;
       bool texcompress = current->properties["compresstextures"];
-      if (geom[i]->texIdx < 0 || current->textures[geom[i]->texIdx]->texture->width == 0) //Width set to 0 to flag reload
+      if (!geom[i]->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
       {
-        if (!geom[i]->height)
-        {
-          //No height? Calculate from values data
-          if (geom[i]->colourData())
-            //(assumes float luminance data (4 bpv))
-            geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
-          else if (geom[i]->colours.size() > 0)
-            geom[i]->height = geom[i]->colours.size() / geom[i]->width;
-          else if (geom[i]->luminance.size() > 0)
-            geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
-          else if (geom[i]->rgb.size() > 0)
-            geom[i]->height = geom[i]->rgb.size() / geom[i]->width / 3;
-        }
-
-        //Texture crop?
-        json texsize = current->properties["texturesize"];
-        json texoffset = current->properties["textureoffset"];
-        unsigned int dims[3] = {geom[i]->width, geom[i]->height, (unsigned int)slices[current]};
-        bool crop = false;
-        for (int d=0; d<3; d++)
-        {
-          if ((int)texsize[d] > 0 && (int)texsize[d] < dims[d]) 
-          {
-            dims[d] = texsize[d];
-            crop = true;
-          }
-          if ((int)texoffset[d] > 0) crop = true;
-          //Check within tex limits
-          assert(dims[d] <= (unsigned)maxtex);
-        }
-        if (crop)
-          printf("Cropping volume %d x %d ==> %d x %d @ %d,%d\n", geom[i]->width, geom[i]->height, dims[0], dims[1], (int)texoffset[0], (int)texoffset[1]);
-
-        //Init/allocate/bind texture
-        int idx = geom[i]->texIdx;
-        if (idx < 0) idx = current->addTexture(); //Add a new texture container
+        //Determine type of data then load the texture
+        if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
         unsigned int bpv = 4;
-        int type = 0;
-        GL_Error_Check;
         if (geom[i]->colours.size() > 0)
         {
-          //RGBA colours
-          type = texcompress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
-          current->textures[idx]->load3D(dims[0], dims[1], dims[2], NULL, type);
-          for (unsigned int j=i; j<i+slices[current]; j++)
-          {
-            if (crop) 
-            {
-              GLubyte* ptr = RawImageCrop(geom[j]->colours.ref(), geom[i]->width, geom[i]->height, 4, dims[0], dims[1], texoffset[0], texoffset[1]);
-              current->textures[idx]->load3Dslice(j-i, ptr);
-              delete ptr;
-            }
-            else
-              current->textures[idx]->load3Dslice(j-i, geom[j]->colours.ref());
-          }
-        }
-        else if (geom[i]->rgb.size() > 0)
-        {
-          //Byte RGB
-          bpv = 3;
-          type = texcompress ? VOLUME_RGB_COMPRESSED : VOLUME_RGB;
-          assert(geom[i]->rgb.size() == 3*geom[i]->width * geom[i]->height);
-          current->textures[idx]->load3D(dims[0], dims[1], dims[2], NULL, type);
-          for (unsigned int j=i; j<i+slices[current]; j++)
-          {
-            if (crop) 
-            {
-              GLubyte* ptr = RawImageCrop(geom[j]->rgb.ref(), geom[i]->width, geom[i]->height, 3, dims[0], dims[1], texoffset[0], texoffset[1]);
-              current->textures[idx]->load3Dslice(j-i, ptr);
-              delete ptr;
-            }
-            else
-              current->textures[idx]->load3Dslice(j-i, geom[j]->rgb.ref());
-          }
+          int type = texcompress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
+          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), type);
         }
         else if (geom[i]->luminance.size() > 0)
         {
-          //Byte luminance
           bpv = 1;
-          type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
-          assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height);
-          current->textures[idx]->load3D(dims[0], dims[1], dims[2], NULL, type);
-          for (unsigned int j=i; j<i+slices[current]; j++)
-          {
-            if (crop) 
-            {
-              GLubyte* ptr = RawImageCrop(geom[j]->luminance.ref(), geom[i]->width, geom[i]->height, 1, dims[0], dims[1], texoffset[0], texoffset[1]);
-              current->textures[idx]->load3Dslice(j-i, ptr);
-              delete ptr;
-            }
-            else
-              current->textures[idx]->load3Dslice(j-i, geom[j]->luminance.ref());
-          }
+          int type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
+          assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height * geom[i]->depth);
+          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->luminance.ref(), type);
         }
         else if (geom[i]->colourData())
         {
-          //Float data, interpret as either luminance or bytes packed into float container (legacy, still needed?)
-          //TODO: Support RGB(A) float GL_RGBA16F (bpv=8) or GL_RGBA32F? (bpv=16)
-          bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height);
-          if (bpv == 1)
-          {
-            type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
-            current->textures[idx]->load3D(dims[0], dims[1], dims[2], NULL, type);
-          }
-          else if (bpv == 4)
-          {
-            current->textures[idx]->load3D(dims[0], dims[1], dims[2], NULL, VOLUME_FLOAT);
-          }
-          else
-            abort_program("Invalid volume bpv %d", bpv);
-
-          for (unsigned int j=i; j<i+slices[current]; j++)
-          {
-            if (crop) 
-            {
-              GLubyte* ptr = RawImageCrop(geom[j]->colourData()->ref(), geom[i]->width, geom[i]->height, bpv, dims[0], dims[1], texoffset[0], texoffset[1]);
-              current->textures[idx]->load3Dslice(j-i, ptr);
-              delete ptr;
-            }
-            else
-              current->textures[idx]->load3Dslice(j-i, geom[j]->colourData()->ref());
-          }
-
+          assert(geom[i]->colourData()->size() == geom[i]->width * geom[i]->height * geom[i]->depth);
+          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colourData()->ref(), VOLUME_FLOAT);
         }
+        debug_print("volume %d width %d height %d depth %d (bpv %d)\n", i, geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
+      }
+      continue;
+    }
 
-        debug_print("current %s width %d height %d depth %d (bpv %d type %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv, type);
-
-        //Set the loaded texture
-        geom[i]->texIdx = idx;
-        GL_Error_Check;
-
-        //Calibrate on data now so if colour bar drawn it will have correct range
-        geom[i]->colourCalibrate();
+    //Collection of 2D slices
+    DrawingObject* current = geom[i]->draw;
+    bool texcompress = current->properties["compresstextures"];
+    if (!geom[i]->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
+    {
+      if (!geom[i]->height)
+      {
+        //No height? Calculate from values data
+        if (geom[i]->colourData())
+          //(assumes float luminance data (4 bpv))
+          geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
+        else if (geom[i]->colours.size() > 0)
+          geom[i]->height = geom[i]->colours.size() / geom[i]->width;
+        else if (geom[i]->luminance.size() > 0)
+          geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
+        else if (geom[i]->rgb.size() > 0)
+          geom[i]->height = geom[i]->rgb.size() / geom[i]->width / 3;
       }
 
-      //Setup gradient texture from colourmap
-      ColourMap* cmap = geom[i]->draw->colourMap;
-      if (cmap) cmap->loadTexture();
+      //Texture crop?
+      json texsize = current->properties["texturesize"];
+      json texoffset = current->properties["textureoffset"];
+      unsigned int dims[3] = {geom[i]->width, geom[i]->height, (unsigned int)slices[current]};
+      bool crop = false;
+      for (int d=0; d<3; d++)
+      {
+        if ((int)texsize[d] > 0 && (int)texsize[d] < dims[d]) 
+        {
+          dims[d] = texsize[d];
+          crop = true;
+        }
+        if ((int)texoffset[d] > 0) crop = true;
+        //Check within tex limits
+        assert(dims[d] <= (unsigned)maxtex);
+      }
+      if (crop)
+        printf("Cropping volume %d x %d ==> %d x %d @ %d,%d\n", geom[i]->width, geom[i]->height, dims[0], dims[1], (int)texoffset[0], (int)texoffset[1]);
+
+      //Init/allocate/bind texture
+      if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
+      unsigned int bpv = 4;
+      int type = 0;
+      GL_Error_Check;
+      if (geom[i]->colours.size() > 0)
+      {
+        //RGBA colours
+        type = texcompress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
+        geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, type);
+        for (unsigned int j=i; j<i+slices[current]; j++)
+        {
+          if (crop) 
+          {
+            GLubyte* ptr = RawImageCrop(geom[j]->colours.ref(), geom[i]->width, geom[i]->height, 4, dims[0], dims[1], texoffset[0], texoffset[1]);
+            geom[i]->texture->load3Dslice(j-i, ptr);
+            delete ptr;
+          }
+          else
+            geom[i]->texture->load3Dslice(j-i, geom[j]->colours.ref());
+        }
+      }
+      else if (geom[i]->rgb.size() > 0)
+      {
+        //Byte RGB
+        bpv = 3;
+        type = texcompress ? VOLUME_RGB_COMPRESSED : VOLUME_RGB;
+        assert(geom[i]->rgb.size() == 3*geom[i]->width * geom[i]->height);
+        geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, type);
+        for (unsigned int j=i; j<i+slices[current]; j++)
+        {
+          if (crop) 
+          {
+            GLubyte* ptr = RawImageCrop(geom[j]->rgb.ref(), geom[i]->width, geom[i]->height, 3, dims[0], dims[1], texoffset[0], texoffset[1]);
+            geom[i]->texture->load3Dslice(j-i, ptr);
+            delete ptr;
+          }
+          else
+            geom[i]->texture->load3Dslice(j-i, geom[j]->rgb.ref());
+        }
+      }
+      else if (geom[i]->luminance.size() > 0)
+      {
+        //Byte luminance
+        bpv = 1;
+        type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
+        assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height);
+        geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, type);
+        for (unsigned int j=i; j<i+slices[current]; j++)
+        {
+          if (crop) 
+          {
+            GLubyte* ptr = RawImageCrop(geom[j]->luminance.ref(), geom[i]->width, geom[i]->height, 1, dims[0], dims[1], texoffset[0], texoffset[1]);
+            geom[i]->texture->load3Dslice(j-i, ptr);
+            delete ptr;
+          }
+          else
+            geom[i]->texture->load3Dslice(j-i, geom[j]->luminance.ref());
+        }
+      }
+      else if (geom[i]->colourData())
+      {
+        //Float data, interpret as either luminance or bytes packed into float container (legacy, still needed?)
+        //TODO: Support RGB(A) float GL_RGBA16F (bpv=8) or GL_RGBA32F? (bpv=16)
+        bpv = (4 * geom[i]->colourData()->size()) / (float)(geom[i]->width * geom[i]->height);
+        if (bpv == 1)
+        {
+          type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
+          geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, type);
+        }
+        else if (bpv == 4)
+        {
+          geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, VOLUME_FLOAT);
+        }
+        else
+          abort_program("Invalid volume bpv %d", bpv);
+
+        for (unsigned int j=i; j<i+slices[current]; j++)
+        {
+          if (crop) 
+          {
+            GLubyte* ptr = RawImageCrop(geom[j]->colourData()->ref(), geom[i]->width, geom[i]->height, bpv, dims[0], dims[1], texoffset[0], texoffset[1]);
+            geom[i]->texture->load3Dslice(j-i, ptr);
+            delete ptr;
+          }
+          else
+            geom[i]->texture->load3Dslice(j-i, geom[j]->colourData()->ref());
+        }
+
+      }
+
+      debug_print("current %s width %d height %d depth %d (bpv %d type %d)\n", current->name().c_str(), geom[i]->width, geom[i]->height, slices[current], bpv, type);
+      GL_Error_Check;
+
+      //Calibrate on data now so if colour bar drawn it will have correct range
+      geom[i]->colourCalibrate();
     }
+
+    //Setup gradient texture from colourmap
+    ColourMap* cmap = geom[i]->draw->colourMap;
+    if (cmap) cmap->loadTexture();
   }
+
   //Restore padding
   glPopClientAttrib();
   GL_Error_Check;
@@ -335,8 +328,12 @@ void Volumes::render(int i)
   Properties& props = geom[i]->draw->properties;
   float viewport[4];
   glGetFloatv(GL_VIEWPORT, viewport);
-  TextureData* voltexture = geom[i]->draw->useTexture(geom[i]->texIdx);
-  if (!voltexture) abort_program("No volume texture loaded!\n");
+  TextureData* voltexture = geom[i]->draw->useTexture(geom[i]->texture);
+  if (!voltexture) 
+  {
+    fprintf(stderr, "No volume texture loaded for %d!\n", i);
+    return;
+  }
   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};
   glUniform3fv(prog->uniforms["uResolution"], 1, res);
   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
@@ -375,8 +372,6 @@ void Volumes::render(int i)
   glUniform1f(prog->uniforms["uDensityFactor"], density * opacity);
   Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
   float isoalpha = props["isoalpha"];
-  //Default isoalpha shows surface only if isovalue set
-  if (props.has("isovalue") && isoalpha == 0.0) isoalpha = 1.0;
   colour.a = 255.0 * isoalpha * (colour.a/255.0);
   colour.setUniform(prog->uniforms["uIsoColour"]);
   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
@@ -396,7 +391,7 @@ void Volumes::render(int i)
     range[0] = geom[i]->colourData()->minimum;
     range[1] = geom[i]->colourData()->maximum;
     //For non float type, normalise isovalue to range [0,1] to match data
-    if (geom[i]->draw->textures[geom[i]->draw->textures.size()-1]->type != VOLUME_FLOAT)
+    if (geom[i]->texture->type != VOLUME_FLOAT)
       isoval = (isoval - range[0]) / (range[1] - range[0]);
     //std::cout << "IsoValue " << isoval << std::endl;
     //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;

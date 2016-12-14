@@ -60,15 +60,14 @@ public:
 
   //Object properties data...
   Properties properties;
-  //Texture list
-  std::vector<ImageLoader*> textures;
+  //Default texture
+  ImageLoader* texture;
 
   DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
   void setup();
-  int addTexture(std::string texfn="");
-  TextureData* useTexture(int index);
+  TextureData* useTexture(ImageLoader* tex=NULL);
   std::string name() {return properties["name"];}
 };
 

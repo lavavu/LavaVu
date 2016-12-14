@@ -585,7 +585,7 @@ void Geometry::redrawObject(DrawingObject* draw)
     {
       debug_print("Reloading object: %s\n", draw->name().c_str());
       //Flag reload of texture
-      if (geom[i]->texIdx >= 0) draw->textures[geom[i]->texIdx]->texture->width = 0;
+      if (geom[i]->texture) geom[i]->texture->texture->width = 0;
       reload = true;
       return;
     }
@@ -599,7 +599,7 @@ void Geometry::init() //Called on GL init
 
 void Geometry::setState(unsigned int i, Shader* prog)
 {
-  //NOTE: Transparent triangle surfaces are drawn as a single object so 
+  //NOTE: Transparent triangle surfaces/points are drawn as a single object so 
   //      no per-object state settings work, state applied is that of first in list
   GL_Error_Check;
   if (geom.size() <= i) return;
@@ -658,11 +658,11 @@ void Geometry::setState(unsigned int i, Shader* prog)
     glEnable(GL_LIGHTING);
 
   //Textured?
-  TextureData* texture = draw->useTexture(geom[i]->texIdx);
+  TextureData* texture = draw->useTexture(geom[i]->texture);
   GL_Error_Check;
   if (texture)
   {
-    //Combine texture with colourmap? Requires modulate mode
+    //Combine texture with colourmap: Requires modulate mode
     //GL_MODULATE/BLEND/REPLACE/DECAL
     if (geom[i]->colourCount() > 0)
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -1173,10 +1173,10 @@ void Geometry::toImage(unsigned int idx)
   delete[] image;
 }
 
-void Geometry::setTexture(DrawingObject* draw, int idx)
+void Geometry::setTexture(DrawingObject* draw, ImageLoader* tex)
 {
   GeomData* geomdata = getObjectStore(draw);
-  geomdata->texIdx = idx;
+  geomdata->texture = tex;
   //std::cout << "SET TEXTURE: " << idx << " ON " << draw->name() << std::endl;
   //Must be opaque to draw with own texture
   geomdata->opaque = true;

@@ -659,6 +659,7 @@ public:
   TextureData* texture;
   int type;
 
+  ImageLoader() : mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
   ImageLoader(const std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
 
   TextureData* use();

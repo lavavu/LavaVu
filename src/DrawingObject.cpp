@@ -39,6 +39,7 @@
 DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, unsigned int id)
   : properties(drawstate.globals, drawstate.defaults), dbid(id)
 {
+  texture = NULL;
   colourMaps = NULL;
   skip = drawstate.global("noload");
   //Name set in properties overrides that passed from database
@@ -61,8 +62,8 @@ DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string
 
 DrawingObject::~DrawingObject()
 {
-  for (unsigned int i=0; i<textures.size(); i++)
-    delete textures[i];
+  if (texture)
+    delete texture;
 }
 
 void DrawingObject::setup()
@@ -82,53 +83,36 @@ void DrawingObject::setup()
   if (omapid >= 0 && omapid < colourMaps->size()) opacityMap = (*colourMaps)[omapid];
 }
 
-int DrawingObject::addTexture(std::string texfn)
-{
-  //If passed a valid file path:
-  // - will add the texture loader object but not load the file yet
-  //If not:
-  // - will add an empty texture loader object that must be manually filled
-  textures.push_back(new ImageLoader(texfn));
-  return textures.size() - 1;
-}
-
-TextureData* DrawingObject::useTexture(int index)
+TextureData* DrawingObject::useTexture(ImageLoader* tex)
 {
   GL_Error_Check;
-  //Load default texture if available
-  if (textures.size() == 0)
+  //Use/load default texture
+  if (!tex)
   {
-    if (properties.has("texturefile"))
+    if (texture)
+      tex = texture;
+    else if (properties.has("texturefile"))
     {
       std::string texfn = properties["texturefile"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
-        index = addTexture(texfn);
+        tex = texture = new ImageLoader(texfn);
       }
       else
       {
         if (texfn.length() > 0) debug_print("Texture File: %s not found!\n", texfn.c_str());
         //If load failed, skip from now on
         properties.data["texturefile"] = "";
-        return NULL;
       }
     }
-    else
-      return NULL;
   }
 
-  //Use first available texture if out of range
-  //if (index+1 > textures.size())
-  if (textures.size() > 0 && (index < 0 || index+1 > (int)textures.size()))
-    index = textures.size() - 1;
-
-  if (index >= 0 && textures[index])
+  if (tex)
   {
     //On first call only loads data from external file if provided
     //Then, and on subsequent calls, simply returns the preloaded texture
-    return textures[index]->use();
+    return tex->use();
   }
-  GL_Error_Check;
 
   //No texture:
   glDisable(GL_TEXTURE_2D);

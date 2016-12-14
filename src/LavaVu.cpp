@@ -1333,7 +1333,7 @@ void LavaVu::readOBJ(const FilePath& fn)
             texpath = fn.path + "/" + texpath;
 
           //Add per-object texture
-          amodel->triSurfaces->setTexture(tobj, tobj->addTexture(texpath));
+          amodel->triSurfaces->setTexture(tobj, new ImageLoader(texpath));
           //if (tobj->properties["texturefile"].ToString("").length() == 0)
           //  tobj->properties.data["texturefile"] = texpath;
         }

@@ -1736,10 +1736,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
         obj["max"] = {max[0], max[1], max[2]};
       }
 
+      //TODO: export geom textures
       //Texture ? Export first only, as external file for now
       //TODO: dataurl using getImageString(image, iw, ih, channels)
-      if (objects[i]->textures.size() > 0 && obj.count("texturefile") == 0)
-        obj["texturefile"] = objects[i]->textures[0]->fn.full;
+      //if (objects[i]->textures.size() > 0 && obj.count("texturefile") == 0)
+      //  obj["texturefile"] = objects[i]->textures[0]->fn.full;
 
       if (!objdata)
       {

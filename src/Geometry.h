@@ -90,8 +90,8 @@ public:
   unsigned int depth;
   char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
-  int texIdx;    //Texture index to use
   unsigned int fixedOffset; //Offset to end of fixed value data
+  ImageLoader* texture; //Texture
   std::vector<Filter> filterCache;
 
   float distance;
@@ -137,7 +137,7 @@ public:
     data[lucLuminanceData] = &luminance;
     data[lucRGBData] = &rgb;
 
-    texIdx = -1;
+    texture = NULL;
 
     for (int i=0; i<3; i++)
     {
@@ -156,6 +156,9 @@ public:
     //Delete value data containers (exclude fixed additions)
     for (unsigned int i=fixedOffset; i<values.size(); i++)
       delete values[i];
+
+    if (texture)
+      delete texture;
   }
 
   void checkPointMinMax(float *coord);
@@ -286,7 +289,7 @@ public:
   void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);
-  void setTexture(DrawingObject* draw, int idx);
+  void setTexture(DrawingObject* draw, ImageLoader* tex);
   void drawVector(DrawingObject *draw, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count=24);
   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength=0.f, int segment_count=24);
   void drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads=false);
