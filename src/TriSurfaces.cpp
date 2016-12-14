@@ -232,14 +232,16 @@ void TriSurfaces::loadMesh()
     else
     {
       //Switch out the optimised vertices and normals with the old data stores
-      std::vector<Vec3d> vertices;
-      geom[index]->vertices = Coord3DValues();
+      Coord3DValues newverts = Coord3DValues();
       geom[index]->normals = Coord3DValues();
       geom[index]->indices = UIntValues();
       geom[index]->count = 0;
-      geom[index]->data[lucVertexData] = &geom[index]->vertices;
+      geom[index]->data[lucVertexData] = &newverts;
       geom[index]->data[lucNormalData] = &geom[index]->normals;
       geom[index]->data[lucIndexData] = &geom[index]->indices;
+      FloatValues* oldvalues = geom[index]->colourData();
+      if (oldvalues)
+        geom[index]->values[geom[index]->draw->colourIdx] = new FloatValues();
       bool optimise = geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
       {
@@ -251,14 +253,18 @@ void TriSurfaces::loadMesh()
           normals[verts[v].id].normalise();
 
           //Average final colour
-          if (vertColour && verts[v].vcount > 1)
-            geom[index]->colourData()->value[verts[v].id] /= verts[v].vcount;
+          if (vertColour && oldvalues)
+          {
+            read(geom[index]->draw, 1, &oldvalues->value[verts[v].id], "Default");
+            if (verts[v].vcount > 1)
+              geom[index]->colourData()->value[geom[index]->count] /= verts[v].vcount;
+          }
 
           //Save an index lookup entry (Grid indices loaded in previous step)
-          indices[verts[v].id] = vertices.size();
+          indices[verts[v].id] = geom[index]->count;
 
           //Replace verts & normals
-          vertices.push_back(Vec3d(verts[v].vert));
+          read(geom[index], 1, lucVertexData, verts[v].vert);
           read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
 
           unique++;
@@ -270,7 +276,8 @@ void TriSurfaces::loadMesh()
         }
       }
       //Read replacement vertices
-      read(geom[index], vertices.size(), lucVertexData, &vertices[0]);
+      geom[index]->vertices = newverts;
+      if (oldvalues) delete oldvalues;
     }
 
     t2 = clock();
@@ -397,6 +404,7 @@ void TriSurfaces::loadBuffers()
     //Calibrate colour maps on range for this surface
     geom[index]->colourCalibrate();
     int hasColours = geom[index]->colourCount();
+    if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
     int colrange = hasColours ? geom[index]->count / hasColours : 1;
     //if (hasColours) assert(colrange * hasColours == geom[index]->count);
     //if (hasColours && colrange * hasColours != geom[index]->count)
@@ -477,7 +485,7 @@ void TriSurfaces::centroid(float* v1, float* v2, float* v3)
   //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);
 
   //Limit to defined bounding box
-  //Possibly should store calculated bounding box separately for goemetry outside border
+  //Possibly should store calculated bounding box separately for geometry outside border
   for (int i=0; i<3; i++)
   {
     centroids[idx][i] = max(centroids[idx][i], view->min[i]);
@@ -546,7 +554,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
         normals[verts[match].id] += normals[verts[v].id];
 
         //Colour value, add to matched
-        if (vertColour)
+        if (vertColour && geom[index]->colourData())
           geom[index]->colourData()->value[verts[match].id] += geom[index]->colourData()->value[verts[v].id];
 
         verts[match].vcount++;

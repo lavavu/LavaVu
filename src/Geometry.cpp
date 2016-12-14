@@ -300,7 +300,7 @@ bool GeomData::filter(unsigned int idx)
 
 FloatValues* GeomData::colourData() 
 {
-  return values.size() && values.size() > draw->colourIdx ? values[draw->colourIdx] : NULL;
+  return values.size() && values.size() > draw->colourIdx && values[draw->colourIdx]->size() ? values[draw->colourIdx] : NULL;
 }
 
 float GeomData::colourData(unsigned int idx) 
@@ -312,7 +312,7 @@ float GeomData::colourData(unsigned int idx)
 
 FloatValues* GeomData::valueData(unsigned int vidx)
 {
-  if (values.size() <= vidx) return NULL;
+  if (values.size() <= vidx || !values[vidx]->size()) return NULL;
   return values[vidx];
 }
 
