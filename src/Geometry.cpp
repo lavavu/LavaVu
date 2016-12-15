@@ -777,9 +777,10 @@ void Geometry::labels()
     std::string font = geom[i]->draw->properties["font"];
     if (view->scale2d != 1.0 && font != "vector")
       geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
+    //Default to object colour (if fontcolour provided will replace)
+    Colour colour = Colour(geom[i]->draw->properties["colour"]);
+    drawstate.fonts.printSetColour(colour.value);
     drawstate.fonts.printSetFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
-
-    Colour colour;
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)

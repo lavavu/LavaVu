@@ -2029,7 +2029,7 @@ void LavaVu::drawAxis()
 
   drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
   drawstate.fonts.rasterSetFontScale(length*6.0);
-  drawstate.fonts.printSetColour(viewer->inverse.value);
+  drawstate.fonts.printSetColour(viewer->textColour.value);
   drawstate.fonts.print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   drawstate.fonts.print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
   if (aview->is3d)
@@ -2062,7 +2062,7 @@ void LavaVu::drawRulers()
   obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.5*aview->model_size;
   obj->properties.data["font"] = "vector";
   //Colour for labels
-  obj->properties.data["colour"] = viewer->inverse.toJson();
+  obj->properties.data["colour"] = viewer->textColour.toJson();
 
 
   int ticks = aview->properties["rulerticks"];
@@ -2302,18 +2302,12 @@ void LavaVu::printMessage(const char *fmt, ...)
 
 void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colour* colour)
 {
-  //Black on white or reverse depending on background intensity
-  int avg = (viewer->background.r + viewer->background.g + viewer->background.b) / 3;
-  int tcol = 0xff000000;
-  int scol = 0xffffffff;
-  if (avg < 127) 
-  {
-    tcol = 0xffffffff;
-    scol = 0xff000000;
-  }
+  //Black on white or reverse depending on background
+  Colour scol = viewer->textColour;
+  scol.invert();
 
   //Shadow
-  drawstate.fonts.printSetColour(scol);
+  drawstate.fonts.printSetColour(scol.value);
   drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
   drawstate.fonts.rasterSetFontScale(scale);
 
@@ -2323,12 +2317,12 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   if (colour)
     drawstate.fonts.printSetColour(colour->value);
   else
-    drawstate.fonts.printSetColour(tcol);
+    drawstate.fonts.printSetColour(viewer->textColour.value);
 
   drawstate.fonts.print(xpos, ypos, str.c_str());
 
   //Revert to normal colour
-  drawstate.fonts.printSetColour(viewer->inverse.value);
+  drawstate.fonts.printSetColour(viewer->textColour.value);
 }
 
 void LavaVu::displayMessage()
@@ -2408,7 +2402,7 @@ void LavaVu::drawSceneBlended()
   size_t pos =  title.find("##");
   if (pos != std::string::npos && drawstate.timesteps.size() >= drawstate.now)
     title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
-  aview->drawOverlay(viewer->inverse, title);
+  aview->drawOverlay(viewer->textColour, title);
   drawAxis();
 #endif
 }

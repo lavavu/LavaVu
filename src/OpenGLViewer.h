@@ -118,6 +118,7 @@ public:
   int blend_mode;
   Colour background;
   Colour inverse;
+  Colour textColour;
 
   int outwidth, outheight;
   std::string title;
@@ -172,6 +173,12 @@ public:
     background = bgcol;
     inverse = background;
     inverse.invert();
+    //Calculate text foreground colour black/white depending on background intensity
+    int avg = (background.r + background.g + background.b) / 3.0;
+    textColour.value = 0xff000000;
+    if (avg < 127) 
+      textColour.value = 0xffffffff;
+
     if (isopen)
     {
       app->drawstate.fonts.printSetColour(inverse.value);

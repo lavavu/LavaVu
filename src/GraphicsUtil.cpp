@@ -258,9 +258,8 @@ float FontManager::printSetFont(Properties& properties, std::string def, float s
 
   //Colour
   Colour colour = Colour(properties["fontcolour"]);
-  if (colour.a == 0.0)
-    colour = Colour(properties["colour"]);
-  printSetColour(colour.value);
+  if (colour.a > 0.0) //Otherwise (default) leave colour unchanged
+    printSetColour(colour.value);
 
   //Bitmap fonts
   if (fonttype == "fixed")

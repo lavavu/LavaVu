@@ -819,6 +819,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
   //Title
   if (title.length())
   {
+    drawstate.fonts.printSetColour(colour.value);
     float fontscale = drawstate.fonts.printSetFont(properties, "vector", 1.0);
     if (fontscale < 0)
       drawstate.fonts.rasterSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
