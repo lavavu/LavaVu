@@ -731,22 +731,15 @@ void View::zoomToFit(int margin)
 
 void View::drawOverlay(Colour& colour, std::string& title)
 {
-#ifdef PDF_CAPTURE
-  return;   //Skip overlay
-#endif
   //2D overlay objects, apply text scaling
   Viewport2d(width, height);
   glScalef(scale2d, scale2d, scale2d);
   int w = width / scale2d;
   int h = height / scale2d;
+  GL_Error_Check;
 
   //Colour bars
-  GL_Error_Check;
-  float last_y = 0;
-  int AOFF = 35; //A=x for horizontal, y for vertical
-  int BOFF = 20; //B=y for horizontal, x for vertical
-  int margin_defaults[4] = {BOFF, BOFF, AOFF, AOFF}; //top, bottom, right, left
-  int offsets[4] = {1, 1, 1, 1};
+  int last_B[4] = {0, 0, 0, 0};
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
@@ -758,57 +751,69 @@ void View::drawOverlay(Colour& colour, std::string& title)
       cmap = (*objects[i]->colourMaps)[0];
     if (!cmap) continue;
 
-    int pos = objects[i]->properties["position"];
+    float position = objects[i]->properties["position"];
     std::string align = objects[i]->properties["align"];
     int ww = w, hh = h;
     bool vertical = false;
     bool opposite = (align == "left" || align == "bottom");
-    int idx = 0;
-    if (opposite) idx += 1;
+    int side = 0;
+    if (opposite) side += 1;
+    //Vertical?
     if (align == "left" || align == "right")
     {
-      idx += 2;
+      side += 2;
       vertical = true;
-      //Centre positioning only makes sense for horizontal bar
-      if (pos == 0) pos = -1;
+      //Centre positioning only makes sense for horizontal bar,
+      //default to top for vertical
+      if (position == 0) position = -0.06;
       ww = h;
       hh = w;
     }
 
-    int margin_B = objects[i]->properties["offset"];
-    int margin_A = margin_B;
-    if (margin_B == 0)
-    {
-      //Auto-increase default margins as used
-      margin_B = offsets[idx] * margin_defaults[idx];
-      margin_A = margin_defaults[idx];
-      offsets[idx] += 2;
-    }
-
     //Dimensions, default is to calculate automatically
     json size = objects[i]->properties["size"];
-    float breadth = size[0];
-    float length = size[1];
+    float breadth = size[1];
+    float length = size[0];
     if (length == 0)
       length = vertical ? 0.5 : 0.8;
     if (breadth == 0)
       breadth = vertical ? 20 : 10;
-    //If dims < 1.0 assume they are a ratio of window size
-    if (length < 1.0) length = ww * length;
-    if (breadth < 1.0) breadth = hh * breadth;
+
+    //Size: if in range [0,1] they are a ratio of window size so multiply to get pixels
+    if (length < 1.0) length *= ww;
+    if (breadth < 1.0) breadth *= hh;
+
+    //Margin offset
+    float margin = objects[i]->properties["offset"];
+    if (margin == 0)
+    {
+      //Calculate a sensible default margin
+      drawstate.fonts.printSetFont(objects[i]->properties);
+      if (vertical)
+        margin = 18 + drawstate.fonts.printWidth("1.000001");
+      else
+        margin = 7 + drawstate.fonts.printWidth("1.1");
+    }
+
+    //Position: if in range [0,1] they are a ratio of window size so multiply to get pixels
+    if (fabs(position) < 1.0) position *= ww;
+    if (margin < 1.0) margin *= hh;
+
+    //Add previous offset used and store for next
+    margin = last_B[side] + margin;
+    last_B[side] = margin + breadth;
     
-    int start_A = (ww - length) / 2;
-    if (pos == 1) start_A = margin_A;
-    if (pos == -1) start_A = ww - margin_A - length;
-    int start_B = margin_B;
+    //Calc corner coords
+    int start_A = (ww - length) / 2; //Centred, default for horizontal
+    if (position > 0) start_A = position;
+    if (position < 0) start_A = ww + position - length;
+    int start_B = margin;
 
     if (!opposite) start_B = hh - start_B - breadth;
 
     std::string font = objects[i]->properties["font"];
-    if (scale2d != 1.0 && font != "vector")
-      objects[i]->properties.data["font"] = "vector"; //Force vector font if downsampling
-
-    last_y = start_B;
+    //if (scale2d != 1.0 && font != "vector")
+    //  objects[i]->properties.data["font"] = "vector"; //Force vector font if downsampling
 
     cmap->draw(drawstate, objects[i]->properties, start_A, start_B, length, breadth, colour, vertical);
     GL_Error_Check;

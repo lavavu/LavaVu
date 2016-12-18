@@ -259,11 +259,9 @@ public:
 
     // | colourbar | boolean | Indicates object is a colourbar
     defaults["colourbar"] = false;
-    // | colourbar | integer | Align position of colour bar, 1=towards left/bottom, 0=centre, -1=towards right/top
-    defaults["position"] = 0;
     // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
     defaults["align"] = "bottom";
-    // | colourbar | real [0,1] | Fixed dimensions of colour bar (shortest dimension first) in pixels (> 1) or ratio of screen width or height (< 1)
+    // | colourbar | real[2] | Fixed dimensions of colour bar (length/breadth) in pixels or viewport size ratio
     defaults["size"] = {0, 0};
     // | colourbar | integer | Number of additional tick marks to draw besides start and end
     defaults["ticks"] = 0;
@@ -281,8 +279,10 @@ public:
     defaults["scalevalue"] = 1.0;
     // | colourbar | integer | Outline width to draw around colour bar
     defaults["outline"] = 1.0;
-    // | colourbar | integer | Margin in pixels to edge of viewport
+    // | colourbar | real | Margin to parallel edge in pixels or viewport size ratio
     defaults["offset"] = 0;
+    // | colourbar | real | Margin to perpendicular edge in pixels or viewport size ratio, >0=towards left/bottom, 0=centre (horizontal only), <0=towards right/top
+    defaults["position"] = 0;
 
     // | colourmap | boolean | Set to true to use log scales
     defaults["logscale"] = false;

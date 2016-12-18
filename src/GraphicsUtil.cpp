@@ -304,8 +304,6 @@ void FontManager::printString(const char* str)
   if (charLists == 0 || !glIsList(charLists+1))   // Load font if not yet done
     charLists = GenerateFontCharacters();
 
-  fontColour.rgba[3] = 255;
-  glColor4ubv(fontColour.rgba);
   glDisable(GL_CULL_FACE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   glListBase(charLists - 32);      // Set font display list base (space)

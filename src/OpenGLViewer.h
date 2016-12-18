@@ -178,16 +178,14 @@ public:
     textColour.value = 0xff000000;
     if (avg < 127) 
       textColour.value = 0xffffffff;
-
-    if (isopen)
+    if (app)
     {
+      app->drawstate.defaults["colour"] = textColour.toJson();
       app->drawstate.fonts.printSetColour(inverse.value);
-      //Set clear colour
-      glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
     }
-    //Update default foreground colour
-    if (!app) return;
-    app->drawstate.defaults["colour"] = {inverse.r, inverse.g, inverse.b, 255};
+    //Set clear colour
+    if (isopen)
+      glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
   }
 
   void idleReset();

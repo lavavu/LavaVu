@@ -338,7 +338,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 
 #define VERT2D(x, y, swap) swap ? glVertex2f(y, x) : glVertex2f(x, y);
 //#define VERT2D(x, y, swap) swap ? glVertex2f(y+0.5, x+0.5) : glVertex2f(x+0.5, y+0.5);
-#define RECT2D(x0, y0, x1, y1, s) glBegin(GL_QUADS); VERT2D(x0, y0, s); VERT2D(x1, y0, s); VERT2D(x1, y1, s); VERT2D(x0, y1, s); glEnd();
+#define RECT2D(x0, y0, x1, y1, s) {glBegin(GL_QUADS); VERT2D(x0, y0, s); VERT2D(x1, y0, s); VERT2D(x1, y1, s); VERT2D(x0, y1, s); glEnd();}
 
 void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
 {
@@ -347,10 +347,12 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
   if (!calibrated) calibrate(minimum, maximum);
 
-  // Draw larger background box for border
-  float border = colourbarprops["outline"];
-  glDisable(GL_CULL_FACE);
+  // Draw larger background box for border, use font colour
   glColor4ubv(printColour.rgba);
+  drawstate.fonts.printSetFont(colourbarprops);
+  int border = colourbarprops["outline"];
+  glDisable(GL_CULL_FACE);
+  //glColor4ubv(printColour.rgba);
   if (border > 0)
     RECT2D(startx - border, starty - border, startx + length + border, starty + breadth + border, vertical);
 
@@ -420,6 +422,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
   //Labels / tick marks
   glColor4ubv(printColour.rgba);
+  float fontscale = drawstate.fonts.printSetFont(colourbarprops);
   float tickValue;
   int ticks = colourbarprops["ticks"];
   json tickValues = colourbarprops["tickvalues"];
@@ -434,7 +437,6 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   if (properties["logscale"] && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
-  float fontscale = drawstate.fonts.printSetFont(colourbarprops);
   for (int i = 0; i < ticks+2; i++)
   {
     /* Get tick value */
@@ -451,7 +453,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
       /* End tick */
       tickValue = maximum;
       scaledPos = 1;
-      if (minimum == maximum) scaledPos = 0.5;
+      if (minimum == maximum) continue;
     }
     else
     {

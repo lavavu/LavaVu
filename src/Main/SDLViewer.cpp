@@ -86,10 +86,7 @@ SDLViewer::SDLViewer() : OpenGLViewer(), screen(NULL)
 
   // Keyboard setup
   SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-//#ifndef PDF_CAPTURE
   SDL_EnableUNICODE(1);   //Enable unicode character translation
-//Above prevents adobe 3d capture from detecting print screen key?
-//#endif
 
   // Save fullscreen width/height
   savewidth = pSDLVideoInfo->current_w;
