@@ -41,6 +41,8 @@ colourMaps["smoothheat"] = "#440088 #831bb9 #c66f5d #ebbf56 #ffff88"
 colourMaps["coolwarm"] = "#3b4cc0 #7396f5 #b0cbfc #dcdcdc #f6bfa5 #ea7b60 #b50b27"
 #colourMaps["coolwarm"] = "#4860d1 #87a9fc #a7c5fd #dcdcdc #f2c8b4 #ee8669 #d95847"
 
+TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
+
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj():
@@ -500,19 +502,31 @@ class Viewer(object):
             print "WebGL output error: " + str(e)
             pass
 
-    def testimages(self, imagelist, tolerance=0.001, expectedPath='expected/', outputPath='./'):
+    def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=False):
         results = []
+        if not imagelist:
+            #Default to all png images in expected dir
+            cwd = os.getcwd()
+            os.chdir(expectedPath)
+            imagelist = glob.glob("*.png")
+            os.chdir(cwd)
         for f in imagelist:
             outfile = outputPath+f
             expfile = expectedPath+f
             results.append(self.testimage(outfile, expfile, tolerance))
         #Combined result
         overallResult = all(results)
+        if clear:
+            try:
+                for f in imagelist:
+                    os.remove(f)
+            except:
+                pass
         if not overallResult:
             raise RuntimeError("Image tests failed due to one or more image comparisons above tolerance level!")
         print "-------------\nTests Passed!\n-------------"
 
-    def testimage(self, outfile, expfile, tolerance=0.001):
+    def testimage(self, outfile, expfile, tolerance=TOL_DEFAULT):
         if len(expfile) and not os.path.exists(expfile):
             print "Test skipped, Reference image '%s' not found!" % expfile
             return 0
@@ -535,13 +549,6 @@ class Viewer(object):
                   " of ref image."\
                 % (passed, outfile, diff, tolerance)
         return result
-
-    def clearimages(self, imagelist):
-        try:
-            for f in imagelist:
-                os.remove(f)
-        except:
-            pass
 
     def serve(self):
         try:
