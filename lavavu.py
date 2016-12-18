@@ -176,7 +176,7 @@ class Objects(dict):
 
 class Viewer(object):
     app = None
-    res = (640,480)
+    resolution = (640,480)
 
     def __init__(self, reuse=False, binpath=libpath, *args, **kwargs):
         try:
@@ -203,7 +203,7 @@ class Viewer(object):
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
-         quality=2, writeimage=False, res=None, script=None, initscript=False, usequeue=False):
+         quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False):
         #Convert options to args
         args = []
         if not initscript:
@@ -235,10 +235,13 @@ class Viewer(object):
         #Initial figure
         if figure != None:
           args += ["-f" + str(figure)]
-        #Output resolution
-        if res != None and isinstance(res,tuple):
-          args += ["-x" + str(res[0]) + "," + str(res[1])]
-          self.res = res
+        #Resolution
+        if resolution != None and isinstance(resolution,tuple) or isinstance(resolution,list):
+          #Output res
+          args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
+          #Interactive res
+          args += ["-r" + str(resolution[0]) + "," + str(resolution[1])]
+          self.resolution = resolution
         #Save image and quit
         if writeimage:
           args += ["-I"]
@@ -444,7 +447,7 @@ class Viewer(object):
     def frame(self, resolution=None):
         #self.set() #Sync state first?
         #Jpeg encoded frame data
-        if not resolution: resolution = self.res
+        if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], True);
 
     def display(self, resolution=(640,480)):
