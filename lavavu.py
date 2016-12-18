@@ -45,7 +45,7 @@ TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
-class Obj():
+class Obj(object):
     def __init__(self, idict, instance, *args, **kwargs):
         self.dict = idict
         self.instance = instance
@@ -384,8 +384,8 @@ class Viewer(object):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def getobject(self, name=None):
-        #Return object by name or last in list if none provided
+    def getobject(self, identifier=None):
+        #Return object by name/number or last in list if none provided
         #Get state and update object list
         self.get()
         if len(self.objects.list) == 0:
@@ -393,10 +393,13 @@ class Viewer(object):
             return None
         #If name passed, find this object in updated list, if not just use the last
         obj = None
-        if name:
+        if isinstance(identifier, str):
             for obj in self.objects.list:
-                if obj["name"] == name: break
+                if obj["name"] == identifier: break
                 obj = None
+        if isinstance(identifier, int):
+            if len(self.objects.list) >= identifier:
+                obj = self.objects.list[identifier-1]
         if not obj:
             obj = self.objects.list[-1]
 
