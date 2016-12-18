@@ -780,7 +780,7 @@ void Geometry::labels()
     //Default to object colour (if fontcolour provided will replace)
     Colour colour = Colour(geom[i]->draw->properties["colour"]);
     glColor3ubv(colour.rgba);
-    drawstate.fonts.printSetFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
+    drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)

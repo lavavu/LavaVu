@@ -2027,8 +2027,8 @@ void LavaVu::drawAxis()
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
-  drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
-  drawstate.fonts.rasterSetFontScale(length*6.0);
+  drawstate.fonts.charset = FONT_VECTOR;
+  drawstate.fonts.fontscale = length*6.0;
   glColor3ubv(viewer->textColour.rgba);
   drawstate.fonts.print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   drawstate.fonts.print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
@@ -2097,9 +2097,6 @@ void LavaVu::drawRulers()
 void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis)
 {
   // Draw rulers with optional tick marks
-  //float fontscale = drawstate.fonts.printSetFont(properties, "vector", 0.05*model_size*textscale);
-  //float fontscale = drawstate.fonts.printSetFont(aview->properties, "vector", 1.0, 0.08*aview->model_size);
-
   float vec[3];
   float length;
   vectorSubtract(vec, end, start);
@@ -2308,8 +2305,8 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
   //Shadow
   glColor3ubv(scol.rgba);
-  drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
-  drawstate.fonts.rasterSetFontScale(scale);
+  drawstate.fonts.charset = FONT_VECTOR;
+  drawstate.fonts.fontscale = scale;
 
   drawstate.fonts.print(xpos+1, ypos-1, str.c_str());
 

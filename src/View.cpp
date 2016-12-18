@@ -788,7 +788,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
     if (margin == 0)
     {
       //Calculate a sensible default margin
-      drawstate.fonts.printSetFont(objects[i]->properties);
+      drawstate.fonts.setFont(objects[i]->properties);
       if (vertical)
         margin = 18 + drawstate.fonts.printWidth("1.000001");
       else
@@ -825,9 +825,9 @@ void View::drawOverlay(Colour& colour, std::string& title)
   if (title.length())
   {
     glColor3ubv(colour.rgba);
-    float fontscale = drawstate.fonts.printSetFont(properties, "vector", 1.0);
-    if (fontscale < 0)
-      drawstate.fonts.rasterSetFontScale(fabs(fontscale)*0.6); //Scale down vector font slightly for title
+    drawstate.fonts.setFont(properties, "vector", 1.0);
+    if (drawstate.fonts.charset == FONT_VECTOR)
+      drawstate.fonts.fontscale *= 0.6; //Scale down vector font slightly for title
     drawstate.fonts.print(0.5 * (w - drawstate.fonts.printWidth(title.c_str())), h - 3 - drawstate.fonts.printWidth("W"), title.c_str());
   }
 

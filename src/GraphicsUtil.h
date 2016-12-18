@@ -537,11 +537,11 @@ void Viewport2d(int width, int height);
 
 class FontManager
 {
-public:
   unsigned int fontbase, fonttexture;
-  int fontcharset;
-  float fontscale;
   GLuint charLists;
+public:
+  int charset;
+  float fontscale;
 
   FontManager()
   {
@@ -556,7 +556,7 @@ public:
   void clear()
   {
     //Vector font
-    fontcharset = FONT_DEFAULT;
+    charset = FONT_DEFAULT;
     fontscale = 1.0;
     charLists = 0;
 
@@ -579,7 +579,7 @@ public:
   }
 
   //3d fonts
-  float printSetFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
+  void setFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str);
@@ -591,8 +591,6 @@ public:
   void rasterPrintString(const char* str);
   void rasterPrint(int x, int y, const char* str);
   void rasterPrint3d(double x, double y, double z, const char *str, bool alignRight=false);
-  void rasterSetFontCharset(int charset);
-  void rasterSetFontScale(float scale);
   int rasterPrintWidth(const char *string);
   void rasterSetupFonts();
   void rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx);

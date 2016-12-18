@@ -243,7 +243,7 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
-float FontManager::printSetFont(Properties& properties, std::string def, float scaling, float multiplier2d)
+void FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d)
 {
   //fixed, small, sans, serif, vector
 #ifdef USE_OMEGALIB
@@ -263,22 +263,19 @@ float FontManager::printSetFont(Properties& properties, std::string def, float s
 
   //Bitmap fonts
   if (fonttype == "fixed")
-    rasterSetFontCharset(FONT_FIXED);
+    charset = FONT_FIXED;
   else if (fonttype == "sans")
-    rasterSetFontCharset(FONT_NORMAL);
+    charset = FONT_NORMAL;
   else if (fonttype == "serif")
-    rasterSetFontCharset(FONT_SERIF);
+    charset = FONT_SERIF;
   else if (fonttype == "vector")
-  {
-    rasterSetFontCharset(FONT_VECTOR);
-    return -fontscale;
-  }
+    charset = FONT_VECTOR;
   else  //Default (small)
-    rasterSetFontCharset(FONT_SMALL);
+    charset = FONT_SMALL;
 
   //For non-vector fonts
-  fontscale *= multiplier2d;
-  return fontscale;
+  if (charset > FONT_VECTOR)
+    fontscale *= multiplier2d;
 }
 
 void FontManager::printString(const char* str)
@@ -306,7 +303,7 @@ void FontManager::printf(int x, int y, const char *fmt, ...)
 
 void FontManager::print(int x, int y, const char *str)
 {
-  if (fontcharset > FONT_VECTOR) return rasterPrint(x, y, str);
+  if (charset > FONT_VECTOR) return rasterPrint(x, y, str);
   glPushMatrix();
   glTranslated(x, y, 0);
   glScaled(fontscale, fontscale, 1.0);
@@ -316,7 +313,7 @@ void FontManager::print(int x, int y, const char *str)
 
 void FontManager::print3d(double x, double y, double z, const char *str)
 {
-  if (fontcharset > FONT_VECTOR) return rasterPrint3d(x, y, z, str);
+  if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str);
   glPushMatrix();
   glTranslated(x, y, z);
   glScaled(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
@@ -326,7 +323,7 @@ void FontManager::print3d(double x, double y, double z, const char *str)
 
 void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align)
 {
-  if (fontcharset > FONT_VECTOR) return rasterPrint3d(x, y, z, str, align > -1);
+  if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str, align > -1);
   float modelview[16];
   int i,j;
 
@@ -367,7 +364,7 @@ void FontManager::print3dBillboard(double x, double y, double z, const char *str
 // String width calc
 int FontManager::printWidth(const char *string)
 {
-  if (fontcharset > FONT_VECTOR) return rasterPrintWidth(string);
+  if (charset > FONT_VECTOR) return rasterPrintWidth(string);
   // Sum character widths in string
   int i, len = 0, slen = strlen(string);
   for (i = 0; i < slen; i++)
@@ -384,8 +381,8 @@ void FontManager::rasterPrintString(const char* str)
   if (fontbase == 0)                        /* Load font if not yet done */
     rasterSetupFonts();
 
-  if (fontcharset > FONT_SERIF || fontcharset < FONT_FIXED)      /* Character set valid? */
-    fontcharset = FONT_FIXED;
+  if (charset > FONT_SERIF || charset < FONT_FIXED)      /* Character set valid? */
+    charset = FONT_FIXED;
 
   /* First save state of enable flags */
   glPushAttrib(GL_ENABLE_BIT);
@@ -395,7 +392,7 @@ void FontManager::rasterPrintString(const char* str)
 
   glEnable(GL_TEXTURE_2D);                            /* Enable Texture Mapping */
   glBindTexture(GL_TEXTURE_2D, fonttexture);
-  glListBase(fontbase - 32 + (96 * fontcharset));      /* Choose the font and charset */
+  glListBase(fontbase - 32 + (96 * charset));      /* Choose the font and charset */
   glPushMatrix();
   if (fontscale >= 1.0) //Don't allow downscaling bitmap fonts
     glScalef(fontscale, fontscale, fontscale);
@@ -415,8 +412,8 @@ void FontManager::rasterPrint(int x, int y, const char *str)
   {
     /* call to gl2pText is required for text output using vector formats,
      * as no text is stored in the GL feedback buffer */
-    glRasterPos2d(x, y+bmpfont_charheights[fontcharset]);
-    switch (fontcharset)
+    glRasterPos2d(x, y+bmpfont_charheights[charset]);
+    switch (charset)
     {
     case FONT_FIXED:
       gl2psText( str, "Courier", 12);
@@ -437,7 +434,7 @@ void FontManager::rasterPrint(int x, int y, const char *str)
 
   glPushMatrix();
   //glLoadIdentity();
-  glTranslated(x, y-bmpfont_charheights[fontcharset], 0);
+  glTranslated(x, y-bmpfont_charheights[charset], 0);
   rasterPrintString(str);
   glPopMatrix();
 }
@@ -470,23 +467,13 @@ void FontManager::rasterPrint3d(double x, double y, double z, const char *str, b
   glDisable(GL_ALPHA_TEST);
 }
 
-void FontManager::rasterSetFontCharset(int charset)
-{
-  fontcharset = charset;
-}
-
-void FontManager::rasterSetFontScale(float scale)
-{
-  fontscale = scale;
-}
-
 /* String width calc */
 int FontManager::rasterPrintWidth(const char *string)
 {
   /* Sum character widths in string */
   int i, len = 0, slen = strlen(string);
   for (i = 0; i < slen; i++)
-    len += bmpfont_charwidths[string[i]-32 + (96 * fontcharset)];
+    len += bmpfont_charwidths[string[i]-32 + (96 * charset)];
   /* Additional pixel of spacing for each character */
   float w = len + slen;
   if (fontscale >= 1.0) return fontscale * w;
@@ -562,7 +549,7 @@ void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int 
 
 
 #else //USE_FONTS
-float FontManager::printSetFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return 0.0;}
+void FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d) {}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str) {}
@@ -575,8 +562,6 @@ int FontManager::printWidth(const char *string)
 void FontManager::rasterPrintString(const char* str) {}
 void FontManager::rasterPrint(int x, int y, const char *str) {}
 void FontManager::rasterPrint3d(double x, double y, double z, const char *str, bool alignRight) {}
-void FontManager::rasterSetFontCharset(int charset) {}
-void FontManager::rasterSetFontScale(float scale) {}
 int FontManager::rasterPrintWidth(const char *string)
 {
   return 0;

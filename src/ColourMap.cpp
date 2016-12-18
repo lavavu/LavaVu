@@ -349,7 +349,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
   // Draw larger background box for border, use font colour
   glColor4ubv(printColour.rgba);
-  drawstate.fonts.printSetFont(colourbarprops);
+  drawstate.fonts.setFont(colourbarprops);
   int border = colourbarprops["outline"];
   glDisable(GL_CULL_FACE);
   //glColor4ubv(printColour.rgba);
@@ -422,7 +422,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
   //Labels / tick marks
   glColor4ubv(printColour.rgba);
-  float fontscale = drawstate.fonts.printSetFont(colourbarprops);
+  drawstate.fonts.setFont(colourbarprops);
   float tickValue;
   int ticks = colourbarprops["ticks"];
   json tickValues = colourbarprops["tickvalues"];
@@ -532,7 +532,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
         sprintf(string, format, tickValue);
       }
 
-      if (fontscale > 0.0)
+      if (drawstate.fonts.charset > FONT_VECTOR)
       {
         if (vertical)
           drawstate.fonts.rasterPrint(starty + breadth + 10, xpos,  string);
