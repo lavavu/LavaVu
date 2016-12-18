@@ -538,7 +538,6 @@ void Viewport2d(int width, int height);
 class FontManager
 {
 public:
-  Colour fontColour;
   unsigned int fontbase, fonttexture;
   int fontcharset;
   float fontscale;
@@ -581,7 +580,6 @@ public:
 
   //3d fonts
   float printSetFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
-  void printSetColour(int colour, bool XOR=false);
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str);

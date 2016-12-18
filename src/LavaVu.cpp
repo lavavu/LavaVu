@@ -2029,7 +2029,7 @@ void LavaVu::drawAxis()
 
   drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
   drawstate.fonts.rasterSetFontScale(length*6.0);
-  drawstate.fonts.printSetColour(viewer->textColour.value);
+  glColor3ubv(viewer->textColour.rgba);
   drawstate.fonts.print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   drawstate.fonts.print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
   if (aview->is3d)
@@ -2307,7 +2307,7 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   scol.invert();
 
   //Shadow
-  drawstate.fonts.printSetColour(scol.value);
+  glColor3ubv(scol.rgba);
   drawstate.fonts.rasterSetFontCharset(FONT_VECTOR);
   drawstate.fonts.rasterSetFontScale(scale);
 
@@ -2315,14 +2315,14 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
   //Use provided text colour or calculated
   if (colour)
-    drawstate.fonts.printSetColour(colour->value);
+    glColor3ubv(colour->rgba);
   else
-    drawstate.fonts.printSetColour(viewer->textColour.value);
+    glColor3ubv(viewer->textColour.rgba);
 
   drawstate.fonts.print(xpos, ypos, str.c_str());
 
   //Revert to normal colour
-  drawstate.fonts.printSetColour(viewer->textColour.value);
+  glColor3ubv(viewer->textColour.rgba);
 }
 
 void LavaVu::displayMessage()

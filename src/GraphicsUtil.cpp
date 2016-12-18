@@ -259,7 +259,7 @@ float FontManager::printSetFont(Properties& properties, std::string def, float s
   //Colour
   Colour colour = Colour(properties["fontcolour"]);
   if (colour.a > 0.0) //Otherwise (default) leave colour unchanged
-    printSetColour(colour.value);
+    glColor3ubv(colour.rgba);
 
   //Bitmap fonts
   if (fonttype == "fixed")
@@ -279,24 +279,6 @@ float FontManager::printSetFont(Properties& properties, std::string def, float s
   //For non-vector fonts
   fontscale *= multiplier2d;
   return fontscale;
-}
-
-void FontManager::printSetColour(int colour, bool XOR)
-{
-  if (XOR)
-  {
-    fontColour.value = 0xffffffff;
-    glLogicOp(GL_XOR);
-    glEnable(GL_COLOR_LOGIC_OP);
-  }
-  else
-  {
-    glDisable(GL_COLOR_LOGIC_OP);
-    fontColour.value = colour;
-    //Disable alpha
-    fontColour.a = 255;
-  }
-  glColor4ubv(fontColour.rgba);
 }
 
 void FontManager::printString(const char* str)
@@ -581,7 +563,6 @@ void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int 
 
 #else //USE_FONTS
 float FontManager::printSetFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return 0.0;}
-void FontManager::printSetColour(int colour, bool XOR) {}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str) {}

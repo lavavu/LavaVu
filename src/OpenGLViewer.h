@@ -179,13 +179,13 @@ public:
     if (avg < 127) 
       textColour.value = 0xffffffff;
     if (app)
-    {
       app->drawstate.defaults["colour"] = textColour.toJson();
-      app->drawstate.fonts.printSetColour(inverse.value);
-    }
-    //Set clear colour
+    //Set GL colours
     if (isopen)
+    {
       glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
+      glColor3ubv(textColour.rgba);
+    }
   }
 
   void idleReset();
