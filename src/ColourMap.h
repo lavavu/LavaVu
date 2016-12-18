@@ -75,7 +75,7 @@ public:
   bool noValues; //Use position data only
   TextureData* texture;
 
-  ColourMap(DrawState& drawstate, const char* name="", float min=0, float max=1, std::string props="");
+  ColourMap(DrawState& drawstate, std::string name="", std::string props="");
   ~ColourMap()
   {
     if (texture) delete texture;
@@ -92,8 +92,7 @@ public:
   void add(float *components, float pvalue);
   void calc();
   void calibrate(float min, float max);
-  void calibrate(FloatValues* dataValues);
-  void calibrate();
+  void calibrate(FloatValues* dataValues=NULL);
   Colour getfast(float value);
   Colour get(float value);
   float scaleValue(float value);

@@ -224,7 +224,7 @@ public:
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
   void setObject(std::string name, std::string properties);
-  int colourMap(std::string name, std::string colours="", float min=0., float max=1.);
+  int colourMap(std::string name, std::string colours="", std::string properties="");
   std::string colourBar(std::string objname);
   std::string getObject(std::string name);
   void setState(std::string state);

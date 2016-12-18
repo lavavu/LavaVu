@@ -56,11 +56,10 @@ class Obj():
         props = json.loads(self.instance.app.getObject(self.name()))
         self.dict.clear()
         self.dict.update(props)
-        self.origname = self.name() #Store original for lookup in case name changed in dict
 
     def set(self):
         #Send updated props (via original name)
-        self.instance.setupobject(self.origname, self.dict)
+        self.instance.setupobject(**self.dict)
         self.get()
 
     def __getitem__(self, key):
@@ -132,9 +131,9 @@ class Obj():
     def labels(self, data):
         self.instance.app.labels(data)
 
-    def colourmap(self, data):
+    def colourmap(self, data, **kwargs):
         #Load colourmap and set property on this object
-        cmap = self.instance.colourmap(self.name() + '-default', data)
+        cmap = self.instance.colourmap(self.name() + '-default', data, **kwargs)
         self["colourmap"] = cmap
         return cmap
     
@@ -151,7 +150,7 @@ class Obj():
         #Update list
         self.get()
         #Setups up new object, all other args passed to properties dict
-        self.instance.setupobject(name, **kwargs)
+        return self.instance.setupobject(name, **kwargs)
 
 #Wrapper dict+list of objects
 class Objects(dict):
@@ -351,7 +350,7 @@ class Viewer(object):
                 datasets[key] = kwargs.pop(key, None)
 
         #Call function to add/setup the object, all other args passed to properties dict
-        self.app.setObject(name, json.dumps(kwargs))
+        self.app.setObject(str(name), str(json.dumps(kwargs)))
 
         #Get the created/update object
         obj = self.getobject(name)
@@ -416,7 +415,7 @@ class Viewer(object):
             obj = self.file(infile, kwargs)
         return obj
 
-    def colourmap(self, name, data):
+    def colourmap(self, name, data, **kwargs):
         datastr = data
         if isinstance(data, list):
             #Convert list map to string format
@@ -431,7 +430,7 @@ class Viewer(object):
             datastr = colourMaps[data]
         data = datastr
         #Load colourmap
-        return self.app.colourMap(name, data)
+        return self.app.colourMap(name, data, str(json.dumps(kwargs)))
 
     def clear(self):
         self.close()

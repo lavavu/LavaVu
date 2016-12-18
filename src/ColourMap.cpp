@@ -46,15 +46,12 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
   return os << cv.value << " --> " << cv.position << "=" << cv.colour;
 }
 
-ColourMap::ColourMap(DrawState& drawstate, const char* name,
-                     float min, float max, std::string props)
+ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
   : properties(drawstate.globals, drawstate.defaults),
-    minimum(min), maximum(max),
+    minimum(0), maximum(1), name(name), texture(NULL),
     calibrated(false), noValues(false)
 {
   precalc = new Colour[samples];
-  this->name = std::string(name);
-  texture = NULL;
   background.value = 0xff000000;
 
   properties.parseSet(props);
@@ -62,7 +59,7 @@ ColourMap::ColourMap(DrawState& drawstate, const char* name,
   if (properties.has("colours"))
   {
     loadPalette(properties["colours"]);
-    //Erase the colour list? Keep it for now for export
+    //Erase the colour list? Or keep it for export?
     //properties.data.erase("colours");
   }
 }
@@ -231,26 +228,21 @@ void ColourMap::calibrate(float min, float max)
   //Calc values now colours have been added
   calc();
 
-  debug_print("ColourMap calibrated min %f, max %f, range %f ==> %d colours\n", minimum, maximum, range, colours.size());
+  debug_print("ColourMap %s calibrated min %f, max %f, range %f ==> %d colours\n", name.c_str(), minimum, maximum, range, colours.size());
   //for (int i=0; i < colours.size(); i++)
   //   printf(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
   calibrated = true;
 }
 
-//Calibration from a geom data set, also copies scaling data fields
+//Calibration from set "range" property or geom data set
 void ColourMap::calibrate(FloatValues* dataValues)
 {
   float range[2];
   Properties::toFloatArray(properties["range"], range, 2);
-  if (range[0] == range[1])
+  if (dataValues && range[0] == range[1])
     calibrate(dataValues->minimum, dataValues->maximum);
   else
     calibrate(range[0], range[1]);
-}
-
-void ColourMap::calibrate()
-{
-  calibrate(minimum, maximum);
 }
 
 Colour ColourMap::getfast(float value)

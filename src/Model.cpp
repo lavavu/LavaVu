@@ -372,13 +372,8 @@ void Model::redraw(bool reload)
 //Adds colourmap
 unsigned int Model::addColourMap(ColourMap* cmap)
 {
-  if (!cmap)
-  {
-    //Create a default greyscale map
-    cmap = new ColourMap(drawstate);
-    unsigned int colours[] = {0xff000000, 0xffffffff};
-    cmap->add(colours, 2);
-  }
+  //Create a default greyscale map
+  if (!cmap) cmap = new ColourMap(drawstate, "default", "colours=#000000 #ffffff");
   //Save colour map in list
   colourMaps.push_back(cmap);
   //Return index
@@ -805,10 +800,10 @@ void Model::loadColourMaps()
     maximum = sqlite3_column_double(statement, 3);
     int logscale = sqlite3_column_int(statement, 4);
     int discrete = sqlite3_column_int(statement, 5);
-    char *props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(drawstate, cmname, minimum, maximum, props ? props : "");
-    if (logscale) colourMap->properties.data["logscale"] = true;
-    if (discrete) colourMap->properties.data["discrete"] = true;
+    std::string props;
+    if (sqlite3_column_type(statement, 6) != SQLITE_NULL) props = (char*)sqlite3_column_text(statement, 6);
+    colourMap = new ColourMap(drawstate, cmname, props);
+    setColourMapProps(colourMap->properties, minimum, maximum, logscale, discrete);
     colourMaps.push_back(colourMap);
   }
 
@@ -853,12 +848,11 @@ void Model::loadColourMapsLegacy()
       maximum = sqlite3_column_double(statement, 2);
       int logscale = sqlite3_column_int(statement, 3);
       int discrete = sqlite3_column_int(statement, 4);
-      char *props = NULL;
-      if (!old) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(drawstate, cmname ? cmname : idname, minimum, maximum, props ? props : "");
+      std::string props;
+      if (!old && sqlite3_column_type(statement, 8) != SQLITE_NULL) props = (char*)sqlite3_column_text(statement, 8);
+      colourMap = new ColourMap(drawstate, cmname ? cmname : idname, props);
       colourMaps.push_back(colourMap);
-      if (logscale) colourMap->properties.data["logscale"] = true;
-      if (discrete) colourMap->properties.data["discrete"] = true;
+      setColourMapProps(colourMap->properties, minimum, maximum, logscale, discrete);
       //Colours already parsed from properties?
       if (colourMap->colours.size() > 0) parsed = true;
       else parsed = false;
@@ -885,6 +879,21 @@ void Model::loadColourMapsLegacy()
   //Initial calibration for all maps
   for (unsigned int i=0; i<colourMaps.size(); i++)
     colourMaps[i]->calibrate();
+}
+
+void Model::setColourMapProps(Properties& properties, float minimum, float maximum, bool logscale, bool discrete)
+{
+  //These properties used to be database fields, convert
+  if (logscale) properties.data["logscale"] = true;
+  if (discrete) properties.data["discrete"] = true;
+
+  //Set range if dynamic=0 or minimum/maximum values are not defaults
+  float range = maximum - minimum;
+  if ((properties.has("dynamic") && !properties["dynamic"]) ||
+      (!properties.has("range") && range != 0.0 && range != 1.0))
+  {
+    properties.data["range"] = {minimum, maximum};
+  }
 }
 
 //SQLite3 utility functions

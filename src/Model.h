@@ -112,6 +112,7 @@ public:
   void loadObjects();
   void loadColourMaps();
   void loadColourMapsLegacy();
+  void setColourMapProps(Properties& properties, float  minimum, float maximum, bool logscale, bool discrete);
 
   Model(DrawState& drawstate);
   void load(const FilePath& fn);
