@@ -367,7 +367,7 @@ class Viewer(object):
         self.app.setObject(identifier, str(json.dumps(kwargs)))
 
         #Get the created/update object
-        obj = self._getobject(identifier)
+        obj = self.getobject(identifier)
 
         #Read any property data sets (allows object creation and load with single prop dict)
         for key in datasets:
@@ -393,7 +393,7 @@ class Viewer(object):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def _getobject(self, identifier=None):
+    def getobject(self, identifier=None):
         #Return object by name/number or last in list if none provided
         #Get state and update object list
         self._get()
@@ -419,7 +419,7 @@ class Viewer(object):
         self.app.loadFile(filename)
 
         #Get object
-        obj = self._getobject(name)
+        obj = self.getobject(name)
 
         #Setups up new object, all other args passed to properties dict
         return self._setupobject(obj.name(), **kwargs)
