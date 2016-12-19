@@ -1007,6 +1007,49 @@ void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtyp
   }
 }
 
+//Read a triangle with optional resursive splitting and y/z swap
+void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY)
+{
+  level--;
+  //Experimental: splitting triangles by size
+  //float a_b[3], a_c[3], b_c[3];
+  //vectorSubtract(a_b, a, b);
+  //vectorSubtract(a_c, a, c);
+  //vectorSubtract(b_c, b, c);
+  //float max = 100000; //aview->model_size / 100.0;
+  //printf("%f\n", max); getchar();
+
+  if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
+  {
+    float A[3] = {a[0], a[2], a[1]};
+    float B[3] = {b[0], b[2], b[1]};
+    float C[3] = {c[0], c[2], c[1]};
+    if (swapY)
+    {
+      a = A;
+      b = B;
+      c = C;
+    }
+
+    //Read the triangle
+    read(obj, 1, lucVertexData, a);
+    read(obj, 1, lucVertexData, b);
+    read(obj, 1, lucVertexData, c);
+  }
+  else
+  {
+    //Process a triangle into 4 sub-triangles
+    float ab[3] = {0.5f*(a[0]+b[0]), 0.5f*(a[1]+b[1]), 0.5f*(a[2]+b[2])};
+    float ac[3] = {0.5f*(a[0]+c[0]), 0.5f*(a[1]+c[1]), 0.5f*(a[2]+c[2])};
+    float bc[3] = {0.5f*(b[0]+c[0]), 0.5f*(b[1]+c[1]), 0.5f*(b[2]+c[2])};
+
+    addTriangle(obj, a, ab, ac, level);
+    addTriangle(obj, ab, b, bc, level);
+    addTriangle(obj, ac, bc, c, level);
+    addTriangle(obj, ab, bc, ac, level);
+  }
+}
+
 void Geometry::setup(DrawingObject* draw)
 {
   //Scan all data for min/max

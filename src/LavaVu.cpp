@@ -1239,48 +1239,6 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   }
 }
 
-void LavaVu::addTriangles(DrawingObject* obj, float* a, float* b, float* c, int level)
-{
-  level--;
-  bool swapY = drawstate.global("swapyz");
-  //float a_b[3], a_c[3], b_c[3];
-  //vectorSubtract(a_b, a, b);
-  //vectorSubtract(a_c, a, c);
-  //vectorSubtract(b_c, b, c);
-  //float max = 100000; //aview->model_size / 100.0;
-  //printf("%f\n", max); getchar();
-
-  if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
-  {
-    float A[3] = {a[0], a[2], a[1]};
-    float B[3] = {b[0], b[2], b[1]};
-    float C[3] = {c[0], c[2], c[1]};
-    if (swapY)
-    {
-      a = A;
-      b = B;
-      c = C;
-    }
-
-    //Read the triangle
-    amodel->triSurfaces->read(obj, 1, lucVertexData, a);
-    amodel->triSurfaces->read(obj, 1, lucVertexData, b);
-    amodel->triSurfaces->read(obj, 1, lucVertexData, c);
-  }
-  else
-  {
-    //Process a triangle into 4 sub-triangles
-    float ab[3] = {0.5f*(a[0]+b[0]), 0.5f*(a[1]+b[1]), 0.5f*(a[2]+b[2])};
-    float ac[3] = {0.5f*(a[0]+c[0]), 0.5f*(a[1]+c[1]), 0.5f*(a[2]+c[2])};
-    float bc[3] = {0.5f*(b[0]+c[0]), 0.5f*(b[1]+c[1]), 0.5f*(b[2]+c[2])};
-
-    addTriangles(obj, a, ab, ac, level);
-    addTriangles(obj, ab, b, bc, level);
-    addTriangles(obj, ac, bc, c, level);
-    addTriangles(obj, ab, bc, ac, level);
-  }
-}
-
 void LavaVu::readOBJ(const FilePath& fn)
 {
   //Use tiny_obj_loader to load a model
@@ -1355,6 +1313,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
     int trisplit = drawstate.global("trisplit");
+    bool swapY = drawstate.global("swapyz");
     printf("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     if (trisplit == 0 || attrib.texcoords.size())
     {
@@ -1433,11 +1392,11 @@ void LavaVu::readOBJ(const FilePath& fn)
       for (size_t f = 0; f < shapes[i].mesh.indices.size(); f += 3)
       {
         //This won't work with textures(tex coords) ... calculated indices have incorrect order
-        addTriangles(tobj,
+        amodel->triSurfaces->addTriangle(tobj,
                      &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3],
-                     trisplit);
+                     trisplit, swapY);
       }
     }
   }
@@ -1517,23 +1476,25 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     amodel->lines->read(obj, 1, &colour, "demo colours");
   }
 
-  //Add some quads (using tri surface mode)
+  //Add some triangles
+  float verts[3][12] = {
+    {-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
+    {-2,0,-2,  2,0,-2,  -2,0,2,  2,0,2},
+    {0,-2,-2,  0,2,-2,   0,-2,2, 0,2,2}
+  };
+  char axischar[3] = {'Z', 'Y', 'X'};
+  for (int i=0; i<3; i++)
   {
-    float verts[3][12] = {{-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
-      {-2,0,-2,  2,0,-2,  -2,0,2,  2,0,2},
-      {0,-2,-2,  0,2,-2,   0,-2,2, 0,2,2}
-    };
-    char axischar[3] = {'Z', 'Y', 'X'};
-    for (int i=0; i<3; i++)
-    {
-      char label[64];
-      sprintf(label, "%c-cross-section", axischar[i]);
-      obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\nstatic=1\n"));
-      Colour c;
-      c.value = (0xff000000 | 0xff<<(8*i));
-      obj->properties.data["colour"] = c.toJson();
-      amodel->triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
-    }
+    char label[64];
+    sprintf(label, "%c-cross-section", axischar[i]);
+    obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\nstatic=1\n"));
+    Colour c;
+    c.value = (0xff000000 | 0xff<<(8*i));
+    obj->properties.data["colour"] = c.toJson();
+    //amodel->triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
+    //Read 2 triangles and split recursively for a nicer surface
+    amodel->triSurfaces->addTriangle(obj, &verts[i][0], &verts[i][1*3], &verts[i][3*3], 8);
+    amodel->triSurfaces->addTriangle(obj, &verts[i][0*3], &verts[i][3*3], &verts[i][2*3], 8);
   }
 }
 
