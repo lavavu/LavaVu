@@ -53,32 +53,30 @@ class Obj(object):
     def name(self):
         return str(self.dict["name"])
 
-    def get(self):
-        #Retrieve updated props
-        props = json.loads(self.instance.app.getObject(self.name()))
+    def _setprops(self, props):
+        #Replace props with new data from app
         self.dict.clear()
         self.dict.update(props)
 
-    def set(self):
-        #Send updated props (via original name)
-        self.instance.setupobject(**self.dict)
-        self.get()
+    def _set(self):
+        #Send updated props (via id in case name changed)
+        self.instance._setupobject(self.id, **self.dict)
 
     def __getitem__(self, key):
-        self.get()
+        self.instance._get() #Ensure in sync
         return self.dict[key]
 
     def __setitem__(self, key, value):
-        self.get()
+        self.instance._get() #Ensure in sync
         #Set new value and send
         self.dict[key] = value
-        self.set()
+        self._set()
 
     def __contains__(self, key):
         return key in self.dict
 
     def __str__(self):
-        self.get()
+        self.instance._get() #Ensure in sync
         return str('\n'.join(['%s=%s' % (k,json.dumps(v)) for k,v in self.dict.iteritems()]))
 
     #Interface for setting filters
@@ -100,7 +98,7 @@ class Obj(object):
         if isinstance(values, list):
             filter["inclusive"] = True
         self["filters"].append(filter)
-        self.set()
+        self._set()
         return len(self["filters"])-1
 
     def data(self):
@@ -150,9 +148,9 @@ class Obj(object):
         name = self.instance.app.colourBar(self.name())
         if len(name) == 0: return
         #Update list
-        self.get()
+        self.instance._get() #Ensure in sync
         #Setups up new object, all other args passed to properties dict
-        return self.instance.setupobject(name, **kwargs)
+        return self.instance._setupobject(name, **kwargs)
 
 #Wrapper dict+list of objects
 class Objects(dict):
@@ -160,18 +158,29 @@ class Objects(dict):
     self.instance = instance
     pass
 
-  def update(self):
+  def _sync(self):
     self.list = []
     for obj in self.instance.state["objects"]:
         if obj["name"] in self:
-            self[obj["name"]].get()
+            #Update object with new properties
+            self[obj["name"]]._setprops(obj)
             self.list.append(self[obj["name"]])
         else:
+            #Create a new object wrapper
             o = Obj(obj, self.instance)
             self[obj["name"]] = o
             self.list.append(o)
+        #Flag sync
+        self[obj["name"]].found = True
         #Save the id number
         self.list[-1].id = len(self.list)
+        
+    #Delete any objects from dict that are no longer present
+    for name in self.keys():
+        if not self[name].found:
+            del self[name]
+        else:
+            self[name].found = False
 
   def __str__(self):
     return '[' + ', '.join(self.keys()) + ']'
@@ -257,7 +266,7 @@ class Viewer(object):
             self.app.run(args)
             if database:
                 #Load objects/state
-                self.get()
+                self._get()
         except RuntimeError,e:
             print "LavaVu Run error: " + str(e)
             pass
@@ -279,7 +288,7 @@ class Viewer(object):
         #Set view/global property
         #self.app.parseCommands("select") #Ensure no object selected
         #self.app.parseCommands(key + '=' + str(item))
-        #self.get()
+        #self._get()
         self.state = json.loads(self.app.getState())
         view = self.state["views"][0]
         if key in self.state:
@@ -288,26 +297,26 @@ class Viewer(object):
             view[key] = item
         else:
             self.state["properties"][key] = item
-        self.set()
+        self._set()
 
     def __contains__(self, key):
         return key in self.state or key in self.state["properties"] or key in self.state["views"][0]
 
     def __str__(self):
         #View/global props to string
-        self.get()
+        self._get()
         self.properties = self.state["properties"]
         self.properties.update(self.state["views"][0])
         return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in self.properties.iteritems()]))
 
-    def get(self):
+    def _get(self):
         #Import state from lavavu
         self.state = json.loads(self.app.getState())
         if not isinstance(self.objects, Objects):
             self.objects = Objects(self)
-        self.objects.update()
+        self.objects._sync()
 
-    def set(self):
+    def _set(self):
         #Export state to lavavu
         #(include current object list state)
         #self.state["objects"] = [obj.dict for obj in self.objects.list]
@@ -321,7 +330,7 @@ class Viewer(object):
         else:
             self.app.parseCommands(cmds)
         #Always sync the state after running commands
-        self.get()
+        self._get()
 
     #Callable with commands...
     def __call__(self, cmds):
@@ -339,7 +348,7 @@ class Viewer(object):
             #Check for add object by geom type shortcut
             if key in ["labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"]:
                 #Allows calling add by geometry type, eg: obj = lavavu.lines()
-                return self.addtype(key, *args, **kwargs)
+                return self._addtype(key, *args, **kwargs)
             #Otherwise, pass args as command string
             argstr = key
             for arg in args:
@@ -347,7 +356,7 @@ class Viewer(object):
             self.commands(argstr)
         return any_method
 
-    def setupobject(self, name, **kwargs):
+    def _setupobject(self, identifier=None, **kwargs):
         #Strip data keys from kwargs and put aside for loading
         datasets = {}
         for key in kwargs.keys():
@@ -355,10 +364,10 @@ class Viewer(object):
                 datasets[key] = kwargs.pop(key, None)
 
         #Call function to add/setup the object, all other args passed to properties dict
-        self.app.setObject(str(name), str(json.dumps(kwargs)))
+        self.app.setObject(identifier, str(json.dumps(kwargs)))
 
         #Get the created/update object
-        obj = self.getobject(name)
+        obj = self._getobject(identifier)
 
         #Read any property data sets (allows object creation and load with single prop dict)
         for key in datasets:
@@ -375,19 +384,19 @@ class Viewer(object):
             return self.objects[name]
 
         #Adds a new object, all other args passed to properties dict
-        return self.setupobject(name, **kwargs)
+        return self._setupobject(name, **kwargs)
 
     #Shortcut for adding specific geometry types
-    def addtype(self, typename, name=None, **kwargs):
+    def _addtype(self, typename, name=None, **kwargs):
         #Set name to typename if none provided
         if not name: name = typename
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def getobject(self, identifier=None):
+    def _getobject(self, identifier=None):
         #Return object by name/number or last in list if none provided
         #Get state and update object list
-        self.get()
+        self._get()
         if len(self.objects.list) == 0:
             print "WARNING: No objects"
             return None
@@ -410,10 +419,10 @@ class Viewer(object):
         self.app.loadFile(filename)
 
         #Get object
-        obj = self.getobject(name)
+        obj = self._getobject(name)
 
         #Setups up new object, all other args passed to properties dict
-        return self.setupobject(obj.name(), **kwargs)
+        return self._setupobject(obj.name(), **kwargs)
     
     def files(self, filespec, name=None, **kwargs):
         #Load list of files with glob
@@ -450,7 +459,7 @@ class Viewer(object):
         return self.app.parseCommands("newstep")
 
     def frame(self, resolution=None):
-        #self.set() #Sync state first?
+        #self._set() #Sync state first?
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], True);
@@ -466,7 +475,7 @@ class Viewer(object):
 
         """
         #Sync state first
-        self.set()
+        self._set()
 
         try:
             if __IPYTHON__:

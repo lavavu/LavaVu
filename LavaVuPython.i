@@ -57,8 +57,8 @@ public:
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
   void defaultModel();
+  void setObject(unsigned int id, std::string properties);
   void setObject(std::string name, std::string properties);
-  std::string getObject(std::string name);
   int colourMap(std::string name, std::string colours="", std::string properties="");
   std::string colourBar(std::string objname);
   void setState(std::string state);

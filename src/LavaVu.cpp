@@ -2816,6 +2816,15 @@ std::string LavaVu::web(bool tofile)
   return jsonWriteFile(NULL, false, true);
 }
 
+void LavaVu::setObject(unsigned int id, std::string properties)
+{
+  if (!amodel) return;
+  if (id < 1 && id > amodel->objects.size()) return;
+  DrawingObject* obj = amodel->objects[id-1];
+  //Parse and merge property strings
+  obj->properties.parseSet(properties);
+}
+
 void LavaVu::setObject(std::string name, std::string properties)
 {
   if (!amodel) defaultModel();
@@ -2827,17 +2836,6 @@ void LavaVu::setObject(std::string name, std::string properties)
   }
   //Parse and merge property strings
   obj->properties.parseSet(properties);
-}
-
-std::string LavaVu::getObject(std::string name)
-{
-  DrawingObject* obj = lookupObject(name, aobject);
-  if (!obj) return "{}";
-  //Export object state
-  std::stringstream ss;
-  amodel->jsonWrite(ss, obj, false);
-  json data = json::parse(ss.str());
-  return data["objects"][0].dump();
 }
 
 int LavaVu::colourMap(std::string name, std::string colours, std::string properties)
