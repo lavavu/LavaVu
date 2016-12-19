@@ -261,7 +261,7 @@ public:
     defaults["colourbar"] = false;
     // | colourbar | string | Alignment of colour bar to screen edge, top/bottom/left/right
     defaults["align"] = "bottom";
-    // | colourbar | real[2] | Fixed dimensions of colour bar (length/breadth) in pixels or viewport size ratio
+    // | colourbar | real[2] | Dimensions of colour bar (length/breadth) in pixels or viewport size ratio
     defaults["size"] = {0, 0};
     // | colourbar | integer | Number of additional tick marks to draw besides start and end
     defaults["ticks"] = 0;

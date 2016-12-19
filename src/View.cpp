@@ -763,9 +763,9 @@ void View::drawOverlay(Colour& colour, std::string& title)
     {
       side += 2;
       vertical = true;
-      //Centre positioning only makes sense for horizontal bar,
-      //default to top for vertical
-      if (position == 0) position = -0.06;
+      //Default position for vertical is offset from top
+      if (position == 0 && !objects[i]->properties.has("position"))
+        position = -0.06;
       ww = h;
       hh = w;
     }
