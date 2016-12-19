@@ -811,9 +811,13 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     if (!opposite) start_B = hh - start_B - breadth;
 
-    std::string font = objects[i]->properties["font"];
-    //if (scale2d != 1.0 && font != "vector")
-    //  objects[i]->properties.data["font"] = "vector"; //Force vector font if downsampling
+    //Default to vector font if downsampling and no other font requested
+    if (scale2d != 1.0 && !objects[i]->properties.has("font"))
+    {
+      objects[i]->properties.data["font"] = "vector";
+      if (!objects[i]->properties.has("fontscale"))
+        objects[i]->properties.data["fontscale"] = 0.4;
+    }
 
     cmap->draw(drawstate, objects[i]->properties, start_A, start_B, length, breadth, colour, vertical);
     GL_Error_Check;
