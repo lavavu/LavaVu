@@ -137,37 +137,28 @@ def render(html):
         output += html
         export()
 
-def loadscripts(onload="", viewer=None, html=""):
+def initialise():
     if not htmlpath: return
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML,Javascript
-            #Create link to web content directory
-            if not os.path.isdir("html"):
-                #print "Creating symlink: ./html => " + htmldir
-                os.symlink(htmlpath, 'html')
-            #Stylesheet, shaders and inline html
-            display(HTML('<link rel="stylesheet" type="text/css" href="html/control.css">\n' + fragmentShader + vertexShader + html))
-            #Load external scripts via require.js
-            #Append onload code to the callback to init after scripts loaded
-            js = """
-            require.config({baseUrl: 'html',
-                            paths: {'control': ["control"],
-                                    'ok': ["OK-min"],
-                                    'gl-matrix': ["gl-matrix-min"],
-                                    'drawbox': ["drawbox"]
-                                   }
-                           }
-                          );
+            #Load stylesheet
+            css = '<style>\n'
+            fo = open(os.path.join(htmlpath, "control.css"), 'r')
+            css += fo.read()
+            fo.close()
+            css += '</style>\n'
 
-            require(["control", "ok", "gl-matrix", "drawbox"], function() {
-                console.log("Loaded scripts");
-                ---ONLOAD---
-                return {};
-            });
-            """
-            js = js.replace('---ONLOAD---', onload)
-            display(Javascript(js))
+            #Load combined javascript libraries
+            jslibs = '<script>\n'
+            for f in ['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js']:
+                fpath = os.path.join(htmlpath, f)
+                fo = open(fpath, 'r')
+                jslibs += fo.read()
+                fo.close()
+            jslibs += '</script>\n'
+
+            display(HTML(css + fragmentShader + vertexShader + jslibs))
     except NameError, ImportError:
         pass
 
@@ -184,8 +175,10 @@ def window(viewer, html="", align="left"):
     #print "Viewer appended " + str(id(viewer)) + " app= " + str(id(viewer.app)) + " # " + str(len(windows))
     try:
         if __IPYTHON__:
-            #Script init and create windowinteractor
-            loadscripts('var wi = new WindowInteractor(' + str(viewerid) + ');', viewer, html)
+            #Create windowinteractor
+            from IPython.display import display,HTML,Javascript
+            display(HTML(html))
+            display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
     except NameError, ImportError:
         render(html)
 
@@ -334,7 +327,7 @@ class Control(object):
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
         html += 'value="' + str(self.value) + '" '
-        onchange += self.onchange();
+        onchange += self.onchange()
         html += 'onchange="' + onchange + '" '
         html += '>\n'
         return html
@@ -345,7 +338,7 @@ class Checkbox(Control):
 
     def controls(self):
         attribs = {}
-        if self.value: attribs = {"checked" : "checked"};
+        if self.value: attribs = {"checked" : "checked"}
         html = "<label>\n"
         html += super(Checkbox, self).controls('checkbox', attribs)
         html += " " + self.label + "</label>\n"
@@ -368,7 +361,7 @@ class Range(Control):
                 self.step = 0.01
 
     def controls(self):
-        attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step};
+        attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step}
         html = super(Range, self).controls('number', attribs, onchange='this.nextElementSibling.value=this.value; ')
         html += super(Range, self).controls('range', attribs, onchange='this.previousElementSibling.value=this.value; ')
         return html
@@ -458,11 +451,11 @@ class TimeStepper(Range):
 
         self.timesteps = viewer.timesteps()
         self.range = (self.timesteps[0], self.timesteps[-1])
-        self.step = 1;
-        self.value = 0;
+        self.step = 1
+        self.value = 0
 
     def controls(self):
-        attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step};
+        attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step}
         html = Control.controls(self, 'number', attribs, onchange='this.nextElementSibling.value=this.value; ')
         html += Control.controls(self, 'range', attribs, onchange='this.previousElementSibling.value=this.value; ')
         html += """<br>

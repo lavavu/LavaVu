@@ -206,6 +206,8 @@ class Viewer(object):
             if not os.path.isdir(control.htmlpath):
                 control.htmlpath = None
                 print("Can't locate html dir, interactive view disabled")
+            else:
+                control.initialise()
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
             pass

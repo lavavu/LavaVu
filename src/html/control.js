@@ -1,6 +1,6 @@
 var kernel;
 //Maintain a list of interactor instances opened by id
-instances = [];
+var instances = [];
 
 function initLoad() {
   if (parent.IPython) {
@@ -75,6 +75,9 @@ function WindowInteractor(id) {
   // - display initial image
   this.img = document.getElementById("imgtarget_" + this.id);
 
+  //No window
+  if (!this.img) return;
+
   //Initial image
   //(Init WebGL bounding box interaction on load)
   var that = this;
@@ -98,10 +101,12 @@ WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
   } else {
     //HTTP interface
     //Replace newlines with semi-colon first
+    var that = this;
+    var img = this.img;
     cmd = cmd.replace(/\n/g,';');
-    if (instant) {
+    if (instant && img) {
       var url = getUrl() + "/icommand=" + cmd + "?" + new Date().getTime();
-      img = document.getElementById('imgtarget_0');
+      //img = document.getElementById('imgtarget_0');
       img.onload = null;
       if (img) img.src = url;
     } else {
