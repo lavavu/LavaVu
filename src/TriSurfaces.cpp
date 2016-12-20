@@ -177,8 +177,6 @@ void TriSurfaces::loadMesh()
       continue;
     }
 
-    bool grid = (geom[index]->width > 0 && geom[index]->height > 0);
-
     //Add vertices to a vector with indices
     //Sort vertices vector with std::sort & custom compare sort( vec.begin(), vec.end() );
     //Iterate, for duplicates replace indices with index of first
@@ -200,6 +198,7 @@ void TriSurfaces::loadMesh()
     debug_print("  %.4lf seconds to add to sort vector\n", (t2-t1)/(double)CLOCKS_PER_SEC);
 
     int triverts = 0;
+    bool grid = (geom[index]->width * geom[index]->height == geom[index]->count);
     if (grid)
     {
       //Structured mesh grid, 2 triangles per element, 3 indices per tri

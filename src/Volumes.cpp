@@ -151,12 +151,15 @@ void Volumes::update()
   {
     if (!drawable(i)) continue;
 
+    //Required to cache colour value info
+    geom[i]->colourCalibrate();
+
     //Single volume cube
     if (geom[i]->depth > 1)
     {
       DrawingObject* current = geom[i]->draw;
       bool texcompress = current->properties["compresstextures"];
-      if (!geom[i]->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
+      if (!geom[i]->texture || !geom[i]->texture->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
       {
         //Determine type of data then load the texture
         if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
@@ -186,7 +189,7 @@ void Volumes::update()
     //Collection of 2D slices
     DrawingObject* current = geom[i]->draw;
     bool texcompress = current->properties["compresstextures"];
-    if (!geom[i]->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
+    if (!geom[i]->texture || !geom[i]->texture->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
     {
       if (!geom[i]->height)
       {
