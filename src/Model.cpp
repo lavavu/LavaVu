@@ -109,8 +109,6 @@ void Model::init()
     bool hideall = drawstate.global("hideall");
     if (hideall)
       geometry[i]->hideShowAll(true);
-    //Reset static data
-    geometry[i]->close();
   }
 }
 
@@ -299,10 +297,7 @@ void Model::attach(int stepidx)
 void Model::close()
 {
   for (unsigned int i=0; i < geometry.size(); i++)
-  {
-    geometry[i]->close();
     delete geometry[i];
-  }
   geometry.clear();
 
   labels = NULL;
