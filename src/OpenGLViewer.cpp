@@ -72,7 +72,13 @@ bool FBO::create(int w, int h)
   }
 
   //Skip if already created at this size
-  if (enabled && frame > 0 && width==w && height==h) return false;
+  if (enabled && frame && texture && depth && width==w && height==h)
+  {
+    target = GL_COLOR_ATTACHMENT0_EXT;
+    glDrawBuffer(target);
+    GL_Error_Check;
+    return false;
+  }
 
   width = w;
   height = h;
@@ -97,29 +103,27 @@ bool FBO::create(int w, int h)
   glGenRenderbuffersEXT(1, &depth);
   glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth);
   glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, width, height);
-  //glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX, width, height);
-  /*
-  // initialize packed depth-stencil renderbuffer
-  glGenRenderbuffersEXT(1, &depth);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, width, height);
-  */
 
   // Attach backbuffer texture, depth & stencil
   glGenFramebuffersEXT(1, &frame);
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame);
   //Depth attachment
   glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
-  //Depth & Stencil attachments
-  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
-  //glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
   //Image buffer texture attachment
   glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture, 0);
   GL_Error_Check;
 
-  if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT)
+  GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+  if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
   {
-    debug_print("FBO setup failed\n");
+    if (status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT)
+      std::cerr << "FBO failed INCOMPLETE_ATTACHMENT" << std::endl;
+    if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT)
+      std::cerr << "FBO failed INCOMPLETE_DIMENSIONS" << std::endl;
+    if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT)
+      std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
+    if (status == GL_FRAMEBUFFER_UNSUPPORTED_EXT)
+      std::cerr << "FBO failed UNSUPPORTED" << std::endl;
     enabled = false;
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   }
@@ -146,6 +150,7 @@ void FBO::destroy()
   if (texture) glDeleteTextures(1, &texture);
   if (depth) glDeleteRenderbuffersEXT(1, &depth);
   if (frame) glDeleteFramebuffersEXT(1, &frame);
+  texture = depth = frame = 0;
 #endif
 }
 
@@ -179,6 +184,7 @@ GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
   glGenerateMipmapEXT(GL_TEXTURE_2D);
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image);
   GL_Error_Check;
+  glBindTexture(GL_TEXTURE_2D, 0);
 
   if (flip)
     RawImageFlip(image, w, h, channels);
