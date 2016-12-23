@@ -783,12 +783,22 @@ void View::drawOverlay(Colour& colour, std::string& title)
     if (length < 1.0) length *= ww;
     if (breadth < 1.0) breadth *= hh;
 
+    //Default to vector font if downsampling and no other font requested
+    Properties cbprops(drawstate.globals, drawstate.defaults);
+    if (scale2d != 1.0)
+    {
+      cbprops.data["font"] = "vector";
+      cbprops.data["fontscale"] = 0.4*(w/640.0);
+    }
+    //Update to overwrite defaults if any set by user
+    cbprops.merge(objects[i]->properties.data);
+
     //Margin offset
     float margin = objects[i]->properties["offset"];
     if (margin == 0)
     {
       //Calculate a sensible default margin
-      drawstate.fonts.setFont(objects[i]->properties);
+      drawstate.fonts.setFont(cbprops);
       if (vertical)
         margin = 18 + drawstate.fonts.printWidth("1.000001");
       else
@@ -811,15 +821,8 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     if (!opposite) start_B = hh - start_B - breadth;
 
-    //Default to vector font if downsampling and no other font requested
-    if (scale2d != 1.0 && !objects[i]->properties.has("font"))
-    {
-      objects[i]->properties.data["font"] = "vector";
-      if (!objects[i]->properties.has("fontscale"))
-        objects[i]->properties.data["fontscale"] = 0.4;
-    }
-
-    cmap->draw(drawstate, objects[i]->properties, start_A, start_B, length, breadth, colour, vertical);
+    //cmap->draw(drawstate, objects[i]->properties, start_A, start_B, length, breadth, colour, vertical);
+    cmap->draw(drawstate, cbprops, start_A, start_B, length, breadth, colour, vertical);
     GL_Error_Check;
   }
 
@@ -831,7 +834,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
     glColor3ubv(colour.rgba);
     drawstate.fonts.setFont(properties, "vector", 1.0);
     if (drawstate.fonts.charset == FONT_VECTOR)
-      drawstate.fonts.fontscale *= 0.6; //Scale down vector font slightly for title
+      drawstate.fonts.fontscale *= 0.6*(w/640.0); //Scale down vector font slightly for title
     drawstate.fonts.print(0.5 * (w - drawstate.fonts.printWidth(title.c_str())), h - 3 - drawstate.fonts.printWidth("W"), title.c_str());
   }
 

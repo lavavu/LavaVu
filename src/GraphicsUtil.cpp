@@ -254,7 +254,6 @@ void FontManager::setFont(Properties& properties, std::string def, float scaling
   if (properties.has("font")) fonttype = properties["font"];
 #endif
   fontscale = properties.getFloat("fontscale", scaling);
-  fontscale = properties.getFloat("fontscale", scaling);
 
   //Colour
   Colour colour = Colour(properties["fontcolour"]);
