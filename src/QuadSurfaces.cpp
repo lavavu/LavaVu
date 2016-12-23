@@ -105,8 +105,6 @@ void QuadSurfaces::update()
   //To force, set geometry->reload = true
   if (reload || elements != quadverts)
   {
-    //Clear buffers
-    close();
     elements = quadverts;
     //Load & optimise the mesh data
     render();
@@ -126,7 +124,6 @@ void QuadSurfaces::render()
 
   //Always set data size again in case changed
   assert(elements);
-  glGenBuffers(1, &indexvbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
