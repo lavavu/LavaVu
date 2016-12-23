@@ -165,6 +165,10 @@ void LavaVu::defaults()
 
 LavaVu::~LavaVu()
 {
+  //Need to call display to switch contexts before freeing OpenGL resources
+  if (viewer)
+    viewer->display();
+
   close();
 
   Server::Delete();
