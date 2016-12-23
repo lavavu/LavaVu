@@ -516,7 +516,7 @@ class Viewer(object):
             print "WebGL output error: " + str(e)
             pass
 
-    def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=False):
+    def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
         results = []
         if not imagelist:
             #Default to all png images in expected dir
@@ -530,14 +530,14 @@ class Viewer(object):
             results.append(self.testimage(outfile, expfile, tolerance))
         #Combined result
         overallResult = all(results)
+        if not overallResult:
+            raise RuntimeError("Image tests failed due to one or more image comparisons above tolerance level!")
         if clear:
             try:
                 for f in imagelist:
                     os.remove(f)
             except:
                 pass
-        if not overallResult:
-            raise RuntimeError("Image tests failed due to one or more image comparisons above tolerance level!")
         print "-------------\nTests Passed!\n-------------"
 
     def testimage(self, outfile, expfile, tolerance=TOL_DEFAULT):
