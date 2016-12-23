@@ -42,7 +42,6 @@ TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(draws
   idxcount = 0;
   vbo = 0;
   indexvbo = 0;
-  tidx = NULL;
   tidx = swap = NULL;
   flat2d = flat2Dflag;
 }
@@ -108,8 +107,6 @@ void TriSurfaces::update()
   //Not needed when objects hidden/shown but required if colours changed
   if ((lastcount != total && reload) || !tidx)
   {
-    //Clear buffers
-    //close();
     //Load & optimise the mesh data (on first load and if total changes)
     if (!tidx || lastcount != total)
       loadMesh();
@@ -151,6 +148,7 @@ void TriSurfaces::loadMesh()
   centroids.reserve(total);
   for (unsigned int index = 0; index < geom.size(); index++)
   {
+    if (geom[index]->count == 0) continue;
     //Save initial offset
     GLuint voffset = unique;
 
