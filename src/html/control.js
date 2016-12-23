@@ -101,14 +101,11 @@ WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
   } else {
     //HTTP interface
     //Replace newlines with semi-colon first
-    var that = this;
-    var img = this.img;
     cmd = cmd.replace(/\n/g,';');
-    if (instant && img) {
+    if (instant && this.img) {
       var url = getUrl() + "/icommand=" + cmd + "?" + new Date().getTime();
-      //img = document.getElementById('imgtarget_0');
-      img.onload = null;
-      if (img) img.src = url;
+      this.img.onload = null;
+      this.img.src = url;
     } else {
       var url = getUrl() + "/command=" + cmd + "?" + new Date().getTime()
       x = new XMLHttpRequest();

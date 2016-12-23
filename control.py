@@ -8,7 +8,6 @@ actions = []
 #Register of windows (viewer instances)
 windows = []
 
-
 vertexShader = """
 <script id="line-vs" type="x-shader/x-vertex">
 precision highp float;
@@ -40,6 +39,7 @@ void main(void)
 
 #Static HTML location
 htmlpath = ""
+initialised = False
 
 def export():
     if not htmlpath: return
@@ -138,7 +138,8 @@ def render(html):
         export()
 
 def initialise():
-    if not htmlpath: return
+    global initialised
+    if not htmlpath or initialised: return
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML,Javascript
@@ -159,6 +160,7 @@ def initialise():
             jslibs += '</script>\n'
 
             display(HTML(css + fragmentShader + vertexShader + jslibs))
+            initialised = True
     except NameError, ImportError:
         pass
 
@@ -172,7 +174,7 @@ def window(viewer, html="", align="left"):
 
     #Append the viewer ref
     windows.append(viewer)
-    #print "Viewer appended " + str(id(viewer)) + " app= " + str(id(viewer.app)) + " # " + str(len(windows))
+
     try:
         if __IPYTHON__:
             #Create windowinteractor
@@ -181,6 +183,7 @@ def window(viewer, html="", align="left"):
             display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
     except NameError, ImportError:
         render(html)
+    return viewerid
 
 def action(id, value):
     #return str(id) + " : " + str(value)

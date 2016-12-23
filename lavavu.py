@@ -1,23 +1,35 @@
 #LavaVu python interface: viewer utils & wrapper
-import control
 import json
 import math
 import sys
 import os
 import glob
+import control
 
 #Attempt to import swig module
 libpath = "bin"
 try:
     #This file should be found one dir above bin dir containing built modules
-    binpath = os.path.join(os.path.dirname(control.__file__), 'bin')
+    binpath = os.path.join(os.path.dirname(__file__), 'bin')
     sys.path.append(binpath)
     import LavaVuPython
-    modpath = os.path.abspath(os.path.dirname(control.__file__))
+    modpath = os.path.abspath(os.path.dirname(__file__))
     libpath = os.path.join(modpath, "bin")
 except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
+
+#Function to enable the interactive control interface
+#Called on initial import, on subsequent imports must be called by user if required
+#(ie: in IPython, if re-running notebook without re-starting)
+enablecontrol = False
+def resetcontrols():
+    global enablecontrol
+    enablecontrol = True
+    #Reset initialised state
+    control.initialised = False
+
+resetcontrols()
 
 #Some preset colourmaps
 # aim to reduce banding artifacts by being either 
@@ -186,33 +198,29 @@ class Objects(dict):
     return '[' + ', '.join(self.keys()) + ']'
 
 class Viewer(object):
-    app = None
-    resolution = (640,480)
 
-    def __init__(self, reuse=False, binpath=libpath, *args, **kwargs):
+    def __init__(self, binpath=libpath, *args, **kwargs):
+        self.resolution = (640,480)
+        self.app = None
         try:
-            #TODO: re-using instance causes multiple interactive viewer instances to die
-            #ensure not doing this doesn't cause issues (could leak memory if many created)
-            #Create a new instance, always if cache disabled (reuse)
-            if not self.app or not reuse:
-                self.app = LavaVuPython.LavaVu(binpath)
-            #    print "Launching LavaVu, instance: " + str(id(self.app))
-            #else:
-            #    print "Re-using LavaVu, instance: " + str(id(self.app))
+            self.app = LavaVuPython.LavaVu(binpath)
             self.setup(*args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
-            control.htmlpath = os.path.join(binpath, "html")
-            if not os.path.isdir(control.htmlpath):
-                control.htmlpath = None
-                print("Can't locate html dir, interactive view disabled")
-            else:
-                control.initialise()
+            global enablecontrol
+            if enablecontrol:
+                control.htmlpath = os.path.join(binpath, "html")
+                if not os.path.isdir(control.htmlpath):
+                    control.htmlpath = None
+                    print("Can't locate html dir, interactive view disabled")
+                else:
+                    control.initialise()
+                #Copy control module ref so can be accessed from instance
+                #TODO: Just move control.py functions to Viewer class
+                self.control = control
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
             pass
-        #Copy control module ref
-        self.control = control
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
@@ -565,6 +573,7 @@ class Viewer(object):
         return result
 
     def serve(self):
+        if not self.control: return
         try:
             import server
             os.chdir(control.htmlpath)
@@ -577,10 +586,13 @@ class Viewer(object):
             pass
 
     def window(self):
+        if not self.control: return
         #Interactive viewer instance
-        control.window(self)
+        #if not isinstance(self.winid, int):
+        self.winid = control.window(self)
 
     def redisplay(self):
+        if not self.control: return
         if isinstance(self.winid, int):
             control.redisplay(self.winid)
 
