@@ -740,6 +740,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
   //Colour bars
   int last_B[4] = {0, 0, 0, 0};
+  float adjust = cbrt(w*h)/65.0;
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
@@ -788,7 +789,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
     if (scale2d != 1.0)
     {
       cbprops.data["font"] = "vector";
-      cbprops.data["fontscale"] = 0.4*(w/640.0);
+      cbprops.data["fontscale"] = 0.4*adjust;
     }
     //Update to overwrite defaults if any set by user
     cbprops.merge(objects[i]->properties.data);
@@ -821,7 +822,6 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     if (!opposite) start_B = hh - start_B - breadth;
 
-    //cmap->draw(drawstate, objects[i]->properties, start_A, start_B, length, breadth, colour, vertical);
     cmap->draw(drawstate, cbprops, start_A, start_B, length, breadth, colour, vertical);
     GL_Error_Check;
   }
@@ -834,7 +834,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
     glColor3ubv(colour.rgba);
     drawstate.fonts.setFont(properties, "vector", 1.0);
     if (drawstate.fonts.charset == FONT_VECTOR)
-      drawstate.fonts.fontscale *= 0.6*(w/640.0); //Scale down vector font slightly for title
+      drawstate.fonts.fontscale *= 0.6*adjust; //Scale down vector font slightly for title
     drawstate.fonts.print(0.5 * (w - drawstate.fonts.printWidth(title.c_str())), h - 3 - drawstate.fonts.printWidth("W"), title.c_str());
   }
 
