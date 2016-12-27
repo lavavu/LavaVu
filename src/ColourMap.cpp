@@ -237,12 +237,18 @@ void ColourMap::calibrate(float min, float max)
 //Calibration from set "range" property or geom data set
 void ColourMap::calibrate(FloatValues* dataValues)
 {
+  bool hasRange = properties.has("range");
   float range[2];
   Properties::toFloatArray(properties["range"], range, 2);
-  if (dataValues && range[0] == range[1])
+  //Has values and no fixed range, calibrate to data
+  if (dataValues && !hasRange)
     calibrate(dataValues->minimum, dataValues->maximum);
-  else
+  //Otherwise calibrate to fixed range if provided
+  else if (hasRange)
     calibrate(range[0], range[1]);
+  //Otherwise calibrate with existing values
+  else
+    calibrate(minimum, maximum);
 }
 
 Colour ColourMap::getfast(float value)
