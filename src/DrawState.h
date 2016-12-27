@@ -202,9 +202,9 @@ public:
     // | object(volume) | real | Density multiplier for volume data
     defaults["density"] = 5.0;
     // | object(volume) | real | Isovalue for dynamic isosurface
-    defaults["isovalue"] = 0.0;
+    defaults["isovalue"] = FLT_MAX;
     // | object(volume) | real [0,1] | Transparency value for isosurface
-    defaults["isoalpha"] = 0.0;
+    defaults["isoalpha"] = 1.0;
     // | object(volume) | real | Isosurface smoothing factor for normal calculation
     defaults["isosmooth"] = 0.1;
     // | object(volume) | boolean | Connect isosurface enclosed area with walls

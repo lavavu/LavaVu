@@ -391,7 +391,9 @@ void Volumes::render(int i)
   float opacity = props["opacity"], density = props["density"];
   glUniform1f(prog->uniforms["uDensityFactor"], density * opacity);
   Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
+  float isoval = props["isovalue"];
   float isoalpha = props["isoalpha"];
+  if (isoval == FLT_MAX) isoalpha = 0.0; //Skip drawing isosurface if no isovalue set
   colour.a = 255.0 * isoalpha * (colour.a/255.0);
   colour.setUniform(prog->uniforms["uIsoColour"]);
   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
@@ -405,7 +407,6 @@ void Volumes::render(int i)
   //Field data requires normalisation to [0,1]
   //Pass minimum,maximum in place of colourmap calibrate
   float range[2] = {0.0, 1.0};
-  float isoval = props["isovalue"];
   if (geom[i]->colourData())
   {
     range[0] = geom[i]->colourData()->minimum;
