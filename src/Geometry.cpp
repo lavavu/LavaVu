@@ -443,10 +443,17 @@ void Geometry::jsonWrite(DrawingObject* draw, json& obj)
   //Export geometry to json
 }
 
-void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
+void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
 {
   //Export all geometry to json
   //TODO: json model needs to store value data separately by label
+  std::string& typelabel = GeomData::names[type];
+  if (typelabel == "quads") typelabel = "triangles";
+  json array;
+  //Append to existing if found
+  if (obj.count(typelabel) > 0 && obj[typelabel].type() == json::value_t::array)
+    array = obj[typelabel];
+
   int dsizes[lucMaxDataType+1] = {3, 3, 3,
                                 1, 1, 1, 1, 1,
                                 1, 1, 1, 1,
@@ -513,6 +520,9 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& array, bool encode)
       array.push_back(data);
     }
   }
+
+  if (array.size() > 0)
+    obj[typelabel] = array;
 }
 
 bool Geometry::hide(unsigned int idx)

@@ -475,9 +475,6 @@ void Points::draw()
 
 void Points::jsonWrite(DrawingObject* draw, json& obj)
 {
-  json points;
-  if (obj.count("points") > 0) points = obj["points"];
-  jsonExportAll(draw, points);
-  if (points.size() > 0) obj["points"] = points;
+  jsonExportAll(draw, obj);
 }
 

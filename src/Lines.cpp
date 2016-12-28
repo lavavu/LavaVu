@@ -288,10 +288,7 @@ void Lines::draw()
 
 void Lines::jsonWrite(DrawingObject* draw, json& obj)
 {
-  json lines;
-  if (obj.count("lines") > 0) lines = obj["lines"];
-  jsonExportAll(draw, lines);
-  if (lines.size() > 0) obj["lines"] = lines;
+  jsonExportAll(draw, obj);
 
   //Triangles rendered?
   if (!all2d || any3d)

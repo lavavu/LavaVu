@@ -113,6 +113,8 @@ void Volumes::update()
     tris->update();
     tris->render();
   }
+  else
+    return; //No volume to render
 
   clock_t t2,tt;
   tt = clock();

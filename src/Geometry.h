@@ -259,7 +259,7 @@ public:
   void compareMinMax(float* min, float* max);
   void dump(std::ostream& csv, DrawingObject* draw=NULL);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
-  void jsonExportAll(DrawingObject* draw, json& array, bool encode=true);
+  void jsonExportAll(DrawingObject* draw, json& obj, bool encode=true);
   bool hide(unsigned int idx);
   void hideShowAll(bool hide);
   bool show(unsigned int idx);

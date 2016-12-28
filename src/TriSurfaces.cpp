@@ -890,8 +890,5 @@ void TriSurfaces::draw()
 
 void TriSurfaces::jsonWrite(DrawingObject* draw, json& obj)
 {
-  json tris;
-  if (obj.count("triangles") > 0) tris = obj["triangles"];
-  jsonExportAll(draw, tris);
-  if (tris.size() > 0) obj["triangles"] = tris;
+  jsonExportAll(draw, obj);
 }

@@ -1644,7 +1644,7 @@ void Model::objectBounds(DrawingObject* draw, float* min, float* max)
     geometry[i]->objectBounds(draw, min, max);
 }
 
-void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
+void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 {
   //Write new JSON format objects
   // - globals are all stored on / sourced from drawstate.globals
@@ -1723,7 +1723,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
   //if (!viewer->visible) aview->filtered = false; //Disable viewport filtering
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    if (!obj || objects[i] == obj)
+    if (!o || objects[i] == o)
     {
       //Only able to dump point/triangle based objects currently:
       //TODO: fix to use sub-renderer output for others
@@ -1771,8 +1771,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* obj, bool objdata)
         }
         obj["data"] = dict;
 
-        //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.getBool("points", false) << "," 
-        //          << obj.getBool("triangles", false) << "," << obj.getBool("volume", false) << std::endl;
+        //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.count("points") << "," 
+        //          << obj.count("triangles") << "," << obj.count("volume") << std::endl;
         outobjects.push_back(obj);
         continue;
       }
