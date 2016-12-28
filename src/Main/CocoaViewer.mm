@@ -65,7 +65,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   bool running;
   NSRect windowRect;
   NSRecursiveLock* appLock;
-  OpenGLViewer* viewer;
+  CGLViewer* viewer;
   bool redisplay;
 }
 @end
@@ -159,6 +159,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 
   NSLog(@"GL version:   %s", glGetString(GL_VERSION));
   NSLog(@"GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+  //Save the CGL context
+  viewer->context = (CGLContextObj)[[self openGLContext] CGLContextObj];
 
   //Call Viewer OpenGL init
   viewer->init();
@@ -582,9 +585,9 @@ void CocoaViewer::show()
 
 void CocoaViewer::display(bool redraw)
 {
-  //TODO: GL context switch?
-  //[[self openGLContext] makeCurrentContext];
-  OpenGLViewer::display(redraw);
+  //GL context switch done in CGLViewer
+  //TODO: test this
+  CGLViewer::display(redraw);
   //Swap not needed as drawing on timer
 }
 
