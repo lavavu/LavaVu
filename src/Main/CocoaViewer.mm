@@ -44,6 +44,17 @@
 #import <QuartzCore/CVDisplayLink.h>
 #import <OpenGL/OpenGL.h>
 
+#if __MAC_OS_X_VERSION_MIN_REQUIRED <= 1080
+#define NSEventModifierFlagShift NSShiftKeyMask
+#define NSEventModifierFlagControl NSControlKeyMask
+#define NSEventModifierFlagOption NSAlternateKeyMask
+
+#define NSWindowStyleMaskTitled NSTitledWindowMask
+#define NSWindowStyleMaskClosable NSClosableWindowMask
+#define NSWindowStyleMaskResizable NSResizableWindowMask
+#define NSWindowStyleMaskMiniaturizable NSMiniaturizableWindowMask
+#endif
+
 @class CView;
 static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, const CVTimeStamp*, CVOptionFlags, CVOptionFlags*, void*);
 
