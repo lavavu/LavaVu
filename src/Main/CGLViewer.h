@@ -53,7 +53,7 @@ public:
 
   //Function implementations
   void open(int width, int height);
-  void display();
+  void display(bool redraw=true);
   void execute();
 };
 

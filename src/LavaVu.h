@@ -157,7 +157,7 @@ public:
   // Virtual functions for window management
   virtual void open(int width, int height);
   virtual void resize(int new_width, int new_height);
-  virtual void display();
+  virtual void display(bool redraw=true);
   virtual void close();
 
   // Virtual functions for interactivity

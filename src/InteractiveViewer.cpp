@@ -1798,7 +1798,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::cout << HELP_INTERACTION;
       std::cout << help;
     }
-    viewer->swap();  //Immediate display
+    viewer->display(false);  //Immediate display
     redisplay = false;
   }
   else if (parsed.exists("antialias"))
@@ -1883,7 +1883,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Print available elements by id
       for (unsigned int i=0; i < amodel->geometry.size(); i++)
         amodel->geometry[i]->print();
-      viewer->swap();  //Immediate display
+      viewer->display(false);  //Immediate display
       return false;
     }
     else if (parsed["list"] == "colourmaps")
@@ -1901,7 +1901,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           std::cerr << ss.str() << std::endl;
         }
       }
-      viewer->swap();  //Immediate display
+      viewer->display(false);  //Immediate display
       return false;
     }
     else if (parsed["list"] == "data")
@@ -1931,7 +1931,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       displayText("-----------------------------------------", ++offset);
       std::cout << "-----------------------------------------" << std::endl;
-      viewer->swap();  //Immediate display
+      viewer->display(false);  //Immediate display
       return false;
     }
     else //if (parsed["list"] == "objects")

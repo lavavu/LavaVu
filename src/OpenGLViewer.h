@@ -132,8 +132,7 @@ public:
   virtual void init();
   virtual void setsize(int width, int height);
   virtual void resize(int new_width, int new_height);
-  virtual void display();
-  virtual void swap() {};
+  virtual void display(bool redraw=true);
   virtual void close();
   virtual void animate(int msec);
 

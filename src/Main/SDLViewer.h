@@ -60,8 +60,7 @@ public:
   void open(int width, int height);
   void setsize(int width, int height);
   void show();
-  void display();
-  void swap();
+  void display(bool redraw=true);
   void execute();
   void fullScreen();
   void animate(int msec);

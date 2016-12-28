@@ -569,16 +569,12 @@ void CocoaViewer::show()
   OpenGLViewer::show();
 }
 
-void CocoaViewer::display()
+void CocoaViewer::display(bool redraw)
 {
+  //TODO: GL context switch?
   //[[self openGLContext] makeCurrentContext];
-  OpenGLViewer::display();
-  //swap();
-}
-
-void CocoaViewer::swap()
-{
-  // Swap buffers
+  OpenGLViewer::display(redraw);
+  //Swap not needed as drawing on timer
 }
 
 void CocoaViewer::execute()

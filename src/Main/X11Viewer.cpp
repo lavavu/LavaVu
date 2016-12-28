@@ -158,16 +158,11 @@ void X11Viewer::show()
   XSetWMProperties(Xdisplay, win, &Xtitle, &Xtitle, NULL, 0, sHints, wmHints, NULL);
 }
 
-void X11Viewer::display()
+void X11Viewer::display(bool redraw)
 {
   if (!Xdisplay) return;
   glXMakeCurrent(Xdisplay, win, glxcontext);
-  OpenGLViewer::display();
-  swap();
-}
-
-void X11Viewer::swap()
-{
+  OpenGLViewer::display(redraw);
   // Swap buffers
   if (doubleBuffer)
     glXSwapBuffers(Xdisplay, win);

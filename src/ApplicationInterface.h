@@ -66,8 +66,7 @@ public:
   virtual void close() = 0;
   virtual void resize(int new_width, int new_height) = 0;
   virtual void setsize(int width, int height) {}
-  virtual void display() = 0;
-  virtual void swap() = 0;
+  virtual void display(bool redraw=true) = 0;
 
   // Virtual functions for interactivity
   virtual bool mouseMove(int x, int y) = 0;

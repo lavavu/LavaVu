@@ -72,8 +72,7 @@ public:
   void open(int w, int h);
   void setsize(int width, int height);
   void show();
-  void display();
-  void swap();
+  void display(bool redraw=true);
   void execute();
   void fullScreen();
 

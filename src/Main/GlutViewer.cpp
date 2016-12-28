@@ -115,14 +115,12 @@ void GlutViewer::show()
   glutSetWindowTitle(title.c_str());
 }
 
-void GlutViewer::display()
+void GlutViewer::display(bool redraw)
 {
-  OpenGLViewer::display();
-  swap();
-}
-
-void GlutViewer::swap()
-{
+  //Make window current
+  if (win)
+    glutSetWindow(win);
+  OpenGLViewer::display(redraw);
   // Swap buffers
   if (doubleBuffer)
     glutSwapBuffers();

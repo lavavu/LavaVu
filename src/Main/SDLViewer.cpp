@@ -46,7 +46,7 @@ Uint32 sdl_timer(Uint32 interval, void* param)
 {
   // Create a user event and post
   SDLViewer* self = (SDLViewer*) param;
-  if (self->postdisplay || pollInput())
+  if (self->postdisplay || self->pollInput())
   {
     SDL_Event event;// = {SDL_USEREVENT, 1, 0, 0};
     event.type = SDL_USEREVENT;
@@ -179,14 +179,12 @@ void SDLViewer::show()
   SDL_WM_SetCaption(title.c_str(), NULL);
 }
 
-void SDLViewer::display()
+void SDLViewer::display(bool redraw)
 {
-  OpenGLViewer::display();
-  swap();
-}
+  //SDL 1.2 has no way of handling multiple contexts!
+  //if multiple viewers are opened, this will fail
 
-void SDLViewer::swap()
-{
+  OpenGLViewer::display(redraw);
   // Swap buffers
   if (doubleBuffer)
     SDL_GL_SwapBuffers();

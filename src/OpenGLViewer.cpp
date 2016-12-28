@@ -354,8 +354,10 @@ void OpenGLViewer::execute()
 }
 
 // Render
-void OpenGLViewer::display()
+void OpenGLViewer::display(bool redraw)
 {
+  if (!redraw) return;
+
   postdisplay = false;
   //Parse stored commands first...
   bool idling = false;

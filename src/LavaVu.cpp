@@ -1758,7 +1758,7 @@ void LavaVu::viewApply(int idx)
 }
 
 // Render
-void LavaVu::display(void)
+void LavaVu::display(bool redraw)
 {
   if (!viewer->isopen) return;
 
