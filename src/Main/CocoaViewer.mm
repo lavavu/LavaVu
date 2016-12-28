@@ -40,8 +40,6 @@
 
 #include "CocoaViewer.h"
 
-bool redisplay = true;
-
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CVDisplayLink.h>
 #import <OpenGL/OpenGL.h>
@@ -57,6 +55,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   NSRect windowRect;
   NSRecursiveLock* appLock;
   OpenGLViewer* viewer;
+  bool redisplay;
 }
 @end
 
@@ -514,6 +513,7 @@ void CocoaViewer::open(int w, int h)
   CView* view = [[[CView alloc] initWithFrame:windowRect] autorelease];
   view->windowRect = windowRect;
   view->viewer = this;
+  view->redisplay = true;
 
   [[NSApplication sharedApplication] activateIgnoringOtherApps:YES];
 
