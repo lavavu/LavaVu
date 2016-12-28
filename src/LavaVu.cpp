@@ -167,7 +167,7 @@ LavaVu::~LavaVu()
 {
   //Need to call display to switch contexts before freeing OpenGL resources
   if (viewer)
-    viewer->display();
+    viewer->display(false);
 
   close();
 

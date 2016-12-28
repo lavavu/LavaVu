@@ -671,6 +671,8 @@ bool LavaVu::parseCommands(std::string cmd)
 bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 {
   if (cmd.length() == 0) return false;
+  if (viewer->isopen)
+    viewer->display(false); //Display without redraw, ensures correct context active
   //Trim leading whitespace
   size_t pos = cmd.find_first_not_of(" \t\n\r");
   if (std::string::npos != pos) cmd = cmd.substr(pos);
