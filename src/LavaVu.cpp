@@ -2547,6 +2547,9 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   amodel = models[model_idx];
   model = model_idx;
 
+  //Save active colourmaps list on drawstate
+  drawstate.colourMaps = &amodel->colourMaps;
+
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)
   {

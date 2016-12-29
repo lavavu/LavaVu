@@ -37,10 +37,9 @@
 #include "Model.h"
 
 DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, unsigned int id)
-  : properties(drawstate.globals, drawstate.defaults), dbid(id)
+  : drawstate(drawstate), properties(drawstate.globals, drawstate.defaults), dbid(id)
 {
   texture = NULL;
-  colourMaps = NULL;
   skip = drawstate.global("noload");
   //Name set in properties overrides that passed from database
   properties.data["name"] = name;
@@ -77,10 +76,13 @@ void DrawingObject::setup()
   if (opacity > 1.0) opacity /= 255.0;
   //Cache colourmaps
   colourMap = opacityMap = NULL;
-  int cmapid = properties["colourmap"];
-  if (cmapid >= 0 && cmapid < colourMaps->size()) colourMap = (*colourMaps)[cmapid];
-  int omapid = properties["opacitymap"];
-  if (omapid >= 0 && omapid < colourMaps->size()) opacityMap = (*colourMaps)[omapid];
+  if (drawstate.colourMaps)
+  {
+    int cmapid = properties["colourmap"];
+    if (cmapid >= 0 && cmapid < drawstate.colourMaps->size()) colourMap = (*drawstate.colourMaps)[cmapid];
+    int omapid = properties["opacitymap"];
+    if (omapid >= 0 && omapid < drawstate.colourMaps->size()) opacityMap = (*drawstate.colourMaps)[omapid];
+  }
 }
 
 TextureData* DrawingObject::useTexture(ImageLoader* tex)

@@ -45,6 +45,9 @@ public:
   //Fonts
   FontManager fonts;
 
+  //Global colourmaps list for active model
+  std::vector<ColourMap*> * colourMaps;
+
   DrawState() : prog()
   {
     borderobj = axisobj = rulerobj = NULL;
@@ -84,6 +87,8 @@ public:
     pvbo = 0;
 
     fonts.reset();
+
+    colourMaps = NULL;
 
     //Setup default properties
     //(Comments formatted to be parsed into documentation)

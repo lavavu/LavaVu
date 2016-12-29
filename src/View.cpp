@@ -748,8 +748,8 @@ void View::drawOverlay(Colour& colour, std::string& title)
     objects[i]->setup(); //Required to cache colouring values
     ColourMap* cmap = objects[i]->colourMap;
     //Use the first available colourmap by default
-    if (!cmap && objects[i]->colourMaps && objects[i]->colourMaps->size() > 0)
-      cmap = (*objects[i]->colourMaps)[0];
+    if (!cmap && drawstate.colourMaps && drawstate.colourMaps->size() > 0)
+      cmap = (*drawstate.colourMaps)[0];
     if (!cmap) continue;
 
     float position = objects[i]->properties["position"];

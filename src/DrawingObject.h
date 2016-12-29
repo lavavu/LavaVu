@@ -46,6 +46,7 @@ class ColourMap;
 //Holds parameters for a drawing object
 class DrawingObject
 {
+  DrawState& drawstate;
 public:
   unsigned int dbid;
   bool skip;
@@ -54,7 +55,6 @@ public:
   Colour colour;
   unsigned int colourIdx;
   unsigned int opacityIdx;
-  std::vector<ColourMap*> * colourMaps; // Reference to model colour map list
   ColourMap* colourMap; //Cached references
   ColourMap* opacityMap;
 

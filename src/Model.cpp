@@ -197,7 +197,6 @@ void Model::addObject(DrawingObject* obj)
   } while (found);
 
   //Create master drawing object list entry
-  obj->colourMaps = &colourMaps;
   objects.push_back(obj);
 }
 
