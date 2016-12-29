@@ -1530,85 +1530,105 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
   std::vector<GeomData*> data = geometry[type]->getAllObjects(obj);
   //Loop through and write out all object data
   char SQL[SQL_QUERY_MAX];
-  unsigned int i, data_type;
-  for (i=0; i<data.size(); i++)
+  unsigned int data_type;
+  for (unsigned int i=0; i<data.size(); i++)
   {
     for (data_type=0; data_type < data[i]->data.size(); data_type++)
     {
-      //Get the data block
+      //Write the data entry
       DataContainer* block = data[i]->data[data_type];
       if (!block || block->size() == 0) continue;
       std::cerr << "Writing geometry (type[" << data_type << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
-      sqlite3_stmt* statement;
-      unsigned char* buffer = (unsigned char*)block->ref(0);
-      unsigned long src_len = block->bytes();
-      // Compress the data if enabled and > 1kb
-      unsigned long cmp_len = 0;
-      if (compressdata &&  src_len > 1000)
-      {
-        cmp_len = compressBound(src_len);
-        buffer = (unsigned char*)malloc((size_t)cmp_len);
-        if (buffer == NULL)
-          abort_program("Compress database: out of memory!\n");
-        if (compress(buffer, &cmp_len, (const unsigned char *)block->ref(0), src_len) != Z_OK)
-          abort_program("Compress database buffer failed!\n");
-        if (cmp_len >= src_len)
-        {
-          free(buffer);
-          buffer = (unsigned char*)block->ref(0);
-          cmp_len = 0;
-        }
-        else
-          src_len = cmp_len;
-      }
-
-      if (block->minimum == HUGE_VAL) block->minimum = 0;
-      if (block->maximum == -HUGE_VAL) block->maximum = 0;
-
-      float min[3], max[3];
-      for (int c=0; c<3; c++)
-      {
-        if (ISFINITE(data[i]->min[c])) min[c] = data[i]->min[c];
-        else data[i]->min[c] = drawstate.min[c];
-        if (ISFINITE(data[i]->max[c])) max[c] = data[i]->max[c];
-        else data[i]->max[c] = drawstate.max[c];
-
-      }
-
-      snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", obj->dbid, step, data[i]->height, data[i]->depth, type, data_type, block->unitsize(), block->size(), data[i]->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
-
-      /* Prepare statement... */
-      if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
-      {
-        abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
-      }
-
-      /* Setup text data for insert (on vertex block only) */
-      std::string labels = data[i]->getLabels().c_str();
-      if (data_type == lucVertexData && labels.length() > 0)
-      {
-        if (sqlite3_bind_text(statement, 1, labels.c_str(), labels.length(), SQLITE_STATIC) != SQLITE_OK)
-        //const char* clabels = labels.c_str();
-        //if (sqlite3_bind_text(statement, 1, clabels, strlen(clabels), SQLITE_STATIC) != SQLITE_OK)
-          abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
-      }
-
-      /* Setup blob data for insert */
-      debug_print("Writing %lu bytes\n", src_len);
-      if (sqlite3_bind_blob(statement, 2, buffer, src_len, SQLITE_STATIC) != SQLITE_OK)
-        abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
-
-      /* Execute statement */
-      if (sqlite3_step(statement) != SQLITE_DONE )
-        abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
-
-      sqlite3_finalize(statement);
-
-      // Free compression buffer
-      if (cmp_len > 0) free(buffer);
+      writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
+    }
+    for (unsigned int j=0; j<data[i]->values.size(); j++)
+    {
+      //Write the value data entry
+      DataContainer* block = (DataContainer*)data[i]->values[j];
+      if (!block || block->size() == 0) continue;
+      std::cerr << "Writing geometry (values[" << j << "] * " << block->size()
+                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
+      //TODO: fix to write/read labels for data values from database, preferably in a separate table?
+      //This hack will work for up to 7 value data sets for now
+      //Filters and colourby properties will need modification though
+      data_type = lucColourValueData+j;
+      if (data_type == lucIndexData) data_type++;
+      writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }
   }
+}
+
+void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata)
+{
+  char SQL[SQL_QUERY_MAX];
+  sqlite3_stmt* statement;
+  unsigned char* buffer = (unsigned char*)block->ref(0);
+  unsigned long src_len = block->bytes();
+  // Compress the data if enabled and > 1kb
+  unsigned long cmp_len = 0;
+  if (compressdata &&  src_len > 1000)
+  {
+    cmp_len = compressBound(src_len);
+    buffer = (unsigned char*)malloc((size_t)cmp_len);
+    if (buffer == NULL)
+      abort_program("Compress database: out of memory!\n");
+    if (compress(buffer, &cmp_len, (const unsigned char *)block->ref(0), src_len) != Z_OK)
+      abort_program("Compress database buffer failed!\n");
+    if (cmp_len >= src_len)
+    {
+      free(buffer);
+      buffer = (unsigned char*)block->ref(0);
+      cmp_len = 0;
+    }
+    else
+      src_len = cmp_len;
+  }
+
+  if (block->minimum == HUGE_VAL) block->minimum = 0;
+  if (block->maximum == -HUGE_VAL) block->maximum = 0;
+
+  float min[3], max[3];
+  for (int c=0; c<3; c++)
+  {
+    if (ISFINITE(data->min[c])) min[c] = data->min[c];
+    else data->min[c] = drawstate.min[c];
+    if (ISFINITE(data->max[c])) max[c] = data->max[c];
+    else data->max[c] = drawstate.max[c];
+
+  }
+
+  snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+
+  /* Prepare statement... */
+  if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
+  {
+    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+  }
+
+  /* Setup text data for insert (on vertex block only) */
+  std::string labels = data->getLabels().c_str();
+  if (dtype == lucVertexData && labels.length() > 0)
+  {
+    if (sqlite3_bind_text(statement, 1, labels.c_str(), labels.length(), SQLITE_STATIC) != SQLITE_OK)
+    //const char* clabels = labels.c_str();
+    //if (sqlite3_bind_text(statement, 1, clabels, strlen(clabels), SQLITE_STATIC) != SQLITE_OK)
+      abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
+  }
+
+  /* Setup blob data for insert */
+  debug_print("Writing %lu bytes\n", src_len);
+  if (sqlite3_bind_blob(statement, 2, buffer, src_len, SQLITE_STATIC) != SQLITE_OK)
+    abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
+
+  /* Execute statement */
+  if (sqlite3_step(statement) != SQLITE_DONE )
+    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+
+  sqlite3_finalize(statement);
+
+  // Free compression buffer
+  if (cmp_len > 0) free(buffer);
 }
 
 void Model::deleteObject(unsigned int id)

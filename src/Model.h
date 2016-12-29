@@ -168,6 +168,7 @@ public:
   void writeState(sqlite3* outdb=NULL);
   void writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress);
   void writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
+  void writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata);
   void deleteObject(unsigned int id);
   void backup(sqlite3 *fromDb, sqlite3* toDb);
   void objectBounds(DrawingObject* draw, float* min, float* max);
