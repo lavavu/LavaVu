@@ -12,7 +12,6 @@ uniform float uAmbient;
 uniform float uDiffuse;
 uniform float uSpecular;
 uniform bool uTextured;
-uniform bool uCalcNormal;
 uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
@@ -40,10 +39,10 @@ void main(void)
   vec3 lightDir = normalize(-vPosEye);
 
   //Calculate diffuse lighting
-  vec3 N = normalize(vNormal);
+  vec3 N = vNormal;
 
   //Default normal...
-  if (length(N) < 0.9 || uCalcNormal)
+  if (dot(N,N) < 0.01)
   {
     vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
     vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
