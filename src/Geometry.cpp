@@ -471,13 +471,14 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
   {
     if (geom[index]->draw == draw && drawable(index))
     {
-      std::cerr << "Collecting data, " << geom[index]->count << " vertices (" << index << ")" << std::endl;
+      std::cerr << "Collecting data for " << draw->name() << ", " << geom[index]->count << " vertices (" << index << ")" << std::endl;
       json data;
       for (int data_type=lucMinDataType; data_type<=lucMaxDataType; data_type++)
       {
         DataContainer* dat = geom[index]->data[data_type];
         if (!dat)
         {
+          //TODO: export all values with labels separately
           //Check in values and use if label matches
           for (auto vals : geom[index]->values)
           {

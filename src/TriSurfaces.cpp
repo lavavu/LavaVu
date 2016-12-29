@@ -575,7 +575,7 @@ void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
   clock_t t1,t2;
   t1=clock();
   debug_print("Calculating normals for grid surface %d... ", i);
-  bool genTexCoords = (geom[i]->texCoords.size() == 0);
+  bool genTexCoords = (geom[i]->texture && geom[i]->texCoords.size() == 0);
 
   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   int n = 0;
