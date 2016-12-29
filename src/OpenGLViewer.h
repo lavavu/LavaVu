@@ -189,6 +189,7 @@ public:
 
   void idleReset();
   void idleTimer(int display=TIMER_IDLE);
+  unsigned int getIdleTime() {return idle;}
 
   void addOutput(OutputInterface* output)
   {

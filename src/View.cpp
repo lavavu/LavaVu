@@ -36,7 +36,7 @@
 #include "View.h"
 #include "Model.h"
 
-View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : drawstate(drawstate), properties(drawstate.globals, drawstate.defaults)
+View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : properties(drawstate.globals, drawstate.defaults), drawstate(drawstate)
 {
   // default view params
   eye_sep_ratio = 0.03f;  //Eye separation ratio to focal length
@@ -348,7 +348,9 @@ void View::setScale(float x, float y, float z, bool replace)
 std::string View::zoom(float factor)
 {
   float adj = factor * model_size;
+  if (abs(model_trans[2]) < model_size) adj *= 0.1;
   model_trans[2] += adj;
+  if (model_trans[2] > model_size*0.3) model_trans[2] = model_size*0.3;
   std::ostringstream ss;
   ss << "translate z " << adj;
   return ss.str();
@@ -394,6 +396,11 @@ void View::print()
   printf("%s\n", translateString().c_str());
   printf("%s\n", rotateString().c_str());
   printf("------------------------------\n");
+#ifdef DEBUG
+  GLfloat modelView[16];
+  glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
+  printMatrix(modelView);
+#endif
 }
 
 //Absolute viewport

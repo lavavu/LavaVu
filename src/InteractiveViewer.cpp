@@ -111,6 +111,8 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   static bool translated = false;
   bool redraw = false;
   int scroll = 0;
+  if (down) idle = viewer->getIdleTime();
+
   viewer->idleReset(); //Reset idle timer
   if (down)
   {
@@ -231,11 +233,11 @@ bool LavaVu::mouseScroll(float scroll)
   else if (viewer->keyState.alt)
     history.push_back(aview->adjustStereo(scroll, 0, 0));
   else if (viewer->keyState.ctrl)
-    //Fast zoom
-    history.push_back(aview->zoom(scroll * 0.1));
-  //Default = slow zoom
+    //Slower zoom
+    history.push_back(aview->zoom(scroll * 0.1/sqrt(idle+1)));
   else
-    history.push_back(aview->zoom(scroll * 0.01));
+    //Default zoom
+    history.push_back(aview->zoom(scroll * 0.25/sqrt(idle+1)));
 
   return true;
 }

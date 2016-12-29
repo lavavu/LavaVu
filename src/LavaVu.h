@@ -102,6 +102,8 @@ protected:
   Lines* rulers;
   QuadSurfaces* border;
 
+  unsigned int idle;
+
 public:
   bool loop;
   int animate;
