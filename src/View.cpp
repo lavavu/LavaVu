@@ -531,7 +531,7 @@ void View::apply(bool use_fp)
 
   // Translate model away from eye by camera zoom/pan translation
   //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
-  glTranslatef(model_trans[0]*scale[0], model_trans[1]*scale[0], model_trans[2]*scale[0]);
+  glTranslatef(model_trans[0]*scale[0], model_trans[1]*scale[0], model_trans[2]*scale[2]);
   GL_Error_Check;
 #endif
 
