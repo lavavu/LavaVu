@@ -415,8 +415,12 @@ function vertexColour(colour, opacity, colourmap, data, idx) {
       if (data.values.maximum != undefined) max = data.values.maximum;
       //Use a colourmap
       if (colourmap.range != undefined) {
-        min = parseFloat(colourmap.range[0]);
-        max = parseFloat(colourmap.range[1]);
+        rmin = parseFloat(colourmap.range[0]);
+        rmax = parseFloat(colourmap.range[1]);
+        if (rmin < rmax) {
+          min = rmin;
+          max = rmax;
+        }
       }
       //Get nearest pixel on the canvas
       var pos = MAXIDX*0.5;  //If rubbish data, return centre
@@ -1082,7 +1086,7 @@ Renderer.prototype.updateBuffers = function() {
   }
 
   var time = (new Date() - start) / 1000.0;
-  OK.debug(time + " seconds to load buffers... (elements: " + this.elements + " bytes: " + buffer.byteLength + ")");
+  OK.debug(time + " seconds to load buffers... (elements: " + this.elements + " bytes: " + buffer.bytes.length + ")");
 
   buffer.update(this.gl);
 }
