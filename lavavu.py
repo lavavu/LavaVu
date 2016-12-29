@@ -510,6 +510,11 @@ class Viewer(object):
 
         try:
             if __IPYTHON__:
+                #TODO: build single html file instead with inline scripts/data/custom controls
+                #Create link to web content directory
+                if not os.path.isdir("html"):
+                    htmldir = os.path.join(binpath, 'html')
+                    os.symlink(htmldir, 'html')
                 from IPython.display import display,Image,HTML
                 #Write files to disk first, can be passed directly on url but is slow for large datasets
                 filename = "input.json"
