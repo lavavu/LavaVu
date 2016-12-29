@@ -126,13 +126,17 @@ install: paths $(PROGRAM)
 	cp -R src/html/*.css $(PREFIX)/html
 	/bin/bash build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
 
+.PHONY: force
+compiler_flags: force
+	echo '$(CPPFLAGS)' | cmp -s - $@ || echo '$(CPPFLAGS)' > $@
+
 paths:
 	mkdir -p $(OPATH)
 	mkdir -p $(PREFIX)
 	mkdir -p $(PREFIX)/html
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(INC)
+$(OBJS): $(OPATH)/%.o : %.cpp compiler_flags $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
