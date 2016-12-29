@@ -10,6 +10,7 @@ var server = false;
 var types = {"triangles" : "triangle", "points" : "particle", "lines" : "line", "volume" : "volume", "border" : "line"};
 var debug_on = false;
 var noui = false;
+var MAXIDX = 2047;
 
 function initPage(src, fn) {
   var urlq = decodeURI(window.location.href);
@@ -242,7 +243,7 @@ function canvasMouseMove(event, mouse) {
 
 var zoomTimer;
 var zoomClipTimer;
-var zoomFactor = 0;
+var zoomSpin = 0;
 
 function canvasMouseWheel(event, mouse) {
   if (event.shiftKey) {
@@ -252,12 +253,10 @@ function canvasMouseWheel(event, mouse) {
     if (zoomClipTimer) clearTimeout(zoomClipTimer);
     zoomClipTimer = setTimeout(function () {viewer.zoomClip(factor);}, 100 );
   } else {
-    var factor = event.spin * 0.05;
-    if (window.navigator.platform.indexOf("Mac") >= 0)
-      factor *= 0.1;
-    if (zoomTimer) clearTimeout(zoomTimer);
-    zoomFactor += factor;
-    zoomTimer = setTimeout(function () {viewer.zoom(zoomFactor); zoomFactor = 0;}, 100 );
+    if (zoomTimer) 
+      clearTimeout(zoomTimer);
+    zoomSpin += event.spin;
+    zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin); zoomSpin = 0;}, 100 );
   }
   return false; //Prevent default
 }
@@ -402,42 +401,46 @@ function objVertexColour(obj, data, idx) {
   return vertexColour(obj.colour, obj.opacity, obj.colourmap >= 0 ? vis.colourmaps[obj.colourmap] : null, data, idx);
 }
 
+function safeLog10(val) {return val < Number.MIN_VALUE ? Math.log10(Number.MIN_VALUE) : Math.log10(val); }
+
 function vertexColour(colour, opacity, colourmap, data, idx) {
   //Default to object colour property
   if (data.values) {
     var colrange = data.vertices.data.length / (3*data.values.data.length);
     idx = Math.floor(idx/colrange);
     if (colourmap) {
-      //Use a colourmap
-      var min = parseFloat(colourmap.min);
-      var max = parseFloat(colourmap.max);
+      var min = 0;
+      var max = 1;
       if (data.values.minimum != undefined) min = data.values.minimum;
       if (data.values.maximum != undefined) max = data.values.maximum;
-      if (min == undefined) min = 0;
-      if (max == undefined) min = 1;
+      //Use a colourmap
+      if (colourmap.range != undefined) {
+        min = parseFloat(colourmap.range[0]);
+        max = parseFloat(colourmap.range[1]);
+      }
       //Get nearest pixel on the canvas
-      var pos = 256;  //If rubbish data, return centre
+      var pos = MAXIDX*0.5;  //If rubbish data, return centre
       //Allows single value for entire object
       if (idx >= data.values.data.length) idx = data.values.data.length-1;
       var val = data.values.data[idx];
       if (val < min)
         pos = 0;
       else if (val > max)
-        pos = 511;
+        pos = MAXIDX;
       else if (max > min) {
         var scaled;
         if (colourmap.logscale) {
-          val = Math.log10(val);
-          min = Math.log10(min);
-          max = Math.log10(max);
+          val = safeLog10(val);
+          min = safeLog10(min);
+          max = safeLog10(max);
         }
         //Scale to range [0,1]
         scaled = (val - min) / (max - min);
         //Get colour pos [0-2047)
-        pos =  Math.round(2047 * scaled);
+        pos =  Math.round(MAXIDX * scaled);
       }
       colour = colourmap.palette.cache[pos];
-      //if (idx % 100 == 0) console.log(" : " + val + " min " + min + " max " + max + " pos = " + pos + " colour: " + colour);
+      //if (idx % 100) console.log(" : " + val + " min " + min + " max " + max + " pos = " + pos + " colour: " + colour);
     } else if (data.values.type == 'integer') {
       //Integer data values, treat as colours
       colour = data.values.data[idx];
@@ -924,7 +927,7 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
     //if (dat.values)
     //  console.log(object.name + " : " + dat.values.minimum + " -> " + dat.values.maximum);
     //if (object.colourmap >= 0)
-    //  console.log(object.name + " :: " + vis.colourmaps[object.colourmap].minimum + " -> " + vis.colourmaps[object.colourmap].maximum);
+    //  console.log(object.name + " :: " + vis.colourmaps[object.colourmap].range[0] + " -> " + vis.colourmaps[object.colourmap].range[1]);
 
     for (var i=0; i<dat.indices.data.length/3; i++) {
       //Tex-coords for wireframing
@@ -948,6 +951,10 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
           this.floats[this.offset+3] = dat.normals.data[ids3[j]];
           this.floats[this.offset+4] = dat.normals.data[ids3[j]+1];
           this.floats[this.offset+5] = dat.normals.data[ids3[j]+2];
+        } else {
+          this.floats[this.offset+3] = 0.0;
+          this.floats[this.offset+4] = 0.0;
+          this.floats[this.offset+5] = 0.0;
         }
         this.ints[this.offset+6] = objVertexColour(object, dat, ids[j]);
         if (dat.texcoords) {
@@ -1147,12 +1154,12 @@ Renderer.prototype.draw = function() {
   //General uniform vars
   this.gl.uniform1i(this.program.uniforms["uLighting"], 1);
   this.gl.uniform1f(this.program.uniforms["uOpacity"], vis.properties.opacity || 1.0);
-  this.gl.uniform1f(this.program.uniforms["uBrightness"], vis.properties.brightness);
+  this.gl.uniform1f(this.program.uniforms["uBrightness"], vis.properties.brightness || 0.0);
   this.gl.uniform1f(this.program.uniforms["uContrast"], vis.properties.contrast || 1.0);
   this.gl.uniform1f(this.program.uniforms["uSaturation"], vis.properties.saturation || 1.0);
   this.gl.uniform1f(this.program.uniforms["uAmbient"], vis.properties.ambient || 0.4);
   this.gl.uniform1f(this.program.uniforms["uDiffuse"], vis.properties.diffuse || 0.8);
-  this.gl.uniform1f(this.program.uniforms["uSpecular"], vis.properties.specular);
+  this.gl.uniform1f(this.program.uniforms["uSpecular"], vis.properties.specular || 0.0);
   if (this.colour)
     this.gl.uniform4f(this.program.uniforms["uColour"], this.colour.red/255.0, this.colour.green/255.0, this.colour.blue/255.0, this.colour.alpha);
   var cmin = [vis.views[view].min[0] + viewer.dims[0] * (vis.properties.xmin || 0.0),
@@ -1205,7 +1212,9 @@ Renderer.prototype.draw = function() {
     //this.gl.bindTexture(this.gl.TEXTURE_2D, viewer.webgl.textures[0]);
     this.gl.bindTexture(this.gl.TEXTURE_2D, vis.objects[0].tex);
     this.gl.uniform1i(this.program.uniforms["uTexture"], 0);
-    this.gl.uniform1i(this.program.uniforms["uTextured"], 1);
+    this.gl.uniform1i(this.program.uniforms["uTextured"], 0); //Disabled unless texture attached!
+
+    this.gl.uniform1i(this.program.uniforms["uCalcNormal"], 0);
 
     //Draw triangles
     this.gl.drawElements(this.gl.TRIANGLES, this.elements, this.gl.UNSIGNED_INT, 0);
@@ -1300,7 +1309,7 @@ Renderer.prototype.draw = function() {
     this.gl.uniform1f(this.program.uniforms["uDensityFactor"], this.properties.density);
     // brightness and contrast
     this.gl.uniform1f(this.program.uniforms["uSaturation"], this.properties.saturation || 1.0);
-    this.gl.uniform1f(this.program.uniforms["uBrightness"], this.properties.brightness);
+    this.gl.uniform1f(this.program.uniforms["uBrightness"], this.properties.brightness || 0.0);
     this.gl.uniform1f(this.program.uniforms["uContrast"], this.properties.contrast || 1.0);
     this.gl.uniform1f(this.program.uniforms["uPower"], this.properties.power || 1.0);
 
@@ -1376,6 +1385,7 @@ function Viewer(canvas) {
       this.gl.getExtension('MOZ_OES_element_index_uint') ||
       this.gl.getExtension('WEBKIT_OES_element_index_uint')
     );
+    this.gl.getExtension('OES_standard_derivatives');
   } catch(e) {
     //No WebGL
     OK.debug(e);
@@ -2079,9 +2089,9 @@ paletteLoad = function(palette) {
   //palette.draw(canvas, false);
   palette.draw(gradient, false);
   //Cache colour values
-  var pixels = context.getImageData(0, 0, 2048, 1).data;
+  var pixels = context.getImageData(0, 0, MAXIDX+1, 1).data;
   palette.cache = [];
-  for (var c=0; c<2048; c++)
+  for (var c=0; c<=MAXIDX; c++)
     palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
 
   //Redraw UI
@@ -2158,9 +2168,10 @@ Viewer.prototype.drawFrame = function(borderOnly) {
 
   //Apply translation to origin, any rotation and scaling (inverse of zoom factor)
   this.webgl.modelView.identity()
-  this.webgl.modelView.translate(this.translate)
+  this.webgl.modelView.translate([this.translate[0]*this.scale[0], this.translate[1]*this.scale[1], this.translate[2]*this.scale[2]])
+
   // Adjust centre of rotation, default is same as focal point so this does nothing...
-  adjust = [-(this.focus[0] - this.centre[0]), -(this.focus[1] - this.centre[1]), -(this.focus[2] - this.centre[2])];
+  adjust = [-(this.focus[0] - this.centre[0])*this.scale[0], -(this.focus[1] - this.centre[1])*this.scale[1], -(this.focus[2] - this.centre[2])*this.scale[2]];
   this.webgl.modelView.translate(adjust);
 
   // rotate model 
@@ -2168,16 +2179,15 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   this.webgl.modelView.mult(rotmat);
 
   // Adjust back for rotation centre
-  adjust = [this.focus[0] - this.centre[0], this.focus[1] - this.centre[1], this.focus[2] - this.centre[2]];
-  this.webgl.modelView.translate(adjust);
+  this.webgl.modelView.translate([-adjust[0], -adjust[1], -adjust[2]]);
 
   // Translate back by centre of model to align eye with model centre
-  this.webgl.modelView.translate([-this.focus[0], -this.focus[1], -this.focus[2] * this.orientation]);
+  this.webgl.modelView.translate([-this.focus[0]*this.scale[0], -this.focus[1]*this.scale[1], -this.focus[2]*this.scale[2] * this.orientation]);
 
   // Apply scaling factors (including orientation switch if required)
   var scaling = [this.scale[0], this.scale[1], this.scale[2] * this.orientation];
   this.webgl.modelView.scale(scaling);
-  //OK.debug(JSON.stringify(this.webgl.modelView));
+  //console.log(JSON.stringify(this.webgl.modelView));
 
    // Set default polygon front faces
    if (this.orientation == 1.0)
@@ -2258,8 +2268,15 @@ Viewer.prototype.reset = function() {
 }
 
 Viewer.prototype.zoom = function(factor) {
+  factor = 0.01*factor*factor*factor;
+  if (window.navigator.platform.indexOf("Mac") >= 0)
+    factor *= 0.1;
+
   if (this.gl) {
-    this.translate[2] += factor * this.modelsize;
+    var adj = factor * this.modelsize;
+    if (Math.abs(this.translate[2]) < this.modelsize) adj *= 0.1;
+    this.translate[2] += adj;
+    if (this.translate[2] > this.modelsize*0.3) this.translate[2] = this.modelsize*0.3;
     this.draw();
   }
 
@@ -2332,9 +2349,11 @@ Viewer.prototype.updateDims = function(view) {
 
   }
 
-  //OK.debug("DIMS: " + min[0] + " to " + max[0] + "," + min[1] + " to " + max[1] + "," + min[2] + " to " + max[2]);
-  OK.debug("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
-  OK.debug("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
+  /*console.log("DIMS: " + this.dims[0] + "," + this.dims[1] + "," + this.dims[2]);
+  console.log("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
+  console.log("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
+  console.log("Rotate: " + this.rotate[0] + "," + this.rotate[1] + "," + this.rotate[2] + "," + this.rotate[3]);
+  console.log(JSON.stringify(view));*/
 }
 
 function resizeToWindow() {
