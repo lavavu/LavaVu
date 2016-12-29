@@ -1619,6 +1619,9 @@ void Model::deleteObject(unsigned int id)
   snprintf(SQL, SQL_QUERY_MAX, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
   issue(SQL);
   issue("vacuum");
+  //Update state
+  storeFigure(); //Save the state
+  writeState(db);
 }
 
 void Model::backup(sqlite3 *fromDb, sqlite3* toDb)

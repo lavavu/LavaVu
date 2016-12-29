@@ -2765,10 +2765,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     for (unsigned int c=0; c<list.size(); c++)
     {
       if (list[c]->dbid == 0) continue;
-      amodel->deleteObject(list[c]->dbid);
-      printMessage("%s deleted from database", list[c]->name().c_str());
+      printMessage("%s deleting from database", list[c]->name().c_str());
       //Delete the loaded object data
       parseCommand("delete " + list[c]->name());
+      //Delete from db
+      amodel->deleteObject(list[c]->dbid);
     }
   }
   else if (parsed.exists("merge"))
