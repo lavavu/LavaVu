@@ -185,6 +185,7 @@ unsigned int GeomData::valuesLookup(const json& by)
         break;
       }
     }
+    debug_print("Label: %s not found!\n", label.c_str());
   }
   else if (by.is_number())
     valueIdx = by;
@@ -483,33 +484,43 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
             if (vals->label == labels[data_type])
               dat = vals;
           }
+          //Use default colour values for "values" until multiple data sets supported in WebGL viewer
+          if (!dat && data_type == lucColourValueData)
+            dat = geom[index]->colourData();
+
         }
         if (!dat) continue;
         json el;
 
-        unsigned int length = geom[index]->data[data_type]->size() * sizeof(float);
+        unsigned int length = dat->size() * sizeof(float);
 
         if (length > 0)
         {
           el["size"] = dsizes[data_type];
-          el["count"] = (int)geom[index]->data[data_type]->size();
+          el["count"] = (int)dat->size();
           if (encode)
-            el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(geom[index]->data[data_type]->ref(0)), length);
+            el["data"] = base64_encode(reinterpret_cast<const unsigned char*>(dat->ref(0)), length);
           else
           {
             //TODO: Support export of custom value data (not with pre-defined label)
             //      include minimum/maximum/label fields
             json values;
-            for (unsigned int j=0; j<geom[index]->data[data_type]->size(); j++)
+            for (unsigned int j=0; j<dat->size(); j++)
             {
               if (data_type == lucIndexData || data_type == lucRGBAData)
-                values.push_back((int)*reinterpret_cast<unsigned int*>(geom[index]->data[data_type]->ref(j)));
+                values.push_back((int)*reinterpret_cast<unsigned int*>(dat->ref(j)));
               else
-                values.push_back((float)*reinterpret_cast<float*>(geom[index]->data[data_type]->ref(j)));
+                values.push_back((float)*reinterpret_cast<float*>(dat->ref(j)));
             }
             el["data"] = values;
           }
           data[labels[data_type]] = el;
+          std::cout << " -- " <<  labels[data_type] << " * " << length << " : " << dat->minimum << " - " << dat->maximum << std::endl;
+          if (dat->minimum < dat->maximum)
+          {
+            el["minimum"] = dat->minimum;
+            el["maximum"] = dat->maximum;
+          }
         }
       }
 
