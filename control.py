@@ -40,6 +40,7 @@ void main(void)
 #Static HTML location
 htmlpath = ""
 initialised = False
+winid = None
 
 def export():
     if not htmlpath: return
@@ -117,12 +118,12 @@ def export():
     hfile.close()
     filename = os.path.join(htmlpath, "control.html")
 
-def redisplay(id):
+def redisplay(vid=None):
     #Simply update the active viewer image, if any
     try:
         if __IPYTHON__:
             from IPython.display import display,Javascript
-            display(Javascript('redisplay(' + str(id) + ');'))
+            display(Javascript('redisplay(' + str(vid) + ');'))
     except NameError, ImportError:
         pass
 
@@ -183,6 +184,8 @@ def window(viewer, html="", align="left"):
             display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
     except NameError, ImportError:
         render(html)
+    global winid
+    winid = viewerid
     return viewerid
 
 def action(id, value):
@@ -418,7 +421,7 @@ class ColourMap(Control):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
         maps = target.instance.state["colourmaps"]
-        if self.value >= len(maps)-1:
+        if self.value < len(maps):
             self.map = maps[self.value]
         #Replace action on the control
         actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
@@ -455,6 +458,9 @@ class TimeStepper(Range):
         self.timesteps = viewer.timesteps()
         self.range = (self.timesteps[0], self.timesteps[-1])
         self.step = 1
+        #Calculate step gap
+        if len(self.timesteps) > 1:
+            self.step = self.timesteps[1] - self.timesteps[0]
         self.value = 0
 
     def controls(self):

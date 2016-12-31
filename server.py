@@ -50,6 +50,7 @@ httpd = SocketServer.TCPServer(("0.0.0.0", 9999), LVRequestHandler)
 def serve(lv):
     global lavavu
     lavavu = lv
+    lv.app.viewer.quitProgram = False
     while not lv.app.viewer.quitProgram:
         httpd.handle_request()
 

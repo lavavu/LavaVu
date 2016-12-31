@@ -592,12 +592,14 @@ class Viewer(object):
 
     def window(self):
         if not self.control: return
-        #Interactive viewer instance
-        #if not isinstance(self.winid, int):
-        self.winid = control.window(self)
+        #Interactive viewer instance, store id
+        self.winid = control.window(self.control.winid)
 
     def redisplay(self):
+        #Issue redisplay to active viewer, or last saved 
         if not self.control: return
-        if isinstance(self.winid, int):
+        if isinstance(self.control.winid, int):
+            control.redisplay(self.control.winid)
+        else:
             control.redisplay(self.winid)
 
