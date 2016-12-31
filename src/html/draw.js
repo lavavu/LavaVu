@@ -688,7 +688,7 @@ Renderer.prototype.init = function() {
     }
   }
 
-  if (this.type == "volume" && this.id) {
+  if (this.type == "volume" && this.id && this.image) {
     //Setup two-triangle rendering
     viewer.webgl.init2dBuffers(this.gl.TEXTURE1); //Use 2nd texture unit
 
@@ -934,7 +934,7 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
     //  console.log(object.name + " :: " + vis.colourmaps[object.colourmap].range[0] + " -> " + vis.colourmaps[object.colourmap].range[1]);
 
     for (var i=0; i<dat.indices.data.length/3; i++) {
-      //Tex-coords for wireframing
+      //Generate tex-coords
       var texc = texcoords[(i%2+1)*T];
 
       //Indices holds references to vertices and other data
@@ -1310,7 +1310,7 @@ Renderer.prototype.draw = function() {
     this.gl.uniform3fv(this.program.uniforms["uBBMax"], new Float32Array(bbmax));
     this.gl.uniform3fv(this.program.uniforms["uResolution"], new Float32Array(this.resolution));
 
-    this.gl.uniform1f(this.program.uniforms["uDensityFactor"], this.properties.density);
+    this.gl.uniform1f(this.program.uniforms["uDensityFactor"], this.properties.density || 5);
     // brightness and contrast
     this.gl.uniform1f(this.program.uniforms["uSaturation"], this.properties.saturation || 1.0);
     this.gl.uniform1f(this.program.uniforms["uBrightness"], this.properties.brightness || 0.0);

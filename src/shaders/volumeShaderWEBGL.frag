@@ -48,7 +48,7 @@ vec2 islices = vec2(1.0 / slices.x, 1.0 / slices.y);
 vec4 texture3Dfrom2D(vec3 pos)
 {
   //Get z slice index and position between two slices
-  float Z = pos.z * slices.x * slices.y;
+  float Z = pos.z * (slices.x * slices.y - 1.0);
   int slice = int(Z); //Index of first slice
 
   //X & Y coords of sample scaled to slice size
