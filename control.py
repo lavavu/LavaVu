@@ -169,7 +169,7 @@ def window(viewer, html="", align="left"):
     if not htmlpath: return
     viewerid = len(windows)
 
-    html += '<div style="position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">\n'
+    html += '<div style="min-height: 200px; min-width: 200px; background: #ccc; position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">\n'
     html += '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="border: 1px solid #aaa;">\n'
     html += '</div>\n'
 
