@@ -43,8 +43,9 @@
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/CVDisplayLink.h>
 #import <OpenGL/OpenGL.h>
+#import <AvailabilityMacros.h>
 
-#if __MAC_OS_X_VERSION_MIN_REQUIRED <= 1080
+#if MAC_OS_X_VERSION_MAX_ALLOWED < 101200  //ie, if the current OSX version is Sierra, setup the following
 #define NSEventModifierFlagShift NSShiftKeyMask
 #define NSEventModifierFlagControl NSControlKeyMask
 #define NSEventModifierFlagOption NSAlternateKeyMask
