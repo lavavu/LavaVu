@@ -135,7 +135,13 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     if (vals->size() == 1) idx = 0;  //Single colour value only provided
     //assert(idx < values->size());
     if (idx >= vals->size()) idx = vals->size() - 1;
-    colour = cmap->getfast(colourData(idx));
+    float val = colourData(idx);
+    if (val == HUGE_VAL) 
+    {
+      colour.value = 0;
+      return;
+    }
+    colour = cmap->getfast(val);
   }
   else if (colours.size() > 0)
   {

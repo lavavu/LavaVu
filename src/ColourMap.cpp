@@ -173,6 +173,9 @@ void ColourMap::calibrate(float min, float max)
   //Skip calibration when locked
   if (properties["locked"]) return;
 
+  if (min == HUGE_VAL) min = max;
+  if (max == HUGE_VAL) max = min;
+
   minimum = min;
   maximum = max;
   if (properties["logscale"])
