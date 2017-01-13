@@ -3029,7 +3029,7 @@ float LavaVu::imageDiff(std::string path1, std::string path2, int downsample)
   if (downsample > 1)
   {
     //Average downsample
-    int qdims[2] = {width/downsample, height/downsample};
+    int qdims[2] = {width/(float)downsample+0.5, height/(float)downsample+0.5};
     int qsize = qdims[0] * qdims[1] * channels;
     std::vector<float> compare1(qsize);
     std::vector<float> compare2(qsize);
