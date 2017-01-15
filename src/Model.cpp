@@ -683,7 +683,7 @@ int Model::loadTimeSteps(bool scan)
   basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
 
   //Don't reload timesteps when data has been cached
-  if (drawstate.global("cache") && timesteps.size() > 0) return timesteps.size();
+  if (useCache() && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
   drawstate.gap = 0;
   int rows = 0;
@@ -934,9 +934,16 @@ void Model::freeze()
   loadFixed();
 }
 
+bool Model::useCache()
+{
+  //Use cache if no database loaded, or turned on by global parameter
+  if (!db) return true;
+  return drawstate.global("cache");
+}
+
 void Model::deleteCache()
 {
-  if (!drawstate.global("cache")) return;
+  if (!useCache()) return;
   debug_print("~~~ Cache emptied\n");
   //cache.clear();
 }
@@ -958,7 +965,7 @@ void Model::cacheLoad()
 void Model::cacheStep()
 {
   //Don't cache if we already loaded from cache or out of range!
-  if (!drawstate.global("cache") || drawstate.now < 0 || (int)timesteps.size() <= drawstate.now) return;
+  if (!useCache() || drawstate.now < 0 || (int)timesteps.size() <= drawstate.now) return;
   if (timesteps[drawstate.now]->cache.size() > 0) return; //Already cached this step
 
   debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), drawstate.now, file.base.c_str(), membytes__/1000000.0f);
@@ -992,7 +999,7 @@ void Model::cacheStep()
 
 bool Model::restoreStep()
 {
-  if (drawstate.now < 0 || !drawstate.global("cache")) return false;
+  if (drawstate.now < 0 || !useCache()) return false;
   if (timesteps[drawstate.now]->cache.size() == 0)
     return false; //Nothing cached this step
 
@@ -1078,7 +1085,7 @@ int Model::setTimeStep(int stepidx)
   bool first = (now < 0);
 
   //Cache currently loaded data
-  if (drawstate.global("cache")) cacheStep();
+  if (useCache()) cacheStep();
 
   //Set the new timestep index
   debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, drawstate.now, stepidx);
@@ -1109,7 +1116,7 @@ int Model::setTimeStep(int stepidx)
       //Detach any attached db file and attach n'th timestep database if available
       attach(drawstate.now);
 
-      if (drawstate.global("cache"))
+      if (useCache())
         //Attempt caching all geometry from database at start
         rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
       else

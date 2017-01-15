@@ -130,6 +130,7 @@ public:
   void freeze();
 
   //Timestep caching
+  bool useCache();
   void deleteCache();
   void cacheLoad();
   void cacheStep();
