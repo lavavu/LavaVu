@@ -164,6 +164,14 @@ class Obj(object):
         #Setups up new object, all other args passed to properties dict
         return self.instance._setupobject(name, **kwargs)
 
+    def save(self, filename="state.json"):
+        with open(filename, "w") as state_file:
+            state_file.write(self.app.getState())
+
+    def load(self, filename="state.json"):
+        with open(filename, "r") as state_file:
+            self.app.setState(state_file.read())
+
 #Wrapper dict+list of objects
 class Objects(dict):
   def __init__(self, instance):
