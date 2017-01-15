@@ -56,6 +56,7 @@ public:
   void init();
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
+  std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();
   void setObject(unsigned int id, std::string properties);
   void setObject(std::string name, std::string properties);
