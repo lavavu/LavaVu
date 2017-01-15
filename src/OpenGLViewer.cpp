@@ -194,7 +194,7 @@ GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
 }
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
+OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0), savewidth(0), saveheight(0)
 {
   app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;
@@ -406,21 +406,16 @@ void OpenGLViewer::display(bool redraw)
   }
 }
 
-GLubyte* OpenGLViewer::pixels(GLubyte* image, int channels, bool flip)
+void OpenGLViewer::outputON(int& w, int& h, int channels)
 {
-  assert(isopen);
-  if (fbo.enabled)
-    return fbo.pixels(image, channels, flip);
-  else
-    return FrameBuffer::pixels(image, channels, flip);
-}
-
-GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool flip)
-{
+  //This function switches to the defined output resolution
+  //and enables downsampling if possible
+  //Used when capturing images and video frames
+  //(only supported with hidden window => fbo output)
   assert(isopen);
   //Save current viewer size
-  int savewidth = width;
-  int saveheight = height;
+  savewidth = width;
+  saveheight = height;
 
   if (w && !h)
   {
@@ -445,7 +440,6 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
     //std::cout << "FBO Support required to save image at different size to window\n";
     w = width;
     h = height;
-    image = FrameBuffer::pixels(image, channels, flip);
   }
   else
   {
@@ -458,16 +452,34 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
 
     //Re-render to fbo first
     display();
-
-    image = fbo.pixels(image, channels, flip);
-
-    //Restore dims
-    width = savewidth;
-    height = saveheight;
   }
+}
 
+void OpenGLViewer::outputOFF()
+{
+  //Restore normal viewing dims when output mode is finished
+  width = savewidth;
+  height = saveheight;
   //Restore settings
   blend_mode = BLEND_NORMAL;
+}
+
+GLubyte* OpenGLViewer::pixels(GLubyte* image, int channels, bool flip)
+{
+  assert(isopen);
+  if (fbo.enabled)
+    return fbo.pixels(image, channels, flip);
+  else
+    return FrameBuffer::pixels(image, channels, flip);
+}
+
+GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool flip)
+{
+  assert(isopen);
+
+  outputON(w, h,channels);
+  image = pixels(image, channels, flip);
+  outputOFF();
 
   return image;
 }

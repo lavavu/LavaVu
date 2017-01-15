@@ -96,6 +96,7 @@ protected:
   std::vector<OutputInterface*> outputs; //Additional output attachments
   std::vector<InputInterface*> inputs; //Additional input attachments
   FBO fbo;
+  int savewidth, saveheight;
 
 public:
   ApplicationInterface* app;
@@ -159,6 +160,8 @@ public:
   virtual void execute();
 
   virtual void fullScreen() {}
+  void outputON(int& w, int& h, int channels=3);
+  void outputOFF();
   GLubyte* pixels(GLubyte* image, int channels=3, bool flip=false);
   GLubyte* pixels(GLubyte* image, int& w, int& h, int channels=3, bool flip=false);
   std::string image(const std::string& path="", bool jpeg=false);
