@@ -1469,20 +1469,25 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
     }
   }
-  else if (parsed.has(ival, "movie"))
+  else if (parsed.exists("movie"))
   {
     if (gethelp)
     {
       help += "> Encode video of model running from current timestep to specified timestep  \n"
               "> (Requires libavcodec)\n\n"
-              "> **Usage:** movie endstep\n\n"
-              "> endstep (integer) : last frame timestep  \n";
+              "> **Usage:** movie [startstep] [endstep]\n\n"
+              "> startstep (integer) : first frame timestep (defaults to first) \n";
+              "> endstep (integer) : last frame timestep (defaults to final) \n";
       return false;
     }
 
-    encodeVideo();
-    writeSteps(false, amodel->step(), ival);
-    encodeVideo(); //Write final step and stop encoding
+    int start = -1;
+    int end = -1;
+    if (parsed.has(ival, "movie"))
+      end = ival;
+    if (parsed.has(ival, "movie", 1))
+      start = ival;
+    video("", 30, viewer->outwidth, viewer->outheight, start, end);
   }
   else if (parsed.exists("play"))
   {
@@ -2407,17 +2412,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (filename.length() > 0)
       viewer->image(filename);
     else
-    {
-      //Apply image counter to default filename when multiple images output
-      static int imagecounter = 0;
-      std::stringstream outpath;
-      std::string title = drawstate.global("caption");
-      outpath << title;
-      if (imagecounter > 0)
-        outpath <<  "-" << imagecounter;
-      viewer->image(outpath.str());
-      imagecounter++;
-    }
+      viewer->image(drawstate.counterFilename());
 
     if (viewer->outwidth > 0)
       printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);

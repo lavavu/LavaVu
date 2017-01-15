@@ -2587,6 +2587,20 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   return true;
 }
 
+std::string LavaVu::video(std::string filename, int fps, int width, int height, int start, int end)
+{
+  if (width > 0) viewer->outwidth = width;
+  if (height > 0) viewer->outheight = height;
+  if (end <= 0) end = amodel->lastStep();
+  debug_print("VIDEO: w %d h %d fps %d, %d --> %d\n", width, height, fps, start, end);
+  if (filename.length() == 0) 
+    filename = drawstate.counterFilename() + ".mp4";
+  encodeVideo(filename, fps);
+  writeSteps(false, start, end);
+  encodeVideo(); //Write final step and stop encoding
+  return filename;
+}
+
 void LavaVu::encodeVideo(std::string filename, int fps)
 {
   //TODO: - make VideoEncoder use OutputInterface
@@ -2596,18 +2610,18 @@ void LavaVu::encodeVideo(std::string filename, int fps)
   if (!encoder)
   {
     if (filename.length() == 0) 
-    {
-      filename = drawstate.global("caption");
-      filename += ".mp4";
-    }
-    if (filename.length() == 0) filename = "output.mp4";
-    encoder = new VideoEncoder(filename.c_str(), viewer->width, viewer->height, fps);
+      filename = drawstate.counterFilename() + ".mp4";
+    int w = viewer->outwidth;
+    int h = viewer->outheight;
+    viewer->outputON(w, h, 3);
+    encoder = new VideoEncoder(filename.c_str(), w, h, fps);
   }
   else
   {
     //Deleting the encoder completes the video
     delete encoder;
     encoder = NULL;
+    viewer->outputOFF();
     return;
   }
 #else
@@ -2645,11 +2659,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
 #ifdef HAVE_LIBAVCODEC
       //Always output to video encode if it exists
       if (encoder)
-      {
-        viewer->pixels(encoder->buffer, 3, true);
-        //bitrate settings?
-        encoder->frame();
-      }
+        viewer->display();
 #endif
     }
   }

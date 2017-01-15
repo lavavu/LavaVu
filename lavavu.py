@@ -529,6 +529,35 @@ class Viewer(object):
             print "WebGL output error: " + str(e)
             pass
 
+    def video(self, filename="", fps=10, resolution=(640,480)):
+        """        
+        Shows the generated video inline within an ipython notebook.
+        
+        If IPython is installed, displays the result video content inline
+
+        If IPython is not installed, this method will call the default video 
+        output routines to save the result in the current directory
+
+        """
+
+        try:
+            if __IPYTHON__:
+                from IPython.display import display,HTML
+                fn = self.app.video(filename, fps, resolution[0], resolution[1])
+                html = """
+                <video src="---FN---" controls loop>
+                Sorry, your browser doesn't support embedded videos, 
+                </video><br>
+                <a href="---FN---">Download Video</a> 
+                """
+                html = html.replace('---FN---', fn)
+                display(HTML(html))
+        except NameError, ImportError:
+            self.app.web(True)
+        except Exception,e:
+            print "Video output error: " + str(e)
+            pass
+        
     def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
         results = []
         if not imagelist:

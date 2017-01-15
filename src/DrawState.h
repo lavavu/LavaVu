@@ -51,7 +51,22 @@ public:
   DrawState() : prog()
   {
     borderobj = axisobj = rulerobj = NULL;
+    counter = 0;
     //reset();
+  }
+
+  int counter;
+
+  std::string counterFilename()
+  {
+    //Apply image counter to default filename when multiple images/videos output
+    std::stringstream outpath;
+    std::string title = global("caption");
+    outpath << title;
+    if (counter > 0)
+      outpath <<  "-" << counter;
+    counter++;
+    return outpath.str();
   }
 
   void reset()
