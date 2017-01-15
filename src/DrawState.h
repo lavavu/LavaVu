@@ -412,10 +412,17 @@ public:
 #endif
   }
 
+  //Return a global parameter (or default if not set)
   json& global(const std::string& key)
   {
-    if (globals.count(key) > 0 && !globals[key].is_null()) return globals[key];
+    if (has(key)) return globals[key];
     return defaults[key];
+  }
+
+  //Return true if a global parameter has been set
+  bool has(const std::string& key)
+  {
+    return (globals.count(key) > 0 && !globals[key].is_null());
   }
 
   // Calculates a set of points on a unit circle for a given number of segments
