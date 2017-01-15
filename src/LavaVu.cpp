@@ -1659,6 +1659,9 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
   if (viewer->isopen && setBounds)
   {
+    //Ensure correct context selected!
+    viewer->display(false);
+
     //Auto-calc data ranges
     amodel->setup();
 
