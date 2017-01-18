@@ -157,8 +157,25 @@ void Model::storeFigure()
     figures[figure] = jsonWrite();
 }
 
-int Model::addFigure(const std::string& name, const std::string& state)
+int Model::addFigure(std::string name, const std::string& state)
 {
+  if (name.length() == 0) name = "(unnamed)";
+  //Check for duplicate names
+  bool found = false;
+  do
+  {
+    found = false;
+    for (auto n : fignames)
+    {
+      //Duplicate name, add underscore until not a duplicate
+      if (n == name)
+      {
+        found = true;
+        name += "_";
+      }
+    }
+  } while (found);
+
   fignames.push_back(name);
   if (state.length())
     figures.push_back(state);

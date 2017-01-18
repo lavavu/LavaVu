@@ -121,7 +121,7 @@ public:
 
   bool loadFigure(int fig);
   void storeFigure();
-  int addFigure(const std::string& name="", const std::string& state="");
+  int addFigure(std::string name="", const std::string& state="");
   void addObject(DrawingObject* obj);
   DrawingObject* findObject(unsigned int id);
   View* defaultView();

@@ -1321,6 +1321,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       help += "> Set figure to view (when available)\n\n"
               "> **Usage:** figure up/down/value\n\n"
               "> value (integer/string) : the figure index or name to view  \n"
+              ">                          if it doesn't exist it will be created  \n"
               "> up : switch to previous figure if available  \n"
               "> down : switch to next figure if available  \n";
       return false;
@@ -1340,10 +1341,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         //Not found? Create it
         if (ival < 0)
         {
-          amodel->fignames.push_back(parsed["figure"]);
-          std::stringstream ss;
-          amodel->jsonWrite(ss, 0, false);
-          amodel->figures.push_back(ss.str());
+          std::string figname = parsed["figure"];
+          amodel->addFigure(figname, "");
           ival = amodel->figures.size()-1;
         }
       }
