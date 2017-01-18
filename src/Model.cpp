@@ -129,9 +129,6 @@ Model::~Model()
     delete colourMaps[i];
 
   if (db) sqlite3_close(db);
-
-  fignames.clear();
-  figures.clear();
 }
 
 bool Model::loadFigure(int fig)
@@ -1907,8 +1904,14 @@ void Model::jsonRead(std::string data)
     if (inviews[v].count("rotate") > 0)
     {
       rot = view->properties["rotate"];
-      view->setRotation(rot[0], rot[1], rot[2], rot[3]);
+      if (rot.size() == 4)
+        view->setRotation(rot[0], rot[1], rot[2], rot[3]);
+      else if (rot.size() == 3)
+        view->rotate(rot[0], rot[1], rot[2]);
     }
+    else
+      view->setRotation(0, 0, 0, 1);
+
     if (inviews[v].count("translate") > 0)
     {
       trans = view->properties["translate"];
