@@ -135,6 +135,7 @@ public:
   void cacheLoad();
   void cacheStep();
   bool restoreStep();
+  void clearStep();
   void printCache();
 
   int step()

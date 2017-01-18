@@ -973,8 +973,11 @@ void Model::cacheStep()
   //Copy all elements
   if (membytes__ > 0)
   {
+    clearStep();
     timesteps[drawstate.now]->write(geometry);
     debug_print("~~~ Cached step, at: %d\n", step());
+    printf(".");
+    fflush(stdout);
     geometry.clear();
   }
   else
@@ -1004,7 +1007,8 @@ bool Model::restoreStep()
     return false; //Nothing cached this step
 
   //Load the cache and save loaded timestep
-  timesteps[drawstate.now]->read(geometry, !drawstate.global("gpucache"));
+  clearStep();
+  timesteps[drawstate.now]->read(geometry);
   debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, file.base.c_str());
 
   //Switch geometry containers
@@ -1022,6 +1026,16 @@ bool Model::restoreStep()
   //Redraw display
   redraw();
   return true;
+}
+
+void Model::clearStep()
+{
+  //Clear and tell all geometry objects they need to reload data
+  for (unsigned int i=0; i < geometry.size(); i++)
+  {
+    //Release any graphics memory and clear
+    geometry[i]->close();
+  }
 }
 
 void Model::printCache()

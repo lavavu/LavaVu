@@ -60,10 +60,6 @@ public:
 
   void write(std::vector<Geometry*> &data)
   {
-    //for (unsigned int i=0; i < data.size(); i++)
-    //   //Release any graphics memory
-    //   data[i]->close();
-
     cache = data;
 
     //for (Geometry* g : cache)
@@ -72,18 +68,8 @@ public:
     //      std::cout << "Cached [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
   }
 
-  void read(std::vector<Geometry*> &data, bool clear=true)
+  void read(std::vector<Geometry*> &data)
   {
-    //Disable clearing to cache all data on gpu too
-    if (clear)
-    {
-      for (unsigned int i=0; i < data.size(); i++)
-      {
-        //Release any graphics memory
-        data[i]->close();
-      }
-    }
-
     data = cache;
 
     //for (Geometry* g : cache)
