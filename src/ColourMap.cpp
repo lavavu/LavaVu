@@ -49,7 +49,7 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
   : properties(drawstate.globals, drawstate.defaults),
     minimum(0), maximum(1), name(name), texture(NULL),
-    calibrated(false), noValues(false)
+    calibrated(false), noValues(false), log(false)
 {
   precalc = new Colour[samples];
   background.value = 0xff000000;
@@ -156,7 +156,7 @@ void ColourMap::calc()
 {
   if (!colours.size()) return;
   //Precalculate colours
-  if (properties["logscale"])
+  if (log)
     for (int cv=0; cv<samples; cv++)
       precalc[cv] = get(pow(10, log10(minimum) + range * (float)cv/(samples-1)));
   else
@@ -178,10 +178,12 @@ void ColourMap::calibrate(float min, float max)
 
   minimum = min;
   maximum = max;
-  if (properties["logscale"])
+  log = properties["logscale"];
+  if (log)
     range = LOG10(maximum) - LOG10(minimum);
   else
     range = maximum - minimum;
+  irange = 1.0 / range;
 
   //Calculates positions based on field values over range
   if (!noValues)
@@ -262,10 +264,10 @@ Colour ColourMap::getfast(float value)
   //NOTE: value caching DOES NOT WORK for log scales!
   //If this is causing slow downs in future, need a better method
   int c = 0;
-  if (properties["logscale"])
-    c = (int)((samples-1) * ((LOG10(value) - LOG10(minimum)) / range));
+  if (log)
+    c = (int)((samples-1) * irange * ((LOG10(value) - LOG10(minimum))));
   else
-    c = (int)((samples-1) * ((value - minimum) / range));
+    c = (int)((samples-1) * irange * ((value - minimum)));
   if (c > samples - 1) c = samples - 1;
   if (c < 0) c = 0;
   //std::cerr << value << " range : " << range << " : min " << minimum << ", max " << maximum << ", pos " << c << ", Colour " << precalc[c] << " uncached " << get(value) << std::endl;
@@ -285,7 +287,7 @@ float ColourMap::scaleValue(float value)
   if (value <= min) return 0.0;
   if (value >= max) return 1.0;
 
-  if (properties["logscale"])
+  if (log)
   {
     value = LOG10(value);
     min = LOG10(minimum);
@@ -446,7 +448,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   float scaleval = colourbarprops["scalevalue"];
 
   //Always show at least two ticks on a log scale
-  if (properties["logscale"] && ticks < 2) ticks = 2;
+  if (log && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
   for (int i = 0; i < ticks+2; i++)
@@ -473,7 +475,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
       if (i > tickValues.size())  /* No fixed value provided */
       {
         /* First get scaled position 0-1 */
-        if (properties["logscale"])
+        if (log)
         {
           /* Space ticks based on a logarithmic scale of log(1) to log(11)
              shows non-linearity while keeping ticks spaced apart enough to read labels */
@@ -485,7 +487,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
           scaledPos = (float)i / (ticks+1);
 
         /* Compute the tick value */
-        if (properties["logscale"])
+        if (log)
         {
           /* Reverse calc to find tick value at calculated position 0-1: */
           tickValue = LOG10(minimum) + scaledPos

@@ -70,9 +70,10 @@ public:
   Properties properties;
   float minimum;
   float maximum;
-  float range;
+  float range, irange;
   bool calibrated;
   bool noValues; //Use position data only
+  bool log; //Cached logscale setting
   TextureData* texture;
 
   ColourMap(DrawState& drawstate, std::string name="", std::string props="");
