@@ -51,17 +51,18 @@ Volumes::~Volumes()
 void Volumes::close()
 {
   tris->close();
-  Geometry::close();
+
   //Iterate geom and delete textures
-  //"cachevolumes" property allows switching this behaviour off for faster switching
+  //"gpucache" property allows switching this behaviour off for faster switching
+  //(usually set globally but checked per object for volumes)
   //requries enough GPU ram to store all volumes
-  if (drawstate.global("cachevolumes")) return;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    if (geom[i]->texture)
+    if (!geom[i]->draw->properties["gpucache"] && geom[i]->texture)
     {
       delete geom[i]->texture;
       geom[i]->texture = NULL;
+      reload = true;
     }
   }
 }
@@ -97,6 +98,7 @@ void Volumes::draw()
   glBindTexture(GL_TEXTURE_3D, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
   //t2 = clock(); debug_print("  Draw %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
+
 }
 
 void Volumes::update()

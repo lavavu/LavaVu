@@ -36,8 +36,6 @@ public:
 
   //TriSurfaces, Lines, Points, Volumes
   Shader* prog[lucMaxType];
-  //Points
-  GLuint pindexvbo, pvbo;
 
   //View
   Camera* globalcam = NULL;
@@ -97,9 +95,6 @@ public:
     x_coords = NULL;
     y_coords = NULL;
     segments = 0;    // Saves segment count for circle based objects
-
-    pindexvbo = 0;
-    pvbo = 0;
 
     fonts.reset();
 
@@ -368,8 +363,6 @@ public:
     defaults["caption"] = "LavaVu";
     // | global | integer[2] | Window resolution X,Y
     defaults["resolution"] = {1024, 768};
-    // | global | boolean | Turn on to keep all volumes in GPU memory between timesteps
-    defaults["cachevolumes"] = false;
     // | global | boolean | Turn on to automatically add and switch to a new timestep after loading a data file
     defaults["filestep"] = false;
     // | global | boolean | Turn on to set initial state of all loaded objects to hidden
@@ -416,7 +409,7 @@ public:
     defaults["sort"] = -1;
     // | global | boolean | Cache timestep varying data in ram
     defaults["cache"] = false;
-    // | global | boolean | Cache timestep varying data on gpu as well as ram (will only work for small models)
+    // | global | boolean | Cache timestep varying data on gpu as well as ram (only if model size permits)
     defaults["gpucache"] = false;
 
     //LavaVR specific

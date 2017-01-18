@@ -41,6 +41,8 @@ Points::Points(DrawState& drawstate) : Geometry(drawstate)
   type = lucPointType;
   pidx = swap = NULL;
   idxcount = 0;
+  indexvbo = 0;
+  vbo = 0;
 }
 
 Points::~Points()
@@ -50,20 +52,23 @@ Points::~Points()
 
 void Points::close()
 {
-  if (drawstate.pvbo)
-    glDeleteBuffers(1, &drawstate.pvbo);
-  if (drawstate.pindexvbo)
-    glDeleteBuffers(1, &drawstate.pindexvbo);
+  if (!drawstate.global("gpucache"))
+  {
+    if (vbo)
+      glDeleteBuffers(1, &vbo);
+    if (indexvbo)
+      glDeleteBuffers(1, &indexvbo);
+    vbo = 0;
+    indexvbo = 0;
+
+    reload = true;
+  }
+
   if (pidx)
     delete[] pidx;
   if (swap)
     delete[] swap;
-
-  drawstate.pvbo = 0;
-  drawstate.pindexvbo = 0;
   pidx = swap = NULL;
-
-  Geometry::close();
 }
 
 void Points::init()
@@ -75,7 +80,7 @@ void Points::update()
 {
   //Ensure vbo recreated if total changed
   //To force update, set geometry->reload = true
-  if (reload || !pidx)
+  if (reload || vbo == 0)
     loadVertices();
 
   //Initial depth sort & render
@@ -100,13 +105,13 @@ void Points::loadVertices()
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
-  if (!drawstate.pvbo) glGenBuffers(1, &drawstate.pvbo);
+  if (!vbo) glGenBuffers(1, &vbo);
 
-  glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
   //Initialise point buffer
-  if (glIsBuffer(drawstate.pvbo))
+  if (glIsBuffer(vbo))
   {
-    glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_STREAM_DRAW);
     debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
   }
@@ -116,7 +121,7 @@ void Points::loadVertices()
   GL_Error_Check;
 
   unsigned char *p = NULL, *ptr = NULL;
-  if (glIsBuffer(drawstate.pvbo))
+  if (glIsBuffer(vbo))
   {
     ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     GL_Error_Check;
@@ -273,15 +278,15 @@ void Points::render()
   tt = t1 = clock();
 
   // Index buffer object for quick display
-  if (!drawstate.pindexvbo)
-    glGenBuffers(1, &drawstate.pindexvbo);
+  if (!indexvbo)
+    glGenBuffers(1, &indexvbo);
 
   //Always set data size again in case changed
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawstate.pindexvbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   //Initialise particle buffer
   int subSample = drawstate.global("pointsubsample");
-  if (glIsBuffer(drawstate.pindexvbo))
+  if (glIsBuffer(indexvbo))
   {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_STATIC_DRAW);
@@ -407,9 +412,9 @@ void Points::draw()
   int stride = 3 * sizeof(float) + sizeof(Colour);
   if (drawstate.global("pointattribs"))
     stride += 2 * sizeof(float);
-  glBindBuffer(GL_ARRAY_BUFFER, drawstate.pvbo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawstate.pindexvbo);
-  if (elements > 0 && glIsBuffer(drawstate.pvbo) && glIsBuffer(drawstate.pindexvbo))
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+  if (elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
     //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
     glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only

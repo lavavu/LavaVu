@@ -345,7 +345,6 @@ Geometry::~Geometry()
 //Virtuals to implement
 void Geometry::close() //Called on quit or gl context destroy
 {
-  reload = true;
 }
 
 void Geometry::clear(bool all)

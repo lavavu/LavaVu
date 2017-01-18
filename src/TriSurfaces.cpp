@@ -53,20 +53,24 @@ TriSurfaces::~TriSurfaces()
 
 void TriSurfaces::close()
 {
-  if (vbo)
-    glDeleteBuffers(1, &vbo);
-  if (indexvbo)
-    glDeleteBuffers(1, &indexvbo);
+  if (!drawstate.global("gpucache"))
+  {
+    if (vbo)
+      glDeleteBuffers(1, &vbo);
+    if (indexvbo)
+      glDeleteBuffers(1, &indexvbo);
+    vbo = 0;
+    indexvbo = 0;
+
+    reload = true;
+  }
+
   if (tidx)
     delete[] tidx;
   if (swap)
     delete[] swap;
 
-  vbo = 0;
-  indexvbo = 0;
   tidx = swap = NULL;
-
-  Geometry::close();
 }
 
 void TriSurfaces::update()
@@ -105,7 +109,8 @@ void TriSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  if ((lastcount != total && reload) || !tidx)
+  //if ((lastcount != total && reload) || !tidx)
+  if ((lastcount != total && reload) || vbo == 0)
   {
     //Load & optimise the mesh data (on first load and if total changes)
     if (!tidx || lastcount != total)
@@ -119,7 +124,7 @@ void TriSurfaces::update()
   }
 
   //Reload the list if count changes
-  if (tricount == 0 || tricount*3 != idxcount)
+  if (!tidx || tricount == 0 || tricount*3 != idxcount)
     loadList();
 
   if (reload || idxcount == 0)

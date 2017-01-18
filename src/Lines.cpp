@@ -55,6 +55,14 @@ Lines::~Lines()
 void Lines::close()
 {
   tris->close();
+
+  if (!drawstate.global("gpucache"))
+  {
+    if (vbo)
+      glDeleteBuffers(1, &vbo);
+
+    reload = true;
+  }
 }
 
 void Lines::update()

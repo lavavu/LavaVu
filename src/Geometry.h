@@ -326,9 +326,8 @@ class TriSurfaces : public Geometry
   std::vector<Vec3d> centroids;
 protected:
   std::vector<Distance> surf_sort;
-public:
   GLuint indexvbo, vbo;
-
+public:
   TriSurfaces(DrawState& drawstate, bool flat2Dflag=false);
   ~TriSurfaces();
   virtual void close();
@@ -416,6 +415,7 @@ class Points : public Geometry
   PIndex *pidx;
   PIndex *swap;
   unsigned int idxcount;
+  GLuint indexvbo, vbo;
 public:
   Points(DrawState& drawstate);
   ~Points();
