@@ -154,11 +154,7 @@ void Model::storeFigure()
 {
   //Save current state in current selected figure
   if (figure >= 0 && figures.size() > figure)
-  {
-    std::ostringstream json;
-    jsonWrite(json);
-    figures[figure] = json.str();
-  }
+    figures[figure] = jsonWrite();
 }
 
 int Model::addFigure(const std::string& name, const std::string& state)
@@ -167,12 +163,7 @@ int Model::addFigure(const std::string& name, const std::string& state)
   if (state.length())
     figures.push_back(state);
   else
-  {
-    std::stringstream ss;
-    jsonWrite(ss, 0, false);
-    std::string state = ss.str();
-    figures.push_back(state);
-  }
+    figures.push_back(jsonWrite());
   return figures.size()-1;
 }
 
@@ -1685,6 +1676,13 @@ void Model::objectBounds(DrawingObject* draw, float* min, float* max)
   //Expand bounds by all geometry objects
   for (unsigned int i=0; i < geometry.size(); i++)
     geometry[i]->objectBounds(draw, min, max);
+}
+
+std::string Model::jsonWrite(bool objdata)
+{
+  std::ostringstream json;
+  jsonWrite(json, NULL, objdata);
+  return json.str();
 }
 
 void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)

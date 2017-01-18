@@ -2789,11 +2789,7 @@ std::string LavaVu::web(bool tofile)
   display(); //Forces view/window open
   amodel->triSurfaces->loadMesh();  //Optimise triangle meshes before export
   if (!tofile)
-  {
-    std::stringstream ss;
-    amodel->jsonWrite(ss, 0, true);
-    return ss.str();
-  }
+    return amodel->jsonWrite(true);
   return jsonWriteFile(NULL, false, true);
 }
 
@@ -2869,10 +2865,8 @@ void LavaVu::setState(std::string state)
 std::string LavaVu::getState()
 {
   if (!amodel) return "{}";
-  std::stringstream ss;
   //Export current state
-  amodel->jsonWrite(ss, 0, false);
-  return ss.str();
+  return amodel->jsonWrite();
 }
 
 std::string LavaVu::getFigures()
@@ -2883,12 +2877,12 @@ std::string LavaVu::getFigures()
   for (unsigned int s=0; s<amodel->figures.size(); s++)
   {
     amodel->loadFigure(s);
-    amodel->jsonWrite(ss, 0, false);
+    amodel->jsonWrite(ss);
     if (s < amodel->figures.size()-1) ss << ",\n";
   }
   //Export current state only if no figures
   if (amodel->figures.size() == 0)
-    amodel->jsonWrite(ss, 0, false);
+    amodel->jsonWrite(ss);
   ss << "]\n";
   return ss.str();
 }

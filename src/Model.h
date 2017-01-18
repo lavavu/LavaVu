@@ -175,6 +175,7 @@ public:
   void backup(sqlite3 *fromDb, sqlite3* toDb);
   void objectBounds(DrawingObject* draw, float* min, float* max);
 
+  std::string jsonWrite(bool objdata=false);
   void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
   void jsonRead(std::string data);
 };
