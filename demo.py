@@ -6,16 +6,16 @@ debug = False
 def second_viewer():
     #return
     global debug
-    lv2 = lavavu.Viewer(verbose=debug, hidden=False) #Interactive - require visible window
+    lv2 = lavavu.Viewer(verbose=debug)
     lines2 = lv2.add("lines", colour="blue", link=True, geometry="lines")
     lines2.vertices([[1, -1, 1], [0, 0, 0], [1, -1, -1]])
     lv2.test()
     lv2.init()
+    lv2.image("lv2")
     #lv2.interactive()
     return lv2
 
-lv = lavavu.Viewer(verbose=debug, hidden=False) #Interactive - require visible window
-#lv = lavavu.load()
+lv = lavavu.Viewer(verbose=debug)
 
 lv2 = second_viewer()
 
@@ -61,21 +61,16 @@ lv.fit()
 
 print lv.image("rotated")
 
-#from threading import Thread
-#thread = Thread(target = second_viewer)
-#thread.start()
-
-#Enter interative mode
+#Enter interative mode - note: OS X window will not return from here
 lv.interactive()
 
-#thread.join()
-lv2.interactive()
+#lv2.interactive()
 
 #print lv
 print lv.image("final")
 
 #lv("export")
-imagestr = lv2.image()
+#imagestr = lv2.image()
 
 #lv = None
 """
