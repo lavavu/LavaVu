@@ -1348,6 +1348,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
     }
 
+    //Save currently selected first
+    amodel->storeFigure();
+    //Load new selection
     if (!amodel->loadFigure(ival)) return false; //Invalid
     viewset = 2; //Force check for resize and autozoom
     printMessage("Load figure %d", amodel->figure);

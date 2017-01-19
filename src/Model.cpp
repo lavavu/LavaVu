@@ -134,8 +134,6 @@ Model::~Model()
 bool Model::loadFigure(int fig)
 {
   if (fig < 0 || figures.size() == 0) return false;
-  //Save currently selected first
-  storeFigure();
   if (fig >= (int)figures.size()) fig = 0;
   if (fig < 0) fig = figures.size()-1;
   figure = fig;
