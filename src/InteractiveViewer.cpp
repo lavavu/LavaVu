@@ -1475,8 +1475,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       help += "> Encode video of model running from current timestep to specified timestep  \n"
               "> (Requires libavcodec)\n\n"
               "> **Usage:** movie [startstep] [endstep]\n\n"
-              "> startstep (integer) : first frame timestep (defaults to first) \n";
-              "> endstep (integer) : last frame timestep (defaults to final) \n";
+              "> startstep (integer) : first frame timestep (defaults to first)  \n"
+              "> endstep (integer) : last frame timestep (defaults to final)  \n";
       return false;
     }
 
