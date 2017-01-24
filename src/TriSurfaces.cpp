@@ -348,7 +348,7 @@ void TriSurfaces::loadList()
       //All opaque triangles at start
       if (geom[index]->opaque)
       {
-        tidx[tricount].distance = SORT_DIST_MAX;
+        tidx[tricount].distance = USHRT_MAX;
         tidx[tricount].vertex = NULL;
       }
       else
@@ -695,23 +695,23 @@ void TriSurfaces::depthSort()
   view->getMinMaxDistance(&mindist, &maxdist);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
-  float multiplier = (SORT_DIST_MAX-1.0) / (maxdist - mindist);
+  float multiplier = (USHRT_MAX-1.0) / (maxdist - mindist);
   unsigned int opaqueCount = 0;
   float fdistance;
   for (unsigned int i = 0; i < tricount; i++)
   {
     //Distance from viewing plane is -eyeZ
     //Max dist 65535 reserved for opaque triangles
-    if (tidx[i].distance < SORT_DIST_MAX)
+    if (tidx[i].distance < USHRT_MAX)
     {
       assert(tidx[i].vertex);
       fdistance = eyeDistance(view->modelView, tidx[i].vertex);
       tidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
-      assert(tidx[i].distance >= 0 && tidx[i].distance <= SORT_DIST_MAX);
+      assert(tidx[i].distance >= 0 && tidx[i].distance <= USHRT_MAX);
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);
       //Reverse as radix sort is ascending and we want to draw by distance descending
-      //tidx[i].distance = SORT_DIST_MAX - (unsigned short)(multiplier * (fdistance - mindist));
-      //assert(tidx[i].distance >= 1 && tidx[i].distance <= SORT_DIST_MAX);
+      //tidx[i].distance = USHRT_MAX - (unsigned short)(multiplier * (fdistance - mindist));
+      //assert(tidx[i].distance >= 1 && tidx[i].distance <= USHRT_MAX);
     }
     else
       opaqueCount++;
