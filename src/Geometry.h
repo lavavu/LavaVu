@@ -238,6 +238,7 @@ protected:
   int elements;
   int drawcount;
   bool flat2d; //Flag for flat surfaces in 2d
+  DrawingObject* cached;
 
 public:
   DrawState& drawstate;

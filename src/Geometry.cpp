@@ -330,7 +330,7 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
 }
 
 Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate), 
-                       view(NULL), elements(0), flat2d(false),
+                       view(NULL), elements(0), flat2d(false), cached(NULL),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
@@ -631,6 +631,9 @@ void Geometry::setState(unsigned int i, Shader* prog)
   GL_Error_Check;
   if (geom.size() <= i) return;
   DrawingObject* draw = geom[i]->draw;
+  //Only set state when object changes
+  if (draw == cached && i > 0) return;
+  cached = draw;
   bool lighting = geom[i]->draw->properties["lit"];
 
   //Global/Local draw state
