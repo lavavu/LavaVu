@@ -1278,33 +1278,6 @@ int compareParticle(const void *a, const void *b)
   return p1->distance < p2->distance ? -1 : 1;
 }
 
-//Generic radix sorter - template free version
-void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *dest, int size)
-{
-  // Radix counting sort of 1 byte, 8 bits = 256 bins
-  long count[256], index[256];
-  int i;
-  memset(count, 0, sizeof(count)); //Clear counts
-
-  //Create histogram, count occurences of each possible byte value 0-255
-  for (i=0; i<N; i++)
-    count[source[i*size+byte]]++;
-
-  //Calculate number of elements less than each value (running total through array)
-  //This becomes the offset index into the sorted array
-  //(eg: there are 5 smaller values so place me in 6th position = 5)
-  index[0]=0;
-  for (i=1; i<256; i++) index[i] = index[i-1] + count[i-1];
-
-  //Finally, re-arrange data by index positions
-  for (i=0; i<N; i++)
-  {
-    int val = source[i*size + byte];  //Get value
-    memcpy(&dest[index[val]*size], &source[i*size], size);
-    index[val]++; //Increment index to push next element with same value forward one
-  }
-}
-
 //////////////////////////////////
 // Draws a 3d vector
 // pos: centre position at which to draw vector

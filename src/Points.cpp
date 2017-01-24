@@ -203,12 +203,19 @@ void Points::loadList()
   if (geom.size() == 0) return;
   elements = 0;
   int offset = 0;
+  int subSample = drawstate.global("pointsubsample");
+  uint32_t SEED;
   for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count, s++)
   {
     if (!drawable(s)) continue;
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
       if (geom[s]->filter(i)) continue;
+      // If subSampling, use a pseudo random distribution to select which particles to draw
+      // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
+      SEED = i; //Reset the seed for determinism based on index
+      if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
+
       pidx[elements].index = offset + i;
       pidx[elements].vertex = geom[s]->vertices[i];
       pidx[elements].distance = 0;
@@ -216,7 +223,8 @@ void Points::loadList()
     }
   }
   t2 = clock();
-  debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", elements, total, (t2-t1)/(double)CLOCKS_PER_SEC);
+  debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
+printf("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
   t1 = clock();
 }
 
@@ -232,8 +240,8 @@ void Points::depthSort()
   float maxdist, mindist;
   view->getMinMaxDistance(&mindist, &maxdist);
 
-  //Update eye distances, clamping int distance to integer between 0 and SORT_DIST_MAX
-  float multiplier = (float)SORT_DIST_MAX / (maxdist - mindist);
+  //Update eye distances, clamping distance to integer between 0 and USHRT_MAX
+  float multiplier = (float)USHRT_MAX / (maxdist - mindist);
   float fdistance;
   for (unsigned int i = 0; i < elements; i++)
   {
@@ -247,8 +255,6 @@ void Points::depthSort()
 
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
   radix_sort<PIndex>(pidx, swap, elements, 2);
-  //radix_sort(pidx, elements, sizeof(PIndex), 2);
-  //qsort(pidx, geom.size(), sizeof(PIndex), compare);
   t2 = clock();
   debug_print("  %.4lf seconds to sort %d points\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
   t1 = clock();
@@ -263,16 +269,11 @@ void Points::render()
   assert(pidx);
 
   //First, depth sort the particles
-  if (view->is3d && view->sort)
+  //if (view->is3d && view->sort)
+  if (view->sort)
   {
     debug_print("Depth sorting %d of %d particles...\n", elements, total);
     depthSort();
-  }
-  else if (idxcount == elements)
-  {
-    //Nothing has changed, skip
-    debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
-    return;
   }
 
   tt = t1 = clock();
@@ -285,10 +286,9 @@ void Points::render()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   //Initialise particle buffer
-  int subSample = drawstate.global("pointsubsample");
   if (glIsBuffer(indexvbo))
   {
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_STATIC_DRAW);
     debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
   }
@@ -305,22 +305,22 @@ void Points::render()
   uint32_t SEED;
   idxcount = 0;
   for(int i=elements-1; i>=0; i--)
-  //for(int i=total-1; i>=0; i--)
   {
-    // If subSampling, use a pseudo random distribution to select which particles to draw
-    // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
-    SEED = pidx[i].index; //Reset the seed for determinism based on index
     //Distance based sub-sampling
     if (distSample > 0)
-      subSample = 1 + distSample * pidx[i].distance / SORT_DIST_MAX; //[1,distSample]
-    if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
+    {
+      SEED = pidx[i].index; //Reset the seed for determinism based on index
+      int subSample = 1 + distSample * pidx[i].distance / USHRT_MAX; //[1,distSample]
+      if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
+    }
     ptr[idxcount] = pidx[i].index;
     idxcount++;
   }
+
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
   t2 = clock();
-  if (subSample)
-    debug_print("  %.4lf seconds to upload %d indices (Sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, subSample);
+  if (distSample)
+    debug_print("  %.4lf seconds to upload %d indices (dist-sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, distSample);
   else
     debug_print("  %.4lf seconds to upload %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
   t1 = clock();
@@ -375,9 +375,10 @@ void Points::draw()
   setState(0, prog); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
-  if (view->sort || idxcount != elements) render();
+  //if (view->sort || idxcount != elements) render();
+  if (view->sort || idxcount == 0) render();
   //After render(), elements holds unfiltered count, idxcount is filtered
-  elements = idxcount;
+  //idxcount = idxcount;
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   glEnable(GL_POINT_SPRITE);
@@ -414,7 +415,7 @@ void Points::draw()
     stride += 2 * sizeof(float);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-  if (elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
+  if (idxcount > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
     //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
     glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
@@ -440,7 +441,7 @@ void Points::draw()
       }
 
       //Draw the points
-      glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+      glDrawElements(GL_POINTS, idxcount, GL_UNSIGNED_INT, (GLvoid*)0);
 
       if (aSize >= 0) glDisableVertexAttribArray(aSize);
       if (aPointType >= 0) glDisableVertexAttribArray(aPointType);
@@ -453,7 +454,7 @@ void Points::draw()
       GL_Error_Check;
 
       //Draw the points
-      glDrawElements(GL_POINTS, elements, GL_UNSIGNED_INT, (GLvoid*)0);
+      glDrawElements(GL_POINTS, idxcount, GL_UNSIGNED_INT, (GLvoid*)0);
     }
 
     glDisableClientState(GL_VERTEX_ARRAY);

@@ -47,8 +47,6 @@
 #ifndef Geometry__
 #define Geometry__
 
-#define SORT_DIST_MAX 65535
-
 typedef struct
 {
   unsigned int dataIdx;
@@ -455,10 +453,6 @@ public:
 //Sorting util functions
 int compareXYZ(const void *a, const void *b);
 int comparePoint(const void *a, const void *b);
-//void radix(int byte, long N, PIndex *source, PIndex *dest);
-//void radixsort2(PIndex *source, long N);
-//void radix_sort_byte(int byte, long N, unsigned char *source, unsigned char *dest, int size);
-//void radix_sort(void *source, long N, int size, int bytes);
 
 template <typename T>
 void radix(char byte, long N, T *source, T *dest)
