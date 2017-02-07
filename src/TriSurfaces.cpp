@@ -161,7 +161,7 @@ void TriSurfaces::loadMesh()
     if (geom[index]->indices.size() > 0)
     {
       unsigned i1, i2, i3;
-      for (unsigned int j=0; j < geom[index]->indices.size(); j += 3)
+      for (unsigned int j=0; j < geom[index]->indices.size()-2; j += 3)
       {
         i1 = geom[index]->indices[j];
         i2 = geom[index]->indices[j+1];
@@ -335,7 +335,7 @@ void TriSurfaces::loadList()
     //(also required for filtering by map)
     //geom[index]->colourCalibrate();
 
-    for (unsigned int t = 0; t < geom[index]->indices.size(); t+=3, offset++)
+    for (unsigned int t = 0; t < geom[index]->indices.size()-2; t+=3, offset++)
     {
       //voffset is offset of the last vertex added to the vbo from the previous object
       assert(offset < total);
@@ -506,7 +506,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   bool vertColour = (hasColours && hasColours == geom[index]->vertices.size()/3);
   if (hasColours && !vertColour) std::cout << "WARNING: Not enough colour values for per-vertex normalisation!\n";
   //Calculate face normals for each triangle and copy to each face vertex
-  for (unsigned int v=0; v<verts.size(); v += 3)
+  for (unsigned int v=0; v<verts.size()-2; v += 3)
   {
     //Copies for each vertex
     normals[v] = vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
