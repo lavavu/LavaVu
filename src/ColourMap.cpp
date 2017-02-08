@@ -49,7 +49,7 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
   : properties(drawstate.globals, drawstate.defaults),
     minimum(0), maximum(1), name(name), texture(NULL),
-    calibrated(false), noValues(false), log(false)
+    calibrated(false), noValues(false), log(false), opaque(true)
 {
   precalc = new Colour[samples];
   background.value = 0xff000000;
@@ -155,6 +155,18 @@ void ColourMap::add(float *components, float pvalue)
 void ColourMap::calc()
 {
   if (!colours.size()) return;
+
+  //Check for transparency
+  opaque = true;
+  for (unsigned int i=0; i<colours.size(); i++)
+  {
+    if (colours[i].colour.a < 255)
+    {
+      opaque = false;
+      break;
+    }
+  }
+
   //Precalculate colours
   if (log)
     for (int cv=0; cv<samples; cv++)

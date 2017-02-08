@@ -63,6 +63,10 @@ class ColourMap
   static int samples;
   Colour* precalc;
 
+  bool noValues; //Use position data only
+  bool log; //Cached logscale setting
+  float range, irange;
+
 public:
   std::vector<ColourVal> colours;
   Colour background;
@@ -70,10 +74,8 @@ public:
   Properties properties;
   float minimum;
   float maximum;
-  float range, irange;
   bool calibrated;
-  bool noValues; //Use position data only
-  bool log; //Cached logscale setting
+  bool opaque;
   TextureData* texture;
 
   ColourMap(DrawState& drawstate, std::string name="", std::string props="");
