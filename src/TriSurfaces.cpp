@@ -250,7 +250,12 @@ void TriSurfaces::loadMesh()
       geom[index]->data[lucIndexData] = &geom[index]->indices;
       FloatValues* oldvalues = geom[index]->colourData();
       if (oldvalues)
+      {
         geom[index]->values[geom[index]->draw->colourIdx] = new FloatValues();
+        geom[index]->values[geom[index]->draw->colourIdx]->label = oldvalues->label;
+        geom[index]->values[geom[index]->draw->colourIdx]->minimum = oldvalues->minimum;
+        geom[index]->values[geom[index]->draw->colourIdx]->maximum = oldvalues->maximum;
+      }
       bool optimise = geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
       {
@@ -262,9 +267,10 @@ void TriSurfaces::loadMesh()
           normals[verts[v].id].normalise();
 
           //Average final colour
+          //if (vertColour && oldvalues && geom[index]->colourData())
           if (vertColour && oldvalues)
           {
-            read(geom[index]->draw, 1, &oldvalues->value[verts[v].id], "Default");
+            read(geom[index]->draw, 1, &oldvalues->value[verts[v].id], oldvalues->label);
             if (verts[v].vcount > 1)
               geom[index]->colourData()->value[geom[index]->count] /= verts[v].vcount;
           }
@@ -284,8 +290,9 @@ void TriSurfaces::loadMesh()
           indices[verts[v].id] = indices[verts[v].ref];
         }
       }
-      //Read replacement vertices
+      //Replace vertex containers
       geom[index]->vertices = newverts;
+      geom[index]->data[lucVertexData] = &geom[index]->vertices;
       if (oldvalues) delete oldvalues;
     }
 
