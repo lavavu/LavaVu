@@ -631,9 +631,11 @@ void Geometry::setState(unsigned int i, Shader* prog)
   GL_Error_Check;
   if (geom.size() <= i) return;
   DrawingObject* draw = geom[i]->draw;
+
   //Only set state when object changes
-  if (draw == cached && i > 0) return;
+  if (draw == cached) return;
   cached = draw;
+
   bool lighting = geom[i]->draw->properties["lit"];
 
   //Global/Local draw state
@@ -770,6 +772,9 @@ void Geometry::draw()  //Display saved geometry
 
   //Default to no shaders
   glUseProgram(0);
+
+  //Clear cached object
+  cached = NULL;
 
   //Anything to draw?
   int newcount = 0;
