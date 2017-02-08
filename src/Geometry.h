@@ -336,6 +336,7 @@ public:
   void loadList();
   void centroid(float* v1, float* v2, float* v3);
   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
+  void calcTriangleNormalsWithIndices(int index);
   void calcGridNormals(int i, std::vector<Vec3d> &normals);
   void calcGridIndices(int i, std::vector<GLuint> &indices);
   void depthSort();

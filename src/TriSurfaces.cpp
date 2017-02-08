@@ -184,6 +184,9 @@ void TriSurfaces::loadMesh()
       //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
       //elements += counts[index]; //geom[index]->indices.size();
       unique += geom[index]->vertices.size() / 3;
+
+      if (geom[index]->normals.size() == 0)
+        calcTriangleNormalsWithIndices(index);
       continue;
     }
 
@@ -586,6 +589,42 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   t2 = clock();
   debug_print("  %.4lf seconds to replace duplicates (%d/%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, dupcount, verts.size());
   t1 = clock();
+}
+
+void TriSurfaces::calcTriangleNormalsWithIndices(int index)
+{
+  clock_t t1,t2;
+  t1 = clock();
+  debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->indices.size()/3);
+  //Calculate face normals for each triangle and copy to each face vertex
+  std::vector<Vec3d> normals(geom[index]->count);
+  for (unsigned int i=0; i<geom[index]->indices.size()-2; i += 3)
+  {
+    //Copies for each vertex
+    GLuint i1 = geom[index]->indices[i];
+    GLuint i2 = geom[index]->indices[i+1];
+    GLuint i3 = geom[index]->indices[i+2];
+
+    Vec3d normal = vectorNormalToPlane(geom[index]->vertices[i1], 
+                                       geom[index]->vertices[i2],
+                                       geom[index]->vertices[i3]);
+
+    normals[i1] += normal;
+    normals[i2] += normal;
+    normals[i3] += normal;
+  }
+  t2 = clock();
+  debug_print("  %.4lf seconds to calc facet normals\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+
+  //Normalise to combine and load normal data
+  for (unsigned int n=0; n<normals.size(); n++)
+  {
+    normals[n].normalise();
+    read(geom[index], 1, lucNormalData, normals[n].ref());
+  }
+  t2 = clock();
+  debug_print("  %.4lf seconds to normalise (%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, normals.size());
 }
 
 void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
