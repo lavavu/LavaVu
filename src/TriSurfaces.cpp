@@ -347,7 +347,7 @@ void TriSurfaces::loadList()
 
     //Calibrate colour maps on range for this surface
     //(also required for filtering by map)
-    //geom[index]->colourCalibrate();
+    geom[index]->colourCalibrate();
 
     for (unsigned int t = 0; t < geom[index]->indices.size()-2; t+=3, offset++)
     {
