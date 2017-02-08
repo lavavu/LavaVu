@@ -99,6 +99,13 @@ void TriSurfaces::update()
     //(can't set per-objects properties when all triangles collected and sorted)
     geom[t]->opaque = (geom[t]->draw->properties["wireframe"] || 
                        geom[t]->draw->properties["opaque"]);
+
+    //If using a colourmap without transparency, and no opacity prop, flag opaque
+    if (geom[t]->draw->colourMap && geom[t]->values.size() > geom[t]->draw->colourIdx && 
+        geom[t]->draw->colourMap->opaque && geom[t]->draw->properties["opacity"] == 1.0)
+    {
+      geom[t]->opaque = true;
+    }
   }
   if (total == 0) return;
   if (drawelements == 0) return;
