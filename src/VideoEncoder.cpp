@@ -170,7 +170,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->me_subpel_quality = 7; //9, 7, 0
     c->me_range = 16;
 
-    c->scenechange_threshold = 40;
+    //c->scenechange_threshold = 40; //DEPRECATED
     c->i_quant_factor = 0.71;
     c->qcompress = 0.6; // qcomp=0.5
 
@@ -197,7 +197,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
     c->refs = 3; // reference frames
 
     c->max_b_frames = 2; //16; //2; //Default
-    c->b_frame_strategy = 1;
+    //c->b_frame_strategy = 1; //DEPRECATED
 
     //Do we need to set this or just let it be based on quality settings?
     //c->bit_rate = (int)(3200000.f * 0.80f);
@@ -252,15 +252,17 @@ AVFrame *VideoEncoder::alloc_picture(enum AVPixelFormat pix_fmt)
   picture = av_frame_alloc();
   if (!picture)
     return NULL;
-  size = avpicture_get_size(pix_fmt, width, height);
+  //size = av_get_size(pix_fmt, width, height);
+  size = av_image_get_buffer_size(pix_fmt, width, height, 1);
   picture_buf = (uint8_t*)av_malloc(size);
   if (!picture_buf)
   {
     av_free(picture);
     return NULL;
   }
-  avpicture_fill((AVPicture *)picture, picture_buf,
-                 pix_fmt, width, height);
+  //avframe_fill(picture, picture_buf,
+  //               pix_fmt, width, height);
+  av_image_fill_arrays (picture->data, picture->linesize, picture_buf, pix_fmt, width, height, 1);
   //Fixes frame warnings?
   picture->width = width;
   picture->height = height;
