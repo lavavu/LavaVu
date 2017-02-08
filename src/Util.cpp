@@ -201,7 +201,7 @@ void Properties::parse(const std::string& property, bool global)
       //Parse simple increments and decrements
       int end = key.length()-1;
       char prev = key.at(end);
-      if (prev == '+' || prev == '-')
+      if (prev == '+' || prev == '-' || prev == '*')
       {
         std::string mkey = key.substr(0,end);
         std::stringstream ss(value);
@@ -212,6 +212,8 @@ void Properties::parse(const std::string& property, bool global)
           dest[mkey] = val + parsedval;
         else if (prev == '-')
           dest[mkey] = val - parsedval;
+        else if (prev == '*')
+          dest[mkey] = val * parsedval;
 
       }
       else if (valuel == "true")
