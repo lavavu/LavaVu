@@ -103,6 +103,8 @@ protected:
   QuadSurfaces* border;
 
   unsigned int idle;
+  std::chrono::time_point<std::chrono::system_clock> frametime;
+  int fps, framecount;
 
 public:
   bool loop;

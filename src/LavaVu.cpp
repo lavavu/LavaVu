@@ -60,6 +60,8 @@ LavaVu::LavaVu(std::string binpath) : binpath(binpath)
   rulers = NULL;
   encoder = NULL;
   verbose = dbpath = false;
+  frametime = std::chrono::system_clock::now();
+  fps = framecount = 0;
 
   defaultScript = "init.script";
 
@@ -1892,6 +1894,23 @@ void LavaVu::display(bool redraw)
     viewSelect(selview);
   }
 #endif
+
+  //Calculate FPS
+  if (drawstate.global("fps"))
+  {
+    auto now = std::chrono::system_clock::now();
+    std::chrono::duration<float> diff = now-frametime;
+    framecount++;
+    if (diff.count() > 1.0f)
+    {
+      fps = framecount / diff.count();
+      framecount = 0;
+      frametime = now;
+    }
+    std::stringstream ss;
+    ss << "FPS: " << fps;
+    displayText(ss.str(), 1);
+  }
 
   //Print current info message (displayed for one frame only)
   if (status) displayMessage();
