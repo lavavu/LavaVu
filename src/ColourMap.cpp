@@ -454,9 +454,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   json tickValues = colourbarprops["tickvalues"];
   if (tickValues.size() > ticks) ticks = tickValues.size();
   bool printTicks = colourbarprops["printticks"];
-  std::string units = colourbarprops["units"];
-  bool scientific = colourbarprops["scientific"];
-  int precision = colourbarprops["precision"];
+  std::string format = colourbarprops["format"];
   float scaleval = colourbarprops["scalevalue"];
 
   //Always show at least two ticks on a log scale
@@ -547,15 +545,13 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
     if (printTicks || i == 0 || i == ticks+1)
     {
       /* Apply any scaling factor  and show units on output */
-      if ( !scientific && fabs(tickValue) <= FLT_MIN )
+      if (fabs(tickValue) <= FLT_MIN )
         sprintf( string, "0" );
       else
       {
         // For display purpose, scales the printed values if needed
         tickValue = scaleval * tickValue;
-        char format[10];
-        sprintf(format, "%%.%d%c%s", precision, scientific ? 'e' : 'g', units.c_str());
-        sprintf(string, format, tickValue);
+        sprintf(string, format.c_str(), tickValue);
       }
 
       if (drawstate.fonts.charset > FONT_VECTOR)

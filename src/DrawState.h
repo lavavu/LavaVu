@@ -284,12 +284,8 @@ public:
     defaults["tickvalues"] = json::array();
     // | colourbar | boolean | Set to false to disable drawing of tick values
     defaults["printticks"] = true;
-    // | colourbar | string | Units to print with tick values
-    defaults["units"] = "";
-    // | colourbar | boolean | Set to true to use scientific exponential notation for tick values
-    defaults["scientific"] = false;
-    // | colourbar | integer | Number of significant decimal digits to show
-    defaults["precision"] = 2;
+    // | colourbar | string | Format specifier for tick values, eg: %.3[f/e/g] standard, scientific, both
+    defaults["format"] = "%.5g";
     // | colourbar | real | Multiplier to scale tick values
     defaults["scalevalue"] = 1.0;
     // | colourbar | integer | Outline width to draw around colour bar
