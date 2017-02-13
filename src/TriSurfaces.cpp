@@ -102,7 +102,7 @@ void TriSurfaces::update()
 
     //If using a colourmap without transparency, and no opacity prop, flag opaque
     if (geom[t]->draw->colourMap && geom[t]->values.size() > geom[t]->draw->colourIdx && 
-        geom[t]->draw->colourMap->opaque && geom[t]->draw->properties["opacity"] == 1.0)
+        geom[t]->draw->colourMap->opaque && (float)geom[t]->draw->properties["opacity"] == 1.0)
     {
       geom[t]->opaque = true;
     }
