@@ -121,13 +121,12 @@ protected:
   unsigned int next;
   unsigned int datasize;
   unsigned int offset;
-  bool generated;
 public:
   float minimum;
   float maximum;
   std::string label;
 
-  DataContainer() : next(0), datasize(1), offset(0), generated(false), minimum(0), maximum(1), label("Default") {}
+  DataContainer() : next(0), datasize(1), offset(0), minimum(0), maximum(1), label("") {}
 
   //Pure virtual methods
   virtual unsigned int bytes() = 0;

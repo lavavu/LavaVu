@@ -172,7 +172,6 @@ public:
   int switchCoordSystem();
   void zoomToFit(int margin=-1);
   bool scaleSwitch();
-  int direction();
 
   //Utility functions
   void drawOverlay(Colour& colour, std::string& title);

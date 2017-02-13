@@ -605,12 +605,6 @@ bool View::scaleSwitch()
   return scaled;
 }
 
-int View::direction()
-{
-  //Returns 1 or -1 multiplier representing direction of viewer
-  return model_trans[2] > 0 ? -1 : 1;
-}
-
 int View::switchCoordSystem()
 {
   if ((int)properties["coordsystem"] == LEFT_HANDED)
