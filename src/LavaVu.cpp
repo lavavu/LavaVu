@@ -2459,10 +2459,6 @@ bool LavaVu::loadFile(const std::string& file)
     //Load initial figure
     if (initfigure != 0) amodel->loadFigure(initfigure-1);
 
-    //Set default window title to model name
-    std::string name = drawstate.global("caption");
-    if (name == APPNAME__ && !amodel->memorydb) drawstate.globals["caption"] = amodel->file.base;
-
     //Save path of first sucessfully loaded model
     if (dbpath && viewer->output_path.length() == 0)
     {

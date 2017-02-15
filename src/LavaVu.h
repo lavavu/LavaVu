@@ -46,10 +46,6 @@
 #include "Model.h"
 #include "VideoEncoder.h"
 
-#ifndef APPNAME__
-#define APPNAME__ "LavaVu"
-#endif
-
 #define MAX_MSG 256
 
 typedef enum

@@ -142,6 +142,8 @@ bool Model::loadFigure(int fig)
   //Set window caption
   if (fignames[figure].length() > 0)
     drawstate.globals["caption"] = fignames[figure];
+  else if (!memorydb) 
+    drawstate.globals["caption"] = file.base;
   return true;
 }
 
