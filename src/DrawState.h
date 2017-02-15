@@ -246,7 +246,7 @@ public:
     // | object(vector) | real | Arrow fixed shaft radius, default is to calculate proportional to length
     defaults["radius"] = 0.0;
     // | object(vector) | boolean | Automatically scale vectors based on maximum magnitude
-    defaults["autoscale"] = false;
+    defaults["autoscale"] = true;
 
     // | object(tracer) | integer | Number of time steps to trace particle path
     defaults["steps"] = 0;
