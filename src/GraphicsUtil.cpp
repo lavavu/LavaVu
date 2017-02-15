@@ -724,6 +724,10 @@ GLubyte* ImageLoader::read()
     imageData = loadPPM();
   if (fn.type == "tif" || fn.type == "tiff")
     imageData = loadTIFF();
+
+  //Requires flip on load for OpenGL
+  if (flip) RawImageFlip(imageData, texture->width, texture->height, texture->channels);
+
   return imageData;
 }
 
@@ -794,8 +798,7 @@ GLubyte* ImageLoader::loadPPM()
   texture->channels = 3;
   imageData = new GLubyte[texture->width*texture->height*texture->channels];
 
-  //Flip scanlines vertically
-  for (int j = texture->height - 1 ; j >= 0 ; j--)
+  for (int j = 0; j<texture->height; j++)
     if (fread(&imageData[texture->width * j * texture->channels], texture->channels, texture->width, imageFile) < texture->width) 
       abort_program("PPM Read Error");
   fclose(imageFile);
@@ -814,9 +817,6 @@ GLubyte* ImageLoader::loadPNG()
   }
   imageData = (GLubyte*)read_png(file, texture->channels, texture->width, texture->height);
 
-  //Requires flip on load for OpenGL
-  RawImageFlip(imageData, texture->width, texture->height, texture->channels);
-
   file.close();
 
   return imageData;
@@ -826,9 +826,6 @@ GLubyte* ImageLoader::loadJPEG()
 {
   int width, height, channels;
   GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, 3);
-
-  //Requires flip on load for OpenGL
-  RawImageFlip(imageData, width, height, 3);
 
   texture->width = width;
   texture->height = height;
@@ -856,7 +853,6 @@ GLubyte* ImageLoader::loadTIFF()
     {
       if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
       {
-        RawImageFlip(imageData, width, height, texture->channels);
         texture->width = width;
         texture->height = height;
       }

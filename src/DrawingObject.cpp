@@ -98,7 +98,7 @@ TextureData* DrawingObject::useTexture(ImageLoader* tex)
       std::string texfn = properties["texturefile"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
-        tex = texture = new ImageLoader(texfn);
+        tex = texture = new ImageLoader(texfn, properties["fliptexture"]);
       }
       else
       {

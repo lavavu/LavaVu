@@ -180,6 +180,8 @@ public:
     defaults["scaling"] = 1.0;
     // | object | string | External texture image file path to load and apply to surface or points
     defaults["texturefile"] = "";
+    // | object | boolean | Flip texture image after loading, usually required
+    defaults["fliptexture"] = true;
     // | object | integer [0,n] | Index of data set to colour object by (requires colour map)
     defaults["colourby"] = 0;
     // | object | integer [0,n] | Index of data set to apply transparency to object by (requires opacity map)

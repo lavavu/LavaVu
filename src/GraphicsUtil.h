@@ -652,11 +652,12 @@ class ImageLoader
 public:
   FilePath fn;
   bool mipmaps;
+  bool flip;
   TextureData* texture;
   int type;
 
-  ImageLoader() : mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
-  ImageLoader(const std::string& texfn) : fn(texfn), mipmaps(true), texture(NULL), type(VOLUME_NONE) {}
+  ImageLoader(bool flip=true) : mipmaps(true), flip(flip), texture(NULL), type(VOLUME_NONE) {}
+  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), mipmaps(true), flip(flip), texture(NULL), type(VOLUME_NONE) {}
 
   TextureData* use();
   void load();
