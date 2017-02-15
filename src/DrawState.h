@@ -361,6 +361,8 @@ public:
     defaults["caption"] = "LavaVu";
     // | global | integer[2] | Window resolution X,Y
     defaults["resolution"] = {1024, 768};
+    // | global | boolean | Turn on to display FPS count
+    defaults["fps"] = false;
     // | global | boolean | Turn on to automatically add and switch to a new timestep after loading a data file
     defaults["filestep"] = false;
     // | global | boolean | Turn on to set initial state of all loaded objects to hidden
