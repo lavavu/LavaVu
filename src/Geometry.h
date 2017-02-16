@@ -81,6 +81,7 @@ class GeomData
 {
 public:
   static std::string names[lucMaxType];
+  static std::string datalabels[lucMaxDataType+1];
   DrawingObject* draw; //Parent drawing object
   unsigned int count;  //Number of vertices
   unsigned int width;

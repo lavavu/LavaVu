@@ -38,6 +38,13 @@
 //Init static, names list
 std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
 
+std::string GeomData::datalabels[lucMaxDataType+1] = {"vertices", "normals", "vectors",
+                                          "values", "opacities", "red", "green", "blue",
+                                          "indices", "widths", "heights", "lengths",
+                                          "colours", "texcoords", "sizes", 
+                                          "luminance", "rgb", "values"
+                                         };
+
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
 {
@@ -465,13 +472,6 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
                                 1, 1, 1, 1,
                                 1, 2, 1, 1, 1
                                };
-  const char* labels[lucMaxDataType+1] = {"vertices", "normals", "vectors",
-                                          "values", "opacities", "red", "green", "blue",
-                                          "indices", "widths", "heights", "lengths",
-                                          "colours", "texcoords", "sizes", 
-                                          "luminance", "rgb", "values"
-                                         };
-
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     if (geom[index]->draw == draw && drawable(index))
@@ -487,7 +487,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
           //Check in values and use if label matches
           for (auto vals : geom[index]->values)
           {
-            if (vals->label == labels[data_type])
+            if (vals->label == GeomData::datalabels[data_type])
               dat = vals;
           }
           //Use default colour values for "values" until multiple data sets supported in WebGL viewer
@@ -520,8 +520,8 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
             }
             el["data"] = values;
           }
-          data[labels[data_type]] = el;
-          std::cout << " -- " <<  labels[data_type] << " * " << length << " : " << dat->minimum << " - " << dat->maximum << std::endl;
+          data[GeomData::datalabels[data_type]] = el;
+          std::cout << " -- " <<  GeomData::datalabels[data_type] << " * " << length << " : " << dat->minimum << " - " << dat->maximum << std::endl;
           if (dat->minimum < dat->maximum)
           {
             el["minimum"] = dat->minimum;
