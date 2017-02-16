@@ -401,7 +401,7 @@ void LavaVu::arguments(std::vector<std::string> args)
   //drawstate.now = startstep;
 
   //Add default script
-  if (defaultScript.length())
+  if (defaultScript.length() && FileExists(defaultScript))
     args.push_back(defaultScript);
 
   //Process remaining args: Loads files, runs scripts, execute script commands
