@@ -787,7 +787,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     //Default to vector font if downsampling and no other font requested
     Properties cbprops(drawstate.globals, drawstate.defaults);
-    if (scale2d != 1.0)
+    if (scale2d != 1.0 && !objects[i]->properties.has("font"))
     {
       cbprops.data["font"] = "vector";
       cbprops.data["fontscale"] = 0.4*adjust;
