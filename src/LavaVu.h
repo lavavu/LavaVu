@@ -198,7 +198,7 @@ public:
   void writeSteps(bool images, int start, int end);
 
   //data loading
-  bool loadFile(const std::string& file);
+  virtual bool loadFile(const std::string& file);
   void defaultModel();
   void loadModel(FilePath& fn);
   bool loadModelStep(int model_idx, int at_timestep=-1, bool autozoom=false);
