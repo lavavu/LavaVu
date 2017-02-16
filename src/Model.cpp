@@ -397,8 +397,8 @@ void Model::loadWindows()
     loadFigure(figures.size()-1);
 
     //Load object links (colourmaps)
-    for (unsigned int o=0; o<objects.size(); o++)
-      loadLinks(objects[o]);
+    for (auto o: objects)
+      loadLinks(o);
   }
   else //Old db uses window structure
   {
@@ -642,6 +642,9 @@ void Model::loadLinks()
 //Load colourmaps for each object only
 void Model::loadLinks(DrawingObject* obj)
 {
+  //Only for objects from db files
+  if (obj->dbid <= 0) return;
+
   //Select statment to get all viewports in window and all objects in viewports
   char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
@@ -1172,6 +1175,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
     sprintf(objfilter, "WHERE object_id=%d", obj_id);
     //Remove the skip flag now we have explicitly loaded object
     DrawingObject* obj = findObject(obj_id);
+
     if (obj) obj->skip = false;
   }
 
@@ -1247,7 +1251,8 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       float maximum = (float)sqlite3_column_double(statement, 11);
       //New fields for the scaling features, applied when drawing colour bars
       //float dimFactor = (float)sqlite3_column_double(statement, 12);
-      //const char *units = (const char*)sqlite3_column_text(statement, 13);
+      //Units field repurposed for data label
+      const char *data_label = (const char*)sqlite3_column_text(statement, 13);
       const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
 
       const void *data = sqlite3_column_blob(statement, datacol);
@@ -1333,39 +1338,25 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
         //Read data block
         GeomData* g;
         //Convert legacy value types to use data labels
-        //TODO: allow label set in database (via property on geometry record?)
         switch (data_type)
         {
           case lucColourValueData:
-            g = active->read(obj, items, data, "colours");
-            break;
           case lucOpacityValueData:
-            g = active->read(obj, items, data, "opacities");
-            break;
           case lucRedValueData:
-            g = active->read(obj, items, data, "red");
-            break;
           case lucGreenValueData:
-            g = active->read(obj, items, data, "green");
-            break;
           case lucBlueValueData:
-            g = active->read(obj, items, data, "blue");
-            break;
           case lucXWidthData:
-            g = active->read(obj, items, data, "widths");
-            break;
           case lucYHeightData:
-            g = active->read(obj, items, data, "heights");
-            break;
           case lucZLengthData:
-            g = active->read(obj, items, data, "lengths");
-            break;
           case lucSizeData:
-            g = active->read(obj, items, data, "sizes");
-            break;
           case lucMaxDataType:
-            g = active->read(obj, items, data, "values");
+            if (strlen(data_label) > 0)
+              //Use provided label from units field
+              g = active->read(obj, items, data, data_label);
+            else //Use default/legacy label
+              g = active->read(obj, items, data, GeomData::datalabels[data_type]);
             break;
+
           default:
             //Non-value data
             g = active->read(obj, items, data_type, data, width, height, depth);
@@ -1439,8 +1430,6 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   // Remove existing data?
   issue("drop table IF EXISTS geometry", outdb);
   issue("drop table IF EXISTS timestep", outdb);
-  issue("drop table IF EXISTS object_colourmap", outdb);
-  issue("drop table IF EXISTS colourmap", outdb);
   issue("drop table IF EXISTS object", outdb);
   issue("drop table IF EXISTS state", outdb);
 
@@ -1451,10 +1440,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))", outdb);
 
   issue(
-    "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048), FOREIGN KEY (colourmap_id) REFERENCES colourmap (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
-
-  issue(
-    "create table colourmap (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), minimum REAL, maximum REAL, logscale INTEGER, discrete INTEGER, centreValue REAL, properties VARCHAR(2048))", outdb);
+    "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))", outdb);
 
   //Write state
   writeState(outdb);
@@ -1513,6 +1499,9 @@ void Model::writeState(sqlite3* outdb)
     if (figures.size() == 0)
       figure = addFigure("default");
   }
+
+  //Update any active changes to current state
+  storeFigure();
 
   char SQL[SQL_QUERY_MAX];
 
@@ -1624,7 +1613,7 @@ void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometr
 
   }
 
-  snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, "", min[0], min[1], min[2], max[0], max[1], max[2]);
+  snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 
   /* Prepare statement... */
   if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
@@ -1967,7 +1956,6 @@ void Model::jsonRead(std::string data)
   if (len < inobjects.size()) len = inobjects.size();
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    if (i >= objects.size()) continue; //No adding objects from json now
     /*if (i >= objects.size())
     {
       std::string name = inobjects[i]["name"];
