@@ -198,7 +198,7 @@ unsigned int GeomData::valuesLookup(const json& by)
         break;
       }
     }
-    debug_print("Label: %s not found!\n", label.c_str());
+    if (valueIdx > MAX_DATA_ARRAYS) debug_print("Label: %s not found!\n", label.c_str());
   }
   else if (by.is_number())
     valueIdx = by;
@@ -268,6 +268,7 @@ bool GeomData::filter(unsigned int idx)
       //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
       min = filterCache[i].minimum;
       max = filterCache[i].maximum;
+      FloatValues* v = values[filterCache[i].dataIdx];
       if (filterCache[i].map)
       {
         //Range type filters map over available values on [0,1] => [min,max]
@@ -275,17 +276,17 @@ bool GeomData::filter(unsigned int idx)
         //Otherwise they come directly from the data 
         ColourMap* cmap = draw->colourMap;
         if (cmap)
-          value = cmap->scaleValue(values[filterCache[i].dataIdx]->value[ridx]);
+          value = cmap->scaleValue((*v)[ridx]);
         else
         {
           value = values[filterCache[i].dataIdx]->maximum - values[filterCache[i].dataIdx]->minimum;
           min = values[filterCache[i].dataIdx]->minimum + min * value;
           max = values[filterCache[i].dataIdx]->minimum + max * value;
-          value = values[filterCache[i].dataIdx]->value[ridx];
+          value = (*v)[ridx];
         }
       }
       else
-        value = values[filterCache[i].dataIdx]->value[ridx];
+        value = (*v)[ridx];
 
       //if (idx%10000==0) std::cout << min << " < " << value << " < " << max << std::endl;
       
@@ -321,7 +322,7 @@ float GeomData::colourData(unsigned int idx)
 {
   if (values.size() == 0 || values.size() <= draw->colourIdx) return HUGE_VALF;
   FloatValues* fv = values[draw->colourIdx];
-  return fv->value[idx];
+  return (*fv)[idx];
 }
 
 FloatValues* GeomData::valueData(unsigned int vidx)
@@ -333,7 +334,7 @@ FloatValues* GeomData::valueData(unsigned int vidx)
 float GeomData::valueData(unsigned int vidx, unsigned int idx)
 {
   FloatValues* fv = valueData(vidx);
-  return fv ? fv->value[idx] : HUGE_VALF;
+  return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
 Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate), 
