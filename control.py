@@ -95,6 +95,7 @@ def export():
         if actcmd:
           actfunction += ";" + actcmd
         actfunction = 'wi.execute("' + actfunction + '", true);'
+        #actfunction = 'wi.execute("' + actfunction + '");'
         #Add to actions list
         actionjs += 'actions.push(function(value) {' + actfunction + '});\n'
 
@@ -263,10 +264,6 @@ class Panel(object):
     def html(self):
         html = ''
         for i in range(len(self.controls)):
-            if self.controls[i].label and not isinstance(self.controls[i], Checkbox):
-                html += '<p>' + self.controls[i].label + ':</p>\n'
-            else:
-                html += '<br>\n'
             html += self.controls[i].controls()
         return html
 
@@ -322,32 +319,51 @@ class Control(object):
         viewerid = len(windows)-1 #Just use the most recently added interactor instance
         if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
         html = '<div data-id="' + str(viewerid) + '" style="" class="lvctrl">\n'
-        #html = '<div data-id="' + str(viewerid) + '" style="float: left;" class="lvctrl">\n'
-        if len(self.label): html += '<p>' + self.label + ':</p>\n'
         html += self.controls()
         html += '</div>\n'
         render(html)
 
+    def labelhtml(self):
+        #Default label
+        html = ""
+        if len(self.label):
+            html += '<p>' + self.label + ':</p>\n'
+        return html
+
     def controls(self, type='number', attribs={}, onchange=""):
+        #Input control
         html =  '<input type="' + type + '" '
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
         html += 'value="' + str(self.value) + '" '
+        #Onchange event
         onchange += self.onchange()
         html += 'onchange="' + onchange + '" '
         html += '>\n'
         return html
 
+class Number(Control):
+    def __init__(self, *args, **kwargs):
+        super(Number, self).__init__(*args, **kwargs)
+
+    def controls(self):
+        html = self.labelhtml()
+        html += super(Number, self).controls()
+        return html + '<br>\n'
+
 class Checkbox(Control):
     def __init__(self, *args, **kwargs):
         super(Checkbox, self).__init__(*args, **kwargs)
+
+    def labelhtml(self):
+        return '' #'<br>\n'
 
     def controls(self):
         attribs = {}
         if self.value: attribs = {"checked" : "checked"}
         html = "<label>\n"
         html += super(Checkbox, self).controls('checkbox', attribs)
-        html += " " + self.label + "</label>\n"
+        html += " " + self.label + "</label><br>\n"
         return html
 
     def onchange(self):
@@ -368,8 +384,27 @@ class Range(Control):
 
     def controls(self):
         attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step}
-        html = super(Range, self).controls('number', attribs, onchange='this.nextElementSibling.value=this.value; ')
+        html = self.labelhtml()
+        html += super(Range, self).controls('number', attribs, onchange='this.nextElementSibling.value=this.value; ')
         html += super(Range, self).controls('range', attribs, onchange='this.previousElementSibling.value=this.value; ')
+        return html + '<br>\n'
+
+class Button(Control):
+    def __init__(self, command, label=""):
+        super(Button, self).__init__(None, None, command, "", label)
+
+    def onchange(self):
+        return "do_action(" + str(self.id) + ", '', this);"
+
+    def labelhtml(self):
+        return ''
+
+    def controls(self):
+        html = self.labelhtml()
+        html =  '<input type="button" value="' + str(self.label) + '" '
+        #Onclick event
+        html += 'onclick="' + self.onchange() + '" '
+        html += '><br>\n'
         return html
 
 class Command(Control):
@@ -377,10 +412,11 @@ class Command(Control):
         super(Command, self).__init__(command=" ", label="Command", *args, **kwargs)
 
     def controls(self):
-        html = """
+        html = self.labelhtml()
+        html += """
         <input type="text" value="" 
         onkeypress="if (event.keyCode == 13) { var cmd=this.value.trim(); 
-        do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };">\n
+        do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
         """
         return html.replace('---ID---', str(self.id))
 
@@ -389,7 +425,8 @@ class Colour(Control):
         super(Colour, self).__init__(command="", *args, **kwargs)
 
     def controls(self):
-        html = """
+        html = self.labelhtml()
+        html += """
         <div><div class="colourbg checkerboard">
           <div id="colour_---ELID---" class="colour" onclick="
             var col = new Colour();
@@ -421,13 +458,14 @@ class ColourMap(Control):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
         maps = target.instance.state["colourmaps"]
-        if self.value < len(maps):
+        if self.value != None and self.value < len(maps):
             self.map = maps[self.value]
         #Replace action on the control
         actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
 
     def controls(self):
-        html = """
+        html = self.labelhtml()
+        html += """
         <canvas id="palette_---ELID---" width="512" height="24" class="palette checkerboard">
         </canvas>
         <script>
@@ -464,16 +502,22 @@ class TimeStepper(Range):
         self.value = 0
 
     def controls(self):
-        attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step}
-        html = Control.controls(self, 'number', attribs, onchange='this.nextElementSibling.value=this.value; ')
-        html += Control.controls(self, 'range', attribs, onchange='this.previousElementSibling.value=this.value; ')
-        html += """<br>
-        <input type="button" onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()" value="&larr;" />
-        <input type="button" onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()" value="&rarr;" />
-        """
+        html = Range.controls(self)
+        html += '<input type="button" style="width: 50px;" onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()" value="&larr;" />'
+        html += '<input type="button" style="width: 50px;" onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()" value="&rarr;" />'
         return html
 
-class Filter(object):
+class DualRange(Control):
+    def __init__(self, target, properties, values, label, step=None):
+        self.label = label
+
+        self.ctrlmin = Range(target=target, property=properties[0], step=step, value=values[0], label="")
+        self.ctrlmax = Range(target=target, property=properties[1], step=step, value=values[1], label="")
+
+    def controls(self):
+        return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
+
+class Filter(Control):
     def __init__(self, target, filteridx, label=None, range=None, step=None):
         self.label = label
         self.filter = target["filters"][filteridx]
@@ -499,7 +543,7 @@ class Filter(object):
         actions[self.ctrlmax.id] = {"type" : "FILTER", "args" : [target, filteridx, "maximum"]}
 
     def controls(self):
-        return self.ctrlmin.controls() + "<br>\n" + self.ctrlmax.controls()
+        return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
 
 class ObjectList(Control):
     def __init__(self, viewer, *args, **kwargs):
@@ -509,8 +553,8 @@ class ObjectList(Control):
             self.objctrls.append(Checkbox(obj, "visible", label=obj["name"])) 
 
     def controls(self):
-        html = ""
+        html = self.labelhtml()
         for ctrl in self.objctrls:
-            html += ctrl.controls() + "<br>\n"
+            html += ctrl.controls()
         return html
 
