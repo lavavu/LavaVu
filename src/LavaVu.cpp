@@ -763,7 +763,7 @@ void LavaVu::readVolumeSlice(const FilePath& fn)
     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
-void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels)
+void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels, bool flip)
 {
   //Create volume object, or if static volume object exists, use it
   int outChannels = drawstate.global("volchannels");
@@ -793,6 +793,8 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   }
   else
     amodel->volumes->add(vobj);
+
+  if (flip) RawImageFlip(imageData, width, height, channels);
 
   //Save static volume for loading multiple slices
   volume = vobj;
@@ -936,8 +938,7 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
         {
           //Subsample
           if (count % ds != 0) {count++; continue;}
-          RawImageFlip(imageData, width, height, channels);
-          readVolumeSlice(fn.base, imageData, width, height, channels);
+          readVolumeSlice(fn.base, imageData, width, height, channels, true);
         }
         count++;
       }
@@ -1014,6 +1015,7 @@ void LavaVu::createDemoVolume()
       amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
       std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
     }
+    free(imageData);
   }
 }
 

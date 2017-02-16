@@ -144,7 +144,7 @@ public:
   void readXrwVolume(const FilePath& fn);
   void readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float min[2], float max[3], int channels=1);
   void readVolumeSlice(const FilePath& fn);
-  void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int bytesPerPixel);
+  void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels, bool flip=false);
   void readVolumeTIFF(const FilePath& fn);
   void createDemoModel(unsigned int numpoints);
   void createDemoVolume();
