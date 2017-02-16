@@ -66,6 +66,8 @@ public:
   std::string getState();
   std::string getFigures();
   std::string getTimeSteps();
+  void appendContainer(const std::string& name);
+  void loadTriangles(std::vector< std::vector <float> > array, const std::string& name, int split=0);
   void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData, const std::string& name="");
   void loadValues(std::vector <float> array, std::string label="", const std::string& name="");
   void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData, const std::string& name="");

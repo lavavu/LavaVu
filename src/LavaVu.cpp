@@ -2917,6 +2917,23 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
+void LavaVu::appendContainer(const std::string& name)
+{
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+    container->add(obj);
+}
+
+void LavaVu::loadTriangles(std::vector< std::vector <float> > array, const std::string& name, int split)
+{
+  DrawingObject* obj = lookupObject(name, aobject);
+  Geometry* container = lookupObjectContainer(obj);
+  if (container) 
+    for (unsigned int i=0; i < array.size(); i += 3)
+      container->addTriangle(obj, &array[i+0][0], &array[i+1][0], &array[i+2][0], split);
+}
+
 void LavaVu::loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type, const std::string& name)
 {
   DrawingObject* obj = lookupObject(name, aobject);

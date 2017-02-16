@@ -117,6 +117,16 @@ class Obj(object):
         #Return json data set list
         return json.dumps(self.dict["data"])
 
+    def add(self):
+        self.instance.app.appendContainer(self.name())
+
+    def triangles(self, data, split=0):
+        if split > 1:
+            print split
+            self.instance.app.loadTriangles(data, self.name(), split)
+        else:
+            self.vertices(data)
+
     def vertices(self, data):
         self.instance.app.loadVectors(data, LavaVuPython.lucVertexData, self.name())
 
@@ -126,16 +136,24 @@ class Obj(object):
     def vectors(self, data):
         self.instance.app.loadVectors(data, LavaVuPython.lucVectorData, self.name())
 
-    def values(self, data, label=""):
+    def values(self, data, label="default"):
         self.instance.app.loadValues(data, label, self.name())
 
     def colours(self, data):
         #Convert to list of strings
         if isinstance(data, str):
             data = data.split()
-        for i in range(len(data)):
-            if not isinstance(data[i], str): data[i] = str(data[i])
-        self.instance.app.loadColours(data, self.name())
+        if len(data) < 1: return
+        #Load as string array or unsigned int array
+        if isinstance(data[0], list):
+            #Convert to strings for json parsing first
+            data = [str(i) for i in data]
+        if isinstance(data[0], str):
+            #Each element will be parsed as a colour string
+            self.instance.app.loadColours(data, self.name())
+        else:
+            #Plain list, assume unsinged colour data
+            self.instance.app.loadUnsigned(data, LavaVuPython.lucRGBAData, self.name())
 
     def indices(self, data):
         self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData, self.name())
@@ -209,6 +227,7 @@ class Viewer(object):
 
     def __init__(self, binpath=libpath, *args, **kwargs):
         self.resolution = (640,480)
+        self._ctr = 0
         self.app = None
         try:
             self.app = LavaVuPython.LavaVu(binpath)
@@ -232,7 +251,7 @@ class Viewer(object):
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
-         quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False):
+         quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         #Convert options to args
         args = []
         if not initscript:
@@ -285,6 +304,9 @@ class Viewer(object):
             if database:
                 #Load objects/state
                 self._get()
+            #Additional keyword args = properties
+            for key in kwargs:
+                self[key] = kwargs[key]
         except RuntimeError,e:
             print "LavaVu Run error: " + str(e)
             pass
@@ -309,10 +331,10 @@ class Viewer(object):
         #self._get()
         self.state = json.loads(self.app.getState())
         view = self.state["views"][0]
-        if key in self.state:
-            self.state[key] = item
         if key in view:
             view[key] = item
+        elif key in self.state:
+            self.state[key] = item
         else:
             self.state["properties"][key] = item
         self._set()
@@ -407,9 +429,25 @@ class Viewer(object):
     #Shortcut for adding specific geometry types
     def _addtype(self, typename, name=None, **kwargs):
         #Set name to typename if none provided
-        if not name: name = typename
+        if not name: 
+            self._ctr += 1
+            name = typename + str(self._ctr)
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
+
+    def grid(self, name=None, width=100, height=100, dims=[2,2], verts=[], *args, **kwargs):
+        obj = self._addtype("quads", name, dims=dims, *args, **kwargs)
+        if len(verts) != dims[0]*dims[1]:
+            verts = []
+            yc = 0.0
+            for y in range(dims[1]):
+                xc = 0.0
+                for x in range(dims[0]):
+                    verts.append([xc, yc, 0])
+                    xc += width / float(dims[0])
+                yc += height / float(dims[1])
+        obj.vertices(verts)
+        return obj
 
     def getobject(self, identifier=None):
         #Return object by name/number or last in list if none provided
