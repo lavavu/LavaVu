@@ -137,12 +137,12 @@ void X11Viewer::open(int w, int h)
   OpenGLViewer::init();
 }
 
-void X11Viewer::setsize(int width, int height)
+void X11Viewer::setsize(int w, int h)
 {
-  if (width == 0 || height == 0 || !Xdisplay) return;
-  XResizeWindow(Xdisplay, win, width, height);
+  if (width == 0 || height == 0 || !Xdisplay || (w==width && h==height)) return;
+  XResizeWindow(Xdisplay, win, w, h);
   //Call base class setsize
-  OpenGLViewer::setsize(width, height);
+  OpenGLViewer::setsize(w, h);
 }
 
 void X11Viewer::show()
@@ -425,7 +425,6 @@ bool X11Viewer::createWindow(int width, int height)
 
 
   if (!glxcontext) abort_program("No context!\n");
-  if (!glxcontext) return false;
   return true;
 }
 
