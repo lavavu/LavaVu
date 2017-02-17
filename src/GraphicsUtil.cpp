@@ -246,13 +246,13 @@ void Viewport2d(int width, int height)
 void FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d)
 {
   //fixed, small, sans, serif, vector
-#ifdef USE_OMEGALIB
-  //Always use 3D vector font
-  std::string fonttype = "vector";
-#else
   std::string fonttype = def;
-  if (properties.has("font")) fonttype = properties["font"];
-#endif
+  if (properties["vectorfont"])
+    //Always use 3D vector font
+    fonttype = "vector";
+  if (properties.has("font"))
+    fonttype = properties["font"];
+
   fontscale = properties.getFloat("fontscale", scaling);
 
   //Colour

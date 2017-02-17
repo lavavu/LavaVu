@@ -14,6 +14,8 @@ public:
   json defaults;
 
   bool automate;
+  //Set when called from omegalib, camera handled externally
+  bool omegalib;
 
   //Model
   int now;
@@ -50,6 +52,7 @@ public:
   {
     borderobj = axisobj = rulerobj = NULL;
     counter = 0;
+    omegalib = false;
     //reset();
   }
 
@@ -381,6 +384,8 @@ public:
     defaults["trisplit"] = 0;
     // | global | boolean | Enable global camera for all models (default is separate cam for each)
     defaults["globalcam"] = false;
+    // | global | boolean | Always use vector font regardless of individual object properties
+    defaults["vectorfont"] = false;
     // | global | integer | Volume rendering output channels 1 (luminance) 3/4 (rgba)
     defaults["volchannels"] = 1;
     // | global | integer[3] | Volume rendering data voxel resolution X Y Z

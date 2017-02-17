@@ -52,7 +52,7 @@
 #include "Main/CocoaViewer.h"
 
 //Viewer class implementation...
-LavaVu::LavaVu(std::string binpath) : binpath(binpath)
+LavaVu::LavaVu(std::string binpath, bool omegalib) : binpath(binpath)
 {
   viewer = NULL;
   axis = NULL;
@@ -62,6 +62,7 @@ LavaVu::LavaVu(std::string binpath) : binpath(binpath)
   verbose = dbpath = false;
   frametime = std::chrono::system_clock::now();
   fps = framecount = 0;
+  drawstate.omegalib = omegalib;
 
   defaultScript = "init.script";
 
@@ -77,6 +78,8 @@ LavaVu::LavaVu(std::string binpath) : binpath(binpath)
 #endif
 
   //Create viewer window
+  if (!omegalib)
+  {
 #if defined HAVE_X11
   if (!viewer) viewer = new X11Viewer();
 #endif
@@ -90,11 +93,10 @@ LavaVu::LavaVu(std::string binpath) : binpath(binpath)
   if (!viewer) viewer = new CocoaViewer();
   if (!viewer) viewer = new CGLViewer();
 #endif
-#if defined HAVE_GLCONTEXT
-  //Assumes an OpenGL context is already provided
+  }
+  //Assume an OpenGL context is already provided
   if (!viewer) viewer = new OpenGLViewer();
-#endif
-  if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
+  //if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
 
   viewer->app = (ApplicationInterface*)this;
 
@@ -105,10 +107,11 @@ LavaVu::LavaVu(std::string binpath) : binpath(binpath)
   Server::htmlpath = binpath + "html";
 
   //Add default console input attachment to viewer
-#ifndef USE_OMEGALIB
-  static StdInput stdi;
-  viewer->addInput(&stdi);
-#endif
+  if (!omegalib)
+  {
+    static StdInput stdi;
+    viewer->addInput(&stdi);
+  }
 }
 
 void LavaVu::defaults()
@@ -147,9 +150,12 @@ void LavaVu::defaults()
   status = true;
   writeimage = false;
   writemovie = 0;
-#ifdef USE_OMEGALIB
-  drawstate.globals["sort"] = 0;
-#endif
+  //Omegalib defaults
+  if (drawstate.omegalib)
+  {
+    drawstate.globals["sort"] = 0;
+    drawstate.globals["vectorfont"] = true;
+  }
   message[0] = '\0';
   volume = NULL;
 
@@ -1740,17 +1746,18 @@ void LavaVu::display(bool redraw)
   //Viewport reset flagged
   if (viewset > 0)
   {
-#ifndef USE_OMEGALIB
-    //Resize if required
-    json res = aview->properties["resolution"];
-    if ((int)res[0] != viewer->width || (int)res[1] != viewer->height)
+    if (!drawstate.omegalib)
     {
-      viewer->setsize(res[0], res[1]);
-      viewer->postdisplay = true;
-      aview->initialised = false; //Force initial autozoom
-      return;
+      //Resize if required
+      json res = aview->properties["resolution"];
+      if ((int)res[0] != viewer->width || (int)res[1] != viewer->height)
+      {
+        viewer->setsize(res[0], res[1]);
+        viewer->postdisplay = true;
+        aview->initialised = false; //Force initial autozoom
+        return;
+      }
     }
-#endif
     //Update the viewports
     resetViews(viewset == 2);
   }
@@ -1776,10 +1783,10 @@ void LavaVu::display(bool redraw)
   else //Single viewport, always disable filter
     aview->filtered = false;
 
-#ifdef USE_OMEGALIB
+if (drawstate.omegalib)
   drawSceneBlended();
-#else
-
+else
+{
   if (aview->stereo)
   {
     viewApply(view);
@@ -1858,7 +1865,7 @@ void LavaVu::display(bool redraw)
     if (view != selview)
     viewSelect(selview);
   }
-#endif
+}
 
   //Calculate FPS
   if (drawstate.global("fps"))
@@ -2345,15 +2352,16 @@ void LavaVu::drawSceneBlended()
     drawScene();
     break;
   }
-#ifndef USE_OMEGALIB
-  std::string title = aview->properties["title"];
-  //Timestep macro ##
-  size_t pos =  title.find("##");
-  if (pos != std::string::npos && drawstate.timesteps.size() >= drawstate.now)
-    title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
-  aview->drawOverlay(viewer->textColour, title);
-  drawAxis();
-#endif
+  if (!drawstate.omegalib)
+  {
+    std::string title = aview->properties["title"];
+    //Timestep macro ##
+    size_t pos =  title.find("##");
+    if (pos != std::string::npos && drawstate.timesteps.size() >= drawstate.now)
+      title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
+    aview->drawOverlay(viewer->textColour, title);
+    drawAxis();
+  }
 }
 
 void LavaVu::drawScene()
@@ -2381,9 +2389,8 @@ void LavaVu::drawScene()
   amodel->labels->draw();
   amodel->lines->draw();
 
-#ifndef USE_OMEGALIB
-  drawBorder();
-#endif
+  if (!drawstate.omegalib)
+    drawBorder();
   drawRulers();
 
   //Restore default state

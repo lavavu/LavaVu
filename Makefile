@@ -1,5 +1,5 @@
 #Install path
-PREFIX = bin
+PREFIX ?= bin
 APREFIX = $(realpath $(PREFIX))
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
@@ -8,7 +8,7 @@ SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
 INDEX = $(PREFIX)/html/index.html
 
 #Object files path
-OPATH ?= /tmp
+OPATH ?= tmp
 
 #Compilers
 CPP=g++
@@ -127,7 +127,7 @@ install: paths $(PROGRAM)
 	/bin/bash build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
 
 .PHONY: force
-compiler_flags: force
+$(OPATH)/compiler_flags: force
 	echo '$(CPPFLAGS)' | cmp -s - $@ || echo '$(CPPFLAGS)' > $@
 
 paths:
@@ -136,7 +136,7 @@ paths:
 	mkdir -p $(PREFIX)/html
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp compiler_flags $(INC)
+$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths

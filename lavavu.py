@@ -225,12 +225,12 @@ class Objects(dict):
 
 class Viewer(object):
 
-    def __init__(self, binpath=libpath, *args, **kwargs):
+    def __init__(self, binpath=libpath, omegalib=False, *args, **kwargs):
         self.resolution = (640,480)
         self._ctr = 0
         self.app = None
         try:
-            self.app = LavaVuPython.LavaVu(binpath)
+            self.app = LavaVuPython.LavaVu(binpath, omegalib)
             self.setup(*args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary

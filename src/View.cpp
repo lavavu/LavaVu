@@ -528,19 +528,20 @@ void View::apply(bool use_fp)
   GL_Error_Check;
   // Setup view transforms
   glMatrixMode(GL_MODELVIEW);
-#ifndef USE_OMEGALIB
-  glLoadIdentity();
-  GL_Error_Check;
+  if (!drawstate.omegalib)
+  {
+    glLoadIdentity();
+    GL_Error_Check;
 
-  // Translate to cancel stereo parallax
-  glTranslatef(scene_shift, 0.0, 0.0);
-  GL_Error_Check;
+    // Translate to cancel stereo parallax
+    glTranslatef(scene_shift, 0.0, 0.0);
+    GL_Error_Check;
 
-  // Translate model away from eye by camera zoom/pan translation
-  //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
-  glTranslatef(model_trans[0]*scale[0], model_trans[1]*scale[0], model_trans[2]*scale[2]);
-  GL_Error_Check;
-#endif
+    // Translate model away from eye by camera zoom/pan translation
+    //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
+    glTranslatef(model_trans[0]*scale[0], model_trans[1]*scale[0], model_trans[2]*scale[2]);
+    GL_Error_Check;
+  }
 
   // Adjust centre of rotation, default is same as focal point so this does nothing...
   float adjust[3] = {(focal_point[0]-rotate_centre[0])*scale[0], (focal_point[1]-rotate_centre[1])*scale[1], (focal_point[2]-rotate_centre[2])*scale[2]};

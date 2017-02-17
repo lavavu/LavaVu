@@ -383,15 +383,18 @@ void OpenGLViewer::display(bool redraw)
     {
       //For what was this needed? test...
       //We're about to call display anyway regardless, if setting should probably return after
-#ifdef USE_OMEGALIB
-      //Is this needed for Omegalib mode param updates?
-      postdisplay = true;
-#else
-      //This break causes server commands to back up and not all be processed in loop
-      //However, animate "play" repeats forever without display if not enabled
-      if (displayidle > 0)
-        break;
-#endif
+      if (app->drawstate.omegalib)
+      {
+        //Is this needed for Omegalib mode param updates?
+        postdisplay = true;
+      }
+      else
+      {
+        //This break causes server commands to back up and not all be processed in loop
+        //However, animate "play" repeats forever without display if not enabled
+        if (displayidle > 0)
+          break;
+      }
     }
   }
 

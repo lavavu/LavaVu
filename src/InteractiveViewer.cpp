@@ -864,6 +864,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    if (drawstate.omegalib) return false;
     viewer->quitProgram = false;
     viewer->execute();
   }
