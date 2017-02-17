@@ -1291,17 +1291,28 @@ void LavaVu::readOBJ(const FilePath& fn)
       if (id >= 0)
       {
         //Use the diffuse property as the colour/texture
+        std::string texpath = materials[id].diffuse_texname;
+        if (texpath.length() == 0)
+        {
+          texpath = materials[id].ambient_texname;
+          if (texpath.length() == 0)
+          {
+            texpath = materials[id].specular_texname;
+            if (texpath.length() > 0)
+              std::cerr << "Applying specular texture: " << texpath << std::endl;
+          }
+          else
+            std::cerr << "Applying ambient texture: " << texpath << std::endl;
+        }
+        else
+          std::cerr << "Applying diffuse texture: " << texpath << std::endl;
         if (materials[id].diffuse_texname.length() > 0)
         {
-          std::cerr << "Applying diffuse texture: " << materials[id].diffuse_texname << std::endl;
-          std::string texpath = materials[id].diffuse_texname;
           if (fn.path.length() > 0)
             texpath = fn.path + "/" + texpath;
 
           //Add per-object texture
           amodel->triSurfaces->setTexture(tobj, new ImageLoader(texpath));
-          //if (tobj->properties["texturefile"].ToString("").length() == 0)
-          //  tobj->properties.data["texturefile"] = texpath;
         }
         else
         {
@@ -1325,9 +1336,9 @@ void LavaVu::readOBJ(const FilePath& fn)
     printf("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     if (trisplit == 0 || attrib.texcoords.size())
     {
-#if 1
+      //Load, re-index to use indices for this shape only (the global list is for all shapes)
       int voffset = 0;
-      for (size_t f=0; f < shapes[i].mesh.indices.size(); f+=3)
+      for (size_t f=0; f < shapes[i].mesh.indices.size()-2; f+=3)
       {
         tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
         for (int c=0; c<3; c++)
@@ -1346,60 +1357,12 @@ void LavaVu::readOBJ(const FilePath& fn)
           }
         }
       }
-#else
-      int v0 = attrib.vertices.size();
-      int v1 = 0;
-      int n0 = attrib.normals.size();
-      int n1 = 0;
-      int t0 = attrib.texcoords.size();
-      int t1 = 0;
-      for (size_t f=0; f < shapes[i].mesh.indices.size(); f+=3)
-      {
-        tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
-        int vidx = 3*shapes[i].mesh.indices[f].vertex_index;
-        if (vidx < v0) v0 = vidx;
-        if (vidx > v1) v1 = vidx;
-          if (attrib.texcoords.size())
-          {
-            int tidx = 2*shapes[i].mesh.indices[f].texcoord_index;
-            if (tidx < 0) tidx = 2*shapes[i].mesh.indices[f].vertex_index;
-            if (tidx < t0) t0 = tidx;
-            if (tidx > t1) t1 = tidx;
-          }
-          if (attrib.normals.size())
-          {
-            int nidx = 3*shapes[i].mesh.indices[f].normal_index;
-            //Some files skip the normal index, so assume it is the same as vertex index
-            if (nidx < 0) nidx = vidx;
-            if (nidx < v0) n0 = nidx;
-            if (nidx > v1) n1 = nidx;
-          }
-      }
-      GeomData* g = Model::triSurfaces->read(tobj, (v1-v0+1)/3, lucVertexData, &attrib.vertices[v0]);
-      amodel->triSurfaces->read(tobj, (t1-t0+1)/2, lucTexCoordData, &attrib.texcoords[t0]);
-      printf("%d == %d\n", (t1-t0), attrib.texcoords.size());
-      amodel->triSurfaces->read(tobj, (n1-n0+1)/3, lucNormalData, &attrib.normals[n0]);
-      for (int v=v0; v<v1; v+=3)
-      {
-        g->checkPointMinMax(&attrib.vertices[v]);
-        //printf("%f %f %f\n", attrib.vertices[v], attrib.vertices[v+1], attrib.vertices[v+2]);
-        //Model::triSurfaces->read(tobj, 1, lucVertexData, &attrib.vertices[v]);
-        //Model::triSurfaces->read(tobj, 1, lucTexCoordData, &attrib.texcoords[v]);
-        //Model::triSurfaces->read(tobj, 1, lucNormalData, &attrib.normals[v]);
-      }
-      for (int id=0; id<shapes[i].mesh.indices.size(); id++)
-      {
-        int idx = shapes[i].mesh.indices[id].vertex_index - v0;
-        amodel->triSurfaces->read(tobj, 1, lucIndexData, &idx);
-        //Model::triSurfaces->read(tobj, 1, lucIndexData, &id);
-      }
-#endif
     }
     else
     {
       for (size_t f = 0; f < shapes[i].mesh.indices.size(); f += 3)
       {
-        //This won't work with textures(tex coords) ... calculated indices have incorrect order
+        //This won't work with mapped textures (tex coords) ... calculated indices have incorrect order
         amodel->triSurfaces->addTriangle(tobj,
                      &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
