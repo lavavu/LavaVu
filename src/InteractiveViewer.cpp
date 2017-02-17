@@ -1608,6 +1608,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         repeat = ival;
         replay = history;
+        viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
       }
       else
       {
@@ -1626,6 +1627,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         repeat = ival;
         replay.push_back(last_cmd);
+        viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
       }
       else
       {
