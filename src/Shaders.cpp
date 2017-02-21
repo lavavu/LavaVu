@@ -29,14 +29,14 @@ Shader::Shader()
   init("", "");
 }
 
-Shader::Shader(const char *fshader)
+Shader::Shader(const std::string& fshader)
 {
   //This constructor for a fragment shader only
   std::string fsrc = read_file(fshader);
   init("", fsrc);
 }
 
-Shader::Shader(const char *vshader, const char *fshader)
+Shader::Shader(const std::string& vshader, const std::string& fshader)
 {
   //This constructor is for a single vertex and/or fragment shader only
   std::string vsrc = read_file(vshader);
@@ -65,16 +65,16 @@ bool Shader::version()
 }
 
 //Read a fragment or vertex shader from a file into a shader object
-std::string Shader::read_file(const char *fname)
+std::string Shader::read_file(const std::string& fname)
 {
-  char filepath[FILE_PATH_MAX] = "";
-  if (!fname) return std::string("");
+  if (!fname.length()) return std::string("");
 
   //If shader found locally in working directory, use it instead
+  std::string filepath;
   if (Shader::path.length() > 0 && !FileExists(fname))
-    strcpy(filepath, Shader::path.c_str());
+    filepath = Shader::path;
 
-  strcat(filepath, fname);
+  filepath += fname;
   debug_print("Shader loading: %s\n", filepath);
 
   std::ifstream ifs(filepath);

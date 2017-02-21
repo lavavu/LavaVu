@@ -16,12 +16,12 @@ public:
   bool supported;
 
   Shader();
-  Shader(const char *fshader);
-  Shader(const char *vshader, const char *fshader);
+  Shader(const std::string& fshader);
+  Shader(const std::string&, const std::string& fshader);
   void init(std::string vsrc, std::string fsrc);
 
   bool version();
-  std::string read_file(const char *fname);
+  std::string read_file(const std::string& fname);
   bool compile(const char *src, GLuint type);
   bool build();
   void use();
