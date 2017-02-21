@@ -846,3 +846,16 @@ void View::drawOverlay(Colour& colour, std::string& title)
   GL_Error_Check;
 }
 
+void View::setBackground()
+{
+  background = Colour(properties["background"]);
+  inverse = background;
+  inverse.invert();
+  //Calculate text foreground colour black/white depending on background intensity
+  int avg = (background.r + background.g + background.b) / 3.0;
+  textColour.value = 0xff000000;
+  if (avg < 127) 
+    textColour.value = 0xffffffff;
+  drawstate.defaults["colour"] = textColour.toJson();
+}
+

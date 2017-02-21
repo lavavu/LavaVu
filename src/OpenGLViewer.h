@@ -117,10 +117,6 @@ public:
   int last_x, last_y;
 
   int blend_mode;
-  Colour background;
-  Colour inverse;
-  Colour textColour;
-
   int outwidth, outheight;
   std::string title;
   std::string output_path;
@@ -168,27 +164,6 @@ public:
 
   float scale2d() {return pow(2, fbo.downsample-1);}
   void downSample(int q) { fbo.downsample = q < 1 ? 1 : q; }
-
-  void setBackground() {setBackground(background);}
-  void setBackground(const Colour& bgcol)
-  {
-    background = bgcol;
-    inverse = background;
-    inverse.invert();
-    //Calculate text foreground colour black/white depending on background intensity
-    int avg = (background.r + background.g + background.b) / 3.0;
-    textColour.value = 0xff000000;
-    if (avg < 127) 
-      textColour.value = 0xffffffff;
-    if (app)
-      app->drawstate.defaults["colour"] = textColour.toJson();
-    //Set GL colours
-    if (isopen)
-    {
-      glClearColor(background.r/255.0, background.g/255.0, background.b/255.0, 0);
-      glColor3ubv(textColour.rgba);
-    }
-  }
 
   void idleReset();
   void idleTimer(int display=TIMER_IDLE);

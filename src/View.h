@@ -108,6 +108,11 @@ public:
   float dims[3];
   float min[3], max[3];
   bool initialised;
+
+  Colour background;
+  Colour inverse;
+  Colour textColour;
+
 private:
   DrawState& drawstate;
   Camera* localcam;
@@ -175,6 +180,7 @@ public:
 
   //Utility functions
   void drawOverlay(Colour& colour, std::string& title);
+  void setBackground();
 };
 
 #endif //View__

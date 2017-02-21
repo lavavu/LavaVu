@@ -1700,7 +1700,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   }
 
   //Update background colour
-  viewer->setBackground(Colour(aview->properties["background"]));
+  aview->setBackground();
 }
 
 void LavaVu::viewApply(int idx)
@@ -1783,8 +1783,15 @@ void LavaVu::display(bool redraw)
   else //Single viewport, always disable filter
     aview->filtered = false;
 
+  //Set GL colours
+  glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0);
+  glColor3ubv(aview->textColour.rgba);
+
 if (drawstate.omegalib)
+{
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   drawSceneBlended();
+}
 else
 {
   if (aview->stereo)
@@ -1803,7 +1810,7 @@ else
     {
       /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       // Apply red filter for left eye
-      if (viewer->background.value < viewer->inverse.value)
+      if (aview->background.value < aview->inverse.value)
          glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
       else  //Use opposite mask for light backgrounds
          glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -1830,7 +1837,7 @@ else
       /*/ Clear the depth buffer so red/cyan components are blended
       glClear(GL_DEPTH_BUFFER_BIT);
       // Apply cyan filter for right eye
-      if (viewer->background.value < viewer->inverse.value)
+      if (aview->background.value < aview->inverse.value)
          glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
       else  //Use opposite mask for light backgrounds
          glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
@@ -1988,7 +1995,7 @@ void LavaVu::drawAxis()
 
   drawstate.fonts.charset = FONT_VECTOR;
   drawstate.fonts.fontscale = length*6.0;
-  glColor3ubv(viewer->textColour.rgba);
+  glColor3ubv(aview->textColour.rgba);
   drawstate.fonts.print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
   drawstate.fonts.print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
   if (aview->is3d)
@@ -2021,7 +2028,7 @@ void LavaVu::drawRulers()
   obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.5*aview->model_size;
   obj->properties.data["font"] = "vector";
   //Colour for labels
-  obj->properties.data["colour"] = viewer->textColour.toJson();
+  obj->properties.data["colour"] = aview->textColour.toJson();
 
 
   int ticks = aview->properties["rulerticks"];
@@ -2231,7 +2238,7 @@ void LavaVu::displayObjectList(bool console)
       c.a = 255;
       offset++;
       displayText(ss.str(), offset);
-      if (c.value != viewer->background.value)
+      if (c.value != aview->background.value)
         displayText(std::string(1, 0x7f), offset, &c);
     }
     else
@@ -2259,7 +2266,7 @@ void LavaVu::printMessage(const char *fmt, ...)
 void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colour* colour)
 {
   //Black on white or reverse depending on background
-  Colour scol = viewer->textColour;
+  Colour scol = aview->textColour;
   scol.invert();
 
   //Shadow
@@ -2273,12 +2280,12 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   if (colour)
     glColor3ubv(colour->rgba);
   else
-    glColor3ubv(viewer->textColour.rgba);
+    glColor3ubv(aview->textColour.rgba);
 
   drawstate.fonts.print(xpos, ypos, str.c_str());
 
   //Revert to normal colour
-  glColor3ubv(viewer->textColour.rgba);
+  glColor3ubv(aview->textColour.rgba);
 }
 
 void LavaVu::displayMessage()
@@ -2359,7 +2366,7 @@ void LavaVu::drawSceneBlended()
     size_t pos =  title.find("##");
     if (pos != std::string::npos && drawstate.timesteps.size() >= drawstate.now)
       title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
-    aview->drawOverlay(viewer->textColour, title);
+    aview->drawOverlay(aview->textColour, title);
     drawAxis();
   }
 }

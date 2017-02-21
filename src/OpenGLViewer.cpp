@@ -217,8 +217,6 @@ OpenGLViewer::~OpenGLViewer()
 
 void OpenGLViewer::open(int w, int h)
 {
-  setBackground();
-
   //Open window, called before window manager open
   //Set width and height
 

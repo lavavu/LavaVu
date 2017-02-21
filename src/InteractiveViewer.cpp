@@ -2468,28 +2468,28 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string val = parsed["background"];
     if (val == "invert")
     {
-      viewer->background.invert();
+      aview->background.invert();
     }
     else if (parsed.has(fval, "background"))
     {
-      viewer->background.a = 255;
+      aview->background.a = 255;
       if (fval <= 1.0) fval *= 255;
-      viewer->background.r = viewer->background.g = viewer->background.b = fval;
+      aview->background.r = aview->background.g = aview->background.b = fval;
     }
     else if (val.length() > 0)
     {
       parsePropertySet("background=" + parsed["background"]);
-      viewer->background = Colour(aview->properties["background"]);
+      aview->background = Colour(aview->properties["background"]);
     }
     else
     {
-      if (viewer->background.r == 255 || viewer->background.r == 0)
-        viewer->background.value = 0xff666666;
+      if (aview->background.r == 255 || aview->background.r == 0)
+        aview->background.value = 0xff666666;
       else
-        viewer->background.value = 0xff000000;
+        aview->background.value = 0xff000000;
     }
-    aview->properties.data["background"] = viewer->background.toString();
-    viewer->setBackground();
+    aview->properties.data["background"] = aview->background.toString();
+    aview->setBackground();
     printMessage("Background colour set");
   }
   else if (parsed.exists("border"))

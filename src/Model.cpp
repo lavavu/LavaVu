@@ -1921,6 +1921,7 @@ void Model::jsonRead(std::string data)
     //min = aview->properties["min"];
     //max = aview->properties["max"];
     //view->init(false, newmin, newmax);
+    view->setBackground(); //Update background colour
   }
 
   // Import colourmaps
@@ -1971,9 +1972,6 @@ void Model::jsonRead(std::string data)
     //Merge properties
     objects[i]->properties.merge(inobjects[i]);
   }
-
-  //if (viewer && viewer->isopen)
-  //  viewer->setBackground(Colour(aview->properties["background"])); //Update background colour
 
   bool reload = (imported["reload"].is_boolean() && imported["reload"]);
   redraw(reload);
