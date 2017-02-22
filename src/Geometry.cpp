@@ -114,9 +114,8 @@ void GeomData::mapToColour(Colour& colour, float value)
   ColourMap* cmap = draw->colourMap;
   if (cmap) colour = cmap->getfast(value);
 
-  //Apply opacity from drawing object override level if set
-  if (draw->opacity > 0.0 && draw->opacity < 1.0)
-    colour.a *= draw->opacity;
+  //Apply opacity from drawing object override level
+  colour.a *= draw->opacity;
 }
 
 int GeomData::colourCount()
@@ -178,8 +177,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
   }
 
   //Apply opacity from drawing object override level if set
-  if (draw->opacity > 0.0 && draw->opacity < 1.0)
-    colour.a *= draw->opacity;
+  colour.a *= draw->opacity;
 }
 
 unsigned int GeomData::valuesLookup(const json& by)
@@ -710,8 +708,13 @@ void Geometry::setState(unsigned int i, Shader* prog)
   if (prog && prog->program > 0)
   {
     prog->use();
-    //prog->setUniformf("uOpacity", geom[i]->draw->properties["opacity"]);
-    prog->setUniformf("uOpacity", drawstate.global("opacity"));  //Use global opacity only here
+    //Per-object "opacity" overrides global default if set
+    //"alpha" is multiplied to affect all objects
+    float opacity = (float)geom[i]->draw->properties["alpha"];
+    //Apply global 'opacity' only if no per-object setting
+    if (!geom[i]->draw->properties.has("opacity"))
+      opacity *= (float)drawstate.global("opacity");
+    prog->setUniformf("uOpacity", opacity);
     prog->setUniformi("uLighting", lighting);
     prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
     prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);

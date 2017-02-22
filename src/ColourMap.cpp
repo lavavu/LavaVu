@@ -329,7 +329,8 @@ Colour ColourMap::getFromScaled(float scaledValue)
       if (colours[i].position > scaledValue) break;
     }
 
-    if (i==0 || i==colours.size()) abort_program("Colour position %f not in range [%f,%f]", scaledValue, colours[0].position, colours.back().position);
+    if (i==0 || i==colours.size()) 
+      abort_program("Colour position %f not in range [%f,%f]", scaledValue, colours[0].position, colours.back().position);
 
     // Calculate interpolation factor [0,1] between colour at index and previous colour
     float interpolate = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);

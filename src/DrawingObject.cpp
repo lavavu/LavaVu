@@ -74,6 +74,8 @@ void DrawingObject::setup()
     opacity = properties["opacity"];
   //Convert values (1,255] -> [0,1]
   if (opacity > 1.0) opacity /= 255.0;
+  //Disable opacity if zero or out of range
+  if (opacity <= 0.0 || opacity > 1.0) opacity = 1.0; 
   //Cache colourmaps
   colourMap = opacityMap = NULL;
   if (drawstate.colourMaps)

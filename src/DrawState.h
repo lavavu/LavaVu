@@ -372,6 +372,8 @@ public:
     defaults["hideall"] = false;
     // | global | colour | Background colour RGB(A)
     defaults["background"] = {0, 0, 0, 255};
+    // | global | real [0,1] | Global opacity multiplier where 0 is transparent and 1 is opaque, this is combined with "opacity" prop
+    defaults["alpha"] = 1.0;
     // | global | boolean | Disables initial loading of object data from database, only object names loaded, use the "load" command to subsequently load selected object data
     defaults["noload"] = false;
     // | global | boolean | Enable rendering points as proper 3d spherical meshes

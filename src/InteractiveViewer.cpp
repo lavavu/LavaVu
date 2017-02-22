@@ -836,25 +836,26 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   else if (parsed.has(fval, "alpha") || parsed.has(fval, "opacity"))
   {
+    std::string action = parsed.exists("alpha") ? "alpha" : "opacity";
     if (gethelp)
     {
       help += "> Set global transparency value\n\n"
               "> **Usage:** opacity/alpha value\n\n"
+              "> 'opacity' is global default, applies to all objects without own opacity setting\n"
+              "> 'alpha' is global override, is combined with opacity setting of all objects\n"
               "> value (integer > 1) : sets opacity as integer in range [1,255] where 255 is fully opaque  \n"
               "> value (number [0,1]) : sets opacity as real number in range [0,1] where 1.0 is fully opaque  \n";
       return false;
     }
 
-    float opacity = drawstate.global("opacity");
-    if (opacity == 0.0) opacity = 1.0;
+    float value = drawstate.global(action);
+    if (value == 0.0) value = 1.0;
     if (fval > 1.0)
-      opacity = fval / 255.0;
+      value = fval / 255.0;
     else
-      opacity = fval;
-    drawstate.globals["opacity"] = opacity;
-    printMessage("Set global opacity to %.2f", opacity);
-    if (amodel)
-      amodel->redraw(true); //Colour prop change requires full reload
+      value = fval;
+    drawstate.globals[action] = value;
+    printMessage("Set global %s to %.2f", action.c_str(), value);
   }
   else if (parsed.exists("interactive"))
   {

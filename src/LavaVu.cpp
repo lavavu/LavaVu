@@ -1960,7 +1960,7 @@ void LavaVu::drawAxis()
   axis->clear();
   axis->setView(aview);
   DrawingObject* aobj = drawstate.axisobj;
-  if (!aobj) aobj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\n");
+  if (!aobj) aobj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(aobj)) aview->addObject(aobj);
   axis->add(aobj);
 
@@ -2021,7 +2021,7 @@ void LavaVu::drawRulers()
   DrawingObject* obj = drawstate.rulerobj;
   rulers->clear();
   rulers->setView(aview);
-  if (!obj) obj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nlit=false");
+  if (!obj) obj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nlit=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
@@ -2144,7 +2144,7 @@ void LavaVu::drawBorder()
   DrawingObject* obj = drawstate.borderobj;
   border->clear();
   border->setView(aview);
-  if (!obj) obj = new DrawingObject(drawstate, "", "clip=false\n");
+  if (!obj) obj = new DrawingObject(drawstate, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
   if (!aview->is3d) obj->properties.data["depthtest"] = false;
