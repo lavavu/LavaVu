@@ -1446,7 +1446,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         active->hideShowAll(action == "hide");
         printMessage("%s all %s", action.c_str(), what.c_str());
       }
-      amodel->redraw();
     }
     else
     {
@@ -1468,7 +1467,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             amodel->geometry[i]->showObj(list[c], vis);
           list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
           printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
-          amodel->redraw();
         }
       }
     }
@@ -2593,7 +2591,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         drawstate.globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
         drawstate.globals[key] = scale / 1.5;
-      active->redraw = true;
+      //No need to redraw points when scaled
+      if (active->type != lucPointType)
+        active->redraw = true;
       printMessage("%s scaling set to %f", what.c_str(), (float)drawstate.globals[key]);
     }
     else
@@ -2650,11 +2650,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           else if (parsed.get("scale", next) == "down")
             obj->properties.data["scaling"] = sc / 1.5;
           printMessage("%s scaling set to %f", obj->name().c_str(), (float)obj->properties["scaling"]);
-          for (int type=lucMinType; type<lucMaxType; type++)
-            amodel->geometry[type]->redraw = true;
-          //Full object reload as data changed - required for points but not others, comment for now
-          //amodel->reload(obj);
-          amodel->redraw();
+          //Reload required for per-object scaling
+          amodel->redraw(true);
         }
       }
     }

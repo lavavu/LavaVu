@@ -581,7 +581,6 @@ void Geometry::showObj(DrawingObject* draw, bool state)
       geom[i]->draw->properties.data["visible"] = state;
     }
   }
-  redraw = true;
 }
 
 void Geometry::setValueRange(DrawingObject* draw)
