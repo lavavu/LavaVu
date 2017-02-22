@@ -75,7 +75,7 @@ std::string Shader::read_file(const std::string& fname)
     filepath = Shader::path;
 
   filepath += fname;
-  debug_print("Shader loading: %s\n", filepath);
+  debug_print("Shader loading: %s\n", filepath.c_str());
 
   std::ifstream ifs(filepath);
   std::stringstream buffer;
