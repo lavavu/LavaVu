@@ -117,8 +117,8 @@ class Obj(object):
         #Return json data set list
         return json.dumps(self.dict["data"])
 
-    def add(self):
-        self.instance.app.appendContainer(self.name())
+    def append(self):
+        self.instance.append(self.id) #self.name())
 
     def triangles(self, data, split=0):
         if split > 1:
@@ -169,9 +169,9 @@ class Obj(object):
     
     def file(self, *args, **kwargs):
         #Load file with this object selected (import)
-        self.instance.select('"' + self.name() + '"')
+        self.instance.selectObject(self.name())
         self.instance.file(*args, name=self.name(), **kwargs)
-        self.instance.select()
+        self.instance.selectObject()
 
     def colourbar(self, name=None, **kwargs):
         #Create a new colourbar for this object

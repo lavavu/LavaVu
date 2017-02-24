@@ -2894,12 +2894,18 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
-void LavaVu::appendContainer(const std::string& name)
+void LavaVu::selectObject(const std::string& name)
 {
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
-    container->add(obj);
+  aobject = NULL;
+  if (name.length())
+    aobject = lookupObject(name, aobject);
+}
+
+void LavaVu::selectObject(int id)
+{
+  aobject = NULL;
+  if (id > 0 && id <= (int)amodel->objects.size())
+    aobject = amodel->objects[id-1];
 }
 
 void LavaVu::loadTriangles(std::vector< std::vector <float> > array, const std::string& name, int split)

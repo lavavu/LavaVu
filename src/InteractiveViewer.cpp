@@ -2951,7 +2951,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Add a new object and select as the active object\n\n"
-              "> **Usage:** add [object_nam] [data_type]\n\n"
+              "> **Usage:** add [object_name] [data_type]\n\n"
               "> object_name (string) : optional name of the object to add  \n"
               "> data_type (string) : optional name of the default data type  \n"
               "> (points/labels/vectors/tracers/triangles/quads/shapes/lines)  \n";
@@ -2965,6 +2965,30 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::string type = parsed.get("add", 1);
       if (type.length() > 0) aobject->properties.data["geometry"] = type;
       printMessage("Added object: %s", aobject->name().c_str());
+    }
+  }
+  else if (parsed.exists("append"))
+  {
+    if (gethelp)
+    {
+      help += "> Append a new geometry container to an object\n"
+              "> eg: to divide line objects into segments  \n\n"
+              "> **Usage:** append [object]\n\n"
+              "> object (integer/string) : the index or name of the object to select (see: \"list objects\")  \n";
+      return false;
+    }
+
+    std::string o = parsed["append"];
+    if (o.length())
+      aobject = lookupObject(parsed, "append");
+    if (aobject)
+    {
+      Geometry* container = lookupObjectContainer(aobject);
+      if (container) 
+      {
+        container->add(aobject);
+        printMessage("Appended to object: %s", aobject->name().c_str());
+      }
     }
   }
   else if (parsed.exists("select"))
@@ -3251,7 +3275,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
-    {"hide", "show", "delete", "load", "select", "add", "read", "label", "name",
+    {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",
      "vertex", "normal", "vector", "value", "colour"},
     {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
