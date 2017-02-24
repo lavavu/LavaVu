@@ -1401,17 +1401,38 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string what = parsed[action];
-
-    if (what == "all")
+    std::vector<DrawingObject*> list = lookupObjects(parsed, action);
+    Geometry* active = getGeometryType(what);
+    if (list.size())
+    {
+      //Hide/show by name/ID match in all drawing objects
+      for (unsigned int c=0; c<list.size(); c++)
+      {
+        if (list[c]->skip)
+        {
+          std::ostringstream ss;
+          ss << "load " << list[c]->name();
+          return parseCommands(ss.str());
+        }
+        else
+        {
+          //Hide/show all data for this object
+          bool vis = (action == "show");
+          for (unsigned int i=0; i < amodel->geometry.size(); i++)
+            amodel->geometry[i]->showObj(list[c], vis);
+          list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
+          printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
+        }
+      }
+    }
+    else if (what == "all")
     {
       for (unsigned int i=0; i < amodel->geometry.size(); i++)
         amodel->geometry[i]->hideShowAll(action == "hide");
       return true;
     }
-
     //Have selected a geometry type?
-    Geometry* active = getGeometryType(what);
-    if (active)
+    else if (active)
     {
       int id;
       std::string range = parsed.get(action, 1);
@@ -1445,29 +1466,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       {
         active->hideShowAll(action == "hide");
         printMessage("%s all %s", action.c_str(), what.c_str());
-      }
-    }
-    else
-    {
-      //Hide/show by name/ID match in all drawing objects
-      std::vector<DrawingObject*> list = lookupObjects(parsed, action);
-      for (unsigned int c=0; c<list.size(); c++)
-      {
-        if (list[c]->skip)
-        {
-          std::ostringstream ss;
-          ss << "load " << list[c]->name();
-          return parseCommands(ss.str());
-        }
-        else
-        {
-          //Hide/show all data for this object
-          bool vis = (action == "show");
-          for (unsigned int i=0; i < amodel->geometry.size(); i++)
-            amodel->geometry[i]->showObj(list[c], vis);
-          list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
-          printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
-        }
       }
     }
   }
