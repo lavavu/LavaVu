@@ -1849,7 +1849,9 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   exported["views"] = outviews;
   exported["colourmaps"] = cmaps;
   exported["objects"] = outobjects;
-  exported["reload"] = true;
+  //Should not set this unless data changed for webgl?
+  //exported["reload"] = true;
+  exported["reload"] = objdata;
   if (fignames.size() > figure)
     exported["figure"] = fignames[figure];
 
