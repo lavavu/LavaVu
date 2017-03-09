@@ -569,7 +569,8 @@ void View::apply(bool use_fp)
 
   // Translate to align eye with model centre - view focal point
   //glTranslatef(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
-  if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  //if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  if (use_fp && !drawstate.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
   // Set default polygon front faces
