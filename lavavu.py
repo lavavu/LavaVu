@@ -229,6 +229,7 @@ class Viewer(object):
         self.resolution = (640,480)
         self._ctr = 0
         self.app = None
+        self.objects = Objects(self)
         try:
             self.app = LavaVuPython.LavaVu(binpath, omegalib)
             self.setup(*args, **kwargs)
@@ -352,8 +353,6 @@ class Viewer(object):
     def _get(self):
         #Import state from lavavu
         self.state = json.loads(self.app.getState())
-        if not isinstance(self.objects, Objects):
-            self.objects = Objects(self)
         self.objects._sync()
 
     def _set(self):
