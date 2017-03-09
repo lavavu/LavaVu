@@ -1787,92 +1787,91 @@ void LavaVu::display(bool redraw)
   glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0);
   glColor3ubv(aview->textColour.rgba);
 
-if (drawstate.omegalib)
-{
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  drawSceneBlended();
-}
-else
-{
-  if (aview->stereo)
+  if (drawstate.omegalib)
   {
-    viewApply(view);
-    GL_Error_Check;
-
-    bool sideBySide = false;
-    if (viewer->stereoBuffer)
-    {
-      // Draw to the left buffer
-      glDrawBuffer(GL_LEFT);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-    else
-    {
-      /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      // Apply red filter for left eye
-      if (aview->background.value < aview->inverse.value)
-         glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
-      else  //Use opposite mask for light backgrounds
-         glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
-         */
-      sideBySide = true;
-    }
-
-    // Render the left-eye view
-    if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height*0.5);
-    aview->projection(EYE_LEFT);
-    if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height);
-    aview->apply();
-    // Draw scene
     drawSceneBlended();
-
-    if (viewer->stereoBuffer)
-    {
-      // Draw to the right buffer
-      glDrawBuffer(GL_RIGHT);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-    else
-    {
-      /*/ Clear the depth buffer so red/cyan components are blended
-      glClear(GL_DEPTH_BUFFER_BIT);
-      // Apply cyan filter for right eye
-      if (aview->background.value < aview->inverse.value)
-         glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
-      else  //Use opposite mask for light backgrounds
-         glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
-      */
-    }
-
-    // Render the right-eye view
-    if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height*0.5);
-    aview->projection(EYE_RIGHT);
-    if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
-    aview->apply();
-    // Draw scene
-    drawSceneBlended();
-
-    // Restore full-colour
-    //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
   }
   else
   {
-    //Loop through all viewports and display each
-    int selview = view;
-    for (unsigned int v=0; v<amodel->views.size(); v++)
+    if (aview->stereo)
     {
-      viewApply(v);
+      viewApply(view);
       GL_Error_Check;
 
-      // Default non-stereo render
-      aview->projection(EYE_CENTRE);
-      drawSceneBlended();
-    }
+      bool sideBySide = false;
+      if (viewer->stereoBuffer)
+      {
+        // Draw to the left buffer
+        glDrawBuffer(GL_LEFT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      }
+      else
+      {
+        /*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Apply red filter for left eye
+        if (aview->background.value < aview->inverse.value)
+           glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+        else  //Use opposite mask for light backgrounds
+           glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+           */
+        sideBySide = true;
+      }
 
-    if (view != selview)
-    viewSelect(selview);
+      // Render the left-eye view
+      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height*0.5);
+      aview->projection(EYE_LEFT);
+      if (sideBySide) aview->port(0, 0, viewer->width*0.5, viewer->height);
+      aview->apply();
+      // Draw scene
+      drawSceneBlended();
+
+      if (viewer->stereoBuffer)
+      {
+        // Draw to the right buffer
+        glDrawBuffer(GL_RIGHT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      }
+      else
+      {
+        /*/ Clear the depth buffer so red/cyan components are blended
+        glClear(GL_DEPTH_BUFFER_BIT);
+        // Apply cyan filter for right eye
+        if (aview->background.value < aview->inverse.value)
+           glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+        else  //Use opposite mask for light backgrounds
+           glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+        */
+      }
+
+      // Render the right-eye view
+      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height*0.5);
+      aview->projection(EYE_RIGHT);
+      if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
+      aview->apply();
+      // Draw scene
+      drawSceneBlended();
+
+      // Restore full-colour
+      //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    }
+    else
+    {
+      //Loop through all viewports and display each
+      int selview = view;
+      for (unsigned int v=0; v<amodel->views.size(); v++)
+      {
+        viewApply(v);
+        GL_Error_Check;
+
+        // Default non-stereo render
+        aview->projection(EYE_CENTRE);
+        drawSceneBlended();
+      }
+
+      if (view != selview)
+      viewSelect(selview);
+    }
   }
-}
 
   //Calculate FPS
   if (drawstate.global("fps"))
