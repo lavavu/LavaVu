@@ -539,17 +539,28 @@ void View::apply(bool use_fp)
 
     // Translate model away from eye by camera zoom/pan translation
     //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
-    glTranslatef(model_trans[0]*scale[0], model_trans[1]*scale[0], model_trans[2]*scale[2]);
+    glTranslatef(model_trans[0], model_trans[1], model_trans[2]);
     GL_Error_Check;
   }
 
   // Adjust centre of rotation, default is same as focal point so this does nothing...
-  float adjust[3] = {(focal_point[0]-rotate_centre[0])*scale[0], (focal_point[1]-rotate_centre[1])*scale[1], (focal_point[2]-rotate_centre[2])*scale[2]};
+  float adjust[3] = {(focal_point[0]-rotate_centre[0]), (focal_point[1]-rotate_centre[1]), (focal_point[2]-rotate_centre[2])};
   if (use_fp) glTranslatef(-adjust[0], -adjust[1], -adjust[2]);
   GL_Error_Check;
 
   // rotate model
   rotation->apply();
+  GL_Error_Check;
+
+  // Apply scaling factors
+  // also switch coordinate system if applicable
+  if (orientation < 0.0 || scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
+  {
+    glScalef(scale[0], scale[1], scale[2] * orientation);
+    // Enable automatic rescaling of normal vectors when scaling is turned on
+    //glEnable(GL_RESCALE_NORMAL);
+    glEnable(GL_NORMALIZE);
+  }
   GL_Error_Check;
 
   // Adjust back for rotation centre
@@ -558,21 +569,7 @@ void View::apply(bool use_fp)
 
   // Translate to align eye with model centre - view focal point
   //glTranslatef(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
-  if (use_fp) glTranslatef(-focal_point[0]*scale[0], -focal_point[1]*scale[1], orientation * -focal_point[2]*scale[2]);
-  GL_Error_Check;
-
-  // Switch coordinate system if applicable
-  glScalef(1.0, 1.0, 1.0 * orientation);
-  GL_Error_Check;
-
-  // Apply scaling factors
-  if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
-  {
-    glScalef(scale[0], scale[1], scale[2]);
-    // Enable automatic rescaling of normal vectors when scaling is turned on
-    //glEnable(GL_RESCALE_NORMAL);
-    glEnable(GL_NORMALIZE);
-  }
+  if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
   // Set default polygon front faces
