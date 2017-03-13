@@ -938,9 +938,20 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
 GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   draw->skip = false;  //Enable object (has geometry now)
-  GeomData* geomdata;
+  GeomData* geomdata = NULL;
   //Get passed object's most recently added data store
   geomdata = getObjectStore(draw);
+
+  //If dimensions specified, check if full dataset loaded
+  bool loaded = false;
+  if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
+  {
+    unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
+    if (size == geomdata->data[dtype]->count())
+      geomdata = NULL;
+    //if (loaded) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
+    //                   geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
+  }
 
   //Allow spec width/height/depth in properties
   if (!geomdata || geomdata->count == 0)
@@ -952,18 +963,8 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
     if (depth == 0) depth = dims[2];
   }
 
-  //If dimensions specified, check if full dataset loaded
-  bool loaded = false;
-  if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
-  {
-    unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
-    loaded = size == geomdata->data[dtype]->count();
-    //if (loaded) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
-    //                   geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
-  }
-
   //Create new data store if required, save in drawing object and Geometry list
-  if (!geomdata || loaded)
+  if (!geomdata)
     geomdata = add(draw);
 
   //Now ready to load geometry data into store
