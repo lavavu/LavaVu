@@ -214,6 +214,8 @@ public:
     defaults["opaque"] = false;
     // | object(surface) | boolean | Disable this flag to skip the mesh optimisation step
     defaults["optimise"] = true;
+    // | object(surface) | boolean | Disable this flag to skip calculating vertex normals
+    defaults["vertexnormals"] = true;
 
     // | object(volume) | real | Power used when applying transfer function, 1.0=linear mapping
     defaults["power"] = 1.0;

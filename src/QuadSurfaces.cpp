@@ -148,19 +148,31 @@ void QuadSurfaces::render()
 
     //Quad indices
     int quads = (geom[index]->width-1) * (geom[index]->height-1);
-    indices.resize(quads*4);
+    tricount += quads; //For debug messages
+    bool vnormals = geom[index]->draw->properties["vertexnormals"];
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
-    calcGridNormals(index, normals);
-    calcGridIndices(index, indices, voffset);
+    if (vnormals && geom[index]->normals.size() < geom[index]->count)
+      calcGridNormals(index, normals);
+    if (geom[index]->indices.size() == 0)
+    {
+      indices.resize(quads*4);
+      calcGridIndices(index, indices, voffset);
+    }
     //Vertex index offset
     voffset += geom[index]->count;
     //Index offset
     elements += quads*4;
     //Read new data and continue
-    //geom[index]->indices.clear();
-    geom[index]->normals.clear();
-    //geom[index]->indices.read(indices.size(), &indices[0]);
-    geom[index]->normals.read(normals.size(), normals[0].ref());
+    if (vnormals)
+    {
+      geom[index]->normals.clear();
+      geom[index]->normals.read(normals.size(), normals[0].ref());
+    }
+    if (indices.size())
+    {
+      geom[index]->indices.clear();
+      geom[index]->indices.read(indices.size(), &indices[0]);
+    }
 
     t1 = clock();
     int bytes = indices.size()*sizeof(GLuint);

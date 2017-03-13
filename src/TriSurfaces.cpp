@@ -73,6 +73,16 @@ void TriSurfaces::close()
   tidx = swap = NULL;
 }
 
+int TriSurfaces::triCount(int index)
+{
+  int tris;
+  if (geom[index]->indices.size() > 0)
+    return geom[index]->indices.size() / 3;
+  else if (geom[index]->width > 0 && geom[index]->height > 0)
+    return 2 * (geom[index]->width-1) * (geom[index]->height-1);
+  return geom[index]->count / 3;
+}
+
 void TriSurfaces::update()
 {
   // Update triangles...
@@ -83,13 +93,7 @@ void TriSurfaces::update()
   int drawelements = 0;
   for (unsigned int t = 0; t < geom.size(); t++)
   {
-    int tris;
-    if (geom[t]->indices.size() > 0)
-      tris = geom[t]->indices.size() / 3;
-    else if (geom[t]->width > 0 && geom[t]->height > 0)
-      tris = 2 * (geom[t]->width-1) * (geom[t]->height-1);
-    else
-      tris = geom[t]->count / 3;
+    int tris = triCount(t);
     total += tris;
     bool hidden = !drawable(t);
     if (!hidden) drawelements += tris*3; //Count drawable
@@ -160,6 +164,7 @@ void TriSurfaces::loadMesh()
   centroids.reserve(total);
   for (unsigned int index = 0; index < geom.size(); index++)
   {
+    bool vnormals = geom[index]->draw->properties["vertexnormals"];
     if (geom[index]->count == 0) continue;
     //Save initial offset
     GLuint voffset = unique;
@@ -185,7 +190,7 @@ void TriSurfaces::loadMesh()
       //elements += counts[index]; //geom[index]->indices.size();
       unique += geom[index]->vertices.size() / 3;
 
-      if (geom[index]->normals.size() == 0)
+      if (vnormals && geom[index]->normals.size() == 0)
         calcTriangleNormalsWithIndices(index);
       continue;
     }
@@ -200,7 +205,7 @@ void TriSurfaces::loadMesh()
 
     //Add vertices to vector
     std::vector<Vertex> verts(geom[index]->count);
-    std::vector<Vec3d> normals(geom[index]->count);
+    std::vector<Vec3d> normals(vnormals ? geom[index]->count : 0);
     std::vector<GLuint> indices;
     for (unsigned int j=0; j < geom[index]->count; j++)
     {
@@ -218,7 +223,8 @@ void TriSurfaces::loadMesh()
       int els = (geom[index]->width-1) * (geom[index]->height-1);
       triverts = els * 6;
       indices.resize(triverts);
-      calcGridNormals(index, normals);
+      if (vnormals && geom[index]->normals.size() == 0)
+        calcGridNormals(index, normals);
       calcGridIndices(index, indices);
       unique += geom[index]->count; //For calculating index offset (voffset)
       elements += triverts;
@@ -238,18 +244,24 @@ void TriSurfaces::loadMesh()
     if (grid)
     {
       //Replace normals
-      geom[index]->normals = Coord3DValues();
-      read(geom[index], normals.size(), lucNormalData, &normals[0]);
+      if (vnormals)
+      {
+        geom[index]->normals = Coord3DValues();
+        read(geom[index], normals.size(), lucNormalData, &normals[0]);
+      }
     }
     else
     {
       //Switch out the optimised vertices and normals with the old data stores
       Coord3DValues newverts = Coord3DValues();
-      geom[index]->normals = Coord3DValues();
+      if (vnormals) 
+      {
+        geom[index]->normals = Coord3DValues();
+        geom[index]->data[lucNormalData] = &geom[index]->normals;
+      }
       geom[index]->indices = UIntValues();
       geom[index]->count = 0;
       geom[index]->data[lucVertexData] = &newverts;
-      geom[index]->data[lucNormalData] = &geom[index]->normals;
       geom[index]->data[lucIndexData] = &geom[index]->indices;
       FloatValues* oldvalues = geom[index]->colourData();
       if (oldvalues)
@@ -266,8 +278,6 @@ void TriSurfaces::loadMesh()
         if (!optimise || verts[v].id == verts[v].ref)
         {
           //Reference id == self, not a duplicate
-          //Normalise final vector
-          normals[verts[v].id].normalise();
 
           //Average final colour
           //if (vertColour && oldvalues && geom[index]->colourData())
@@ -283,8 +293,12 @@ void TriSurfaces::loadMesh()
 
           //Replace verts & normals
           read(geom[index], 1, lucVertexData, verts[v].vert);
-          read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
-
+          if (vnormals)
+          {
+            //Normalise final vector first
+            normals[verts[v].id].normalise();
+            read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
+          }
           unique++;
         }
         else
@@ -425,6 +439,7 @@ void TriSurfaces::loadBuffers()
     int hasColours = geom[index]->colourCount();
     if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
     int colrange = hasColours ? geom[index]->count / hasColours : 1;
+    if (colrange < 1) colrange = 1;
     //if (hasColours) assert(colrange * hasColours == geom[index]->count);
     //if (hasColours && colrange * hasColours != geom[index]->count)
     //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count, hasColours);
@@ -439,15 +454,10 @@ void TriSurfaces::loadBuffers()
     std::array<float,3> shiftvert;
     for (unsigned int v=0; v < geom[index]->count; v++)
     {
-      if (colrange <= 1)
-        geom[index]->getColour(colour, v);
-      else
-      {
-        //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
-        unsigned int cidx = v / colrange;
-        if (cidx * colrange == v)
-          geom[index]->getColour(colour, cidx);
-      }
+      //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
+      unsigned int cidx = v / colrange;
+      if (cidx * colrange == v)
+        geom[index]->getColour(colour, cidx);
 
       float* vert = geom[index]->vertices[v];
       if (shift > 0)
@@ -522,13 +532,17 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours == geom[index]->vertices.size()/3);
   if (hasColours && !vertColour) std::cout << "WARNING: Not enough colour values for per-vertex normalisation!\n";
+  bool normal = geom[index]->draw->properties["vertexnormals"];
   //Calculate face normals for each triangle and copy to each face vertex
   for (unsigned int v=0; v<verts.size()-2 && verts.size() > 2; v += 3)
   {
     //Copies for each vertex
-    normals[v] = vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
-    normals[v+1] = Vec3d(normals[v]);
-    normals[v+2] = Vec3d(normals[v]);
+    if (normal)
+    {
+      normals[v] = vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
+      normals[v+1] = Vec3d(normals[v]);
+      normals[v+2] = Vec3d(normals[v]);
+    }
 
     //Calc triangle centroid for sorting
     centroid(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
@@ -560,7 +574,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
       // use depends on the model, but 90 degrees is usually a good start.
 
       // cosine of angle between vectors = (v1 . v2) / |v1|.|v2|
-      float angle = RAD2DEG * normals[verts[v].id].angle(normals[verts[match].id]);
+      float angle = normal ? RAD2DEG * normals[verts[v].id].angle(normals[verts[match].id]) : 0;
       //debug_print("angle %f ", angle);
       //Don't include vertices in the sum if angle between normals too sharp
       if (angle < 90)
@@ -570,7 +584,8 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
         dupcount++;
 
         //Add this normal to matched normal
-        normals[verts[match].id] += normals[verts[v].id];
+        if (normal)
+          normals[verts[match].id] += normals[verts[v].id];
 
         //Colour value, add to matched
         if (vertColour && geom[index]->colourData())

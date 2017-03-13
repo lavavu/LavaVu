@@ -317,7 +317,8 @@ public:
 
 class TriSurfaces : public Geometry
 {
-  friend class Volumes; //Allow private access from Volumes
+  friend class Volumes; //Allow private access from Volumes, QuadSurfaces
+  friend class QuadSurfaces;
   TIndex *tidx;
   TIndex *swap;
   unsigned int tricount;
@@ -332,6 +333,7 @@ public:
   ~TriSurfaces();
   virtual void close();
   virtual void update();
+  int triCount(int index);
   void loadMesh();
   void loadBuffers();
   void loadList();
