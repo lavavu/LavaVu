@@ -137,7 +137,7 @@ void Shapes::update()
         {
           rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
         }
-        std::cout << vec << " ==> " << rot << std::endl;
+        //std::cout << vec << " ==> " << rot << std::endl;
       }
 
       //Create shape
