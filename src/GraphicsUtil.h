@@ -526,6 +526,8 @@ public:
     attitude = asin(2*test) * RAD2DEG;
     bank = atan2(2*x*w-2*y*z , 1 - 2*sqx - 2*sqz) * RAD2DEG;
   }
+
+  friend std::ostream& operator<<(std::ostream& stream, const Quaternion& q);
 };
 
 const char* glErrorString(GLenum errorCode);

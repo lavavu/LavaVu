@@ -114,7 +114,7 @@ void Shapes::update()
       }
 
       //Setup orientation using alignment vector
-      Quaternion qrot;
+      Quaternion rot;
       if (geom[i]->vectors.size() > 0)
       {
         Vec3d vec(geom[i]->vectors[v]);
@@ -124,19 +124,28 @@ void Shapes::update()
         //...Want to align our z-axis to point along arrow vector:
         // axis of rotation = (z x vec)
         // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec| *
-        vec.normalise();
-        float rangle = RAD2DEG * vec.angle(Vec3d(0.0, 0.0, 1.0));
+        Vec3d rvector(vec);
+        rvector.normalise();
+        float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
         //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
-        Vec3d rvec = Vec3d(-vec.y, vec.x, 0);
-        qrot.fromAxisAngle(rvec, rangle);
+        if (rangle == 180.0)
+        {
+          rot.y = 1;
+          rot.w = 0.0;
+        }
+        else if (rangle > 0.0)
+        {
+          rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
+        }
+        std::cout << vec << " ==> " << rot << std::endl;
       }
 
       //Create shape
       Vec3d pos = Vec3d(geom[i]->vertices[v]);
       if (shape == 1)
-        tris->drawCuboidAt(geom[i]->draw, pos, sdims, qrot);
+        tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot);
       else
-        tris->drawEllipsoid(geom[i]->draw, pos, sdims, qrot, quality);
+        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, quality);
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
       geom[i]->getColour(colour, v);

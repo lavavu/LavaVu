@@ -588,6 +588,11 @@ std::ostream & operator<<(std::ostream &os, const Vec3d& vec)
   return os << "[" << vec.x << "," << vec.y << "," << vec.z << "]";
 }
 
+std::ostream& operator<<(std::ostream& stream, const Quaternion& q)
+{
+  return stream << q.x << "," << q.y << "," << q.z << "," << q.w; 
+}
+
 // Given three points which define a plane, returns a vector which is normal to that plane
 Vec3d vectorNormalToPlane(float pos0[3], float pos1[3], float pos2[3])
 {
