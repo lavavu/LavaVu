@@ -106,6 +106,39 @@ void GeomData::colourCalibrate()
     if (values.size() > draw->opacityIdx)
       omap->calibrate(valueData(draw->opacityIdx));
   }
+
+  //Cache the filter data
+  //The cache stores filter values so we can avoid 
+  //hitting the json store for every vertex (very slow)
+  filterCache.clear();
+  json filters = draw->properties["filters"];
+  for (unsigned int i=0; i < filters.size(); i++)
+  {
+    float min = filters[i]["minimum"];
+    float max = filters[i]["maximum"];
+    if (min == max) continue; //Skip
+
+    int j = filterCache.size();
+    filterCache.push_back(Filter());
+    filterCache[j].dataIdx = valuesLookup(filters[i]["by"]);
+    filterCache[j].map = filters[i]["map"];
+    filterCache[j].out = filters[i]["out"];
+    filterCache[j].inclusive = filters[i]["inclusive"];
+    if (min > max)
+    {
+      //Swap and change to an out filter
+      filterCache[j].minimum = max;
+      filterCache[j].maximum = min;
+      filterCache[j].out = !filterCache[j].out;
+      //Also flip the inclusive flag
+      filterCache[j].inclusive = !filterCache[j].inclusive;
+    }
+    else
+    {
+      filterCache[j].minimum = min;
+      filterCache[j].maximum = max;
+    }
+  }
 }
 
 //Get colour using specified colourValue
@@ -210,42 +243,6 @@ unsigned int GeomData::valuesLookup(const json& by)
 //Returns true if vertex/voxel is to be filtered (don't display)
 bool GeomData::filter(unsigned int idx)
 {
-  //On the first index, cache the filter data
-  if (idx == 0)
-  {
-    //The cache stores filter values so we can avoid 
-    //hitting the json store for every vertex (very slow)
-    filterCache.clear();
-    json filters = draw->properties["filters"];
-    for (unsigned int i=0; i < filters.size(); i++)
-    {
-      float min = filters[i]["minimum"];
-      float max = filters[i]["maximum"];
-      if (min == max) continue; //Skip
-
-      int j = filterCache.size();
-      filterCache.push_back(Filter());
-      filterCache[j].dataIdx = valuesLookup(filters[i]["by"]);
-      filterCache[j].map = filters[i]["map"];
-      filterCache[j].out = filters[i]["out"];
-      filterCache[j].inclusive = filters[i]["inclusive"];
-      if (min > max)
-      {
-        //Swap and change to an out filter
-        filterCache[j].minimum = max;
-        filterCache[j].maximum = min;
-        filterCache[j].out = !filterCache[j].out;
-        //Also flip the inclusive flag
-        filterCache[j].inclusive = !filterCache[j].inclusive;
-      }
-      else
-      {
-        filterCache[j].minimum = min;
-        filterCache[j].maximum = max;
-      }
-    }
-  }
-
   //Iterate all the filters,
   // - if a value matches a filter condition return true (filtered)
   // - if no filters hit, returns false
