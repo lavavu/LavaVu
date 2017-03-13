@@ -663,6 +663,7 @@ public:
 
   TextureData* use();
   void load();
+  void load(GLubyte* imageData, GLuint width, GLuint height, GLuint channels);
   GLubyte* read();
   GLubyte* loadPPM();
   GLubyte* loadPNG();

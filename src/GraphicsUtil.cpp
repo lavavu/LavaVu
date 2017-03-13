@@ -716,6 +716,24 @@ void ImageLoader::load()
   delete[] imageData;
 }
 
+void ImageLoader::load(GLubyte* imageData, GLuint width, GLuint height, GLuint channels)
+{
+  //Load image from data
+  if (!imageData) abort_program("NULL image data\n");
+  if (!texture)
+    texture = new TextureData();
+
+  texture->width = width;
+  texture->height = height;
+  texture->channels = channels;
+
+  //Requires flip on load for OpenGL
+  if (flip) RawImageFlip(imageData, texture->width, texture->height, texture->channels);
+
+  //Build texture
+  build(imageData);
+}
+
 GLubyte* ImageLoader::read()
 {
   //Load image file
@@ -731,7 +749,7 @@ GLubyte* ImageLoader::read()
     imageData = loadTIFF();
 
   //Requires flip on load for OpenGL
-  if (flip) RawImageFlip(imageData, texture->width, texture->height, texture->channels);
+  if (imageData && flip) RawImageFlip(imageData, texture->width, texture->height, texture->channels);
 
   return imageData;
 }
