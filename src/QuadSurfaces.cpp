@@ -153,7 +153,7 @@ void QuadSurfaces::render()
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
     if (vnormals && geom[index]->normals.size() < geom[index]->count)
       calcGridNormals(index, normals);
-    if (geom[index]->indices.size() == 0)
+    if (geom[index]->indices.size() != quads*4)
     {
       indices.resize(quads*4);
       calcGridIndices(index, indices, voffset);
@@ -175,8 +175,8 @@ void QuadSurfaces::render()
     }
 
     t1 = clock();
-    int bytes = indices.size()*sizeof(GLuint);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bytes, &indices[0]);
+    int bytes = geom[index]->indices.size()*sizeof(GLuint);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bytes, geom[index]->indices.ref());
     t2 = clock();
     debug_print("  %.4lf seconds to upload %d quad indices (%d - %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, indices.size(), offset, bytes);
     t1 = clock();
