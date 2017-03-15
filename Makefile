@@ -106,7 +106,7 @@ vpath %.h src/Main:src:src/jpeg:src/png:src/sqlite3
 vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
 
-SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*.cpp) $(wildcard src/jpeg/*.cpp) $(wildcard src/png/*.cpp)
+SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp) $(wildcard src/png/*.cpp)
 
 INC := $(wildcard src/*.h)
 #INC := $(SRC:%.cpp=%.h)
@@ -139,9 +139,14 @@ paths:
 $(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
+$(PROGRAM): $(LIBNAME) $(OPATH)/main.o paths
+	$(CPP) -o $(PROGRAM) $(OPATH)/main.o $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
+
+$(LIBNAME): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
 	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(APPLEOBJ) $(LIBS)
-	$(CPP) -o $(PROGRAM) $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
+
+$(OPATH)/main.o : main.cpp
+	$(CPP) $(CPPFLAGS) $(DEFINES) -c $^ -o $@
 
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
