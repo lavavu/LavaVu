@@ -13,6 +13,7 @@ OPATH ?= tmp
 #Compilers
 CPP=g++
 CC=gcc
+SWIG=$(shell command -v swig 2> /dev/null)
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
@@ -120,7 +121,7 @@ OBJ2 = $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
 
 default: install
 
-install: paths $(PROGRAM)
+install: paths $(PROGRAM) swig
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(PREFIX)/html
 	cp -R src/html/*.css $(PREFIX)/html
@@ -128,12 +129,12 @@ install: paths $(PROGRAM)
 
 .PHONY: force
 $(OPATH)/compiler_flags: force
-	echo '$(CPPFLAGS)' | cmp -s - $@ || echo '$(CPPFLAGS)' > $@
+	@echo '$(CPPFLAGS)' | cmp -s - $@ || echo '$(CPPFLAGS)' > $@
 
 paths:
-	mkdir -p $(OPATH)
-	mkdir -p $(PREFIX)
-	mkdir -p $(PREFIX)/html
+	@mkdir -p $(OPATH)
+	@mkdir -p $(PREFIX)
+	@mkdir -p $(PREFIX)/html
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
@@ -159,10 +160,15 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 
 swig: $(SWIGLIB)
 
-$(SWIGLIB) : LavaVuPython.i
-	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
+ifeq ($(SWIG),)
+$(SWIGLIB) : $(LIBNAME) LavaVuPython.i
+	@echo "*** Python interface build requires Swig ***"
+else
+$(SWIGLIB) : $(LIBNAME) LavaVuPython.i
+	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVuPython_wrap.cxx -o $(OPATH)/LavaVuPython_wrap.os
 	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+endif
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
@@ -171,8 +177,6 @@ docs: src/LavaVu.cpp src/DrawState.h
 	bin/LavaVu -? > docs/Commandline-Arguments.md
 
 clean:
-	-rm -f *~ $(OPATH)/*.o $(PROGRAM) $(LIBNAME)
-	-rm $(PREFIX)/html/*
-	-rm $(PREFIX)/*.vert
-	-rm $(PREFIX)/*.frag
+	-rm -f *~ $(OPATH)/*.o
+	-rm -rf $(PREFIX)
 
