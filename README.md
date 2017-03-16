@@ -26,25 +26,21 @@ Development happens in the "master" branch with stable releases tagged.
 
 ### How do I get set up? ###
 
-The simplest way to get started on a Unix based OS is clone this repository and build from source:
-(You will need to first install git )
+The simplest way to get started on a Unix OS (Mac/Linux) is clone this repository and build from source:
+(You will need to first install git)
 
 ```
   git clone https://github.com/OKaluza/LavaVu
   cd LavaVu
   make -j4
-  make swig #Optional
-```
-
-To build the python interface requires swig (http://www.swig.org/), then after building above run:
-```
-  make swig
 ```
 
 If all goes well the viewer will be built and ready to run in ./bin, try running with:
   bin/LavaVu
 
 ### Dependencies ###
+
+To build the python interface requires swig (http://www.swig.org/)
 
 For video output, requires: libavcodec, libavformat, libavutil, libswscale
 
