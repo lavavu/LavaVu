@@ -3,12 +3,13 @@ PREFIX ?= bin
 APREFIX = $(realpath $(PREFIX))
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
-LIBNAME = lib$(PROGNAME).$(LIBEXT)
+LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
 SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
-INDEX = $(PREFIX)/html/index.html
 
 #Object files path
 OPATH ?= tmp
+#HTML files path
+HTMLPATH = $(PREFIX)/html
 
 #Compilers
 CPP=g++
@@ -116,38 +117,41 @@ OBJ := $(SRC:%.cpp=%.o)
 OBJS = $(notdir $(OBJ))
 #Add object path
 OBJS := $(OBJS:%.o=$(OPATH)/%.o)
+ALLOBJS := $(OBJS)
 #Additional library objects (no cpp extension so not included above)
-OBJ2 = $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
+ALLOBJS += $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
+#Mac only
+ALLOBJS += $(APPLEOBJ)
 
 default: install
 
-install: paths $(PROGRAM) swig
+.PHONY: install
+install: $(PROGRAM) swig
 	cp src/shaders/*.* $(PREFIX)
-	cp -R src/html/*.js $(PREFIX)/html
-	cp -R src/html/*.css $(PREFIX)/html
-	/bin/bash build-index.sh src/html/index.html $(PREFIX)/html/index.html src/shaders
+	cp -R src/html/*.js $(HTMLPATH)
+	cp -R src/html/*.css $(HTMLPATH)
+	/bin/bash build-index.sh src/html/index.html $(HTMLPATH)/index.html src/shaders
 
 .PHONY: force
 $(OPATH)/compiler_flags: force
 	@echo '$(CPPFLAGS)' | cmp -s - $@ || echo '$(CPPFLAGS)' > $@
 
+.PHONY: paths
 paths:
 	@mkdir -p $(OPATH)
 	@mkdir -p $(PREFIX)
-	@mkdir -p $(PREFIX)/html
+	@mkdir -p $(HTMLPATH)
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
-$(PROGRAM): $(LIBNAME) $(OPATH)/main.o paths
+$(PROGRAM): $(LIBRARY) main.cpp | paths
+	$(CPP) $(CPPFLAGS) $(DEFINES) -c src/Main/main.cpp -o $(OPATH)/main.o
 	$(CPP) -o $(PROGRAM) $(OPATH)/main.o $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
-$(LIBNAME): $(OBJS) $(OBJ2) $(APPLEOBJ) paths
-	$(CPP) -o $(PREFIX)/lib$(PROGNAME).$(LIBEXT) $(LIBBUILD) $(LIBINSTALL) $(OBJS) $(OBJ2) $(APPLEOBJ) $(LIBS)
-
-$(OPATH)/main.o : main.cpp
-	$(CPP) $(CPPFLAGS) $(DEFINES) -c $^ -o $@
+$(LIBRARY): $(ALLOBJS) | paths
+	$(CPP) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
 
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
@@ -161,10 +165,10 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 swig: $(SWIGLIB)
 
 ifeq ($(SWIG),)
-$(SWIGLIB) : $(LIBNAME) LavaVuPython.i
+$(SWIGLIB) : $(LIBRARY) LavaVuPython.i
 	@echo "*** Python interface build requires Swig ***"
 else
-$(SWIGLIB) : $(LIBNAME) LavaVuPython.i
+$(SWIGLIB) : $(LIBRARY) LavaVuPython.i
 	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVuPython_wrap.cxx -o $(OPATH)/LavaVuPython_wrap.os
 	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
