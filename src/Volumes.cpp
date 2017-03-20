@@ -450,14 +450,14 @@ void Volumes::render(int i)
   glPushMatrix();
   //Get modelview without focal point / rotation centre adjustment
   view->apply(false);
-  //Object rotation/translation
-  if (geom[i]->draw->properties.has("translate"))
+  //Object rotation/translation (ok to get from global)
+  //if (geom[i]->draw->properties.has("translate"))
   {
     float trans[3];
     Properties::toFloatArray(geom[i]->draw->properties["translate"], trans, 3);
     glTranslatef(trans[0], trans[1], trans[2]);
   }
-  if (geom[i]->draw->properties.has("rotate"))
+  //if (geom[i]->draw->properties.has("rotate"))
   {
     float rot[4];
     Properties::toFloatArray(geom[i]->draw->properties["rotate"], rot, 4);

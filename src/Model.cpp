@@ -1899,6 +1899,7 @@ void Model::jsonRead(std::string data)
         view->setRotation(rot[0], rot[1], rot[2], rot[3]);
       else if (rot.size() == 3)
         view->rotate(rot[0], rot[1], rot[2]);
+      view->properties.data.erase("rotate"); //Delete from props
     }
     else
       view->setRotation(0, 0, 0, 1);
@@ -1907,6 +1908,7 @@ void Model::jsonRead(std::string data)
     {
       trans = view->properties["translate"];
       view->setTranslation(trans[0], trans[1], trans[2]);
+      view->properties.data.erase("translate"); //Delete from props
     }
     if (inviews[v].count("focus") > 0)
     {
