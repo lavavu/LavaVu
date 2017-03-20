@@ -448,22 +448,29 @@ void Volumes::render(int i)
 
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
   glPushMatrix();
+
   //Get modelview without focal point / rotation centre adjustment
-  view->apply(false);
-  //Object rotation/translation (ok to get from global)
-  //if (geom[i]->draw->properties.has("translate"))
+  bool rotatable = props["rotatable"]; //Object rotation by view flag
+  if (!rotatable) view->apply(false);
+
+  //Object rotation/translation
+  if (props.has("translate"))
   {
     float trans[3];
-    Properties::toFloatArray(geom[i]->draw->properties["translate"], trans, 3);
+    Properties::toFloatArray(props["translate"], trans, 3);
     glTranslatef(trans[0], trans[1], trans[2]);
   }
-  //if (geom[i]->draw->properties.has("rotate"))
+
+  if (props.has("rotate"))
   {
     float rot[4];
-    Properties::toFloatArray(geom[i]->draw->properties["rotate"], rot, 4);
+    Properties::toFloatArray(props["rotate"], rot, 4);
     Quaternion qrot(rot[0], rot[1], rot[2], rot[3]);
     qrot.apply();
   }
+  else if (rotatable)
+    //Rotating this object with view rotation
+    view->apply(false);
 
   //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
   glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin

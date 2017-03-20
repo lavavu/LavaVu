@@ -135,6 +135,8 @@ public:
     defaults["depthtest"] = true;
     // | object | integer[3] | width/height/depth override for geometry
     defaults["dims"] = {0, 0, 0};
+    // | object | boolean | Set to true to apply the view rotation to this object
+    defaults["rotatable"] = true;
 
     // | object | colour | Object colour RGB(A)
     defaults["colour"] = {0, 0, 0, 255};
