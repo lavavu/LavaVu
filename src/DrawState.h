@@ -421,9 +421,6 @@ public:
     // | global | boolean | Cache timestep varying data on gpu as well as ram (only if model size permits)
     defaults["gpucache"] = false;
 
-    //LavaVR specific
-    defaults["sweep"] = false;
-    defaults["navspeed"] = 0;
 #ifdef DEBUG
     //std::cerr << std::setw(2) << defaults << std::endl;
 #endif
