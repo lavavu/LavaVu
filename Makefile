@@ -165,13 +165,21 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 swig: $(SWIGLIB)
 
 ifeq ($(SWIG),)
-$(SWIGLIB) : $(LIBRARY) LavaVuPython.i
+$(SWIGLIB) : $(LIBRARY)
 	@echo "*** Python interface build requires Swig ***"
 else
-$(SWIGLIB) : $(LIBRARY) LavaVuPython.i
-	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) LavaVuPython.i
-	$(CPP) $(CPPFLAGS) `python-config --cflags` -c LavaVuPython_wrap.cxx -o $(OPATH)/LavaVuPython_wrap.os
-	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(OPATH)/LavaVuPython_wrap.os $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+
+SWIGSRC = LavaVuPython_wrap.cxx
+SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
+
+$(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
+	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+
+$(SWIGOBJ) : $(SWIGSRC)
+	$(CPP) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ)
+
+$(SWIGSRC) : $(INC) LavaVuPython.i | paths
+	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
 endif
 
 docs: src/LavaVu.cpp src/DrawState.h
