@@ -890,9 +890,17 @@ void Model::setColourMapProps(Properties& properties, float minimum, float maxim
   if (discrete) properties.data["discrete"] = true;
 
   //Set range if dynamic=0 or minimum/maximum values are not defaults
+  if (properties.has("dynamic"))
+  {
+    //Legacy prop, supports int and bool
+    json d = properties["dynamic"];
+    bool dynamic = d.is_boolean() ? (bool)d : (int)d != 0;
+    if (!dynamic)
+      properties.data["range"] = {minimum, maximum};
+  }
+
   float range = maximum - minimum;
-  if ((properties.has("dynamic") && !properties["dynamic"]) ||
-      (!properties.has("range") && range != 0.0 && range != 1.0))
+  if (!properties.has("range") && range != 0.0 && range != 1.0)
   {
     properties.data["range"] = {minimum, maximum};
   }

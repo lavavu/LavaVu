@@ -323,7 +323,7 @@ public:
     defaults["margin"] = 20;
     // | view | boolean | Draw rulers around object axes
     defaults["rulers"] = false;
-    // | view | string | Ruler axes to draw
+    // | view | string | Draw rulers along figure axes (xyzXYZ)
     defaults["ruleraxes"] = "xyz";
     // | view | integer | Number of tick marks to display on rulers
     defaults["rulerticks"] = 5;
