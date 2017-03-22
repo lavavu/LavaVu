@@ -83,10 +83,11 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps,
   /* write the stream header, if any */
   /* also sets the output parameters (none). */
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(53,2,0)
-  avformat_write_header(oc, NULL);
+  int res = avformat_write_header(oc, NULL);
 #else
-  av_write_header(oc);
+  int res = av_write_header(oc);
 #endif
+  if (res != 0) abort_program("AV header write failed %d\n", res);
 }
 
 VideoEncoder::~VideoEncoder()
