@@ -236,6 +236,9 @@ void Properties::parse(const std::string& property, bool global)
       dest[key] = value;
     }
   }
+
+  //Run a type check
+  checkall();
 }
 
 void Properties::merge(json& other)
