@@ -586,7 +586,7 @@ public:
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str);
   void print3d(double x, double y, double z, const char *str);
-  void print3dBillboard(double x, double y, double z, const char *str, int align=-1, float scalex=1.0);
+  void print3dBillboard(double x, double y, double z, const char *str, int align=-1, float* scale=NULL);
   int printWidth(const char *string);
 
   //Bitmap texture fonts

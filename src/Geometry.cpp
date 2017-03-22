@@ -827,18 +827,28 @@ void Geometry::labels()
         //Preceed with ! for right align, | for centre
         float shift = drawstate.fonts.printWidth("XX")*FONT_SCALE_3D/view->scale[1]; //Vertical shift
         char alignchar = labstr.at(0);
+        char alignchar2 = labstr.at(1);
+        //Left/right/centre
         int align = -1;
         if (alignchar == '!') align = 1;
         if (alignchar == '|') align = 0;
-        if (alignchar == '^')
-        {
-          align = 1;
+
+        //Reverse v-shift
+        if (alignchar == '^' || alignchar2 == '^')
+          shift = -0.5*shift;
+        //Zero vshift
+        if (alignchar == '_' || alignchar2 == '_')
           shift = 0.0;
-        }
-        if (align > -1) labstr = labstr.substr(1); //String align char
+
+        //Strip align chars
+        if (alignchar2 == '^' || alignchar2 == '_')
+          labstr = labstr.substr(2);
+        else if (alignchar == '!' || alignchar == '|' || alignchar == '^' || alignchar == '_')
+          labstr = labstr.substr(1);
+
         if (geom[i]->labels[j].size() > 0)
         {
-          drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, 1.0/view->scale[0]);
+          drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, view->scale);
         }
       }
     }

@@ -189,7 +189,7 @@ public:
   void drawSceneBlended();
 
   void drawRulers();
-  void drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis);
+  void drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis, int tickdir=1);
   void drawBorder();
   void drawAxis();
 
