@@ -143,7 +143,7 @@ paths:
 	@mkdir -p $(HTMLPATH)
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
+$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) | paths
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths
