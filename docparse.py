@@ -3,6 +3,7 @@
 #Generate markdown output to docs/Property-Reference.md
 import os
 import subprocess
+import re
 
 def readFile(filename):
   f = open(filename,"r")
@@ -10,13 +11,12 @@ def readFile(filename):
   f.close()
   return contents
 
-f = open("docs/Property-Reference.md", "w")
-f.write("\n## Property reference\n\n")
-
 src = readFile("src/DrawState.h").split("\n")
 gotComment = False
 lastScope = ""
 tokens = []
+content = ""
+TOC = ""
 for line in src:
     #Already read a comment descriptor, read the name and default value
     if gotComment:
@@ -34,18 +34,23 @@ for line in src:
         desc = tokens[3]
 
         if scope != lastScope:
-            f.write("\n### " + scope + "\n\n")
-            f.write("| **Property**     | Type       | Default        | Description                               |\n")
-            f.write("| ---------------- | ---------- | -------------- | ----------------------------------------- |\n")
+            TOC += " * [" + scope + "](#" + re.sub(r'\W+', '', scope) + ")\n"
+            content += "\n### " + scope + "\n\n"
+            content += "| **Property**     | Type       | Default        | Description                               |\n"
+            content += "| ---------------- | ---------- | -------------- | ----------------------------------------- |\n"
             lastScope = scope
 
-        f.write("|" + name.ljust(16))
-        f.write("|" + typename.ljust(10) + "")
-        f.write("|" + default.ljust(14) + "")
-        f.write("|" + desc + "|\n")
+        content += "|" + name.ljust(16)
+        content += "|" + typename.ljust(10) + ""
+        content += "|" + default.ljust(14) + ""
+        content += "|" + desc + "|\n"
 
     elif line.startswith("    // |"):
         gotComment = True
         tokens = line.split(' | ')
 
+f = open("docs/Property-Reference.md", "w")
+f.write("\n## Property reference\n\n")
+f.write("\n" + TOC + "\n")
+f.write(content)
 f.close()
