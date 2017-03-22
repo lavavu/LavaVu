@@ -825,7 +825,7 @@ void Geometry::labels()
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
-        float shift = drawstate.fonts.printWidth("XX")*FONT_SCALE_3D; //Vertical shift
+        float shift = drawstate.fonts.printWidth("XX")*FONT_SCALE_3D/view->scale[1]; //Vertical shift
         char alignchar = labstr.at(0);
         int align = -1;
         if (alignchar == '!') align = 1;
@@ -838,7 +838,7 @@ void Geometry::labels()
         if (align > -1) labstr = labstr.substr(1); //String align char
         if (geom[i]->labels[j].size() > 0)
         {
-          drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align);
+          drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, 1.0/view->scale[0]);
         }
       }
     }

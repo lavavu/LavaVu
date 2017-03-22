@@ -320,7 +320,7 @@ void FontManager::print3d(double x, double y, double z, const char *str)
   glPopMatrix();
 }
 
-void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align)
+void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align, float scalex)
 {
   if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str, align > -1);
   float modelview[16];
@@ -328,8 +328,9 @@ void FontManager::print3dBillboard(double x, double y, double z, const char *str
 
   float sw = FONT_SCALE_3D * printWidth(str);
   //Default align = -1 (Left)
-  if (align == 1) x -= sw;     //Right
-  if (align == 0) x -= sw*0.5; //Centre
+  //(scalex is to undo any x axis scaling on position adjustments)
+  if (align == 1) x -= sw*scalex;     //Right
+  if (align == 0) x -= sw*0.5*scalex; //Centre
   z -= 0.025 * fontscale;
 
   // save the current modelview matrix
