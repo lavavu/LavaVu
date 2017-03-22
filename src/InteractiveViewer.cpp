@@ -995,8 +995,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       help += "> Rotate model\n\n"
               "> **Usage:** rotate axis degrees\n\n"
               "> axis (x/y/z) : axis of rotation  \n"
-              "> degrees (number) : degrees of rotation  \n"
-              "> \n**Usage:** rotate x y z\n\n"
+              "> degrees (number) : degrees of rotation  \n\n"
+              "> **Usage:** rotate x y z\n\n"
               "> x (number) : x axis degrees of rotation  \n"
               "> y (number) : y axis degrees of rotation  \n"
               "> z (number) : z axis degrees of rotation  \n";
@@ -1116,8 +1116,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       help += "> Translate model in 3 dimensions\n\n"
               "> **Usage:** translate dir shift\n\n"
               "> dir (x/y/z) : direction to translate  \n"
-              "> shift (number) : amount of translation  \n"
-              "> \n**Usage:** translation x y z\n\n"
+              "> shift (number) : amount of translation  \n\n"
+              "> **Usage:** translation x y z\n\n"
               "> x (number) : x axis shift  \n"
               "> y (number) : y axis shift  \n"
               "> z (number) : z axis shift  \n";
@@ -1391,8 +1391,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> " + action + " objects/geometry types\n\n"
               "> **Usage:** " + action + " object\n\n"
-              "> object (integer/string) : the index or name of the object to " + action + " (see: \"list objects\")  \n"
-              "> \n**Usage:** " + action + " geometry_type id\n\n"
+              "> object (integer/string) : the index or name of the object to " + action + " (see: \"list objects\")  \n\n"
+              "> **Usage:** " + action + " geometry_type id\n\n"
               "> geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes  \n"
               "> id (integer, optional) : id of geometry to " + action + "  \n"
               "> eg: 'hide points' will " + action + " all objects containing point data  \n"
@@ -1593,8 +1593,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "> Repeat commands from history\n\n"
               "> **Usage:** repeat count\n\n"
-              "> count (integer) : repeat the last entered command count times  \n"
-              "> \n**Usage:** repeat history count (animate)\n\n"
+              "> count (integer) : repeat the last entered command count times  \n\n"
+              "> **Usage:** repeat history count (animate)\n\n"
               "> count (integer) : repeat every command in history buffer count times  \n";
       return false;
     }
@@ -1745,7 +1745,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "> Enable/disable stereo projection  \n"
-              "> If no stereo hardware found will use red/cyan anaglyph mode  \n";
+              "> If no stereo hardware found will use side-by-side mode  \n";
       return false;
     }
 
@@ -2569,8 +2569,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "> value (number) : scaling value applied to all geometry on specified axis (multiplies existing)\n\n"
               "> **Usage:** scale geometry_type value/up/down\n\n"
               "> geometry_type : points/vectors/tracers/shapes  \n"
-              "> value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  \n"
-              "> \n**Usage:** scale object value/up/down\n\n"
+              "> value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  \n\n"
+              "> **Usage:** scale object value/up/down\n\n"
               "> object (integer/string) : the index or name of the object to scale (see: \"list objects\")  \n"
               "> value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  \n";
       return false;
@@ -3267,7 +3267,7 @@ bool LavaVu::parsePropertySet(std::string cmd)
 void LavaVu::helpCommand(std::string cmd)
 {
   //This list of categories and commands must be maintained along with the individual command help strings
-  std::vector<std::string> categories = {"General", "Input", "Output", "View/Camera", "Object", "Display", "Scripting", "Miscellanious"};
+  std::vector<std::string> categories = {"General", "Input", "Output", "View", "Object", "Display", "Scripting", "Miscellanious"};
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
     {"file", "script", "figure", "view", "scan"},
@@ -3302,13 +3302,23 @@ void LavaVu::helpCommand(std::string cmd)
   }
   else if (cmd == "docs:scripting")
   {
-    std::cout << "\n##Scripting command reference\n\n";
+    std::cout << "\n## Scripting command reference\n\n";
+    //Create content index
     for (unsigned int i=0; i<categories.size(); i++)
     {
-      std::cout <<  "\n---\n###" + categories[i] + " commands:\n\n";
+      std::string anchor = categories[i] + "-commands";
+      std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
+      std::cout <<  " - **[" + categories[i] + "](#" + anchor + ")**\n";
+      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+        std::cout <<  "    * [" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")\n";
+    }
+    //Create content
+    for (unsigned int i=0; i<categories.size(); i++)
+    {
+      std::cout <<  "\n---\n### " + categories[i] + " commands:\n\n";
       for (unsigned int j=0; j<cmdlist[i].size(); j++)
       {
-        help = "\n\n####" + cmdlist[i][j] + "\n\n";
+        help = "\n\n#### " + cmdlist[i][j] + "\n\n";
         helpCommand(cmdlist[i][j]);
         std::cout << help;
       }
