@@ -33,6 +33,11 @@ for line in src:
         typename = tokens[2]
         desc = tokens[3]
 
+        #Some tweaks to default values
+        default = default.replace('FLT_MAX', 'Infinity')
+        default = default.replace('{', '[')
+        default = default.replace('}', ']')
+
         if scope != lastScope:
             TOC += " * [" + scope + "](#" + re.sub(r'\W+', '', scope) + ")\n"
             content += "\n### " + scope + "\n\n"
