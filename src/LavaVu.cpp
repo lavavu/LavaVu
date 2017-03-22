@@ -2199,9 +2199,11 @@ void LavaVu::drawBorder()
   }
   else
   {
-    minvert.z = maxvert.z = 0;
-    Vec3d vert1 = Vec3d(aview->max[0], aview->min[1], 0);
-    Vec3d vert2 = Vec3d(aview->min[0], aview->max[1], 0);
+    float z = aview->min[2];
+    if (std::isinf(z) || std::isnan(z)) z = 0.0f;
+    minvert.z = maxvert.z = z;
+    Vec3d vert1 = Vec3d(aview->max[0], aview->min[1], z);
+    Vec3d vert2 = Vec3d(aview->min[0], aview->max[1], z);
     border->read(obj, 1, lucVertexData, minvert.ref(), 2, 2);
     border->read(obj, 1, lucVertexData, vert1.ref());
     border->read(obj, 1, lucVertexData, vert2.ref());
