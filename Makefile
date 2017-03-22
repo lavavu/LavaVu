@@ -133,7 +133,7 @@ install: $(PROGRAM) swig
 	/bin/bash build-index.sh src/html/index.html $(HTMLPATH)/index.html src/shaders
 
 .PHONY: force
-$(OPATH)/compiler_flags: force
+$(OPATH)/compiler_flags: force | paths
 	@echo '$(CPPFLAGS)' | cmp -s - $@ || echo '$(CPPFLAGS)' > $@
 
 .PHONY: paths
@@ -143,7 +143,7 @@ paths:
 	@mkdir -p $(HTMLPATH)
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) | paths
+$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
 	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths
