@@ -2031,21 +2031,26 @@ void LavaVu::drawRulers()
 
 
   int ticks = aview->properties["rulerticks"];
+  std::string axes = aview->properties["ruleraxes"];
   //Axis rulers
   float shift[3] = {0.01f/aview->scale[0] * aview->model_size,
                     0.01f/aview->scale[1] * aview->model_size,
                     0.01f/aview->scale[2] * aview->model_size
                    };
+
+  if (axes.find_first_of('x') != std::string::npos)
   {
     float sta[3] = {aview->min[0], aview->min[1]-shift[1], aview->max[2]};
     float end[3] = {aview->max[0], aview->min[1]-shift[1], aview->max[2]};
     drawRuler(obj, sta, end, aview->min[0], aview->max[0], ticks, 0);
   }
+  if (axes.find_first_of('y') != std::string::npos)
   {
     float sta[3] = {aview->min[0]-shift[0], aview->min[1], aview->max[2]};
     float end[3] = {aview->min[0]-shift[0], aview->max[1], aview->max[2]};
     drawRuler(obj, sta, end, aview->min[1], aview->max[1], ticks, 1);
   }
+  if (axes.find_first_of('z') != std::string::npos)
   {
     float sta[3] = {aview->min[0]-shift[0], aview->min[1]-shift[1], aview->min[2]};
     float end[3] = {aview->min[0]-shift[0], aview->min[1]-shift[1], aview->max[2]};
@@ -2075,10 +2080,6 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
   rulers->drawVector(obj, pos, vec, 1.0, 0, 0, 0, 0);
   rulers->add(obj); //Add new object for ticks
 
-  // Undo any scaling factor
-  //if (aview->scale[0] != 1.0 || aview->scale[1] != 1.0 || aview->scale[2] != 1.0)
-  //   glScalef(1.0/aview->scale[0], 1.0/aview->scale[1], 1.0/aview->scale[2]);
-
   std::string align = "";
   for (int i = 0; i < ticks; i++)
   {
@@ -2090,6 +2091,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     // Draws the tick
     if (axis == 0)
     {
+      height /= aview->scale[1];
       float tvec[3] = {0, height, 0};
       float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height * 0.5f, start[2]};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
@@ -2097,6 +2099,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     }
     else if (axis == 1)
     {
+      height /= aview->scale[0];
       float tvec[3] = {height, 0, 0};
       float tpos[3] = {start[0] + height * 0.5f, start[1] + vec[1] * scaledPos, start[2]};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
@@ -2104,6 +2107,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     }
     else if (axis == 2)
     {
+      height /= aview->scale[1];
       float tvec[3] = {0, height, 0};
       float tpos[3] = {start[0], start[1] + height * 0.5f, start[2] + vec[2] * scaledPos};
       rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
