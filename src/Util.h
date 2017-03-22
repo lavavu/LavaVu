@@ -323,6 +323,8 @@ public:
   void parseSet(const std::string& properties);
   void parse(const std::string& property, bool global=false);
   void merge(json& other);
+  void checkall();
+  bool typecheck(json& val, json& def);
 
 };
 

@@ -241,10 +241,52 @@ void Properties::parse(const std::string& property, bool global)
 void Properties::merge(json& other)
 {
   //Merge: keep existing values, replace any imported
-  for (json::iterator it = other.begin() ; it != other.end(); ++it)
+  for (json::iterator it = other.begin(); it != other.end(); ++it)
   {
     if (!it.value().is_null())
       data[it.key()] = it.value();
+  }
+
+  //Run a type check
+  checkall();
+}
+
+void Properties::checkall()
+{
+  //Ensure all loaded values are of correct types by checking against default types
+  for (json::iterator it = data.begin(); it != data.end(); ++it)
+  {
+    if (!it.value().is_null())
+    {
+      if (!typecheck(data[it.key()], defaults[it.key()]))
+        debug_print("DATA key: %s had incorrect type\n", it.key().c_str());
+    }
+  }
+
+  //Check globals
+  for (json::iterator it = globals.begin(); it != globals.end(); ++it)
+  {
+    if (!it.value().is_null())
+    {
+      if (!typecheck(globals[it.key()], defaults[it.key()]))
+        debug_print("GLOBAL key: %s had incorrect type\n", it.key().c_str());
+    }
+  }
+}
+
+bool Properties::typecheck(json& val, json& def)
+{
+  if (val.type() == def.type()) return true;
+  if (val.is_number() && def.is_number()) return true;
+  if (def.is_array()) return true; //Skip check on arrays
+
+  //Convert a json type to the correct type
+  //Only do this where a sensible conversion is possible
+  if (def.is_boolean())
+  {
+    //Just supporting bool conversion for now
+    debug_print("Attempting to coerce value to BOOLEAN\n");
+    val = val != 0;
   }
 }
 
