@@ -11,7 +11,7 @@ def readFile(filename):
   return contents
 
 f = open("docs/Property-Reference.md", "w")
-f.write("\n##Property reference\n\n")
+f.write("\n## Property reference\n\n")
 
 src = readFile("src/DrawState.h").split("\n")
 gotComment = False
@@ -34,7 +34,7 @@ for line in src:
         desc = tokens[3]
 
         if scope != lastScope:
-            f.write("\n###" + scope + "\n")
+            f.write("\n### " + scope + "\n\n")
             f.write("| **Property**     | Type       | Default        | Description                               |\n")
             f.write("| ---------------- | ---------- | -------------- | ----------------------------------------- |\n")
             lastScope = scope
