@@ -730,9 +730,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Load database or model file  \n"
-              "> **Usage:** file \"filename\"\n\n"
-              "> filename (string) : the path to the file, quotes necessary if path contains spaces  \n";
+      help += "Load database or model file\n"
+              "**Usage:** file \"filename\"\n\n"
+              "filename (string) : the path to the file, quotes necessary if path contains spaces\n";
       return false;
     }
 
@@ -744,10 +744,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Run script file  \n"
-              "> Load a saved script of viewer commands from a file\n\n"
-              "> **Usage:** script filename\n\n"
-              "> filename (string) : path and name of the script file to load  \n";
+      help += "Run script file\n"
+              "Load a saved script of viewer commands from a file\n\n"
+              "**Usage:** script filename\n\n"
+              "filename (string) : path and name of the script file to load\n";
       return false;
     }
 
@@ -773,11 +773,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Export all settings as json state file that can be reloaded later\n\n"
-              "> **Usage:** save [\"filename\"]\n\n"
-              "> file (string) : name of file to import  \n"
-              "> If filename omitted and database loaded, will save the state  \n"
-              "> to the active figure in the database instead  \n";
+      help += "Export all settings as json state file that can be reloaded later\n\n"
+              "**Usage:** save [\"filename\"]\n\n"
+              "file (string) : name of file to import\n"
+              "If filename omitted and database loaded, will save the state\n"
+              "to the active figure in the database instead\n";
       return false;
     }
 
@@ -796,8 +796,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Switch verbose output mode on/off\n\n"
-              "> **Usage:** verbose [off]  \n";
+      help += "Switch verbose output mode on/off\n\n"
+              "**Usage:** verbose [off]\n";
       return false;
     }
 
@@ -814,7 +814,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Create a static volume object which will receive all following volumes as timesteps  \n";
+      help += "Create a static volume object which will receive all following volumes as timesteps\n";
       return false;
     }
 
@@ -826,7 +826,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Clear global static volume object, any future volume loads will create a new object automatically  \n";
+      help += "Clear global static volume object, any future volume loads will create a new object automatically\n";
       return false;
     }
 
@@ -839,12 +839,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string action = parsed.exists("alpha") ? "alpha" : "opacity";
     if (gethelp)
     {
-      help += "> Set global transparency value\n\n"
-              "> **Usage:** opacity/alpha value\n\n"
-              "> 'opacity' is global default, applies to all objects without own opacity setting\n"
-              "> 'alpha' is global override, is combined with opacity setting of all objects\n"
-              "> value (integer > 1) : sets opacity as integer in range [1,255] where 255 is fully opaque  \n"
-              "> value (number [0,1]) : sets opacity as real number in range [0,1] where 1.0 is fully opaque  \n";
+      help += "Set global transparency value\n\n"
+              "**Usage:** opacity/alpha value\n\n"
+              "'opacity' is global default, applies to all objects without own opacity setting\n"
+              "'alpha' is global override, is combined with opacity setting of all objects\n"
+              "value (integer > 1) : sets opacity as integer in range [1,255] where 255 is fully opaque\n"
+              "value (number [0,1]) : sets opacity as real number in range [0,1] where 1.0 is fully opaque\n";
       return false;
     }
 
@@ -861,7 +861,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Switch to interactive mode, for use in scripts  \n";
+      help += "Switch to interactive mode, for use in scripts\n";
       return false;
     }
 
@@ -873,7 +873,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Open the viewer window if not already done, for use in scripts  \n";
+      help += "Open the viewer window if not already done, for use in scripts\n";
       return false;
     }
 
@@ -884,10 +884,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Resize view window\n\n"
-              "> **Usage:** resize width height\n\n"
-              "> width (integer) : width in pixels  \n"
-              "> height (integer) : height in pixels  \n";
+      help += "Resize view window\n\n"
+              "**Usage:** resize width height\n\n"
+              "width (integer) : width in pixels\n"
+              "height (integer) : height in pixels\n";
       return false;
     }
 
@@ -902,7 +902,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Quit the program  \n";
+      help += "Quit the program\n";
       return false;
     }
 
@@ -912,10 +912,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Encode video of all frames displayed at specified framerate  \n"
-              "> (Requires libavcodec)\n\n"
-              "> **Usage:** record (framerate)\n\n"
-              "> framerate (integer): frames per second (default 30)  \n";
+      help += "Encode video of all frames displayed at specified framerate\n"
+              "(Requires libavcodec)\n\n"
+              "**Usage:** record (framerate)\n\n"
+              "framerate (integer): frames per second (default 30)\n";
       return false;
     }
 
@@ -938,8 +938,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Rescan the current directory for timestep database files  \n"
-              "> based on currently loaded filename\n\n";
+      help += "Rescan the current directory for timestep database files\n"
+              "based on currently loaded filename\n\n";
       return false;
     }
 
@@ -949,12 +949,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model rotation in 3d coords about given axis vector (replaces any previous rotation)\n\n"
-              "> **Usage:** rotation x y z degrees\n\n"
-              "> x (number) : axis of rotation x component  \n"
-              "> y (number) : axis of rotation y component  \n"
-              "> z (number) : axis of rotation z component  \n"
-              "> degrees (number) : degrees of rotation  \n";
+      help += "Set model rotation in 3d coords about given axis vector (replaces any previous rotation)\n\n"
+              "**Usage:** rotation x y z degrees\n\n"
+              "x (number) : axis of rotation x component\n"
+              "y (number) : axis of rotation y component\n"
+              "z (number) : axis of rotation z component\n"
+              "degrees (number) : degrees of rotation\n";
       return false;
     }
 
@@ -972,11 +972,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model translation in 3d coords (replaces any previous translation)\n\n"
-              "> **Usage:** translation x y z\n\n"
-              "> x (number) : x axis shift  \n"
-              "> y (number) : y axis shift  \n"
-              "> z (number) : z axis shift  \n";
+      help += "Set model translation in 3d coords (replaces any previous translation)\n\n"
+              "**Usage:** translation x y z\n\n"
+              "x (number) : x axis shift\n"
+              "y (number) : y axis shift\n"
+              "z (number) : z axis shift\n";
       return false;
     }
 
@@ -992,14 +992,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Rotate model\n\n"
-              "> **Usage:** rotate axis degrees\n\n"
-              "> axis (x/y/z) : axis of rotation  \n"
-              "> degrees (number) : degrees of rotation  \n\n"
-              "> **Usage:** rotate x y z\n\n"
-              "> x (number) : x axis degrees of rotation  \n"
-              "> y (number) : y axis degrees of rotation  \n"
-              "> z (number) : z axis degrees of rotation  \n";
+      help += "Rotate model\n\n"
+              "**Usage:** rotate axis degrees\n\n"
+              "axis (x/y/z) : axis of rotation\n"
+              "degrees (number) : degrees of rotation\n\n"
+              "**Usage:** rotate x y z\n\n"
+              "x (number) : x axis degrees of rotation\n"
+              "y (number) : y axis degrees of rotation\n"
+              "z (number) : z axis degrees of rotation\n";
       return false;
     }
 
@@ -1024,9 +1024,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Rotate model about x-axis\n\n"
-              "> **Usage:** rotatex degrees\n\n"
-              "> degrees (number) : degrees of rotation  \n";
+      help += "Rotate model about x-axis\n\n"
+              "**Usage:** rotatex degrees\n\n"
+              "degrees (number) : degrees of rotation\n";
       return false;
     }
 
@@ -1037,9 +1037,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Rotate model about y-axis\n\n"
-              "> **Usage:** rotatey degrees\n\n"
-              "> degrees (number) : degrees of rotation  \n";
+      help += "Rotate model about y-axis\n\n"
+              "**Usage:** rotatey degrees\n\n"
+              "degrees (number) : degrees of rotation\n";
       return false;
     }
 
@@ -1050,9 +1050,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Rotate model about z-axis\n\n"
-              "> **Usage:** rotatez degrees\n\n"
-              "> degrees (number) : degrees of rotation  \n";
+      help += "Rotate model about z-axis\n\n"
+              "**Usage:** rotatez degrees\n\n"
+              "degrees (number) : degrees of rotation\n";
       return false;
     }
 
@@ -1063,11 +1063,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Translate model in Z direction (zoom)\n\n"
-              "> **Usage:** zoom units\n\n"
-              "> units (number) : distance to zoom, units are based on model size  \n"
-              ">                  1 unit is approx the model bounding box size  \n"
-              ">                  negative to zoom out, positive in  \n";
+      help += "Translate model in Z direction (zoom)\n\n"
+              "**Usage:** zoom units\n\n"
+              "units (number) : distance to zoom, units are based on model size\n"
+              "                 1 unit is approx the model bounding box size\n"
+              "                 negative to zoom out, positive in\n";
       return false;
     }
 
@@ -1077,9 +1077,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Translate model in X direction\n\n"
-              "> **Usage:** translationx shift\n\n"
-              "> shift (number) : x axis shift  \n";
+      help += "Translate model in X direction\n\n"
+              "**Usage:** translationx shift\n\n"
+              "shift (number) : x axis shift\n";
       return false;
     }
 
@@ -1089,9 +1089,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Translate model in Y direction\n\n"
-              "> **Usage:** translationy shift\n\n"
-              "> shift (number) : y axis shift  \n";
+      help += "Translate model in Y direction\n\n"
+              "**Usage:** translationy shift\n\n"
+              "shift (number) : y axis shift\n";
       return false;
     }
 
@@ -1101,9 +1101,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Translate model in Z direction\n\n"
-              "> **Usage:** translationz shift\n\n"
-              "> shift (number) : z axis shift  \n";
+      help += "Translate model in Z direction\n\n"
+              "**Usage:** translationz shift\n\n"
+              "shift (number) : z axis shift\n";
       return false;
     }
 
@@ -1113,14 +1113,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Translate model in 3 dimensions\n\n"
-              "> **Usage:** translate dir shift\n\n"
-              "> dir (x/y/z) : direction to translate  \n"
-              "> shift (number) : amount of translation  \n\n"
-              "> **Usage:** translation x y z\n\n"
-              "> x (number) : x axis shift  \n"
-              "> y (number) : y axis shift  \n"
-              "> z (number) : z axis shift  \n";
+      help += "Translate model in 3 dimensions\n\n"
+              "**Usage:** translate dir shift\n\n"
+              "dir (x/y/z) : direction to translate\n"
+              "shift (number) : amount of translation\n\n"
+              "**Usage:** translation x y z\n\n"
+              "x (number) : x axis shift\n"
+              "y (number) : y axis shift\n"
+              "z (number) : z axis shift\n";
       return false;
     }
 
@@ -1144,11 +1144,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model focal point in 3d coords\n\n"
-              "> **Usage:** focus x y z\n\n"
-              "> x (number) : x coord  \n"
-              "> y (number) : y coord  \n"
-              "> z (number) : z coord  \n";
+      help += "Set model focal point in 3d coords\n\n"
+              "**Usage:** focus x y z\n\n"
+              "x (number) : x coord\n"
+              "y (number) : y coord\n"
+              "z (number) : z coord\n";
       return false;
     }
 
@@ -1164,9 +1164,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set camera aperture (field-of-view)\n\n"
-              "> **Usage:** aperture degrees\n\n"
-              "> degrees (number) : degrees of viewing range  \n";
+      help += "Set camera aperture (field-of-view)\n\n"
+              "**Usage:** aperture degrees\n\n"
+              "degrees (number) : degrees of viewing range\n";
       return false;
     }
 
@@ -1176,9 +1176,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set camera focal length (for stereo viewing)\n\n"
-              "> **Usage:** focallength len\n\n"
-              "> len (number) : distance from camera to focal point  \n";
+      help += "Set camera focal length (for stereo viewing)\n\n"
+              "**Usage:** focallength len\n\n"
+              "len (number) : distance from camera to focal point\n";
       return false;
     }
 
@@ -1188,9 +1188,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set camera stereo eye separation\n\n"
-              "> **Usage:** eyeseparation len\n\n"
-              "> len (number) : distance between left and right eye camera viewpoints  \n";
+      help += "Set camera stereo eye separation\n\n"
+              "**Usage:** eyeseparation len\n\n"
+              "len (number) : distance between left and right eye camera viewpoints\n";
       return false;
     }
 
@@ -1200,9 +1200,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Adjust near clip plane relative to current value\n\n"
-              "> **Usage:** zoomclip multiplier\n\n"
-              "> multiplier (number) : multiply current near clip plane by this value  \n";
+      help += "Adjust near clip plane relative to current value\n\n"
+              "**Usage:** zoomclip multiplier\n\n"
+              "multiplier (number) : multiply current near clip plane by this value\n";
       return false;
     }
 
@@ -1212,9 +1212,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set near clip plane, before which geometry is not displayed\n\n"
-              "> **Usage:** nearclip dist\n\n"
-              "> dist (number) : distance from camera to near clip plane  \n";
+      help += "Set near clip plane, before which geometry is not displayed\n\n"
+              "**Usage:** nearclip dist\n\n"
+              "dist (number) : distance from camera to near clip plane\n";
       return false;
     }
 
@@ -1224,9 +1224,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set far clip plane, beyond which geometry is not displayed\n\n"
-              "> **Usage:** farrclip dist\n\n"
-              "> dist (number) : distance from camera to far clip plane  \n";
+      help += "Set far clip plane, beyond which geometry is not displayed\n\n"
+              "**Usage:** farrclip dist\n\n"
+              "dist (number) : distance from camera to far clip plane\n";
       return false;
     }
 
@@ -1236,11 +1236,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set timestep to view\n\n"
-              "> **Usage:** timestep up/down/value\n\n"
-              "> value (integer) : the timestep to view  \n"
-              "> up : switch to previous timestep if available  \n"
-              "> down : switch to next timestep if available  \n";
+      help += "Set timestep to view\n\n"
+              "**Usage:** timestep up/down/value\n\n"
+              "value (integer) : the timestep to view\n"
+              "up : switch to previous timestep if available\n"
+              "down : switch to next timestep if available\n";
       return false;
     }
     if (!parsed.has(ival, "timestep"))
@@ -1267,9 +1267,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Jump from current timestep forward/backwards\n\n"
-              "> **Usage:** jump value\n\n"
-              "> value (integer) : how many timesteps to jump (negative for backwards)  \n";
+      help += "Jump from current timestep forward/backwards\n\n"
+              "**Usage:** jump value\n\n"
+              "value (integer) : how many timesteps to jump (negative for backwards)\n";
       return false;
     }
 
@@ -1286,12 +1286,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model to view (when multiple models loaded)\n\n"
-              "> **Usage:** model up/down/value\n\n"
-              "> value (integer) : the model index to view [1,n]  \n"
-              "> up : switch to previous model if available  \n"
-              "> down : switch to next model if available  \n"
-              "> add : add a new model  \n";
+      help += "Set model to view (when multiple models loaded)\n\n"
+              "**Usage:** model up/down/value\n\n"
+              "value (integer) : the model index to view [1,n]\n"
+              "up : switch to previous model if available\n"
+              "down : switch to next model if available\n"
+              "add : add a new model\n";
       return false;
     }
 
@@ -1320,12 +1320,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set figure to view (when available)\n\n"
-              "> **Usage:** figure up/down/value\n\n"
-              "> value (integer/string) : the figure index or name to view  \n"
-              ">                          if it doesn't exist it will be created  \n"
-              "> up : switch to previous figure if available  \n"
-              "> down : switch to next figure if available  \n";
+      help += "Set figure to view (when available)\n\n"
+              "**Usage:** figure up/down/value\n\n"
+              "value (integer/string) : the figure index or name to view\n"
+              "                         if it doesn't exist it will be created\n"
+              "up : switch to previous figure if available\n"
+              "down : switch to next figure if available\n";
       return false;
     }
 
@@ -1361,11 +1361,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set view (when available)\n\n"
-              "> **Usage:** view up/down/value\n\n"
-              "> value (integer) : the view index to switch to  \n"
-              "> up : switch to previous view if available  \n"
-              "> down : switch to next view if available  \n";
+      help += "Set view (when available)\n\n"
+              "**Usage:** view up/down/value\n\n"
+              "value (integer) : the view index to switch to\n"
+              "up : switch to previous view if available\n"
+              "down : switch to next view if available\n";
       return false;
     }
 
@@ -1389,14 +1389,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (gethelp)
     {
-      help += "> " + action + " objects/geometry types\n\n"
-              "> **Usage:** " + action + " object\n\n"
-              "> object (integer/string) : the index or name of the object to " + action + " (see: \"list objects\")  \n\n"
-              "> **Usage:** " + action + " geometry_type id\n\n"
-              "> geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes  \n"
-              "> id (integer, optional) : id of geometry to " + action + "  \n"
-              "> eg: 'hide points' will " + action + " all objects containing point data  \n"
-              "> note: 'hide all' will " + action + " all objects  \n";
+      help += "" + action + " objects/geometry types\n\n"
+              "**Usage:** " + action + " object\n\n"
+              "object (integer/string) : the index or name of the object to " + action + " (see: \"list objects\")\n\n"
+              "**Usage:** " + action + " geometry_type id\n\n"
+              "geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes\n"
+              "id (integer, optional) : id of geometry to " + action + "\n"
+              "eg: 'hide points' will " + action + " all objects containing point data\n"
+              "note: 'hide all' will " + action + " all objects\n";
       return false;
     }
 
@@ -1473,11 +1473,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Encode video of model running from current timestep to specified timestep  \n"
-              "> (Requires libavcodec)\n\n"
-              "> **Usage:** movie [startstep] [endstep]\n\n"
-              "> startstep (integer) : first frame timestep (defaults to first)  \n"
-              "> endstep (integer) : last frame timestep (defaults to final)  \n";
+      help += "Encode video of model running from current timestep to specified timestep\n"
+              "(Requires libavcodec)\n\n"
+              "**Usage:** movie [startstep] [endstep]\n\n"
+              "startstep (integer) : first frame timestep (defaults to first)\n"
+              "endstep (integer) : last frame timestep (defaults to final)\n";
       return false;
     }
 
@@ -1493,10 +1493,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Display model timesteps in sequence from current timestep to specified timestep\n\n"
-              "> **Usage:** play endstep\n\n"
-              "> endstep (integer) : last frame timestep  \n"
-              "> If endstep omitted, will loop continually until 'stop' command entered  \n";
+      help += "Display model timesteps in sequence from current timestep to specified timestep\n\n"
+              "**Usage:** play endstep\n\n"
+              "endstep (integer) : last frame timestep\n"
+              "If endstep omitted, will loop continually until 'stop' command entered\n";
       return false;
     }
 
@@ -1522,7 +1522,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Go to next timestep in sequence  \n";
+      help += "Go to next timestep in sequence\n";
       return false;
     }
 
@@ -1541,7 +1541,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Stop the looping 'play' command  \n";
+      help += "Stop the looping 'play' command\n";
       return false;
     }
 
@@ -1552,9 +1552,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Write images in sequence from current timestep to specified timestep\n\n"
-              "> **Usage:** images endstep\n\n"
-              "> endstep (integer) : last frame timestep  \n";
+      help += "Write images in sequence from current timestep to specified timestep\n\n"
+              "**Usage:** images endstep\n\n"
+              "endstep (integer) : last frame timestep\n";
       return false;
     }
 
@@ -1569,11 +1569,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Update display between each command\n\n"
-              "> **Usage:** animate rate\n\n"
-              "> rate (integer) : animation timer to fire every (rate) msec (default: 50)  \n"
-              "> When on, if multiple commands are issued the frame is re-rendered at set framerate  \n"
-              "> When off, all commands will be processed before the display is updated  \n";
+      help += "Update display between each command\n\n"
+              "**Usage:** animate rate\n\n"
+              "rate (integer) : animation timer to fire every (rate) msec (default: 50)\n"
+              "When on, if multiple commands are issued the frame is re-rendered at set framerate\n"
+              "When off, all commands will be processed before the display is updated\n";
       return false;
     }
 
@@ -1591,11 +1591,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Repeat commands from history\n\n"
-              "> **Usage:** repeat count\n\n"
-              "> count (integer) : repeat the last entered command count times  \n\n"
-              "> **Usage:** repeat history count (animate)\n\n"
-              "> count (integer) : repeat every command in history buffer count times  \n";
+      help += "Repeat commands from history\n\n"
+              "**Usage:** repeat count\n\n"
+              "count (integer) : repeat the last entered command count times\n\n"
+              "**Usage:** repeat history count (animate)\n\n"
+              "count (integer) : repeat every command in history buffer count times\n";
       return false;
     }
 
@@ -1641,9 +1641,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Display/hide the axis legend\n\n"
-              "> **Usage:** axis (on/off)\n\n"
-              "> on/off (optional) : show/hide the axis, if omitted switches state  \n";
+      help += "Display/hide the axis legend\n\n"
+              "**Usage:** axis (on/off)\n\n"
+              "on/off (optional) : show/hide the axis, if omitted switches state\n";
       return false;
     }
 
@@ -1660,10 +1660,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Toggle a boolean property\n\n"
-              "> **Usage:** toogle (property-name)\n\n"
-              "> property-name : name of property to switch  \n"
-              "> If an object is selected, will try there, then view, then global\n";
+      help += "Toggle a boolean property\n\n"
+              "**Usage:** toogle (property-name)\n\n"
+              "property-name : name of property to switch\n"
+              "If an object is selected, will try there, then view, then global\n";
       return false;
     }
 
@@ -1691,7 +1691,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Redraw all object data, required after changing some parameters but may be slow  \n";
+      help += "Redraw all object data, required after changing some parameters but may be slow\n";
       return false;
     }
 
@@ -1702,7 +1702,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Switch viewer to full-screen mode and back to windowed mode  \n";
+      help += "Switch viewer to full-screen mode and back to windowed mode\n";
       return false;
     }
 
@@ -1713,7 +1713,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Disable/enable scaling, default is on, disable to view model un-scaled  \n";
+      help += "Disable/enable scaling, default is on, disable to view model un-scaled\n";
       return false;
     }
 
@@ -1723,7 +1723,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Adjust camera view to fit the model in window  \n";
+      help += "Adjust camera view to fit the model in window\n";
       return false;
     }
 
@@ -1733,7 +1733,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Automatically adjust camera view to always fit the model in window (enable/disable)  \n";
+      help += "Automatically adjust camera view to always fit the model in window (enable/disable)\n";
       return false;
     }
 
@@ -1744,8 +1744,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Enable/disable stereo projection  \n"
-              "> If no stereo hardware found will use side-by-side mode  \n";
+      help += "Enable/disable stereo projection\n"
+              "If no stereo hardware found will use side-by-side mode\n";
       return false;
     }
 
@@ -1756,7 +1756,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Switch between Right-handed and Left-handed coordinate system  \n";
+      help += "Switch between Right-handed and Left-handed coordinate system\n";
       return false;
     }
 
@@ -1766,7 +1766,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set title heading to following text  \n";
+      help += "Set title heading to following text\n";
       return false;
     }
 
@@ -1776,7 +1776,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Enable/disable axis rulers (unfinished)  \n";
+      help += "Enable/disable axis rulers (unfinished)\n";
       return false;
     }
 
@@ -1788,7 +1788,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Display help about a command  \n";
+      help += "Display help about a command\n";
       return false;
     }
 
@@ -1796,14 +1796,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string cmd = parsed["help"];
     if (cmd.length() > 0)
     {
-      help = "~~~~~~~~~~~~~~~~~~~~~~~~  \n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~  \n";
+      help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
       helpCommand(cmd);
       displayText(help);
       std::cout << help;
     }
     else
     {
-      help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~  \n";
+      help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
       helpCommand("help");
       displayText(help);
       std::cout << HELP_INTERACTION;
@@ -1816,7 +1816,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Enable/disable multi-sample anti-aliasing (if supported by OpenGL drivers)  \n";
+      help += "Enable/disable multi-sample anti-aliasing (if supported by OpenGL drivers)\n";
       return false;
     }
 
@@ -1827,7 +1827,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Adjust colourmaps on each object to fit actual value range  \n";
+      help += "Adjust colourmaps on each object to fit actual value range\n";
       return false;
     }
 
@@ -1847,12 +1847,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Export object data\n\n"
-              "> **Usage:** export [format] [object]\n\n"
-              "> format (string) : json/csv/db (left blank: compressed db)  \n"
-              "> object (integer/string) : the index or name of the object to export (see: \"list objects\")  \n"
-              "> object_name (string) : the name of the object to export (see: \"list objects\")  \n"
-              "> If object ommitted all will be exported  \n";
+      help += "Export object data\n\n"
+              "**Usage:** export [format] [object]\n\n"
+              "format (string) : json/csv/db (left blank: compressed db)\n"
+              "object (integer/string) : the index or name of the object to export (see: \"list objects\")\n"
+              "object_name (string) : the name of the object to export (see: \"list objects\")\n"
+              "If object ommitted all will be exported\n";
       return false;
     }
 
@@ -1879,13 +1879,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> List available data\n\n"
-              "> **Usage:** list objects/colourmaps/elements\n\n"
-              "> objects : enable object list (stays on screen until disabled)  \n"
-              ">           (dimmed objects are hidden or not in selected viewport)  \n"
-              "> colourmaps : show colourmap list  \n"
-              "> elements : show geometry elements by id in terminal  \n"
-              "> data : show available data sets in selected object or all  \n";
+      help += "List available data\n\n"
+              "**Usage:** list objects/colourmaps/elements\n\n"
+              "objects : enable object list (stays on screen until disabled)\n"
+              "          (dimmed objects are hidden or not in selected viewport)\n"
+              "colourmaps : show colourmap list\n"
+              "elements : show geometry elements by id in terminal\n"
+              "data : show available data sets in selected object or all\n";
       return false;
     }
 
@@ -1955,7 +1955,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Reset the camera to the default model view  \n";
+      help += "Reset the camera to the default model view\n";
       return false;
     }
 
@@ -1967,7 +1967,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Recalculate the model bounding box from geometry  \n";
+      help += "Recalculate the model bounding box from geometry\n";
       return false;
     }
 
@@ -1987,10 +1987,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Clear all data of current model/timestep\n\n"
-              "> **Usage:** clear [objects]\n\n"
-              "> objects : optionally clear all object entries  \n"
-              ">           (if omitted, only the objects geometry data is cleared)  \n";
+      help += "Clear all data of current model/timestep\n\n"
+              "**Usage:** clear [objects]\n\n"
+              "objects : optionally clear all object entries\n"
+              "          (if omitted, only the objects geometry data is cleared)\n";
       return false;
     }
 
@@ -2000,10 +2000,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Reload all data of current model/timestep from database  \n\n"
-              "> **Usage:** reload [object_id]\n\n"
-              "> If an object is selected, reload will apply to that object only  \n"
-              "> (If no database, will still reload data to gpu)  \n";
+      help += "Reload all data of current model/timestep from database\n\n"
+              "**Usage:** reload [object_id]\n\n"
+              "If an object is selected, reload will apply to that object only\n"
+              "(If no database, will still reload data to gpu)\n";
       return false;
     }
 
@@ -2026,7 +2026,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set the camera postiion to the origin (for scripting, not generally advisable)  \n";
+      help += "Set the camera postiion to the origin (for scripting, not generally advisable)\n";
       return false;
     }
 
@@ -2036,12 +2036,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set colourmap on object\n\n"
-              "> **Usage:** colourmap object [colourmap / \"add\" | \"data\"]\n\n"
-              "> object (integer/string) : the index or name of the object to set (see: \"list objects\")  \n"
-              "> colourmap (integer/string) : the index or name of the colourmap to apply (see: \"list colourmaps\")  \n"
-              "> add : add a new colourmap to selected object  \n"
-              "> data (string) : data to load into selected object's colourmap  \n";
+      help += "Set colourmap on object\n\n"
+              "**Usage:** colourmap object [colourmap / \"add\" | \"data\"]\n\n"
+              "object (integer/string) : the index or name of the object to set (see: \"list objects\")\n"
+              "colourmap (integer/string) : the index or name of the colourmap to apply (see: \"list colourmaps\")\n"
+              "add : add a new colourmap to selected object\n"
+              "data (string) : data to load into selected object's colourmap\n";
       return false;
     }
 
@@ -2108,9 +2108,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Add a colour bar display to selected object\n\n"
-              "> **Usage:** colourbar [alignment] [size]\n\n"
-              "> alignment (string) : viewport alignment (left/right/top/bottom)  \n";
+      help += "Add a colour bar display to selected object\n\n"
+              "**Usage:** colourbar [alignment] [size]\n\n"
+              "alignment (string) : viewport alignment (left/right/top/bottom)\n";
       return false;
     }
 
@@ -2126,9 +2126,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Add a colour value to selected object, appends to colour value array\n\n"
-              "> **Usage:** colour colourval\n\n"
-              "> colourval (string) : json [r,g,b(,a)] or hex RRGGBB(AA)  \n";
+      help += "Add a colour value to selected object, appends to colour value array\n\n"
+              "**Usage:** colour colourval\n\n"
+              "colourval (string) : json [r,g,b(,a)] or hex RRGGBB(AA)\n";
       return false;
     }
 
@@ -2157,10 +2157,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Add a float value to selected object, appends to value array\n\n"
-              "> **Usage:** value val label\n\n"
-              "> label (string) : name of data set to append to  \n"
-              "> val (number) : value to append  \n";
+      help += "Add a float value to selected object, appends to value array\n\n"
+              "**Usage:** value val label\n\n"
+              "label (string) : name of data set to append to\n"
+              "val (number) : value to append\n";
       return false;
     }
 
@@ -2192,12 +2192,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (gethelp)
     {
-      help += "> Add a " + action + " to selected object, appends to " + action + " array\n\n"
-              "> **Usage:** " + action + " x y z\n\n"
-              "> x (number) : " + action + " X coord  \n"
-              "> y (number) : " + action + " Y coord  \n"
-              "> z (number) : " + action + " Z coord\n\n"
-              "> (minX/Y/Z or maxX/Y/Z can be used in place of number for model bounding box edges)  \n";
+      help += "Add a " + action + " to selected object, appends to " + action + " array\n\n"
+              "**Usage:** " + action + " x y z\n\n"
+              "x (number) : " + action + " X coord\n"
+              "y (number) : " + action + " Y coord\n"
+              "z (number) : " + action + " Z coord\n\n"
+              "(minX/Y/Z or maxX/Y/Z can be used in place of number for model bounding box edges)\n";
       return false;
     }
 
@@ -2224,10 +2224,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Deprecate? This data loading stuff is better done through python interface
     if (gethelp)
     {
-      help += "> Read data into selected object, appends to specified data array\n\n"
-              "> **Usage:** read type\n\n"
-              "> type (string) : data type to load vertices/vectors/normals/values/colours  \n"
-              "> Before using this command, store the data a json array in a property of same name\n\n";
+      help += "Read data into selected object, appends to specified data array\n\n"
+              "**Usage:** read type\n\n"
+              "type (string) : data type to load vertices/vectors/normals/values/colours\n"
+              "Before using this command, store the data a json array in a property of same name\n\n";
       return false;
     }
 
@@ -2306,9 +2306,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Label vertices of selected object\n\n"
-              "> **Usage:** label \"labels\"\n\n"
-              "> labels (string) : list of newline separated label data\n\n";
+      help += "Label vertices of selected object\n\n"
+              "**Usage:** label \"labels\"\n\n"
+              "labels (string) : list of newline separated label data\n\n";
       return false;
     }
 
@@ -2332,12 +2332,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set point-rendering type on object\n\n"
-              "> **Usage:** pointtype all/object type/up/down\n\n"
-              "> all : use 'all' to set the global default point type  \n"
-              "> object (integer/string) : the index or name of the object to set (see: \"list objects\")  \n"
-              "> type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)  \n"
-              "> up/down : use 'up' or 'down' to switch to the previous/next type in list  \n";
+      help += "Set point-rendering type on object\n\n"
+              "**Usage:** pointtype all/object type/up/down\n\n"
+              "all : use 'all' to set the global default point type\n"
+              "object (integer/string) : the index or name of the object to set (see: \"list objects\")\n"
+              "type (integer) : Point type [0,3] to apply (gaussian/flat/sphere/highlight sphere)\n"
+              "up/down : use 'up' or 'down' to switch to the previous/next type in list\n";
       return false;
     }
 
@@ -2383,10 +2383,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set point sub-sampling value\n\n"
-              "> **Usage:** pointsample value/up/down\n\n"
-              "> value (integer) : 1=no sub-sampling=50%% sampled etc..  \n"
-              "> up/down : use 'up' or 'down' to sample more (up) or less (down) points  \n";
+      help += "Set point sub-sampling value\n\n"
+              "**Usage:** pointsample value/up/down\n\n"
+              "value (integer) : 1=no sub-sampling=50%% sampled etc..\n"
+              "up/down : use 'up' or 'down' to sample more (up) or less (down) points\n";
       return false;
     }
 
@@ -2404,9 +2404,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Save an image of the current view  \n"
-              "> **Usage:** image [filename]\n\n"
-              "> filename (string) : optional base filename without extension  \n";
+      help += "Save an image of the current view\n"
+              "**Usage:** image [filename]\n\n"
+              "filename (string) : optional base filename without extension\n";
       return false;
     }
 
@@ -2425,9 +2425,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set output image width (height calculated to match window aspect)\n\n"
-              "> **Usage:** outwidth value\n\n"
-              "> value (integer) : width in pixels for output images  \n";
+      help += "Set output image width (height calculated to match window aspect)\n\n"
+              "**Usage:** outwidth value\n\n"
+              "value (integer) : width in pixels for output images\n";
       return false;
     }
 
@@ -2439,9 +2439,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set output image height\n\n"
-              "> **Usage:** outheight value\n\n"
-              "> value (integer) : height in pixels for output images  \n";
+      help += "Set output image height\n\n"
+              "**Usage:** outheight value\n\n"
+              "value (integer) : height in pixels for output images\n";
       return false;
     }
 
@@ -2453,12 +2453,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set window background colour\n\n"
-              "> **Usage:** background colour/value/white/black/grey/invert\n\n"
-              "> colour (string) : any valid colour string  \n"
-              "> value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white  \n"
-              "> white/black/grey : sets background to specified value  \n"
-              "> invert (or omitted value) : inverts current background colour  \n";
+      help += "Set window background colour\n\n"
+              "**Usage:** background colour/value/white/black/grey/invert\n\n"
+              "colour (string) : any valid colour string\n"
+              "value (number [0,1]) : sets to greyscale value with luminosity in range [0,1] where 1.0 is white\n"
+              "white/black/grey : sets background to specified value\n"
+              "invert (or omitted value) : inverts current background colour\n";
       return false;
     }
     
@@ -2493,12 +2493,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model border frame\n\n"
-              "> **Usage:** border on/off/filled\n\n"
-              "> on : line border around model bounding-box  \n"
-              "> off : no border  \n"
-              "> filled : filled background bounding box  \n"
-              "> (no value) : switch between possible values  \n";
+      help += "Set model border frame\n\n"
+              "**Usage:** border on/off/filled\n\n"
+              "on : line border around model bounding-box\n"
+              "off : no border\n"
+              "filled : filled background bounding box\n"
+              "(no value) : switch between possible values\n";
       return false;
     }
 
@@ -2526,7 +2526,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Output camera state for use in model scripts  \n";
+      help += "Output camera state for use in model scripts\n";
       return false;
     }
 
@@ -2538,11 +2538,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set model scaling, multiples by existing values\n\n"
-              "> **Usage:** scale xval yval zval\n\n"
-              "> xval (number) : scaling value applied to x axis\n\n"
-              "> yval (number) : scaling value applied to y axis  \n"
-              "> zval (number) : scaling value applied to z axis  \n";
+      help += "Set model scaling, multiples by existing values\n\n"
+              "**Usage:** scale xval yval zval\n\n"
+              "xval (number) : scaling value applied to x axis\n\n"
+              "yval (number) : scaling value applied to y axis\n"
+              "zval (number) : scaling value applied to z axis\n";
       return false;
     }
 
@@ -2563,16 +2563,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Scale model or applicable objects\n\n"
-              "> **Usage:** scale axis value\n\n"
-              "> axis : x/y/z  \n"
-              "> value (number) : scaling value applied to all geometry on specified axis (multiplies existing)\n\n"
-              "> **Usage:** scale geometry_type value/up/down\n\n"
-              "> geometry_type : points/vectors/tracers/shapes  \n"
-              "> value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  \n\n"
-              "> **Usage:** scale object value/up/down\n\n"
-              "> object (integer/string) : the index or name of the object to scale (see: \"list objects\")  \n"
-              "> value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling  \n";
+      help += "Scale model or applicable objects\n\n"
+              "**Usage:** scale axis value\n\n"
+              "axis : x/y/z\n"
+              "value (number) : scaling value applied to all geometry on specified axis (multiplies existing)\n\n"
+              "**Usage:** scale geometry_type value/up/down\n\n"
+              "geometry_type : points/vectors/tracers/shapes\n"
+              "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n\n"
+              "**Usage:** scale object value/up/down\n\n"
+              "object (integer/string) : the index or name of the object to scale (see: \"list objects\")\n"
+              "value (number) or 'up/down' : scaling value or use 'up' or 'down' to reduce/increase scaling\n";
       return false;
     }
 
@@ -2658,9 +2658,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Write command history to output (eg: terminal)\n\n"
-              "> **Usage:** history [filename]\n\n"
-              "> filename (string) : optional file to write data to  \n";
+      help += "Write command history to output (eg: terminal)\n\n"
+              "**Usage:** history [filename]\n\n"
+              "filename (string) : optional file to write data to\n";
       return false;
     }
 
@@ -2688,7 +2688,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Clear command history  \n";
+      help += "Clear command history\n";
       return false;
     }
 
@@ -2699,9 +2699,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Pause execution (for scripting)\n\n"
-              "> **Usage:** pause msecs\n\n"
-              "> msecs (integer) : how long to pause for in milliseconds  \n";
+      help += "Pause execution (for scripting)\n\n"
+              "**Usage:** pause msecs\n\n"
+              "msecs (integer) : how long to pause for in milliseconds\n";
       return false;
     }
 
@@ -2711,9 +2711,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Delete objects  \n"
-              "> **Usage:** delete object\n\n"
-              "> object (integer/string) : the index or name of the object to delete (see: \"list objects\")  \n";
+      help += "Delete objects\n"
+              "**Usage:** delete object\n\n"
+              "object (integer/string) : the index or name of the object to delete (see: \"list objects\")\n";
       return false;
     }
 
@@ -2752,10 +2752,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Delete objects from database  \n"
-              "> WARNING: This is irreversible! Backup your database before using!\n\n"
-              "> **Usage:** delete object_id\n\n"
-              "> object (integer/string) : the index or name of the object to delete (see: \"list objects\")  \n";
+      help += "Delete objects from database\n"
+              "WARNING: This is irreversible! Backup your database before using!\n\n"
+              "**Usage:** delete object_id\n\n"
+              "object (integer/string) : the index or name of the object to delete (see: \"list objects\")\n";
       return false;
     }
 
@@ -2774,7 +2774,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Merge data from attached databases into main (warning: backup first!)  \n";
+      help += "Merge data from attached databases into main (warning: backup first!)\n";
       return false;
     }
 
@@ -2785,10 +2785,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Load objects from database  \n"
-              "> Used when running with deferred loading (-N command line switch)\n\n"
-              "> **Usage:** load object\n\n"
-              "> object (integer/string) : the index or name of the object to load (see: \"list objects\")  \n";
+      help += "Load objects from database\n"
+              "Used when running with deferred loading (-N command line switch)\n\n"
+              "**Usage:** load object\n\n"
+              "object (integer/string) : the index or name of the object to load (see: \"list objects\")\n";
       return false;
     }
 
@@ -2809,12 +2809,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Sort geometry on demand (with idle timer)\n\n"
-              "> **Usage:** sort on/off/timer\n\n"
-              "> on : (default) sort after model rotation  \n"
-              "> off : no sorting  \n"
-              "> timer : sort after 1.5 second timeout  \n"
-              "> If no options passed, flags re-sort required  \n";
+      help += "Sort geometry on demand (with idle timer)\n\n"
+              "**Usage:** sort on/off/timer\n\n"
+              "on : (default) sort after model rotation\n"
+              "off : no sorting\n"
+              "timer : sort after 1.5 second timeout\n"
+              "If no options passed, flags re-sort required\n";
       return false;
     }
 
@@ -2950,11 +2950,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Add a new object and select as the active object\n\n"
-              "> **Usage:** add [object_name] [data_type]\n\n"
-              "> object_name (string) : optional name of the object to add  \n"
-              "> data_type (string) : optional name of the default data type  \n"
-              "> (points/labels/vectors/tracers/triangles/quads/shapes/lines)  \n";
+      help += "Add a new object and select as the active object\n\n"
+              "**Usage:** add [object_name] [data_type]\n\n"
+              "object_name (string) : optional name of the object to add\n"
+              "data_type (string) : optional name of the default data type\n"
+              "(points/labels/vectors/tracers/triangles/quads/shapes/lines)\n";
       return false;
     }
 
@@ -2971,10 +2971,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Append a new geometry container to an object\n"
-              "> eg: to divide line objects into segments  \n\n"
-              "> **Usage:** append [object]\n\n"
-              "> object (integer/string) : the index or name of the object to select (see: \"list objects\")  \n";
+      help += "Append a new geometry container to an object\n"
+              "eg: to divide line objects into segments\n\n"
+              "**Usage:** append [object]\n\n"
+              "object (integer/string) : the index or name of the object to select (see: \"list objects\")\n";
       return false;
     }
 
@@ -2995,12 +2995,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Select object as the active object  \n"
-              "> Used for setting properties of objects  \n"
-              "> following commands that take an object id will no longer require one)\n\n"
-              "> **Usage:** select object\n\n"
-              "> object (integer/string) : the index or name of the object to select (see: \"list objects\")  \n"
-              "> Leave object parameter empty to clear selection.  \n";
+      help += "Select object as the active object\n"
+              "Used for setting properties of objects\n"
+              "following commands that take an object id will no longer require one)\n\n"
+              "**Usage:** select object\n\n"
+              "object (integer/string) : the index or name of the object to select (see: \"list objects\")\n"
+              "Leave object parameter empty to clear selection.\n";
       return false;
     }
 
@@ -3014,7 +3014,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Reload shader program files from disk  \n";
+      help += "Reload shader program files from disk\n";
       return false;
     }
 
@@ -3026,9 +3026,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Select blending type\n\n"
-              "> **Usage:** blend mode\n\n"
-              "> mode (string) : normal: multiplicative, add: additive, png: premultiplied for png output  \n";
+      help += "Select blending type\n\n"
+              "**Usage:** blend mode\n\n"
+              "mode (string) : normal: multiplicative, add: additive, png: premultiplied for png output\n";
       return false;
     }
 
@@ -3044,7 +3044,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Print properties on active object or global and view if none selected  \n";
+      help += "Print properties on active object or global and view if none selected\n";
       return false;
     }
 
@@ -3054,7 +3054,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Print all available properties and their default values  \n";
+      help += "Print all available properties and their default values\n";
       return false;
     }
 
@@ -3064,7 +3064,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Create and display some test data, points, lines, quads  \n";
+      help += "Create and display some test data, points, lines, quads\n";
       return false;
     }
 
@@ -3076,7 +3076,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Create and display a test volume dataset  \n";
+      help += "Create and display a test volume dataset\n";
       return false;
     }
 
@@ -3087,10 +3087,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set object name\n\n"
-              "> **Usage:** name object newname\n\n"
-              "> object (integer/string) : the index or name of the object to rename (see: \"list objects\")  \n"
-              "> newname (string) : new name to apply  \n";
+      help += "Set object name\n\n"
+              "**Usage:** name object newname\n\n"
+              "object (integer/string) : the index or name of the object to rename (see: \"list objects\")\n"
+              "newname (string) : new name to apply\n";
       return false;
     }
 
@@ -3115,7 +3115,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Add a new timestep after the current one  \n";
+      help += "Add a new timestep after the current one\n";
       return false;
     }
 
@@ -3129,13 +3129,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Set a data filter on selected object\n\n"
-              "> **Usage:** filter index min max [map]\n\n"
-              "> index (integer) : the index of the data set to filter on (see: \"list data\")  \n"
-              "> min (number) : the minimum value of the range to filter in or out  \n"
-              "> max (number) : the maximum value of the range to filter in or out  \n"
-              "> map (literal) : add map keyword for min/max [0,1] on available data range  \n"
-              ">                   eg: 0.1-0.9 will filter the lowest and highest 10% of values  \n";
+      help += "Set a data filter on selected object\n\n"
+              "**Usage:** filter index min max [map]\n\n"
+              "index (integer) : the index of the data set to filter on (see: \"list data\")\n"
+              "min (number) : the minimum value of the range to filter in or out\n"
+              "max (number) : the maximum value of the range to filter in or out\n"
+              "map (literal) : add map keyword for min/max [0,1] on available data range\n"
+              "                  eg: 0.1-0.9 will filter the lowest and highest 10% of values\n";
       return false;
     }
 
@@ -3171,10 +3171,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string action = parsed.exists("filtermin") ? "filtermin" : "filtermax";
     if (gethelp)
     {
-      help += "> Modify a data filter on selected object\n\n"
-              "> **Usage:** " + action + " index value\n\n"
-              "> index (integer) : the index filter to set [0 - N-1] where N = # of filters added  \n"
-              "> value (number) : the " + (action == "filtermin" ? "minimum" : "maximum") + " value of the range to filter in or out  \n";
+      help += "Modify a data filter on selected object\n\n"
+              "**Usage:** " + action + " index value\n\n"
+              "index (integer) : the index filter to set [0 - N-1] where N = # of filters added\n"
+              "value (number) : the " + (action == "filtermin" ? "minimum" : "maximum") + " value of the range to filter in or out\n";
       return false;
     }
 
@@ -3201,7 +3201,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Clear filters on selected object  \n";
+      help += "Clear filters on selected object\n";
       return false;
     }
 
@@ -3218,8 +3218,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "> Fix currently loaded geometry as not time-varying\n\n"
-              "> This data will then exist for all time steps\n";
+      help += "Fix currently loaded geometry as not time-varying\n\n"
+              "This data will then exist for all time steps\n";
       return false;
     }
 
@@ -3299,28 +3299,40 @@ void LavaVu::helpCommand(std::string cmd)
         if (j < cmdlist[i].size() - 1) help += ", ";
       }
     }
+    help += "\n";
   }
   else if (cmd == "docs:scripting")
   {
-    std::cout << "\n## Scripting command reference\n\n";
+    std::cout << "\n# Scripting command reference\n\n";
     //Create content index
     for (unsigned int i=0; i<categories.size(); i++)
     {
       std::string anchor = categories[i] + "-commands";
       std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
-      std::cout <<  " - **[" + categories[i] + "](#" + anchor + ")**\n";
+      std::cout <<  " - **[" + categories[i] + "](#" + anchor + ")**  \n";
       for (unsigned int j=0; j<cmdlist[i].size(); j++)
-        std::cout <<  "    * [" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")\n";
+      {
+        //std::cout <<  "    * [" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")\n";
+        if (j > 0) std::cout << ", ";
+        std::cout <<  "[" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")";
+      }
+      std::cout << std::endl;
     }
     //Create content
     for (unsigned int i=0; i<categories.size(); i++)
     {
-      std::cout <<  "\n---\n### " + categories[i] + " commands:\n\n";
+      std::cout <<  "\n---\n## " + categories[i] + " commands:\n\n";
       for (unsigned int j=0; j<cmdlist[i].size(); j++)
       {
-        help = "\n\n#### " + cmdlist[i][j] + "\n\n";
+        std::cout << "\n### " + cmdlist[i][j] + "\n\n";
+        help = "";
         helpCommand(cmdlist[i][j]);
-        std::cout << help;
+
+        std::string line;
+        std::stringstream ss(help);
+        while(std::getline(ss, line))
+          std::cout << " > " + line + "  \n";
+        std::cout << std::endl;
       }
     }
   }

@@ -56,7 +56,7 @@ for line in src:
         tokens = line.split(' | ')
 
 f = open("docs/Property-Reference.md", "w")
-f.write("\n## Property reference\n\n")
+f.write("\n# Property reference\n\n")
 f.write("\n" + TOC + "\n")
 f.write(content)
 f.close()
