@@ -34,6 +34,7 @@ for line in src:
         desc = tokens[3]
 
         #Some tweaks to default values
+        default = default.replace('json::array()', '[]')
         default = default.replace('FLT_MAX', 'Infinity')
         default = default.replace('{', '[')
         default = default.replace('}', ']')
@@ -41,7 +42,7 @@ for line in src:
         if scope != lastScope:
             TOC += " * [" + scope + "](#" + re.sub(r'\W+', '', scope) + ")\n"
             content += "\n### " + scope + "\n\n"
-            content += "| **Property**     | Type       | Default        | Description                               |\n"
+            content += "| Property         | Type       | Default        | Description                               |\n"
             content += "| ---------------- | ---------- | -------------- | ----------------------------------------- |\n"
             lastScope = scope
 
