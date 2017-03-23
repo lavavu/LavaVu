@@ -224,7 +224,6 @@ void Points::loadList()
   }
   t2 = clock();
   debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
-printf("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
   t1 = clock();
 }
 
