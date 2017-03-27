@@ -14,7 +14,6 @@ HTMLPATH = $(PREFIX)/html
 #Compilers
 CPP=g++
 CC=gcc
-SWIG=$(shell command -v swig 2> /dev/null)
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
@@ -126,7 +125,7 @@ ALLOBJS += $(APPLEOBJ)
 default: install
 
 .PHONY: install
-install: $(PROGRAM) swig
+install: $(PROGRAM) $(SWIGLIB)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(HTMLPATH)
 	cp -R src/html/*.css $(HTMLPATH)
@@ -162,18 +161,13 @@ $(OPATH)/sqlite3.o : sqlite3.c
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
-swig: $(SWIGLIB)
-
+#Python interface
 SWIGSRC = LavaVuPython_wrap.cxx
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
 
-ifeq ($(SWIG),)
-$(SWIGSRC) : $(INC) LavaVuPython.i | paths
-	@echo "*** Python interface rebuild requires Swig ***"
-else
-$(SWIGSRC) : $(INC) LavaVuPython.i | paths
-	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
-endif
+.PHONY: swig
+swig : $(INC) LavaVuPython.i | paths
+	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
