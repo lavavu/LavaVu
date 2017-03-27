@@ -52,6 +52,16 @@
 //Fast random int with fixed seed for deterministic random sample (SEED should be uint32_t)
 #define SHR3(SEED) (SEED^=(SEED<<13), SEED^=(SEED>>17), SEED^=(SEED<<5))
 
+#define GET_VAR_ARGS(fmt, buffer) \
+{ \
+  va_list ap;                 /* Pointer to arguments list         */ \
+  assert(fmt != NULL);        /* No format string                  */ \
+  va_start(ap, fmt);          /* Parse format string for variables */ \
+  vsprintf(buffer, fmt, ap);  /* Convert symbols                   */ \
+  va_end(ap);                                                         \
+} 
+
+
 extern FILE* infostream;
 void abort_program(const char * s, ...);
 void debug_print(const char *fmt, ...);

@@ -541,6 +541,8 @@ class FontManager
 {
   unsigned int fontbase, fonttexture;
   GLuint charLists;
+  char buffer[4096];
+
 public:
   int charset;
   float fontscale;

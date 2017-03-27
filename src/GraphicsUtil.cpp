@@ -288,15 +288,9 @@ void FontManager::printString(const char* str)
   glCallLists(strlen(str), GL_UNSIGNED_BYTE, str);      // Display
 }
 
-char buffer[4096];
 void FontManager::printf(int x, int y, const char *fmt, ...)
 {
-  va_list ap;                 // Pointer to arguments list
-  if (fmt == NULL) return;    // No format string
-  va_start(ap, fmt);          // Parse format string for variables
-  vsprintf(buffer, fmt, ap);    // Convert symbols
-  va_end(ap);
-
+  GET_VAR_ARGS(fmt, buffer);
   print(x, y, buffer);   // FontManager::print result string
 }
 
