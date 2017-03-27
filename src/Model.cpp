@@ -1202,7 +1202,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels,
   //minX, minY, minZ, maxX, maxY, maxZ, data)
-  sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
+  sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry %s ORDER BY timestep,object_id", prefix, filter);
   sqlite3_stmt* statement = select(SQL, true);
 
   //Old database compatibility
@@ -1210,7 +1210,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   {
     //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
     //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-    sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
+    sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id", prefix, filter);
     statement = select(SQL, true);
     datacol = 15;
 
@@ -1228,7 +1228,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   //Very old database compatibility
   if (statement == NULL)
   {
-    sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry %s ORDER BY timestep,object_id,idx,rank", prefix, filter);
+    sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry %s ORDER BY timestep,object_id", prefix, filter);
     statement = select(SQL);
     datacol = 14;
   }
@@ -1257,11 +1257,12 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (height == 0) height = width > 0 ? items / width : 0;
       float minimum = (float)sqlite3_column_double(statement, 10);
       float maximum = (float)sqlite3_column_double(statement, 11);
-      //New fields for the scaling features, applied when drawing colour bars
-      //float dimFactor = (float)sqlite3_column_double(statement, 12);
       //Units field repurposed for data label
       const char *data_label = (const char*)sqlite3_column_text(statement, 13);
       const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
+
+      //printf("%d] OBJ %d STEP %d TYPE %d DTYPE %d DIMS (%d x %d x %d) COUNT %d ITEMS %d LABELS %s\n", 
+      //       rows, object_id, timestep, type, data_type, width, height, depth, count, items, labels);
 
       const void *data = sqlite3_column_blob(statement, datacol);
       unsigned int bytes = sqlite3_column_bytes(statement, datacol);
@@ -1427,17 +1428,23 @@ void Model::mergeDatabases()
 
 void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 {
-  //Write objects to a new database
-  sqlite3 *outdb;
-  if (sqlite3_open_v2(path, &outdb, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL))
+  //Write objects to a new database?
+  sqlite3 *outdb = NULL;
+  if (path)
   {
-    debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(outdb));
-    return;
+    if (sqlite3_open_v2(path, &outdb, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL))
+    {
+      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(outdb));
+      return;
+    }
+  }
+  else
+  {
+    outdb = db;
+    reopen(true);  //Open writable
   }
 
-  // Remove existing data?
-  issue("drop table IF EXISTS geometry", outdb);
-  issue("drop table IF EXISTS timestep", outdb);
+  // Remove existing static data
   issue("drop table IF EXISTS object", outdb);
   issue("drop table IF EXISTS state", outdb);
 
@@ -1548,11 +1555,21 @@ void Model::writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool comp
   }
 }
 
+void Model::deleteGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step)
+{
+  char SQL[SQL_QUERY_MAX];
+  //Clear existing data of this type before writing, allows object update to db
+  snprintf(SQL, SQL_QUERY_MAX, "DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
+  issue(SQL);
+}
+
 void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compressdata)
 {
+  //Clear existing data of this type before writing, allows object data updates to db
+  deleteGeometry(outdb, type, obj, step);
+
   std::vector<GeomData*> data = geometry[type]->getAllObjects(obj);
   //Loop through and write out all object data
-  char SQL[SQL_QUERY_MAX];
   unsigned int data_type;
   for (unsigned int i=0; i<data.size(); i++)
   {
@@ -1561,8 +1578,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
       //Write the data entry
       DataContainer* block = data[i]->data[data_type];
       if (!block || block->size() == 0) continue;
-      std::cerr << "Writing geometry (type[" << data_type << "] * " << block->size()
-                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
+      if (infostream)
+        std::cerr << "Writing geometry (type[" << data_type << "] * " << block->size()
+                  << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }
     for (unsigned int j=0; j<data[i]->values.size(); j++)
@@ -1570,8 +1588,9 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
       //Write the value data entry
       DataContainer* block = (DataContainer*)data[i]->values[j];
       if (!block || block->size() == 0) continue;
-      std::cerr << "Writing geometry (values[" << j << "] * " << block->size()
-                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
+      if (infostream)
+        std::cerr << "Writing geometry (values[" << j << "] * " << block->size()
+                  << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       //TODO: fix to write/read labels for data values from database, preferably in a separate table?
       //This hack will work for up to 7 value data sets for now
       //Filters and colourby properties will need modification though
@@ -1652,6 +1671,9 @@ void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometr
 
   // Free compression buffer
   if (cmp_len > 0) free(buffer);
+
+  //printf("WROTE ID %d STEP %d TYPE %d DTYPE %d DIMS (%d x %d x %d) COUNT %d LABELS %s\n", 
+  //       objid, step, type, dtype, data->width, data->height, data->depth, block->size(), labels.c_str());
 }
 
 void Model::deleteObject(unsigned int id)
