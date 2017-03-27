@@ -263,13 +263,15 @@ void TriSurfaces::loadMesh()
       geom[index]->count = 0;
       geom[index]->data[lucVertexData] = &newverts;
       geom[index]->data[lucIndexData] = &geom[index]->indices;
+      //Recreate value data as optimised version is smaller, re-load necessary values
       FloatValues* oldvalues = geom[index]->colourData();
+      FloatValues* newvalues = NULL;
       if (oldvalues)
       {
-        geom[index]->values[geom[index]->draw->colourIdx] = new FloatValues();
-        geom[index]->values[geom[index]->draw->colourIdx]->label = oldvalues->label;
-        geom[index]->values[geom[index]->draw->colourIdx]->minimum = oldvalues->minimum;
-        geom[index]->values[geom[index]->draw->colourIdx]->maximum = oldvalues->maximum;
+        newvalues = new FloatValues();
+        newvalues->label = oldvalues->label;
+        newvalues->minimum = oldvalues->minimum;
+        newvalues->maximum = oldvalues->maximum;
       }
       bool optimise = geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
@@ -279,13 +281,12 @@ void TriSurfaces::loadMesh()
         {
           //Reference id == self, not a duplicate
 
-          //Average final colour
-          //if (vertColour && oldvalues && geom[index]->colourData())
-          if (vertColour && oldvalues)
+          //Average final colour value
+          if (vertColour && newvalues)
           {
-            read(geom[index]->draw, 1, &oldvalues->value[verts[v].id], oldvalues->label);
             if (verts[v].vcount > 1)
-              geom[index]->colourData()->value[geom[index]->count] /= verts[v].vcount;
+              oldvalues->value[verts[v].id] /= verts[v].vcount;
+            newvalues->read(1, &oldvalues->value[verts[v].id]);
           }
 
           //Save an index lookup entry (Grid indices loaded in previous step)
@@ -310,6 +311,7 @@ void TriSurfaces::loadMesh()
       //Replace vertex containers
       geom[index]->vertices = newverts;
       geom[index]->data[lucVertexData] = &geom[index]->vertices;
+      geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
       if (oldvalues) delete oldvalues;
     }
 
@@ -562,7 +564,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   int match = 0;
   int dupcount = 0;
   bool optimise = geom[index]->draw->properties["optimise"];
-  for(unsigned int v=1; v<verts.size(); v++)
+  for (unsigned int v=1; v<verts.size(); v++)
   {
     if (optimise && verts[match] == verts[v])
     {
