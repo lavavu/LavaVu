@@ -2446,7 +2446,7 @@ bool LavaVu::loadFile(const std::string& file)
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
     //Open database file, if a non-db model already loaded, load into that
-    if (models.size() == 0 || (amodel && amodel->db))
+    if (models.size() == 0 || (amodel && amodel->database))
     {
       amodel = new Model(drawstate);
       models.push_back(amodel);
@@ -2578,7 +2578,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
     amodel->redraw();
 
     //Set timestep and load geometry at that step
-    if (amodel->db)
+    if (amodel->database)
     {
       if (at_timestep < 0)
         amodel->setTimeStep(drawstate.now);

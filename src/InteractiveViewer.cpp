@@ -783,10 +783,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //Export json settings only (no object data)
     std::string what = parsed["save"];
-    if (what.length() == 0 && amodel->db)
+    if (what.length() == 0 && amodel->database)
     {
       amodel->storeFigure(); //Save the state
-      amodel->reopen(true);  //Open writable
+      amodel->database.reopen(true);  //Open writable
       amodel->writeState();
     }
     else
@@ -2012,7 +2012,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       obj = lookupObject(parsed, "reload");
 
     //Restore original data
-    if (amodel->db)
+    if (amodel->database)
       amodel->loadTimeSteps();
 
     if (obj)

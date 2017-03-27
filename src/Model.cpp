@@ -36,10 +36,142 @@
 //Model class
 #include "Model.h"
 
-Model::Model(DrawState& drawstate) : drawstate(drawstate), readonly(true), attached(0), now(-1), db(NULL), memorydb(false), figure(-1)
+Database::Database() : readonly(true), silent(true), attached(NULL), db(NULL), memory(false)
 {
   prefix[0] = '\0';
-  
+}
+
+Database::Database(const FilePath& fn) : readonly(true), silent(true), attached(NULL), db(NULL), file(fn), memory(false)
+{
+  prefix[0] = '\0';
+}
+
+Database::~Database()
+{
+  if (db) sqlite3_close(db);
+}
+
+bool Database::open(bool write)
+{
+  //Single file database
+  char path[FILE_PATH_MAX];
+  int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
+  strcpy(path, file.full.c_str());
+  if (strstr(path, "file:")) 
+  {
+    flags = flags | SQLITE_OPEN_URI;
+    memory = true;
+  }
+  if (strstr(path, "mode=memory")) memory = true;
+  debug_print("Opening db %s with flags %d\n", path, flags);
+  if (sqlite3_open_v2(path, &db, flags, NULL))
+  {
+    debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
+    return false;
+  }
+  // success
+  debug_print("Open database %s successful, SQLite version %s\n", path, sqlite3_libversion());
+  //rc = sqlite3_busy_handler(db, busy_handler, void*);
+  sqlite3_busy_timeout(db, 10000); //10 seconds
+
+  if (write) readonly = false;
+
+  return true;
+}
+
+void Database::reopen(bool write)
+{
+  if (!readonly || !db) return;
+  if (db) sqlite3_close(db);
+  open(write);
+
+  //Re-attach any attached db file
+  if (attached)
+  {
+    char SQL[SQL_QUERY_MAX];
+    sprintf(SQL, "attach database '%s' as t%d", attached->path.c_str(), attached->step);
+    if (issue(SQL))
+      debug_print("Database %s found and re-attached\n", attached->path.c_str());
+  }
+}
+
+void Database::attach(TimeStep* timestep)
+{
+  //Detach any attached db file
+  if (memory) return;
+  char SQL[SQL_QUERY_MAX];
+  if (attached && attached->step != timestep->step)
+  {
+    sprintf(SQL, "detach database 't%d'", attached->step);
+    if (issue(SQL))
+    {
+      debug_print("Database t%d detached\n", attached->step);
+      attached = NULL;
+      prefix[0] = '\0';
+    }
+    else
+      debug_print("Database t%d detach failed!\n", attached->step);
+  }
+
+  //Attach n'th timestep database if available
+  if (timestep->step > 0 && !attached)
+  {
+    const std::string& path = timestep->path;
+    if (path.length() > 0)
+    {
+      sprintf(SQL, "attach database '%s' as t%d", path.c_str(), timestep->step);
+      if (issue(SQL))
+      {
+        sprintf(prefix, "t%d.", timestep->step);
+        debug_print("Database %s found and attached\n", path.c_str());
+        attached = timestep;
+      }
+      else
+      {
+        debug_print("Database %s found but attach failed!\n", path.c_str());
+      }
+    }
+    //else
+    //   debug_print("Database %s not found, loading from current db\n", path.c_str());
+  }
+}
+
+//SQLite3 utility functions
+sqlite3_stmt* Database::select(const char* fmt, ...)
+{
+  GET_VAR_ARGS(fmt, SQL);
+
+  //debug_print("Issuing select: %s\n", SQL);
+  sqlite3_stmt* statement;
+  //Prepare statement...
+  int rc = sqlite3_prepare_v2(db, SQL, -1, &statement, NULL);
+  if (rc != SQLITE_OK)
+  {
+    if (!silent)
+      debug_print("Prepare error (%s) %s\n", SQL, sqlite3_errmsg(db));
+    return NULL;
+  }
+  return statement;
+}
+
+bool Database::issue(const char* fmt, ...)
+{
+  GET_VAR_ARGS(fmt, SQL);
+  // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
+  //debug_print("Issuing: %s\n", SQL);
+  char* zErrMsg = NULL;
+  if (sqlite3_exec(db, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
+  {
+    std::cerr << "SQLite error: " << (zErrMsg ? zErrMsg : "(no error msg)") << std::endl;
+    std::cerr << " -- " << SQL << std::endl;
+    sqlite3_free(zErrMsg);
+    return false;
+  }
+  return true;
+}
+
+Model::Model(DrawState& drawstate) : drawstate(drawstate), now(-1), figure(-1)
+{
   //Create new geometry containers
   init();
 }
@@ -47,8 +179,8 @@ Model::Model(DrawState& drawstate) : drawstate(drawstate), readonly(true), attac
 void Model::load(const FilePath& fn)
 {
   //Open database file
-  file = fn;
-  if (open())
+  database = Database(fn);
+  if (database.open())
   {
     loadTimeSteps();
     loadColourMaps();
@@ -127,8 +259,6 @@ Model::~Model()
   //Clear colourmaps
   for(unsigned int i=0; i<colourMaps.size(); i++)
     delete colourMaps[i];
-
-  if (db) sqlite3_close(db);
 }
 
 bool Model::loadFigure(int fig)
@@ -142,8 +272,8 @@ bool Model::loadFigure(int fig)
   //Set window caption
   if (fignames[figure].length() > 0)
     drawstate.globals["caption"] = fignames[figure];
-  else if (!memorydb) 
-    drawstate.globals["caption"] = file.base;
+  else if (!database.memory) 
+    drawstate.globals["caption"] = database.file.base;
   return true;
 }
 
@@ -210,92 +340,6 @@ DrawingObject* Model::findObject(unsigned int id)
   for (unsigned int i=0; i<objects.size(); i++)
     if (objects[i]->dbid == id) return objects[i];
   return NULL;
-}
-
-bool Model::open(bool write)
-{
-  //Single file database
-  char path[FILE_PATH_MAX];
-  int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
-  strcpy(path, file.full.c_str());
-  if (strstr(path, "file:")) 
-  {
-    flags = flags | SQLITE_OPEN_URI;
-    memorydb = true;
-  }
-  if (strstr(path, "mode=memory")) memorydb = true;
-  debug_print("Opening db %s with flags %d\n", path, flags);
-  if (sqlite3_open_v2(path, &db, flags, NULL))
-  {
-    debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
-    return false;
-  }
-  // success
-  debug_print("Open database %s successful, SQLite version %s\n", path, sqlite3_libversion());
-  //rc = sqlite3_busy_handler(db, busy_handler, void*);
-  sqlite3_busy_timeout(db, 10000); //10 seconds
-
-  if (write) readonly = false;
-
-  return true;
-}
-
-void Model::reopen(bool write)
-{
-  if (!readonly || !db) return;
-  if (db) sqlite3_close(db);
-  open(write);
-
-  //Re-attach any attached db file
-  if (attached)
-  {
-    char SQL[SQL_QUERY_MAX];
-    sprintf(SQL, "attach database '%s' as t%d", timesteps[drawstate.now]->path.c_str(), attached);
-    if (issue(SQL))
-      debug_print("Model %s found and re-attached\n", timesteps[drawstate.now]->path.c_str());
-  }
-}
-
-void Model::attach(int stepidx)
-{
-  int timestep = timesteps[stepidx]->step;
-  //Detach any attached db file
-  if (memorydb) return;
-  char SQL[SQL_QUERY_MAX];
-  if (attached && attached != timestep)
-  {
-    sprintf(SQL, "detach database 't%d'", attached);
-    if (issue(SQL))
-    {
-      debug_print("Model t%d detached\n", attached);
-      attached = 0;
-      prefix[0] = '\0';
-    }
-    else
-      debug_print("Model t%d detach failed!\n", attached);
-  }
-
-  //Attach n'th timestep database if available
-  if (timestep > 0 && !attached)
-  {
-    const std::string& path = timesteps[stepidx]->path;
-    if (path.length() > 0)
-    {
-      sprintf(SQL, "attach database '%s' as t%d", path.c_str(), timestep);
-      if (issue(SQL))
-      {
-        sprintf(prefix, "t%d.", timestep);
-        debug_print("Model %s found and attached\n", path.c_str());
-        attached = timestep;
-      }
-      else
-      {
-        debug_print("Model %s found but attach failed!\n", path.c_str());
-      }
-    }
-    //else
-    //   debug_print("Model %s not found, loading from current db\n", path.c_str());
-  }
 }
 
 void Model::close()
@@ -382,7 +426,7 @@ unsigned int Model::addColourMap(ColourMap* cmap)
 void Model::loadWindows()
 {
   //Load state from database if available
-  sqlite3_stmt* statement = select("SELECT name, data from state ORDER BY id");
+  sqlite3_stmt* statement = database.select("SELECT name, data from state ORDER BY id");
   while (sqlite3_step(statement) == SQLITE_ROW)
   {
     const char *name = (const char*)sqlite3_column_text(statement, 0);
@@ -403,7 +447,7 @@ void Model::loadWindows()
   else //Old db uses window structure
   {
     //Load windows list from database and insert into models
-    statement = select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ from window");
+    statement = database.select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ from window");
     //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
     //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
     //Single window only supported now, use viewports for multiple
@@ -451,7 +495,7 @@ void Model::loadViewports()
   views.clear();
 
   sqlite3_stmt* statement;
-  statement = select("SELECT id,x,y,near,far FROM viewport ORDER BY y,x", true);
+  statement = database.select("SELECT id,x,y,near,far FROM viewport ORDER BY y,x");
 
   //viewport:
   //(id, title, x, y, near, far, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
@@ -493,15 +537,12 @@ void Model::loadViewCamera(int viewport_id)
 {
   int adj=0;
   //Load specified viewport and apply camera settings
-  char SQL[SQL_QUERY_MAX];
-  sprintf(SQL, "SELECT aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", viewport_id);
-  sqlite3_stmt* statement = select(SQL);
+  sqlite3_stmt* statement = database.select("SELECT aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", viewport_id);
   if (statement == NULL)
   {
     //Old db
     adj = -5;
-    sprintf(SQL, "SELECT translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ FROM viewport WHERE id=%d;", viewport_id);
-    statement = select(SQL);
+    statement = database.select("SELECT translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ FROM viewport WHERE id=%d;", viewport_id);
   }
 
   //viewport:
@@ -549,9 +590,9 @@ void Model::loadViewCamera(int viewport_id)
 void Model::loadObjects()
 {
   sqlite3_stmt* statement;
-  statement = select("SELECT id, name, colour, opacity, properties FROM object", true);
+  statement = database.select("SELECT id, name, colour, opacity, properties FROM object", true);
   if (statement == NULL)
-    statement = select("SELECT id, name, colour, opacity FROM object");
+    statement = database.select("SELECT id, name, colour, opacity FROM object");
 
   //object (id, name, colourmap_id, colour, opacity, properties)
   while (sqlite3_step(statement) == SQLITE_ROW)
@@ -587,10 +628,8 @@ void Model::loadObjects()
 void Model::loadLinks()
 {
   //Select statment to get all viewports in window and all objects in viewports
-  char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
-  sprintf(SQL, "SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id");
-  sqlite3_stmt* statement = select(SQL, true); //Don't report errors as these tables are allowed to not exist
+  sqlite3_stmt* statement = database.select("SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id"); //Don't report errors as these tables are allowed to not exist
 
   int last_viewport = 0, last_object = 0;
   DrawingObject* draw = NULL;
@@ -648,8 +687,7 @@ void Model::loadLinks(DrawingObject* obj)
   //Select statment to get all viewports in window and all objects in viewports
   char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
-  sprintf(SQL, "SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", obj->dbid);
-  sqlite3_stmt* statement = select(SQL);
+  sqlite3_stmt* statement = database.select("SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", obj->dbid);
 
   while ( sqlite3_step(statement) == SQLITE_ROW)
   {
@@ -688,7 +726,8 @@ void Model::clearTimeSteps()
 int Model::loadTimeSteps(bool scan)
 {
   //Strip any digits from end of filename to get base
-  basename = file.base.substr(0, file.base.find_last_not_of("0123456789") + 1);
+  std::string base = database.file.base;
+  std::string basename = base.substr(0, base.find_last_not_of("0123456789") + 1);
 
   //Don't reload timesteps when data has been cached
   if (useCache() && timesteps.size() > 0) return timesteps.size();
@@ -698,9 +737,9 @@ int Model::loadTimeSteps(bool scan)
   int last_step = 0;
 
   //Scan for additional timestep files with corrosponding entries in timestep table
-  if (!scan && db)
+  if (!scan && database)
   {
-    sqlite3_stmt* statement = select("SELECT * FROM timestep");
+    sqlite3_stmt* statement = database.select("SELECT * FROM timestep");
     //(id, time, dim_factor, units)
     while (sqlite3_step(statement) == SQLITE_ROW)
     {
@@ -741,7 +780,7 @@ int Model::loadTimeSteps(bool scan)
       if (path.length() > 0)
       {
         debug_print("Found step %d database %s\n", ts, path.c_str());
-        if (path == file.full && timesteps.size() == 1)
+        if (path == database.file.full && timesteps.size() == 1)
         {
           //Update step if this is the initial db file
           timesteps[0]->step = ts;
@@ -776,8 +815,8 @@ std::string Model::checkFileStep(unsigned int ts, const std::string& basename, u
   for (int w = 5; w >= len; w--)
   {
     std::ostringstream ss;
-    ss << file.path << basename << std::setw(w) << std::setfill('0') << ts;
-    ss << "." << file.ext;
+    ss << database.file.path << basename << std::setw(w) << std::setfill('0') << ts;
+    ss << "." << database.file.ext;
     std::string path = ss.str();
     if (FileExists(path))
       return path;
@@ -787,11 +826,11 @@ std::string Model::checkFileStep(unsigned int ts, const std::string& basename, u
 
 void Model::loadColourMaps()
 {
-  sqlite3_stmt* statement = select("select count(*) from colourvalue");
+  sqlite3_stmt* statement = database.select("select count(*) from colourvalue");
   if (statement) return loadColourMapsLegacy();
 
   //New databases have only a colourmap table with colour data in properties
-  statement = select("SELECT id,name,minimum,maximum,logscale,discrete,properties FROM colourmap");
+  statement = database.select("SELECT id,name,minimum,maximum,logscale,discrete,properties FROM colourmap");
   double minimum;
   double maximum;
   ColourMap* colourMap = NULL;
@@ -820,11 +859,11 @@ void Model::loadColourMapsLegacy()
 {
   //Handles old databases with colourvalue table
   bool old = false;
-  sqlite3_stmt* statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value,name,properties FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
+  sqlite3_stmt* statement = database.select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value,name,properties FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
   if (statement == NULL)
   {
     //Old DB format, had no name or props
-    statement = select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
+    statement = database.select("SELECT colourmap.id,minimum,maximum,logscale,discrete,colour,value FROM colourmap,colourvalue WHERE colourvalue.colourmap_id=colourmap.id");
     old = true;
   }
   //colourmap (id, minimum, maximum, logscale, discrete, centreValue)
@@ -906,38 +945,6 @@ void Model::setColourMapProps(Properties& properties, float minimum, float maxim
   }
 }
 
-//SQLite3 utility functions
-sqlite3_stmt* Model::select(const char* SQL, bool silent)
-{
-  //debug_print("Issuing select: %s\n", SQL);
-  sqlite3_stmt* statement;
-  //Prepare statement...
-  int rc = sqlite3_prepare_v2(db, SQL, -1, &statement, NULL);
-  if (rc != SQLITE_OK)
-  {
-    if (!silent)
-      debug_print("Prepare error (%s) %s\n", SQL, sqlite3_errmsg(db));
-    return NULL;
-  }
-  return statement;
-}
-
-bool Model::issue(const char* SQL, sqlite3* odb)
-{
-  if (!odb) odb = db; //Use existing database
-  // Executes a basic SQLite command (ie: without pointer objects and ignoring result sets) and checks for errors
-  //debug_print("Issuing: %s\n", SQL);
-  char* zErrMsg = NULL;
-  if (sqlite3_exec(odb, SQL, NULL, 0, &zErrMsg) != SQLITE_OK)
-  {
-    std::cerr << "SQLite error: " << (zErrMsg ? zErrMsg : "(no error msg)") << std::endl;
-    std::cerr << " -- " << SQL << std::endl;
-    sqlite3_free(zErrMsg);
-    return false;
-  }
-  return true;
-}
-
 void Model::freeze()
 {
   //Freeze fixed geometry
@@ -953,7 +960,7 @@ void Model::freeze()
 bool Model::useCache()
 {
   //Use cache if no database loaded, or turned on by global parameter
-  if (!db) return true;
+  if (!database) return true;
   return drawstate.global("cache");
 }
 
@@ -970,7 +977,7 @@ void Model::cacheLoad()
   {
     setTimeStep(i);
     if (drawstate.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
-    debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), file.base.c_str());
+    debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), database.file.base.c_str());
   }
   //Cache final step
   cacheStep();
@@ -984,7 +991,7 @@ void Model::cacheStep()
   if (!useCache() || drawstate.now < 0 || (int)timesteps.size() <= drawstate.now) return;
   if (timesteps[drawstate.now]->cache.size() > 0) return; //Already cached this step
 
-  debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), drawstate.now, file.base.c_str(), membytes__/1000000.0f);
+  debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), drawstate.now, database.file.base.c_str(), membytes__/1000000.0f);
 
   //Copy all elements
   if (membytes__ > 0)
@@ -1025,7 +1032,7 @@ bool Model::restoreStep()
   //Load the cache and save loaded timestep
   clearStep();
   timesteps[drawstate.now]->read(geometry);
-  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, file.base.c_str());
+  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, database.file.base.c_str());
 
   //Switch geometry containers
   labels = geometry[lucLabelType];
@@ -1141,10 +1148,10 @@ int Model::setTimeStep(int stepidx)
 
     //Attempt to load from cache first
     //if (restoreStep(state.now)) return 0; //Cache hit successful return value
-    if (db)
+    if (database)
     {
       //Detach any attached db file and attach n'th timestep database if available
-      attach(drawstate.now);
+      database.attach(timesteps[drawstate.now]);
 
       if (useCache())
         //Attempt caching all geometry from database at start
@@ -1161,7 +1168,7 @@ int Model::setTimeStep(int stepidx)
 
 int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseTracers)
 {
-  if (!db)
+  if (!database)
   {
     std::cerr << "No database loaded!!\n";
     return 0;
@@ -1188,7 +1195,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   }
 
   //...timestep...(if ts db attached, assume all geometry is at current step)
-  if (time_start >= 0 && time_stop >= 0 && !attached)
+  if (time_start >= 0 && time_stop >= 0 && !database.attached)
   {
     if (strlen(objfilter) > 0)
       sprintf(filter, "%s AND timestep BETWEEN %d AND %d", objfilter, time_start, time_stop);
@@ -1202,34 +1209,29 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels,
   //minX, minY, minZ, maxX, maxY, maxZ, data)
-  sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry %s ORDER BY timestep,object_id", prefix, filter);
-  sqlite3_stmt* statement = select(SQL, true);
+  sqlite3_stmt* statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
 
   //Old database compatibility
   if (statement == NULL)
   {
     //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
     //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-    sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id", prefix, filter);
-    statement = select(SQL, true);
+    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
     datacol = 15;
 
     //Fix
 #ifdef ALTER_DB
-    reopen(true);  //Open writable
-    sprintf(SQL, "ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
+    database.reopen(true);  //Open writable
+    database.issue("ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
             "ALTER TABLE %sgeometry ADD COLUMN maxX REAL; ALTER TABLE %sgeometry ADD COLUMN maxY REAL; ALTER TABLE %sgeometry ADD COLUMN maxZ REAL; ",
-            prefix, prefix, prefix, prefix, prefix, prefix, prefix);
-    debug_print("%s\n", SQL);
-    issue(SQL);
+            database.prefix, database.prefix, database.prefix, database.prefix, database.prefix, database.prefix, database.prefix);
 #endif
   }
 
   //Very old database compatibility
   if (statement == NULL)
   {
-    sprintf(SQL, "SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry %s ORDER BY timestep,object_id", prefix, filter);
-    statement = select(SQL);
+    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
     datacol = 14;
   }
 
@@ -1275,7 +1277,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       //Bulk load: switch timestep and cache if timestep changes!
       // - disabled when loading multiple tracer steps (recursive load)
       // - disabled when using attached databases (cached in loop via cacheLoad())
-      if (recurseTracers && step() != timestep && !attached)
+      if (recurseTracers && step() != timestep && !database.attached)
       {
         cacheStep();
         drawstate.now = now = nearestTimeStep(timestep);
@@ -1411,17 +1413,15 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
 void Model::mergeDatabases()
 {
-  if (!db) return;
-  char SQL[SQL_QUERY_MAX];
-  reopen(true);  //Open writable
+  if (!database) return;
+  database.reopen(true);  //Open writable
   for (unsigned int i=0; i<=timesteps.size(); i++)
   {
     debug_print("MERGE %d/%d...%d\n", i, timesteps.size(), step());
     setTimeStep(i);
-    if (attached == step())
+    if (database.attached->step == step())
     {
-      snprintf(SQL, SQL_QUERY_MAX, "insert into geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ from %sgeometry", prefix);
-      issue(SQL);
+      database.issue("insert into geometry select null, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels, properties, data, minX, minY, minZ, maxX, maxY, maxZ from %sgeometry", database.prefix);
     }
   }
 }
@@ -1429,38 +1429,39 @@ void Model::mergeDatabases()
 void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 {
   //Write objects to a new database?
-  sqlite3 *outdb = NULL;
+  Database outdb;
   if (path)
   {
-    if (sqlite3_open_v2(path, &outdb, SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, NULL))
+    outdb = Database(FilePath(path));
+    if (!outdb.open(true))
     {
-      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(outdb));
+      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(outdb.db));
       return;
     }
   }
   else
   {
-    outdb = db;
-    reopen(true);  //Open writable
+    outdb = database;
+    database.reopen(true);  //Open writable
   }
 
   // Remove existing static data
-  issue("drop table IF EXISTS object", outdb);
-  issue("drop table IF EXISTS state", outdb);
+  outdb.issue("drop table IF EXISTS object");
+  outdb.issue("drop table IF EXISTS state");
 
   // Create new tables when not present
-  issue("create table IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)", outdb);
+  outdb.issue("create table IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)");
 
-  issue(
-    "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))", outdb);
+  outdb.issue(
+    "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))");
 
-  issue(
-    "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))", outdb);
+  outdb.issue(
+    "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))");
 
   //Write state
   writeState(outdb);
 
-  issue("BEGIN EXCLUSIVE TRANSACTION", outdb);
+  outdb.issue("BEGIN EXCLUSIVE TRANSACTION");
 
   char SQL[SQL_QUERY_MAX];
 
@@ -1469,27 +1470,27 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   {
     if (!obj || objects[i] == obj)
     {
-      snprintf(SQL, SQL_QUERY_MAX, "insert into object (name, properties) values ('%s', '%s')", objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str());
-      //printf("%s\n", SQL);
-      if (!issue(SQL, outdb)) return;
+      if (!outdb.issue("insert into object (name, properties) values ('%s', '%s')", objects[i]->name().c_str(), objects[i]->properties.data.dump().c_str()))
+        return;
       //Store the id
-      objects[i]->dbid = sqlite3_last_insert_rowid(outdb);
+      objects[i]->dbid = sqlite3_last_insert_rowid(outdb.db);
     }
   }
 
   //Write timesteps & objects...
+  //(Only write timestep where doesn't exist already)
   if (timesteps.size() == 0)
   {
-    //Create a timestep and
-    if (!issue("insert into timestep (id, time) values (0, 0)", outdb)) return;
+    //Create a default timestep
+    if (!outdb.issue("insert into timestep (id, time) values (0, 0) WHERE NOT EXISTS (SELECT 1 FROM timestep WHERE id = 0);")) return;
     writeObjects(outdb, obj, 0, compress);
   }
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
-    snprintf(SQL, SQL_QUERY_MAX, "insert into timestep (id, time, properties) values (%d, %g, '%s')", timesteps[i]->step, timesteps[i]->time, "");
-    //printf("%s\n", SQL);
-    if (!issue(SQL, outdb)) return;
+    if (!outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s') WHERE NOT EXISTS (SELECT 1 FROM timestep WHERE id = %d);", 
+          timesteps[i]->step, timesteps[i]->time, "", timesteps[i]->step))
+      return;
 
     //Get data at this timestep
     setTimeStep(i);
@@ -1498,14 +1499,18 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     writeObjects(outdb, obj, step(), compress);
   }
 
-  issue("COMMIT", outdb);
+  outdb.issue("COMMIT");
 }
 
-void Model::writeState(sqlite3* outdb)
+void Model::writeState()
+{
+  writeState(database);
+}
+
+void Model::writeState(Database& outdb)
 {
   //Write state
-  if (!outdb) outdb = db; //Use existing database
-  issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)", outdb);
+  outdb.issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)");
 
   //Add default figure
   if (figure < 0)
@@ -1518,28 +1523,26 @@ void Model::writeState(sqlite3* outdb)
   //Update any active changes to current state
   storeFigure();
 
-  char SQL[SQL_QUERY_MAX];
-
   // Delete any state entry with same name
-  snprintf(SQL, SQL_QUERY_MAX,  "delete from state where name == '%s'", fignames[figure].c_str());
-  issue(SQL, outdb);
+  outdb.issue("delete from state where name == '%s'", fignames[figure].c_str());
 
+  char SQL[SQL_QUERY_MAX];
   snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[figure].c_str());
   sqlite3_stmt* statement;
 
-  if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
-    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+  if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)
+    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
 
   if (sqlite3_bind_text(statement, 1, figures[figure].c_str(), figures[figure].length(), SQLITE_STATIC) != SQLITE_OK)
-    abort_program("SQL bind error: %s\n", sqlite3_errmsg(db));
+    abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb.db));
 
   if (sqlite3_step(statement) != SQLITE_DONE )
-    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(db));
+    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
 
   sqlite3_finalize(statement);
 }
 
-void Model::writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress)
+void Model::writeObjects(Database& outdb, DrawingObject* obj, int step, bool compress)
 {
   //Write object data
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1555,15 +1558,13 @@ void Model::writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool comp
   }
 }
 
-void Model::deleteGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step)
+void Model::deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step)
 {
-  char SQL[SQL_QUERY_MAX];
   //Clear existing data of this type before writing, allows object update to db
-  snprintf(SQL, SQL_QUERY_MAX, "DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
-  issue(SQL);
+  outdb.issue("DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
 }
 
-void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compressdata)
+void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step, bool compressdata)
 {
   //Clear existing data of this type before writing, allows object data updates to db
   deleteGeometry(outdb, type, obj, step);
@@ -1601,7 +1602,7 @@ void Model::writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* o
   }
 }
 
-void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata)
+void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata)
 {
   char SQL[SQL_QUERY_MAX];
   sqlite3_stmt* statement;
@@ -1643,9 +1644,9 @@ void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometr
   snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 
   /* Prepare statement... */
-  if (sqlite3_prepare_v2(outdb, SQL, -1, &statement, NULL) != SQLITE_OK)
+  if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)
   {
-    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
   }
 
   /* Setup text data for insert (on vertex block only) */
@@ -1655,17 +1656,17 @@ void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometr
     if (sqlite3_bind_text(statement, 1, labels.c_str(), labels.length(), SQLITE_STATIC) != SQLITE_OK)
     //const char* clabels = labels.c_str();
     //if (sqlite3_bind_text(statement, 1, clabels, strlen(clabels), SQLITE_STATIC) != SQLITE_OK)
-      abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
+      abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb.db));
   }
 
   /* Setup blob data for insert */
   debug_print("Writing %lu bytes\n", src_len);
   if (sqlite3_bind_blob(statement, 2, buffer, src_len, SQLITE_STATIC) != SQLITE_OK)
-    abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb));
+    abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb.db));
 
   /* Execute statement */
   if (sqlite3_step(statement) != SQLITE_DONE )
-    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb));
+    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
 
   sqlite3_finalize(statement);
 
@@ -1678,22 +1679,20 @@ void Model::writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometr
 
 void Model::deleteObject(unsigned int id)
 {
-  if (!db) return;
-  reopen(true);  //Open writable
-  char SQL[SQL_QUERY_MAX];
-  snprintf(SQL, SQL_QUERY_MAX, "DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
-  issue(SQL);
-  issue("vacuum");
+  if (!database) return;
+  database.reopen(true);  //Open writable
+  database.issue("DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
+  database.issue("vacuum");
   //Update state
   storeFigure(); //Save the state
-  writeState(db);
+  writeState();
 }
 
-void Model::backup(sqlite3 *fromDb, sqlite3* toDb)
+void Model::backup(Database& fromdb, Database& todb)
 {
-  if (!db) return;
+  if (!fromdb || !todb) return;
   sqlite3_backup *pBackup;  // Backup object used to copy data
-  pBackup = sqlite3_backup_init(toDb, "main", fromDb, "main");
+  pBackup = sqlite3_backup_init(todb.db, "main", fromdb.db, "main");
   if (pBackup)
   {
     (void)sqlite3_backup_step(pBackup, -1);

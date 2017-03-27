@@ -39,6 +39,7 @@
 #include "sqlite3/sqlite3.h"
 
 #include "DrawState.h"
+#include "Util.h"
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
 #include "View.h"
@@ -47,20 +48,45 @@
 
 #define SQL_QUERY_MAX 4096
 
+class Database
+{
+  friend class Model; //Allow private access from Model
+private:
+  bool readonly;
+  bool silent;
+  char SQL[SQL_QUERY_MAX];
+
+protected:
+  TimeStep* attached;
+  char prefix[10];    //attached db prefix
+  sqlite3 *db;
+  FilePath file;
+  bool memory;
+
+public:
+
+  Database();
+  Database(const FilePath& fn);
+  ~Database();
+
+  bool open(bool write=false);
+  void reopen(bool write=false);
+  void attach(TimeStep* timestep);
+
+  sqlite3_stmt* select(const char* fmt, ...);
+  bool issue(const char* fmt, ...);
+
+  operator bool() const { return db != NULL; }
+};
+
 class Model
 {
 private:
-  bool readonly;
-  int attached;
-  char prefix[10];    //attached db prefix
   int now;            //Loaded step per model
 
 public:
   DrawState& drawstate;
-  FilePath file;
-  std::string basename;
-  sqlite3 *db;
-  bool memorydb;
+  Database database;
 
   std::vector<std::string> fignames;
   std::vector<std::string> figures;
@@ -89,11 +115,7 @@ public:
   DrawingObject* borderobj;
   DrawingObject* axisobj;
   DrawingObject* rulerobj;
-  sqlite3_stmt* select(const char* SQL, bool silent=false);
-  bool issue(const char* SQL, sqlite3* odb=NULL);
-  bool open(bool write=false);
-  void reopen(bool write=false);
-  void attach(int stepidx);
+
   void close();
   void clearObjects(bool all=false);
   void setup();
@@ -167,13 +189,14 @@ public:
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
   void mergeDatabases();
   void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);
-  void writeState(sqlite3* outdb=NULL);
-  void writeObjects(sqlite3* outdb, DrawingObject* obj, int step, bool compress);
-  void deleteGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step);
-  void writeGeometry(sqlite3* outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
-  void writeGeometryRecord(sqlite3* outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata);
+  void writeState();
+  void writeState(Database& outdb);
+  void writeObjects(Database& outdb, DrawingObject* obj, int step, bool compress);
+  void deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step);
+  void writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
+  void writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata);
   void deleteObject(unsigned int id);
-  void backup(sqlite3 *fromDb, sqlite3* toDb);
+  void backup(Database& fromdb, Database& todb);
   void objectBounds(DrawingObject* draw, float* min, float* max);
 
   std::string jsonWrite(bool objdata=false);
