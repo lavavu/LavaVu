@@ -164,23 +164,22 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 
 swig: $(SWIGLIB)
 
-ifeq ($(SWIG),)
-$(SWIGLIB) : $(LIBRARY)
-	@echo "*** Python interface build requires Swig ***"
-else
-
 SWIGSRC = LavaVuPython_wrap.cxx
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
+
+ifeq ($(SWIG),)
+$(SWIGSRC) : $(INC) LavaVuPython.i | paths
+	@echo "*** Python interface rebuild requires Swig ***"
+else
+$(SWIGSRC) : $(INC) LavaVuPython.i | paths
+	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
+endif
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC)
 	$(CPP) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ)
-
-$(SWIGSRC) : $(INC) LavaVuPython.i | paths
-	$(SWIG) -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
-endif
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py

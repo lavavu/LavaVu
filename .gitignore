@@ -1,6 +1,7 @@
 # use glob syntax.
 syntax: glob
 bin/*
+tmp/*
 *.log
 *.o
 *~
@@ -16,4 +17,4 @@ archive/*
 Images/*
 html/*
 .ipynb_checkpoints/*
-LavaVuPython_wrap.cxx
+compiler_flags
