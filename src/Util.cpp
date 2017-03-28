@@ -163,7 +163,7 @@ void Properties::parseSet(const std::string& properties)
 {
   //Properties can be provided as valid json object {...}
   //in which case, parse directly
-  if (properties.length() > 2 && properties.at(0) == '{')
+  if (properties.length() > 1 && properties.at(0) == '{')
   {
     json props = json::parse(properties);
     merge(props);
