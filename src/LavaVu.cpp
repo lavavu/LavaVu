@@ -745,7 +745,7 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
 
     //Load full cube
     int bytes = channels * width * height * depth;
-    printf("Loading %u bytes, res %d %d %d\n", bytes, width, height, depth);
+    debug_print("Loading %u bytes, res %d %d %d\n", bytes, width, height, depth);
     amodel->volumes->read(vobj, bytes, lucLuminanceData, data, width, height, depth);
   }
 }
@@ -1019,7 +1019,8 @@ void LavaVu::createDemoVolume()
 
       if (z > 0) amodel->volumes->add(vobj);
       amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
-      std::cout << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
+      if (verbose) std::cerr << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
+      //Demo colour values - depth
     }
     free(imageData);
   }
@@ -1267,11 +1268,14 @@ void LavaVu::readOBJ(const FilePath& fn)
     return;
   }
 
-  std::cout << "# of shapes    : " << shapes.size() << std::endl;
-  std::cout << "# of materials : " << materials.size() << std::endl;
-  std::cout << "# of vertices : " << attrib.vertices.size() << std::endl;
-  std::cout << "# of normals : " << attrib.normals.size() << std::endl;
-  std::cout << "# of texcoords : " << attrib.texcoords.size() << std::endl;
+  if (verbose)
+  {
+    std::cerr << "# of shapes    : " << shapes.size() << std::endl;
+    std::cerr << "# of materials : " << materials.size() << std::endl;
+    std::cerr << "# of vertices : " << attrib.vertices.size() << std::endl;
+    std::cerr << "# of normals : " << attrib.normals.size() << std::endl;
+    std::cerr << "# of texcoords : " << attrib.texcoords.size() << std::endl;
+  }
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
@@ -1284,8 +1288,8 @@ void LavaVu::readOBJ(const FilePath& fn)
     if (std::string::npos != last_slash)
       shapes[i].name = shapes[i].name.substr(last_slash + 1);
 
-    printf("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
-    printf("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
+    debug_print("shape[%ld].name = %s\n", i, shapes[i].name.c_str());
+    debug_print("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
 
     //Add new triangles data store to object
     amodel->triSurfaces->add(tobj);
@@ -1304,13 +1308,13 @@ void LavaVu::readOBJ(const FilePath& fn)
           if (texpath.length() == 0)
           {
             texpath = materials[id].specular_texname;
-            if (texpath.length() > 0)
+            if (texpath.length() > 0 && verbose)
               std::cerr << "Applying specular texture: " << texpath << std::endl;
           }
-          else
+          else if (verbose)
             std::cerr << "Applying ambient texture: " << texpath << std::endl;
         }
-        else
+        else if (verbose)
           std::cerr << "Applying diffuse texture: " << texpath << std::endl;
         if (materials[id].diffuse_texname.length() > 0)
         {
@@ -1339,7 +1343,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     //Setting > 1 also divides triangles into smaller pieces first
     int trisplit = drawstate.global("trisplit");
     bool swapY = drawstate.global("swapyz");
-    printf("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
+    debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     if (trisplit == 0 || attrib.texcoords.size())
     {
       //Load, re-index to use indices for this shape only (the global list is for all shapes)

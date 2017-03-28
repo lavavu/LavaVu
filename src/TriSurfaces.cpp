@@ -311,6 +311,7 @@ void TriSurfaces::loadMesh()
       //Replace vertex containers
       geom[index]->vertices = newverts;
       geom[index]->data[lucVertexData] = &geom[index]->vertices;
+      //printf("OBJ %s EL %d, optimised vertices: %d\n", geom[index]->draw->name().c_str(), index, geom[index]->vertices.size());
       if (newvalues)
         geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
       if (oldvalues) delete oldvalues;
