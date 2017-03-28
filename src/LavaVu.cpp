@@ -1507,31 +1507,44 @@ void LavaVu::reloadShaders()
   //Point shaders
   if (drawstate.prog[lucPointType]) delete drawstate.prog[lucPointType];
   drawstate.prog[lucPointType] = new Shader("pointShader.vert", "pointShader.frag");
-  const char* pUniforms[14] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", "uTextured", "uTexture", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
-  drawstate.prog[lucPointType]->loadUniforms(pUniforms, 14);
-  const char* pAttribs[2] = {"aSize", "aPointType"};
-  drawstate.prog[lucPointType]->loadAttribs(pAttribs, 2);
+  const char* pUniforms[] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", 
+                             "uTextured", "uTexture", "uClipMin", "uClipMax",
+                             "uBrightness", "uContrast", "uSaturation",
+                             "uAmbient", "uDiffuse", "uSpecular"};
+  drawstate.prog[lucPointType]->loadUniforms(pUniforms, sizeof(pUniforms)/sizeof(char*));
+  const char* pAttribs[] = {"aSize", "aPointType"};
+  drawstate.prog[lucPointType]->loadAttribs(pAttribs, sizeof(pAttribs)/sizeof(char*));
 
   //Line shaders
   if (drawstate.prog[lucLineType]) delete drawstate.prog[lucLineType];
   drawstate.prog[lucLineType] = new Shader("lineShader.vert", "lineShader.frag");
-  const char* lUniforms[6] = {"uOpacity", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation"};
-  drawstate.prog[lucLineType]->loadUniforms(lUniforms, 6);
+  const char* lUniforms[] = {"uOpacity", "uClipMin", "uClipMax", 
+                             "uBrightness", "uContrast", "uSaturation"};
+  drawstate.prog[lucLineType]->loadUniforms(lUniforms, sizeof(lUniforms)/sizeof(char*));
 
   //Triangle shaders
   if (drawstate.prog[lucTriangleType]) delete drawstate.prog[lucTriangleType];
   drawstate.prog[lucTriangleType] = new Shader("triShader.vert", "triShader.frag");
-  const char* tUniforms[13] = {"uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"};
-  drawstate.prog[lucTriangleType]->loadUniforms(tUniforms, 13);
+  const char* tUniforms[] = {"uOpacity", "uLighting", "uTextured", "uTexture",
+                             "uCalcNormal", "uClipMin", "uClipMax",
+                             "uBrightness", "uContrast", "uSaturation",
+                             "uAmbient", "uDiffuse", "uSpecular"};
+  drawstate.prog[lucTriangleType]->loadUniforms(tUniforms, sizeof(tUniforms)/sizeof(char*));
   drawstate.prog[lucGridType] = drawstate.prog[lucTriangleType];
 
   //Volume ray marching shaders
   if (drawstate.prog[lucVolumeType]) delete drawstate.prog[lucVolumeType];
   drawstate.prog[lucVolumeType] = new Shader("volumeShader.vert", "volumeShader.frag");
-  const char* vUniforms[24] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix", "uVolume", "uTransferFunction", "uBBMin", "uBBMax", "uResolution", "uEnableColour", "uBrightness", "uContrast", "uSaturation", "uPower", "uViewport", "uSamples", "uDensityFactor", "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uFilter", "uRange", "uDenMinMax"};
-  drawstate.prog[lucVolumeType]->loadUniforms(vUniforms, 24);
-  const char* vAttribs[1] = {"aVertexPosition"};
-  drawstate.prog[lucVolumeType]->loadAttribs(vAttribs, 1);
+  const char* vUniforms[] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix",
+                             "uVolume", "uTransferFunction", "uBBMin", "uBBMax",
+                             "uResolution", "uEnableColour",
+                             "uBrightness", "uContrast", "uSaturation", 
+                             "uPower", "uViewport", "uSamples", "uDensityFactor",
+                             "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls",
+                             "uFilter", "uRange", "uDenMinMax"};
+  drawstate.prog[lucVolumeType]->loadUniforms(vUniforms, sizeof(vUniforms)/sizeof(char*));
+  const char* vAttribs[] = {"aVertexPosition"};
+  drawstate.prog[lucVolumeType]->loadAttribs(vAttribs, sizeof(vAttribs)/sizeof(char*));
 }
 
 void LavaVu::resize(int new_width, int new_height)
