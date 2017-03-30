@@ -39,18 +39,18 @@ Volumes::Volumes(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucVolumeType;
   //Create sub-renderers
-  tris = new TriSurfaces(drawstate);
-  tris->internal = true;
+  twoTriangles = new TriSurfaces(drawstate);
+  twoTriangles->internal = true;
 }
 
 Volumes::~Volumes()
 {
-  delete tris;
+  delete twoTriangles;
 }
 
 void Volumes::close()
 {
-  tris->close();
+  twoTriangles->close();
 
   //Iterate geom and delete textures
   //"gpucache" property allows switching this behaviour off for faster switching
@@ -103,17 +103,17 @@ void Volumes::draw()
 
 void Volumes::update()
 {
-  tris->clear();
-  tris->setView(view);
+  twoTriangles->clear();
+  twoTriangles->setView(view);
 
   //Use triangle renderer for two triangles to display volume shader output
   if (geom.size() > 0)
   {
     //Load 2 fullscreen triangles
     float verts[18] = {-1,-1, 0,   -1, 1, 0,   1,-1, 0,   -1, 1, 0,   1, 1, 0,   1,-1, 0};
-    tris->read(geom[0]->draw, 6, lucVertexData, verts);
-    tris->update();
-    tris->render();
+    twoTriangles->read(geom[0]->draw, 6, lucVertexData, verts);
+    twoTriangles->update();
+    twoTriangles->render();
   }
   else
     return; //No volume to render
@@ -142,9 +142,9 @@ void Volumes::update()
     {
       slices[draw] = count;
       if (count == 1)
-        printf("Reloading: cube in object %s\n", draw->name().c_str());
+        debug_print("Reloading: cube in object %s\n", draw->name().c_str());
       else
-        printf("Reloading: %d slices in object %s\n", count, draw->name().c_str());
+        debug_print("Reloading: %d slices in object %s\n", count, draw->name().c_str());
       count = 0;
       if (i<geom.size()) draw = geom[i]->draw;
     }
@@ -226,7 +226,7 @@ void Volumes::update()
         assert(dims[d] <= (unsigned)maxtex);
       }
       if (crop)
-        printf("Cropping volume %d x %d ==> %d x %d @ %d,%d\n", geom[i]->width, geom[i]->height, dims[0], dims[1], (int)texoffset[0], (int)texoffset[1]);
+        debug_print("Cropping volume %d x %d ==> %d x %d @ %d,%d\n", geom[i]->width, geom[i]->height, dims[0], dims[1], (int)texoffset[0], (int)texoffset[1]);
 
       //Init/allocate/bind texture
       if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
@@ -501,11 +501,11 @@ void Volumes::render(int i)
 
   //Draw two triangles to fill screen
   int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
-  glBindBuffer(GL_ARRAY_BUFFER, tris->vbo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tris->indexvbo);
+  glBindBuffer(GL_ARRAY_BUFFER, twoTriangles->vbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, twoTriangles->indexvbo);
   glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
   glEnableClientState(GL_VERTEX_ARRAY);
-  glDrawElements(GL_TRIANGLES, tris->elements, GL_UNSIGNED_INT, (GLvoid*)0);
+  glDrawElements(GL_TRIANGLES, twoTriangles->elements, GL_UNSIGNED_INT, (GLvoid*)0);
   glDisableClientState(GL_VERTEX_ARRAY);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -549,7 +549,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       ih = ceil(geom[i]->depth / (float)xtiles) * geom[i]->height;
       if (ih == geom[i]->height) iw = geom[i]->width * geom[i]->depth;
       int size = geom[i]->width * geom[i]->height;
-      printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), geom[i]->width, geom[i]->height, geom[i]->depth, iw, ih);
+      debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), geom[i]->width, geom[i]->height, geom[i]->depth, iw, ih);
       channels = bpv;
       image = new GLubyte[iw * ih * channels];
       memset(image, 0, iw*ih*sizeof(GLubyte));
@@ -603,7 +603,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       iw = width * xtiles;
       ih = ceil(slices[draw] / (float)xtiles) * height;
       if (ih == height) iw = width * slices[draw];
-      printf("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), width, height, slices[draw], iw, ih);
+      debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), width, height, slices[draw], iw, ih);
       image = new GLubyte[iw * ih * channels];
       memset(image, 0, iw*ih*channels*sizeof(GLubyte));
       int xoffset = 0, yoffset = 0;
