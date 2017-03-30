@@ -155,6 +155,7 @@ int GeomData::colourCount()
 {
   //Return number of colour values or RGBA colours
   int hasColours = colours.size();
+  if (rgb.size()) hasColours = rgb.size() / 3;
   if (values.size() > draw->colourIdx)
   {
     FloatValues* fv = values[draw->colourIdx];
@@ -188,6 +189,14 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     if (idx >= colours.size()) idx = colours.size() - 1;
     //assert(idx < colours.size());
     colour.value = colours[idx];
+  }
+  else if (rgb.size() > 0)
+  {
+    if (idx >= rgb.size()/3) idx = rgb.size()/3 - 1;
+    colour.r = rgb[idx*3];
+    colour.g = rgb[idx*3+1];
+    colour.b = rgb[idx*3+2];
+    colour.a = 255;
   }
   else if (luminance.size() > 0)
   {
