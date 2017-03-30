@@ -41,11 +41,13 @@ DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string
 {
   texture = NULL;
   skip = drawstate.global("noload");
-  //Name set in properties overrides that passed from database
-  properties.data["name"] = name;
 
   //Fix any names with spaces
   std::replace(name.begin(), name.end(), ' ', '_');
+
+  //Name set in properties overrides that passed from database
+  if (name.length())
+    properties.data["name"] = name;
 
   properties.parseSet(props);
 
