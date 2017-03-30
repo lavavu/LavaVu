@@ -1,13 +1,13 @@
 import sys
 import re
-import lavavu
+import lvdb
 
 dbPath = "testvectors.gldb"
 
 #Create vis object
-vectors = lavavu.Vectors('vectors', None)
+vectors = lvdb.Vectors('vectors', None)
 #Create vis database for output
-db = lavavu.Database(dbPath)
+db = lvdb.Database(dbPath)
 
 #Create a new timestep entry in database
 db.timestep()

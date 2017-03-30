@@ -1,6 +1,6 @@
 import sys
 import re
-import lavavu
+import lvdb
 
 if len(sys.argv) < 2:
   print "Convert text xyz to LavaVu database"
@@ -20,20 +20,20 @@ if len(sys.argv) > 3:
     fixBB = sys.argv[3]
 
 #Create a colourmap with 15 random colours
-#colours = lavavu.RandomColourMap(count=15, seed=34)
+#colours = lvdb.RandomColourMap(count=15, seed=34)
 #Print the colour list, this can be used as the starting point for a custom colour map
 #print colours.colours
 #User defined colour map (R,G,B [0,1])
-#colours = lavavu.ColourMap([[1,0,0], [1,1,0], [0,1,0], [0,1,1], [0,0,1], [1,0,1], [1,1,1]])
+#colours = lvdb.ColourMap([[1,0,0], [1,1,0], [0,1,0], [0,1,1], [0,0,1], [1,0,1], [1,1,1]])
 #Create vis object (points)
-#points = lavavu.Points('points', None, size=5, pointtype=lavavu.Points.ShinySphere, props="colour=white")
-points = lavavu.Points('points', None, size=5, pointtype=lavavu.Points.ShinySphere, props="colour=white\ntexturefile=shiny.png")
-#points = lavavu.Points('points', colours, size=10, pointtype=lavavu.Points.ShinySphere)
-#points = lavavu.Shapes('points', colours, size=1.0, shape=lavavu.Shapes.Sphere)
-#points = lavavu.Points('points', None, size=10, pointtype=lavavu.Points.ShinySphere, props="colour=[1,0,0]")
+#points = lvdb.Points('points', None, size=5, pointtype=lvdb.Points.ShinySphere, props="colour=white")
+points = lvdb.Points('points', None, size=5, pointtype=lvdb.Points.ShinySphere, props="colour=white\ntexturefile=shiny.png")
+#points = lvdb.Points('points', colours, size=10, pointtype=lvdb.Points.ShinySphere)
+#points = lvdb.Shapes('points', colours, size=1.0, shape=lvdb.Shapes.Sphere)
+#points = lvdb.Points('points', None, size=10, pointtype=lvdb.Points.ShinySphere, props="colour=[1,0,0]")
 
 #Create vis database for output
-db = lavavu.Database(dbPath)
+db = lvdb.Database(dbPath)
 #Write the colourmaps to the database
 #colours.write(db)
 

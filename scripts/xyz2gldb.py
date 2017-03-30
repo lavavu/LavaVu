@@ -1,6 +1,6 @@
 import sys
 import re
-import lavavu
+import lvdb
 
 if len(sys.argv) < 3:
   print "Convert text xyz to LavaVu database"
@@ -22,11 +22,11 @@ if len(sys.argv) > 3:
   subsample = int(sys.argv[3])
 
 #Create vis object (points)
-points = lavavu.Points('points', None, size=5, props="colour=white")
-#points = lavavu.Points('points', None, size=5, pointtype=lavavu.Points.ShinySphere, props="colour=white\ntexturefile=shiny.png")
+points = lvdb.Points('points', None, size=5, props="colour=white")
+#points = lvdb.Points('points', None, size=5, pointtype=lvdb.Points.ShinySphere, props="colour=white\ntexturefile=shiny.png")
 
 #Create vis database for output
-db = lavavu.Database(dbPath)
+db = lvdb.Database(dbPath)
 
 #Create a new timestep entry in database
 db.timestep()

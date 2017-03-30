@@ -1,6 +1,6 @@
 import sys
 import re
-import lavavu
+import lvdb
 
 if len(sys.argv) < 2:
   print "Convert text xyz to LavaVu database"
@@ -20,21 +20,21 @@ if len(sys.argv) > 3:
     fixBB = sys.argv[3]
 
 #Create a colourmap with 15 random colours
-colours = lavavu.RandomColourMap(count=15, seed=34)
-colours2 = lavavu.RandomColourMap(count=15, seed=1)
+colours = lvdb.RandomColourMap(count=15, seed=34)
+colours2 = lvdb.RandomColourMap(count=15, seed=1)
 #Print the colour list, this can be used as the starting point for a custom colour map
 print colours.colours
 #User defined colour map (R,G,B [0,1])
-#colours = lavavu.ColourMap([[1,0,0], [1,1,0], [0,1,0], [0,1,1], [0,0,1], [1,0,1], [1,1,1]])
+#colours = lvdb.ColourMap([[1,0,0], [1,1,0], [0,1,0], [0,1,1], [0,0,1], [1,0,1], [1,1,1]])
 #Create vis object, points and lines
-points = lavavu.Points('molecules', colours, size=10, pointtype=lavavu.Points.ShinySphere)
-endpoints = lavavu.Points('molecule-ends', colours2, size=11, pointtype=lavavu.Points.ShinySphere)
-#points = lavavu.Shapes('molecules', colours, size=1.0, shape=lavavu.Shapes.Sphere)
-#endpoints = lavavu.Shapes('molecule-ends', colours2, size=1.1, shape=lavavu.Shapes.Sphere)
-#points = lavavu.Points('molecules', None, size=10, pointtype=lavavu.Points.ShinySphere, props="colour=[1,0,0]")
-links = lavavu.Lines('links', colours, width=1, link=True, flat=True)
+points = lvdb.Points('molecules', colours, size=10, pointtype=lvdb.Points.ShinySphere)
+endpoints = lvdb.Points('molecule-ends', colours2, size=11, pointtype=lvdb.Points.ShinySphere)
+#points = lvdb.Shapes('molecules', colours, size=1.0, shape=lvdb.Shapes.Sphere)
+#endpoints = lvdb.Shapes('molecule-ends', colours2, size=1.1, shape=lvdb.Shapes.Sphere)
+#points = lvdb.Points('molecules', None, size=10, pointtype=lvdb.Points.ShinySphere, props="colour=[1,0,0]")
+links = lvdb.Lines('links', colours, width=1, link=True, flat=True)
 #Create vis database for output
-db = lavavu.Database(dbPath)
+db = lvdb.Database(dbPath)
 #Write the colourmaps to the database
 colours.write(db)
 colours2.write(db)
