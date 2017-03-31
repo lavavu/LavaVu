@@ -262,8 +262,8 @@ void View::getCamera(float rotate[4], float translate[3], float focus[3])
 std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
 {
   fov += aperture;
-  if (fov < 30) fov = 30;
-  if (fov > 70) fov = 70;
+  if (fov < 10) fov = 10;
+  if (fov > 100) fov = 100;
   focal_length_adj += focal_len;
   eye_sep_ratio += eye_sep;
   //if (eye_sep_ratio < 0) eye_sep_ratio = 0;
