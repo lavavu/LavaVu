@@ -127,9 +127,10 @@ void Lines::update()
       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
       Colour colour;
+      bool fastCol = hasColours == geom[i]->colours.size() && hasColours > 0 && !geom[i]->draw->opacityMap;
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
-        if (!internal && geom[i]->filter(i)) continue;
+        if (!internal && geom[i]->filter(v)) continue;
 
         //Check length limit if applied (used for periodic boundary conditions)
         //NOTE: will not work with linked lines, require separated segments
@@ -148,7 +149,14 @@ void Lines::update()
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;
-        geom[i]->getColour(colour, cidx);
+        //Fast lookup for prepared colour data
+        if (fastCol)
+        {
+          colour.value = geom[i]->colours[cidx];
+          colour.a *= geom[i]->draw->opacity;
+        }
+        else
+          geom[i]->getColour(colour, cidx);
         //if (cidx%100 ==0) printf("COLOUR %d => %d,%d,%d\n", cidx, colour.r, colour.g, colour.b);
         //Write vertex data to vbo
         assert((int)(ptr-p) < bsize);
