@@ -1308,8 +1308,18 @@ void Geometry::setTexture(DrawingObject* draw, ImageLoader* tex)
 {
   GeomData* geomdata = getObjectStore(draw);
   geomdata->texture = tex;
-  //std::cout << "SET TEXTURE: " << idx << " ON " << draw->name() << std::endl;
+  //std::cout << "SET TEXTURE ON " << draw->name() << std::endl;
   //Must be opaque to draw with own texture
+  geomdata->opaque = true;
+}
+
+void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip)
+{
+  GeomData* geomdata = getObjectStore(draw);
+  if (!geomdata->texture) geomdata->texture = new ImageLoader(flip);
+  geomdata->texture->load(data, width, height, channels);
+  //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
+  //Must be opaque to draw with own texture (TODO: obj properties in shader)
   geomdata->opaque = true;
 }
 
