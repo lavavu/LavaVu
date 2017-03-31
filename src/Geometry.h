@@ -92,6 +92,7 @@ public:
   unsigned int fixedOffset; //Offset to end of fixed value data
   ImageLoader* texture; //Texture
   std::vector<Filter> filterCache;
+  lucGeometryType type;   //Holds the object type
 
   float distance;
 
@@ -123,9 +124,8 @@ public:
     return sizeof(float);
   }
 
-  GeomData(DrawingObject* draw) : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false)
+  GeomData(DrawingObject* draw, lucGeometryType type) : draw(draw), type(type), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false)
   {
-    //opaque = false; //true; //Always true for now (need to check colourmap, opacity and global opacity)
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
     data[lucVertexData] = &vertices;
     data[lucVectorData] = &vectors;

@@ -904,11 +904,11 @@ GeomData* Geometry::getObjectStore(DrawingObject* draw)
 
 GeomData* Geometry::add(DrawingObject* draw)
 {
-  GeomData* geomdata = new GeomData(draw);
+  GeomData* geomdata = new GeomData(draw, type);
   geom.push_back(geomdata);
   if (hidden.size() < geom.size()) hidden.push_back(allhidden);
   //if (allhidden) draw->properties.data["visible"] = false;
-  //debug_print("NEW DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", draw->name().c_str(), geom.size(), geomdata, allhidden);
+  //debug_print("%d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", geom.size(), GeomData::names[type].c_str(), draw->name().c_str(), geom.size(), geomdata, allhidden);
   return geomdata;
 }
 
@@ -1202,7 +1202,9 @@ void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
 
   //Load from vector 
   for (auto line : labels)
+  {
     geomdata->label(line);
+  }
 }
 
 void Geometry::print()
