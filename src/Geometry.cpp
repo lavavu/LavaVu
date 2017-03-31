@@ -1022,39 +1022,6 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   return geomdata; //Return data store pointer
 }
 
-GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
-{
-  //Read into given label - for value data only
-
-  //Get passed object's most recently added data store
-  GeomData* geomdata = getObjectStore(draw);
-  //Create new data store if required, save in drawing object and Geometry list
-  if (!geomdata)
-    geomdata = add(draw);
-
-  //Find labelled value store
-  FloatValues* store = NULL;
-  for (auto vals : geomdata->values)
-  {
-    if (vals->label == label)
-      store = vals;
-  }
-
-  //Create value store if required
-  if (!store)
-  {
-    store = new FloatValues();
-    geomdata->values.push_back(store);
-    store->label = label;
-    //debug_print(" -- NEW VALUE STORE CREATED FOR %s label %s count %d ptr %p\n", geomdata->draw->name().c_str(), label.c_str(), geomdata->values.size(), store);
-  }
-
-  //Read the data
-  if (n > 0) store->read(n, data);
-
-  return geomdata; //Return data store pointer
-}
-
 void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   //Set width & height if provided
@@ -1090,6 +1057,46 @@ void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtyp
         geomdata->checkPointMinMax((float*)data);
     }
   }
+}
+
+GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
+{
+  //Read into given label - for value data only
+
+  //Get passed object's most recently added data store
+  GeomData* geomdata = getObjectStore(draw);
+  //Create new data store if required, save in drawing object and Geometry list
+  if (!geomdata)
+    geomdata = add(draw);
+
+  return read(geomdata, n, data, label);
+}
+
+GeomData* Geometry::read(GeomData* geom, unsigned int n, const void* data, std::string label)
+{
+  //Read into given label - for value data only
+
+  //Find labelled value store
+  FloatValues* store = NULL;
+  for (auto vals : geom->values)
+  {
+    if (vals->label == label)
+      store = vals;
+  }
+
+  //Create value store if required
+  if (!store)
+  {
+    store = new FloatValues();
+    geom->values.push_back(store);
+    store->label = label;
+    //debug_print(" -- NEW VALUE STORE CREATED FOR %s label %s count %d N %d ptr %p\n", geom->draw->name().c_str(), label.c_str(), geom->values.size(), n, store);
+  }
+
+  //Read the data
+  if (n > 0) store->read(n, data);
+
+  return geom; //Return data store pointer
 }
 
 //Read a triangle with optional resursive splitting and y/z swap

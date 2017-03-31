@@ -278,8 +278,9 @@ public:
   GeomData* getObjectStore(DrawingObject* draw);
   GeomData* add(DrawingObject* draw);
   GeomData* read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
-  GeomData* read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
   void read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
+  GeomData* read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
+  GeomData* read(GeomData* geom, unsigned int n, const void* data, std::string label);
   void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
   void setup(DrawingObject* draw);
   void insertFixed(Geometry* fixed);
