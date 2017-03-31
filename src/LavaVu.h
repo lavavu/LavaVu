@@ -240,6 +240,7 @@ public:
   void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData, const std::string& name="");
   void loadColours(std::vector <std::string> list, const std::string& name);
   void labels(std::vector <std::string> labels, const std::string& name="");
+  void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
   //For testing via python
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=4);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);

@@ -3012,6 +3012,16 @@ void LavaVu::labels(std::vector <std::string> labels, const std::string& name)
     container->label(obj, labels);
 }
 
+void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clearvol)
+{
+  //Create an isosurface from selected volume object
+  //If "clearvol" is true, volume data will be deleted leaving only the surface triangles
+  if (!amodel || !target || !source) return;
+  Geometry* container = lookupObjectContainer(source);
+  amodel->volumes->isosurface(amodel->triSurfaces, target, clearvol);
+  target->properties.data["geometry"] = "triangles";
+}
+
 std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int channels)
 {
   //Return an image as a vector of floats

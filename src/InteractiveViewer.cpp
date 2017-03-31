@@ -2321,6 +2321,29 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //amodel->reload(aobject);
     }
   }
+  else if (parsed.exists("isosurface"))
+  {
+    if (gethelp)
+    {
+      help += "Generate an isosurface from a volume object\n\n"
+              "**Usage:** isosurface [isovalue]\n\n"
+              "isovalue (number) : isovalue to draw the surface at,\n"
+              "                    if not specified, will use 'isovalues' property\n";
+      return false;
+    }
+
+    if (aobject)
+    {
+      if (parsed.has(fval, "isosurface"))
+      {
+        json isovals = aobject->properties["isovalues"];
+        isovals.push_back(fval);
+        aobject->properties.data["isovalues"] = isovals;
+      }
+      isosurface(aobject, aobject, false);
+      printMessage("Generating IsoSurface for object: %s", aobject->name().c_str());
+    }
+  }
   else if (parsed.exists("pointtype"))
   {
     if (gethelp)
@@ -3269,7 +3292,7 @@ void LavaVu::helpCommand(std::string cmd)
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
     {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",
-     "vertex", "normal", "vector", "value", "colour"},
+     "vertex", "normal", "vector", "value", "colour", "isosurface"},
     {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
