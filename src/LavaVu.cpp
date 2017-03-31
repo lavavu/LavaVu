@@ -96,7 +96,6 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : binpath(binpath)
   }
   //Assume an OpenGL context is already provided
   if (!viewer) viewer = new OpenGLViewer();
-  //if (!viewer) abort_program("No windowing system configured (requires X11, GLUT, SDL or Cocoa/CGL)");
 
   viewer->app = (ApplicationInterface*)this;
 
@@ -523,9 +522,9 @@ void LavaVu::run(std::vector<std::string> args)
 
   //Start event loop
   if (viewer->visible)
-    viewer->execute();
+    viewer->loop();
   else if (persist)
-    viewer->OpenGLViewer::execute();
+    viewer->loop(false);  //Enter event loop but remain hidden
   else
   {
     //Read input script from stdin on first timestep

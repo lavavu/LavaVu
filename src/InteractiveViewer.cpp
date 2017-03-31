@@ -868,6 +868,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (drawstate.omegalib) return false;
     viewer->quitProgram = false;
+    viewer->loop();
+  }
+  else if (parsed.exists("event"))
+  {
+    if (gethelp)
+    {
+      help += "Check for and process input events, for use in animated scripts\n";
+      return false;
+    }
+
+    if (drawstate.omegalib) return false;
     viewer->execute();
   }
   else if (parsed.exists("open"))
@@ -3296,7 +3307,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
-    {"next", "play", "stop", "open", "interactive"},
+    {"next", "play", "stop", "open", "interactive", "event"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
      "verbose", "toggle", "createvolume", "clearvolume"}
   };

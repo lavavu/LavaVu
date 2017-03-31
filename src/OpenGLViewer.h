@@ -38,7 +38,7 @@
 #define OpenGLViewer__
 
 //Timer increment in ms
-#define TIMER_INC 50
+#define TIMER_INC 10
 #define TIMER_IDLE 1500
 
 #include "GraphicsUtil.h"
@@ -154,6 +154,7 @@ public:
   virtual void show();
   virtual void setTitle() {}
   virtual void execute();
+  void loop(bool interactive=true);
 
   virtual void fullScreen() {}
   void outputON(int& w, int& h, int channels=3);

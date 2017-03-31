@@ -63,6 +63,14 @@ class X11Viewer  : public OpenGLViewer
   unsigned int   displayNumber;
   unsigned int   displayScreen;
 
+  bool hidden;
+  bool redisplay;
+
+  //Timer variables and file descriptors for monitoring
+  int x11_fd;
+  fd_set in_fds;
+  struct timeval tv;
+
 public:
 
   X11Viewer();

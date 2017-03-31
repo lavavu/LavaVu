@@ -336,18 +336,27 @@ void OpenGLViewer::close()
 
 void OpenGLViewer::execute()
 {
-  //Default: fake event loop processing
-  display();
+  //Default event processing, sleep for TIMER_INC microseconds
+
+  //New frame? call display
+  if (postdisplay || pollInput())
+    display();
+#ifdef _WIN32
+  Sleep(TIMER_INC);
+#else
+  usleep(TIMER_INC * 1000);   // usleep takes sleep time in us (1 millionth of a second)
+#endif
+}
+
+void OpenGLViewer::loop(bool interactive)
+{
+  //Event loop processing
   while (!quitProgram)
   {
-    //New frame? call display
-    if (postdisplay || pollInput())
-      display();
-#ifdef _WIN32
-    Sleep(TIMER_INC);
-#else
-    usleep(TIMER_INC * 1000);   // usleep takes sleep time in us (1 millionth of a second)
-#endif
+    if (interactive)
+      execute();
+    else
+      OpenGLViewer::execute();
   }
 }
 

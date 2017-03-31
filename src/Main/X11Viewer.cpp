@@ -49,7 +49,7 @@ int X11_error(Display* Xdisplay, XErrorEvent* error)
 }
 
 // Create a new X11 window
-X11Viewer::X11Viewer() : OpenGLViewer()
+X11Viewer::X11Viewer() : OpenGLViewer(), hidden(false), redisplay(true)
 {
   // Setup display name
   strcpy(host, "localhost");
@@ -62,6 +62,8 @@ X11Viewer::X11Viewer() : OpenGLViewer()
   Xdisplay = NULL;
   sHints = NULL;
   wmHints = NULL;
+
+  x11_fd = -1; //Initial unset flag value
 }
 
 X11Viewer::~X11Viewer()
@@ -164,12 +166,13 @@ void X11Viewer::display(bool redraw)
   glXMakeCurrent(Xdisplay, win, glxcontext);
   OpenGLViewer::display(redraw);
   // Swap buffers
-  if (doubleBuffer)
+  if (redraw && doubleBuffer)
     glXSwapBuffers(Xdisplay, win);
 }
 
 void X11Viewer::execute()
 {
+  //Inside event loop
   visible = true;
   if (!Xdisplay) open(width, height);
   XEvent event;
@@ -178,127 +181,123 @@ void X11Viewer::execute()
   KeySym keysym;
   char buf[64];
   int count;
-  bool hidden = false;
-  bool redisplay = true;
 
-  //Ensure window visible for interaction
-  fbo.downsample = 1; //Disable any downsampled output mode
-  show();
-
-  //Get file descriptor of the X11 display
-  int x11_fd = ConnectionNumber(Xdisplay);
-  //Create a File Description Set containing x11_fd
-  fd_set in_fds;
-  FD_ZERO(&in_fds);
-  FD_SET(x11_fd, &in_fds);
-  struct timeval tv;
-  tv.tv_sec   = 0;
-
-  // Enter event loop processing
-  while (!quitProgram)
+  //First time through?
+  if (x11_fd < 0)
   {
-    if (timer > 0)
-    {
+    //Get file descriptor of the X11 display
+    x11_fd = ConnectionNumber(Xdisplay);
+    //Create a File Description Set containing x11_fd
+    FD_ZERO(&in_fds);
+    FD_SET(x11_fd, &in_fds);
 
-      // Wait for X Event or timer
-      tv.tv_usec  = timer*1000; //Convert to microseconds
-      if (select(x11_fd+1, &in_fds, 0, 0, &tv) == 0)
-      {
-        //Timer fired
-        if (postdisplay || pollInput())
-          display();
-      }
+    //Ensure window visible for interaction
+    fbo.downsample = 1; //Disable any downsampled output mode
+    show();
+  }
+
+  // Event processing
+  if (timer > 0)
+  {
+    // Wait for X Event or timer
+    tv.tv_usec  = timer*1000; //Convert to microseconds
+    tv.tv_sec   = 0;
+    if (select(x11_fd+1, &in_fds, 0, 0, &tv) == 0)
+    {
+      //Timer fired
+      if (postdisplay || pollInput())
+        display();
     }
+  }
 
-    //Process all pending events
-    while (XPending(Xdisplay))
-    {
-      // Get next event
-      XNextEvent(Xdisplay, &event);
+  //Process all pending events
+  while (XPending(Xdisplay))
+  {
+    // Get next event
+    XNextEvent(Xdisplay, &event);
 
-      //Save shift states
-      keyState.shift = (event.xkey.state & ShiftMask);
-      keyState.ctrl = (event.xkey.state & ControlMask);
+    //Save shift states
+    keyState.shift = (event.xkey.state & ShiftMask);
+    keyState.ctrl = (event.xkey.state & ControlMask);
 #ifdef __APPLE__
-      keyState.alt = (event.xkey.state & Mod1Mask | event.xkey.state & Mod2Mask);
+    keyState.alt = (event.xkey.state & Mod1Mask | event.xkey.state & Mod2Mask);
 #else
-      keyState.alt = (event.xkey.state & Mod1Mask);
+    keyState.alt = (event.xkey.state & Mod1Mask);
 #endif
 
-      switch (event.type)
-      {
-      case ButtonRelease:
-        mouseState = 0;
-        button = (MouseButton)event.xbutton.button;
-        mousePress(button, false, event.xmotion.x, event.xmotion.y);
-        redisplay = true;
-        break;
-      case ButtonPress:
-        // XOR state of three mouse buttons to the mouseState variable
-        button = (MouseButton)event.xbutton.button;
-        if (button <= RightButton) mouseState ^= (int)pow(2, (float)button);
-        mousePress(button, true, event.xmotion.x, event.xmotion.y);
-        break;
-      case MotionNotify:
-        if (mouseState)
-        {
-          mouseMove(event.xmotion.x, event.xmotion.y);
-          redisplay = true;
-        }
-        break;
-      case KeyPress:
-        // Convert to cross-platform codes for event handler
-        count = XLookupString((XKeyEvent *)&event, buf, 64, &keysym, NULL);
-        if (count) key = buf[0];
-        else if (keysym == XK_KP_Up || keysym == XK_Up) key = KEY_UP;
-        else if (keysym == XK_KP_Down || keysym == XK_Down) key = KEY_DOWN;
-        else if (keysym == XK_KP_Left || keysym == XK_Left) key = KEY_LEFT;
-        else if (keysym == XK_KP_Right || keysym == XK_Right) key = KEY_RIGHT;
-        else if (keysym == XK_KP_Page_Up || keysym == XK_Page_Up) key = KEY_PAGEUP;
-        else if (keysym == XK_KP_Page_Down || keysym == XK_Page_Down) key = KEY_PAGEDOWN;
-        else if (keysym == XK_KP_Home || keysym == XK_Home) key = KEY_HOME;
-        else if (keysym == XK_KP_End || keysym == XK_End) key = KEY_END;
-        else key = keysym;
-
-        if (keyPress(key, event.xkey.x, event.xkey.y))
-          redisplay = true;
-
-        break;
-      case ClientMessage:
-        if (event.xclient.data.l[0] == (long)wmDeleteWindow)
-          quitProgram = true;
-        break;
-      case MapNotify:
-        // Window shown
-        if (hidden) redisplay = true;
-        hidden = false;
-        break;
-      case UnmapNotify:
-        // Window hidden, iconized or switched to another desktop
-        hidden = true;
-        redisplay = false;
-        break;
-      case ConfigureNotify:
-      {
-        // Notification of window actions, including resize
-        resize(event.xconfigure.width, event.xconfigure.height);
-        break;
-      }
-      case Expose:
-        if (!hidden) redisplay = true;
-        break;
-      default:
-        redisplay = false;
-      }
-    }
-
-    //Redisplay if required.®.
-    if (redisplay)
+    switch (event.type)
     {
-      // Redraw Viewer (Call virtual to display)
-      display();
+    case ButtonRelease:
+      mouseState = 0;
+      button = (MouseButton)event.xbutton.button;
+      mousePress(button, false, event.xmotion.x, event.xmotion.y);
+      redisplay = true;
+      break;
+    case ButtonPress:
+      // XOR state of three mouse buttons to the mouseState variable
+      button = (MouseButton)event.xbutton.button;
+      if (button <= RightButton) mouseState ^= (int)pow(2, (float)button);
+      mousePress(button, true, event.xmotion.x, event.xmotion.y);
+      break;
+    case MotionNotify:
+      if (mouseState)
+      {
+        mouseMove(event.xmotion.x, event.xmotion.y);
+        redisplay = true;
+      }
+      break;
+    case KeyPress:
+      // Convert to cross-platform codes for event handler
+      count = XLookupString((XKeyEvent *)&event, buf, 64, &keysym, NULL);
+      if (count) key = buf[0];
+      else if (keysym == XK_KP_Up || keysym == XK_Up) key = KEY_UP;
+      else if (keysym == XK_KP_Down || keysym == XK_Down) key = KEY_DOWN;
+      else if (keysym == XK_KP_Left || keysym == XK_Left) key = KEY_LEFT;
+      else if (keysym == XK_KP_Right || keysym == XK_Right) key = KEY_RIGHT;
+      else if (keysym == XK_KP_Page_Up || keysym == XK_Page_Up) key = KEY_PAGEUP;
+      else if (keysym == XK_KP_Page_Down || keysym == XK_Page_Down) key = KEY_PAGEDOWN;
+      else if (keysym == XK_KP_Home || keysym == XK_Home) key = KEY_HOME;
+      else if (keysym == XK_KP_End || keysym == XK_End) key = KEY_END;
+      else key = keysym;
+
+      if (keyPress(key, event.xkey.x, event.xkey.y))
+        redisplay = true;
+
+      break;
+    case ClientMessage:
+      if (event.xclient.data.l[0] == (long)wmDeleteWindow)
+        quitProgram = true;
+      break;
+    case MapNotify:
+      // Window shown
+      if (hidden) redisplay = true;
+      hidden = false;
+      break;
+    case UnmapNotify:
+      // Window hidden, iconized or switched to another desktop
+      hidden = true;
+      redisplay = false;
+      break;
+    case ConfigureNotify:
+    {
+      // Notification of window actions, including resize
+      resize(event.xconfigure.width, event.xconfigure.height);
+      break;
+    }
+    case Expose:
+      if (!hidden) redisplay = true;
+      break;
+    default:
       redisplay = false;
     }
+  }
+
+  //Redisplay if required.®.
+  if (redisplay)
+  {
+    // Redraw Viewer (Call virtual to display)
+    display();
+    redisplay = false;
   }
 }
 
