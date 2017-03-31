@@ -201,9 +201,13 @@ void Points::loadList()
   swap = new PIndex[total];
   if (pidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
   if (geom.size() == 0) return;
-  elements = 0;
   int offset = 0;
+  int maxCount = drawstate.global("pointmaxcount");
   int subSample = drawstate.global("pointsubsample");
+  //Auto-sub-sample if maxcount set
+  if (maxCount > 0 && elements > maxCount)
+    subSample = elements / maxCount + 0.5; //Rounded up
+  elements = 0;
   uint32_t SEED;
   for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count, s++)
   {
@@ -387,10 +391,6 @@ void Points::draw()
   glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
   GL_Error_Check;
 
-
-  glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
-  if (!view->is3d) glDisable(GL_DEPTH_TEST);
-
   //Point size distance attenuation (disabled for 2d models)
   float scale0 = (float)geom[0]->draw->properties["scalepoints"] * view->scale2d; //Include 2d scale factor
   if (view->is3d && drawstate.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
@@ -410,7 +410,8 @@ void Points::draw()
 
   // Draw using vertex buffer object
   int stride = 3 * sizeof(float) + sizeof(Colour);
-  if (drawstate.global("pointattribs"))
+  bool attribs = drawstate.global("pointattribs");
+  if (attribs)
     stride += 2 * sizeof(float);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
@@ -422,17 +423,17 @@ void Points::draw()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
 
+    GLint aSize = 0, aPointType = 0;
+    aSize = prog->attribs["aSize"];
+    aPointType = prog->attribs["aPointType"];
     //Generic vertex attributes, "aSize", "aPointType"
-    if (drawstate.global("pointattribs"))
+    if (attribs)
     {
-      GLint aSize = 0, aPointType = 0;
-      aSize = prog->attribs["aSize"];
       if (aSize >= 0)
       {
         glEnableVertexAttribArray(aSize);
         glVertexAttribPointer(aSize, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float)+sizeof(Colour)));
       }
-      aPointType = prog->attribs["aPointType"];
       if (aPointType >= 0)
       {
         glEnableVertexAttribArray(aPointType);
@@ -448,8 +449,8 @@ void Points::draw()
     else
     {
       //Use generic default values
-      glVertexAttrib1f(prog->attribs["aPointType"], -1.0);
-      glVertexAttrib1f(prog->attribs["aSize"], 1.0);
+      glVertexAttrib1f(aPointType, -1.0);
+      glVertexAttrib1f(aSize, 1.0);
       GL_Error_Check;
 
       //Draw the points

@@ -412,6 +412,8 @@ public:
     defaults["inscale"] = {1., 1., 1.};
     // | global | integer | Point render sub-sampling factor
     defaults["pointsubsample"] = 0;
+    // | global | integer | Point render maximum count before auto sub-sampling
+    defaults["pointmaxcount"] = 0;
     // | global | integer | Point distance sub-sampling factor
     defaults["pointdistsample"] = 0;
     // | global | boolean | Point size/type attributes can be applied per object (requires more GPU ram)

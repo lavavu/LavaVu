@@ -2429,10 +2429,10 @@ void LavaVu::drawScene()
   amodel->volumes->draw();
   amodel->triSurfaces->draw();
   amodel->quadSurfaces->draw();
-  amodel->points->draw();
   amodel->vectors->draw();
   amodel->tracers->draw();
   amodel->shapes->draw();
+  amodel->points->draw();
   amodel->labels->draw();
   amodel->lines->draw();
 
