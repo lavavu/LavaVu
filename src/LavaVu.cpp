@@ -2234,7 +2234,7 @@ void LavaVu::drawBorder()
   if (verbose) infostream = stderr;
 }
 
-GeomData* LavaVu::getGeometry(DrawingObject* obj)
+GeomData* LavaVu::getFilledGeometry(DrawingObject* obj)
 {
   //Find the first available geometry container for this drawing object
   //Used to append colour values and to get a representative colour for objects
@@ -2271,7 +2271,7 @@ void LavaVu::displayObjectList(bool console)
       if (console) std::cerr << "[          ]" << ss.str() << std::endl;
       //Use object colour if provided, unless matches background
       Colour c;
-      GeomData* geomdata = getGeometry(amodel->objects[i]);
+      GeomData* geomdata = getFilledGeometry(amodel->objects[i]);
       if (geomdata)
         geomdata->getColour(c, 0);
       else

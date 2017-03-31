@@ -585,11 +585,12 @@ std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const 
   return list;
 }
 
-Geometry* LavaVu::lookupObjectContainer(DrawingObject* obj)
+Geometry* LavaVu::lookupObjectContainer(DrawingObject* obj, std::string gtype)
 {
-  //Get the container type to load into from property  (defaults to points)
   if (!obj) return NULL;
-  std::string gtype = obj->properties["geometry"];
+  //If not provided, get the container type to load into from property  (defaults to points)
+  if (gtype.length() == 0)
+    gtype = obj->properties["geometry"];
   Geometry* container = getGeometryType(gtype);
   return container;
 }
@@ -2137,16 +2138,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       Colour c(parsed.get("colour"));
-      /*/Find the first available geometry container for this drawing object and append a colour
-      GeomData* geomdata = getGeometry(aobject);
-      if (geomdata)
-      {
-        geomdata->data[lucRGBAData]->read(1, &c.value);
-        printMessage("%s colour appended %x", aobject->name().c_str(), c.value);
-      }*/
       //Use the "geometry" property to get the type to read into
-      std::string gtype = aobject->properties["geometry"];
-      Geometry* active = getGeometryType(gtype);
+      Geometry* active = lookupObjectContainer(aobject);
       active->read(aobject, 1, lucRGBAData, &c.value);
       printMessage("%s colour appended %x", aobject->name().c_str(), c.value);
       //Full object reload if colours updated
