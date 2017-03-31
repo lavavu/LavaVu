@@ -200,7 +200,7 @@ void TriSurfaces::loadMesh()
     //Iterate, for duplicates replace indices with index of first
     //Remove duplicate vertices Triangles stored as list of indices
     unsigned int hasColours = geom[index]->colourCount();
-    bool vertColour = hasColours && (hasColours == geom[index]->count);
+    bool vertColour = hasColours && (hasColours >= geom[index]->count);
     t1=tt=clock();
 
     //Add vertices to vector
@@ -404,6 +404,7 @@ void TriSurfaces::loadList()
 
 void TriSurfaces::loadBuffers()
 {
+  if (!view->initialised) return; //Wait before using OpenGL
   //Copy data to Vertex Buffer Object
   clock_t t1,t2,tt;
   tt=clock();
@@ -534,7 +535,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   //Vertex elimination currently only works for per-vertex colouring, 
   // if less colour values provided, must precalc own indices to skip this step 
   unsigned int hasColours = geom[index]->colourCount();
-  bool vertColour = (hasColours && hasColours == geom[index]->vertices.size()/3);
+  bool vertColour = (hasColours && hasColours >= geom[index]->vertices.size()/3);
   if (hasColours && !vertColour) std::cout << "WARNING: Not enough colour values for per-vertex normalisation!\n";
   bool normal = geom[index]->draw->properties["vertexnormals"];
   //Calculate face normals for each triangle and copy to each face vertex
@@ -809,6 +810,7 @@ void TriSurfaces::depthSort()
 //Reloads triangle indices, required after data update and depth sort
 void TriSurfaces::render()
 {
+  if (!view->initialised) return; //Wait before using OpenGL
   clock_t t1,t2;
   if (tricount == 0 || elements == 0) return;
   assert(tidx);
@@ -874,6 +876,7 @@ void TriSurfaces::render()
 
 void TriSurfaces::draw()
 {
+  if (!view->initialised) return; //Wait before using OpenGL
   //Draw, calls update when required
   Geometry::draw();
   GL_Error_Check;
