@@ -56,30 +56,48 @@ colourMaps["coolwarm"] = "#3b4cc0 #7396f5 #b0cbfc #dcdcdc #f6bfa5 #ea7b60 #b50b2
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
-typestr = {}
-typestr["labels"] = LavaVuPython.lucLabelType
-typestr["points"] = LavaVuPython.lucPointType
-typestr["grid"] = LavaVuPython.lucGridType
-typestr["triangles"] = LavaVuPython.lucTriangleType
-typestr["vectors"] = LavaVuPython.lucVectorType
-typestr["tracers"] = LavaVuPython.lucTracerType
-typestr["lines"] = LavaVuPython.lucLineType
-typestr["shapes"] = LavaVuPython.lucShapeType
-typestr["volume"] = LavaVuPython.lucVolumeType
+geomtypes = {"labels":    LavaVuPython.lucLabelType,
+             "points":    LavaVuPython.lucPointType,
+             "grid":      LavaVuPython.lucGridType,
+             "triangles": LavaVuPython.lucTriangleType,
+             "vectors":   LavaVuPython.lucVectorType,
+             "tracers":   LavaVuPython.lucTracerType,
+             "lines":     LavaVuPython.lucLineType,
+             "shapes":    LavaVuPython.lucShapeType,
+             "volume":    LavaVuPython.lucVolumeType}
 
-datatypestr = {}
-datatypestr["vertices"] = LavaVuPython.lucVertexData
-datatypestr["normals"] = LavaVuPython.lucNormalData
-datatypestr["vectors"] = LavaVuPython.lucVectorData
-datatypestr["indices"] = LavaVuPython.lucIndexData
-datatypestr["colours"] = LavaVuPython.lucRGBAData
-datatypestr["texcoords"] = LavaVuPython.lucTexCoordData
-datatypestr["luminance"] = LavaVuPython.lucLuminanceData
-datatypestr["rgb"] = LavaVuPython.lucRGBData
+datatypes = {"vertices":  LavaVuPython.lucVertexData,
+             "normals":   LavaVuPython.lucNormalData,
+             "vectors":   LavaVuPython.lucVectorData,
+             "indices":   LavaVuPython.lucIndexData,
+             "colours":   LavaVuPython.lucRGBAData,
+             "texcoords": LavaVuPython.lucTexCoordData,
+             "luminance": LavaVuPython.lucLuminanceData,
+             "rgb":       LavaVuPython.lucRGBData,
+             "values":    LavaVuPython.lucMaxDataType}
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj(object):
+    """  
+    The Object class provides an interface to a LavaVu drawing object
+    Obj instances are created internally in the Viewer class and can
+    be retrieved from the object list
+
+    New objects are also created using viewer methods
+    
+    Example
+    -------
+        
+    Create a viewer, load some test data, get objects
+    
+    >>> import lavavu
+    >>> lv = lavavu.Viewer()
+    >>> lv.test()
+    >>> objects = lv.getobjects()
+    >>> print objects
+
+    """
     def __init__(self, idict, instance, *args, **kwargs):
         self.dict = idict
         self.instance = instance
@@ -165,6 +183,9 @@ class Obj(object):
         if not isinstance(data, numpy.ndarray) or data.dtype != numpy.float32:
             data = numpy.asarray(data, dtype=numpy.float32)
         self.instance.app.arrayFloat(self.ref, data.ravel(), dtype)
+
+    def data(self, filter=None):
+        return Geometry(self, filter)
 
     def vertices(self, data=None):
         self._loadVector(data, LavaVuPython.lucVertexData)
@@ -258,8 +279,17 @@ class Obj(object):
 
     def cleardata(self, dtype):
         if isinstance(dtype, str):
-            dtype = datatypestr[dtype]
+            dtype = datatypes[dtype]
         self.instance.app.clearData(self.ref, dtype)
+
+    def update(self, geomname=None, compress=True):
+        #Update object data at current timestep
+        if geomname is None:
+            #Re-writes all data to db for this object
+            self.instance.app.update(self.ref, compress)
+        else:
+            #Re-writes data to db for this object and geom type
+            self.instance.app.update(self.ref, geomtypes[geomname], compress)
 
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         #Generate and return an isosurface object, 
@@ -283,40 +313,59 @@ class Obj(object):
 
 #Wrapper dict+list of objects
 class Objects(dict):
-  def __init__(self, instance):
-    self.instance = instance
+    """  
+    The Objects class is used internally to manage and synchronise the drawing object list
+    """
+    def __init__(self, instance):
+        self.instance = instance
 
-  def _sync(self):
-    self.list = []
-    for obj in self.instance.state["objects"]:
-        if obj["name"] in self:
-            #Update object with new properties
-            self[obj["name"]]._setprops(obj)
-            self.list.append(self[obj["name"]])
-        else:
-            #Create a new object wrapper
-            o = Obj(obj, self.instance)
-            self[obj["name"]] = o
-            self.list.append(o)
-        #Flag sync
-        self[obj["name"]].found = True
-        #Save the object id and reference (use id # to get)
-        _id = len(self.list)
-        self.list[-1].id = _id
-        self.list[-1].ref = self.instance.getObject(_id)
-        
-    #Delete any objects from dict that are no longer present
-    for name in self.keys():
-        if not self[name].found:
-            del self[name]
-        else:
-            self[name].found = False
+    def _sync(self):
+        self.list = []
+        for obj in self.instance.state["objects"]:
+            if obj["name"] in self:
+                #Update object with new properties
+                self[obj["name"]]._setprops(obj)
+                self.list.append(self[obj["name"]])
+            else:
+                #Create a new object wrapper
+                o = Obj(obj, self.instance)
+                self[obj["name"]] = o
+                self.list.append(o)
+            #Flag sync
+            self[obj["name"]].found = True
+            #Save the object id and reference (use id # to get)
+            _id = len(self.list)
+            self.list[-1].id = _id
+            self.list[-1].ref = self.instance.getObject(_id)
+            
+        #Delete any objects from dict that are no longer present
+        for name in self.keys():
+            if not self[name].found:
+                del self[name]
+            else:
+                self[name].found = False
 
-  def __str__(self):
-    return '[' + ', '.join(self.keys()) + ']'
+    def __str__(self):
+        return '[' + ', '.join(self.keys()) + ']'
 
 class Viewer(object):
+    """  
+    The Viewer class provides an interface to a LavaVu session
+    
+    Parameters
+    ----------
+    **kwargs: 
+        Global properties passed to the created viewer
+            
+    Example
+    -------
+        
+    Create a viewer, set the background colour to white
+    
+    >>> import lavavu
+    >>> lv = lavavu.Viewer(background="white")
 
+    """
     def __init__(self, binpath=libpath, omegalib=False, *args, **kwargs):
         self.resolution = (640,480)
         self._ctr = 0
@@ -452,6 +501,10 @@ class Viewer(object):
         #(include current object list state)
         #self.state["objects"] = [obj.dict for obj in self.objects.list]
         self.app.setState(json.dumps(self.state))
+
+    def getobjects(self):
+        self._get()
+        return self.objects
 
     def commands(self, cmds):
         if isinstance(cmds, list):
@@ -780,4 +833,129 @@ class Viewer(object):
             control.redisplay(self.control.winid)
         else:
             control.redisplay(self.winid)
+
+
+#Wrapper for list of geomdata objects
+class Geometry(list):
+    """  
+    The Geometry class provides an interface to a drawing object's internal data
+    Geometry instances are created internally in the Obj class with the data() method
+
+    Example
+    -------
+        
+    Get all object data
+
+    >>> data = obj.data()
+    
+    Get only triangle data
+
+    >>> data = obj.data("triangles")
+
+    Loop through data
+
+    >>> data = obj.data()
+    >>> for el in obj.data:
+    >>>     print el
+
+    """
+    def __init__(self, obj, filter=None):
+        self.obj = obj
+
+        #Get a list of geometry data objects for a given drawing object
+        count = self.obj.instance.app.getGeometryCount(self.obj.ref)
+        for idx in range(count):
+            g = self.obj.instance.app.getGeometry(self.obj.ref, idx)
+            #By default all elements are returned, even if object has multiple types 
+            #Filter can be set to a type name to exclude other geometry types
+            if filter is None or g.type == geomtypes[filter]:
+                self.append(GeomData(g, obj.instance))
+
+    def __str__(self):
+        return '[' + ', '.join([str(i) for i in self]) + ']'
+
+#Wrapper class for GeomData geometry object
+class GeomData(object):
+    """  
+    The GeomData class provides an interface to a single object data element
+    GeomData instances are created internally from the Geometry class
+
+    copy(), get() and set() methods provide access to the data types
+
+    Example
+    -------
+        
+    Get the most recently used object data element
+
+    >>> data = obj.data()
+    >>> el = data[-1]
+    
+    Get a copy of the rgba colours (if any)
+
+    >>> colours = el.copy("rgba")
+
+    Get a view of the vertex data
+
+    >>> verts = el.get("vertices")
+
+    WARNING: this reference may be deleted by other calls, 
+    only use get() if you are processing the data immediately 
+    and not relying on it continuing to exist later
+
+    Get a copy of some value data by label
+    >>> verts = el.copy("colourvals")
+
+    Load some new values for these vertices
+
+    >>> el.set("sampledfield", newdata)
+
+    """
+    def __init__(self, data, instance):
+        self.data = data
+        self.instance = instance
+
+    def get(self, typename):
+        #Warning... other than for internal use, should always make copies of data
+        # there is no guarantee memory will not be released
+        array = None
+        if typename in datatypes:
+            if typename in ["luminance", "rgb"]:
+                #Get uint8 data
+                array = self.instance.app.geometryArrayViewUInt8(self.data, datatypes[typename])
+            elif typename in ["indices", "colours"]:
+                #Get uint32 data
+                array = self.instance.app.geometryArrayViewUInt32(self.data, datatypes[typename])
+            else:
+                #Get float32 data
+                array = self.instance.app.geometryArrayViewFloat(self.data, datatypes[typename])
+        else:
+            #Get float32 data
+            array = self.instance.app.geometryArrayViewFloat(self.data, typename)
+        
+        return array
+
+    def copy(self, typename):
+        #Safer data access, makes a copy to ensure we still have access 
+        #to the data no matter what viewer does with it
+        return numpy.copy(self.get(typename))
+
+    def set(self, typename, array):
+        if typename in datatypes:
+            if typename in ["luminance", "rgb"]:
+                #Set uint8 data
+                self.instance.app.geometryArrayUInt8(self.data, array, datatypes[typename])
+            elif typename in ["indices", "colours"]:
+                #Set uint32 data
+                self.instance.app.geometryArrayUInt32(self.data, array, datatypes[typename])
+            else:
+                #Set float32 data
+                self.instance.app.geometryArrayFloat(self.data, array, datatypes[typename])
+        else:
+            #Set float32 data
+            self.instance.app.geometryArrayFloat(self.data, array, typename)
+        
+    def __str__(self):
+        return [key for key, value in geomtypes.items() if value == self.data.type][0]
+
+
 

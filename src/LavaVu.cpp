@@ -3051,6 +3051,7 @@ void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, un
 std::vector<GeomData*> LavaVu::getAllGeometry(DrawingObject* target)
 {
   std::vector<GeomData*> list;
+  if (!amodel || !target) return list;
   for (int type=lucMinType; type<lucMaxType; type++)
   {
     std::vector<GeomData*> geomlist = amodel->geometry[type]->getAllObjects(target);
@@ -3112,6 +3113,26 @@ void LavaVu::geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, f
   if (!geom) return;
   DataContainer* dat = geom->data[dtype];
   *array = (float*)dat->ref(0);
+  *len = dat->size();
+}
+
+void LavaVu::geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, unsigned int** array, int* len)
+{
+  //Get a view of internal geom array
+  //(warning, can be released at any time, copy if needed!)
+  if (!geom) return;
+  DataContainer* dat = geom->data[dtype];
+  *array = (unsigned int*)dat->ref(0);
+  *len = dat->size();
+}
+
+void LavaVu::geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, unsigned char** array, int* len)
+{
+  //Get a view of internal geom array
+  //(warning, can be released at any time, copy if needed!)
+  if (!geom) return;
+  DataContainer* dat = geom->data[dtype];
+  *array = (unsigned char*)dat->ref(0);
   *len = dat->size();
 }
 

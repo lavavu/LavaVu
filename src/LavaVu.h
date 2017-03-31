@@ -260,7 +260,10 @@ public:
   void geometryArrayUInt(GeomData* geom, unsigned int* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(GeomData* geom, float* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(GeomData* geom, float* array, int len, std::string label);
+
   void geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len);
+  void geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, unsigned int** array, int* len);
+  void geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
   void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);

@@ -124,7 +124,7 @@ public:
     return sizeof(float);
   }
 
-  GeomData(DrawingObject* draw, lucGeometryType type) : draw(draw), type(type), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false)
+  GeomData(DrawingObject* draw, lucGeometryType type) : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
   {
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
     data[lucVertexData] = &vertices;

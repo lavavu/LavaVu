@@ -3025,18 +3025,20 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_lucGeometryType swig_types[12]
 #define SWIGTYPE_p_p_PyObject swig_types[13]
 #define SWIGTYPE_p_p_float swig_types[14]
-#define SWIGTYPE_p_size_type swig_types[15]
-#define SWIGTYPE_p_std__allocatorT_float_t swig_types[16]
-#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[17]
-#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[18]
-#define SWIGTYPE_p_std__invalid_argument swig_types[19]
-#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[20]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[21]
-#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[22]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[23]
-#define SWIGTYPE_p_value_type swig_types[24]
-static swig_type_info *swig_types[26];
-static swig_module_info swig_module = {swig_types, 25, 0, 0, 0, 0};
+#define SWIGTYPE_p_p_unsigned_char swig_types[15]
+#define SWIGTYPE_p_p_unsigned_int swig_types[16]
+#define SWIGTYPE_p_size_type swig_types[17]
+#define SWIGTYPE_p_std__allocatorT_float_t swig_types[18]
+#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[19]
+#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[20]
+#define SWIGTYPE_p_std__invalid_argument swig_types[21]
+#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[22]
+#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[23]
+#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[24]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[25]
+#define SWIGTYPE_p_value_type swig_types[26]
+static swig_type_info *swig_types[28];
+static swig_module_info swig_module = {swig_types, 27, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -17179,6 +17181,124 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewUInt(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  GeomData *arg2 = (GeomData *) 0 ;
+  lucGeometryDataType arg3 ;
+  unsigned int **arg4 = (unsigned int **) 0 ;
+  int *arg5 = (int *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  void *argp4 = 0 ;
+  int res4 = 0 ;
+  void *argp5 = 0 ;
+  int res5 = 0 ;
+  PyObject *swig_obj[5] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_geometryArrayViewUInt",5,5,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_geometryArrayViewUInt" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_GeomData, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_geometryArrayViewUInt" "', argument " "2"" of type '" "GeomData *""'"); 
+  }
+  arg2 = reinterpret_cast< GeomData * >(argp2);
+  ecode3 = SWIG_AsVal_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_geometryArrayViewUInt" "', argument " "3"" of type '" "lucGeometryDataType""'");
+  } 
+  arg3 = static_cast< lucGeometryDataType >(val3);
+  res4 = SWIG_ConvertPtr(swig_obj[3], &argp4,SWIGTYPE_p_p_unsigned_int, 0 |  0 );
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "LavaVu_geometryArrayViewUInt" "', argument " "4"" of type '" "unsigned int **""'"); 
+  }
+  arg4 = reinterpret_cast< unsigned int ** >(argp4);
+  res5 = SWIG_ConvertPtr(swig_obj[4], &argp5,SWIGTYPE_p_int, 0 |  0 );
+  if (!SWIG_IsOK(res5)) {
+    SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "LavaVu_geometryArrayViewUInt" "', argument " "5"" of type '" "int *""'"); 
+  }
+  arg5 = reinterpret_cast< int * >(argp5);
+  {
+    try {
+      (arg1)->geometryArrayViewUInt(arg2,arg3,arg4,arg5);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewUChar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  GeomData *arg2 = (GeomData *) 0 ;
+  lucGeometryDataType arg3 ;
+  unsigned char **arg4 = (unsigned char **) 0 ;
+  int *arg5 = (int *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  void *argp4 = 0 ;
+  int res4 = 0 ;
+  void *argp5 = 0 ;
+  int res5 = 0 ;
+  PyObject *swig_obj[5] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_geometryArrayViewUChar",5,5,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_geometryArrayViewUChar" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_GeomData, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_geometryArrayViewUChar" "', argument " "2"" of type '" "GeomData *""'"); 
+  }
+  arg2 = reinterpret_cast< GeomData * >(argp2);
+  ecode3 = SWIG_AsVal_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_geometryArrayViewUChar" "', argument " "3"" of type '" "lucGeometryDataType""'");
+  } 
+  arg3 = static_cast< lucGeometryDataType >(val3);
+  res4 = SWIG_ConvertPtr(swig_obj[3], &argp4,SWIGTYPE_p_p_unsigned_char, 0 |  0 );
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "LavaVu_geometryArrayViewUChar" "', argument " "4"" of type '" "unsigned char **""'"); 
+  }
+  arg4 = reinterpret_cast< unsigned char ** >(argp4);
+  res5 = SWIG_ConvertPtr(swig_obj[4], &argp5,SWIGTYPE_p_int, 0 |  0 );
+  if (!SWIG_IsOK(res5)) {
+    SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "LavaVu_geometryArrayViewUChar" "', argument " "5"" of type '" "int *""'"); 
+  }
+  arg5 = reinterpret_cast< int * >(argp5);
+  {
+    try {
+      (arg1)->geometryArrayViewUChar(arg2,arg3,arg4,arg5);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_isosurface__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -18227,6 +18347,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_geometryArrayUInt", _wrap_LavaVu_geometryArrayUInt, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_geometryArrayFloat", _wrap_LavaVu_geometryArrayFloat, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_geometryArrayViewFloat", _wrap_LavaVu_geometryArrayViewFloat, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_geometryArrayViewUInt", _wrap_LavaVu_geometryArrayViewUInt, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_geometryArrayViewUChar", _wrap_LavaVu_geometryArrayViewUChar, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_isosurface", _wrap_LavaVu_isosurface, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_update", _wrap_LavaVu_update, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_close", (PyCFunction)_wrap_LavaVu_close, METH_O, NULL},
@@ -18256,6 +18378,8 @@ static swig_type_info _swigt__p_lucGeometryDataType = {"_p_lucGeometryDataType",
 static swig_type_info _swigt__p_lucGeometryType = {"_p_lucGeometryType", "enum lucGeometryType *|lucGeometryType *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_PyObject = {"_p_p_PyObject", "PyObject **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_float = {"_p_p_float", "float **", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_p_unsigned_char = {"_p_p_unsigned_char", "unsigned char **", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_p_unsigned_int = {"_p_p_unsigned_int", "unsigned int **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_size_type = {"_p_size_type", "size_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__allocatorT_float_t = {"_p_std__allocatorT_float_t", "std::vector< float >::allocator_type *|std::allocator< float > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__allocatorT_std__string_t = {"_p_std__allocatorT_std__string_t", "std::vector< std::string >::allocator_type *|std::allocator< std::string > *", 0, 0, (void*)0, 0};
@@ -18283,6 +18407,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_lucGeometryType,
   &_swigt__p_p_PyObject,
   &_swigt__p_p_float,
+  &_swigt__p_p_unsigned_char,
+  &_swigt__p_p_unsigned_int,
   &_swigt__p_size_type,
   &_swigt__p_std__allocatorT_float_t,
   &_swigt__p_std__allocatorT_std__string_t,
@@ -18310,6 +18436,8 @@ static swig_cast_info _swigc__p_lucGeometryDataType[] = {  {&_swigt__p_lucGeomet
 static swig_cast_info _swigc__p_lucGeometryType[] = {  {&_swigt__p_lucGeometryType, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_PyObject[] = {  {&_swigt__p_p_PyObject, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_float[] = {  {&_swigt__p_p_float, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_p_unsigned_char[] = {  {&_swigt__p_p_unsigned_char, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_p_unsigned_int[] = {  {&_swigt__p_p_unsigned_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_size_type[] = {  {&_swigt__p_size_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__allocatorT_float_t[] = {  {&_swigt__p_std__allocatorT_float_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__allocatorT_std__string_t[] = {  {&_swigt__p_std__allocatorT_std__string_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -18337,6 +18465,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_lucGeometryType,
   _swigc__p_p_PyObject,
   _swigc__p_p_float,
+  _swigc__p_p_unsigned_char,
+  _swigc__p_p_unsigned_int,
   _swigc__p_size_type,
   _swigc__p_std__allocatorT_float_t,
   _swigc__p_std__allocatorT_std__string_t,
