@@ -404,6 +404,36 @@ void Geometry::remove(DrawingObject* draw)
   }
 }
 
+void Geometry::clearValues(DrawingObject* draw, std::string label)
+{
+  reload = true;
+  for (auto g : geom)
+  {
+    if (draw == g->draw)
+    {
+      for (int i=0; i<g->values.size(); i++)
+      for (auto vals : g->values)
+        if (label.length() == 0 || vals->label == label)
+          vals->clear();
+    }
+  }
+}
+
+void Geometry::clearData(DrawingObject* draw, lucGeometryDataType dtype)
+{
+  reload = true;
+  for (auto g : geom)
+  {
+    if (draw == g->draw)
+    {
+      g->data[dtype]->clear();
+      if (dtype == lucVertexData)
+        g->count = 0; //Reset vertex count
+    }
+  }
+  //std::cout << "CLEARED " << dtype << std::endl;
+}
+
 void Geometry::compareMinMax(float* min, float* max)
 {
   //Compare passed min/max with min/max of all geometry

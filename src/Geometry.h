@@ -254,6 +254,8 @@ public:
 
   void clear(bool all=false); //Called before new data loaded
   void remove(DrawingObject* draw);
+  void clearValues(DrawingObject* draw, std::string label="");
+  void clearData(DrawingObject* draw, lucGeometryDataType dtype);
   virtual void close(); //Called on quit & before gl context recreated
 
   void compareMinMax(float* min, float* max);
