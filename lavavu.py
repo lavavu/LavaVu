@@ -5,6 +5,7 @@ import sys
 import os
 import glob
 import control
+import numpy
 
 #Attempt to import swig module
 libpath = "bin"
@@ -55,6 +56,27 @@ colourMaps["coolwarm"] = "#3b4cc0 #7396f5 #b0cbfc #dcdcdc #f6bfa5 #ea7b60 #b50b2
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
+typestr = {}
+typestr["labels"] = LavaVuPython.lucLabelType
+typestr["points"] = LavaVuPython.lucPointType
+typestr["grid"] = LavaVuPython.lucGridType
+typestr["triangles"] = LavaVuPython.lucTriangleType
+typestr["vectors"] = LavaVuPython.lucVectorType
+typestr["tracers"] = LavaVuPython.lucTracerType
+typestr["lines"] = LavaVuPython.lucLineType
+typestr["shapes"] = LavaVuPython.lucShapeType
+typestr["volume"] = LavaVuPython.lucVolumeType
+
+datatypestr = {}
+datatypestr["vertices"] = LavaVuPython.lucVertexData
+datatypestr["normals"] = LavaVuPython.lucNormalData
+datatypestr["vectors"] = LavaVuPython.lucVectorData
+datatypestr["indices"] = LavaVuPython.lucIndexData
+datatypestr["colours"] = LavaVuPython.lucRGBAData
+datatypestr["texcoords"] = LavaVuPython.lucTexCoordData
+datatypestr["luminance"] = LavaVuPython.lucLuminanceData
+datatypestr["rgb"] = LavaVuPython.lucRGBData
+
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj(object):
@@ -71,8 +93,8 @@ class Obj(object):
         self.dict.update(props)
 
     def _set(self):
-        #Send updated props (via id in case name changed)
-        self.instance._setupobject(self.id, **self.dict)
+        #Send updated props (via ref in case name changed)
+        self.instance._setupobject(self.ref, **self.dict)
 
     def __getitem__(self, key):
         self.instance._get() #Ensure in sync
@@ -113,8 +135,9 @@ class Obj(object):
         self._set()
         return len(self["filters"])-1
 
-    def data(self):
+    def datasets(self):
         #Return json data set list
+        #TODO: use Geometry wrapper?
         return json.dumps(self.dict["data"])
 
     def append(self):
@@ -122,24 +145,45 @@ class Obj(object):
 
     def triangles(self, data, split=0):
         if split > 1:
-            print split
-            self.instance.app.loadTriangles(data, self.name(), split)
+            self.instance.app.loadTriangles(self.ref, data, self.name(), split)
         else:
             self.vertices(data)
 
-    def vertices(self, data):
-        self.instance.app.loadVectors(data, LavaVuPython.lucVertexData, self.name())
+    def _loadScalar(self, data, dtype):
+        #Passes a scalar dataset (float/uint8/uint32)
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.asarray(data, dtype=numpy.float32)
+        if data.dtype == numpy.float32:
+            self.instance.app.arrayFloat(self.ref, data.ravel(), dtype)
+        elif data.dtype == numpy.uint32:
+            self.instance.app.arrayUInt(self.ref, data.ravel(), dtype)
+        elif data.dtype == numpy.uint8:
+            self.instance.app.arrayUChar(self.ref, data.ravel(), dtype)
+
+    def _loadVector(self, data, dtype):
+        #Passes a vector dataset (float)
+        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.float32:
+            data = numpy.asarray(data, dtype=numpy.float32)
+        self.instance.app.arrayFloat(self.ref, data.ravel(), dtype)
+
+    def vertices(self, data=None):
+        self._loadVector(data, LavaVuPython.lucVertexData)
 
     def normals(self, data):
-        self.instance.app.loadVectors(data, LavaVuPython.lucNormalData, self.name())
+        self._loadVector(data, LavaVuPython.lucNormalData)
 
     def vectors(self, data):
-        self.instance.app.loadVectors(data, LavaVuPython.lucVectorData, self.name())
+        self._loadVector(data, LavaVuPython.lucVectorData)
 
     def values(self, data, label="default"):
-        self.instance.app.loadValues(data, label, self.name())
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.asarray(data, dtype=numpy.float32)
+        self.instance.app.arrayFloat(self.ref, data.ravel(), label)
 
     def colours(self, data):
+        if isinstance(data, numpy.ndarray):
+            self._loadScalar(data, LavaVuPython.lucRGBAData)
+            return
         #Convert to list of strings
         if isinstance(data, str):
             data = data.split()
@@ -150,37 +194,53 @@ class Obj(object):
             data = [str(i) for i in data]
         if isinstance(data[0], str):
             #Each element will be parsed as a colour string
-            self.instance.app.loadColours(data, self.name())
+            self.instance.app.loadColours(self.ref, data)
         else:
-            #Plain list, assume unsinged colour data
-            self.instance.app.loadUnsigned(data, LavaVuPython.lucRGBAData, self.name())
+            #Plain list, assume unsigned colour data
+            data = numpy.asarray(data, dtype=numpy.uint32)
+            self.colours(data)
 
     def indices(self, data):
-        self.instance.app.loadUnsigned(data, LavaVuPython.lucIndexData, self.name())
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.asarray(data, dtype=numpy.uint32)
+        self._loadScalar(data, LavaVuPython.lucIndexData)
 
-    def labels(self, data):
-        self.instance.app.labels(data)
+    def texture(self, data, width, height, depth=4, flip=True):
+        if not isinstance(data, numpy.ndarray):
+            data = numpy.asarray(data, dtype=numpy.uint32)
+        if data.dtype == numpy.uint32:
+            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, depth, flip)
+        elif data.dtype == numpy.uint8:
+            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, depth, flip)
+
+    def label(self, data):
+        if isinstance(data, str):
+            data = [data]
+        self.instance.app.label(self.ref, data)
 
     def colourmap(self, data, **kwargs):
         #Load colourmap and set property on this object
         cmap = self.instance.colourmap(self.name() + '-default', data, **kwargs)
         self["colourmap"] = cmap
         return cmap
+
+    def select(self):
+        self.instance.selectObject(self.name())
     
     def file(self, *args, **kwargs):
         #Load file with this object selected (import)
-        self.instance.selectObject(self.name())
+        self.select()
         self.instance.file(*args, name=self.name(), **kwargs)
         self.instance.selectObject()
 
     def colourbar(self, name=None, **kwargs):
         #Create a new colourbar for this object
-        name = self.instance.app.colourBar(self.name())
-        if len(name) == 0: return
+        ref = self.instance.app.colourBar(self.ref)
+        if not ref: return
         #Update list
         self.instance._get() #Ensure in sync
         #Setups up new object, all other args passed to properties dict
-        return self.instance._setupobject(name, **kwargs)
+        return self.instance._setupobject(ref, **kwargs)
 
     def save(self, filename="state.json"):
         with open(filename, "w") as state_file:
@@ -190,11 +250,41 @@ class Obj(object):
         with open(filename, "r") as state_file:
             self.app.setState(state_file.read())
 
+    def clear(self):
+        self.instance.app.clearObject(self.ref)
+
+    def clearvals(self, label=""):
+        self.instance.app.clearValues(self.ref, label)
+
+    def cleardata(self, dtype):
+        if isinstance(dtype, str):
+            dtype = datatypestr[dtype]
+        self.instance.app.clearData(self.ref, dtype)
+
+    def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
+        #Generate and return an isosurface object, 
+        #pass properties as kwargs (eg: isovalues=[])
+        isobj = self
+        if not convert:
+            #Create a new object for the surface
+            if name is None: name = self.name() + "_surface"
+            isobj = self.instance.add(name, **kwargs)
+            isobj["geometry"] = "triangles"
+        else:
+            #Convert existing object (self) set properties 
+            self.instance._setupobject(self.ref, **kwargs)
+        #Create surface, If requested, write the new data to the database
+        self.instance.isosurface(isobj.ref, self.ref, convert)
+        #Re-write modified types to the database
+        if updatedb:
+            self.instance.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
+            self.instance.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
+        return isobj
+
 #Wrapper dict+list of objects
 class Objects(dict):
   def __init__(self, instance):
     self.instance = instance
-    pass
 
   def _sync(self):
     self.list = []
@@ -210,8 +300,10 @@ class Objects(dict):
             self.list.append(o)
         #Flag sync
         self[obj["name"]].found = True
-        #Save the id number
-        self.list[-1].id = len(self.list)
+        #Save the object id and reference (use id # to get)
+        _id = len(self.list)
+        self.list[-1].id = _id
+        self.list[-1].ref = self.instance.getObject(_id)
         
     #Delete any objects from dict that are no longer present
     for name in self.keys():
@@ -368,8 +460,6 @@ class Viewer(object):
             self.app.queueCommands(cmds)
         else:
             self.app.parseCommands(cmds)
-        #Always sync the state after running commands
-        self._get()
 
     #Callable with commands...
     def __call__(self, cmds):
@@ -395,24 +485,34 @@ class Viewer(object):
             self.commands(argstr)
         return any_method
 
-    def _setupobject(self, identifier=None, **kwargs):
+    def _setupobject(self, ref=None, **kwargs):
         #Strip data keys from kwargs and put aside for loading
         datasets = {}
+        cmapstr = None
         for key in kwargs.keys():
             if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
                 datasets[key] = kwargs.pop(key, None)
+            if key == "colourmap" and isinstance(kwargs[key], str):
+                cmapstr = kwargs.pop(key, None)
 
         #Call function to add/setup the object, all other args passed to properties dict
-        self.app.setObject(identifier, str(json.dumps(kwargs)))
+        if ref is None:
+            ref = self.app.createObject(str(json.dumps(kwargs)))
+        else:
+            self.app.setObject(ref, str(json.dumps(kwargs)))
 
         #Get the created/update object
-        obj = self.getobject(identifier)
+        obj = self.getobject(ref)
 
         #Read any property data sets (allows object creation and load with single prop dict)
         for key in datasets:
             #Get the load function matching the data set (eg: vertices() ) and call on data
             func = getattr(obj, key)
             func(datasets[key])
+
+        if not cmapstr is None:
+            #Convert string colourmap
+            obj.colourmap(cmapstr)
 
         #Return wrapper obj
         return obj
@@ -422,8 +522,12 @@ class Viewer(object):
             print "Object exists: " + name
             return self.objects[name]
 
+        #Put provided name in properties
+        if len(name):
+            kwargs["name"] = name
+
         #Adds a new object, all other args passed to properties dict
-        return self._setupobject(name, **kwargs)
+        return self._setupobject(ref=None, **kwargs)
 
     #Shortcut for adding specific geometry types
     def _addtype(self, typename, name=None, **kwargs):
@@ -449,35 +553,35 @@ class Viewer(object):
         return obj
 
     def getobject(self, identifier=None):
-        #Return object by name/number or last in list if none provided
+        #Return object by name/ref or last in list if none provided
         #Get state and update object list
         self._get()
         if len(self.objects.list) == 0:
-            print "WARNING: No objects"
+            print "WARNING: No objects exist!"
             return None
         #If name passed, find this object in updated list, if not just use the last
-        obj = None
         if isinstance(identifier, str):
             for obj in self.objects.list:
-                if obj["name"] == identifier: break
-                obj = None
+                if obj["name"] == identifier:
+                    return obj
         if isinstance(identifier, int):
             if len(self.objects.list) >= identifier:
-                obj = self.objects.list[identifier-1]
-        if not obj:
-            obj = self.objects.list[-1]
-
-        return obj
+                return self.objects.list[identifier-1]
+        elif isinstance(identifier, LavaVuPython.DrawingObject):
+            for obj in self.objects.list:
+                if obj.ref == identifier:
+                    return obj
+        return self.objects.list[-1]
 
     def file(self, filename, name=None, **kwargs):
         #Load a new object from file
         self.app.loadFile(filename)
 
-        #Get object
+        #Get object by name (or last if none provided)
         obj = self.getobject(name)
 
         #Setups up new object, all other args passed to properties dict
-        return self._setupobject(obj.name(), **kwargs)
+        return self._setupobject(obj.ref, **kwargs)
     
     def files(self, filespec, name=None, **kwargs):
         #Load list of files with glob

@@ -217,30 +217,55 @@ public:
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonReadFile(std::string fn);
-  DrawingObject* colourBar(DrawingObject* obj);
+
+  std::vector<GeomData*> getAllGeometry(DrawingObject* target);
 
   //Python interface functions
   void render();
   void init();
   std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
   std::string web(bool tofile=false);
-  void setObject(unsigned int id, std::string properties);
-  void setObject(std::string name, std::string properties);
   int colourMap(std::string name, std::string colours="", std::string properties="");
-  std::string colourBar(std::string objname);
+  DrawingObject* colourBar(DrawingObject* obj);
   void setState(std::string state);
   std::string getState();
   std::string getFigures();
   std::string getTimeSteps();
+
+  void setObject(DrawingObject* target, std::string properties);
+  DrawingObject* createObject(std::string properties);
+  DrawingObject* getObject(const std::string& name);
+  DrawingObject* getObject(int id=-1);
   void selectObject(const std::string& name);
   void selectObject(int id=-1);
-  void loadTriangles(std::vector< std::vector <float> > array, const std::string& name, int split=0);
-  void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData, const std::string& name="");
-  void loadValues(std::vector <float> array, std::string label="", const std::string& name="");
-  void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData, const std::string& name="");
-  void loadColours(std::vector <std::string> list, const std::string& name);
-  void labels(std::vector <std::string> labels, const std::string& name="");
+
+  void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
+  void loadColours(DrawingObject* target, std::vector <std::string> list);
+  void label(DrawingObject* target, std::vector <std::string> labels);
+
+  void clearObject(DrawingObject* target);
+  void clearValues(DrawingObject* target, std::string label="");
+  void clearData(DrawingObject* target, lucGeometryDataType type);
+  //Numpy interface
+  void arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData);
+  void arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
+  void arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type=lucVertexData);
+  void arrayFloat(DrawingObject* target, float* array, int len, std::string label);
+  void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true);
+  void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true);
+
+  int getGeometryCount(DrawingObject* target);
+  GeomData* getGeometry(DrawingObject* target, int index);
+  void geometryArrayUChar(GeomData* geom, unsigned char* array, int len, lucGeometryDataType type);
+  void geometryArrayUInt(GeomData* geom, unsigned int* array, int len, lucGeometryDataType type);
+  void geometryArrayFloat(GeomData* geom, float* array, int len, lucGeometryDataType type);
+  void geometryArrayFloat(GeomData* geom, float* array, int len, std::string label);
+  void geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len);
+
   void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
+  void update(DrawingObject* target, bool compress=true);
+  void update(DrawingObject* target, lucGeometryType type, bool compress=true);
+
   //For testing via python
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=4);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);

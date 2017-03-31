@@ -2828,28 +2828,6 @@ std::string LavaVu::web(bool tofile)
   return jsonWriteFile(NULL, false, true);
 }
 
-void LavaVu::setObject(unsigned int id, std::string properties)
-{
-  if (!amodel) return;
-  if (id < 1 && id > amodel->objects.size()) return;
-  DrawingObject* obj = amodel->objects[id-1];
-  //Parse and merge property strings
-  obj->properties.parseSet(properties);
-}
-
-void LavaVu::setObject(std::string name, std::string properties)
-{
-  if (!amodel) defaultModel();
-  DrawingObject* obj = lookupObject(name);
-  if (!obj) 
-  {
-    if (name.length() == 0) name = "default";
-    obj = addObject(new DrawingObject(drawstate, name));
-  }
-  //Parse and merge property strings
-  obj->properties.parseSet(properties);
-}
-
 int LavaVu::colourMap(std::string name, std::string colours, std::string properties)
 {
   if (!amodel) return -1;
@@ -2879,14 +2857,6 @@ DrawingObject* LavaVu::colourBar(DrawingObject* obj)
   DrawingObject* cbar = addObject(new DrawingObject(drawstate, obj->name() + "_colourbar", "colourbar=1\n"));
   cbar->properties.data["colourmap"] = obj->properties["colourmap"];
   return cbar;
-}
-
-std::string LavaVu::colourBar(std::string objname)
-{
-  DrawingObject* obj = lookupObject(objname, aobject);
-  if (!obj) return "";
-  DrawingObject* cbar = colourBar(obj);
-  return cbar->name();
 }
 
 void LavaVu::setState(std::string state)
@@ -2935,81 +2905,215 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
+void LavaVu::setObject(DrawingObject* target, std::string properties)
+{
+  if (!amodel || !target) return;
+  //Parse and merge property strings
+  target->properties.parseSet(properties);
+}
+
+DrawingObject* LavaVu::createObject(std::string properties)
+{
+  if (!amodel) defaultModel();
+  DrawingObject* obj = addObject(new DrawingObject(drawstate));
+
+  //Parse and merge property strings
+  setObject(obj, properties);
+
+  //Ensure has a name
+  std::string name = obj->properties["name"];
+  if (name.length() == 0)
+  {
+    //Avoid duplicate default names
+    std::stringstream nss;
+    nss << "default_" << amodel->objects.size();
+    obj->properties.data["name"] = nss.str();
+  }
+
+  return obj;
+}
+
+DrawingObject* LavaVu::getObject(const std::string& name)
+{
+  if (name.length())
+    return lookupObject(name, aobject);
+  return NULL;
+}
+
+DrawingObject* LavaVu::getObject(int id)
+{
+  if (id > 0 && id <= (int)amodel->objects.size())
+    return amodel->objects[id-1];
+  return NULL;
+}
+
 void LavaVu::selectObject(const std::string& name)
 {
-  aobject = NULL;
-  if (name.length())
-    aobject = lookupObject(name, aobject);
+  aobject = getObject(name);
 }
 
 void LavaVu::selectObject(int id)
 {
-  aobject = NULL;
-  if (id > 0 && id <= (int)amodel->objects.size())
-    aobject = amodel->objects[id-1];
+  aobject = getObject(id);
 }
 
-void LavaVu::loadTriangles(std::vector< std::vector <float> > array, const std::string& name, int split)
+void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split)
 {
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
     for (unsigned int i=0; i < array.size(); i += 3)
-      container->addTriangle(obj, &array[i+0][0], &array[i+1][0], &array[i+2][0], split);
+      container->addTriangle(target, &array[i+0][0], &array[i+1][0], &array[i+2][0], split);
 }
 
-void LavaVu::loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type, const std::string& name)
+void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
 {
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
-  {
-    //Load 3d vertices
-    for (unsigned int i=0; i < array.size(); i++)
-      container->read(obj, 1, type, &array[i][0]);
-  }
-}
-
-void LavaVu::loadValues(std::vector <float> array, std::string label, const std::string& name)
-{
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
-    //Load scalar values
-    container->read(obj, array.size(), &array[0], label);
-}
-
-void LavaVu::loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type, const std::string& name)
-{
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
-    container->read(obj, array.size(), type, &array[0]);
-  //for (unsigned int i=0; i < array.size(); i++)
-  //  container->read(obj, 1, type, &array[i]);
-}
-
-void LavaVu::loadColours(std::vector <std::string> list, const std::string& name)
-{
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
   {
     for (auto item : list)
     {
       //Use colour constructor to parse string colours
       Colour c(item);
-      container->read(obj, 1, lucRGBAData, &c);
+      container->read(target, 1, lucRGBAData, &c);
     }
   }
 }
 
-void LavaVu::labels(std::vector <std::string> labels, const std::string& name)
+void LavaVu::label(DrawingObject* target, std::vector <std::string> labels)
 {
-  DrawingObject* obj = lookupObject(name, aobject);
-  Geometry* container = lookupObjectContainer(obj);
-  if (container) 
-    container->label(obj, labels);
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->label(target, labels);
+}
+
+void LavaVu::clearObject(DrawingObject* target)
+{
+  for (unsigned int i=0; i < amodel->geometry.size(); i++)
+    amodel->geometry[i]->remove(target);
+}
+
+void LavaVu::clearValues(DrawingObject* target, std::string label)
+{
+  for (unsigned int i=0; i < amodel->geometry.size(); i++)
+    amodel->geometry[i]->clearValues(target, label);
+}
+
+void LavaVu::clearData(DrawingObject* target, lucGeometryDataType type)
+{
+  for (unsigned int i=0; i < amodel->geometry.size(); i++)
+    amodel->geometry[i]->clearData(target, type);
+}
+
+void LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
+{
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->read(target, len, type, array);
+}
+
+void LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type)
+{
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->read(target, len, type, array);
+}
+
+void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type)
+{
+  Geometry* container = lookupObjectContainer(target);
+  int dsize = 3;
+  if (type == lucTexCoordData) dsize = 2;
+  if (container)
+    container->read(target, len/dsize, type, array);
+}
+
+void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label)
+{
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->read(target, len, array, label);
+}
+
+void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip)
+{
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->loadTexture(target, array, width, height, channels, flip);
+}
+
+void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip)
+{
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip);
+}
+
+//GeomData interface, for loading/acessing geom store directly
+std::vector<GeomData*> LavaVu::getAllGeometry(DrawingObject* target)
+{
+  std::vector<GeomData*> list;
+  for (int type=lucMinType; type<lucMaxType; type++)
+  {
+    std::vector<GeomData*> geomlist = amodel->geometry[type]->getAllObjects(target);
+    list.insert(std::end(list), std::begin(geomlist), std::end(geomlist));
+  }
+  return list;
+}
+
+int LavaVu::getGeometryCount(DrawingObject* target)
+{
+  std::vector<GeomData*> geomlist = getAllGeometry(target);
+  return geomlist.size();
+}
+
+GeomData* LavaVu::getGeometry(DrawingObject* target, int index)
+{
+  std::vector<GeomData*> geomlist = getAllGeometry(target);
+  if (geomlist.size() > index)
+  {
+    return geomlist[index];
+  }
+  return NULL;
+}
+
+void LavaVu::geometryArrayUChar(GeomData* geom, unsigned char* array, int len, lucGeometryDataType type)
+{
+  Geometry* container = lookupObjectContainer(geom->draw);
+  if (container && geom)
+    container->read(geom, len, type, array);
+}
+
+void LavaVu::geometryArrayUInt(GeomData* geom, unsigned int* array, int len, lucGeometryDataType type)
+{
+  Geometry* container = lookupObjectContainer(geom->draw);
+  if (container && geom)
+    container->read(geom, len, type, array);
+}
+
+void LavaVu::geometryArrayFloat(GeomData* geom, float* array, int len, lucGeometryDataType type)
+{
+  int dsize = 3;
+  if (type == lucTexCoordData) dsize = 2;
+  Geometry* container = lookupObjectContainer(geom->draw);
+  if (container && geom)
+    container->read(geom, len/dsize, type, array);
+}
+
+void LavaVu::geometryArrayFloat(GeomData* geom, float* array, int len, std::string label)
+{
+  Geometry* container = lookupObjectContainer(geom->draw);
+  if (container && geom)
+    container->read(geom, len, array, label);
+}
+
+void LavaVu::geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len)
+{
+  //Get a view of internal geom array
+  //(warning, can be released at any time, copy if needed!)
+  if (!geom) return;
+  DataContainer* dat = geom->data[dtype];
+  *array = (float*)dat->ref(0);
+  *len = dat->size();
 }
 
 void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clearvol)
@@ -3020,6 +3124,26 @@ void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clear
   Geometry* container = lookupObjectContainer(source);
   amodel->volumes->isosurface(amodel->triSurfaces, target, clearvol);
   target->properties.data["geometry"] = "triangles";
+}
+
+void LavaVu::update(DrawingObject* target, bool compress)
+{
+  //Re-write the database geometry at current step for specified object - all types
+  if (!amodel || !target) return;
+  amodel->database.reopen(true); //Ensure opened writable
+  amodel->database.issue("BEGIN EXCLUSIVE TRANSACTION");
+  amodel->writeObjects(amodel->database, target, amodel->step(), compress);
+  amodel->database.issue("COMMIT");
+}
+
+void LavaVu::update(DrawingObject* target, lucGeometryType type, bool compress)
+{
+  //Re-write the database geometry at current step for specified object - specified type only
+  if (!amodel || !target) return;
+  amodel->database.reopen(true); //Ensure opened writable
+  amodel->database.issue("BEGIN EXCLUSIVE TRANSACTION");
+  amodel->writeGeometry(amodel->database, type, target, amodel->step(), compress);
+  amodel->database.issue("COMMIT");
 }
 
 std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int channels)

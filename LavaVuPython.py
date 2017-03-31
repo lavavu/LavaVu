@@ -174,49 +174,6 @@ Line.capacity = new_instancemethod(_LavaVuPython.Line_capacity, None, Line)
 Line_swigregister = _LavaVuPython.Line_swigregister
 Line_swigregister(Line)
 
-class ULine(object):
-    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
-    __repr__ = _swig_repr
-    def __iter__(self):
-        return self.iterator()
-
-    def __init__(self, *args):
-        _LavaVuPython.ULine_swiginit(self, _LavaVuPython.new_ULine(*args))
-    __swig_destroy__ = _LavaVuPython.delete_ULine
-ULine.iterator = new_instancemethod(_LavaVuPython.ULine_iterator, None, ULine)
-ULine.__nonzero__ = new_instancemethod(_LavaVuPython.ULine___nonzero__, None, ULine)
-ULine.__bool__ = new_instancemethod(_LavaVuPython.ULine___bool__, None, ULine)
-ULine.__len__ = new_instancemethod(_LavaVuPython.ULine___len__, None, ULine)
-ULine.__getslice__ = new_instancemethod(_LavaVuPython.ULine___getslice__, None, ULine)
-ULine.__setslice__ = new_instancemethod(_LavaVuPython.ULine___setslice__, None, ULine)
-ULine.__delslice__ = new_instancemethod(_LavaVuPython.ULine___delslice__, None, ULine)
-ULine.__delitem__ = new_instancemethod(_LavaVuPython.ULine___delitem__, None, ULine)
-ULine.__getitem__ = new_instancemethod(_LavaVuPython.ULine___getitem__, None, ULine)
-ULine.__setitem__ = new_instancemethod(_LavaVuPython.ULine___setitem__, None, ULine)
-ULine.pop = new_instancemethod(_LavaVuPython.ULine_pop, None, ULine)
-ULine.append = new_instancemethod(_LavaVuPython.ULine_append, None, ULine)
-ULine.empty = new_instancemethod(_LavaVuPython.ULine_empty, None, ULine)
-ULine.size = new_instancemethod(_LavaVuPython.ULine_size, None, ULine)
-ULine.swap = new_instancemethod(_LavaVuPython.ULine_swap, None, ULine)
-ULine.begin = new_instancemethod(_LavaVuPython.ULine_begin, None, ULine)
-ULine.end = new_instancemethod(_LavaVuPython.ULine_end, None, ULine)
-ULine.rbegin = new_instancemethod(_LavaVuPython.ULine_rbegin, None, ULine)
-ULine.rend = new_instancemethod(_LavaVuPython.ULine_rend, None, ULine)
-ULine.clear = new_instancemethod(_LavaVuPython.ULine_clear, None, ULine)
-ULine.get_allocator = new_instancemethod(_LavaVuPython.ULine_get_allocator, None, ULine)
-ULine.pop_back = new_instancemethod(_LavaVuPython.ULine_pop_back, None, ULine)
-ULine.erase = new_instancemethod(_LavaVuPython.ULine_erase, None, ULine)
-ULine.push_back = new_instancemethod(_LavaVuPython.ULine_push_back, None, ULine)
-ULine.front = new_instancemethod(_LavaVuPython.ULine_front, None, ULine)
-ULine.back = new_instancemethod(_LavaVuPython.ULine_back, None, ULine)
-ULine.assign = new_instancemethod(_LavaVuPython.ULine_assign, None, ULine)
-ULine.resize = new_instancemethod(_LavaVuPython.ULine_resize, None, ULine)
-ULine.insert = new_instancemethod(_LavaVuPython.ULine_insert, None, ULine)
-ULine.reserve = new_instancemethod(_LavaVuPython.ULine_reserve, None, ULine)
-ULine.capacity = new_instancemethod(_LavaVuPython.ULine_capacity, None, ULine)
-ULine_swigregister = _LavaVuPython.ULine_swigregister
-ULine_swigregister(ULine)
-
 class Array(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
@@ -404,6 +361,27 @@ class OpenGLViewer(object):
 OpenGLViewer_swigregister = _LavaVuPython.OpenGLViewer_swigregister
 OpenGLViewer_swigregister(OpenGLViewer)
 
+class DrawingObject(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        _LavaVuPython.DrawingObject_swiginit(self, _LavaVuPython.new_DrawingObject(*args))
+    __swig_destroy__ = _LavaVuPython.delete_DrawingObject
+DrawingObject_swigregister = _LavaVuPython.DrawingObject_swigregister
+DrawingObject_swigregister(DrawingObject)
+
+class GeomData(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    type = _swig_property(_LavaVuPython.GeomData_type_get, _LavaVuPython.GeomData_type_set)
+
+    def __init__(self, draw, type):
+        _LavaVuPython.GeomData_swiginit(self, _LavaVuPython.new_GeomData(draw, type))
+    __swig_destroy__ = _LavaVuPython.delete_GeomData
+GeomData_swigregister = _LavaVuPython.GeomData_swigregister
+GeomData_swigregister(GeomData)
+
 class LavaVu(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
@@ -425,20 +403,36 @@ LavaVu.image = new_instancemethod(_LavaVuPython.LavaVu_image, None, LavaVu)
 LavaVu.web = new_instancemethod(_LavaVuPython.LavaVu_web, None, LavaVu)
 LavaVu.video = new_instancemethod(_LavaVuPython.LavaVu_video, None, LavaVu)
 LavaVu.defaultModel = new_instancemethod(_LavaVuPython.LavaVu_defaultModel, None, LavaVu)
-LavaVu.setObject = new_instancemethod(_LavaVuPython.LavaVu_setObject, None, LavaVu)
 LavaVu.colourMap = new_instancemethod(_LavaVuPython.LavaVu_colourMap, None, LavaVu)
 LavaVu.colourBar = new_instancemethod(_LavaVuPython.LavaVu_colourBar, None, LavaVu)
 LavaVu.setState = new_instancemethod(_LavaVuPython.LavaVu_setState, None, LavaVu)
 LavaVu.getState = new_instancemethod(_LavaVuPython.LavaVu_getState, None, LavaVu)
 LavaVu.getFigures = new_instancemethod(_LavaVuPython.LavaVu_getFigures, None, LavaVu)
 LavaVu.getTimeSteps = new_instancemethod(_LavaVuPython.LavaVu_getTimeSteps, None, LavaVu)
+LavaVu.resetViews = new_instancemethod(_LavaVuPython.LavaVu_resetViews, None, LavaVu)
+LavaVu.setObject = new_instancemethod(_LavaVuPython.LavaVu_setObject, None, LavaVu)
+LavaVu.createObject = new_instancemethod(_LavaVuPython.LavaVu_createObject, None, LavaVu)
+LavaVu.getObject = new_instancemethod(_LavaVuPython.LavaVu_getObject, None, LavaVu)
 LavaVu.selectObject = new_instancemethod(_LavaVuPython.LavaVu_selectObject, None, LavaVu)
 LavaVu.loadTriangles = new_instancemethod(_LavaVuPython.LavaVu_loadTriangles, None, LavaVu)
-LavaVu.loadVectors = new_instancemethod(_LavaVuPython.LavaVu_loadVectors, None, LavaVu)
-LavaVu.loadValues = new_instancemethod(_LavaVuPython.LavaVu_loadValues, None, LavaVu)
-LavaVu.loadUnsigned = new_instancemethod(_LavaVuPython.LavaVu_loadUnsigned, None, LavaVu)
 LavaVu.loadColours = new_instancemethod(_LavaVuPython.LavaVu_loadColours, None, LavaVu)
-LavaVu.labels = new_instancemethod(_LavaVuPython.LavaVu_labels, None, LavaVu)
+LavaVu.label = new_instancemethod(_LavaVuPython.LavaVu_label, None, LavaVu)
+LavaVu.clearObject = new_instancemethod(_LavaVuPython.LavaVu_clearObject, None, LavaVu)
+LavaVu.clearValues = new_instancemethod(_LavaVuPython.LavaVu_clearValues, None, LavaVu)
+LavaVu.clearData = new_instancemethod(_LavaVuPython.LavaVu_clearData, None, LavaVu)
+LavaVu.arrayUChar = new_instancemethod(_LavaVuPython.LavaVu_arrayUChar, None, LavaVu)
+LavaVu.arrayUInt = new_instancemethod(_LavaVuPython.LavaVu_arrayUInt, None, LavaVu)
+LavaVu.arrayFloat = new_instancemethod(_LavaVuPython.LavaVu_arrayFloat, None, LavaVu)
+LavaVu.textureUChar = new_instancemethod(_LavaVuPython.LavaVu_textureUChar, None, LavaVu)
+LavaVu.textureUInt = new_instancemethod(_LavaVuPython.LavaVu_textureUInt, None, LavaVu)
+LavaVu.getGeometryCount = new_instancemethod(_LavaVuPython.LavaVu_getGeometryCount, None, LavaVu)
+LavaVu.getGeometry = new_instancemethod(_LavaVuPython.LavaVu_getGeometry, None, LavaVu)
+LavaVu.geometryArrayUChar = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUChar, None, LavaVu)
+LavaVu.geometryArrayUInt = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUInt, None, LavaVu)
+LavaVu.geometryArrayFloat = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayFloat, None, LavaVu)
+LavaVu.geometryArrayViewFloat = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayViewFloat, None, LavaVu)
+LavaVu.isosurface = new_instancemethod(_LavaVuPython.LavaVu_isosurface, None, LavaVu)
+LavaVu.update = new_instancemethod(_LavaVuPython.LavaVu_update, None, LavaVu)
 LavaVu.close = new_instancemethod(_LavaVuPython.LavaVu_close, None, LavaVu)
 LavaVu.imageArray = new_instancemethod(_LavaVuPython.LavaVu_imageArray, None, LavaVu)
 LavaVu.imageDiff = new_instancemethod(_LavaVuPython.LavaVu_imageDiff, None, LavaVu)

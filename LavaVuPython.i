@@ -1,14 +1,24 @@
 /*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 * LavaVu python interface
 **~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*/
-
 %module LavaVuPython
+
+%{
+#define SWIG_FILE_WITH_INIT
+%}
+
 %include <std_string.i>
 %include <std_vector.i>
+%include <numpy.i>
+
+%init %{
+  import_array();
+%}
 
 %{
 #include "src/LavaVu.h"
 #include "src/ViewerTypes.h"
+#include "src/DrawingObject.h"
 %}
 
 %include "exception.i"
@@ -20,13 +30,22 @@
   }
 }
 
+%init 
+%{
+import_array();
+%}
+
 namespace std 
 {
 %template(Line)  vector <float>;
-%template(ULine) vector <unsigned int> ;
 %template(Array) vector <vector <float> >;
 %template(List) vector <string>;
 }
+
+%apply (unsigned char* IN_ARRAY1, int DIM1) {(unsigned char* array, int len)};
+%apply (unsigned int* IN_ARRAY1, int DIM1) {(unsigned int* array, int len)};
+%apply (float* IN_ARRAY1, int DIM1) {(float* array, int len)};
+%apply (float** ARGOUTVIEW_ARRAY1, int* DIM1) {(float** array, int* len)};
 
 %include "src/ViewerTypes.h"
 
@@ -34,6 +53,19 @@ class OpenGLViewer
 {
   public:
     bool quitProgram;
+};
+
+class DrawingObject
+{
+public:
+  DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
+};
+
+class GeomData
+{
+public:
+  lucGeometryType type;   //Holds the object type
+  GeomData(DrawingObject* draw, lucGeometryType type);
 };
 
 class LavaVu
@@ -58,22 +90,49 @@ public:
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();
-  void setObject(unsigned int id, std::string properties);
-  void setObject(std::string name, std::string properties);
   int colourMap(std::string name, std::string colours="", std::string properties="");
-  std::string colourBar(std::string objname);
+  DrawingObject* colourBar(DrawingObject* obj);
   void setState(std::string state);
   std::string getState();
   std::string getFigures();
   std::string getTimeSteps();
+
+  void resetViews(bool autozoom=false);
+
+  void setObject(DrawingObject* target, std::string properties);
+  DrawingObject* createObject(std::string properties);
+  DrawingObject* getObject(const std::string& name);
+  DrawingObject* getObject(int id=-1);
   void selectObject(const std::string& name);
   void selectObject(int id=-1);
-  void loadTriangles(std::vector< std::vector <float> > array, const std::string& name, int split=0);
-  void loadVectors(std::vector< std::vector <float> > array, lucGeometryDataType type=lucVertexData, const std::string& name="");
-  void loadValues(std::vector <float> array, std::string label="", const std::string& name="");
-  void loadUnsigned(std::vector <unsigned int> array, lucGeometryDataType type=lucIndexData, const std::string& name="");
-  void loadColours(std::vector <std::string> list, const std::string& name);
-  void labels(std::vector <std::string> labels, const std::string& name="");
+
+  void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
+  void loadColours(DrawingObject* target, std::vector <std::string> list);
+  void label(DrawingObject* target, std::vector <std::string> labels);
+
+  void clearObject(DrawingObject* target);
+  void clearValues(DrawingObject* target, std::string label="");
+  void clearData(DrawingObject* target, lucGeometryDataType type);
+
+  void arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData);
+  void arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
+  void arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type=lucVertexData);
+  void arrayFloat(DrawingObject* target, float* array, int len, std::string label);
+  void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true);
+  void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true);
+
+  int getGeometryCount(DrawingObject* target);
+  GeomData* getGeometry(DrawingObject* target, int index);
+  void geometryArrayUChar(GeomData* geom, unsigned char* array, int len, lucGeometryDataType type);
+  void geometryArrayUInt(GeomData* geom, unsigned int* array, int len, lucGeometryDataType type);
+  void geometryArrayFloat(GeomData* geom, float* array, int len, lucGeometryDataType type);
+  void geometryArrayFloat(GeomData* geom, float* array, int len, std::string label);
+  void geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len);
+
+  void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
+  void update(DrawingObject* target, bool compress=true);
+  void update(DrawingObject* target, lucGeometryType type, bool compress=true);
+
   void close();
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=3);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);
