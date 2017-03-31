@@ -188,6 +188,7 @@ void QuadSurfaces::render()
 void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset)
 {
   //Normals: calculate from surface geometry
+  if (geom[i]->height == 0 || geom[i]->width == 0) return;
   clock_t t1,t2;
   t1=clock();
   debug_print("Calculating indices for grid quad surface %d... ", i);
