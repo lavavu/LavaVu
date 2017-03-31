@@ -34,6 +34,7 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 #include "Geometry.h"
+#include "IsoSurface.h"
 
 Volumes::Volumes(DrawState& drawstate) : Geometry(drawstate)
 {
@@ -736,3 +737,16 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
     }
   }
 }
+
+void Volumes::isosurface(TriSurfaces* surfaces, DrawingObject* target, bool clearvol)
+{
+  //Isosurface extract
+  Isosurface iso(geom, surfaces, target);
+
+  //Clear the volume data, allows converting object from a volume to a surface
+  if (clearvol) clear(true);
+
+  //Optimise triangle vertices
+  surfaces->loadMesh();
+}
+

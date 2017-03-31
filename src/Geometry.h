@@ -456,6 +456,7 @@ public:
   GLubyte* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles=16);
   void saveImage(DrawingObject* draw, int xtiles=16);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
+  void isosurface(TriSurfaces* surfaces, DrawingObject* target, bool clearvol=false);
 };
 
 //Sorting util functions
