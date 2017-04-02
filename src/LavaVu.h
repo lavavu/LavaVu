@@ -265,6 +265,10 @@ public:
   void geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, unsigned int** array, int* len);
   void geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
+  void imageBuffer(unsigned char* array, int width, int height, int depth);
+  std::string imageJPEG(int width, int height, int quality=95);
+  std::string imagePNG(int width, int height, int depth);
+
   void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);
   void update(DrawingObject* target, lucGeometryType type, bool compress=true);

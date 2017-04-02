@@ -3136,6 +3136,35 @@ void LavaVu::geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, u
   *len = dat->size();
 }
 
+void LavaVu::imageBuffer(unsigned char* array, int width, int height, int depth)
+{
+  if (!amodel || !viewer->isopen) return;
+  // Read the pixels into provided buffer
+  viewer->pixels((GLubyte*)array, width, height, depth, false);
+}
+
+std::string LavaVu::imageJPEG(int width, int height, int quality)
+{
+  if (!amodel || !viewer->isopen) return "";
+
+  GLubyte* image = viewer->pixels(NULL, width, height, 3, false);
+  //Write JPEG to string
+  std::string retImg = getImageString(image, width, height, 3, quality);
+  delete[] image;
+  return retImg;
+}
+
+std::string LavaVu::imagePNG(int width, int height, int depth)
+{
+  if (!amodel || !viewer->isopen) return "";
+
+  GLubyte* image = viewer->pixels(NULL, width, height, depth, false);
+  //Write PNG to string
+  std::string retImg = getImageString(image, width, height, depth);
+  delete[] image;
+  return retImg;
+}
+
 void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clearvol)
 {
   //Create an isosurface from selected volume object

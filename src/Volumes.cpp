@@ -707,7 +707,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       int iw, ih, channels; //TODO: Support other pixel formats
       GLubyte *image = getTiledImage(draw, i, iw, ih, channels, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
-      std::string imagestr = getImageString(image, iw, ih, channels);
+      std::string imagestr = getImageUrlString(image, iw, ih, channels);
       delete[] image;
       json res, scale;
       res.push_back((int)geom[i]->width);

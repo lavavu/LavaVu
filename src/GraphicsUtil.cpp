@@ -1053,10 +1053,12 @@ std::string writeImage(GLubyte *image, int width, int height, const std::string&
   return path;
 }
 
-std::string getImageString(GLubyte *image, int width, int height, int channels, bool jpeg)
+unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels, unsigned int* outsize, int jpegquality)
 {
-  std::string encoded;
-  if (!jpeg)
+  //Returns encoded image as binary data, caller must delete returned buffer!
+  int size = width * height * channels;
+  unsigned char* buffer = new unsigned char[size];
+  if (jpegquality <= 0)
   {
 #ifndef HAVE_LIBPNG
     //Requires y-flip as uses opposite y origin to OpenGL
@@ -1067,7 +1069,8 @@ std::string getImageString(GLubyte *image, int width, int height, int channels, 
     write_png(ss, channels, width, height, image);
     //Base64 encode!
     std::string str = ss.str();
-    encoded = "data:image/png;base64," + base64_encode(reinterpret_cast<const unsigned char*>(str.c_str()), str.length());
+    memcpy(buffer, str.c_str(), str.length());
+    *outsize = str.length();
   }
   else
   {
@@ -1076,22 +1079,50 @@ std::string getImageString(GLubyte *image, int width, int height, int channels, 
     // Writes JPEG image to memory buffer.
     // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
     // If return value is true, jpeg_bytes will be set to the size of the compressed data.
-    int jpeg_bytes = width * height * channels;
-    unsigned char* jpeg = new unsigned char[jpeg_bytes];
+    int jpeg_bytes = size;
     // Fill in the compression parameter structure.
     jpge::params params;
-    params.m_quality = 95;
+    params.m_quality = jpegquality;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-    if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, width, height, channels, (const unsigned char *)image, params))
+    if (compress_image_to_jpeg_file_in_memory(buffer, jpeg_bytes, width, height, channels, (const unsigned char *)image, params))
       debug_print("JPEG compressed, size %d\n", jpeg_bytes);
     else
       abort_program("JPEG compress error\n");
-    //Base64 encode!
-    encoded = "data:image/jpeg;base64," + base64_encode(reinterpret_cast<const unsigned char*>(jpeg), jpeg_bytes);
-    delete[] jpeg;
+    *outsize = jpeg_bytes;
   }
 
+  return buffer;
+}
+
+std::string getImageString(GLubyte *image, int width, int height, int channels, int jpegquality)
+{
+  //Gets encoded image as binary string
+  unsigned int outsize;
+  const char* buffer = (const char*)getImageBytes(image, width, height, channels, &outsize, jpegquality);
+  std::string copy = std::string(buffer, outsize);
+  delete[] buffer;
+  return copy;
+}
+
+std::string getImageBase64(GLubyte *image, int width, int height, int channels, int jpegquality)
+{
+  //Gets encoded image as base64 string
+  std::string encoded;
+  unsigned int outsize;
+  unsigned char* buffer = getImageBytes(image, width, height, channels, &outsize, jpegquality);
+  //Base64 encode
+  encoded = base64_encode(reinterpret_cast<const unsigned char*>(buffer), outsize);
+  delete[] buffer;
   return encoded;
+}
+
+std::string getImageUrlString(GLubyte *image, int width, int height, int channels, int jpegquality)
+{
+  //Gets encoded image as base64 data url
+  std::string encoded = getImageBase64(image, width, height, channels, jpegquality);
+  if (jpegquality > 0)
+    return "data:image/jpeg;base64," + encoded;
+  return "data:image/png;base64," + encoded;
 }
 
 #ifdef HAVE_LIBPNG

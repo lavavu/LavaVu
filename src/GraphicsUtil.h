@@ -616,7 +616,10 @@ void RawImageFlip(void* image, int width, int height, int channels);
 GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outwidth, int outheight, int offsetx=0, int offsety=0);
 
 std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels=3);
-std::string getImageString(GLubyte *image, int width, int height, int channels, bool jpeg=false);
+unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels, unsigned int* outsize, int jpegquality);
+std::string getImageString(GLubyte *image, int width, int height, int channels, int jpegquality=0);
+std::string getImageBase64(GLubyte *image, int width, int height, int channels, int jpegquality=0);
+std::string getImageUrlString(GLubyte *image, int width, int height, int channels, int jpegquality=0);
 
 //PNG utils
 void write_png(std::ostream& stream, int channels, int width, int height, void* data);

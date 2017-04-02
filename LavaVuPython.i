@@ -46,6 +46,9 @@ namespace std
 %apply (unsigned int* IN_ARRAY1, int DIM1) {(unsigned int* array, int len)};
 %apply (float* IN_ARRAY1, int DIM1) {(float* array, int len)};
 %apply (float** ARGOUTVIEW_ARRAY1, int* DIM1) {(float** array, int* len)};
+%apply (unsigned char** ARGOUTVIEW_ARRAY1, int* DIM1) {(unsigned char** array, int* len)};
+%apply (unsigned int** ARGOUTVIEW_ARRAY1, int* DIM1) {(unsigned int** array, int* len)};
+%apply (unsigned char* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(unsigned char* array, int width, int height, int depth)};
 
 %include "src/ViewerTypes.h"
 
@@ -131,6 +134,10 @@ public:
   void geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len);
   void geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, unsigned int** array, int* len);
   void geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, unsigned char** array, int* len);
+
+  void imageBuffer(unsigned char* array, int width, int height, int depth);
+  std::string imageJPEG(int width, int height, int quality=95);
+  std::string imagePNG(int width, int height, int depth);
 
   void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);

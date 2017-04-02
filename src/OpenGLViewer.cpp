@@ -487,7 +487,7 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
 {
   assert(isopen);
 
-  outputON(w, h,channels);
+  outputON(w, h, channels);
   image = pixels(image, channels, flip);
   outputOFF();
 
@@ -509,7 +509,7 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
-    retImg = getImageString(image, outwidth, outheight, channels, jpeg);
+    retImg = getImageUrlString(image, outwidth, outheight, channels, jpeg);
   else
     retImg = writeImage(image, outwidth, outheight, path, channels);
 

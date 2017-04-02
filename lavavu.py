@@ -759,7 +759,12 @@ class Viewer(object):
         except Exception,e:
             print "Video output error: " + str(e)
             pass
-        
+
+    def imageBytes(self, width=640, height=480, channels=3):
+        img = numpy.zeros(shape=(width,height,channels), dtype=numpy.uint8)
+        self.imageBuffer(img)
+        return img
+
     def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
         results = []
         if not imagelist:
