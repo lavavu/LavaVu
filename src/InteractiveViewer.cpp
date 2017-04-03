@@ -1861,7 +1861,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Export object data\n\n"
               "**Usage:** export [format] [object]\n\n"
-              "format (string) : json/csv/db (left blank: compressed db)\n"
+              "format (string) : json/csv/db/dbz (default: dbz = compressed db)\n"
               "object (integer/string) : the index or name of the object to export (see: \"list objects\")\n"
               "object_name (string) : the name of the object to export (see: \"list objects\")\n"
               "If object ommitted all will be exported\n";
@@ -1875,15 +1875,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (list.size() == 0)
     {
       //Only export all if no other spec provided
-      exportData(type);
-      printMessage("Dumped all objects to %s", what.c_str());
+      std::string fn = exportData(type);
+      printMessage("Dumped all objects to %s", fn.c_str());
     }
     else
     {
       for (unsigned int c=0; c<list.size(); c++)
       {
-        exportData(type, list[c]);
-        printMessage("Dumped object %s to %s", list[c]->name().c_str(), what.c_str());
+        std::string fn = exportData(type, list[c]);
+        printMessage("Dumped object %s to %s", list[c]->name().c_str(), fn.c_str());
       }
     }
   }

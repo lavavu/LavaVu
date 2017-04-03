@@ -546,20 +546,34 @@ void LavaVu::clearData(bool objects)
   aobject = NULL;
 }
 
-void LavaVu::exportData(lucExportType type, DrawingObject* obj)
+std::string LavaVu::exportData(lucExportType type, DrawingObject* obj)
 {
   //Export data
   viewer->display();
   if (type == lucExportJSON)
-    jsonWriteFile(obj);
+  {
+    return jsonWriteFile(obj);
+  }
   else if (type == lucExportJSONP)
-    jsonWriteFile(obj, true);
+  {
+    return jsonWriteFile(obj, true);
+  }
   else if (type == lucExportGLDB)
+  {
     amodel->writeDatabase("exported.gldb", obj);
+    return "exported.gldb";
+  }
   else if (type == lucExportGLDBZ)
+  {
     amodel->writeDatabase("exported.gldb", obj, true);
+    return "exported.gldb";
+  }
   else if (type == lucExportCSV)
+  {
     dumpCSV(obj);
+    return "CSV files";
+  }
+  return "";
 }
 
 //Property containers now using json

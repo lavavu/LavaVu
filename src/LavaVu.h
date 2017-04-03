@@ -127,7 +127,7 @@ public:
   void run(std::vector<std::string> args={});
   void clearData(bool objects=false);
 
-  void exportData(lucExportType type, DrawingObject* obj=NULL);
+  std::string exportData(lucExportType type, DrawingObject* obj=NULL);
 
   void parseProperties(std::string& properties);
   void parseProperty(std::string& data);

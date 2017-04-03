@@ -55,26 +55,36 @@ bool Database::open(bool write)
 {
   //Single file database
   char path[FILE_PATH_MAX];
-  int flags = write ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
+  int flags = SQLITE_OPEN_READONLY;
+  if (write)
+  {
+    flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE;
+    readonly = false;
+  }
+
   strcpy(path, file.full.c_str());
   if (strstr(path, "file:")) 
   {
     flags = flags | SQLITE_OPEN_URI;
     memory = true;
   }
-  if (strstr(path, "mode=memory")) memory = true;
+
+  if (strstr(path, "mode=memory"))
+    memory = true;
+
   debug_print("Opening db %s with flags %d\n", path, flags);
-  if (sqlite3_open_v2(path, &db, flags, NULL))
+
+  int ret = sqlite3_open_v2(path, &db, flags, NULL);
+  if (ret != SQLITE_OK)
   {
     debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(db));
     return false;
   }
-  // success
+
+  // Success
   debug_print("Open database %s successful, SQLite version %s\n", path, sqlite3_libversion());
   //rc = sqlite3_busy_handler(db, busy_handler, void*);
   sqlite3_busy_timeout(db, 10000); //10 seconds
-
-  if (write) readonly = false;
 
   return true;
 }
@@ -1435,7 +1445,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     outdb = Database(FilePath(path));
     if (!outdb.open(true))
     {
-      debug_print("Can't open database %s: %s\n", path, sqlite3_errmsg(outdb.db));
+      printf("Database write failed '%s': %s\n", path, sqlite3_errmsg(outdb.db));
       return;
     }
   }
@@ -1482,15 +1492,14 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   if (timesteps.size() == 0)
   {
     //Create a default timestep
-    if (!outdb.issue("insert into timestep (id, time) values (0, 0) WHERE NOT EXISTS (SELECT 1 FROM timestep WHERE id = 0);")) return;
+    outdb.issue("insert into timestep (id, time) values (0, 0);");
     writeObjects(outdb, obj, 0, compress);
   }
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
-    if (!outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s') WHERE NOT EXISTS (SELECT 1 FROM timestep WHERE id = %d);", 
-          timesteps[i]->step, timesteps[i]->time, "", timesteps[i]->step))
-      return;
+    outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s');", 
+                timesteps[i]->step, timesteps[i]->time, "", timesteps[i]->step);
 
     //Get data at this timestep
     setTimeStep(i);
