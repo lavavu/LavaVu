@@ -1972,7 +1972,9 @@ void Model::jsonRead(std::string data)
       addColourMap();
 
     //Replace properties with imported
-    json cmap = colourMaps[i]->properties.data = cmaps[i];
+    colourMaps[i]->properties.data = cmaps[i];
+    colourMaps[i]->properties.checkall();
+    json cmap = colourMaps[i]->properties.data;
 
     json colours = cmap["colours"];
     if (cmap["name"].is_string()) colourMaps[i]->name = cmap["name"];
