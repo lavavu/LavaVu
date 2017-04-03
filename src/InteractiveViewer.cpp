@@ -2006,7 +2006,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    clearData(parsed["clear"] == "objects");
+    clearAll(parsed["clear"] == "objects");
   }
   else if (parsed.exists("reload"))
   {

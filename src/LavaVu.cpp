@@ -533,11 +533,11 @@ void LavaVu::run(std::vector<std::string> args)
   }
 }
 
-void LavaVu::clearData(bool objects)
+void LavaVu::clearAll(bool objects)
 {
-  //Clear data
+  //Clear all data
   if (amodel) amodel->clearObjects(true);
-  //Delete objects? only works for active view/model
+  //Delete all objects? only works for active view/model
   if (objects)
   {
     if (aview) aview->objects.clear();

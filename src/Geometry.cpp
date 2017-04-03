@@ -391,6 +391,7 @@ void Geometry::clear(bool all)
 
 void Geometry::remove(DrawingObject* draw)
 {
+  //Same as clear but for specific drawing object
   reload = true;
   for (int i = geom.size()-1; i>=0; i--)
   {
@@ -411,6 +412,13 @@ void Geometry::clearValues(DrawingObject* draw, std::string label)
   {
     if (draw == g->draw)
     {
+      if (label == "labels")
+      {
+        //Also used to clear labels
+        g->labels.clear();
+        continue;
+      }
+
       for (int i=0; i<g->values.size(); i++)
       for (auto vals : g->values)
         if (label.length() == 0 || vals->label == label)

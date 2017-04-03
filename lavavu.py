@@ -197,7 +197,7 @@ class Obj(object):
         self._loadVector(data, LavaVuPython.lucVectorData)
 
     def values(self, data, label="default"):
-        if not isinstance(data, numpy.ndarray):
+        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.float32:
             data = numpy.asarray(data, dtype=numpy.float32)
         self.instance.app.arrayFloat(self.ref, data.ravel(), label)
 
@@ -274,13 +274,17 @@ class Obj(object):
     def clear(self):
         self.instance.app.clearObject(self.ref)
 
-    def clearvals(self, label=""):
-        self.instance.app.clearValues(self.ref, label)
-
-    def cleardata(self, dtype):
-        if isinstance(dtype, str):
-            dtype = datatypes[dtype]
-        self.instance.app.clearData(self.ref, dtype)
+    def cleardata(self, typename=""):
+        if not isinstance(typename, str):
+            print "Requires type name or label string"
+            return
+        if typename in datatypes:
+            #Found data type name
+            dtype = datatypes[typename]
+            self.instance.app.clearData(self.ref, dtype)
+        else:
+            #Assume values by label (or all values if blank)
+            self.instance.app.clearValues(self.ref, typename)
 
     def update(self, geomname=None, compress=True):
         #Update object data at current timestep

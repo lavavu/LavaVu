@@ -125,7 +125,7 @@ public:
   virtual void arguments(std::vector<std::string> args);
   //Execute function
   void run(std::vector<std::string> args={});
-  void clearData(bool objects=false);
+  void clearAll(bool objects=false);
 
   std::string exportData(lucExportType type, DrawingObject* obj=NULL);
 
@@ -246,6 +246,7 @@ public:
   void clearObject(DrawingObject* target);
   void clearValues(DrawingObject* target, std::string label="");
   void clearData(DrawingObject* target, lucGeometryDataType type);
+
   //Numpy interface
   void arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData);
   void arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
