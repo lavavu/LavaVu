@@ -223,7 +223,7 @@ public:
   //Python interface functions
   void render();
   void init();
-  std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
+  std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0);
   std::string web(bool tofile=false);
   int colourMap(std::string name, std::string colours="", std::string properties="");
   DrawingObject* colourBar(DrawingObject* obj);

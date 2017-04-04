@@ -89,7 +89,7 @@ public:
   bool parseCommands(std::string cmd);
   void render();
   void init();
-  std::string image(std::string filename="", int width=0, int height=0, bool frame=false);
+  std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0);
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();

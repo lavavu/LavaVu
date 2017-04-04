@@ -275,9 +275,6 @@ class Obj(object):
         self.instance.app.clearObject(self.ref)
 
     def cleardata(self, typename=""):
-        if not isinstance(typename, str):
-            print "Requires type name or label string"
-            return
         if typename in datatypes:
             #Found data type name
             dtype = datatypes[typename]
@@ -678,7 +675,7 @@ class Viewer(object):
         #self._set() #Sync state first?
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
-        return self.app.image("", resolution[0], resolution[1], True);
+        return self.app.image("", resolution[0], resolution[1], 85);
 
     def display(self, resolution=(640,480)):
         """        

@@ -2819,16 +2819,14 @@ void LavaVu::init()
   viewer->init();
 }
 
-std::string LavaVu::image(std::string filename, int width, int height, bool frame)
+std::string LavaVu::image(std::string filename, int width, int height, int jpegquality)
 {
   if (!amodel || !viewer->isopen) return "";
   //Set width/height override
   viewer->outwidth = width;
   viewer->outheight = height;
-  //Always jpeg encode to string for frame output
-  if (frame) return viewer->image("", true);
   //Otherwise write image to file or return as string (base64 data url)
-  return viewer->image(filename);
+  return viewer->image(filename, jpegquality);
 }
 
 std::string LavaVu::web(bool tofile)

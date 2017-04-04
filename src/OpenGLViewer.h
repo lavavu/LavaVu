@@ -161,7 +161,7 @@ public:
   void outputOFF();
   GLubyte* pixels(GLubyte* image, int channels=3, bool flip=false);
   GLubyte* pixels(GLubyte* image, int& w, int& h, int channels=3, bool flip=false);
-  std::string image(const std::string& path="", bool jpeg=false);
+  std::string image(const std::string& path="", int jpegquality=0);
 
   float scale2d() {return pow(2, fbo.downsample-1);}
   void downSample(int q) { fbo.downsample = q < 1 ? 1 : q; }

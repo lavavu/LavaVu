@@ -13844,14 +13844,14 @@ SWIGINTERN PyObject *_wrap_LavaVu_image__SWIG_0(PyObject *SWIGUNUSEDPARM(self), 
   std::string arg2 ;
   int arg3 ;
   int arg4 ;
-  bool arg5 ;
+  int arg5 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int val3 ;
   int ecode3 = 0 ;
   int val4 ;
   int ecode4 = 0 ;
-  bool val5 ;
+  int val5 ;
   int ecode5 = 0 ;
   std::string result;
   
@@ -13880,11 +13880,11 @@ SWIGINTERN PyObject *_wrap_LavaVu_image__SWIG_0(PyObject *SWIGUNUSEDPARM(self), 
     SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "LavaVu_image" "', argument " "4"" of type '" "int""'");
   } 
   arg4 = static_cast< int >(val4);
-  ecode5 = SWIG_AsVal_bool(swig_obj[4], &val5);
+  ecode5 = SWIG_AsVal_int(swig_obj[4], &val5);
   if (!SWIG_IsOK(ecode5)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "LavaVu_image" "', argument " "5"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "LavaVu_image" "', argument " "5"" of type '" "int""'");
   } 
-  arg5 = static_cast< bool >(val5);
+  arg5 = static_cast< int >(val5);
   {
     try {
       result = (arg1)->image(arg2,arg3,arg4,arg5);
@@ -14088,7 +14088,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_image(PyObject *self, PyObject *args) {
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_image'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    LavaVu::image(std::string,int,int,bool)\n"
+    "    LavaVu::image(std::string,int,int,int)\n"
     "    LavaVu::image(std::string,int,int)\n"
     "    LavaVu::image(std::string,int)\n"
     "    LavaVu::image(std::string)\n"

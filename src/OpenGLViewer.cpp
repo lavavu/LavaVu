@@ -494,12 +494,12 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
   return image;
 }
 
-std::string OpenGLViewer::image(const std::string& path, bool jpeg)
+std::string OpenGLViewer::image(const std::string& path, int jpegquality)
 {
   assert(isopen);
   FilePath filepath(path);
-  if (filepath.type == "jpeg" || filepath.type == "jpg") jpeg = true;
-  bool alphapng = !jpeg && app->drawstate.global("pngalpha");
+  if (filepath.type == "jpeg" || filepath.type == "jpg") jpegquality = 95;
+  bool alphapng = !jpegquality && app->drawstate.global("pngalpha");
   int channels = 3;
   if (alphapng) channels = 4;
   std::string retImg;
@@ -509,7 +509,7 @@ std::string OpenGLViewer::image(const std::string& path, bool jpeg)
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
-    retImg = getImageUrlString(image, outwidth, outheight, channels, jpeg);
+    retImg = getImageUrlString(image, outwidth, outheight, channels, jpegquality);
   else
     retImg = writeImage(image, outwidth, outheight, path, channels);
 
