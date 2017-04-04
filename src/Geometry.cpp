@@ -873,8 +873,10 @@ void Geometry::labels()
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
         float shift = drawstate.fonts.printWidth("XX")*FONT_SCALE_3D/view->scale[1]; //Vertical shift
-        char alignchar = labstr.at(0);
-        char alignchar2 = labstr.at(1);
+        char alignchar = ' ';
+        char alignchar2 = ' ';
+        if (labstr.length() > 1) alignchar = labstr.at(0);
+        if (labstr.length() > 2) alignchar2 = labstr.at(1);
         //Left/right/centre
         int align = -1;
         if (alignchar == '!') align = 1;
