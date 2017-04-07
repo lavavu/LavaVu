@@ -164,6 +164,7 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 #Python interface
 SWIGSRC = LavaVuPython_wrap.cxx
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
+NUMPYINC = $(shell python -c 'import numpy; print numpy.get_include()')
 
 .PHONY: swig
 swig : $(INC) LavaVuPython.i | paths
@@ -173,7 +174,7 @@ $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC)
-	$(CPP) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ)
+	$(CPP) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
