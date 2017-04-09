@@ -1371,7 +1371,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
           case lucZLengthData:
           case lucSizeData:
           case lucMaxDataType:
-            if (strlen(data_label) > 0)
+            if (data_label && strlen(data_label) > 0)
               //Use provided label from units field
               g = active->read(obj, items, data, data_label);
             else //Use default/legacy label
