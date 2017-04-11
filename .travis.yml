@@ -8,16 +8,16 @@ os:
   - linux
 #  - osx
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi; echo $CC
-  - sudo apt-get update -qq
-  - sudo apt-get install -y gcc-4.8 g++-4.8
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi; echo $CC
+#  - sudo apt-get update -qq
+#  - sudo apt-get install -y gcc-4.8 g++-4.8
 addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - gcc-4.8
-    - g++-4.8
+    - gcc-4.9
+    - g++-4.9
 script:
   #- mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make
   - make
