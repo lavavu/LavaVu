@@ -12,8 +12,8 @@ OPATH ?= tmp
 HTMLPATH = $(PREFIX)/html
 
 #Compilers
-CPP=g++
-CC=gcc
+CPP?=g++
+CC?=gcc
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
