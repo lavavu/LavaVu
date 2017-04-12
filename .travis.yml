@@ -1,12 +1,12 @@
 language: cpp
-compiler: 
-  - gcc
-  - clang
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+    - os: osx
+      compiler: clang   
 before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
-os:
-  - linux
-  - osx
 install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CPP="g++-4.9"; CC="gcc-4.9"; echo $CPP;echo $CC ; fi
 addons:
