@@ -5,6 +5,8 @@ matrix:
       compiler: gcc
     - os: osx
       compiler: clang   
+    - os: osx
+      compiler: gcc 
 before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
 install:
@@ -19,3 +21,5 @@ addons:
     - python-numpy
 script:
   - make
+after_script:
+  - ls -la ./bin
