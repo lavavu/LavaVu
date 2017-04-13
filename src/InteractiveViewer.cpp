@@ -3171,6 +3171,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       json filter;
       std::string action = "filter";
+      filter["out"] = false;
       if (parsed.exists("filterout"))
       {
         action = "filterout";
