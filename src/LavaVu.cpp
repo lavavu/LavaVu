@@ -982,11 +982,11 @@ void LavaVu::createDemoVolume()
     Properties::toFloatArray(drawstate.global("volmax"), volmax, 3);
     Properties::toFloatArray(drawstate.global("volres"), volres, 3);
     Properties::toFloatArray(drawstate.global("inscale"), inscale, 3);
-    vobj = new DrawingObject(drawstate, "volume", "density=50\n");
+    vobj = new DrawingObject(drawstate, "volume", "density=50\nsamples=1024\n");
     addObject(vobj);
 
     //Demo colourmap, depth 
-    vobj->properties.data["colourmap"] = colourMap("volume", "#3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
+    vobj->properties.data["colourmap"] = colourMap("volume", "#000000:0 #ff0000 #ff8800 #ffff77 #00ffff #3333ff");
     //Add colour bar display
     colourBar(vobj);
 
@@ -1033,7 +1033,10 @@ void LavaVu::createDemoVolume()
       if (z > 0) amodel->volumes->add(vobj);
       amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
       if (verbose) std::cerr << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
-      //Demo colour values - depth
+      //Demo colour values - depth, these aren't used for volume render but can be used to plot an isosurface
+      float colourval = z/(float)depth;
+      for (unsigned int c=0; c<width*height; c++)
+        amodel->volumes->read(vobj, 1, &colourval, "depth");
     }
     free(imageData);
   }

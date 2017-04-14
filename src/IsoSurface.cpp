@@ -104,9 +104,7 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
 
     //Save colour values reference
     //TODO: specify colour field label vs surface field
-    //All this does is sample the isosurface field if it uses colourVals
-    // which is always the same colour per isovalue anyway
-    colourVals = NULL; //geom[i]->colourData();
+    colourVals = geom[i]->colourData();
     if (colourVals && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
       colourVals = NULL;
 

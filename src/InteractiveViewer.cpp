@@ -91,7 +91,7 @@ Hold [shift] and use the scroll wheel to move the clip plane in and out.  \n\
 [v] [ENTER]  hide/show all vector arrow fields\n\
 [t] [ENTER]  hide/show all tracer trajectories\n\
 [q] [ENTER]  hide/show all quad surfaces (scalar fields, cross sections etc.)\n\
-[u] [ENTER]  hide/show all triangle surfaces (isosurfaces)\n\
+[u] [ENTER]  hide/show all triangle surfaces\n\
 [s] [ENTER]  hide/show all shapes\n\
 [l] [ENTER]  hide/show all lines\n\
 [ESC][ENTER] quit program\n\
