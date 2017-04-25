@@ -135,27 +135,40 @@ json& Properties::operator[](const std::string& key)
 //Functions to get values with provided defaults
 Colour Properties::getColour(const std::string& key, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha)
 {
+  if (data.count(key))
+    return Colour(data[key], red, green, blue, alpha);
+  else if (globals.count(key))
+    return Colour(globals[key], red, green, blue, alpha);
+
   Colour colour = {red, green, blue, alpha};
-  if (data.count(key) == 0) return colour;
-  return Colour(data[key], red, green, blue, alpha);
+  return colour;
 }
 
 float Properties::getFloat(const std::string& key, float def)
 {
-  if (data.count(key) == 0) return def;
-  return data[key];
+  if (data.count(key))
+    return data[key];
+  else if (globals.count(key))
+    return globals[key];
+  return def;
 }
 
 int Properties::getInt(const std::string& key, int def)
 {
-  if (data.count(key) == 0) return def;
-  return data[key];
+  if (data.count(key))
+    return data[key];
+  else if (globals.count(key))
+    return globals[key];
+  return def;
 }
 
 bool Properties::getBool(const std::string& key, bool def)
 {
-  if (data.count(key) == 0) return def;
-  return data[key];
+  if (data.count(key))
+    return data[key];
+  else if (globals.count(key))
+    return globals[key];
+  return def;
 }
 
 //Parse multi-line string
