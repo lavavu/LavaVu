@@ -454,14 +454,6 @@ void Volumes::render(int i)
   bool rotatable = props["rotatable"]; //Object rotation by view flag
   if (!rotatable) view->apply(false);
 
-  //Object rotation/translation
-  if (props.has("translate"))
-  {
-    float trans[3];
-    Properties::toFloatArray(props["translate"], trans, 3);
-    glTranslatef(trans[0], trans[1], trans[2]);
-  }
-
   if (props.has("rotate"))
   {
     float rot[4];
@@ -470,8 +462,18 @@ void Volumes::render(int i)
     qrot.apply();
   }
   else if (rotatable)
+  {
     //Rotating this object with view rotation
     view->apply(false);
+  }
+
+  //Object rotation/translation
+  if (props.has("translate"))
+  {
+    float trans[3];
+    Properties::toFloatArray(props["translate"], trans, 3);
+    glTranslatef(trans[0], trans[1], trans[2]);
+  }
 
   //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
   glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
