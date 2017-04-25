@@ -725,7 +725,7 @@ class Viewer(object):
                 text_file.write(self.web());
                 text_file.close()
                 from IPython.display import IFrame
-                display(IFrame("html/index.html#" + filename, width=resolution[0], height=resolution[1]))
+                display(IFrame("html/viewer.html#" + filename, width=resolution[0], height=resolution[1]))
         except NameError, ImportError:
             self.app.web(True)
         except Exception,e:
