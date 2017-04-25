@@ -553,10 +553,9 @@ void View::apply(bool use_fp)
   GL_Error_Check;
 
   // Apply scaling factors
-  // also switch coordinate system if applicable
-  if (orientation < 0.0 || scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
+  if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
   {
-    glScalef(scale[0], scale[1], scale[2] * orientation);
+    glScalef(scale[0], scale[1], scale[2]);
     // Enable automatic rescaling of normal vectors when scaling is turned on
     //glEnable(GL_RESCALE_NORMAL);
     glEnable(GL_NORMALIZE);
@@ -573,11 +572,16 @@ void View::apply(bool use_fp)
   if (use_fp && !drawstate.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
-  // Set default polygon front faces
+  // Switch coordinate system if applicable and set default polygon front faces
   if (orientation == RIGHT_HANDED)
+  {
     glFrontFace(GL_CCW);
+  }
   else
+  {
     glFrontFace(GL_CW);
+    glScalef(1.0, 1.0, -1.0);
+  }
   GL_Error_Check;
 }
 
