@@ -212,6 +212,10 @@ void Points::loadList()
   for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count, s++)
   {
     if (!drawable(s)) continue;
+
+    //Calibrate colourMap - required to re-cache filter settings (TODO: split filter reload into another function?)
+    geom[s]->colourCalibrate();
+
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
       if (geom[s]->filter(i)) continue;
