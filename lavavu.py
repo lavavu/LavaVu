@@ -965,3 +965,41 @@ class GeomData(object):
 
 
 
+def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
+    """
+    Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
+
+    Implemented from FORTRAN 77 code from D.A. Green, 2011, BASI, 39, 289.
+    "A colour scheme for the display of astronomical intensity images"
+    http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
+
+    samples: number of colour samples to produce
+    start: start colour [0,3] 1=red,2=green,3=blue
+    rot: rotations through spectrum, negative to reverse direction
+    sat: colour saturation grayscale to full [0,1], >1 to oversaturate
+    gamma: gamma correction [0,1]
+    alpha: set true for transparent to opaque alpha
+
+    """
+
+    colours = []
+
+    for i in range(0,samples+1):
+        fract = i / float(samples)
+        angle = 2.0 * math.pi * (start / 3.0 + 1.0 + rot * fract)
+        amp = sat * fract * (1 - fract)
+        fract = pow(fract, gamma)
+
+        r = fract + amp * (-0.14861 * math.cos(angle) + 1.78277 * math.sin(angle))
+        g = fract + amp * (-0.29227 * math.cos(angle) - 0.90649 * math.sin(angle))
+        b = fract + amp * (+1.97294 * math.cos(angle))
+                
+        r = max(min(r, 1.0), 0.0)
+        g = max(min(g, 1.0), 0.0)
+        b = max(min(b, 1.0), 0.0)
+        a = fract if alpha else 1.0
+
+        colours.append((fract, 'rgba(%d,%d,%d,%d)' % (r*0xff, g*0xff, b*0xff, a*0xff)))
+
+    return colours
+
