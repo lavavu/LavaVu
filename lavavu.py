@@ -840,6 +840,13 @@ class Viewer(object):
         else:
             control.redisplay(self.winid)
 
+    def camera(self):
+        self._get()
+        me = getVariableName(self)
+        print me + ".translation(" + str(self.state["views"][0]["translate"])[1:-2] + ")"
+        print me + ".rotation(" + str(self.state["views"][0]["rotate"])[1:-2] + ")"
+        #Also print in terminal for debugging
+        self.commands("camera")
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
@@ -1002,4 +1009,15 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
         colours.append((fract, 'rgba(%d,%d,%d,%d)' % (r*0xff, g*0xff, b*0xff, a*0xff)))
 
     return colours
+
+def getVariableName(var):
+    """
+    Attempt to find the name of a variable from the main module namespace
+    """
+    import __main__ as main_mod
+    for name in dir(main_mod):
+        val = getattr(main_mod, name)
+        if val is var:
+            return name
+    return None
 
