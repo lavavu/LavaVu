@@ -661,6 +661,9 @@ bool LavaVu::parseCommands(std::string cmd)
     return true;
   }
 
+  //Replace semi-colon with newlines (multiple commands on single line)
+  std::replace(cmd.begin(), cmd.end(), ';', '\n');
+
   std::string line;
   std::stringstream ss(cmd);
   while(std::getline(ss, line))

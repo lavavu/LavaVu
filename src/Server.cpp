@@ -263,8 +263,6 @@ int Server::request(struct mg_connection *conn)
   else if (strstr(request_info->uri, "command=") != NULL)
   {
     std::string data = request_info->uri+1;
-    //Replace semi-colon with newlines, multiple line commands
-    std::replace(data.begin(), data.end(), ';', '\n');
     const size_t equals = data.find('=');
     const size_t amp = data.find('&');
     //Push command onto queue to be processed in the viewer thread
