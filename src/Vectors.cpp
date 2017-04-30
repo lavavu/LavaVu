@@ -58,7 +58,12 @@ void Vectors::close()
 
 void Vectors::update()
 {
-  if (!reload && drawstate.global("gpucache")) return;
+  if (!reload && drawstate.global("gpucache")) 
+  {
+    tris->update();
+    lines->update();
+    return;
+  }
   //Convert vectors to triangles
   clock_t t1,tt;
   tt=clock();
