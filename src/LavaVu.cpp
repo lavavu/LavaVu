@@ -2952,19 +2952,17 @@ DrawingObject* LavaVu::getObject(const std::string& name)
 
 DrawingObject* LavaVu::getObject(int id)
 {
+  if (!amodel) return NULL;
   if (id > 0 && id <= (int)amodel->objects.size())
     return amodel->objects[id-1];
   return NULL;
 }
 
-void LavaVu::selectObject(const std::string& name)
+void LavaVu::reloadObject(DrawingObject* target)
 {
-  aobject = getObject(name);
-}
-
-void LavaVu::selectObject(int id)
-{
-  aobject = getObject(id);
+  //Reload data on specific object only
+  if (!amodel || !target) return;
+  amodel->reload(target);
 }
 
 void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split)
@@ -2998,18 +2996,21 @@ void LavaVu::label(DrawingObject* target, std::vector <std::string> labels)
 
 void LavaVu::clearObject(DrawingObject* target)
 {
+  if (!amodel || !target) return;
   for (unsigned int i=0; i < amodel->geometry.size(); i++)
     amodel->geometry[i]->remove(target);
 }
 
 void LavaVu::clearValues(DrawingObject* target, std::string label)
 {
+  if (!amodel || !target) return;
   for (unsigned int i=0; i < amodel->geometry.size(); i++)
     amodel->geometry[i]->clearValues(target, label);
 }
 
 void LavaVu::clearData(DrawingObject* target, lucGeometryDataType type)
 {
+  if (!amodel || !target) return;
   for (unsigned int i=0; i < amodel->geometry.size(); i++)
     amodel->geometry[i]->clearData(target, type);
 }

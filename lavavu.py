@@ -243,16 +243,17 @@ class Obj(object):
         #Load colourmap and set property on this object
         cmap = self.instance.colourmap(self.name() + '-default', data, **kwargs)
         self["colourmap"] = cmap
+        self.instance.app.reloadObject(self.ref)
         return cmap
 
     def select(self):
-        self.instance.selectObject(self.name())
+        self.instance.app.aobject = self.ref
     
     def file(self, *args, **kwargs):
         #Load file with this object selected (import)
         self.select()
         self.instance.file(*args, name=self.name(), **kwargs)
-        self.instance.selectObject()
+        self.instance.app.aobject = None
 
     def colourbar(self, name=None, **kwargs):
         #Create a new colourbar for this object

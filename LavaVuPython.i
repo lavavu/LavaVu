@@ -106,8 +106,7 @@ public:
   DrawingObject* createObject(std::string properties);
   DrawingObject* getObject(const std::string& name);
   DrawingObject* getObject(int id=-1);
-  void selectObject(const std::string& name);
-  void selectObject(int id=-1);
+  void reloadObject(DrawingObject* target);
 
   void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
   void loadColours(DrawingObject* target, std::vector <std::string> list);
