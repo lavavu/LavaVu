@@ -2589,12 +2589,6 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
   if (models.size() == 0) defaultModel();
   if (model_idx == model && at_timestep >= 0 && at_timestep == drawstate.now) return false; //No change
-  if (at_timestep >= 0)
-  {
-    //Cache selected step, then force new timestep set when model changes
-    amodel->cacheStep();
-  }
-
   if (model_idx >= (int)models.size()) return false;
 
   //Save active model as selected

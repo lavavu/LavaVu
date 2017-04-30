@@ -152,14 +152,15 @@ public:
   void freeze();
 
   //Timestep caching
-  bool useCache();
-  void deleteCache();
   void cacheLoad();
+private:
+  bool useCache();
   void cacheStep();
   bool restoreStep();
   void clearStep();
   void printCache();
 
+public:
   int step()
   {
     //Current actual step

@@ -974,13 +974,6 @@ bool Model::useCache()
   return drawstate.global("cache");
 }
 
-void Model::deleteCache()
-{
-  if (!useCache()) return;
-  debug_print("~~~ Cache emptied\n");
-  //cache.clear();
-}
-
 void Model::cacheLoad()
 {
   for (unsigned int i=0; i<timesteps.size(); i++)
@@ -1011,6 +1004,7 @@ void Model::cacheStep()
     debug_print("~~~ Cached step, at: %d\n", step());
     printf(".");
     fflush(stdout);
+    //Objects have been moved into cache, clear from active list
     geometry.clear();
   }
   else
