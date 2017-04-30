@@ -2638,15 +2638,13 @@ std::string LavaVu::video(std::string filename, int fps, int width, int height, 
   if (height > 0) viewer->outheight = height;
   if (end <= 0) end = amodel->lastStep();
   debug_print("VIDEO: w %d h %d fps %d, %d --> %d\n", width, height, fps, start, end);
-  if (filename.length() == 0) 
-    filename = drawstate.counterFilename() + ".mp4";
-  encodeVideo(filename, fps);
+  filename = encodeVideo(filename, fps);
   writeSteps(false, start, end);
   encodeVideo(); //Write final step and stop encoding
   return filename;
 }
 
-void LavaVu::encodeVideo(std::string filename, int fps)
+std::string LavaVu::encodeVideo(std::string filename, int fps)
 {
   //TODO: - make VideoEncoder use OutputInterface
   //      - make image frame output a default video output
@@ -2656,10 +2654,14 @@ void LavaVu::encodeVideo(std::string filename, int fps)
   {
     if (filename.length() == 0) 
       filename = drawstate.counterFilename() + ".mp4";
+    FilePath fp(filename);
+    if (fp.ext.length() == 0) 
+      filename += ".mp4"; //Default to mp4
     int w = viewer->outwidth;
     int h = viewer->outheight;
     viewer->outputON(w, h, 3);
     encoder = new VideoEncoder(filename.c_str(), w, h, fps);
+    return filename;
   }
   else
   {
@@ -2667,11 +2669,11 @@ void LavaVu::encodeVideo(std::string filename, int fps)
     delete encoder;
     encoder = NULL;
     viewer->outputOFF();
-    return;
   }
 #else
   std::cout << "Video output disabled, libavcodec not found!" << std::endl;
 #endif
+  return "";
 }
 
 void LavaVu::writeSteps(bool images, int start, int end)

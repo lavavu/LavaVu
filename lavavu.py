@@ -753,7 +753,10 @@ class Viewer(object):
                 </video><br>
                 <a href="---FN---">Download Video</a> 
                 """
-                html = html.replace('---FN---', fn)
+                #Get a UUID based on host ID and current time
+                import uuid
+                uid = uuid.uuid1()
+                html = html.replace('---FN---', fn + "?" + str(uid))
                 display(HTML(html))
         except NameError, ImportError:
             self.app.web(True)
