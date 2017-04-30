@@ -129,6 +129,8 @@ private:
   bool  auto_stereo;         // Auto-adjust focal-len & eye-separation?
   float focal_length_adj;    // User adjust to focal length
 
+  float near, far;
+
 public:
   std::vector<DrawingObject*> objects;     // Contains these objects
   float fov;                 // Field of view

@@ -45,6 +45,9 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   scene_shift = 0.0;      //Stereo projection shift
   rotated = rotating = sort = false;
 
+  near = nearc;
+  far = farc;
+
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
   height = 0;             //Viewport height
@@ -86,10 +89,6 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   //Gets current value (either global or default)
   for (auto key : viewprops)
     properties.data[key] = drawstate.global(key);
-
-  //Clip planes
-  properties.data["near"] = nearc;
-  properties.data["far"] = farc;
 }
 
 View::~View()
@@ -140,14 +139,14 @@ bool View::init(bool force, float* newmin, float* newmax)
   if (model_size == 0 || !ISFINITE(model_size)) return false;
 
   //Check and calculate near/far clip planes
-  float near_clip = properties["near"];
-  float far_clip = properties["far"];
-  checkClip(near_clip, far_clip);
+  near = properties["near"];
+  far = properties["far"];
+  checkClip(near, far);
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
-  debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s\n",
-              model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"));
+  debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s CLIP %f : %d\n",
+              model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"), near, far);
 
   //Auto-cam etc should only be processed once... and only when viewport size has been set
   if ((force || !initialised) && width > 0 && height > 0)
@@ -191,7 +190,7 @@ void View::checkClip(float& near_clip, float& far_clip)
       aspectRatio = width / (float)height;
     if (near_clip == 0)
       near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
-     //near_clip = model_size / 5.0;
+    //near_clip = model_size / 5.0;
     if (far_clip == 0)
       far_clip = model_size * 20.0;
     debug_print("Auto-corrected clip planes: near %f far %f.\n", near_clip, far_clip);
@@ -199,10 +198,6 @@ void View::checkClip(float& near_clip, float& far_clip)
   }
 
   if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
-
-  //Update properties
-  properties.data["near"] = near_clip;
-  properties.data["far"] = far_clip;
 }
 
 void View::getMinMaxDistance(float* mindist, float* maxdist)
@@ -358,13 +353,11 @@ std::string View::zoom(float factor)
 
 std::string View::zoomClip(float factor)
 {
-  float near_clip = properties["near"];
-  float far_clip = properties["far"];
-  near_clip += factor * model_size;
-  checkClip(near_clip, far_clip);
+  near += factor * model_size;
+  checkClip(near, far);
   //Returns command to set in history
   std::ostringstream ss;
-  ss << "nearclip " << near_clip;
+  ss << "nearclip " << near;
   return ss.str();
 }
 
@@ -388,7 +381,7 @@ void View::print()
   rotation->toEuler(xrot, yrot, zrot);
   printf("------------------------------\n");
   printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
-  printf("Clip planes: near %f far %f\n", (float)properties["near"], (float)properties["far"]);
+  printf("Clip planes: near %f far %f\n", near, far);
   printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n",
          model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -454,7 +447,7 @@ void View::projection(int eye)
   float left, right, top, bottom;
   float eye_separation, frustum_shift;
 
-  //Ensure clip planes valid
+  //Ensure clip planes valid, calculate if not provided in properties
   float near_clip = properties["near"];
   float far_clip = properties["far"];
   checkClip(near_clip, far_clip);
