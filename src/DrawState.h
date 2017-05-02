@@ -364,6 +364,8 @@ public:
     defaults["far"] = 0.0;
     // | view | integer | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed
     defaults["coordsystem"] = 1;
+    // | view | boolean | Enable to follow the model bounding box centre with camera as it changes
+    defaults["follow"] = false;
 
     //Global Properties
     // | global | string | Title of window for caption area

@@ -121,9 +121,12 @@ bool View::init(bool force, float* newmin, float* newmax)
     //Invalid bounds! Skip
     if (!ISFINITE(newmin[i]) || !ISFINITE(newmax[i])) return false;
 
-    //If bounds changed, reset focal point to default
-    //(causes jitter when switching timesteps - do we really want this?)
-    if (min[i] != newmin[i] || max[i] != newmax[i]) focal_point[i] = default_focus[i];
+    if (properties["follow"])
+    {
+      //If bounds changed, reset focal point to default
+      //(causes jitter when switching timesteps as camera follows default focal point)
+      if (min[i] != newmin[i] || max[i] != newmax[i]) focal_point[i] = default_focus[i];
+    }
 
     min[i] = newmin[i];
     max[i] = newmax[i];
@@ -145,7 +148,7 @@ bool View::init(bool force, float* newmin, float* newmax)
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
-  debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s CLIP %f : %d\n",
+  debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s CLIP %f : %f\n",
               model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"), near, far);
 
   //Auto-cam etc should only be processed once... and only when viewport size has been set
@@ -343,7 +346,7 @@ void View::setScale(float x, float y, float z, bool replace)
 std::string View::zoom(float factor)
 {
   float adj = factor * model_size;
-  if (abs(model_trans[2]) < model_size) adj *= 0.1;
+  if (fabs(model_trans[2]) < model_size) adj *= 0.1;
   model_trans[2] += adj;
   if (model_trans[2] > model_size*0.3) model_trans[2] = model_size*0.3;
   std::ostringstream ss;
