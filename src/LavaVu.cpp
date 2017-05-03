@@ -1277,7 +1277,7 @@ void LavaVu::readOBJ(const FilePath& fn)
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string err;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), NULL);
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), fn.path.c_str());
   if (!err.empty())
   {
     std::cerr << "Error loading OBJ file: " << fn.full << " - " << err << std::endl;
