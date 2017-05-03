@@ -48,6 +48,10 @@
 
 #define MAX_MSG 256
 
+#define RESET_NO   0
+#define RESET_YES  1
+#define RESET_ZOOM 2
+
 typedef enum
 {
   lucExportNone,

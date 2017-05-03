@@ -135,7 +135,7 @@ void LavaVu::defaults()
   border = new QuadSurfaces(drawstate);
 
   initfigure = 0;
-  viewset = 0;
+  viewset = RESET_NO;
   view = -1;
   model = -1;
   aview = NULL;
@@ -600,7 +600,7 @@ void LavaVu::parseProperty(std::string& data)
   {
     aview->properties.parse(data);
     if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
-    viewset = 2; //Force check for resize and autozoom
+    viewset = RESET_ZOOM; //Force check for resize and autozoom
   }
   else
   {
@@ -608,7 +608,8 @@ void LavaVu::parseProperty(std::string& data)
     Properties temp(drawstate.globals, drawstate.defaults);
     temp.parse(data, true);
     if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << drawstate.globals << std::endl;
-    viewset = 2; //Force check for resize and autozoom
+    //TODO: do this only for certain properties
+    //viewset = RESET_ZOOM; //Force check for resize and autozoom
   }
 }
 
@@ -1615,7 +1616,7 @@ void LavaVu::close()
 //Called when model loaded/changed, updates all views settings
 void LavaVu::resetViews(bool autozoom)
 {
-  viewset = 0;
+  viewset = RESET_NO;
 
   //Setup view(s) for new model dimensions
   int curview = view;
@@ -1792,7 +1793,7 @@ void LavaVu::display(bool redraw)
       }
     }
     //Update the viewports
-    resetViews(viewset == 2);
+    resetViews(viewset == RESET_ZOOM);
   }
 
   //Always redraw the active view, others only if flag set
@@ -2511,8 +2512,6 @@ bool LavaVu::loadFile(const std::string& file)
       viewer->postdisplay = true;
     }
 
-    //Reselect the active view after loading any model data (resets model bounds)
-    viewSelect(view, true, true);
     return true;
   }
 
@@ -2565,8 +2564,8 @@ bool LavaVu::loadFile(const std::string& file)
     //Unknown type
     return false;
 
-  //Reselect the active view after loading any model data (resets model bounds)
-  viewSelect(view, true, true);
+  //Reselect the active view after loading any model data
+  viewset = RESET_ZOOM; //View will be reset and autozoomed on next display call
 
   return true;
 }
@@ -2627,7 +2626,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
     viewer->setsize(res[0], res[1]);
 
   //Flag a view update
-  viewset = autozoom ? 2 : 1;
+  viewset = autozoom ? RESET_ZOOM : RESET_YES;
 
   return true;
 }

@@ -910,7 +910,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
       aview->properties.data["resolution"] = json::array({w, h});
-      viewset = 2; //Force check for resize and autozoom
+      viewset = RESET_ZOOM; //Force check for resize and autozoom
     }
   }
   else if (parsed.exists("quit") || parsed.exists("exit"))
@@ -1369,7 +1369,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     amodel->storeFigure();
     //Load new selection
     if (!amodel->loadFigure(ival)) return false; //Invalid
-    viewset = 2; //Force check for resize and autozoom
+    viewset = RESET_ZOOM; //Force check for resize and autozoom
     printMessage("Load figure %d", amodel->figure);
   }
   else if (parsed.exists("view"))
