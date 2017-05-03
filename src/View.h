@@ -150,6 +150,7 @@ public:
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
   void checkClip(float& near_clip, float& far_clip);
   void getMinMaxDistance(float* mindist, float* maxdist);
+  void autoRotate();
   std::string rotateString();
   std::string translateString();
   void getCamera(float rotate[4], float translate[3], float focus[3]);
@@ -158,12 +159,11 @@ public:
   void translate(float x, float y, float z);
   void setTranslation(float x, float y, float z);
   void setRotation(float x, float y, float z, float w);
+  Quaternion getRotation() {return *rotation;}
   void rotate(float degrees, Vec3d axis);
   void rotate(float degreesX, float degreesY, float degreesZ);
-  void applyRotation()
-  {
-    rotation->apply();
-  }
+  void applyRotation() {rotation->apply();}
+
   void setScale(float x, float y, float z, bool replace=true);
   std::string zoom(float factor);
   std::string zoomClip(float factor);

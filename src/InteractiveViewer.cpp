@@ -1074,6 +1074,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->rotate(0, 0, fval);
     aview->rotated = true;  //Flag rotation finished
   }
+  else if (parsed.exists("autorotate"))
+  {
+    if (gethelp)
+    {
+      help += "Auto-Rotate model to face camera if flat in X or Y dimensions\n\n";
+      return false;
+    }
+
+    aview->autoRotate();
+    aview->rotated = true;  //Flag rotation finished
+  }
   else if (parsed.has(fval, "zoom"))
   {
     if (gethelp)
@@ -3301,7 +3312,7 @@ void LavaVu::helpCommand(std::string cmd)
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
     {"file", "script", "figure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
-    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
+    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "autorotate",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
     {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",

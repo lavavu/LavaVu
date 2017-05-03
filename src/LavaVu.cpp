@@ -1725,6 +1725,9 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     int zstep = aview->properties["zoomstep"];
     if (autozoom && zstep > 0 && amodel->step() % zstep == 0)
       aview->zoomToFit();
+
+    //Apply auto rotate once all commands processed
+    parseCommand("autorotate");
   }
   else
   {

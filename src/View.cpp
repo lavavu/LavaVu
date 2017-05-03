@@ -229,6 +229,16 @@ void View::getMinMaxDistance(float* mindist, float* maxdist)
   //printf("DISTANCE MIN %f MAX %f\n", *mindist, *maxdist);
 }
 
+void View::autoRotate()
+{
+  //If model is 2d plane on X or Y axis, rotate to face camera
+  bool unrotated = (rotation->x == 0.0 && rotation->y == 0.0 && rotation->z == 0.0);
+  if (unrotated && drawstate.min[0] == drawstate.max[0])
+    rotate(0, 90, 0);
+  if (unrotated && drawstate.min[1] == drawstate.max[1])
+    rotate(-90, 0, 0);
+}
+
 std::string View::rotateString()
 {
   //Convert rotation to command string...
