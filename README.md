@@ -2,11 +2,13 @@
 
 A scientific visualisation tool with a python interface for rapid development.
 
-The acronym stands for: **L**ightweight, **A**utomatable  **V**isualisation & **A**nalysis **V**iewing **U**tility, but the name is also a reference to its roots as a viewer for geophysical simulations (hence "lava"). It's also a unique enough name you can find the repository with a simple google search.
+LavaVu development is supported by the [Monash Immersive Visualisation Plaform](http://monash.edu.au/mivp) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
 
-The project sprang out of the gLucifer framework (https://underworldproject.org/hg/gLucifer) for visualising geodynamics simulations when the OpenGL visualisation module was separated from the simulation and sampling libraries. It has become a more general purpose tool in recent years. GLucifer itself continues as a sampling tool for Underworld simulations, LavaVu provides the rendering library for creating 2d and 3d visualisations to view the sampled data, inline within interactive IPython notebooks and offline through saved visualisation databases and images/movies.
+The acronym stands for: **L**ightweight, **A**utomatable  **V**isualisation & **A**nalysis **V**iewing **U**tility, but the name is also a reference to its primary application as a viewer for geophysical simulations (hence "lava"). It's also a unique enough name you can find the repository with a simple google search.
 
-In short, it's a scriptable 3D visualisation tool capable of producing publication quality high res images and 4D movie output from time varying data sets as well as HTML5 3D visualisations in WebGL.
+The project sprang out of the gLucifer<sup>1</sup> framework for visualising geodynamics simulations when the OpenGL visualisation module was separated from the simulation and sampling libraries, but is now a more general purpose visualisation tool. gLucifer continues to provide sampling tools for Underworld simulations as part of the [Underworld2](https://github.com/underworldcode/underworld2/), LavaVu provides the rendering library for creating 2d and 3d visualisations to view this sampled data, inline within interactive IPython notebooks and offline through saved visualisation databases and images/movies.
+
+As a standalone tool it is a scriptable 3D visualisation tool capable of producing publication quality high res images and 4D movie output from time varying data sets as well as HTML5 3D visualisations in WebGL.
 Rendering features include correctly and efficiently rendering large numbers of opaque and transparent points and surfaces and volume rendering by GPU ray-marching. There are also features for drawing vector fields and tracers (streamlines).
 
 A native data format called GLDB is used to store and visualisations in a compact single file, using SQLite for storage and fast loading. A small number of other data formats are supported for import (OBJ surfaces, TIFF stacks etc). 
@@ -57,3 +59,6 @@ For further documentation / examples, see the Wiki
 
 TODO: 
 * License, include/update documentation
+
+---
+<sup>1</sup> Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, *gLucifer: Next Generation Visualization Framework for High performance computational geodynamics*, 2008, Visual Geosciences
