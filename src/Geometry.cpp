@@ -107,6 +107,13 @@ void GeomData::colourCalibrate()
       omap->calibrate(valueData(draw->opacityIdx));
   }
 
+  //TODO: Set a colour lookup function pointer here
+  // - calculate number of colour lookups required
+  // - determine source of colour data
+  // - set a colour lookup function pointer to do the
+  //   required lookup at high efficiency
+  // - use this fn ptr to to the lookups by vert index in drawing code
+
   //Cache the filter data
   //The cache stores filter values so we can avoid 
   //hitting the json store for every vertex (very slow)
@@ -212,7 +219,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
   //Set opacity using own value map...
   ColourMap* omap = draw->opacityMap;
   vals = valueData(draw->opacityIdx);
-  if (omap && vals->size() > draw->opacityIdx)
+  if (omap && vals && vals->size() > draw->opacityIdx)
   {
     Colour cc = omap->getfast(valueData(draw->opacityIdx, idx));
     colour.a = cc.a;
@@ -346,6 +353,7 @@ Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
+  drawcount = 0;
 }
 
 Geometry::~Geometry()

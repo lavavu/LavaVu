@@ -591,7 +591,6 @@ void Model::loadViewCamera(int viewport_id)
     v->setScale(scale[0], scale[1], scale[2]);
     v->properties.parseSet(std::string(vprops));
     v->properties["coordsystem"] = orientation;
-    //debug_print("Loaded \"%s\" at %f,%f\n");
   }
   sqlite3_finalize(statement);
 }
@@ -649,6 +648,7 @@ void Model::loadLinks()
     int viewport_id = sqlite3_column_int(statement, 0);
     int object_id = sqlite3_column_int(statement, 1);
     unsigned int colourmap_id = sqlite3_column_int(statement, 3); //Linked colourmap id
+    int data_type = sqlite3_column_int(statement, 4); //Colour/Opacity/R/G/B etc (legacy)
 
     //Fields from object_colourmap
     if (!colourmap_id)
@@ -681,8 +681,11 @@ void Model::loadLinks()
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
       //Find colourmap by id == index
-      //Add colourmap to drawing object
-      draw->properties.data["colourmap"] = colourmap_id-1;
+      //Add colourmap to drawing object Colour & Opacity still suported, R/G/B are not
+      if (data_type == lucColourValueData)
+        draw->properties.data["colourmap"] = colourmap_id-1;
+      if (data_type == lucOpacityValueData)
+        draw->properties.data["opacitymap"] = colourmap_id-1;
     }
   }
   sqlite3_finalize(statement);

@@ -725,6 +725,7 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
     GLubyte* ptr = data;
     int slicesize = width * height;
     json volss = drawstate.global("volsubsample");
+    //TODO: average samples instead of discarding
     int ss = volss[2];
     char path[FILE_PATH_MAX];
     for (int slice=0; slice<depth; slice++)
@@ -1652,6 +1653,7 @@ void LavaVu::resetViews(bool autozoom)
 void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 {
   //Set a default viewport/camera if none
+  assert(amodel->views.size());
   if (idx < 0) idx = 0;
   view = idx;
   if (view < 0) view = amodel->views.size() - 1;

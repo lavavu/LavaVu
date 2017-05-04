@@ -275,11 +275,11 @@ public:
     // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
     defaults["scaleshapes"] = 1.0;
     // | object(shape) | integer [0,n] | Index of data set to apply to shape widths
-    defaults["widthby"] = 1;
+    defaults["widthby"] = "widths";
     // | object(shape) | integer [0,n] | Index of data set to apply to shape heights
-    defaults["heightby"] = 2;
+    defaults["heightby"] = "heights";
     // | object(shape) | integer [0,n] | Index of data set to apply to shape lengths
-    defaults["lengthby"] = 3;
+    defaults["lengthby"] = "lengths";
 
     // | colourbar | boolean | Indicates object is a colourbar
     defaults["colourbar"] = false;
