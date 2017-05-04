@@ -132,7 +132,7 @@ void Points::loadVertices()
 
 //////////////////////////////////////////////////
   t1 = clock();
-  //debug_print("Reloading %d particles...(size %f)\n", (int)ceil(total / (float)subSample), scale);
+  //debug_print("Reloading %d particles...(size %f)\n", total);
 
   //Get eye distances and copy all particles into sorting array
   for (unsigned int s = 0; s < geom.size(); s++)
@@ -145,6 +145,7 @@ void Points::loadVertices()
     Properties& props = geom[s]->draw->properties;
     float psize0 = props["pointsize"];
     float scaling = props["scaling"];
+    //printf("psize %f scaling %f\n", psize0, scaling);
     psize0 *= scaling;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
     bool attribs = drawstate.global("pointattribs");

@@ -2033,9 +2033,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    DrawingObject* obj = aobject;
-    if (!obj)
-      obj = lookupObject(parsed, "reload");
+    DrawingObject* obj = lookupObject(parsed, "reload");
 
     //Restore original data
     if (amodel->database)
