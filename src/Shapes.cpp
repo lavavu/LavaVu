@@ -82,6 +82,8 @@ void Shapes::update()
     dims[1] = props["shapeheight"];
     dims[2] = props["shapelength"];
     int shape = props["shape"];
+    //Disable vertex normals for cuboids...
+    props.data["vertexnormals"] = (shape != 1);
     int quality = 4 * props.getInt("glyphs", 3);
     //Points drawn as shapes?
     if (!geom[i]->draw->properties.has("shape"))
