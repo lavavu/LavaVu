@@ -43,6 +43,7 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
   //Generate an isosurface from a set of volume slices or a cube
   clock_t t1,t2,tt;
   tt = t1 = clock();
+  if (geom.size() == 0) return;
 
   std::map<DrawingObject*, int> slices;
   slices.clear();
@@ -98,9 +99,9 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
     Vec3d start = Vec3d(geom[i]->vertices[0]);
     Vec3d end = Vec3d(geom[i]->vertices[1]);
     Vec3d inc = end-start;
-    inc[0] = inc[0] / nx;
-    inc[1] = inc[1] / ny;
-    inc[2] = inc[2] / nz;
+    inc[0] = inc[0] / (nx-1);
+    inc[1] = inc[1] / (ny-1);
+    inc[2] = inc[2] / (nz-1);
 
     //Save colour values reference
     //TODO: specify colour field label vs surface field
