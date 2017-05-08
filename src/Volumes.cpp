@@ -379,13 +379,13 @@ void Volumes::render(int i)
                     props.getFloat("ymax", 0.99) * geom[i]->vertices[1][1]),
                     props.getFloat("zmax", 0.99) * geom[i]->vertices[1][2])};
   */
-  float bbMin[3] = {props.getFloat("xmin", 0.01),
-                    props.getFloat("ymin", 0.01),
-                    props.getFloat("zmin", 0.01)
+  float bbMin[3] = {props.getFloat("xmin", 0.),
+                    props.getFloat("ymin", 0.),
+                    props.getFloat("zmin", 0.)
                    };
-  float bbMax[3] = {props.getFloat("xmax", 0.99),
-                    props.getFloat("ymax", 0.99),
-                    props.getFloat("zmax", 0.99)
+  float bbMax[3] = {props.getFloat("xmax", 1.),
+                    props.getFloat("ymax", 1.),
+                    props.getFloat("zmax", 1.)
                    };
 
   glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
