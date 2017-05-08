@@ -269,7 +269,9 @@ class Panel(object):
 
     def show(self):
         if not htmlpath: return
-        viewerid = len(windows)
+        viewerid = len(windows)-1 #Default to the most recently added interactor instance
+        if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
+        if self.showwin: viewerid = len(windows) #Use the soon to be added viewer window
         #Add control wrapper with the viewer id as a custom attribute
         html = '<div data-id="' + str(viewerid) + '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
         html += self.html() + '</div>\n'
@@ -306,8 +308,9 @@ class Control(object):
 
         #Get value from target if not provided
         if value == None and property != None:
-          if target and property in target:
-            value = target[property]
+            if target and property in target:
+                #TODO: query function that gets the value used even if prop not set
+                value = target[property]
         self.value = value
 
     def onchange(self):
