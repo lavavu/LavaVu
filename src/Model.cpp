@@ -1433,6 +1433,21 @@ void Model::mergeDatabases()
   }
 }
 
+void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compress)
+{
+  database.reopen(true); //Ensure opened writable
+  database.issue("BEGIN EXCLUSIVE TRANSACTION");
+  if (type == lucMaxType)
+    writeObjects(database, target, step(), compress);
+  else
+    writeGeometry(database, type, target, step(), compress);
+
+  //Update object
+  database.issue("update object set properties = '%s' where name = '%s')", target->properties.data.dump().c_str(), target->name().c_str());
+
+  database.issue("COMMIT");
+}
+
 void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 {
   //Write objects to a new database?

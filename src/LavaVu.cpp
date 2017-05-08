@@ -3194,21 +3194,14 @@ void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clear
 void LavaVu::update(DrawingObject* target, bool compress)
 {
   //Re-write the database geometry at current step for specified object - all types
-  if (!amodel || !target) return;
-  amodel->database.reopen(true); //Ensure opened writable
-  amodel->database.issue("BEGIN EXCLUSIVE TRANSACTION");
-  amodel->writeObjects(amodel->database, target, amodel->step(), compress);
-  amodel->database.issue("COMMIT");
+  update(target, lucMaxType, compress);
 }
 
 void LavaVu::update(DrawingObject* target, lucGeometryType type, bool compress)
 {
   //Re-write the database geometry at current step for specified object - specified type only
   if (!amodel || !target) return;
-  amodel->database.reopen(true); //Ensure opened writable
-  amodel->database.issue("BEGIN EXCLUSIVE TRANSACTION");
-  amodel->writeGeometry(amodel->database, type, target, amodel->step(), compress);
-  amodel->database.issue("COMMIT");
+  amodel->updateObject(target, type, compress);
 }
 
 std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int channels)

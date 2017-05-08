@@ -189,6 +189,7 @@ public:
   int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
   void mergeDatabases();
+  void updateObject(DrawingObject* target, lucGeometryType type, bool compress=true);
   void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);
   void writeState();
   void writeState(Database& outdb);
