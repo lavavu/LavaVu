@@ -439,7 +439,6 @@ void TriSurfaces::loadBuffers()
   if (!p) abort_program("VBO setup failed");
 
   //Buffer data for all vertices
-  float vshift = view->properties["shift"];
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     t1=tt=clock();
@@ -459,8 +458,9 @@ void TriSurfaces::loadBuffers()
     bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
     debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
     float zero[3] = {0,0,0};
-    float shift = vshift * 0.0001 * index * view->model_size;
-    if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip built in objects
+    float shift = geom[index]->draw->properties["shift"];
+    if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
+    shift *= 0.0001 * view->model_size;
     std::array<float,3> shiftvert;
     for (unsigned int v=0; v < geom[index]->count; v++)
     {
@@ -475,7 +475,7 @@ void TriSurfaces::loadBuffers()
         //Shift vertices
         shiftvert = {vert[0] + shift, vert[1] + shift, vert[2] + shift};
         vert = shiftvert.data();
-        //if (v%1000==0) printf("SHIFTING %d (%d) by %f (%d)\n", geom[index]->draw->dbid, index, shift, vshift);
+        if (v==0) debug_print("Shifting vertices %s (%d) by %f\n", geom[index]->draw->name().c_str(), index, shift);
       }
 
       //Write vertex data to vbo
