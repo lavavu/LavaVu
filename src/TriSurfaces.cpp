@@ -93,6 +93,7 @@ void TriSurfaces::update()
 
   //Get triangle count
   unsigned int lastcount = total;
+  total = 0;
   int drawelements = 0;
   for (unsigned int t = 0; t < geom.size(); t++)
   {
@@ -517,7 +518,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   // if less colour values provided, must precalc own indices to skip this step 
   unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours >= geom[index]->vertices.size()/3);
-  if (hasColours && !vertColour) std::cout << "WARNING: Not enough colour values for per-vertex normalisation!\n";
+  if (hasColours && !vertColour) debug_print("WARNING: Not enough colour values for per-vertex normalisation! %d < %d\n", hasColours, geom[index]->vertices.size()/3);
   bool normal = geom[index]->draw->properties["vertexnormals"];
   //Calculate face normals for each triangle and copy to each face vertex
   for (unsigned int v=0; v<verts.size()-2 && verts.size() > 2; v += 3)
@@ -808,6 +809,12 @@ void TriSurfaces::render()
     debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
     return;
   }
+  if (tricount > total)
+  {
+    //Will overflow tidx buffer
+    fprintf(stderr, "Too many triangles! %d > %d\n", tricount, total);
+    tricount = total;
+  }
 
   t1 = clock();
 
@@ -837,9 +844,8 @@ void TriSurfaces::render()
   if (!p) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
   idxcount = 0;
-  assert(tricount <= total); //Or will overflow tidx buffer
   for(int i=tricount-1; i>=0; i--)
-    //for(int i=0; i<tricount; i++)
+  //for(int i=0; i<tricount; i++)
   {
     idxcount += 3;
     assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
