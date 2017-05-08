@@ -1443,7 +1443,7 @@ void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compr
     writeGeometry(database, type, target, step(), compress);
 
   //Update object
-  database.issue("update object set properties = '%s' where name = '%s')", target->properties.data.dump().c_str(), target->name().c_str());
+  database.issue("update object set properties = '%s' where name = '%s'", target->properties.data.dump().c_str(), target->name().c_str());
 
   database.issue("COMMIT");
 }
