@@ -35,6 +35,9 @@
 
 #include "Geometry.h"
 
+//Triangle centroid for depth sorting
+#define centroid(v1,v2,v3) {centroids.emplace_back((v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, (v1[2]+v2[2]+v3[2])/3);}
+
 TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(drawstate)
 {
   type = lucTriangleType;
@@ -337,6 +340,7 @@ void TriSurfaces::loadMesh()
 
 void TriSurfaces::loadList()
 {
+  assert(view);
   clock_t t1,t2,tt;
   tt=clock();
 
@@ -502,29 +506,6 @@ void TriSurfaces::loadBuffers()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   debug_print("  Total %.4lf seconds to update triangle buffers\n", (t2-tt)/(double)CLOCKS_PER_SEC);
-}
-
-//#define MAX3(a,b,c) ( a>b ? (a>c ? a : c) : (b>c ? b : c) )
-void TriSurfaces::centroid(float* v1, float* v2, float* v3)
-{
-  //Triangle centroid for depth sorting
-  int idx = centroids.size();
-  assert(idx+1 <= centroids.capacity()); //Resizing vector will invalid pointers, assert size is sufficient
-
-  //Use actual centroid
-  centroids.emplace_back((v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, view->is3d ? (v1[2]+v2[2]+v3[2])/3 : 0.0f);
-
-  //Max values in each axis instead of centroid TODO: allow switching sort vertex calc type
-  //float centroid[3] = {MAX3(v1[0], v2[0], v3[0]), MAX3(v1[1], v2[1], v3[1]), MAX3(v1[2], v2[2], v3[2])};
-  //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);
-
-  //Limit to defined bounding box
-  //Possibly should store calculated bounding box separately for geometry outside border
-  for (int i=0; i<3; i++)
-  {
-    centroids[idx][i] = max(centroids[idx][i], view->min[i]);
-    centroids[idx][i] = min(centroids[idx][i], view->max[i]);
-  }
 }
 
 void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)
@@ -758,7 +739,8 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
 //Depth sort the triangles before drawing, called whenever the viewing angle has changed
 void TriSurfaces::depthSort()
 {
-  if (tricount == 0 || elements == 0) return;
+  //Skip if nothing to render or in 2d
+  if (tricount == 0 || elements == 0 || !view->is3d) return;
   clock_t t1,t2;
   t1 = clock();
   assert(tidx);
@@ -779,8 +761,8 @@ void TriSurfaces::depthSort()
     {
       assert(tidx[i].vertex);
       fdistance = eyeDistance(view->modelView, tidx[i].vertex);
+      fdistance = min(maxdist, max(mindist, fdistance)); //Clamp to range
       tidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
-      assert(tidx[i].distance >= 0 && tidx[i].distance <= USHRT_MAX);
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);
       //Reverse as radix sort is ascending and we want to draw by distance descending
       //tidx[i].distance = USHRT_MAX - (unsigned short)(multiplier * (fdistance - mindist));
