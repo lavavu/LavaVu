@@ -222,7 +222,8 @@ class Obj(object):
             self.colours(data)
 
     def indices(self, data):
-        if not isinstance(data, numpy.ndarray):
+        #Accepts only uint32 indices
+        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint32:
             data = numpy.asarray(data, dtype=numpy.uint32)
         self._loadScalar(data, LavaVuPython.lucIndexData)
 
