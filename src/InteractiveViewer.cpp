@@ -710,6 +710,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       return false;
   }
+  //std::cout << "CMD: " << cmd << std::endl;
 
   //Parse the line
   parsed.parseLine(cmd);
@@ -2073,6 +2074,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     DrawingObject* obj = aobject;
     int next = 0;
     //Select by id, or active as fallback
+    ival = 0;
     if (!obj || parsed.has(ival, "colourmap"))
     {
       obj = lookupObject(parsed, "colourmap");
