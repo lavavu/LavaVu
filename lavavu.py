@@ -316,6 +316,29 @@ class Obj(object):
             #Re-writes data to db for this object and geom type
             self.instance.app.update(self.ref, geomtypes[geomname], compress)
 
+    def getcolourmap(self, array=False):
+        #Return colourmap as a string/array that can be passed to re-create the map
+        cmid = self["colourmap"]
+        arr = []
+        if cmid < 0: return [] if array else ''
+
+        cmaps = self.instance.state["colourmaps"]
+        cm = cmaps[cmid]
+        if array:
+            arrstr = '['
+            import re
+            for c in cm["colours"]:
+                comp = re.findall(r"[\d\.]+", c["colour"])
+                comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
+                arrstr += "(%6.4f, %s),\n" % (c["position"], str(comp))
+            return arrstr[0:-2] + ']\n'
+        else:
+            cmstr = '"""\n'
+            for c in cm["colours"]:
+                cmstr += "%6.4f=%s\n" % (c["position"],c["colour"])
+            cmstr += '"""\n'
+            return cmstr
+
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         #Generate and return an isosurface object, 
         #pass properties as kwargs (eg: isovalues=[])
@@ -548,7 +571,6 @@ class Viewer(object):
         #__getattr__ called if no attrib/method found
         def any_method(*args, **kwargs):
             #If member function exists on LavaVu, call it
-            has = hasattr(self.app, key)
             method = getattr(self.app, key, None)
             if method and callable(method):
                 return method(*args, **kwargs)
@@ -866,10 +888,14 @@ class Viewer(object):
     def camera(self):
         self._get()
         me = getVariableName(self)
-        print me + ".translation(" + str(self.state["views"][0]["translate"])[1:-2] + ")"
-        print me + ".rotation(" + str(self.state["views"][0]["rotate"])[1:-2] + ")"
+        print me + ".translation(" + str(self.state["views"][0]["translate"])[1:-1] + ")"
+        print me + ".rotation(" + str(self.state["views"][0]["rotate"])[1:-1] + ")"
         #Also print in terminal for debugging
         self.commands("camera")
+
+    def view(self):
+        self._get()
+        return self.state["views"][0]
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
@@ -957,10 +983,10 @@ class GeomData(object):
         if typename in datatypes:
             if typename in ["luminance", "rgb"]:
                 #Get uint8 data
-                array = self.instance.app.geometryArrayViewUInt8(self.data, datatypes[typename])
+                array = self.instance.app.geometryArrayViewUChar(self.data, datatypes[typename])
             elif typename in ["indices", "colours"]:
                 #Get uint32 data
-                array = self.instance.app.geometryArrayViewUInt32(self.data, datatypes[typename])
+                array = self.instance.app.geometryArrayViewUInt(self.data, datatypes[typename])
             else:
                 #Get float32 data
                 array = self.instance.app.geometryArrayViewFloat(self.data, datatypes[typename])
