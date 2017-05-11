@@ -112,6 +112,9 @@ class Obj(object):
         self.dict = idict
         self.instance = instance
 
+        #Create a control factory
+        self.control = control.ControlFactory(self)
+
     def name(self):
         return str(self.dict["name"])
 
@@ -416,6 +419,10 @@ class Viewer(object):
             if not os.path.isdir(control.htmlpath):
                 control.htmlpath = None
                 print("Can't locate html dir, interactive view disabled")
+
+            #Create a control factory
+            self.control = control.ControlFactory(self)
+
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
             pass

@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import json
 output = ""
@@ -286,17 +287,11 @@ def action(id, value):
 
     return ""
 
-lastid = 0
-def uniqueid():
-    global lastid
-    lastid += 1
-    return str(lastid)
-
-class Panel(object):
-    def __init__(self, viewer, showwin=True):
+class Container(object):
+    #Parent class for container types
+    def __init__(self, viewer):
         self.viewer = viewer
         self.controls = []
-        self.showwin = showwin
 
     def add(self, ctrl):
         self.controls.append(ctrl)
@@ -307,13 +302,19 @@ class Panel(object):
             html += self.controls[i].controls()
         return html
 
+class Panel(Container):
+    def __init__(self, viewer, showwin=True):
+        super(Panel, self).__init__(viewer)
+        self.showwin = showwin
+
     def show(self):
         if not htmlpath: return
         viewerid = len(windows)-1 #Default to the most recently added interactor instance
         if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
         if self.showwin: viewerid = len(windows) #Use the soon to be added viewer window
         #Add control wrapper with the viewer id as a custom attribute
-        html = '<div data-id="' + str(viewerid) + '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
+        html = '<div data-id="' + str(viewerid)
+        html += '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
         html += self.html() + '</div>\n'
         if self.showwin:
             window(self.viewer, html, "right")
@@ -321,6 +322,8 @@ class Panel(object):
             render(html)
 
 class Control(object):
+    lastid = 0
+
     def __init__(self, target, property=None, command=None, value=None, label=None):
         self.label = label
 
@@ -352,6 +355,12 @@ class Control(object):
                 #TODO: query function that gets the value used even if prop not set
                 value = target[property]
         self.value = value
+
+    def uniqueid(self):
+        #Get a unique control identifier
+        Control.lastid += 1
+        self.elid = Control.lastid
+        return str(self.elid)
 
     def onchange(self):
         return "do_action(" + str(self.id) + ", this.value, this);"
@@ -386,18 +395,12 @@ class Control(object):
         return html
 
 class Number(Control):
-    def __init__(self, *args, **kwargs):
-        super(Number, self).__init__(*args, **kwargs)
-
     def controls(self):
         html = self.labelhtml()
         html += super(Number, self).controls()
         return html + '<br>\n'
 
 class Checkbox(Control):
-    def __init__(self, *args, **kwargs):
-        super(Checkbox, self).__init__(*args, **kwargs)
-
     def labelhtml(self):
         return '' #'<br>\n'
 
@@ -450,6 +453,12 @@ class Button(Control):
         html += '><br>\n'
         return html
 
+class Entry(Control):
+    def controls(self):
+        html = self.labelhtml()
+        html += '<input type="text" value="" onkeypress="if (event.keyCode == 13) { do_action(---ID---, this.value.trim(), this); };"><br>\n'
+        return html.replace('---ID---', str(self.id))
+
 class Command(Control):
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(command=" ", label="Command", *args, **kwargs)
@@ -461,6 +470,28 @@ class Command(Control):
         onkeypress="if (event.keyCode == 13) { var cmd=this.value.trim(); 
         do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
         """
+        return html.replace('---ID---', str(self.id))
+
+class List(Control):
+    def __init__(self, target, options=[], *args, **kwargs):
+        self.options = options
+        super(List, self).__init__(target, *args, **kwargs)
+
+    def controls(self):
+        html = self.labelhtml()
+        html += '<select id="select_---ELID---" value="" '
+        html += 'onchange="' + self.onchange() + '">\n'
+        for opt in self.options:
+            if isinstance(opt, dict):
+                selected = "selected" if opt.selected else ""
+                html += '<option value="' + str(opt["value"]) + '" ' + selected + '>' + opt["label"] + '</option>\n'
+            elif isinstance(opt, list):
+                selected = "selected" if len(opt) > 2 and opt[2] else ""
+                html += '<option value="' + str(opt[0]) + '" ' + selected + '>' + str(opt[1]) + '</option>\n'
+            else:
+                html += '<option>' + str(opt) + '</option>\n'
+        html += '</select><br>\n'
+        html = html.replace('---ELID---', self.uniqueid())
         return html.replace('---ID---', str(self.id))
 
 class Colour(Control):
@@ -493,18 +524,19 @@ class Colour(Control):
         </script>
         """
         html = html.replace('---VALUE---', str(self.value))
-        html = html.replace('---ELID---', uniqueid())
+        html = html.replace('---ELID---', self.uniqueid())
         return html.replace('---ID---', str(self.id))
 
-class ColourMap(Control):
+class ColourMap(List):
     def __init__(self, target, *args, **kwargs):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
-        maps = target.instance.state["colourmaps"]
-        if self.value != None and self.value < len(maps):
-            self.map = maps[self.value]
+        self.maps = target.instance.state["colourmaps"]
+        if self.value != None and self.value < len(self.maps):
+            self.map = self.maps[self.value]
         #Replace action on the control
         actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
+        self.selected = -1;
 
     def controls(self):
         html = self.labelhtml()
@@ -513,13 +545,17 @@ class ColourMap(Control):
         </canvas>
         <script>
         var el = document.getElementById("palette_---ELID---");
+        el.colourmaps = ---COLOURMAPS---;
+        el.selectedIndex = ---SELID---;
         if (!el.gradient) {
           //Create the gradient editor
           el.gradient = new GradientEditor(el, function(obj, id) {
               //Gradient updated
-              console.log("PALETTE: " + obj.palette);
-              //do_action(---ID---, obj.palette, el);
               do_action(---ID---, obj.palette.toString(), el);
+
+              //Update stored maps list
+              if (el.selectedIndex >= 0)
+                el.colourmaps[el.selectedIndex] = el.gradient.palette.get().colours;
             }
           , true); //Enable premultiply
           //Load the initial colourmap
@@ -527,9 +563,51 @@ class ColourMap(Control):
         }
         </script>
         """
+        mapstr = '['
+        for m in range(len(self.maps)):
+            mapstr += json.dumps(self.maps[m]["colours"])
+            if m < len(self.maps)-1: mapstr += ','
+        mapstr += ']'
+        html = html.replace('---COLOURMAPS---', mapstr)
         html = html.replace('---COLOURMAP---', json.dumps(self.map["colours"]))
-        html = html.replace('---ELID---', uniqueid())
+        html = html.replace('---SELID---', str(self.selected))
+        html = html.replace('---ELID---', self.uniqueid())
         return html.replace('---ID---', str(self.id))
+
+class ColourMaps(List):
+    def __init__(self, target, *args, **kwargs):
+        #Load maps list
+        self.maps = target.instance.state["colourmaps"]
+        options = [[-1, "None"]]
+        for m in range(len(self.maps)):
+            options.append([m, self.maps[m]["name"]])
+        #Mark selected
+        sel = target["colourmap"]
+        if sel is None: sel = -1
+        options[sel+1].append(True)
+
+        self.gradient = ColourMap(target)
+        self.gradient.selected = sel #gradient editor needs to know selection index
+        self.gradient.label = "" #Clear label
+
+        super(ColourMaps, self).__init__(target, options=options, command="reload", property="colourmap", *args, **kwargs)
+
+    def onchange(self):
+        #Find the saved palette entry and load it
+        script = """
+        var el = document.getElementById('palette_---PALLID---'); 
+        var sel = document.getElementById('select_---ELID---');
+        if (sel.selectedIndex > 0) {
+            el.gradient.read(el.colourmaps[sel.selectedIndex-1]);
+            el.selectedIndex = sel.selectedIndex-1;
+        }
+        """
+        return script + super(ColourMaps, self).onchange()
+
+    def controls(self):
+        html = super(ColourMaps, self).controls() + self.gradient.controls()
+        html = html.replace('---PALLID---', str(self.gradient.elid))
+        return html
 
 class TimeStepper(Range):
     def __init__(self, viewer, *args, **kwargs):
@@ -600,4 +678,64 @@ class ObjectList(Control):
         for ctrl in self.objctrls:
             html += ctrl.controls()
         return html
+
+class ControlFactory(object):
+    #Creates a control factory used to generate controls for a specified target
+    def __init__(self, target):
+        self._target = target
+        self.clear()
+
+        #Save types of all control/containers
+        def all_subclasses(cls):
+            return cls.__subclasses__() + [g for s in cls.__subclasses__() for g in all_subclasses(s)]
+        self._control_types = all_subclasses(Control)
+        self._container_types = all_subclasses(Container)
+        self._all_types = self._control_types + self._container_types
+
+    #Undefined methods call Control constructors if defined, passing saved target
+    def __getattr__(self, key):
+        #__getattr__ called if no attrib/method found
+        def any_method(*args, **kwargs):
+            #Find if class exists that extends Control or Container
+            current_module = sys.modules[__name__]
+            method = getattr(current_module, key)
+            if isinstance(method, type) and method in self._all_types:
+                #Return the new control and add it to the list
+                newctrl = method(self._target, *args, **kwargs)
+                self.add(newctrl)
+                return newctrl
+
+        return any_method
+
+    def add(self, ctrl):
+        if type(ctrl) in self._container_types:
+            #Save new container, further controls will be added to it
+            self._containers.append(ctrl)
+        elif len(self._containers):
+            #Add to existing container (last in list)
+            self._containers[-1].add(ctrl)
+        else:
+            #Add to global list
+            self._controls.append(ctrl)
+
+        #Add to viewer instance list too if target is Obj
+        if not hasattr(self._target, 'objects'):
+            self._target.instance.control.add(ctrl)
+
+    def show(self, interact=False):
+        #Show all controls and containers
+        for c in self._controls:
+            c.show()
+        for c in self._containers:
+            c.show()
+
+    def interact(self):
+        #Require an interactor, create a windowless one
+        interactor(self._target.instance)
+        #Show the controls
+        self.show()
+
+    def clear(self):
+        self._controls = []
+        self._containers = []
 
