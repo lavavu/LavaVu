@@ -28,18 +28,6 @@ except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
 
-#Function to enable the interactive control interface
-#Called on initial import, on subsequent imports must be called by user if required
-#(ie: in IPython, if re-running notebook without re-starting)
-enablecontrol = False
-def resetcontrols():
-    global enablecontrol
-    enablecontrol = True
-    #Reset initialised state
-    control.initialised = False
-
-resetcontrols()
-
 #Some preset colourmaps
 # aim to reduce banding artifacts by being either 
 # - isoluminant
@@ -424,17 +412,10 @@ class Viewer(object):
             self.setup(*args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
-            global enablecontrol
-            if enablecontrol:
-                control.htmlpath = os.path.join(binpath, "html")
-                if not os.path.isdir(control.htmlpath):
-                    control.htmlpath = None
-                    print("Can't locate html dir, interactive view disabled")
-                else:
-                    control.initialise()
-                #Copy control module ref so can be accessed from instance
-                #TODO: Just move control.py functions to Viewer class
-                self.control = control
+            control.htmlpath = os.path.join(binpath, "html")
+            if not os.path.isdir(control.htmlpath):
+                control.htmlpath = None
+                print("Can't locate html dir, interactive view disabled")
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
             pass

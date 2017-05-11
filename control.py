@@ -140,11 +140,42 @@ def render(html):
         export()
 
 def initialise():
+    if not htmlpath: return
     global initialised
-    if not htmlpath or initialised: return
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML,Javascript
+            """ Re-import check
+            This sneakily scans the IPython history for "import lavavu" in cell AFTER the one where
+            the control interface was last initialised, if it is found, assume we need to initialise again!
+            A false positive will add the init code again, which is harmless but bloats the notebook.
+            A false negative will cause the interactive viewer widget to not display the webgl bounding box,
+            as was the previous behaviour after a re-run without restart.
+            """
+            ip = get_ipython()
+            #Returns a list of executed cells and their content
+            history = list(ip.history_manager.get_range())
+            if initialised:
+                count = 0
+                found = False
+                #Loop through all the cells in history list
+                for cell in history:
+                    #Skip cells, until we pass the previous init cell
+                    count += 1
+                    if count <= initialised: continue;
+                    #Each cell is tuple, 3rd element contains line
+                    if "import lavavu" in cell[2]:
+                        #LavaVu has been re-imported, re-init
+                        found = True
+                        break
+
+                if not found:
+                    #Viewer was initialised in an earlier cell
+                    return
+
+            #Save cell # from history we insert initialisation code at
+            initialised = len(history)
+
             #Load stylesheet
             css = '<style>\n'
             fo = open(os.path.join(htmlpath, "control.css"), 'r')
@@ -162,26 +193,35 @@ def initialise():
             jslibs += '</script>\n'
 
             display(HTML(css + fragmentShader + vertexShader + jslibs))
-            initialised = True
     except NameError, ImportError:
         pass
 
 def window(viewer, html="", align="left"):
+    #Creates an interactor with a view window and webgl box control for rotation/translation
     if not htmlpath: return
-    viewerid = len(windows)
-
-    html += '<div style="min-height: 200px; min-width: 200px; background: #ccc; position: relative; float: ' + align + '; display: inline;" data-id="' + str(viewerid) + '">\n'
-    html += '<img id="imgtarget_' + str(viewerid) + '" draggable=false style="border: 1px solid #aaa;">\n'
+    html += '<div style="min-height: 200px; min-width: 200px; background: #ccc; position: relative; float: ' + align + '; display: inline;" data-id="---VIEWERID---">\n'
+    html += '<img id="imgtarget_---VIEWERID---" draggable=false style="border: 1px solid #aaa;">\n'
     html += '</div>\n'
+
+    return interactor(viewer, html)
+
+def interactor(viewer, html=""):
+    #Creates an interactor to connect javascript/html controls to IPython and viewer
+    #default is a windowless interactor
+    if not htmlpath: return
+    initialise() #Requires some additional js/css/webgl
+    viewerid = len(windows)
 
     #Append the viewer ref
     windows.append(viewer)
+
+    html = html.replace('---VIEWERID---', str(viewerid))
 
     try:
         if __IPYTHON__:
             #Create windowinteractor
             from IPython.display import display,HTML,Javascript
-            display(HTML(html))
+            if len(html): display(HTML(html))
             display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
     except NameError, ImportError:
         render(html)
