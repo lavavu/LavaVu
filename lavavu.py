@@ -1,4 +1,12 @@
-#LavaVu python interface: viewer utils & wrapper
+"""
+LavaVu python interface: viewer utils & wrapper
+
+NOTE: regarding sync of state between python and library
+- sync from python to lavavu is immediate,
+    property setting must always trigger a sync to python
+- sync from lavavu to python is lazy, always need to call _get()
+    before using state data
+"""
 import json
 import math
 import sys
@@ -76,6 +84,20 @@ datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "rgb":       LavaVuPython.lucRGBData,
              "values":    LavaVuPython.lucMaxDataType}
 
+def convert_keys(dictionary):
+    """Recursively converts dictionary keys
+       and unicode values to utf-8 strings."""
+    if isinstance(dictionary, list):
+        for i in range(len(dictionary)):
+            dictionary[i] = convert_keys(dictionary[i])
+        return dictionary
+    if not isinstance(dictionary, dict):
+        if isinstance(dictionary, unicode):
+            return dictionary.encode('utf-8')
+        return dictionary
+    return dict((k.encode('utf-8'), convert_keys(v)) 
+        for k, v in dictionary.items())
+
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj(object):
@@ -119,7 +141,7 @@ class Obj(object):
         return self.dict[key]
 
     def __setitem__(self, key, value):
-        self.instance._get() #Ensure in sync
+        #self.instance._get() #Ensure in sync
         #Set new value and send
         self.dict[key] = value
         self._set()
@@ -459,12 +481,12 @@ class Viewer(object):
     #dict methods
     def __getitem__(self, key):
         #Get view/global property
-        #self.state = json.loads(self.getState())
+        self._get()
         view = self.state["views"][0]
-        if key in self.state:
-            return self.state[key]
         if key in view:
             return view[key]
+        elif key in self.state:
+            return self.state[key]
         else:
             return self.state["properties"][key]
         return None
@@ -473,8 +495,8 @@ class Viewer(object):
         #Set view/global property
         #self.app.parseCommands("select") #Ensure no object selected
         #self.app.parseCommands(key + '=' + str(item))
-        #self._get()
-        self.state = json.loads(self.app.getState())
+        self._get()
+        #self.state = json.loads(self.app.getState())
         view = self.state["views"][0]
         if key in view:
             view[key] = item
@@ -490,13 +512,13 @@ class Viewer(object):
     def __str__(self):
         #View/global props to string
         self._get()
-        self.properties = self.state["properties"]
-        self.properties.update(self.state["views"][0])
-        return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in self.properties.iteritems()]))
+        properties = self.state["properties"]
+        properties.update(self.state["views"][0])
+        return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.iteritems()]))
 
     def _get(self):
         #Import state from lavavu
-        self.state = json.loads(self.app.getState())
+        self.state = convert_keys(json.loads(self.app.getState()))
         self.objects._sync()
 
     def _set(self):
@@ -674,7 +696,6 @@ class Viewer(object):
         return self.app.parseCommands("newstep")
 
     def frame(self, resolution=None):
-        #self._set() #Sync state first?
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], 85);
@@ -689,9 +710,6 @@ class Viewer(object):
         output routines to save the result with a default filename in the current directory
 
         """
-        #Sync state first
-        self._set()
-
         try:
             if __IPYTHON__:
                 from IPython.display import display,Image,HTML
