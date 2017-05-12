@@ -213,12 +213,12 @@ void Volumes::update()
       bool crop = false;
       for (int d=0; d<3; d++)
       {
-        if ((int)texsize[d] > 0 && (int)texsize[d] < dims[d]) 
+        if (texsize[d] > 0 && texsize[d] < dims[d]) 
         {
           dims[d] = texsize[d];
           crop = true;
         }
-        if ((int)texoffset[d] > 0) crop = true;
+        if (texoffset[d] > 0) crop = true;
         //Check within tex limits
         assert(dims[d] <= (unsigned)maxtex);
       }
@@ -546,18 +546,18 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       }
       iw = geom[i]->width * xtiles;
       ih = ceil(geom[i]->depth / (float)xtiles) * geom[i]->height;
-      if (ih == geom[i]->height) iw = geom[i]->width * geom[i]->depth;
+      if ((unsigned int)ih == geom[i]->height) iw = geom[i]->width * geom[i]->depth;
       int size = geom[i]->width * geom[i]->height;
       debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), geom[i]->width, geom[i]->height, geom[i]->depth, iw, ih);
       channels = bpv;
       image = new GLubyte[iw * ih * channels];
       memset(image, 0, iw*ih*sizeof(GLubyte));
-      int xoffset = 0, yoffset = 0;
+      unsigned int xoffset = 0, yoffset = 0;
       for (unsigned int z=0; z<geom[i]->depth; z++)
       {
-        for (int y=0; y<geom[i]->height; y++)
+        for (unsigned int y=0; y<geom[i]->height; y++)
         {
-          for (int x=0; x<geom[i]->width; x += 4/bpv)
+          for (unsigned int x=0; x<geom[i]->width; x += 4/bpv)
           {
             /*if (bpv == 1) //Byte, DEPRECATED, now stored in own type as uchar
             {

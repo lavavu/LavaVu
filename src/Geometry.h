@@ -234,8 +234,8 @@ protected:
   View* view;
   std::vector<GeomData*> geom;
   std::vector<bool> hidden;
-  int elements;
-  int drawcount;
+  unsigned int elements;
+  unsigned int drawcount;
   bool flat2d; //Flag for flat surfaces in 2d
   DrawingObject* cached;
 

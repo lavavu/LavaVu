@@ -180,7 +180,7 @@ bool Database::issue(const char* fmt, ...)
   return true;
 }
 
-Model::Model(DrawState& drawstate) : drawstate(drawstate), now(-1), figure(-1)
+Model::Model(DrawState& drawstate) : now(-1), drawstate(drawstate), figure(-1)
 {
   //Create new geometry containers
   init();
@@ -290,7 +290,7 @@ bool Model::loadFigure(int fig)
 void Model::storeFigure()
 {
   //Save current state in current selected figure
-  if (figure >= 0 && figures.size() > figure)
+  if (figure >= 0 && (int)figures.size() > figure)
     figures[figure] = jsonWrite();
 }
 
@@ -698,7 +698,6 @@ void Model::loadLinks(DrawingObject* obj)
   if (obj->dbid <= 0) return;
 
   //Select statment to get all viewports in window and all objects in viewports
-  char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
   sqlite3_stmt* statement = database.select("SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", obj->dbid);
 
@@ -788,7 +787,6 @@ int Model::loadTimeSteps(bool scan)
     {
       //If no steps found after trying 100, give up scanning
       if (timesteps.size() < 2 && ts > 100) break;
-      int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
       std::string path = checkFileStep(ts, basename);
       if (path.length() > 0)
       {
@@ -822,10 +820,10 @@ void Model::loadFixed()
 
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
 {
-  int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+  unsigned int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
   //Lower limit of digits to look for, default 1-5
   if (len < limit) len = limit;
-  for (int w = 5; w >= len; w--)
+  for (int w = 5; w >= (int)len; w--)
   {
     std::ostringstream ss;
     ss << database.file.path << basename << std::setw(w) << std::setfill('0') << ts;
@@ -1187,7 +1185,6 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   if (time_stop < 0) time_stop = step();
 
   //Load geometry
-  char SQL[SQL_QUERY_MAX];
   char filter[256] = {'\0'};
   char objfilter[32] = {'\0'};
 
@@ -1264,8 +1261,9 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       int items = count / size;
       int width = sqlite3_column_int(statement, 9);
       if (height == 0) height = width > 0 ? items / width : 0;
-      float minimum = (float)sqlite3_column_double(statement, 10);
-      float maximum = (float)sqlite3_column_double(statement, 11);
+      //TODO: these should be used for value data if set!
+      //float minimum = (float)sqlite3_column_double(statement, 10);
+      //float maximum = (float)sqlite3_column_double(statement, 11);
       //Units field repurposed for data label
       const char *data_label = (const char*)sqlite3_column_text(statement, 13);
       const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
@@ -1484,8 +1482,6 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   writeState(outdb);
 
   outdb.issue("BEGIN EXCLUSIVE TRANSACTION");
-
-  char SQL[SQL_QUERY_MAX];
 
   //Write objects
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1902,7 +1898,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   //Should not set this unless data changed for webgl?
   //exported["reload"] = true;
   exported["reload"] = objdata;
-  if (fignames.size() > figure)
+  if ((int)fignames.size() > figure)
     exported["figure"] = fignames[figure];
 
   //Export with indentation

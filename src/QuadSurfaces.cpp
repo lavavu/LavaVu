@@ -61,10 +61,10 @@ void QuadSurfaces::update()
   debug_print("Reloading and sorting %d quad surfaces...\n", geom.size());
   total = 0;
   surf_sort.clear();
-  int quadverts = 0;
+  unsigned int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    int quads = (geom[i]->width-1) * (geom[i]->height-1);
+    unsigned int quads = (geom[i]->width-1) * (geom[i]->height-1);
     quadverts += quads * 4;
     total += geom[i]->count; //Actual vertices
 
@@ -147,7 +147,7 @@ void QuadSurfaces::render()
     std::vector<GLuint> indices;
 
     //Quad indices
-    int quads = (geom[index]->width-1) * (geom[index]->height-1);
+    unsigned int quads = (geom[index]->width-1) * (geom[index]->height-1);
     tricount += quads; //For debug messages
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);

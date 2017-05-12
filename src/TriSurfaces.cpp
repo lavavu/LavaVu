@@ -78,7 +78,6 @@ void TriSurfaces::close()
 
 int TriSurfaces::triCount(int index)
 {
-  int tris;
   if (geom[index]->indices.size() > 0)
     return geom[index]->indices.size() / 3;
   else if (geom[index]->width > 0 && geom[index]->height > 0)
@@ -94,7 +93,7 @@ void TriSurfaces::update()
   //Get triangle count
   unsigned int lastcount = total;
   total = 0;
-  int drawelements = 0;
+  unsigned int drawelements = 0;
   for (unsigned int t = 0; t < geom.size(); t++)
   {
     int tris = triCount(t);
@@ -170,8 +169,6 @@ void TriSurfaces::loadMesh()
   {
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     if (geom[index]->count == 0) continue;
-    //Save initial offset
-    GLuint voffset = unique;
 
     //Has index data, simply load the triangles
     if (geom[index]->indices.size() > 0)
@@ -342,7 +339,7 @@ void TriSurfaces::loadMesh()
 void TriSurfaces::loadList()
 {
   assert(view);
-  clock_t t1,t2,tt;
+  clock_t t2,tt;
   tt=clock();
 
   debug_print("Loading up to %d triangles into list...\n", total);
@@ -359,8 +356,8 @@ void TriSurfaces::loadList()
   counts.resize(geom.size());
 
   //Index data for all vertices
-  int voffset = 0;
-  int offset = 0; //Offset into centroid list, include all hidden/filtered
+  unsigned int voffset = 0;
+  unsigned int offset = 0; //Offset into centroid list, include all hidden/filtered
   tricount = 0;
   for (unsigned int index = 0; index < geom.size(); voffset += geom[index]->count, index++)
   {
@@ -444,9 +441,9 @@ void TriSurfaces::loadBuffers()
 
     //Calibrate colour maps on range for this surface
     geom[index]->colourCalibrate();
-    int hasColours = geom[index]->colourCount();
+    unsigned int hasColours = geom[index]->colourCount();
     if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
-    int colrange = hasColours ? geom[index]->count / hasColours : 1;
+    unsigned int colrange = hasColours ? geom[index]->count / hasColours : 1;
     if (colrange < 1) colrange = 1;
     //if (hasColours) assert(colrange * hasColours == geom[index]->count);
     //if (hasColours && colrange * hasColours != geom[index]->count)

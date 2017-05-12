@@ -198,8 +198,8 @@ void Points::loadList()
   if (pidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
   if (geom.size() == 0) return;
   int offset = 0;
-  int maxCount = drawstate.global("pointmaxcount");
-  int subSample = drawstate.global("pointsubsample");
+  unsigned int maxCount = drawstate.global("pointmaxcount");
+  unsigned int subSample = drawstate.global("pointsubsample");
   //Auto-sub-sample if maxcount set
   if (maxCount > 0 && elements > maxCount)
     subSample = elements / maxCount + 0.5; //Rounded up
@@ -237,7 +237,6 @@ void Points::depthSort()
   clock_t t1,t2;
   t1 = clock();
   if (elements == 0) return;
-  int size = elements*sizeof(PIndex);
 
   //Calculate min/max distances from view plane
   float maxdist, mindist;

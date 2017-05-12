@@ -304,6 +304,7 @@ bool Properties::typecheck(json& val, json& def)
     debug_print("Attempting to coerce value to BOOLEAN\n");
     val = val != 0;
   }
+  return false;
 }
 
 void debug_print(const char *fmt, ...)

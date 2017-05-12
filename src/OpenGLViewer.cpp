@@ -198,7 +198,7 @@ GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
 }
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0), savewidth(0), saveheight(0)
+OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
 {
   app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;

@@ -37,7 +37,7 @@
 #include "Model.h"
 
 DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, unsigned int id)
-  : drawstate(drawstate), properties(drawstate.globals, drawstate.defaults), dbid(id)
+  : drawstate(drawstate), dbid(id), properties(drawstate.globals, drawstate.defaults)
 {
   texture = NULL;
   skip = drawstate.global("noload");
@@ -83,9 +83,9 @@ void DrawingObject::setup()
   if (drawstate.colourMaps)
   {
     int cmapid = properties["colourmap"];
-    if (cmapid >= 0 && cmapid < drawstate.colourMaps->size()) colourMap = (*drawstate.colourMaps)[cmapid];
+    if (cmapid >= 0 && cmapid < (int)drawstate.colourMaps->size()) colourMap = (*drawstate.colourMaps)[cmapid];
     int omapid = properties["opacitymap"];
-    if (omapid >= 0 && omapid < drawstate.colourMaps->size()) opacityMap = (*drawstate.colourMaps)[omapid];
+    if (omapid >= 0 && omapid < (int)drawstate.colourMaps->size()) opacityMap = (*drawstate.colourMaps)[omapid];
   }
 }
 

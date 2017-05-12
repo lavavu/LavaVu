@@ -865,7 +865,6 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     {
       //Convert LUM/RGBA to RGB
       GLubyte* rgb = new GLubyte[w*h*3];
-      int count = 0;
       for (int y=0; y<height; y+=hstep)
       {
         for (int x=0; x<width; x+=wstep)
@@ -898,7 +897,6 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     {
       //Convert LUM/RGB to RGBA
       GLubyte* rgba = new GLubyte[w*h*4];
-      int count = 0;
       for (int y=0; y<height; y+=hstep)
       {
         for (int x=0; x<width; x+=wstep)
@@ -1279,7 +1277,7 @@ void LavaVu::readOBJ(const FilePath& fn)
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string err;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), fn.path.c_str());
+  tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), fn.path.c_str());
   if (!err.empty())
   {
     std::cerr << "Error loading OBJ file: " << fn.full << " - " << err << std::endl;
@@ -1429,8 +1427,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   float RANGE = 2.f;
   float min[3] = {-RANGE,-RANGE,-RANGE};
   float max[3] = {RANGE,RANGE,RANGE};
-  float dims[3] = {RANGE*2.f,RANGE*2.f,RANGE*2.f};
-  float size = sqrt(dotProduct(dims,dims));
+  //float dims[3] = {RANGE*2.f,RANGE*2.f,RANGE*2.f};
   viewer->title = "Test Pattern";
 
   //Add points object
@@ -1440,8 +1437,8 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   obj->properties.data["colourmap"] = cmap;
   //Add colour bar display
   colourBar(obj);
-  int pointsperswarm = numpoints/4; //4 swarms
-  for (int i=0; i < numpoints; i++)
+  unsigned int pointsperswarm = numpoints/4; //4 swarms
+  for (unsigned int i=0; i < numpoints; i++)
   {
     float colour, ref[3];
     ref[0] = min[0] + (max[0] - min[0]) * frand;
@@ -2427,7 +2424,7 @@ void LavaVu::drawSceneBlended()
     std::string title = aview->properties["title"];
     //Timestep macro ##
     size_t pos =  title.find("##");
-    if (pos != std::string::npos && drawstate.timesteps.size() >= drawstate.now)
+    if (pos != std::string::npos && (int)drawstate.timesteps.size() >= drawstate.now)
       title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
     aview->drawOverlay(aview->textColour, title);
     drawAxis();
@@ -3087,7 +3084,7 @@ int LavaVu::getGeometryCount(DrawingObject* target)
 GeomData* LavaVu::getGeometry(DrawingObject* target, int index)
 {
   std::vector<GeomData*> geomlist = getAllGeometry(target);
-  if (geomlist.size() > index)
+  if ((int)geomlist.size() > index)
   {
     return geomlist[index];
   }
@@ -3188,7 +3185,6 @@ void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clear
   //Create an isosurface from selected volume object
   //If "clearvol" is true, volume data will be deleted leaving only the surface triangles
   if (!amodel || !target || !source) return;
-  Geometry* container = lookupObjectContainer(source);
   amodel->volumes->isosurface(amodel->triSurfaces, target, clearvol);
   target->properties.data["geometry"] = "triangles";
 }
@@ -3336,7 +3332,7 @@ float LavaVu::imageDiff(std::string path1, std::string path2, int downsample)
   {
     //Mean squared error on raw images
     imgsize = image1.size() - 3;
-    for (int i=3; i<image1.size(); i++)
+    for (unsigned int i=3; i<image1.size(); i++)
     {
       float diff = image1[i] - image2[i];
       sum += diff*diff;

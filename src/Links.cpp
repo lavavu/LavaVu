@@ -69,8 +69,8 @@ void Links::update()
 
     if (all2d || (props.getBool("flat", true) && !props["tubes"]))
     {
-      int hasColours = geom[i]->colourCount();
-      int colrange = hasColours ? geom[i]->count / hasColours : 1;
+      unsigned int hasColours = geom[i]->colourCount();
+      unsigned int colrange = hasColours ? geom[i]->count / hasColours : 1;
       if (colrange < 1) colrange = 1;
       debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
@@ -78,7 +78,6 @@ void Links::update()
       if (linked) lines->add(geom[i]->draw);
 
       Colour colour;
-      bool fastCol = hasColours == geom[i]->colours.size() && hasColours > 0 && !geom[i]->draw->opacityMap;
       int count = 0;
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
@@ -107,7 +106,7 @@ void Links::update()
         }
 
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
-        int cidx = v / colrange;
+        unsigned int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;
         geom[i]->getColour(colour, cidx);
 

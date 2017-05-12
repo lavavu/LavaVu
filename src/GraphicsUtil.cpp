@@ -818,7 +818,7 @@ GLubyte* ImageLoader::loadPPM()
   texture->channels = 3;
   imageData = new GLubyte[texture->width*texture->height*texture->channels];
 
-  for (int j = 0; j<texture->height; j++)
+  for (unsigned int j = 0; j<texture->height; j++)
     if (fread(&imageData[texture->width * j * texture->channels], texture->channels, texture->width, imageFile) < texture->width) 
       abort_program("PPM Read Error");
   fclose(imageFile);

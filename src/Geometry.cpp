@@ -348,8 +348,8 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
   return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
-Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate), 
-                       view(NULL), elements(0), flat2d(false), cached(NULL),
+Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
+                       flat2d(false), cached(NULL), drawstate(drawstate),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
@@ -427,7 +427,6 @@ void Geometry::clearValues(DrawingObject* draw, std::string label)
         continue;
       }
 
-      for (int i=0; i<g->values.size(); i++)
       for (auto vals : g->values)
         if (label.length() == 0 || vals->label == label)
           vals->clear();
@@ -832,7 +831,7 @@ void Geometry::display()
   cached = NULL;
 
   //Anything to draw?
-  int newcount = 0;
+  unsigned int newcount = 0;
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (drawable(i))
@@ -1023,14 +1022,13 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   geomdata = getObjectStore(draw);
 
   //If dimensions specified, check if full dataset loaded
-  bool loaded = false;
   if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
   {
     unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
     if (size == geomdata->data[dtype]->count())
       geomdata = NULL;
-    //if (loaded) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
-    //                   geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
+    //if (!geomdata) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
+    //                       geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
   }
 
   //Allow spec width/height/depth in properties
@@ -1226,7 +1224,6 @@ void Geometry::insertFixed(Geometry* fixed)
 
   for (unsigned int i=0; i<fixed->geom.size(); i++)
   {
-    GeomData* varying = NULL;
     if (geom.size() == i)
       add(fixed->geom[i]->draw); //Insert new if not enough records
     //Create a shallow copy of member content

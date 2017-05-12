@@ -2333,7 +2333,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       std::string data = parsed["label"];
-      lucGeometryDataType dtype;
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
@@ -3222,7 +3221,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       json& filters = aobject->properties["filters"];
-      int idx = parsed.Int(action, 0);
+      unsigned int idx = parsed.Int(action, 0);
       if (filters.size() <= idx) return false;
       json& filter = filters[idx];
       float val;

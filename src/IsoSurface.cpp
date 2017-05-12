@@ -38,7 +38,7 @@
 // Given a grid dataset and an isovalue, calculate the triangular
 //  facets required to represent the isosurface through the data.
 Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample)
-  : subsample(subsample), target(target), surfaces(tris)
+  : subsample(subsample), surfaces(tris), target(target)
 {
   //Generate an isosurface from a set of volume slices or a cube
   clock_t t1,t2,tt;
@@ -83,7 +83,7 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
         geom[i]->height = geom[i]->colours.size() / geom[i]->width;
     }
 
-    unsigned int depth = geom[i]->depth;
+    int depth = geom[i]->depth;
     if (slices[current] > depth) depth = slices[current]; 
 
     nx = geom[i]->width;
@@ -116,15 +116,15 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
     // Sample in regular grid
     Colour c;
     unsigned int next = 0;
-    for (int z = 0; z < nz; z++)
+    for (unsigned int z = 0; z < nz; z++)
     //for (int x = 0; x < nx; x++)
     {
       //if (geom[i]->depth <= 1) next = 0; //Reset value index if sliced
 
-      for (int y = 0; y < ny; y++)
+      for (unsigned int y = 0; y < ny; y++)
       {
 
-        for (int x = 0; x < nx; x++)
+        for (unsigned int x = 0; x < nx; x++)
         //for (int z = 0; z < nz; z++)
         {
           vertex->at(x,y,z).pos[0] = start[0]+x*inc[0];
@@ -216,7 +216,6 @@ The lookup table is taken from http://astronomy.swin.edu.au/~pbourke/modelling/p
 */
 void Isosurface::MarchingCubes()
 {
-   int i,j,k,n;
    int cubeindex;
    IVertex points[12];
 
@@ -515,11 +514,11 @@ void Isosurface::MarchingCubes()
    };
 
 
-   for ( i = 0 ; i < nx - 1  ; i++ )
+   for (unsigned int i = 0 ; i < nx - 1  ; i++ )
    {
-      for ( j = 0 ; j < ny - 1 ; j++ )
+      for (unsigned int j = 0 ; j < ny - 1 ; j++ )
       {
-         for ( k = 0 ; k < nz - 1 ; k++ )
+         for (unsigned int k = 0 ; k < nz - 1 ; k++ )
          {
             /* Determine the index into the edge table which tells us which vertices are inside of the surface */
             cubeindex = 0;
@@ -562,7 +561,7 @@ void Isosurface::MarchingCubes()
                VertexInterp( &points[11], &vertex->at(i,j,k+1) , &vertex->at(i,j+1,k+1) );
 
             /* Create the triangles */
-            for ( n = 0 ; triTable[cubeindex][n] != -1 ; n += 3 )
+            for (unsigned int n = 0 ; triTable[cubeindex][n] != -1 ; n += 3 )
             {
                CreateTriangle( &points[ triTable[cubeindex][n  ] ], 
                                &points[ triTable[cubeindex][n+1] ], 
@@ -629,7 +628,7 @@ void Isosurface::CreateTriangle(IVertex* point1, IVertex* point2, IVertex* point
 
 void Isosurface::DrawWalls()
 {
-   int i, j, k;
+   unsigned int i, j, k;
    IVertex * points[8];
    IVertex midVertices[4];
    points[LEFT] = &midVertices[0];
