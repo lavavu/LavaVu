@@ -102,7 +102,9 @@ function canvasMouseWheel(event, mouse) {
     if (zoomTimer) 
       clearTimeout(zoomTimer);
     zoomSpin += event.spin;
-    zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
+    zoomTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
+    //Clear the box after a second
+    setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
