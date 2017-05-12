@@ -277,6 +277,7 @@ bool Model::loadFigure(int fig)
   if (fig >= (int)figures.size()) fig = 0;
   if (fig < 0) fig = figures.size()-1;
   figure = fig;
+  assert(figure >= 0);
   jsonRead(figures[figure]);
 
   //Set window caption
@@ -290,7 +291,7 @@ bool Model::loadFigure(int fig)
 void Model::storeFigure()
 {
   //Save current state in current selected figure
-  if (figure >= 0 && (int)figures.size() > figure)
+  if (figure >= 0 && figure < (int)figures.size())
     figures[figure] = jsonWrite();
 }
 
@@ -1536,6 +1537,7 @@ void Model::writeState(Database& outdb)
     if (figures.size() == 0)
       figure = addFigure("default");
   }
+  assert(figure >= 0);
 
   //Update any active changes to current state
   storeFigure();
@@ -1898,7 +1900,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   //Should not set this unless data changed for webgl?
   //exported["reload"] = true;
   exported["reload"] = objdata;
-  if ((int)fignames.size() > figure)
+  if (figure >= 0 && figure < (int)fignames.size())
     exported["figure"] = fignames[figure];
 
   //Export with indentation
