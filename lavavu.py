@@ -705,9 +705,10 @@ class Viewer(object):
     def addstep(self):
         return self.app.parseCommands("newstep")
 
-    def image(self, filename, resolution=None, transparent=None):
+    def image(self, filename=None, resolution=None, transparent=None):
         if transparent is not None: self["pngalpha"] = transparent
-        if not resolution: resolution = self.resolution
+        if resolution is None:
+            return self.app.image(filename);
         return self.app.image(filename, resolution[0], resolution[1]);
 
     def frame(self, resolution=None):
