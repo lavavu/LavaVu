@@ -79,6 +79,8 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
         geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
       else if (geom[i]->luminance.size() > 0)
         geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
+      else if (geom[i]->colours.size() > 0)
+        geom[i]->height = geom[i]->colours.size() / geom[i]->width;
     }
 
     unsigned int depth = geom[i]->depth;
@@ -87,6 +89,9 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
     nx = geom[i]->width;
     ny = geom[i]->height;
     nz = depth;
+
+    if (nx == 0 || ny == 0 || nz == 0)
+      abort_program("Invalid volume dimensions %d %d %d\n", nx, ny, nz);
 
     //Apply subsampling and allocate grid vertex array
     nx /= subsample;
@@ -104,7 +109,6 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
     inc[2] = inc[2] / (nz-1);
 
     //Save colour values reference
-    //TODO: specify colour field label vs surface field
     colourVals = geom[i]->colourData();
     if (colourVals && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
       colourVals = NULL;
