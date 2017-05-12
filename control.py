@@ -165,7 +165,7 @@ def initialise():
                     count += 1
                     if count <= initialised: continue;
                     #Each cell is tuple, 3rd element contains line
-                    if "import lavavu" in cell[2]:
+                    if "import lavavu" in cell[2] or "import glucifer" in cell[2]:
                         #LavaVu has been re-imported, re-init
                         found = True
                         break
