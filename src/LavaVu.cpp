@@ -2569,7 +2569,8 @@ bool LavaVu::loadFile(const std::string& file)
     return false;
 
   //Reselect the active view after loading any model data
-  viewset = RESET_ZOOM; //View will be reset and autozoomed on next display call
+  resetViews(true);
+  //viewset = RESET_ZOOM; //View will be reset and autozoomed on next display call
 
   return true;
 }
