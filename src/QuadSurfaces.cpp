@@ -226,10 +226,6 @@ void QuadSurfaces::draw()
   if (view->is3d && view->sort)
     redraw = true; //Recalc cross section order
 
-  //Draw, calls update when required
-  Geometry::draw();
-  if (drawcount == 0) return;
-
   GL_Error_Check;
   // Draw using vertex buffer object
   clock_t t0 = clock();

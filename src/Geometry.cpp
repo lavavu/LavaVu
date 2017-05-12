@@ -817,12 +817,12 @@ void Geometry::setState(unsigned int i, Shader* prog)
   GL_Error_Check;
 }
 
-void Geometry::update()
+void Geometry::display()
 {
-}
+  //Skip if view not open or nothing to draw
+  if (!view || !view->width || !total) return;
 
-void Geometry::draw()  //Display saved geometry
-{
+  //Draw data, then labels
   GL_Error_Check;
 
   //Default to no shaders
@@ -839,14 +839,16 @@ void Geometry::draw()  //Display saved geometry
       newcount++;
   }
 
-  //Have something to update?
-  if (total > 0)
+  if (reload || redraw || newcount != drawcount)
   {
-    if (reload || redraw || newcount != drawcount)
-    {
-      update();
-      reload = false;
-    }
+    update();
+    reload = false;
+  }
+
+  //Skip draw for internal sub-renderers, will be done by parent renderer
+  if (!internal && newcount)
+  {
+    draw();
 
     labels();
   }
@@ -854,6 +856,16 @@ void Geometry::draw()  //Display saved geometry
   drawcount = newcount;
   redraw = false;
   GL_Error_Check;
+}
+
+void Geometry::update()
+{
+  //Update virtual to be implemented
+}
+
+void Geometry::draw()
+{
+  //Draw virtual to be implemented
 }
 
 void Geometry::labels()
@@ -864,15 +876,16 @@ void Geometry::labels()
   glDisable(GL_LIGHTING);  //No lighting
   for (unsigned int i=0; i < geom.size(); i++)
   {
-    std::string font = geom[i]->draw->properties["font"];
-    if (view->scale2d != 1.0 && font != "vector")
-      geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
-    //Default to object colour (if fontcolour provided will replace)
-    Colour colour = Colour(geom[i]->draw->properties["colour"]);
-    glColor3ubv(colour.rgba);
-    drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
+      std::string font = geom[i]->draw->properties["font"];
+      if (view->scale2d != 1.0 && font != "vector")
+        geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
+      //Default to object colour (if fontcolour provided will replace)
+      Colour colour = Colour(geom[i]->draw->properties["colour"]);
+      glColor3ubv(colour.rgba);
+      drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
+
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
         float* p = geom[i]->vertices[j];
@@ -960,7 +973,7 @@ GeomData* Geometry::add(DrawingObject* draw)
   return geomdata;
 }
 
-void Geometry::setView(View* vp, float* min, float* max)
+void Geometry::setup(View* vp, float* min, float* max)
 {
   view = vp;
 
@@ -1160,7 +1173,7 @@ void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int
   }
 }
 
-void Geometry::setup(DrawingObject* draw)
+void Geometry::setupObject(DrawingObject* draw)
 {
   //Scan all data for min/max
   std::vector<float> minimums;
@@ -1814,5 +1827,87 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
   //Read the triangle indices
   read(draw, indices.size(), lucIndexData, &indices[0]);
+}
+
+//Class to handle geometry types with sub-geometry glyphs drawn
+//at vertices consisting of lines and/or triangles
+Glyphs::Glyphs(DrawState& drawstate) : Geometry(drawstate)
+{
+  //Create sub-renderers
+  lines = new Lines(drawstate);
+  tris = new TriSurfaces(drawstate);
+  tris->internal = lines->internal = true;
+}
+
+Glyphs::~Glyphs()
+{
+  delete lines;
+  delete tris;
+}
+
+void Glyphs::close()
+{
+  lines->close();
+  tris->close();
+  Geometry::close();
+}
+
+void Glyphs::setup(View* vp, float* min, float* max)
+{
+  lines->setup(vp, min, max);
+  tris->setup(vp, min, max);
+  Geometry::setup(vp, min, max);
+}
+
+void Glyphs::display()
+{
+  tris->redraw = redraw;
+  tris->reload = reload;
+  lines->redraw = redraw;
+  lines->reload = reload;
+
+  //Need to call to clear the cached object
+  lines->display();
+  tris->display();
+
+  if (!reload && drawstate.global("gpucache"))
+  {
+    //Skip re-gen of internal geometry shapes
+    redraw = false;
+  }
+
+  //Render in parent display call
+  Geometry::display();
+}
+
+void Glyphs::update()
+{
+  tris->update();
+  lines->update();
+}
+
+void Glyphs::draw()
+{
+  if (tris->total)
+  {
+    // Undo any scaling factor for glyph drawing...
+    glPushMatrix();
+    if (tris->unscale)
+      glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
+
+    tris->draw();
+
+    // Re-Apply scaling factors
+    glPopMatrix();
+  }
+
+  if (lines->total)
+    lines->draw();
+}
+
+void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
+{
+  tris->jsonWrite(draw, obj);
+  lines->jsonWrite(draw, obj);
 }
 

@@ -70,10 +70,6 @@ void Volumes::close()
 
 void Volumes::draw()
 {
-  //Draw
-  Geometry::draw();
-  if (drawcount == 0) return;
-
   //clock_t t1,t2,tt;
   //t1 = tt = clock();
 
@@ -105,7 +101,7 @@ void Volumes::draw()
 void Volumes::update()
 {
   twoTriangles->clear();
-  twoTriangles->setView(view);
+  twoTriangles->setup(view);
 
   //Use triangle renderer for two triangles to display volume shader output
   if (geom.size() > 0)

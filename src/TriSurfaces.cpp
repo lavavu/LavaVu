@@ -409,7 +409,6 @@ void TriSurfaces::loadList()
 
 void TriSurfaces::loadBuffers()
 {
-  if (!view->width) return; //Wait before using OpenGL
   //Copy data to Vertex Buffer Object
   clock_t t1,t2,tt;
   tt=clock();
@@ -793,7 +792,6 @@ void TriSurfaces::depthSort()
 //Reloads triangle indices, required after data update and depth sort
 void TriSurfaces::render()
 {
-  if (!view->width) return; //Wait before using OpenGL
   clock_t t1,t2;
   if (tricount == 0 || elements == 0) return;
   assert(tidx);
@@ -864,11 +862,8 @@ void TriSurfaces::render()
 
 void TriSurfaces::draw()
 {
-  if (!view->width) return; //Wait before using OpenGL
-  //Draw, calls update when required
-  Geometry::draw();
   GL_Error_Check;
-  if (drawcount == 0 || elements == 0) return;
+  if (elements == 0) return;
 
   //Re-render the triangles if view has rotated
   if (view->sort || idxcount != elements) render();

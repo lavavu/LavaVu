@@ -1687,7 +1687,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
 
     //Expand bounds by all geometry objects
     for (unsigned int i=0; i < amodel->geometry.size(); i++)
-      amodel->geometry[i]->setView(aview, omin, omax);
+      amodel->geometry[i]->setup(aview, omin, omax);
 
     //Set viewport based on window size
     aview->port(viewer->width, viewer->height);
@@ -1735,7 +1735,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   {
     //Set view on geometry objects only, no boundary check
     for (unsigned int i=0; i < amodel->geometry.size(); i++)
-      amodel->geometry[i]->setView(aview);
+      amodel->geometry[i]->setup(aview);
   }
 
   //Update background colour
@@ -1996,7 +1996,7 @@ void LavaVu::drawAxis()
   float Zpos[3] = {0, 0, length/2};
 
   axis->clear();
-  axis->setView(aview);
+  axis->setup(aview);
   DrawingObject* aobj = drawstate.axisobj;
   if (!aobj) aobj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(aobj)) aview->addObject(aobj);
@@ -2058,7 +2058,7 @@ void LavaVu::drawRulers()
   infostream = NULL;
   DrawingObject* obj = drawstate.rulerobj;
   rulers->clear();
-  rulers->setView(aview);
+  rulers->setup(aview);
   if (!obj) obj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nlit=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
@@ -2204,7 +2204,7 @@ void LavaVu::drawBorder()
 
   DrawingObject* obj = drawstate.borderobj;
   border->clear();
-  border->setView(aview);
+  border->setup(aview);
   if (!obj) obj = new DrawingObject(drawstate, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
@@ -2449,15 +2449,17 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
-  amodel->volumes->draw();
-  amodel->triSurfaces->draw();
-  amodel->quadSurfaces->draw();
-  amodel->vectors->draw();
-  amodel->tracers->draw();
-  amodel->shapes->draw();
-  amodel->points->draw();
-  amodel->labels->draw();
-  amodel->lines->draw();
+  //TODO: replace this hard coded rendering order
+  // provide user defined renderer list on model
+  amodel->volumes->display();
+  amodel->triSurfaces->display();
+  amodel->quadSurfaces->display();
+  amodel->vectors->display();
+  amodel->tracers->display();
+  amodel->shapes->display();
+  amodel->points->display();
+  amodel->labels->display();
+  amodel->lines->display();
 
   if (!drawstate.omegalib)
     drawBorder();

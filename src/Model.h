@@ -108,7 +108,7 @@ public:
   Tracers* tracers;
   QuadSurfaces* quadSurfaces;
   TriSurfaces* triSurfaces;
-  Lines* lines;
+  Links* lines;
   Shapes* shapes;
   Volumes* volumes;
 

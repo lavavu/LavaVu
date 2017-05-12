@@ -242,7 +242,7 @@ void Model::init()
   geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate, true);
   geometry[lucVolumeType] = volumes = new Volumes(drawstate);
   geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate, true);
-  geometry[lucLineType] = lines = new Lines(drawstate);
+  geometry[lucLineType] = lines = new Links(drawstate);
   geometry[lucShapeType] = shapes = new Shapes(drawstate);
   debug_print("Created %d new geometry containers\n", geometry.size());
 
@@ -384,14 +384,14 @@ void Model::setup()
   //Setup min/max on all object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    points->setup(objects[i]);
-    quadSurfaces->setup(objects[i]);
-    triSurfaces->setup(objects[i]);
-    vectors->setup(objects[i]);
-    tracers->setup(objects[i]);
-    shapes->setup(objects[i]);
-    lines->setup(objects[i]);
-    volumes->setup(objects[i]);
+    points->setupObject(objects[i]);
+    quadSurfaces->setupObject(objects[i]);
+    triSurfaces->setupObject(objects[i]);
+    vectors->setupObject(objects[i]);
+    tracers->setupObject(objects[i]);
+    shapes->setupObject(objects[i]);
+    lines->setupObject(objects[i]);
+    volumes->setupObject(objects[i]);
   }
 }
 
@@ -1049,7 +1049,7 @@ bool Model::restoreStep()
   quadSurfaces = (QuadSurfaces*)geometry[lucGridType];
   volumes = (Volumes*)geometry[lucVolumeType];
   triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
-  lines = (Lines*)geometry[lucLineType];
+  lines = (Links*)geometry[lucLineType];
   shapes = (Shapes*)geometry[lucShapeType];
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);

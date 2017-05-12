@@ -36,43 +36,19 @@
 #include "Geometry.h"
 #include "TimeStep.h"
 
-Tracers::Tracers(DrawState& drawstate) : Geometry(drawstate)
+Tracers::Tracers(DrawState& drawstate) : Glyphs(drawstate)
 {
   type = lucTracerType;
-  //Create sub-renderers
-  lines = new Lines(drawstate, true); //Only used for 2d lines
-  tris = new TriSurfaces(drawstate);
-  tris->internal = lines->internal = true;
-}
-
-Tracers::~Tracers()
-{
-  delete lines;
-  delete tris;
-}
-
-void Tracers::close()
-{
-  lines->close();
-  tris->close();
 }
 
 void Tracers::update()
 {
-  if (!reload && drawstate.global("gpucache"))
-  {
-    lines->update();
-    tris->update();
-    return;
-  }
-  //Convert tracers to triangles
+  //Convert tracers to triangles/lines
+  lines->clear();
+  tris->clear();
   //All tracers stored as single vertex/value block
   //Contains vertex/value for every tracer particle at each timestep
   //Number of particles is number of entries divided by number of timesteps
-  lines->clear();
-  lines->setView(view);
-  tris->clear();
-  tris->setView(view);
   Vec3d scale(view->scale);
   tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
   tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
@@ -215,36 +191,12 @@ void Tracers::update()
     if (taper) debug_print("Tapered tracers from %f to %f (step %f)\n", size0, size, factor);
 
     //Adjust bounding box
-    tris->compareMinMax(geom[i]->min, geom[i]->max);
-    lines->compareMinMax(geom[i]->min, geom[i]->max);
+    //tris->compareMinMax(geom[i]->min, geom[i]->max);
+    //lines->compareMinMax(geom[i]->min, geom[i]->max);
   }
   GL_Error_Check;
 
-  tris->update();
-  lines->update();
+  Glyphs::update();
 }
 
-void Tracers::draw()
-{
-  Geometry::draw();
-  if (drawcount == 0) return;
-
-  // Undo any scaling factor for tracer drawing...
-  glPushMatrix();
-  if (tris->unscale)
-    glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
-
-  tris->draw();
-
-  // Re-Apply scaling factors
-  glPopMatrix();
-
-  lines->draw();
-}
-
-void Tracers::jsonWrite(DrawingObject* draw, json& obj)
-{
-  tris->jsonWrite(draw, obj);
-  lines->jsonWrite(draw, obj);
-}
 

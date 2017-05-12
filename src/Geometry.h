@@ -271,8 +271,9 @@ public:
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void setState(unsigned int i, Shader* prog=NULL);
+  virtual void display(); //Display saved geometry
   virtual void update();  //Implementation should create geometry here...
-  virtual void draw();  //Display saved geometry
+  virtual void draw();    //Implementation should draw geometry here...
   void labels();  //Draw labels
   std::vector<GeomData*> getAllObjects(DrawingObject* draw);
   GeomData* getObjectStore(DrawingObject* draw);
@@ -282,14 +283,14 @@ public:
   GeomData* read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
   GeomData* read(GeomData* geom, unsigned int n, const void* data, std::string label);
   void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
-  void setup(DrawingObject* draw);
+  void setupObject(DrawingObject* draw);
   void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
   void label(DrawingObject* draw, std::vector<std::string> labels);
   void print();
   json getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
-  void setView(View* vp, float* min=NULL, float* max=NULL);
+  virtual void setup(View* vp, float* min=NULL, float* max=NULL);
   void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);
@@ -341,7 +342,6 @@ public:
   void loadMesh();
   void loadBuffers();
   void loadList();
-  void centroid(float* v1, float* v2, float* v3);
   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
   void calcTriangleNormalsWithIndices(int index);
   void calcGridNormals(int i, std::vector<Vec3d> &normals);
@@ -354,13 +354,11 @@ public:
 
 class Lines : public Geometry
 {
-  TriSurfaces* tris;
   GLuint vbo;
   unsigned int linetotal;
-  bool all2d, any3d;
   std::vector<unsigned int> counts;
 public:
-  Lines(DrawState& drawstate, bool all2Dflag=false);
+  Lines(DrawState& drawstate);
   ~Lines();
   virtual void close();
   virtual void update();
@@ -368,30 +366,50 @@ public:
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
-class Vectors : public Geometry
+class Glyphs : public Geometry
 {
+protected:
   Lines* lines;
   TriSurfaces* tris;
 public:
-  Vectors(DrawState& drawstate);
-  ~Vectors();
+  Glyphs(DrawState& drawstate);
+  ~Glyphs();
   virtual void close();
+  virtual void setup(View* vp, float* min=NULL, float* max=NULL);
+  virtual void display();
   virtual void update();
   virtual void draw();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
-class Tracers : public Geometry
+class Links : public Glyphs
 {
-  Lines* lines;
-  TriSurfaces* tris;
+  bool all2d, any3d;
+public:
+  Links(DrawState& drawstate, bool all2Dflag=false);
+  virtual void update();
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
+};
+
+class Vectors : public Glyphs
+{
+public:
+  Vectors(DrawState& drawstate);
+  virtual void update();
+};
+
+class Tracers : public Glyphs
+{
 public:
   Tracers(DrawState& drawstate);
-  ~Tracers();
-  virtual void close();
   virtual void update();
-  virtual void draw();
-  virtual void jsonWrite(DrawingObject* draw, json& obj);
+};
+
+class Shapes : public Glyphs
+{
+public:
+  Shapes(DrawState& drawstate);
+  virtual void update();
 };
 
 class QuadSurfaces : public TriSurfaces
@@ -405,18 +423,6 @@ public:
   virtual void draw();
 };
 
-class Shapes : public Geometry
-{
-  TriSurfaces* tris;
-public:
-  Shapes(DrawState& drawstate);
-  ~Shapes();
-  virtual void close();
-  virtual void update();
-  virtual void draw();
-  virtual void jsonWrite(DrawingObject* draw, json& obj);
-};
-
 class Points : public Geometry
 {
   PIndex *pidx;
@@ -426,7 +432,6 @@ class Points : public Geometry
 public:
   Points(DrawState& drawstate);
   ~Points();
-  virtual void init();
   virtual void close();
   virtual void update();
   void loadVertices();

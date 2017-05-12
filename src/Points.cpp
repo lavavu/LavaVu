@@ -71,11 +71,6 @@ void Points::close()
   pidx = swap = NULL;
 }
 
-void Points::init()
-{
-  Geometry::init();
-}
-
 void Points::update()
 {
   //Ensure vbo recreated if total changed
@@ -372,9 +367,7 @@ int Points::getPointType(int index)
 
 void Points::draw()
 {
-  //Draw, update
-  Geometry::draw();
-  if (drawcount == 0 || elements == 0) return;
+  if (elements == 0) return;
   clock_t t0 = clock();
   double time;
   GL_Error_Check;
