@@ -2244,7 +2244,7 @@ void LavaVu::drawBorder()
     border->read(obj, 1, lucVertexData, maxvert.ref());
   }
 
-  rulers->display();
+  border->display();
 
   //Restore info/error stream
   if (verbose) infostream = stderr;
