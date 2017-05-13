@@ -873,6 +873,7 @@ void Geometry::labels()
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_DEPTH_TEST);  //No depth testing
   glDisable(GL_LIGHTING);  //No lighting
+  glUseProgram(0);
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (drawable(i) && geom[i]->labels.size() > 0)
@@ -915,7 +916,7 @@ void Geometry::labels()
         else if (alignchar == '!' || alignchar == '|' || alignchar == '^' || alignchar == '_')
           labstr = labstr.substr(1);
 
-        if (geom[i]->labels[j].size() > 0)
+        if (labstr.length() > 0)
         {
           drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, view->scale);
         }
