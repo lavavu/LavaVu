@@ -2066,7 +2066,6 @@ void LavaVu::drawRulers()
   //Colour for labels
   obj->properties.data["colour"] = aview->textColour.toJson();
 
-
   int ticks = aview->properties["rulerticks"];
   std::string axes = aview->properties["ruleraxes"];
   
@@ -2113,9 +2112,7 @@ void LavaVu::drawRulers()
     drawRuler(obj, sta, end, aview->min[2], aview->max[2], ticks, 2, -1);
   }
 
-
-  rulers->update();
-  rulers->draw();
+  rulers->display();
 
   //Restore info/error stream
   if (verbose) infostream = stderr;
@@ -2247,8 +2244,7 @@ void LavaVu::drawBorder()
     border->read(obj, 1, lucVertexData, maxvert.ref());
   }
 
-  border->update();
-  border->draw();
+  rulers->display();
 
   //Restore info/error stream
   if (verbose) infostream = stderr;
