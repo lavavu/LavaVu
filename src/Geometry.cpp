@@ -790,7 +790,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
       {
         clipMin = Vec3d((float)geom[i]->draw->properties["xmin"],
                         (float)geom[i]->draw->properties["ymin"],
-                        view->is3d ? (float)geom[i]->draw->properties["zmin"] : HUGE_VALF);
+                        view->is3d ? (float)geom[i]->draw->properties["zmin"] : -HUGE_VALF);
         clipMax = Vec3d((float)geom[i]->draw->properties["xmax"],
                         (float)geom[i]->draw->properties["ymax"],
                         view->is3d ? (float)geom[i]->draw->properties["zmax"] : HUGE_VALF);
