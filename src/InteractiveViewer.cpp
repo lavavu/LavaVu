@@ -715,6 +715,23 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   //Parse the line
   parsed.parseLine(cmd);
 
+  //Check for commands that require viewer to be open and view initialised,
+  //if found, open the viewer / setup view first
+  if (!viewer->isopen || (aview && !aview->initialised))
+  {
+    std::vector<std::string> viewcmds = commandList("View");
+
+    for (auto c : viewcmds)
+    {
+      if (parsed.exists(c))
+      {
+        debug_print("%s : Camera command requires view to be initialised, performing auto-init\n", c.c_str());
+        loadModelStep(0, 0, true);
+        resetViews(); //Forces bounding box update
+      }
+    }
+  }
+
   //Verbose command processor
   float fval;
   int ival;
@@ -3303,10 +3320,13 @@ bool LavaVu::parsePropertySet(std::string cmd)
   return true;
 }
 
-void LavaVu::helpCommand(std::string cmd)
+std::vector<std::string> LavaVu::commandList(std::string category)
 {
-  //This list of categories and commands must be maintained along with the individual command help strings
+  //Return the list of categories, or list of commands in passed category
   std::vector<std::string> categories = {"General", "Input", "Output", "View", "Object", "Display", "Scripting", "Miscellanious"};
+  if (category.length() == 0)
+    return categories;
+
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
     {"file", "script", "figure", "view", "scan"},
@@ -3324,6 +3344,15 @@ void LavaVu::helpCommand(std::string cmd)
      "verbose", "toggle", "createvolume", "clearvolume"}
   };
 
+  for (unsigned int i=0; i<categories.size(); i++)
+    if (categories[i] == category) return cmdlist[i];
+  return std::vector<std::string>();
+}
+
+void LavaVu::helpCommand(std::string cmd)
+{
+  //This list of categories and commands must be maintained along with the individual command help strings
+  std::vector<std::string> categories = commandList();
   //Verbose command help
   if (cmd == "help")
   {
@@ -3331,11 +3360,12 @@ void LavaVu::helpCommand(std::string cmd)
     for (unsigned int i=0; i<categories.size(); i++)
     {
       help += "\n\n" + categories[i] + " commands:\n\n";
-      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      std::vector<std::string> cmds = commandList(categories[i]);
+      for (unsigned int j=0; j<cmds.size(); j++)
       {
         if (j % 11 == 10) help += "\n  ";
-        help += cmdlist[i][j];
-        if (j < cmdlist[i].size() - 1) help += ", ";
+        help += cmds[j];
+        if (j < cmds.size() - 1) help += ", ";
       }
     }
     help += "\n";
@@ -3349,11 +3379,12 @@ void LavaVu::helpCommand(std::string cmd)
       std::string anchor = categories[i] + "-commands";
       std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
       std::cout <<  " - **[" + categories[i] + "](#" + anchor + ")**  \n";
-      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      std::vector<std::string> cmds = commandList(categories[i]);
+      for (unsigned int j=0; j<cmds.size(); j++)
       {
-        //std::cout <<  "    * [" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")\n";
+        //std::cout <<  "    * [" + cmds[j] + "](#" + cmds[j] + ")\n";
         if (j > 0) std::cout << ", ";
-        std::cout <<  "[" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")";
+        std::cout <<  "[" + cmds[j] + "](#" + cmds[j] + ")";
       }
       std::cout << std::endl;
     }
@@ -3361,11 +3392,12 @@ void LavaVu::helpCommand(std::string cmd)
     for (unsigned int i=0; i<categories.size(); i++)
     {
       std::cout <<  "\n---\n## " + categories[i] + " commands:\n\n";
-      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      std::vector<std::string> cmds = commandList(categories[i]);
+      for (unsigned int j=0; j<cmds.size(); j++)
       {
-        std::cout << "\n### " + cmdlist[i][j] + "\n\n";
+        std::cout << "\n### " + cmds[j] + "\n\n";
         help = "";
-        helpCommand(cmdlist[i][j]);
+        helpCommand(cmds[j]);
 
         std::string line;
         std::stringstream ss(help);

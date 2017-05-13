@@ -216,6 +216,7 @@ public:
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
   Geometry* lookupObjectContainer(DrawingObject* obj, std::string gtype="");
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
+  std::vector<std::string> commandList(std::string category="");
   void helpCommand(std::string cmd);
   void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
