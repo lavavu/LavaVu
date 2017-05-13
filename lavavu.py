@@ -705,11 +705,10 @@ class Viewer(object):
     def addstep(self):
         return self.app.parseCommands("newstep")
 
-    def image(self, filename=None, resolution=None, transparent=None):
-        if transparent is not None: self["pngalpha"] = transparent
+    def image(self, filename=None, resolution=None, transparent=False):
         if resolution is None:
             return self.app.image(filename);
-        return self.app.image(filename, resolution[0], resolution[1]);
+        return self.app.image(filename, resolution[0], resolution[1], transparent);
 
     def frame(self, resolution=None):
         #Jpeg encoded frame data

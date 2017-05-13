@@ -506,12 +506,12 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
   return image;
 }
 
-std::string OpenGLViewer::image(const std::string& path, int jpegquality)
+std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool transparent)
 {
   assert(isopen);
   FilePath filepath(path);
   if (filepath.type == "jpeg" || filepath.type == "jpg") jpegquality = 95;
-  bool alphapng = !jpegquality && app->drawstate.global("pngalpha");
+  bool alphapng = !jpegquality && (transparent || app->drawstate.global("pngalpha"));
   int channels = 3;
   if (alphapng) channels = 4;
   std::string retImg;

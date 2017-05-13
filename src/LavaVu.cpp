@@ -2821,14 +2821,14 @@ void LavaVu::init()
   viewer->init();
 }
 
-std::string LavaVu::image(std::string filename, int width, int height, int jpegquality)
+std::string LavaVu::image(std::string filename, int width, int height, int jpegquality, bool transparent)
 {
   if (!amodel || !viewer->isopen) return "";
   //Set width/height override
   viewer->outwidth = width;
   viewer->outheight = height;
   //Otherwise write image to file or return as string (base64 data url)
-  return viewer->image(filename, jpegquality);
+  return viewer->image(filename, jpegquality, transparent);
 }
 
 std::string LavaVu::web(bool tofile)
