@@ -1036,7 +1036,7 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   if (!geomdata || geomdata->count == 0)
   {
     float dims[3];
-    Properties::toFloatArray(draw->properties["dims"], dims, 3);
+    Properties::toArray<float>(draw->properties["dims"], dims, 3);
     if (width == 0) width = dims[0];
     if (height == 0) height = dims[1];
     if (depth == 0) depth = dims[2];

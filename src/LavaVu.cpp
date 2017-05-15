@@ -645,9 +645,9 @@ void LavaVu::readRawVolume(const FilePath& fn)
   file.close();
 
   float volmin[3], volmax[3], volres[3];
-  Properties::toFloatArray(drawstate.global("volmin"), volmin, 3);
-  Properties::toFloatArray(drawstate.global("volmax"), volmax, 3);
-  Properties::toFloatArray(drawstate.global("volres"), volres, 3);
+  Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
+  Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
+  Properties::toArray<float>(drawstate.global("volres"), volres, 3);
 
   readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volmin, volmax);
 }
@@ -701,7 +701,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   }
 
   float inscale[3];
-  Properties::toFloatArray(drawstate.global("inscale"), inscale, 3);
+  Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
 
   //Scale geometry by input scaling factor
   for (int i=0; i<3; i++)
@@ -795,10 +795,10 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   {
     count = 0;
     float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toFloatArray(drawstate.global("volmin"), volmin, 3);
-    Properties::toFloatArray(drawstate.global("volmax"), volmax, 3);
-    Properties::toFloatArray(drawstate.global("volres"), volres, 3);
-    Properties::toFloatArray(drawstate.global("inscale"), inscale, 3);
+    Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
+    Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
+    Properties::toArray<float>(drawstate.global("volres"), volres, 3);
+    Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
     vobj = addObject(new DrawingObject(drawstate, name, "static=1"));
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
@@ -978,10 +978,10 @@ void LavaVu::createDemoVolume()
   if (!vobj)
   {
     float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toFloatArray(drawstate.global("volmin"), volmin, 3);
-    Properties::toFloatArray(drawstate.global("volmax"), volmax, 3);
-    Properties::toFloatArray(drawstate.global("volres"), volres, 3);
-    Properties::toFloatArray(drawstate.global("inscale"), inscale, 3);
+    Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
+    Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
+    Properties::toArray<float>(drawstate.global("volres"), volres, 3);
+    Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
     vobj = new DrawingObject(drawstate, "volume", "density=50\nsamples=1024\n");
     addObject(vobj);
 
@@ -1109,8 +1109,8 @@ void LavaVu::readHeightMap(const FilePath& fn)
   }
 
   float min[3], max[3];
-  Properties::toFloatArray(aview->properties["min"], min, 3);
-  Properties::toFloatArray(aview->properties["max"], max, 3);
+  Properties::toArray<float>(aview->properties["min"], min, 3);
+  Properties::toArray<float>(aview->properties["max"], max, 3);
   float range[3] = {0,0,0};
 
   min[0] = xmap;
@@ -1672,8 +1672,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     amodel->setup();
 
     float min[3], max[3];
-    Properties::toFloatArray(aview->properties["min"], min, 3);
-    Properties::toFloatArray(aview->properties["max"], max, 3);
+    Properties::toArray<float>(aview->properties["min"], min, 3);
+    Properties::toArray<float>(aview->properties["max"], max, 3);
 
     float omin[3] = {min[0], min[1], min[2]};
     float omax[3] = {max[0], max[1], max[2]};

@@ -322,7 +322,8 @@ public:
     data = json::object();
   }
 
-  static void toFloatArray(const json& val, float* array, unsigned int size);
+  template<typename T>
+  static void toArray(const json& val, T* array, unsigned int size);
 
   bool has(const std::string& key);
   json& operator[](const std::string& key);
@@ -337,6 +338,19 @@ public:
   bool typecheck(json& val, json& def);
 
 };
+
+template<typename T>
+void Properties::toArray(const json& val, T* array, unsigned int size)
+{
+  //Convert to a array of type T
+  for (unsigned int i=0; i<size; i++)
+  {
+    if (i >= val.size())
+      array[i] = (T)0.0; //Zero pad if too short
+    else
+      array[i] = val[i];
+  }
+}
 
 //Utility class for parsing property,value strings
 typedef std::vector<std::string> prop_values;

@@ -450,7 +450,7 @@ class Volumes : public Geometry
   TriSurfaces* twoTriangles;
 public:
   GLuint colourTexture;
-  std::map<DrawingObject*, int> slices;
+  std::map<DrawingObject*, unsigned int> slices;
 
   Volumes(DrawState& drawstate);
   ~Volumes();

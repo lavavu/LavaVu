@@ -207,9 +207,10 @@ void Volumes::update()
       }
 
       //Texture crop?
-      json texsize = current->properties["texturesize"];
-      json texoffset = current->properties["textureoffset"];
-      unsigned int dims[3] = {geom[i]->width, geom[i]->height, (unsigned int)slices[current]};
+      unsigned int texsize[3], texoffset[3];
+      Properties::toArray<unsigned int>(current->properties["texturesize"], texsize, 3);
+      Properties::toArray<unsigned int>(current->properties["textureoffset"], texoffset, 3);
+      unsigned int dims[3] = {geom[i]->width, geom[i]->height, slices[current]};
       bool crop = false;
       for (int d=0; d<3; d++)
       {
@@ -453,7 +454,7 @@ void Volumes::render(int i)
   if (props.has("rotate"))
   {
     float rot[4];
-    Properties::toFloatArray(props["rotate"], rot, 4);
+    Properties::toArray<float>(props["rotate"], rot, 4);
     Quaternion qrot(rot[0], rot[1], rot[2], rot[3]);
     qrot.apply();
   }
@@ -467,7 +468,7 @@ void Volumes::render(int i)
   if (props.has("translate"))
   {
     float trans[3];
-    Properties::toFloatArray(props["translate"], trans, 3);
+    Properties::toArray<float>(props["translate"], trans, 3);
     glTranslatef(trans[0], trans[1], trans[2]);
   }
 
