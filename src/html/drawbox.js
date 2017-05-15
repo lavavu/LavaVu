@@ -1,4 +1,6 @@
 //Bounding box only in WebGL
+//Urgent TODO: move shared code with draw.js into common file
+//maintaining two copies currently!
 function initBox(el, cmd_callback) {
   //console.log("INITBOX: " + el.id);
   var canvas = document.createElement("canvas");
@@ -87,7 +89,7 @@ function canvasMouseMove(event, mouse) {
 
 var zoomTimer;
 var zoomClipTimer;
-var zoomFactor = 0;
+var zoomSpin = 0;
 
 function canvasMouseWheel(event, mouse) {
   if (event.shiftKey) {
@@ -97,12 +99,10 @@ function canvasMouseWheel(event, mouse) {
     if (zoomClipTimer) clearTimeout(zoomClipTimer);
     zoomClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
   } else {
-    var factor = event.spin * 0.05;
-    if (window.navigator.platform.indexOf("Mac") >= 0)
-      factor *= 0.1;
-    if (zoomTimer) clearTimeout(zoomTimer);
-    zoomFactor += factor;
-    zoomTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomFactor); zoomFactor = 0;}, 100 );
+    if (zoomTimer) 
+      clearTimeout(zoomTimer);
+    zoomSpin += event.spin;
+    zoomTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
     //Clear the box after a second
     setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
@@ -225,6 +225,11 @@ function Viewer(canvas) {
   try {
     this.webgl = new WebGL(this.canvas, {antialias: true, premultipliedAlpha: false});
     this.gl = this.webgl.gl;
+    canvas.addEventListener("webglcontextlost", function(event) {
+      event.preventDefault();
+      console.log("CONTEXT LOSS DETECTED");
+    }, false);
+
   } catch(e) {
     //No WebGL
     console.log("No WebGL: " + e);
@@ -347,35 +352,7 @@ Viewer.prototype.draw = function() {
   this.gl.clearColor(0.5, 0.5, 0.5, 0);
   this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-  this.webgl.setPerspective(this.fov, this.gl.viewportWidth / this.gl.viewportHeight, this.near_clip, this.far_clip);
-
-  //Apply translation to origin, any rotation and scaling (inverse of zoom factor)
-  this.webgl.modelView.identity()
-  this.webgl.modelView.translate(this.translate)
-  // Adjust centre of rotation, default is same as focal point so this does nothing...
-  var adjust = [this.scale[0]*(this.focus[0] - this.centre[0]), this.scale[1]*(this.focus[1] - this.centre[1]), this.scale[2]*(this.focus[2] - this.centre[2])];
-  this.webgl.modelView.translate([-adjust[0], -adjust[1], -adjust[2]]);
-
-  // rotate model 
-  var rotmat = quat4.toMat4(this.rotate);
-  this.webgl.modelView.mult(rotmat);
-
-  // Adjust back for rotation centre
-  this.webgl.modelView.translate(adjust);
-
-  // Translate back by centre of model to align eye with model centre
-  this.webgl.modelView.translate([-this.focus[0]*this.scale[0], -this.focus[1]*this.scale[1], -this.focus[2]*this.scale[2] * this.orientation]);
-
-  // Apply scaling factors (including orientation switch if required)
-  var scaling = [this.scale[0], this.scale[1], this.scale[2] * this.orientation];
-  this.webgl.modelView.scale(scaling);
-  //console.log(JSON.stringify(this.webgl.modelView));
-
-   // Set default polygon front faces
-   if (this.orientation == 1.0)
-      this.gl.frontFace(this.gl.CCW);
-   else
-      this.gl.frontFace(this.gl.CW);
+  this.webgl.view(this);
 
   //Render objects
   this.border.draw(this.webgl);

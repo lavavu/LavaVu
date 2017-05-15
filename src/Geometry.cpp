@@ -107,6 +107,13 @@ void GeomData::colourCalibrate()
       omap->calibrate(valueData(draw->opacityIdx));
   }
 
+  //TODO: Set a colour lookup function pointer here
+  // - calculate number of colour lookups required
+  // - determine source of colour data
+  // - set a colour lookup function pointer to do the
+  //   required lookup at high efficiency
+  // - use this fn ptr to to the lookups by vert index in drawing code
+
   //Cache the filter data
   //The cache stores filter values so we can avoid 
   //hitting the json store for every vertex (very slow)
@@ -212,7 +219,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
   //Set opacity using own value map...
   ColourMap* omap = draw->opacityMap;
   vals = valueData(draw->opacityIdx);
-  if (omap && vals->size() > draw->opacityIdx)
+  if (omap && vals && vals->size() > draw->opacityIdx)
   {
     Colour cc = omap->getfast(valueData(draw->opacityIdx, idx));
     colour.a = cc.a;
@@ -341,11 +348,12 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
   return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
-Geometry::Geometry(DrawState& drawstate) : drawstate(drawstate), 
-                       view(NULL), elements(0), flat2d(false), cached(NULL),
+Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
+                       flat2d(false), cached(NULL), drawstate(drawstate),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
+  drawcount = 0;
 }
 
 Geometry::~Geometry()
@@ -419,7 +427,6 @@ void Geometry::clearValues(DrawingObject* draw, std::string label)
         continue;
       }
 
-      for (int i=0; i<g->values.size(); i++)
       for (auto vals : g->values)
         if (label.length() == 0 || vals->label == label)
           vals->clear();
@@ -783,10 +790,10 @@ void Geometry::setState(unsigned int i, Shader* prog)
       {
         clipMin = Vec3d((float)geom[i]->draw->properties["xmin"],
                         (float)geom[i]->draw->properties["ymin"],
-                        (float)geom[i]->draw->properties["zmin"]);
+                        view->is3d ? (float)geom[i]->draw->properties["zmin"] : -HUGE_VALF);
         clipMax = Vec3d((float)geom[i]->draw->properties["xmax"],
                         (float)geom[i]->draw->properties["ymax"],
-                        (float)geom[i]->draw->properties["zmax"]);
+                        view->is3d ? (float)geom[i]->draw->properties["zmax"] : HUGE_VALF);
         if (geom[i]->draw->properties["clipmap"])
         {
           Vec3d dims(drawstate.dims);
@@ -809,12 +816,12 @@ void Geometry::setState(unsigned int i, Shader* prog)
   GL_Error_Check;
 }
 
-void Geometry::update()
+void Geometry::display()
 {
-}
+  //Skip if view not open or nothing to draw
+  if (!view || !view->width || !total) return;
 
-void Geometry::draw()  //Display saved geometry
-{
+  //Draw data, then labels
   GL_Error_Check;
 
   //Default to no shaders
@@ -824,21 +831,23 @@ void Geometry::draw()  //Display saved geometry
   cached = NULL;
 
   //Anything to draw?
-  int newcount = 0;
+  unsigned int newcount = 0;
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (drawable(i))
       newcount++;
   }
 
-  //Have something to update?
-  if (total > 0)
+  if (reload || redraw || newcount != drawcount)
   {
-    if (reload || redraw || newcount != drawcount)
-    {
-      update();
-      reload = false;
-    }
+    update();
+    reload = false;
+  }
+
+  //Skip draw for internal sub-renderers, will be done by parent renderer
+  if (!internal && newcount)
+  {
+    draw();
 
     labels();
   }
@@ -848,23 +857,35 @@ void Geometry::draw()  //Display saved geometry
   GL_Error_Check;
 }
 
+void Geometry::update()
+{
+  //Update virtual to be implemented
+}
+
+void Geometry::draw()
+{
+  //Draw virtual to be implemented
+}
+
 void Geometry::labels()
 {
   //Print labels
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_DEPTH_TEST);  //No depth testing
   glDisable(GL_LIGHTING);  //No lighting
+  glUseProgram(0);
   for (unsigned int i=0; i < geom.size(); i++)
   {
-    std::string font = geom[i]->draw->properties["font"];
-    if (view->scale2d != 1.0 && font != "vector")
-      geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
-    //Default to object colour (if fontcolour provided will replace)
-    Colour colour = Colour(geom[i]->draw->properties["colour"]);
-    glColor3ubv(colour.rgba);
-    drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
+      std::string font = geom[i]->draw->properties["font"];
+      if (view->scale2d != 1.0 && font != "vector")
+        geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
+      //Default to object colour (if fontcolour provided will replace)
+      Colour colour = Colour(geom[i]->draw->properties["colour"]);
+      glColor3ubv(colour.rgba);
+      drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
+
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
         float* p = geom[i]->vertices[j];
@@ -895,7 +916,7 @@ void Geometry::labels()
         else if (alignchar == '!' || alignchar == '|' || alignchar == '^' || alignchar == '_')
           labstr = labstr.substr(1);
 
-        if (geom[i]->labels[j].size() > 0)
+        if (labstr.length() > 0)
         {
           drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, view->scale);
         }
@@ -952,7 +973,7 @@ GeomData* Geometry::add(DrawingObject* draw)
   return geomdata;
 }
 
-void Geometry::setView(View* vp, float* min, float* max)
+void Geometry::setup(View* vp, float* min, float* max)
 {
   view = vp;
 
@@ -1002,21 +1023,20 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   geomdata = getObjectStore(draw);
 
   //If dimensions specified, check if full dataset loaded
-  bool loaded = false;
   if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
   {
     unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
     if (size == geomdata->data[dtype]->count())
       geomdata = NULL;
-    //if (loaded) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
-    //                   geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
+    //if (!geomdata) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
+    //                       geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
   }
 
   //Allow spec width/height/depth in properties
   if (!geomdata || geomdata->count == 0)
   {
     float dims[3];
-    Properties::toFloatArray(draw->properties["dims"], dims, 3);
+    Properties::toArray<float>(draw->properties["dims"], dims, 3);
     if (width == 0) width = dims[0];
     if (height == 0) height = dims[1];
     if (depth == 0) depth = dims[2];
@@ -1152,7 +1172,7 @@ void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int
   }
 }
 
-void Geometry::setup(DrawingObject* draw)
+void Geometry::setupObject(DrawingObject* draw)
 {
   //Scan all data for min/max
   std::vector<float> minimums;
@@ -1205,7 +1225,6 @@ void Geometry::insertFixed(Geometry* fixed)
 
   for (unsigned int i=0; i<fixed->geom.size(); i++)
   {
-    GeomData* varying = NULL;
     if (geom.size() == i)
       add(fixed->geom[i]->draw); //Insert new if not enough records
     //Create a shallow copy of member content
@@ -1806,5 +1825,87 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
   //Read the triangle indices
   read(draw, indices.size(), lucIndexData, &indices[0]);
+}
+
+//Class to handle geometry types with sub-geometry glyphs drawn
+//at vertices consisting of lines and/or triangles
+Glyphs::Glyphs(DrawState& drawstate) : Geometry(drawstate)
+{
+  //Create sub-renderers
+  lines = new Lines(drawstate);
+  tris = new TriSurfaces(drawstate);
+  tris->internal = lines->internal = true;
+}
+
+Glyphs::~Glyphs()
+{
+  delete lines;
+  delete tris;
+}
+
+void Glyphs::close()
+{
+  lines->close();
+  tris->close();
+  Geometry::close();
+}
+
+void Glyphs::setup(View* vp, float* min, float* max)
+{
+  lines->setup(vp, min, max);
+  tris->setup(vp, min, max);
+  Geometry::setup(vp, min, max);
+}
+
+void Glyphs::display()
+{
+  tris->redraw = redraw;
+  tris->reload = reload;
+  lines->redraw = redraw;
+  lines->reload = reload;
+
+  //Need to call to clear the cached object
+  lines->display();
+  tris->display();
+
+  if (!reload && drawstate.global("gpucache"))
+  {
+    //Skip re-gen of internal geometry shapes
+    redraw = false;
+  }
+
+  //Render in parent display call
+  Geometry::display();
+}
+
+void Glyphs::update()
+{
+  tris->update();
+  lines->update();
+}
+
+void Glyphs::draw()
+{
+  if (tris->total)
+  {
+    // Undo any scaling factor for glyph drawing...
+    glPushMatrix();
+    if (tris->unscale)
+      glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
+
+    tris->draw();
+
+    // Re-Apply scaling factors
+    glPopMatrix();
+  }
+
+  if (lines->total)
+    lines->draw();
+}
+
+void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
+{
+  tris->jsonWrite(draw, obj);
+  lines->jsonWrite(draw, obj);
 }
 

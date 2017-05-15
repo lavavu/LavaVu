@@ -180,7 +180,7 @@ bool Database::issue(const char* fmt, ...)
   return true;
 }
 
-Model::Model(DrawState& drawstate) : drawstate(drawstate), now(-1), figure(-1)
+Model::Model(DrawState& drawstate) : now(-1), drawstate(drawstate), figure(-1)
 {
   //Create new geometry containers
   init();
@@ -242,7 +242,7 @@ void Model::init()
   geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate, true);
   geometry[lucVolumeType] = volumes = new Volumes(drawstate);
   geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate, true);
-  geometry[lucLineType] = lines = new Lines(drawstate);
+  geometry[lucLineType] = lines = new Links(drawstate);
   geometry[lucShapeType] = shapes = new Shapes(drawstate);
   debug_print("Created %d new geometry containers\n", geometry.size());
 
@@ -277,6 +277,7 @@ bool Model::loadFigure(int fig)
   if (fig >= (int)figures.size()) fig = 0;
   if (fig < 0) fig = figures.size()-1;
   figure = fig;
+  assert(figure >= 0);
   jsonRead(figures[figure]);
 
   //Set window caption
@@ -290,7 +291,7 @@ bool Model::loadFigure(int fig)
 void Model::storeFigure()
 {
   //Save current state in current selected figure
-  if (figure >= 0 && figures.size() > figure)
+  if (figure >= 0 && figure < (int)figures.size())
     figures[figure] = jsonWrite();
 }
 
@@ -384,14 +385,14 @@ void Model::setup()
   //Setup min/max on all object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    points->setup(objects[i]);
-    quadSurfaces->setup(objects[i]);
-    triSurfaces->setup(objects[i]);
-    vectors->setup(objects[i]);
-    tracers->setup(objects[i]);
-    shapes->setup(objects[i]);
-    lines->setup(objects[i]);
-    volumes->setup(objects[i]);
+    points->setupObject(objects[i]);
+    quadSurfaces->setupObject(objects[i]);
+    triSurfaces->setupObject(objects[i]);
+    vectors->setupObject(objects[i]);
+    tracers->setupObject(objects[i]);
+    shapes->setupObject(objects[i]);
+    lines->setupObject(objects[i]);
+    volumes->setupObject(objects[i]);
   }
 }
 
@@ -591,7 +592,6 @@ void Model::loadViewCamera(int viewport_id)
     v->setScale(scale[0], scale[1], scale[2]);
     v->properties.parseSet(std::string(vprops));
     v->properties["coordsystem"] = orientation;
-    //debug_print("Loaded \"%s\" at %f,%f\n");
   }
   sqlite3_finalize(statement);
 }
@@ -649,6 +649,7 @@ void Model::loadLinks()
     int viewport_id = sqlite3_column_int(statement, 0);
     int object_id = sqlite3_column_int(statement, 1);
     unsigned int colourmap_id = sqlite3_column_int(statement, 3); //Linked colourmap id
+    int data_type = sqlite3_column_int(statement, 4); //Colour/Opacity/R/G/B etc (legacy)
 
     //Fields from object_colourmap
     if (!colourmap_id)
@@ -681,8 +682,11 @@ void Model::loadLinks()
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
       //Find colourmap by id == index
-      //Add colourmap to drawing object
-      draw->properties.data["colourmap"] = colourmap_id-1;
+      //Add colourmap to drawing object Colour & Opacity still suported, R/G/B are not
+      if (data_type == lucColourValueData)
+        draw->properties.data["colourmap"] = colourmap_id-1;
+      if (data_type == lucOpacityValueData)
+        draw->properties.data["opacitymap"] = colourmap_id-1;
     }
   }
   sqlite3_finalize(statement);
@@ -695,7 +699,6 @@ void Model::loadLinks(DrawingObject* obj)
   if (obj->dbid <= 0) return;
 
   //Select statment to get all viewports in window and all objects in viewports
-  char SQL[SQL_QUERY_MAX];
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
   sqlite3_stmt* statement = database.select("SELECT object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE object.id=%d", obj->dbid);
 
@@ -785,7 +788,6 @@ int Model::loadTimeSteps(bool scan)
     {
       //If no steps found after trying 100, give up scanning
       if (timesteps.size() < 2 && ts > 100) break;
-      int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
       std::string path = checkFileStep(ts, basename);
       if (path.length() > 0)
       {
@@ -819,10 +821,10 @@ void Model::loadFixed()
 
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
 {
-  int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
+  unsigned int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
   //Lower limit of digits to look for, default 1-5
   if (len < limit) len = limit;
-  for (int w = 5; w >= len; w--)
+  for (int w = 5; w >= (int)len; w--)
   {
     std::ostringstream ss;
     ss << database.file.path << basename << std::setw(w) << std::setfill('0') << ts;
@@ -974,13 +976,6 @@ bool Model::useCache()
   return drawstate.global("cache");
 }
 
-void Model::deleteCache()
-{
-  if (!useCache()) return;
-  debug_print("~~~ Cache emptied\n");
-  //cache.clear();
-}
-
 void Model::cacheLoad()
 {
   for (unsigned int i=0; i<timesteps.size(); i++)
@@ -1011,6 +1006,7 @@ void Model::cacheStep()
     debug_print("~~~ Cached step, at: %d\n", step());
     printf(".");
     fflush(stdout);
+    //Objects have been moved into cache, clear from active list
     geometry.clear();
   }
   else
@@ -1052,7 +1048,7 @@ bool Model::restoreStep()
   quadSurfaces = (QuadSurfaces*)geometry[lucGridType];
   volumes = (Volumes*)geometry[lucVolumeType];
   triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
-  lines = (Lines*)geometry[lucLineType];
+  lines = (Links*)geometry[lucLineType];
   shapes = (Shapes*)geometry[lucShapeType];
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
@@ -1190,7 +1186,6 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   if (time_stop < 0) time_stop = step();
 
   //Load geometry
-  char SQL[SQL_QUERY_MAX];
   char filter[256] = {'\0'};
   char objfilter[32] = {'\0'};
 
@@ -1267,8 +1262,9 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       int items = count / size;
       int width = sqlite3_column_int(statement, 9);
       if (height == 0) height = width > 0 ? items / width : 0;
-      float minimum = (float)sqlite3_column_double(statement, 10);
-      float maximum = (float)sqlite3_column_double(statement, 11);
+      //TODO: these should be used for value data if set!
+      //float minimum = (float)sqlite3_column_double(statement, 10);
+      //float maximum = (float)sqlite3_column_double(statement, 11);
       //Units field repurposed for data label
       const char *data_label = (const char*)sqlite3_column_text(statement, 13);
       const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
@@ -1436,6 +1432,21 @@ void Model::mergeDatabases()
   }
 }
 
+void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compress)
+{
+  database.reopen(true); //Ensure opened writable
+  database.issue("BEGIN EXCLUSIVE TRANSACTION");
+  if (type == lucMaxType)
+    writeObjects(database, target, step(), compress);
+  else
+    writeGeometry(database, type, target, step(), compress);
+
+  //Update object
+  database.issue("update object set properties = '%s' where name = '%s'", target->properties.data.dump().c_str(), target->name().c_str());
+
+  database.issue("COMMIT");
+}
+
 void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
 {
   //Write objects to a new database?
@@ -1472,8 +1483,6 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   writeState(outdb);
 
   outdb.issue("BEGIN EXCLUSIVE TRANSACTION");
-
-  char SQL[SQL_QUERY_MAX];
 
   //Write objects
   for (unsigned int i=0; i < objects.size(); i++)
@@ -1528,6 +1537,7 @@ void Model::writeState(Database& outdb)
     if (figures.size() == 0)
       figure = addFigure("default");
   }
+  assert(figure >= 0);
 
   //Update any active changes to current state
   storeFigure();
@@ -1890,7 +1900,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   //Should not set this unless data changed for webgl?
   //exported["reload"] = true;
   exported["reload"] = objdata;
-  if (fignames.size() > figure)
+  if (figure >= 0 && figure < (int)fignames.size())
     exported["figure"] = fignames[figure];
 
   //Export with indentation

@@ -35,6 +35,9 @@
 
 #include "Geometry.h"
 
+//Triangle centroid for depth sorting
+#define centroid(v1,v2,v3) {centroids.emplace_back((v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, (v1[2]+v2[2]+v3[2])/3);}
+
 TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(drawstate)
 {
   type = lucTriangleType;
@@ -75,7 +78,6 @@ void TriSurfaces::close()
 
 int TriSurfaces::triCount(int index)
 {
-  int tris;
   if (geom[index]->indices.size() > 0)
     return geom[index]->indices.size() / 3;
   else if (geom[index]->width > 0 && geom[index]->height > 0)
@@ -90,7 +92,8 @@ void TriSurfaces::update()
 
   //Get triangle count
   unsigned int lastcount = total;
-  int drawelements = 0;
+  total = 0;
+  unsigned int drawelements = 0;
   for (unsigned int t = 0; t < geom.size(); t++)
   {
     int tris = triCount(t);
@@ -166,8 +169,6 @@ void TriSurfaces::loadMesh()
   {
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     if (geom[index]->count == 0) continue;
-    //Save initial offset
-    GLuint voffset = unique;
 
     //Has index data, simply load the triangles
     if (geom[index]->indices.size() > 0)
@@ -337,7 +338,8 @@ void TriSurfaces::loadMesh()
 
 void TriSurfaces::loadList()
 {
-  clock_t t1,t2,tt;
+  assert(view);
+  clock_t t2,tt;
   tt=clock();
 
   debug_print("Loading up to %d triangles into list...\n", total);
@@ -354,8 +356,8 @@ void TriSurfaces::loadList()
   counts.resize(geom.size());
 
   //Index data for all vertices
-  int voffset = 0;
-  int offset = 0; //Offset into centroid list, include all hidden/filtered
+  unsigned int voffset = 0;
+  unsigned int offset = 0; //Offset into centroid list, include all hidden/filtered
   tricount = 0;
   for (unsigned int index = 0; index < geom.size(); voffset += geom[index]->count, index++)
   {
@@ -404,7 +406,6 @@ void TriSurfaces::loadList()
 
 void TriSurfaces::loadBuffers()
 {
-  if (!view->width) return; //Wait before using OpenGL
   //Copy data to Vertex Buffer Object
   clock_t t1,t2,tt;
   tt=clock();
@@ -434,16 +435,15 @@ void TriSurfaces::loadBuffers()
   if (!p) abort_program("VBO setup failed");
 
   //Buffer data for all vertices
-  float vshift = view->properties["shift"];
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     t1=tt=clock();
 
     //Calibrate colour maps on range for this surface
     geom[index]->colourCalibrate();
-    int hasColours = geom[index]->colourCount();
+    unsigned int hasColours = geom[index]->colourCount();
     if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
-    int colrange = hasColours ? geom[index]->count / hasColours : 1;
+    unsigned int colrange = hasColours ? geom[index]->count / hasColours : 1;
     if (colrange < 1) colrange = 1;
     //if (hasColours) assert(colrange * hasColours == geom[index]->count);
     //if (hasColours && colrange * hasColours != geom[index]->count)
@@ -454,8 +454,9 @@ void TriSurfaces::loadBuffers()
     bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
     debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
     float zero[3] = {0,0,0};
-    float shift = vshift * 0.0001 * index * view->model_size;
-    if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip built in objects
+    float shift = geom[index]->draw->properties["shift"];
+    if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
+    shift *= 0.0001 * view->model_size;
     std::array<float,3> shiftvert;
     for (unsigned int v=0; v < geom[index]->count; v++)
     {
@@ -470,7 +471,7 @@ void TriSurfaces::loadBuffers()
         //Shift vertices
         shiftvert = {vert[0] + shift, vert[1] + shift, vert[2] + shift};
         vert = shiftvert.data();
-        //if (v%1000==0) printf("SHIFTING %d (%d) by %f (%d)\n", geom[index]->draw->dbid, index, shift, vshift);
+        if (v==0) debug_print("Shifting vertices %s (%d) by %f\n", geom[index]->draw->name().c_str(), index, shift);
       }
 
       //Write vertex data to vbo
@@ -504,29 +505,6 @@ void TriSurfaces::loadBuffers()
   debug_print("  Total %.4lf seconds to update triangle buffers\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
-//#define MAX3(a,b,c) ( a>b ? (a>c ? a : c) : (b>c ? b : c) )
-void TriSurfaces::centroid(float* v1, float* v2, float* v3)
-{
-  //Triangle centroid for depth sorting
-  int idx = centroids.size();
-  assert(idx+1 <= centroids.capacity()); //Resizing vector will invalid pointers, assert size is sufficient
-
-  //Use actual centroid
-  centroids.emplace_back((v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, view->is3d ? (v1[2]+v2[2]+v3[2])/3 : 0.0f);
-
-  //Max values in each axis instead of centroid TODO: allow switching sort vertex calc type
-  //float centroid[3] = {MAX3(v1[0], v2[0], v3[0]), MAX3(v1[1], v2[1], v3[1]), MAX3(v1[2], v2[2], v3[2])};
-  //printf("%d v1 %f,%f,%f v2 %f,%f,%f v3 %f,%f,%f\n", index, v1[0], v1[1], v1[2], v2[0], v2[1], v2[2], v3[0], v3[1], v3[2]);
-
-  //Limit to defined bounding box
-  //Possibly should store calculated bounding box separately for geometry outside border
-  for (int i=0; i<3; i++)
-  {
-    centroids[idx][i] = max(centroids[idx][i], view->min[i]);
-    centroids[idx][i] = min(centroids[idx][i], view->max[i]);
-  }
-}
-
 void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)
 {
   clock_t t1,t2;
@@ -536,7 +514,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   // if less colour values provided, must precalc own indices to skip this step 
   unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours >= geom[index]->vertices.size()/3);
-  if (hasColours && !vertColour) std::cout << "WARNING: Not enough colour values for per-vertex normalisation!\n";
+  if (hasColours && !vertColour) debug_print("WARNING: Not enough colour values for per-vertex normalisation! %d < %d\n", hasColours, geom[index]->vertices.size()/3);
   bool normal = geom[index]->draw->properties["vertexnormals"];
   //Calculate face normals for each triangle and copy to each face vertex
   for (unsigned int v=0; v<verts.size()-2 && verts.size() > 2; v += 3)
@@ -758,7 +736,8 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
 //Depth sort the triangles before drawing, called whenever the viewing angle has changed
 void TriSurfaces::depthSort()
 {
-  if (tricount == 0 || elements == 0) return;
+  //Skip if nothing to render or in 2d
+  if (tricount == 0 || elements == 0 || !view->is3d) return;
   clock_t t1,t2;
   t1 = clock();
   assert(tidx);
@@ -779,8 +758,8 @@ void TriSurfaces::depthSort()
     {
       assert(tidx[i].vertex);
       fdistance = eyeDistance(view->modelView, tidx[i].vertex);
+      fdistance = min(maxdist, max(mindist, fdistance)); //Clamp to range
       tidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
-      assert(tidx[i].distance >= 0 && tidx[i].distance <= USHRT_MAX);
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);
       //Reverse as radix sort is ascending and we want to draw by distance descending
       //tidx[i].distance = USHRT_MAX - (unsigned short)(multiplier * (fdistance - mindist));
@@ -810,7 +789,6 @@ void TriSurfaces::depthSort()
 //Reloads triangle indices, required after data update and depth sort
 void TriSurfaces::render()
 {
-  if (!view->width) return; //Wait before using OpenGL
   clock_t t1,t2;
   if (tricount == 0 || elements == 0) return;
   assert(tidx);
@@ -825,6 +803,12 @@ void TriSurfaces::render()
     //Nothing has changed, skip
     debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
     return;
+  }
+  if (tricount > total)
+  {
+    //Will overflow tidx buffer
+    fprintf(stderr, "Too many triangles! %d > %d\n", tricount, total);
+    tricount = total;
   }
 
   t1 = clock();
@@ -855,9 +839,8 @@ void TriSurfaces::render()
   if (!p) abort_program("glMapBuffer failed");
   //Reverse order farthest to nearest
   idxcount = 0;
-  assert(tricount <= total); //Or will overflow tidx buffer
   for(int i=tricount-1; i>=0; i--)
-    //for(int i=0; i<tricount; i++)
+  //for(int i=0; i<tricount; i++)
   {
     idxcount += 3;
     assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
@@ -876,11 +859,8 @@ void TriSurfaces::render()
 
 void TriSurfaces::draw()
 {
-  if (!view->width) return; //Wait before using OpenGL
-  //Draw, calls update when required
-  Geometry::draw();
   GL_Error_Check;
-  if (drawcount == 0 || elements == 0) return;
+  if (elements == 0) return;
 
   //Re-render the triangles if view has rotated
   if (view->sort || idxcount != elements) render();

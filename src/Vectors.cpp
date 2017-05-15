@@ -35,37 +35,18 @@
 
 #include "Geometry.h"
 
-Vectors::Vectors(DrawState& drawstate) : Geometry(drawstate)
+Vectors::Vectors(DrawState& drawstate) : Glyphs(drawstate)
 {
   type = lucVectorType;
-  //Create sub-renderers
-  lines = new Lines(drawstate, true); //Only used for 2d lines
-  tris = new TriSurfaces(drawstate);
-  tris->internal = lines->internal = true;
-}
-
-Vectors::~Vectors()
-{
-  delete lines;
-  delete tris;
-}
-
-void Vectors::close()
-{
-  lines->close();
-  tris->close();
 }
 
 void Vectors::update()
 {
-  if (!reload && drawstate.global("gpucache")) return;
   //Convert vectors to triangles
+  lines->clear();
+  tris->clear();
   clock_t t1,tt;
   tt=clock();
-  lines->clear();
-  lines->setView(view);
-  tris->clear();
-  tris->setView(view);
   int tot = 0;
   Vec3d scale(view->scale);
   tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
@@ -137,37 +118,12 @@ void Vectors::update()
     }
 
     //Adjust bounding box
-    tris->compareMinMax(geom[i]->min, geom[i]->max);
-    lines->compareMinMax(geom[i]->min, geom[i]->max);
+    //tris->compareMinMax(geom[i]->min, geom[i]->max);
+    //lines->compareMinMax(geom[i]->min, geom[i]->max);
   }
   t1 = clock();
   debug_print("Plotted %d vector arrows in %.4lf seconds\n", tot, (t1-tt)/(double)CLOCKS_PER_SEC);
 
-  tris->update();
-  lines->update();
-}
-
-void Vectors::draw()
-{
-  Geometry::draw();
-  if (drawcount == 0) return;
-
-  // Undo any scaling factor for arrow drawing...
-  glPushMatrix();
-  if (tris->unscale)
-    glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
-
-  tris->draw();
-
-  // Re-Apply scaling factors
-  glPopMatrix();
-
-  lines->draw();
-}
-
-void Vectors::jsonWrite(DrawingObject* draw, json& obj)
-{
-  tris->jsonWrite(draw, obj);
-  lines->jsonWrite(draw, obj);
+  Glyphs::update();
 }
 

@@ -38,11 +38,12 @@
 // Given a grid dataset and an isovalue, calculate the triangular
 //  facets required to represent the isosurface through the data.
 Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample)
-  : subsample(subsample), target(target), surfaces(tris)
+  : subsample(subsample), surfaces(tris), target(target)
 {
   //Generate an isosurface from a set of volume slices or a cube
   clock_t t1,t2,tt;
   tt = t1 = clock();
+  if (geom.size() == 0) return;
 
   std::map<DrawingObject*, int> slices;
   slices.clear();
@@ -78,14 +79,19 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
         geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
       else if (geom[i]->luminance.size() > 0)
         geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
+      else if (geom[i]->colours.size() > 0)
+        geom[i]->height = geom[i]->colours.size() / geom[i]->width;
     }
 
-    unsigned int depth = geom[i]->depth;
+    int depth = geom[i]->depth;
     if (slices[current] > depth) depth = slices[current]; 
 
     nx = geom[i]->width;
     ny = geom[i]->height;
     nz = depth;
+
+    if (nx == 0 || ny == 0 || nz == 0)
+      abort_program("Invalid volume dimensions %d %d %d\n", nx, ny, nz);
 
     //Apply subsampling and allocate grid vertex array
     nx /= subsample;
@@ -98,30 +104,27 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
     Vec3d start = Vec3d(geom[i]->vertices[0]);
     Vec3d end = Vec3d(geom[i]->vertices[1]);
     Vec3d inc = end-start;
-    inc[0] = inc[0] / nx;
-    inc[1] = inc[1] / ny;
-    inc[2] = inc[2] / nz;
+    inc[0] = inc[0] / (nx-1);
+    inc[1] = inc[1] / (ny-1);
+    inc[2] = inc[2] / (nz-1);
 
     //Save colour values reference
-    //TODO: specify colour field label vs surface field
-    //All this does is sample the isosurface field if it uses colourVals
-    // which is always the same colour per isovalue anyway
-    colourVals = NULL; //geom[i]->colourData();
+    colourVals = geom[i]->colourData();
     if (colourVals && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
       colourVals = NULL;
 
     // Sample in regular grid
     Colour c;
     unsigned int next = 0;
-    for (int z = 0; z < nz; z++)
+    for (unsigned int z = 0; z < nz; z++)
     //for (int x = 0; x < nx; x++)
     {
       //if (geom[i]->depth <= 1) next = 0; //Reset value index if sliced
 
-      for (int y = 0; y < ny; y++)
+      for (unsigned int y = 0; y < ny; y++)
       {
 
-        for (int x = 0; x < nx; x++)
+        for (unsigned int x = 0; x < nx; x++)
         //for (int z = 0; z < nz; z++)
         {
           vertex->at(x,y,z).pos[0] = start[0]+x*inc[0];
@@ -213,7 +216,6 @@ The lookup table is taken from http://astronomy.swin.edu.au/~pbourke/modelling/p
 */
 void Isosurface::MarchingCubes()
 {
-   int i,j,k,n;
    int cubeindex;
    IVertex points[12];
 
@@ -512,11 +514,11 @@ void Isosurface::MarchingCubes()
    };
 
 
-   for ( i = 0 ; i < nx - 1  ; i++ )
+   for (unsigned int i = 0 ; i < nx - 1  ; i++ )
    {
-      for ( j = 0 ; j < ny - 1 ; j++ )
+      for (unsigned int j = 0 ; j < ny - 1 ; j++ )
       {
-         for ( k = 0 ; k < nz - 1 ; k++ )
+         for (unsigned int k = 0 ; k < nz - 1 ; k++ )
          {
             /* Determine the index into the edge table which tells us which vertices are inside of the surface */
             cubeindex = 0;
@@ -559,7 +561,7 @@ void Isosurface::MarchingCubes()
                VertexInterp( &points[11], &vertex->at(i,j,k+1) , &vertex->at(i,j+1,k+1) );
 
             /* Create the triangles */
-            for ( n = 0 ; triTable[cubeindex][n] != -1 ; n += 3 )
+            for (unsigned int n = 0 ; triTable[cubeindex][n] != -1 ; n += 3 )
             {
                CreateTriangle( &points[ triTable[cubeindex][n  ] ], 
                                &points[ triTable[cubeindex][n+1] ], 
@@ -626,7 +628,7 @@ void Isosurface::CreateTriangle(IVertex* point1, IVertex* point2, IVertex* point
 
 void Isosurface::DrawWalls()
 {
-   int i, j, k;
+   unsigned int i, j, k;
    IVertex * points[8];
    IVertex midVertices[4];
    points[LEFT] = &midVertices[0];

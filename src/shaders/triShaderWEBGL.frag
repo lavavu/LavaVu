@@ -29,9 +29,6 @@ void main(void)
   vec4 fColour = vColour;
   if (uTextured) 
     fColour = texture2D(uTexture, vTexCoord);
-  //Wireframe from tex coord
-  else if (vTexCoord.x > 0.03 && vTexCoord.x < 0.97 &&
-           vTexCoord.y > 0.03 && vTexCoord.y < 0.97) discard;
 
   //Get properties by object ID
   int cullface = 0;

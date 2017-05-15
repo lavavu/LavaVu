@@ -1,6 +1,7 @@
 var kernel;
 //Maintain a list of interactor instances opened by id
 var instances = [];
+var delay = 0;
 
 function initLoad() {
   if (parent.IPython) {
@@ -43,19 +44,23 @@ function do_action(id, val, element) {
 function redisplay(id) {
   //If instance doesn't exist yet, try again in 0.5 seconds... only seems to be needed in chrome
   if (id+1 > instances.length || !instances[id] || instances[id].box === undefined) {
+    if (delay > 5) return; //Give up after 5 tries
     console.log("Delaying redisplay " + id);
     setTimeout(function() {redisplay(id);}, 500); 
+    delay++;
     if (id+1 > instances.length) console.log(" -- Invalid ID " + (id+1) + ' > ' + instances.length);
     else if (!instances[id]) console.log(" -- No instance: [" + id + "] " + instances[id]);
     else if (!instances[id].box) console.log(" -- No box viewer: [" + id + "] " + instances[id]);
     return;
   }
 
-  //Call get_image
-  instances[id].get_image();
+  var that = instances[id];
+  if (that.img) {
+    //Call get_image
+    that.get_image();
     //Update the box size by getting state
-    var that = instances[id];
     updateBox(that.box, function(onget) {that.get_state(onget);});
+  }
 }
 
 function WindowInteractor(id) {
@@ -152,10 +157,12 @@ WindowInteractor.prototype.do_action = function(id, val) {
 
   //Reload state
   var that = this;
-  updateBox(this.box, function(onget) {that.get_state(onget);});
+  if (that.img)
+    updateBox(this.box, function(onget) {that.get_state(onget);});
 }
 
 WindowInteractor.prototype.get_image = function(onload) {
+  if (!this.img) return;
   //console.log("get_img: " + this.id);
   if (kernel) {
     var that = this;

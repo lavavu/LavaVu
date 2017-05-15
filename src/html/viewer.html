@@ -10,6 +10,46 @@
 <script type="text/javascript" src="draw.js"></script>
 <script type="text/javascript" src="server.js"></script>
 
+<script id="particle-vs" type="x-shader/x-vertex">
+precision highp float;
+//Point vertex shader
+</script>
+
+<script id="particle-fs" type="x-shader/x-fragment">
+precision highp float;
+//Point fragment shader
+</script>
+
+<script id="triangle-vs" type="x-shader/x-vertex">
+precision highp float;
+//Tri vertex shader
+</script>
+
+<script id="triangle-fs" type="x-shader/x-fragment">
+precision highp float;
+//Tri fragment shader
+</script>
+
+<script id="line-vs" type="x-shader/x-vertex">
+precision highp float;
+//Line vertex shader
+</script>
+
+<script id="line-fs" type="x-shader/x-fragment">
+precision highp float;
+//Line fragment shader
+</script>
+
+<script id="volume-vs" type="x-shader/x-vertex">
+precision highp float;
+//Volume vertex shader
+</script>
+
+<script id="volume-fs" type="x-shader/x-fragment">
+precision highp float;
+//Volume fragment shader
+</script>
+
 </head>
 
 <body onload="initPage();" oncontextmenu="return false;">
@@ -18,6 +58,9 @@
     <span id="progressmessage"></span><span id="progressstatus"></span>
     <div id="progressbar" style="width: 300px; height: 10px; background: #58f;"></div>
   </div>
+
+  <canvas id="canvas" class="canvas"></canvas>
+  <img id="frame" class="server" style="display: none; position: absolute; top: 0px; left: 0px; z-index: -1;"></img>
 
   <div id="hidden" style="display: none">
     <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAPCAYAAAA2yOUNAAAAj0lEQVQokWNIjHT8/+zZs//Pnj37/+TJk/9XLp/+f+bEwf9HDm79v2Prqv9aKrz/GUYVEaeoMDMQryJXayWIoi0bFmFV1NWS+z/E1/Q/AwMDA0NVcez/LRsWoSia2luOUAADVcWx/xfO6/1/5fLp/1N7y//HhlmhKoCBgoyA/w3Vyf8jgyyxK4CBUF8zDAUAAJRXY0G1eRgAAAAASUVORK5CYII=" id="slider">
@@ -159,6 +202,8 @@
     </table>
       
     <hr>
+    <input type="button" class="server" value="Resize" onclick="resizeToWindow();">
+    <input type="button" class="server" value="Connect" onclick="connectWindow();"><br>
     <input type="button" value="Import" onclick="document.getElementById('fileupload').click();">
     <input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)" style="display: none;">
     <input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();">

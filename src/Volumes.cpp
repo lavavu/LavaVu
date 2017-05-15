@@ -70,10 +70,6 @@ void Volumes::close()
 
 void Volumes::draw()
 {
-  //Draw
-  Geometry::draw();
-  if (drawcount == 0) return;
-
   //clock_t t1,t2,tt;
   //t1 = tt = clock();
 
@@ -105,7 +101,7 @@ void Volumes::draw()
 void Volumes::update()
 {
   twoTriangles->clear();
-  twoTriangles->setView(view);
+  twoTriangles->setup(view);
 
   //Use triangle renderer for two triangles to display volume shader output
   if (geom.size() > 0)
@@ -211,18 +207,19 @@ void Volumes::update()
       }
 
       //Texture crop?
-      json texsize = current->properties["texturesize"];
-      json texoffset = current->properties["textureoffset"];
-      unsigned int dims[3] = {geom[i]->width, geom[i]->height, (unsigned int)slices[current]};
+      unsigned int texsize[3], texoffset[3];
+      Properties::toArray<unsigned int>(current->properties["texturesize"], texsize, 3);
+      Properties::toArray<unsigned int>(current->properties["textureoffset"], texoffset, 3);
+      unsigned int dims[3] = {geom[i]->width, geom[i]->height, slices[current]};
       bool crop = false;
       for (int d=0; d<3; d++)
       {
-        if ((int)texsize[d] > 0 && (int)texsize[d] < dims[d]) 
+        if (texsize[d] > 0 && texsize[d] < dims[d]) 
         {
           dims[d] = texsize[d];
           crop = true;
         }
-        if ((int)texoffset[d] > 0) crop = true;
+        if (texoffset[d] > 0) crop = true;
         //Check within tex limits
         assert(dims[d] <= (unsigned)maxtex);
       }
@@ -379,13 +376,13 @@ void Volumes::render(int i)
                     props.getFloat("ymax", 0.99) * geom[i]->vertices[1][1]),
                     props.getFloat("zmax", 0.99) * geom[i]->vertices[1][2])};
   */
-  float bbMin[3] = {props.getFloat("xmin", 0.01),
-                    props.getFloat("ymin", 0.01),
-                    props.getFloat("zmin", 0.01)
+  float bbMin[3] = {props.getFloat("xmin", 0.),
+                    props.getFloat("ymin", 0.),
+                    props.getFloat("zmin", 0.)
                    };
-  float bbMax[3] = {props.getFloat("xmax", 0.99),
-                    props.getFloat("ymax", 0.99),
-                    props.getFloat("zmax", 0.99)
+  float bbMax[3] = {props.getFloat("xmax", 1.),
+                    props.getFloat("ymax", 1.),
+                    props.getFloat("zmax", 1.)
                    };
 
   glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
@@ -454,24 +451,26 @@ void Volumes::render(int i)
   bool rotatable = props["rotatable"]; //Object rotation by view flag
   if (!rotatable) view->apply(false);
 
-  //Object rotation/translation
-  if (props.has("translate"))
-  {
-    float trans[3];
-    Properties::toFloatArray(props["translate"], trans, 3);
-    glTranslatef(trans[0], trans[1], trans[2]);
-  }
-
   if (props.has("rotate"))
   {
     float rot[4];
-    Properties::toFloatArray(props["rotate"], rot, 4);
+    Properties::toArray<float>(props["rotate"], rot, 4);
     Quaternion qrot(rot[0], rot[1], rot[2], rot[3]);
     qrot.apply();
   }
   else if (rotatable)
+  {
     //Rotating this object with view rotation
     view->apply(false);
+  }
+
+  //Object rotation/translation
+  if (props.has("translate"))
+  {
+    float trans[3];
+    Properties::toArray<float>(props["translate"], trans, 3);
+    glTranslatef(trans[0], trans[1], trans[2]);
+  }
 
   //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
   glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
@@ -548,18 +547,18 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       }
       iw = geom[i]->width * xtiles;
       ih = ceil(geom[i]->depth / (float)xtiles) * geom[i]->height;
-      if (ih == geom[i]->height) iw = geom[i]->width * geom[i]->depth;
+      if ((unsigned int)ih == geom[i]->height) iw = geom[i]->width * geom[i]->depth;
       int size = geom[i]->width * geom[i]->height;
       debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), geom[i]->width, geom[i]->height, geom[i]->depth, iw, ih);
       channels = bpv;
       image = new GLubyte[iw * ih * channels];
       memset(image, 0, iw*ih*sizeof(GLubyte));
-      int xoffset = 0, yoffset = 0;
+      unsigned int xoffset = 0, yoffset = 0;
       for (unsigned int z=0; z<geom[i]->depth; z++)
       {
-        for (int y=0; y<geom[i]->height; y++)
+        for (unsigned int y=0; y<geom[i]->height; y++)
         {
-          for (int x=0; x<geom[i]->width; x += 4/bpv)
+          for (unsigned int x=0; x<geom[i]->width; x += 4/bpv)
           {
             /*if (bpv == 1) //Byte, DEPRECATED, now stored in own type as uchar
             {

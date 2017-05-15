@@ -137,6 +137,8 @@ public:
     defaults["dims"] = {0, 0, 0};
     // | object | boolean | Set to true to apply the view rotation to this object
     defaults["rotatable"] = true;
+    // | object | real | Apply a shift to object position by this amount multiplied by model size, to fix depth fighting when visualising objects drawn at same depth
+    defaults["shift"] = 0.;
 
     // | object | colour | Object colour RGB(A)
     defaults["colour"] = {0, 0, 0, 255};
@@ -275,11 +277,11 @@ public:
     // | object(shape) | real | Shape scaling multiplier, applies to all shape objects
     defaults["scaleshapes"] = 1.0;
     // | object(shape) | integer [0,n] | Index of data set to apply to shape widths
-    defaults["widthby"] = 1;
+    defaults["widthby"] = "widths";
     // | object(shape) | integer [0,n] | Index of data set to apply to shape heights
-    defaults["heightby"] = 2;
+    defaults["heightby"] = "heights";
     // | object(shape) | integer [0,n] | Index of data set to apply to shape lengths
-    defaults["lengthby"] = 3;
+    defaults["lengthby"] = "lengths";
 
     // | colourbar | boolean | Indicates object is a colourbar
     defaults["colourbar"] = false;
@@ -343,8 +345,6 @@ public:
     defaults["timestep"] = false;
     // | view | boolean | Enable multisample anti-aliasing, only works with interactive viewing
     defaults["antialias"] = true; //Should be global
-    // | view | real | Apply a shift to object depth sort index by this amount multiplied by id, improves visualising objects drawn at same depth
-    defaults["shift"] = 0.;
     //View: Camera
     // | view | real[4] | Camera rotation quaternion [x,y,z,w]
     defaults["rotate"] = {0., 0., 0., 1.};
@@ -364,6 +364,8 @@ public:
     defaults["far"] = 0.0;
     // | view | integer | Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed
     defaults["coordsystem"] = 1;
+    // | view | boolean | Enable to follow the model bounding box centre with camera as it changes
+    defaults["follow"] = false;
 
     //Global Properties
     // | global | string | Title of window for caption area

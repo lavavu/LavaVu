@@ -57,23 +57,25 @@ function initPage(src, fn) {
 
   progress();
 
-  window.onresize = function() {viewer.drawTimed();};
-
   var canvas = document.getElementById('canvas');
-  //this.canvas = document.createElement("canvas");
-  //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
-  //if (!parentEl) parentEl = document.body;
-  //parentEl.appendChild(this.canvas);
   viewer =  new Viewer(canvas);
+  if (canvas) {
+    //this.canvas = document.createElement("canvas");
+    //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
+    //if (!parentEl) parentEl = document.body;
+    //parentEl.appendChild(this.canvas);
 
-  //Canvas event handling
-  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
-  //Following two settings should probably be defaults?
-  canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
-  //canvas.mouse.setDefault();
+    //Canvas event handling
+    canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
+    //Following two settings should probably be defaults?
+    canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
+    //canvas.mouse.setDefault();
 
-  canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
-  defaultMouse = document.mouse = canvas.mouse;
+    canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
+    defaultMouse = document.mouse = canvas.mouse;
+
+    window.onresize = function() {viewer.drawTimed();};
+  }
 
   if (query && query.indexOf("server") >= 0) {
     //Switch to image frame
@@ -102,7 +104,9 @@ function initPage(src, fn) {
   } else {
     setAll('none', 'server');
     setAll('', 'client');
-    document.getElementById('frame').style.display = 'none';
+    var frame = document.getElementById('frame');
+    if (frame)
+      frame.style.display = 'none';
   }
 
   if (!noui) {
@@ -257,6 +261,7 @@ function canvasMouseWheel(event, mouse) {
       clearTimeout(zoomTimer);
     zoomSpin += event.spin;
     zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin); zoomSpin = 0;}, 100 );
+    //zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
   }
   return false; //Prevent default
 }
@@ -1276,6 +1281,7 @@ Renderer.prototype.draw = function() {
 
       //For a volume cube other than [0,0,0] - [1,1,1], need to translate/scale here...
       viewer.webgl.modelView.translate([-this.scaling[0]*0.5, -this.scaling[1]*0.5, -this.scaling[2]*0.5]);  //Translate to origin
+      //viewer.webgl.modelView.translate([-0.5, -0.5, -0.5]);  //Translate to origin
       //Inverse of scaling
       viewer.webgl.modelView.scale([this.iscale[0], this.iscale[1], this.iscale[2]]);
 
@@ -1381,19 +1387,22 @@ function minMaxDist()
 //This object holds the viewer details and calls the renderers
 function Viewer(canvas) {
   this.canvas = canvas;
-  try {
-    this.webgl = new WebGL(this.canvas, {antialias: true, premultipliedAlpha: false});
-    this.gl = this.webgl.gl;
-    this.ext = (
-      this.gl.getExtension('OES_element_index_uint') ||
-      this.gl.getExtension('MOZ_OES_element_index_uint') ||
-      this.gl.getExtension('WEBKIT_OES_element_index_uint')
-    );
-    this.gl.getExtension('OES_standard_derivatives');
-  } catch(e) {
-    //No WebGL
-    OK.debug(e);
-    if (!this.webgl) document.getElementById('canvas').style.display = 'none';
+  if (canvas)
+  {
+    try {
+      this.webgl = new WebGL(this.canvas, {antialias: true, premultipliedAlpha: false});
+      this.gl = this.webgl.gl;
+      this.ext = (
+        this.gl.getExtension('OES_element_index_uint') ||
+        this.gl.getExtension('MOZ_OES_element_index_uint') ||
+        this.gl.getExtension('WEBKIT_OES_element_index_uint')
+      );
+      this.gl.getExtension('OES_standard_derivatives');
+    } catch(e) {
+      //No WebGL
+      OK.debug(e);
+      if (!this.webgl) document.getElementById('canvas').style.display = 'none';
+    }
   }
 
   //Default colour editor
@@ -1446,7 +1455,7 @@ function Viewer(canvas) {
 Viewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
   //console.log(source);
-  if (document.mouse.isdown) return;
+  if (document.mouse && document.mouse.isdown) return;
   var start = new Date();
   var updated = true;
   try {
@@ -2078,7 +2087,9 @@ paletteUpdate = function(obj, id) {
 
   //Update colour data
   cmap.colours = cmap.palette.colours;
-      viewer.webgl.updateTexture(viewer.webgl.gradientTexture, gradient, viewer.gl.TEXTURE1);  //Use 2nd texture unit
+
+  if (viewer.webgl)
+    viewer.webgl.updateTexture(viewer.webgl.gradientTexture, gradient, viewer.gl.TEXTURE1);  //Use 2nd texture unit
 }
 
 paletteLoad = function(palette) {
@@ -2126,16 +2137,18 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   
   //Show screenshot while interacting or if using server
   //if (server || borderOnly)
-  if (server) {
-    document.getElementById("frame").style.display = 'block';
-    var frame = document.getElementById('frame');
-    this.width = frame.offsetWidth;
-    this.height = frame.offsetHeight;
-    this.canvas.style.width = this.width + "px";
-    this.canvas.style.height = this.height + "px";
+  var frame = document.getElementById('frame');
+  if (frame) {
+    if (server) {
+      frame.style.display = 'block';
+      this.width = frame.offsetWidth;
+      this.height = frame.offsetHeight;
+      this.canvas.style.width = this.width + "px";
+      this.canvas.style.height = this.height + "px";
+    } else { 
+      frame.style.display = 'none';
+    }
   }
-  else
-    document.getElementById("frame").style.display = 'none';
   
   if (!this.gl) return;
 
@@ -2168,37 +2181,9 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   //this.gl.clearColor(1, 1, 1, 0);
   this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-  this.webgl.setPerspective(this.fov, this.gl.viewportWidth / this.gl.viewportHeight, this.near_clip, this.far_clip);
-
-  //Apply translation to origin, any rotation and scaling (inverse of zoom factor)
-  this.webgl.modelView.identity()
-  this.webgl.modelView.translate([this.translate[0]*this.scale[0], this.translate[1]*this.scale[1], this.translate[2]*this.scale[2]])
-
-  // Adjust centre of rotation, default is same as focal point so this does nothing...
-  adjust = [-(this.focus[0] - this.centre[0])*this.scale[0], -(this.focus[1] - this.centre[1])*this.scale[1], -(this.focus[2] - this.centre[2])*this.scale[2]];
-  this.webgl.modelView.translate(adjust);
-
-  // rotate model 
-  var rotmat = quat4.toMat4(this.rotate);
-  this.webgl.modelView.mult(rotmat);
-
-  // Adjust back for rotation centre
-  this.webgl.modelView.translate([-adjust[0], -adjust[1], -adjust[2]]);
-
-  // Translate back by centre of model to align eye with model centre
-  this.webgl.modelView.translate([-this.focus[0]*this.scale[0], -this.focus[1]*this.scale[1], -this.focus[2]*this.scale[2] * this.orientation]);
-
-  // Apply scaling factors (including orientation switch if required)
-  var scaling = [this.scale[0], this.scale[1], this.scale[2] * this.orientation];
-  this.webgl.modelView.scale(scaling);
-  //console.log(JSON.stringify(this.webgl.modelView));
-
-   // Set default polygon front faces
-   if (this.orientation == 1.0)
-      this.gl.frontFace(this.gl.CCW);
-   else
-      this.gl.frontFace(this.gl.CW);
-
+  //Apply the camera
+  this.webgl.view(this);
+  
   //Render objects
   for (var r in this.renderers) {
     //if (!document.mouse.isdown && !this.showBorder && type == 'border') continue;
@@ -2365,8 +2350,10 @@ function resizeToWindow() {
   //if (canvas.width < window.innerWidth || canvas.height < window.innerHeight)
     sendCommand('resize ' + window.innerWidth + " " + window.innerHeight);
   var frame = document.getElementById('frame');
-  canvas.style.width = frame.style.width = "100%";
-  canvas.style.height = frame.style.height = "100%";
+  if (frame) {
+    canvas.style.width = frame.style.width = "100%";
+    canvas.style.height = frame.style.height = "100%";
+  }
 }
 
 function connectWindow() {

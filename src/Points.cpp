@@ -71,11 +71,6 @@ void Points::close()
   pidx = swap = NULL;
 }
 
-void Points::init()
-{
-  Geometry::init();
-}
-
 void Points::update()
 {
   //Ensure vbo recreated if total changed
@@ -132,7 +127,7 @@ void Points::loadVertices()
 
 //////////////////////////////////////////////////
   t1 = clock();
-  //debug_print("Reloading %d particles...(size %f)\n", (int)ceil(total / (float)subSample), scale);
+  //debug_print("Reloading %d particles...(size %f)\n", total);
 
   //Get eye distances and copy all particles into sorting array
   for (unsigned int s = 0; s < geom.size(); s++)
@@ -145,6 +140,7 @@ void Points::loadVertices()
     Properties& props = geom[s]->draw->properties;
     float psize0 = props["pointsize"];
     float scaling = props["scaling"];
+    //printf("psize %f scaling %f\n", psize0, scaling);
     psize0 *= scaling;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
     bool attribs = drawstate.global("pointattribs");
@@ -202,8 +198,8 @@ void Points::loadList()
   if (pidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
   if (geom.size() == 0) return;
   int offset = 0;
-  int maxCount = drawstate.global("pointmaxcount");
-  int subSample = drawstate.global("pointsubsample");
+  unsigned int maxCount = drawstate.global("pointmaxcount");
+  unsigned int subSample = drawstate.global("pointsubsample");
   //Auto-sub-sample if maxcount set
   if (maxCount > 0 && elements > maxCount)
     subSample = elements / maxCount + 0.5; //Rounded up
@@ -212,6 +208,10 @@ void Points::loadList()
   for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count, s++)
   {
     if (!drawable(s)) continue;
+
+    //Calibrate colourMap - required to re-cache filter settings (TODO: split filter reload into another function?)
+    geom[s]->colourCalibrate();
+
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
       if (geom[s]->filter(i)) continue;
@@ -237,7 +237,6 @@ void Points::depthSort()
   clock_t t1,t2;
   t1 = clock();
   if (elements == 0) return;
-  int size = elements*sizeof(PIndex);
 
   //Calculate min/max distances from view plane
   float maxdist, mindist;
@@ -367,9 +366,7 @@ int Points::getPointType(int index)
 
 void Points::draw()
 {
-  //Draw, update
-  Geometry::draw();
-  if (drawcount == 0 || elements == 0) return;
+  if (elements == 0) return;
   clock_t t0 = clock();
   double time;
   GL_Error_Check;

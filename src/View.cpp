@@ -45,6 +45,9 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   scene_shift = 0.0;      //Stereo projection shift
   rotated = rotating = sort = false;
 
+  near = nearc;
+  far = farc;
+
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
   height = 0;             //Viewport height
@@ -82,14 +85,10 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   std::string viewprops[] = {"title", "zoomstep", "margin", 
                              "rulers", "rulerticks", "rulerwidth", 
                              "fontscale", "border", "fillborder", "bordercolour", 
-                             "axis", "axislength", "timestep", "antialias", "shift"};
+                             "axis", "axislength", "timestep", "antialias"};
   //Gets current value (either global or default)
   for (auto key : viewprops)
     properties.data[key] = drawstate.global(key);
-
-  //Clip planes
-  properties.data["near"] = nearc;
-  properties.data["far"] = farc;
 }
 
 View::~View()
@@ -122,9 +121,12 @@ bool View::init(bool force, float* newmin, float* newmax)
     //Invalid bounds! Skip
     if (!ISFINITE(newmin[i]) || !ISFINITE(newmax[i])) return false;
 
-    //If bounds changed, reset focal point to default
-    //(causes jitter when switching timesteps - do we really want this?)
-    if (min[i] != newmin[i] || max[i] != newmax[i]) focal_point[i] = default_focus[i];
+    if (properties["follow"])
+    {
+      //If bounds changed, reset focal point to default
+      //(causes jitter when switching timesteps as camera follows default focal point)
+      if (min[i] != newmin[i] || max[i] != newmax[i]) focal_point[i] = default_focus[i];
+    }
 
     min[i] = newmin[i];
     max[i] = newmax[i];
@@ -140,14 +142,14 @@ bool View::init(bool force, float* newmin, float* newmax)
   if (model_size == 0 || !ISFINITE(model_size)) return false;
 
   //Check and calculate near/far clip planes
-  float near_clip = properties["near"];
-  float far_clip = properties["far"];
-  checkClip(near_clip, far_clip);
+  near = properties["near"];
+  far = properties["far"];
+  checkClip(near, far);
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
-  debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s\n",
-              model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"));
+  debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s CLIP %f : %f\n",
+              model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"), near, far);
 
   //Auto-cam etc should only be processed once... and only when viewport size has been set
   if ((force || !initialised) && width > 0 && height > 0)
@@ -191,7 +193,7 @@ void View::checkClip(float& near_clip, float& far_clip)
       aspectRatio = width / (float)height;
     if (near_clip == 0)
       near_clip = min_dist / sqrt(1 + pow(tan(0.5*M_PI*fov/180), 2) * (pow(aspectRatio, 2) + 1));
-     //near_clip = model_size / 5.0;
+    //near_clip = model_size / 5.0;
     if (far_clip == 0)
       far_clip = model_size * 20.0;
     debug_print("Auto-corrected clip planes: near %f far %f.\n", near_clip, far_clip);
@@ -199,10 +201,6 @@ void View::checkClip(float& near_clip, float& far_clip)
   }
 
   if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
-
-  //Update properties
-  properties.data["near"] = near_clip;
-  properties.data["far"] = far_clip;
 }
 
 void View::getMinMaxDistance(float* mindist, float* maxdist)
@@ -229,6 +227,16 @@ void View::getMinMaxDistance(float* mindist, float* maxdist)
   }
   if (*maxdist == *mindist) *maxdist += 0.0000001;
   //printf("DISTANCE MIN %f MAX %f\n", *mindist, *maxdist);
+}
+
+void View::autoRotate()
+{
+  //If model is 2d plane on X or Y axis, rotate to face camera
+  bool unrotated = (rotation->x == 0.0 && rotation->y == 0.0 && rotation->z == 0.0);
+  if (unrotated && drawstate.min[0] == drawstate.max[0])
+    rotate(0, 90, 0);
+  if (unrotated && drawstate.min[1] == drawstate.max[1])
+    rotate(-90, 0, 0);
 }
 
 std::string View::rotateString()
@@ -348,7 +356,7 @@ void View::setScale(float x, float y, float z, bool replace)
 std::string View::zoom(float factor)
 {
   float adj = factor * model_size;
-  if (abs(model_trans[2]) < model_size) adj *= 0.1;
+  if (fabs(model_trans[2]) < model_size) adj *= 0.1;
   model_trans[2] += adj;
   if (model_trans[2] > model_size*0.3) model_trans[2] = model_size*0.3;
   std::ostringstream ss;
@@ -358,13 +366,11 @@ std::string View::zoom(float factor)
 
 std::string View::zoomClip(float factor)
 {
-  float near_clip = properties["near"];
-  float far_clip = properties["far"];
-  near_clip += factor * model_size;
-  checkClip(near_clip, far_clip);
+  near += factor * model_size;
+  checkClip(near, far);
   //Returns command to set in history
   std::ostringstream ss;
-  ss << "nearclip " << near_clip;
+  ss << "nearclip " << near;
   return ss.str();
 }
 
@@ -388,7 +394,7 @@ void View::print()
   rotation->toEuler(xrot, yrot, zrot);
   printf("------------------------------\n");
   printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
-  printf("Clip planes: near %f far %f\n", (float)properties["near"], (float)properties["far"]);
+  printf("Clip planes: near %f far %f\n", near, far);
   printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n",
          model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -454,7 +460,7 @@ void View::projection(int eye)
   float left, right, top, bottom;
   float eye_separation, frustum_shift;
 
-  //Ensure clip planes valid
+  //Ensure clip planes valid, calculate if not provided in properties
   float near_clip = properties["near"];
   float far_clip = properties["far"];
   checkClip(near_clip, far_clip);
@@ -553,10 +559,9 @@ void View::apply(bool use_fp)
   GL_Error_Check;
 
   // Apply scaling factors
-  // also switch coordinate system if applicable
-  if (orientation < 0.0 || scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
+  if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
   {
-    glScalef(scale[0], scale[1], scale[2] * orientation);
+    glScalef(scale[0], scale[1], scale[2]);
     // Enable automatic rescaling of normal vectors when scaling is turned on
     //glEnable(GL_RESCALE_NORMAL);
     glEnable(GL_NORMALIZE);
@@ -573,11 +578,16 @@ void View::apply(bool use_fp)
   if (use_fp && !drawstate.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
-  // Set default polygon front faces
+  // Switch coordinate system if applicable and set default polygon front faces
   if (orientation == RIGHT_HANDED)
+  {
     glFrontFace(GL_CCW);
+  }
   else
+  {
     glFrontFace(GL_CW);
+    glScalef(1.0, 1.0, -1.0);
+  }
   GL_Error_Check;
 }
 

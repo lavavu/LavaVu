@@ -108,7 +108,7 @@ public:
   Tracers* tracers;
   QuadSurfaces* quadSurfaces;
   TriSurfaces* triSurfaces;
-  Lines* lines;
+  Links* lines;
   Shapes* shapes;
   Volumes* volumes;
 
@@ -152,14 +152,15 @@ public:
   void freeze();
 
   //Timestep caching
-  bool useCache();
-  void deleteCache();
   void cacheLoad();
+private:
+  bool useCache();
   void cacheStep();
   bool restoreStep();
   void clearStep();
   void printCache();
 
+public:
   int step()
   {
     //Current actual step
@@ -188,6 +189,7 @@ public:
   int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
   void mergeDatabases();
+  void updateObject(DrawingObject* target, lucGeometryType type, bool compress=true);
   void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);
   void writeState();
   void writeState(Database& outdb);

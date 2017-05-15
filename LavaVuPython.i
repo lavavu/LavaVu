@@ -89,7 +89,7 @@ public:
   bool parseCommands(std::string cmd);
   void render();
   void init();
-  std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0);
+  std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();
@@ -106,8 +106,7 @@ public:
   DrawingObject* createObject(std::string properties);
   DrawingObject* getObject(const std::string& name);
   DrawingObject* getObject(int id=-1);
-  void selectObject(const std::string& name);
-  void selectObject(int id=-1);
+  void reloadObject(DrawingObject* target);
 
   void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
   void loadColours(DrawingObject* target, std::vector <std::string> list);

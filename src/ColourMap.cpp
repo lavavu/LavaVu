@@ -47,9 +47,8 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 }
 
 ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
-  : properties(drawstate.globals, drawstate.defaults),
-    minimum(0), maximum(1), name(name), texture(NULL),
-    calibrated(false), noValues(false), log(false), opaque(true)
+  : noValues(false), log(false), name(name), properties(drawstate.globals, drawstate.defaults),
+    minimum(0), maximum(1), calibrated(false), opaque(true), texture(NULL)
 {
   precalc = new Colour[samples];
   background.value = 0xff000000;
@@ -257,7 +256,7 @@ void ColourMap::calibrate(FloatValues* dataValues)
   //Check has range property and is valid
   bool hasRange = properties.has("range");
   float range[2];
-  Properties::toFloatArray(properties["range"], range, 2);
+  Properties::toArray<float>(properties["range"], range, 2);
   if (range[0] >= range[1]) hasRange = false;
 
   //Has values and no fixed range, calibrate to data
@@ -451,7 +450,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   glColor4ubv(printColour.rgba);
   drawstate.fonts.setFont(colourbarprops);
   float tickValue;
-  int ticks = colourbarprops["ticks"];
+  unsigned int ticks = colourbarprops["ticks"];
   json tickValues = colourbarprops["tickvalues"];
   if (tickValues.size() > ticks) ticks = tickValues.size();
   bool printTicks = colourbarprops["printticks"];
@@ -462,7 +461,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   if (log && ticks < 2) ticks = 2;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
-  for (int i = 0; i < ticks+2; i++)
+  for (unsigned int i = 0; i < ticks+2; i++)
   {
     /* Get tick value */
     float scaledPos;
@@ -534,7 +533,9 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
     int te = starty+offset;
     //Full breadth ticks at ends
     if (scaledPos != 0.5 && (i==0 || i==ticks+1))
+    {
       if (vertical) ts-=breadth; else te+=breadth;
+    }
     //Outline tweak
     if (i==0) xpos -= border;
     if (i==ticks+1) xpos += border-1; //-1 tweak or will be offset from edge

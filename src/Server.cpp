@@ -37,6 +37,7 @@ Server::Server(OpenGLViewer* viewer) : viewer(viewer)
   jpeg = NULL;
   updated = false;
   client_id = 0;
+  synched[0] = true;
   ctx = NULL;
   // Initialize mutex and condition variable objects
   pthread_mutex_init(&cs_mutex, NULL);
@@ -105,7 +106,7 @@ void Server::display()
 {
   //Image serving can be disabled by global prop
   if (!ctx || !render) return;
-  if (quality == 0) quality = 90;  //Ensure valid
+  if (quality < 50) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data
   if (pthread_mutex_trylock(&cs_mutex) == 0)
@@ -191,14 +192,24 @@ void send_string(std::string str, struct mg_connection *conn)
 int Server::request(struct mg_connection *conn)
 {
   const struct mg_request_info *request_info = mg_get_request_info(conn);
+  int id = -1;
   debug_print("SERVER REQUEST: %s\n", request_info->uri);
 
+  //Default location is control interface only
   if (strcmp("/", request_info->uri) == 0)
   {
     mg_printf(conn, "HTTP/1.1 302 Found\r\n"
               "Set-Cookie: original_url=%s\r\n"
               "Location: %s\r\n\r\n",
               request_info->uri, "/index.html?server");
+  }
+  //Default viewer with server enabled
+  if (strcmp("/viewer", request_info->uri) == 0)
+  {
+    mg_printf(conn, "HTTP/1.1 302 Found\r\n"
+              "Set-Cookie: original_url=%s\r\n"
+              "Location: %s\r\n\r\n",
+              request_info->uri, "/viewer.html?server");
   }
   else if (strstr(request_info->uri, "/timestep=") != NULL)
   {
@@ -229,7 +240,8 @@ int Server::request(struct mg_connection *conn)
     _self->updated = true; //Force update
     pthread_cond_broadcast(&_self->condition_var);  //Display complete signal
   }
-  else if (strstr(request_info->uri, "/objects") != NULL)
+  else if (strstr(request_info->uri, "/objects") != NULL || 
+           strstr(request_info->uri, "/getstate") != NULL)
   {
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
     std::string objects = _self->viewer->app->requestData("objects");
@@ -241,53 +253,16 @@ int Server::request(struct mg_connection *conn)
     std::string history = _self->viewer->app->requestData("history");
     mg_write(conn, history.c_str(), history.length());
   }
-  else if (strstr(request_info->uri, "/image=") != NULL)
+  else if (strstr(request_info->uri, "/image") != NULL)
   {
-    //Image update requested, wait until data available then send
-    int id = atoi(request_info->uri+7);
-    pthread_t tid;
-    tid = pthread_self();
-    pthread_mutex_lock(&_self->cs_mutex);
-    debug_print("CLIENT %d THREAD ID %u ENTERING WAIT STATE (synched %d)\n", id, tid, _self->synched[id]);
-
-    //while (!_self->updated && !_self->viewer->quitProgram)
-    while (_self->synched[id] && !_self->viewer->quitProgram)
-    {
-      debug_print("CLIENT %d THREAD ID %u WAITING\n", id, tid);
-      //This doesn't seem to be needed, causes constant display updates even when no changes
-      //_self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
-      pthread_cond_wait(&_self->condition_var, &_self->cs_mutex);
-    }
-    debug_print("CLIENT %d THREAD ID %u RESUMED, quit? %d\n", id, tid, _self->viewer->quitProgram);
-
-    if (!_self->viewer->quitProgram)
-    {
-      //debug_print("Sending JPEG %d bytes...\n", self->jpeg_bytes);
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
-      mg_printf(conn, "Content-Length: %d\r\n", _self->jpeg_bytes);
-      //Allow cross-origin requests
-      mg_printf(conn, "Access-Control-Allow-Origin: *\r\n\r\n");
-      //Write raw
-      mg_write(conn, _self->jpeg, _self->jpeg_bytes);
-
-      _self->updated = false;
-      _self->synched[id] = true;
-    }
-    pthread_mutex_unlock(&_self->cs_mutex);
+    id = 0; //Default client
+    //Get id from url if passed eg: /image=id
+    if (strstr(request_info->uri, "/image=") != NULL)
+      id = atoi(request_info->uri+7);
   }
-  else if (strstr(request_info->uri, "/command=") != NULL)
+  else if (strstr(request_info->uri, "command=") != NULL)
   {
-#if defined _WIN32
-    SDL_SysWMinfo info;
-    SDL_VERSION(&info.version); // this is important!
-    if (SDL_GetWMInfo(&info))
-      SetWindowPos(info.window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
-    SetWindowPos(info.window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
-#endif
-    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
     std::string data = request_info->uri+1;
-    //Replace semi-colon with newlines, multiple line commands
-    std::replace(data.begin(), data.end(), ';', '\n');
     const size_t equals = data.find('=');
     const size_t amp = data.find('&');
     //Push command onto queue to be processed in the viewer thread
@@ -299,6 +274,10 @@ int Server::request(struct mg_connection *conn)
     debug_print("CMD: %s\n", data.substr(equals+1).c_str());
     _self->viewer->postdisplay = true;
     pthread_mutex_unlock(&_self->viewer->cmd_mutex);
+    if (strstr(request_info->uri, "icommand=") != NULL)
+      id = 0;  //Image requested with command, use default client id
+    else
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
   }
   else if (strstr(request_info->uri, "/post") != NULL)
   {
@@ -353,6 +332,47 @@ int Server::request(struct mg_connection *conn)
     // No suitable handler found, mark as not processed. Mongoose will
     // try to serve the request.
     return 0;
+  }
+
+  //Respond with an image frame
+  if (id >= 0)
+  {
+    if (!Server::render) {
+      Server::render = true;
+      _self->updated = true; //Force update
+    _self->viewer->postdisplay = true;
+    _self->synched[id] = true;
+    }
+    //Image update requested, wait until data available then send
+    pthread_t tid;
+    tid = pthread_self();
+    pthread_mutex_lock(&_self->cs_mutex);
+    debug_print("CLIENT %d THREAD ID %u ENTERING WAIT STATE (synched %d)\n", id, tid, _self->synched[id]);
+
+    //while (!_self->updated && !_self->viewer->quitProgram)
+    while (_self->synched[id] && !_self->viewer->quitProgram)
+    {
+      debug_print("CLIENT %d THREAD ID %u WAITING\n", id, tid);
+      //This doesn't seem to be needed, causes constant display updates even when no changes
+      //_self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
+      pthread_cond_wait(&_self->condition_var, &_self->cs_mutex);
+    }
+    debug_print("CLIENT %d THREAD ID %u RESUMED, quit? %d\n", id, tid, _self->viewer->quitProgram);
+
+    if (!_self->viewer->quitProgram)
+    {
+      //debug_print("Sending JPEG %d bytes...\n", _self->jpeg_bytes);
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
+      mg_printf(conn, "Content-Length: %d\r\n", _self->jpeg_bytes);
+      //Allow cross-origin requests
+      mg_printf(conn, "Access-Control-Allow-Origin: *\r\n\r\n");
+      //Write raw
+      mg_write(conn, _self->jpeg, _self->jpeg_bytes);
+
+      _self->updated = false;
+      _self->synched[id] = true;
+    }
+    pthread_mutex_unlock(&_self->cs_mutex);
   }
 
   // Returning non-zero tells mongoose that our function has replied to

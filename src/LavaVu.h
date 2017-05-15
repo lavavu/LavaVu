@@ -48,6 +48,10 @@
 
 #define MAX_MSG 256
 
+#define RESET_NO   0
+#define RESET_YES  1
+#define RESET_ZOOM 2
+
 typedef enum
 {
   lucExportNone,
@@ -194,7 +198,7 @@ public:
   void drawAxis();
 
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
-  void encodeVideo(std::string filename="", int fps=30);
+  std::string encodeVideo(std::string filename="", int fps=30);
   void writeSteps(bool images, int start, int end);
 
   //data loading
@@ -212,6 +216,7 @@ public:
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
   Geometry* lookupObjectContainer(DrawingObject* obj, std::string gtype="");
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
+  std::vector<std::string> commandList(std::string category="");
   void helpCommand(std::string cmd);
   void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
@@ -223,7 +228,7 @@ public:
   //Python interface functions
   void render();
   void init();
-  std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0);
+  std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
   int colourMap(std::string name, std::string colours="", std::string properties="");
   DrawingObject* colourBar(DrawingObject* obj);
@@ -236,8 +241,7 @@ public:
   DrawingObject* createObject(std::string properties);
   DrawingObject* getObject(const std::string& name);
   DrawingObject* getObject(int id=-1);
-  void selectObject(const std::string& name);
-  void selectObject(int id=-1);
+  void reloadObject(DrawingObject* target);
 
   void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
   void loadColours(DrawingObject* target, std::vector <std::string> list);

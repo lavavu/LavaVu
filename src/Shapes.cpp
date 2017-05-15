@@ -35,30 +35,15 @@
 
 #include "Geometry.h"
 
-Shapes::Shapes(DrawState& drawstate) : Geometry(drawstate)
+Shapes::Shapes(DrawState& drawstate) : Glyphs(drawstate)
 {
   type = lucShapeType;
-  //Create sub-renderers
-  tris = new TriSurfaces(drawstate);
-  tris->internal = true;
-}
-
-Shapes::~Shapes()
-{
-  delete tris;
-}
-
-void Shapes::close()
-{
-  tris->close();
 }
 
 void Shapes::update()
 {
-  if (!reload && drawstate.global("gpucache")) return;
   //Convert shapes to triangles
   tris->clear();
-  tris->setView(view);
   Vec3d scale(view->scale);
   tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
   tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
@@ -77,6 +62,8 @@ void Shapes::update()
     dims[1] = props["shapeheight"];
     dims[2] = props["shapelength"];
     int shape = props["shape"];
+    //Disable vertex normals for cuboids...
+    props.data["vertexnormals"] = (shape != 1);
     int quality = 4 * props.getInt("glyphs", 3);
     //Points drawn as shapes?
     if (!geom[i]->draw->properties.has("shape"))
@@ -153,33 +140,9 @@ void Shapes::update()
     }
 
     //Adjust bounding box
-    tris->compareMinMax(geom[i]->min, geom[i]->max);
+    //tris->compareMinMax(geom[i]->min, geom[i]->max);
   }
 
-  tris->update();
-}
-
-void Shapes::draw()
-{
-  GL_Error_Check;
-  Geometry::draw();
-  if (drawcount == 0) return;
-
-  GL_Error_Check;
-  // Undo any scaling factor for arrow drawing...
-  glPushMatrix();
-  if (tris->unscale)
-    glScalef(tris->iscale[0], tris->iscale[1], tris->iscale[2]);
-
-  tris->draw();
-
-  // Re-Apply scaling factors
-  glPopMatrix();
-  GL_Error_Check;
-}
-
-void Shapes::jsonWrite(DrawingObject* draw, json& obj)
-{
-  tris->jsonWrite(draw, obj);
+  Glyphs::update();
 }
 

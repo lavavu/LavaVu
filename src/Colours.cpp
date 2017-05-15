@@ -77,12 +77,11 @@ void Colour::fromJSON(json& jvalue)
     float B = jvalue[2];
     float A = 1.0;
     if (jvalue.size() > 3) A = jvalue[3];
-    if (R <= 1.0 && G <= 1.0 && B <= 1.0 && A <= 1.0)
+    if (R <= 1.0 && G <= 1.0 && B <= 1.0)
     {
       r = R*255.0;
       g = G*255.0;
       b = B*255.0;
-      a = A*255.0;
     }
     else
     {
@@ -90,6 +89,9 @@ void Colour::fromJSON(json& jvalue)
       g = G;
       b = B;
     }
+
+    //Parse alpha separately, allows [0-255] RGB + [0,1] A
+    a = A <= 1.0 ? A * 255.0 : A;
   }
   else if (jvalue.is_string())
   {

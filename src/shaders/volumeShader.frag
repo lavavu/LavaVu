@@ -268,6 +268,7 @@ void main()
     //if (T > 0.95) discard;
     gl_FragColor = vec4(colour, 1.0 - T);
 
+#ifndef NO_DEPTH_WRITE
     // Write the depth (!Not supported in WebGL without extension)
     float depth = 1.0; //Default to far limit
     if (T < depthT)
@@ -281,5 +282,7 @@ void main()
       //                        gl_DepthRange.near + gl_DepthRange.far);
     }
 
-    gl_FragDepth = depth;
+    if (depth >= 0.0 && depth <= 1.0)
+      gl_FragDepth = depth;
+#endif
 }

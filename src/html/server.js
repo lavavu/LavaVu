@@ -175,7 +175,7 @@ function requestData(data, callback, sync) {
   http.send(null); 
 }
 
-function requestImage() {
+function requestImage(target) {
   if (client_id < 0) return; //No longer connected
   var http = new XMLHttpRequest();
   //Add count to url to prevent caching
@@ -184,10 +184,9 @@ function requestImage() {
 
   http.onload = function() { 
     if(http.status == 200) {
-      var frame = document.getElementById('frame');
       //Clean up when loaded
-      frame.onload = function(e) {window.URL.revokeObjectURL(frame.src);};
-      frame.src = window.URL.createObjectURL(http.response);
+      target.onload = function(e) {window.URL.revokeObjectURL(target.src);};
+      target.src = window.URL.createObjectURL(http.response);
 
       //Update the object state, then request next image
       requestData('/objects', parseObjects);
@@ -208,15 +207,17 @@ var client_id = 0;
 function parseRequest(response) {
   client_id = parseInt(response);
   requestData('/objects', parseObjects);
-  //requestImage();
 }
 
 var imgtimer;
 function parseObjects(response) {
   viewer.loadFile(response);
   //Get next frame (after brief timeout so we don't flood the server)
-  if (imgtimer) clearTimeout(imgtimer);
-  imgtimer = setTimeout(requestImage, 100);
+  var target = document.getElementById('frame');
+  if (target) {
+    if (imgtimer) clearTimeout(imgtimer);
+    imgtimer = setTimeout(requestImage(target), 100);
+  }
 }
 
 function requestObjects() {

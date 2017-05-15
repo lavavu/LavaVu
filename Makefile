@@ -129,7 +129,8 @@ install: $(PROGRAM) $(SWIGLIB)
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(HTMLPATH)
 	cp -R src/html/*.css $(HTMLPATH)
-	/bin/bash build-index.sh src/html/index.html $(HTMLPATH)/index.html src/shaders
+	/bin/bash build-index.sh src/html/viewer.html $(HTMLPATH)/viewer.html src/shaders
+	cp src/html/index.html $(HTMLPATH)/index.html
 
 .PHONY: force
 $(OPATH)/compiler_flags: force | paths

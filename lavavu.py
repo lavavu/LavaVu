@@ -1,4 +1,12 @@
-#LavaVu python interface: viewer utils & wrapper
+"""
+LavaVu python interface: viewer utils & wrapper
+
+NOTE: regarding sync of state between python and library
+- sync from python to lavavu is immediate,
+    property setting must always trigger a sync to python
+- sync from lavavu to python is lazy, always need to call _get()
+    before using state data
+"""
 import json
 import math
 import sys
@@ -19,18 +27,6 @@ try:
 except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
-
-#Function to enable the interactive control interface
-#Called on initial import, on subsequent imports must be called by user if required
-#(ie: in IPython, if re-running notebook without re-starting)
-enablecontrol = False
-def resetcontrols():
-    global enablecontrol
-    enablecontrol = True
-    #Reset initialised state
-    control.initialised = False
-
-resetcontrols()
 
 #Some preset colourmaps
 # aim to reduce banding artifacts by being either 
@@ -76,6 +72,20 @@ datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "rgb":       LavaVuPython.lucRGBData,
              "values":    LavaVuPython.lucMaxDataType}
 
+def convert_keys(dictionary):
+    """Recursively converts dictionary keys
+       and unicode values to utf-8 strings."""
+    if isinstance(dictionary, list):
+        for i in range(len(dictionary)):
+            dictionary[i] = convert_keys(dictionary[i])
+        return dictionary
+    if not isinstance(dictionary, dict):
+        if isinstance(dictionary, unicode):
+            return dictionary.encode('utf-8')
+        return dictionary
+    return dict((k.encode('utf-8'), convert_keys(v)) 
+        for k, v in dictionary.items())
+
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj(object):
@@ -102,6 +112,9 @@ class Obj(object):
         self.dict = idict
         self.instance = instance
 
+        #Create a control factory
+        self.control = control.ControlFactory(self)
+
     def name(self):
         return str(self.dict["name"])
 
@@ -119,7 +132,7 @@ class Obj(object):
         return self.dict[key]
 
     def __setitem__(self, key, value):
-        self.instance._get() #Ensure in sync
+        #self.instance._get() #Ensure in sync
         #Set new value and send
         self.dict[key] = value
         self._set()
@@ -222,7 +235,8 @@ class Obj(object):
             self.colours(data)
 
     def indices(self, data):
-        if not isinstance(data, numpy.ndarray):
+        #Accepts only uint32 indices
+        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint32:
             data = numpy.asarray(data, dtype=numpy.uint32)
         self._loadScalar(data, LavaVuPython.lucIndexData)
 
@@ -243,16 +257,17 @@ class Obj(object):
         #Load colourmap and set property on this object
         cmap = self.instance.colourmap(self.name() + '-default', data, **kwargs)
         self["colourmap"] = cmap
+        self.instance.app.reloadObject(self.ref)
         return cmap
 
     def select(self):
-        self.instance.selectObject(self.name())
+        self.instance.app.aobject = self.ref
     
     def file(self, *args, **kwargs):
         #Load file with this object selected (import)
         self.select()
         self.instance.file(*args, name=self.name(), **kwargs)
-        self.instance.selectObject()
+        self.instance.app.aobject = None
 
     def colourbar(self, name=None, **kwargs):
         #Create a new colourbar for this object
@@ -291,6 +306,29 @@ class Obj(object):
         else:
             #Re-writes data to db for this object and geom type
             self.instance.app.update(self.ref, geomtypes[geomname], compress)
+
+    def getcolourmap(self, array=False):
+        #Return colourmap as a string/array that can be passed to re-create the map
+        cmid = self["colourmap"]
+        arr = []
+        if cmid < 0: return [] if array else ''
+
+        cmaps = self.instance.state["colourmaps"]
+        cm = cmaps[cmid]
+        if array:
+            arrstr = '['
+            import re
+            for c in cm["colours"]:
+                comp = re.findall(r"[\d\.]+", c["colour"])
+                comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
+                arrstr += "(%6.4f, %s),\n" % (c["position"], str(comp))
+            return arrstr[0:-2] + ']\n'
+        else:
+            cmstr = '"""\n'
+            for c in cm["colours"]:
+                cmstr += "%6.4f=%s\n" % (c["position"],c["colour"])
+            cmstr += '"""\n'
+            return cmstr
 
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         #Generate and return an isosurface object, 
@@ -377,17 +415,14 @@ class Viewer(object):
             self.setup(*args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
-            global enablecontrol
-            if enablecontrol:
-                control.htmlpath = os.path.join(binpath, "html")
-                if not os.path.isdir(control.htmlpath):
-                    control.htmlpath = None
-                    print("Can't locate html dir, interactive view disabled")
-                else:
-                    control.initialise()
-                #Copy control module ref so can be accessed from instance
-                #TODO: Just move control.py functions to Viewer class
-                self.control = control
+            control.htmlpath = os.path.join(binpath, "html")
+            if not os.path.isdir(control.htmlpath):
+                control.htmlpath = None
+                print("Can't locate html dir, interactive view disabled")
+
+            #Create a control factory
+            self.control = control.ControlFactory(self)
+
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
             pass
@@ -457,12 +492,12 @@ class Viewer(object):
     #dict methods
     def __getitem__(self, key):
         #Get view/global property
-        #self.state = json.loads(self.getState())
+        self._get()
         view = self.state["views"][0]
-        if key in self.state:
-            return self.state[key]
         if key in view:
             return view[key]
+        elif key in self.state:
+            return self.state[key]
         else:
             return self.state["properties"][key]
         return None
@@ -471,8 +506,8 @@ class Viewer(object):
         #Set view/global property
         #self.app.parseCommands("select") #Ensure no object selected
         #self.app.parseCommands(key + '=' + str(item))
-        #self._get()
-        self.state = json.loads(self.app.getState())
+        self._get()
+        #self.state = json.loads(self.app.getState())
         view = self.state["views"][0]
         if key in view:
             view[key] = item
@@ -488,13 +523,13 @@ class Viewer(object):
     def __str__(self):
         #View/global props to string
         self._get()
-        self.properties = self.state["properties"]
-        self.properties.update(self.state["views"][0])
-        return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in self.properties.iteritems()]))
+        properties = self.state["properties"]
+        properties.update(self.state["views"][0])
+        return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.iteritems()]))
 
     def _get(self):
         #Import state from lavavu
-        self.state = json.loads(self.app.getState())
+        self.state = convert_keys(json.loads(self.app.getState()))
         self.objects._sync()
 
     def _set(self):
@@ -524,7 +559,6 @@ class Viewer(object):
         #__getattr__ called if no attrib/method found
         def any_method(*args, **kwargs):
             #If member function exists on LavaVu, call it
-            has = hasattr(self.app, key)
             method = getattr(self.app, key, None)
             if method and callable(method):
                 return method(*args, **kwargs)
@@ -671,8 +705,12 @@ class Viewer(object):
     def addstep(self):
         return self.app.parseCommands("newstep")
 
+    def image(self, filename=None, resolution=None, transparent=False):
+        if resolution is None:
+            return self.app.image(filename);
+        return self.app.image(filename, resolution[0], resolution[1], transparent);
+
     def frame(self, resolution=None):
-        #self._set() #Sync state first?
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], 85);
@@ -687,9 +725,6 @@ class Viewer(object):
         output routines to save the result with a default filename in the current directory
 
         """
-        #Sync state first
-        self._set()
-
         try:
             if __IPYTHON__:
                 from IPython.display import display,Image,HTML
@@ -725,7 +760,7 @@ class Viewer(object):
                 text_file.write(self.web());
                 text_file.close()
                 from IPython.display import IFrame
-                display(IFrame("html/index.html#" + filename, width=resolution[0], height=resolution[1]))
+                display(IFrame("html/viewer.html#" + filename, width=resolution[0], height=resolution[1]))
         except NameError, ImportError:
             self.app.web(True)
         except Exception,e:
@@ -753,7 +788,10 @@ class Viewer(object):
                 </video><br>
                 <a href="---FN---">Download Video</a> 
                 """
-                html = html.replace('---FN---', fn)
+                #Get a UUID based on host ID and current time
+                import uuid
+                uid = uuid.uuid1()
+                html = html.replace('---FN---', fn + "?" + str(uid))
                 display(HTML(html))
         except NameError, ImportError:
             self.app.web(True)
@@ -840,6 +878,17 @@ class Viewer(object):
         else:
             control.redisplay(self.winid)
 
+    def camera(self):
+        self._get()
+        me = getVariableName(self)
+        print me + ".translation(" + str(self.state["views"][0]["translate"])[1:-1] + ")"
+        print me + ".rotation(" + str(self.state["views"][0]["rotate"])[1:-1] + ")"
+        #Also print in terminal for debugging
+        self.commands("camera")
+
+    def view(self):
+        self._get()
+        return self.state["views"][0]
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
@@ -927,10 +976,10 @@ class GeomData(object):
         if typename in datatypes:
             if typename in ["luminance", "rgb"]:
                 #Get uint8 data
-                array = self.instance.app.geometryArrayViewUInt8(self.data, datatypes[typename])
+                array = self.instance.app.geometryArrayViewUChar(self.data, datatypes[typename])
             elif typename in ["indices", "colours"]:
                 #Get uint32 data
-                array = self.instance.app.geometryArrayViewUInt32(self.data, datatypes[typename])
+                array = self.instance.app.geometryArrayViewUInt(self.data, datatypes[typename])
             else:
                 #Get float32 data
                 array = self.instance.app.geometryArrayViewFloat(self.data, datatypes[typename])
@@ -964,4 +1013,53 @@ class GeomData(object):
         return [key for key, value in geomtypes.items() if value == self.data.type][0]
 
 
+
+def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
+    """
+    Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
+
+    Implemented from FORTRAN 77 code from D.A. Green, 2011, BASI, 39, 289.
+    "A colour scheme for the display of astronomical intensity images"
+    http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
+
+    samples: number of colour samples to produce
+    start: start colour [0,3] 1=red,2=green,3=blue
+    rot: rotations through spectrum, negative to reverse direction
+    sat: colour saturation grayscale to full [0,1], >1 to oversaturate
+    gamma: gamma correction [0,1]
+    alpha: set true for transparent to opaque alpha
+
+    """
+
+    colours = []
+
+    for i in range(0,samples+1):
+        fract = i / float(samples)
+        angle = 2.0 * math.pi * (start / 3.0 + 1.0 + rot * fract)
+        amp = sat * fract * (1 - fract)
+        fract = pow(fract, gamma)
+
+        r = fract + amp * (-0.14861 * math.cos(angle) + 1.78277 * math.sin(angle))
+        g = fract + amp * (-0.29227 * math.cos(angle) - 0.90649 * math.sin(angle))
+        b = fract + amp * (+1.97294 * math.cos(angle))
+                
+        r = max(min(r, 1.0), 0.0)
+        g = max(min(g, 1.0), 0.0)
+        b = max(min(b, 1.0), 0.0)
+        a = fract if alpha else 1.0
+
+        colours.append((fract, 'rgba(%d,%d,%d,%d)' % (r*0xff, g*0xff, b*0xff, a*0xff)))
+
+    return colours
+
+def getVariableName(var):
+    """
+    Attempt to find the name of a variable from the main module namespace
+    """
+    import __main__ as main_mod
+    for name in dir(main_mod):
+        val = getattr(main_mod, name)
+        if val is var:
+            return name
+    return None
 

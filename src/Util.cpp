@@ -106,18 +106,6 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
   return bpath;
 }
 
-void Properties::toFloatArray(const json& val, float* array, unsigned int size)
-{
-  //Convert to a float array
-  for (unsigned int i=0; i<size; i++)
-  {
-    if (i >= val.size())
-      array[i] = 0.0; //Zero pad if too short
-    else
-      array[i] = val[i];
-  }
-}
-
 bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
 
 json& Properties::operator[](const std::string& key)
@@ -135,27 +123,40 @@ json& Properties::operator[](const std::string& key)
 //Functions to get values with provided defaults
 Colour Properties::getColour(const std::string& key, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha)
 {
+  if (data.count(key))
+    return Colour(data[key], red, green, blue, alpha);
+  else if (globals.count(key))
+    return Colour(globals[key], red, green, blue, alpha);
+
   Colour colour = {red, green, blue, alpha};
-  if (data.count(key) == 0) return colour;
-  return Colour(data[key], red, green, blue, alpha);
+  return colour;
 }
 
 float Properties::getFloat(const std::string& key, float def)
 {
-  if (data.count(key) == 0) return def;
-  return data[key];
+  if (data.count(key))
+    return data[key];
+  else if (globals.count(key))
+    return globals[key];
+  return def;
 }
 
 int Properties::getInt(const std::string& key, int def)
 {
-  if (data.count(key) == 0) return def;
-  return data[key];
+  if (data.count(key))
+    return data[key];
+  else if (globals.count(key))
+    return globals[key];
+  return def;
 }
 
 bool Properties::getBool(const std::string& key, bool def)
 {
-  if (data.count(key) == 0) return def;
-  return data[key];
+  if (data.count(key))
+    return data[key];
+  else if (globals.count(key))
+    return globals[key];
+  return def;
 }
 
 //Parse multi-line string
@@ -291,6 +292,7 @@ bool Properties::typecheck(json& val, json& def)
     debug_print("Attempting to coerce value to BOOLEAN\n");
     val = val != 0;
   }
+  return false;
 }
 
 void debug_print(const char *fmt, ...)

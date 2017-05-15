@@ -41,6 +41,7 @@ GLubyte* FrameBuffer::pixels(GLubyte* image, int channels, bool flip)
 {
   // Read the pixels
   assert(width && height);
+  //TODO: store as TextureData so can check width/height
   if (!image)
     image = new GLubyte[width * height * channels];
 
@@ -118,12 +119,14 @@ bool FBO::create(int w, int h)
   {
     if (status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT)
       std::cerr << "FBO failed INCOMPLETE_ATTACHMENT" << std::endl;
-    if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT)
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT)
       std::cerr << "FBO failed INCOMPLETE_DIMENSIONS" << std::endl;
-    if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT)
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT)
       std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
-    if (status == GL_FRAMEBUFFER_UNSUPPORTED_EXT)
+    else if (status == GL_FRAMEBUFFER_UNSUPPORTED_EXT)
       std::cerr << "FBO failed UNSUPPORTED" << std::endl;
+    else
+      std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   }
@@ -175,6 +178,7 @@ GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
   float factor = 1.0/pow(2, downsample-1);
   unsigned int w = width*factor;
   unsigned int h = height*factor;
+  //TODO: store as TextureData so can check width/height
   if (!image)
     image = new GLubyte[w * h * channels];
 
@@ -194,7 +198,7 @@ GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
 }
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer() : stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0), savewidth(0), saveheight(0)
+OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
 {
   app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;
@@ -298,6 +302,7 @@ void OpenGLViewer::show()
 void OpenGLViewer::setsize(int w, int h)
 {
   //Resize fbo
+  display(false); //Ensure correct context active
   if (fbo.enabled && fbo.create(w, h))
     //Reset the viewer size
     resize(w, h);
@@ -437,17 +442,23 @@ void OpenGLViewer::outputON(int& w, int& h, int channels)
   //Use out dims if defined
   if (!w) w = width;
   if (!h) h = height;
+  assert(w && h);
+  //debug_printf("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
 
   //Redraw blended output for transparent PNG
   if (channels == 4) blend_mode = BLEND_PNG;
 
   //Ensure correct GL context selected first
+  //display(false);
+  //Do a full display or setsize will be called again
+  //with the original display size before we output
   display();
 
   if (!fbo.enabled)
   {
     //outwidth/outheight only support if fbo available
-    //std::cout << "FBO Support required to save image at different size to window\n";
+    if (w != width || h != height)
+      std::cerr << "FBO Support required to save image at different size to window\n";
     w = width;
     h = height;
   }
@@ -472,6 +483,7 @@ void OpenGLViewer::outputOFF()
   height = saveheight;
   //Restore settings
   blend_mode = BLEND_NORMAL;
+  savewidth = saveheight = 0;
 }
 
 GLubyte* OpenGLViewer::pixels(GLubyte* image, int channels, bool flip)
@@ -494,17 +506,18 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool
   return image;
 }
 
-std::string OpenGLViewer::image(const std::string& path, int jpegquality)
+std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool transparent)
 {
   assert(isopen);
   FilePath filepath(path);
   if (filepath.type == "jpeg" || filepath.type == "jpg") jpegquality = 95;
-  bool alphapng = !jpegquality && app->drawstate.global("pngalpha");
+  bool alphapng = !jpegquality && (transparent || app->drawstate.global("pngalpha"));
   int channels = 3;
   if (alphapng) channels = 4;
   std::string retImg;
 
   // Read the pixels
+  // TODO: store in TextureData so can check width/height
   GLubyte* image = pixels(NULL, outwidth, outheight, channels, false);
 
   //Write PNG/JPEG to string or file

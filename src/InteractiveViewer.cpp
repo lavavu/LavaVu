@@ -91,7 +91,7 @@ Hold [shift] and use the scroll wheel to move the clip plane in and out.  \n\
 [v] [ENTER]  hide/show all vector arrow fields\n\
 [t] [ENTER]  hide/show all tracer trajectories\n\
 [q] [ENTER]  hide/show all quad surfaces (scalar fields, cross sections etc.)\n\
-[u] [ENTER]  hide/show all triangle surfaces (isosurfaces)\n\
+[u] [ENTER]  hide/show all triangle surfaces\n\
 [s] [ENTER]  hide/show all shapes\n\
 [l] [ENTER]  hide/show all lines\n\
 [ESC][ENTER] quit program\n\
@@ -661,6 +661,9 @@ bool LavaVu::parseCommands(std::string cmd)
     return true;
   }
 
+  //Replace semi-colon with newlines (multiple commands on single line)
+  std::replace(cmd.begin(), cmd.end(), ';', '\n');
+
   std::string line;
   std::stringstream ss(cmd);
   while(std::getline(ss, line))
@@ -707,9 +710,27 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       return false;
   }
+  //std::cout << "CMD: " << cmd << std::endl;
 
   //Parse the line
   parsed.parseLine(cmd);
+
+  //Check for commands that require viewer to be open and view initialised,
+  //if found, open the viewer / setup view first
+  if (!viewer->isopen || (aview && !aview->initialised))
+  {
+    std::vector<std::string> viewcmds = commandList("View");
+
+    for (auto c : viewcmds)
+    {
+      if (parsed.exists(c))
+      {
+        debug_print("%s : Camera command requires view to be initialised, performing auto-init\n", c.c_str());
+        loadModelStep(0, 0, true);
+        resetViews(); //Forces bounding box update
+      }
+    }
+  }
 
   //Verbose command processor
   float fval;
@@ -907,7 +928,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
       aview->properties.data["resolution"] = json::array({w, h});
-      viewset = 2; //Force check for resize and autozoom
+      viewset = RESET_ZOOM; //Force check for resize and autozoom
     }
   }
   else if (parsed.exists("quit") || parsed.exists("exit"))
@@ -1069,6 +1090,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     aview->rotate(0, 0, fval);
+    aview->rotated = true;  //Flag rotation finished
+  }
+  else if (parsed.exists("autorotate"))
+  {
+    if (gethelp)
+    {
+      help += "Auto-Rotate model to face camera if flat in X or Y dimensions\n\n";
+      return false;
+    }
+
+    aview->autoRotate();
     aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "zoom"))
@@ -1366,7 +1398,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     amodel->storeFigure();
     //Load new selection
     if (!amodel->loadFigure(ival)) return false; //Invalid
-    viewset = 2; //Force check for resize and autozoom
+    viewset = RESET_ZOOM; //Force check for resize and autozoom
     printMessage("Load figure %d", amodel->figure);
   }
   else if (parsed.exists("view"))
@@ -2019,9 +2051,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    DrawingObject* obj = aobject;
-    if (!obj)
-      obj = lookupObject(parsed, "reload");
+    DrawingObject* obj = lookupObject(parsed, "reload");
 
     //Restore original data
     if (amodel->database)
@@ -2061,6 +2091,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     DrawingObject* obj = aobject;
     int next = 0;
     //Select by id, or active as fallback
+    ival = 0;
     if (!obj || parsed.has(ival, "colourmap"))
     {
       obj = lookupObject(parsed, "colourmap");
@@ -2319,7 +2350,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       std::string data = parsed["label"];
-      lucGeometryDataType dtype;
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
       Geometry* active = getGeometryType(gtype);
@@ -2829,8 +2859,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Update the views
     resetViews(false);
     amodel->redraw(true); //Redraw & reload
-    //Delete the cache as object list changed
-    amodel->deleteCache();
   }
   else if (parsed.exists("sort"))
   {
@@ -3171,6 +3199,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       json filter;
       std::string action = "filter";
+      filter["out"] = false;
       if (parsed.exists("filterout"))
       {
         action = "filterout";
@@ -3209,7 +3238,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       json& filters = aobject->properties["filters"];
-      int idx = parsed.Int(action, 0);
+      unsigned int idx = parsed.Int(action, 0);
       if (filters.size() <= idx) return false;
       json& filter = filters[idx];
       float val;
@@ -3291,15 +3320,18 @@ bool LavaVu::parsePropertySet(std::string cmd)
   return true;
 }
 
-void LavaVu::helpCommand(std::string cmd)
+std::vector<std::string> LavaVu::commandList(std::string category)
 {
-  //This list of categories and commands must be maintained along with the individual command help strings
+  //Return the list of categories, or list of commands in passed category
   std::vector<std::string> categories = {"General", "Input", "Output", "View", "Object", "Display", "Scripting", "Miscellanious"};
+  if (category.length() == 0)
+    return categories;
+
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
     {"file", "script", "figure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
-    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez",
+    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "autorotate",
      "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
      "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
     {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",
@@ -3312,6 +3344,15 @@ void LavaVu::helpCommand(std::string cmd)
      "verbose", "toggle", "createvolume", "clearvolume"}
   };
 
+  for (unsigned int i=0; i<categories.size(); i++)
+    if (categories[i] == category) return cmdlist[i];
+  return std::vector<std::string>();
+}
+
+void LavaVu::helpCommand(std::string cmd)
+{
+  //This list of categories and commands must be maintained along with the individual command help strings
+  std::vector<std::string> categories = commandList();
   //Verbose command help
   if (cmd == "help")
   {
@@ -3319,11 +3360,12 @@ void LavaVu::helpCommand(std::string cmd)
     for (unsigned int i=0; i<categories.size(); i++)
     {
       help += "\n\n" + categories[i] + " commands:\n\n";
-      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      std::vector<std::string> cmds = commandList(categories[i]);
+      for (unsigned int j=0; j<cmds.size(); j++)
       {
         if (j % 11 == 10) help += "\n  ";
-        help += cmdlist[i][j];
-        if (j < cmdlist[i].size() - 1) help += ", ";
+        help += cmds[j];
+        if (j < cmds.size() - 1) help += ", ";
       }
     }
     help += "\n";
@@ -3337,11 +3379,12 @@ void LavaVu::helpCommand(std::string cmd)
       std::string anchor = categories[i] + "-commands";
       std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
       std::cout <<  " - **[" + categories[i] + "](#" + anchor + ")**  \n";
-      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      std::vector<std::string> cmds = commandList(categories[i]);
+      for (unsigned int j=0; j<cmds.size(); j++)
       {
-        //std::cout <<  "    * [" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")\n";
+        //std::cout <<  "    * [" + cmds[j] + "](#" + cmds[j] + ")\n";
         if (j > 0) std::cout << ", ";
-        std::cout <<  "[" + cmdlist[i][j] + "](#" + cmdlist[i][j] + ")";
+        std::cout <<  "[" + cmds[j] + "](#" + cmds[j] + ")";
       }
       std::cout << std::endl;
     }
@@ -3349,11 +3392,12 @@ void LavaVu::helpCommand(std::string cmd)
     for (unsigned int i=0; i<categories.size(); i++)
     {
       std::cout <<  "\n---\n## " + categories[i] + " commands:\n\n";
-      for (unsigned int j=0; j<cmdlist[i].size(); j++)
+      std::vector<std::string> cmds = commandList(categories[i]);
+      for (unsigned int j=0; j<cmds.size(); j++)
       {
-        std::cout << "\n### " + cmdlist[i][j] + "\n\n";
+        std::cout << "\n### " + cmds[j] + "\n\n";
         help = "";
-        helpCommand(cmdlist[i][j]);
+        helpCommand(cmds[j]);
 
         std::string line;
         std::stringstream ss(help);
