@@ -713,7 +713,7 @@ class Viewer(object):
     def frame(self, resolution=None):
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
-        return self.app.image("", resolution[0], resolution[1], 85);
+        return self.app.image("", resolution[0], resolution[1], 90);
 
     def display(self, resolution=(640,480)):
         """        
@@ -867,16 +867,14 @@ class Viewer(object):
 
     def window(self):
         if not self.control: return
-        #Interactive viewer instance, store id
-        self.winid = control.window(self)
+        #Create and display Interactive viewer instance
+        self.control.Window()
+        self.control.show()
 
     def redisplay(self):
-        #Issue redisplay to active viewer, or last saved 
+        #Issue redisplay to active viewer
         if not self.control: return
-        if isinstance(self.control.winid, int):
-            control.redisplay(self.control.winid)
-        else:
-            control.redisplay(self.winid)
+        self.control.redisplay()
 
     def camera(self):
         self._get()

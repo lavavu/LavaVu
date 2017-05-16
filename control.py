@@ -41,9 +41,9 @@ void main(void)
 #Static HTML location
 htmlpath = ""
 initialised = False
-winid = None
+initcell = ""
 
-def export():
+def export(html):
     if not htmlpath: return
     #Dump all output to control.html
     filename = os.path.join(htmlpath, "control.html")
@@ -111,43 +111,25 @@ def export():
     <script type="text/Javascript" src="drawbox.js"></script>
     <script type="text/Javascript" src="OK-min.js"></script>
     <script type="text/Javascript" src="gl-matrix-min.js"></script>
-    <link rel="stylesheet" type="text/css" href="control.css">
-    """ + fragmentShader + vertexShader + actionjs + """
-    </head>
-    <body onload="init();">""" + output + """
-    </body>
-    </html>""")
+    <link rel="stylesheet" type="text/css" href="control.css">""")
+    hfile.write(fragmentShader)
+    hfile.write(vertexShader)
+    hfile.write(actionjs)
+    hfile.write('</head>\n<body onload="init();">\n')
+    hfile.write(html)
+    hfile.write("\n</body>\n</html>")
     hfile.close()
     filename = os.path.join(htmlpath, "control.html")
 
-def redisplay(vid=None):
-    #Simply update the active viewer image, if any
-    try:
-        if __IPYTHON__:
-            from IPython.display import display,Javascript
-            display(Javascript('redisplay(' + str(vid) + ');'))
-    except NameError, ImportError:
-        pass
-
-def render(html):
-    if not htmlpath: return
-    try:
-        if __IPYTHON__:
-            from IPython.display import display,HTML
-            display(HTML(html))
-    except NameError, ImportError:
-        global output
-        output += html
-        export()
-
 def initialise():
+    global initialised, initcell
     if not htmlpath: return
-    global initialised
     try:
         if __IPYTHON__:
             from IPython.display import display,HTML,Javascript
             """ Re-import check
-            This sneakily scans the IPython history for "import lavavu" in cell AFTER the one where
+            First check if re-executing the cell init code was inserted from, if so must re-init
+            Then sneakily scans the IPython history for "import lavavu" in cell AFTER the one where
             the control interface was last initialised, if it is found, assume we need to initialise again!
             A false positive will add the init code again, which is harmless but bloats the notebook.
             A false negative will cause the interactive viewer widget to not display the webgl bounding box,
@@ -156,7 +138,7 @@ def initialise():
             ip = get_ipython()
             #Returns a list of executed cells and their content
             history = list(ip.history_manager.get_range())
-            if initialised:
+            if initialised and history[-1][2] != initcell:
                 count = 0
                 found = False
                 #Loop through all the cells in history list
@@ -174,8 +156,9 @@ def initialise():
                     #Viewer was initialised in an earlier cell
                     return
 
-            #Save cell # from history we insert initialisation code at
+            #Save cell # and content from history we insert initialisation code at
             initialised = len(history)
+            initcell = history[-1][2]
 
             #Load stylesheet
             css = '<style>\n'
@@ -196,39 +179,6 @@ def initialise():
             display(HTML(css + fragmentShader + vertexShader + jslibs))
     except NameError, ImportError:
         pass
-
-def window(viewer, html="", align="left"):
-    #Creates an interactor with a view window and webgl box control for rotation/translation
-    if not htmlpath: return
-    html += '<div style="min-height: 200px; min-width: 200px; background: #ccc; position: relative; float: ' + align + '; display: inline;" data-id="---VIEWERID---">\n'
-    html += '<img id="imgtarget_---VIEWERID---" draggable=false style="border: 1px solid #aaa;">\n'
-    html += '</div>\n'
-
-    return interactor(viewer, html)
-
-def interactor(viewer, html=""):
-    #Creates an interactor to connect javascript/html controls to IPython and viewer
-    #default is a windowless interactor
-    if not htmlpath: return
-    initialise() #Requires some additional js/css/webgl
-    viewerid = len(windows)
-
-    #Append the viewer ref
-    windows.append(viewer)
-
-    html = html.replace('---VIEWERID---', str(viewerid))
-
-    try:
-        if __IPYTHON__:
-            #Create windowinteractor
-            from IPython.display import display,HTML,Javascript
-            if len(html): display(HTML(html))
-            display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
-    except NameError, ImportError:
-        render(html)
-    global winid
-    winid = viewerid
-    return viewerid
 
 def action(id, value):
     #return str(id) + " : " + str(value)
@@ -302,24 +252,45 @@ class Container(object):
             html += self.controls[i].controls()
         return html
 
+class Window(Container):
+    #Creates an interactor with a view window and webgl box control for rotation/translation
+    def __init__(self, viewer, align="left"):
+        super(Window, self).__init__(viewer)
+        self.align = align
+
+    def html(self, wrapper=True, wrapperstyle=""):
+        style = 'min-height: 200px; min-width: 200px; background: #ccc; position: relative;'
+        style += 'float: ' + self.align + '; display: inline;'
+        if wrapper:
+            style += ' margin-right: 10px;'
+        html = '<div style="' + style + '" data-id="---VIEWERID---">\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="border: 1px solid #aaa;">\n'
+        html += '</div>\n'
+        #Display any contained controls
+        if wrapper:
+            html += '<div data-id="---VIEWERID---" style="' + wrapperstyle + '" class="lvctrl">\n'
+        html += super(Window, self).html()
+        if wrapper:
+            html += '</div>\n'
+        return html
+
 class Panel(Container):
     def __init__(self, viewer, showwin=True):
         super(Panel, self).__init__(viewer)
-        self.showwin = showwin
+        self.win = None
+        if showwin:
+            self.win = Window(viewer, align="right")
 
-    def show(self):
+    def html(self):
         if not htmlpath: return
-        viewerid = len(windows)-1 #Default to the most recently added interactor instance
-        if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
-        if self.showwin: viewerid = len(windows) #Use the soon to be added viewer window
         #Add control wrapper with the viewer id as a custom attribute
-        html = '<div data-id="' + str(viewerid)
+        html = '<div data-id="---VIEWERID---'
         html += '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
-        html += self.html() + '</div>\n'
-        if self.showwin:
-            window(self.viewer, html, "right")
-        else:
-            render(html)
+        html += super(Panel, self).html()
+        html += '</div>\n'
+        if self.win: html += self.win.html(wrapper=False)
+        #if self.win: html += self.win.html(wrapperstyle="float: left; padding:0px; margin: 0px; position: relative;")
+        return html
 
 class Control(object):
     lastid = 0
@@ -366,14 +337,13 @@ class Control(object):
         return "do_action(" + str(self.id) + ", this.value, this);"
 
     def show(self):
-        if not htmlpath: return
         #Show only this control
-        viewerid = len(windows)-1 #Just use the most recently added interactor instance
-        if viewerid < 0: viewerid = 0 #Not yet added, assume it will be
-        html = '<div data-id="' + str(viewerid) + '" style="" class="lvctrl">\n'
-        html += self.controls()
+        html = '<div data-id="---VIEWERID---" style="" class="lvctrl">\n'
+        html += self.html()
         html += '</div>\n'
-        render(html)
+
+    def html(self):
+        return self.controls()
 
     def labelhtml(self):
         #Default label
@@ -510,6 +480,7 @@ class Colour(Control):
               var col = new Colour(0);
               col.setHSV(val);
               el.style.backgroundColor = col.html();
+              console.log(col.html());
               do_action(---ID---, col.html(), el);
             }
             el.picker = new ColourPicker(savefn);
@@ -684,6 +655,8 @@ class ControlFactory(object):
     def __init__(self, target):
         self._target = target
         self.clear()
+        self.interactor = False
+        self.output = ""
 
         #Save types of all control/containers
         def all_subclasses(cls):
@@ -710,10 +683,10 @@ class ControlFactory(object):
     def add(self, ctrl):
         if type(ctrl) in self._container_types:
             #Save new container, further controls will be added to it
-            self._containers.append(ctrl)
-        elif len(self._containers):
-            #Add to existing container (last in list)
-            self._containers[-1].add(ctrl)
+            self._container = ctrl
+        elif self._container:
+            #Add to existing container
+            self._container.add(ctrl)
         else:
             #Add to global list
             self._controls.append(ctrl)
@@ -722,20 +695,70 @@ class ControlFactory(object):
         if not hasattr(self._target, 'objects'):
             self._target.instance.control.add(ctrl)
 
-    def show(self, interact=False):
-        #Show all controls and containers
-        for c in self._controls:
-            c.show()
-        for c in self._containers:
-            c.show()
+    def show(self, win=None):
+        #Show all controls in container
+        if not htmlpath: return
 
-    def interact(self):
-        #Require an interactor, create a windowless one
-        interactor(self._target.instance)
-        #Show the controls
-        self.show()
+        #Generate the HTML
+        html = ""
+        chtml = ""
+        for c in self._controls:
+            chtml += c.html()
+        if len(chtml):
+            html = '<div data-id="---VIEWERID---" style="" class="lvctrl">\n' + chtml + '</div>\n'
+        if self._container:
+            html += self._container.html()
+
+        #Creates an interactor to connect javascript/html controls to IPython and viewer
+        #if no viewer Window() created, it will be a windowless interactor
+        viewerid = len(windows)
+        if hasattr(self._target, 'objects'):
+            try:
+                #Find viewer id
+                viewerid = windows.index(self._target)
+            except ValueError:
+                #Append the current viewer ref
+                windows.append(self._target)
+                #Use viewer instance just added
+                viewerid = len(windows)-1
+
+        #Set viewer id
+        html = html.replace('---VIEWERID---', str(viewerid))
+
+        #Display HTML inline or export
+        self.output += html
+        try:
+            if __IPYTHON__:
+                from IPython.display import display,HTML,Javascript
+                #Interaction requires some additional js/css/webgl
+                initialise()
+                #Output the controls
+                display(HTML(html))
+                #Create WindowInteractor instance (if none created, or output contains a viewer target)
+                if not self.interactor or 'imgtarget' in html:
+                    display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
+                    self.interactor = True
+            else:
+                export(self.output)
+        except NameError, ImportError:
+            export(self.output)
+
+        #Auto-Clear after show?
+        self.clear()
+
+    def redisplay(self):
+        #Update the active viewer image, if any
+        try:
+            #Find viewer id
+            viewerid = windows.index(self._target)
+            if __IPYTHON__:
+                from IPython.display import display,Javascript
+                display(Javascript('redisplay(' + str(viewerid) + ');'))
+
+        except (NameError, ImportError, ValueError):
+            pass
 
     def clear(self):
         self._controls = []
-        self._containers = []
+        self._container = None
 
