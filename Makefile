@@ -12,8 +12,8 @@ OPATH ?= tmp
 HTMLPATH = $(PREFIX)/html
 
 #Compilers
-CPP?=g++
-CC?=gcc
+CXX ?= g++
+CC ?= gcc
 
 #Default flags
 CFLAGS = $(FLAGS) -fPIC -Isrc
@@ -144,14 +144,14 @@ paths:
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
-	$(CPP) $(CPPFLAGS) $(DEFINES) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths
-	$(CPP) $(CPPFLAGS) $(DEFINES) -c src/Main/main.cpp -o $(OPATH)/main.o
-	$(CPP) -o $(PROGRAM) $(OPATH)/main.o $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) $(CPPFLAGS) $(DEFINES) -c src/Main/main.cpp -o $(OPATH)/main.o
+	$(CXX) -o $(PROGRAM) $(OPATH)/main.o $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(LIBRARY): $(ALLOBJS) | paths
-	$(CPP) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
+	$(CXX) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
 
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
@@ -160,7 +160,7 @@ $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
-	$(CPP) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
+	$(CXX) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
 #Python interface
 SWIGSRC = LavaVuPython_wrap.cxx
@@ -172,10 +172,10 @@ swig : $(INC) LavaVuPython.i | paths
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
-	$(CPP) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC)
-	$(CPP) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
+	$(CXX) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	python docparse.py
