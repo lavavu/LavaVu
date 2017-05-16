@@ -27,8 +27,9 @@ addons:
 before_script:
   - git clone https://github.com/mivp/LavaVuTesting
   - sudo pip install pyvirtualdisplay
+  - export PYTHONPATH=$PYTHONPATH:`pwd`
 script:
-  - make
+  - make -j4
   - cd LavaVuTesting
   - python runall.py xvfb
 after_script:
