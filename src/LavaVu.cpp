@@ -1765,6 +1765,10 @@ void LavaVu::viewApply(int idx)
   aview->port(viewer->width, viewer->height);
   GL_Error_Check;
 
+  //Set GL colours
+  glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0);
+  glColor3ubv(aview->textColour.rgba);
+
   // Clear viewport
   GL_Error_Check;
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1819,10 +1823,6 @@ void LavaVu::display(bool redraw)
   }
   else //Single viewport, always disable filter
     aview->filtered = false;
-
-  //Set GL colours
-  glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0);
-  glColor3ubv(aview->textColour.rgba);
 
   if (drawstate.omegalib)
   {
