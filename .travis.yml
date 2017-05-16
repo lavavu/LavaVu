@@ -24,12 +24,15 @@ addons:
 before_script:
   - git clone https://github.com/mivp/LavaVuTesting
   - export DISPLAY=:99.0
+  - export GALLIUM_DRIVER="llvmpipe"
   - sh -e /etc/init.d/xvfb start
   - sleep 3 # give xvfb some time to start
   - export PYTHONPATH=$PYTHONPATH:`pwd`
 script:
   - make -j2
   - cd LavaVuTesting
-  - python runall.py echo
+  - python runall.py echo verbose
 after_script:
+  - cd ..
+  - pwd
   - ls -la ./bin

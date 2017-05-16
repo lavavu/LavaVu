@@ -87,7 +87,8 @@ def convert_keys(dictionary):
         for k, v in dictionary.items())
 
 #Echo image test fail output to console
-echofails = False
+echo_fails = False
+default_args = []
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
@@ -434,7 +435,8 @@ class Viewer(object):
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
          quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         #Convert options to args
-        args = []
+        global default_args
+        args = default_args[:]
         if not initscript:
           args += ["-S"]
         if verbose:
@@ -849,8 +851,8 @@ class Viewer(object):
             print "%s: %s Image comp errors %f, not"\
                   " within tolerance %g of reference image."\
                 % (failed, outfile, diff, tolerance)
-            global echofails
-            if echofails:
+            global echo_fails
+            if echo_fails:
                 print "__________________________________________"
                 print self.app.image("")
                 print "__________________________________________"
