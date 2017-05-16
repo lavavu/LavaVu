@@ -21,16 +21,15 @@ addons:
     - python-numpy
     - libgl1-mesa-dev
     - libgl1-mesa-glx
-    - xvfb
-    - xserver-xephyr
-    - vnc4server
 before_script:
   - git clone https://github.com/mivp/LavaVuTesting
-  - sudo pip install pyvirtualdisplay
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3 # give xvfb some time to start
   - export PYTHONPATH=$PYTHONPATH:`pwd`
 script:
   - make -j2
   - cd LavaVuTesting
-  - python runall.py xvfb
+  - python runall.py echo
 after_script:
   - ls -la ./bin
