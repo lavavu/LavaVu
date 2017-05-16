@@ -1065,7 +1065,6 @@ def printH5(f):
     """
     Print info about HDF5 data set (requires h5py)
     """
-    print "HDF5 file summary:"
     print "------ ",f.filename," ------"
     ks = f.keys()
     for key in ks[:10]:
