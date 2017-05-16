@@ -6,7 +6,7 @@ A scientific visualisation tool with a python interface for fast and flexible vi
 
 LavaVu development is supported by the [Monash Immersive Visualisation Plaform](http://monash.edu.au/mivp) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
 
-The acronym stands for: **L**ightweight, **A**utomatable  **V**isualisation & **A**nalysis **V**iewing **U**tility, but "lava" is also a reference to its primary application as a viewer for geophysical simulations. It wsa also chosen to be unique enough to find the repository with google.
+The acronym stands for: **L**ightweight, **A**utomatable  **V**isualisation & **A**nalysis **V**iewing **U**tility, but "lava" is also a reference to its primary application as a viewer for geophysical simulations. It was also chosen to be unique enough to find the repository with google.
 
 The project sprang out of the gLucifer<sup>1</sup> framework for visualising geodynamics simulations when the OpenGL visualisation module was separated from the simulation and sampling libraries, but is now a more general purpose visualisation tool. gLucifer continues as a set of sampling tools for Underworld simulations as part of the [Underworld2](https://github.com/underworldcode/underworld2/) code. LavaVu provides the rendering library for creating 2d and 3d visualisations to view this sampled data, inline within interactive IPython notebooks and offline through saved visualisation databases and images/movies.
 
