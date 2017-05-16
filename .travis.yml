@@ -1,0 +1,25 @@
+language: cpp
+matrix:
+  include:
+    - os: linux
+      compiler: gcc
+    - os: osx
+      compiler: clang   
+    - os: osx
+      compiler: gcc 
+before_install:
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CPP="g++-4.9"; CC="gcc-4.9"; echo $CPP;echo $CC ; fi
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.9
+    - g++-4.9
+    - python-numpy
+script:
+  - make
+after_script:
+  - ls -la ./bin
