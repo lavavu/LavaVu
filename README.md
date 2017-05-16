@@ -1,5 +1,7 @@
 # LavaVu #
 
+[![Build Status](https://travis-ci.org/OKaluza/LavaVu.svg?branch=master)](https://travis-ci.org/OKaluza/LavaVu)
+
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
 LavaVu development is supported by the [Monash Immersive Visualisation Plaform](http://monash.edu.au/mivp) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
