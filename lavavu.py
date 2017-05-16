@@ -86,6 +86,8 @@ def convert_keys(dictionary):
     return dict((k.encode('utf-8'), convert_keys(v)) 
         for k, v in dictionary.items())
 
+dumpfails = 0
+
 #Wrapper class for drawing object
 #handles property updating via internal dict
 class Obj(object):
@@ -846,6 +848,11 @@ class Viewer(object):
             print "%s: %s Image comp errors %f, not"\
                   " within tolerance %g of reference image."\
                 % (failed, outfile, diff, tolerance)
+            global dumpfails
+            print dumpfails
+            if dumpfails > 0:
+                self.image("FAIL%04d" % dumpfails + ".png")
+                dumpfails += 1
         else:
             print "%s: %s Image comp errors %f, within tolerance %f"\
                   " of ref image."\

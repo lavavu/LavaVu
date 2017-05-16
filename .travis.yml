@@ -10,7 +10,7 @@ matrix:
 before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CPP="g++-4.9"; CC="gcc-4.9"; echo $CPP;echo $CC ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX="g++-4.9"; CC="gcc-4.9"; echo $CXX;echo $CC ; fi
 addons:
   apt:
     sources:
@@ -29,7 +29,7 @@ before_script:
   - sudo pip install pyvirtualdisplay
   - export PYTHONPATH=$PYTHONPATH:`pwd`
 script:
-  - make -j4
+  - make -j2
   - cd LavaVuTesting
   - python runall.py xvfb
 after_script:
