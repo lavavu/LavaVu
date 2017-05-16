@@ -19,7 +19,13 @@ addons:
     - gcc-4.9
     - g++-4.9
     - python-numpy
+    - libgl1-mesa-dev
+    - libgl1-mesa-glx
+before_script:
+  - git clone https://github.com/mivp/LavaVuTesting
 script:
   - make
+  - cd LavaVuTesting
+  - python runall.py
 after_script:
   - ls -la ./bin
