@@ -86,7 +86,8 @@ def convert_keys(dictionary):
     return dict((k.encode('utf-8'), convert_keys(v)) 
         for k, v in dictionary.items())
 
-dumpfails = 0
+#Echo image test fail output to console
+echofails = False
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
@@ -848,11 +849,11 @@ class Viewer(object):
             print "%s: %s Image comp errors %f, not"\
                   " within tolerance %g of reference image."\
                 % (failed, outfile, diff, tolerance)
-            global dumpfails
-            print dumpfails
-            if dumpfails > 0:
-                self.image("FAIL%04d" % dumpfails + ".png")
-                dumpfails += 1
+            global echofails
+            if echofails:
+                print "__________________________________________"
+                print self.app.image("")
+                print "__________________________________________"
         else:
             print "%s: %s Image comp errors %f, within tolerance %f"\
                   " of ref image."\
