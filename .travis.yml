@@ -11,15 +11,15 @@ matrix:
       compiler: gcc 
 before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
-#install:
-#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX="g++-4.9"; CC="gcc-4.9"; echo $CXX;echo $CC ; fi
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX="g++-4.9"; CC="gcc-4.9"; echo $CXX;echo $CC ; fi
 addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-#    - gcc-4.9
-#    - g++-4.9
+    - gcc-4.9
+    - g++-4.9
     - python-numpy
     - libgl1-mesa-dev
     - libgl1-mesa-glx
