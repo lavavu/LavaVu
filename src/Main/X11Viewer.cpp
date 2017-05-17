@@ -166,7 +166,7 @@ void X11Viewer::display(bool redraw)
   glXMakeCurrent(Xdisplay, win, glxcontext);
   OpenGLViewer::display(redraw);
   // Swap buffers
-  if (doubleBuffer)
+  if (redraw && doubleBuffer)
     glXSwapBuffers(Xdisplay, win);
 }
 
