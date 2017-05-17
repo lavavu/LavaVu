@@ -242,15 +242,20 @@ void Properties::parse(const std::string& property, bool global)
   checkall();
 }
 
+void Properties::mergeJSON(json& dest, json& src)
+{
+  //Merge: keep existing values, replace any imported
+  for (json::iterator it = src.begin(); it != src.end(); ++it)
+  {
+    if (!it.value().is_null())
+      dest[it.key()] = it.value();
+  }
+}
+
 void Properties::merge(json& other)
 {
   //Merge: keep existing values, replace any imported
-  for (json::iterator it = other.begin(); it != other.end(); ++it)
-  {
-    if (!it.value().is_null())
-      data[it.key()] = it.value();
-  }
-
+  mergeJSON(data, other);
   //Run a type check
   checkall();
 }

@@ -1912,7 +1912,10 @@ void Model::jsonRead(std::string data)
   std::lock_guard<std::mutex> guard(drawstate.mutex);
   
   json imported = json::parse(data);
-  drawstate.globals = imported["properties"];
+
+  //Load globals, merge with existing values
+  Properties::mergeJSON(drawstate.globals, imported["properties"]);
+
   json inviews;
   //If "options" exists (old format) read it as first view properties
   if (imported.count("options") > 0)

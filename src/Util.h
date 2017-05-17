@@ -324,6 +324,7 @@ public:
 
   template<typename T>
   static void toArray(const json& val, T* array, unsigned int size);
+  static void mergeJSON(json& dest, json& src);
 
   bool has(const std::string& key);
   json& operator[](const std::string& key);
