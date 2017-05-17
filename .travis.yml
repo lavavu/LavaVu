@@ -26,14 +26,13 @@ addons:
 before_script:
   - pip install numpy
   - git clone https://github.com/mivp/LavaVuTesting
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; 
-    then
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       export CXX="g++-4.9"; CC="gcc-4.9";
-      echo $CXX;echo $CC ;
-      export DISPLAY=:99.0
-      export GALLIUM_DRIVER="llvmpipe"
-      sh -e /etc/init.d/xvfb start
-      sleep 3 # give xvfb some time to start
+      echo $CXX; echo $CC;
+      export DISPLAY=:99.0;
+      export GALLIUM_DRIVER="llvmpipe";
+      sh -e /etc/init.d/xvfb start;
+      sleep 3 ;
     fi
     #  - export DISPLAY=:99.0
     #  - export GALLIUM_DRIVER="llvmpipe"
