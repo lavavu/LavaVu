@@ -631,18 +631,19 @@ class Viewer(object):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def grid(self, name=None, width=100, height=100, dims=[2,2], verts=[], *args, **kwargs):
+    def grid(self, name=None, width=0, height=0, dims=[2,2], vertices=None, *args, **kwargs):
+        #Creates a quads object, 
         obj = self._addtype("quads", name, dims=dims, *args, **kwargs)
-        if len(verts) != dims[0]*dims[1]:
-            verts = []
+        if width > 0 and height > 0 and vertices is None:
+            vertices = []
             yc = 0.0
             for y in range(dims[1]):
                 xc = 0.0
                 for x in range(dims[0]):
-                    verts.append([xc, yc, 0])
+                    vertices.append([xc, yc, 0])
                     xc += width / float(dims[0])
                 yc += height / float(dims[1])
-        obj.vertices(verts)
+        obj.vertices(vertices)
         return obj
 
     def getobject(self, identifier=None):
