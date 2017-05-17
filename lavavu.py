@@ -820,7 +820,7 @@ class Viewer(object):
         for f in imagelist:
             outfile = outputPath+f
             expfile = expectedPath+f
-            results.append(self.testimage(outfile, expfile, tolerance))
+            results.append(self.testimage(expfile, outfile, tolerance))
         #Combined result
         overallResult = all(results)
         if not overallResult:
@@ -833,8 +833,8 @@ class Viewer(object):
                 pass
         print "-------------\nTests Passed!\n-------------"
 
-    def testimage(self, outfile, expfile, tolerance=TOL_DEFAULT):
-        if len(expfile) and not os.path.exists(expfile):
+    def testimage(self, expfile, outfile, tolerance=TOL_DEFAULT):
+        if not os.path.exists(expfile):
             print "Test skipped, Reference image '%s' not found!" % expfile
             return 0
         if len(outfile) and not os.path.exists(outfile):
@@ -855,11 +855,13 @@ class Viewer(object):
             if echo_fails:
                 print "__________________________________________"
                 if len(outfile):
+                    print outfile
                     with open(outfile, mode='rb') as f:
                         data = f.read()
                         import base64
                         print "data:image/png;base64,",base64.b64encode(data)
                 else:
+                    print "Buffer:"
                     print self.app.image("")
                 print "__________________________________________"
         else:
