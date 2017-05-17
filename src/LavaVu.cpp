@@ -1930,6 +1930,13 @@ void LavaVu::display(bool redraw)
   //Print current info message (displayed for one frame only)
   if (status) displayMessage();
 
+  //Print help message (displayed for one frame only)
+  if (help.length()) 
+  {
+    displayText(help);
+    help = "";
+  }
+
   //Display object list if enabled
   if (objectlist)
     displayObjectList(false);

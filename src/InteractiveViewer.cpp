@@ -1842,19 +1842,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
       helpCommand(cmd);
-      displayText(help);
       std::cout << help;
     }
     else
     {
       help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
       helpCommand("help");
-      displayText(help);
       std::cout << HELP_INTERACTION;
       std::cout << help;
     }
     viewer->display(false);  //Immediate display
-    redisplay = false;
   }
   else if (parsed.exists("antialias"))
   {
