@@ -8,14 +8,22 @@ matrix:
       before_script:
         - export CXX="g++-4.9"; CC="gcc-4.9";
         - echo $CXX; echo $CC;
+        - git clone https://github.com/mivp/LavaVuTesting
+        - export DISPLAY=:99.0
+        - export GALLIUM_DRIVER="llvmpipe"
+        - sh -e /etc/init.d/xvfb start
+        #- Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        - sleep 3 # give xvfb some time to start
+        - export CXX="g++-4.9"; CC="gcc-4.9"
+        - echo $CXX; echo $CC
     - os: osx
       compiler: clang   
     - os: osx
       compiler: gcc 
-before_install:
-#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+#before_install:
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export CXX="g++-4.9"; CC="gcc-4.9"; echo $CXX;echo $CC ; fi
+  - pip install numpy
 addons:
   apt:
     sources:
@@ -23,23 +31,17 @@ addons:
     packages:
     - gcc-4.9
     - g++-4.9
-    - python-numpy
-    - libgl1-mesa-dev
+    - libgl1-mesa-dri
     - libgl1-mesa-glx
-before_script:
-  - pip install numpy
-  - git clone https://github.com/mivp/LavaVuTesting
-  - export DISPLAY=:99.0
-  - export GALLIUM_DRIVER="llvmpipe"
-    #  - sh -e /etc/init.d/xvfb start
-  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-  - sleep 3 # give xvfb some time to start
-  - export PYTHONPATH=$PYTHONPATH:`pwd`
+    - libgl1-mesa-dev
 script:
-  - make LIBPNG=1 -j2
-  - cd LavaVuTesting
-  - python runall.py echo verbose
+  - make -j2
+  - export PYTHONPATH=$PYTHONPATH:`pwd`
+  - if [ -d "LavaVuTesting" ]; then
+      cd LavaVuTesting;
+      python runall.py echo verbose;
+      cd ..;
+    fi
 after_script:
-  - cd ..
   - pwd
   - ls -la ./bin
