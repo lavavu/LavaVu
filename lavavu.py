@@ -854,7 +854,13 @@ class Viewer(object):
             global echo_fails
             if echo_fails:
                 print "__________________________________________"
-                print self.app.image("")
+                if len(outfile):
+                    with open(outfile, mode='rb') as f:
+                        data = f.read()
+                        import base64
+                        print "data:image/png;base64,",base64.b64encode(data)
+                else:
+                    print self.app.image("")
                 print "__________________________________________"
         else:
             print "%s: %s Image comp errors %f, within tolerance %f"\
