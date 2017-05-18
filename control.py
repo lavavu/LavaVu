@@ -735,9 +735,10 @@ class ControlFactory(object):
                 #Output the controls
                 display(HTML(html))
                 #Create WindowInteractor instance (if none created, or output contains a viewer target)
-                if not self.interactor or 'imgtarget' in html:
-                    display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
-                    self.interactor = True
+                #if not self.interactor or 'imgtarget' in html:
+                #    display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
+                #    self.interactor = True
+                display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
             else:
                 export(self.output)
         except NameError, ImportError:
