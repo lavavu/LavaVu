@@ -264,6 +264,9 @@ class Obj(object):
         self.instance.app.reloadObject(self.ref)
         return cmap
 
+    def reload(self):
+        self.instance.app.reloadObject(self.ref)
+
     def select(self):
         self.instance.app.aobject = self.ref
     
