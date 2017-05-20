@@ -242,7 +242,9 @@ void Model::init()
   geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate, true);
   geometry[lucVolumeType] = volumes = new Volumes(drawstate);
   geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate, true);
-  geometry[lucLineType] = lines = new Links(drawstate);
+  geometry[lucLineType] = lines = new Lines(drawstate);
+  //TODO: all renderers should be switchable and user defined, for now leave out links (slow)
+  //geometry[lucLineType] = lines = new Links(drawstate);
   geometry[lucShapeType] = shapes = new Shapes(drawstate);
   debug_print("Created %d new geometry containers\n", geometry.size());
 
@@ -1048,7 +1050,7 @@ bool Model::restoreStep()
   quadSurfaces = (QuadSurfaces*)geometry[lucGridType];
   volumes = (Volumes*)geometry[lucVolumeType];
   triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
-  lines = (Links*)geometry[lucLineType];
+  lines = geometry[lucLineType];
   shapes = (Shapes*)geometry[lucShapeType];
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
