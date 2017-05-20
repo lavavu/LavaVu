@@ -2831,7 +2831,7 @@ std::string LavaVu::image(std::string filename, int width, int height, int jpegq
   //Set width/height override
   viewer->outwidth = width;
   viewer->outheight = height;
-  //Otherwise write image to file or return as string (base64 data url)
+  //Write image to file if filename provided or return as string (base64 data url)
   return viewer->image(filename, jpegquality, transparent);
 }
 
