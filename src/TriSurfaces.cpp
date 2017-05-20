@@ -138,7 +138,7 @@ void TriSurfaces::update()
   }
 
   //Reload the list if count changes
-  if (!tidx || tricount == 0 || tricount*3 != idxcount)
+  if (reload || !tidx || tricount == 0 || tricount*3 != idxcount)
     loadList();
 
   if (reload || idxcount == 0)
