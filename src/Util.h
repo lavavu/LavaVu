@@ -434,7 +434,7 @@ public:
   void parseLine(std::string& line)
   {
     std::istringstream iss(line);
-    std::string key, value;
+    std::string key;
 
     iss >> key;
     if (ignoreCase)
@@ -444,6 +444,7 @@ public:
     //Read values into vector until stream empty
     while (iss.good())
     {
+      std::string value;
       iss >> value;
       //Detect quotes, if found read until end quote if any
       if (value.length() > 0 && value.at(0) == '"')
