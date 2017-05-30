@@ -97,6 +97,9 @@ protected:
   std::vector<std::string> history;
   std::vector<std::string> linehistory;
   std::vector<std::string> replay;
+  std::string last_cmd;
+  std::string multiline;
+  int historyline;
 
   TriSurfaces* axis;
   Lines* rulers;

@@ -251,7 +251,6 @@ bool LavaVu::keyPress(unsigned char key, int x, int y)
 
 bool LavaVu::parseChar(unsigned char key)
 {
-  static int historyline = -1;
   int hline = historyline;
   if (hline < 0) hline = linehistory.size();
   bool response = true;
@@ -682,11 +681,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   //Trim leading whitespace
   size_t pos = cmd.find_first_not_of(" \t\n\r");
   if (std::string::npos != pos) cmd = cmd.substr(pos);
-  //std::cout << "CMD: " << cmd << std::endl;
   bool redisplay = true;
-  PropertyParser parsed = PropertyParser();
-  static std::string last_cmd = "";
-  static std::string multiline = "";
 
   //Skip comments or empty lines
   if (cmd.length() == 0 || cmd.at(0) == '#') return false;
@@ -713,6 +708,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   //std::cout << "CMD: " << cmd << std::endl;
 
   //Parse the line
+  PropertyParser parsed = PropertyParser();
   parsed.parseLine(cmd);
 
   //Check for commands that require viewer to be open and view initialised,

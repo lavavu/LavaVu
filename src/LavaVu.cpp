@@ -63,6 +63,8 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : binpath(binpath)
   frametime = std::chrono::system_clock::now();
   fps = framecount = 0;
   drawstate.omegalib = omegalib;
+  historyline = -1;
+  last_cmd = multiline = "";
 
   defaultScript = "init.script";
 
