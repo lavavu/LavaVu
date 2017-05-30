@@ -97,7 +97,7 @@ VideoEncoder::~VideoEncoder()
    * No more frame to compress. The codec has a latency of a few
      frames if using B frames, so we get the last frames by
      passing the same picture again */
-  for (int i=0; i<8; i++)
+  for (int i=0; i<16; i++)
   {
     picture->pts++;
     write_video_frame();
