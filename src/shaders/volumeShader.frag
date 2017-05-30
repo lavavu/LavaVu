@@ -10,7 +10,7 @@
 //precision highp float;
 
 const int maxSamples = 2048;
-const float depthT = 0.95; //Transmissivity threshold below which depth write applied
+const float depthT = 0.99; //Transmissivity threshold below which depth write applied
 
 uniform sampler3D uVolume;
 uniform sampler2D uTransferFunction;
@@ -265,7 +265,7 @@ void main()
     colour = mix(AvgLumin, colour, uContrast);
 
     //TODO: alpha threshold uniform?
-    //if (T > 0.95) discard;
+    //if (T > depthT) discard;
     gl_FragColor = vec4(colour, 1.0 - T);
 
 #ifndef NO_DEPTH_WRITE
@@ -277,12 +277,15 @@ void main()
       //Get in normalised device coords [-1,1]
       float ndc_depth = clip_space_pos.z / clip_space_pos.w;
       //Convert to depth range, default [0,1] but may have been modified
-      depth = 0.5 * ndc_depth + 0.5;
+      if (ndc_depth >= -1.0 && ndc_depth <= 1.0)
+        depth = 0.5 * ndc_depth + 0.5;
+      else
+        depth = 0.0;
+
       //depth = 0.5 * (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
       //                        gl_DepthRange.near + gl_DepthRange.far);
     }
 
-    if (depth >= 0.0 && depth <= 1.0)
-      gl_FragDepth = depth;
+    gl_FragDepth = depth;
 #endif
 }
