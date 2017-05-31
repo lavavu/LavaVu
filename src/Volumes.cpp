@@ -36,22 +36,18 @@
 #include "Geometry.h"
 #include "IsoSurface.h"
 
-Volumes::Volumes(DrawState& drawstate) : Geometry(drawstate)
+Volumes::Volumes(DrawState& drawstate) : Imposter(drawstate)
 {
   type = lucVolumeType;
-  //Create sub-renderers
-  twoTriangles = new TriSurfaces(drawstate);
-  twoTriangles->internal = true;
 }
 
 Volumes::~Volumes()
 {
-  delete twoTriangles;
 }
 
 void Volumes::close()
 {
-  twoTriangles->close();
+  Imposter::close();
 
   //Iterate geom and delete textures
   //"gpucache" property allows switching this behaviour off for faster switching
@@ -100,19 +96,10 @@ void Volumes::draw()
 
 void Volumes::update()
 {
-  twoTriangles->clear();
-  twoTriangles->setup(view);
-
   //Use triangle renderer for two triangles to display volume shader output
-  if (geom.size() > 0)
-  {
-    //Load 2 fullscreen triangles
-    float verts[18] = {-1,-1, 0,   -1, 1, 0,   1,-1, 0,   -1, 1, 0,   1, 1, 0,   1,-1, 0};
-    twoTriangles->read(geom[0]->draw, 6, lucVertexData, verts);
-    twoTriangles->update();
-    twoTriangles->render();
-  }
-  else
+  Imposter::update();
+
+  if (geom.size() == 0)
     return; //No volume to render
 
   clock_t t2,tt;
@@ -496,22 +483,10 @@ void Volumes::render(int i)
   glEnable(GL_BLEND);
   //Blending for premultiplied alpha
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-  glDisable(GL_MULTISAMPLE);
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   //Draw two triangles to fill screen
-  int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
-  glBindBuffer(GL_ARRAY_BUFFER, twoTriangles->vbo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, twoTriangles->indexvbo);
-  glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glDrawElements(GL_TRIANGLES, twoTriangles->elements, GL_UNSIGNED_INT, (GLvoid*)0);
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  GL_Error_Check;
+  Imposter::draw();
 
-  glEnable(GL_MULTISAMPLE);
   glPopAttrib();
   GL_Error_Check;
   glActiveTexture(GL_TEXTURE0);

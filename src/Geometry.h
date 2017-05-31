@@ -445,9 +445,18 @@ public:
   void dumpJSON();
 };
 
-class Volumes : public Geometry
+class Imposter : public Geometry
 {
-  TriSurfaces* twoTriangles;
+  GLuint vbo;
+public:
+  Imposter(DrawState& drawstate);
+  virtual void close();
+  virtual void update();
+  virtual void draw();
+};
+
+class Volumes : public Imposter
+{
 public:
   GLuint colourTexture;
   std::map<DrawingObject*, unsigned int> slices;

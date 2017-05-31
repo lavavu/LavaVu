@@ -354,6 +354,7 @@ Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
   drawcount = 0;
+  type = lucMinType;
 }
 
 Geometry::~Geometry()
@@ -1907,5 +1908,51 @@ void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
 {
   tris->jsonWrite(draw, obj);
   lines->jsonWrite(draw, obj);
+}
+
+Imposter::Imposter(DrawState& drawstate) : Geometry(drawstate)
+{
+  vbo = 0;
+}
+
+void Imposter::close()
+{
+  if (vbo)
+    glDeleteBuffers(1, &vbo);
+  vbo = 0;
+}
+
+void Imposter::draw()
+{
+  //State...
+  glDisable(GL_MULTISAMPLE);
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+  //Draw two triangles to fill screen
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glVertexPointer(3, GL_FLOAT, 3 * sizeof(float), (GLvoid*)0); // Load vertex x,y,z only
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  GL_Error_Check;
+  
+  glEnable(GL_MULTISAMPLE);
+  GL_Error_Check;
+}
+
+void Imposter::update()
+{
+  //Use triangle renderer for two triangles to display shader output
+  if (!vbo)
+  {
+    //Load 2 fullscreen triangles
+    float verts[12] = {1,1,0,  -1,1,0,  1,-1,0,  -1,-1,0};
+    //Initialise vertex buffer
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    if (glIsBuffer(vbo))
+      glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+  }
 }
 
