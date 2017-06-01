@@ -350,7 +350,7 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
 }
 
 Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
-                       flat2d(false), cached(NULL), drawstate(drawstate),
+                       cached(NULL), drawstate(drawstate),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
@@ -688,6 +688,8 @@ void Geometry::setState(unsigned int i, Shader* prog)
   cached = draw;
 
   bool lighting = geom[i]->draw->properties["lit"];
+  //Don't light surfaces in 2d models
+  if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal) lighting = false;
 
   //Global/Local draw state
   if (geom[i]->draw->properties["cullface"])
@@ -699,8 +701,6 @@ void Geometry::setState(unsigned int i, Shader* prog)
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   if (type == lucTriangleType || type == lucGridType || TriangleBased(type))
   {
-    //Don't light surfaces in 2d models
-    if (!view->is3d && flat2d) lighting = false;
     //Disable lighting and polygon faces in wireframe mode
     if (geom[i]->draw->properties["wireframe"])
     {
@@ -838,6 +838,22 @@ void Geometry::display()
   {
     if (drawable(i))
       newcount++;
+
+    //Opacity flag - default transparency enabled
+    geom[i]->opaque = false;
+
+    //Per-object wireframe works only when drawing opaque objects
+    //(can't set per-objects properties when all triangles collected and sorted)
+    geom[i]->opaque = (geom[i]->draw->properties["wireframe"] || 
+                       geom[i]->draw->properties["opaque"]);
+
+    //If using a colourmap without transparency, and no opacity prop, flag opaque
+    if (geom[i]->draw->colourMap && geom[i]->values.size() > geom[i]->draw->colourIdx && 
+        geom[i]->draw->colourMap->opaque && (float)geom[i]->draw->properties["opacity"] == 1.0)
+    {
+      geom[i]->opaque = true;
+    }
+
   }
 
   if (reload || redraw || newcount != drawcount)

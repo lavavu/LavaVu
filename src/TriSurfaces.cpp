@@ -38,35 +38,16 @@
 //Triangle centroid for depth sorting
 #define centroid(v1,v2,v3) {centroids.emplace_back((v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, (v1[2]+v2[2]+v3[2])/3);}
 
-TriSurfaces::TriSurfaces(DrawState& drawstate, bool flat2Dflag) : Geometry(drawstate)
+TriSurfaces::TriSurfaces(DrawState& drawstate) : Triangles(drawstate)
 {
-  type = lucTriangleType;
   tricount = 0;
-  idxcount = 0;
-  vbo = 0;
-  indexvbo = 0;
   tidx = swap = NULL;
-  flat2d = flat2Dflag;
-}
-
-TriSurfaces::~TriSurfaces()
-{
-  close();
 }
 
 void TriSurfaces::close()
 {
   if (!drawstate.global("gpucache"))
-  {
-    if (vbo)
-      glDeleteBuffers(1, &vbo);
-    if (indexvbo)
-      glDeleteBuffers(1, &indexvbo);
-    vbo = 0;
-    indexvbo = 0;
-
-    reload = true;
-  }
+    Triangles::close();
 
   if (tidx)
     delete[] tidx;
@@ -76,50 +57,12 @@ void TriSurfaces::close()
   tidx = swap = NULL;
 }
 
-int TriSurfaces::triCount(int index)
-{
-  if (geom[index]->indices.size() > 0)
-    return geom[index]->indices.size() / 3;
-  else if (geom[index]->width > 0 && geom[index]->height > 0)
-    return 2 * (geom[index]->width-1) * (geom[index]->height-1);
-  return geom[index]->count / 3;
-}
-
 void TriSurfaces::update()
 {
   // Update triangles...
-  if (geom.size() == 0) return;
-
-  //Get triangle count
   unsigned int lastcount = total;
-  total = 0;
-  unsigned int drawelements = 0;
-  for (unsigned int t = 0; t < geom.size(); t++)
-  {
-    int tris = triCount(t);
-    total += tris;
-    bool hidden = !drawable(t);
-    if (!hidden) drawelements += tris*3; //Count drawable
-    debug_print("Surface %d %s, triangles %d hidden? %s\n", t, geom[t]->draw->name().c_str(), tris, (hidden ? "yes" : "no"));
-
-    //Per-object wireframe works only when drawing opaque objects
-    //(can't set per-objects properties when all triangles collected and sorted)
-    geom[t]->opaque = (geom[t]->draw->properties["wireframe"] || 
-                       geom[t]->draw->properties["opaque"]);
-
-    //If using a colourmap without transparency, and no opacity prop, flag opaque
-    if (geom[t]->draw->colourMap && geom[t]->values.size() > geom[t]->draw->colourIdx && 
-        geom[t]->draw->colourMap->opaque && (float)geom[t]->draw->properties["opacity"] == 1.0)
-    {
-      geom[t]->opaque = true;
-    }
-  }
-  if (total == 0) return;
+  unsigned int drawelements = triCount();
   if (drawelements == 0) return;
-
-  //When objects hidden/shown drawable count changes, so need to reallocate
-  if (elements != drawelements) idxcount = 0;
-  elements = drawelements;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
@@ -402,107 +345,6 @@ void TriSurfaces::loadList()
 
   t2 = clock();
   debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
-}
-
-void TriSurfaces::loadBuffers()
-{
-  //Copy data to Vertex Buffer Object
-  clock_t t1,t2,tt;
-  tt=clock();
-
-  //Update VBO...
-  debug_print("Reloading %d triangles...\n", tricount);
-
-  // VBO - copy normals/colours/positions to buffer object
-  unsigned char *p, *ptr;
-  ptr = p = NULL;
-  unsigned int datasize = sizeof(float) * 8 + sizeof(Colour);   //Vertex(3), normal(3), texCoord(2) and 32-bit colour
-  unsigned int vcount = 0;
-  for (unsigned int index = 0; index < geom.size(); index++)
-    vcount += geom[index]->count;
-  unsigned int bsize = vcount * datasize;
-
-  //Initialise vertex buffer
-  if (!vbo) glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  if (glIsBuffer(vbo))
-  {
-    glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
-    debug_print("  %d byte VBO created, holds %d vertices\n", bsize, bsize/datasize);
-    ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    GL_Error_Check;
-  }
-  if (!p) abort_program("VBO setup failed");
-
-  //Buffer data for all vertices
-  for (unsigned int index = 0; index < geom.size(); index++)
-  {
-    t1=tt=clock();
-
-    //Calibrate colour maps on range for this surface
-    geom[index]->colourCalibrate();
-    unsigned int hasColours = geom[index]->colourCount();
-    if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
-    unsigned int colrange = hasColours ? geom[index]->count / hasColours : 1;
-    if (colrange < 1) colrange = 1;
-    //if (hasColours) assert(colrange * hasColours == geom[index]->count);
-    //if (hasColours && colrange * hasColours != geom[index]->count)
-    //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count, hasColours);
-    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count, hasColours);
-
-    Colour colour;
-    bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
-    debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
-    float zero[3] = {0,0,0};
-    float shift = geom[index]->draw->properties["shift"];
-    if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
-    shift *= 0.0001 * view->model_size;
-    std::array<float,3> shiftvert;
-    for (unsigned int v=0; v < geom[index]->count; v++)
-    {
-      //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
-      unsigned int cidx = v / colrange;
-      if (cidx * colrange == v)
-        geom[index]->getColour(colour, cidx);
-
-      float* vert = geom[index]->vertices[v];
-      if (shift > 0)
-      {
-        //Shift vertices
-        shiftvert = {vert[0] + shift, vert[1] + shift, vert[2] + shift};
-        vert = shiftvert.data();
-        if (v==0) debug_print("Shifting vertices %s (%d) by %f\n", geom[index]->draw->name().c_str(), index, shift);
-      }
-
-      //Write vertex data to vbo
-      assert((unsigned int)(ptr-p) < bsize);
-      //Copies vertex bytes
-      memcpy(ptr, vert, sizeof(float) * 3);
-      ptr += sizeof(float) * 3;
-      //Copies normal bytes
-      if (normals)
-        memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
-      else
-        memcpy(ptr, zero, sizeof(float) * 3);
-      ptr += sizeof(float) * 3;
-      //Copies texCoord bytes
-      if (geom[index]->texCoords.size() > 0)
-        memcpy(ptr, &geom[index]->texCoords[v][0], sizeof(float) * 2);
-      ptr += sizeof(float) * 2;
-      //Copies colour bytes
-      memcpy(ptr, &colour, sizeof(Colour));
-      ptr += sizeof(Colour);
-    }
-    t2 = clock();
-    debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[index]->count);
-    t1 = clock();
-  }
-
-  glUnmapBuffer(GL_ARRAY_BUFFER);
-  GL_Error_Check;
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  debug_print("  Total %.4lf seconds to update triangle buffers\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
 void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)
@@ -865,6 +707,9 @@ void TriSurfaces::draw()
   //Re-render the triangles if view has rotated
   if (view->sort || idxcount != elements) render();
 
+  GL_Error_Check;
+  if (elements == 0) return;
+
   // Draw using vertex buffer object
   clock_t t0 = clock();
   clock_t t1 = clock();
@@ -948,7 +793,3 @@ void TriSurfaces::draw()
   GL_Error_Check;
 }
 
-void TriSurfaces::jsonWrite(DrawingObject* draw, json& obj)
-{
-  jsonExportAll(draw, obj);
-}

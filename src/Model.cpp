@@ -239,9 +239,9 @@ void Model::init()
   geometry[lucPointType] = points = new Points(drawstate);
   geometry[lucVectorType] = vectors = new Vectors(drawstate);
   geometry[lucTracerType] = tracers = new Tracers(drawstate);
-  geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate, true);
+  geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate);
   geometry[lucVolumeType] = volumes = new Volumes(drawstate);
-  geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate, true);
+  geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate);
   geometry[lucLineType] = lines = new Lines(drawstate);
   //TODO: all renderers should be switchable and user defined, for now leave out links (slow)
   //geometry[lucLineType] = lines = new Links(drawstate);

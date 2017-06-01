@@ -236,7 +236,6 @@ protected:
   std::vector<bool> hidden;
   unsigned int elements;
   unsigned int drawcount;
-  bool flat2d; //Flag for flat surfaces in 2d
   DrawingObject* cached;
 
 public:
@@ -320,27 +319,35 @@ public:
   }
 };
 
-class TriSurfaces : public Geometry
+class Triangles : public Geometry
 {
-  friend class Volumes; //Allow private access from Volumes, QuadSurfaces
-  friend class QuadSurfaces;
+protected:
+  unsigned int idxcount;
+  std::vector<unsigned int> counts;
+  GLuint indexvbo, vbo;
+public:
+  Triangles(DrawState& drawstate);
+  virtual void close();
+  unsigned int triCount();
+  virtual void update();
+  void loadBuffers();
+  virtual void render();
+  virtual void draw();
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
+};
+
+class TriSurfaces : public Triangles
+{
+  friend class QuadSurfaces; //Allow private access from QuadSurfaces
   TIndex *tidx;
   TIndex *swap;
   unsigned int tricount;
-  unsigned int idxcount;
-  std::vector<unsigned int> counts;
   std::vector<Vec3d> centroids;
-protected:
-  std::vector<Distance> surf_sort;
-  GLuint indexvbo, vbo;
 public:
-  TriSurfaces(DrawState& drawstate, bool flat2Dflag=false);
-  ~TriSurfaces();
+  TriSurfaces(DrawState& drawstate);
   virtual void close();
   virtual void update();
-  int triCount(int index);
   void loadMesh();
-  void loadBuffers();
   void loadList();
   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
   void calcTriangleNormalsWithIndices(int index);
@@ -349,7 +356,6 @@ public:
   void depthSort();
   virtual void render();
   virtual void draw();
-  virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
 class Lines : public Geometry
@@ -414,8 +420,9 @@ public:
 
 class QuadSurfaces : public TriSurfaces
 {
+  std::vector<Distance> surf_sort;
 public:
-  QuadSurfaces(DrawState& drawstate, bool flat2Dflag=false);
+  QuadSurfaces(DrawState& drawstate);
   ~QuadSurfaces();
   virtual void update();
   virtual void render();
