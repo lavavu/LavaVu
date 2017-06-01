@@ -123,7 +123,6 @@ void GeomData::colourCalibrate()
   {
     float min = filters[i]["minimum"];
     float max = filters[i]["maximum"];
-    if (min == max) continue; //Skip
 
     int j = filterCache.size();
     filterCache.push_back(Filter());
@@ -305,6 +304,7 @@ bool GeomData::filter(unsigned int idx)
       if (filterCache[i].out)
       {
         //Filter out values between specified ranges (allows filtering separate sections)
+        if (min == max) return value == min;
         if (filterCache[i].inclusive && value >= min && value <= max) 
           return true;
         if (value > min && value < max) 
@@ -313,6 +313,7 @@ bool GeomData::filter(unsigned int idx)
       //Default is to filter values NOT in the filter range - include those that are
       else
       {
+        if (min == max) return value != min;
         //Filter out values unless between specified ranges (allows combining filters)
         if (filterCache[i].inclusive && (value <= min || value >= max))
           return true;
