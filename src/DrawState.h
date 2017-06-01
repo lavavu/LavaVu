@@ -136,7 +136,7 @@ public:
     // | object | integer[3] | width/height/depth override for geometry
     defaults["dims"] = {0, 0, 0};
     // | object | boolean | Set to true to apply the view rotation to this object
-    defaults["rotatable"] = true;
+    defaults["rotatable"] = false;
     // | object | real | Apply a shift to object position by this amount multiplied by model size, to fix depth fighting when visualising objects drawn at same depth
     defaults["shift"] = 0.;
 

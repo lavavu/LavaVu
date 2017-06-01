@@ -507,7 +507,7 @@ void View::projection(int eye)
   GL_Error_Check;
 }
 
-void View::apply(bool use_fp)
+void View::apply(bool use_fp, bool use_rotate)
 {
   // Right-handed (GL default) or Left-handed
   int orientation = properties["coordsystem"];
@@ -555,7 +555,8 @@ void View::apply(bool use_fp)
   GL_Error_Check;
 
   // rotate model
-  rotation->apply();
+  if (use_rotate)
+    rotation->apply();
   GL_Error_Check;
 
   // Apply scaling factors

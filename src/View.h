@@ -175,7 +175,7 @@ public:
   bool hasPixel(int x, int y);
 
   void projection(int eye);
-  void apply(bool use_fp=true);
+  void apply(bool use_fp=true, bool use_rotate=true);
   int switchCoordSystem();
   void zoomToFit(int margin=-1);
   bool scaleSwitch();

@@ -436,20 +436,10 @@ void Volumes::render(int i)
 
   //Get modelview without focal point / rotation centre adjustment
   bool rotatable = props["rotatable"]; //Object rotation by view flag
-  if (!rotatable) view->apply(false);
-
-  if (props.has("rotate"))
-  {
-    float rot[4];
-    Properties::toArray<float>(props["rotate"], rot, 4);
-    Quaternion qrot(rot[0], rot[1], rot[2], rot[3]);
-    qrot.apply();
-  }
-  else if (rotatable)
-  {
-    //Rotating this object with view rotation
+  if (rotatable)
+    view->apply(false, false);
+  else
     view->apply(false);
-  }
 
   //Object rotation/translation
   if (props.has("translate"))
@@ -459,11 +449,31 @@ void Volumes::render(int i)
     glTranslatef(trans[0], trans[1], trans[2]);
   }
 
+  if (props.has("rotate"))
+  {
+    float rot[4];
+    Properties::toArray<float>(props["rotate"], rot, 4);
+    Quaternion qrot(rot[0], rot[1], rot[2], rot[3]);
+    qrot.apply();
+  }
+  //Rotate this object with view rotation setting
+  if (rotatable)
+    view->getRotation().apply();
+
   //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
   glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
   glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
   //glScalef(1.0/dims[0]*view->scale[0], 1.0/dims[1]*view->scale[1], 1.0/dims[2]*view->scale[2]);
   glScalef(1.0/(view->scale[0]*view->scale[0]), 1.0/(view->scale[1]*view->scale[1]), 1.0/(view->scale[2]*view->scale[2]));
+
+  //Object scaling
+  if (props.has("scale"))
+  {
+    float scale[3];
+    Properties::toArray<float>(props["scale"], scale, 3);
+    glScalef(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
+  }
+
   glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);
   glPopMatrix();
   glGetFloatv(GL_PROJECTION_MATRIX, pMatrix);
