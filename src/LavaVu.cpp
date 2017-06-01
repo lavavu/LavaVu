@@ -2687,6 +2687,13 @@ std::string LavaVu::encodeVideo(std::string filename, int fps)
 
 void LavaVu::writeSteps(bool images, int start, int end)
 {
+  //Default to last available step
+  if (end < 0)
+  {
+    end = amodel->lastStep();
+    if (end < 0) end = 0;
+  }
+  //Swap if out of order
   if (start > end)
   {
     int temp = start;

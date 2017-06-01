@@ -1599,10 +1599,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Default to writing from current to final step
-    int end = drawstate.timesteps[drawstate.timesteps.size()-1]->step;
+    int end = -1;
     if (parsed.has(ival, "images"))
       end = ival;
-
     writeSteps(true, amodel->step(), end);
   }
   else if (parsed.exists("animate"))
