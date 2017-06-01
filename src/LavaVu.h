@@ -101,7 +101,7 @@ protected:
   std::string multiline;
   int historyline;
 
-  TriSurfaces* axis;
+  Vectors* axis;
   Lines* rulers;
   QuadSurfaces* border;
 

@@ -132,7 +132,7 @@ void LavaVu::defaults()
   //Clear any queued commands
   viewer->commands.clear();
 
-  axis = new TriSurfaces(drawstate);
+  axis = new Vectors(drawstate);
   rulers = new Lines(drawstate);
   border = new QuadSurfaces(drawstate);
 
@@ -1974,9 +1974,7 @@ void LavaVu::drawAxis()
   if (!doaxis) return;
   infostream = NULL;
   float length = axislen;
-  float headsize = 8.0;   //8 x radius (r = 0.01 * length)
   float LH = length * 0.1;
-  float radius = length * 0.01;
   float aspectRatio = aview->width / (float)aview->height;
 
   glPushAttrib(GL_ENABLE_BIT);
@@ -2012,21 +2010,32 @@ void LavaVu::drawAxis()
   axis->clear();
   axis->setup(aview);
   DrawingObject* aobj = drawstate.axisobj;
-  if (!aobj) aobj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nopacity=1.0\nalpha=1.0\n");
+  if (!aobj) aobj = new DrawingObject(drawstate);
+  aobj->properties.data = {
+    {"wireframe",    false},
+    {"clip",         false},
+    {"opacity",      1.0},
+    {"alpha",        1.0},
+    {"scalevectors", length},
+    {"arrowhead",    8.0},  //8 x radius (r = 0.01 * length)
+    {"radius",       length*0.1}
+  };
   if (!aview->hasObject(aobj)) aview->addObject(aobj);
   axis->add(aobj);
 
   {
     float vector[3] = {1.0, 0.0, 0.0};
     Colour colour = {255, 0, 0, 255};
-    axis->drawVector(aobj, Xpos, vector, length, radius, radius, headsize, 16);
+    axis->read(aobj, 1, lucVertexData, Xpos);
+    axis->read(aobj, 1, lucVectorData, vector);
     axis->read(aobj, 1, lucRGBAData, &colour.value);
   }
 
   {
     float vector[3] = {0.0, 1.0, 0.0};
     Colour colour = {0, 255, 0, 255};
-    axis->drawVector(aobj, Ypos, vector, length, radius, radius, headsize, 16);
+    axis->read(aobj, 1, lucVertexData, Ypos);
+    axis->read(aobj, 1, lucVectorData, vector);
     axis->read(aobj, 1, lucRGBAData, &colour.value);
   }
 
@@ -2034,7 +2043,8 @@ void LavaVu::drawAxis()
   {
     float vector[3] = {0.0, 0.0, 1.0};
     Colour colour = {0, 0, 255, 255};
-    axis->drawVector(aobj, Zpos, vector, length, radius, radius, headsize, 16);
+    axis->read(aobj, 1, lucVertexData, Zpos);
+    axis->read(aobj, 1, lucVectorData, vector);
     axis->read(aobj, 1, lucRGBAData, &colour.value);
   }
   axis->update();
