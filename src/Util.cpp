@@ -113,49 +113,43 @@ json& Properties::operator[](const std::string& key)
   //std::cout << key << " : " << data.count(key) << std::endl;
   //std::cout << key << " :: DATA\n" << data << std::endl;
   //std::cout << key << " :: DEFAULTS\n" << defaults << std::endl;
-  if (data.count(key))
+  if (data.count(key) && !data[key].is_null())
     return data[key];
-  else if (globals.count(key))
+  else if (globals.count(key) && !globals[key].is_null())
     return globals[key];
   return defaults[key];
 }
 
-//Functions to get values with provided defaults
+//Functions to get values with provided defaults instead of system defaults
 Colour Properties::getColour(const std::string& key, unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha)
 {
-  if (data.count(key))
-    return Colour(data[key], red, green, blue, alpha);
-  else if (globals.count(key))
-    return Colour(globals[key], red, green, blue, alpha);
-
+  if (data.count(key) || globals.count(key))
+  {
+    json val = (*this)[key];
+    return Colour(val, red, green, blue, alpha);
+  }
   Colour colour = {red, green, blue, alpha};
   return colour;
 }
 
 float Properties::getFloat(const std::string& key, float def)
 {
-  if (data.count(key))
-    return data[key];
-  else if (globals.count(key))
-    return globals[key];
+  if (data.count(key) || globals.count(key))
+    return (*this)[key];
   return def;
 }
 
 int Properties::getInt(const std::string& key, int def)
 {
-  if (data.count(key))
-    return data[key];
-  else if (globals.count(key))
-    return globals[key];
+  if (data.count(key) || globals.count(key))
+    return (*this)[key];
   return def;
 }
 
 bool Properties::getBool(const std::string& key, bool def)
 {
-  if (data.count(key))
-    return data[key];
-  else if (globals.count(key))
-    return globals[key];
+  if (data.count(key) || globals.count(key))
+    return (*this)[key];
   return def;
 }
 
