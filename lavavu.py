@@ -162,9 +162,13 @@ class Obj(object):
         return self.filter(*args, out=True, map=True, **kwargs)
 
     def filter(self, label, values, out=False, map=False):
-        #Pass a tuple for exclusive range (min < val < max), list for inclusive range (min <= val <= max)
+        #Pass a single value to include/exclude exact value
+        #Pass a tuple for exclusive range (min < val < max)
+        # list for inclusive range (min <= val <= max)
+        if isinstance(values, float) or isinstance(values, int):
+            values = [values,values]
         filter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
-        if isinstance(values, list):
+        if isinstance(values, list) or values[0] == values[1]:
             filter["inclusive"] = True
         self["filters"].append(filter)
         self._set()
