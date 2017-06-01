@@ -58,6 +58,7 @@ void Triangles::close()
 unsigned int Triangles::triCount()
 {
   //Get triangle count
+  //TODO: support different output types, eg: GL_TRIANGLE_STRIP
   total = 0;
   unsigned int drawelements = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
@@ -68,7 +69,7 @@ unsigned int Triangles::triCount()
     {
       //Un-structured tri indices
       tris = geom[index]->indices.size() / 3;
-      if (tris * 3 != geom[index]->indices.size() || geom[index]->draw->properties["tristrip"])
+      if (tris * 3 != geom[index]->indices.size()) // || geom[index]->draw->properties["tristrip"])
         //Tri-strip indices
         tris = geom[index]->indices.size() - 2;
     }
@@ -79,7 +80,7 @@ unsigned int Triangles::triCount()
     {
       //Un-structured tri vertices
       tris = geom[index]->count / 3;
-      if (tris * 3 != geom[index]->count || geom[index]->draw->properties["tristrip"])
+      if (tris * 3 != geom[index]->count) // || geom[index]->draw->properties["tristrip"])
         //Tri-strip vertices
         tris =  geom[index]->count - 2;
     }
