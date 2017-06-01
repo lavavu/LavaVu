@@ -973,7 +973,7 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
 #endif
 }
 
-void LavaVu::createDemoVolume()
+void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned int depth)
 {
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
@@ -984,7 +984,13 @@ void LavaVu::createDemoVolume()
     Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
     Properties::toArray<float>(drawstate.global("volres"), volres, 3);
     Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
-    vobj = new DrawingObject(drawstate, "volume", "density=50\nsamples=1024\n");
+    unsigned int samples = (width+height+depth)*0.6;
+    if (samples < 128) samples = 128;
+    vobj = new DrawingObject(drawstate, "volume");
+    vobj->properties.data = {
+      {"density",    50},
+      {"samples",    samples}
+    };
     addObject(vobj);
 
     //Demo colourmap, depth 
@@ -1004,7 +1010,7 @@ void LavaVu::createDemoVolume()
     amodel->volumes->read(vobj, 1, lucVertexData, volmax);
   }
 
-  unsigned int width = 256, height = 256, depth = 256, block = 24;
+  unsigned int block = width/10;
   size_t npixels = width*height;
   int channels = 4;
   GLubyte* imageData;

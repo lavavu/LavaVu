@@ -154,7 +154,7 @@ public:
   void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels, bool flip=false);
   void readVolumeTIFF(const FilePath& fn);
   void createDemoModel(unsigned int numpoints);
-  void createDemoVolume();
+  void createDemoVolume(unsigned int width=256, unsigned int height=256, unsigned int depth=256);
   void newModel(std::string name, int bg=0, float mmin[3]=NULL, float mmax[3]=NULL);
   DrawingObject* addObject(DrawingObject* obj);
   void setOpacity(unsigned int id, float opacity);

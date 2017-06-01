@@ -3127,7 +3127,18 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    createDemoVolume();
+    float x = 0, y = 0, z = 0;
+    if (parsed.has(x, "voltest", 0) &&
+        parsed.has(y, "voltest", 1) &&
+        parsed.has(z, "voltest", 2))
+    {
+      if (x < 32) x = 32;
+      if (y < 32) y = 32;
+      if (z < 32) z = 32;
+      createDemoVolume(x, y, z);
+    }
+    else
+      createDemoVolume();
     resetViews();
   }
   else if (parsed.exists("name"))
