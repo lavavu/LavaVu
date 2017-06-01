@@ -987,10 +987,11 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
     unsigned int samples = (width+height+depth)*0.6;
     if (samples < 128) samples = 128;
     vobj = new DrawingObject(drawstate, "volume");
-    vobj->properties.data = {
+    json props = {
       {"density",    50},
       {"samples",    samples}
     };
+    vobj->properties.merge(props);
     addObject(vobj);
 
     //Demo colourmap, depth 
