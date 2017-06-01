@@ -49,7 +49,7 @@ def export(html):
     filename = os.path.join(htmlpath, "control.html")
 
     #Process actions
-    actionjs = '<script type="text/Javascript">\nvar actions = [];\n'
+    actionjs = '<script type="text/Javascript">\nvar actions = [\n'
     for act in actions:
         #Default placeholder action
         actfunction = ''
@@ -95,13 +95,11 @@ def export(html):
         #Append additional command (eg: reload)
         if actcmd:
           actfunction += ";" + actcmd
-        actfunction = 'wi.execute("' + actfunction + '", true);'
-        #actfunction = 'wi.execute("' + actfunction + '");'
         #Add to actions list
-        actionjs += 'actions.push(function(value) {' + actfunction + '});\n'
+        actionjs += '  function(value) {wi.execute("' + actfunction + '", true);},\n'
 
     #Add init and finish
-    actionjs += 'function init() {wi = new WindowInteractor(0);}\n</script>'
+    actionjs += '  null];\nfunction init() {wi = new WindowInteractor(0);}\n</script>'
     hfile = open(filename, "w")
     hfile.write("""
     <html>
@@ -216,7 +214,9 @@ def action(id, value):
         f = target["filters"]
         f[index][property] = value
         target["filters"] = f
-        return "redraw"
+        #return "#" + str(f) + "; redraw"
+        #return "redraw"
+        return "reload"
 
     elif act == "COLOURMAP":
         if len(args) < 1: return "#args<1"
