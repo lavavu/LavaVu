@@ -106,7 +106,7 @@ void Tracers::update()
     factor *= scaling * drawstate.gap * 0.0005;
     float arrowSize = props["arrowhead"];
     //Iterate individual tracers
-    float size;
+    float size = 0;
     for (unsigned int p=0; p < particles; p++)
     {
       float* oldpos = NULL;

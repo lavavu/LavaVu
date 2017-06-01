@@ -516,7 +516,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
   {
     if (geom.size() == 1) //Single volume cube
     {
-      int bpv;
+      int bpv=1;
       float min = 0.f, range = 0.f;
       if (geom[i]->colours.size() > 0)
       {

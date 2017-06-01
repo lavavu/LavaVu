@@ -2262,7 +2262,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject && aobject->properties.has(what))
     {
       json data = aobject->properties[what];
-      lucGeometryDataType dtype;
+      lucGeometryDataType dtype = lucVertexData;
 
       int width = 3;
       if (what == "vertices")

@@ -517,7 +517,7 @@ void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int 
   float divY = IMAGE_HEIGHT / (float)glyphsize;
   float glyphX = 1 / divX;   /* Width & height of a glyph in texture coords */
   float glyphY = 1 / divY;
-  GLfloat cx, cy;         /* the character coordinates in our texture */
+  GLfloat cx = 0, cy = 0;         /* the character coordinates in our texture */
   if (startidx == 0) yoffset = 0;
   glBindTexture(GL_TEXTURE_2D, fonttexture);
   for (i = 0; i < (stopidx - startidx); i++)

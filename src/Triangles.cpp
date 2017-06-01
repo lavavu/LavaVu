@@ -124,7 +124,7 @@ void Triangles::loadBuffers()
 {
   //Copy data to Vertex Buffer Object
   clock_t t1,t2,tt;
-  tt=clock();
+  tt=t2=clock();
 
   //Update VBO...
   debug_print("Reloading %d triangles...\n", elements);
