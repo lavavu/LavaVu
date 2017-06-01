@@ -1399,30 +1399,15 @@ int compareParticle(const void *a, const void *b)
   return p1->distance < p2->distance ? -1 : 1;
 }
 
-//////////////////////////////////
-// Draws a 3d vector
-// pos: centre position at which to draw vector
-// scale: scaling factor for entire vector
-// radius: radius of cylinder sections to draw,
-//         if zero a default value is automatically calculated based on length & scale
-// head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
-// segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
-#define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
-void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], float scale, float radius0, float radius1, float head_scale, int segment_count)
+Quaternion Geometry::vectorRotation(Vec3d rvector)
 {
-  std::vector<unsigned int> indices;
-  Vec3d vec(vector);
-  Vec3d translate(pos);
-
-  //Setup orientation using alignment vector
-  Quaternion rot;
-  // Rotate to orient the shape
+  // Get Rotattion quaternion to orient along rvector
   //...Want to align our z-axis to point along arrow vector:
   // axis of rotation = (z x vec)
   // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec| *
-  Vec3d rvector(vec);
   rvector.normalise();
   float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
+  Quaternion rot;
   //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
   if (rangle == 180.0)
   {
@@ -1433,9 +1418,27 @@ void Geometry::drawVector(DrawingObject *draw, float pos[3], float vector[3], fl
   {
     rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
   }
+  return rot;
+}
+
+//////////////////////////////////
+// Draws a 3d vector
+// pos: centre position at which to draw vector
+// scale: scaling factor for entire vector
+// radius: radius of cylinder sections to draw,
+//         if zero a default value is automatically calculated based on length & scale
+// head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
+// segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
+#define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
+void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count)
+{
+  //Setup orientation using alignment vector
+  Quaternion rot = vectorRotation(vector);
 
   //Scale vector
-  vec *= scale;
+  Vec3d vec = vector * scale;
+
+  std::vector<unsigned int> indices;
 
   // Previous implementation was head_scale as a ratio of length [0,1],
   // now uses ratio to radius (> 1), so adjust if < 1

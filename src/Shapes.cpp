@@ -106,25 +106,7 @@ void Shapes::update()
       {
         Vec3d vec(geom[i]->vectors[v]);
         //vec *= Vec3d(view->scale); //Scale
-
-        // Rotate to orient the shape
-        //...Want to align our z-axis to point along arrow vector:
-        // axis of rotation = (z x vec)
-        // cosine of angle between vector and z-axis = (z . vec) / |z|.|vec| *
-        Vec3d rvector(vec);
-        rvector.normalise();
-        float rangle = RAD2DEG * rvector.angle(Vec3d(0.0, 0.0, 1.0));
-        //Axis of rotation = vec x [0,0,1] = -vec[1],vec[0],0
-        if (rangle == 180.0)
-        {
-          rot.y = 1;
-          rot.w = 0.0;
-        }
-        else if (rangle > 0.0)
-        {
-          rot.fromAxisAngle(Vec3d(-rvector.y, rvector.x, 0), rangle);
-        }
-        //std::cout << vec << " ==> " << rot << std::endl;
+        rot = vectorRotation(vec);
       }
 
       //Create shape
