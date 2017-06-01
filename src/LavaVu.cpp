@@ -132,7 +132,7 @@ void LavaVu::defaults()
   //Clear any queued commands
   viewer->commands.clear();
 
-  axis = new Vectors(drawstate);
+  axis = new Triangles(drawstate);
   rulers = new Lines(drawstate);
   border = new QuadSurfaces(drawstate);
 
@@ -1969,13 +1969,8 @@ void LavaVu::display(bool redraw)
 void LavaVu::drawAxis()
 {
   bool doaxis = aview->properties["axis"];
-  float axislen = aview->properties["axislength"];
-
   if (!doaxis) return;
   infostream = NULL;
-  float length = axislen;
-  float LH = length * 0.1;
-  float aspectRatio = aview->width / (float)aview->height;
 
   glPushAttrib(GL_ENABLE_BIT);
   glEnable(GL_LIGHTING);
@@ -1987,10 +1982,12 @@ void LavaVu::drawAxis()
   glPushMatrix();
   glLoadIdentity();
   // Build the viewing frustum - fixed near/far
+  float aspectRatio = aview->width / (float)aview->height;
   float nearc = 0.01, farc = 10.0, right, top;
   top = tan(0.5f * DEG2RAD * 45) * nearc;
   right = aspectRatio * top;
   glFrustum(-right, right, -top, top, nearc, farc);
+  
   //Modelview (rotation only)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
@@ -2003,65 +2000,61 @@ void LavaVu::drawAxis()
   // Switch coordinate system if applicable
   glScalef(1.0, 1.0, 1.0 * (int)aview->properties["coordsystem"]);
 
-  float Xpos[3] = {length/2, 0, 0};
-  float Ypos[3] = {0, length/2, 0};
-  float Zpos[3] = {0, 0, length/2};
-
-  axis->clear();
-  axis->setup(aview);
-  DrawingObject* aobj = drawstate.axisobj;
-  if (!aobj) aobj = new DrawingObject(drawstate);
-  aobj->properties.data = {
-    {"wireframe",    false},
-    {"clip",         false},
-    {"opacity",      1.0},
-    {"alpha",        1.0},
-    {"scalevectors", length},
-    {"arrowhead",    8.0},  //8 x radius (r = 0.01 * length)
-    {"radius",       length*0.1}
-  };
-  if (!aview->hasObject(aobj)) aview->addObject(aobj);
-  axis->add(aobj);
-
+  float length = aview->properties["axislength"];
+  float oldlen = drawstate.axisobj ? length : 0;
+  if (oldlen != length)
   {
-    float vector[3] = {1.0, 0.0, 0.0};
-    Colour colour = {255, 0, 0, 255};
-    axis->read(aobj, 1, lucVertexData, Xpos);
-    axis->read(aobj, 1, lucVectorData, vector);
-    axis->read(aobj, 1, lucRGBAData, &colour.value);
+    //printf("Generating axis vectors %f != %f\n", oldlen, length);
+    if (!drawstate.axisobj) 
+    {
+      drawstate.axisobj = new DrawingObject(drawstate);
+      if (!aview->hasObject(drawstate.axisobj)) aview->addObject(drawstate.axisobj);
+      axis->add(drawstate.axisobj);
+      axis->setup(aview);
+    }
+    axis->clear();
+    axis->type = lucVectorType;
+    drawstate.axisobj->properties.data = {
+      {"wireframe",    false},
+      {"clip",         false},
+      {"opacity",      1.0},
+      {"alpha",        1.0},
+      {"axislength",   length}
+    };
+
+    float headsize = 8.0;  //8 x radius (r = 0.01 * length)
+    float radius = length*0.01;
+    int dims = aview->is3d ? 3 : 2;
+    for (int c=0; c<dims; c++)
+    {
+      float vector[3] = {0, 0, 0};
+      float pos[3] = {0, 0, 0};
+      Colour colour = {0, 0, 0, 255};
+      vector[c] = 1.0;
+      pos[c] = length/2;
+      colour.rgba[c] = 255;
+      axis->drawVector(drawstate.axisobj, pos, vector, length, radius, radius, headsize, 16);
+      axis->read(drawstate.axisobj, 1, lucRGBAData, &colour.value);
+    }
+    axis->update();
   }
 
-  {
-    float vector[3] = {0.0, 1.0, 0.0};
-    Colour colour = {0, 255, 0, 255};
-    axis->read(aobj, 1, lucVertexData, Ypos);
-    axis->read(aobj, 1, lucVectorData, vector);
-    axis->read(aobj, 1, lucRGBAData, &colour.value);
-  }
-
-  if (aview->is3d)
-  {
-    float vector[3] = {0.0, 0.0, 1.0};
-    Colour colour = {0, 0, 255, 255};
-    axis->read(aobj, 1, lucVertexData, Zpos);
-    axis->read(aobj, 1, lucVectorData, vector);
-    axis->read(aobj, 1, lucRGBAData, &colour.value);
-  }
-  axis->update();
-  axis->draw();
-  glUseProgram(0);
+  axis->display();
 
   //Labels
+  glUseProgram(0);
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
   drawstate.fonts.charset = FONT_VECTOR;
   drawstate.fonts.fontscale = length*6.0;
   glColor3ubv(aview->textColour.rgba);
-  drawstate.fonts.print3dBillboard(Xpos[0],    Xpos[1]-LH, Xpos[2], "X");
-  drawstate.fonts.print3dBillboard(Ypos[0]-LH, Ypos[1],    Ypos[2], "Y");
+  float pos = length/2;
+  float LH = length * 0.1;
+  drawstate.fonts.print3dBillboard(pos, -LH, 0, "X");
+  drawstate.fonts.print3dBillboard(-LH, pos, 0, "Y");
   if (aview->is3d)
-    drawstate.fonts.print3dBillboard(Zpos[0]-LH, Zpos[1]-LH, Zpos[2], "Z");
+    drawstate.fonts.print3dBillboard(-LH, -LH, pos, "Z");
 
   glPopAttrib();
 
