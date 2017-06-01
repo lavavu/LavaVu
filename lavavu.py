@@ -1093,3 +1093,23 @@ def printH5(f):
         print f[key]
     for item in f.attrs.keys():
         print item + ":", f.attrs[item]
+
+def rotation(x, y, z):
+    """
+    Get a rotation quaternion from x/y/z Euler angles
+    """
+    deg2rad = math.pi / 180
+    x = x*0.5*deg2rad
+    y = y*0.5*deg2rad
+    z = z*0.5*deg2rad
+    sinx = math.sin(x)
+    siny = math.sin(y)
+    sinz = math.sin(z)
+    cosx = math.cos(x)
+    cosy = math.cos(y)
+    cosz = math.cos(z)
+    return [cosx*cosy*sinz - sinx*siny*cosz,
+            cosx*cosy*cosz + sinx*siny*sinz,
+            sinx*cosy*cosz - cosy*siny*sinz,
+            cosx*siny*cosz + sinx*cosy*sinz]
+
