@@ -2393,9 +2393,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed["pointtype"];
     if (what == "all")
     {
-      int pt = 1;
-      if (drawstate.globals.count("pointtype") > 0)
-        pt = drawstate.globals["pointtype"];
+      int pt = drawstate.global("pointtype");
       if (parsed.has(ival, "pointtype", 1))
         drawstate.globals["pointtype"] = ival % 5;
       else
@@ -2630,8 +2628,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (active)
     {
       std::string key = "scale" + what;
-      float scale = 1.0;
-      if (drawstate.globals.count(key) > 0) scale = drawstate.globals[key];
+      float scale = drawstate.global(key);
       if (parsed.has(fval, "scale", 1))
         drawstate.globals[key] = fval > 0.0 ? fval : 1.0;
       else if (parsed.get("scale", 1) == "up")
