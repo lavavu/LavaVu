@@ -196,7 +196,6 @@ void View::checkClip(float& near_clip, float& far_clip)
     //near_clip = model_size / 5.0;
     if (far_clip == 0)
       far_clip = model_size * 20.0;
-    debug_print("Auto-corrected clip planes: near %f far %f.\n", near_clip, far_clip);
     assert(near_clip > 0.0 && far_clip > 0.0);
   }
 
@@ -461,9 +460,9 @@ void View::projection(int eye)
   float eye_separation, frustum_shift;
 
   //Ensure clip planes valid, calculate if not provided in properties
-  float near_clip = properties["near"];
-  float far_clip = properties["far"];
-  checkClip(near_clip, far_clip);
+  near = properties["near"];
+  far = properties["far"];
+  checkClip(near, far);
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
   //default is to set to distance to model front edge...
@@ -476,14 +475,14 @@ void View::projection(int eye)
 
   // Build the viewing frustum
   // Top of frustum calculated from field of view (aperture) and near clipping plane, camera->aperture = fov in degrees
-  top = tan(0.5f * DEG2RAD * fov) * near_clip;
+  top = tan(0.5f * DEG2RAD * fov) * near;
   bottom = -top;
   // Account for aspect ratio (width/height) to get right edge of frustum
   right = aspectRatio * top;
   left = -right;
 
   //Shift frustum to the left/right to account for right/left eye viewpoint
-  frustum_shift = eye * 0.5 * eye_separation * fabs(near_clip / focal_length);  //Mutiply by eye (-1 left, 0 none, 1 right)
+  frustum_shift = eye * 0.5 * eye_separation * fabs(near / focal_length);  //Mutiply by eye (-1 left, 0 none, 1 right)
   //Viewport eye shift in pixels => for raycasting shader
   eye_shift = eye * eye_sep_ratio * height * 0.6 / tan(DEG2RAD * fov);
 
@@ -495,12 +494,12 @@ void View::projection(int eye)
   if (eye) debug_print("STEREO %s: focalLen: %f eyeSep: %f frustum_shift: %f, scene_shift: %f eye_shift %f\n", (eye < 0 ? "LEFT (RED)  " : "RIGHT (BLUE)"),
                          focal_length, eye_separation, frustum_shift, scene_shift, eye_shift);
   //debug_print(" Ratio %f Left %f Right %f Top %f Bottom %f Near %f Far %f\n",
-  //         aspectRatio, left, right, bottom, top, near_clip, far_clip);
+  //         aspectRatio, left, right, bottom, top, near, far);
 
   // Set up our projection transform
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, near_clip, far_clip);
+  glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, near, far);
 
   // Return to model view
   glMatrixMode(GL_MODELVIEW);
