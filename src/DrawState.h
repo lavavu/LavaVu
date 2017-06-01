@@ -311,7 +311,7 @@ public:
     // | colourmap | boolean | Set to true to apply colours as discrete values rather than gradient
     defaults["discrete"] = false;
     // | colourmap | colours | Colour list, see [Colour map lists] for more information
-    defaults["colours"] = "";
+    defaults["colours"] = json::array();
     // | colourmap | real[2] | Fixed scale range, default is to automatically calculate range based on data min/max
     defaults["range"] = {0.0, 0.0};
     // | colourmap | boolean | Set to true to lock colourmap ranges to current values
@@ -366,6 +366,8 @@ public:
     defaults["coordsystem"] = 1;
     // | view | boolean | Enable to follow the model bounding box centre with camera as it changes
     defaults["follow"] = false;
+    // | bounds | object | Read only bounding box (min/max)
+    defaults["bounds"] = {};
 
     //Global Properties
     // | global | string | Title of window for caption area

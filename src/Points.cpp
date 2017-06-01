@@ -334,34 +334,14 @@ void Points::render()
 
 int Points::getPointType(int index)
 {
-  json& pointtype = drawstate.global("pointtype");
-  int ptype = -1;
   if (index != -1)
   {
     if (geom[index]->draw->properties.has("pointtype"))
-      pointtype = geom[index]->draw->properties["pointtype"];
+      return geom[index]->draw->properties["pointtype"];
     else
       return -1; //Use global 
   }
-
-  if (pointtype.is_string())
-  {
-    std::string val = pointtype;
-    if (pointtype == "blur")
-      ptype = 0;
-    else if (pointtype == "smooth")
-      ptype = 1;
-    else if (pointtype == "sphere")
-      ptype = 2;
-    else if (pointtype == "shiny")
-      ptype = 3;
-    else if (pointtype == "flat")
-      ptype = 4;
-  }
-  else if (pointtype.is_number())
-    ptype = pointtype;
-
-  return ptype;
+  return drawstate.global("pointtype");
 }
 
 void Points::draw()

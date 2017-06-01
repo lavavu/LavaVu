@@ -225,6 +225,10 @@ void Properties::parse(const std::string& property, bool global)
       {
         dest[key] = false;
       }
+      else if (defaults[key].is_string())
+      {
+        dest[key] = value;
+      }
       else
       {
         dest[key] = json::parse(value);
@@ -293,10 +297,50 @@ bool Properties::typecheck(json& val, json& def)
   //Only do this where a sensible conversion is possible
   if (def.is_boolean())
   {
-    //Just supporting bool conversion for now
+    //Bool conversion
     debug_print("Attempting to coerce value to BOOLEAN\n");
     val = val != 0;
   }
+  if (def.is_number())
+  {
+    //Num conversion
+    debug_print("Attempting to coerce value to NUMBER\n");
+    if (val.is_string())
+    {
+      std::string sval = val;
+      //Check for alias string values:
+      if (sval == "blur" || sval == "ellipsoid")
+        val = 0;
+      else if (sval == "smooth" || sval == "cuboid")
+        val = 1;
+      else if (sval == "sphere")
+        val = 2;
+      else if (sval == "shiny")
+        val = 3;
+      else if (sval == "flat")
+        val = 0;
+      else
+      {
+        std::stringstream ss;
+        ss << sval;
+        float v = 0.0;
+        ss >> v;
+        val = v;
+        if (v - (int)v == 0.0) val = (int)v;
+      }
+    }
+    else
+      val = (float)val;
+  }
+  if (def.is_string() && !val.is_string())
+  {
+    //String conversion
+    debug_print("Attempting to coerce value to STRING\n");
+    std::stringstream ss;
+    ss << val;
+    val = ss.str();
+  }
+
   return false;
 }
 
