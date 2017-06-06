@@ -38,6 +38,30 @@
 //Safe log function for scaling
 #define LOG10(val) (val > FLT_MIN ? log10(val) : log10(FLT_MIN))
 
+/* Some preset colourmaps
+*   aim to reduce banding artifacts by being either 
+* - isoluminant
+* - smoothly increasing in luminance
+* - diverging in luminance about centre value
+*/
+ColourMap::CMap ColourMap::defaultMaps = { 
+//Isoluminant blue-orange
+{"isolum", "#288FD0 #50B6B8 #989878 #C68838 #FF7520"},
+//Diverging blue-yellow-orange
+{"diverge", "#288FD0 #fbfb9f #FF7520"},
+//Isoluminant rainbow blue-green-orange
+{"rainbow", "#5ed3ff #6fd6de #7ed7be #94d69f #b3d287 #d3ca7b #efc079 #ffb180"},
+//CubeLaw indigo-blue-green-yellow
+{"cubelaw", "#440088 #831bb9 #578ee9 #3db6b6 #6ce64d #afeb56 #ffff88"},
+//CubeLaw indigo-blue-green-orange-yellow
+{"cubelaw2", "#440088 #1b83b9 #6cc35b #ebbf56 #ffff88"},
+//CubeLaw heat blue-magenta-yellow
+{"smoothheat", "#440088 #831bb9 #c66f5d #ebbf56 #ffff88"},
+//Paraview cool-warm (diverging blue-red)
+{"coolwarm", "#3b4cc0 #7396f5 #b0cbfc #dcdcdc #f6bfa5 #ea7b60 #b50b27"}
+//{"coolwarm", "#4860d1 #87a9fc #a7c5fd #dcdcdc #f2c8b4 #ee8669 #d95847"}
+};
+
 //This can stay global as never actually modified, if it needs to be then move to State
 int ColourMap::samples = 4096;
 
@@ -628,44 +652,49 @@ void ColourMap::loadTexture(bool repeat)
 
 void ColourMap::loadPalette(std::string data)
 {
-  //Two types of palette data accepted
+  //Three types of data accepted
+  // - name of predefined colour map
   // - space separated colour list (process with parse())
   // - position=rgba colour palette (process here)
+  if (ColourMap::defaultMaps.count(data) > 0)
+    data = ColourMap::defaultMaps[data];
+
   if (data.find("=") == std::string::npos)
   {
      parse(data);
-     return;
   }
-
-  //Currently only support loading palettes with literal position data, not values to scale
-  noValues = true;
-  //Parse palette string into key/value pairs
-  std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
-  std::stringstream is(data);
-  colours.clear();
-  std::string line;
-  while(std::getline(is, line))
+  else
   {
-    std::istringstream iss(line);
-    float pos;
-    char delim;
-    std::string value;
-    if (iss >> pos && pos >= 0.0 && pos <= 1.0)
+    //Currently only support loading palettes with literal position data, not values to scale
+    noValues = true;
+    //Parse palette string into key/value pairs
+    std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
+    std::stringstream is(data);
+    colours.clear();
+    std::string line;
+    while(std::getline(is, line))
     {
-      iss >> delim;
-      std::getline(iss, value); //Read rest of stream into value
-      Colour colour(value);
-      //Add to colourmap
-      addAt(colour, pos);
-    }
-    else
-    {
-      //Background?
-      std::size_t pos = line.find("=") + 1;
-      if (line.substr(0, pos) == "Background=")
+      std::istringstream iss(line);
+      float pos;
+      char delim;
+      std::string value;
+      if (iss >> pos && pos >= 0.0 && pos <= 1.0)
       {
-        Colour c(line.substr(pos));
-        background = c;
+        iss >> delim;
+        std::getline(iss, value); //Read rest of stream into value
+        Colour colour(value);
+        //Add to colourmap
+        addAt(colour, pos);
+      }
+      else
+      {
+        //Background?
+        std::size_t pos = line.find("=") + 1;
+        if (line.substr(0, pos) == "Background=")
+        {
+          Colour c(line.substr(pos));
+          background = c;
+        }
       }
     }
   }

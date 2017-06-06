@@ -106,6 +106,9 @@ public:
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);
   void print();
+
+  typedef std::map<std::string, std::string> CMap;
+  static CMap defaultMaps;
 };
 
 #endif //ColourMap__

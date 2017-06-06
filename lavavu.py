@@ -28,28 +28,6 @@ except Exception,e:
     print "LavaVu visualisation module load failed: " + str(e)
     raise
 
-#Some preset colourmaps
-# aim to reduce banding artifacts by being either 
-# - isoluminant
-# - smoothly increasing in luminance
-# - diverging in luminance about centre value
-colourMaps = {}
-#Isoluminant blue-orange
-colourMaps["isolum"] = "#288FD0 #50B6B8 #989878 #C68838 #FF7520"
-#Diverging blue-yellow-orange
-colourMaps["diverge"] = "#288FD0 #fbfb9f #FF7520"
-#Isoluminant rainbow blue-green-orange
-colourMaps["rainbow"] = "#5ed3ff #6fd6de #7ed7be #94d69f #b3d287 #d3ca7b #efc079 #ffb180"
-#CubeLaw indigo-blue-green-yellow
-colourMaps["cubelaw"] = "#440088 #831bb9 #578ee9 #3db6b6 #6ce64d #afeb56 #ffff88"
-#CubeLaw indigo-blue-green-orange-yellow
-colourMaps["cubelaw2"] = "#440088 #1b83b9 #6cc35b #ebbf56 #ffff88"
-#CubeLaw heat blue-magenta-yellow)
-colourMaps["smoothheat"] = "#440088 #831bb9 #c66f5d #ebbf56 #ffff88"
-#Paraview cool-warm (diverging)
-colourMaps["coolwarm"] = "#3b4cc0 #7396f5 #b0cbfc #dcdcdc #f6bfa5 #ea7b60 #b50b27"
-#colourMaps["coolwarm"] = "#4860d1 #87a9fc #a7c5fd #dcdcdc #f2c8b4 #ee8669 #d95847"
-
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
 geomtypes = {"labels":    LavaVuPython.lucLabelType,
@@ -693,7 +671,6 @@ class Viewer(object):
         return obj
 
     def colourmap(self, name, data, **kwargs):
-        datastr = data
         if isinstance(data, list):
             #Convert list map to string format
             datastr = ""
@@ -702,10 +679,7 @@ class Viewer(object):
                     datastr += str(item[0]) + '=' + str(item[1]) + '\n'
                 else:
                     datastr += item + '\n'
-        elif data in colourMaps.keys():
-            #Use a predefined map by name
-            datastr = colourMaps[data]
-        data = datastr
+            data = datastr
         #Load colourmap
         return self.app.colourMap(name, data, str(json.dumps(kwargs)))
 

@@ -230,7 +230,7 @@ void Properties::parse(const std::string& property, bool global)
     }
     catch (std::exception& e)
     {
-      //std::cerr << e.what() << " : [" << key << "] => " << value;
+      //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
       //Treat as a string value
       dest[key] = value;
     }
