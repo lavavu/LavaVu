@@ -47,7 +47,7 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 }
 
 ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
-  : noValues(false), log(false), name(name), properties(drawstate.globals, drawstate.defaults),
+  : noValues(false), log(false), discrete(false), name(name), properties(drawstate.globals, drawstate.defaults),
     minimum(0), maximum(1), calibrated(false), opaque(true), texture(NULL)
 {
   precalc = new Colour[samples];
@@ -187,6 +187,14 @@ void ColourMap::calibrate(float min, float max)
   if (min == HUGE_VAL) min = max;
   if (max == HUGE_VAL) max = min;
 
+  discrete = properties["discrete"];
+  if (discrete)
+  {
+    if (max - (int)max != 0.0) max = ceil(max);
+    if (min - (int)min != 0.0) min = floor(min);
+    debug_print("Discrete colour map %s min %.0f, max %.0f\n", name.c_str(), minimum, maximum);
+  }
+
   minimum = min;
   maximum = max;
   log = properties["logscale"];
@@ -294,6 +302,10 @@ Colour ColourMap::get(float value)
 float ColourMap::scaleValue(float value)
 {
   float min = minimum, max = maximum;
+
+  if (discrete) 
+    value = round(value);
+
   if (max == min) return 0.5;   // Force central value if no range
   if (value <= min) return 0.0;
   if (value >= max) return 1.0;
@@ -334,27 +346,16 @@ Colour ColourMap::getFromScaled(float scaledValue)
     // Calculate interpolation factor [0,1] between colour at index and previous colour
     float interpolate = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);
 
+    //Linear interpolation between colours
     //printf(" interpolate %f above %f below %f\n", interpolate, colours[i].position, colours[i-1].position);
-    if (properties["discrete"])
-    {
-      //No interpolation
-      if (interpolate < 0.5)
-        return colours[i-1].colour;
-      else
-        return colours[i].colour;
-    }
-    else
-    {
-      //Linear interpolation between colours
-      Colour colour0, colour1;
-      colour0 = colours[i-1].colour;
-      colour1 = colours[i].colour;
+    Colour colour0, colour1;
+    colour0 = colours[i-1].colour;
+    colour1 = colours[i].colour;
 
-      for (int c=0; c<4; c++)
-        colour0.rgba[c] += (colour1.rgba[c] - colour0.rgba[c]) * interpolate;
+    for (int c=0; c<4; c++)
+      colour0.rgba[c] += (colour1.rgba[c] - colour0.rgba[c]) * interpolate;
 
-      return colour0;
-    }
+    return colour0;
   }
 
   Colour c;
@@ -404,26 +405,28 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   // Draw Colour Bar
   int count = colours.size();
   int idx, xpos;
-  if (colourbarprops["discrete"])
+  if (discrete)
   {
+    int vals =  maximum - minimum + 1;
     glShadeModel(GL_FLAT);
     glBegin(GL_QUAD_STRIP);
     xpos = startx;
     VERT2D(xpos, starty, vertical);
     VERT2D(xpos, starty + breadth, vertical);
-    for (idx = 1; idx < count+1; idx++)
+    for (idx = 0; idx < vals+1; idx++)
     {
       int oldx = xpos;
-      colour = getFromScaled(colours[idx-1].position);
+      float dval = idx - 1;
+      colour = get(dval);
       glColor4ubv(colour.rgba);
-      if (idx == count)
+      if (idx == vals)
       {
         VERT2D(xpos, starty, vertical);
         VERT2D(xpos, starty + breadth, vertical);
       }
       else
       {
-        xpos = startx + length * colours[idx].position;
+        xpos = startx + length * idx/(float)(vals-1);
         VERT2D(oldx + 0.5 * (xpos - oldx), starty, vertical);
         VERT2D(oldx + 0.5 * (xpos - oldx), starty + breadth, vertical);
       }

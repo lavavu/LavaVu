@@ -1095,12 +1095,12 @@ void Colour::fromX11Colour(std::string x11colour)
 void Colour::fromHex(const std::string& hexName)
 {
   /* Check to make sure colour is valid */
-  if (hexName.at(0) != '#')
-    debug_print( "Cannot recognise hex colour %s.\n", hexName.c_str());
+  if (hexName.at(0) != '#' || hexName.length() < 7)
+    abort_program( "Cannot recognise hex colour %s.\n", hexName.c_str());
   for (int i = 1 ; i <= 6 ; i++)
   {
     if (isxdigit(hexName.at(i)) == 0)
-      printf( "Cannot recognise hex colour %s.\n", hexName.c_str());
+      abort_program( "Cannot recognise hex colour %s.\n", hexName.c_str());
   }
 
   /* Seperate colours */

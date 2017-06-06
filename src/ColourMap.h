@@ -65,6 +65,7 @@ class ColourMap
 
   bool noValues; //Use position data only
   bool log; //Cached logscale setting
+  bool discrete; //Cached discrete setting
   float range, irange;
 
 public:
