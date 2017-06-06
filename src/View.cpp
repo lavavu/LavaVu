@@ -80,15 +80,6 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   }
 
   is3d = true;
-
-  //View properties can only be set if exist, so copy defaults
-  std::string viewprops[] = {"title", "zoomstep", "margin", 
-                             "rulers", "rulerticks", "rulerwidth", 
-                             "fontscale", "border", "fillborder", "bordercolour", 
-                             "axis", "axislength", "timestep", "antialias"};
-  //Gets current value (either global or default)
-  for (auto key : viewprops)
-    properties.data[key] = drawstate.global(key);
 }
 
 View::~View()

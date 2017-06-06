@@ -48,6 +48,10 @@ public:
   //Global colourmaps list for active model
   std::vector<ColourMap*> * colourMaps;
 
+  //List of properties that apply to colourMaps, views
+  std::vector<std::string> colourMapProps;
+  std::vector<std::string> viewProps;
+
   DrawState() : prog()
   {
     borderobj = axisobj = rulerobj = NULL;
@@ -102,6 +106,12 @@ public:
     fonts.reset();
 
     colourMaps = NULL;
+
+    colourMapProps = {"logscale", "discrete", "colours", "range", "locked"};
+    viewProps = {"title", "zoomstep", "margin", 
+                 "rulers", "rulerticks", "rulerwidth", 
+                 "fontscale", "border", "fillborder", "bordercolour", 
+                 "axis", "axislength", "timestep", "antialias"};
 
     //Setup default properties
     //(Comments formatted to be parsed into documentation)

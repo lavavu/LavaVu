@@ -595,10 +595,21 @@ void LavaVu::parseProperty(std::string& data)
   std::string key = data.substr(0,data.find("="));
   if (aobject)
   {
-    aobject->properties.parse(data);
-    if (verbose) std::cerr << "OBJECT " << std::setw(2) << aobject->name() << ", DATA: " << aobject->properties.data << std::endl;
+    //Properties reserved for colourmaps can be set from any objects that use that map
+    if (aobject->colourMap && std::find(drawstate.colourMapProps.begin(), drawstate.colourMapProps.end(), key) != drawstate.colourMapProps.end())
+    {
+      aobject->colourMap->properties.parse(data);
+      if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << aobject->colourMap->name
+                             << ", DATA: " << aobject->colourMap->properties.data << std::endl;
+    }
+    else
+    {
+      aobject->properties.parse(data);
+      if (verbose) std::cerr << "OBJECT " << std::setw(2) << aobject->name()
+                             << ", DATA: " << aobject->properties.data << std::endl;
+    }
   }
-  else if (aview && aview->properties.data.count(key) > 0)
+  else if (aview && std::find(drawstate.viewProps.begin(), drawstate.viewProps.end(), key) != drawstate.viewProps.end())
   {
     aview->properties.parse(data);
     if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
