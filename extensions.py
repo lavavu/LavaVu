@@ -76,7 +76,7 @@ header.write("\n")
 header.write("typedef void* (*getProcAddressFN)(const char* procName);\n")
 header.write("\n")
 header.write("#if defined _WIN32\n")
-header.write("#include "Include.h"\n")
+header.write('#include "Include.h"\n')
 
 for fn in win_functions:
     header.write("extern PFN" + fn.upper() + "PROC " + fn + ";\n")
@@ -131,12 +131,12 @@ source.write("#ifdef EXTENSION_POINTERS\n")
 source.write("#if defined _WIN32\n")
 
 for fn in win_functions:
-    source.write("   " + fn + " = (PFN" + fn.upper() + "PROC) GetProcAddress(\"" + fn + "\");\n")
+    source.write("  " + fn + " = (PFN" + fn.upper() + "PROC) GetProcAddress(\"" + fn + "\");\n")
 
 source.write("#endif\n")
 
 for fn in functions:
-    source.write("   " + fn + " = (PFN" + fn.upper() + "PROC) GetProcAddress(\"" + fn + "\");\n")
+    source.write("  " + fn + " = (PFN" + fn.upper() + "PROC) GetProcAddress(\"" + fn + "\");\n")
 
 source.write("#endif\n")
 source.write("}\n")
