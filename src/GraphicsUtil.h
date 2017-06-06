@@ -59,8 +59,6 @@
 #define GL_Error_Check
 #endif
 
-#define STRINGIFY(A) #A
-
 #define BLEND_NORMAL 0
 #define BLEND_PNG 1
 #define BLEND_ADD 2

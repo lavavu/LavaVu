@@ -7,21 +7,21 @@ std::string Shader::path = SHADER_PATH;
 #endif
 
 //Default shaders
-const char *vertexShader = STRINGIFY(
-                             void main(void)
+const char *vertexShader = R"(
+void main(void)
 {
   gl_TexCoord[0] = gl_MultiTexCoord0;
   gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
   gl_FrontColor = gl_Color;
 }
-                           );
+)";
 
-const char *fragmentShader = STRINGIFY(
-                               void main(void)
+const char *fragmentShader = R"(
+void main(void)
 {
   gl_FragColor = gl_Color;
 }
-                             );
+)";
 
 Shader::Shader()
 {
@@ -44,9 +44,26 @@ Shader::Shader(const std::string& vshader, const std::string& fshader)
   init(vsrc, fsrc);
 }
 
+Shader::Shader(const std::string& shader, GLenum shader_type)
+{
+  //This constructor is for a custom shader of specified type (eg: GL_COMPUTE_SHADER)
+  std::string src = read_file(shader);
+  program = 0;
+  for (auto s : shaders)
+    glDeleteShader(s);
+  shaders.clear();
+  supported = version();
+  if (!supported) return;
+  //Attempts to load and build shader programs
+  if (compile(src.c_str(), shader_type)) build();
+}
+
 void Shader::init(std::string vsrc, std::string fsrc)
 {
-  program = shaders[0] = shaders[1] = 0;
+  program = 0;
+  for (auto s : shaders)
+    glDeleteShader(s);
+  shaders.clear();
   supported = version();
   if (!supported) return;
   //Default shaders
@@ -89,20 +106,14 @@ std::string Shader::read_file(const std::string& fname)
 bool Shader::compile(const char *src, GLuint type)
 {
   GLint compiled;
-  int idx = (type == GL_VERTEX_SHADER ? 0 : 1);
   GLuint shader = glCreateShader(type);
   glShaderSource(shader, 1, &src, NULL);
   glCompileShader(shader);
   glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
   if (!compiled)
-  {
     print_log("Shader Compile", shader);
-  }
   else
-  {
-    if (shaders[idx]) glDeleteShader(shaders[idx]);
-    shaders[idx] = shader;
-  }
+    shaders.push_back(shader);
   GL_Error_Check;
   return compiled;
 }
@@ -117,10 +128,11 @@ bool Shader::build()
   program = glCreateProgram();
   assert(glIsProgram(program));
 
-  if (glIsShader(shaders[0]))
-    glAttachShader(program, shaders[0]);
-  if (glIsShader(shaders[1]))
-    glAttachShader(program, shaders[1]);
+  for (auto s : shaders)
+  {
+    if (glIsShader(s))
+      glAttachShader(program, s);
+  }
 
   glLinkProgram(program);
   glGetProgramiv(program, GL_LINK_STATUS, &linked);
