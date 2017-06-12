@@ -1864,7 +1864,9 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
             dict[key] = dataobj;
           }
         }
-        obj["data"] = dict;
+
+        if (dict.size() > 0)
+          obj["data"] = dict;
 
         //std::cout << "HAS OBJ TYPES: (point,tri,vol)" << obj.count("points") << "," 
         //          << obj.count("triangles") << "," << obj.count("volume") << std::endl;
