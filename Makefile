@@ -178,7 +178,7 @@ $(SWIGOBJ) : $(SWIGSRC)
 	$(CXX) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/DrawState.h
-	python docparse.py
+	bin/LavaVu -S -h -p0 : docs:properties quit > docs/Property-Reference.md
 	bin/LavaVu -S -h -p0 : docs:interaction quit > docs/Interaction.md
 	bin/LavaVu -S -h -p0 : docs:scripting quit > docs/Scripting-Commands-Reference.md
 	bin/LavaVu -? > docs/Commandline-Arguments.md
