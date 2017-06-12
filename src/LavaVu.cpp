@@ -1656,12 +1656,11 @@ void LavaVu::resetViews(bool autozoom)
   std::string name = drawstate.global("caption");
   std::string vpt = aview->properties["title"];
   if (vpt.length() > 0)
-  {
     title << aview->properties["title"];
-    title << " (" << name << ")";
-  }
   else
-    title << name;
+    title << "LavaVu";
+  if (name.length() > 0)
+    title << " (" << name << ")";
 
   if (amodel->timesteps.size() > 1)
     title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->stepInfo();

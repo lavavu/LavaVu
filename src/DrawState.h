@@ -68,8 +68,7 @@ public:
     std::stringstream outpath;
     std::string title = global("caption");
     outpath << title;
-    if (counter > 0)
-      outpath <<  "-" << counter;
+    outpath <<  "-" << std::setfill('0') << std::setw(5) << counter;
     counter++;
     return outpath.str();
   }
@@ -383,7 +382,7 @@ public:
 
     //Global Properties
     // | global | string | Title of window for caption area
-    defaults["caption"] = "LavaVu";
+    defaults["caption"] = "default";
     // | global | integer[2] | Window resolution X,Y
     defaults["resolution"] = {1024, 768};
     // | global | boolean | Turn on to display FPS count
