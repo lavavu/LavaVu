@@ -638,6 +638,7 @@ void ColourMap::loadPalette(std::string data)
   //   and only colours loaded at even spacing
   // b) Space separated colour list (process with parse())
   // c) Position=rgba colour palette (process here)
+
   bool nopos = false;
   if (data.at(0) == '@')
   {
@@ -716,6 +717,14 @@ void ColourMap::flip()
   std::reverse(colours.begin(), colours.end());
   for (unsigned int idx = 0; idx < colours.size(); idx++)
     colours[idx].position = 1.0 - colours[idx].position;
+}
+
+std::string ColourMap::getDefaultMap(std::string name)
+{
+  for (unsigned int i=0; i<ColourMap::defaultMapNames.size(); i++)
+    if (ColourMap::defaultMapNames[i] == name)
+      return ColourMap::defaultMaps[i];
+  return "";
 }
 
 /* Some preset colourmaps

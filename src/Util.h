@@ -473,7 +473,10 @@ public:
     if (props.find(key) != props.end())
     {
       for (; idx < props[key].size(); idx++)
-        all += props[key][idx] + " ";
+      {
+        if (all.length() > 0) all += " ";
+        all += props[key][idx];
+      }
     }
     return all;
   }

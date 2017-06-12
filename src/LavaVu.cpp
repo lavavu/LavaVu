@@ -2458,8 +2458,8 @@ void LavaVu::drawSceneBlended()
     size_t pos =  title.find("##");
     if (pos != std::string::npos && (int)drawstate.timesteps.size() >= drawstate.now)
       title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
-    aview->drawOverlay(aview->textColour, title);
     drawAxis();
+    aview->drawOverlay(aview->textColour, title);
   }
 }
 

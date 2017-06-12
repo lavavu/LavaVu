@@ -3334,7 +3334,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     return categories;
 
   std::vector<std::vector<std::string> > cmdlist = {
-    {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "clear"},
+    {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "autorotate",
