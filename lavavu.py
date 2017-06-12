@@ -1062,6 +1062,100 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
 
     return colours
 
+def loadCPT(fn, positions=True):
+    """
+    Create a colourmap from a CPT colour table file
+    """
+    result = ""
+    values = []
+    colours = []
+    hexcolours = []
+    hsv = False
+    hinge = None
+
+    def addColour(val, colour):
+        if len(values) and val == values[-1]:
+            if colour == colours[-1]:
+                return #Skip duplicates
+            val += 0.001 #Add a small increment
+        values.append(val)
+        if isinstance(colour, str):
+            if '/' in colour:
+                colour = colour.split('/')
+            if '-' in colour:
+                colour = colour.split('-')
+        if isinstance(colour, list):
+            if hsv:
+                colour = [float(v) for v in colour]
+                import colorsys
+                colour = colorsys.hsv_to_rgb(colour[0]/360.0,colour[1],colour[2])
+                colour = [int(v*255) for v in colour]
+            else:
+                colour = [int(v) for v in colour]
+
+        if len(colours) == 0 or colour != colours[-1]:
+            if isinstance(colour, str):
+                hexcolours.append(colour)
+            else:
+                hexcolours.append("#%02x%02x%02x" % (colour[0],colour[1],colour[2]))
+
+        colours.append(colour)
+
+    with open(fn, "r") as cpt_file:
+        for line in cpt_file:
+            if "COLOR_MODEL" in line and 'hsv' in line.lower():
+                hsv = True
+                continue
+            if "HINGE" in line:
+                line = line.split('=')
+                hinge = float(line[1])
+                continue
+            if line[0] == '#': continue
+            if line[0] == 'B': continue
+            if line[0] == 'F': continue
+            if line[0] == 'N': continue
+            line = line.split()
+            #RGB/HSV space separated?
+            if len(line) > 7:
+                addColour(float(line[0]), [int(line[1]), int(line[2]), int(line[3])])
+                addColour(float(line[4]), [int(line[5]), int(line[6]), int(line[7])])
+            #Pass whole strings if / or - separated
+            elif len(line) > 1:
+                addColour(float(line[0]), line[1])
+                if len(line) > 3:
+                    addColour(float(line[2]), line[3])
+            
+
+
+    minval = min(values)
+    maxval = max(values)
+    vrange = maxval - minval
+    #print "HINGE: ",hinge,"MIN",minval,"MAX",maxval
+    
+    if positions:
+        for v in range(len(values)):
+            #Centre hinge value
+            if hinge is not None:
+                if values[v] == hinge:
+                    values[v] = 0.5
+                elif values[v] < hinge:
+                    values[v] = 0.5 * (values[v] - minval) / (hinge - minval)
+                elif values[v] > hinge:
+                    values[v] = 0.5 * (values[v] - hinge) / (maxval - hinge) + 0.5
+            else:
+                values[v] = (values[v] - minval) / vrange
+
+            if isinstance(colours[v], str):
+                result += "%.5f=%s; " % (values[v], colours[v])
+            else:
+                result += "%.5f=rgb(%d,%d,%d); " % (values[v], colours[v][0], colours[v][1], colours[v][2])
+    else:
+        for v in range(len(hexcolours)):
+            #print "(%f)%s" % (values[v], hexcolours[v]),
+            result += hexcolours[v] + " "
+
+    return result
+
 def getVariableName(var):
     """
     Attempt to find the name of a variable from the main module namespace
