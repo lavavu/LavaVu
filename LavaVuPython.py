@@ -466,6 +466,8 @@ LavaVu.close = new_instancemethod(_LavaVuPython.LavaVu_close, None, LavaVu)
 LavaVu.imageArray = new_instancemethod(_LavaVuPython.LavaVu_imageArray, None, LavaVu)
 LavaVu.imageDiff = new_instancemethod(_LavaVuPython.LavaVu_imageDiff, None, LavaVu)
 LavaVu.queueCommands = new_instancemethod(_LavaVuPython.LavaVu_queueCommands, None, LavaVu)
+LavaVu.helpCommand = new_instancemethod(_LavaVuPython.LavaVu_helpCommand, None, LavaVu)
+LavaVu.commandList = new_instancemethod(_LavaVuPython.LavaVu_commandList, None, LavaVu)
 LavaVu_swigregister = _LavaVuPython.LavaVu_swigregister
 LavaVu_swigregister(LavaVu)
 

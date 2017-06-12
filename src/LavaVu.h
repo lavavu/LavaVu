@@ -220,7 +220,7 @@ public:
   Geometry* lookupObjectContainer(DrawingObject* obj, std::string gtype="");
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   std::vector<std::string> commandList(std::string category="");
-  void helpCommand(std::string cmd);
+  std::string helpCommand(std::string cmd="");
   void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
@@ -241,7 +241,7 @@ public:
   std::string getFigures();
   std::string getTimeSteps();
 
-  void setObject(DrawingObject* target, std::string properties);
+  void setObject(DrawingObject* target, std::string properties, bool replace=false);
   DrawingObject* createObject(std::string properties);
   DrawingObject* getObject(const std::string& name);
   DrawingObject* getObject(int id=-1);

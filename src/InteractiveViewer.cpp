@@ -744,6 +744,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cout << HELP_INTERACTION;
     return false;
   }
+  if (parsed.exists("docs:properties"))
+  {
+    helpCommand("docs:properties");
+    return false;
+  }
   else if (parsed.exists("file"))
   {
     if (gethelp)
@@ -1842,7 +1847,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
     {
       help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
-      helpCommand("help");
+      help += "For detailed help on a command, type:\n\nhelp command [ENTER]";
+      helpCommand();
       std::cout << HELP_INTERACTION;
       std::cout << help;
     }
@@ -3349,17 +3355,17 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   return std::vector<std::string>();
 }
 
-void LavaVu::helpCommand(std::string cmd)
+std::string LavaVu::helpCommand(std::string cmd)
 {
   //This list of categories and commands must be maintained along with the individual command help strings
+  std::stringstream markdown;
   std::vector<std::string> categories = commandList();
   //Verbose command help
-  if (cmd == "help")
+  if (cmd == "help" || cmd.length() == 0)
   {
-    help += "For detailed help on a command, type:\n\nhelp command [ENTER]";
     for (unsigned int i=0; i<categories.size(); i++)
     {
-      help += "\n\n" + categories[i] + " commands:\n\n";
+      help += "\n" + categories[i] + " commands:\n\n > **";
       std::vector<std::string> cmds = commandList(categories[i]);
       for (unsigned int j=0; j<cmds.size(); j++)
       {
@@ -3367,49 +3373,120 @@ void LavaVu::helpCommand(std::string cmd)
         help += cmds[j];
         if (j < cmds.size() - 1) help += ", ";
       }
+      help += "**\n";
     }
     help += "\n";
+    markdown << help;
   }
   else if (cmd == "docs:scripting")
   {
-    std::cout << "\n# Scripting command reference\n\n";
+    markdown << "\n# Scripting command reference\n\n";
     //Create content index
     for (unsigned int i=0; i<categories.size(); i++)
     {
       std::string anchor = categories[i] + "-commands";
       std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
-      std::cout <<  " - **[" + categories[i] + "](#" + anchor + ")**  \n";
+      markdown <<  " - **[" << categories[i] << "](#" << anchor << ")**  \n";
       std::vector<std::string> cmds = commandList(categories[i]);
       for (unsigned int j=0; j<cmds.size(); j++)
       {
         //std::cout <<  "    * [" + cmds[j] + "](#" + cmds[j] + ")\n";
         if (j > 0) std::cout << ", ";
-        std::cout <<  "[" + cmds[j] + "](#" + cmds[j] + ")";
+        markdown <<  "[" << cmds[j] << "](#" << cmds[j] + ")";
       }
-      std::cout << std::endl;
+      markdown << std::endl;
     }
     //Create content
     for (unsigned int i=0; i<categories.size(); i++)
     {
-      std::cout <<  "\n---\n## " + categories[i] + " commands:\n\n";
       std::vector<std::string> cmds = commandList(categories[i]);
+      markdown <<  "\n---\n## " << categories[i] << " commands:\n\n";
       for (unsigned int j=0; j<cmds.size(); j++)
-      {
-        std::cout << "\n### " + cmds[j] + "\n\n";
-        help = "";
-        helpCommand(cmds[j]);
-
-        std::string line;
-        std::stringstream ss(help);
-        while(std::getline(ss, line))
-          std::cout << " > " + line + "  \n";
-        std::cout << std::endl;
-      }
+        markdown << helpCommand(cmds[j]);
     }
+    std::cout << markdown.str();
+  }
+  else if (cmd == "docs:properties")
+  {
+    markdown << "\n# Property reference\n\n";
+    //Create content index
+    std::string TOC;
+    std::stringstream content;
+    std::string last;
+    for (json::iterator it = drawstate.properties.begin(); it != drawstate.properties.end(); ++it)
+    {
+      std::string name = it.key();
+      json prop = it.value();
+      std::string target = prop[PROPTARGET];
+      json defp = prop[PROPDEFAULT];
+      std::string def = defp.dump();
+      std::string type = prop[PROPTYPE];
+      std::string doc = prop[PROPDOC];
+
+      if (defp.is_number())
+      {
+        if (defp == FLT_MAX) def = "Infinity";
+        if (defp == -FLT_MAX) def = "-Infinity";
+      }
+
+      if (target != last)
+      {
+        std::string anchor = target;
+        std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
+        anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &ispunct), anchor.end());
+        anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &isspace), anchor.end());
+        TOC += " * [" + target + "](#" + anchor + ")\n";
+        content << "\n### " << target << "\n\n";
+        content << "| Property         | Type       | Default        | Description                               |\n";
+        content << "| ---------------- | ---------- | -------------- | ----------------------------------------- |\n";
+        last = target;
+      }
+      content << "|*" << std::left << std::setw(16) << name << "*";
+      content << "| " << std::left << std::setw(10) << type << " ";
+      content << "| " << std::left << std::setw(14) << def << " ";
+      content << "| " << doc << "|\n";
+    }
+    markdown << TOC << content.str();
+    std::cout << markdown.str();
+  }
+  else if (cmd.at(0) == '@')
+  {
+    std::string pname = cmd.substr(1);
+    json prop = drawstate.properties[pname];
+    if (prop.is_null()) return "";
+
+      std::string target = prop[PROPTARGET];
+      json defp = prop[PROPDEFAULT];
+      std::string def = defp.dump();
+      std::string type = prop[PROPTYPE];
+      std::string doc = prop[PROPDOC];
+
+      if (defp.is_number())
+      {
+        if (defp == FLT_MAX) def = "Infinity";
+        if (defp == -FLT_MAX) def = "-Infinity";
+      }
+
+    markdown << "\n### Property: \"" << pname + "\"\n\n";
+    markdown << " > " << doc << "  \n\n";
+    markdown << " - Data type: **" << type << "**  \n";
+    markdown << " - Applies to: *" << target << "*  \n";
+    markdown << " - Default: **" << def << "**  \n";
+    markdown << std::endl;
+    help = markdown.str();
   }
   else
   {
+    markdown << "\n### " << cmd << "\n\n";
+    help = "";
     parseCommand(cmd + " 1.0", true);
+    std::string line;
+    std::stringstream ss(help);
+    while(std::getline(ss, line))
+      markdown << " > " << line << "  \n";
+    markdown << std::endl;
   }
+
+  return markdown.str();
 }
 

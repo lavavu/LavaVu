@@ -114,7 +114,7 @@ public:
 
   void resetViews(bool autozoom=false);
 
-  void setObject(DrawingObject* target, std::string properties);
+  void setObject(DrawingObject* target, std::string properties, bool replace=false);
   DrawingObject* createObject(std::string properties);
   DrawingObject* getObject(const std::string& name);
   DrawingObject* getObject(int id=-1);
@@ -160,5 +160,7 @@ public:
   float imageDiff(std::string path1, std::string path2="", int downsample=4);
   void queueCommands(std::string cmds);
 
+  std::string helpCommand(std::string cmd="");
+  std::vector<std::string> commandList(std::string category="");
 };
 

@@ -2450,6 +2450,7 @@ void LavaVu::drawSceneBlended()
     drawScene();
     break;
   }
+
   if (!drawstate.omegalib)
   {
     std::string title = aview->properties["title"];
@@ -2967,11 +2968,15 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
-void LavaVu::setObject(DrawingObject* target, std::string properties)
+void LavaVu::setObject(DrawingObject* target, std::string properties, bool replace)
 {
   if (!amodel || !target) return;
-  //Parse and merge property strings
-  target->properties.parseSet(properties);
+  if (replace)
+    //Simply parse and replace property dict
+    target->properties.data = json::parse(properties);
+  else
+    //Parse and merge property strings
+    target->properties.parseSet(properties);
 }
 
 DrawingObject* LavaVu::createObject(std::string properties)
