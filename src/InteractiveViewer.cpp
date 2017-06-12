@@ -3391,7 +3391,7 @@ std::string LavaVu::helpCommand(std::string cmd)
       for (unsigned int j=0; j<cmds.size(); j++)
       {
         //std::cout <<  "    * [" + cmds[j] + "](#" + cmds[j] + ")\n";
-        if (j > 0) std::cout << ", ";
+        if (j > 0) markdown << ", ";
         markdown <<  "[" << cmds[j] << "](#" << cmds[j] + ")";
       }
       markdown << std::endl;
