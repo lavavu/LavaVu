@@ -58,7 +58,7 @@ public:
   std::vector<std::string> viewProps;
 
   //Property metadata / documentation
-  json properties;
+  std::vector<std::pair<std::string,json>> properties;
 
   int counter;
 

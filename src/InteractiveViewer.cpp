@@ -3413,10 +3413,10 @@ std::string LavaVu::helpCommand(std::string cmd)
     std::string TOC;
     std::stringstream content;
     std::string last;
-    for (json::iterator it = drawstate.properties.begin(); it != drawstate.properties.end(); ++it)
+    for (auto p : drawstate.properties)
     {
-      std::string name = it.key();
-      json prop = it.value();
+      std::string name = p.first;
+      json prop = p.second;
       std::string target = prop[PROPTARGET];
       json defp = prop[PROPDEFAULT];
       std::string def = defp.dump();
@@ -3441,7 +3441,7 @@ std::string LavaVu::helpCommand(std::string cmd)
         content << "| ---------------- | ---------- | -------------- | ----------------------------------------- |\n";
         last = target;
       }
-      content << "|*" << std::left << std::setw(16) << name << "*";
+      content << "|" << std::left << std::setw(18) << ("*" + name + "*");
       content << "| " << std::left << std::setw(10) << type << " ";
       content << "| " << std::left << std::setw(14) << def << " ";
       content << "| " << doc << "|\n";
@@ -3452,27 +3452,32 @@ std::string LavaVu::helpCommand(std::string cmd)
   else if (cmd.at(0) == '@')
   {
     std::string pname = cmd.substr(1);
-    json prop = drawstate.properties[pname];
-    if (prop.is_null()) return "";
-
-      std::string target = prop[PROPTARGET];
-      json defp = prop[PROPDEFAULT];
-      std::string def = defp.dump();
-      std::string type = prop[PROPTYPE];
-      std::string doc = prop[PROPDOC];
-
-      if (defp.is_number())
+    for (auto p : drawstate.properties)
+    {
+      if (p.first == pname)
       {
-        if (defp == FLT_MAX) def = "Infinity";
-        if (defp == -FLT_MAX) def = "-Infinity";
-      }
+        json prop = p.second;
+        std::string target = prop[PROPTARGET];
+        json defp = prop[PROPDEFAULT];
+        std::string def = defp.dump();
+        std::string type = prop[PROPTYPE];
+        std::string doc = prop[PROPDOC];
 
-    markdown << "\n### Property: \"" << pname + "\"\n\n";
-    markdown << " > " << doc << "  \n\n";
-    markdown << " - Data type: **" << type << "**  \n";
-    markdown << " - Applies to: *" << target << "*  \n";
-    markdown << " - Default: **" << def << "**  \n";
-    markdown << std::endl;
+        if (defp.is_number())
+        {
+          if (defp == FLT_MAX) def = "Infinity";
+          if (defp == -FLT_MAX) def = "-Infinity";
+        }
+
+        markdown << "\n### Property: \"" << pname + "\"\n\n";
+        markdown << " > " << doc << "  \n\n";
+        markdown << " - Data type: **" << type << "**  \n";
+        markdown << " - Applies to: *" << target << "*  \n";
+        markdown << " - Default: **" << def << "**  \n";
+        markdown << std::endl;
+        break;
+      }
+    }
     help = markdown.str();
   }
   else

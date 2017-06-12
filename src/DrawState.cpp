@@ -1164,7 +1164,7 @@ void DrawState::reset()
       "bounds",
       {
         json::array(),
-        "bounds",
+        "global",
         "object",
         "Read only bounding box (min/max)"
       }
@@ -1441,11 +1441,11 @@ void DrawState::reset()
     }
   };
 
-  for (json::iterator it = properties.begin(); it != properties.end(); ++it)
+  for (auto p : properties)
   {
     //Copy default values
-    std::string key = it.key();
-    defaults[key] = it.value()[PROPDEFAULT];
+    std::string key = p.first;
+    defaults[key] = p.second[PROPDEFAULT];
   }
 
 #ifdef DEBUG
