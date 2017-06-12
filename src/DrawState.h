@@ -315,6 +315,8 @@ public:
     defaults["offset"] = 0;
     // | colourbar | real | Margin to perpendicular edge in pixels or viewport size ratio, >0=towards left/bottom, 0=centre (horizontal only), <0=towards right/top
     defaults["position"] = 0;
+    // | colourbar | boolean | Set to true to label discrete bins rather than tick points
+    defaults["binlabels"] = false;
 
     // | colourmap | boolean | Set to true to use log scales
     defaults["logscale"] = false;

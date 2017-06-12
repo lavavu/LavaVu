@@ -429,31 +429,24 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   // Draw Colour Bar
   int count = colours.size();
   int idx, xpos;
+  int discretevals = 0;
   if (discrete)
   {
-    int vals =  maximum - minimum + 1;
+    discretevals =  maximum - minimum + 1;
     glShadeModel(GL_FLAT);
     glBegin(GL_QUAD_STRIP);
     xpos = startx;
     VERT2D(xpos, starty, vertical);
     VERT2D(xpos, starty + breadth, vertical);
-    for (idx = 0; idx < vals+1; idx++)
+    for (idx = 0; idx < discretevals+1; idx++)
     {
       int oldx = xpos;
-      float dval = idx - 1;
+      float dval = minimum + idx - 1;
       colour = get(dval);
       glColor4ubv(colour.rgba);
-      if (idx == vals)
-      {
-        VERT2D(xpos, starty, vertical);
-        VERT2D(xpos, starty + breadth, vertical);
-      }
-      else
-      {
-        xpos = startx + length * idx/(float)(vals-1);
-        VERT2D(oldx + 0.5 * (xpos - oldx), starty, vertical);
-        VERT2D(oldx + 0.5 * (xpos - oldx), starty + breadth, vertical);
-      }
+      xpos = startx + length * idx/(float)(discretevals);
+      VERT2D(oldx + (xpos - oldx), starty, vertical);
+      VERT2D(oldx + (xpos - oldx), starty + breadth, vertical);
     }
     glEnd();
     glShadeModel(GL_SMOOTH);
@@ -483,9 +476,12 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   bool printTicks = colourbarprops["printticks"];
   std::string format = colourbarprops["format"];
   float scaleval = colourbarprops["scalevalue"];
+  bool binLabels = colourbarprops["binlabels"];
 
   //Always show at least two ticks on a log scale
   if (log && ticks < 2) ticks = 2;
+  //Label interval bins
+  if (discrete && binLabels) ticks = discretevals-1;
   // No ticks if no range
   if (minimum == maximum) ticks = 0;
   for (unsigned int i = 0; i < ticks+2; i++)
@@ -568,6 +564,15 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
     if (i==ticks+1) xpos += border-1; //-1 tweak or will be offset from edge
 
     RECT2D(xpos, ts, xpos+1, te, vertical);
+
+    //Discrete: label bin not tick
+    if (binLabels)
+    {
+      if (i==ticks+1) break; //Draw one less label
+      xpos += 0.5*length/(float)ticks;
+      scaledPos = (float)i / (ticks);
+      tickValue = minimum + scaledPos * (maximum - minimum);
+    }
 
     /* Always print end values, print others if flag set */
     char string[20];
