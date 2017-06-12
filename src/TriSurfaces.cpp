@@ -600,7 +600,7 @@ void TriSurfaces::depthSort()
     {
       assert(tidx[i].vertex);
       fdistance = eyeDistance(view->modelView, tidx[i].vertex);
-      fdistance = min(maxdist, max(mindist, fdistance)); //Clamp to range
+      fdistance = std::min(maxdist, std::max(mindist, fdistance)); //Clamp to range
       tidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);
       //Reverse as radix sort is ascending and we want to draw by distance descending

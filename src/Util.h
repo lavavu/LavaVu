@@ -40,13 +40,6 @@
 
 #define INBUF_SIZE 65535
 
-#ifndef min
-#define min(a,b) ((a)<(b)?(a):(b))
-#endif
-#ifndef max
-#define max(a,b) ((a)>(b)?(a):(b))
-#endif
-
 #define frand (rand() / (float) RAND_MAX)
 
 //Fast random int with fixed seed for deterministic random sample (SEED should be uint32_t)
