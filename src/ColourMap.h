@@ -106,9 +106,22 @@ public:
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);
   void print();
+  void flip();
 
-  typedef std::map<std::string, std::string> CMap;
-  static CMap defaultMaps;
+  static std::vector<std::string> defaultMapNames;
+  static std::vector<std::string> defaultMaps;
+  static std::vector<std::string> getDefaultMapNames() {return defaultMapNames;}
+  static std::string getDefaultMap(std::string name)
+  {
+    auto it = std::find(ColourMap::defaultMapNames.begin(), ColourMap::defaultMapNames.end(), name);
+    if (it != ColourMap::defaultMapNames.end())
+    {
+      auto index = std::distance(ColourMap::defaultMapNames.begin(), it);
+      return ColourMap::defaultMaps[index];
+    }
+    return "";
+  }
+
 };
 
 #endif //ColourMap__

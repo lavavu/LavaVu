@@ -19,6 +19,7 @@
 #include "src/LavaVu.h"
 #include "src/ViewerTypes.h"
 #include "src/DrawingObject.h"
+#include "src/ColourMap.h"
 %}
 
 %include "exception.i"
@@ -62,6 +63,16 @@ class DrawingObject
 {
 public:
   DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
+  ColourMap* colourMap;
+};
+
+class ColourMap
+{
+public:
+  ColourMap(DrawState& drawstate, std::string name="", std::string props="");
+  void flip();
+  static std::vector<std::string> getDefaultMapNames();
+  static std::string getDefaultMap(std::string);
 };
 
 class GeomData
@@ -94,7 +105,8 @@ public:
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();
   int colourMap(std::string name, std::string colours="", std::string properties="");
-  DrawingObject* colourBar(DrawingObject* obj);
+  ColourMap* getColourMap(int id);
+  DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();
   std::string getFigures();
@@ -112,6 +124,7 @@ public:
   void loadColours(DrawingObject* target, std::vector <std::string> list);
   void label(DrawingObject* target, std::vector <std::string> labels);
 
+  void clearAll(bool objects=false, bool colourmaps=false);
   void clearObject(DrawingObject* target);
   void clearValues(DrawingObject* target, std::string label="");
   void clearData(DrawingObject* target, lucGeometryDataType type);

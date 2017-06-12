@@ -260,12 +260,7 @@ class Obj(object):
 
     def colourbar(self, name=None, **kwargs):
         #Create a new colourbar for this object
-        ref = self.instance.app.colourBar(self.ref)
-        if not ref: return
-        #Update list
-        self.instance._get() #Ensure in sync
-        #Setups up new object, all other args passed to properties dict
-        return self.instance._setupobject(ref, **kwargs)
+        return self.instance.colourbar(name, self.ref, **kwargs)
 
     def save(self, filename="state.json"):
         with open(filename, "w") as state_file:
@@ -296,28 +291,27 @@ class Obj(object):
             #Re-writes data to db for this object and geom type
             self.instance.app.update(self.ref, geomtypes[geomname], compress)
 
-    def getcolourmap(self, array=False):
+    def getcolourmap(self, string=True):
         #Return colourmap as a string/array that can be passed to re-create the map
         cmid = self["colourmap"]
         arr = []
-        if cmid < 0: return [] if array else ''
+        if cmid < 0: return '' if string else arr
 
         cmaps = self.instance.state["colourmaps"]
         cm = cmaps[cmid]
-        if array:
-            arrstr = '['
+        if string:
+            cmstr = '"""'
+            for c in cm["colours"]:
+                cmstr += "%6.4f=%s; " % (c["position"],c["colour"])
+            cmstr += '"""\n'
+            return cmstr
+        else:
             import re
             for c in cm["colours"]:
                 comp = re.findall(r"[\d\.]+", c["colour"])
                 comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
-                arrstr += "(%6.4f, %s),\n" % (c["position"], str(comp))
-            return arrstr[0:-2] + ']\n'
-        else:
-            cmstr = '"""\n'
-            for c in cm["colours"]:
-                cmstr += "%6.4f=%s\n" % (c["position"],c["colour"])
-            cmstr += '"""\n'
-            return cmstr
+                arr.append((c["position"], comp))
+            return arr
 
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         #Generate and return an isosurface object, 
@@ -670,21 +664,36 @@ class Viewer(object):
             obj = self.file(infile, kwargs)
         return obj
 
-    def colourmap(self, name, data, **kwargs):
-        if isinstance(data, list):
-            #Convert list map to string format
-            datastr = ""
-            for item in data:
-                if isinstance(item, list) or isinstance(item, tuple):
-                    datastr += str(item[0]) + '=' + str(item[1]) + '\n'
-                else:
-                    datastr += item + '\n'
-            data = datastr
+    def colourbar(self, name=None, oref=None, **kwargs):
+        #Create a new colourbar
+        ref = self.app.colourBar(oref)
+        if not ref: return
+        #Update list
+        self._get() #Ensure in sync
+        #Setups up new object, all other args passed to properties dict
+        return self._setupobject(ref, **kwargs)
+
+    def defaultcolourmaps(self):
+        return list(LavaVuPython.ColourMap.getDefaultMapNames())
+
+    def defaultcolourmap(self, name):
+        return LavaVuPython.ColourMap.getDefaultMap(name)
+
+    def colourmap(self, name, data, reverse=False, **kwargs):
+        if not isinstance(data, str):
+            #Convert iterable maps to string format
+            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
+            data = '\n'.join(data)
         #Load colourmap
-        return self.app.colourMap(name, data, str(json.dumps(kwargs)))
+        id = self.app.colourMap(name, data, str(json.dumps(kwargs)))
+        if reverse:
+            cmap = self.app.getColourMap(id)
+            cmap.flip()
+        return id
 
     def clear(self):
-        self.close()
+        self.clearAll(True, True)
+        self._get() #Ensure in sync
 
     def timesteps(self):
         return json.loads(self.app.getTimeSteps())

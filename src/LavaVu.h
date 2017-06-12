@@ -132,7 +132,7 @@ public:
   virtual void arguments(std::vector<std::string> args);
   //Execute function
   void run(std::vector<std::string> args={});
-  void clearAll(bool objects=false);
+  void clearAll(bool objects=false, bool colourmaps=false);
 
   std::string exportData(lucExportType type, DrawingObject* obj=NULL);
 
@@ -234,7 +234,8 @@ public:
   std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
   int colourMap(std::string name, std::string colours="", std::string properties="");
-  DrawingObject* colourBar(DrawingObject* obj);
+  ColourMap* getColourMap(int id);
+  DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();
   std::string getFigures();

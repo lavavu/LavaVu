@@ -367,9 +367,31 @@ class DrawingObject(object):
 
     def __init__(self, *args):
         _LavaVuPython.DrawingObject_swiginit(self, _LavaVuPython.new_DrawingObject(*args))
+    colourMap = _swig_property(_LavaVuPython.DrawingObject_colourMap_get, _LavaVuPython.DrawingObject_colourMap_set)
     __swig_destroy__ = _LavaVuPython.delete_DrawingObject
 DrawingObject_swigregister = _LavaVuPython.DrawingObject_swigregister
 DrawingObject_swigregister(DrawingObject)
+
+class ColourMap(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        _LavaVuPython.ColourMap_swiginit(self, _LavaVuPython.new_ColourMap(*args))
+    getDefaultMapNames = staticmethod(_LavaVuPython.ColourMap_getDefaultMapNames)
+    getDefaultMap = staticmethod(_LavaVuPython.ColourMap_getDefaultMap)
+    __swig_destroy__ = _LavaVuPython.delete_ColourMap
+ColourMap.flip = new_instancemethod(_LavaVuPython.ColourMap_flip, None, ColourMap)
+ColourMap_swigregister = _LavaVuPython.ColourMap_swigregister
+ColourMap_swigregister(ColourMap)
+
+def ColourMap_getDefaultMapNames():
+    return _LavaVuPython.ColourMap_getDefaultMapNames()
+ColourMap_getDefaultMapNames = _LavaVuPython.ColourMap_getDefaultMapNames
+
+def ColourMap_getDefaultMap(arg2):
+    return _LavaVuPython.ColourMap_getDefaultMap(arg2)
+ColourMap_getDefaultMap = _LavaVuPython.ColourMap_getDefaultMap
 
 class GeomData(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -404,6 +426,7 @@ LavaVu.web = new_instancemethod(_LavaVuPython.LavaVu_web, None, LavaVu)
 LavaVu.video = new_instancemethod(_LavaVuPython.LavaVu_video, None, LavaVu)
 LavaVu.defaultModel = new_instancemethod(_LavaVuPython.LavaVu_defaultModel, None, LavaVu)
 LavaVu.colourMap = new_instancemethod(_LavaVuPython.LavaVu_colourMap, None, LavaVu)
+LavaVu.getColourMap = new_instancemethod(_LavaVuPython.LavaVu_getColourMap, None, LavaVu)
 LavaVu.colourBar = new_instancemethod(_LavaVuPython.LavaVu_colourBar, None, LavaVu)
 LavaVu.setState = new_instancemethod(_LavaVuPython.LavaVu_setState, None, LavaVu)
 LavaVu.getState = new_instancemethod(_LavaVuPython.LavaVu_getState, None, LavaVu)
@@ -417,6 +440,7 @@ LavaVu.reloadObject = new_instancemethod(_LavaVuPython.LavaVu_reloadObject, None
 LavaVu.loadTriangles = new_instancemethod(_LavaVuPython.LavaVu_loadTriangles, None, LavaVu)
 LavaVu.loadColours = new_instancemethod(_LavaVuPython.LavaVu_loadColours, None, LavaVu)
 LavaVu.label = new_instancemethod(_LavaVuPython.LavaVu_label, None, LavaVu)
+LavaVu.clearAll = new_instancemethod(_LavaVuPython.LavaVu_clearAll, None, LavaVu)
 LavaVu.clearObject = new_instancemethod(_LavaVuPython.LavaVu_clearObject, None, LavaVu)
 LavaVu.clearValues = new_instancemethod(_LavaVuPython.LavaVu_clearValues, None, LavaVu)
 LavaVu.clearData = new_instancemethod(_LavaVuPython.LavaVu_clearData, None, LavaVu)

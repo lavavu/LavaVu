@@ -3010,35 +3010,36 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_DrawState swig_types[0]
-#define SWIGTYPE_p_DrawingObject swig_types[1]
-#define SWIGTYPE_p_GeomData swig_types[2]
-#define SWIGTYPE_p_LavaVu swig_types[3]
-#define SWIGTYPE_p_Model swig_types[4]
-#define SWIGTYPE_p_OpenGLViewer swig_types[5]
-#define SWIGTYPE_p_View swig_types[6]
-#define SWIGTYPE_p_allocator_type swig_types[7]
-#define SWIGTYPE_p_char swig_types[8]
-#define SWIGTYPE_p_difference_type swig_types[9]
-#define SWIGTYPE_p_int swig_types[10]
-#define SWIGTYPE_p_lucGeometryDataType swig_types[11]
-#define SWIGTYPE_p_lucGeometryType swig_types[12]
-#define SWIGTYPE_p_p_PyObject swig_types[13]
-#define SWIGTYPE_p_p_float swig_types[14]
-#define SWIGTYPE_p_p_unsigned_char swig_types[15]
-#define SWIGTYPE_p_p_unsigned_int swig_types[16]
-#define SWIGTYPE_p_size_type swig_types[17]
-#define SWIGTYPE_p_std__allocatorT_float_t swig_types[18]
-#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[19]
-#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[20]
-#define SWIGTYPE_p_std__invalid_argument swig_types[21]
-#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[22]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[23]
-#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[24]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[25]
-#define SWIGTYPE_p_value_type swig_types[26]
-static swig_type_info *swig_types[28];
-static swig_module_info swig_module = {swig_types, 27, 0, 0, 0, 0};
+#define SWIGTYPE_p_ColourMap swig_types[0]
+#define SWIGTYPE_p_DrawState swig_types[1]
+#define SWIGTYPE_p_DrawingObject swig_types[2]
+#define SWIGTYPE_p_GeomData swig_types[3]
+#define SWIGTYPE_p_LavaVu swig_types[4]
+#define SWIGTYPE_p_Model swig_types[5]
+#define SWIGTYPE_p_OpenGLViewer swig_types[6]
+#define SWIGTYPE_p_View swig_types[7]
+#define SWIGTYPE_p_allocator_type swig_types[8]
+#define SWIGTYPE_p_char swig_types[9]
+#define SWIGTYPE_p_difference_type swig_types[10]
+#define SWIGTYPE_p_int swig_types[11]
+#define SWIGTYPE_p_lucGeometryDataType swig_types[12]
+#define SWIGTYPE_p_lucGeometryType swig_types[13]
+#define SWIGTYPE_p_p_PyObject swig_types[14]
+#define SWIGTYPE_p_p_float swig_types[15]
+#define SWIGTYPE_p_p_unsigned_char swig_types[16]
+#define SWIGTYPE_p_p_unsigned_int swig_types[17]
+#define SWIGTYPE_p_size_type swig_types[18]
+#define SWIGTYPE_p_std__allocatorT_float_t swig_types[19]
+#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[20]
+#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[21]
+#define SWIGTYPE_p_std__invalid_argument swig_types[22]
+#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[23]
+#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[24]
+#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[25]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[26]
+#define SWIGTYPE_p_value_type swig_types[27]
+static swig_type_info *swig_types[29];
+static swig_module_info swig_module = {swig_types, 28, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3541,6 +3542,7 @@ SWIG_AsVal_ptrdiff_t (PyObject * obj, ptrdiff_t *val)
 #include "src/LavaVu.h"
 #include "src/ViewerTypes.h"
 #include "src/DrawingObject.h"
+#include "src/ColourMap.h"
 
 
 namespace swig {
@@ -13064,6 +13066,58 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_DrawingObject_colourMap_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  ColourMap *arg2 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"DrawingObject_colourMap_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_colourMap_set" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_ColourMap, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "DrawingObject_colourMap_set" "', argument " "2"" of type '" "ColourMap *""'"); 
+  }
+  arg2 = reinterpret_cast< ColourMap * >(argp2);
+  if (arg1) (arg1)->colourMap = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DrawingObject_colourMap_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  ColourMap *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_colourMap_get" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  result = (ColourMap *) ((arg1)->colourMap);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_delete_DrawingObject(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   DrawingObject *arg1 = (DrawingObject *) 0 ;
@@ -13100,6 +13154,271 @@ SWIGINTERN PyObject *DrawingObject_swigregister(PyObject *SWIGUNUSEDPARM(self), 
 }
 
 SWIGINTERN PyObject *DrawingObject_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  return SWIG_Python_InitShadowInstance(args);
+}
+
+SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  DrawState *arg1 = 0 ;
+  std::string arg2 ;
+  std::string arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+  }
+  arg1 = reinterpret_cast< DrawState * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_ColourMap" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_ColourMap" "', argument " "3"" of type '" "std::string""'"); 
+    }
+    arg3 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = (ColourMap *)new ColourMap(*arg1,arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  DrawState *arg1 = 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+  }
+  arg1 = reinterpret_cast< DrawState * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_ColourMap" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = (ColourMap *)new ColourMap(*arg1,arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  DrawState *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+  }
+  arg1 = reinterpret_cast< DrawState * >(argp1);
+  {
+    try {
+      result = (ColourMap *)new ColourMap(*arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_ColourMap(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"new_ColourMap",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 1) {
+    return _wrap_new_ColourMap__SWIG_2(self, argc, argv);
+  }
+  if (argc == 2) {
+    return _wrap_new_ColourMap__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_new_ColourMap__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_ColourMap'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ColourMap::ColourMap(DrawState &,std::string,std::string)\n"
+    "    ColourMap::ColourMap(DrawState &,std::string)\n"
+    "    ColourMap::ColourMap(DrawState &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_ColourMap_flip(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ColourMap *arg1 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ColourMap_flip" "', argument " "1"" of type '" "ColourMap *""'"); 
+  }
+  arg1 = reinterpret_cast< ColourMap * >(argp1);
+  {
+    try {
+      (arg1)->flip();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ColourMap_getDefaultMapNames(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::string,std::allocator< std::string > > result;
+  
+  if (!SWIG_Python_UnpackTuple(args,"ColourMap_getDefaultMapNames",0,0,0)) SWIG_fail;
+  {
+    try {
+      result = ColourMap::getDefaultMapNames();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = swig::from(static_cast< std::vector< std::string,std::allocator< std::string > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ColourMap_getDefaultMap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  PyObject *swig_obj[1] ;
+  std::string result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "ColourMap_getDefaultMap" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = ColourMap::getDefaultMap(arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_ColourMap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ColourMap *arg1 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_ColourMap, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_ColourMap" "', argument " "1"" of type '" "ColourMap *""'"); 
+  }
+  arg1 = reinterpret_cast< ColourMap * >(argp1);
+  {
+    try {
+      delete arg1;
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *ColourMap_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!SWIG_Python_UnpackTuple(args,(char*)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_ColourMap, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *ColourMap_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   return SWIG_Python_InitShadowInstance(args);
 }
 
@@ -14835,7 +15154,43 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_colourBar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  ColourMap *result = 0 ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_getColourMap",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_getColourMap" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      result = (ColourMap *)(arg1)->getColourMap(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_colourBar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -14843,10 +15198,9 @@ SWIGINTERN PyObject *_wrap_LavaVu_colourBar(PyObject *SWIGUNUSEDPARM(self), PyOb
   int res1 = 0 ;
   void *argp2 = 0 ;
   int res2 = 0 ;
-  PyObject *swig_obj[2] ;
   DrawingObject *result = 0 ;
   
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_colourBar",2,2,swig_obj)) SWIG_fail;
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_colourBar" "', argument " "1"" of type '" "LavaVu *""'"); 
@@ -14868,6 +15222,57 @@ SWIGINTERN PyObject *_wrap_LavaVu_colourBar(PyObject *SWIGUNUSEDPARM(self), PyOb
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_colourBar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  DrawingObject *result = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_colourBar" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      result = (DrawingObject *)(arg1)->colourBar();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_DrawingObject, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_colourBar(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_colourBar",0,2,argv))) SWIG_fail;
+  --argc;
+  if (argc == 1) {
+    return _wrap_LavaVu_colourBar__SWIG_1(self, argc, argv);
+  }
+  if (argc == 2) {
+    return _wrap_LavaVu_colourBar__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_colourBar'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::colourBar(DrawingObject *)\n"
+    "    LavaVu::colourBar()\n");
+  return 0;
 }
 
 
@@ -15546,6 +15951,136 @@ SWIGINTERN PyObject *_wrap_LavaVu_label(PyObject *SWIGUNUSEDPARM(self), PyObject
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_clearAll__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  bool arg2 ;
+  bool arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  bool val3 ;
+  int ecode3 = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_clearAll" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_clearAll" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  ecode3 = SWIG_AsVal_bool(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_clearAll" "', argument " "3"" of type '" "bool""'");
+  } 
+  arg3 = static_cast< bool >(val3);
+  {
+    try {
+      (arg1)->clearAll(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_clearAll__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_clearAll" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_clearAll" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  {
+    try {
+      (arg1)->clearAll(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_clearAll__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_clearAll" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      (arg1)->clearAll();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_clearAll(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_clearAll",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 1) {
+    return _wrap_LavaVu_clearAll__SWIG_2(self, argc, argv);
+  }
+  if (argc == 2) {
+    return _wrap_LavaVu_clearAll__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_LavaVu_clearAll__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_clearAll'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::clearAll(bool,bool)\n"
+    "    LavaVu::clearAll(bool)\n"
+    "    LavaVu::clearAll()\n");
+  return 0;
 }
 
 
@@ -18473,9 +19008,18 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"OpenGLViewer_swigregister", OpenGLViewer_swigregister, METH_VARARGS, NULL},
 	 { (char *)"OpenGLViewer_swiginit", OpenGLViewer_swiginit, METH_VARARGS, NULL},
 	 { (char *)"new_DrawingObject", _wrap_new_DrawingObject, METH_VARARGS, NULL},
+	 { (char *)"DrawingObject_colourMap_set", _wrap_DrawingObject_colourMap_set, METH_VARARGS, NULL},
+	 { (char *)"DrawingObject_colourMap_get", (PyCFunction)_wrap_DrawingObject_colourMap_get, METH_O, NULL},
 	 { (char *)"delete_DrawingObject", (PyCFunction)_wrap_delete_DrawingObject, METH_O, NULL},
 	 { (char *)"DrawingObject_swigregister", DrawingObject_swigregister, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_swiginit", DrawingObject_swiginit, METH_VARARGS, NULL},
+	 { (char *)"new_ColourMap", _wrap_new_ColourMap, METH_VARARGS, NULL},
+	 { (char *)"ColourMap_flip", (PyCFunction)_wrap_ColourMap_flip, METH_O, NULL},
+	 { (char *)"ColourMap_getDefaultMapNames", (PyCFunction)_wrap_ColourMap_getDefaultMapNames, METH_NOARGS, NULL},
+	 { (char *)"ColourMap_getDefaultMap", (PyCFunction)_wrap_ColourMap_getDefaultMap, METH_O, NULL},
+	 { (char *)"delete_ColourMap", (PyCFunction)_wrap_delete_ColourMap, METH_O, NULL},
+	 { (char *)"ColourMap_swigregister", ColourMap_swigregister, METH_VARARGS, NULL},
+	 { (char *)"ColourMap_swiginit", ColourMap_swiginit, METH_VARARGS, NULL},
 	 { (char *)"GeomData_type_set", _wrap_GeomData_type_set, METH_VARARGS, NULL},
 	 { (char *)"GeomData_type_get", (PyCFunction)_wrap_GeomData_type_get, METH_O, NULL},
 	 { (char *)"new_GeomData", _wrap_new_GeomData, METH_VARARGS, NULL},
@@ -18504,6 +19048,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_video", _wrap_LavaVu_video, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_defaultModel", (PyCFunction)_wrap_LavaVu_defaultModel, METH_O, NULL},
 	 { (char *)"LavaVu_colourMap", _wrap_LavaVu_colourMap, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_getColourMap", _wrap_LavaVu_getColourMap, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_colourBar", _wrap_LavaVu_colourBar, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_setState", _wrap_LavaVu_setState, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_getState", (PyCFunction)_wrap_LavaVu_getState, METH_O, NULL},
@@ -18517,6 +19062,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_loadTriangles", _wrap_LavaVu_loadTriangles, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_loadColours", _wrap_LavaVu_loadColours, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_label", _wrap_LavaVu_label, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_clearAll", _wrap_LavaVu_clearAll, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearObject", _wrap_LavaVu_clearObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearValues", _wrap_LavaVu_clearValues, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearData", _wrap_LavaVu_clearData, METH_VARARGS, NULL},
@@ -18550,6 +19096,7 @@ static PyMethodDef SwigMethods[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
+static swig_type_info _swigt__p_ColourMap = {"_p_ColourMap", "ColourMap *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_DrawState = {"_p_DrawState", "DrawState *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_DrawingObject = {"_p_DrawingObject", "DrawingObject *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_GeomData = {"_p_GeomData", "GeomData *", 0, 0, (void*)0, 0};
@@ -18579,6 +19126,7 @@ static swig_type_info _swigt__p_swig__SwigPyIterator = {"_p_swig__SwigPyIterator
 static swig_type_info _swigt__p_value_type = {"_p_value_type", "value_type *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
+  &_swigt__p_ColourMap,
   &_swigt__p_DrawState,
   &_swigt__p_DrawingObject,
   &_swigt__p_GeomData,
@@ -18608,6 +19156,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_value_type,
 };
 
+static swig_cast_info _swigc__p_ColourMap[] = {  {&_swigt__p_ColourMap, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_DrawState[] = {  {&_swigt__p_DrawState, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_DrawingObject[] = {  {&_swigt__p_DrawingObject, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GeomData[] = {  {&_swigt__p_GeomData, 0, 0, 0},{0, 0, 0, 0}};
@@ -18637,6 +19186,7 @@ static swig_cast_info _swigc__p_swig__SwigPyIterator[] = {  {&_swigt__p_swig__Sw
 static swig_cast_info _swigc__p_value_type[] = {  {&_swigt__p_value_type, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
+  _swigc__p_ColourMap,
   _swigc__p_DrawState,
   _swigc__p_DrawingObject,
   _swigc__p_GeomData,

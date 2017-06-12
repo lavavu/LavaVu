@@ -535,7 +535,7 @@ void LavaVu::run(std::vector<std::string> args)
   }
 }
 
-void LavaVu::clearAll(bool objects)
+void LavaVu::clearAll(bool objects, bool colourmaps)
 {
   //Clear all data
   if (amodel) amodel->clearObjects(true);
@@ -545,6 +545,11 @@ void LavaVu::clearAll(bool objects)
     if (aview) aview->objects.clear();
     if (amodel) amodel->objects.clear();
   }
+  if (colourmaps)
+  {
+    if (amodel) amodel->colourMaps.clear();
+  }
+
   aobject = NULL;
 }
 
@@ -2898,11 +2903,20 @@ int LavaVu::colourMap(std::string name, std::string colours, std::string propert
   return amodel->colourMaps.size()-1;
 }
 
+ColourMap* LavaVu::getColourMap(int id)
+{
+  if (!amodel || id < 0 || amodel->colourMaps.size() <= id) return NULL;
+  return amodel->colourMaps[id];
+}
+
 DrawingObject* LavaVu::colourBar(DrawingObject* obj)
 {
   //Add colour bar display to specified object
-  DrawingObject* cbar = addObject(new DrawingObject(drawstate, obj->name() + "_colourbar", "colourbar=1\n"));
-  cbar->properties.data["colourmap"] = obj->properties["colourmap"];
+  std::string name = "colourbar";
+  if (obj) name = obj->name() + "_colourbar";
+  DrawingObject* cbar = addObject(new DrawingObject(drawstate, name, "colourbar=1\n"));
+  if (obj)
+    cbar->properties.data["colourmap"] = obj->properties["colourmap"];
   return cbar;
 }
 
