@@ -499,7 +499,7 @@ class Colour(Control):
         html = html.replace('---ELID---', self.uniqueid())
         return html.replace('---ID---', str(self.id))
 
-class ColourMap(List):
+class ColourMap(Control):
     def __init__(self, target, *args, **kwargs):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
@@ -545,6 +545,18 @@ class ColourMap(List):
         html = html.replace('---SELID---', str(self.selected))
         html = html.replace('---ELID---', self.uniqueid())
         return html.replace('---ID---', str(self.id))
+
+class ColourMapList(List):
+    def __init__(self, target, selection=None, *args, **kwargs):
+        #Load maps list
+        if selection is None:
+            selection = target.instance.defaultcolourmaps()
+        options = [''] + selection
+
+        super(ColourMapList, self).__init__(target, options=options, command="reload", property="colourmap", *args, **kwargs)
+
+        #Replace action on the control
+        actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
 
 class ColourMaps(List):
     def __init__(self, target, *args, **kwargs):
