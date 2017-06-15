@@ -220,7 +220,7 @@ public:
   Geometry* lookupObjectContainer(DrawingObject* obj, std::string gtype="");
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   std::vector<std::string> commandList(std::string category="");
-  std::string helpCommand(std::string cmd="");
+  std::string helpCommand(std::string cmd="", bool heading=true);
   void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
@@ -240,6 +240,7 @@ public:
   std::string getState();
   std::string getFigures();
   std::string getTimeSteps();
+  void addTimeStep(int step);
 
   void setObject(DrawingObject* target, std::string properties, bool replace=false);
   DrawingObject* createObject(std::string properties);
@@ -249,7 +250,7 @@ public:
 
   void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
   void loadColours(DrawingObject* target, std::vector <std::string> list);
-  void label(DrawingObject* target, std::vector <std::string> labels);
+  void loadLabels(DrawingObject* target, std::vector <std::string> labels);
 
   void clearObject(DrawingObject* target);
   void clearValues(DrawingObject* target, std::string label="");
@@ -278,7 +279,7 @@ public:
   std::string imageJPEG(int width, int height, int quality=95);
   std::string imagePNG(int width, int height, int depth);
 
-  void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
+  void isoSurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);
   void update(DrawingObject* target, lucGeometryType type, bool compress=true);
 

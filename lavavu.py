@@ -227,7 +227,7 @@ class Obj(object):
             data = numpy.asarray(data, dtype=numpy.uint32)
         self._loadScalar(data, LavaVuPython.lucIndexData)
 
-    def texture(self, data, width, height, depth=4, flip=True):
+    def texture(self, data, width, height, channels=4, flip=True):
         if not isinstance(data, numpy.ndarray):
             data = numpy.asarray(data, dtype=numpy.uint32)
         if data.dtype == numpy.uint32:
@@ -238,7 +238,7 @@ class Obj(object):
     def label(self, data):
         if isinstance(data, str):
             data = [data]
-        self.instance.app.label(self.ref, data)
+        self.instance.app.loadLabels(self.ref, data)
 
     def colourmap(self, data, **kwargs):
         #Load colourmap and set property on this object
@@ -254,22 +254,20 @@ class Obj(object):
         self.instance.app.aobject = self.ref
     
     def file(self, *args, **kwargs):
-        #Load file with this object selected (import)
+        #Load file with this object selected
         self.select()
-        self.instance.file(*args, name=self.name(), **kwargs)
+        self.instance.file(*args, obj=self, **kwargs)
         self.instance.app.aobject = None
 
-    def colourbar(self, name=None, **kwargs):
+    def files(self, *args, **kwargs):
+        #Load files with this object selected
+        self.select()
+        self.instance.files(*args, obj=self, **kwargs)
+        self.instance.app.aobject = None
+
+    def colourbar(self, **kwargs):
         #Create a new colourbar for this object
-        return self.instance.colourbar(name, self.ref, **kwargs)
-
-    def save(self, filename="state.json"):
-        with open(filename, "w") as state_file:
-            state_file.write(self.app.getState())
-
-    def load(self, filename="state.json"):
-        with open(filename, "r") as state_file:
-            self.app.setState(state_file.read())
+        return self.instance.colourbar(self, **kwargs)
 
     def clear(self):
         self.instance.app.clearObject(self.ref)
@@ -283,14 +281,14 @@ class Obj(object):
             #Assume values by label (or all values if blank)
             self.instance.app.clearValues(self.ref, typename)
 
-    def update(self, geomname=None, compress=True):
+    def update(self, filter=None, compress=True):
         #Update object data at current timestep
-        if geomname is None:
+        if filter is None:
             #Re-writes all data to db for this object
             self.instance.app.update(self.ref, compress)
         else:
             #Re-writes data to db for this object and geom type
-            self.instance.app.update(self.ref, geomtypes[geomname], compress)
+            self.instance.app.update(self.ref, geomtypes[filter], compress)
 
     def getcolourmap(self, string=True):
         #Return colourmap as a string/array that can be passed to re-create the map
@@ -327,11 +325,11 @@ class Obj(object):
             #Convert existing object (self) set properties 
             self.instance._setupobject(self.ref, **kwargs)
         #Create surface, If requested, write the new data to the database
-        self.instance.isosurface(isobj.ref, self.ref, convert)
+        self.instance.isoSurface(isobj.ref, self.ref, convert)
         #Re-write modified types to the database
         if updatedb:
-            self.instance.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
-            self.instance.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
+            self.instance.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
+            self.instance.app.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
         return isobj
 
 #Wrapper dict+list of objects
@@ -343,8 +341,11 @@ class Objects(dict):
         self.instance = instance
 
     def _sync(self):
+        #Sync the object list with the viewer
         self.list = []
+        #Loop through retrieved object list
         for obj in self.instance.state["objects"]:
+            #Exists in our own list?
             if obj["name"] in self:
                 #Update object with new properties
                 self[obj["name"]]._setprops(obj)
@@ -359,9 +360,9 @@ class Objects(dict):
             #Save the object id and reference (use id # to get)
             _id = len(self.list)
             self.list[-1].id = _id
-            self.list[-1].ref = self.instance.getObject(_id)
+            self.list[-1].ref = self.instance.app.getObject(_id)
             
-        #Delete any objects from dict that are no longer present
+        #Delete any objects from stored dict that are no longer present
         for name in self.keys():
             if not self[name].found:
                 del self[name]
@@ -369,6 +370,7 @@ class Objects(dict):
                 self[name].found = False
 
     def __str__(self):
+        #Default string representation is a comma separated list
         return '[' + ', '.join(self.keys()) + ']'
 
 class Viewer(object):
@@ -389,7 +391,11 @@ class Viewer(object):
     >>> lv = lavavu.Viewer(background="white")
 
     """
-    def __init__(self, binpath=libpath, omegalib=False, *args, **kwargs):
+
+    def __init__(self, arglist=None, database=None, figure=None, timestep=None, 
+         port=0, verbose=False, interactive=False, hidden=True, cache=False,
+         quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False,
+         binpath=libpath, omegalib=False, *args, **kwargs):
         self.resolution = (640,480)
         self._ctr = 0
         self.app = None
@@ -397,7 +403,8 @@ class Viewer(object):
         self.state = {}
         try:
             self.app = LavaVuPython.LavaVu(binpath, omegalib)
-            self.setup(*args, **kwargs)
+            self.setup(arglist, database, figure, timestep, port, verbose, interactive, hidden, cache,
+                       quality, writeimage, resolution, script, initscript, usequeue, *args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
             control.htmlpath = os.path.join(binpath, "html")
@@ -407,6 +414,55 @@ class Viewer(object):
 
             #Create a control factory
             self.control = control.ControlFactory(self)
+
+            #Get available commands
+            self._cmdcategories = self.app.commandList()
+            self._cmds = {}
+            self._allcmds = []
+            for c in self._cmdcategories:
+                self._cmds[c] = self.app.commandList(c)
+                self._allcmds += self._cmds[c]
+
+            #Create command methods
+            for key in self._allcmds:
+                #Check if a method exists already
+                existing = getattr(self, key, None)
+                if existing:
+                    #Add the lavavu doc entry to the docstring
+                    doc = ""
+                    if existing.__doc__:
+                        doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
+                    doc += self.app.helpCommand(key, False)
+                    #These should all be wrapper for the matching lavavu commands
+                    #(Need to ensure we don't add methods that clash)
+                    existing.__func__.__doc__ = doc
+                else:
+                    #Use a closure to define a new method that runs this command
+                    def cmdmethod(name):
+                        def method(*args, **kwargs):
+                            self.commands(name + ' ' + ' '.join([str(a) for a in args]))
+                        return method
+
+                    #Create method that runs this command:
+                    method = cmdmethod(key)
+
+                    #Set docstring
+                    method.__doc__ = self.app.helpCommand(key, False)
+                    #Add the new method
+                    self.__setattr__(key, method)
+
+            #Add object by geom type shortcut methods
+            #(allows calling add by geometry type, eg: obj = lavavu.lines())
+            for key in ["labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"]:
+                #Use a closure to define a new method to call addtype with this type
+                def addmethod(name):
+                    def method(*args, **kwargs):
+                        return self._addtype(name, *args, **kwargs)
+                    return method
+                method = addmethod(key)
+                #Set docstring
+                method.__doc__ = "Add a " + key + " visualisation object, any data loaded into the object will be plotted as " + key
+                self.__setattr__(key, method)
 
         except RuntimeError,e:
             print "LavaVu Init error: " + str(e)
@@ -462,6 +518,9 @@ class Viewer(object):
         if arglist:
             args += arglist
         self.queue = usequeue
+
+        if verbose:
+            print args
 
         try:
             self.app.run(args)
@@ -536,28 +595,22 @@ class Viewer(object):
         else:
             self.app.parseCommands(cmds)
 
+    def help(self, cmd="", obj=None):
+        if obj is None: obj = self
+        md = ""
+        if not len(cmd):
+            md += _docmd(obj.__doc__)
+        elif cmd in dir(obj) and callable(getattr(obj, cmd)):
+            md = '### ' + cmd + '  \n'
+            md += _docmd(getattr(obj, cmd).__doc__)
+        else:
+            if cmd[0] != '@': cmd = '@' + cmd
+            md = self.app.helpCommand(cmd)
+        _markdown(md)
+
     #Callable with commands...
     def __call__(self, cmds):
         self.commands(cmds)
-
-    #Undefined methods supported directly as LavaVu commands
-    def __getattr__(self, key):
-        #__getattr__ called if no attrib/method found
-        def any_method(*args, **kwargs):
-            #If member function exists on LavaVu, call it
-            method = getattr(self.app, key, None)
-            if method and callable(method):
-                return method(*args, **kwargs)
-            #Check for add object by geom type shortcut
-            if key in ["labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"]:
-                #Allows calling add by geometry type, eg: obj = lavavu.lines()
-                return self._addtype(key, *args, **kwargs)
-            #Otherwise, pass args as command string
-            argstr = key
-            for arg in args:
-                argstr += " " + str(arg)
-            self.commands(argstr)
-        return any_method
 
     def _setupobject(self, ref=None, **kwargs):
         #Strip data keys from kwargs and put aside for loading
@@ -648,17 +701,18 @@ class Viewer(object):
                     return obj
         return self.objects.list[-1]
 
-    def file(self, filename, name=None, **kwargs):
+    def file(self, filename, obj=None, **kwargs):
         #Load a new object from file
         self.app.loadFile(filename)
 
-        #Get object by name (or last if none provided)
-        obj = self.getobject(name)
+        #Get last object added if none provided
+        if obj is None:
+            obj = self.getobject()
 
         #Setups up new object, all other args passed to properties dict
         return self._setupobject(obj.ref, **kwargs)
     
-    def files(self, filespec, name=None, **kwargs):
+    def files(self, filespec, obj=None, **kwargs):
         #Load list of files with glob
         filelist = glob.glob(filespec)
         obj = None
@@ -666,9 +720,12 @@ class Viewer(object):
             obj = self.file(infile, kwargs)
         return obj
 
-    def colourbar(self, name=None, oref=None, **kwargs):
+    def colourbar(self, obj=None, **kwargs):
         #Create a new colourbar
-        ref = self.app.colourBar(oref)
+        if obj is None:
+            ref = self.app.colourBar()
+        else:
+            ref = self.app.colourBar(obj.ref)
         if not ref: return
         #Update list
         self._get() #Ensure in sync
@@ -693,15 +750,23 @@ class Viewer(object):
             cmap.flip()
         return id
 
-    def clear(self):
-        self.clearAll(True, True)
+    def clear(self, objects=True, colourmaps=True):
+        self.app.clearAll(objects, colourmaps)
         self._get() #Ensure in sync
+
+    def store(self, filename="state.json"):
+        with open(filename, "w") as state_file:
+            state_file.write(self.app.getState())
+
+    def restore(self, filename="state.json"):
+        with open(filename, "r") as state_file:
+            self.app.setState(state_file.read())
 
     def timesteps(self):
         return json.loads(self.app.getTimeSteps())
 
-    def addstep(self):
-        return self.app.parseCommands("newstep")
+    def addstep(self, step=-1):
+        self.app.addTimeStep(step)
 
     def image(self, filename=None, resolution=None, transparent=False):
         if resolution is None:
@@ -715,12 +780,12 @@ class Viewer(object):
 
     def display(self, resolution=(640,480), transparent=False):
         """        
-        Shows the generated image inline within an ipython notebook.
+        Show the current display as inline image within an ipython notebook.
         
         If IPython is installed, displays the result image content inline
 
-        If IPython is not installed, this method will call the default image 
-        output routines to save the result with a default filename in the current directory
+        If IPython is not installed, will save the result with 
+        a default filename in the current directory
 
         """
         try:
@@ -739,8 +804,8 @@ class Viewer(object):
         
         If IPython is installed, displays the result WebGL content inline
 
-        If IPython is not installed, this method will call the default web 
-        output routines to save the result with a default filename in the current directory
+        If IPython is not installed, will save the result with
+        a default filename in the current directory
 
         """
 
@@ -771,8 +836,7 @@ class Viewer(object):
         
         If IPython is installed, displays the result video content inline
 
-        If IPython is not installed, this method will call the default video 
-        output routines to save the result in the current directory
+        If IPython is not installed, will save the result in the current directory
 
         """
 
@@ -809,6 +873,7 @@ class Viewer(object):
             cwd = os.getcwd()
             os.chdir(expectedPath)
             imagelist = glob.glob("*.png")
+            imagelist += glob.glob("*.jpg")
             imagelist.sort(key=os.path.getmtime)
             os.chdir(cwd)
         for f in imagelist:
@@ -834,7 +899,7 @@ class Viewer(object):
         if len(outfile) and not os.path.exists(outfile):
             raise RuntimeError("Generated image '%s' not found!" % outfile)
 
-        diff = self.imageDiff(outfile, expfile)
+        diff = self.app.imageDiff(outfile, expfile)
         result = diff <= tolerance
         reset = '\033[0m'
         red = '\033[91m'
@@ -896,9 +961,15 @@ class Viewer(object):
         #Also print in terminal for debugging
         self.commands("camera")
 
-    def view(self):
+    def getview(self):
+        if view is not None:
+            self.state["views"][0] = json.loads(view)
+        
         self._get()
-        return self.state["views"][0]
+        return json.dumps(self.state["views"][0])
+
+    def setview(self, view):
+        self.state["views"][0] = json.loads(view)
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
@@ -1024,7 +1095,7 @@ class GeomData(object):
 
 
 
-def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
+def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
     """
     Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
 
@@ -1037,11 +1108,15 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
     rot: rotations through spectrum, negative to reverse direction
     sat: colour saturation grayscale to full [0,1], >1 to oversaturate
     gamma: gamma correction [0,1]
-    alpha: set true for transparent to opaque alpha
+    alpha: Alpha [min,max] for transparency ramp
 
     """
 
     colours = []
+
+    if not isinstance(alpha,list) and not isinstance(alpha,tuple):
+        #Convert as boolean
+        if alpha: alpha = [0,1]
 
     for i in range(0,samples+1):
         fract = i / float(samples)
@@ -1056,7 +1131,9 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=False):
         r = max(min(r, 1.0), 0.0)
         g = max(min(g, 1.0), 0.0)
         b = max(min(b, 1.0), 0.0)
-        a = fract if alpha else 1.0
+        a = 1.0
+        if alpha:
+            a = alpha[0] + (alpha[1]-alpha[0]) * fract
 
         colours.append((fract, 'rgba(%d,%d,%d,%d)' % (r*0xff, g*0xff, b*0xff, a*0xff)))
 
@@ -1167,16 +1244,16 @@ def getVariableName(var):
             return name
     return None
 
-def printH5(f):
+def printH5(h5):
     """
     Print info about HDF5 data set (requires h5py)
     """
-    print "------ ",f.filename," ------"
-    ks = f.keys()
+    print "------ ",h5.filename," ------"
+    ks = h5.keys()
     for key in ks[:10]:
-        print f[key]
-    for item in f.attrs.keys():
-        print item + ":", f.attrs[item]
+        print h5[key]
+    for item in h5.attrs.keys():
+        print item + ":", h5.attrs[item]
 
 def rotation(x, y, z):
     """
@@ -1196,4 +1273,39 @@ def rotation(x, y, z):
             cosx*cosy*cosz + sinx*siny*sinz,
             sinx*cosy*cosz - cosy*siny*sinz,
             cosx*siny*cosz + sinx*cosy*sinz]
+
+def _docmd(doc):
+    #Convert a docstring to markdown
+    if doc is None: return ''
+    def codeblock(lines):
+        return ['```python'] + ['    ' + l for l in lines] + ['```']
+    md = []
+    code = []
+    for line in doc.split('\n'):
+        line = line.strip()
+        if len(line) and len(md) and line[0] == '-' and line == len(md[-1].strip()) * '-':
+            #Replace '-----' heading underline with '#### heading"
+            md[-1] = "#### " + md[-1]
+        elif line.startswith('>>> '):
+            code += [line[4:]]
+        else:
+            #Add code block
+            if len(code):
+                md += codeblock(code)
+                code = []
+            md += [line + '  '] #Preserve line breaks
+    if len(code):
+        md += codeblock(code)
+    return '\n'.join(md)
+
+def _markdown(mdstr):
+    #Display markdown in IPython if available,
+    #otherwise just print it
+    try:
+        if __IPYTHON__:
+            from IPython.display import display,Markdown
+            display(Markdown(mdstr))
+    except NameError, ImportError:
+        #Not in IPython, just print
+        print(mdstr)
 

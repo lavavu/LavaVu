@@ -15400,6 +15400,41 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_addTimeStep(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_addTimeStep",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_addTimeStep" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_addTimeStep" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      (arg1)->addTimeStep(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_resetViews__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -15984,7 +16019,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_label(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_loadLabels(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -15995,29 +16030,29 @@ SWIGINTERN PyObject *_wrap_LavaVu_label(PyObject *SWIGUNUSEDPARM(self), PyObject
   int res2 = 0 ;
   PyObject *swig_obj[3] ;
   
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_label",3,3,swig_obj)) SWIG_fail;
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_loadLabels",3,3,swig_obj)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_label" "', argument " "1"" of type '" "LavaVu *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_loadLabels" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
   res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_label" "', argument " "2"" of type '" "DrawingObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_loadLabels" "', argument " "2"" of type '" "DrawingObject *""'"); 
   }
   arg2 = reinterpret_cast< DrawingObject * >(argp2);
   {
     std::vector< std::string,std::allocator< std::string > > *ptr = (std::vector< std::string,std::allocator< std::string > > *)0;
     int res = swig::asptr(swig_obj[2], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_label" "', argument " "3"" of type '" "std::vector< std::string,std::allocator< std::string > >""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_loadLabels" "', argument " "3"" of type '" "std::vector< std::string,std::allocator< std::string > >""'"); 
     }
     arg3 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
   }
   {
     try {
-      (arg1)->label(arg2,arg3);
+      (arg1)->loadLabels(arg2,arg3);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
@@ -18093,7 +18128,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_isosurface__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_isoSurface__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -18111,27 +18146,27 @@ SWIGINTERN PyObject *_wrap_LavaVu_isosurface__SWIG_0(PyObject *SWIGUNUSEDPARM(se
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_isosurface" "', argument " "1"" of type '" "LavaVu *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_isoSurface" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
   res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_isosurface" "', argument " "2"" of type '" "DrawingObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_isoSurface" "', argument " "2"" of type '" "DrawingObject *""'"); 
   }
   arg2 = reinterpret_cast< DrawingObject * >(argp2);
   res3 = SWIG_ConvertPtr(swig_obj[2], &argp3,SWIGTYPE_p_DrawingObject, 0 |  0 );
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "LavaVu_isosurface" "', argument " "3"" of type '" "DrawingObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "LavaVu_isoSurface" "', argument " "3"" of type '" "DrawingObject *""'"); 
   }
   arg3 = reinterpret_cast< DrawingObject * >(argp3);
   ecode4 = SWIG_AsVal_bool(swig_obj[3], &val4);
   if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "LavaVu_isosurface" "', argument " "4"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "LavaVu_isoSurface" "', argument " "4"" of type '" "bool""'");
   } 
   arg4 = static_cast< bool >(val4);
   {
     try {
-      (arg1)->isosurface(arg2,arg3,arg4);
+      (arg1)->isoSurface(arg2,arg3,arg4);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
@@ -18143,7 +18178,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_isosurface__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_isoSurface__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -18158,22 +18193,22 @@ SWIGINTERN PyObject *_wrap_LavaVu_isosurface__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_isosurface" "', argument " "1"" of type '" "LavaVu *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_isoSurface" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
   res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_isosurface" "', argument " "2"" of type '" "DrawingObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_isoSurface" "', argument " "2"" of type '" "DrawingObject *""'"); 
   }
   arg2 = reinterpret_cast< DrawingObject * >(argp2);
   res3 = SWIG_ConvertPtr(swig_obj[2], &argp3,SWIGTYPE_p_DrawingObject, 0 |  0 );
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "LavaVu_isosurface" "', argument " "3"" of type '" "DrawingObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "LavaVu_isoSurface" "', argument " "3"" of type '" "DrawingObject *""'"); 
   }
   arg3 = reinterpret_cast< DrawingObject * >(argp3);
   {
     try {
-      (arg1)->isosurface(arg2,arg3);
+      (arg1)->isoSurface(arg2,arg3);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
@@ -18185,26 +18220,26 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_isosurface(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_isoSurface(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
   PyObject *argv[5] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_isosurface",0,4,argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_isoSurface",0,4,argv))) SWIG_fail;
   --argc;
   if (argc == 3) {
-    return _wrap_LavaVu_isosurface__SWIG_1(self, argc, argv);
+    return _wrap_LavaVu_isoSurface__SWIG_1(self, argc, argv);
   }
   if (argc == 4) {
-    return _wrap_LavaVu_isosurface__SWIG_0(self, argc, argv);
+    return _wrap_LavaVu_isoSurface__SWIG_0(self, argc, argv);
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_isosurface'.\n"
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_isoSurface'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    LavaVu::isosurface(DrawingObject *,DrawingObject *,bool)\n"
-    "    LavaVu::isosurface(DrawingObject *,DrawingObject *)\n");
+    "    LavaVu::isoSurface(DrawingObject *,DrawingObject *,bool)\n"
+    "    LavaVu::isoSurface(DrawingObject *,DrawingObject *)\n");
   return 0;
 }
 
@@ -18914,6 +18949,51 @@ SWIGINTERN PyObject *_wrap_LavaVu_helpCommand__SWIG_0(PyObject *SWIGUNUSEDPARM(s
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   std::string arg2 ;
+  bool arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val3 ;
+  int ecode3 = 0 ;
+  std::string result;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_helpCommand" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_helpCommand" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  ecode3 = SWIG_AsVal_bool(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_helpCommand" "', argument " "3"" of type '" "bool""'");
+  } 
+  arg3 = static_cast< bool >(val3);
+  {
+    try {
+      result = (arg1)->helpCommand(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_helpCommand__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  std::string arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   std::string result;
@@ -18947,7 +19027,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_helpCommand__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_helpCommand__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   void *argp1 = 0 ;
@@ -18976,22 +19056,26 @@ fail:
 
 SWIGINTERN PyObject *_wrap_LavaVu_helpCommand(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[3] = {
+  PyObject *argv[4] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_helpCommand",0,2,argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_helpCommand",0,3,argv))) SWIG_fail;
   --argc;
   if (argc == 1) {
-    return _wrap_LavaVu_helpCommand__SWIG_1(self, argc, argv);
+    return _wrap_LavaVu_helpCommand__SWIG_2(self, argc, argv);
   }
   if (argc == 2) {
+    return _wrap_LavaVu_helpCommand__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
     return _wrap_LavaVu_helpCommand__SWIG_0(self, argc, argv);
   }
   
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_helpCommand'.\n"
     "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::helpCommand(std::string,bool)\n"
     "    LavaVu::helpCommand(std::string)\n"
     "    LavaVu::helpCommand()\n");
   return 0;
@@ -19305,6 +19389,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_getState", (PyCFunction)_wrap_LavaVu_getState, METH_O, NULL},
 	 { (char *)"LavaVu_getFigures", (PyCFunction)_wrap_LavaVu_getFigures, METH_O, NULL},
 	 { (char *)"LavaVu_getTimeSteps", (PyCFunction)_wrap_LavaVu_getTimeSteps, METH_O, NULL},
+	 { (char *)"LavaVu_addTimeStep", _wrap_LavaVu_addTimeStep, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_resetViews", _wrap_LavaVu_resetViews, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_setObject", _wrap_LavaVu_setObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_createObject", _wrap_LavaVu_createObject, METH_VARARGS, NULL},
@@ -19312,7 +19397,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_reloadObject", _wrap_LavaVu_reloadObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_loadTriangles", _wrap_LavaVu_loadTriangles, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_loadColours", _wrap_LavaVu_loadColours, METH_VARARGS, NULL},
-	 { (char *)"LavaVu_label", _wrap_LavaVu_label, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_loadLabels", _wrap_LavaVu_loadLabels, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearAll", _wrap_LavaVu_clearAll, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearObject", _wrap_LavaVu_clearObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearValues", _wrap_LavaVu_clearValues, METH_VARARGS, NULL},
@@ -19333,7 +19418,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_imageBuffer", _wrap_LavaVu_imageBuffer, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_imageJPEG", _wrap_LavaVu_imageJPEG, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_imagePNG", _wrap_LavaVu_imagePNG, METH_VARARGS, NULL},
-	 { (char *)"LavaVu_isosurface", _wrap_LavaVu_isosurface, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_isoSurface", _wrap_LavaVu_isoSurface, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_update", _wrap_LavaVu_update, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_close", (PyCFunction)_wrap_LavaVu_close, METH_O, NULL},
 	 { (char *)"LavaVu_imageArray", _wrap_LavaVu_imageArray, METH_VARARGS, NULL},

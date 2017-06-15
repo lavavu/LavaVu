@@ -2379,7 +2379,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         isovals.push_back(fval);
         aobject->properties.data["isovalues"] = isovals;
       }
-      isosurface(aobject, aobject, false);
+      isoSurface(aobject, aobject, false);
       printMessage("Generating IsoSurface for object: %s", aobject->name().c_str());
     }
   }
@@ -3180,8 +3180,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    amodel->addTimeStep(amodel->step()+1);
-    amodel->setTimeStep(drawstate.now+1);
+    int step;
+    if (!parsed.has(step, "newstep"))
+        step = 0;
+    addTimeStep(step);
 
     //Don't record
     return false;
@@ -3337,9 +3339,9 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
-    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "autorotate",
-     "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip", "zerocam", "reset", "bounds", "camera",
-     "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort", "rotation", "translation"},
+    {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
+     "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
+     "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
     {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",
      "vertex", "normal", "vector", "value", "colour", "isosurface"},
     {"background", "alpha", "axis", "scaling", "rulers",
@@ -3355,7 +3357,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   return std::vector<std::string>();
 }
 
-std::string LavaVu::helpCommand(std::string cmd)
+std::string LavaVu::helpCommand(std::string cmd, bool heading)
 {
   //This list of categories and commands must be maintained along with the individual command help strings
   std::stringstream markdown;
@@ -3469,7 +3471,7 @@ std::string LavaVu::helpCommand(std::string cmd)
           if (defp == -FLT_MAX) def = "-Infinity";
         }
 
-        markdown << "\n### Property: \"" << pname + "\"\n\n";
+        if (heading) markdown << "\n### Property: \"" << pname + "\"\n\n";
         markdown << " > " << doc << "  \n\n";
         markdown << " - Data type: **" << type << "**  \n";
         markdown << " - Applies to: *" << target << "*  \n";
@@ -3482,7 +3484,7 @@ std::string LavaVu::helpCommand(std::string cmd)
   }
   else
   {
-    markdown << "\n### " << cmd << "\n\n";
+    if (heading) markdown << "\n### " << cmd << "\n\n";
     help = "";
     parseCommand(cmd + " 1.0", true);
     std::string line;

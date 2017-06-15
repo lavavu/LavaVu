@@ -202,7 +202,7 @@ WindowInteractor.prototype.get_state = function(onget) {
         onget(data);
       }
     };
-    kernel.execute('lavavu.control.windows[' + this.id + '].getState()', {iopub: callbacks}, {silent: false});
+    kernel.execute('lavavu.control.windows[' + this.id + '].app.getState()', {iopub: callbacks}, {silent: false});
   }
   else {
     var url = getUrl() + "/getstate"

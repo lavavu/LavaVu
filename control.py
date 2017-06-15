@@ -61,7 +61,8 @@ def export(html):
             #Set a property
             target = act["args"][0]
             # - Globally
-            if hasattr(target, "binpath"):
+            #if hasattr(target, "binpath"):
+            if target.__class__.__name__ == 'Viewer':
                 prop = act["args"][1]
                 actfunction = 'select; ' + prop + '=" + value + "'
                 if len(act["args"]) > 2:

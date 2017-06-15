@@ -111,6 +111,7 @@ public:
   std::string getState();
   std::string getFigures();
   std::string getTimeSteps();
+  void addTimeStep(int step);
 
   void resetViews(bool autozoom=false);
 
@@ -122,7 +123,7 @@ public:
 
   void loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split=0);
   void loadColours(DrawingObject* target, std::vector <std::string> list);
-  void label(DrawingObject* target, std::vector <std::string> labels);
+  void loadLabels(DrawingObject* target, std::vector <std::string> labels);
 
   void clearAll(bool objects=false, bool colourmaps=false);
   void clearObject(DrawingObject* target);
@@ -151,7 +152,7 @@ public:
   std::string imageJPEG(int width, int height, int quality=95);
   std::string imagePNG(int width, int height, int depth);
 
-  void isosurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
+  void isoSurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);
   void update(DrawingObject* target, lucGeometryType type, bool compress=true);
 
@@ -160,7 +161,7 @@ public:
   float imageDiff(std::string path1, std::string path2="", int downsample=4);
   void queueCommands(std::string cmds);
 
-  std::string helpCommand(std::string cmd="");
+  std::string helpCommand(std::string cmd="", bool heading=true);
   std::vector<std::string> commandList(std::string category="");
 };
 

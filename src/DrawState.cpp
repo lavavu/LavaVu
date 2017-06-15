@@ -1165,7 +1165,7 @@ void DrawState::reset()
       {
         json::array(),
         "global",
-        "object",
+        "real[][]",
         "Read only bounding box (min/max)"
       }
     },

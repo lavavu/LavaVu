@@ -2968,6 +2968,14 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
+void LavaVu::addTimeStep(int step)
+{
+  if (step < 0)
+    step = amodel->step()+1;
+  amodel->addTimeStep(step);
+  amodel->setTimeStep(step);
+}
+
 void LavaVu::setObject(DrawingObject* target, std::string properties, bool replace)
 {
   if (!amodel || !target) return;
@@ -3044,7 +3052,7 @@ void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
   }
 }
 
-void LavaVu::label(DrawingObject* target, std::vector <std::string> labels)
+void LavaVu::loadLabels(DrawingObject* target, std::vector <std::string> labels)
 {
   Geometry* container = lookupObjectContainer(target);
   if (container)
@@ -3234,7 +3242,7 @@ std::string LavaVu::imagePNG(int width, int height, int depth)
   return retImg;
 }
 
-void LavaVu::isosurface(DrawingObject* target, DrawingObject* source, bool clearvol)
+void LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, bool clearvol)
 {
   //Create an isosurface from selected volume object
   //If "clearvol" is true, volume data will be deleted leaving only the surface triangles
