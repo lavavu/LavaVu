@@ -78,6 +78,11 @@ class Obj(object):
 
     New objects are also created using viewer methods
     
+    Parameters
+    ----------
+    **kwargs:
+        Initial set of properties passed to the created object
+
     Example
     -------
         
@@ -89,6 +94,16 @@ class Obj(object):
     >>> objects = lv.getobjects()
     >>> print objects
 
+    Object properties can be passed in when created or set by using as a dictionary:
+
+    >>> obj = lv.points(pointtype="sphere")
+    >>> obj["pointsize"] = 5
+
+    A list of available properties can be found here: https://github.com/OKaluza/LavaVu/wiki/Property-Reference
+    or by using the online help:
+
+    >>> obj.help('opacity')
+
     """
     def __init__(self, idict, instance, *args, **kwargs):
         self.dict = idict
@@ -98,6 +113,14 @@ class Obj(object):
         self.control = control.ControlFactory(self)
 
     def name(self):
+        """
+        Get the object's name property
+
+        Returns
+        -------
+        name: str
+            The name of the object
+        """
         return str(self.dict["name"])
 
     def _setprops(self, props):
@@ -128,18 +151,121 @@ class Obj(object):
 
     #Interface for setting filters
     def include(self, *args, **kwargs):
+        """
+        Filter data by including a range of values
+        shortcut for:
+            filter(... , out=False)
+
+        Parameters
+        ----------
+        label: str
+            Data label to filter on
+        values: number,list,tuple
+            value range single value, list or tuple
+            if a single value the filter applies to only this value: x == value
+            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
+            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+
+        Returns
+        -------
+        filter: int
+            The filter id created
+        """
         return self.filter(*args, out=False, **kwargs)
 
     def includemap(self, *args, **kwargs):
+        """
+        Filter data by including a range of mapped values
+        shortcut for:
+            filter(... , out=False, map=True)
+
+        Parameters
+        ----------
+        label: str
+            Data label to filter on
+        values: number,list,tuple
+            value range single value, list or tuple
+            if a single value the filter applies to only this value: x == value
+            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
+            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+
+        Returns
+        -------
+        filter: int
+            The filter id created
+        """
         return self.filter(*args, out=False, map=True, **kwargs)
 
     def exclude(self, *args, **kwargs):
+        """
+        Filter data by excluding a range of values
+        shortcut for:
+            filter(... , out=True)
+
+        Parameters
+        ----------
+        label: str
+            Data label to filter on
+        values: number,list,tuple
+            value range single value, list or tuple
+            if a single value the filter applies to only this value: x == value
+            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
+            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+
+        Returns
+        -------
+        filter: int
+            The filter id created
+        """
         return self.filter(*args, out=True, **kwargs)
             
     def excludemap(self, *args, **kwargs):
+        """
+        Filter data by excluding a range of mapped values
+        shortcut for:
+            filter(... , out=True, map=True)
+
+        Parameters
+        ----------
+        label: str
+            Data label to filter on
+        values: number,list,tuple
+            value range single value, list or tuple
+            if a single value the filter applies to only this value: x == value
+            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
+            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+
+        Returns
+        -------
+        filter: int
+            The filter id created
+        """
         return self.filter(*args, out=True, map=True, **kwargs)
 
     def filter(self, label, values, out=False, map=False):
+        """
+        Filter data by including a range of values
+
+        Parameters
+        ----------
+        label: str
+            Data label to filter on
+        values: number,list,tuple
+            value range single value, list or tuple
+            if a single value the filter applies to only this value: x == value
+            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
+            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+        out: boolean
+            Set this flag to filter out values instead of including them
+        map: boolean
+            Set this flag to filter by normalised values mapped to [0,1]
+            instead of actual min/max of the data range
+
+        Returns
+        -------
+        filter: int
+            The filter id created
+        """
         #Pass a single value to include/exclude exact value
         #Pass a tuple for exclusive range (min < val < max)
         # list for inclusive range (min <= val <= max)
@@ -154,14 +280,42 @@ class Obj(object):
         return len(self["filters"])-1
 
     def datasets(self):
+        """
+        Retrieve available data sets on this object
+
+        Returns
+        -------
+        data: str
+            A string representation of the data objects available
+        """
         #Return json data set list
         #TODO: use Geometry wrapper?
         return json.dumps(self.dict["data"])
 
     def append(self):
+        """
+        Append a new data element to the object
+
+        Object data is sometimes dependant on individual elements to
+        determine where one part ends and another starts, eg: line segments, grids
+
+        This allows manually closing the active element so all new data is loaded into a new element
+        """
+        #TODO: use ref? requires new function in LavaVu
         self.instance.append(self.id) #self.name())
 
     def triangles(self, data, split=0):
+        """
+        Load triangle data,
+
+        This is the same as loading vertices into a triangle mesh object but allows
+        decomposing the mesh into smaller triangles with the split option
+
+        Parameters
+        ----------
+        split: int
+            Split triangles this many times on loading
+        """
         if split > 1:
             self.instance.app.loadTriangles(self.ref, data, self.name(), split)
         else:
@@ -185,23 +339,89 @@ class Obj(object):
         self.instance.app.arrayFloat(self.ref, data.ravel(), dtype)
 
     def data(self, filter=None):
+        """
+        Return internal geometry data
+        Returns a Geometry() object that can be iterated through containing all data elements
+        Elements contain vertex/normal/value etc. data as numpy arrays
+
+        Parameters
+        ----------
+        filter: str
+            Limit the data returned to this type
+            (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
+
+        Returns
+        -------
+        data: Geometry
+            An object holding the data elements retrieved
+
+        Example
+        -------
+        >>> data = obj.data()
+        >>> for el in obj.data:
+        >>>     print el
+        """
         return Geometry(self, filter)
 
     def vertices(self, data=None):
+        """
+        Load vertex data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy float32 array of vertices
+        """
         self._loadVector(data, LavaVuPython.lucVertexData)
 
     def normals(self, data):
+        """
+        Load normal data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy float32 array of normals
+        """
         self._loadVector(data, LavaVuPython.lucNormalData)
 
     def vectors(self, data):
+        """
+        Load vector data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy float32 array of vectors
+        """
         self._loadVector(data, LavaVuPython.lucVectorData)
 
     def values(self, data, label="default"):
+        """
+        Load value data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy float32 array of values
+        label: str
+            Label for this data set
+        """
         if not isinstance(data, numpy.ndarray) or data.dtype != numpy.float32:
             data = numpy.asarray(data, dtype=numpy.float32)
         self.instance.app.arrayFloat(self.ref, data.ravel(), label)
 
     def colours(self, data):
+        """
+        Load colour data for object
+
+        Parameters
+        ----------
+        data: str,list,array
+            Pass a list or numpy uint32 array of colours
+            if a string or list of strings is provided, colours are parsed as html colour string values
+            if a numpy array is passed, colours are loaded as 4 byte ARGB unsigned integer values
+        """
         if isinstance(data, numpy.ndarray):
             self._loadScalar(data, LavaVuPython.lucRGBAData)
             return
@@ -222,12 +442,40 @@ class Obj(object):
             self.colours(data)
 
     def indices(self, data):
+        """
+        Load index data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy uint32 array of indices
+            indices are loaded as 32 bit unsigned integer values
+        """
+
         #Accepts only uint32 indices
         if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint32:
             data = numpy.asarray(data, dtype=numpy.uint32)
         self._loadScalar(data, LavaVuPython.lucIndexData)
 
     def texture(self, data, width, height, channels=4, flip=True):
+        """
+        Load raw texture data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy uint32 or uint8 array
+            texture data is loaded as raw image data
+        width: int
+            image width in pixels
+        height: int
+            image height in pixels
+        channels: int
+            colour channels/depth in bytes (1=luminance, 3=RGB, 4=RGBA)
+        flip: boolean
+            flip the texture vertically after loading
+            (default is enabled as usually required for OpenGL but can be disabled)
+        """
         if not isinstance(data, numpy.ndarray):
             data = numpy.asarray(data, dtype=numpy.uint32)
         if data.dtype == numpy.uint32:
@@ -236,11 +484,37 @@ class Obj(object):
             self.instance.app.textureUChar(self.ref, data.ravel(), width, height, depth, flip)
 
     def label(self, data):
+        """
+        Load label data for object
+
+        Parameters
+        ----------
+        data: list,str
+            Pass a label or list of labels to be applied, one per vertex
+        """
         if isinstance(data, str):
             data = [data]
         self.instance.app.loadLabels(self.ref, data)
 
     def colourmap(self, data, **kwargs):
+        """
+        Load colour map data for object
+
+        Parameters
+        ----------
+        data: list,str
+            Provided colourmap data can be
+            - a string,
+            - list of colour strings,
+            - list of position,value tuples
+            - or a built in colourmap name
+            Creates a colourmap named objectname-default if it doesn't exist already
+
+        Returns
+        -------
+        colourmap: int
+            The id of the colourmap loaded/created
+        """
         #Load colourmap and set property on this object
         cmap = self.instance.colourmap(self.name() + '-default', data, **kwargs)
         self["colourmap"] = cmap
@@ -248,31 +522,77 @@ class Obj(object):
         return cmap
 
     def reload(self):
+        """
+        Fully reload the object's data, recalculating all parameters such as colours
+        that may be cached on the GPU, required after changing some properties
+        so the changes are reflected in the visualisation
+        """
         self.instance.app.reloadObject(self.ref)
 
     def select(self):
+        """
+        Set this object as the selected object
+        """
         self.instance.app.aobject = self.ref
     
     def file(self, *args, **kwargs):
-        #Load file with this object selected
+        """
+        Load data from a file into this object
+
+        Parameters
+        ----------
+        filename: str
+            Name of the file to load
+        """
+        #Load file with this object selected (import)
         self.select()
         self.instance.file(*args, obj=self, **kwargs)
         self.instance.app.aobject = None
 
     def files(self, *args, **kwargs):
-        #Load files with this object selected
+        """
+        Load data from a series of files into this object (using wildcards or a list)
+
+        Parameters
+        ----------
+        files: str
+            Specification of the files to load
+        """
+        #Load file with this object selected (import)
         self.select()
         self.instance.files(*args, obj=self, **kwargs)
         self.instance.app.aobject = None
 
     def colourbar(self, **kwargs):
+        """
+        Create a new colourbar using this object's colourmap
+
+        Returns
+        -------
+        colourbar: Obj
+            The colourbar object created
+        """
         #Create a new colourbar for this object
         return self.instance.colourbar(self, **kwargs)
 
     def clear(self):
+        """
+        Clear all visualisation data from this object
+        """
         self.instance.app.clearObject(self.ref)
 
     def cleardata(self, typename=""):
+        """
+        Clear specific visualisation data/values from this object
+
+        Parameters
+        ----------
+        typename: str
+            Optional filter naming type of data to be cleared,
+            Either a built in type:
+              (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
+            or a user defined data label
+        """
         if typename in datatypes:
             #Found data type name
             dtype = datatypes[typename]
@@ -282,6 +602,17 @@ class Obj(object):
             self.instance.app.clearValues(self.ref, typename)
 
     def update(self, filter=None, compress=True):
+        """
+        Write the objects's visualisation data back to the database
+
+        Parameters
+        ----------
+        filter: str
+            Optional filter to type of geometry to be updated, if omitted all will be written
+            (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
+        compress: boolean
+            Use zlib compression when writing the geometry data
+        """
         #Update object data at current timestep
         if filter is None:
             #Re-writes all data to db for this object
@@ -291,6 +622,23 @@ class Obj(object):
             self.instance.app.update(self.ref, geomtypes[filter], compress)
 
     def getcolourmap(self, string=True):
+        """
+        Return the colour map data from the object as a string or list
+        Either return format can be used to create/modify a colourmap
+        with colourmap()
+
+        Parameters
+        ----------
+        string: boolean
+            The default is to return the data as a string of colours separated by semi-colons
+            To instead return a list of (position,[R,G,B,A]) tuples for easier automated processing in python,
+            set this to False
+
+        Returns
+        -------
+        mapdata: str/list
+            The formatted colourmap data
+        """
         #Return colourmap as a string/array that can be passed to re-create the map
         cmid = self["colourmap"]
         arr = []
@@ -313,6 +661,30 @@ class Obj(object):
             return arr
 
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
+        """
+        Generate an isosurface from a volume data set using the marching cubes algorithm
+
+        Parameters
+        ----------
+        name: str
+            Name of the created object, automatically assigned if not provided
+        convert: bool
+            Setting this flag to True will replace the existing volume object with the
+            newly created isosurface by deleting the volume data and loading the mesh
+            data into the preexisting object
+        updatedb: bool
+            Setting this flag to True will write the newly created/modified data
+            to the database when done
+        compress: boolean
+            Use zlib compression when writing the geometry data
+        **kwargs:
+            Initial set of properties passed to the created object
+
+        Returns
+        -------
+        obj: Obj
+            The isosurface object created/converted
+        """
         #Generate and return an isosurface object, 
         #pass properties as kwargs (eg: isovalues=[])
         isobj = self
@@ -331,6 +703,18 @@ class Obj(object):
             self.instance.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
             self.instance.app.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
         return isobj
+
+    def help(self, cmd=""):
+        """
+        Get help on an object method or property
+
+        Parameters
+        ----------
+        cmd: str
+            Command to get help with, if ommitted displays general introductory help
+            If cmd is a property or is preceded with '@' will display property help
+        """
+        self.instance.help(cmd, self)
 
 #Wrapper dict+list of objects
 class Objects(dict):
@@ -375,20 +759,80 @@ class Objects(dict):
 
 class Viewer(object):
     """  
-    The Viewer class provides an interface to a LavaVu session
+    *The Viewer class provides an interface to a LavaVu session*
     
     Parameters
     ----------
-    **kwargs: 
-        Global properties passed to the created viewer
+    arglist: list
+        list of additional init arguments to pass
+    database: str
+        initial database (or model) file to load
+    figure: int
+        initial figure id to display
+    timestep: int
+        initial timestep to display
+    port: int
+        web server port
+    verbose: boolean
+        verbose output to command line for debugging
+    interactive: boolean
+        begin in interactive mode, opens gui window and passes control to event loop immediately
+    hidden: boolean
+        begin hidden, for offscreen rendering or web browser control
+    cache: boolean
+        cache all model timesteps in loaded database, everything loaded into memory on startup
+        (assumes enough memory is available)
+    quality: integer
+        Render sampling quality, render 2^N times larger image and downsample output
+        For anti-aliasing image rendering where GPU multisample anti-aliasing is not available
+    writeimage: boolean
+        Write images and quit, create images for all figures/timesteps in loaded database then exit
+    resolution: list, tuple
+        Window/image resolution in pixels [x,y]
+    script: list
+        List of script commands to run after initialising
+    initscript: boolean
+        Set to False to disable loading any "init.script" file found in current directory
+    usequeue: boolean
+        Set to True to add all commands to a background queue for processing rather than
+        immediate execution
+    **kwargs:
+        Remaining keyword args will be  passed to the created viewer
+        and parsed into the initial set of global properties
             
     Example
     -------
         
-    Create a viewer, set the background colour to white
+    Create a viewer, setting the initial background colour to white
     
     >>> import lavavu
     >>> lv = lavavu.Viewer(background="white")
+
+    Objects can be added by loading files:
+
+    >>> obj = lv.file('model.obj')
+
+    Or creating empty objects and loading data:
+
+    >>> obj = lv.points('mypoints')
+    >>> obj.vertices([0,0,0], [1,1,1])
+
+    Viewer commands can be called as methods on the viewer object:
+
+    >>> lv.rotate('x', 45)
+
+    Viewer properties can be set by using it like a dictionary:
+
+    >>> lv["background"] = "grey50"
+
+    A list of available commands and properties can be found in the wiki:
+    https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
+    https://github.com/OKaluza/LavaVu/wiki/Property-Reference
+
+    or by using the online help:
+
+    >>> lv.help('rotate')
+    >>> lv.help('opacity')
 
     """
 
@@ -396,6 +840,18 @@ class Viewer(object):
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
          quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False,
          binpath=libpath, omegalib=False, *args, **kwargs):
+        """
+        Create and init viewer instance
+
+        Parameters
+        ----------
+        (see Viewer class docs for setup args)
+        binpath: str
+            Override the executable path
+        omegalib: boolean
+            For use in VR mode, disables some conflicting functionality
+            and parsed into the initial set of global properties
+        """
         self.resolution = (640,480)
         self._ctr = 0
         self.app = None
@@ -471,6 +927,15 @@ class Viewer(object):
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
          quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
+        """
+        Execute the viewer, initialising with provided arguments and
+        entering event loop if requested
+
+        Parameters
+        ----------
+        see __init__ docs
+
+        """
         #Convert options to args
         global default_args
         args = default_args[:]
@@ -584,10 +1049,29 @@ class Viewer(object):
         self.app.setState(json.dumps(self.state))
 
     def getobjects(self):
+        """
+        Get the list of active objects
+
+        Returns
+        -------
+        objects: Objects(dict)
+            An dictionary wrapper containing the list of available visualisation objects
+            Can be printed, iterated or accessed as a dictionary by object name
+        """
         self._get()
         return self.objects
 
     def commands(self, cmds):
+        """
+        Execute viewer commands
+        https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
+        These commands can also be executed individually by calling them as methods of the viewer object
+
+        Parameters
+        ----------
+        cmds: list, str
+            Command(s) to execute
+        """
         if isinstance(cmds, list):
             cmds = '\n'.join(cmds)
         if self.queue: #Thread safe queue requested
@@ -596,6 +1080,15 @@ class Viewer(object):
             self.app.parseCommands(cmds)
 
     def help(self, cmd="", obj=None):
+        """
+        Get help on a command or property
+
+        Parameters
+        ----------
+        cmd: str
+            Command to get help with, if ommitted displays general introductory help
+            If cmd is a property or is preceded with '@' will display property help
+        """
         if obj is None: obj = self
         md = ""
         if not len(cmd):
@@ -608,8 +1101,20 @@ class Viewer(object):
             md = self.app.helpCommand(cmd)
         _markdown(md)
 
-    #Callable with commands...
     def __call__(self, cmds):
+        """
+        Run a LavaVu script
+
+        Parameters
+        ----------
+        cmds: str
+            String containing commands to run, separate commands with semi-colons"
+
+        Example
+        -------
+        >>> lv('reset; translate -2')
+
+        """
         self.commands(cmds)
 
     def _setupobject(self, ref=None, **kwargs):
@@ -645,6 +1150,20 @@ class Viewer(object):
         return obj
 
     def add(self, name, **kwargs):
+        """
+        Add a visualisation object
+
+        Parameters
+        ----------
+        name: str
+            Name to apply to the created object
+            If an object of this name exists, it will be returned instead of created
+
+        Returns
+        -------
+        obj: Obj
+            The object created
+        """
         if isinstance(self.objects, Objects) and name in self.objects:
             print "Object exists: " + name
             return self.objects[name]
@@ -681,6 +1200,22 @@ class Viewer(object):
         return obj
 
     def getobject(self, identifier=None):
+        """
+        Get a visualisation object
+
+        Parameters
+        ----------
+        identifier: str,int,Object (Optional)
+            If a string, lookup an object by name
+            If a number, lookup object by index
+            If an object reference, lookup the Object by reference
+            If omitted, return the last object in the list
+
+        Returns
+        -------
+        obj: Obj
+            The object located
+        """
         #Return object by name/ref or last in list if none provided
         #Get state and update object list
         self._get()
@@ -702,6 +1237,18 @@ class Viewer(object):
         return self.objects.list[-1]
 
     def file(self, filename, obj=None, **kwargs):
+        """
+        Load a database or model file
+
+        Parameters
+        ----------
+        filename: str
+            Name of the file to load
+        obj: Obj
+            Vis object to load the file data into,
+            if not provided a default will be created
+        """
+
         #Load a new object from file
         self.app.loadFile(filename)
 
@@ -713,6 +1260,17 @@ class Viewer(object):
         return self._setupobject(obj.ref, **kwargs)
     
     def files(self, filespec, obj=None, **kwargs):
+        """
+        Load data from a series of files (using wildcards or a list)
+
+        Parameters
+        ----------
+        files: str
+            Specification of the files to load
+        obj: Obj
+            Vis object to load the data into,
+            if not provided a default will be created
+        """
         #Load list of files with glob
         filelist = glob.glob(filespec)
         obj = None
@@ -721,6 +1279,19 @@ class Viewer(object):
         return obj
 
     def colourbar(self, obj=None, **kwargs):
+        """
+        Create a new colourbar
+
+        Parameters
+        ----------
+        obj: Obj (optional)
+            Vis object the colour bar applies to
+
+        Returns
+        -------
+        colourbar: Obj
+            The colourbar object created
+        """
         #Create a new colourbar
         if obj is None:
             ref = self.app.colourBar()
@@ -733,12 +1304,54 @@ class Viewer(object):
         return self._setupobject(ref, **kwargs)
 
     def defaultcolourmaps(self):
+        """
+        Get the list of default colour map names
+
+        Returns
+        -------
+        colourmaps: list of str
+            Names of all predefined colour maps
+        """
         return list(LavaVuPython.ColourMap.getDefaultMapNames())
 
     def defaultcolourmap(self, name):
+        """
+        Get content of a default colour map
+
+        Parameters
+        ----------
+        name: str
+            Name of the built in colourmap to return
+
+        Returns
+        -------
+        data: str
+            Colourmap data formatted as a string
+        """
         return LavaVuPython.ColourMap.getDefaultMap(name)
 
     def colourmap(self, name, data, reverse=False, **kwargs):
+        """
+        Load or create a colour map
+
+        Parameters
+        ----------
+        name: str
+            Name of the colourmap, if this colourmap name is found
+            the data will replace the existing colourmap, otherwise
+            a new colourmap will be created
+        data: list,str
+            Provided colourmap data can be
+            - a string,
+            - list of colour strings,
+            - list of position,value tuples
+            - or a built in colourmap name
+
+        Returns
+        -------
+        colourmap: int
+            The id of the colourmap loaded/created
+        """
         if not isinstance(data, str):
             #Convert iterable maps to string format
             data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
@@ -751,29 +1364,107 @@ class Viewer(object):
         return id
 
     def clear(self, objects=True, colourmaps=True):
+        """
+        Clears all data from the visualisation
+        Including objects and colourmaps by default
+
+        objects: boolean
+            including all objects, if set to False will clear the objects
+            but not delete them
+        colourmaps: boolean
+            including all colourmaps
+
+        """
         self.app.clearAll(objects, colourmaps)
         self._get() #Ensure in sync
 
     def store(self, filename="state.json"):
+        """
+        Store current visualisation state as a json file
+        (Includes all properties, colourmaps and defined objects but not their geometry data)
+
+        Parameters
+        ----------
+        filename: str
+            Name of the file to save
+
+        """
         with open(filename, "w") as state_file:
             state_file.write(self.app.getState())
 
     def restore(self, filename="state.json"):
+        """
+        Restore visualisation state from a json file
+        (Includes all properties, colourmaps and defined objects but not their geometry data)
+
+        Parameters
+        ----------
+        filename: str
+            Name of the file to load
+
+        """
         with open(filename, "r") as state_file:
             self.app.setState(state_file.read())
 
     def timesteps(self):
+        """
+        Retrieve the time step data from loaded model
+
+        Returns
+        -------
+        timesteps: list
+            A list of all available time steps
+        """
         return json.loads(self.app.getTimeSteps())
 
     def addstep(self, step=-1):
+        """
+        Add a new time step
+
+        Parameters
+        ----------
+        step: int (Optional)
+            Time step number, default is current + 1
+        """
         self.app.addTimeStep(step)
 
     def image(self, filename=None, resolution=None, transparent=False):
+        """
+        Save or get an image of current display
+
+        Parameters
+        ----------
+        filename: str
+            Name of the file to save (should be .jpg or .png),
+            if not provided the image will be returned as a base64 encoded data url
+        resolution: list, tuple
+            Image resolution in pixels [x,y]
+        transparent: boolean
+            Creates a PNG image with a transparent background
+
+        Returns
+        -------
+        image: str
+            filename of saved image or encoded image as string data
+        """
         if resolution is None:
             return self.app.image(filename, 0, 0, 0, transparent);
         return self.app.image(filename, resolution[0], resolution[1], 0, transparent);
 
     def frame(self, resolution=None):
+        """
+        Get an image frame, returns current display as base64 encoded jpeg data url
+
+        Parameters
+        ----------
+        resolution: list, tuple
+            Image resolution in pixels [x,y]
+
+        Returns
+        -------
+        image: str
+            encoded image as string data
+        """
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], 90);
@@ -787,6 +1478,12 @@ class Viewer(object):
         If IPython is not installed, will save the result with 
         a default filename in the current directory
 
+        Parameters
+        ----------
+        resolution: list, tuple
+            Image resolution in pixels [x,y]
+        transparent: boolean
+            Creates a PNG image with a transparent background
         """
         try:
             if __IPYTHON__:
@@ -807,6 +1504,10 @@ class Viewer(object):
         If IPython is not installed, will save the result with
         a default filename in the current directory
 
+        Parameters
+        ----------
+        resolution: list, tuple
+            Display window resolution in pixels [x,y]
         """
 
         try:
@@ -838,6 +1539,15 @@ class Viewer(object):
 
         If IPython is not installed, will save the result in the current directory
 
+
+        Parameters
+        ----------
+        filename: str
+            Name of the file to save, if not provided a default will be used
+        fps: int
+            Frames to output per second of video
+        resolution: list, tuple
+            Video resolution in pixels [x,y]
         """
 
         try:
@@ -862,11 +1572,45 @@ class Viewer(object):
             pass
 
     def imageBytes(self, width=640, height=480, channels=3):
+        """
+        Return raw image data
+
+        Parameters
+        ----------
+        width: int
+            Image width in pixels
+        height: int
+            Image height in pixels
+        channels: int
+            colour channels/depth in bytes (1=luminance, 3=RGB, 4=RGBA)
+
+        Returns
+        -------
+        image: array
+            Numpy array of the image data requested
+        """
         img = numpy.zeros(shape=(width,height,channels), dtype=numpy.uint8)
         self.imageBuffer(img)
         return img
 
     def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
+        """
+        Compare a list of images to expected images for testing
+
+        Parameters
+        ----------
+        imagelist: list
+            List of test images to compare with expected results
+            If not provided, will process all jpg and png images in working directory
+        tolerance: float
+            Tolerance level of difference before a comparison fails, default 0.0001
+        expectedPath: str
+            Where to find the expected result images (should have the same filenames as output images)
+        outputPath: str
+            Where to find the output images
+        clear: boolean
+            If the test passes the output images will be deleted, set to False to disable deletion
+        """
         results = []
         if not imagelist:
             #Default to all png images in expected dir
@@ -893,6 +1637,24 @@ class Viewer(object):
         print "-------------\nTests Passed!\n-------------"
 
     def testimage(self, expfile, outfile, tolerance=TOL_DEFAULT):
+        """
+        Compare two images
+
+        Parameters
+        ----------
+        expfile: str
+            Expected result image
+        outfile: str
+            Test output image
+        tolerance: float
+            Tolerance level of difference before a comparison fails, default 0.0001
+
+        Returns
+        -------
+        result: boolean
+            True if test passes, difference <= tolerance
+            False if test fails, difference > tolerance
+        """
         if not os.path.exists(expfile):
             print "Test skipped, Reference image '%s' not found!" % expfile
             return 0
@@ -930,6 +1692,14 @@ class Viewer(object):
         return result
 
     def serve(self):
+        """
+        Run a web server in python (experimental)
+        This uses server.py to launch a simple web server
+        Not threaded like the mongoose server used in C++ to is limited
+
+        Currently recommended to use threaded web server by supplying
+        port=#### argument when creating viewer instead
+        """
         if not self.control: return
         try:
             import server
@@ -943,17 +1713,36 @@ class Viewer(object):
             pass
 
     def window(self):
+        """
+        Create and display an interactive viewer instance
+
+        This shows an active viewer window to the visualisation
+        that can be controlled with the mouse or html widgets
+
+        """
         if not self.control: return
-        #Create and display Interactive viewer instance
         self.control.Window()
         self.control.show()
 
     def redisplay(self):
+        """
+        Update the display of any interactive viewer
+
+        This is required after changing vis properties from python
+        so the changes are reflected in the viewer
+
+        """
         #Issue redisplay to active viewer
         if not self.control: return
         self.control.redisplay()
 
     def camera(self):
+        """
+        Get the current camera viewpoint
+
+        Displays camera in python code form that can be pasted and
+        executed to restore the same camera view
+        """
         self._get()
         me = getVariableName(self)
         print me + ".translation(" + str(self.state["views"][0]["translate"])[1:-1] + ")"
@@ -962,6 +1751,14 @@ class Viewer(object):
         self.commands("camera")
 
     def getview(self):
+        """
+        Get current view settings
+
+        Returns
+        -------
+        view: str
+            json string containing saved view settings
+        """
         if view is not None:
             self.state["views"][0] = json.loads(view)
         
@@ -969,6 +1766,14 @@ class Viewer(object):
         return json.dumps(self.state["views"][0])
 
     def setview(self, view):
+        """
+        Set current view settings
+
+        Parameters
+        ----------
+        view: str
+            json string containing saved view settings
+        """
         self.state["views"][0] = json.loads(view)
 
 #Wrapper for list of geomdata objects
@@ -1051,8 +1856,24 @@ class GeomData(object):
         self.instance = instance
 
     def get(self, typename):
-        #Warning... other than for internal use, should always make copies of data
-        # there is no guarantee memory will not be released
+        """
+        Get a data element from a set of geometry data
+
+        Warning... other than for internal use, should always
+        immediately make copies of the data
+        there is no guarantee memory will not be released!
+
+        Parameters
+        ----------
+        typename: str
+            Type of data to be retrieved
+            (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
+
+        Returns
+        -------
+        data: array
+            Numpy array view of the data set requested
+        """
         array = None
         if typename in datatypes:
             if typename in ["luminance", "rgb"]:
@@ -1071,11 +1892,39 @@ class GeomData(object):
         return array
 
     def copy(self, typename):
+        """
+        Get a copy of a data element from a set of geometry data
+
+        This is a safe version of get() that copies the data
+        before returning so can be assured it will remain valid
+
+        Parameters
+        ----------
+        typename: str
+            Type of data to be retrieved
+            (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
+
+        Returns
+        -------
+        data: array
+            Numpy array containing a copy of the data set requested
+        """
         #Safer data access, makes a copy to ensure we still have access 
         #to the data no matter what viewer does with it
         return numpy.copy(self.get(typename))
 
     def set(self, typename, array):
+        """
+        Set a data element in a set of geometry data
+
+        Parameters
+        ----------
+        typename: str
+            Type of data to set
+            (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
+        array: array
+            Numpy array holding the data to be written
+        """
         if typename in datatypes:
             if typename in ["luminance", "rgb"]:
                 #Set uint8 data
@@ -1103,13 +1952,25 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
     "A colour scheme for the display of astronomical intensity images"
     http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
 
-    samples: number of colour samples to produce
-    start: start colour [0,3] 1=red,2=green,3=blue
-    rot: rotations through spectrum, negative to reverse direction
-    sat: colour saturation grayscale to full [0,1], >1 to oversaturate
-    gamma: gamma correction [0,1]
-    alpha: Alpha [min,max] for transparency ramp
+    Parameters
+    ----------
+    samples: int
+        Number of colour samples to produce
+    start: float
+        Start colour [0,3] 1=red,2=green,3=blue
+    rot: float
+        Rotations through spectrum, negative to reverse direction
+    sat: float
+        Colour saturation grayscale to full [0,1], >1 to oversaturate
+    gamma: float
+        Gamma correction [0,1]
+    alpha: list,tuple
+        Alpha [min,max] for transparency ramp
 
+    Returns
+    -------
+    colours: list
+        List of colours ready to be loaded by colourmap()
     """
 
     colours = []
@@ -1142,6 +2003,17 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
 def loadCPT(fn, positions=True):
     """
     Create a colourmap from a CPT colour table file
+
+    Parameters
+    ----------
+    positions: boolean
+        Set this to false to ignore any positional data and
+        load only the colours from the file
+
+    Returns
+    -------
+    colours: string
+        Colour string ready to be loaded by colourmap()
     """
     result = ""
     values = []
@@ -1236,6 +2108,16 @@ def loadCPT(fn, positions=True):
 def getVariableName(var):
     """
     Attempt to find the name of a variable from the main module namespace
+
+    Parameters
+    ----------
+    var: object
+        The variable in question
+
+    Returns
+    -------
+    name: str
+        Name of the variable
     """
     import __main__ as main_mod
     for name in dir(main_mod):
@@ -1247,6 +2129,11 @@ def getVariableName(var):
 def printH5(h5):
     """
     Print info about HDF5 data set (requires h5py)
+
+    Parameters
+    ----------
+    h5: hdf5 object
+        HDF5 Dataset loaded with h5py
     """
     print "------ ",h5.filename," ------"
     ks = h5.keys()
@@ -1258,6 +2145,20 @@ def printH5(h5):
 def rotation(x, y, z):
     """
     Get a rotation quaternion from x/y/z Euler angles
+
+    Parameters
+    ----------
+    x: float
+        Rotation about X axis in degrees
+    y: float
+        Rotation about Y axis in degrees
+    z: float
+        Rotation about Z axis in degrees
+
+    Returns
+    -------
+    quaternion: list
+        4D quaternion representation of the rotation
     """
     deg2rad = math.pi / 180
     x = x*0.5*deg2rad
