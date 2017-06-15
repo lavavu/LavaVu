@@ -15157,10 +15157,10 @@ fail:
 SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
-  int arg2 ;
+  unsigned int arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  int val2 ;
+  unsigned int val2 ;
   int ecode2 = 0 ;
   PyObject *swig_obj[2] ;
   ColourMap *result = 0 ;
@@ -15171,11 +15171,11 @@ SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *SWIGUNUSEDPARM(self), P
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
-  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(swig_obj[1], &val2);
   if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_getColourMap" "', argument " "2"" of type '" "int""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "LavaVu_getColourMap" "', argument " "2"" of type '" "unsigned int""'");
   } 
-  arg2 = static_cast< int >(val2);
+  arg2 = static_cast< unsigned int >(val2);
   {
     try {
       result = (ColourMap *)(arg1)->getColourMap(arg2);

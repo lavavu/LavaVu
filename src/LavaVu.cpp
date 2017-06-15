@@ -2905,9 +2905,9 @@ int LavaVu::colourMap(std::string name, std::string colours, std::string propert
   return amodel->colourMaps.size()-1;
 }
 
-ColourMap* LavaVu::getColourMap(int id)
+ColourMap* LavaVu::getColourMap(unsigned int id)
 {
-  if (!amodel || id < 0 || amodel->colourMaps.size() <= id) return NULL;
+  if (!amodel || amodel->colourMaps.size() <= id) return NULL;
   return amodel->colourMaps[id];
 }
 

@@ -105,7 +105,7 @@ public:
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();
   int colourMap(std::string name, std::string colours="", std::string properties="");
-  ColourMap* getColourMap(int id);
+  ColourMap* getColourMap(unsigned int id);
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();
