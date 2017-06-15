@@ -697,7 +697,7 @@ class Obj(object):
             #Convert existing object (self) set properties 
             self.instance._setupobject(self.ref, **kwargs)
         #Create surface, If requested, write the new data to the database
-        self.instance.isoSurface(isobj.ref, self.ref, convert)
+        self.instance.app.isoSurface(isobj.ref, self.ref, convert)
         #Re-write modified types to the database
         if updatedb:
             self.instance.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
