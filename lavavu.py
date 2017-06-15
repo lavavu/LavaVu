@@ -479,9 +479,9 @@ class Obj(object):
         if not isinstance(data, numpy.ndarray):
             data = numpy.asarray(data, dtype=numpy.uint32)
         if data.dtype == numpy.uint32:
-            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, depth, flip)
+            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip)
         elif data.dtype == numpy.uint8:
-            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, depth, flip)
+            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip)
 
     def label(self, data):
         """
@@ -887,6 +887,7 @@ class Viewer(object):
                     #Add the lavavu doc entry to the docstring
                     doc = ""
                     if existing.__doc__:
+                        if "Wraps LavaVu" in existing.__doc__: continue #Already modified
                         doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
                     doc += self.app.helpCommand(key, False)
                     #These should all be wrapper for the matching lavavu commands
@@ -896,7 +897,8 @@ class Viewer(object):
                     #Use a closure to define a new method that runs this command
                     def cmdmethod(name):
                         def method(*args, **kwargs):
-                            self.commands(name + ' ' + ' '.join([str(a) for a in args]))
+                            args = [name] + [str(a) for a in args]
+                            self.commands(' '.join(args))
                         return method
 
                     #Create method that runs this command:
@@ -917,7 +919,7 @@ class Viewer(object):
                     return method
                 method = addmethod(key)
                 #Set docstring
-                method.__doc__ = "Add a " + key + " visualisation object, any data loaded into the object will be plotted as " + key
+                method.__doc__ = "Add a " + key + " visualisation object,\nany data loaded into the object will be plotted as " + key
                 self.__setattr__(key, method)
 
         except RuntimeError,e:
@@ -1428,6 +1430,18 @@ class Viewer(object):
         """
         self.app.addTimeStep(step)
 
+    def render(self):
+        """        
+        Render a new frame, explicit display update
+        """
+        self.app.render()
+
+    def init(self):
+        """        
+        Re-initialise the viewer window
+        """
+        self.app.init()
+
     def image(self, filename=None, resolution=None, transparent=False):
         """
         Save or get an image of current display
@@ -1759,9 +1773,6 @@ class Viewer(object):
         view: str
             json string containing saved view settings
         """
-        if view is not None:
-            self.state["views"][0] = json.loads(view)
-        
         self._get()
         return json.dumps(self.state["views"][0])
 
@@ -1774,7 +1785,7 @@ class Viewer(object):
         view: str
             json string containing saved view settings
         """
-        self.state["views"][0] = json.loads(view)
+        self.state["views"][0] = convert_keys(json.loads(view))
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
@@ -2176,32 +2187,44 @@ def rotation(x, y, z):
             cosx*siny*cosz + sinx*cosy*sinz]
 
 def _docmd(doc):
-    #Convert a docstring to markdown
+    """Convert a docstring to markdown"""
     if doc is None: return ''
     def codeblock(lines):
         return ['```python'] + ['    ' + l for l in lines] + ['```']
     md = []
     code = []
+    indent = 0
+    lastindent = 0
     for line in doc.split('\n'):
+        indent = len(line)
         line = line.strip()
+        indent -= len(line)
         if len(line) and len(md) and line[0] == '-' and line == len(md[-1].strip()) * '-':
             #Replace '-----' heading underline with '#### heading"
             md[-1] = "#### " + md[-1]
         elif line.startswith('>>> '):
+            #Python code
             code += [line[4:]]
         else:
             #Add code block
             if len(code):
                 md += codeblock(code)
                 code = []
-            md += [line + '  '] #Preserve line breaks
+            elif len(md) and indent == lastindent + 4:
+                #Indented block, preserve indent
+                md += ['&nbsp;&nbsp;&nbsp;&nbsp;' + line + '  ']
+                #Keep indenting at this level until indent level changes
+                continue
+            else:
+                md += [line + '  '] #Preserve line breaks
+        lastindent = indent
     if len(code):
         md += codeblock(code)
     return '\n'.join(md)
 
 def _markdown(mdstr):
-    #Display markdown in IPython if available,
-    #otherwise just print it
+    """Display markdown in IPython if available,
+    otherwise just print it"""
     try:
         if __IPYTHON__:
             from IPython.display import display,Markdown

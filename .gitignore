@@ -17,4 +17,6 @@ archive/*
 Images/*
 html/*
 .ipynb_checkpoints/*
+notebooks/.ipynb_checkpoints/*
+notebooks/html/*
 compiler_flags

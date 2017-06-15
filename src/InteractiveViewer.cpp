@@ -676,7 +676,7 @@ bool LavaVu::parseCommands(std::string cmd)
 bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 {
   if (cmd.length() == 0) return false;
-  if (viewer->isopen)
+  if (viewer->isopen && !gethelp)
     viewer->display(false); //Display without redraw, ensures correct context active
   //Trim leading whitespace
   size_t pos = cmd.find_first_not_of(" \t\n\r");
@@ -687,7 +687,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   if (cmd.length() == 0 || cmd.at(0) == '#') return false;
 
   //Save in history
-  history.push_back(cmd);
+  if (!gethelp)
+    history.push_back(cmd);
 
   //If the command contains only one double-quote, append until another received before parsing as a single string
   size_t n = std::count(cmd.begin(), cmd.end(), '"');
@@ -713,7 +714,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
   //Check for commands that require viewer to be open and view initialised,
   //if found, open the viewer / setup view first
-  if (!viewer->isopen || (aview && !aview->initialised))
+  if (!gethelp && (!viewer->isopen || (aview && !aview->initialised)))
   {
     std::vector<std::string> viewcmds = commandList("View");
 
@@ -791,29 +792,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (scriptfile != "init.script")
         printMessage("Unable to open file: %s", scriptfile.c_str());
     }
-  }
-  else if (parsed.exists("save"))
-  {
-    if (gethelp)
-    {
-      help += "Export all settings as json state file that can be reloaded later\n\n"
-              "**Usage:** save [\"filename\"]\n\n"
-              "file (string) : name of file to import\n"
-              "If filename omitted and database loaded, will save the state\n"
-              "to the active figure in the database instead\n";
-      return false;
-    }
-
-    //Export json settings only (no object data)
-    std::string what = parsed["save"];
-    if (what.length() == 0 && amodel->database)
-    {
-      amodel->storeFigure(); //Save the state
-      amodel->database.reopen(true);  //Open writable
-      amodel->writeState();
-    }
-    else
-      jsonWriteFile(what, 0, false, false);
   }
   else if (parsed.exists("verbose"))
   {
@@ -967,6 +945,29 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Add to the queue to be processed once open
     viewer->commands.push_back(cmd);
     return false;
+  }
+  else if (parsed.exists("save"))
+  {
+    if (gethelp)
+    {
+      help += "Export all settings as json state file that can be reloaded later\n\n"
+              "**Usage:** save [\"filename\"]\n\n"
+              "file (string) : name of file to import\n"
+              "If filename omitted and database loaded, will save the state\n"
+              "to the active figure in the database instead\n";
+      return false;
+    }
+
+    //Export json settings only (no object data)
+    std::string what = parsed["save"];
+    if (what.length() == 0 && amodel->database)
+    {
+      amodel->storeFigure(); //Save the state
+      amodel->database.reopen(true);  //Open writable
+      amodel->writeState();
+    }
+    else
+      jsonWriteFile(what, 0, false, false);
   }
   else if (parsed.exists("scan"))
   {
