@@ -54,12 +54,6 @@ void DrawState::reset()
 
   colourMaps = NULL;
 
-  colourMapProps = {"logscale", "discrete", "colours", "range", "locked"};
-  viewProps = {"title", "zoomstep", "margin", 
-               "rulers", "rulerticks", "rulerwidth", 
-               "fontscale", "border", "fillborder", "bordercolour", 
-               "axis", "axislength", "timestep", "antialias"};
-
   //Setup default properties
   properties = {
     {
@@ -1445,6 +1439,19 @@ void DrawState::reset()
   {
     //Copy default values
     std::string key = p.first;
+    defaults[key] = p.second[PROPDEFAULT];
+
+    //Save view properties
+    std::string target = p.second[PROPTARGET];
+    //if (target.find("view") != std::string::npos)
+    if (target == "view")
+      viewProps.push_back(key);
+
+    //Save colourmap properties
+    if (target.find("colourmap") != std::string::npos)
+      colourMapProps.push_back(key);
+
+    //Save defaults
     defaults[key] = p.second[PROPDEFAULT];
   }
 
