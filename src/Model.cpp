@@ -1513,12 +1513,14 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   if (timesteps.size() == 0)
   {
     //Create a default timestep
+    outdb.issue("delete from timestep where id == '0'");
     outdb.issue("insert into timestep (id, time) values (0, 0);");
     writeObjects(outdb, obj, 0, compress);
   }
 
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
+    outdb.issue("delete from timestep where id == '%d'", i);
     outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s');", 
                 timesteps[i]->step, timesteps[i]->time, "", timesteps[i]->step);
 
