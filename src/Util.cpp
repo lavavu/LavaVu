@@ -299,7 +299,9 @@ bool Properties::typecheck(json& val, json& def)
   {
     //Num conversion
     debug_print("Attempting to coerce value to NUMBER\n");
-    if (val.is_string())
+    if (val.is_boolean())
+      val = val ? 1 : 0;
+    else if (val.is_string())
     {
       std::string sval = val;
       //Check for alias string values:
