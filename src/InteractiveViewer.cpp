@@ -2600,7 +2600,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       if (parsed.has(ival, "border"))
         aview->properties.data["border"] = ival;
       else
-        aview->properties.data["border"] = !aview->properties["border"];
+      {
+        ival = aview->properties["border"];
+        aview->properties.data["border"] = ival ? 0 : 1;
+      }
     }
     printMessage("Frame set to %s, filled=%d", (int)aview->properties["border"] ? "ON" : "OFF", (bool)aview->properties["fillborder"]);
   }
