@@ -962,7 +962,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed["save"];
     if (what.length() == 0 && amodel->database)
     {
-      amodel->storeFigure(); //Save the state
       amodel->database.reopen(true);  //Open writable
       amodel->writeState();
     }
@@ -1362,14 +1361,45 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     amodel->setTimeStep(drawstate.now); //Reselect ensures all loaded correctly
     printMessage("Load model %d", model);
   }
+  else if (parsed.exists("savefigure"))
+  {
+    if (gethelp)
+    {
+      help += "Store current vis settings in a figure\n\n"
+              "**Usage:** figure name\n\n"
+              "name (string) : the figure name to save\n"
+              "                if ommitted, currently active or default figure will be saved\n"
+              "                if it doesn't exist it will be created\n";
+      return false;
+    }
+
+    std::string what = parsed["savefigure"];
+    if (what.length() == 0)
+    {
+      //Save changes to currently selected
+      amodel->storeFigure();
+    }
+    else
+    {
+      amodel->figure = -1;
+      for (unsigned int i=0; i<amodel->fignames.size(); i++)
+        if (amodel->fignames[i] == what) amodel->figure = i;
+      //Not found? Create it
+      if (amodel->figure < 0)
+        amodel->figure = amodel->addFigure(what, "");
+      else
+        amodel->storeFigure();
+    }
+
+    printMessage("Saved figure %d", amodel->figure);
+  }
   else if (parsed.exists("figure"))
   {
     if (gethelp)
     {
-      help += "Set figure to view (when available)\n\n"
+      help += "Set figure to view\n\n"
               "**Usage:** figure up/down/value\n\n"
               "value (integer/string) : the figure index or name to view\n"
-              "                         if it doesn't exist it will be created\n"
               "up : switch to previous figure if available\n"
               "down : switch to next figure if available\n";
       return false;
@@ -1384,24 +1414,22 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       else
       {
         ival = -1;
+        std::string figname = parsed["figure"];
         for (unsigned int i=0; i<amodel->fignames.size(); i++)
-          if (amodel->fignames[i] == parsed["figure"]) ival = i;
-        //Not found? Create it
-        if (ival < 0)
-        {
-          std::string figname = parsed["figure"];
-          amodel->addFigure(figname, "");
-          ival = amodel->figures.size()-1;
-        }
+          if (amodel->fignames[i] == figname) ival = i;
       }
     }
 
-    //Save currently selected first
-    amodel->storeFigure();
-    //Load new selection
-    if (!amodel->loadFigure(ival)) return false; //Invalid
-    viewset = RESET_ZOOM; //Force check for resize and autozoom
-    printMessage("Load figure %d", amodel->figure);
+    if (ival >= 0)
+    {
+      //Save changes to currently selected first
+      amodel->storeFigure();
+
+      //Load new selection
+      if (!amodel->loadFigure(ival)) return false; //Invalid
+      viewset = RESET_ZOOM; //Force check for resize and autozoom
+      printMessage("Load figure %d", amodel->figure);
+    }
   }
   else if (parsed.exists("view"))
   {
@@ -3338,7 +3366,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
 
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "redraw", "clear"},
-    {"file", "script", "figure", "view", "scan"},
+    {"file", "script", "figure", "savefigure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",

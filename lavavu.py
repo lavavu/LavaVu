@@ -1419,6 +1419,28 @@ class Viewer(object):
         """
         return json.loads(self.app.getTimeSteps())
 
+    def figures(self, names=False):
+        """
+        Retrieve the saved figures from loaded model
+        List returned contains full figure state data by default
+        These data sets can be loaded with the restore() method
+
+        Parameters
+        ----------
+        names: boolean
+            Return figure names only
+
+        Returns
+        -------
+        figures: list
+            A list of all available figure data or names
+        """
+        figures = convert_keys(json.loads(self.app.getFigures()))
+        if names:
+            #Extract the names only
+            figures = [fig["figure"] for fig in figures]
+        return figures
+
     def addstep(self, step=-1):
         """
         Add a new time step

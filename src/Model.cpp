@@ -292,9 +292,18 @@ bool Model::loadFigure(int fig)
 
 void Model::storeFigure()
 {
+  //Add default figure
+  if (figure < 0)
+  {
+    figure = 0;
+    if (figures.size() == 0)
+      figure = addFigure("default");
+  }
+  assert(figure >= 0);
+  assert(figure < (int)figures.size());
+
   //Save current state in current selected figure
-  if (figure >= 0 && figure < (int)figures.size())
-    figures[figure] = jsonWrite();
+  figures[figure] = jsonWrite();
 }
 
 int Model::addFigure(std::string name, const std::string& state)
@@ -321,6 +330,7 @@ int Model::addFigure(std::string name, const std::string& state)
     figures.push_back(state);
   else
     figures.push_back(jsonWrite());
+
   return figures.size()-1;
 }
 
@@ -1529,38 +1539,32 @@ void Model::writeState()
 
 void Model::writeState(Database& outdb)
 {
+  //Save changes to the active state first
+  storeFigure();
+
   //Write state
   outdb.issue("create table if not exists state (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), data TEXT)");
 
-  //Add default figure
-  if (figure < 0)
-  {
-    figure = 0;
-    if (figures.size() == 0)
-      figure = addFigure("default");
-  }
-  assert(figure >= 0);
-
-  //Update any active changes to current state
-  storeFigure();
-
-  // Delete any state entry with same name
-  outdb.issue("delete from state where name == '%s'", fignames[figure].c_str());
-
   char SQL[SQL_QUERY_MAX];
-  snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[figure].c_str());
-  sqlite3_stmt* statement;
+  for (unsigned int f=0; f<fignames.size(); f++)
+  {
+    // Delete any state entry with same name
+    outdb.issue("delete from state where name == '%s'", fignames[f].c_str());
 
-  if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)
-    abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
+    snprintf(SQL, SQL_QUERY_MAX, "insert into state (name, data) values ('%s', ?)", fignames[f].c_str());
+    sqlite3_stmt* statement;
 
-  if (sqlite3_bind_text(statement, 1, figures[figure].c_str(), figures[figure].length(), SQLITE_STATIC) != SQLITE_OK)
-    abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb.db));
+    if (sqlite3_prepare_v2(outdb.db, SQL, -1, &statement, NULL) != SQLITE_OK)
+      abort_program("SQL prepare error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
 
-  if (sqlite3_step(statement) != SQLITE_DONE )
-    abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
+    if (sqlite3_bind_text(statement, 1, figures[f].c_str(), figures[f].length(), SQLITE_STATIC) != SQLITE_OK)
+      abort_program("SQL bind error: %s\n", sqlite3_errmsg(outdb.db));
 
-  sqlite3_finalize(statement);
+    if (sqlite3_step(statement) != SQLITE_DONE )
+      abort_program("SQL step error: (%s) %s\n", SQL, sqlite3_errmsg(outdb.db));
+
+    sqlite3_finalize(statement);
+  }
 }
 
 void Model::writeObjects(Database& outdb, DrawingObject* obj, int step, bool compress)
@@ -1706,7 +1710,6 @@ void Model::deleteObject(unsigned int id)
   database.issue("DELETE FROM object WHERE id==%1$d; DELETE FROM geometry WHERE object_id=%1$d; DELETE FROM viewport_object WHERE object_id=%1$d;", id);
   database.issue("vacuum");
   //Update state
-  storeFigure(); //Save the state
   writeState();
 }
 
