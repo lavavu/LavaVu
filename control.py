@@ -176,7 +176,7 @@ def initialise():
             jslibs += '</script>\n'
 
             display(HTML(css + fragmentShader + vertexShader + jslibs))
-    except NameError, ImportError:
+    except (NameError, ImportError):
         pass
 
 def action(id, value):
@@ -729,7 +729,7 @@ class ControlFactory(object):
             try:
                 #Find viewer id
                 viewerid = windows.index(self._target)
-            except ValueError:
+            except (ValueError):
                 #Append the current viewer ref
                 windows.append(self._target)
                 #Use viewer instance just added
@@ -754,7 +754,7 @@ class ControlFactory(object):
                 display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
             else:
                 export(self.output)
-        except NameError, ImportError:
+        except (NameError, ImportError):
             export(self.output)
 
         #Auto-Clear after show?
