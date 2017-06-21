@@ -793,7 +793,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
       cbprops.data["fontscale"] = 0.4*adjust;
     }
     //Update to overwrite defaults if any set by user
-    cbprops.merge(objects[i]->properties.data);
+    Properties::mergeJSON(cbprops.data, objects[i]->properties.data);
 
     //Margin offset
     float margin = objects[i]->properties["offset"];
