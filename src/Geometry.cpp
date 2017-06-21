@@ -1907,6 +1907,9 @@ void Glyphs::update()
 
 void Glyphs::draw()
 {
+  if (lines->total)
+    lines->draw();
+
   if (tris->total)
   {
     // Undo any scaling factor for glyph drawing...
@@ -1919,9 +1922,6 @@ void Glyphs::draw()
     // Re-Apply scaling factors
     glPopMatrix();
   }
-
-  if (lines->total)
-    lines->draw();
 }
 
 void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
