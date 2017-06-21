@@ -639,26 +639,8 @@ class Obj(object):
         mapdata: str/list
             The formatted colourmap data
         """
-        #Return colourmap as a string/array that can be passed to re-create the map
         cmid = self["colourmap"]
-        arr = []
-        if cmid < 0: return '' if string else arr
-
-        cmaps = self.instance.state["colourmaps"]
-        cm = cmaps[cmid]
-        if string:
-            cmstr = '"""'
-            for c in cm["colours"]:
-                cmstr += "%6.4f=%s; " % (c["position"],c["colour"])
-            cmstr += '"""\n'
-            return cmstr
-        else:
-            import re
-            for c in cm["colours"]:
-                comp = re.findall(r"[\d\.]+", c["colour"])
-                comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
-                arr.append((c["position"], comp))
-            return arr
+        return self.instance.getcolourmap(cmid)
 
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         """
@@ -1335,7 +1317,7 @@ class Viewer(object):
         """
         return LavaVuPython.ColourMap.getDefaultMap(name)
 
-    def colourmap(self, name, data, reverse=False, **kwargs):
+    def colourmap(self, name, data, reverse=False, monochrome=False, **kwargs):
         """
         Load or create a colour map
 
@@ -1351,6 +1333,10 @@ class Viewer(object):
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
+        reverse: boolean
+            Reverse the order of the colours after loading
+        monochrome: boolean
+            Convert to greyscale
 
         Returns
         -------
@@ -1363,16 +1349,59 @@ class Viewer(object):
             data = '\n'.join(data)
         #Load colourmap
         id = self.app.colourMap(name, data, str(json.dumps(kwargs)))
+        cmap = self.app.getColourMap(id)
         if reverse:
-            cmap = self.app.getColourMap(id)
             cmap.flip()
+        if monochrome:
+            cmap.monochrome()
         return id
+
+    def getcolourmap(self, cmid, string=True):
+        """
+        Return colour map data as a string or list
+        Either return format can be used to create/modify a colourmap
+        with colourmap()
+
+        Parameters
+        ----------
+        cmid: int
+            Identifier of the colourmap to retrieve
+        string: boolean
+            The default is to return the data as a string of colours separated by semi-colons
+            To instead return a list of (position,[R,G,B,A]) tuples for easier automated processing in python,
+            set this to False
+
+        Returns
+        -------
+        mapdata: str/list
+            The formatted colourmap data
+        """
+        #Return colourmap as a string/array that can be passed to re-create the map
+        arr = []
+        cmaps = self.state["colourmaps"]
+        if cmid < 0 or cmid >= len(cmaps): return '' if string else arr
+        cm = cmaps[cmid]
+        if string:
+            cmstr = '"""'
+            for c in cm["colours"]:
+                cmstr += "%6.4f=%s; " % (c["position"],c["colour"])
+            cmstr += '"""\n'
+            return cmstr
+        else:
+            import re
+            for c in cm["colours"]:
+                comp = re.findall(r"[\d\.]+", c["colour"])
+                comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
+                arr.append((c["position"], comp))
+            return arr
 
     def clear(self, objects=True, colourmaps=True):
         """
         Clears all data from the visualisation
         Including objects and colourmaps by default
 
+        Parameters
+        ----------
         objects: boolean
             including all objects, if set to False will clear the objects
             but not delete them

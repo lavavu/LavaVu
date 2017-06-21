@@ -71,6 +71,7 @@ class ColourMap
 public:
   ColourMap(DrawState& drawstate, std::string name="", std::string props="");
   void flip();
+  void monochrome();
   static std::vector<std::string> getDefaultMapNames();
   static std::string getDefaultMap(std::string);
 };

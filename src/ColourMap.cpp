@@ -454,8 +454,8 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   float scaleval = colourbarprops["scalevalue"];
   bool binLabels = colourbarprops["binlabels"];
 
-  //Always show at least two ticks on a log scale
-  if (log && ticks < 2) ticks = 2;
+  //Always show at one tick on a log scale
+  if (log && ticks < 1) ticks = 1;
   //Label interval bins
   if (discrete && binLabels) ticks = discretevals-1;
   // No ticks if no range
@@ -717,6 +717,20 @@ void ColourMap::flip()
   std::reverse(colours.begin(), colours.end());
   for (unsigned int idx = 0; idx < colours.size(); idx++)
     colours[idx].position = 1.0 - colours[idx].position;
+}
+
+void ColourMap::monochrome()
+{
+  for (unsigned int i=0; i<colours.size(); i++)
+  {
+    //Convert RGBA to perceived greyscale luminance
+    //cdf. http://jakevdp.github.io/blog/2014/10/16/how-bad-is-your-colormap/
+    //cf. http://alienryderflex.com/hsp.html
+    Colour col = colours[i].colour;
+    float luminance = sqrt(0.299*col.r*col.r + 0.587*col.g*col.g + 0.114*col.b*col.b);
+    for (int c=0; c<3; c++)
+       colours[i].colour.rgba[c] = luminance;
+  }
 }
 
 std::string ColourMap::getDefaultMap(std::string name)

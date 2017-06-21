@@ -382,6 +382,7 @@ class ColourMap(object):
     getDefaultMap = staticmethod(_LavaVuPython.ColourMap_getDefaultMap)
     __swig_destroy__ = _LavaVuPython.delete_ColourMap
 ColourMap.flip = new_instancemethod(_LavaVuPython.ColourMap_flip, None, ColourMap)
+ColourMap.monochrome = new_instancemethod(_LavaVuPython.ColourMap_monochrome, None, ColourMap)
 ColourMap_swigregister = _LavaVuPython.ColourMap_swigregister
 ColourMap_swigregister(ColourMap)
 

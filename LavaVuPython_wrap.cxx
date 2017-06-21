@@ -13333,6 +13333,34 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_ColourMap_monochrome(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ColourMap *arg1 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ColourMap_monochrome" "', argument " "1"" of type '" "ColourMap *""'"); 
+  }
+  arg1 = reinterpret_cast< ColourMap * >(argp1);
+  {
+    try {
+      (arg1)->monochrome();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_ColourMap_getDefaultMapNames(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   std::vector< std::string,std::allocator< std::string > > result;
@@ -19379,6 +19407,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"DrawingObject_swiginit", DrawingObject_swiginit, METH_VARARGS, NULL},
 	 { (char *)"new_ColourMap", _wrap_new_ColourMap, METH_VARARGS, NULL},
 	 { (char *)"ColourMap_flip", (PyCFunction)_wrap_ColourMap_flip, METH_O, NULL},
+	 { (char *)"ColourMap_monochrome", (PyCFunction)_wrap_ColourMap_monochrome, METH_O, NULL},
 	 { (char *)"ColourMap_getDefaultMapNames", (PyCFunction)_wrap_ColourMap_getDefaultMapNames, METH_NOARGS, NULL},
 	 { (char *)"ColourMap_getDefaultMap", (PyCFunction)_wrap_ColourMap_getDefaultMap, METH_O, NULL},
 	 { (char *)"delete_ColourMap", (PyCFunction)_wrap_delete_ColourMap, METH_O, NULL},

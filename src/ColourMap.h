@@ -107,6 +107,7 @@ public:
   void loadPalette(std::string data);
   void print();
   void flip();
+  void monochrome();
 
   static std::vector<std::string> defaultMapNames;
   static std::vector<std::string> defaultMaps;
