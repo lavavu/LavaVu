@@ -31,6 +31,7 @@ function initBox(el, cmd_callback) {
 }
 
 function updateBox(viewer, loaderfn) {
+  if (!viewer) return;
   //Loader callback
   loaderfn(function(data) {viewer.loadFile(data);});
 }

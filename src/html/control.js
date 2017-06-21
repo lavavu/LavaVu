@@ -1,18 +1,25 @@
+//IPython kernel object
 var kernel;
-//Maintain a list of interactor instances opened by id
-var instances = [];
-var delay = 0;
+if (parent.IPython) {
+  kernel = parent.IPython.notebook.kernel;
+}
 
-function initLoad() {
-  if (parent.IPython) {
-    kernel = parent.IPython.notebook.kernel;
-    //This ensures we have imported the lavavu module in notebook scope
-    //required for control event pass-back
-    //(NOTE: this looks a bit hacky because it is, but it seems kernel.execute loops only work as a one liners)
-    kernel.execute('lavavu = None if not "lavavu" in globals() else lavavu');
-    kernel.execute('import sys');
-    kernel.execute('modules = dict(sys.modules)');
-    kernel.execute('for m in modules: lavavu = modules[m].lavavu if "lavavu" in dir(modules[m]) else lavavu');
+//Maintain a list of interactor instances opened by id
+//(check in case this script imported twice, don't overwrite previous)
+var _wi = window._wi ? window._wi : [];
+var delay = 0;
+function debug_kernel(cmd) {
+  //For debugging:
+  //Run a python command in kernel and log output to console
+  if (kernel) {
+    kernel.execute(cmd);
+    //Debug callback
+    var callbacks = {'output' : function(out) {
+        data = out.content.data['text/plain']
+        console.log("CMD: " + cmd + ", RESULT: " + data);
+      }
+    };
+    kernel.execute(cmd, {iopub: callbacks}, {silent: false});
   }
 }
 
@@ -22,57 +29,11 @@ function getUrl() {
   return baseUrl;
 }
 
-function do_action(id, val, element) {
-  //Get instance id from parent element, next level up or just use 0
-  //console.log("DO_ACTION " + id + " ( " + val + " ) " + element.id);
-  var inst_id = element.parentElement.dataset.id;
-  if (inst_id == undefined)
-    inst_id = element.parentElement.parentElement.dataset.id;
-  if (inst_id == undefined)
-    inst_id = 0;
-  else
-    inst_id = parseInt(inst_id);
-
-  //if (inst_id-1 > instances.length) return;
-  if (inst_id+1 > instances.length) {console.log("Invalid ID for action instance: " + (inst_id+1) + ' > ' + instances.length); return;}
-  if (!instances[inst_id]) {console.log("NO ACTION INSTANCE: [" + inst_id + "] " + instances[inst_id]); return;}
-
-  //Call action on interactor which owns control
-  instances[inst_id].do_action(id, val);
-}
-
-function redisplay(id) {
-  //If instance doesn't exist yet, try again in 0.5 seconds... only seems to be needed in chrome
-  if (id+1 > instances.length || !instances[id] || instances[id].box === undefined) {
-    if (delay > 5) return; //Give up after 5 tries
-    console.log("Delaying redisplay " + id);
-    setTimeout(function() {redisplay(id);}, 500); 
-    delay++;
-    if (id+1 > instances.length) console.log(" -- Invalid ID " + (id+1) + ' > ' + instances.length);
-    else if (!instances[id]) console.log(" -- No instance: [" + id + "] " + instances[id]);
-    else if (!instances[id].box) console.log(" -- No box viewer: [" + id + "] " + instances[id]);
-    return;
-  }
-
-  var that = instances[id];
-  if (that.img) {
-    //Call get_image
-    that.get_image();
-    //Update the box size by getting state
-    updateBox(that.box, function(onget) {that.get_state(onget);});
-  }
-}
-
 function WindowInteractor(id) {
-  //Always check for lavavu module loaded, in case IPython notebook has been reloaded
-  initLoad();
-  //Check instances list valid, wipe if adding initial interactor
-  if (!instances || id==0) instances = [];
   //Store self in list and save id
   this.id = id;
-  instances[id] = this;
   
-  console.log("New interactor: " + this.id + " : " + instances.length + " :: " + instances[this.id]);
+  console.log("New interactor: " + this.id);
   //Interactor class, handles javascript side of window control
   //Takes viewer id
   // - set as active target for commands
@@ -87,7 +48,7 @@ function WindowInteractor(id) {
   //(Init WebGL bounding box interaction on load)
   var that = this;
   this.get_image(function() {
-    //console.log('In image loaded callback 0');
+    //console.log('In image loaded callback ' + that.id);
     //Init on image load with callback function to execute commands
     that.box = initBox(that.img, function(cmd) {that.execute(cmd, true);});
     //console.log("Box init on " + that.id);
@@ -137,18 +98,6 @@ WindowInteractor.prototype.do_action = function(id, val) {
     }
     kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
     kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
-    /*/Debug callback
-    var callbacks = {'output' : function(out) {
-        if (!out.content.data) {alert("NO DATA"); return;}
-        data = out.content.data['text/plain']
-          alert("RESULT: " + data);
-      }
-    };*/
-    //kernel.execute('len(lavavu.control.actions)', {iopub: callbacks}, {silent: false});
-    //kernel.execute('str(lavavu.control.actions[' + id + '])', {iopub: callbacks}, {silent: false});
-    //kernel.execute('lavavu.control.action(' + id + ',' + val + ')', {iopub: callbacks}, {silent: false});
-    //kernel.execute('str(lavavu.control.actions[' + id + ']["args"][0])', {iopub: callbacks}, {silent: false});
-    //kernel.execute('cmds', {iopub: callbacks}, {silent: false});
     this.get_image();
   } else {
     //HTML control actions via http
@@ -156,9 +105,21 @@ WindowInteractor.prototype.do_action = function(id, val) {
   }
 
   //Reload state
-  var that = this;
-  if (that.img)
+  if (this.img) {
+    var that = this;
     updateBox(this.box, function(onget) {that.get_state(onget);});
+  }
+}
+
+WindowInteractor.prototype.redisplay = function() {
+  //console.log("redisplay: " + this.id);
+  if (this.img) {
+    //Call get_image
+    this.get_image();
+    //Update the box size by getting state
+    var that = this;
+    updateBox(that.box, function(onget) {that.get_state(onget);});
+  }
 }
 
 WindowInteractor.prototype.get_image = function(onload) {
@@ -174,7 +135,9 @@ WindowInteractor.prototype.get_image = function(onload) {
         data = data.substring(1, data.length-1)
         //console.log("Got image: " + data.length);
         if (that.img) {
-          that.img.onload = onload;
+          //Only set onload if provided
+          if (onload) // && !that.img.onload)
+            that.img.onload = onload;
           that.img.src = data;
         }
       }
@@ -195,6 +158,7 @@ WindowInteractor.prototype.get_state = function(onget) {
   //console.log("get_state: " + this.id);
   if (kernel) {
     var callbacks = {'output' : function(out) {
+        //if (!out.content.data) {console.log(JSON.stringify(out)); return;}
         if (!out.content.data) return;
         data = out.content.data['text/plain']
         data = data.replace(/(?:\\n)+/g, "");

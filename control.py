@@ -1,3 +1,4 @@
+#TODO: docstrings!
 import os
 import sys
 import time
@@ -43,6 +44,21 @@ htmlpath = ""
 initialised = False
 initcell = ""
 
+def isobj(target):
+    """Return true if target is a vis object"""
+    return hasattr(target, "instance")
+
+def isviewer(target):
+    """Return true if target is a viewer"""
+    return not hasattr(target, "instance")
+
+def getviewer(target):
+    """Return its viewer if target is vis object
+    otherwise just return target as if is a viewer"""
+    if isobj(target):
+        return target.instance
+    return target
+
 def export(html):
     if not htmlpath: return
     #Dump all output to control.html
@@ -61,8 +77,7 @@ def export(html):
             #Set a property
             target = act["args"][0]
             # - Globally
-            #if hasattr(target, "binpath"):
-            if target.__class__.__name__ == 'Viewer':
+            if isviewer(target):
                 prop = act["args"][1]
                 actfunction = 'select; ' + prop + '=" + value + "'
                 if len(act["args"]) > 2:
@@ -137,6 +152,8 @@ def initialise():
             ip = get_ipython()
             #Returns a list of executed cells and their content
             history = list(ip.history_manager.get_range())
+            #If init was done in cell with exact same code this check is false positive
+            #(eg: lv.window())
             if initialised and history[-1][2] != initcell:
                 count = 0
                 found = False
@@ -264,12 +281,12 @@ class Window(Container):
         style += 'float: ' + self.align + '; display: inline;'
         if wrapper:
             style += ' margin-right: 10px;'
-        html = '<div style="' + style + '" data-id="---VIEWERID---">\n'
+        html = '<div style="' + style + '">\n'
         html += '<img id="imgtarget_---VIEWERID---" draggable=false style="border: 1px solid #aaa;">\n'
         html += '</div>\n'
         #Display any contained controls
         if wrapper:
-            html += '<div data-id="---VIEWERID---" style="' + wrapperstyle + '" class="lvctrl">\n'
+            html += '<div style="' + wrapperstyle + '" class="lvctrl">\n'
         html += super(Window, self).html()
         if wrapper:
             html += '</div>\n'
@@ -285,8 +302,7 @@ class Panel(Container):
     def html(self):
         if not htmlpath: return
         #Add control wrapper with the viewer id as a custom attribute
-        html = '<div data-id="---VIEWERID---'
-        html += '" style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
+        html = '<div style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
         html += super(Panel, self).html()
         html += '</div>\n'
         if self.win: html += self.win.html(wrapper=False)
@@ -340,11 +356,11 @@ class Control(object):
         return str(self.elid)
 
     def onchange(self):
-        return "do_action(" + str(self.id) + ", this.value, this);"
+        return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", this.value, this);"
 
     def show(self):
         #Show only this control
-        html = '<div data-id="---VIEWERID---" style="" class="lvctrl">\n'
+        html = '<div style="" class="lvctrl">\n'
         html += self.html()
         html += '</div>\n'
 
@@ -389,7 +405,7 @@ class Checkbox(Control):
         return html
 
     def onchange(self):
-        return "; do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
+        return "; _wi[---VIEWERID---].do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
 
 class Range(Control):
     def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None):
@@ -416,7 +432,7 @@ class Button(Control):
         super(Button, self).__init__(None, None, command, "", label)
 
     def onchange(self):
-        return "do_action(" + str(self.id) + ", '', this);"
+        return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", '', this);"
 
     def labelhtml(self):
         return ''
@@ -432,7 +448,7 @@ class Button(Control):
 class Entry(Control):
     def controls(self):
         html = self.labelhtml()
-        html += '<input type="text" value="" onkeypress="if (event.keyCode == 13) { do_action(---ID---, this.value.trim(), this); };"><br>\n'
+        html += '<input type="text" value="" onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
         return html.replace('---ID---', str(self.id))
 
 class Command(Control):
@@ -444,7 +460,7 @@ class Command(Control):
         html += """
         <input type="text" value="" 
         onkeypress="if (event.keyCode == 13) { var cmd=this.value.trim(); 
-        do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
+        _wi[---VIEWERID---].do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
         """
         return html.replace('---ID---', str(self.id))
 
@@ -487,7 +503,7 @@ class Colour(Control):
               col.setHSV(val);
               el.style.backgroundColor = col.html();
               console.log(col.html());
-              do_action(---ID---, col.html(), el);
+              _wi[---VIEWERID---].do_action(---ID---, col.html(), el);
             }
             el.picker = new ColourPicker(savefn);
             el.picker.pick(col, offset[0], offset[1]);">
@@ -528,7 +544,7 @@ class ColourMap(Control):
           //Create the gradient editor
           el.gradient = new GradientEditor(el, function(obj, id) {
               //Gradient updated
-              do_action(---ID---, obj.palette.toString(), el);
+              _wi[---VIEWERID---].do_action(---ID---, obj.palette.toString(), el);
 
               //Update stored maps list
               if (el.selectedIndex >= 0)
@@ -710,27 +726,23 @@ class ControlFactory(object):
             self._controls.append(ctrl)
 
         #Add to viewer instance list too if target is Obj
-        if not hasattr(self._target, 'objects'):
+        if isobj(self._target):
             self._target.instance.control.add(ctrl)
 
-    def show(self, win=None):
+    def show(self, fallback=None):
+        """
+        Displays all added controls including viewer if any
+
+        (fallback parameter allows a function to be passed which is called
+        when run outside IPython)
+        """
         #Show all controls in container
         if not htmlpath: return
-
-        #Generate the HTML
-        html = ""
-        chtml = ""
-        for c in self._controls:
-            chtml += c.html()
-        if len(chtml):
-            html = '<div data-id="---VIEWERID---" style="" class="lvctrl">\n' + chtml + '</div>\n'
-        if self._container:
-            html += self._container.html()
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
         viewerid = len(windows)
-        if hasattr(self._target, 'objects'):
+        if isviewer(self._target):
             try:
                 #Find viewer id
                 viewerid = windows.index(self._target)
@@ -739,6 +751,16 @@ class ControlFactory(object):
                 windows.append(self._target)
                 #Use viewer instance just added
                 viewerid = len(windows)-1
+
+        #Generate the HTML
+        html = ""
+        chtml = ""
+        for c in self._controls:
+            chtml += c.html()
+        if len(chtml):
+            html = '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
+        if self._container:
+            html += self._container.html()
 
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
@@ -750,29 +772,34 @@ class ControlFactory(object):
                 from IPython.display import display,HTML,Javascript
                 #Interaction requires some additional js/css/webgl
                 initialise()
+
                 #Output the controls
                 display(HTML(html))
-                #Create WindowInteractor instance (if none created, or output contains a viewer target)
-                #if not self.interactor or 'imgtarget' in html:
-                #    display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
-                #    self.interactor = True
-                display(Javascript('var wi = new WindowInteractor(' + str(viewerid) + ');'))
+
+                #Create WindowInteractor instance
+                js = '_wi[' + str(viewerid) + '] = new WindowInteractor(' + str(viewerid) + ');'
+                display(Javascript(js))
+
             else:
                 export(self.output)
+                if callable(fallback): fallback(self._target)
         except (NameError, ImportError):
             export(self.output)
+            if callable(fallback): fallback()
 
         #Auto-Clear after show?
         self.clear()
 
     def redisplay(self):
         #Update the active viewer image, if any
+        #TODO: reset control values from current state data
         try:
             #Find viewer id
             viewerid = windows.index(self._target)
             if __IPYTHON__:
                 from IPython.display import display,Javascript
-                display(Javascript('redisplay(' + str(viewerid) + ');'))
+                js = '_wi[' + str(viewerid) + '].redisplay(' + str(viewerid) + ');'
+                display(Javascript(js))
 
         except (NameError, ImportError, ValueError):
             pass
