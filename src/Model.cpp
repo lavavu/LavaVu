@@ -1314,7 +1314,12 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
       //Create object and set parameters
       if (type == lucPointType && drawstate.global("pointspheres")) type = lucShapeType;
-      //if (type == lucGridType) type = lucTriangleType;
+      /* Convert grid to tris
+       * - need to skip index/normal data as it is setup for tri strips
+      if (type == lucGridType) {
+        type = lucTriangleType;
+        if (data_type == lucIndexData || data_type == lucNormalData) continue;
+      }*/
       active = geometry[type];
 
       if (recurseTracers && type == lucTracerType)

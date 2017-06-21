@@ -425,6 +425,7 @@ class QuadSurfaces : public TriSurfaces
 public:
   QuadSurfaces(DrawState& drawstate);
   ~QuadSurfaces();
+  virtual void display();
   virtual void update();
   virtual void render();
   void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);

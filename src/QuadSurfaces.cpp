@@ -44,6 +44,14 @@ QuadSurfaces::~QuadSurfaces()
 {
 }
 
+void QuadSurfaces::display()
+{
+  GL_Error_Check;
+  if (view->is3d && view->sort)
+    redraw = true; //Recalc cross section order
+  Geometry::display();
+}
+
 void QuadSurfaces::update()
 {
   clock_t t1,t2,tt;
@@ -150,28 +158,25 @@ void QuadSurfaces::render()
     tricount += quads; //For debug messages
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
-    if (vnormals && geom[index]->normals.size() < geom[index]->count)
+    if (vnormals && geom[index]->normals.size()/3 < geom[index]->count)
+    {
       calcGridNormals(index, normals);
+      geom[index]->normals.clear();
+      geom[index]->normals.read(normals.size(), normals[0].ref());
+    }
     if (geom[index]->indices.size() != quads*4)
     {
       indices.resize(quads*4);
       calcGridIndices(index, indices, voffset);
+      //Read new data and continue
+      geom[index]->indices.clear();
+      geom[index]->indices.read(indices.size(), &indices[0]);
     }
+
     //Vertex index offset
     voffset += geom[index]->count;
     //Index offset
     elements += quads*4;
-    //Read new data and continue
-    if (vnormals)
-    {
-      geom[index]->normals.clear();
-      geom[index]->normals.read(normals.size(), normals[0].ref());
-    }
-    if (indices.size())
-    {
-      geom[index]->indices.clear();
-      geom[index]->indices.read(indices.size(), &indices[0]);
-    }
 
     t1 = clock();
     int bytes = geom[index]->indices.size()*sizeof(GLuint);
@@ -221,10 +226,6 @@ void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned
 
 void QuadSurfaces::draw()
 {
-  GL_Error_Check;
-  if (view->is3d && view->sort)
-    redraw = true; //Recalc cross section order
-
   GL_Error_Check;
   // Draw using vertex buffer object
   clock_t t0 = clock();

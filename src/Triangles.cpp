@@ -72,10 +72,14 @@ unsigned int Triangles::triCount()
       if (tris * 3 != geom[index]->indices.size()) // || geom[index]->draw->properties["tristrip"])
         //Tri-strip indices
         tris = geom[index]->indices.size() - 2;
+      debug_print("Surface (indexed) %d", index);
     }
     //Grid
     else if (geom[index]->width > 0 && geom[index]->height > 0)
+    {
       tris = 2 * (geom[index]->width-1) * (geom[index]->height-1);
+      debug_print("Grid Surface %d (%d x %d)", index, geom[index]->width, geom[index]->height);
+    }
     else
     {
       //Un-structured tri vertices
@@ -83,12 +87,13 @@ unsigned int Triangles::triCount()
       if (tris * 3 != geom[index]->count) // || geom[index]->draw->properties["tristrip"])
         //Tri-strip vertices
         tris =  geom[index]->count - 2;
+      debug_print("Surface %d ", index);
     }
 
     total += tris;
     bool hidden = !drawable(index);
     if (!hidden) drawelements += tris*3; //Count drawable
-    debug_print("Surface %d %s, triangles %d hidden? %s\n", index, geom[index]->draw->name().c_str(), tris, (hidden ? "yes" : "no"));
+    debug_print(" %s, triangles %d hidden? %s\n", geom[index]->draw->name().c_str(), tris, (hidden ? "yes" : "no"));
   }
 
   //When objects hidden/shown drawable count changes, so need to reallocate
