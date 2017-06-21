@@ -321,11 +321,16 @@ class Control(object):
         if not self.label:
             self.label = ""
 
-        #Get value from target if not provided
-        if value == None and property != None:
-            if target and property in target:
-                #TODO: query function that gets the value used even if prop not set
+        #Get value from target or default if not provided
+        if value == None and property != None and target:
+            if property in target:
                 value = target[property]
+            else:
+                #Get property default
+                _lv = target
+                _lv = getviewer(target)
+                prop = _lv._proplist[property]
+                value = prop[0]
         self.value = value
 
     def uniqueid(self):

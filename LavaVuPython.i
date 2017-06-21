@@ -163,5 +163,6 @@ public:
 
   std::string helpCommand(std::string cmd="", bool heading=true);
   std::vector<std::string> commandList(std::string category="");
+  std::string propertyList();
 };
 

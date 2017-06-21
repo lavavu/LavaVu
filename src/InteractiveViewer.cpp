@@ -3529,3 +3529,17 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
   return markdown.str();
 }
 
+std::string LavaVu::propertyList()
+{
+  json properties = {};
+  for (auto p : drawstate.properties)
+  {
+    //json entry = p.second;
+    std::string key = p.first;
+    properties[key] = p.second;
+  }
+
+  std::stringstream ss;
+  ss << properties;
+  return ss.str();
+}

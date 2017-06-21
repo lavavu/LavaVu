@@ -871,6 +871,9 @@ class Viewer(object):
             #Create a control factory
             self.control = control.ControlFactory(self)
 
+            #Get property dict
+            self._proplist = convert_keys(json.loads(self.app.propertyList()))
+
             #Get available commands
             self._cmdcategories = self.app.commandList()
             self._cmds = {}

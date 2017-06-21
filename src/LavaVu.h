@@ -221,6 +221,7 @@ public:
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   std::vector<std::string> commandList(std::string category="");
   std::string helpCommand(std::string cmd="", bool heading=true);
+  std::string propertyList();
   void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);

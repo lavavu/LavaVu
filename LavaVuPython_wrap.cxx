@@ -19170,6 +19170,35 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_propertyList(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::string result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_propertyList" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      result = (arg1)->propertyList();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *LavaVu_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!SWIG_Python_UnpackTuple(args,(char*)"swigregister", 1, 1,&obj)) return NULL;
@@ -19426,6 +19455,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_queueCommands", _wrap_LavaVu_queueCommands, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_helpCommand", _wrap_LavaVu_helpCommand, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_commandList", _wrap_LavaVu_commandList, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_propertyList", (PyCFunction)_wrap_LavaVu_propertyList, METH_O, NULL},
 	 { (char *)"LavaVu_swigregister", LavaVu_swigregister, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_swiginit", LavaVu_swiginit, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
