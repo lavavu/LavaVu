@@ -159,6 +159,7 @@ public:
   void translate(float x, float y, float z);
   void setTranslation(float x, float y, float z);
   void setRotation(float x, float y, float z, float w);
+  void setRotation(float x, float y, float z);
   Quaternion getRotation() {return *rotation;}
   void rotate(float degrees, Vec3d axis);
   void rotate(float degreesX, float degreesY, float degreesZ);

@@ -498,6 +498,24 @@ public:
     glMultMatrixf(getMatrix());
   }
 
+  //Convert from Euler angles
+  void fromEuler(float X, float Y, float Z)
+  {
+    X = DEG2RAD*X*0.5;
+    Y = DEG2RAD*Y*0.5;
+    Z = DEG2RAD*Z*0.5;
+    float sinx = sin(X);
+    float siny = sin(Y);
+    float sinz = sin(Z);
+    float cosx = cos(X);
+    float cosy = cos(Y);
+    float cosz = cos(Z);
+    x = sinx*cosy*cosz - cosy*siny*sinz;
+    y = cosx*siny*cosz + sinx*cosy*sinz;
+    z = cosx*cosy*sinz - sinx*siny*cosz;
+    w = cosx*cosy*cosz + sinx*siny*sinz;
+  }
+
   void toEuler(float& bank, float& heading, float& attitude)
   {
     float test = x*y + z*w;
@@ -523,6 +541,26 @@ public:
     heading = atan2(2*y*w-2*x*z , 1 - 2*sqy - 2*sqz) * RAD2DEG;
     attitude = asin(2*test) * RAD2DEG;
     bank = atan2(2*x*w-2*y*z , 1 - 2*sqx - 2*sqz) * RAD2DEG;
+    /*
+    #https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+    double ysqr = y*y;
+
+    // roll (x-axis rotation)
+    double t0 = +2.0 * (w * x + y * z);
+    double t1 = +1.0 - 2.0 * (x * x + ysqr);
+    roll = std::atan2(t0, t1);
+
+    // pitch (y-axis rotation)
+    double t2 = +2.0 * (w * y - z * x);
+    t2 = t2 > 1.0 ? 1.0 : t2;
+    t2 = t2 < -1.0 ? -1.0 : t2;
+    pitch = std::asin(t2);
+
+    // yaw (z-axis rotation)
+    double t3 = +2.0 * (w * z + x * y);
+    double t4 = +1.0 - 2.0 * (ysqr + z * z);  
+    yaw = std::atan2(t3, t4);
+    */
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const Quaternion& q);

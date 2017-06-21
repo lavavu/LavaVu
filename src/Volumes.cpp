@@ -452,8 +452,18 @@ void Volumes::render(int i)
   if (props.has("rotate"))
   {
     float rot[4];
-    Properties::toArray<float>(props["rotate"], rot, 4);
-    Quaternion qrot(rot[0], rot[1], rot[2], rot[3]);
+    Quaternion qrot;
+    json jrot = props["rotate"];
+    if (jrot.size() == 4)
+    {
+      Properties::toArray<float>(jrot, rot, 4);
+      qrot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
+    }
+    else
+    {
+      Properties::toArray<float>(jrot, rot, 3);
+      qrot.fromEuler(rot[0], rot[1], rot[2]);
+    }
     qrot.apply();
   }
   //Rotate this object with view rotation setting

@@ -983,22 +983,28 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Set model rotation in 3d coords about given axis vector (replaces any previous rotation)\n\n"
-              "**Usage:** rotation x y z degrees\n\n"
-              "x (number) : axis of rotation x component\n"
-              "y (number) : axis of rotation y component\n"
-              "z (number) : axis of rotation z component\n"
-              "degrees (number) : degrees of rotation\n";
+      help += "Set model rotation (replaces any previous rotation)\n\n"
+              "**Usage:** rotation x y z [w]\n\n"
+              "x (number) : rotation x component\n"
+              "y (number) : rotation y component\n"
+              "z (number) : rotation z component\n"
+              "w (number) : rotation w component\n"
+              "If only x,y,z are provided they determine the rotation\n"
+              "about these axis (roll/pitch/yaw)\n"
+              "If x,y,z,w are provided, the rotation is loaded\n"
+              "as a quaternion with these components\n\n";
       return false;
     }
 
     float x = 0, y = 0, z = 0, w = 0;
     if (parsed.has(x, "rotation", 0) &&
         parsed.has(y, "rotation", 1) &&
-        parsed.has(z, "rotation", 2) &&
-        parsed.has(w, "rotation", 3))
+        parsed.has(z, "rotation", 2))
     {
-      aview->setRotation(x, y, z, w);
+      if (parsed.has(w, "rotation", 3))
+        aview->setRotation(x, y, z, w);
+      else
+        aview->setRotation(x, y, z);
       aview->rotated = true;  //Flag rotation finished
     }
   }

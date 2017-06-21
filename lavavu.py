@@ -1768,7 +1768,6 @@ class Viewer(object):
         Currently recommended to use threaded web server by supplying
         port=#### argument when creating viewer instead
         """
-        if not self.control: return
         try:
             import server
             os.chdir(control.htmlpath)
@@ -1788,7 +1787,6 @@ class Viewer(object):
         that can be controlled with the mouse or html widgets
 
         """
-        if not self.control: return
         self.control.Window()
         self.control.show()
 
@@ -1801,7 +1799,6 @@ class Viewer(object):
 
         """
         #Issue redisplay to active viewer
-        if not self.control: return
         self.control.redisplay()
 
     def camera(self):
@@ -1813,8 +1810,14 @@ class Viewer(object):
         """
         self._get()
         me = getVariableName(self)
-        print(me + ".translation(" + str(self.state["views"][0]["translate"])[1:-1] + ")")
-        print(me + ".rotation(" + str(self.state["views"][0]["rotate"])[1:-1] + ")")
+        if not me: me = "lv"
+        rot = self.state["views"][0]["xyzrotate"]
+        tr = self.state["views"][0]["translate"]
+        for r in range(3):
+            rot[r] = round(rot[r], 3)
+            tr[r] = round(tr[r], 3)
+        print(me + ".translation(" + str(tr)[1:-1] + ")")
+        print(me + ".rotation(" + str(rot)[1:-1] + ")")
         #Also print in terminal for debugging
         self.commands("camera")
 
@@ -2206,39 +2209,6 @@ def printH5(h5):
         print(h5[key])
     for item in h5.attrs.keys():
         print(item + ":", h5.attrs[item])
-
-def rotation(x, y, z):
-    """
-    Get a rotation quaternion from x/y/z Euler angles
-
-    Parameters
-    ----------
-    x: float
-        Rotation about X axis in degrees
-    y: float
-        Rotation about Y axis in degrees
-    z: float
-        Rotation about Z axis in degrees
-
-    Returns
-    -------
-    quaternion: list
-        4D quaternion representation of the rotation
-    """
-    deg2rad = math.pi / 180
-    x = x*0.5*deg2rad
-    y = y*0.5*deg2rad
-    z = z*0.5*deg2rad
-    sinx = math.sin(x)
-    siny = math.sin(y)
-    sinz = math.sin(z)
-    cosx = math.cos(x)
-    cosy = math.cos(y)
-    cosz = math.cos(z)
-    return [cosx*cosy*sinz - sinx*siny*cosz,
-            cosx*cosy*cosz + sinx*siny*sinz,
-            sinx*cosy*cosz - cosy*siny*sinz,
-            cosx*siny*cosz + sinx*cosy*sinz]
 
 def _docmd(doc):
     """Convert a docstring to markdown"""

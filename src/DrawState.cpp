@@ -1074,6 +1074,15 @@ void DrawState::reset()
       }
     },
     {
+      "xyzrotate",
+      {
+        {0.,0.,0.},
+        "view",
+        "real[3]",
+        "Camera rotation as Euler angles [x,y,z] - output only"
+      }
+    },
+    {
       "translate",
       {
         {0.,0.,0.},

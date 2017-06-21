@@ -1770,13 +1770,16 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
     View* view = views[v];
     json& vprops = view->properties.data;
 
-    float rotate[4], translate[3], focus[3];
+    float rotate[4], rota[3], translate[3], focus[3];
     view->getCamera(rotate, translate, focus);
-    json rot, trans, foc, scale, min, max;
+    Quaternion qrot(rotate[0], rotate[1], rotate[2], rotate[3]);
+    qrot.toEuler(rota[0], rota[1], rota[2]);
+    json rot, ra, trans, foc, scale, min, max;
     for (int i=0; i<4; i++)
     {
       rot.push_back(rotate[i]);
       if (i>2) break;
+      ra.push_back(rota[i]);
       trans.push_back(translate[i]);
       foc.push_back(focus[i]);
       scale.push_back(view->scale[i]);
@@ -1785,6 +1788,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
     }
 
     vprops["rotate"] = rot;
+    vprops["xyzrotate"] = ra;
     vprops["translate"] = trans;
     vprops["focus"] = foc;
     vprops["scale"] = scale;
@@ -1964,7 +1968,7 @@ void Model::jsonRead(std::string data)
       if (rot.size() == 4)
         view->setRotation(rot[0], rot[1], rot[2], rot[3]);
       else if (rot.size() == 3)
-        view->rotate(rot[0], rot[1], rot[2]);
+        view->setRotation(rot[0], rot[1], rot[2]);
     }
     else
       view->setRotation(0, 0, 0, 1);

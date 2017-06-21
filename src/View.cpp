@@ -308,6 +308,12 @@ void View::setRotation(float x, float y, float z, float w)
   rotation->w = w;
 }
 
+void View::setRotation(float x, float y, float z)
+{
+  //Convert from Euler angles
+  rotation->fromEuler(x, y, z);
+}
+
 void View::rotate(float degrees, Vec3d axis)
 {
   Quaternion nrot;
