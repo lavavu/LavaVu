@@ -15,6 +15,10 @@ import glob
 import control
 import numpy
 
+if __name__ != 'glucifer.lavavu' and 'glucifer.lavavu' in sys.modules:
+    #Already imported, some paths issue causes double import
+    raise RuntimeError("LavaVu module provided by glucifer exists, please don't import separately")
+
 #Attempt to import swig module
 libpath = "bin"
 try:
