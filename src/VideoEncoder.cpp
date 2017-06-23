@@ -36,7 +36,7 @@ VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps,
   frame_count = 0;
 
   //Create the frame buffer
-  buffer = new unsigned char[width * height * 3];
+  buffer = new ImageData(width, height, 3);
 
   /* initialize libavcodec, and register all codecs and formats */
   av_register_all();
@@ -135,7 +135,7 @@ VideoEncoder::~VideoEncoder()
   av_free(oc);
 
   //Free framebuffer
-  delete[] buffer;
+  delete buffer;
 }
 
 /**************************************************************/
@@ -388,7 +388,7 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 void VideoEncoder::frame(int channels)
 {
 #ifdef HAVE_SWSCALE
-  uint8_t * inData[1] = { buffer }; // RGB24 have one plane
+  uint8_t * inData[1] = { buffer->pixels }; // RGB24 have one plane
   int inLinesize[1] = { 3*width }; // RGB stride
   sws_scale(ctx, inData, inLinesize, 0, height, picture->data, picture->linesize);
 #else
@@ -409,9 +409,9 @@ void VideoEncoder::frame(int channels)
     {
       pixel_I = yPixel_I * width + xPixel_I;
 
-      red   = (float) buffer[channels*pixel_I];
-      green = (float) buffer[channels*pixel_I+1];
-      blue  = (float) buffer[channels*pixel_I+2];
+      red   = (float) buffer->pixels[channels*pixel_I];
+      green = (float) buffer->pixels[channels*pixel_I+1];
+      blue  = (float) buffer->pixels[channels*pixel_I+2];
 
       picture->data[0][yPixel_I * picture->linesize[0] + xPixel_I] =
         (unsigned char)((0.257 * red) + (0.504 * green) + (0.098 * blue) + 16);
@@ -427,10 +427,10 @@ void VideoEncoder::frame(int channels)
       /* Find four pixels in this macro pixel */
       int idx0 = channels*(yPixel_I*2) * width + xPixel_I * 2*channels;
       int idx1 = channels*(yPixel_I*2+1) * width + xPixel_I * 2*channels;
-      macroPixel0 = buffer + idx0;
-      macroPixel1 = buffer + idx0 + channels;
-      macroPixel2 = buffer + idx1;
-      macroPixel3 = buffer + idx1 + channels;
+      macroPixel0 = buffer->pixels + idx0;
+      macroPixel1 = buffer->pixels + idx0 + channels;
+      macroPixel2 = buffer->pixels + idx1;
+      macroPixel3 = buffer->pixels + idx1 + channels;
 
       /* Average red, green and blue for four pixels around point */
       red   = 0.25 * ((float) (macroPixel0[0] + macroPixel1[0] + macroPixel2[0] + macroPixel3[0] ));

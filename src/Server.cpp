@@ -81,22 +81,22 @@ void Server::resize(int new_width, int new_height)
 {
 }
 
-bool Server::compare(GLubyte* image)
+bool Server::compare(ImageData* image)
 {
   bool match = false;
   if (imageCache)
   {
     match = true;
-    size_t size = viewer->width * viewer->height * 3;
-    for (unsigned int i=0; i<size; i++)
+    if (image->size() != imageCache->size()) return false;
+    for (unsigned int i=0; i<image->size(); i++)
     {
-      if (image[i] != imageCache[i])
+      if (image->pixels[i] != imageCache->pixels[i])
       {
         match = false;
         break;
       }
     }
-    delete[] imageCache;
+    delete imageCache;
   }
   imageCache = image;
   return match;
@@ -113,7 +113,7 @@ void Server::display()
   {
     //CRITICAL SECTION
     // Read the pixels (flipped)
-    GLubyte *image = viewer->pixels(NULL, 3, true);
+    ImageData *image = viewer->pixels(NULL, 3, true);
 
     if (!compare(image))
     {
@@ -130,7 +130,7 @@ void Server::display()
       params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
 
       if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, viewer->width, viewer->height, 3,
-          (const unsigned char *)image, params))
+          (const unsigned char *)image->pixels, params))
       {
         debug_print("JPEG compressed, size %d\n", jpeg_bytes);
       }
@@ -138,7 +138,7 @@ void Server::display()
         debug_print("JPEG compress error\n");
 
       //Deleted in compare
-      //delete[] image;
+      //delete image;
 
       updated = true; //Set new frame rendered flag
       std::map<int,bool>::iterator iter;

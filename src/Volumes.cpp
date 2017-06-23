@@ -517,9 +517,9 @@ void Volumes::render(int i)
   geom[i]->colourCalibrate();
 }
 
-GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles)
+ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles)
 {
-  GLubyte *image = NULL;
+  ImageData *image = NULL;
   unsigned int inc = slices[draw];
   if (inc <= 0) inc = 1;
   for (unsigned int i = 0; i < geom.size(); i += inc)
@@ -546,8 +546,8 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       int size = geom[i]->width * geom[i]->height;
       debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), geom[i]->width, geom[i]->height, geom[i]->depth, iw, ih);
       channels = bpv;
-      image = new GLubyte[iw * ih * channels];
-      memset(image, 0, iw*ih*sizeof(GLubyte));
+      image->allocate(iw, ih, channels);
+      image->clear();
       unsigned int xoffset = 0, yoffset = 0;
       for (unsigned int z=0; z<geom[i]->depth; z++)
       {
@@ -565,7 +565,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
             else*/ if (bpv == 4) //Float
             {
               float val = geom[i]->colourData((z * size) + y * geom[i]->width + x);
-              image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
+              image->pixels[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
             }
           }
         }
@@ -599,8 +599,8 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
       ih = ceil(slices[draw] / (float)xtiles) * height;
       if (ih == height) iw = width * slices[draw];
       debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), width, height, slices[draw], iw, ih);
-      image = new GLubyte[iw * ih * channels];
-      memset(image, 0, iw*ih*channels*sizeof(GLubyte));
+      image->allocate(iw, ih, channels);
+      image->clear();
       int xoffset = 0, yoffset = 0;
       for (unsigned int j=i; j<i+slices[draw]; j++)
       {
@@ -615,7 +615,7 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
             for (int x=0; x<width; x++)
             {
               float val = geom[j]->colourData(y * width + x);
-              image[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
+              image->pixels[iw * (y + yoffset) + x + xoffset] = (val - min) / range * 255;
             }
           }
         }
@@ -627,10 +627,10 @@ GLubyte* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw
             for (int x=0; x<width; x++)
             {
               c.value = geom[j]->colours[y * width + x];
-              image[(iw * (y + yoffset) + x + xoffset)*4] = c.r;
-              image[(iw * (y + yoffset) + x + xoffset)*4+1] = c.g;
-              image[(iw * (y + yoffset) + x + xoffset)*4+2] = c.b;
-              image[(iw * (y + yoffset) + x + xoffset)*4+3] = c.a;
+              image->pixels[(iw * (y + yoffset) + x + xoffset)*4] = c.r;
+              image->pixels[(iw * (y + yoffset) + x + xoffset)*4+1] = c.g;
+              image->pixels[(iw * (y + yoffset) + x + xoffset)*4+2] = c.b;
+              image->pixels[(iw * (y + yoffset) + x + xoffset)*4+3] = c.a;
             }
           }
         }
@@ -658,12 +658,12 @@ void Volumes::saveImage(DrawingObject* draw, int xtiles)
     if (geom[i]->draw == draw && drawable(i))
     {
       int iw, ih, channels;
-      GLubyte *image = getTiledImage(draw, i, iw, ih, channels, xtiles);
+      ImageData *image = getTiledImage(draw, i, iw, ih, channels, xtiles);
       if (!image) return;
       char path[FILE_PATH_MAX];
       sprintf(path, "%s_%d", geom[i]->draw->name().c_str(), count++);
-      writeImage(image, iw, ih, path, channels);
-      delete[] image;
+      image->write(path);
+      delete image;
       break;  //Done
     }
   }
@@ -699,10 +699,10 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
 
       //Get a tiled image for WebGL to use as a 2D texture...
       int iw, ih, channels; //TODO: Support other pixel formats
-      GLubyte *image = getTiledImage(draw, i, iw, ih, channels, 16); //16 * 256 = 4096^2 square texture
+      ImageData *image = getTiledImage(draw, i, iw, ih, channels, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
-      std::string imagestr = getImageUrlString(image, iw, ih, channels);
-      delete[] image;
+      std::string imagestr = getImageUrlString(image);
+      delete image;
       json res, scale;
       res.push_back((int)geom[i]->width);
       res.push_back(height);

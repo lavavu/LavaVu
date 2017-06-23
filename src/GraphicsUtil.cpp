@@ -1015,7 +1015,7 @@ void ImageLoader::load3Dslice(int slice, void* data)
   GL_Error_Check;
 }
 
-std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels)
+std::string ImageData::write(const std::string& path)
 {
   FilePath filepath(path);
   if (filepath.type == "png")
@@ -1024,21 +1024,21 @@ std::string writeImage(GLubyte *image, int width, int height, const std::string&
     std::ofstream file(filepath.full, std::ios::binary);
     //Requires y-flip as uses opposite y origin to OpenGL (except for libpng)
 #ifndef HAVE_LIBPNG
-    RawImageFlip(image, width, height, channels);
+    flip();
 #endif
-    write_png(file, channels, width, height, image);
+    write_png(file, channels, width, height, pixels);
   }
   else if (filepath.type == "jpeg" || filepath.type == "jpg")
   {
     //JPEG support with built in encoder
     // Fill in the compression parameter structure.
     //Requires y-flip as uses opposite y origin to OpenGL
-    RawImageFlip(image, width, height, channels);
+    flip();
 
     jpge::params params;
     params.m_quality = 95;
     params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-    if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, channels, image, params))
+    if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, channels, pixels, params))
     {
       fprintf(stderr, "[write_jpeg] File %s could not be saved\n", filepath.full.c_str());
       return "";
@@ -1047,26 +1047,26 @@ std::string writeImage(GLubyte *image, int width, int height, const std::string&
   else
   {
     std::string newpath = path + ".png";
-    return writeImage(image, width, height, newpath, channels);
+    return write(newpath);
   }
   debug_print("[%s] File successfully written\n", filepath.full.c_str());
   return path;
 }
 
-unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels, unsigned int* outsize, int jpegquality)
+unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegquality)
 {
   //Returns encoded image as binary data, caller must delete returned buffer!
-  int size = width * height * channels;
+  int size = image->size();
   unsigned char* buffer = new unsigned char[size];
   if (jpegquality <= 0)
   {
 #ifndef HAVE_LIBPNG
     //Requires y-flip as uses opposite y origin to OpenGL
-    RawImageFlip(image, width, height, channels);
+    image->flip();
 #endif
     // Write png to stringstream
     std::stringstream ss;
-    write_png(ss, channels, width, height, image);
+    write_png(ss, image->channels, image->width, image->height, image->pixels);
     //Base64 encode!
     std::string str = ss.str();
     memcpy(buffer, str.c_str(), str.length());
@@ -1075,7 +1075,7 @@ unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels
   else
   {
     //Requires y-flip as uses opposite y origin to OpenGL
-    RawImageFlip(image, width, height, channels);
+    image->flip();
     // Writes JPEG image to memory buffer.
     // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
     // If return value is true, jpeg_bytes will be set to the size of the compressed data.
@@ -1084,7 +1084,7 @@ unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels
     jpge::params params;
     params.m_quality = jpegquality;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-    if (compress_image_to_jpeg_file_in_memory(buffer, jpeg_bytes, width, height, channels, (const unsigned char *)image, params))
+    if (compress_image_to_jpeg_file_in_memory(buffer, jpeg_bytes, image->width, image->height, image->channels, (const unsigned char *)image, params))
       debug_print("JPEG compressed, size %d\n", jpeg_bytes);
     else
       abort_program("JPEG compress error\n");
@@ -1094,32 +1094,32 @@ unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels
   return buffer;
 }
 
-std::string getImageString(GLubyte *image, int width, int height, int channels, int jpegquality)
+std::string getImageString(ImageData *image, int jpegquality)
 {
   //Gets encoded image as binary string
   unsigned int outsize;
-  const char* buffer = (const char*)getImageBytes(image, width, height, channels, &outsize, jpegquality);
+  const char* buffer = (const char*)getImageBytes(image, &outsize, jpegquality);
   std::string copy = std::string(buffer, outsize);
   delete[] buffer;
   return copy;
 }
 
-std::string getImageBase64(GLubyte *image, int width, int height, int channels, int jpegquality)
+std::string getImageBase64(ImageData *image, int jpegquality)
 {
   //Gets encoded image as base64 string
   std::string encoded;
   unsigned int outsize;
-  unsigned char* buffer = getImageBytes(image, width, height, channels, &outsize, jpegquality);
+  unsigned char* buffer = getImageBytes(image, &outsize, jpegquality);
   //Base64 encode
   encoded = base64_encode(reinterpret_cast<const unsigned char*>(buffer), outsize);
   delete[] buffer;
   return encoded;
 }
 
-std::string getImageUrlString(GLubyte *image, int width, int height, int channels, int jpegquality)
+std::string getImageUrlString(ImageData *image, int jpegquality)
 {
   //Gets encoded image as base64 data url
-  std::string encoded = getImageBase64(image, width, height, channels, jpegquality);
+  std::string encoded = getImageBase64(image, jpegquality);
   if (jpegquality > 0)
     return "data:image/jpeg;base64," + encoded;
   return "data:image/png;base64," + encoded;

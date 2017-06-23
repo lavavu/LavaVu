@@ -29,6 +29,7 @@
 #define VideoEncoder__
 
 #ifdef HAVE_LIBAVCODEC
+#include "GraphicsUtil.h"
 
 extern "C"
 {
@@ -104,7 +105,7 @@ extern "C"
 class VideoEncoder
 {
 public:
-  unsigned char* buffer;
+  ImageData* buffer;
 
   VideoEncoder(const char *filename, int width, int height, int fps, int quality=VIDEO_HIGHQ);
   ~VideoEncoder();

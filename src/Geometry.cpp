@@ -1338,7 +1338,7 @@ void Geometry::toImage(unsigned int idx)
   if (height == 0) height = geom[idx]->colourData()->size() / width;
   char path[FILE_PATH_MAX];
   int pixel = 3;
-  GLubyte *image = new GLubyte[width * height * pixel];
+  ImageData image(width, height, pixel);
   // Read the pixels
   for (int y=0; y<height; y++)
   {
@@ -1347,15 +1347,14 @@ void Geometry::toImage(unsigned int idx)
       //printf("%f\n", geom[idx]->colourData()[y * width + x]);
       Colour c;
       geom[idx]->getColour(c, y * width + x);
-      image[y * width*pixel + x*pixel + 0] = c.r;
-      image[y * width*pixel + x*pixel + 1] = c.g;
-      image[y * width*pixel + x*pixel + 2] = c.b;
+      image.pixels[y * width*pixel + x*pixel + 0] = c.r;
+      image.pixels[y * width*pixel + x*pixel + 1] = c.g;
+      image.pixels[y * width*pixel + x*pixel + 2] = c.b;
     }
   }
   //Write data to image file
   sprintf(path, "%s.%05d", geom[idx]->draw->name().c_str(), idx);
-  writeImage(image, width, height, path, false);
-  delete[] image;
+  image.write(path);
 }
 
 void Geometry::setTexture(DrawingObject* draw, ImageLoader* tex)

@@ -37,23 +37,23 @@
 #include "OpenGLViewer.h"
 
 // FBO buffers
-GLubyte* FrameBuffer::pixels(GLubyte* image, int channels, bool flip)
+ImageData* FrameBuffer::pixels(ImageData* image, int channels, bool flip)
 {
   // Read the pixels
   assert(width && height);
-  //TODO: store as TextureData so can check width/height
   if (!image)
-    image = new GLubyte[width * height * channels];
+    image = new ImageData(width, height, channels);
 
   if (!target) target = GL_BACK;
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
 
   //Read pixels from the specified render target
+  assert(image->width == width && image->height == height && image->channels == channels);
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
   GL_Error_Check;
   glReadBuffer(target);
   GL_Error_Check;
-  glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image);
+  glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image->pixels);
   GL_Error_Check;
   if (flip)
     RawImageFlip(image, width, height, channels);
@@ -168,7 +168,7 @@ void FBO::disable()
 #endif
 }
 
-GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
+ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
 {
   if (!enabled || frame == 0 || downsample < 2)
     return FrameBuffer::pixels(image, channels, flip);
@@ -178,15 +178,15 @@ GLubyte* FBO::pixels(GLubyte* image, int channels, bool flip)
   float factor = 1.0/pow(2, downsample-1);
   unsigned int w = width*factor;
   unsigned int h = height*factor;
-  //TODO: store as TextureData so can check width/height
   if (!image)
-    image = new GLubyte[w * h * channels];
+    image = new ImageData(w, h, channels);
 
   // Read the pixels from mipmap image
+  assert(image->width == w && image->height == h && image->channels == channels);
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
   glBindTexture(GL_TEXTURE_2D, texture);
   glGenerateMipmapEXT(GL_TEXTURE_2D);
-  glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image);
+  glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
   GL_Error_Check;
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -486,7 +486,7 @@ void OpenGLViewer::outputOFF()
   savewidth = saveheight = 0;
 }
 
-GLubyte* OpenGLViewer::pixels(GLubyte* image, int channels, bool flip)
+ImageData* OpenGLViewer::pixels(ImageData* image, int channels, bool flip)
 {
   assert(isopen);
   if (fbo.enabled)
@@ -495,7 +495,7 @@ GLubyte* OpenGLViewer::pixels(GLubyte* image, int channels, bool flip)
     return FrameBuffer::pixels(image, channels, flip);
 }
 
-GLubyte* OpenGLViewer::pixels(GLubyte* image, int& w, int& h, int channels, bool flip)
+ImageData* OpenGLViewer::pixels(ImageData* image, int& w, int& h, int channels, bool flip)
 {
   assert(isopen);
 
@@ -517,16 +517,15 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   std::string retImg;
 
   // Read the pixels
-  // TODO: store in TextureData so can check width/height
-  GLubyte* image = pixels(NULL, outwidth, outheight, channels, false);
+  ImageData* image = pixels(NULL, outwidth, outheight, channels, false);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
-    retImg = getImageUrlString(image, outwidth, outheight, channels, jpegquality);
+    retImg = getImageUrlString(image, jpegquality);
   else
-    retImg = writeImage(image, outwidth, outheight, path, channels);
+    retImg = image->write(path);
 
-  delete[] image;
+  delete image;
 
   return retImg;
 }

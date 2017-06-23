@@ -849,7 +849,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   if (outChannels == 1)
   {
     //Convert to luminance (just using red channel now, other options in future)
-    GLubyte* luminance = new GLubyte[w*h];
+    ImageData luminance(w, h, 1);
     GLubyte byte;
     for (int y=0; y<height; y+=hstep)
     {
@@ -866,13 +866,12 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           if (imageData[(y*width+x)*channels+2] > byte)
             byte = imageData[(y*width+x)*channels+2];
         }
-        luminance[offset++] = byte;
+        luminance.pixels[offset++] = byte;
       }
     }
 
     //Now using a container designed for byte data
-    amodel->volumes->read(vobj, w * h, lucLuminanceData, luminance, w, h);
-    delete[] luminance;
+    amodel->volumes->read(vobj, w * h, lucLuminanceData, luminance.pixels, w, h);
   }
   else if (outChannels == 3)
   {
@@ -882,7 +881,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     else
     {
       //Convert LUM/RGBA to RGB
-      GLubyte* rgb = new GLubyte[w*h*3];
+      ImageData rgb(w, h, 3);
       for (int y=0; y<height; y+=hstep)
       {
         for (int x=0; x<width; x+=wstep)
@@ -890,20 +889,19 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           assert(offset+2 < w*h*3);
           if (channels == 1)
           {
-            rgb[offset++] = imageData[y*width+x];
-            rgb[offset++] = imageData[y*width+x];
-            rgb[offset++] = imageData[y*width+x];
+            rgb.pixels[offset++] = imageData[y*width+x];
+            rgb.pixels[offset++] = imageData[y*width+x];
+            rgb.pixels[offset++] = imageData[y*width+x];
           }
           else if (channels >= 3)
           {
-            rgb[offset++] = imageData[(y*width+x)*channels];
-            rgb[offset++] = imageData[(y*width+x)*channels+1];
-            rgb[offset++] = imageData[(y*width+x)*channels+2];
+            rgb.pixels[offset++] = imageData[(y*width+x)*channels];
+            rgb.pixels[offset++] = imageData[(y*width+x)*channels+1];
+            rgb.pixels[offset++] = imageData[(y*width+x)*channels+2];
           }
         }
       }
-      amodel->volumes->read(vobj, w*h*3, lucRGBData, rgb, w, h);
-      delete[] rgb;
+      amodel->volumes->read(vobj, w*h*3, lucRGBData, rgb.pixels, w, h);
     }
   }
   else
@@ -914,7 +912,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     else
     {
       //Convert LUM/RGB to RGBA
-      GLubyte* rgba = new GLubyte[w*h*4];
+      ImageData rgba(w, h, 4);
       for (int y=0; y<height; y+=hstep)
       {
         for (int x=0; x<width; x+=wstep)
@@ -922,26 +920,25 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           assert(offset+3 < w*h*4);
           if (channels == 1)
           {
-            rgba[offset++] = imageData[y*width+x];
-            rgba[offset++] = imageData[y*width+x];
-            rgba[offset++] = imageData[y*width+x];
-            rgba[offset++] = 255;
+            rgba.pixels[offset++] = imageData[y*width+x];
+            rgba.pixels[offset++] = imageData[y*width+x];
+            rgba.pixels[offset++] = imageData[y*width+x];
+            rgba.pixels[offset++] = 255;
           }
           else if (channels >= 3)
           {
-            rgba[offset++] = imageData[(y*width+x)*channels];
-            rgba[offset++] = imageData[(y*width+x)*channels+1];
-            rgba[offset++] = imageData[(y*width+x)*channels+2];
-            //if (x%16==0&&y%16==0) printf("RGBA %d %d %d\n", rgba[offset-3], rgba[offset-2], rgba[offset-1]);
+            rgba.pixels[offset++] = imageData[(y*width+x)*channels];
+            rgba.pixels[offset++] = imageData[(y*width+x)*channels+1];
+            rgba.pixels[offset++] = imageData[(y*width+x)*channels+2];
+            //if (x%16==0&&y%16==0) printf("RGBA %d %d %d\n", rgba.pixels[offset-3], rgba.pixels[offset-2], rgba.pixels[offset-1]);
             if (channels == 4)
-              rgba[offset++] = imageData[(y*width+x)*channels+3];
+              rgba.pixels[offset++] = imageData[(y*width+x)*channels+3];
             else
-              rgba[offset++] = 255;
+              rgba.pixels[offset++] = 255;
           }
         }
       }
-      amodel->volumes->read(vobj, w*h, lucRGBAData, rgba, w, h);
-      delete[] rgba;
+      amodel->volumes->read(vobj, w*h, lucRGBAData, rgba.pixels, w, h);
     }
   }
   std::cout << "Slice loaded " << count << " : " << width << "," << height << " channels: " << outChannels
@@ -3217,17 +3214,17 @@ void LavaVu::imageBuffer(unsigned char* array, int width, int height, int depth)
 {
   if (!amodel || !viewer->isopen) return;
   // Read the pixels into provided buffer
-  viewer->pixels((GLubyte*)array, width, height, depth, false);
+  viewer->pixels((ImageData*)array, width, height, depth, false);
 }
 
 std::string LavaVu::imageJPEG(int width, int height, int quality)
 {
   if (!amodel || !viewer->isopen) return "";
 
-  GLubyte* image = viewer->pixels(NULL, width, height, 3, false);
+  ImageData* image = viewer->pixels(NULL, width, height, 3, false);
   //Write JPEG to string
-  std::string retImg = getImageString(image, width, height, 3, quality);
-  delete[] image;
+  std::string retImg = getImageString(image, quality);
+  delete image;
   return retImg;
 }
 
@@ -3235,10 +3232,10 @@ std::string LavaVu::imagePNG(int width, int height, int depth)
 {
   if (!amodel || !viewer->isopen) return "";
 
-  GLubyte* image = viewer->pixels(NULL, width, height, depth, false);
+  ImageData* image = viewer->pixels(NULL, width, height, depth, false);
   //Write PNG to string
-  std::string retImg = getImageString(image, width, height, depth);
-  delete[] image;
+  std::string retImg = getImageString(image);
+  delete image;
   return retImg;
 }
 
@@ -3270,7 +3267,7 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   //- first 3 values are width,height,channels
   //- read from disk if path provided
   //- read from framebuffer otherwise
-  GLubyte* image = NULL;
+  ImageData* image = NULL;
   int outchannels = channels;
   ImageFile* img = NULL;
   if (path.length() > 0)
@@ -3279,7 +3276,7 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     width = img->width;
     height = img->height;
     outchannels = img->channels;
-    image = img->pixels;
+    image = (ImageData*)img;
     //printf("Reading file %d x %d @ %d (actual %d)\n", width, height, channels, outchannels);
   }
   else
@@ -3306,13 +3303,13 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   for (int i=0; i<size*outchannels; i++)
   {
     if (skipalpha && i%4==3) continue;
-    data[idx++] = image[i] * r255;
+    data[idx++] = image->pixels[i] * r255;
   }
   //Free image data
   if (img)
     delete img;
   else
-    delete[] image;
+    delete image;
   return data;
 }
 

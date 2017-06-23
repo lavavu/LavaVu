@@ -130,6 +130,80 @@ void compareCoordMinMax(float* min, float* max, float *coord);
 void clearMinMax(float* min, float* max);
 void getCoordRange(float* min, float* max, float* dims);
 
+void RawImageFlip(void* image, int width, int height, int channels);
+
+class ImageData  //Raw Image data
+{
+public:
+  GLuint   width;     // Image Width
+  GLuint   height;    // Image Height
+  GLuint   channels;  // Image Depth
+  GLubyte* pixels;     // Image data
+  bool allocated;
+
+  ImageData(int w=0, int h=0, int c=4) : pixels(NULL), allocated(false)
+  {
+    if (w && h && c)
+      allocate(w, h, c);
+  }
+
+  ImageData(int w, int h, int c, GLubyte* data, bool allocated=false) : allocated(allocated)
+  {
+    //Provided data, pass allocated=true if it needs to be freed when in destructor
+    width = w;
+    height = h;
+    channels = c;
+    pixels = data;
+  }
+
+  ~ImageData()
+  {
+    free();
+  }
+
+  void allocate(int w, int h, int c=4)
+  {
+    free();
+    width = w;
+    height = h;
+    channels = c;
+    pixels = new GLubyte[width * height * channels];
+    allocated = true;
+  }
+
+  void free()
+  {
+    if (allocated)
+    {
+      if (pixels)
+        delete pixels;
+      pixels = NULL;
+    }
+  }
+
+  void copy(GLubyte* data)
+  {
+    memcpy(pixels, data, width*height*channels);
+  }
+
+  void flip()
+  {
+    RawImageFlip(pixels, width, height, channels);
+  }
+
+  void clear()
+  {
+    memset(pixels, 0, size());
+  }
+
+  unsigned int size()
+  {
+    return width*height*channels*sizeof(GLubyte);
+  }
+
+  std::string write(const std::string& path);
+};
+
 //Generic 3d vector
 class Vec3d
 {
@@ -648,14 +722,12 @@ void drawEllipsoid_(float centre[3], float radiusX, float radiusY, float radiusZ
 void drawVector3d_( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);
 void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
-void RawImageFlip(void* image, int width, int height, int channels);
 GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outwidth, int outheight, int offsetx=0, int offsety=0);
 
-std::string writeImage(GLubyte *image, int width, int height, const std::string& path, int channels=3);
-unsigned char* getImageBytes(GLubyte *image, int width, int height, int channels, unsigned int* outsize, int jpegquality);
-std::string getImageString(GLubyte *image, int width, int height, int channels, int jpegquality=0);
-std::string getImageBase64(GLubyte *image, int width, int height, int channels, int jpegquality=0);
-std::string getImageUrlString(GLubyte *image, int width, int height, int channels, int jpegquality=0);
+unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegquality);
+std::string getImageString(ImageData *image, int jpegquality=0);
+std::string getImageBase64(ImageData *image, int jpegquality=0);
+std::string getImageUrlString(ImageData *image, int jpegquality=0);
 
 //PNG utils
 void write_png(std::ostream& stream, int channels, int width, int height, void* data);
@@ -720,12 +792,9 @@ public:
   }
 };
 
-class ImageFile
+class ImageFile : public ImageData
 {
 public:
-  int width, height, channels;
-  GLubyte* pixels;
-
   ImageFile(const FilePath& fn)
   {
     //Use the texture loader to read any supported image
@@ -734,11 +803,6 @@ public:
     width = tex.texture->width;
     height = tex.texture->height;
     channels = tex.texture->channels;
-  }
-
-  ~ImageFile()
-  {
-    if (pixels) delete[] pixels;
   }
 };
 
