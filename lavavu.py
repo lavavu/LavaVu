@@ -1684,6 +1684,18 @@ class Viewer(object):
             If the test passes the output images will be deleted, set to False to disable deletion
         """
         results = []
+        if not os.path.isdir(expectedPath):
+            print "No expected data, copying found images to expected folder..."
+            os.makedirs(expectedPath)
+            from shutil import copyfile
+            if not imagelist:
+                #Get all images in cwd
+                imagelist = glob.glob("*.png")
+                imagelist += glob.glob("*.jpg")
+            print imagelist
+            for image in imagelist:
+                copyfile(image, os.path.join(expectedPath, image))
+
         if not imagelist:
             #Default to all png images in expected dir
             cwd = os.getcwd()
