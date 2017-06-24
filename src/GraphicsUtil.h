@@ -158,32 +158,35 @@ public:
 
   ~ImageData()
   {
-    free();
+    release();
   }
 
   void allocate(int w, int h, int c=4)
   {
-    free();
+    release();
     width = w;
     height = h;
     channels = c;
-    pixels = new GLubyte[width * height * channels];
+    pixels = new GLubyte[size()];
     allocated = true;
   }
 
-  void free()
+  void release()
   {
     if (allocated)
     {
       if (pixels)
-        delete pixels;
+      {
+        delete[] pixels;
+      }
       pixels = NULL;
+      allocated = false;
     }
   }
 
   void copy(GLubyte* data)
   {
-    memcpy(pixels, data, width*height*channels);
+    memcpy(pixels, data, size());
   }
 
   void flip()
@@ -194,6 +197,21 @@ public:
   void clear()
   {
     memset(pixels, 0, size());
+  }
+
+  void rgba2rgb()
+  {
+    if (channels != 4) return;
+    int scanline = channels * width;
+    GLubyte* dst = pixels;
+    GLubyte* src = pixels;
+    for (int i=0; i<width*height*4; i++)
+    {
+      memcpy(dst, src, 3);
+      dst += 3;
+      src += 4;
+    }
+    channels = 3;
   }
 
   unsigned int size()

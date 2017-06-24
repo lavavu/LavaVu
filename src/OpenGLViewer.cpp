@@ -56,7 +56,7 @@ ImageData* FrameBuffer::pixels(ImageData* image, int channels, bool flip)
   glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image->pixels);
   GL_Error_Check;
   if (flip)
-    RawImageFlip(image, width, height, channels);
+    image->flip();
   GL_Error_Check;
   return image;
 }
@@ -174,6 +174,7 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
     return FrameBuffer::pixels(image, channels, flip);
 
 #ifdef GL_FRAMEBUFFER_EXT
+  glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
   //Output width
   float factor = 1.0/pow(2, downsample-1);
   unsigned int w = width*factor;
@@ -183,15 +184,27 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
 
   // Read the pixels from mipmap image
   assert(image->width == w && image->height == h && image->channels == channels);
+  assert(w/factor == width && h/factor == height);
+  assert(channels == 3 || channels == 4);
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
   glBindTexture(GL_TEXTURE_2D, texture);
   glGenerateMipmapEXT(GL_TEXTURE_2D);
+
+#ifdef DEBUG
+  //Check size
+  int outw, outh;
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
+  assert(w==outw && h==outh);
+  debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
+#endif
+
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
   GL_Error_Check;
   glBindTexture(GL_TEXTURE_2D, 0);
 
   if (flip)
-    RawImageFlip(image, w, h, channels);
+    image->flip();
   GL_Error_Check;
 #endif
   return image;
@@ -443,7 +456,7 @@ void OpenGLViewer::outputON(int& w, int& h, int channels)
   if (!w) w = width;
   if (!h) h = height;
   assert(w && h);
-  //debug_printf("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
+  //debug_print("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
 
   //Redraw blended output for transparent PNG
   if (channels == 4) blend_mode = BLEND_PNG;
@@ -525,7 +538,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   else
     retImg = image->write(path);
 
-  delete image;
+  if (image) delete image;
 
   return retImg;
 }
