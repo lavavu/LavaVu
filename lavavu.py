@@ -1500,7 +1500,7 @@ class Viewer(object):
         """
         self.app.init()
 
-    def image(self, filename=None, resolution=None, transparent=False):
+    def image(self, filename="", resolution=None, transparent=False):
         """
         Save or get an image of current display
 
@@ -1593,7 +1593,7 @@ class Viewer(object):
                 #Write files to disk first, can be passed directly on url but is slow for large datasets
                 filename = "input.json"
                 text_file = open("html/" + filename, "w")
-                text_file.write(self.web());
+                text_file.write(self.app.web());
                 text_file.close()
                 from IPython.display import IFrame
                 display(IFrame("html/viewer.html#" + filename, width=resolution[0], height=resolution[1]))

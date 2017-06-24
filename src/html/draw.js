@@ -1532,7 +1532,7 @@ Viewer.prototype.loadFile = function(source) {
 
   this.applyBackground(vis.properties.background);
 
-  if (vis.properties.resolution && vis.properties.resolution[0] && vis.properties.resolution[1]) {
+  if (this.canvas && vis.properties.resolution && vis.properties.resolution[0] && vis.properties.resolution[1]) {
     this.width = vis.properties.resolution[0];
     this.height = vis.properties.resolution[1];
     this.canvas.style.width = "";
