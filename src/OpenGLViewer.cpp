@@ -48,7 +48,7 @@ ImageData* FrameBuffer::pixels(ImageData* image, int channels, bool flip)
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
 
   //Read pixels from the specified render target
-  assert(image->width == width && image->height == height && image->channels == channels);
+  assert(image->width == (unsigned int)width && image->height == (unsigned int)height && image->channels == (unsigned int)channels);
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
   GL_Error_Check;
   glReadBuffer(target);
@@ -183,7 +183,7 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
     image = new ImageData(w, h, channels);
 
   // Read the pixels from mipmap image
-  assert(image->width == w && image->height == h && image->channels == channels);
+  assert(image->width == w && image->height == h && image->channels == (unsigned int)channels);
   assert(w/factor == width && h/factor == height);
   assert(channels == 3 || channels == 4);
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
@@ -195,7 +195,7 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
   int outw, outh;
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
-  assert(w==outw && h==outh);
+  assert(w==(unsigned int)outw && h==(unsigned int)outh);
   debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
 #endif
 

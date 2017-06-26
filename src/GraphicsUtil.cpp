@@ -550,7 +550,7 @@ void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str) {}
 void FontManager::print3d(double x, double y, double z, const char *str) {}
-void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align) {}
+void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align, float* scale) {}
 int FontManager::printWidth(const char *string)
 {
   return 0;

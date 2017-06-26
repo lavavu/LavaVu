@@ -1271,10 +1271,10 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   Vec3d vertex;
 
   //Use red channel as luminance for now
-  for (int z=0; z<image.height; z++)
+  for (unsigned int z=0; z<image.height; z++)
   {
     vertex[2] = z;
-    for (int x=0; x<image.width; x++)
+    for (unsigned int x=0; x<image.width; x++)
     {
       vertex[0] = x;
       vertex[1] = heightrange * image.pixels[(z*image.width+x)*image.channels] / 255.0;

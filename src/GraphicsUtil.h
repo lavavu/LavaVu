@@ -202,10 +202,9 @@ public:
   void rgba2rgb()
   {
     if (channels != 4) return;
-    int scanline = channels * width;
     GLubyte* dst = pixels;
     GLubyte* src = pixels;
-    for (int i=0; i<width*height*4; i++)
+    for (unsigned int i=0; i<width*height*4; i++)
     {
       memcpy(dst, src, 3);
       dst += 3;
