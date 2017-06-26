@@ -328,6 +328,7 @@ protected:
   GLuint indexvbo, vbo;
 public:
   Triangles(DrawState& drawstate);
+  ~Triangles() {close();}
   virtual void close();
   unsigned int triCount();
   virtual void update();
@@ -346,6 +347,7 @@ class TriSurfaces : public Triangles
   std::vector<Vec3d> centroids;
 public:
   TriSurfaces(DrawState& drawstate);
+  ~TriSurfaces() {close();}
   virtual void close();
   virtual void update();
   void loadMesh();
@@ -394,6 +396,7 @@ class Links : public Glyphs
   bool all2d, any3d;
 public:
   Links(DrawState& drawstate, bool all2Dflag=false);
+  ~Links() {close();}
   virtual void update();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
@@ -459,6 +462,7 @@ class Imposter : public Geometry
   GLuint vbo;
 public:
   Imposter(DrawState& drawstate);
+  ~Imposter() {close();}
   virtual void close();
   virtual void update();
   virtual void draw();

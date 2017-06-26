@@ -44,6 +44,7 @@ Lines::Lines(DrawState& drawstate) : Geometry(drawstate)
 
 Lines::~Lines()
 {
+  close();
 }
 
 void Lines::close()

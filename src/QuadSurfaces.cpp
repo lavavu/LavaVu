@@ -42,6 +42,7 @@ QuadSurfaces::QuadSurfaces(DrawState& drawstate) : TriSurfaces(drawstate)
 
 QuadSurfaces::~QuadSurfaces()
 {
+  close();
 }
 
 void QuadSurfaces::display()

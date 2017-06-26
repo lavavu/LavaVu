@@ -360,8 +360,8 @@ Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
 
 Geometry::~Geometry()
 {
+  //Free GeomData elements
   clear(true);
-  close();
 }
 
 //Virtuals to implement
@@ -1859,6 +1859,7 @@ Glyphs::Glyphs(DrawState& drawstate) : Geometry(drawstate)
 
 Glyphs::~Glyphs()
 {
+  close();
   delete lines;
   delete tris;
 }

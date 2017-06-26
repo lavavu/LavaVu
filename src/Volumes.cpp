@@ -43,6 +43,7 @@ Volumes::Volumes(DrawState& drawstate) : Imposter(drawstate)
 
 Volumes::~Volumes()
 {
+  close();
 }
 
 void Volumes::close()
