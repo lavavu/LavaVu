@@ -1611,9 +1611,6 @@ void LavaVu::resize(int new_width, int new_height)
 
 void LavaVu::close()
 {
-  for (unsigned int i=0; i < models.size(); i++)
-    models[i]->close();
-
   //Clear models - will delete contained views, objects
   //Should free all allocated memory
   for (unsigned int i=0; i < models.size(); i++)

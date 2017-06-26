@@ -258,6 +258,24 @@ void Model::init()
 
 Model::~Model()
 {
+  for (unsigned int i=0; i < geometry.size(); i++)
+    delete geometry[i];
+  geometry.clear();
+
+  for (unsigned int i=0; i < fixed.size(); i++)
+    delete fixed[i];
+  fixed.clear();
+
+  labels = NULL;
+  points = NULL;
+  vectors = NULL;
+  tracers = NULL;
+  quadSurfaces = NULL;
+  triSurfaces = NULL;
+  lines = NULL;
+  shapes = NULL;
+  volumes = NULL;
+
   clearTimeSteps();
 
   //Clear drawing objects
@@ -363,23 +381,6 @@ DrawingObject* Model::findObject(unsigned int id)
   for (unsigned int i=0; i<objects.size(); i++)
     if (objects[i]->dbid == id) return objects[i];
   return NULL;
-}
-
-void Model::close()
-{
-  for (unsigned int i=0; i < geometry.size(); i++)
-    delete geometry[i];
-  geometry.clear();
-
-  labels = NULL;
-  points = NULL;
-  vectors = NULL;
-  tracers = NULL;
-  quadSurfaces = NULL;
-  triSurfaces = NULL;
-  lines = NULL;
-  shapes = NULL;
-  volumes = NULL;
 }
 
 void Model::clearObjects(bool all)

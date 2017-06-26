@@ -116,7 +116,6 @@ public:
   DrawingObject* axisobj;
   DrawingObject* rulerobj;
 
-  void close();
   void clearObjects(bool all=false);
   void setup();
   void reload(DrawingObject* obj);
