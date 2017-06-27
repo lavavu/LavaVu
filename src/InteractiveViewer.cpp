@@ -737,7 +737,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   //First check for settings commands that don't require a model to be loaded yet!
   if (parsed.exists("docs:scripting"))
   {
-    helpCommand("docs:scripting");
+    help = helpCommand("docs:scripting");
     return false;
   }
   else if (parsed.exists("docs:interaction"))
@@ -747,7 +747,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
   if (parsed.exists("docs:properties"))
   {
-    helpCommand("docs:properties");
+    help = helpCommand("docs:properties");
     return false;
   }
   else if (parsed.exists("file"))
@@ -1875,15 +1875,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string cmd = parsed["help"];
     if (cmd.length() > 0)
     {
-      help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
-      helpCommand(cmd);
+      help = helpCommand(cmd);
+      help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n" + help;
       std::cout << help;
     }
     else
     {
-      help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~\n";
-      help += "For detailed help on a command, type:\n\nhelp command [ENTER]";
-      helpCommand();
+      help = helpCommand(cmd);
+      help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~\n"
+             "For detailed help on a command, type:\n\nhelp command [ENTER]" + help;
       std::cout << HELP_INTERACTION;
       std::cout << help;
     }
@@ -3405,18 +3405,17 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
   {
     for (unsigned int i=0; i<categories.size(); i++)
     {
-      help += "\n" + categories[i] + " commands:\n\n > **";
+      markdown << "\n" << categories[i] << " commands:\n\n > **";
       std::vector<std::string> cmds = commandList(categories[i]);
       for (unsigned int j=0; j<cmds.size(); j++)
       {
-        if (j % 11 == 10) help += "\n  ";
-        help += cmds[j];
-        if (j < cmds.size() - 1) help += ", ";
+        if (j % 11 == 10) markdown << "\n  ";
+        markdown << cmds[j];
+        if (j < cmds.size() - 1) markdown << ", ";
       }
-      help += "**\n";
+      markdown << "**\n";
     }
-    help += "\n";
-    markdown << help;
+    markdown << "\n";
   }
   else if (cmd == "docs:scripting")
   {
@@ -3518,7 +3517,6 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
         break;
       }
     }
-    help = markdown.str();
   }
   else
   {
@@ -3529,6 +3527,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     std::stringstream ss(help);
     while(std::getline(ss, line))
       markdown << " > " << line << "  \n";
+    help = "";
     markdown << std::endl;
   }
 
