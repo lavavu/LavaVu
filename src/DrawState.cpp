@@ -5,13 +5,20 @@ DrawState::DrawState() : prog()
   borderobj = axisobj = rulerobj = NULL;
   counter = 0;
   omegalib = false;
+  segments = 0;    // Saves segment count for circle based objects
   //reset();
   defaults = json::object();
+  // Saves arrays of x,y points on circle for set segment count
+  x_coords = NULL;
+  y_coords = NULL;
 }
 
 DrawState::~DrawState()
 {
   if (globalcam) delete globalcam;
+
+  if (x_coords != NULL) delete[] x_coords;
+  if (y_coords != NULL) delete[] y_coords;
 }
 
 std::string DrawState::counterFilename()
@@ -47,11 +54,6 @@ void DrawState::reset()
     max[i] = -HUGE_VALF;
     dims[i] = 0;
   }
-
-  // Saves arrays of x,y points on circle for set segment count
-  x_coords = NULL;
-  y_coords = NULL;
-  segments = 0;    // Saves segment count for circle based objects
 
   fonts.reset();
 
@@ -1493,10 +1495,10 @@ bool DrawState::has(const std::string& key)
 void DrawState::cacheCircleCoords(int segment_count)
 {
   // Recalc required? Only done first time called and when segment count changes
+  if (segment_count == 0 || segments == segment_count) return;
   GLfloat angle;
   float angle_inc = 2*M_PI / (float)segment_count;
   int idx;
-  if (segments == segment_count) return;
 
   // Calculate unit circle points when divided into specified segments
   // and store in static variable to re-use every time a vector with the
