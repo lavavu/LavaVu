@@ -762,26 +762,31 @@ int Model::loadTimeSteps(bool scan)
   int rows = 0;
   int last_step = 0;
 
-  //Scan for additional timestep files with corrosponding entries in timestep table
+  //Scan for additional timestep files with corresponding entries in timestep table
   if (!scan && database)
   {
-    sqlite3_stmt* statement = database.select("SELECT * FROM timestep");
+    sqlite3_stmt* statement = database.select("SELECT id,time,(select count() from geometry where timestep = timestep.id) FROM timestep");
     //(id, time, dim_factor, units)
     while (sqlite3_step(statement) == SQLITE_ROW)
     {
       int step = sqlite3_column_int(statement, 0);
       double time = sqlite3_column_double(statement, 1);
+      int geomcount = sqlite3_column_int(statement, 2);
       addTimeStep(step, time);
       //Save gap
       if (step - last_step > drawstate.gap) drawstate.gap = step - last_step;
       last_step = step;
 
-      //Look for additional db file (minimum 3 digit padded step in names)
-      std::string path = checkFileStep(step, basename, 3);
-      if (path.length() > 0)
+      //No geometry in current db? Check for attachment db
+      if (geomcount == 0)
       {
-        debug_print("Found step %d database %s\n", step, path.c_str());
-        timesteps[rows]->path = path;
+        //Look for additional db file (minimum 3 digit padded step in names)
+        std::string path = checkFileStep(step, basename, 3);
+        if (path.length() > 0 && path != database.file.full)
+        {
+          debug_print("Found step %d database %s\n", step, path.c_str());
+          timesteps[rows]->path = path;
+        }
       }
 
       rows++;
@@ -1212,7 +1217,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
     if (obj) obj->skip = false;
   }
 
-  //...timestep...(if ts db attached, assume all geometry is at current step)
+  //...timestep...(if ts db attached, just load all data from attached db assuming geometry is at current step)
   if (time_start >= 0 && time_stop >= 0 && !database.attached)
   {
     if (strlen(objfilter) > 0)
