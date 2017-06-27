@@ -1465,6 +1465,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   //Add colour bar display
   colourBar(obj);
   unsigned int pointsperswarm = numpoints/4; //4 swarms
+  srand(0); //Use a deterministic seed for tests
   for (unsigned int i=0; i < numpoints; i++)
   {
     float colour, ref[3];
@@ -3263,46 +3264,45 @@ void LavaVu::update(DrawingObject* target, lucGeometryType type, bool compress)
   amodel->updateObject(target, type, compress);
 }
 
-std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int channels)
+std::vector<float> LavaVu::imageArray(std::string path, int width, int height, int outchannels)
 {
   //Return an image as a vector of floats
   //- first 3 values are width,height,channels
   //- read from disk if path provided
   //- read from framebuffer otherwise
   ImageData* image = NULL;
-  int outchannels = channels;
   ImageFile* img = NULL;
   if (path.length() > 0)
   {
     img = new ImageFile(path);
-    width = img->width;
-    height = img->height;
-    outchannels = img->channels;
     image = (ImageData*)img;
-    //printf("Reading file %d x %d @ %d (actual %d)\n", width, height, channels, outchannels);
+    //printf("Reading file %s %d x %d @ %d (requested %d)\n", path.c_str(), image->width, image->height, image->channels, outchannels);
+    //Will discard alpha but adding alpha channel not supported for now
+    if (outchannels > image->channels)
+      outchannels = image->channels;
   }
   else
   {
-    //Get current image from framebuffer
+    //Get current image from framebuffer at requested size and depth
     image = viewer->pixels(NULL, width, height, outchannels);
     //printf("Reading framebuffer %d x %d @ %d\n", width, height, outchannels);
-    viewer->blend_mode = BLEND_NORMAL;
   }
 
   if (!image) return std::vector<float>();
 
   //Size in pixels
-  int size = width*height;
-  std::vector<float> data(3+size*channels);
+  int size = image->width*image->height;
+  std::vector<float> data(3+size*outchannels);
   //Add dims
-  data[0] = width;
-  data[1] = height;
-  data[2] = channels;
+  data[0] = image->width;
+  data[1] = image->height;
+  data[2] = image->channels;
   //Load data
   float r255 = 1.0/255.0;
-  bool skipalpha = outchannels > channels;
+  //If loaded image channels > requested, reduce RGBA->RGB
+  bool skipalpha = image->channels > outchannels;
   int idx=3;
-  for (int i=0; i<size*outchannels; i++)
+  for (int i=0; i<size*image->channels; i++)
   {
     if (skipalpha && i%4==3) continue;
     data[idx++] = image->pixels[i] * r255;
@@ -3334,6 +3334,7 @@ float LavaVu::imageDiff(std::string path1, std::string path2, int downsample)
   {
     std::cout << "Image metrics differ: " << std::endl;
     std::cout << " - " << path1 << " != " << path2 << std::endl;
+    std::cout << " - " << image1.size() << " : " << image2.size() << std::endl;
     std::cout << " - " << image1[0] << " x " << image1[1] << " : " << image1[2] << std::endl;
     std::cout << " - " << image2[0] << " x " << image2[1] << " : " << image2[2] << std::endl;
     return 1.0;
