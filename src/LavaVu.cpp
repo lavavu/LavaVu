@@ -1811,7 +1811,7 @@ void LavaVu::display(bool redraw)
   //Viewport reset flagged
   if (viewset > 0)
   {
-    if (!drawstate.omegalib)
+    if (!viewer->imagemode && !drawstate.omegalib)
     {
       //Resize if required
       json res = aview->properties["resolution"];
@@ -1951,14 +1951,17 @@ void LavaVu::display(bool redraw)
     displayText(ss.str(), 1);
   }
 
-  //Print current info message (displayed for one frame only)
-  if (status) displayMessage();
-
-  //Print help message (displayed for one frame only)
-  if (help.length()) 
+  if (viewer->visible && !viewer->imagemode)
   {
-    displayText(help);
-    help = "";
+    //Print current info message (displayed for one frame only)
+    if (status) displayMessage();
+
+    //Print help message (displayed for one frame only)
+    if (help.length())
+    {
+      displayText(help);
+      help = "";
+    }
   }
 
   //Display object list if enabled

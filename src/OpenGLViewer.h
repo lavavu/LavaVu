@@ -120,6 +120,7 @@ public:
   int outwidth, outheight;
   std::string title;
   std::string output_path;
+  bool imagemode;
 
   OpenGLViewer();
   virtual ~OpenGLViewer();
@@ -157,10 +158,10 @@ public:
   void loop(bool interactive=true);
 
   virtual void fullScreen() {}
-  void outputON(int& w, int& h, int channels=3);
+  void outputON(int w, int h, int channels=3);
   void outputOFF();
   ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
-  ImageData* pixels(ImageData* image, int& w, int& h, int channels=3, bool flip=false);
+  ImageData* pixels(ImageData* image, int w, int h, int channels=3, bool flip=false);
   std::string image(const std::string& path="", int jpegquality=0, bool transparent=false);
 
   float scale2d() {return pow(2, fbo.downsample-1);}

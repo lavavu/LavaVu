@@ -211,7 +211,9 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
 }
 
 //OpenGLViewer class implementation...
-OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fullscreen(false), postdisplay(false), quitProgram(false), isopen(false), mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0)
+OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fullscreen(false), 
+  postdisplay(false), quitProgram(false), isopen(false), 
+  mouseState(0), button(NoButton), blend_mode(BLEND_NORMAL), outwidth(0), outheight(0), imagemode(false)
 {
   app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;
@@ -434,13 +436,23 @@ void OpenGLViewer::display(bool redraw)
   }
 }
 
-void OpenGLViewer::outputON(int& w, int& h, int channels)
+void OpenGLViewer::outputON(int w, int h, int channels)
 {
   //This function switches to the defined output resolution
   //and enables downsampling if possible
   //Used when capturing images and video frames
   //(only supported with hidden window => fbo output)
   assert(isopen);
+
+  //Ensure correct GL context selected first
+  //Do a full display or setsize will be called again
+  //with the original display size before we output
+  //Also ensures correct resolution set by setsize if changed
+  display();
+
+  //Enable image mode for further display calls
+  imagemode = true;
+
   //Save current viewer size
   savewidth = width;
   saveheight = height;
@@ -460,12 +472,6 @@ void OpenGLViewer::outputON(int& w, int& h, int channels)
 
   //Redraw blended output for transparent PNG
   if (channels == 4) blend_mode = BLEND_PNG;
-
-  //Ensure correct GL context selected first
-  //display(false);
-  //Do a full display or setsize will be called again
-  //with the original display size before we output
-  display();
 
   if (!fbo.enabled)
   {
@@ -492,6 +498,7 @@ void OpenGLViewer::outputON(int& w, int& h, int channels)
 void OpenGLViewer::outputOFF()
 {
   //Restore normal viewing dims when output mode is finished
+  imagemode = false;
   width = savewidth;
   height = saveheight;
   //Restore settings
@@ -508,7 +515,7 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int channels, bool flip)
     return FrameBuffer::pixels(image, channels, flip);
 }
 
-ImageData* OpenGLViewer::pixels(ImageData* image, int& w, int& h, int channels, bool flip)
+ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels, bool flip)
 {
   assert(isopen);
 
