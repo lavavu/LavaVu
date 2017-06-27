@@ -6,6 +6,12 @@ DrawState::DrawState() : prog()
   counter = 0;
   omegalib = false;
   //reset();
+  defaults = json::object();
+}
+
+DrawState::~DrawState()
+{
+  if (globalcam) delete globalcam;
 }
 
 std::string DrawState::counterFilename()
@@ -23,7 +29,6 @@ std::string DrawState::counterFilename()
 
 void DrawState::reset()
 {
-  defaults = json::object();
   globals = json::object();
 
   automate = false;
@@ -32,8 +37,6 @@ void DrawState::reset()
   if (axisobj) delete axisobj;
   if (rulerobj) delete rulerobj;
   borderobj = axisobj = rulerobj = NULL;
-
-  fonts.reset();
 
   now = -1;
   gap = 0;
@@ -54,7 +57,10 @@ void DrawState::reset()
 
   colourMaps = NULL;
 
-  //Setup default properties
+  //Setup default properties (once only)
+  if (properties.size() > 0)
+    return;
+
   properties = {
     {
       "font",

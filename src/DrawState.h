@@ -63,6 +63,7 @@ public:
   int counter;
 
   DrawState();
+  ~DrawState();
   std::string counterFilename();
   void reset();
   json& global(const std::string& key);

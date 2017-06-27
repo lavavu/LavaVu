@@ -170,6 +170,11 @@ void LavaVu::defaults()
   animate = 0;
   repeat = 0;
   encoder = NULL;
+
+  history.clear();
+  linehistory.clear();
+  replay.clear();
+  help = "";
 }
 
 LavaVu::~LavaVu()
@@ -2228,7 +2233,7 @@ void LavaVu::drawBorder()
   DrawingObject* obj = drawstate.borderobj;
   border->clear();
   border->setup(aview);
-  if (!obj) obj = new DrawingObject(drawstate, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
+  if (!obj) obj = drawstate.borderobj = new DrawingObject(drawstate, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
   if (!aview->is3d) obj->properties.data["depthtest"] = false;
