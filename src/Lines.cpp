@@ -53,6 +53,7 @@ void Lines::close()
   {
     if (vbo)
       glDeleteBuffers(1, &vbo);
+    vbo = 0;
 
     reload = true;
   }

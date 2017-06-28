@@ -3281,7 +3281,7 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     image = (ImageData*)img;
     //printf("Reading file %s %d x %d @ %d (requested %d)\n", path.c_str(), image->width, image->height, image->channels, outchannels);
     //Will discard alpha but adding alpha channel not supported for now
-    if (outchannels > image->channels)
+    if ((unsigned int)outchannels > image->channels)
       outchannels = image->channels;
   }
   else
@@ -3303,9 +3303,9 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   //Load data
   float r255 = 1.0/255.0;
   //If loaded image channels > requested, reduce RGBA->RGB
-  bool skipalpha = image->channels > outchannels;
+  bool skipalpha = image->channels > (unsigned int)outchannels;
   int idx=3;
-  for (int i=0; i<size*image->channels; i++)
+  for (int i=0; i<size*(int)image->channels; i++)
   {
     if (skipalpha && i%4==3) continue;
     data[idx++] = image->pixels[i] * r255;

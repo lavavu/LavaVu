@@ -43,8 +43,8 @@ Vectors::Vectors(DrawState& drawstate) : Glyphs(drawstate)
 void Vectors::update()
 {
   //Convert vectors to triangles
-  lines->clear();
-  tris->clear();
+  lines->clear(true);
+  tris->clear(true);
   clock_t t1,tt;
   tt=clock();
   int tot = 0;
