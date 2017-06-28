@@ -117,9 +117,6 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : binpath(binpath)
 
 void LavaVu::defaults()
 {
-  //Reset state
-  drawstate.reset();
-
   //Set all values/state to defaults
   if (viewer) 
   {
@@ -128,6 +125,9 @@ void LavaVu::defaults()
     viewer->quitProgram = false;
     close();
   }
+
+  //Reset state
+  drawstate.reset();
 
   //Clear any queued commands
   viewer->commands.clear();
@@ -179,10 +179,6 @@ void LavaVu::defaults()
 
 LavaVu::~LavaVu()
 {
-  //Need to call display to switch contexts before freeing OpenGL resources
-  if (viewer)
-    viewer->display(false);
-
   close();
 
   Server::Delete();
@@ -1617,6 +1613,10 @@ void LavaVu::resize(int new_width, int new_height)
 
 void LavaVu::close()
 {
+  //Need to call display to switch contexts before freeing OpenGL resources
+  if (viewer)
+    viewer->display(false);
+
   //Clear models - will delete contained views, objects
   //Should free all allocated memory
   for (unsigned int i=0; i < models.size(); i++)
