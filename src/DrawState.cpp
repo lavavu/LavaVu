@@ -1073,6 +1073,16 @@ void DrawState::reset()
       }
     },
     {
+      "quality",
+      {
+        2,
+        "view", //Should be global?
+        "integer",
+        "Read only: Over-sample antialiasing level, for off-screen rendering"
+      }
+    },
+
+    {
       "rotate",
       {
         {0.,0.,0.,1.},
