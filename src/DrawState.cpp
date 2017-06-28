@@ -15,6 +15,8 @@ DrawState::DrawState() : prog()
 
 DrawState::~DrawState()
 {
+  fonts.reset();
+
   if (globalcam) delete globalcam;
 
   if (x_coords != NULL) delete[] x_coords;
@@ -54,8 +56,6 @@ void DrawState::reset()
     max[i] = -HUGE_VALF;
     dims[i] = 0;
   }
-
-  fonts.reset();
 
   colourMaps = NULL;
 
