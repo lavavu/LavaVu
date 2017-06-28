@@ -550,6 +550,16 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   return retImg;
 }
 
+void OpenGLViewer::downSample(int q)
+{
+  display(false);
+  int ds = q < 1 ? 1 : q;
+  if (ds != fbo.downsample)
+  {
+    fbo.destroy();
+    fbo.downsample = ds;
+  }
+}
 void OpenGLViewer::idleReset()
 {
   //Reset idle timer to zero if active
