@@ -1084,7 +1084,7 @@ unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegqu
     jpge::params params;
     params.m_quality = jpegquality;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-    if (compress_image_to_jpeg_file_in_memory(buffer, jpeg_bytes, image->width, image->height, image->channels, (const unsigned char *)image, params))
+    if (compress_image_to_jpeg_file_in_memory(buffer, jpeg_bytes, image->width, image->height, image->channels, (const unsigned char *)image->pixels, params))
       debug_print("JPEG compressed, size %d\n", jpeg_bytes);
     else
       abort_program("JPEG compress error\n");
