@@ -763,7 +763,7 @@ int Model::loadTimeSteps(bool scan)
   int last_step = 0;
 
   //Scan for additional timestep files with corresponding entries in timestep table
-  if (!scan && database)
+  if (!scan && database && !database.memory)
   {
     sqlite3_stmt* statement = database.select("SELECT id,time,(select count() from geometry where timestep = timestep.id) FROM timestep");
     //(id, time, dim_factor, units)
