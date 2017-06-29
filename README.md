@@ -54,13 +54,11 @@ Releases: prebuilt versions for Windows, Mac, Linux
 
 ### Who do I talk to? ###
 
-* Owen Kaluza (at) monash.edu
+* Report bugs/issues here on github: https://github.com/OKaluza/LavaVu/issues
+* Contact developer: Owen Kaluza (at) monash.edu
 
 For further documentation / examples, see the Wiki
 * https://github.com/OKaluza/LavaVu/wiki
-
-TODO: 
-* License, include/update documentation
 
 ---
 <sup>1</sup> Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, *gLucifer: Next Generation Visualization Framework for High performance computational geodynamics*, 2008, Visual Geosciences
