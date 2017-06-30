@@ -328,7 +328,7 @@ protected:
   GLuint indexvbo, vbo;
 public:
   Triangles(DrawState& drawstate);
-  ~Triangles() {close();}
+  virtual ~Triangles() {close();}
   virtual void close();
   unsigned int triCount();
   virtual void update();
@@ -347,7 +347,7 @@ class TriSurfaces : public Triangles
   std::vector<Vec3d> centroids;
 public:
   TriSurfaces(DrawState& drawstate);
-  ~TriSurfaces() {close();}
+  virtual ~TriSurfaces() {close();}
   virtual void close();
   virtual void update();
   void loadMesh();
@@ -368,7 +368,7 @@ class Lines : public Geometry
   std::vector<unsigned int> counts;
 public:
   Lines(DrawState& drawstate);
-  ~Lines();
+  virtual ~Lines();
   virtual void close();
   virtual void update();
   virtual void draw();
@@ -382,7 +382,7 @@ protected:
   TriSurfaces* tris;
 public:
   Glyphs(DrawState& drawstate);
-  ~Glyphs();
+  virtual ~Glyphs();
   virtual void close();
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
   virtual void display();
@@ -427,7 +427,7 @@ class QuadSurfaces : public TriSurfaces
   std::vector<Distance> surf_sort;
 public:
   QuadSurfaces(DrawState& drawstate);
-  ~QuadSurfaces();
+  virtual ~QuadSurfaces();
   virtual void display();
   virtual void update();
   virtual void render();
@@ -443,7 +443,7 @@ class Points : public Geometry
   GLuint indexvbo, vbo;
 public:
   Points(DrawState& drawstate);
-  ~Points();
+  virtual ~Points();
   virtual void close();
   virtual void update();
   void loadVertices();
@@ -462,7 +462,7 @@ class Imposter : public Geometry
   GLuint vbo;
 public:
   Imposter(DrawState& drawstate);
-  ~Imposter() {close();}
+  virtual ~Imposter() {close();}
   virtual void close();
   virtual void update();
   virtual void draw();
