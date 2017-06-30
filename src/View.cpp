@@ -325,9 +325,9 @@ void View::rotate(float degrees, Vec3d axis)
 void View::rotate(float degreesX, float degreesY, float degreesZ)
 {
   //std::cerr << "Rotate : " << degreesX << "," << degreesY << "," << degreesZ << std::endl;
-  rotate(degreesZ, Vec3d(0,0,1));
-  rotate(degreesY, Vec3d(0,1,0));
   rotate(degreesX, Vec3d(1,0,0));
+  rotate(degreesY, Vec3d(0,1,0));
+  rotate(degreesZ, Vec3d(0,0,1));
 }
 
 void View::setScale(float x, float y, float z, bool replace)

@@ -120,12 +120,6 @@
             printf("\n");               \
         } printf("--------- --------- --------- ---------\n"); }
 
-// In OpenGL you cannot set the raster position to be outside the viewport -
-// but this is a hack which OpenGL allows (and advertises) - That you can get the raster position to a legal value
-// and then move the raster position by calling glBitmap with a NULL bitmap
-#define MoveRaster( deltaX, deltaY ) \
-   glBitmap( 0,0,0.0,0.0, (float)(deltaX), (float)(deltaY), NULL )
-
 void compareCoordMinMax(float* min, float* max, float *coord);
 void clearMinMax(float* min, float* max);
 void getCoordRange(float* min, float* max, float* dims);
@@ -589,69 +583,46 @@ public:
     glMultMatrixf(getMatrix());
   }
 
-  //Convert from Euler angles
+  //Convert to/from Euler angles
+  //https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
   void fromEuler(float X, float Y, float Z)
   {
     X = DEG2RAD*X*0.5;
     Y = DEG2RAD*Y*0.5;
     Z = DEG2RAD*Z*0.5;
-    float sinx = sin(X);
-    float siny = sin(Y);
-    float sinz = sin(Z);
-    float cosx = cos(X);
-    float cosy = cos(Y);
-    float cosz = cos(Z);
-    x = sinx*cosy*cosz - cosy*siny*sinz;
-    y = cosx*siny*cosz + sinx*cosy*sinz;
-    z = cosx*cosy*sinz - sinx*siny*cosz;
-    w = cosx*cosy*cosz + sinx*siny*sinz;
+    double sinx = std::sin(X);
+    double siny = std::sin(Y);
+    double sinz = std::sin(Z);
+    double cosx = std::cos(X);
+    double cosy = std::cos(Y);
+    double cosz = std::cos(Z);
+
+    w = cosz * cosx * cosy + sinz * sinx * siny;
+    x = cosz * sinx * cosy - sinz * cosx * siny;
+    y = cosz * cosx * siny + sinz * sinx * cosy;
+    z = sinz * cosx * cosy - cosz * sinx * siny;
+
+    normalise();
   }
 
-  void toEuler(float& bank, float& heading, float& attitude)
+  void toEuler(float& roll, float& pitch, float& yaw)
   {
-    float test = x*y + z*w;
-    if (test > 0.499)
-    {
-      // singularity at north pole
-      heading = 2 * atan2(x,w) * RAD2DEG;
-      attitude = M_PI/2 * RAD2DEG;
-      bank = 0;
-      return;
-    }
-    if (test < -0.499)
-    {
-      // singularity at south pole
-      heading = -2 * atan2(x,w) * RAD2DEG;
-      attitude = - M_PI/2 * RAD2DEG;
-      bank = 0;
-      return;
-    }
-    float sqx = x*x;
-    float sqy = y*y;
-    float sqz = z*z;
-    heading = atan2(2*y*w-2*x*z , 1 - 2*sqy - 2*sqz) * RAD2DEG;
-    attitude = asin(2*test) * RAD2DEG;
-    bank = atan2(2*x*w-2*y*z , 1 - 2*sqx - 2*sqz) * RAD2DEG;
-    /*
-    #https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
     double ysqr = y*y;
-
     // roll (x-axis rotation)
-    double t0 = +2.0 * (w * x + y * z);
-    double t1 = +1.0 - 2.0 * (x * x + ysqr);
-    roll = std::atan2(t0, t1);
+    double t0 = + 2.0 * (w * x + y * z);
+    double t1 = + 1.0 - 2.0 * (x * x + ysqr);
+    roll = RAD2DEG * std::atan2(t0, t1);
 
     // pitch (y-axis rotation)
-    double t2 = +2.0 * (w * y - z * x);
+    double t2 = + 2.0 * (w * y - z * x);
     t2 = t2 > 1.0 ? 1.0 : t2;
     t2 = t2 < -1.0 ? -1.0 : t2;
-    pitch = std::asin(t2);
+    pitch = RAD2DEG * std::asin(t2);
 
     // yaw (z-axis rotation)
     double t3 = +2.0 * (w * z + x * y);
-    double t4 = +1.0 - 2.0 * (ysqr + z * z);  
-    yaw = std::atan2(t3, t4);
-    */
+    double t4 = + 1.0 - 2.0 * (ysqr + z * z);
+    yaw = RAD2DEG * std::atan2(t3, t4);
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const Quaternion& q);
