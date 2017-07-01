@@ -1827,15 +1827,18 @@ class Viewer(object):
         self._get()
         me = getVariableName(self)
         if not me: me = "lv"
+        qrot = self.state["views"][0]["rotate"]
         rot = self.state["views"][0]["xyzrotate"]
         tr = self.state["views"][0]["translate"]
         for r in range(3):
             rot[r] = round(rot[r], 3)
             tr[r] = round(tr[r], 3)
+        qrot[3] = round(qrot[3], 3)
         print(me + ".translation(" + str(tr)[1:-1] + ")")
         print(me + ".rotation(" + str(rot)[1:-1] + ")")
         #Also print in terminal for debugging
         self.commands("camera")
+        return {"translation" : tr, "xyzrotation" : rot, "rotation" : qrot}
 
     def getview(self):
         """

@@ -472,7 +472,7 @@ void LavaVu::run(std::vector<std::string> args)
         if (amodel->figures.size() == 0) amodel->addFigure();
         for (unsigned int f=0; f < amodel->figures.size(); f++)
         {
-          if (amodel->figure != f)
+          if (amodel->figure != (int)f)
             amodel->loadFigure(f);
 
           resetViews(true);
@@ -2003,36 +2003,41 @@ void LavaVu::drawAxis()
   glPushMatrix();
   glLoadIdentity();
   // Build the viewing frustum - fixed near/far
-  float aspectRatio = aview->width / (float)aview->height;
   float nearc = 0.01, farc = 10.0, right, top;
   top = tan(0.5f * DEG2RAD * 45) * nearc;
-  right = aspectRatio * top;
+  right = top;
   glFrustum(-right, right, -top, top, nearc, farc);
-  
+
+  //Square viewport in lower left corner
+  float size = aview->properties["axislength"];
+  size = 10 + (aview->width+aview->height)*2.0*size;
+  glViewport(aview->xpos, aview->ypos, size, size);
+
   //Modelview (rotation only)
   glMatrixMode(GL_MODELVIEW);
   glPushMatrix();
   glLoadIdentity();
-  //Position to the bottom left
-  glTranslatef(-0.3 * aspectRatio, -0.3, -1.0);
+  //Offset from centre for an angled view in 3d
+  if (aview->is3d)
+    glTranslatef(-0.25, -0.25, -1.0);
+  else
+    glTranslatef(-0.35, -0.35, -1.0);
   //Apply model rotation
   aview->applyRotation();
   GL_Error_Check;
   // Switch coordinate system if applicable
   glScalef(1.0, 1.0, 1.0 * (int)aview->properties["coordsystem"]);
 
-  float length = aview->properties["axislength"];
-  float oldlen = drawstate.axisobj ? length : 0;
-  if (oldlen != length)
+  //Use a fixed size to fill the viewport,
+  //actual size determined by viewport dimensions
+  float length = 0.175;
+  if (!drawstate.axisobj)
   {
     //printf("Generating axis vectors %f != %f\n", oldlen, length);
-    if (!drawstate.axisobj) 
-    {
-      drawstate.axisobj = new DrawingObject(drawstate);
-      if (!aview->hasObject(drawstate.axisobj)) aview->addObject(drawstate.axisobj);
-      axis->add(drawstate.axisobj);
-      axis->setup(aview);
-    }
+    drawstate.axisobj = new DrawingObject(drawstate);
+    if (!aview->hasObject(drawstate.axisobj)) aview->addObject(drawstate.axisobj);
+    axis->add(drawstate.axisobj);
+    axis->setup(aview);
     axis->clear();
     axis->type = lucVectorType;
     drawstate.axisobj->properties.data = {
@@ -2085,6 +2090,9 @@ void LavaVu::drawAxis()
   glMatrixMode(GL_MODELVIEW);
   glPopMatrix();
   GL_Error_Check;
+
+  //Restore viewport
+  aview->port(viewer->width, viewer->height);
 
   //Restore info/error stream
   if (verbose) infostream = stderr;
