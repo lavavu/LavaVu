@@ -364,6 +364,7 @@ std::string View::zoomClip(float factor)
 {
   near += factor * model_size;
   checkClip(near, far);
+  properties.data["near"] = near;
   //Returns command to set in history
   std::ostringstream ss;
   ss << "nearclip " << near;
