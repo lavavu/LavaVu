@@ -1803,6 +1803,9 @@ class Viewer(object):
         that can be controlled with the mouse or html widgets
 
         """
+        if self in control.windows:
+            print "Viewer window exists, only one instance per Viewer permitted"
+            return
         self.control.Window()
         self.control.show()
 
