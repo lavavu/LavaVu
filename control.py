@@ -1,4 +1,6 @@
-#TODO: docstrings!
+"""
+LavaVu python interface: interactive HTML UI controls library
+"""
 import os
 import sys
 import time
@@ -256,6 +258,8 @@ def action(id, value):
     return ""
 
 class Container(object):
+    """A container for a set of controls
+    """
     #Parent class for container types
     def __init__(self, viewer):
         self.viewer = viewer
@@ -271,7 +275,15 @@ class Container(object):
         return html
 
 class Window(Container):
-    #Creates an interactor with a view window and webgl box control for rotation/translation
+    """
+    Creates an interaction window with an image of the viewer frame 
+    and webgl controller for rotation/translation
+
+    Parameters
+    ----------
+    align: str
+        Set to "left/right" to align viewer window, default is left
+    """
     def __init__(self, viewer, align="left"):
         super(Window, self).__init__(viewer)
         self.align = align
@@ -293,6 +305,14 @@ class Window(Container):
         return html
 
 class Panel(Container):
+    """Creates a control panel with an interactive viewer window and a set of controls
+    By default the controls will be placed to the left with the viewer aligned to the right
+
+    Parameters
+    ----------
+    showwin: boolean
+        Set to False to exclude the interactive window
+    """
     def __init__(self, viewer, showwin=True):
         super(Panel, self).__init__(viewer)
         self.win = None
@@ -310,6 +330,23 @@ class Panel(Container):
         return html
 
 class Control(object):
+    """
+    Control object
+
+    Parameters
+    ----------
+    target: Obj or Viewer
+        Add a control to an object to control object properties
+        Add a control to a viewer to control global proerties and run commands
+    property: str
+        Property to modify
+    command: str
+        Command to run
+    value: any type
+        Initial value of the controls
+    label: str
+        Descriptive label for the control
+    """
     lastid = 0
 
     def __init__(self, target, property=None, command=None, value=None, label=None):
@@ -387,12 +424,17 @@ class Control(object):
         return html
 
 class Number(Control):
+    """A basic numerical input control
+    """
+
     def controls(self):
         html = self.labelhtml()
         html += super(Number, self).controls()
         return html + '<br>\n'
 
 class Checkbox(Control):
+    """A checkbox control for a boolean value
+    """
     def labelhtml(self):
         return '' #'<br>\n'
 
@@ -408,6 +450,13 @@ class Checkbox(Control):
         return "; _wi[---VIEWERID---].do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
 
 class Range(Control):
+    """A slider control for a range of values
+
+    Parameters
+    ----------
+    range: list/tuple
+        Min/max values for the range
+    """
     def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None):
         super(Range, self).__init__(target, property, command, value, label)
 
@@ -428,6 +477,8 @@ class Range(Control):
         return html + '<br>\n'
 
 class Button(Control):
+    """A push button control to execute a defined command
+    """
     def __init__(self, command, label=""):
         super(Button, self).__init__(None, None, command, "", label)
 
@@ -446,12 +497,16 @@ class Button(Control):
         return html
 
 class Entry(Control):
+    """A generic input control for string values
+    """
     def controls(self):
         html = self.labelhtml()
         html += '<input type="text" value="" onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
         return html.replace('---ID---', str(self.id))
 
 class Command(Control):
+    """A generic input control for executing command strings
+    """
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(command=" ", label="Command", *args, **kwargs)
 
@@ -465,6 +520,13 @@ class Command(Control):
         return html.replace('---ID---', str(self.id))
 
 class List(Control):
+    """A list of predefined input values to set properties or run commands
+
+    Parameters
+    ----------
+    options: list
+        List of the available value strings
+    """
     def __init__(self, target, options=[], *args, **kwargs):
         self.options = options
         super(List, self).__init__(target, *args, **kwargs)
@@ -487,6 +549,8 @@ class List(Control):
         return html.replace('---ID---', str(self.id))
 
 class Colour(Control):
+    """A colour picker for setting colour properties
+    """
     def __init__(self, *args, **kwargs):
         super(Colour, self).__init__(command="", *args, **kwargs)
 
@@ -521,6 +585,8 @@ class Colour(Control):
         return html.replace('---ID---', str(self.id))
 
 class ColourMap(Control):
+    """A colourmap editor
+    """
     def __init__(self, target, *args, **kwargs):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
@@ -568,6 +634,8 @@ class ColourMap(Control):
         return html.replace('---ID---', str(self.id))
 
 class ColourMapList(List):
+    """A colourmap list selector, populated by the default colour maps
+    """
     def __init__(self, target, selection=None, *args, **kwargs):
         #Load maps list
         if selection is None:
@@ -580,6 +648,9 @@ class ColourMapList(List):
         actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
 
 class ColourMaps(List):
+    """A colourmap list selector, populated by the available colour maps,
+    combined with a colourmap editor for the selected colour map
+    """
     def __init__(self, target, *args, **kwargs):
         #Load maps list
         self.maps = target.instance.state["colourmaps"]
@@ -615,6 +686,8 @@ class ColourMaps(List):
         return html
 
 class TimeStepper(Range):
+    """A time step selection range control with up/down buttons
+    """
     def __init__(self, viewer, *args, **kwargs):
         #Acts as a command setter with some additional controls
         super(TimeStepper, self).__init__(target=viewer, label="Timestep", command="timestep", *args, **kwargs)
@@ -634,16 +707,30 @@ class TimeStepper(Range):
         return html
 
 class DualRange(Control):
-    def __init__(self, target, properties, values, label, step=None):
+    """A set of two range slider controls for adjusting a minimum and maximum range
+
+    Parameters
+    ----------
+    range: list/tuple
+        Min/max values for the range
+    """
+    def __init__(self, target, properties, values, label, range=(0.,1.), step=None):
         self.label = label
 
-        self.ctrlmin = Range(target=target, property=properties[0], step=step, value=values[0], label="")
-        self.ctrlmax = Range(target=target, property=properties[1], step=step, value=values[1], label="")
+        self.ctrlmin = Range(target=target, property=properties[0], step=step, value=values[0], range=range, label="")
+        self.ctrlmax = Range(target=target, property=properties[1], step=step, value=values[1], range=range, label="")
 
     def controls(self):
         return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
 
 class Filter(Control):
+    """A set of two range slider controls for adjusting a minimum and maximum filter range
+
+    Parameters
+    ----------
+    range: list/tuple
+        Min/max values for the filter range
+    """
     def __init__(self, target, filteridx, label=None, range=None, step=None):
         self.label = label
         self.filter = target["filters"][filteridx]
@@ -672,6 +759,8 @@ class Filter(Control):
         return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
 
 class ObjectList(Control):
+    """A set checkbox controls for controlling visibility of all visualisation objects
+    """
     def __init__(self, viewer, *args, **kwargs):
         super(ObjectList, self).__init__(target=viewer, label="Objects", *args, **kwargs)
         self.objctrls = []
@@ -685,6 +774,10 @@ class ObjectList(Control):
         return html
 
 class ControlFactory(object):
+    """
+    Create and manage sets of controls for interaction with a Viewer or Object
+    Controls can run commands or change properties
+    """
     #Creates a control factory used to generate controls for a specified target
     def __init__(self, target):
         self._target = target
@@ -720,6 +813,9 @@ class ControlFactory(object):
             self.__setattr__(key, method)
 
     def add(self, ctrl):
+        """
+        Add a control
+        """
         if type(ctrl) in self._container_types:
             #Save new container, further controls will be added to it
             self._container = ctrl
@@ -738,8 +834,8 @@ class ControlFactory(object):
         """
         Displays all added controls including viewer if any
 
-        (fallback parameter allows a function to be passed which is called
-        when run outside IPython)
+        fallback: function
+            A function which is called in place of the viewer display when run outside IPython
         """
         #Show all controls in container
         if not htmlpath: return
@@ -796,7 +892,9 @@ class ControlFactory(object):
         self.clear()
 
     def redisplay(self):
-        #Update the active viewer image, if any
+        """Update the active viewer image if any
+        Applies changes made in python to the viewer and forces a redisplay
+        """
         #TODO: reset control values from current state data
         try:
             #Find viewer id
