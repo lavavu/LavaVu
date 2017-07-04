@@ -695,24 +695,29 @@ class ControlFactory(object):
         #Save types of all control/containers
         def all_subclasses(cls):
             return cls.__subclasses__() + [g for s in cls.__subclasses__() for g in all_subclasses(s)]
-        self._control_types = all_subclasses(Control)
-        self._container_types = all_subclasses(Container)
-        self._all_types = self._control_types + self._container_types
 
-    #Undefined methods call Control constructors if defined, passing saved target
-    def __getattr__(self, key):
-        #__getattr__ called if no attrib/method found
-        def any_method(*args, **kwargs):
-            #Find if class exists that extends Control or Container
-            current_module = sys.modules[__name__]
-            method = getattr(current_module, key)
-            if isinstance(method, type) and method in self._all_types:
+        #Control contructor shortcut methods
+        #(allows constructing controls directly from the factory object)
+        #Use a closure to define a new method to call constructor and add to controls
+        def addmethod(constr):
+            def method(*args, **kwargs):
                 #Return the new control and add it to the list
-                newctrl = method(self._target, *args, **kwargs)
+                newctrl = constr(self._target, *args, **kwargs)
                 self.add(newctrl)
                 return newctrl
+            return method
 
-        return any_method
+        self._control_types = all_subclasses(Control)
+        self._container_types = all_subclasses(Container)
+        for constr in self._control_types + self._container_types:
+            key = constr.__name__
+            method = addmethod(constr)
+            #Set docstring (+ Control docs)
+            if constr in self._control_types:
+                method.__doc__ = constr.__doc__ + Control.__doc__
+            else:
+                method.__doc__ = constr.__doc__
+            self.__setattr__(key, method)
 
     def add(self, ctrl):
         if type(ctrl) in self._container_types:
