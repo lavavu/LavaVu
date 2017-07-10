@@ -207,7 +207,7 @@ void Triangles::loadBuffers()
         memcpy(ptr, zero, sizeof(float) * 3);
       ptr += sizeof(float) * 3;
       //Copies texCoord bytes
-      if (geom[index]->texCoords.size() > 0)
+      if (geom[index]->texCoords.size() > v)
         memcpy(ptr, &geom[index]->texCoords[v][0], sizeof(float) * 2);
       ptr += sizeof(float) * 2;
       //Copies colour bytes
