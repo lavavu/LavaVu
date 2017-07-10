@@ -1817,8 +1817,9 @@ void LavaVu::display(bool redraw)
     if (!viewer->imagemode && !drawstate.omegalib)
     {
       //Resize if required
-      json res = aview->properties["resolution"];
-      if ((int)res[0] != viewer->width || (int)res[1] != viewer->height)
+      unsigned int res[2];
+      Properties::toArray<unsigned int>(aview->properties["resolution"], res, 2);
+      if (res[0] > 0 && res[1] > 0 && (res[0] != viewer->width || res[1] != viewer->height))
       {
         viewer->setsize(res[0], res[1]);
         viewer->postdisplay = true;
