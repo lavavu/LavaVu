@@ -67,7 +67,7 @@ void TriSurfaces::update()
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //if ((lastcount != total && reload) || !tidx)
-  if ((lastcount != total && reload) || vbo == 0)
+  if (lastcount != total || reload || vbo == 0)
   {
     //Load & optimise the mesh data (on first load and if total changes)
     if (!tidx || lastcount != total)
