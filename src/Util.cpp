@@ -265,7 +265,7 @@ void Properties::checkall()
   {
     if (!it.value().is_null())
     {
-      if (!typecheck(data[it.key()], defaults[it.key()]))
+      if (!typecheck(data[it.key()], it.key()))
         debug_print("DATA key: %s had incorrect type\n", it.key().c_str());
     }
   }
@@ -275,14 +275,21 @@ void Properties::checkall()
   {
     if (!it.value().is_null())
     {
-      if (!typecheck(globals[it.key()], defaults[it.key()]))
+      if (!typecheck(globals[it.key()], it.key()))
         debug_print("GLOBAL key: %s had incorrect type\n", it.key().c_str());
     }
   }
 }
 
-bool Properties::typecheck(json& val, json& def)
+bool Properties::typecheck(json& val, const std::string& key)
 {
+  if (key == "colourby" || key == "opacityby" || key == "sizeby" ||
+      key == "widthby" || key == "heightby" || key == "lengthby")
+  {
+      //Skip these, can be int or string
+      return true;
+  }
+  json& def = defaults[key];
   if (val.type() == def.type()) return true;
   if (val.is_number() && def.is_number()) return true;
   if (def.is_array()) return true; //Skip check on arrays

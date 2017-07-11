@@ -411,8 +411,8 @@ void DrawState::reset()
       {
         0,
         "object",
-        "integer [0,n]",
-        "Index of data set to colour object by (requires colour map)"
+        "string or integer",
+        "Index or label of data set to colour object by (requires colour map)"
       }
     },
     {
@@ -420,8 +420,8 @@ void DrawState::reset()
       {
         1,
         "object",
-        "integer [0,n]",
-        "Index of data set to apply transparency to object by (requires opacity map)"
+        "string or integer",
+        "Index or label of data set to apply transparency to object by (requires opacity map)"
       }
     },
     {
@@ -501,8 +501,8 @@ void DrawState::reset()
       {
         1,
         "object(point)",
-        "integer [0,n]",
-        "Index of data set to apply to point sizes"
+        "string or integer",
+        "Index or label of data set to apply to point sizes"
       }
     },
     {
@@ -771,8 +771,8 @@ void DrawState::reset()
       {
         "widths",
         "object(shape)",
-        "integer [0,n]",
-        "Index of data set to apply to shape widths"
+        "string or integer",
+        "Index or label of data set to apply to shape widths"
       }
     },
     {
@@ -780,8 +780,8 @@ void DrawState::reset()
       {
         "heights",
         "object(shape)",
-        "integer [0,n]",
-        "Index of data set to apply to shape heights"
+        "string or integer",
+        "Index or label of data set to apply to shape heights"
       }
     },
     {
@@ -789,8 +789,8 @@ void DrawState::reset()
       {
         "lengths",
         "object(shape)",
-        "integer [0,n]",
-        "Index of data set to apply to shape lengths"
+        "string or integer",
+        "Index or label of data set to apply to shape lengths"
       }
     },
     {

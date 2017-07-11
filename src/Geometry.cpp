@@ -763,7 +763,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     //Per-object "opacity" overrides global default if set
     //"alpha" is multiplied to affect all objects
     float opacity = (float)geom[i]->draw->properties["alpha"];
-    //Apply global 'opacity' only if no per-object setting
+    //Apply global 'opacity' only if no per-object setting (which is applied with colour)
     if (!geom[i]->draw->properties.has("opacity"))
       opacity *= (float)drawstate.global("opacity");
     prog->setUniformf("uOpacity", opacity);
