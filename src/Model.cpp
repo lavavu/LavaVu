@@ -758,20 +758,22 @@ int Model::loadTimeSteps(bool scan)
   //Don't reload timesteps when data has been cached
   if (useCache() && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
-  drawstate.gap = 0;
+  drawstate.gap = 1;
   int rows = 0;
   int last_step = 0;
 
   //Scan for additional timestep files with corresponding entries in timestep table
   if (!scan && database && !database.memory)
   {
-    sqlite3_stmt* statement = database.select("SELECT id,time,(select count() from geometry where timestep = timestep.id) FROM timestep");
+    sqlite3_stmt* statement = database.select("SELECT * from timestep");
     //(id, time, dim_factor, units)
     while (sqlite3_step(statement) == SQLITE_ROW)
     {
       int step = sqlite3_column_int(statement, 0);
       double time = sqlite3_column_double(statement, 1);
-      int geomcount = sqlite3_column_int(statement, 2);
+      sqlite3_stmt* statement2 = database.select("SELECT count(id) from geometry where timestep = %d", step);
+      int geomcount = sqlite3_column_int(statement2, 0);
+      sqlite3_finalize(statement2);
       addTimeStep(step, time);
       //Save gap
       if (step - last_step > drawstate.gap) drawstate.gap = step - last_step;

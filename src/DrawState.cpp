@@ -48,7 +48,7 @@ void DrawState::reset()
   borderobj = axisobj = rulerobj = NULL;
 
   now = -1;
-  gap = 0;
+  gap = 1;
 
   for (int i=0; i<3; i++)
   {
