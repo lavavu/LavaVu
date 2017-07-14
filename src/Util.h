@@ -173,7 +173,7 @@ public:
   std::vector<dtype> value;
 
   DataValues() {}
-  virtual ~DataValues() {/*membytes__ -= sizeof(dtype)*count;*/}
+  virtual ~DataValues() {membytes__ -= sizeof(dtype)*value.size();}
 
   unsigned int bytes() {return sizeof(dtype)*size();}
 
