@@ -367,6 +367,8 @@ Geometry::~Geometry()
 //Virtuals to implement
 void Geometry::close() //Called on quit or gl context destroy
 {
+  //Ensure cache cleared
+  cached = NULL;
 }
 
 void Geometry::clear(bool all)
@@ -397,6 +399,9 @@ void Geometry::clear(bool all)
   }
   if (all) geom.clear();
   //if (all) std::cout << " deleting all geometry " << std::endl;
+  
+  //Ensure cache cleared
+  cached = NULL;
 }
 
 void Geometry::remove(DrawingObject* draw)
@@ -1866,6 +1871,12 @@ Glyphs::~Glyphs()
 
 void Glyphs::close()
 {
+  if (!drawstate.global("gpucache"))
+  {
+    //Clear all generated geometry
+    lines->clear();
+    tris->clear();
+  }
   lines->close();
   tris->close();
   Geometry::close();
