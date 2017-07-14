@@ -180,8 +180,9 @@ public:
 
   bool hasTimeStep(int ts);
   int nearestTimeStep(int requested);
-  void addTimeStep(int step=0, double time=0.0, const std::string& path="")
+  void addTimeStep(int step=0, double time=-HUGE_VAL, const std::string& path="")
   {
+    if (time == -HUGE_VAL) time = step;
     timesteps.push_back(new TimeStep(step, time, path));
   }
 
