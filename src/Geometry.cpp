@@ -56,7 +56,7 @@ void GeomData::calcBounds()
 {
   //Loop through vertices and calculate bounds automatically for all elements
   for (unsigned int j=0; j < count; j++)
-    checkPointMinMax(vertices[j]);
+    checkPointMinMax(render->vertices[j]);
 }
 
 void GeomData::label(std::string& labeltext)
@@ -160,11 +160,11 @@ void GeomData::mapToColour(Colour& colour, float value)
 int GeomData::colourCount()
 {
   //Return number of colour values or RGBA colours
-  int hasColours = colours.size();
-  if (rgb.size()) hasColours = rgb.size() / 3;
+  int hasColours = render->colours.size();
+  if (render->rgb.size()) hasColours = render->rgb.size() / 3;
   if (values.size() > draw->colourIdx)
   {
-    FloatValues* fv = values[draw->colourIdx];
+    Values_Ptr fv = values[draw->colourIdx];
     hasColours = fv->size();
   }
   return hasColours;
@@ -175,7 +175,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
   ColourMap* cmap = draw->colourMap;
-  FloatValues* vals = colourData();
+  Values_Ptr vals = colourData();
   if (cmap && vals)
   {
     if (vals->size() == 1) idx = 0;  //Single colour value only provided
@@ -189,25 +189,25 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
     }
     colour = cmap->getfast(val);
   }
-  else if (colours.size() > 0)
+  else if (render->colours.size() > 0)
   {
-    if (colours.size() == 1) idx = 0;  //Single colour only provided
-    if (idx >= colours.size()) idx = colours.size() - 1;
+    if (render->colours.size() == 1) idx = 0;  //Single colour only provided
+    if (idx >= render->colours.size()) idx = render->colours.size() - 1;
     //assert(idx < colours.size());
-    colour.value = colours[idx];
+    colour.value = render->colours[idx];
   }
-  else if (rgb.size() > 0)
+  else if (render->rgb.size() > 0)
   {
-    if (idx >= rgb.size()/3) idx = rgb.size()/3 - 1;
-    colour.r = rgb[idx*3];
-    colour.g = rgb[idx*3+1];
-    colour.b = rgb[idx*3+2];
+    if (idx >= render->rgb.size()/3) idx = render->rgb.size()/3 - 1;
+    colour.r = render->rgb[idx*3];
+    colour.g = render->rgb[idx*3+1];
+    colour.b = render->rgb[idx*3+2];
     colour.a = 255;
   }
-  else if (luminance.size() > 0)
+  else if (render->luminance.size() > 0)
   {
-    if (idx >= luminance.size()) idx = luminance.size() - 1;
-    colour.r = colour.g = colour.b = luminance[idx];
+    if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
+    colour.r = colour.g = colour.b = render->luminance[idx];
     colour.a = 255;
   }
   else
@@ -278,7 +278,7 @@ bool GeomData::filter(unsigned int idx)
       //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
       min = filterCache[i].minimum;
       max = filterCache[i].maximum;
-      FloatValues* v = values[filterCache[i].dataIdx];
+      Values_Ptr v = values[filterCache[i].dataIdx];
       if (filterCache[i].map)
       {
         //Range type filters map over available values on [0,1] => [min,max]
@@ -325,27 +325,27 @@ bool GeomData::filter(unsigned int idx)
   return false;
 }
 
-FloatValues* GeomData::colourData() 
+Values_Ptr GeomData::colourData()
 {
-  return values.size() && values.size() > draw->colourIdx && values[draw->colourIdx]->size() ? values[draw->colourIdx] : NULL;
+  return values.size() && values.size() > draw->colourIdx && values[draw->colourIdx]->size() ? values[draw->colourIdx] : nullptr;
 }
 
 float GeomData::colourData(unsigned int idx) 
 {
   if (values.size() == 0 || values.size() <= draw->colourIdx) return HUGE_VALF;
-  FloatValues* fv = values[draw->colourIdx];
+  Values_Ptr fv = values[draw->colourIdx];
   return (*fv)[idx];
 }
 
-FloatValues* GeomData::valueData(unsigned int vidx)
+Values_Ptr GeomData::valueData(unsigned int vidx)
 {
-  if (values.size() <= vidx || !values[vidx]->size()) return NULL;
+  if (values.size() <= vidx || !values[vidx]->size()) return nullptr;
   return values[vidx];
 }
 
 float GeomData::valueData(unsigned int vidx, unsigned int idx)
 {
-  FloatValues* fv = valueData(vidx);
+  Values_Ptr fv = valueData(vidx);
   return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
@@ -383,8 +383,9 @@ void Geometry::clear(bool all)
     unsigned int idx = i;
     if (all || !geom[i]->draw->properties["static"])
     {
+      //Now using shared_ptr so no need to delete
       //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name() << std::endl;
-      delete geom[idx];
+
       if (!all) 
       {
         geom.erase(geom.begin()+idx);
@@ -413,7 +414,7 @@ void Geometry::remove(DrawingObject* draw)
     if (draw == geom[i]->draw)
     {
       total -= geom[i]->count;
-      delete geom[i];
+      //Now using shared_ptr so no need to delete
       geom.erase(geom.begin()+i);
       if (hidden.size() > (unsigned int)i) hidden.erase(hidden.begin()+i);
     }
@@ -494,12 +495,12 @@ void Geometry::dump(std::ostream& csv, DrawingObject* draw)
         //Only supports dump of vertex, vector and scalar colour value
         for (unsigned int v=0; v < geom[i]->count; v++)
         {
-          csv << geom[i]->vertices[v][0] << ',' <<  geom[i]->vertices[v][1] << ',' << geom[i]->vertices[v][2];
+          csv << geom[i]->render->vertices[v][0] << ',' <<  geom[i]->render->vertices[v][1] << ',' << geom[i]->render->vertices[v][2];
 
           if (geom[i]->colourData() && geom[i]->colourData()->size() == geom[i]->count)
             csv << ',' << geom[i]->colourData(v);
-          if (geom[i]->vectors.size() > v)
-            csv << ',' << geom[i]->vectors[v][0] << ',' <<  geom[i]->vectors[v][1] << ',' << geom[i]->vectors[v][2];
+          if (geom[i]->render->vectors.size() > v)
+            csv << ',' << geom[i]->render->vectors[v][0] << ',' <<  geom[i]->render->vectors[v][1] << ',' << geom[i]->render->vectors[v][2];
 
           csv << std::endl;
         }
@@ -545,11 +546,11 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
           for (auto vals : geom[index]->values)
           {
             if (vals->label == GeomData::datalabels[data_type])
-              dat = vals;
+              dat = (FloatValues*)vals.get();
           }
           //Use default colour values for "values" until multiple data sets supported in WebGL viewer
           if (!dat && data_type == lucColourValueData)
-            dat = geom[index]->colourData();
+            dat = (FloatValues*)geom[index]->colourData().get();
 
         }
         if (!dat) continue;
@@ -784,7 +785,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     if (texture)
       prog->setUniform("uTexture", (int)texture->unit);
 
-    if (geom[i]->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
+    if (geom[i]->render->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
       prog->setUniform("uCalcNormal", 1);
     else
       prog->setUniform("uCalcNormal", 0);
@@ -911,7 +912,7 @@ void Geometry::labels()
 
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
-        float* p = geom[i]->vertices[j];
+        float* p = geom[i]->render->vertices[j];
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
@@ -968,27 +969,27 @@ bool Geometry::drawable(unsigned int idx)
   return false;
 }
 
-std::vector<GeomData*> Geometry::getAllObjects(DrawingObject* draw)
+std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 {
   //Get passed object's data store
-  std::vector<GeomData*> geomlist;
+  std::vector<Geom_Ptr> geomlist;
   for (unsigned int i=0; i<geom.size(); i++)
     if (geom[i]->draw == draw)
       geomlist.push_back(geom[i]);
   return geomlist;
 }
 
-GeomData* Geometry::getObjectStore(DrawingObject* draw)
+Geom_Ptr Geometry::getObjectStore(DrawingObject* draw)
 {
   //Get passed object's most recently added data store
   for (int i=geom.size()-1; i>=0; i--)
     if (geom[i]->draw == draw) return geom[i];
-  return NULL;
+  return nullptr;
 }
 
-GeomData* Geometry::add(DrawingObject* draw)
+Geom_Ptr Geometry::add(DrawingObject* draw)
 {
-  GeomData* geomdata = new GeomData(draw, type);
+  Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type);
   geom.push_back(geomdata);
   if (hidden.size() < geom.size()) hidden.push_back(allhidden);
   //if (allhidden) draw->properties.data["visible"] = false;
@@ -1038,10 +1039,10 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
   }
 }
 
-GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
+Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   draw->skip = false;  //Enable object (has geometry now)
-  GeomData* geomdata = NULL;
+  Geom_Ptr geomdata = nullptr;
   //Get passed object's most recently added data store
   geomdata = getObjectStore(draw);
 
@@ -1050,7 +1051,7 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   {
     unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
     if (size == geomdata->data[dtype]->count())
-      geomdata = NULL;
+      geomdata = nullptr;
     //if (!geomdata) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
     //                       geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
   }
@@ -1075,7 +1076,7 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataTyp
   return geomdata; //Return data store pointer
 }
 
-void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
+void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width, int height, int depth)
 {
   //Set width & height if provided
   if (width) geomdata->width = width;
@@ -1112,12 +1113,12 @@ void Geometry::read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtyp
   }
 }
 
-GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
+Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, const void* data, std::string label)
 {
   //Read into given label - for value data only
 
   //Get passed object's most recently added data store
-  GeomData* geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getObjectStore(draw);
   //Create new data store if required, save in drawing object and Geometry list
   if (!geomdata)
     geomdata = add(draw);
@@ -1125,12 +1126,12 @@ GeomData* Geometry::read(DrawingObject* draw, unsigned int n, const void* data, 
   return read(geomdata, n, data, label);
 }
 
-GeomData* Geometry::read(GeomData* geom, unsigned int n, const void* data, std::string label)
+Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::string label)
 {
   //Read into given label - for value data only
 
   //Find labelled value store
-  FloatValues* store = NULL;
+  Values_Ptr store = nullptr;
   for (auto vals : geom->values)
   {
     if (vals->label == label)
@@ -1140,7 +1141,7 @@ GeomData* Geometry::read(GeomData* geom, unsigned int n, const void* data, std::
   //Create value store if required
   if (!store)
   {
-    store = new FloatValues();
+    store = std::make_shared<FloatValues>();
     geom->values.push_back(store);
     store->label = label;
     //debug_print(" -- NEW VALUE STORE CREATED FOR %s label %s count %d N %d ptr %p\n", geom->draw->name().c_str(), label.c_str(), geom->values.size(), n, store);
@@ -1214,7 +1215,7 @@ void Geometry::setupObject(DrawingObject* draw)
           maximums.push_back(-HUGE_VAL);
         }
 
-        FloatValues* flvals = geom[i]->values[d];
+        Values_Ptr flvals = geom[i]->values[d];
         FloatValues& fvals = *flvals;
         for (unsigned int c=0; c < fvals.size(); c++)
         {
@@ -1235,7 +1236,7 @@ void Geometry::setupObject(DrawingObject* draw)
       {
         if (minimums[d] > maximums[d]) continue;
         //std::cout << "Updating data range for " << draw->name() << " == " << minimums[d] << " - " << maximums[d] << std::endl;
-        FloatValues* fvals = geom[i]->values[d];
+        Values_Ptr fvals = geom[i]->values[d];
         fvals->setup(minimums[d], maximums[d]); //, label);
       }
     }
@@ -1250,11 +1251,11 @@ void Geometry::insertFixed(Geometry* fixed)
   {
     if (geom.size() == i)
       add(fixed->geom[i]->draw); //Insert new if not enough records
+
     //Create a shallow copy of member content
     *geom[i] = *fixed->geom[i];
-    //Set offset where fixed data ends (so we can avoid clearing it)
-    geom[i]->fixedOffset = geom[i]->values.size();
-    //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count << " verts " << " = " << geom[i]->count << " offset = " << geom[i]->fixedOffset << " == " << fixed->geom[i]->values.size() << std::endl;
+
+    //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count << " verts " << " = " << geom[i]->count << " value entries = " << fixed->geom[i]->values.size() << std::endl;
   }
 
   //Update total
@@ -1265,7 +1266,7 @@ void Geometry::insertFixed(Geometry* fixed)
 void Geometry::label(DrawingObject* draw, const char* labels)
 {
   //Get passed object's most recently added data store and add vertex labels (newline separated)
-  GeomData* geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getObjectStore(draw);
   if (!geomdata) return;
 
   //Clear if NULL
@@ -1286,7 +1287,7 @@ void Geometry::label(DrawingObject* draw, const char* labels)
 void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
 {
   //Get passed object's most recently added data store and add vertex labels (newline separated)
-  GeomData* geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getObjectStore(draw);
   if (!geomdata) return;
 
   //Load from vector 
@@ -1364,7 +1365,7 @@ void Geometry::toImage(unsigned int idx)
 
 void Geometry::setTexture(DrawingObject* draw, ImageLoader* tex)
 {
-  GeomData* geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getObjectStore(draw);
   geomdata->texture = tex;
   //std::cout << "SET TEXTURE ON " << draw->name() << std::endl;
   //Must be opaque to draw with own texture
@@ -1373,7 +1374,7 @@ void Geometry::setTexture(DrawingObject* draw, ImageLoader* tex)
 
 void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip)
 {
-  GeomData* geomdata = getObjectStore(draw);
+  Geom_Ptr geomdata = getObjectStore(draw);
   if (!geomdata->texture) geomdata->texture = new ImageLoader(flip);
   geomdata->texture->load(data, width, height, channels);
   //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;

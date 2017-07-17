@@ -153,17 +153,17 @@ void Volumes::update()
         //Determine type of data then load the texture
         if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
         unsigned int bpv = 4;
-        if (geom[i]->colours.size() > 0)
+        if (geom[i]->render->colours.size() > 0)
         {
           int type = texcompress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
-          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->colours.ref(), type);
+          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->render->colours.ref(), type);
         }
-        else if (geom[i]->luminance.size() > 0)
+        else if (geom[i]->render->luminance.size() > 0)
         {
           bpv = 1;
           int type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
-          assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height * geom[i]->depth);
-          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->luminance.ref(), type);
+          assert(geom[i]->render->luminance.size() == geom[i]->width * geom[i]->height * geom[i]->depth);
+          geom[i]->texture->load3D(geom[i]->width, geom[i]->height, geom[i]->depth, geom[i]->render->luminance.ref(), type);
         }
         else if (geom[i]->colourData())
         {
@@ -186,12 +186,12 @@ void Volumes::update()
         if (geom[i]->colourData())
           //(assumes float luminance data (4 bpv))
           geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
-        else if (geom[i]->colours.size() > 0)
-          geom[i]->height = geom[i]->colours.size() / geom[i]->width;
-        else if (geom[i]->luminance.size() > 0)
-          geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
-        else if (geom[i]->rgb.size() > 0)
-          geom[i]->height = geom[i]->rgb.size() / geom[i]->width / 3;
+        else if (geom[i]->render->colours.size() > 0)
+          geom[i]->height = geom[i]->render->colours.size() / geom[i]->width;
+        else if (geom[i]->render->luminance.size() > 0)
+          geom[i]->height = geom[i]->render->luminance.size() / geom[i]->width;
+        else if (geom[i]->render->rgb.size() > 0)
+          geom[i]->height = geom[i]->render->rgb.size() / geom[i]->width / 3;
       }
 
       //Texture crop?
@@ -219,7 +219,7 @@ void Volumes::update()
       unsigned int bpv = 4;
       int type = 0;
       GL_Error_Check;
-      if (geom[i]->colours.size() > 0)
+      if (geom[i]->render->colours.size() > 0)
       {
         //RGBA colours
         type = texcompress ? VOLUME_RGBA_COMPRESSED : VOLUME_RGBA;
@@ -228,50 +228,50 @@ void Volumes::update()
         {
           if (crop) 
           {
-            GLubyte* ptr = RawImageCrop(geom[j]->colours.ref(), geom[i]->width, geom[i]->height, 4, dims[0], dims[1], texoffset[0], texoffset[1]);
+            GLubyte* ptr = RawImageCrop(geom[j]->render->colours.ref(), geom[i]->width, geom[i]->height, 4, dims[0], dims[1], texoffset[0], texoffset[1]);
             geom[i]->texture->load3Dslice(j-i, ptr);
             delete ptr;
           }
           else
-            geom[i]->texture->load3Dslice(j-i, geom[j]->colours.ref());
+            geom[i]->texture->load3Dslice(j-i, geom[j]->render->colours.ref());
         }
       }
-      else if (geom[i]->rgb.size() > 0)
+      else if (geom[i]->render->rgb.size() > 0)
       {
         //Byte RGB
         bpv = 3;
         type = texcompress ? VOLUME_RGB_COMPRESSED : VOLUME_RGB;
-        assert(geom[i]->rgb.size() == 3*geom[i]->width * geom[i]->height);
+        assert(geom[i]->render->rgb.size() == 3*geom[i]->width * geom[i]->height);
         geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, type);
         for (unsigned int j=i; j<i+slices[current]; j++)
         {
           if (crop) 
           {
-            GLubyte* ptr = RawImageCrop(geom[j]->rgb.ref(), geom[i]->width, geom[i]->height, 3, dims[0], dims[1], texoffset[0], texoffset[1]);
+            GLubyte* ptr = RawImageCrop(geom[j]->render->rgb.ref(), geom[i]->width, geom[i]->height, 3, dims[0], dims[1], texoffset[0], texoffset[1]);
             geom[i]->texture->load3Dslice(j-i, ptr);
             delete ptr;
           }
           else
-            geom[i]->texture->load3Dslice(j-i, geom[j]->rgb.ref());
+            geom[i]->texture->load3Dslice(j-i, geom[j]->render->rgb.ref());
         }
       }
-      else if (geom[i]->luminance.size() > 0)
+      else if (geom[i]->render->luminance.size() > 0)
       {
         //Byte luminance
         bpv = 1;
         type = texcompress ? VOLUME_BYTE_COMPRESSED : VOLUME_BYTE;
-        assert(geom[i]->luminance.size() == geom[i]->width * geom[i]->height);
+        assert(geom[i]->render->luminance.size() == geom[i]->width * geom[i]->height);
         geom[i]->texture->load3D(dims[0], dims[1], dims[2], NULL, type);
         for (unsigned int j=i; j<i+slices[current]; j++)
         {
           if (crop) 
           {
-            GLubyte* ptr = RawImageCrop(geom[j]->luminance.ref(), geom[i]->width, geom[i]->height, 1, dims[0], dims[1], texoffset[0], texoffset[1]);
+            GLubyte* ptr = RawImageCrop(geom[j]->render->luminance.ref(), geom[i]->width, geom[i]->height, 1, dims[0], dims[1], texoffset[0], texoffset[1]);
             geom[i]->texture->load3Dslice(j-i, ptr);
             delete ptr;
           }
           else
-            geom[i]->texture->load3Dslice(j-i, geom[j]->luminance.ref());
+            geom[i]->texture->load3Dslice(j-i, geom[j]->render->luminance.ref());
         }
       }
       else if (geom[i]->colourData())
@@ -326,9 +326,9 @@ void Volumes::update()
 
 void Volumes::render(int i)
 {
-  float dims[3] = {geom[i]->vertices[1][0] - geom[i]->vertices[0][0],
-                   geom[i]->vertices[1][1] - geom[i]->vertices[0][1],
-                   geom[i]->vertices[1][2] - geom[i]->vertices[0][2]
+  float dims[3] = {geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0],
+                   geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1],
+                   geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]
                   };
 
   GL_Error_Check;
@@ -357,12 +357,12 @@ void Volumes::render(int i)
   bool hasColourMap = cmap && cmapid >= 0;
   //Use per-object clip box if set, otherwise use global clip
   /*
-  float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->vertices[0][0]),
-                    props.getFloat("ymin", 0.01) * geom[i]->vertices[0][1]),
-                    props.getFloat("zmin", 0.01) * geom[i]->vertices[0][2])};
-  float bbMax[3] = {props.getFloat("xmax", 0.99) * geom[i]->vertices[1][0]),
-                    props.getFloat("ymax", 0.99) * geom[i]->vertices[1][1]),
-                    props.getFloat("zmax", 0.99) * geom[i]->vertices[1][2])};
+  float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->render->vertices[0][0]),
+                    props.getFloat("ymin", 0.01) * geom[i]->render->vertices[0][1]),
+                    props.getFloat("zmin", 0.01) * geom[i]->render->vertices[0][2])};
+  float bbMax[3] = {props.getFloat("xmax", 0.99) * geom[i]->render->vertices[1][0]),
+                    props.getFloat("ymax", 0.99) * geom[i]->render->vertices[1][1]),
+                    props.getFloat("zmax", 0.99) * geom[i]->render->vertices[1][2])};
   */
   float bbMin[3] = {props.getFloat("xmin", 0.),
                     props.getFloat("ymin", 0.),
@@ -529,10 +529,10 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
     {
       int bpv=1;
       float min = 0.f, range = 0.f;
-      if (geom[i]->colours.size() > 0)
+      if (geom[i]->render->colours.size() > 0)
       {
         //RGB/RGBA
-        bpv = (4 * geom[i]->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
+        bpv = (4 * geom[i]->render->colours.size()) / (float)(geom[i]->width * geom[i]->height * geom[i]->depth);
       }
       else if (geom[i]->colourData())
       {
@@ -584,7 +584,7 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
     else if (index == i && geom[i]->draw == draw)
     {
       int width = geom[i]->width;
-      bool hasColourVals = geom[i]->colourData();
+      bool hasColourVals = geom[i]->colourData() != nullptr;
       int height = 0;
       if (hasColourVals)
       {
@@ -593,7 +593,7 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
       }
       else
       {
-        height = geom[i]->colours.size() / width;
+        height = geom[i]->render->colours.size() / width;
         channels = 4; //RGBA
       }
       iw = width * xtiles;
@@ -627,7 +627,7 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
           {
             for (int x=0; x<width; x++)
             {
-              c.value = geom[j]->colours[y * width + x];
+              c.value = geom[j]->render->colours[y * width + x];
               image->pixels[(iw * (y + yoffset) + x + xoffset)*4] = c.r;
               image->pixels[(iw * (y + yoffset) + x + xoffset)*4+1] = c.g;
               image->pixels[(iw * (y + yoffset) + x + xoffset)*4+2] = c.b;
@@ -712,9 +712,9 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       else
         res.push_back(geom[i]->depth);
       //Scaling factors
-      scale.push_back(geom[i]->vertices[1][0] - geom[i]->vertices[0][0]);
-      scale.push_back(geom[i]->vertices[1][1] - geom[i]->vertices[0][1]);
-      scale.push_back(geom[i]->vertices[1][2] - geom[i]->vertices[0][2]);
+      scale.push_back(geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0]);
+      scale.push_back(geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1]);
+      scale.push_back(geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]);
       volume["res"] = res;
       volume["scale"] = scale;
 

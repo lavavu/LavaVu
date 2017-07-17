@@ -2227,7 +2227,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     while(end > label && isspace(*end)) end--;
     *(end+1) = 0; //Null terminator
 
-    GeomData* geomdata = rulers->getObjectStore(obj);
+    Geom_Ptr geomdata = rulers->getObjectStore(obj);
     std::string blank = "";
     geomdata->label(blank);
     std::string labelstr = align + "  " + label + "  ";
@@ -2299,12 +2299,12 @@ void LavaVu::drawBorder()
   if (verbose) infostream = stderr;
 }
 
-GeomData* LavaVu::getFilledGeometry(DrawingObject* obj)
+Geom_Ptr LavaVu::getFilledGeometry(DrawingObject* obj)
 {
   //Find the first available geometry container for this drawing object
   //Used to append colour values and to get a representative colour for objects
   //Only works if we know object has a single geometry type
-  GeomData* geomdata = NULL;
+  Geom_Ptr geomdata = nullptr;
   for (int type=lucMinType; type<lucMaxType; type++)
   {
     geomdata = amodel->geometry[type]->getObjectStore(obj);
@@ -2336,7 +2336,7 @@ void LavaVu::displayObjectList(bool console)
       if (console) std::cerr << "[          ]" << ss.str() << std::endl;
       //Use object colour if provided, unless matches background
       Colour c;
-      GeomData* geomdata = getFilledGeometry(amodel->objects[i]);
+      Geom_Ptr geomdata = getFilledGeometry(amodel->objects[i]);
       if (geomdata)
         geomdata->getColour(c, 0);
       else
@@ -3140,13 +3140,13 @@ void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, un
 }
 
 //GeomData interface, for loading/acessing geom store directly
-std::vector<GeomData*> LavaVu::getAllGeometry(DrawingObject* target)
+std::vector<Geom_Ptr> LavaVu::getAllGeometry(DrawingObject* target)
 {
-  std::vector<GeomData*> list;
+  std::vector<Geom_Ptr> list;
   if (!amodel || !target) return list;
   for (int type=lucMinType; type<lucMaxType; type++)
   {
-    std::vector<GeomData*> geomlist = amodel->geometry[type]->getAllObjects(target);
+    std::vector<Geom_Ptr> geomlist = amodel->geometry[type]->getAllObjects(target);
     list.insert(std::end(list), std::begin(geomlist), std::end(geomlist));
   }
   return list;
@@ -3154,13 +3154,13 @@ std::vector<GeomData*> LavaVu::getAllGeometry(DrawingObject* target)
 
 int LavaVu::getGeometryCount(DrawingObject* target)
 {
-  std::vector<GeomData*> geomlist = getAllGeometry(target);
+  std::vector<Geom_Ptr> geomlist = getAllGeometry(target);
   return geomlist.size();
 }
 
-GeomData* LavaVu::getGeometry(DrawingObject* target, int index)
+Geom_Ptr LavaVu::getGeometry(DrawingObject* target, int index)
 {
-  std::vector<GeomData*> geomlist = getAllGeometry(target);
+  std::vector<Geom_Ptr> geomlist = getAllGeometry(target);
   if ((int)geomlist.size() > index)
   {
     return geomlist[index];
@@ -3168,21 +3168,21 @@ GeomData* LavaVu::getGeometry(DrawingObject* target, int index)
   return NULL;
 }
 
-void LavaVu::geometryArrayUChar(GeomData* geom, unsigned char* array, int len, lucGeometryDataType type)
+void LavaVu::geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectContainer(geom->draw);
   if (container && geom)
     container->read(geom, len, type, array);
 }
 
-void LavaVu::geometryArrayUInt(GeomData* geom, unsigned int* array, int len, lucGeometryDataType type)
+void LavaVu::geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectContainer(geom->draw);
   if (container && geom)
     container->read(geom, len, type, array);
 }
 
-void LavaVu::geometryArrayFloat(GeomData* geom, float* array, int len, lucGeometryDataType type)
+void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometryDataType type)
 {
   int dsize = 3;
   if (type == lucTexCoordData) dsize = 2;
@@ -3191,14 +3191,14 @@ void LavaVu::geometryArrayFloat(GeomData* geom, float* array, int len, lucGeomet
     container->read(geom, len/dsize, type, array);
 }
 
-void LavaVu::geometryArrayFloat(GeomData* geom, float* array, int len, std::string label)
+void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::string label)
 {
   Geometry* container = lookupObjectContainer(geom->draw);
   if (container && geom)
     container->read(geom, len, array, label);
 }
 
-void LavaVu::geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len)
+void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, float** array, int* len)
 {
   //Get a view of internal geom array
   //(warning, can be released at any time, copy if needed!)
@@ -3208,7 +3208,7 @@ void LavaVu::geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, f
   *len = dat->size();
 }
 
-void LavaVu::geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, unsigned int** array, int* len)
+void LavaVu::geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, unsigned int** array, int* len)
 {
   //Get a view of internal geom array
   //(warning, can be released at any time, copy if needed!)
@@ -3218,7 +3218,7 @@ void LavaVu::geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, un
   *len = dat->size();
 }
 
-void LavaVu::geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, unsigned char** array, int* len)
+void LavaVu::geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len)
 {
   //Get a view of internal geom array
   //(warning, can be released at any time, copy if needed!)

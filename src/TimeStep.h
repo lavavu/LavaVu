@@ -61,21 +61,11 @@ public:
   void write(std::vector<Geometry*> &data)
   {
     cache = data;
-
-    //for (Geometry* g : cache)
-    //  for (GeomData* d : g->geom)
-    //    if (d->count)
-    //      std::cout << "Cached [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
   }
 
   void read(std::vector<Geometry*> &data)
   {
     data = cache;
-
-    //for (Geometry* g : cache)
-    //  for (GeomData* d : g->geom)
-    //    if (d->count)
-    //      std::cout << "Cache Load [" << GeomData::names[g->type] << "] VERTICES: " << d->count << " VALUE ENTRIES " << d->values.size() << std::endl;
   }
 };
 

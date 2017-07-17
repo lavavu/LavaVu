@@ -156,7 +156,7 @@ void Points::loadVertices()
       {
         assert((unsigned int)(ptr-p) < total * datasize);
         //Copies vertex bytes
-        memcpy(ptr, geom[s]->vertices[i], sizeof(float) * 3);
+        memcpy(ptr, geom[s]->render->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
         geom[s]->getColour(c, i);
         memcpy(ptr, &c, sizeof(Colour));
@@ -221,7 +221,7 @@ void Points::loadList()
       if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
 
       pidx[elements].index = offset + i;
-      pidx[elements].vertex = geom[s]->vertices[i];
+      pidx[elements].vertex = geom[s]->render->vertices[i];
       pidx[elements].distance = 0;
       elements++;
     }

@@ -259,7 +259,7 @@ void ColourMap::calibrate(float min, float max)
 }
 
 //Calibration from set "range" property or geom data set
-void ColourMap::calibrate(FloatValues* dataValues)
+void ColourMap::calibrate(Values_Ptr dataValues)
 {
   //Check has range property and is valid
   bool hasRange = properties.has("range");

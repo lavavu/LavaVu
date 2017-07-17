@@ -65,13 +65,13 @@ unsigned int Triangles::triCount()
   {
     unsigned int tris;
     //Indexed
-    if (geom[index]->indices.size() > 0)
+    if (geom[index]->render->indices.size() > 0)
     {
       //Un-structured tri indices
-      tris = geom[index]->indices.size() / 3;
-      if (tris * 3 != geom[index]->indices.size()) // || geom[index]->draw->properties["tristrip"])
+      tris = geom[index]->render->indices.size() / 3;
+      if (tris * 3 != geom[index]->render->indices.size()) // || geom[index]->draw->properties["tristrip"])
         //Tri-strip indices
-        tris = geom[index]->indices.size() - 2;
+        tris = geom[index]->render->indices.size() - 2;
       debug_print("Surface (indexed) %d", index);
     }
     //Grid
@@ -172,8 +172,8 @@ void Triangles::loadBuffers()
     debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count, hasColours);
 
     Colour colour;
-    bool normals = geom[index]->normals.size() == geom[index]->vertices.size();
-    debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->normals.size(), geom[index]->vertices.size());
+    bool normals = geom[index]->render->normals.size() == geom[index]->render->vertices.size();
+    debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->render->normals.size(), geom[index]->render->vertices.size());
     float zero[3] = {0,0,0};
     float shift = geom[index]->draw->properties["shift"];
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
@@ -186,7 +186,7 @@ void Triangles::loadBuffers()
       if (cidx * colrange == v)
         geom[index]->getColour(colour, cidx);
 
-      float* vert = geom[index]->vertices[v];
+      float* vert = geom[index]->render->vertices[v];
       if (shift > 0)
       {
         //Shift vertices
@@ -202,13 +202,13 @@ void Triangles::loadBuffers()
       ptr += sizeof(float) * 3;
       //Copies normal bytes
       if (normals)
-        memcpy(ptr, &geom[index]->normals[v][0], sizeof(float) * 3);
+        memcpy(ptr, &geom[index]->render->normals[v][0], sizeof(float) * 3);
       else
         memcpy(ptr, zero, sizeof(float) * 3);
       ptr += sizeof(float) * 3;
       //Copies texCoord bytes
-      if (geom[index]->texCoords.size() > v)
-        memcpy(ptr, &geom[index]->texCoords[v][0], sizeof(float) * 2);
+      if (geom[index]->render->texCoords.size() > v)
+        memcpy(ptr, &geom[index]->render->texCoords[v][0], sizeof(float) * 2);
       ptr += sizeof(float) * 2;
       //Copies colour bytes
       memcpy(ptr, &colour, sizeof(Colour));
@@ -259,10 +259,10 @@ void Triangles::render()
   idxcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
-    if (geom[index]->indices.size() > 0)
+    if (geom[index]->render->indices.size() > 0)
     {
-      unsigned int elements = geom[index]->indices.size();
-      glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, elements * sizeof(GLuint), geom[index]->indices.ref());
+      unsigned int elements = geom[index]->render->indices.size();
+      glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, elements * sizeof(GLuint), geom[index]->render->indices.ref());
       idxcount += elements;
       counts[index] = elements;
       offset += counts[index];
@@ -309,7 +309,7 @@ void Triangles::draw()
       if (counts[index] == 0) continue;
       setState(index, drawstate.prog[lucTriangleType]); //Set draw state settings for this object
       //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
-      if (geom[index]->indices.size() > 0)
+      if (geom[index]->render->indices.size() > 0)
       {
         glDrawRangeElements(GL_TRIANGLES, 0, elements, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];

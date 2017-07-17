@@ -80,8 +80,8 @@ void QuadSurfaces::update()
     debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hidden ? "yes" : "no"));
 
     //Get corners of strip
-    float* posmin = geom[i]->vertices[0];
-    float* posmax = geom[i]->vertices[geom[i]->count - 1];
+    float* posmin = geom[i]->render->vertices[0];
+    float* posmax = geom[i]->render->vertices[geom[i]->count - 1];
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
                     posmin[2] + (posmax[2] - posmin[2]) * 0.5f
@@ -159,19 +159,19 @@ void QuadSurfaces::render()
     tricount += quads; //For debug messages
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
-    if (vnormals && geom[index]->normals.size()/3 < geom[index]->count)
+    if (vnormals && geom[index]->render->normals.size()/3 < geom[index]->count)
     {
       calcGridNormals(index, normals);
-      geom[index]->normals.clear();
-      geom[index]->normals.read(normals.size(), normals[0].ref());
+      geom[index]->render->normals.clear();
+      geom[index]->render->normals.read(normals.size(), normals[0].ref());
     }
-    if (geom[index]->indices.size() != quads*4)
+    if (geom[index]->render->indices.size() != quads*4)
     {
       indices.resize(quads*4);
       calcGridIndices(index, indices, voffset);
       //Read new data and continue
-      geom[index]->indices.clear();
-      geom[index]->indices.read(indices.size(), &indices[0]);
+      geom[index]->render->indices.clear();
+      geom[index]->render->indices.read(indices.size(), &indices[0]);
     }
 
     //Vertex index offset
@@ -180,8 +180,8 @@ void QuadSurfaces::render()
     elements += quads*4;
 
     t1 = clock();
-    int bytes = geom[index]->indices.size()*sizeof(GLuint);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bytes, geom[index]->indices.ref());
+    int bytes = geom[index]->render->indices.size()*sizeof(GLuint);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bytes, geom[index]->render->indices.ref());
     t2 = clock();
     debug_print("  %.4lf seconds to upload %d quad indices (%d - %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, indices.size(), offset, bytes);
     t1 = clock();
@@ -257,12 +257,12 @@ void QuadSurfaces::draw()
       for (unsigned int g=0; g<geom.size(); g++)
       {
         if (g == id) break;
-        start += 4 * (geom[g]->width-1) * (geom[g]->height-1); //geom[g]->indices.size();
+        start += 4 * (geom[g]->width-1) * (geom[g]->height-1); //geom[g]->render->indices.size();
       }
 
       //int id = i; //Sorting disabled
       setState(id, drawstate.prog[lucGridType]); //Set draw state settings for this object
-      //fprintf(stderr, "(%d) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->indices.size()/4, start/4, (start+geom[i]->indices.size())/4, elements);
+      //fprintf(stderr, "(%d) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
       glDrawRangeElements(GL_QUADS, 0, elements, 4 * (geom[id]->width-1) * (geom[id]->height-1), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
       //printf("%d) rendered, distance = %f (%f)\n", id, geom[id]->distance, surf_sort[i].distance);
     }

@@ -122,11 +122,11 @@ void Tracers::update()
 
         //Lookup by provided particle index?
         int pidx = p;
-        if (geom[i]->indices.size() > 0)
+        if (geom[i]->render->indices.size() > 0)
         {
           for (unsigned int x=0; x<particles; x++)
           {
-            if (geom[i]->indices[step * particles + x] == p)
+            if (geom[i]->render->indices[step * particles + x] == p)
             {
               pidx = x;
               break;
@@ -138,7 +138,7 @@ void Tracers::update()
         int pp = step * particles + pidx;
         if (!drawable(i) || geom[i]->filter(pp)) continue;
 
-        float* pos = geom[i]->vertices[pp];
+        float* pos = geom[i]->render->vertices[pp];
         //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);
 
         //Get colour either from supplied colour values or time step

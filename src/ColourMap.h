@@ -96,7 +96,7 @@ public:
   void add(float *components, float pvalue);
   void calc();
   void calibrate(float min, float max);
-  void calibrate(FloatValues* dataValues=NULL);
+  void calibrate(Values_Ptr dataValues=nullptr);
   Colour getfast(float value);
   Colour get(float value);
   float scaleValue(float value);

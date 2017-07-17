@@ -10,6 +10,7 @@
 %include <std_string.i>
 %include <std_vector.i>
 %include <numpy.i>
+%include <std_shared_ptr.i>
 
 %init %{
   import_array();
@@ -35,6 +36,8 @@
 %{
 import_array();
 %}
+
+%shared_ptr(GeomData)
 
 namespace std 
 {
@@ -75,6 +78,8 @@ public:
   static std::vector<std::string> getDefaultMapNames();
   static std::string getDefaultMap(std::string);
 };
+
+typedef std::shared_ptr<GeomData> Geom_Ptr;
 
 class GeomData
 {
@@ -139,15 +144,15 @@ public:
   void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true);
 
   int getGeometryCount(DrawingObject* target);
-  GeomData* getGeometry(DrawingObject* target, int index);
-  void geometryArrayUChar(GeomData* geom, unsigned char* array, int len, lucGeometryDataType type);
-  void geometryArrayUInt(GeomData* geom, unsigned int* array, int len, lucGeometryDataType type);
-  void geometryArrayFloat(GeomData* geom, float* array, int len, lucGeometryDataType type);
-  void geometryArrayFloat(GeomData* geom, float* array, int len, std::string label);
+  Geom_Ptr getGeometry(DrawingObject* target, int index);
+  void geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type);
+  void geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type);
+  void geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometryDataType type);
+  void geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::string label);
 
-  void geometryArrayViewFloat(GeomData* geom, lucGeometryDataType dtype, float** array, int* len);
-  void geometryArrayViewUInt(GeomData* geom, lucGeometryDataType dtype, unsigned int** array, int* len);
-  void geometryArrayViewUChar(GeomData* geom, lucGeometryDataType dtype, unsigned char** array, int* len);
+  void geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, float** array, int* len);
+  void geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, unsigned int** array, int* len);
+  void geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
   void imageBuffer(unsigned char* array, int width, int height, int depth);
   std::string imageJPEG(int width, int height, int quality=95);

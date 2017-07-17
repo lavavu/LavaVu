@@ -84,10 +84,10 @@ public:
   unsigned int subsample;
   TriSurfaces* surfaces;
   DrawingObject* target;
-  FloatValues* colourVals;
+  Values_Ptr colourVals;
   vertices* vertex;
 
-  Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample=1);
+  Isosurface(std::vector<Geom_Ptr>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample=1);
 
   void MarchingCubes();
   void DrawWalls();

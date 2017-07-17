@@ -107,7 +107,7 @@ void Lines::update()
     debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
     Colour colour;
-    bool fastCol = hasColours == geom[i]->colours.size() && hasColours > 0 && !geom[i]->draw->opacityMap;
+    bool fastCol = hasColours == geom[i]->render->colours.size() && hasColours > 0 && !geom[i]->draw->opacityMap;
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
       if (!internal && geom[i]->filter(v)) continue;
@@ -119,7 +119,7 @@ void Lines::update()
       //TODO: Replace this (see Geometry::colourCalibrate) with colour lookup function ptr
       if (fastCol)
       {
-        colour.value = geom[i]->colours[cidx];
+        colour.value = geom[i]->render->colours[cidx];
         colour.a *= geom[i]->draw->opacity;
       }
       else
@@ -129,7 +129,7 @@ void Lines::update()
       //Write vertex data to vbo
       assert((int)(ptr-p) < bsize);
       //Copies vertex bytes
-      memcpy(ptr, &geom[i]->vertices[v][0], sizeof(float) * 3);
+      memcpy(ptr, &geom[i]->render->vertices[v][0], sizeof(float) * 3);
       ptr += sizeof(float) * 3;
       //Copies colour bytes
       memcpy(ptr, &colour, sizeof(Colour));

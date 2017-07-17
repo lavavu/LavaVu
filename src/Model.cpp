@@ -986,7 +986,7 @@ void Model::freeze()
   //(Or new data will be appended to the frozen containers!)
   init();
   if (timesteps.size() == 0) addTimeStep();
-  loadFixed();
+  //loadFixed();
 }
 
 bool Model::useCache()
@@ -1378,7 +1378,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
         if (data_type == lucVertexData && recurseTracers) active->add(obj);
 
         //Read data block
-        GeomData* g;
+        Geom_Ptr g;
         //Convert legacy value types to use data labels
         switch (data_type)
         {
@@ -1609,7 +1609,7 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
   //Clear existing data of this type before writing, allows object data updates to db
   deleteGeometry(outdb, type, obj, step);
 
-  std::vector<GeomData*> data = geometry[type]->getAllObjects(obj);
+  std::vector<Geom_Ptr> data = geometry[type]->getAllObjects(obj);
   //Loop through and write out all object data
   unsigned int data_type;
   for (unsigned int i=0; i<data.size(); i++)
@@ -1627,7 +1627,7 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
     for (unsigned int j=0; j<data[i]->values.size(); j++)
     {
       //Write the value data entry
-      DataContainer* block = (DataContainer*)data[i]->values[j];
+      DataContainer* block = (DataContainer*)data[i]->values[j].get();
       if (!block || block->size() == 0) continue;
       if (infostream)
         std::cerr << "Writing geometry (values[" << j << "] * " << block->size()
@@ -1642,7 +1642,7 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
   }
 }
 
-void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata)
+void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step, bool compressdata)
 {
   char SQL[SQL_QUERY_MAX];
   sqlite3_stmt* statement;

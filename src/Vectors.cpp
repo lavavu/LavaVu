@@ -55,7 +55,7 @@ void Vectors::update()
   Colour colour;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    if (geom[i]->vectors.size() < geom[i]->count) continue;
+    if (geom[i]->render->vectors.size() < geom[i]->count) continue;
     Properties& props = geom[i]->draw->properties;
 
     //Create new data stores for output geometry
@@ -69,11 +69,11 @@ void Vectors::update()
     //Dynamic range?
     float scaling = (float)props["scaling"] * (float)props["scalevectors"];
 
-    if (props["autoscale"] && geom[i]->vectors.maximum > 0)
+    if (props["autoscale"] && geom[i]->render->vectors.maximum > 0)
     {
       debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n",
-                  scaling, 1/geom[i]->vectors.maximum, scaling/geom[i]->vectors.maximum);
-      scaling *= 1.0/geom[i]->vectors.maximum;
+                  scaling, 1/geom[i]->render->vectors.maximum, scaling/geom[i]->render->vectors.maximum);
+      scaling *= 1.0/geom[i]->render->vectors.maximum;
     }
 
     //Load scaling factors from properties
@@ -92,8 +92,8 @@ void Vectors::update()
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
       if (!drawable(i) || geom[i]->filter(v)) continue;
-      Vec3d pos(geom[i]->vertices[v]);
-      Vec3d vec(geom[i]->vectors[v]);
+      Vec3d pos(geom[i]->render->vertices[v]);
+      Vec3d vec(geom[i]->render->vectors[v]);
       geom[i]->getColour(colour, v);
 
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)

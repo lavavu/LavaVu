@@ -37,7 +37,7 @@
 
 // Given a grid dataset and an isovalue, calculate the triangular
 //  facets required to represent the isosurface through the data.
-Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample)
+Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample)
   : subsample(subsample), surfaces(tris), target(target)
 {
   //Generate an isosurface from a set of volume slices or a cube
@@ -77,10 +77,10 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
       if (geom[i]->colourData())
         //(assumes float luminance data (4 bpv))
         geom[i]->height = geom[i]->colourData()->size() / geom[i]->width;
-      else if (geom[i]->luminance.size() > 0)
-        geom[i]->height = geom[i]->luminance.size() / geom[i]->width;
-      else if (geom[i]->colours.size() > 0)
-        geom[i]->height = geom[i]->colours.size() / geom[i]->width;
+      else if (geom[i]->render->luminance.size() > 0)
+        geom[i]->height = geom[i]->render->luminance.size() / geom[i]->width;
+      else if (geom[i]->render->colours.size() > 0)
+        geom[i]->height = geom[i]->render->colours.size() / geom[i]->width;
     }
 
     int depth = geom[i]->depth;
@@ -101,8 +101,8 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
     vertex = new vertices(nx, ny, nz);
 
     //Corners
-    Vec3d start = Vec3d(geom[i]->vertices[0]);
-    Vec3d end = Vec3d(geom[i]->vertices[1]);
+    Vec3d start = Vec3d(geom[i]->render->vertices[0]);
+    Vec3d end = Vec3d(geom[i]->render->vertices[1]);
     Vec3d inc = end-start;
     inc[0] = inc[0] / (nx-1);
     inc[1] = inc[1] / (ny-1);
@@ -110,8 +110,8 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
 
     //Save colour values reference
     colourVals = geom[i]->colourData();
-    if (colourVals && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
-      colourVals = NULL;
+    if (colourVals != nullptr && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
+      colourVals = nullptr;
 
     // Sample in regular grid
     Colour c;
@@ -144,17 +144,17 @@ Isosurface::Isosurface(std::vector<GeomData*>& geom, TriSurfaces* tris, DrawingO
           //std::cout << x << "," << y << "," << z << " : " << next << std::endl;
 
           //Set the contour value
-          if (geom[i]->luminance.size() > 0)
+          if (geom[i]->render->luminance.size() > 0)
           {
             //Byte luminance
-            assert(geom[i+j]->luminance.size() > next);
-            vertex->at(x,y,z).value = geom[i+j]->luminance[next]/255.0;
+            assert(geom[i+j]->render->luminance.size() > next);
+            vertex->at(x,y,z).value = geom[i+j]->render->luminance[next]/255.0;
           }
-          else if (geom[i+j]->colours.size() > 0)
+          else if (geom[i+j]->render->colours.size() > 0)
           {
-            assert(geom[i+j]->colours.size() > next);
+            assert(geom[i+j]->render->colours.size() > next);
             //RGBA - just use red channel
-            c.value = geom[i+j]->colours[next];
+            c.value = geom[i+j]->render->colours[next];
             vertex->at(x,y,z).value = c.r/255.0;
           }
           else if (geom[i+j]->values.size() > 0) //Use first values entry

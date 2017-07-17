@@ -75,6 +75,21 @@ typedef struct
   float* vertex; //Pointer to vertex to calc distance from (usually centroid)
 } TIndex;
 
+
+typedef struct
+{
+  Coord3DValues vertices;
+  Coord3DValues vectors;
+  Coord3DValues normals;
+  UIntValues indices;
+  UIntValues colours;
+  Coord2DValues texCoords;
+  UCharValues luminance;
+  UCharValues rgb;
+} RenderData;
+
+typedef std::shared_ptr<RenderData> Render_Ptr;
+
 //Geometry object data store
 #define MAX_DATA_ARRAYS 64
 class GeomData
@@ -89,7 +104,6 @@ public:
   unsigned int depth;
   char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
-  unsigned int fixedOffset; //Offset to end of fixed value data
   ImageLoader* texture; //Texture
   std::vector<Filter> filterCache;
   lucGeometryType type;   //Holds the object type
@@ -102,18 +116,9 @@ public:
 
   std::vector<std::string> labels;      //Optional vertex labels
 
-  //Geometry data
-  Coord3DValues vertices;
-  Coord3DValues vectors;
-  Coord3DValues normals;
-  UIntValues indices;
-  UIntValues colours;
-  Coord2DValues texCoords;
-  UCharValues luminance;
-  UCharValues rgb;
-
   std::vector<DataContainer*> data;
-  std::vector<FloatValues*> values;
+  std::vector<Values_Ptr> values;
+  std::shared_ptr<RenderData> render;
 
   static unsigned int byteSize(lucGeometryDataType type)
   {
@@ -126,15 +131,17 @@ public:
 
   GeomData(DrawingObject* draw, lucGeometryType type) : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
   {
+    render = std::make_shared<RenderData>();
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
-    data[lucVertexData] = &vertices;
-    data[lucVectorData] = &vectors;
-    data[lucNormalData] = &normals;
-    data[lucIndexData] = &indices;
-    data[lucRGBAData] = &colours;
-    data[lucTexCoordData] = &texCoords;
-    data[lucLuminanceData] = &luminance;
-    data[lucRGBData] = &rgb;
+    
+    data[lucVertexData] = (DataContainer*)&render->vertices;
+    data[lucVectorData] = (DataContainer*)&render->vectors;
+    data[lucNormalData] = (DataContainer*)&render->normals;
+    data[lucIndexData] = (DataContainer*)&render->indices;
+    data[lucRGBAData] = (DataContainer*)&render->colours;
+    data[lucTexCoordData] = (DataContainer*)&render->texCoords;
+    data[lucLuminanceData] = (DataContainer*)&render->luminance;
+    data[lucRGBData] = (DataContainer*)&render->rgb;
 
     texture = NULL;
 
@@ -143,18 +150,12 @@ public:
       min[i] = HUGE_VAL;
       max[i] = -HUGE_VAL;
     }
-
-    fixedOffset = 0;
   }
 
   ~GeomData()
   {
     if (labelptr) free(labelptr);
     labelptr = NULL;
-
-    //Delete value data containers (exclude fixed additions)
-    for (unsigned int i=fixedOffset; i<values.size(); i++)
-      delete values[i];
 
     if (texture)
       delete texture;
@@ -171,10 +172,10 @@ public:
   void getColour(Colour& colour, unsigned int idx);
   unsigned int valuesLookup(const json& by);
   bool filter(unsigned int idx);
-  FloatValues* colourData();
+  Values_Ptr colourData();
   float colourData(unsigned int idx);
-  FloatValues* valueData(unsigned int vidx);
-  FloatValues* valueData(const json& prop);
+  Values_Ptr valueData(unsigned int vidx);
+  Values_Ptr valueData(const json& prop);
   float valueData(unsigned int vidx, unsigned int idx);
 };
 
@@ -226,13 +227,16 @@ struct vertexIdSort
   }
 };
 
+//Shared pointer for GeomData
+typedef std::shared_ptr<GeomData> Geom_Ptr;
+
 //Container class for a list of geometry objects
 class Geometry
 {
-  friend class TimeStep; //Allow private access from TimeStep
+  friend class Model;
 protected:
   View* view;
-  std::vector<GeomData*> geom;
+  std::vector<Geom_Ptr> geom;
   std::vector<bool> hidden;
   unsigned int elements;
   unsigned int drawcount;
@@ -274,13 +278,13 @@ public:
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();    //Implementation should draw geometry here...
   void labels();  //Draw labels
-  std::vector<GeomData*> getAllObjects(DrawingObject* draw);
-  GeomData* getObjectStore(DrawingObject* draw);
-  GeomData* add(DrawingObject* draw);
-  GeomData* read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
-  void read(GeomData* geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
-  GeomData* read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
-  GeomData* read(GeomData* geom, unsigned int n, const void* data, std::string label);
+  std::vector<Geom_Ptr> getAllObjects(DrawingObject* draw);
+  Geom_Ptr getObjectStore(DrawingObject* draw);
+  Geom_Ptr add(DrawingObject* draw);
+  Geom_Ptr read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
+  void read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
+  Geom_Ptr read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
+  Geom_Ptr read(Geom_Ptr geom, unsigned int n, const void* data, std::string label);
   void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
   void setupObject(DrawingObject* draw);
   void insertFixed(Geometry* fixed);
@@ -314,7 +318,7 @@ public:
   //Return vertex count of most recently used object
   unsigned int getVertexIdx(DrawingObject* draw)
   {
-    GeomData* geom = getObjectStore(draw);
+    Geom_Ptr geom = getObjectStore(draw);
     if (geom) return geom->count;
     return 0;
   }

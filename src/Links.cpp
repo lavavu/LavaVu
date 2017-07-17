@@ -88,7 +88,7 @@ void Links::update()
         if (limit > 0.f && v%2 == 0 && v < geom[i]->count-1)
         {
           Vec3d line;
-          vectorSubtract(line, geom[i]->vertices[v+1], geom[i]->vertices[v]);
+          vectorSubtract(line, geom[i]->render->vertices[v+1], geom[i]->render->vertices[v]);
           if (line.magnitude() > limit) 
           {
             if (linked)
@@ -110,7 +110,7 @@ void Links::update()
         if (cidx >= hasColours) cidx = hasColours - 1;
         geom[i]->getColour(colour, cidx);
 
-        lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->vertices[v][0]);
+        lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->render->vertices[v][0]);
         lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
 
         //Count of vertices actually plotted
@@ -144,7 +144,7 @@ void Links::update()
         if (geom[i]->filter(v)) continue;
         
         if (v%2 == 0 && !linked) oldpos = NULL;
-        float* pos = geom[i]->vertices[v];
+        float* pos = geom[i]->render->vertices[v];
         if (oldpos)
         {
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);

@@ -302,6 +302,9 @@ public:
   }
 };
 
+//Shared pointer for FloatValues
+typedef std::shared_ptr<FloatValues> Values_Ptr;
+
 //JSON Property set wrapper class
 class Properties
 {

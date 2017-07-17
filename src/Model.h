@@ -196,7 +196,7 @@ public:
   void writeObjects(Database& outdb, DrawingObject* obj, int step, bool compress);
   void deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step);
   void writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
-  void writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, GeomData* data, DataContainer* block, int step, bool compressdata);
+  void writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step, bool compressdata);
   void deleteObject(unsigned int id);
   void backup(Database& fromdb, Database& todb);
   void objectBounds(DrawingObject* draw, float* min, float* max);

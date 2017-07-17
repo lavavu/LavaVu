@@ -102,15 +102,15 @@ void Shapes::update()
 
       //Setup orientation using alignment vector
       Quaternion rot;
-      if (geom[i]->vectors.size() > 0)
+      if (geom[i]->render->vectors.size() > 0)
       {
-        Vec3d vec(geom[i]->vectors[v]);
+        Vec3d vec(geom[i]->render->vectors[v]);
         //vec *= Vec3d(view->scale); //Scale
         rot = vectorRotation(vec);
       }
 
       //Create shape
-      Vec3d pos = Vec3d(geom[i]->vertices[v]);
+      Vec3d pos = Vec3d(geom[i]->render->vertices[v]);
       if (shape == 1)
         tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot);
       else
