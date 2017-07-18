@@ -62,6 +62,12 @@ void Tracers::update()
 
     //Calculate particle count using data count / data steps
     unsigned int particles = geom[i]->width;
+    if (particles == 0)
+    {
+      printf("WARNING: No particles to trace\n");
+      continue;
+    }
+
     int count = geom[i]->count;
     int datasteps = count / particles;
     int timesteps = (datasteps-1) * drawstate.gap + 1; //Multiply by gap between recorded steps
@@ -75,7 +81,7 @@ void Tracers::update()
     int range = timesteps;
     //Skipped steps? Use closest available step
     if (drawstate.gap > 1) range = ceil(timesteps/(float)(drawstate.gap-1));
-    int end = datasteps-1;
+    int end = drawstate.now; //datasteps-1;
     int start = end - range + 1;
     if (start < 0) start = 0;
     debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d)\n", particles, start, end, timesteps, datasteps);

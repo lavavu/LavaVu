@@ -127,6 +127,7 @@ public:
   void clearTimeSteps();
   int loadTimeSteps(bool scan=false);
   void loadFixed();
+  bool inFixed(DataContainer* block0);
   std::string checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit=1);
   void loadViewports();
   void loadViewCamera(int viewport_id);
@@ -186,8 +187,10 @@ public:
     timesteps.push_back(new TimeStep(step, time, path));
   }
 
-  int setTimeStep(int stepidx);
-  int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1, bool recurseTracers=true);
+  int setTimeStep(int stepidx, bool skipload=false);
+  int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1);
+  int loadFixedGeometry();
+  int readGeometryRecords(sqlite3_stmt* statement, bool cache=true);
   void mergeDatabases();
   void updateObject(DrawingObject* target, lucGeometryType type, bool compress=true);
   void writeDatabase(const char* path, DrawingObject* obj, bool compress=false);

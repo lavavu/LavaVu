@@ -233,7 +233,6 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 //Container class for a list of geometry objects
 class Geometry
 {
-  friend class Model;
 protected:
   View* view;
   std::vector<Geom_Ptr> geom;
@@ -288,6 +287,7 @@ public:
   void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
   void setupObject(DrawingObject* draw);
   void insertFixed(Geometry* fixed);
+  bool inFixed(DataContainer* block0);
   void label(DrawingObject* draw, const char* labels);
   void label(DrawingObject* draw, std::vector<std::string> labels);
   void print();

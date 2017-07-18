@@ -839,6 +839,16 @@ void Model::loadFixed()
       geometry[i]->insertFixed(fixed[i]);
 }
 
+bool Model::inFixed(DataContainer* block0)
+{
+  //Return true if a data block found in fixed data set
+  for (Geometry* g : fixed)
+  {
+    if (g->inFixed(block0)) return true;
+  }
+  return false;
+}
+
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
 {
   unsigned int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
@@ -979,6 +989,9 @@ void Model::setColourMapProps(Properties& properties, float minimum, float maxim
 
 void Model::freeze()
 {
+  //Read any fixed records from the database first
+  loadFixedGeometry();
+
   //Freeze fixed geometry
   fixed = geometry;
 
@@ -998,14 +1011,17 @@ bool Model::useCache()
 
 void Model::cacheLoad()
 {
+  std::cout << "Loading " << timesteps.size() << " steps";
   for (unsigned int i=0; i<timesteps.size(); i++)
   {
+    if (i%10==0) std::cout << std::endl;
     setTimeStep(i);
     if (drawstate.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
     debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), database.file.base.c_str());
   }
   //Cache final step
   cacheStep();
+  std::cout << std::endl;
   //Clear current step to ensure selected is loaded from cache
   drawstate.now = now = -1;
 }
@@ -1125,7 +1141,7 @@ int Model::nearestTimeStep(int requested)
 }
 
 //Load data at specified timestep
-int Model::setTimeStep(int stepidx)
+int Model::setTimeStep(int stepidx, bool skipload)
 {
   int rows = 0;
   clock_t t1 = clock();
@@ -1172,16 +1188,15 @@ int Model::setTimeStep(int stepidx)
     if (drawstate.now >= 0) 
       loadFixed();
 
-    //Attempt to load from cache first
-    //if (restoreStep(state.now)) return 0; //Cache hit successful return value
-    if (database)
+    //Load new data
+    if (database && !skipload)
     {
       //Detach any attached db file and attach n'th timestep database if available
       database.attach(timesteps[drawstate.now]);
 
       if (useCache())
         //Attempt caching all geometry from database at start
-        rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step, true);
+        rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step);
       else
         rows += loadGeometry();
 
@@ -1192,14 +1207,13 @@ int Model::setTimeStep(int stepidx)
   return rows;
 }
 
-int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseTracers)
+int Model::loadGeometry(int obj_id, int time_start, int time_stop)
 {
   if (!database)
   {
     std::cerr << "No database loaded!!\n";
     return 0;
   }
-  clock_t t1 = clock();
 
   //Default to current timestep
   if (time_start < 0) time_start = step();
@@ -1207,30 +1221,27 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
 
   //Load geometry
   char filter[256] = {'\0'};
-  char objfilter[32] = {'\0'};
+  char objfilter[64] = {'\0'};
 
   //Setup filters, object...
+  //(Skip tracers, they are loaded with timesteps combined as fixed data)
   if (obj_id > 0)
   {
-    sprintf(objfilter, "WHERE object_id=%d", obj_id);
+    sprintf(objfilter, "WHERE type != %d AND object_id=%d", lucTracerType, obj_id);
     //Remove the skip flag now we have explicitly loaded object
     DrawingObject* obj = findObject(obj_id);
 
     if (obj) obj->skip = false;
   }
+  else
+    sprintf(objfilter, "WHERE type != %d", lucTracerType);
 
   //...timestep...(if ts db attached, just load all data from attached db assuming geometry is at current step)
   if (time_start >= 0 && time_stop >= 0 && !database.attached)
-  {
-    if (strlen(objfilter) > 0)
-      sprintf(filter, "%s AND timestep BETWEEN %d AND %d", objfilter, time_start, time_stop);
-    else
-      sprintf(filter, " WHERE timestep BETWEEN %d AND %d", time_start, time_stop);
-  }
+    sprintf(filter, "%s AND timestep BETWEEN %d AND %d", objfilter, time_start, time_stop);
   else
     strcpy(filter, objfilter);
 
-  int datacol = 21;
   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
   //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels,
   //minX, minY, minZ, maxX, maxY, maxZ, data)
@@ -1241,26 +1252,39 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
   {
     //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
     //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, data)
-    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
-    datacol = 15;
-
-    //Fix
-#ifdef ALTER_DB
-    database.reopen(true);  //Open writable
-    database.issue("ALTER TABLE %sgeometry ADD COLUMN minX REAL; ALTER TABLE %sgeometry ADD COLUMN minY REAL; ALTER TABLE %sgeometry ADD COLUMN minZ REAL; "
-            "ALTER TABLE %sgeometry ADD COLUMN maxX REAL; ALTER TABLE %sgeometry ADD COLUMN maxY REAL; ALTER TABLE %sgeometry ADD COLUMN maxZ REAL; ",
-            database.prefix, database.prefix, database.prefix, database.prefix, database.prefix, database.prefix, database.prefix);
-#endif
-  }
-
-  //Very old database compatibility
-  if (statement == NULL)
-  {
-    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
-    datacol = 14;
+    statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,NULL,NULL,NULL,NULL,NULL,NULL,data FROM %sgeometry %s ORDER BY timestep,object_id", database.prefix, filter);
+    printf("Using legacy GLDB format\n");
   }
 
   if (!statement) return 0;
+
+  //Iterate and process the geometry
+  return readGeometryRecords(statement);
+}
+
+int Model::loadFixedGeometry()
+{
+  if (!database)
+  {
+    std::cerr << "No database loaded!!\n";
+    return 0;
+  }
+
+  //Load geometry (fixed time records only)
+  //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
+  //geometry (id, object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, labels,
+  //minX, minY, minZ, maxX, maxY, maxZ, data)
+  sqlite3_stmt* statement = database.select("SELECT id,object_id,timestep,rank,idx,type,data_type,size,count,width,minimum,maximum,dim_factor,units,labels,minX,minY,minZ,maxX,maxY,maxZ,data FROM geometry WHERE (timestep=-1 OR type=%d) ORDER BY timestep,object_id", lucTracerType);
+
+  if (!statement) return 0;
+
+  //Iterate and process the geometry
+  return readGeometryRecords(statement, false);
+}
+
+int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
+{
+  clock_t t1 = clock();
   int rows = 0;
   int tbytes = 0;
   int ret;
@@ -1287,13 +1311,13 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       //float maximum = (float)sqlite3_column_double(statement, 11);
       //Units field repurposed for data label
       const char *data_label = (const char*)sqlite3_column_text(statement, 13);
-      const char *labels = datacol < 15 ? "" : (const char*)sqlite3_column_text(statement, 14);
+      const char *labels = (const char*)sqlite3_column_text(statement, 14);
 
       //printf("%d] OBJ %d STEP %d TYPE %d DTYPE %d DIMS (%d x %d x %d) COUNT %d ITEMS %d LABELS %s\n", 
       //       rows, object_id, timestep, type, data_type, width, height, depth, count, items, labels);
 
-      const void *data = sqlite3_column_blob(statement, datacol);
-      unsigned int bytes = sqlite3_column_bytes(statement, datacol);
+      const void *data = sqlite3_column_blob(statement, 21);
+      unsigned int bytes = sqlite3_column_bytes(statement, 21);
 
       DrawingObject* obj = findObject(object_id);
 
@@ -1301,14 +1325,9 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       if (!obj || obj->skip) continue;
 
       //Bulk load: switch timestep and cache if timestep changes!
-      // - disabled when loading multiple tracer steps (recursive load)
       // - disabled when using attached databases (cached in loop via cacheLoad())
-      if (recurseTracers && step() != timestep && !database.attached)
-      {
-        cacheStep();
-        drawstate.now = now = nearestTimeStep(timestep);
-        debug_print("TimeStep set to: %d, rows %d\n", step(), rows);
-      }
+      if (cache && step() != timestep && !database.attached)
+        setTimeStep(timestep, true); //Set without loading data
 
       //Create new geometry containers if required
       if (geometry.size() == 0) init();
@@ -1330,106 +1349,90 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop, bool recurseT
       }*/
       active = geometry[type];
 
-      if (recurseTracers && type == lucTracerType)
+      unsigned char* buffer = NULL;
+      if (bytes != (unsigned int)(count * GeomData::byteSize(data_type)))
       {
-        //if (datacol == 13) continue;  //Don't bother supporting tracers from old dbs
-        //Only load tracer timesteps when on the vertex data object or will repeat for every type found
-        if (data_type != lucVertexData) continue;
-
-        //Tracers are loaded with a new select statement across multiple timesteps...
-        //objects[object_id]->steps = timestep+1;
-        //Tracers* tracers = (Tracers*)active;
-        int stepstart = 0; //timestep - objects[object_id]->steps;
-        //int stepstart = timestep - tracers->steps;
-
-        loadGeometry(object_id, stepstart, timestep, false);
-      }
-      else
-      {
-        unsigned char* buffer = NULL;
-        if (bytes != (unsigned int)(count * GeomData::byteSize(data_type)))
-        {
-          //Decompress!
-          unsigned long dst_len = (unsigned long)(count * GeomData::byteSize(data_type));
-          unsigned long uncomp_len = dst_len;
-          unsigned long cmp_len = bytes;
-          buffer = new unsigned char[dst_len];
-          if (!buffer)
-            abort_program("Out of memory!\n");
+        //Decompress!
+        unsigned long dst_len = (unsigned long)(count * GeomData::byteSize(data_type));
+        unsigned long uncomp_len = dst_len;
+        unsigned long cmp_len = bytes;
+        buffer = new unsigned char[dst_len];
+        if (!buffer)
+          abort_program("Out of memory!\n");
 
 #ifdef USE_ZLIB
-          int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
-          if (res != Z_OK || dst_len != uncomp_len)
+        int res = uncompress(buffer, &uncomp_len, (const unsigned char *)data, cmp_len);
+        if (res != Z_OK || dst_len != uncomp_len)
 #else
-          int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
-          if (!res)
+        int res = tinfl_decompress_mem_to_mem(buffer, uncomp_len, (const unsigned char *)data, cmp_len, TINFL_FLAG_PARSE_ZLIB_HEADER);
+        if (!res)
 #endif
-          {
-            abort_program("uncompress() failed! error code %d\n", res);
-            //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
-          }
-          data = buffer; //Replace data pointer
-          bytes = uncomp_len;
-        }
-
-        tbytes += bytes;   //Byte counter
-
-        //Always add a new element for each new vertex geometry record, not suitable if writing db on multiple procs!
-        if (data_type == lucVertexData && recurseTracers) active->add(obj);
-
-        //Read data block
-        Geom_Ptr g;
-        //Convert legacy value types to use data labels
-        switch (data_type)
         {
-          case lucColourValueData:
-          case lucOpacityValueData:
-          case lucRedValueData:
-          case lucGreenValueData:
-          case lucBlueValueData:
-          case lucXWidthData:
-          case lucYHeightData:
-          case lucZLengthData:
-          case lucSizeData:
-          case lucMaxDataType:
-            if (data_label && strlen(data_label) > 0)
-              //Use provided label from units field
-              g = active->read(obj, items, data, data_label);
-            else //Use default/legacy label
-              g = active->read(obj, items, data, GeomData::datalabels[data_type]);
-            break;
-
-          default:
-            //Non-value data
-            g = active->read(obj, items, data_type, data, width, height, depth);
+          abort_program("uncompress() failed! error code %d\n", res);
+          //abort_program("uncompress() failed! error code %d expected size %d actual size %d\n", res, dst_len, uncomp_len);
         }
-
-        //Set geom labels if any
-        if (labels) active->label(obj, labels);
-
-        //Where min/max vertex provided, load
-        if (data_type == lucVertexData && type != lucLabelType)
-        {
-          float min[3] = {0,0,0}, max[3] = {0,0,0};
-          if (datacol > 15 && sqlite3_column_type(statement, 15) != SQLITE_NULL)
-          {
-            for (int i=0; i<3; i++)
-            {
-              min[i] = (float)sqlite3_column_double(statement, 15+i);
-              max[i] = (float)sqlite3_column_double(statement, 18+i);
-            }
-          }
-
-          //Apply dims if provided
-          if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
-          {
-            g->checkPointMinMax(min);
-            g->checkPointMinMax(max);
-          }
-        }
-
-        if (buffer) delete[] buffer;
+        data = buffer; //Replace data pointer
+        bytes = uncomp_len;
       }
+
+      tbytes += bytes;   //Byte counter
+
+      //Always add a new element for each new vertex geometry record except Tracers,
+      //not suitable if writing db on multiple procs!
+      if (data_type == lucVertexData && type != lucTracerType) active->add(obj);
+
+      //Read data block
+      Geom_Ptr g;
+      //Convert legacy value types to use data labels
+      switch (data_type)
+      {
+        case lucColourValueData:
+        case lucOpacityValueData:
+        case lucRedValueData:
+        case lucGreenValueData:
+        case lucBlueValueData:
+        case lucXWidthData:
+        case lucYHeightData:
+        case lucZLengthData:
+        case lucSizeData:
+        case lucMaxDataType:
+          if (data_label && strlen(data_label) > 0)
+            //Use provided label from units field
+            g = active->read(obj, items, data, data_label);
+          else //Use default/legacy label
+            g = active->read(obj, items, data, GeomData::datalabels[data_type]);
+          break;
+
+        default:
+          //Non-value data
+          g = active->read(obj, items, data_type, data, width, height, depth);
+      }
+
+      //Set geom labels if any
+      if (labels) active->label(obj, labels);
+
+      //Where min/max vertex provided, load
+      if (data_type == lucVertexData && type != lucLabelType)
+      {
+        float min[3] = {0,0,0}, max[3] = {0,0,0};
+        if (sqlite3_column_type(statement, 15) != SQLITE_NULL)
+        {
+          for (int i=0; i<3; i++)
+          {
+            min[i] = (float)sqlite3_column_double(statement, 15+i);
+            max[i] = (float)sqlite3_column_double(statement, 18+i);
+          }
+        }
+
+        //Apply dims if provided
+        if (min[0] != max[0] || min[1] != max[1] || min[2] != max[2])
+        {
+          g->checkPointMinMax(min);
+          g->checkPointMinMax(max);
+        }
+      }
+
+      if (buffer) delete[] buffer;
     }
     else if (ret != SQLITE_DONE)
       fprintf(stderr, "Database file problem, sqlite_step returned: %d (%d)\n", ret, (ret>>8));
@@ -1531,6 +1534,9 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     writeObjects(outdb, obj, 0, compress);
   }
 
+  //Write any fixed data
+  writeObjects(outdb, obj, -1, compress);
+
   for (unsigned int i = 0; i < timesteps.size(); i++)
   {
     outdb.issue("delete from timestep where id == '%d'", i);
@@ -1611,16 +1617,17 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
 
   std::vector<Geom_Ptr> data = geometry[type]->getAllObjects(obj);
   //Loop through and write out all object data
-  unsigned int data_type;
+  bool fixedOnly = step < 0; //Write all the fixed data at step -1, otherwise skip it
   for (unsigned int i=0; i<data.size(); i++)
   {
-    for (data_type=0; data_type < data[i]->data.size(); data_type++)
+    for (unsigned int data_type=0; data_type < data[i]->data.size(); data_type++)
     {
       //Write the data entry
       DataContainer* block = data[i]->data[data_type];
+      if (inFixed(block) != fixedOnly) continue; //Skip fixed/unfixed
       if (!block || block->size() == 0) continue;
       if (infostream)
-        std::cerr << "Writing geometry (type[" << data_type << "] * " << block->size()
+        std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
                   << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }
@@ -1628,14 +1635,15 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
     {
       //Write the value data entry
       DataContainer* block = (DataContainer*)data[i]->values[j].get();
+      if (inFixed(block) != fixedOnly) continue; //Skip fixed/unfixed
       if (!block || block->size() == 0) continue;
       if (infostream)
-        std::cerr << "Writing geometry (values[" << j << "] * " << block->size()
+        std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
                   << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       //TODO: fix to write/read labels for data values from database, preferably in a separate table?
       //This hack will work for up to 7 value data sets for now
       //Filters and colourby properties will need modification though
-      data_type = lucColourValueData+j;
+      unsigned int data_type = lucColourValueData+j;
       if (data_type == lucIndexData) data_type++;
       writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }

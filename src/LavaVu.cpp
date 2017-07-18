@@ -33,7 +33,11 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-//TODO/FIX:
+//TODO:
+//Object property to exclude from bounding box calc
+//Vector property to skip scaling and plot all arrows at same size
+//Hidden list on Geometry needs to not be stored in cache or reset after cache load
+//
 //Value data types independent from geometry types?
 //Merge WebGL/standard shader code
 

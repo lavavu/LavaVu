@@ -528,7 +528,12 @@ Geometry* LavaVu::getGeometryType(std::string what)
   if (what == "vectors")
     return amodel->vectors;
   if (what == "tracers")
+  {
+    //Tracers are always in fixed data once loaded
+    if (amodel->fixed.size())
+      return amodel->fixed[lucTracerType];
     return amodel->tracers;
+  }
   if (what == "triangles")
     return amodel->triSurfaces;
   if (what == "quads")

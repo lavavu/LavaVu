@@ -1263,6 +1263,26 @@ void Geometry::insertFixed(Geometry* fixed)
   //std::cout << fixed->total << " + NEW TOTAL == " << total << std::endl;
 }
 
+bool Geometry::inFixed(DataContainer* block0)
+{
+  //Return true if a data block found in fixed data set
+  for (Geom_Ptr p : geom)
+  {
+    for (unsigned int data_type=0; data_type < p->data.size(); data_type++)
+    {
+      //Get the data entries and compare
+      DataContainer* block1 = p->data[data_type];
+      if (block1 && block1 == block0) return true;
+    }
+    for (unsigned int j=0; j<p->values.size(); j++)
+    {
+      DataContainer* block1 = (DataContainer*)p->values[j].get();
+      if (block1 && block1 == block0) return true;
+    }
+  }
+  return false;
+}
+
 void Geometry::label(DrawingObject* draw, const char* labels)
 {
   //Get passed object's most recently added data store and add vertex labels (newline separated)
