@@ -303,8 +303,14 @@ bool GeomData::filter(unsigned int idx)
       //"out" flag indicates values between the filter range are skipped - exclude
       if (filterCache[i].out)
       {
-        //Filter out values between specified ranges (allows filtering separate sections)
-        if (min == max) return value == min;
+        //- return TRUE if VALUE inside RANGE
+        if (min == max)
+        {
+          if (min == value)
+            return true;
+          continue;
+        }
+        //Filters out values between specified ranges (allows filtering separate sections)
         if (filterCache[i].inclusive && value >= min && value <= max) 
           return true;
         if (value > min && value < max) 
@@ -313,8 +319,14 @@ bool GeomData::filter(unsigned int idx)
       //Default is to filter values NOT in the filter range - include those that are
       else
       {
-        if (min == max) return value != min;
-        //Filter out values unless between specified ranges (allows combining filters)
+        //- return TRUE if VALUE outside RANGE
+        if (min == max)
+        {
+          if (min != value)
+            return true;
+          continue;
+        }
+        //Filters out values not between specified ranges (allows combining filters)
         if (filterCache[i].inclusive && (value <= min || value >= max))
           return true;
         if (value < min || value > max)
