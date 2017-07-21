@@ -1011,37 +1011,41 @@ bool Model::useCache()
 
 void Model::cacheLoad()
 {
-  std::cout << "Loading " << timesteps.size() << " steps";
+  if (allcached) return;
+  std::cout << "Loading " << timesteps.size() << " steps\n";
   for (unsigned int i=0; i<timesteps.size(); i++)
   {
-    if (i%10==0) std::cout << std::endl;
     setTimeStep(i);
+    if (i%10==0) std::cout << '|';
     if (drawstate.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
     debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), database.file.base.c_str());
   }
   //Cache final step
-  cacheStep();
+  setTimeStep(0);
   std::cout << std::endl;
   //Clear current step to ensure selected is loaded from cache
   drawstate.now = now = -1;
+  allcached = true;
 }
 
 void Model::cacheStep()
 {
-  //Don't cache if we already loaded from cache or out of range!
-  if (!useCache() || drawstate.now < 0 || (int)timesteps.size() <= drawstate.now) return;
-  if (timesteps[drawstate.now]->cache.size() > 0) return; //Already cached this step
+  //Don't cache if out of range
+  if (!useCache() || drawstate.now < 0 || step() < 0 || (int)timesteps.size() <= drawstate.now) return;
 
-  debug_print("~~~ Caching geometry @ %d (step %d : %s), geom memory usage: %.3f mb\n", step(), drawstate.now, database.file.base.c_str(), membytes__/1000000.0f);
+  debug_print("~~~ Caching geometry @ %d (step %d) : %s), geom memory usage: %.3f mb\n", step(), now, database.file.base.c_str(), membytes__/1000000.0f);
 
   //Copy all elements
   if (membytes__ > 0)
   {
     clearStep();
-    timesteps[drawstate.now]->write(geometry);
+    timesteps[now]->write(geometry);  //Cache at current model step, not global step
     debug_print("~~~ Cached step, at: %d\n", step());
-    printf(".");
-    fflush(stdout);
+    if (!allcached)
+    {
+      printf(".");
+      fflush(stdout);
+    }
     //Objects have been moved into cache, clear from active list
     geometry.clear();
   }
@@ -1164,7 +1168,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
   bool first = (now < 0);
 
   //Cache currently loaded data
-  if (useCache()) cacheStep();
+  cacheStep();
 
   //Set the new timestep index
   debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, drawstate.now, stepidx);
@@ -1265,10 +1269,7 @@ int Model::loadGeometry(int obj_id, int time_start, int time_stop)
 int Model::loadFixedGeometry()
 {
   if (!database)
-  {
-    std::cerr << "No database loaded!!\n";
     return 0;
-  }
 
   //Load geometry (fixed time records only)
   //object (id, name, colourmap_id, colour, opacity, wireframe, cullface, scaling, lineWidth, arrowHead, flat, steps, time)
@@ -1289,6 +1290,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
   int tbytes = 0;
   int ret;
   Geometry* active = NULL;
+  int laststep = -2;
   do
   {
     ret = sqlite3_step(statement);
@@ -1326,8 +1328,11 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
 
       //Bulk load: switch timestep and cache if timestep changes!
       // - disabled when using attached databases (cached in loop via cacheLoad())
-      if (cache && step() != timestep && !database.attached)
-        setTimeStep(timestep, true); //Set without loading data
+      if (cache && !allcached && laststep != timestep && !database.attached)
+      {
+        setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
+        laststep = timestep;
+      }
 
       //Create new geometry containers if required
       if (geometry.size() == 0) init();
