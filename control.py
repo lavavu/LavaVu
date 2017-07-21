@@ -11,6 +11,8 @@ output = ""
 actions = []
 #Register of windows (viewer instances)
 windows = []
+#Register of all control objects
+allcontrols = []
 
 vertexShader = """
 <script id="line-vs" type="x-shader/x-vertex">
@@ -46,10 +48,6 @@ htmlpath = ""
 initialised = False
 initcell = ""
 
-def isobj(target):
-    """Return true if target is a vis object"""
-    return hasattr(target, "instance")
-
 def isviewer(target):
     """Return true if target is a viewer"""
     return not hasattr(target, "instance")
@@ -57,9 +55,40 @@ def isviewer(target):
 def getviewer(target):
     """Return its viewer if target is vis object
     otherwise just return target as if is a viewer"""
-    if isobj(target):
+    if not isviewer(target):
         return target.instance
     return target
+
+def getproperty(target, propname):
+    """Return value of property from target
+    if not defined, return the default value for this property
+    """
+    if propname in target:
+        return target[propname]
+    else:
+        #Get property default
+        _lv = target
+        _lv = getviewer(target)
+        prop = _lv._proplist[propname]
+        return prop[0]
+
+def getcontrolvalues():
+    """Get the property control values from their targets
+    """
+    #Build a list of controls to update and their values
+    updates = []
+    for c in allcontrols:
+        if hasattr(c, 'id') and c.elid:
+            #print c.elid,c.id
+            action = actions[c.id]
+            target = action['args'][0]
+            if action['type'] == 'PROPERTY':
+                propname = action['args'][1]
+                #print "  ",c.elid,action
+                value = getproperty(target, propname)
+                #print "  = ",value
+                updates.append([c.elid, value, propname])
+    return updates
 
 def export(html):
     if not htmlpath: return
@@ -84,6 +113,7 @@ def export(html):
                 actfunction = 'select; ' + prop + '=" + value + "'
                 if len(act["args"]) > 2:
                     actcmd = act["args"][2]
+            #TODO: on an object selector
             # - On an object
             else:
                 name = act["args"][0]["name"]
@@ -114,10 +144,10 @@ def export(html):
         if actcmd:
           actfunction += ";" + actcmd
         #Add to actions list
-        actionjs += '  function(value) {wi.execute("' + actfunction + '", true);},\n'
+        actionjs += '  function(value) {_wi[0].execute("' + actfunction + '", true);},\n'
 
     #Add init and finish
-    actionjs += '  null];\nfunction init() {wi = new WindowInteractor(0);}\n</script>'
+    actionjs += '  null];\nfunction init() {_wi[0] = new WindowInteractor(0);}\n</script>'
     hfile = open(filename, "w")
     hfile.write("""
     <html>
@@ -199,7 +229,6 @@ def initialise():
         pass
 
 def action(id, value):
-    #return str(id) + " : " + str(value)
     #Execute actions from IPython
     global actions
     if len(actions) <= id:
@@ -257,13 +286,33 @@ def action(id, value):
 
     return ""
 
-class Container(object):
+class HTML(object):
+    """A class to output HTML controls
+    """
+    lastid = 0
+
+    #Parent class for container types
+    def __init__(self):
+        self.uniqueid()
+
+    def html(self):
+        """Return the HTML code"""
+        return ''
+
+    def uniqueid(self):
+        #Get a unique control identifier
+        HTML.lastid += 1
+        self.elid = "lvctrl_" + str(HTML.lastid)
+        return self.elid
+
+class Container(HTML):
     """A container for a set of controls
     """
     #Parent class for container types
     def __init__(self, viewer):
         self.viewer = viewer
         self.controls = []
+        super(Container, self).__init__()
 
     def add(self, ctrl):
         self.controls.append(ctrl)
@@ -289,8 +338,8 @@ class Window(Container):
         self.align = align
 
     def html(self, wrapper=True, wrapperstyle=""):
-        style = 'min-height: 200px; min-width: 200px; background: #ccc; position: relative;'
-        style += 'float: ' + self.align + '; display: inline;'
+        style = 'min-height: 200px; min-width: 200px; background: #ccc; position: relative; display: inline; '
+        style += 'float: ' + self.align + ';'
         if wrapper:
             style += ' margin-right: 10px;'
         html = '<div style="' + style + '">\n'
@@ -321,15 +370,83 @@ class Panel(Container):
 
     def html(self):
         if not htmlpath: return
-        #Add control wrapper with the viewer id as a custom attribute
-        html = '<div style="float: left; padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
+        html = ""
+        if self.win: html = self.win.html(wrapper=False)
+        #Add control wrapper
+        html += '<div style="padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
         html += super(Panel, self).html()
         html += '</div>\n'
-        if self.win: html += self.win.html(wrapper=False)
         #if self.win: html += self.win.html(wrapperstyle="float: left; padding:0px; margin: 0px; position: relative;")
         return html
 
-class Control(object):
+class Tabs(Container):
+    """Creates a group of controls with tabs that can be shown or hidden
+
+    Parameters
+    ----------
+    buttons: boolean
+        Display the tab buttons for switching tabs
+    """
+    def __init__(self, target, buttons=True):
+        self.tabs = []
+        self.buttons = buttons
+        super(Tabs, self).__init__(target)
+
+    def tab(self, label=""):
+        """Add a new tab, any controls appending will appear in the new tab
+        Parameters
+        ----------
+        label: str
+            Label for the tab, if omitted will be blank
+        """
+        self.tabs.append(label)
+
+    def add(self, ctrl):
+        if not len(self.tabs): self.tab()
+        self.controls.append(ctrl)
+        ctrl.tab = len(self.tabs)-1
+
+    def html(self):
+        if not htmlpath: return
+        html = """
+        <script>
+        function openTab_---ELID---(el, tabName) {
+          var i;
+          var x = document.getElementsByClassName("---ELID---");
+          for (i = 0; i < x.length; i++)
+             x[i].style.display = "none";  
+          document.getElementById("---ELID---_" + tabName).style.display = "block";  
+
+          tabs = document.getElementsByClassName("tab_---ELID---");
+          for (i = 0; i < x.length; i++)
+            tabs[i].className = tabs[i].className.replace(" lvseltab", "");
+          el.className += " lvseltab";
+        }
+        </script>
+        """
+        if self.buttons:
+            html += "<div class='lvtabbar'>\n"
+            for t in range(len(self.tabs)):
+                #Add header items
+                classes = 'lvbutton lvctrl tab_---ELID---'
+                if t == 0: classes += ' lvseltab'
+                html += '<button class="' + classes + '" onclick="openTab_---ELID---(this, this.innerHTML)">---LABEL---</button>\n'
+                html = html.replace('---LABEL---', self.tabs[t])
+            html += "</div>\n"
+        for t in range(len(self.tabs)):
+            #Add control wrappers
+            style = ''
+            if t != 0: style = 'display: none;'
+            html += '<div id="---ELID---_---LABEL---" style="' + style + '" class="lvtab lvctrl ---ELID---">\n'
+            for ctrl in self.controls:
+                if ctrl.tab == t:
+                    html += ctrl.controls()
+            html += '</div>\n'
+            html = html.replace('---LABEL---', self.tabs[t])
+        html = html.replace('---ELID---', self.elid)
+        return html
+
+class Control(HTML):
     """
     Control object
 
@@ -347,9 +464,9 @@ class Control(object):
     label: str
         Descriptive label for the control
     """
-    lastid = 0
 
     def __init__(self, target, property=None, command=None, value=None, label=None):
+        super(Control, self).__init__()
         self.label = label
 
         #Get id and add to register
@@ -376,21 +493,8 @@ class Control(object):
 
         #Get value from target or default if not provided
         if value == None and property != None and target:
-            if property in target:
-                value = target[property]
-            else:
-                #Get property default
-                _lv = target
-                _lv = getviewer(target)
-                prop = _lv._proplist[property]
-                value = prop[0]
+            value = getproperty(target, property)
         self.value = value
-
-    def uniqueid(self):
-        #Get a unique control identifier
-        Control.lastid += 1
-        self.elid = Control.lastid
-        return str(self.elid)
 
     def onchange(self):
         return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", this.value, this);"
@@ -413,7 +517,7 @@ class Control(object):
 
     def controls(self, type='number', attribs={}, onchange=""):
         #Input control
-        html =  '<input type="' + type + '" '
+        html =  '<input class="---ELID---" type="' + type + '" '
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
         html += 'value="' + str(self.value) + '" '
@@ -421,7 +525,15 @@ class Control(object):
         onchange += self.onchange()
         html += 'onchange="' + onchange + '" '
         html += '>\n'
+        html = html.replace('---ELID---', self.elid)
         return html
+
+class Divider(Control):
+    """A divider element
+    """
+
+    def controls(self):
+        return '<hr style="clear: both;">\n'
 
 class Number(Control):
     """A basic numerical input control
@@ -479,8 +591,8 @@ class Range(Control):
 class Button(Control):
     """A push button control to execute a defined command
     """
-    def __init__(self, command, label=""):
-        super(Button, self).__init__(None, None, command, "", label)
+    def __init__(self, target, command, label=None):
+        super(Button, self).__init__(target, "", command, "", label)
 
     def onchange(self):
         return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", '', this);"
@@ -490,10 +602,11 @@ class Button(Control):
 
     def controls(self):
         html = self.labelhtml()
-        html =  '<input type="button" value="' + str(self.label) + '" '
+        html =  '<input class="---ELID---" type="button" value="' + str(self.label) + '" '
         #Onclick event
         html += 'onclick="' + self.onchange() + '" '
         html += '><br>\n'
+        html = html.replace('---ELID---', self.elid)
         return html
 
 class Entry(Control):
@@ -501,7 +614,8 @@ class Entry(Control):
     """
     def controls(self):
         html = self.labelhtml()
-        html += '<input type="text" value="" onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
+        html += '<input class="---ELID---" type="text" value="" onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
+        html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
 class Command(Control):
@@ -513,10 +627,11 @@ class Command(Control):
     def controls(self):
         html = self.labelhtml()
         html += """
-        <input type="text" value="" 
+        <input class="---ELID---" type="text" value="" 
         onkeypress="if (event.keyCode == 13) { var cmd=this.value.trim(); 
         _wi[---VIEWERID---].do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
         """
+        html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
 class List(Control):
@@ -533,20 +648,23 @@ class List(Control):
 
     def controls(self):
         html = self.labelhtml()
-        html += '<select id="select_---ELID---" value="" '
+        html += '<select class="---ELID---" id="---ELID---" value="" '
         html += 'onchange="' + self.onchange() + '">\n'
         for opt in self.options:
+            #Can be dict {"label" : label, "value" : value, "selected" : True/False}
+            #or list [value, label, selected]
+            #or just: value
             if isinstance(opt, dict):
                 selected = "selected" if opt.selected else ""
                 html += '<option value="' + str(opt["value"]) + '" ' + selected + '>' + opt["label"] + '</option>\n'
-            elif isinstance(opt, list):
+            elif isinstance(opt, list) or isinstance(opt, tuple):
                 selected = "selected" if len(opt) > 2 and opt[2] else ""
                 html += '<option value="' + str(opt[0]) + '" ' + selected + '>' + str(opt[1]) + '</option>\n'
             else:
                 html += '<option>' + str(opt) + '</option>\n'
         html += '</select><br>\n'
-        html = html.replace('---ELID---', self.uniqueid())
-        return html.replace('---ID---', str(self.id))
+        html = html.replace('---ELID---', self.elid)
+        return html
 
 class Colour(Control):
     """A colour picker for setting colour properties
@@ -558,7 +676,7 @@ class Colour(Control):
         html = self.labelhtml()
         html += """
         <div><div class="colourbg checkerboard">
-          <div id="colour_---ELID---" class="colour" onclick="
+          <div id="---ELID---" class="colour ---ELID---" onclick="
             var col = new Colour();
             var offset = findElementPos(this);
             var el = this;
@@ -574,14 +692,14 @@ class Colour(Control):
             </div>
         </div></div>
         <script>
-        var el = document.getElementById("colour_---ELID---");
+        var el = document.getElementById("---ELID---");
         //Set the initial colour
         var col = new Colour('---VALUE---');
         el.style.backgroundColor = col.html();
         </script>
         """
         html = html.replace('---VALUE---', str(self.value))
-        html = html.replace('---ELID---', self.uniqueid())
+        html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
 class ColourMap(Control):
@@ -600,10 +718,10 @@ class ColourMap(Control):
     def controls(self):
         html = self.labelhtml()
         html += """
-        <canvas id="palette_---ELID---" width="512" height="24" class="palette checkerboard">
+        <canvas id="---ELID---" width="512" height="24" class="palette checkerboard">
         </canvas>
         <script>
-        var el = document.getElementById("palette_---ELID---");
+        var el = document.getElementById("---ELID---");
         el.colourmaps = ---COLOURMAPS---;
         el.selectedIndex = ---SELID---;
         if (!el.gradient) {
@@ -630,7 +748,7 @@ class ColourMap(Control):
         html = html.replace('---COLOURMAPS---', mapstr)
         html = html.replace('---COLOURMAP---', json.dumps(self.map["colours"]))
         html = html.replace('---SELID---', str(self.selected))
-        html = html.replace('---ELID---', self.uniqueid())
+        html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
 class ColourMapList(List):
@@ -671,8 +789,8 @@ class ColourMaps(List):
     def onchange(self):
         #Find the saved palette entry and load it
         script = """
-        var el = document.getElementById('palette_---PALLID---'); 
-        var sel = document.getElementById('select_---ELID---');
+        var el = document.getElementById('---PALLID---'); 
+        var sel = document.getElementById('---ELID---');
         if (sel.selectedIndex > 0) {
             el.gradient.read(el.colourmaps[sel.selectedIndex-1]);
             el.selectedIndex = sel.selectedIndex-1;
@@ -773,6 +891,69 @@ class ObjectList(Control):
             html += ctrl.controls()
         return html
 
+class ObjectSelect(List):
+    """A list selector of all visualisation objects that can be used to
+    choose the target of a set of controls
+
+    Parameters
+    ----------
+    objects: list
+        A list of objects to display, by default all available objects are added
+    """
+    def __init__(self, viewer, objects=None, *args, **kwargs):
+        if not isviewer(viewer):
+            print "Can't add ObjectSelect control to an Object, must add to Viewer"
+            return
+        self.instance = viewer
+        if objects is None:
+            objects = viewer.objects.list
+        
+        #Load maps list
+        self.object = 0 #Default to no selection
+        options = [(0, "None")]
+        for o in range(len(objects)):
+            obj = objects[o]
+            options += [(o+1, obj["name"])]
+
+        super(ObjectSelect, self).__init__(target=self, label="Objects", options=options, property="object", *args, **kwargs)
+        #Holds a control factory so controls can be added with this as a target
+        self.control = ControlFactory(self)
+
+    def onchange(self):
+        #Update the control values on change
+        return super(ObjectSelect, self).onchange() + "; getAndUpdateControlValues();"
+
+    def __contains__(self, key):
+        #print "CONTAINS",key
+        #print "OBJECT == ",self.object,(key in self.instance.objects.list[self.object-1])
+        return key == "object" or self.object > 0 and key in self.instance.objects.list[self.object-1]
+
+    def __getitem__(self, key):
+        #print "GETITEM",key
+        if key == "object":
+            return self.object
+        elif self.object > 0:
+            return self.instance.objects.list[self.object-1][key]
+        return None
+
+    def __setitem__(self, key, value):
+        #print "SETITEM",key,value
+        if key == "object":
+            self.object = value
+            #Copy object id
+            self.id = self.instance.objects.list[self.object-1].id
+            #Update controls
+            #self.instance.control.update()
+        elif self.object > 0:
+            self.instance.objects.list[self.object-1][key] = value
+
+class ObjectTabs(ObjectSelect):
+    """Object selction with control tabs for each object"""
+    def __init__(self, *args, **kwargs):
+        super(ObjectTabs, self).__init__(target=self, label="Objects", options=options, property="object", *args, **kwargs)
+    #Add predefined controls?
+    #
+
 class ControlFactory(object):
     """
     Create and manage sets of controls for interaction with a Viewer or Object
@@ -826,9 +1007,12 @@ class ControlFactory(object):
             #Add to global list
             self._controls.append(ctrl)
 
-        #Add to viewer instance list too if target is Obj
-        if isobj(self._target):
+        #Add to viewer instance list too if not already being added
+        if not isviewer(self._target):
             self._target.instance.control.add(ctrl)
+        else:
+            #Add to master list - not cleared after display
+            allcontrols.append(ctrl)
 
     def show(self, fallback=None):
         """
@@ -888,14 +1072,13 @@ class ControlFactory(object):
             export(self.output)
             if callable(fallback): fallback()
 
-        #Auto-Clear after show?
+        #Auto-clear after show?
         self.clear()
 
     def redisplay(self):
         """Update the active viewer image if any
         Applies changes made in python to the viewer and forces a redisplay
         """
-        #TODO: reset control values from current state data
         try:
             #Find viewer id
             viewerid = windows.index(self._target)
@@ -907,6 +1090,23 @@ class ControlFactory(object):
         except (NameError, ImportError, ValueError):
             pass
 
+    def update(self):
+        """Update the control values from current viewer data
+        Applies changes made in python to the UI controls
+        """
+        try:
+            #Build a list of controls to update and their values
+            #pass it to javascript function to update the page
+            updates = getcontrolvalues()
+            if __IPYTHON__:
+                from IPython.display import display,Javascript
+                jso = json.dumps(updates)
+                js = "updateControlValues(" + jso + ");"
+                display(Javascript(js))
+        except (NameError, ImportError, ValueError) as e:
+            print str(e)
+            pass
+        
     def clear(self):
         self._controls = []
         self._container = None

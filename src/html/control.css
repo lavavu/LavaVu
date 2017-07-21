@@ -13,4 +13,13 @@
 
 .palette {margin: 3px; border:1px solid #000; border: 1px dotted #000;}
 
+.lvtab {border: 1px solid #999; padding: 5px;}
+.lvtabbar{width:100%;overflow:hidden}.center .lvtabbar{display:inline-block;width:auto}
+.lvtabbar .lvtabbar-item{padding:8px 16px;float:left;width:auto;border:none;outline:none;display:block}
+.lvtabbar .dropdown-hover,.lvtabbar .dropdown-click{position:static;float:left}
+.lvtabbar .lvbutton{white-space:normal}
 
+.lvbutton:hover{color:#000!important;background-color:#ccc!important; border: 1px solid #999; border-bottom: 0}
+.lvbutton{border: 1px solid #999; border-bottom: 0; display:inline-block;outline:0;padding:8px 16px;vertical-align:middle;overflow:hidden;text-decoration:none;color:inherit;background-color:inherit;text-align:center;cursor:pointer;white-space:nowrap}
+
+.lvseltab,.hover-lvseltab:hover{color:#fff!important;background-color:#555!important}

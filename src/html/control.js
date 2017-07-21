@@ -12,9 +12,10 @@ function debug_kernel(cmd) {
   //For debugging:
   //Run a python command in kernel and log output to console
   if (kernel) {
-    kernel.execute(cmd);
+    console.log(cmd);
     //Debug callback
     var callbacks = {'output' : function(out) {
+        if (!out.content.data) {console.log(JSON.stringify(out)); return;}
         data = out.content.data['text/plain']
         console.log("CMD: " + cmd + ", RESULT: " + data);
       }
@@ -96,8 +97,15 @@ WindowInteractor.prototype.do_action = function(id, val) {
       val = val.replace(/\n/g,';');
       val = '"' + val + '"';
     }
-    kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
-    kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
+
+    //kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
+    var cmd = 'cmds = lavavu.control.action(' + id + ',' + val + ')';
+    //debug_kernel(cmd);
+    kernel.execute(cmd);
+    //kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
+    cmd = 'if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)';
+    kernel.execute(cmd);
+    //debug_kernel(cmd);
     this.get_image();
   } else {
     //HTML control actions via http
@@ -179,6 +187,38 @@ WindowInteractor.prototype.get_state = function(onget) {
     } 
     x.open('GET', url, true);
     x.send();
+  }
+}
+
+//Update controls from JSON data
+function updateControlValues(controls) {
+  //console.log(JSON.stringify(controls));
+  for (var c in controls) {
+    var control = controls[c];
+    var els = document.getElementsByClassName(control[0]);
+    for(var i = 0; i < els.length; i++) {
+      console.log(els[i].id + " : " + els[i].value + " ==> " + control[1]);
+      if (els[i].type == 'checkbox')
+        els[i].checked = control[1];
+      else
+        els[i].value = control[1];
+    };
+  }
+}
+
+function getAndUpdateControlValues() {
+  //Get the updated values
+  if (kernel) {
+    var callbacks = {'output' : function(out) {
+        if (!out.content.data) {console.log(JSON.stringify(out)); return;}
+        data = out.content.data['text/plain']
+        data = data.substring(1, data.length-1)
+        data = data.replace(/(?:\\n)+/g, "");
+        data = data.replace(/'/g, '"');
+        updateControlValues(JSON.parse(data));
+      }
+    };
+    kernel.execute('import json; json.dumps(lavavu.control.getcontrolvalues())', {iopub: callbacks}, {silent: false});
   }
 }
 
