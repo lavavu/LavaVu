@@ -36,7 +36,7 @@ TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
 geomtypes = {"labels":    LavaVuPython.lucLabelType,
              "points":    LavaVuPython.lucPointType,
-             "grid":      LavaVuPython.lucGridType,
+             "quads":     LavaVuPython.lucGridType,
              "triangles": LavaVuPython.lucTriangleType,
              "vectors":   LavaVuPython.lucVectorType,
              "tracers":   LavaVuPython.lucTracerType,
@@ -142,6 +142,9 @@ class Obj(object):
 
     def __setitem__(self, key, value):
         #self.instance._get() #Ensure in sync
+        if key == "colourmap" and not isinstance(value,int):
+            self.colourmap(value)
+            return
         #Set new value and send
         self.dict[key] = value
         self._set()
@@ -900,7 +903,7 @@ class Viewer(object):
 
             #Add object by geom type shortcut methods
             #(allows calling add by geometry type, eg: obj = lavavu.lines())
-            for key in ["labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"]:
+            for key in geomtypes.keys():
                 #Use a closure to define a new method to call addtype with this type
                 def addmethod(name):
                     def method(*args, **kwargs):
@@ -1500,6 +1503,30 @@ class Viewer(object):
         """
         self.app.init()
 
+    def update(self, filter=None, compress=True):
+        """
+        Write visualisation data back to the database
+
+        Parameters
+        ----------
+        filter: str
+            Optional filter to type of geometry to be updated, if omitted all will be written
+            (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
+        compress: boolean
+            Use zlib compression when writing the geometry data
+        """
+        for obj in self.objects.list:
+            #Update object data at current timestep
+            if filter is None:
+                #Re-writes all data to db for object
+                self.app.update(obj.ref, compress)
+            else:
+                #Re-writes data to db for object and geom type
+                self.app.update(obj.ref, geomtypes[filter], compress)
+
+        #Update figure
+        self.savefigure()
+
     def image(self, filename="", resolution=None, transparent=False):
         """
         Save or get an image of current display
@@ -2031,7 +2058,6 @@ class GeomData(object):
         
     def __str__(self):
         return [key for key, value in geomtypes.items() if value == self.data.type][0]
-
 
 
 def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
