@@ -1,6 +1,8 @@
 language: cpp
 dist: trusty
 sudo: required
+notifications:
+  slack: cavedev:0TKfIim9KQnrmiKExKFnKT9L
 matrix:
   include:
     - os: linux
