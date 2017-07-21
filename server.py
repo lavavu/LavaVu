@@ -4,39 +4,49 @@ import SimpleHTTPServer
 import SocketServer
 import urllib
 import base64
+import os
 
 lavavu = None
 
+#Save working dir
+wd = os.getcwd()
+
 class LVRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+    def serveImage(self):
+        start = len('data:image/jpeg;base64,')
+        self.send_response(200)
+        self.send_header('Content-type', 'image/jpeg')
+        self.end_headers()
+        img = lavavu.frame()
+        img = img[start:]
+        self.wfile.write(base64.b64decode(img))
+
+    def runCommands(self, cmds):
+        #Run commands, first restoring working dir
+        wwwd = os.getcwd()
+        os.chdir(wd)
+        lavavu.commands(cmds)
+        #Change back to web server dir
+        os.chdir(wwwd)
+
     def do_GET(self):
         global lavavu
-        start = len('data:image/jpeg;base64,')
         if self.path.find('image') > 0:
-            self.send_response(200)
-            self.send_header('Content-type', 'image/jpeg')
-            self.end_headers()
-            img = lavavu.frame()
-            img = img[start:]
-            self.wfile.write(base64.b64decode(img))
+            self.serveImage()
         elif self.path.find('command=') > 0:
             pos1 = self.path.find('=')
             pos2 = self.path.find('?')
             if pos2 < 0: pos2 = len(self.path)
             cmds = urllib.unquote(self.path[pos1+1:pos2])
-            lavavu.commands(cmds.split(';'))
+            self.runCommands(cmds.split(';'))
             if self.path.find('icommand=') > 0:
-                self.send_response(200)
-                self.send_header('Content-type', 'image/jpeg')
-                self.end_headers()
-                img = lavavu.frame()
-                img = img[start:]
-                self.wfile.write(base64.b64decode(img))
+                self.serveImage()
             else:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/plain')
                 self.end_headers()
         elif self.path.find('getstate') > 0:
-            state = lavavu.getState()
+            state = lavavu.app.getState()
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
