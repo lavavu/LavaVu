@@ -1046,6 +1046,8 @@ void Model::cacheStep()
       printf(".");
       fflush(stdout);
     }
+    //Save the previous step data for reference
+    olddata = geometry;
     //Objects have been moved into cache, clear from active list
     geometry.clear();
   }
@@ -1079,6 +1081,15 @@ bool Model::restoreStep()
   clearStep();
   timesteps[drawstate.now]->read(geometry);
   debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, database.file.base.c_str());
+
+  //Some data shouldn't be cached and
+  //needs to be preserved from previous active settings
+  for (unsigned int g=0; g<olddata.size(); g++)
+  {
+    geometry[g]->hidden = olddata[g]->hidden;
+    geometry[g]->allhidden = olddata[g]->allhidden;
+  }
+  olddata.clear();
 
   //Switch geometry containers
   labels = geometry[lucLabelType];

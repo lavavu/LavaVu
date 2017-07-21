@@ -233,6 +233,7 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 //Container class for a list of geometry objects
 class Geometry
 {
+  friend class Model;
 protected:
   View* view;
   std::vector<Geom_Ptr> geom;

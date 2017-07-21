@@ -101,6 +101,8 @@ public:
   std::vector<Geometry*> fixed;     //Static geometry
   //Current timestep geometry
   std::vector<Geometry*> geometry;
+  //Previous timestep geometry
+  std::vector<Geometry*> olddata;
   //Type specific geometry pointers
   //(TODO: container class for a set of geometry)
   Geometry* labels;
