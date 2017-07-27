@@ -29,7 +29,7 @@ std::string DrawState::counterFilename()
   std::stringstream outpath;
   std::string filename;
   outpath << title;
-  if (timesteps.size() > now)
+  if ((int)timesteps.size() > now)
     outpath << "-" << std::setfill('0') << std::setw(5) << timesteps[now]->step;
   filename = outpath.str();
   int counter = 1;
