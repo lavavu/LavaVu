@@ -1568,7 +1568,7 @@ class Viewer(object):
         if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], 90);
 
-    def display(self, resolution=(640,480), transparent=False):
+    def display(self, resolution=(0,0), transparent=False):
         """        
         Show the current display as inline image within an ipython notebook.
         
@@ -1630,7 +1630,7 @@ class Viewer(object):
             print("WebGL output error: " + str(e))
             pass
 
-    def video(self, filename="", fps=10, resolution=(640,480)):
+    def video(self, filename="", fps=10, resolution=(0,0)):
         """        
         Shows the generated video inline within an ipython notebook.
         
@@ -1650,9 +1650,9 @@ class Viewer(object):
         """
 
         try:
+            fn = self.app.video(filename, fps, resolution[0], resolution[1])
             if __IPYTHON__:
                 from IPython.display import display,HTML
-                fn = self.app.video(filename, fps, resolution[0], resolution[1])
                 html = """
                 <video src="---FN---" controls loop>
                 Sorry, your browser doesn't support embedded videos, 
@@ -1665,7 +1665,7 @@ class Viewer(object):
                 html = html.replace('---FN---', fn + "?" + str(uid))
                 display(HTML(html))
         except (NameError, ImportError):
-            self.app.web(True)
+            pass
         except (Exception) as e:
             print("Video output error: " + str(e))
             pass

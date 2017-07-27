@@ -2710,8 +2710,8 @@ std::string LavaVu::encodeVideo(std::string filename, int fps)
     FilePath fp(filename);
     if (fp.ext.length() == 0) 
       filename += ".mp4"; //Default to mp4
-    int w = viewer->outwidth;
-    int h = viewer->outheight;
+    int w = viewer->outwidth ? viewer->outwidth : viewer->width;
+    int h = viewer->outwidth ? viewer->outheight : viewer->height;
     viewer->outputON(w, h, 3);
     encoder = new VideoEncoder(filename.c_str(), w, h, fps);
     return filename;
