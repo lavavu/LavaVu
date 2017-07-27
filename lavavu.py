@@ -1458,26 +1458,23 @@ class Viewer(object):
         """
         return json.loads(self.app.getTimeSteps())
 
-    def figures(self, names=False):
+    def figures(self):
         """
         Retrieve the saved figures from loaded model
         List returned contains full figure state data by default
         These data sets can be loaded with the restore() method
 
-        Parameters
-        ----------
-        names: boolean
-            Return figure names only
-
         Returns
         -------
-        figures: list
-            A list of all available figure data or names
+        figures: dict
+            A dictionary of all available figure data by name
         """
-        figures = convert_keys(json.loads(self.app.getFigures()))
-        if names:
-            #Extract the names only
-            figures = [fig["figure"] for fig in figures]
+        figs = convert_keys(json.loads(self.app.getFigures()))
+        #Convert from list to dict (TODO: export as dict in getFigures)
+        figures = {}
+        for fig in figs:
+            if "figure" in fig:
+                figures[fig["figure"]] = fig["figure"]
         return figures
 
     def addstep(self, step=-1):
