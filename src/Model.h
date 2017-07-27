@@ -83,7 +83,6 @@ class Model
 {
 private:
   int now;            //Loaded step per model
-  bool allcached = false;
 
 public:
   DrawState& drawstate;

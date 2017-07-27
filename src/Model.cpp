@@ -1011,7 +1011,6 @@ bool Model::useCache()
 
 void Model::cacheLoad()
 {
-  if (allcached) return;
   std::cout << "Loading " << timesteps.size() << " steps\n";
   for (unsigned int i=0; i<timesteps.size(); i++)
   {
@@ -1025,7 +1024,6 @@ void Model::cacheLoad()
   std::cout << std::endl;
   //Clear current step to ensure selected is loaded from cache
   drawstate.now = now = -1;
-  allcached = true;
 }
 
 void Model::cacheStep()
@@ -1039,13 +1037,13 @@ void Model::cacheStep()
   if (membytes__ > 0)
   {
     clearStep();
-    timesteps[now]->write(geometry);  //Cache at current model step, not global step
-    debug_print("~~~ Cached step, at: %d\n", step());
-    if (!allcached)
+    if (!timesteps[now]->cache.size())
     {
       printf(".");
       fflush(stdout);
     }
+    timesteps[now]->write(geometry);  //Cache at current model step, not global step
+    debug_print("~~~ Cached step, at: %d\n", step());
     //Save the previous step data for reference
     olddata = geometry;
     //Objects have been moved into cache, clear from active list
@@ -1339,7 +1337,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
 
       //Bulk load: switch timestep and cache if timestep changes!
       // - disabled when using attached databases (cached in loop via cacheLoad())
-      if (cache && !allcached && laststep != timestep && !database.attached)
+      if (cache && laststep != timestep && !database.attached)
       {
         setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
         laststep = timestep;
