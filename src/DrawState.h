@@ -60,8 +60,6 @@ public:
   //Property metadata / documentation
   std::vector<std::pair<std::string,json>> properties;
 
-  int counter;
-
   DrawState();
   ~DrawState();
   std::string counterFilename();

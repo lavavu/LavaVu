@@ -3,7 +3,6 @@
 DrawState::DrawState() : prog()
 {
   borderobj = axisobj = rulerobj = NULL;
-  counter = 0;
   omegalib = false;
   segments = 0;    // Saves segment count for circle based objects
   //reset();
@@ -26,14 +25,22 @@ DrawState::~DrawState()
 std::string DrawState::counterFilename()
 {
   //Apply image counter to default filename when multiple images/videos output
-  std::stringstream outpath;
-  //TODO: format property for default image output
-  //std::string format = global("outfiles");
   std::string title = global("caption");
+  std::stringstream outpath;
+  std::string filename;
   outpath << title;
-  outpath <<  "-" << std::setfill('0') << std::setw(5) << counter;
-  counter++;
-  return outpath.str();
+  if (timesteps.size() > now)
+    outpath << "-" << std::setfill('0') << std::setw(5) << timesteps[now]->step;
+  filename = outpath.str();
+  int counter = 1;
+  while (FileExists(filename + ".png"))
+  {
+    std::stringstream outpath2;
+    outpath2 << outpath.str() << "-" << std::setfill('0') << std::setw(5) << counter;
+    filename = outpath2.str();
+    counter++;
+  }
+  return filename;
 }
 
 void DrawState::reset()
