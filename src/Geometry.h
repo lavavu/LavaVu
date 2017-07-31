@@ -96,9 +96,9 @@ class OpacityLookup
     this->vals = vals;
   }
 
-  virtual int operator()(unsigned int idx) const
+  virtual float operator()(unsigned int idx) const
   {
-    return 255 * draw->opacity;
+    return draw->opacity;
   }
 };
 
@@ -107,13 +107,13 @@ class OpacityLookupMapped : public OpacityLookup
  public:
   OpacityLookupMapped() {}
 
-  virtual int operator()(unsigned int idx) const
+  virtual float operator()(unsigned int idx) const
   {
     //Set opacity using own value map...
     ColourMap* omap = draw->opacityMap;
     Colour cc = omap->getfast((*vals)[idx]);
     //Apply opacity from drawing object override level if set
-    return cc.a * draw->opacity;
+    return cc.a/255.0 * draw->opacity;
   }
 };
 
@@ -139,7 +139,7 @@ public:
   virtual void operator()(Colour& colour, unsigned int idx) const
   {
     colour = draw->colour;
-    colour.a = getOpacity(idx);
+    colour.a *= getOpacity(idx);
   }
 };
 
@@ -158,7 +158,7 @@ class ColourLookupMapped : public ColourLookup
     else
       colour = draw->colourMap->getfast(val);
 
-    colour.a = getOpacity(idx);
+    colour.a *= getOpacity(idx);
   }
 };
 
@@ -174,7 +174,7 @@ class ColourLookupRGBA : public ColourLookup
     //assert(idx < colours.size());
     colour.value = render->colours[idx];
 
-    colour.a = getOpacity(idx);
+    colour.a *= getOpacity(idx);
   }
 };
 
@@ -191,7 +191,7 @@ class ColourLookupRGB : public ColourLookup
     colour.b = render->rgb[idx*3+2];
     colour.a = getOpacity(idx);
 
-    colour.a = getOpacity(idx);
+    colour.a *= getOpacity(idx);
   }
 };
 
@@ -205,7 +205,7 @@ class ColourLookupLuminance : public ColourLookup
     if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
     colour.r = colour.g = colour.b = render->luminance[idx];
 
-    colour.a = getOpacity(idx);
+    colour.a *= getOpacity(idx);
   }
 };
 
