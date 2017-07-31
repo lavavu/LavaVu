@@ -208,7 +208,7 @@ void TriSurfaces::loadMesh()
       geom[index]->data[lucVertexData] = &newverts;
       geom[index]->data[lucIndexData] = &geom[index]->render->indices;
       //Recreate value data as optimised version is smaller, re-load necessary values
-      Values_Ptr oldvalues = geom[index]->colourData();
+      FloatValues* oldvalues = geom[index]->colourData();
       Values_Ptr newvalues = NULL;
       if (oldvalues)
       {

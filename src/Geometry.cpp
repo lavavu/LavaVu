@@ -95,7 +95,7 @@ void GeomData::colourCalibrate()
   //Calibrate colour maps on ranges for related data
   ColourMap* cmap = draw->colourMap;
   if (cmap && values.size() > draw->colourIdx)
-    cmap->calibrate(values[draw->colourIdx]);
+    cmap->calibrate(values[draw->colourIdx].get());
 
   //Get filter data indices
   for (unsigned int i=0; i < draw->filterCache.size(); i++)
@@ -148,7 +148,7 @@ void GeomData::getColour(Colour& colour, unsigned int idx)
 {
   //Lookup using base colourmap, then RGBA colours, use colour property if no map
   ColourMap* cmap = draw->colourMap;
-  Values_Ptr vals = colourData();
+  FloatValues* vals = colourData();
   if (cmap && vals)
   {
     if (vals->size() == 1) idx = 0;  //Single colour value only provided
@@ -310,9 +310,9 @@ bool GeomData::filter(unsigned int idx)
   return false;
 }
 
-Values_Ptr GeomData::colourData()
+FloatValues* GeomData::colourData()
 {
-  return values.size() && values.size() > draw->colourIdx && values[draw->colourIdx]->size() ? values[draw->colourIdx] : nullptr;
+  return values.size() && values.size() > draw->colourIdx && values[draw->colourIdx]->size() ? values[draw->colourIdx].get() : NULL;
 }
 
 float GeomData::colourData(unsigned int idx) 
@@ -322,15 +322,15 @@ float GeomData::colourData(unsigned int idx)
   return (*fv)[idx];
 }
 
-Values_Ptr GeomData::valueData(unsigned int vidx)
+FloatValues* GeomData::valueData(unsigned int vidx)
 {
-  if (values.size() <= vidx || !values[vidx]->size()) return nullptr;
-  return values[vidx];
+  if (values.size() <= vidx || !values[vidx]->size()) return NULL;
+  return values[vidx].get();
 }
 
 float GeomData::valueData(unsigned int vidx, unsigned int idx)
 {
-  Values_Ptr fv = valueData(vidx);
+  FloatValues* fv = valueData(vidx);
   return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
@@ -535,7 +535,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
           }
           //Use default colour values for "values" until multiple data sets supported in WebGL viewer
           if (!dat && data_type == lucColourValueData)
-            dat = (FloatValues*)geom[index]->colourData().get();
+            dat = geom[index]->colourData();
 
         }
         if (!dat) continue;

@@ -65,7 +65,7 @@ typedef struct
   float* vertex; //Pointer to vertex to calc distance from (usually centroid)
 } TIndex;
 
-
+//All the fixed data types for rendering
 typedef struct
 {
   Coord3DValues vertices;
@@ -78,6 +78,7 @@ typedef struct
   UCharValues rgb;
 } RenderData;
 
+//Shared pointer so we can pass these around without issues
 typedef std::shared_ptr<RenderData> Render_Ptr;
 
 //Geometry object data store
@@ -119,7 +120,8 @@ public:
     return sizeof(float);
   }
 
-  GeomData(DrawingObject* draw, lucGeometryType type) : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
+  GeomData(DrawingObject* draw, lucGeometryType type)
+    : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
   {
     render = std::make_shared<RenderData>();
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
@@ -162,10 +164,9 @@ public:
   void getColour(Colour& colour, unsigned int idx);
   unsigned int valuesLookup(const json& by);
   bool filter(unsigned int idx);
-  Values_Ptr colourData();
+  FloatValues* colourData();
   float colourData(unsigned int idx);
-  Values_Ptr valueData(unsigned int vidx);
-  Values_Ptr valueData(const json& prop);
+  FloatValues* valueData(unsigned int vidx);
   float valueData(unsigned int vidx, unsigned int idx);
 };
 

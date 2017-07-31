@@ -110,8 +110,8 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, TriSurfaces* tris, DrawingOb
 
     //Save colour values reference
     colourVals = geom[i]->colourData();
-    if (colourVals != nullptr && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
-      colourVals = nullptr;
+    if (colourVals != NULL && colourVals->size() != (geom[i]->depth <= 1 ? nx*ny : nx*ny*nz))
+      colourVals = NULL;
 
     // Sample in regular grid
     Colour c;

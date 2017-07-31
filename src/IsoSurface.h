@@ -84,7 +84,7 @@ public:
   unsigned int subsample;
   TriSurfaces* surfaces;
   DrawingObject* target;
-  Values_Ptr colourVals;
+  FloatValues* colourVals;
   vertices* vertex;
 
   Isosurface(std::vector<Geom_Ptr>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample=1);
