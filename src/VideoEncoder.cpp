@@ -119,7 +119,7 @@ VideoEncoder::~VideoEncoder()
   /* free the streams */
   for(unsigned int i = 0; i < oc->nb_streams; i++)
   {
-    avcodec_close(oc->streams[i]->codec);
+    //avcodec_close(oc->streams[i]->codec);
     av_freep(&oc->streams[i]);
   }
 
@@ -153,7 +153,10 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 #endif
   if (!st) abort_program("Could not alloc stream");
 
-  c = video_enc = st->codec = avcodec_alloc_context3(avcodec_find_encoder(codec_id));
+  c = video_enc = avcodec_alloc_context3(avcodec_find_encoder(codec_id));
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,89,0)
+  st->codec = c;
+#endif
   c->codec_id = codec_id;
   c->codec_type = AVMEDIA_TYPE_VIDEO;
 
@@ -311,9 +314,11 @@ void VideoEncoder::open_video()
   picture = alloc_picture(c->pix_fmt);
   if (!picture) abort_program("Could not allocate picture");
 
-    /* copy the stream parameters to the muxer */
-    //if (avcodec_parameters_from_context(video_st->codecpar, video_enc) < 0)
-    //    abort_program("Could not copy the stream parameters\n");
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,89,0)
+  /* copy the stream parameters to the muxer */
+  if (avcodec_parameters_from_context(video_st->codecpar, video_enc) < 0)
+    abort_program("Could not copy the stream parameters\n");
+#endif
 
   /* Only supporting YUV420P now */
   assert(c->pix_fmt == AV_PIX_FMT_YUV420P);
@@ -328,10 +333,19 @@ void VideoEncoder::write_video_frame()
 
   /* encode the image */
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(54,0,0)
+  int got_packet = 0;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,89,0)
+  ret = avcodec_send_frame(c, picture);
+  assert(ret >= 0);
+  ret = avcodec_receive_packet(c, &pkt);
+  if (!ret) got_packet = 1;
+  //if (ret == 0) got_packet = 1;
+  assert(ret == 0 || ret == AVERROR(EAGAIN));
+#else
   pkt.size = video_outbuf_size;
   pkt.data = video_outbuf;
-  int got_packet = 0;
   ret = avcodec_encode_video2(c, &pkt, picture, &got_packet);
+#endif
   if (got_packet)
   {
     if (pkt.pts != AV_NOPTS_VALUE)
@@ -355,16 +369,15 @@ void VideoEncoder::write_video_frame()
     ret = av_interleaved_write_frame(oc, &pkt);
   }
 
-  if (ret != 0) abort_program("Error while writing video frame\n");
+  //if (ret != 0) abort_program("Error while writing video frame\n");
   std::cout << " frame " << frame_count << std::endl;
   frame_count++;
 }
 
 void VideoEncoder::close_video()
 {
-  //avcodec_close(video_enc);
-  av_free(picture->data[0]);
-  av_free(picture);
+  avcodec_close(video_enc);
+  av_frame_free(&picture);
   av_free(video_outbuf);
 }
 
