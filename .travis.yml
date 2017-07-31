@@ -40,7 +40,7 @@ script:
   - export PYTHONPATH=$PYTHONPATH:`pwd`
   - if [ -d "LavaVuTesting" ]; then
       cd LavaVuTesting;
-      python runall.py echo verbose;
+      python runall.py echo verbose || travis_terminate 1;
       cd ..;
     fi
 after_script:
