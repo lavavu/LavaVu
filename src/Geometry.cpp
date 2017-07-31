@@ -84,18 +84,10 @@ std::string GeomData::getLabels()
 }
 
 //Utility functions, calibrate colourmaps and get colours
-void GeomData::colourCalibrate()
+ColourLookup& GeomData::colourCalibrate()
 {
   //Cache colour lookups
   draw->setup();
-
-  //Get the value index
-  draw->colourIdx = valuesLookup(draw->properties["colourby"]);
-
-  //Calibrate colour maps on ranges for related data
-  ColourMap* cmap = draw->colourMap;
-  if (cmap && values.size() > draw->colourIdx)
-    cmap->calibrate(values[draw->colourIdx].get());
 
   //Get filter data indices
   for (unsigned int i=0; i < draw->filterCache.size(); i++)
@@ -103,21 +95,63 @@ void GeomData::colourCalibrate()
 
   //Calibrate opacity map if provided
   ColourMap* omap = draw->opacityMap;
+  bool mappedOpacity = false;
   if (omap)
   {
     //Get the value index
     draw->opacityIdx = valuesLookup(draw->properties["opacityby"]);
     if (values.size() > draw->opacityIdx)
       omap->calibrate(valueData(draw->opacityIdx));
+    //Init the mapped opacity lookup functor
+    mappedOpacity = true;
+    _getOpacityMapped.init(draw, valueData(draw->opacityIdx));
   }
+  else
+    //Init the default opacity lookup functor
+    _getOpacity.init(draw, valueData(draw->opacityIdx));
 
-  //TODO: Set a colour lookup function pointer here
-  // - calculate number of colour lookups required
+  //Get a colour lookup functor
   // - determine source of colour data
-  // - set a colour lookup function pointer to do the
+  // - return a colour lookup functor object to do the
   //   required lookup at high efficiency
-  // - use this fn ptr to to the lookups by vert index in drawing code
 
+  //Save the value index
+  draw->colourIdx = valuesLookup(draw->properties["colourby"]);
+
+  ColourMap* cmap = draw->colourMap;
+  FloatValues* vals = colourData();
+  if (cmap && vals)
+  {
+    //Calibrate the colour map
+    cmap->calibrate(vals);
+    _getColourMapped.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    _getColourMapped(draw->colour, 0); //Cache a representative colour
+    return _getColourMapped;
+  }
+  else if (render->colours.size() > 0)
+  {
+    _getColourRGBA.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    _getColourRGBA(draw->colour, 0); //Cache a representative colour
+    return _getColourRGBA;
+  }
+  else if (render->rgb.size() > 0)
+  {
+    _getColourRGB.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    _getColourRGB(draw->colour, 0); //Cache a representative colour
+    return _getColourRGB;
+  }
+  else if (render->luminance.size() > 0)
+  {
+    _getColourLuminance.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    _getColourLuminance(draw->colour, 0); //Cache a representative colour
+    return _getColourLuminance;
+  }
+  else
+  {
+    //Init data for colour lookup
+    _getColour.init(draw, render, colourData(), mappedOpacity ? _getOpacityMapped : _getOpacity);
+    return _getColour;
+  }
 }
 
 //Get colour using specified colourValue
@@ -141,64 +175,6 @@ int GeomData::colourCount()
     hasColours = fv->size();
   }
   return hasColours;
-}
-
-//Sets the colour for specified vertex index, looks up all provided colourmaps
-void GeomData::getColour(Colour& colour, unsigned int idx)
-{
-  //Lookup using base colourmap, then RGBA colours, use colour property if no map
-  ColourMap* cmap = draw->colourMap;
-  FloatValues* vals = colourData();
-  if (cmap && vals)
-  {
-    if (vals->size() == 1) idx = 0;  //Single colour value only provided
-    //assert(idx < values->size());
-    if (idx >= vals->size()) idx = vals->size() - 1;
-    float val = colourData(idx);
-    if (val == HUGE_VAL) 
-    {
-      colour.value = 0;
-      return;
-    }
-    colour = cmap->getfast(val);
-  }
-  else if (render->colours.size() > 0)
-  {
-    if (render->colours.size() == 1) idx = 0;  //Single colour only provided
-    if (idx >= render->colours.size()) idx = render->colours.size() - 1;
-    //assert(idx < colours.size());
-    colour.value = render->colours[idx];
-  }
-  else if (render->rgb.size() > 0)
-  {
-    if (idx >= render->rgb.size()/3) idx = render->rgb.size()/3 - 1;
-    colour.r = render->rgb[idx*3];
-    colour.g = render->rgb[idx*3+1];
-    colour.b = render->rgb[idx*3+2];
-    colour.a = 255;
-  }
-  else if (render->luminance.size() > 0)
-  {
-    if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
-    colour.r = colour.g = colour.b = render->luminance[idx];
-    colour.a = 255;
-  }
-  else
-  {
-    colour = draw->colour;
-  }
-
-  //Set opacity using own value map...
-  ColourMap* omap = draw->opacityMap;
-  vals = valueData(draw->opacityIdx);
-  if (omap && vals && vals->size() > draw->opacityIdx)
-  {
-    Colour cc = omap->getfast(valueData(draw->opacityIdx, idx));
-    colour.a = cc.a;
-  }
-
-  //Apply opacity from drawing object override level if set
-  colour.a *= draw->opacity;
 }
 
 unsigned int GeomData::valuesLookup(const json& by)
@@ -757,6 +733,8 @@ void Geometry::setState(unsigned int i, Shader* prog)
     //Apply global 'opacity' only if no per-object setting (which is applied with colour)
     if (!geom[i]->draw->properties.has("opacity"))
       opacity *= (float)drawstate.global("opacity");
+    bool allopaque = (drawstate.global("sort") == 0);
+    if (allopaque) opacity = 1.0;
     prog->setUniformf("uOpacity", opacity);
     prog->setUniformi("uLighting", lighting);
     prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
@@ -766,6 +744,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
     prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
     prog->setUniformi("uTextured", texture && texture->unit >= 0);
+    prog->setUniformf("uOpaque", allopaque);
 
     if (texture)
       prog->setUniform("uTexture", (int)texture->unit);
@@ -1342,7 +1321,7 @@ json Geometry::getDataLabels(DrawingObject* draw)
 //Dumps colourmapped data to image
 void Geometry::toImage(unsigned int idx)
 {
-  geom[idx]->colourCalibrate();
+  ColourLookup& getColour = geom[idx]->colourCalibrate();
   int width = geom[idx]->width;
   if (width == 0) width = 256;
   int height = geom[idx]->height;
@@ -1357,7 +1336,7 @@ void Geometry::toImage(unsigned int idx)
     {
       //printf("%f\n", geom[idx]->colourData()[y * width + x]);
       Colour c;
-      geom[idx]->getColour(c, y * width + x);
+      getColour(c, y * width + x);
       image.pixels[y * width*pixel + x*pixel + 0] = c.r;
       image.pixels[y * width*pixel + x*pixel + 1] = c.g;
       image.pixels[y * width*pixel + x*pixel + 2] = c.b;

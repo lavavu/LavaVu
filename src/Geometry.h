@@ -81,6 +81,134 @@ typedef struct
 //Shared pointer so we can pass these around without issues
 typedef std::shared_ptr<RenderData> Render_Ptr;
 
+//Opacity lookup functors
+class OpacityLookup
+{
+ public:
+  DrawingObject* draw;
+  FloatValues* vals;
+
+  OpacityLookup() {}
+
+  void init(DrawingObject* draw, FloatValues* vals)
+  {
+    this->draw = draw;
+    this->vals = vals;
+  }
+
+  virtual int operator()(unsigned int idx) const
+  {
+    return 255 * draw->opacity;
+  }
+};
+
+class OpacityLookupMapped : public OpacityLookup
+{
+ public:
+  OpacityLookupMapped() {}
+
+  virtual int operator()(unsigned int idx) const
+  {
+    //Set opacity using own value map...
+    ColourMap* omap = draw->opacityMap;
+    Colour cc = omap->getfast((*vals)[idx]);
+    //Apply opacity from drawing object override level if set
+    return cc.a * draw->opacity;
+  }
+};
+
+//Colour lookup functors
+class ColourLookup
+{
+public:
+  DrawingObject* draw;
+  std::shared_ptr<RenderData> render;
+  FloatValues* vals;
+  OpacityLookup getOpacity;
+
+  ColourLookup() {}
+
+  void init(DrawingObject* draw, std::shared_ptr<RenderData> render, FloatValues* vals, OpacityLookup getOpacity)
+  {
+    this->draw = draw;
+    this->render = render;
+    this->vals = vals;
+    this->getOpacity = getOpacity;
+  }
+
+  virtual void operator()(Colour& colour, unsigned int idx) const
+  {
+    colour = draw->colour;
+    colour.a = getOpacity(idx);
+  }
+};
+
+class ColourLookupMapped : public ColourLookup
+{
+ public:
+  ColourLookupMapped() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const
+  {
+    //assert(idx < values->size());
+    if (idx >= vals->size()) idx = vals->size() - 1;
+    float val = (*vals)[idx];
+    if (val == HUGE_VAL)
+      colour.value = 0;
+    else
+      colour = draw->colourMap->getfast(val);
+
+    colour.a = getOpacity(idx);
+  }
+};
+
+class ColourLookupRGBA : public ColourLookup
+{
+ public:
+  ColourLookupRGBA() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const
+  {
+    if (render->colours.size() == 1) idx = 0;  //Single colour only provided
+    if (idx >= render->colours.size()) idx = render->colours.size() - 1;
+    //assert(idx < colours.size());
+    colour.value = render->colours[idx];
+
+    colour.a = getOpacity(idx);
+  }
+};
+
+class ColourLookupRGB : public ColourLookup
+{
+ public:
+  ColourLookupRGB() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const
+  {
+    if (idx >= render->rgb.size()/3) idx = render->rgb.size()/3 - 1;
+    colour.r = render->rgb[idx*3];
+    colour.g = render->rgb[idx*3+1];
+    colour.b = render->rgb[idx*3+2];
+    colour.a = getOpacity(idx);
+
+    colour.a = getOpacity(idx);
+  }
+};
+
+class ColourLookupLuminance : public ColourLookup
+{
+ public:
+  ColourLookupLuminance() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const
+  {
+    if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
+    colour.r = colour.g = colour.b = render->luminance[idx];
+
+    colour.a = getOpacity(idx);
+  }
+};
+
 //Geometry object data store
 #define MAX_DATA_ARRAYS 64
 class GeomData
@@ -98,6 +226,14 @@ public:
   ImageLoader* texture; //Texture
   lucGeometryType type;   //Holds the object type
 
+  //Colour/Opacity lookup functors
+  ColourLookup _getColour;
+  ColourLookupMapped _getColourMapped;
+  ColourLookupRGBA _getColourRGBA;
+  ColourLookupRGB _getColourRGB;
+  ColourLookupLuminance _getColourLuminance;
+  OpacityLookup _getOpacity;
+  OpacityLookupMapped _getOpacityMapped;
 
   float distance;
 
@@ -158,10 +294,9 @@ public:
 
   void label(std::string& labeltext);
   std::string getLabels();
-  void colourCalibrate();
+  ColourLookup& colourCalibrate();
   void mapToColour(Colour& colour, float value);
   int colourCount();
-  void getColour(Colour& colour, unsigned int idx);
   unsigned int valuesLookup(const json& by);
   bool filter(unsigned int idx);
   FloatValues* colourData();
@@ -169,7 +304,6 @@ public:
   FloatValues* valueData(unsigned int vidx);
   float valueData(unsigned int vidx, unsigned int idx);
 };
-
 
 class Distance
 {

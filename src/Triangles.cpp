@@ -161,7 +161,7 @@ void Triangles::loadBuffers()
     t1=tt=clock();
 
     //Calibrate colour maps on range for this surface
-    geom[index]->colourCalibrate();
+    ColourLookup& getColour = geom[index]->colourCalibrate();
     unsigned int hasColours = geom[index]->colourCount();
     if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
     unsigned int colrange = hasColours ? geom[index]->count / hasColours : 1;
@@ -184,7 +184,7 @@ void Triangles::loadBuffers()
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
       unsigned int cidx = v / colrange;
       if (cidx * colrange == v)
-        geom[index]->getColour(colour, cidx);
+        getColour(colour, cidx);
 
       float* vert = geom[index]->render->vertices[v];
       if (shift > 0)

@@ -90,15 +90,12 @@ void Tracers::update()
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;
     ColourMap* cmap = geom[i]->draw->colourMap;
+    //Calibrate colour map on provided value range
+    ColourLookup& getColour = geom[i]->colourCalibrate();
     if (cmap && !geom[i]->colourData())
     {
       timecolour = true;
       cmap->calibrate(drawstate.timesteps[start]->time, drawstate.timesteps[end]->time);
-    }
-    else
-    {
-      //Calibrate colour map on provided value range
-      geom[i]->colourCalibrate();
     }
 
     //Get properties
@@ -152,7 +149,7 @@ void Tracers::update()
         if (timecolour)
           colour = cmap->getfast(drawstate.timesteps[step]->time);
         else
-          geom[i]->getColour(colour, pp);
+          getColour(colour, pp);
 
         //Fade out
         if (fade) colour.a = 255 * (step-start) / (float)(end-start);

@@ -135,7 +135,7 @@ void Points::loadVertices()
     debug_print("Swarm %d, points %d hidden? %s\n", s, geom[s]->count, (hidden[s] ? "yes" : "no"));
 
     //Calibrate colourMap
-    geom[s]->colourCalibrate();
+    ColourLookup& getColour = geom[s]->colourCalibrate();
 
     Properties& props = geom[s]->draw->properties;
     float psize0 = props["pointsize"];
@@ -158,7 +158,7 @@ void Points::loadVertices()
         //Copies vertex bytes
         memcpy(ptr, geom[s]->render->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
-        geom[s]->getColour(c, i);
+        getColour(c, i);
         memcpy(ptr, &c, sizeof(Colour));
         ptr += sizeof(Colour);
         //Optional per-object size/type

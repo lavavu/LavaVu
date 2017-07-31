@@ -75,7 +75,7 @@ void Shapes::update()
     if (scaling <= 0) scaling = 1.0;
 
     Colour colour;
-    geom[i]->colourCalibrate();
+    ColourLookup& getColour = geom[i]->colourCalibrate();
 
     unsigned int idxW = geom[i]->valuesLookup(geom[i]->draw->properties["widthby"]);
     unsigned int idxH = geom[i]->valuesLookup(geom[i]->draw->properties["heightby"]);
@@ -118,7 +118,7 @@ void Shapes::update()
         tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, quality);
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
-      geom[i]->getColour(colour, v);
+      getColour(colour, v);
       tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
     }
 

@@ -2302,20 +2302,6 @@ void LavaVu::drawBorder()
   if (verbose) infostream = stderr;
 }
 
-Geom_Ptr LavaVu::getFilledGeometry(DrawingObject* obj)
-{
-  //Find the first available geometry container for this drawing object
-  //Used to append colour values and to get a representative colour for objects
-  //Only works if we know object has a single geometry type
-  Geom_Ptr geomdata = nullptr;
-  for (int type=lucMinType; type<lucMaxType; type++)
-  {
-    geomdata = amodel->geometry[type]->getObjectStore(obj);
-    if (geomdata) break;
-  }
-  return geomdata;
-}
-
 void LavaVu::displayObjectList(bool console)
 {
   //Print available objects by id to screen and stderr
@@ -2337,13 +2323,8 @@ void LavaVu::displayObjectList(bool console)
     else if (amodel->objects[i]->properties["visible"])
     {
       if (console) std::cerr << "[          ]" << ss.str() << std::endl;
-      //Use object colour if provided, unless matches background
-      Colour c;
-      Geom_Ptr geomdata = getFilledGeometry(amodel->objects[i]);
-      if (geomdata)
-        geomdata->getColour(c, 0);
-      else
-        c = amodel->objects[i]->properties.getColour("colour", 0, 0, 0, 255);
+      //Use cached object colour, unless matches background
+      Colour c = amodel->objects[i]->colour;
       c.a = 255;
       offset++;
       displayText(ss.str(), offset);

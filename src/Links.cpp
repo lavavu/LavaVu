@@ -63,7 +63,7 @@ void Links::update()
     Properties& props = geom[i]->draw->properties;
 
     //Calibrate colour maps on range for this object
-    geom[i]->colourCalibrate();
+    ColourLookup& getColour = geom[i]->colourCalibrate();
     float limit = props["limit"];
     bool linked = props["link"];
     bool filter = geom[i]->draw->filterCache.size();
@@ -109,7 +109,7 @@ void Links::update()
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         unsigned int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;
-        geom[i]->getColour(colour, cidx);
+        getColour(colour, cidx);
 
         lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->render->vertices[v][0]);
         lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
@@ -150,7 +150,7 @@ void Links::update()
         {
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
           //Per line colours (can do this as long as sub-renderer always outputs same tri count)
-          geom[i]->getColour(colour, v);
+          getColour(colour, v);
           tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
         }
         oldpos = pos;

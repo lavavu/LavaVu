@@ -86,7 +86,7 @@ void Vectors::update()
 
     if (scaling <= 0) scaling = 1.0;
 
-    geom[i]->colourCalibrate();
+    ColourLookup& getColour = geom[i]->colourCalibrate();
     bool flat = props["flat"] || quality < 1;
 
     bool filter = geom[i]->draw->filterCache.size();
@@ -95,7 +95,7 @@ void Vectors::update()
       if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
       Vec3d pos(geom[i]->render->vertices[v]);
       Vec3d vec(geom[i]->render->vectors[v]);
-      geom[i]->getColour(colour, v);
+      getColour(colour, v);
 
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
       lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);

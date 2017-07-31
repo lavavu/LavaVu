@@ -99,7 +99,7 @@ void Lines::update()
     t1=tt=clock();
 
     //Calibrate colour maps on range for this object
-    geom[i]->colourCalibrate();
+    ColourLookup& getColour = geom[i]->colourCalibrate();
 
     unsigned int hasColours = geom[i]->colourCount();
     unsigned int colrange = hasColours ? geom[i]->count / hasColours : 1;
@@ -107,7 +107,6 @@ void Lines::update()
     debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
 
     Colour colour;
-    bool fastCol = hasColours == geom[i]->render->colours.size() && hasColours > 0 && !geom[i]->draw->opacityMap;
     bool filter = geom[i]->draw->filterCache.size();
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
@@ -116,15 +115,7 @@ void Lines::update()
       //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
       unsigned int cidx = v / colrange;
       if (cidx >= hasColours) cidx = hasColours - 1;
-      //Fast lookup for prepared colour data
-      //TODO: Replace this (see Geometry::colourCalibrate) with colour lookup function ptr
-      if (fastCol)
-      {
-        colour.value = geom[i]->render->colours[cidx];
-        colour.a *= geom[i]->draw->opacity;
-      }
-      else
-        geom[i]->getColour(colour, cidx);
+      getColour(colour, cidx);
       //if (cidx%100 ==0) printf("COLOUR %d => %d,%d,%d\n", cidx, colour.r, colour.g, colour.b);
 
       //Write vertex data to vbo

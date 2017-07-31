@@ -185,7 +185,6 @@ public:
   void viewSelect(int idx, bool setBounds=false, bool autozoom=false);
   void viewApply(int idx);
 
-  Geom_Ptr getFilledGeometry(DrawingObject* obj);
   void displayObjectList(bool console=true);
   void printMessage(const char *fmt, ...);
   void text(const std::string& str, int xpos=10, int ypos=0, float scale=1.0, Colour* colour=NULL);
