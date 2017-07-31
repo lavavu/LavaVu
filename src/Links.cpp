@@ -66,6 +66,7 @@ void Links::update()
     geom[i]->colourCalibrate();
     float limit = props["limit"];
     bool linked = props["link"];
+    bool filter = geom[i]->draw->filterCache.size();
 
     if (all2d || (props.getBool("flat", true) && !props["tubes"]))
     {
@@ -81,7 +82,7 @@ void Links::update()
       int count = 0;
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
-        if (geom[i]->filter(v)) continue;
+        if (filter && geom[i]->filter(v)) continue;
 
         //Check length limit if applied (used for periodic boundary conditions)
         //NOTE: will not work with linked lines, require separated segments
@@ -141,7 +142,7 @@ void Links::update()
       int count = 0;
       for (unsigned int v=0; v < geom[i]->count; v++)
       {
-        if (geom[i]->filter(v)) continue;
+        if (filter && geom[i]->filter(v)) continue;
         
         if (v%2 == 0 && !linked) oldpos = NULL;
         float* pos = geom[i]->render->vertices[v];

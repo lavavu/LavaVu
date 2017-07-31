@@ -47,16 +47,6 @@
 #ifndef Geometry__
 #define Geometry__
 
-typedef struct
-{
-  unsigned int dataIdx;
-  float minimum;
-  float maximum;
-  bool map;
-  bool out;
-  bool inclusive;
-} Filter;
-
 //Types based on triangle renderer
 #define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
@@ -105,8 +95,8 @@ public:
   char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   ImageLoader* texture; //Texture
-  std::vector<Filter> filterCache;
   lucGeometryType type;   //Holds the object type
+
 
   float distance;
 

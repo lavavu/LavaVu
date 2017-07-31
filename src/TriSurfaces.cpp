@@ -314,11 +314,12 @@ void TriSurfaces::loadList()
     //(also required for filtering by map)
     geom[index]->colourCalibrate();
 
+    bool filter = geom[index]->draw->filterCache.size();
     for (unsigned int t = 0; t < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; t+=3, offset++)
     {
       //voffset is offset of the last vertex added to the vbo from the previous object
       assert(offset < total);
-      if (!internal && geom[index]->filter(geom[index]->render->indices[t])) continue; //If first vertex filtered, skip whole tri
+      if (!internal && filter && geom[index]->filter(geom[index]->render->indices[t])) continue; //If first vertex filtered, skip whole tri
       tidx[tricount].index[0] = geom[index]->render->indices[t] + voffset;
       tidx[tricount].index[1] = geom[index]->render->indices[t+1] + voffset;
       tidx[tricount].index[2] = geom[index]->render->indices[t+2] + voffset;

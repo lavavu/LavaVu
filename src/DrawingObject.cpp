@@ -87,6 +87,38 @@ void DrawingObject::setup()
     int omapid = properties["opacitymap"];
     if (omapid >= 0 && omapid < (int)drawstate.colourMaps->size()) opacityMap = (*drawstate.colourMaps)[omapid];
   }
+
+  //Cache the filter data
+  //The cache stores filter values so we can avoid
+  //hitting the json store for every vertex (very slow)
+  filterCache.clear();
+  json filters = properties["filters"];
+  for (unsigned int i=0; i < filters.size(); i++)
+  {
+    float min = filters[i]["minimum"];
+    float max = filters[i]["maximum"];
+
+    int j = filterCache.size();
+    filterCache.push_back(Filter());
+    filterCache[j].label = filters[i]["by"];
+    filterCache[j].map = filters[i]["map"];
+    filterCache[j].out = filters[i]["out"];
+    filterCache[j].inclusive = filters[i]["inclusive"];
+    if (min > max)
+    {
+      //Swap and change to an out filter
+      filterCache[j].minimum = max;
+      filterCache[j].maximum = min;
+      filterCache[j].out = !filterCache[j].out;
+      //Also flip the inclusive flag
+      filterCache[j].inclusive = !filterCache[j].inclusive;
+    }
+    else
+    {
+      filterCache[j].minimum = min;
+      filterCache[j].maximum = max;
+    }
+  }
 }
 
 TextureData* DrawingObject::useTexture(ImageLoader* tex)

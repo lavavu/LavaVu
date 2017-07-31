@@ -55,6 +55,7 @@ void Tracers::update()
   for (unsigned int i=0; i<geom.size(); i++)
   {
     Properties& props = geom[i]->draw->properties;
+    bool filter = geom[i]->draw->filterCache.size();
 
     //Create a new data stores for output geometry
     tris->add(geom[i]->draw);
@@ -142,7 +143,7 @@ void Tracers::update()
 
         //TODO: test filtering
         int pp = step * particles + pidx;
-        if (!drawable(i) || geom[i]->filter(pp)) continue;
+        if (!drawable(i) || (filter && geom[i]->filter(pp))) continue;
 
         float* pos = geom[i]->render->vertices[pp];
         //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);

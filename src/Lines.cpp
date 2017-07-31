@@ -108,9 +108,10 @@ void Lines::update()
 
     Colour colour;
     bool fastCol = hasColours == geom[i]->render->colours.size() && hasColours > 0 && !geom[i]->draw->opacityMap;
+    bool filter = geom[i]->draw->filterCache.size();
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
-      if (!internal && geom[i]->filter(v)) continue;
+      if (filter && !internal && geom[i]->filter(v)) continue;
 
       //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
       unsigned int cidx = v / colrange;

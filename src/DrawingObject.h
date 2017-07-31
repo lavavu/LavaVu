@@ -55,6 +55,7 @@ public:
   unsigned int opacityIdx;
   ColourMap* colourMap; //Cached references
   ColourMap* opacityMap;
+  std::vector<Filter> filterCache;
 
   //Object properties data...
   Properties properties;

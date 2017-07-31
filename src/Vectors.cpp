@@ -89,9 +89,10 @@ void Vectors::update()
     geom[i]->colourCalibrate();
     bool flat = props["flat"] || quality < 1;
 
+    bool filter = geom[i]->draw->filterCache.size();
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
-      if (!drawable(i) || geom[i]->filter(v)) continue;
+      if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
       Vec3d pos(geom[i]->render->vertices[v]);
       Vec3d vec(geom[i]->render->vectors[v]);
       geom[i]->getColour(colour, v);

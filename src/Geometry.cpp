@@ -97,6 +97,10 @@ void GeomData::colourCalibrate()
   if (cmap && values.size() > draw->colourIdx)
     cmap->calibrate(values[draw->colourIdx]);
 
+  //Get filter data indices
+  for (unsigned int i=0; i < draw->filterCache.size(); i++)
+    draw->filterCache[i].dataIdx = valuesLookup(draw->filterCache[i].label);
+
   //Calibrate opacity map if provided
   ColourMap* omap = draw->opacityMap;
   if (omap)
@@ -114,37 +118,6 @@ void GeomData::colourCalibrate()
   //   required lookup at high efficiency
   // - use this fn ptr to to the lookups by vert index in drawing code
 
-  //Cache the filter data
-  //The cache stores filter values so we can avoid 
-  //hitting the json store for every vertex (very slow)
-  filterCache.clear();
-  json filters = draw->properties["filters"];
-  for (unsigned int i=0; i < filters.size(); i++)
-  {
-    float min = filters[i]["minimum"];
-    float max = filters[i]["maximum"];
-
-    int j = filterCache.size();
-    filterCache.push_back(Filter());
-    filterCache[j].dataIdx = valuesLookup(filters[i]["by"]);
-    filterCache[j].map = filters[i]["map"];
-    filterCache[j].out = filters[i]["out"];
-    filterCache[j].inclusive = filters[i]["inclusive"];
-    if (min > max)
-    {
-      //Swap and change to an out filter
-      filterCache[j].minimum = max;
-      filterCache[j].maximum = min;
-      filterCache[j].out = !filterCache[j].out;
-      //Also flip the inclusive flag
-      filterCache[j].inclusive = !filterCache[j].inclusive;
-    }
-    else
-    {
-      filterCache[j].minimum = min;
-      filterCache[j].maximum = max;
-    }
-  }
 }
 
 //Get colour using specified colourValue
@@ -264,11 +237,11 @@ bool GeomData::filter(unsigned int idx)
   float value, min, max;
   int size, range;
   unsigned int ridx;
-  for (unsigned int i=0; i < filterCache.size(); i++)
+  for (unsigned int i=0; i < draw->filterCache.size(); i++)
   {
-    if (values.size() <= filterCache[i].dataIdx || !values[filterCache[i].dataIdx]) continue;
-    size = values[filterCache[i].dataIdx]->size();
-    if (filterCache[i].dataIdx < MAX_DATA_ARRAYS && size > 0)
+    if (values.size() <= draw->filterCache[i].dataIdx || !values[draw->filterCache[i].dataIdx]) continue;
+    size = values[draw->filterCache[i].dataIdx]->size();
+    if (draw->filterCache[i].dataIdx < MAX_DATA_ARRAYS && size > 0)
     {
       //Have values but not enough for per-vertex? spread over range (eg: per triangle)
       range = count / size;
@@ -276,10 +249,10 @@ bool GeomData::filter(unsigned int idx)
       if (range > 1) ridx = idx / range;
 
       //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
-      min = filterCache[i].minimum;
-      max = filterCache[i].maximum;
-      Values_Ptr v = values[filterCache[i].dataIdx];
-      if (filterCache[i].map)
+      min = draw->filterCache[i].minimum;
+      max = draw->filterCache[i].maximum;
+      Values_Ptr v = values[draw->filterCache[i].dataIdx];
+      if (draw->filterCache[i].map)
       {
         //Range type filters map over available values on [0,1] => [min,max]
         //If a colourmap is provided, that is used to get the values (allows log maps)
@@ -289,9 +262,9 @@ bool GeomData::filter(unsigned int idx)
           value = cmap->scaleValue((*v)[ridx]);
         else
         {
-          value = values[filterCache[i].dataIdx]->maximum - values[filterCache[i].dataIdx]->minimum;
-          min = values[filterCache[i].dataIdx]->minimum + min * value;
-          max = values[filterCache[i].dataIdx]->minimum + max * value;
+          value = values[draw->filterCache[i].dataIdx]->maximum - values[draw->filterCache[i].dataIdx]->minimum;
+          min = values[draw->filterCache[i].dataIdx]->minimum + min * value;
+          max = values[draw->filterCache[i].dataIdx]->minimum + max * value;
           value = (*v)[ridx];
         }
       }
@@ -301,7 +274,7 @@ bool GeomData::filter(unsigned int idx)
       //if (idx%10000==0) std::cout << min << " < " << value << " < " << max << std::endl;
       
       //"out" flag indicates values between the filter range are skipped - exclude
-      if (filterCache[i].out)
+      if (draw->filterCache[i].out)
       {
         //- return TRUE if VALUE inside RANGE
         if (min == max)
@@ -311,7 +284,7 @@ bool GeomData::filter(unsigned int idx)
           continue;
         }
         //Filters out values between specified ranges (allows filtering separate sections)
-        if (filterCache[i].inclusive && value >= min && value <= max) 
+        if (draw->filterCache[i].inclusive && value >= min && value <= max)
           return true;
         if (value > min && value < max) 
           return true;
@@ -327,7 +300,7 @@ bool GeomData::filter(unsigned int idx)
           continue;
         }
         //Filters out values not between specified ranges (allows combining filters)
-        if (filterCache[i].inclusive && (value <= min || value >= max))
+        if (draw->filterCache[i].inclusive && (value <= min || value >= max))
           return true;
         if (value < min || value > max)
           return true;

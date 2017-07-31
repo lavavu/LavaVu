@@ -212,9 +212,10 @@ void Points::loadList()
     //Calibrate colourMap - required to re-cache filter settings (TODO: split filter reload into another function?)
     geom[s]->colourCalibrate();
 
+    bool filter = geom[s]->draw->filterCache.size();
     for (unsigned int i = 0; i < geom[s]->count; i ++)
     {
-      if (geom[s]->filter(i)) continue;
+      if (filter && geom[s]->filter(i)) continue;
       // If subSampling, use a pseudo random distribution to select which particles to draw
       // If we just draw every n'th particle, we end up with a whole bunch in one region / proc
       SEED = i; //Reset the seed for determinism based on index

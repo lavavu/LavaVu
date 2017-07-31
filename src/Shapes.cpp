@@ -81,9 +81,10 @@ void Shapes::update()
     unsigned int idxH = geom[i]->valuesLookup(geom[i]->draw->properties["heightby"]);
     unsigned int idxL = geom[i]->valuesLookup(geom[i]->draw->properties["lengthby"]);
 
+    bool filter = geom[i]->draw->filterCache.size();
     for (unsigned int v=0; v < geom[i]->count; v++)
     {
-      if (!drawable(i) || geom[i]->filter(v)) continue;
+      if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)
       Vec3d sdims = Vec3d(dims[0], dims[1], dims[2]);
       if (geom[i]->valueData(idxW)) sdims[0] = geom[i]->valueData(idxW, v);

@@ -114,6 +114,17 @@ public:
 
 std::string GetBinaryPath(const char* argv0, const char* progname);
 
+typedef struct
+{
+  std::string label;
+  unsigned int dataIdx;
+  float minimum;
+  float maximum;
+  bool map;
+  bool out;
+  bool inclusive;
+} Filter;
+
 //General purpose geometry data store types...
 extern long membytes__;
 extern long mempeak__;
