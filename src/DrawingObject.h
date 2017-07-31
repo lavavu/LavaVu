@@ -33,15 +33,13 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#include "GraphicsUtil.h"
 #include "ColourMap.h"
+#include "GraphicsUtil.h"
 #include "ViewerTypes.h"
 #include "DrawState.h"
 
 #ifndef DrawingObject__
 #define DrawingObject__
-
-class ColourMap;
 
 //Holds parameters for a drawing object
 class DrawingObject

@@ -33,14 +33,12 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#ifndef ColourMap__
-#define ColourMap__
-
 #include "Util.h"
 #include "GraphicsUtil.h"
 #include "DrawState.h"
 
-class DrawState;
+#ifndef ColourMap__
+#define ColourMap__
 
 class ColourVal
 {
