@@ -1063,9 +1063,9 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
       amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
       if (verbose) std::cerr << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
       //Demo colour values - depth, these aren't used for volume render but can be used to plot an isosurface
-      float colourval = z/(float)depth;
-      for (unsigned int c=0; c<width*height; c++)
-        amodel->volumes->read(vobj, 1, &colourval, "depth");
+      float colourvals[npixels];
+      std::fill(colourvals + 0, colourvals + npixels, z/(float)depth);
+      amodel->volumes->read(vobj, npixels, colourvals, "depth");
     }
     free(imageData);
   }
