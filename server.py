@@ -8,9 +8,6 @@ import os
 
 lavavu = None
 
-#Save working dir
-wd = os.getcwd()
-
 class LVRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def serveImage(self):
         start = len('data:image/jpeg;base64,')
@@ -21,14 +18,6 @@ class LVRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         img = img[start:]
         self.wfile.write(base64.b64decode(img))
 
-    def runCommands(self, cmds):
-        #Run commands, first restoring working dir
-        wwwd = os.getcwd()
-        os.chdir(wd)
-        lavavu.commands(cmds)
-        #Change back to web server dir
-        os.chdir(wwwd)
-
     def do_GET(self):
         global lavavu
         if self.path.find('image') > 0:
@@ -38,7 +27,8 @@ class LVRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             pos2 = self.path.find('?')
             if pos2 < 0: pos2 = len(self.path)
             cmds = urllib.unquote(self.path[pos1+1:pos2])
-            self.runCommands(cmds.split(';'))
+            #Run commands
+            lavavu.commands(cmds.split(';'))
             if self.path.find('icommand=') > 0:
                 self.serveImage()
             else:

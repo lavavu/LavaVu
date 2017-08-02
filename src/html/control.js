@@ -99,10 +99,10 @@ WindowInteractor.prototype.do_action = function(id, val) {
     }
 
     //kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
-    var cmd = 'cmds = lavavu.control.action(' + id + ',' + val + ')';
+    var cmd = 'cmds = lavavu.control.Action.do(' + id + ',' + val + ')';
     //debug_kernel(cmd);
+    //debug_kernel('print cmds');
     kernel.execute(cmd);
-    //kernel.execute('if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)');
     cmd = 'if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)';
     kernel.execute(cmd);
     //debug_kernel(cmd);
@@ -197,7 +197,7 @@ function updateControlValues(controls) {
     var control = controls[c];
     var els = document.getElementsByClassName(control[0]);
     for(var i = 0; i < els.length; i++) {
-      console.log(els[i].id + " : " + els[i].value + " ==> " + control[1]);
+      //console.log(els[i].id + " : " + els[i].value + " ==> " + control[1]);
       if (els[i].type == 'checkbox')
         els[i].checked = control[1];
       else
@@ -219,6 +219,8 @@ function getAndUpdateControlValues() {
       }
     };
     kernel.execute('import json; json.dumps(lavavu.control.getcontrolvalues())', {iopub: callbacks}, {silent: false});
+  } else {
+    //TODO: http version, need to request updated values from web server
   }
 }
 

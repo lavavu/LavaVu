@@ -668,6 +668,7 @@ class Obj(object):
             Use zlib compression when writing the geometry data
         **kwargs:
             Initial set of properties passed to the created object
+            (Must include "isovalues=[]")
 
         Returns
         -------
@@ -1163,7 +1164,7 @@ class Viewer(object):
             return self.objects[name]
 
         #Put provided name in properties
-        if len(name):
+        if name and len(name):
             kwargs["name"] = name
 
         #Adds a new object, all other args passed to properties dict
@@ -1810,7 +1811,6 @@ class Viewer(object):
         """
         try:
             import server
-            os.chdir(control.htmlpath)
             server.serve(self)
         except (Exception) as e:
             print("LavaVu error: " + str(e))

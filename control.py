@@ -63,14 +63,15 @@ def getproperty(target, propname):
     """Return value of property from target
     if not defined, return the default value for this property
     """
+    _lv = getviewer(target)
     if propname in target:
         return target[propname]
-    else:
+    elif propname in _lv._proplist:
         #Get property default
-        _lv = target
-        _lv = getviewer(target)
         prop = _lv._proplist[propname]
         return prop[0]
+    else:
+        return None
 
 def getcontrolvalues():
     """Get the property control values from their targets
@@ -80,92 +81,37 @@ def getcontrolvalues():
     for c in allcontrols:
         if hasattr(c, 'id') and c.elid:
             #print c.elid,c.id
-            action = actions[c.id]
-            target = action['args'][0]
-            if action['type'] == 'PROPERTY':
-                propname = action['args'][1]
+            action = Action.actions[c.id]
+            #print action
+            if isinstance(action, PropertyAction):
                 #print "  ",c.elid,action
-                value = getproperty(target, propname)
+                value = getproperty(action.target, action.property)
                 #print "  = ",value
-                updates.append([c.elid, value, propname])
+                if value is not None:
+                    updates.append([c.elid, value, action.property])
     return updates
 
-def export(html):
+def getcss():
     if not htmlpath: return
-    #Dump all output to control.html
-    filename = os.path.join(htmlpath, "control.html")
+    #Load stylesheet
+    css = '<style>\n'
+    fo = open(os.path.join(htmlpath, "control.css"), 'r')
+    css += fo.read()
+    fo.close()
+    css += '</style>\n'
+    return css
 
-    #Process actions
-    actionjs = '<script type="text/Javascript">\nvar actions = [\n'
-    for act in actions:
-        #Default placeholder action
-        actfunction = ''
-        actcmd = None
-        if len(act["args"]) == 0:
-            #No action
-            pass
-        elif act["type"] == "PROPERTY":
-            #Set a property
-            target = act["args"][0]
-            # - Globally
-            if isviewer(target):
-                prop = act["args"][1]
-                actfunction = 'select; ' + prop + '=" + value + "'
-                if len(act["args"]) > 2:
-                    actcmd = act["args"][2]
-            #TODO: on an object selector
-            # - On an object
-            else:
-                name = act["args"][0]["name"]
-                prop = act["args"][1]
-                actfunction = 'select ' + name + '; ' + prop + '=" + value + "'
-                if len(act["args"]) > 2:
-                    actcmd = act["args"][2]
-
-        #Run a command with a value argument
-        elif act["type"] == "COMMAND":
-            cmd = act["args"][0]
-            if len(act["args"]) > 1:
-                actcmd = act["args"][1]
-            actfunction = cmd + ' " + value + "'
-        #Set a filter range
-        elif act["type"] == "FILTER":
-            name = act["args"][0]["name"]
-            index = act["args"][1]
-            prop = act["args"][2]
-            cmd = "filtermin" if prop == "minimum" else "filtermax"
-            actfunction = 'select ' + name + '; ' + cmd + ' ' + str(index) + ' " + value + "; redraw'
-        #Set a colourmap
-        elif act["type"] == "COLOURMAP":
-            id = act["args"][0].id
-            actfunction = 'colourmap ' + str(id) + ' \\"" + value + "\\"' #Reload?
-
-        #Append additional command (eg: reload)
-        if actcmd:
-          actfunction += ";" + actcmd
-        #Add to actions list
-        actionjs += '  function(value) {_wi[0].execute("' + actfunction + '", true);},\n'
-
-    #Add init and finish
-    actionjs += '  null];\nfunction init() {_wi[0] = new WindowInteractor(0);}\n</script>'
-    hfile = open(filename, "w")
-    hfile.write("""
-    <html>
-    <head>
-    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-    <script type="text/Javascript" src="control.js"></script>
-    <script type="text/Javascript" src="drawbox.js"></script>
-    <script type="text/Javascript" src="OK-min.js"></script>
-    <script type="text/Javascript" src="gl-matrix-min.js"></script>
-    <link rel="stylesheet" type="text/css" href="control.css">""")
-    hfile.write(fragmentShader)
-    hfile.write(vertexShader)
-    hfile.write(actionjs)
-    hfile.write('</head>\n<body onload="init();">\n')
-    hfile.write(html)
-    hfile.write("\n</body>\n</html>")
-    hfile.close()
-    filename = os.path.join(htmlpath, "control.html")
+def getjslibs():
+    if not htmlpath: return
+    #Load combined javascript libraries
+    jslibs = '<script>\n'
+    for f in ['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js']:
+        fpath = os.path.join(htmlpath, f)
+        fo = open(fpath, 'r')
+        jslibs += fo.read()
+        fo.close()
+    jslibs += '</script>\n'
+    return jslibs
 
 def initialise():
     global initialised, initcell
@@ -208,73 +154,145 @@ def initialise():
             initialised = len(history)
             initcell = history[-1][2]
 
-            #Load stylesheet
-            css = '<style>\n'
-            fo = open(os.path.join(htmlpath, "control.css"), 'r')
-            css += fo.read()
-            fo.close()
-            css += '</style>\n'
-
-            #Load combined javascript libraries
-            jslibs = '<script>\n'
-            for f in ['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js']:
-                fpath = os.path.join(htmlpath, f)
-                fo = open(fpath, 'r')
-                jslibs += fo.read()
-                fo.close()
-            jslibs += '</script>\n'
-
-            display(HTML(css + fragmentShader + vertexShader + jslibs))
+            #Insert stylesheet, shaders and combined javascript libraries
+            display(HTML(getcss() + fragmentShader + vertexShader + getjslibs()))
     except (NameError, ImportError):
         pass
 
-def action(id, value):
-    #Execute actions from IPython
-    global actions
-    if len(actions) <= id:
-        return "#NoAction " + str(id)
+class Action(object):
+    """Base class for an action triggered by a control
 
-    args = actions[id]["args"]
-    act = actions[id]["type"]
+    Default action is to run a command
 
-    if act == "PROPERTY":
-        #Set a property
-        if len(args) < 3: return "#args<3"
-        target = args[0]
-        property = args[1]
-        command = args[2]
+    also holds the global action list
+    """
+    actions = []
 
-        target[property] = value
-        return command
+    #actions.append({"type" : "COMMAND", "args" : [command]})
+    def __init__(self, target, command=None):
+        self.target = target
+        self.command = command
+        Action.actions.append(self)
 
-    elif act == "COMMAND":
-        if len(args) < 1: return "#args<1"
+    def run(self, value):
         #Run a command with a value argument
-        command = args[0]
-        return command + " " + str(value) + "\nredraw"
+        if self.command is None: return ""
+        return self.command + " " + str(value) + "\nredraw"
 
-    elif act == "FILTER":
-        if len(args) < 3: return "#args<3"
+    def script(self):
+        #Return script action for HTML export
+        if self.command is None: return ""
+        #Run a command with a value argument
+        return self.command + ' " + value + "'
+
+    @staticmethod
+    def do(id, value):
+        #Execute actions from client in IPython
+        if len(Action.actions) <= id:
+            return "#NoAction " + str(id)
+        return Action.actions[id].run(value)
+
+    @staticmethod
+    def export(html):
+        #Dump all output to control.html in current directory
+        if not htmlpath: return
+        #Process actions
+        actionjs = '<script type="text/Javascript">\nvar actions = [\n'
+        for act in Action.actions:
+            #Default placeholder action
+            actscript = act.script()
+            if len(actscript) == 0:
+                #No action
+                pass
+            #Add to actions list
+            #(Only a single interactor is supported in exported html, so always use id=0)
+            actionjs += '  function(value) {_wi[0].execute("' + actscript + '", true);},\n'
+        #Add init and finish
+        actionjs += '  null];\nfunction init() {_wi[0] = new WindowInteractor(0);}\n</script>'
+
+        #Write the file
+        hfile = open("control.html", "w")
+        hfile.write('<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">')
+        hfile.write(getcss())
+        hfile.write(fragmentShader)
+        hfile.write(vertexShader)
+        hfile.write(getjslibs())
+        hfile.write(actionjs)
+        hfile.write('</head>\n<body onload="init();">\n')
+        hfile.write(html)
+        hfile.write("\n</body>\n</html>\n")
+        hfile.close()
+
+class PropertyAction(Action):
+    """Property change action triggered by a control
+    """
+
+    #actions.append({"type" : "PROPERTY", "args" : [target, property, command]})
+    def __init__(self, target, prop, command=None):
+        self.property = prop
+        #Default action after property set is redraw, can be set to provided
+        if command is None:
+            command = "redraw"
+        self.command = command
+        super(PropertyAction, self).__init__(target, command)
+
+    def run(self, value):
+        #Set a property
+        self.target[self.property] = value
+        #Run any command action after setting
+        return self.command
+
+    def script(self):
+        #Return script action for HTML export
+        #Set a property
+        # - Globally
+        script = ''
+        if isviewer(self.target):
+            script = 'select; ' + self.property + '=" + value + "'
+        #TODO: on an object selector
+        # - On an object
+        else:
+            script = 'select ' + self.target["name"] + '; ' + self.property + '=" + value + "'
+        #Add any additional commands
+        return script + '; ' + super(PropertyAction, self).script()
+
+class FilterAction(PropertyAction):
+    """Filter property change action triggered by a control
+    """
+    def __init__(self, target, index, prop, command=None):
+        self.index = index
+        if command is None: command = "redraw"
+        self.command = command
+        super(FilterAction, self).__init__(target, prop)
+
+    def run(self, value):
         #Set a filter range
-        target = args[0]
-        index = args[1]
-        property = args[2]
-
-        f = target["filters"]
-        f[index][property] = value
-        target["filters"] = f
+        f = self.target["filters"]
+        f[self.index][self.property] = value
+        self.target["filters"] = f
         #return "#" + str(f) + "; redraw"
         #return "redraw"
-        return "reload"
+        return self.command
+        #return "reload"
 
-    elif act == "COLOURMAP":
-        if len(args) < 1: return "#args<1"
+    def script(self):
+        #Return script action for HTML export
+        #Set a filter range
+        cmd = "filtermin" if self.property == "minimum" else "filtermax"
+        return 'select ' + self.target["name"] + '; ' + cmd + ' ' + str(self.index) + ' " + value + "'
+
+class ColourmapAction(Action):
+    """Colourmap change action triggered by a control
+    """
+    def __init__(self, target):
+        super(ColourmapAction, self).__init__(target)
+
+    def run(self, value):
         #Set a colourmap
-        target = args[0]
-        #index = args[1]
-
-        return 'colourmap ' + str(target.id) + ' "' + value + '"'
+        # - using script command
+        return 'colourmap ' + str(self.target.id) + ' "' + value + '"'
         """
+        # - using python interface
         map = json.loads(value)
         f = target["colourmaps"]
         maps = target.instance["colourmaps"]
@@ -284,7 +302,10 @@ def action(id, value):
         return "reload"
         """
 
-    return ""
+    def script(self):
+        #Return script action for HTML export
+        #Set a colourmap
+        return 'colourmap ' + str(self.target.id) + ' \\"" + value + "\\"' #Reload?
 
 class HTML(object):
     """A class to output HTML controls
@@ -470,29 +491,26 @@ class Control(HTML):
         self.label = label
 
         #Get id and add to register
-        self.id = len(actions)
+        self.id = len(Action.actions)
 
         #Can either set a property directly or run a command
         if property:
-            #Default action after property set is redraw, can be set to provided
-            if command == None:
-                command = "redraw"
-            actions.append({"type" : "PROPERTY", "args" : [target, property, command]})
-            if label == None:
+            action = PropertyAction(target, property, command)
+            if label is None:
                 self.label = property.capitalize()
         elif command:
-            actions.append({"type" : "COMMAND", "args" : [command]})
-            if label == None:
+            action = Action(target, command)
+            if label is None:
                 self.label = command.capitalize()
         else:
-            #Assume derived class will fill out the action
-            actions.append({"type" : "PROPERTY", "args" : []})
+            #Assume derived class will fill out the action, this is just a placeholder
+            action = Action(target)
 
         if not self.label:
             self.label = ""
 
         #Get value from target or default if not provided
-        if value == None and property != None and target:
+        if value is None and property is not None and target:
             value = getproperty(target, property)
         self.value = value
 
@@ -709,10 +727,10 @@ class ColourMap(Control):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
         self.maps = target.instance.state["colourmaps"]
-        if self.value != None and self.value < len(self.maps):
+        if self.value is not None and self.value < len(self.maps):
             self.map = self.maps[self.value]
         #Replace action on the control
-        actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
+        Action.actions[self.id] = ColourmapAction(target)
         self.selected = -1;
 
     def controls(self):
@@ -763,7 +781,7 @@ class ColourMapList(List):
         super(ColourMapList, self).__init__(target, options=options, command="reload", property="colourmap", *args, **kwargs)
 
         #Replace action on the control
-        actions[self.id] = {"type" : "COLOURMAP", "args" : [target]}
+        Action.actions[self.id] = ColourmapAction(target)
 
 class ColourMaps(List):
     """A colourmap list selector, populated by the available colour maps,
@@ -854,7 +872,7 @@ class Filter(Control):
         self.filter = target["filters"][filteridx]
 
         #Default label - data set name
-        if label == None:
+        if label is None:
             self.label = self.filter['by'].capitalize()
 
         #Get the default range limits from the matching data source
@@ -870,14 +888,14 @@ class Filter(Control):
         self.ctrlmax = Range(step=step, range=range, value=self.filter["maximum"])
 
         #Replace actions on the controls
-        actions[self.ctrlmin.id] = {"type" : "FILTER", "args" : [target, filteridx, "minimum"]}
-        actions[self.ctrlmax.id] = {"type" : "FILTER", "args" : [target, filteridx, "maximum"]}
+        Action.actions[self.ctrlmin.id] = FilterAction(target, filteridx, "minimum")
+        Action.actions[self.ctrlmax.id] = FilterAction(target, filteridx, "maximum")
 
     def controls(self):
         return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
 
 class ObjectList(Control):
-    """A set checkbox controls for controlling visibility of all visualisation objects
+    """A set of checkbox controls for controlling visibility of all visualisation objects
     """
     def __init__(self, viewer, *args, **kwargs):
         super(ObjectList, self).__init__(target=viewer, label="Objects", *args, **kwargs)
@@ -1066,13 +1084,13 @@ class ControlFactory(object):
                 display(Javascript(js))
 
             else:
-                export(self.output)
-                if callable(fallback): fallback(self._target)
+                raise NameError()
         except (NameError, ImportError):
-            export(self.output)
-            if callable(fallback): fallback()
+            Action.export(self.output)
+            if callable(fallback): fallback(self._target)
 
         #Auto-clear after show?
+        #Prevents doubling up if cell executed again
         self.clear()
 
     def redisplay(self):
