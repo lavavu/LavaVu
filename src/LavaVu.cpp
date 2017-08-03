@@ -36,6 +36,7 @@
 //TODO:
 //Object property to exclude from bounding box calc
 //Vector property to skip scaling and plot all arrows at same size
+//Shader based cross sections of volume data sets
 //
 //Value data types independent from geometry types?
 //Merge WebGL/standard shader code
@@ -1559,7 +1560,7 @@ void LavaVu::reloadShaders()
   const char* pUniforms[] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", 
                              "uTextured", "uTexture", "uClipMin", "uClipMax",
                              "uBrightness", "uContrast", "uSaturation",
-                             "uAmbient", "uDiffuse", "uSpecular"};
+                             "uAmbient", "uDiffuse", "uSpecular", "uOpaque", "uLightPos"};
   drawstate.prog[lucPointType]->loadUniforms(pUniforms, sizeof(pUniforms)/sizeof(char*));
   const char* pAttribs[] = {"aSize", "aPointType"};
   drawstate.prog[lucPointType]->loadAttribs(pAttribs, sizeof(pAttribs)/sizeof(char*));
@@ -1568,7 +1569,7 @@ void LavaVu::reloadShaders()
   if (drawstate.prog[lucLineType]) delete drawstate.prog[lucLineType];
   drawstate.prog[lucLineType] = new Shader("lineShader.vert", "lineShader.frag");
   const char* lUniforms[] = {"uOpacity", "uClipMin", "uClipMax", 
-                             "uBrightness", "uContrast", "uSaturation"};
+                             "uBrightness", "uContrast", "uSaturation", "uOpaque"};
   drawstate.prog[lucLineType]->loadUniforms(lUniforms, sizeof(lUniforms)/sizeof(char*));
 
   //Triangle shaders
@@ -1577,7 +1578,7 @@ void LavaVu::reloadShaders()
   const char* tUniforms[] = {"uOpacity", "uLighting", "uTextured", "uTexture",
                              "uCalcNormal", "uClipMin", "uClipMax",
                              "uBrightness", "uContrast", "uSaturation",
-                             "uAmbient", "uDiffuse", "uSpecular"};
+                             "uAmbient", "uDiffuse", "uSpecular", "uOpaque", "uLightPos"};
   drawstate.prog[lucTriangleType]->loadUniforms(tUniforms, sizeof(tUniforms)/sizeof(char*));
   drawstate.prog[lucGridType] = drawstate.prog[lucTriangleType];
 
@@ -1588,9 +1589,10 @@ void LavaVu::reloadShaders()
                              "uVolume", "uTransferFunction", "uBBMin", "uBBMax",
                              "uResolution", "uEnableColour",
                              "uBrightness", "uContrast", "uSaturation", 
+                             "uAmbient", "uDiffuse", "uSpecular",
                              "uPower", "uViewport", "uSamples", "uDensityFactor",
                              "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls",
-                             "uFilter", "uRange", "uDenMinMax"};
+                             "uFilter", "uRange", "uDenMinMax", "uLightPos"};
   drawstate.prog[lucVolumeType]->loadUniforms(vUniforms, sizeof(vUniforms)/sizeof(char*));
   const char* vAttribs[] = {"aVertexPosition"};
   drawstate.prog[lucVolumeType]->loadAttribs(vAttribs, sizeof(vAttribs)/sizeof(char*));

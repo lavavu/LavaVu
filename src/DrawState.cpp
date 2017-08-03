@@ -281,7 +281,7 @@ void DrawState::reset()
     {
       "diffuse",
       {
-        0.8,
+        0.65,
         "object",
         "real [0,1]",
         "Diffuse lighting level (shading light/dark)"
@@ -293,7 +293,16 @@ void DrawState::reset()
         0.0,
         "object",
         "real [0,1]",
-        "Sepcular highlight lighting level (spot highlights)"
+        "Specular highlight lighting level (spot highlights)"
+      }
+    },
+    {
+      "lightpos",
+      {
+        {0.1,-0.1,2.0},
+        "object",
+        "real[3]",
+        "Light position X Y Z"
       }
     },
     {

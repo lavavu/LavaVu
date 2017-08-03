@@ -12,9 +12,11 @@ uniform float uAmbient;
 uniform float uDiffuse;
 uniform float uSpecular;
 uniform bool uTextured;
+uniform bool uOpaque;
 uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
+uniform vec3 uLightPos;
 
 void main(void)
 {
@@ -66,7 +68,7 @@ void main(void)
      N.z = sqrt(1.0-R);
 
      //Calculate diffuse lighting
-     vec3 lightDir = normalize(vec3(0.1,-0.1,2) - vPosEye);
+     vec3 lightDir = normalize(uLightPos - vPosEye);
      diffuse = max(0.0, dot(lightDir, N));
 
      //Compute the specular term
@@ -96,5 +98,8 @@ void main(void)
   colour = mix(AvgLumin, colour, uContrast);
   colour.a = alpha;
 
-   gl_FragColor = colour;
+  if (uOpaque)
+    colour.a = 1.0;
+
+  gl_FragColor = colour;
 }

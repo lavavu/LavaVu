@@ -41,6 +41,11 @@ uniform int uFilter;
 uniform vec2 uRange;
 uniform vec2 uDenMinMax;
 
+uniform float uAmbient;
+uniform float uDiffuse;
+uniform float uSpecular;
+uniform vec3 uLightPos;
+
 //#define tex3D(pos) interpolate_tricubic_fast(pos)
 //#define tex3D(pos) texture3Dfrom2D(pos).x
 
@@ -62,20 +67,13 @@ mat4 transpose(in mat4 m)
              );
 }
 
-//Light moves with camera
-const vec3 lightPos = vec3(0.5, 0.5, 5.0);
-const float ambient = 0.2;
-const float diffuse = 0.8;
-const vec3 diffColour = vec3(1.0, 1.0, 1.0);  //Colour of diffuse light
-const vec3 ambColour = vec3(0.2, 0.2, 0.2);   //Colour of ambient light
-
 void lighting(in vec3 pos, in vec3 normal, inout vec3 colour)
 {
   vec4 vertPos = uMVMatrix * vec4(pos, 1.0);
-  //vec3 lightDir = normalize(lightPos - vertPos.xyz);
-  vec3 lightDir = normalize(-vertPos.xyz);
-  vec3 lightWeighting = ambColour + diffColour * diffuse * clamp(abs(dot(normal, lightDir)), 0.1, 1.0);
-
+  //Light moves with camera at specified offset
+  vec3 lightDir = normalize(uLightPos - vertPos.xyz);
+  float diffuse = clamp(abs(dot(normal, lightDir)), 0.1, 1.0);
+  vec3 lightWeighting = vec3(uAmbient + diffuse * uDiffuse);
   colour *= lightWeighting;
 }
 

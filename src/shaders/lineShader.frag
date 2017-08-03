@@ -6,6 +6,7 @@ uniform float uContrast;
 uniform float uSaturation;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
+uniform bool uOpaque;
 
 void main(void)
 {
@@ -27,6 +28,9 @@ void main(void)
   colour.a = alpha;
 
   if (alpha < 0.01) discard;
+
+  if (uOpaque)
+    colour.a = 1.0;
 
   gl_FragColor = colour;
 }

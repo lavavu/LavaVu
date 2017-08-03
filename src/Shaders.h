@@ -32,6 +32,7 @@ public:
   void setUniform(const char* name, float value);
   void setUniformi(const char* name, int value);
   void setUniformf(const char* name, float value);
+  void setUniform3f(const char* name, json value);
 
   std::map<std::string, GLint> uniforms;
   std::map<std::string, GLint> attribs;

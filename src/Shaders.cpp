@@ -227,3 +227,19 @@ void Shader::setUniformf(const char* name, float value)
   }
 }
 
+void Shader::setUniform3f(const char* name, json value)
+{
+  if (!supported || !program) return;
+  std::map<std::string,int>::iterator it = uniforms.find(name);
+  if (it != uniforms.end())
+  {
+    GLint loc = uniforms[name];
+    if (loc >= 0)
+    {
+      float fval[3];
+      Properties::toArray<float>(value, fval, 3);
+      glUniform3fv(loc, 1, fval);
+    }
+    GL_Error_Check;
+  }
+}

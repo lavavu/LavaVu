@@ -15,6 +15,8 @@ uniform bool uTextured;
 uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
+uniform bool uOpaque;
+uniform vec3 uLightPos;
 
 void main(void)
 {
@@ -31,12 +33,11 @@ void main(void)
     return;
   }
   
-  //TODO: uniforms for rest of light params!
   const float shininess = 100.0; //Size of highlight (higher is smaller)
-  const vec3 light = vec3(1.0, 1.0, 1.0);  //Colour of light
+  const vec3 light = vec3(1.0);  //Colour of light
 
   //Head light, lightPos=(0,0,0) - vPosEye
-  vec3 lightDir = normalize(-vPosEye);
+  vec3 lightDir = normalize(uLightPos - vPosEye);
 
   //Calculate diffuse lighting
   vec3 N = vNormal;
@@ -80,6 +81,9 @@ void main(void)
   colour.a = alpha;
 
   if (alpha < 0.01) discard;
+
+  if (uOpaque)
+    colour.a = 1.0;
 
   gl_FragColor = colour;
 }

@@ -743,6 +743,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     prog->setUniformf("uAmbient", geom[i]->draw->properties["ambient"]);
     prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
     prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
+    prog->setUniform3f("uLightPos", geom[i]->draw->properties["lightpos"]);
     prog->setUniformi("uTextured", texture && texture->unit >= 0);
     prog->setUniformf("uOpaque", allopaque);
 
