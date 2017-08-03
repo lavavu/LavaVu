@@ -820,7 +820,9 @@ void Geometry::display()
 
     //If using a colourmap without transparency, and no opacity prop, flag opaque
     if (geom[i]->draw->colourMap && geom[i]->values.size() > geom[i]->draw->colourIdx && 
-        geom[i]->draw->colourMap->opaque && (float)geom[i]->draw->properties["opacity"] == 1.0)
+        geom[i]->draw->colourMap->opaque && 
+        (float)geom[i]->draw->properties["opacity"] == 1.0 &&
+        (float)geom[i]->draw->properties["alpha"] == 1.0)
     {
       geom[i]->opaque = true;
     }
