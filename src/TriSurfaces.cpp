@@ -319,7 +319,14 @@ void TriSurfaces::loadList()
     {
       //voffset is offset of the last vertex added to the vbo from the previous object
       assert(offset < total);
-      if (!internal && filter && geom[index]->filter(geom[index]->render->indices[t])) continue; //If first vertex filtered, skip whole tri
+      if (!internal && filter)
+      {
+        //If any vertex filtered, skip whole tri
+        if (geom[index]->filter(geom[index]->render->indices[t]) ||
+            geom[index]->filter(geom[index]->render->indices[t+1]) ||
+            geom[index]->filter(geom[index]->render->indices[t+2]))
+          continue;
+      }
       tidx[tricount].index[0] = geom[index]->render->indices[t] + voffset;
       tidx[tricount].index[1] = geom[index]->render->indices[t+1] + voffset;
       tidx[tricount].index[2] = geom[index]->render->indices[t+2] + voffset;
