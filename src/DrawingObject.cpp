@@ -100,7 +100,7 @@ void DrawingObject::setup()
 
     int j = filterCache.size();
     filterCache.push_back(Filter());
-    filterCache[j].label = filters[i]["by"];
+    filterCache[j].by = filters[i]["by"];
     filterCache[j].map = filters[i]["map"];
     filterCache[j].out = filters[i]["out"];
     filterCache[j].inclusive = filters[i]["inclusive"];

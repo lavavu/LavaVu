@@ -116,7 +116,7 @@ std::string GetBinaryPath(const char* argv0, const char* progname);
 
 typedef struct
 {
-  std::string label;
+  json by;
   unsigned int dataIdx;
   float minimum;
   float maximum;

@@ -91,7 +91,7 @@ ColourLookup& GeomData::colourCalibrate()
 
   //Get filter data indices
   for (unsigned int i=0; i < draw->filterCache.size(); i++)
-    draw->filterCache[i].dataIdx = valuesLookup(draw->filterCache[i].label);
+    draw->filterCache[i].dataIdx = valuesLookup(draw->filterCache[i].by);
 
   //Calibrate opacity map if provided
   ColourMap* omap = draw->opacityMap;
