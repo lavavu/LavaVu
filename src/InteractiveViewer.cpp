@@ -3225,7 +3225,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     int step;
     if (!parsed.has(step, "newstep"))
-        step = 0;
+        step = -1;
     addTimeStep(step);
 
     //Don't record
