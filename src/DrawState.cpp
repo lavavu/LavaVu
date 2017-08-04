@@ -1475,6 +1475,15 @@ void DrawState::reset()
         "boolean",
         "Cache timestep varying data on gpu as well as ram (only if model size permits)"
       }
+    },
+    {
+      "timestep",
+      {
+        -1,
+        "global",
+        "integer",
+        "Holds the current model timestep, read only, -1 indicates no time varying data loaded"
+      }
     }
   };
 

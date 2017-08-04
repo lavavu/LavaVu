@@ -1162,7 +1162,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
   {
-    drawstate.now = now = -1;
+    drawstate.globals["timestep"] = drawstate.now = now = -1;
     return -1;
   }
 
@@ -1183,6 +1183,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
   debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, drawstate.now, stepidx);
   drawstate.timesteps = timesteps; //Set to current model timestep vector
   drawstate.now = now = stepidx;
+  drawstate.globals["timestep"] = step(); //Save property for read access
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
   if (!restoreStep())
