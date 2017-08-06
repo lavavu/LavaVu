@@ -452,6 +452,8 @@ void OpenGLViewer::outputON(int w, int h, int channels)
 
   //Enable image mode for further display calls
   imagemode = true;
+  //Enable FBO for image output
+  if (visible) fbo.enabled = true;
 
   //Save current viewer size
   savewidth = width;
@@ -499,6 +501,7 @@ void OpenGLViewer::outputOFF()
 {
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
+  if (visible) fbo.enabled = false;
   width = savewidth;
   height = saveheight;
   //Restore settings
