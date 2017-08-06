@@ -50,7 +50,7 @@ Shader::Shader(const std::string& shader, GLenum shader_type)
   std::string src = read_file(shader);
   program = 0;
   for (auto s : shaders)
-    glDeleteShader(s);
+    glDeleteShader(s.second);
   shaders.clear();
   supported = version();
   if (!supported) return;
@@ -62,7 +62,7 @@ void Shader::init(std::string vsrc, std::string fsrc)
 {
   program = 0;
   for (auto s : shaders)
-    glDeleteShader(s);
+    glDeleteShader(s.second);
   shaders.clear();
   supported = version();
   if (!supported) return;
@@ -113,7 +113,7 @@ bool Shader::compile(const char *src, GLuint type)
   if (!compiled)
     print_log("Shader Compile", shader);
   else
-    shaders.push_back(shader);
+    shaders[type] = shader;
   GL_Error_Check;
   return compiled;
 }
@@ -130,8 +130,8 @@ bool Shader::build()
 
   for (auto s : shaders)
   {
-    if (glIsShader(s))
-      glAttachShader(program, s);
+    if (glIsShader(s.second))
+      glAttachShader(program, s.second);
   }
 
   glLinkProgram(program);

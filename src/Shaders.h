@@ -7,7 +7,7 @@
 class Shader
 {
 private:
-  std::vector<GLuint> shaders;
+  std::map<GLuint, GLuint> shaders;
   void print_log(const char *action, GLuint obj);
 
 public:
