@@ -501,7 +501,7 @@ void OpenGLViewer::outputOFF()
 {
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
-  if (visible) fbo.enabled = false;
+  if (visible) fbo.disable();
   width = savewidth;
   height = saveheight;
   //Restore settings
