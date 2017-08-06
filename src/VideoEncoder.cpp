@@ -154,7 +154,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
   if (!st) abort_program("Could not alloc stream");
 
   c = video_enc = avcodec_alloc_context3(avcodec_find_encoder(codec_id));
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,89,0)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57,64,0)
   st->codec = c;
 #endif
   c->codec_id = codec_id;
@@ -314,7 +314,7 @@ void VideoEncoder::open_video()
   picture = alloc_picture(c->pix_fmt);
   if (!picture) abort_program("Could not allocate picture");
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,89,0)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,64,0)
   /* copy the stream parameters to the muxer */
   if (avcodec_parameters_from_context(video_st->codecpar, video_enc) < 0)
     abort_program("Could not copy the stream parameters\n");
@@ -334,7 +334,7 @@ void VideoEncoder::write_video_frame()
   /* encode the image */
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(54,0,0)
   int got_packet = 0;
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,89,0)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,64,0)
   ret = avcodec_send_frame(c, picture);
   assert(ret >= 0);
   ret = avcodec_receive_packet(c, &pkt);
