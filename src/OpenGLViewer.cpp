@@ -78,6 +78,7 @@ bool FBO::create(int w, int h)
     target = GL_COLOR_ATTACHMENT0_EXT;
     glDrawBuffer(target);
     GL_Error_Check;
+    debug_print("FBO already exists, enabling %d x %d (downsampling %d)\n", width, height, downsample);
     return false;
   }
 
@@ -452,8 +453,6 @@ void OpenGLViewer::outputON(int w, int h, int channels)
 
   //Enable image mode for further display calls
   imagemode = true;
-  //Enable FBO for image output
-  if (visible) fbo.enabled = true;
 
   //Save current viewer size
   savewidth = width;
@@ -475,6 +474,14 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   //Redraw blended output for transparent PNG
   if (channels == 4) blend_mode = BLEND_PNG;
 
+  //Enable FBO for image output
+  if (visible && (w != width || h != height))
+    fbo.enabled = true;
+
+  //Activate fbo if enabled
+  if (fbo.enabled)
+    fbo.create(w, h);
+
   if (!fbo.enabled)
   {
     //outwidth/outheight only support if fbo available
@@ -485,16 +492,13 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   }
   else
   {
-    //Activate fbo if enabled
-    fbo.create(w, h);
-
     //Use the fbo size for output
     width = fbo.width;
     height = fbo.height;
-
-    //Re-render to fbo first
-    display();
   }
+
+  //Re-render frame first
+  display();
 }
 
 void OpenGLViewer::outputOFF()
