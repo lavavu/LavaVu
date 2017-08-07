@@ -186,6 +186,83 @@ Model::Model(DrawState& drawstate) : now(-1), drawstate(drawstate), figure(-1)
   init();
 }
 
+Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers)
+{
+  //Return renderer of type specified if found
+  for (auto g : renderers)
+  {
+    if (g->type == type)
+    {
+      return g;
+      break;
+    }
+  }
+  std::cout << "RENDERER NOT FOUND: " << GeomData::names[type] << std::endl;
+  return NULL;
+}
+
+Geometry* Model::getRenderer(lucGeometryType type)
+{
+  return getRenderer(type, geometry);
+}
+
+Geometry* Model::getRenderer(const std::string& what)
+{
+  if (what == "points")
+    return getRenderer(lucPointType);
+  if (what == "labels")
+    return getRenderer(lucLabelType);
+  if (what == "vectors")
+    return getRenderer(lucVectorType);
+  if (what == "tracers")
+  {
+    //Tracers are always in fixed data once loaded
+    if (fixed.size())
+      return getRenderer(lucTracerType, fixed);
+    return getRenderer(lucTracerType);
+  }
+  if (what == "triangles")
+    return getRenderer(lucTriangleType);
+  if (what == "quads")
+    return getRenderer(lucGridType);
+  if (what == "shapes")
+    return getRenderer(lucShapeType);
+  if (what == "lines")
+    return getRenderer(lucLineType);
+  if (what == "volume")
+    return getRenderer(lucVolumeType);
+  return NULL;
+}
+
+Geometry* Model::createRenderer(const std::string& what)
+{
+  if (what == "points") //TODO: unsorted points base class
+    return new Points(drawstate);
+  if (what == "sortedpoints")
+    return new Points(drawstate);
+  if (what == "labels")
+    return new Geometry(drawstate);
+  if (what == "vectors")
+    return new Vectors(drawstate);
+  if (what == "tracers")
+    return new Tracers(drawstate);
+  if (what == "triangles")
+    return new Triangles(drawstate);
+  if (what == "sortedtriangles")
+    return new TriSurfaces(drawstate);
+  if (what == "quads")
+    return new QuadSurfaces(drawstate);
+  if (what == "shapes")
+    return new Shapes(drawstate);
+  if (what == "lines")
+    return new Lines(drawstate);
+  if (what == "links")
+    return new Links(drawstate);
+  if (what == "volume")
+    return new Volumes(drawstate);
+  abort_program("Invalid renderer specified! '%s'\n", what.c_str());
+}
+
 void Model::load(const FilePath& fn)
 {
   //Open database file
@@ -232,49 +309,33 @@ View* Model::defaultView()
 
 void Model::init()
 {
-  //Create new geometry containers
+  //All renderers are switchable and user defined based on "renderers" global property
   geometry.clear();
-  geometry.resize(lucMaxType);
-  geometry[lucLabelType] = labels = new Geometry(drawstate);
-  geometry[lucPointType] = points = new Points(drawstate);
-  geometry[lucVectorType] = vectors = new Vectors(drawstate);
-  geometry[lucTracerType] = tracers = new Tracers(drawstate);
-  geometry[lucGridType] = quadSurfaces = new QuadSurfaces(drawstate);
-  geometry[lucVolumeType] = volumes = new Volumes(drawstate);
-  geometry[lucTriangleType] = triSurfaces = new TriSurfaces(drawstate);
-  geometry[lucLineType] = lines = new Lines(drawstate);
-  //TODO: all renderers should be switchable and user defined, for now leave out links (slow)
-  //geometry[lucLineType] = lines = new Links(drawstate);
-  geometry[lucShapeType] = shapes = new Shapes(drawstate);
-  debug_print("Created %d new geometry containers\n", geometry.size());
+  std::string renderlist = drawstate.global("renderlist");
+  std::istringstream iss(renderlist);
+  std::string s;
+  while (getline( iss, s, ' '))
+    geometry.push_back(createRenderer(s));
 
-  for (unsigned int i=0; i < geometry.size(); i++)
+  debug_print("Created %d new geometry containers: %s\n", geometry.size(), renderlist.c_str());
+
+  for (auto g : geometry)
   {
     bool hideall = drawstate.global("hideall");
     if (hideall)
-      geometry[i]->hideShowAll(true);
+      g->hideShowAll(true);
   }
 }
 
 Model::~Model()
 {
-  for (unsigned int i=0; i < geometry.size(); i++)
-    delete geometry[i];
+  for (auto g : geometry)
+    delete g;
   geometry.clear();
 
-  for (unsigned int i=0; i < fixed.size(); i++)
-    delete fixed[i];
+  for (auto g : fixed)
+    delete g;
   fixed.clear();
-
-  labels = NULL;
-  points = NULL;
-  vectors = NULL;
-  tracers = NULL;
-  quadSurfaces = NULL;
-  triSurfaces = NULL;
-  lines = NULL;
-  shapes = NULL;
-  volumes = NULL;
 
   clearTimeSteps();
 
@@ -389,8 +450,8 @@ void Model::clearObjects(bool all)
     debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", membytes__/1000000.0f);
 
   //Clear containers...
-  for (unsigned int i=0; i < geometry.size(); i++)
-    geometry[i]->clear(all);
+  for (auto g : geometry)
+    g->clear(all);
 }
 
 void Model::setup()
@@ -398,22 +459,16 @@ void Model::setup()
   //Setup min/max on all object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
-    points->setupObject(objects[i]);
-    quadSurfaces->setupObject(objects[i]);
-    triSurfaces->setupObject(objects[i]);
-    vectors->setupObject(objects[i]);
-    tracers->setupObject(objects[i]);
-    shapes->setupObject(objects[i]);
-    lines->setupObject(objects[i]);
-    volumes->setupObject(objects[i]);
+    for (auto g : geometry)
+      g->setupObject(objects[i]);
   }
 }
 
 void Model::reload(DrawingObject* obj)
 {
   //Full data reload on selected object only
-  for (unsigned int i=0; i < geometry.size(); i++)
-    geometry[i]->redrawObject(obj);
+  for (auto g : geometry)
+    g->redrawObject(obj);
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
     colourMaps[i]->calibrated = false;
@@ -422,14 +477,14 @@ void Model::reload(DrawingObject* obj)
 void Model::redraw(bool reload)
 {
   //Flag redraw on all objects...
-  for (unsigned int i=0; i < geometry.size(); i++)
+  for (auto g : geometry)
   {
     if (reload) 
       //Full data reload...
-      geometry[i]->reload = true;
+      g->reload = true;
     else
       //Just flag a redraw, will only be reloaded if vertex count changed
-      geometry[i]->redraw = true;
+      g->redraw = true;
   }
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
@@ -1089,7 +1144,7 @@ bool Model::restoreStep()
   }
   olddata.clear();
 
-  //Switch geometry containers
+  /*/Switch geometry containers
   labels = geometry[lucLabelType];
   points = (Points*)geometry[lucPointType];
   vectors = (Vectors*)geometry[lucVectorType];
@@ -1098,7 +1153,7 @@ bool Model::restoreStep()
   volumes = (Volumes*)geometry[lucVolumeType];
   triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
   lines = geometry[lucLineType];
-  shapes = (Shapes*)geometry[lucShapeType];
+  shapes = (Shapes*)geometry[lucShapeType];*/
 
   debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
   //Redraw display
@@ -1109,10 +1164,10 @@ bool Model::restoreStep()
 void Model::clearStep()
 {
   //Clear and tell all geometry objects they need to reload data
-  for (unsigned int i=0; i < geometry.size(); i++)
+  for (auto g : geometry)
   {
     //Release any graphics memory and clear
-    geometry[i]->close();
+    g->close();
   }
 }
 
@@ -1362,7 +1417,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
         type = lucTriangleType;
         if (data_type == lucIndexData || data_type == lucNormalData) continue;
       }*/
-      active = geometry[type];
+      active = getRenderer(type);
 
       unsigned char* buffer = NULL;
       if (bytes != (unsigned int)(count * GeomData::byteSize(data_type)))
@@ -1482,7 +1537,10 @@ void Model::updateObject(DrawingObject* target, lucGeometryType type, bool compr
   if (type == lucMaxType)
     writeObjects(database, target, step(), compress);
   else
-    writeGeometry(database, type, target, step(), compress);
+  {
+    Geometry* g = getRenderer(type);
+    if (g) writeGeometry(database, g, target, step(), compress);
+  }
 
   //Update object
   database.issue("update object set properties = '%s' where name = '%s'", target->properties.data.dump().c_str(), target->name().c_str());
@@ -1611,9 +1669,9 @@ void Model::writeObjects(Database& outdb, DrawingObject* obj, int step, bool com
     if (!obj || obj == objects[i])
     {
       //Loop through all geometry classes (points/vectors etc)
-      for (int type=lucMinType; type<lucMaxType; type++)
+      for (auto g : geometry)
       {
-        writeGeometry(outdb, (lucGeometryType)type, objects[i], step, compress);
+        writeGeometry(outdb, g, objects[i], step, compress);
       }
     }
   }
@@ -1625,12 +1683,12 @@ void Model::deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject*
   outdb.issue("DELETE FROM geometry WHERE object_id=%d and type=%d and timestep=%d;", obj->dbid, type, step);
 }
 
-void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step, bool compressdata)
+void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step, bool compressdata)
 {
   //Clear existing data of this type before writing, allows object data updates to db
-  deleteGeometry(outdb, type, obj, step);
+  deleteGeometry(outdb, g->type, obj, step);
 
-  std::vector<Geom_Ptr> data = geometry[type]->getAllObjects(obj);
+  std::vector<Geom_Ptr> data = g->getAllObjects(obj);
   //Loop through and write out all object data
   bool fixedOnly = step < 0; //Write all the fixed data at step -1, otherwise skip it
   for (unsigned int i=0; i<data.size(); i++)
@@ -1644,7 +1702,7 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
       if (infostream)
         std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
                   << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
-      writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
+      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }
     for (unsigned int j=0; j<data[i]->values.size(); j++)
     {
@@ -1660,7 +1718,7 @@ void Model::writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* 
       //Filters and colourby properties will need modification though
       unsigned int data_type = lucColourValueData+j;
       if (data_type == lucIndexData) data_type++;
-      writeGeometryRecord(outdb, type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
+      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }
   }
 }
@@ -1769,8 +1827,8 @@ void Model::objectBounds(DrawingObject* draw, float* min, float* max)
   for (int i=0; i<3; i++)
     max[i] = -(min[i] = HUGE_VAL);
   //Expand bounds by all geometry objects
-  for (unsigned int i=0; i < geometry.size(); i++)
-    geometry[i]->objectBounds(draw, min, max);
+  for (auto g : geometry)
+    g->objectBounds(draw, min, max);
 }
 
 std::string Model::jsonWrite(bool objdata)
@@ -1888,20 +1946,16 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 
       if (!objdata)
       {
-        if (points->getVertexCount(objects[i]) > 0) obj["points"] = true;
-        if (quadSurfaces->getVertexCount(objects[i]) > 0 ||
-            triSurfaces->getVertexCount(objects[i]) > 0 ||
-            vectors->getVertexCount(objects[i]) > 0 ||
-            tracers->getVertexCount(objects[i]) > 0 ||
-            shapes->getVertexCount(objects[i]) > 0) obj["triangles"] = true;
-        if (lines->getVertexCount(objects[i]) > 0) obj["lines"] = true;
-        if (volumes->getVertexCount(objects[i]) > 0) obj["volume"] = true;
-
         //Data labels
         json dict;
-        for (unsigned int j=0; j < geometry.size(); j++)
+        for (auto g : geometry)
         {
-          json list = geometry[j]->getDataLabels(objects[i]);
+          //Flag has data of this type (still necessary? was for old html UI or WebGL?)
+          //std::string name = GeomData::names[g->type];
+          //if (g->getVertexCount(objects[i]) > 0)
+          //  obj[name] = true;
+
+          json list = g->getDataLabels(objects[i]);
           std::string key;
           for (auto dataobj : list)
           {
@@ -1919,12 +1973,10 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
         continue;
       }
 
-      for (int type=lucMinType; type<lucMaxType; type++)
+      for (auto g : geometry)
       {
         //Collect vertex/normal/index/value data
-        //When extracting data, skip objects with no data returned...
-        //if (!geometry[type]) continue;
-        geometry[type]->jsonWrite(objects[i], obj);
+        g->jsonWrite(objects[i], obj);
       }
 
       //Save object if contains data
@@ -2055,8 +2107,8 @@ void Model::jsonRead(std::string data)
   json inobjects = imported["objects"];
   //Before loading state, set all object visibility to hidden
   //Only objects present in state data will be shown
-  //for (unsigned int i=0; i < geometry.size(); i++)
-  //  geometry[i]->showObj(NULL, false);
+  //for (auto g : geometry)
+  //  g->showObj(NULL, false);
 
   unsigned int len = objects.size();
   if (len < inobjects.size()) len = inobjects.size();

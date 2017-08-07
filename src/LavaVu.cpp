@@ -505,7 +505,8 @@ void LavaVu::run(std::vector<std::string> args)
       }
 
       //Export data
-      amodel->triSurfaces->loadMesh();  //Optimise triangle meshes before export
+      Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
+      if (tris) tris->loadMesh();  //Optimise triangle meshes before export
       DrawingObject* obj = NULL;
       if (dumpid > 0) obj = amodel->findObject(dumpid);
       exportData(dump, obj);
@@ -743,6 +744,8 @@ void LavaVu::readXrwVolume(const FilePath& fn)
 void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float min[2], float max[3], int channels)
 {
   //Loads full volume, optionally as slices
+  Geometry* volumes = amodel->getRenderer(lucVolumeType);
+  if (!volumes) return;
   bool splitslices = drawstate.global("slicevolumes");
   bool dumpslices = drawstate.global("slicedump");
   if (splitslices || dumpslices)
@@ -780,14 +783,14 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
     addObject(vobj);
 
     //Define the bounding cube by corners
-    amodel->volumes->add(vobj);
-    amodel->volumes->read(vobj, 1, lucVertexData, min);
-    amodel->volumes->read(vobj, 1, lucVertexData, max);
+    volumes->add(vobj);
+    volumes->read(vobj, 1, lucVertexData, min);
+    volumes->read(vobj, 1, lucVertexData, max);
 
     //Load full cube
     int bytes = channels * width * height * depth;
     debug_print("Loading %u bytes, res %d %d %d\n", bytes, width, height, depth);
-    amodel->volumes->read(vobj, bytes, lucLuminanceData, data, width, height, depth);
+    volumes->read(vobj, bytes, lucLuminanceData, data, width, height, depth);
   }
 }
 
@@ -813,6 +816,8 @@ void LavaVu::readVolumeSlice(const FilePath& fn)
 void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels, bool flip)
 {
   //Create volume object, or if static volume object exists, use it
+  Geometry* volumes = amodel->getRenderer(lucVolumeType);
+  if (!volumes) return;
   int outChannels = drawstate.global("volchannels");
   static int count = 0;
   DrawingObject *vobj = volume;
@@ -834,12 +839,12 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
       if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
     }
     //Define the bounding cube by corners
-    amodel->volumes->add(vobj);
-    amodel->volumes->read(vobj, 1, lucVertexData, volmin);
-    amodel->volumes->read(vobj, 1, lucVertexData, volmax);
+    volumes->add(vobj);
+    volumes->read(vobj, 1, lucVertexData, volmin);
+    volumes->read(vobj, 1, lucVertexData, volmax);
   }
   else
-    amodel->volumes->add(vobj);
+    volumes->add(vobj);
 
   if (flip) RawImageFlip(imageData, width, height, channels);
 
@@ -879,13 +884,13 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
     }
 
     //Now using a container designed for byte data
-    amodel->volumes->read(vobj, w * h, lucLuminanceData, luminance.pixels, w, h);
+    volumes->read(vobj, w * h, lucLuminanceData, luminance.pixels, w, h);
   }
   else if (outChannels == 3)
   {
     //Already in the correct format/layout with no sub-sampling, load directly
     if (channels == 3 && w == width && h == height)
-      amodel->volumes->read(vobj, width*height*3, lucRGBData, imageData, width, height);
+      volumes->read(vobj, width*height*3, lucRGBData, imageData, width, height);
     else
     {
       //Convert LUM/RGBA to RGB
@@ -909,14 +914,14 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           }
         }
       }
-      amodel->volumes->read(vobj, w*h*3, lucRGBData, rgb.pixels, w, h);
+      volumes->read(vobj, w*h*3, lucRGBData, rgb.pixels, w, h);
     }
   }
   else
   {
     //Already in the correct format/layout with no sub-sampling, load directly
     if (channels == 4 && w == width && h == height)
-      amodel->volumes->read(vobj, width*height, lucRGBAData, imageData, width, height);
+      volumes->read(vobj, width*height, lucRGBAData, imageData, width, height);
     else
     {
       //Convert LUM/RGB to RGBA
@@ -946,7 +951,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
           }
         }
       }
-      amodel->volumes->read(vobj, w*h, lucRGBAData, rgba.pixels, w, h);
+      volumes->read(vobj, w*h, lucRGBAData, rgba.pixels, w, h);
     }
   }
   std::cout << "Slice loaded " << count << " : " << width << "," << height << " channels: " << outChannels
@@ -998,6 +1003,8 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
 {
   //Create volume object, or if static volume object exists, use it
   DrawingObject *vobj = volume;
+  Geometry* volumes = amodel->getRenderer(lucVolumeType);
+  if (!volumes) return;
   if (!vobj)
   {
     float volmin[3], volmax[3], volres[3], inscale[3];
@@ -1028,8 +1035,8 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
       if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
     }
     //Define the bounding cube by corners
-    amodel->volumes->read(vobj, 1, lucVertexData, volmin);
-    amodel->volumes->read(vobj, 1, lucVertexData, volmax);
+    volumes->read(vobj, 1, lucVertexData, volmin);
+    volumes->read(vobj, 1, lucVertexData, volmax);
   }
 
   unsigned int block = width/10;
@@ -1060,13 +1067,13 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
         }
       }
 
-      if (z > 0) amodel->volumes->add(vobj);
-      amodel->volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
+      if (z > 0) volumes->add(vobj);
+      volumes->read(vobj, width * height, lucRGBAData, imageData, width, height);
       if (verbose) std::cerr << "SLICE LOAD " << z << " : " << width << "," << height << " channels: " << channels << std::endl;
       //Demo colour values - depth, these aren't used for volume render but can be used to plot an isosurface
       float colourvals[npixels];
       std::fill(colourvals + 0, colourvals + npixels, z/(float)depth);
-      amodel->volumes->read(vobj, npixels, colourvals, "depth");
+      volumes->read(vobj, npixels, colourvals, "depth");
     }
     free(imageData);
   }
@@ -1302,6 +1309,8 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
 
 void LavaVu::readOBJ(const FilePath& fn)
 {
+  Geometry* tris = amodel->getRenderer(lucTriangleType);
+  if (!tris) return;
   //Use tiny_obj_loader to load a model
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
@@ -1338,7 +1347,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     debug_print("Size of shape[%ld].material_ids: %ld\n", i, shapes[i].mesh.material_ids.size());
 
     //Add new triangles data store to object
-    amodel->triSurfaces->add(tobj);
+    tris->add(tobj);
 
     if (shapes[i].mesh.material_ids.size() > 0)
     {
@@ -1368,7 +1377,7 @@ void LavaVu::readOBJ(const FilePath& fn)
             texpath = fn.path + "/" + texpath;
 
           //Add per-object texture
-          amodel->triSurfaces->setTexture(tobj, new ImageLoader(texpath));
+          tris->setTexture(tobj, new ImageLoader(texpath));
         }
         else
         {
@@ -1378,7 +1387,7 @@ void LavaVu::readOBJ(const FilePath& fn)
           c.b = materials[id].diffuse[2] * 255;
           c.a = materials[id].dissolve * 255;
           if (c.a == 0.0) c.a = 255;
-          amodel->triSurfaces->read(tobj, 1, lucRGBAData, &c.value);
+          tris->read(tobj, 1, lucRGBAData, &c.value);
         }
       }
     }
@@ -1399,17 +1408,17 @@ void LavaVu::readOBJ(const FilePath& fn)
         tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
         for (int c=0; c<3; c++)
         {
-          amodel->triSurfaces->read(tobj, 1, lucVertexData, &attrib.vertices[3*ids[c].vertex_index]);
-          amodel->triSurfaces->read(tobj, 1, lucIndexData, &voffset);
+          tris->read(tobj, 1, lucVertexData, &attrib.vertices[3*ids[c].vertex_index]);
+          tris->read(tobj, 1, lucIndexData, &voffset);
           voffset++;
           if (attrib.texcoords.size())
-            amodel->triSurfaces->read(tobj, 1, lucTexCoordData, &attrib.texcoords[2*ids[c].texcoord_index]);
+            tris->read(tobj, 1, lucTexCoordData, &attrib.texcoords[2*ids[c].texcoord_index]);
           if (attrib.normals.size())
           {
             //Some files skip the normal index, so assume it is the same as vertex index
             int nidx = ids[c].normal_index;
             if (nidx < 0) nidx = ids[c].vertex_index;
-            amodel->triSurfaces->read(tobj, 1, lucNormalData, &attrib.normals[3*nidx]);
+            tris->read(tobj, 1, lucNormalData, &attrib.normals[3*nidx]);
           }
         }
       }
@@ -1419,7 +1428,7 @@ void LavaVu::readOBJ(const FilePath& fn)
       for (size_t f = 0; f < shapes[i].mesh.indices.size(); f += 3)
       {
         //This won't work with mapped textures (tex coords) ... calculated indices have incorrect order
-        amodel->triSurfaces->addTriangle(tobj,
+        tris->addTriangle(tobj,
                      &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3],
@@ -1454,6 +1463,10 @@ void LavaVu::readOBJ(const FilePath& fn)
 
 void LavaVu::createDemoModel(unsigned int numpoints)
 {
+  Geometry* tris = amodel->getRenderer(lucTriangleType);
+  Geometry* points = amodel->getRenderer(lucPointType);
+  Geometry* lines = amodel->getRenderer(lucLineType);
+  if (!tris || !points || !lines) return;
   float RANGE = 2.f;
   float min[3] = {-RANGE,-RANGE,-RANGE};
   float max[3] = {RANGE,RANGE,RANGE};
@@ -1479,11 +1492,11 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     //Demo colourmap value: distance from model origin
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-    amodel->points->read(obj, 1, lucVertexData, ref);
-    amodel->points->read(obj, 1, &colour, "demo colours");
+    points->read(obj, 1, lucVertexData, ref);
+    points->read(obj, 1, &colour, "demo colours");
 
     if (i % pointsperswarm == pointsperswarm-1 && i != numpoints-1)
-        amodel->points->add(obj);
+        points->add(obj);
   }
 
   //Add lines
@@ -1499,8 +1512,8 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     //Demo colourmap value: distance from model origin
     colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-    amodel->lines->read(obj, 1, lucVertexData, ref);
-    amodel->lines->read(obj, 1, &colour, "demo colours");
+    lines->read(obj, 1, lucVertexData, ref);
+    lines->read(obj, 1, &colour, "demo colours");
   }
 
   //Add some triangles
@@ -1518,10 +1531,10 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     Colour c;
     c.value = (0xff000000 | 0xff<<(8*i));
     obj->properties.data["colour"] = c.toJson();
-    //amodel->triSurfaces->read(obj, 4, lucVertexData, verts[i], 2, 2);
+    //tris->read(obj, 4, lucVertexData, verts[i], 2, 2);
     //Read 2 triangles and split recursively for a nicer surface
-    amodel->triSurfaces->addTriangle(obj, &verts[i][0], &verts[i][1*3], &verts[i][3*3], 8);
-    amodel->triSurfaces->addTriangle(obj, &verts[i][0*3], &verts[i][3*3], &verts[i][2*3], 8);
+    tris->addTriangle(obj, &verts[i][0], &verts[i][1*3], &verts[i][3*3], 8);
+    tris->addTriangle(obj, &verts[i][0*3], &verts[i][3*3], &verts[i][2*3], 8);
   }
 }
 
@@ -1542,8 +1555,8 @@ DrawingObject* LavaVu::addObject(DrawingObject* obj)
 void LavaVu::open(int width, int height)
 {
   //Init geometry containers
-  for (unsigned int i=0; i < amodel->geometry.size(); i++)
-    amodel->geometry[i]->init();
+  for (auto g : amodel->geometry)
+    g->init();
 
   //Initialise all viewports to window size
   for (unsigned int v=0; v<amodel->views.size(); v++)
@@ -1715,8 +1728,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
 
     //Expand bounds by all geometry objects
-    for (unsigned int i=0; i < amodel->geometry.size(); i++)
-      amodel->geometry[i]->setup(aview, omin, omax);
+    for (auto g : amodel->geometry)
+      g->setup(aview, omin, omax);
 
     //Set viewport based on window size
     aview->port(viewer->width, viewer->height);
@@ -1764,8 +1777,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   else
   {
     //Set view on geometry objects only, no boundary check
-    for (unsigned int i=0; i < amodel->geometry.size(); i++)
-      amodel->geometry[i]->setup(aview);
+    for (auto g : amodel->geometry)
+      g->setup(aview);
   }
 
   //Update background colour
@@ -2479,17 +2492,9 @@ void LavaVu::drawScene()
   glShadeModel(GL_SMOOTH);
   glPushAttrib(GL_ENABLE_BIT);
 
-  //TODO: replace this hard coded rendering order
-  // provide user defined renderer list on model
-  amodel->volumes->display();
-  amodel->triSurfaces->display();
-  amodel->quadSurfaces->display();
-  amodel->vectors->display();
-  amodel->tracers->display();
-  amodel->shapes->display();
-  amodel->points->display();
-  amodel->labels->display();
-  amodel->lines->display();
+  //Run the renderers
+  for (auto g : amodel->geometry)
+    g->display();
 
   if (!drawstate.omegalib)
     drawBorder();
@@ -2761,17 +2766,17 @@ void LavaVu::dumpCSV(DrawingObject* obj)
   {
     if (!amodel->objects[i]->skip && (!obj || amodel->objects[i] == obj))
     {
-      for (int type=lucMinType; type<lucMaxType; type++)
+      for (auto g : amodel->geometry)
       {
         std::ostringstream ss;
-        amodel->geometry[type]->dump(ss, amodel->objects[i]);
+        g->dump(ss, amodel->objects[i]);
 
         std::string results = ss.str();
         if (results.size() > 0)
         {
           char filename[FILE_PATH_MAX];
           sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name().c_str(),
-                  GeomData::names[type].c_str(), amodel->stepInfo());
+                  GeomData::names[g->type].c_str(), amodel->stepInfo());
           std::ofstream csv;
           csv.open(filename, std::ios::out | std::ios::trunc);
           std::cout << " * Writing object " << amodel->objects[i]->name() << " to " << filename << std::endl;
@@ -2877,7 +2882,8 @@ std::string LavaVu::web(bool tofile)
 {
   if (!amodel) return "";
   display(); //Forces view/window open
-  amodel->triSurfaces->loadMesh();  //Optimise triangle meshes before export
+  Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
+  if (tris) tris->loadMesh();  //Optimise triangle meshes before export
   if (!tofile)
     return amodel->jsonWrite(true);
   return jsonWriteFile(NULL, false, true);
@@ -3063,22 +3069,22 @@ void LavaVu::loadLabels(DrawingObject* target, std::vector <std::string> labels)
 void LavaVu::clearObject(DrawingObject* target)
 {
   if (!amodel || !target) return;
-  for (unsigned int i=0; i < amodel->geometry.size(); i++)
-    amodel->geometry[i]->remove(target);
+  for (auto g : amodel->geometry)
+    g->remove(target);
 }
 
 void LavaVu::clearValues(DrawingObject* target, std::string label)
 {
   if (!amodel || !target) return;
-  for (unsigned int i=0; i < amodel->geometry.size(); i++)
-    amodel->geometry[i]->clearValues(target, label);
+  for (auto g : amodel->geometry)
+    g->clearValues(target, label);
 }
 
 void LavaVu::clearData(DrawingObject* target, lucGeometryDataType type)
 {
   if (!amodel || !target) return;
-  for (unsigned int i=0; i < amodel->geometry.size(); i++)
-    amodel->geometry[i]->clearData(target, type);
+  for (auto g : amodel->geometry)
+    g->clearData(target, type);
 }
 
 void LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
@@ -3130,9 +3136,9 @@ std::vector<Geom_Ptr> LavaVu::getAllGeometry(DrawingObject* target)
 {
   std::vector<Geom_Ptr> list;
   if (!amodel || !target) return list;
-  for (int type=lucMinType; type<lucMaxType; type++)
+  for (auto g : amodel->geometry)
   {
-    std::vector<Geom_Ptr> geomlist = amodel->geometry[type]->getAllObjects(target);
+    std::vector<Geom_Ptr> geomlist = g->getAllObjects(target);
     list.insert(std::end(list), std::begin(geomlist), std::end(geomlist));
   }
   return list;
@@ -3248,7 +3254,10 @@ void LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, bool clear
   //Create an isosurface from selected volume object
   //If "clearvol" is true, volume data will be deleted leaving only the surface triangles
   if (!amodel || !target || !source) return;
-  amodel->volumes->isosurface(amodel->triSurfaces, target, clearvol);
+  Volumes* volumes = (Volumes*)amodel->getRenderer(lucVolumeType);
+  Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
+  if (volumes && tris)
+    volumes->isosurface(tris, target, clearvol);
   target->properties.data["geometry"] = "triangles";
 }
 

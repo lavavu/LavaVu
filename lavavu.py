@@ -490,7 +490,7 @@ class Obj(object):
         elif data.dtype == numpy.uint8:
             self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip)
 
-    def label(self, data):
+    def labels(self, data):
         """
         Load label data for object
 

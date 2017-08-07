@@ -37,7 +37,7 @@
 
 // Given a grid dataset and an isovalue, calculate the triangular
 //  facets required to represent the isosurface through the data.
-Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample)
+Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* target, unsigned int subsample)
   : subsample(subsample), surfaces(tris), target(target)
 {
   //Generate an isosurface from a set of volume slices or a cube

@@ -462,6 +462,7 @@ public:
   virtual void close();
   unsigned int triCount();
   virtual void update();
+  virtual void loadMesh() {}
   void loadBuffers();
   virtual void render();
   virtual void draw();
@@ -480,7 +481,7 @@ public:
   virtual ~TriSurfaces() {close();}
   virtual void close();
   virtual void update();
-  void loadMesh();
+  virtual void loadMesh();
   void loadList();
   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
   void calcTriangleNormalsWithIndices(int index);
@@ -613,7 +614,7 @@ public:
   ImageData* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles=16);
   void saveImage(DrawingObject* draw, int xtiles=16);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
-  void isosurface(TriSurfaces* surfaces, DrawingObject* target, bool clearvol=false);
+  void isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol=false);
 };
 
 //Sorting util functions

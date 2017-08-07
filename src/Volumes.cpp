@@ -733,7 +733,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
   }
 }
 
-void Volumes::isosurface(TriSurfaces* surfaces, DrawingObject* target, bool clearvol)
+void Volumes::isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol)
 {
   //Isosurface extract
   Isosurface iso(geom, surfaces, target);

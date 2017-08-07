@@ -212,7 +212,7 @@ public:
 
   //Interactive command & script processing
   bool parseChar(unsigned char key);
-  Geometry* getGeometryType(std::string what);
+  bool toggleType(const std::string& name);
   DrawingObject* lookupObject(PropertyParser& parsed, const std::string& key, int idx=0);
   DrawingObject* lookupObject(const std::string& name, DrawingObject* def=NULL);
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);

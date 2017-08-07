@@ -72,6 +72,15 @@ void DrawState::reset()
 
   properties = {
     {
+      "renderlist",
+      {
+        "volume sortedtriangles quads vectors tracers shapes sortedpoints labels lines",
+        "all",
+        "string",
+        "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,labels,lines,links"
+      }
+    },
+    {
       "font",
       {
         "vector",

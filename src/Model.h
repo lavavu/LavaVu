@@ -102,21 +102,15 @@ public:
   std::vector<Geometry*> geometry;
   //Previous timestep geometry
   std::vector<Geometry*> olddata;
-  //Type specific geometry pointers
-  //(TODO: container class for a set of geometry)
-  Geometry* labels;
-  Points* points;
-  Vectors* vectors;
-  Tracers* tracers;
-  QuadSurfaces* quadSurfaces;
-  TriSurfaces* triSurfaces;
-  Geometry* lines;
-  Shapes* shapes;
-  Volumes* volumes;
 
   DrawingObject* borderobj;
   DrawingObject* axisobj;
   DrawingObject* rulerobj;
+
+  Geometry* getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers);
+  Geometry* getRenderer(lucGeometryType type);
+  Geometry* getRenderer(const std::string& what);
+  Geometry* createRenderer(const std::string& what);
 
   void clearObjects(bool all=false);
   void setup();
@@ -200,7 +194,7 @@ public:
   void writeState(Database& outdb);
   void writeObjects(Database& outdb, DrawingObject* obj, int step, bool compress);
   void deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step);
-  void writeGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step, bool compress);
+  void writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step, bool compress);
   void writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step, bool compressdata);
   void deleteObject(unsigned int id);
   void backup(Database& fromdb, Database& todb);

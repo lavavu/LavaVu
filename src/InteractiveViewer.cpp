@@ -249,6 +249,20 @@ bool LavaVu::keyPress(unsigned char key, int x, int y)
   return parseChar(key);
 }
 
+
+bool LavaVu::toggleType(const std::string& name)
+{
+  Geometry* g = amodel->getRenderer(name);
+  if (g)
+  {
+    if (g->allhidden)
+      return parseCommands("show " + name);
+    else
+      return parseCommands("hide " + name);
+  }
+  return false;
+}
+
 bool LavaVu::parseChar(unsigned char key)
 {
   int hline = historyline;
@@ -373,47 +387,29 @@ bool LavaVu::parseChar(unsigned char key)
       }
       switch (ck)
       {
-      case 'p':   //Points
-        if (amodel->points->allhidden)
-          response = parseCommands("show points");
-        else
-          response = parseCommands("hide points");
+      case 'p':
+        toggleType("points");
         break;
-      case 'v':   //Vectors
-        if (amodel->vectors->allhidden)
-          response = parseCommands("show vectors");
-        else
-          response = parseCommands("hide vectors");
+      case 'v':
+        toggleType("vectors");
         break;
-      case 't':   //Tracers
-        if (amodel->tracers->allhidden)
-          response = parseCommands("show tracers");
-        else
-          response = parseCommands("hide tracers");
+      case 't':
+        toggleType("tracers");
         break;
-      case 'u':   //TriSurfaces
-        if (amodel->triSurfaces->allhidden)
-          response = parseCommands("show triangles");
-        else
-          response = parseCommands("hide triangles");
+      case 'u':
+        toggleType("triangles");
         break;
-      case 'q':   //QuadSurfaces
-        if (amodel->quadSurfaces->allhidden)
-          response = parseCommands("show quads");
-        else
-          response = parseCommands("hide quads");
+      case 'q':
+        toggleType("quads");
         break;
-      case 's':   //Shapes
-        if (amodel->shapes->allhidden)
-          response = parseCommands("show shapes");
-        else
-          response = parseCommands("hide shapes");
+      case 's':
+        toggleType("shapes");
         break;
-      case 'l':   //Lines
-        if (amodel->lines->allhidden)
-          response = parseCommands("show lines");
-        else
-          response = parseCommands("hide lines");
+      case 'l':
+        toggleType("lines");
+        break;
+      case 'o':
+        toggleType("volumes");
         break;
       default:
         //Parse as if entered with ALT
@@ -519,34 +515,6 @@ bool LavaVu::parseChar(unsigned char key)
   return response;
 }
 
-Geometry* LavaVu::getGeometryType(std::string what)
-{
-  if (what == "points")
-    return amodel->points;
-  if (what == "labels")
-    return amodel->labels;
-  if (what == "vectors")
-    return amodel->vectors;
-  if (what == "tracers")
-  {
-    //Tracers are always in fixed data once loaded
-    if (amodel->fixed.size())
-      return amodel->fixed[lucTracerType];
-    return amodel->tracers;
-  }
-  if (what == "triangles")
-    return amodel->triSurfaces;
-  if (what == "quads")
-    return amodel->quadSurfaces;
-  if (what == "shapes")
-    return amodel->shapes;
-  if (what == "lines")
-    return amodel->lines;
-  if (what == "volume")
-    return amodel->volumes;
-  return NULL;
-}
-
 DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& key, int idx)
 {
   //Try index(id) first
@@ -595,7 +563,7 @@ Geometry* LavaVu::lookupObjectContainer(DrawingObject* obj, std::string gtype)
   //If not provided, get the container type to load into from property  (defaults to points)
   if (gtype.length() == 0)
     gtype = obj->properties["geometry"];
-  Geometry* container = getGeometryType(gtype);
+  Geometry* container = amodel->getRenderer(gtype);
   return container;
 }
 
@@ -873,6 +841,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (drawstate.omegalib) return false;
     viewer->quitProgram = false;
+    //viewer->show();
+    //viewer->loop(true);
     viewer->loop();
   }
   else if (parsed.exists("event"))
@@ -1487,7 +1457,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     std::string what = parsed[action];
     std::vector<DrawingObject*> list = lookupObjects(parsed, action);
-    Geometry* active = getGeometryType(what);
+    Geometry* active = amodel->getRenderer(what);
     if (list.size())
     {
       //Hide/show by name/ID match in all drawing objects
@@ -1503,8 +1473,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           //Hide/show all data for this object
           bool vis = (action == "show");
-          for (unsigned int i=0; i < amodel->geometry.size(); i++)
-            amodel->geometry[i]->showObj(list[c], vis);
+          for (auto g : amodel->geometry)
+            g->showObj(list[c], vis);
           list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
           printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
         }
@@ -1512,8 +1482,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else if (what == "all")
     {
-      for (unsigned int i=0; i < amodel->geometry.size(); i++)
-        amodel->geometry[i]->hideShowAll(action == "hide");
+      for (auto g : amodel->geometry)
+        g->hideShowAll(action == "hide");
       return true;
     }
     //Have selected a geometry type?
@@ -1918,8 +1888,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       obj = lookupObject(parsed, "valuerange");
     if (obj)
     {
-      for (int type=lucMinType; type<lucMaxType; type++)
-        amodel->geometry[type]->setValueRange(obj);
+      for (auto g : amodel->geometry)
+        g->setValueRange(obj);
       printMessage("ColourMap scales set to local value range");
       //Colour change so force full reload
       amodel->reload(aobject);
@@ -1974,8 +1944,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed["list"] == "elements")
     {
       //Print available elements by id
-      for (unsigned int i=0; i < amodel->geometry.size(); i++)
-        amodel->geometry[i]->print();
+      for (auto g : amodel->geometry)
+        g->print();
       viewer->display(false);  //Immediate display
       return false;
     }
@@ -2008,9 +1978,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       displayText("-----------------------------------------", ++offset);
       std::cout << "-----------------------------------------" << std::endl;
-      for (unsigned int i=0; i < amodel->geometry.size(); i++)
+      for (auto g : amodel->geometry)
       {
-        json list = amodel->geometry[i]->getDataLabels(aobject);
+        json list = g->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
           std::stringstream ss;
@@ -2243,7 +2213,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
-      Geometry* active = getGeometryType(gtype);
+      Geometry* active = amodel->getRenderer(gtype);
       active->read(aobject, 1, &fval, what);
       printMessage("%s value appended %f", aobject->name().c_str(), fval);
     }
@@ -2285,7 +2255,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
-      Geometry* active = getGeometryType(gtype);
+      Geometry* active = amodel->getRenderer(gtype);
       active->read(aobject, 1, dtype, xyz);
       printMessage("%s %s appended", aobject->name().c_str(), action.c_str());
       //Full object reload if colours updated
@@ -2339,7 +2309,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
-      Geometry* active = getGeometryType(gtype);
+      Geometry* active = amodel->getRenderer(gtype);
       if (!data.is_array() || data.size() == 0) return false;
       int size = data.size();
       if (data[0].is_array()) size *= data[0].size();
@@ -2390,7 +2360,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       std::string data = parsed["label"];
       //Use the "geometry" property to get the type to read into
       std::string gtype = aobject->properties["geometry"];
-      Geometry* active = getGeometryType(gtype);
+      Geometry* active = amodel->getRenderer(gtype);
       //Clear first
       active->label(aobject, NULL);
       //Set new labels
@@ -2490,7 +2460,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (parsed["pointsample"] == "down")
       drawstate.globals["pointsubsample"] = (int)drawstate.global("pointsubsample") * 2;
     if ((int)drawstate.global("pointsubsample") < 1) drawstate.globals["pointsubsample"] = 1;
-    amodel->points->redraw = true;
+    Geometry* pts = amodel->getRenderer("points");
+    if (pts) pts->redraw = true;
     printMessage("Point sampling %d", (int)drawstate.global("pointsubsample"));
   }
   else if (parsed.exists("image"))
@@ -2673,7 +2644,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string what = parsed["scale"];
-    Geometry* active = getGeometryType(what);
+    Geometry* active = amodel->getRenderer(what);
     if (active)
     {
       std::string key = "scale" + what;

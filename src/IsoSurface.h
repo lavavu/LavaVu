@@ -82,12 +82,12 @@ public:
   unsigned int                 ny;
   unsigned int                 nz;
   unsigned int subsample;
-  TriSurfaces* surfaces;
+  Triangles* surfaces;
   DrawingObject* target;
   FloatValues* colourVals;
   vertices* vertex;
 
-  Isosurface(std::vector<Geom_Ptr>& geom, TriSurfaces* tris, DrawingObject* target, unsigned int subsample=1);
+  Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* target, unsigned int subsample=1);
 
   void MarchingCubes();
   void DrawWalls();
