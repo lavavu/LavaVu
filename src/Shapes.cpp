@@ -97,21 +97,28 @@ void Shapes::update()
       for (int c=0; c<3; c++)
       {
         if (dims[c] != FLT_MIN) sdims[c] *= dims[c];
-        //Apply scaling, also inverse of model scaling to avoid distorting glyphs
-        sdims[c] *= scaling * (float)props["scaleshapes"] * tris->iscale[c];
+        //Apply scaling
+        sdims[c] *= scaling * (float)props["scaleshapes"];
       }
+
+      //Scale position & vector manually (global scaling is disabled to avoid distorting glyphs)
+      Vec3d scale = Vec3d(view->scale);
+      Vec3d pos = Vec3d(geom[i]->render->vertices[v]);
 
       //Setup orientation using alignment vector
       Quaternion rot;
       if (geom[i]->render->vectors.size() > 0)
       {
         Vec3d vec(geom[i]->render->vectors[v]);
-        //vec *= Vec3d(view->scale); //Scale
+        if (tris->unscale)
+          vec *= scale;
         rot = vectorRotation(vec);
       }
 
+      if (tris->unscale)
+        pos *= scale;
+
       //Create shape
-      Vec3d pos = Vec3d(geom[i]->render->vertices[v]);
       if (shape == 1)
         tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot);
       else
