@@ -219,10 +219,6 @@ void Properties::parse(const std::string& property, bool global)
       {
         dest[key] = false;
       }
-      else if (defaults[key].is_string())
-      {
-        dest[key] = value;
-      }
       else
       {
         dest[key] = json::parse(value);
