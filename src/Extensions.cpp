@@ -9,7 +9,6 @@ PFNGLACTIVETEXTUREPROC glActiveTexture;
 PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 PFNGLTEXIMAGE3DPROC glTexImage3D;
 PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
-PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 #else
 getProcAddressFN GetProcAddress;
 #endif
@@ -63,6 +62,8 @@ PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+PFNGLVERTEXATTRIB1FPROC glVertexAttrib1f;
+PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 PFNGLISPROGRAMPROC glIsProgram;
 #endif
 
@@ -74,7 +75,6 @@ void OpenGL_Extensions_Init()
   glDrawRangeElements = (PFNGLDRAWRANGEELEMENTSPROC) GetProcAddress("glDrawRangeElements");
   glTexImage3D = (PFNGLTEXIMAGE3DPROC) GetProcAddress("glTexImage3D");
   glTexSubImage3D = (PFNGLTEXSUBIMAGE3DPROC) GetProcAddress("glTexSubImage3D");
-  glGenerateMipmapEXT = (PFNGLGENERATEMIPMAPEXTPROC) GetProcAddress("glGenerateMipmapEXT");
 #endif
   glBlendFuncSeparate = (PFNGLBLENDFUNCSEPARATEPROC) GetProcAddress("glBlendFuncSeparate");
   glPointParameterfv = (PFNGLPOINTPARAMETERFVPROC) GetProcAddress("glPointParameterfv");
@@ -124,6 +124,8 @@ void OpenGL_Extensions_Init()
   glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glEnableVertexAttribArray");
   glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) GetProcAddress("glVertexAttribPointer");
   glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glDisableVertexAttribArray");
+  glVertexAttrib1f = (PFNGLVERTEXATTRIB1FPROC) GetProcAddress("glVertexAttrib1f");
+  glGenerateMipmapEXT = (PFNGLGENERATEMIPMAPEXTPROC) GetProcAddress("glGenerateMipmapEXT");
   glIsProgram = (PFNGLISPROGRAMPROC) GetProcAddress("glIsProgram");
 #endif
 }

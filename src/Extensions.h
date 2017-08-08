@@ -7,12 +7,11 @@
 typedef void* (*getProcAddressFN)(const char* procName);
 
 #if defined _WIN32
-#include <SDL/SDL_opengl.h>
+#include "Include.h"
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLDRAWRANGEELEMENTSPROC glDrawRangeElements;
 extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 extern PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
-extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 #define EXTENSION_POINTERS
 #else
 extern getProcAddressFN GetProcAddress;
@@ -67,6 +66,8 @@ extern PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
 extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+extern PFNGLVERTEXATTRIB1FPROC glVertexAttrib1f;
+extern PFNGLGENERATEMIPMAPEXTPROC glGenerateMipmapEXT;
 extern PFNGLISPROGRAMPROC glIsProgram;
 #endif
 

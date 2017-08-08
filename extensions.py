@@ -53,7 +53,13 @@ functions = [
 "glEnableVertexAttribArray",
 "glVertexAttribPointer",
 "glDisableVertexAttribArray",
+"glVertexAttrib1f",
+"glGenerateMipmapEXT",
 "glIsProgram",
+#"glUniform1d",
+#"glUniform1dv",
+#"glUniform2d",
+#"glUniform2dv",
   ]
 
 win_functions = [
@@ -61,7 +67,6 @@ win_functions = [
 "glDrawRangeElements",
 "glTexImage3D",
 "glTexSubImage3D",
-"glGenerateMipmapEXT",
 ]
 
 #Write the header
