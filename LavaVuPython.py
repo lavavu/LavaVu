@@ -301,6 +301,8 @@ class OpenGLViewer(object):
     __swig_destroy__ = _LavaVuPython.delete_OpenGLViewer
 OpenGLViewer_swigregister = _LavaVuPython.OpenGLViewer_swigregister
 OpenGLViewer_swigregister(OpenGLViewer)
+cvar = _LavaVuPython.cvar
+version = cvar.version
 
 class DrawingObject(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')

@@ -3680,6 +3680,7 @@ SWIGINTERNINLINE PyObject*
 }
 
 
+#include "src/version.h"
 #include "src/LavaVu.h"
 #include "src/ViewerTypes.h"
 #include "src/DrawingObject.h"
@@ -12593,6 +12594,20 @@ SWIGINTERN PyObject *List_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *arg
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN int Swig_var_version_set(PyObject *) {
+  SWIG_Error(SWIG_AttributeError,"Variable version is read-only.");
+  return 1;
+}
+
+
+SWIGINTERN PyObject *Swig_var_version_get(void) {
+  PyObject *pyobj = 0;
+  
+  pyobj = SWIG_From_std_string(static_cast< std::string >(version));
+  return pyobj;
+}
+
+
 SWIGINTERN PyObject *_wrap_OpenGLViewer_quitProgram_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
@@ -20233,6 +20248,8 @@ SWIG_init(void) {
   SWIG_Python_SetConstant(d, "lucLuminanceData",SWIG_From_int(static_cast< int >(lucLuminanceData)));
   SWIG_Python_SetConstant(d, "lucRGBData",SWIG_From_int(static_cast< int >(lucRGBData)));
   SWIG_Python_SetConstant(d, "lucMaxDataType",SWIG_From_int(static_cast< int >(lucMaxDataType)));
+  PyDict_SetItemString(md,(char*)"cvar", SWIG_globals());
+  SWIG_addvarlink(SWIG_globals(),(char*)"version",Swig_var_version_get, Swig_var_version_set);
 #if PY_VERSION_HEX >= 0x03000000
   return m;
 #else

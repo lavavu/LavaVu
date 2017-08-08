@@ -17,6 +17,7 @@
 %}
 
 %{
+#include "src/version.h"
 #include "src/LavaVu.h"
 #include "src/ViewerTypes.h"
 #include "src/DrawingObject.h"
@@ -55,6 +56,8 @@ namespace std
 %apply (unsigned char* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(unsigned char* array, int width, int height, int depth)};
 
 %include "src/ViewerTypes.h"
+
+const std::string version;
 
 class OpenGLViewer
 {
