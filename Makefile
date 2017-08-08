@@ -106,6 +106,8 @@ vpath %.cpp src:src/Main:src:src/jpeg:src/png
 vpath %.h src/Main:src:src/jpeg:src/png:src/sqlite3
 vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
+#A bit of a hack to make sure version.cpp is always rebuilt
+TMP := $(shell touch src/version.cpp)
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp) $(wildcard src/png/*.cpp)
 
