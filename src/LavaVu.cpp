@@ -42,6 +42,7 @@
 //Merge WebGL/standard shader code
 
 //Viewer class
+#include "version.h"
 #include "Include.h"
 #include "LavaVu.h"
 #include "Shaders.h"
@@ -199,6 +200,12 @@ void LavaVu::arguments(std::vector<std::string> args)
   //Read command line switches
   for (unsigned int i=0; i<args.size(); i++)
   {
+    //Version
+    if (args[i] == "--version" || args[i] == "-version")
+    {
+      std::cout << "LavaVu " << version << std::endl;
+      exit(0);
+    }
     //Help?
     if (args[i] == "-?" || args[i] == "-help")
     {

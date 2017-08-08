@@ -146,7 +146,7 @@ version:
 	printf '#include "version.h"\nconst std::string version = "%s";\n' $(shell git describe --tags) > src/version.cpp
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) version
+$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) | version
 	$(CXX) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths
