@@ -96,19 +96,14 @@ ColourLookup& GeomData::colourCalibrate()
   //Calibrate opacity map if provided
   ColourMap* omap = draw->opacityMap;
   bool mappedOpacity = false;
-  if (omap)
+  unsigned int opacityIdx = valuesLookup(draw->properties["opacityby"]);
+  FloatValues* ovals = valueData(opacityIdx);
+  if (omap && ovals)
   {
-    //Get the value index
-    draw->opacityIdx = valuesLookup(draw->properties["opacityby"]);
-    if (values.size() > draw->opacityIdx)
-      omap->calibrate(valueData(draw->opacityIdx));
+    omap->calibrate(ovals);
     //Init the mapped opacity lookup functor
     mappedOpacity = true;
-    _getOpacityMapped.init(draw, valueData(draw->opacityIdx));
   }
-  else
-    //Init the default opacity lookup functor
-    _getOpacity.init(draw, valueData(draw->opacityIdx));
 
   //Get a colour lookup functor
   // - determine source of colour data
@@ -124,44 +119,164 @@ ColourLookup& GeomData::colourCalibrate()
   {
     //Calibrate the colour map
     cmap->calibrate(vals);
-    _getColourMapped.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    if (mappedOpacity)
+    {
+      _getColourMappedOpacityMapped.init(draw, render, vals, ovals);
+      _getColourMappedOpacityMapped(draw->colour, 0); //Cache a representative colour
+      return _getColourMappedOpacityMapped;
+    }
+    _getColourMapped.init(draw, render, vals, NULL);
     _getColourMapped(draw->colour, 0); //Cache a representative colour
     return _getColourMapped;
   }
   else if (render->colours.size() > 0)
   {
-    _getColourRGBA.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    if (mappedOpacity)
+    {
+      _getColourRGBAOpacityMapped.init(draw, render, NULL, ovals);
+      _getColourRGBAOpacityMapped(draw->colour, 0); //Cache a representative colour
+      return _getColourRGBAOpacityMapped;
+    }
+    _getColourRGBA.init(draw, render, NULL, NULL);
     _getColourRGBA(draw->colour, 0); //Cache a representative colour
     return _getColourRGBA;
   }
   else if (render->rgb.size() > 0)
   {
-    _getColourRGB.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    if (mappedOpacity)
+    {
+      _getColourRGBOpacityMapped.init(draw, render, NULL, ovals);
+      _getColourRGBOpacityMapped(draw->colour, 0); //Cache a representative colour
+      return _getColourRGBOpacityMapped;
+    }
+    _getColourRGB.init(draw, render, NULL, NULL);
     _getColourRGB(draw->colour, 0); //Cache a representative colour
     return _getColourRGB;
   }
   else if (render->luminance.size() > 0)
   {
-    _getColourLuminance.init(draw, render, vals, mappedOpacity ? _getOpacityMapped : _getOpacity);
+    if (mappedOpacity)
+    {
+      _getColourLuminanceOpacityMapped.init(draw, render, NULL, ovals);
+      _getColourLuminanceOpacityMapped(draw->colour, 0); //Cache a representative colour
+    return _getColourLuminanceOpacityMapped;
+    }
+    _getColourLuminance.init(draw, render, NULL, NULL);
     _getColourLuminance(draw->colour, 0); //Cache a representative colour
     return _getColourLuminance;
   }
   else
   {
-    //Init data for colour lookup
-    _getColour.init(draw, render, colourData(), mappedOpacity ? _getOpacityMapped : _getOpacity);
+    if (mappedOpacity)
+    {
+      _getColourOpacityMapped.init(draw, render, NULL, ovals);
+      return _getColourOpacityMapped;
+    }
+    _getColour.init(draw, render, NULL, NULL);
     return _getColour;
   }
 }
 
-//Get colour using specified colourValue
-void GeomData::mapToColour(Colour& colour, float value)
+void ColourLookup::operator()(Colour& colour, unsigned int idx) const
 {
-  ColourMap* cmap = draw->colourMap;
-  if (cmap) colour = cmap->getfast(value);
-
-  //Apply opacity from drawing object override level
+  colour = draw->colour;
   colour.a *= draw->opacity;
+}
+
+void ColourLookupMapped::operator()(Colour& colour, unsigned int idx) const
+{
+  //assert(idx < values->size());
+  if (idx >= vals->size()) idx = vals->size() - 1;
+  float val = (*vals)[idx];
+  if (val == HUGE_VAL)
+    colour.value = 0;
+  else
+    colour = draw->colourMap->getfast(val);
+
+  colour.a *= draw->opacity;
+}
+
+void ColourLookupRGBA::operator()(Colour& colour, unsigned int idx) const
+{
+  if (render->colours.size() == 1) idx = 0;  //Single colour only provided
+  if (idx >= render->colours.size()) idx = render->colours.size() - 1;
+  //assert(idx < colours.size());
+  colour.value = render->colours[idx];
+
+  colour.a *= draw->opacity;
+}
+
+void ColourLookupRGB::operator()(Colour& colour, unsigned int idx) const
+{
+  if (idx >= render->rgb.size()/3) idx = render->rgb.size()/3 - 1;
+  colour.r = render->rgb[idx*3];
+  colour.g = render->rgb[idx*3+1];
+  colour.b = render->rgb[idx*3+2];
+  colour.a = 255*draw->opacity;
+}
+
+void ColourLookupLuminance::operator()(Colour& colour, unsigned int idx) const
+{
+  if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
+  colour.r = colour.g = colour.b = render->luminance[idx];
+  colour.a = 255*draw->opacity;
+}
+
+void ColourLookupOpacityMapped::operator()(Colour& colour, unsigned int idx) const
+{
+  colour = draw->colour;
+  //Set opacity using own value map...
+  const Colour& temp = draw->opacityMap->getfast((*ovals)[idx]);
+  colour.a *= div255 * temp.a * draw->opacity;
+}
+
+void ColourLookupMappedOpacityMapped::operator()(Colour& colour, unsigned int idx) const
+{
+  //assert(idx < values->size());
+  if (idx >= vals->size()) idx = vals->size() - 1;
+  float val = (*vals)[idx];
+  if (val == HUGE_VAL)
+    colour.value = 0;
+  else
+    colour = draw->colourMap->getfast(val);
+
+  //Set opacity using own value map...
+  const Colour& temp = draw->opacityMap->getfast((*ovals)[idx]);
+  colour.a *= div255 * temp.a * draw->opacity;
+}
+
+void ColourLookupRGBAOpacityMapped::operator()(Colour& colour, unsigned int idx) const
+{
+  if (render->colours.size() == 1) idx = 0;  //Single colour only provided
+  if (idx >= render->colours.size()) idx = render->colours.size() - 1;
+  //assert(idx < colours.size());
+  colour.value = render->colours[idx];
+
+  //Set opacity using own value map...
+  const Colour& temp = draw->opacityMap->getfast((*ovals)[idx]);
+  colour.a *= div255 * temp.a * draw->opacity;
+}
+
+void ColourLookupRGBOpacityMapped::operator()(Colour& colour, unsigned int idx) const
+{
+  if (idx >= render->rgb.size()/3) idx = render->rgb.size()/3 - 1;
+  colour.r = render->rgb[idx*3];
+  colour.g = render->rgb[idx*3+1];
+  colour.b = render->rgb[idx*3+2];
+
+  //Set opacity using own value map...
+  const Colour& temp = draw->opacityMap->getfast((*ovals)[idx]);
+  colour.a = temp.a * draw->opacity;
+}
+
+void ColourLookupLuminanceOpacityMapped::operator()(Colour& colour, unsigned int idx) const
+{
+  if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
+  colour.r = colour.g = colour.b = render->luminance[idx];
+
+  //Set opacity using own value map...
+  const Colour& temp = draw->opacityMap->getfast((*ovals)[idx]);
+  colour.a = temp.a * draw->opacity;
 }
 
 int GeomData::colourCount()

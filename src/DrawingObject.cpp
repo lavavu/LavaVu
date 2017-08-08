@@ -56,7 +56,6 @@ DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string
 
   properties.data["visible"] = true;
   colourIdx = 0; //Default colouring data is first value block
-  opacityIdx = 1;
   colourMap = opacityMap = NULL;
   setup();
 }

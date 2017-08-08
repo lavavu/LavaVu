@@ -81,42 +81,6 @@ typedef struct
 //Shared pointer so we can pass these around without issues
 typedef std::shared_ptr<RenderData> Render_Ptr;
 
-//Opacity lookup functors
-class OpacityLookup
-{
- public:
-  DrawingObject* draw;
-  FloatValues* vals;
-
-  OpacityLookup() {}
-
-  void init(DrawingObject* draw, FloatValues* vals)
-  {
-    this->draw = draw;
-    this->vals = vals;
-  }
-
-  virtual float operator()(unsigned int idx) const
-  {
-    return draw->opacity;
-  }
-};
-
-class OpacityLookupMapped : public OpacityLookup
-{
- public:
-  OpacityLookupMapped() {}
-
-  virtual float operator()(unsigned int idx) const
-  {
-    //Set opacity using own value map...
-    ColourMap* omap = draw->opacityMap;
-    Colour cc = omap->getfast((*vals)[idx]);
-    //Apply opacity from drawing object override level if set
-    return cc.a/255.0 * draw->opacity;
-  }
-};
-
 //Colour lookup functors
 class ColourLookup
 {
@@ -124,23 +88,21 @@ public:
   DrawingObject* draw;
   std::shared_ptr<RenderData> render;
   FloatValues* vals;
-  OpacityLookup getOpacity;
+  FloatValues* ovals;
+  float div255;
 
   ColourLookup() {}
 
-  void init(DrawingObject* draw, std::shared_ptr<RenderData> render, FloatValues* vals, OpacityLookup getOpacity)
+  void init(DrawingObject* draw, std::shared_ptr<RenderData> render, FloatValues* vals, FloatValues* ovals)
   {
+    div255 = 1.0/255;
     this->draw = draw;
     this->render = render;
     this->vals = vals;
-    this->getOpacity = getOpacity;
+    this->ovals = ovals;
   }
 
-  virtual void operator()(Colour& colour, unsigned int idx) const
-  {
-    colour = draw->colour;
-    colour.a *= getOpacity(idx);
-  }
+  virtual void operator()(Colour& colour, unsigned int idx) const;
 };
 
 class ColourLookupMapped : public ColourLookup
@@ -148,18 +110,7 @@ class ColourLookupMapped : public ColourLookup
  public:
   ColourLookupMapped() {}
 
-  virtual void operator()(Colour& colour, unsigned int idx) const
-  {
-    //assert(idx < values->size());
-    if (idx >= vals->size()) idx = vals->size() - 1;
-    float val = (*vals)[idx];
-    if (val == HUGE_VAL)
-      colour.value = 0;
-    else
-      colour = draw->colourMap->getfast(val);
-
-    colour.a *= getOpacity(idx);
-  }
+  virtual void operator()(Colour& colour, unsigned int idx) const;
 };
 
 class ColourLookupRGBA : public ColourLookup
@@ -167,15 +118,7 @@ class ColourLookupRGBA : public ColourLookup
  public:
   ColourLookupRGBA() {}
 
-  virtual void operator()(Colour& colour, unsigned int idx) const
-  {
-    if (render->colours.size() == 1) idx = 0;  //Single colour only provided
-    if (idx >= render->colours.size()) idx = render->colours.size() - 1;
-    //assert(idx < colours.size());
-    colour.value = render->colours[idx];
-
-    colour.a *= getOpacity(idx);
-  }
+  virtual void operator()(Colour& colour, unsigned int idx) const;
 };
 
 class ColourLookupRGB : public ColourLookup
@@ -183,16 +126,7 @@ class ColourLookupRGB : public ColourLookup
  public:
   ColourLookupRGB() {}
 
-  virtual void operator()(Colour& colour, unsigned int idx) const
-  {
-    if (idx >= render->rgb.size()/3) idx = render->rgb.size()/3 - 1;
-    colour.r = render->rgb[idx*3];
-    colour.g = render->rgb[idx*3+1];
-    colour.b = render->rgb[idx*3+2];
-    colour.a = getOpacity(idx);
-
-    colour.a *= getOpacity(idx);
-  }
+  virtual void operator()(Colour& colour, unsigned int idx) const;
 };
 
 class ColourLookupLuminance : public ColourLookup
@@ -200,13 +134,48 @@ class ColourLookupLuminance : public ColourLookup
  public:
   ColourLookupLuminance() {}
 
-  virtual void operator()(Colour& colour, unsigned int idx) const
-  {
-    if (idx >= render->luminance.size()) idx = render->luminance.size() - 1;
-    colour.r = colour.g = colour.b = render->luminance[idx];
+  virtual void operator()(Colour& colour, unsigned int idx) const;
+};
 
-    colour.a *= getOpacity(idx);
-  }
+//Same as above with mapped opacity lookup
+class ColourLookupOpacityMapped : public ColourLookup
+{
+ public:
+  ColourLookupOpacityMapped() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const;
+};
+
+class ColourLookupMappedOpacityMapped : public ColourLookup
+{
+ public:
+  ColourLookupMappedOpacityMapped() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const;
+};
+
+class ColourLookupRGBAOpacityMapped : public ColourLookup
+{
+ public:
+  ColourLookupRGBAOpacityMapped() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const;
+};
+
+class ColourLookupRGBOpacityMapped : public ColourLookup
+{
+ public:
+  ColourLookupRGBOpacityMapped() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const;
+};
+
+class ColourLookupLuminanceOpacityMapped : public ColourLookup
+{
+ public:
+  ColourLookupLuminanceOpacityMapped() {}
+
+  virtual void operator()(Colour& colour, unsigned int idx) const;
 };
 
 //Geometry object data store
@@ -232,8 +201,11 @@ public:
   ColourLookupRGBA _getColourRGBA;
   ColourLookupRGB _getColourRGB;
   ColourLookupLuminance _getColourLuminance;
-  OpacityLookup _getOpacity;
-  OpacityLookupMapped _getOpacityMapped;
+  ColourLookupOpacityMapped _getColourOpacityMapped;
+  ColourLookupMappedOpacityMapped _getColourMappedOpacityMapped;
+  ColourLookupRGBAOpacityMapped _getColourRGBAOpacityMapped;
+  ColourLookupRGBOpacityMapped _getColourRGBOpacityMapped;
+  ColourLookupLuminanceOpacityMapped _getColourLuminanceOpacityMapped;
 
   float distance;
 
@@ -295,7 +267,6 @@ public:
   void label(std::string& labeltext);
   std::string getLabels();
   ColourLookup& colourCalibrate();
-  void mapToColour(Colour& colour, float value);
   int colourCount();
   unsigned int valuesLookup(const json& by);
   bool filter(unsigned int idx);

@@ -52,7 +52,6 @@ public:
   float opacity;
   Colour colour;
   unsigned int colourIdx;
-  unsigned int opacityIdx;
   ColourMap* colourMap; //Cached references
   ColourMap* opacityMap;
   std::vector<Filter> filterCache;
