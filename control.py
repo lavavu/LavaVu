@@ -73,9 +73,13 @@ def getproperty(target, propname):
     else:
         return None
 
-def getcontrolvalues():
+def getcontrolvalues(names=None):
     """Get the property control values from their targets
     """
+    #Can pass a newline seperated list of props
+    #If not provided, updates all properties
+    if names is not None:
+        names = names.split('\n')
     #Build a list of controls to update and their values
     updates = []
     for c in allcontrols:
@@ -83,7 +87,7 @@ def getcontrolvalues():
             #print c.elid,c.id
             action = Action.actions[c.id]
             #print action
-            if isinstance(action, PropertyAction):
+            if hasattr(action, "property") and (names is None or action.property in names):
                 #print "  ",c.elid,action
                 value = getproperty(action.target, action.property)
                 #print "  = ",value
@@ -169,9 +173,11 @@ class Action(object):
     actions = []
 
     #actions.append({"type" : "COMMAND", "args" : [command]})
-    def __init__(self, target, command=None):
+    def __init__(self, target, command=None, readproperty=None):
         self.target = target
         self.command = command
+        if not hasattr(self, "property"):
+            self.property = readproperty
         Action.actions.append(self)
 
     def run(self, value):
@@ -332,16 +338,19 @@ class Container(HTML):
     #Parent class for container types
     def __init__(self, viewer):
         self.viewer = viewer
-        self.controls = []
+        self._content = []
         super(Container, self).__init__()
 
     def add(self, ctrl):
-        self.controls.append(ctrl)
+        self._content.append(ctrl)
+
+    def controls(self):
+        return self.html()
 
     def html(self):
         html = ''
-        for i in range(len(self.controls)):
-            html += self.controls[i].controls()
+        for i in range(len(self._content)):
+            html += self._content[i].controls()
         return html
 
 class Window(Container):
@@ -424,7 +433,7 @@ class Tabs(Container):
 
     def add(self, ctrl):
         if not len(self.tabs): self.tab()
-        self.controls.append(ctrl)
+        self._content.append(ctrl)
         ctrl.tab = len(self.tabs)-1
 
     def html(self):
@@ -459,7 +468,7 @@ class Tabs(Container):
             style = ''
             if t != 0: style = 'display: none;'
             html += '<div id="---ELID---_---LABEL---" style="' + style + '" class="lvtab lvctrl ---ELID---">\n'
-            for ctrl in self.controls:
+            for ctrl in self._content:
                 if ctrl.tab == t:
                     html += ctrl.controls()
             html += '</div>\n'
@@ -484,9 +493,11 @@ class Control(HTML):
         Initial value of the controls
     label: str
         Descriptive label for the control
+    readproperty: str
+        Property to read control value from on update (but not modified)
     """
 
-    def __init__(self, target, property=None, command=None, value=None, label=None):
+    def __init__(self, target, property=None, command=None, value=None, label=None, readproperty=None):
         super(Control, self).__init__()
         self.label = label
 
@@ -499,7 +510,7 @@ class Control(HTML):
             if label is None:
                 self.label = property.capitalize()
         elif command:
-            action = Action(target, command)
+            action = Action(target, command, readproperty)
             if label is None:
                 self.label = command.capitalize()
         else:
@@ -535,7 +546,7 @@ class Control(HTML):
 
     def controls(self, type='number', attribs={}, onchange=""):
         #Input control
-        html =  '<input class="---ELID---" type="' + type + '" '
+        html =  '<input id="---ELID---" class="---ELID---" type="' + type + '" '
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
         html += 'value="' + str(self.value) + '" '
@@ -587,8 +598,8 @@ class Range(Control):
     range: list/tuple
         Min/max values for the range
     """
-    def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None):
-        super(Range, self).__init__(target, property, command, value, label)
+    def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None, readproperty=None):
+        super(Range, self).__init__(target, property, command, value, label, readproperty)
 
         self.range = range
         self.step = step
@@ -826,7 +837,7 @@ class TimeStepper(Range):
     """
     def __init__(self, viewer, *args, **kwargs):
         #Acts as a command setter with some additional controls
-        super(TimeStepper, self).__init__(target=viewer, label="Timestep", command="timestep", *args, **kwargs)
+        super(TimeStepper, self).__init__(target=viewer, label="Timestep", command="timestep", readproperty="timestep", *args, **kwargs)
 
         self.timesteps = viewer.timesteps()
         self.range = (self.timesteps[0], self.timesteps[-1])
@@ -838,8 +849,30 @@ class TimeStepper(Range):
 
     def controls(self):
         html = Range.controls(self)
-        html += '<input type="button" style="width: 50px;" onclick="var el = this.previousElementSibling.previousElementSibling; el.stepDown(); el.onchange()" value="&larr;" />'
-        html += '<input type="button" style="width: 50px;" onclick="var el = this.previousElementSibling.previousElementSibling.previousElementSibling; el.stepUp(); el.onchange()" value="&rarr;" />'
+        html += """
+        <script>
+        var timer_---ELID--- = null;
+        function playPause_---ELID---(btn) {
+          if (timer_---ELID---) {
+            btn.value="\u25BA";
+            btn.style.fontSize = "12px"
+            clearInterval(timer_---ELID---);
+            timer_---ELID--- = null;
+          } else {
+            timer_---ELID--- = setInterval(function () {
+                _wi[---VIEWERID---].execute("next", true);
+                getAndUpdateControlValues('timestep');
+                }, 75 );
+            btn.value="\u25ae\u25ae";
+            btn.style.fontSize = "10px"
+          }
+        }
+        </script>
+        """
+        html += '<input type="button" style="width: 50px;" onclick="var el = document.getElementById(\'---ELID---\'); el.stepDown(); el.onchange()" value="&larr;" />'
+        html += '<input type="button" style="width: 50px;" onclick="var el = document.getElementById(\'---ELID---\'); el.stepUp(); el.onchange()" value="&rarr;" />'
+        html += '<input type="button" style="width: 60px;" onclick="playPause_---ELID---(this);" value="&#9658;" />'
+        html = html.replace('---ELID---', self.elid)
         return html
 
 class DualRange(Control):
@@ -966,7 +999,7 @@ class ObjectSelect(List):
             self.instance.objects.list[self.object-1][key] = value
 
 class ObjectTabs(ObjectSelect):
-    """Object selction with control tabs for each object"""
+    """Object selection with control tabs for each object"""
     def __init__(self, *args, **kwargs):
         super(ObjectTabs, self).__init__(target=self, label="Objects", options=options, property="object", *args, **kwargs)
     #Add predefined controls?
@@ -1058,7 +1091,7 @@ class ControlFactory(object):
         #Generate the HTML
         html = ""
         chtml = ""
-        for c in self._controls:
+        for c in self._content:
             chtml += c.html()
         if len(chtml):
             html = '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
@@ -1126,6 +1159,6 @@ class ControlFactory(object):
             pass
         
     def clear(self):
-        self._controls = []
+        self._content = []
         self._container = None
 
