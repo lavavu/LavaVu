@@ -1056,7 +1056,7 @@ class ControlFactory(object):
             self._container.add(ctrl)
         else:
             #Add to global list
-            self._controls.append(ctrl)
+            self._content.append(ctrl)
 
         #Add to viewer instance list too if not already being added
         if not isviewer(self._target):
