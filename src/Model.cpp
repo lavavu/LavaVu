@@ -444,14 +444,14 @@ DrawingObject* Model::findObject(unsigned int id)
   return NULL;
 }
 
-void Model::clearObjects(bool all)
+void Model::clearObjects()
 {
   if (membytes__ > 0 && geometry.size() > 0)
     debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", membytes__/1000000.0f);
 
   //Clear containers...
   for (auto g : geometry)
-    g->clear(all);
+    g->clear();
 }
 
 void Model::setup()
@@ -1116,7 +1116,7 @@ void Model::cacheStep()
      //Clear containers...
      for (unsigned int i=0; i < cached->store.size(); i++)
      {
-        cached->store[i]->clear(true);
+        cached->store[i]->clear();
         delete cached->store[i];
      }
      debug_print("~~~ Deleted oldest cached step (%d)\n", cached->step);

@@ -126,15 +126,6 @@ void DrawState::reset()
       }
     },
     {
-      "static",
-      {
-        false,
-        "object",
-        "boolean",
-        "Set to true if object remains static regardless of timestep"
-      }
-    },
-    {
       "geometry",
       {
         "points",

@@ -437,7 +437,7 @@ Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
 Geometry::~Geometry()
 {
   //Free GeomData elements
-  clear(true);
+  clear();
 }
 
 //Virtuals to implement
@@ -447,35 +447,11 @@ void Geometry::close() //Called on quit or gl context destroy
   cached = NULL;
 }
 
-void Geometry::clear(bool all)
+void Geometry::clear()
 {
   total = 0;
   reload = true;
-  if (internal) all = true; //Always clear all sub-geometry
-
-  //iterate geom and delete all GeomData entries
-  for (int i = geom.size()-1; i>=0; i--)
-  {
-    unsigned int idx = i;
-    if (all || !geom[i]->draw->properties["static"])
-    {
-      //Now using shared_ptr so no need to delete
-      //std::cout << " deleting geom: " << i << " : " << geom[i]->draw->name() << std::endl;
-
-      if (!all) 
-      {
-        geom.erase(geom.begin()+idx);
-        if (hidden.size() > idx) hidden.erase(hidden.begin()+idx);
-      }
-    }
-    else
-    {
-      total += geom[i]->count;
-      //std::cout << " skipped deleting static geom: " << i << " : " << geom[i]->draw->name() << std::endl;
-    }
-  }
-  if (all) geom.clear();
-  //if (all) std::cout << " deleting all geometry " << std::endl;
+  geom.clear();
   
   //Ensure cache cleared
   cached = NULL;

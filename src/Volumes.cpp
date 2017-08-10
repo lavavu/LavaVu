@@ -739,7 +739,7 @@ void Volumes::isosurface(Triangles* surfaces, DrawingObject* target, bool clearv
   Isosurface iso(geom, surfaces, target);
 
   //Clear the volume data, allows converting object from a volume to a surface
-  if (clearvol) clear(true);
+  if (clearvol) clear();
 
   //Optimise triangle vertices
   surfaces->loadMesh();

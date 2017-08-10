@@ -554,7 +554,7 @@ void LavaVu::run(std::vector<std::string> args)
 void LavaVu::clearAll(bool objects, bool colourmaps)
 {
   //Clear all data
-  if (amodel) amodel->clearObjects(true);
+  if (amodel) amodel->clearObjects();
   //Delete all objects? only works for active view/model
   if (objects)
   {
@@ -1173,7 +1173,7 @@ void LavaVu::readHeightMap(const FilePath& fn)
   debug_print("Height dataset %d x %d Sampling at X,Z %d,%d\n", sx, sz, sx / subsample, sz / subsample);
   //opacity [0,1]
   DrawingObject *obj;
-  std::string props = "static=1\ncolour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
+  std::string props = "colour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
   obj = addObject(new DrawingObject(drawstate, fn.base, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
@@ -1284,7 +1284,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   //Create a height map grid
   std::string texfile = fn.base + "-texture." + fn.ext;
   DrawingObject *obj;
-  std::string props = "static=1\ncullface=0\ntexturefile=" + texfile + "\n";
+  std::string props = "cullface=0\ntexturefile=" + texfile + "\n";
   obj = addObject(new DrawingObject(drawstate, fn.base, props));
 
   //Default colourmap
@@ -1341,7 +1341,7 @@ void LavaVu::readOBJ(const FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(drawstate, fn.base, "static=1\ncolour=[128,128,128]\n"));
+  if (!tobj) tobj = addObject(new DrawingObject(drawstate, fn.base, "colour=[128,128,128]\n"));
 
   for (size_t i = 0; i < shapes.size(); i++)
   {
@@ -1481,7 +1481,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   viewer->title = "Test Pattern";
 
   //Add points object
-  DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nstatic=1\nlit=0\n"));
+  DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nlit=0\n"));
   //Demo colourmap, distance from model origin
   int cmap = colourMap("particles", "#66bb33 #00ff00 #3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
   obj->properties.data["colourmap"] = cmap;
@@ -1507,7 +1507,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   }
 
   //Add lines
-  obj = addObject(new DrawingObject(drawstate, "line-segments", "static=1\nlit=0\n"));
+  obj = addObject(new DrawingObject(drawstate, "line-segments", "lit=0\n"));
   obj->properties.data["colourmap"] = cmap;
   for (int i=0; i < 50; i++)
   {
@@ -1534,7 +1534,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   {
     char label[64];
     sprintf(label, "%c-cross-section", axischar[i]);
-    obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\nstatic=1\n"));
+    obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\n"));
     Colour c;
     c.value = (0xff000000 | 0xff<<(8*i));
     obj->properties.data["colour"] = c.toJson();

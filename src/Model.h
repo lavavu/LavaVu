@@ -112,7 +112,7 @@ public:
   Geometry* getRenderer(const std::string& what);
   Geometry* createRenderer(const std::string& what);
 
-  void clearObjects(bool all=false);
+  void clearObjects();
   void setup();
   void reload(DrawingObject* obj);
   void redraw(bool reload=false);

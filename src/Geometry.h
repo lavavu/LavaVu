@@ -351,7 +351,7 @@ public:
   Geometry(DrawState& drawstate);
   virtual ~Geometry();
 
-  void clear(bool all=false); //Called before new data loaded
+  void clear(); //Called before new data loaded
   void remove(DrawingObject* draw);
   void clearValues(DrawingObject* draw, std::string label="");
   void clearData(DrawingObject* draw, lucGeometryDataType dtype);
