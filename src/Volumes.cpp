@@ -341,7 +341,7 @@ void Volumes::render(int i)
   TextureData* voltexture = geom[i]->draw->useTexture(geom[i]->texture);
   if (!voltexture) 
   {
-    fprintf(stderr, "No volume texture loaded for %d!\n", i);
+    fprintf(stderr, "No volume texture loaded for %s : %d!\n", geom[i]->draw->name().c_str(), i);
     return;
   }
   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};

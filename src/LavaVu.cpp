@@ -813,31 +813,60 @@ void LavaVu::readVolumeSlice(const FilePath& fn)
 
   ImageFile image(fn);
   if (image.pixels)
-  {
     readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.channels);
-  }
   else
     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
 
 void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels, bool flip)
 {
-  //Create volume object, or if static volume object exists, use it
   Geometry* volumes = amodel->getRenderer(lucVolumeType);
   if (!volumes) return;
+
   int outChannels = drawstate.global("volchannels");
-  static int count = 0;
-  DrawingObject *vobj = volume;
   json volss = drawstate.global("volsubsample");
+  float volmin[3], volmax[3], volres[3], inscale[3];
+  Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
+  Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
+  Properties::toArray<float>(drawstate.global("volres"), volres, 3);
+  Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
+
+  //Detect volume atlas and load
+  if (width > volres[0] && height > volres[1])
+  {
+    debug_print("Attempting to load image as Volume Atlas %d %d => %f %f @ %d bpp\n", width, height, volres[0], volres[1], channels);
+    RawImageFlip(imageData, width, height, channels);
+    int tscanline = width * channels;
+    int scanline = volres[1] * channels;
+    for (int y=0; y < height; y += volres[1])
+    {
+      for (int x=0; x < width; x += volres[0])
+      {
+        //printf("%d,%d scan %d tscan %d offset %d\n", x, y, scanline, tscanline, y * tscanline + x * channels);
+        ImageData subimage(volres[0], volres[1], channels);
+        GLubyte* src = imageData + y * tscanline + x * channels;
+        GLubyte* dst = subimage.pixels;
+        for (int yy=0; yy < volres[1]; yy++)
+        {
+          memcpy(dst, src, scanline);
+          dst += scanline;
+          src += tscanline;
+        }
+        //Read the subimage slice
+        readVolumeSlice(name, subimage.pixels, volres[0], volres[1], channels, false);
+      }
+    }
+
+    return;
+  }
+
+  //Create volume object, or if static volume object exists, use it
+  DrawingObject *vobj = volume;
+  static int count = 0;
   if (!vobj)
   {
     count = 0;
-    float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
-    Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
-    Properties::toArray<float>(drawstate.global("volres"), volres, 3);
-    Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
-    vobj = addObject(new DrawingObject(drawstate, name, "static=1"));
+    vobj = addObject(new DrawingObject(drawstate, name));
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
     {
@@ -853,6 +882,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   else
     volumes->add(vobj);
 
+  //Flip if requested
   if (flip) RawImageFlip(imageData, width, height, channels);
 
   //Save static volume for loading multiple slices
