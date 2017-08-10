@@ -842,14 +842,14 @@ GLubyte* ImageLoader::loadPNG()
   return imageData;
 }
 
-GLubyte* ImageLoader::loadJPEG()
+GLubyte* ImageLoader::loadJPEG(int req_channels)
 {
   int width, height, channels;
-  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, 3);
+  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, req_channels);
 
   texture->width = width;
   texture->height = height;
-  texture->channels = channels;
+  texture->channels = req_channels ? req_channels : channels;
 
   return imageData;
 }

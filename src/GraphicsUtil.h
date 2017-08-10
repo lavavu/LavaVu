@@ -768,7 +768,7 @@ public:
   GLubyte* read();
   GLubyte* loadPPM();
   GLubyte* loadPNG();
-  GLubyte* loadJPEG();
+  GLubyte* loadJPEG(int req_channels=0);
   GLubyte* loadTIFF();
   int build(GLubyte* imageData);
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
