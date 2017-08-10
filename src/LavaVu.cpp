@@ -1436,6 +1436,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     int trisplit = drawstate.global("trisplit");
     bool swapY = drawstate.global("swapyz");
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
+    int vi;
     if (trisplit == 0 || attrib.texcoords.size())
     {
       //Load, re-index to use indices for this shape only (the global list is for all shapes)
@@ -1445,7 +1446,14 @@ void LavaVu::readOBJ(const FilePath& fn)
         tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
         for (int c=0; c<3; c++)
         {
-          tris->read(tobj, 1, lucVertexData, &attrib.vertices[3*ids[c].vertex_index]);
+          vi = 3*ids[c].vertex_index;
+          if (swapY)
+          {
+            float vert[3] = {attrib.vertices[vi], attrib.vertices[vi+2], attrib.vertices[vi+1]};
+            tris->read(tobj, 1, lucVertexData, vert);
+          }
+          else
+            tris->read(tobj, 1, lucVertexData, &attrib.vertices[vi]);
           tris->read(tobj, 1, lucIndexData, &voffset);
           voffset++;
           if (attrib.texcoords.size())
@@ -1453,9 +1461,15 @@ void LavaVu::readOBJ(const FilePath& fn)
           if (attrib.normals.size())
           {
             //Some files skip the normal index, so assume it is the same as vertex index
-            int nidx = ids[c].normal_index;
-            if (nidx < 0) nidx = ids[c].vertex_index;
-            tris->read(tobj, 1, lucNormalData, &attrib.normals[3*nidx]);
+            int nidx = 3*ids[c].normal_index;
+            if (nidx < 0) nidx = 3*ids[c].vertex_index;
+            if (swapY)
+            {
+              float norm[3] = {attrib.normals[nidx], attrib.normals[nidx+2], attrib.normals[nidx+1]};
+              tris->read(tobj, 1, lucNormalData, norm);
+            }
+            else
+              tris->read(tobj, 1, lucNormalData, &attrib.normals[nidx]);
           }
         }
       }

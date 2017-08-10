@@ -1311,7 +1311,7 @@ void DrawState::reset()
         0,
         "global",
         "integer",
-        "Imported model triangle subdivision level"
+        "Imported model triangle subdivision level. Can also be set to 1 to force vertex normals to be recalculated by ignoring any present in the loaded model data."
       }
     },
     {
