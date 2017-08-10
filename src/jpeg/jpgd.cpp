@@ -3062,10 +3062,10 @@ unsigned char *decompress_jpeg_image_from_stream(jpeg_decoder_stream *pStream, i
     return NULL;
   *actual_comps = 0;
 
-  if ((!pStream) || (!width) || (!height) || (!req_comps))
+  if ((!pStream) || (!width) || (!height))
     return NULL;
 
-  if ((req_comps != 1) && (req_comps != 3) && (req_comps != 4))
+  if (req_comps && (req_comps != 1) && (req_comps != 3) && (req_comps != 4))
     return NULL;
 
   jpeg_decoder decoder(pStream);
@@ -3076,6 +3076,10 @@ unsigned char *decompress_jpeg_image_from_stream(jpeg_decoder_stream *pStream, i
   *width = image_width;
   *height = image_height;
   *actual_comps = decoder.get_num_components();
+
+  //Preserve actual components if none specified in req_comps
+  if (!req_comps)
+    req_comps = *actual_comps;
 
   if (decoder.begin_decoding() != JPGD_SUCCESS)
     return NULL;
