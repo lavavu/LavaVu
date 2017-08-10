@@ -1071,15 +1071,6 @@ void DrawState::reset()
       }
     },
     {
-      "timestep",
-      {
-        false,
-        "view",
-        "boolean",
-        "Draw a timestep label at top right of view - CURRENTLY NOT IMPLEMENTED"
-      }
-    },
-    {
       "antialias",
       {
         true,

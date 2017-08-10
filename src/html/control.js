@@ -192,7 +192,6 @@ WindowInteractor.prototype.get_state = function(onget) {
 
 //Update controls from JSON data
 function updateControlValues(controls) {
-  //console.log(JSON.stringify(controls));
   for (var c in controls) {
     var control = controls[c];
     var els = document.getElementsByClassName(control[0]);
@@ -206,7 +205,7 @@ function updateControlValues(controls) {
   }
 }
 
-function getAndUpdateControlValues() {
+function getAndUpdateControlValues(names) {
   //Get the updated values
   if (kernel) {
     var callbacks = {'output' : function(out) {
@@ -215,10 +214,11 @@ function getAndUpdateControlValues() {
         data = data.substring(1, data.length-1)
         data = data.replace(/(?:\\n)+/g, "");
         data = data.replace(/'/g, '"');
+        //console.log(data);
         updateControlValues(JSON.parse(data));
       }
     };
-    kernel.execute('import json; json.dumps(lavavu.control.getcontrolvalues())', {iopub: callbacks}, {silent: false});
+    kernel.execute('import json; json.dumps(lavavu.control.getcontrolvalues("' + names + '"))', {iopub: callbacks}, {silent: false});
   } else {
     //TODO: http version, need to request updated values from web server
   }

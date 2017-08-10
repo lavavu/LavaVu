@@ -860,8 +860,14 @@ class TimeStepper(Range):
             timer_---ELID--- = null;
           } else {
             timer_---ELID--- = setInterval(function () {
-                _wi[---VIEWERID---].execute("next", true);
-                getAndUpdateControlValues('timestep');
+                  el = document.getElementById('---ELID---');
+                  if (el) {
+                    _wi[---VIEWERID---].execute("next", true);
+                    getAndUpdateControlValues('timestep');
+                  } else {
+                    //Kill the timer if element missing
+                    clearInterval(timer_---ELID---);
+                  }
                 }, 75 );
             btn.value="\u25ae\u25ae";
             btn.style.fontSize = "10px"
