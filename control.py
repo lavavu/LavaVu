@@ -373,7 +373,7 @@ class Window(Container):
         if wrapper:
             style += ' margin-right: 10px;'
         html = '<div style="' + style + '">\n'
-        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="border: 1px solid #aaa;">\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa;">\n'
         html += '</div>\n'
         #Display any contained controls
         if wrapper:
