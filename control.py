@@ -212,7 +212,7 @@ class Action(object):
                 pass
             #Add to actions list
             #(Only a single interactor is supported in exported html, so always use id=0)
-            actionjs += '  function(value) {_wi[0].execute("' + actscript + '", true);},\n'
+            actionjs += '  function(value) {_wi[0].execute("' + actscript + '");},\n'
         #Add init and finish
         actionjs += '  null];\nfunction init() {_wi[0] = new WindowInteractor(0);}\n</script>'
 
@@ -862,7 +862,7 @@ class TimeStepper(Range):
             timer_---ELID--- = setInterval(function () {
                   el = document.getElementById('---ELID---');
                   if (el) {
-                    _wi[---VIEWERID---].execute("next", true);
+                    _wi[---VIEWERID---].execute("next");
                     getAndUpdateControlValues('timestep');
                   } else {
                     //Kill the timer if element missing

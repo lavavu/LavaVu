@@ -51,7 +51,7 @@ function WindowInteractor(id) {
   this.get_image(function() {
     //console.log('In image loaded callback ' + that.id);
     //Init on image load with callback function to execute commands
-    that.box = initBox(that.img, function(cmd) {that.execute(cmd, true);});
+    that.box = initBox(that.img, function(cmd) {that.execute(cmd);});
     //console.log("Box init on " + that.id);
     //Update the box size by getting state
     updateBox(that.box, function(onget) {that.get_state(onget);});
@@ -60,11 +60,14 @@ function WindowInteractor(id) {
   });
 }
 
-WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
+//Load frame image and run command in single action (non-IPython mode only)
+var instant = true;
+
+WindowInteractor.prototype.execute = function(cmd, callback) {
   //console.log("execute: " + cmd);
   if (kernel) {
     kernel.execute('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
-    this.get_image();
+    this.get_image(callback);
   } else {
     //HTTP interface
     //Replace newlines with semi-colon first
@@ -72,13 +75,15 @@ WindowInteractor.prototype.execute = function(cmd, instant) { //, viewer_id) {
     if (instant && this.img) {
       var url = getUrl() + "/icommand=" + cmd + "?" + new Date().getTime();
       this.img.onload = null;
+      if (callback)
+        this.img.onload = callback;
       this.img.src = url;
     } else {
       var url = getUrl() + "/command=" + cmd + "?" + new Date().getTime()
       x = new XMLHttpRequest();
       x.open('GET', url, true);
       x.send();
-      this.get_image();
+      this.get_image(callback);
     }
 
   }
