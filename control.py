@@ -851,24 +851,31 @@ class TimeStepper(Range):
         html = Range.controls(self)
         html += """
         <script>
-        var timer_---ELID--- = null;
+        var timer_---ELID--- = -1;
+        function startTimer_---ELID---() {
+          if (timer_---ELID--- >= 0) {
+            if (timer_---ELID--- > 0)
+              window.cancelAnimationFrame(timer_---ELID---);
+            timer_---ELID--- = window.requestAnimationFrame(nextStep_---ELID---);
+          }
+        }
+        function nextStep_---ELID---() {
+          el = document.getElementById('---ELID---');
+          if (el) {
+            //Call again on image load - pass callback
+            _wi[---VIEWERID---].execute("next", startTimer_---ELID---);
+            getAndUpdateControlValues('timestep');
+          }
+        }
         function playPause_---ELID---(btn) {
-          if (timer_---ELID---) {
+          if (timer_---ELID--- >= 0) {
             btn.value="\u25BA";
             btn.style.fontSize = "12px"
-            clearInterval(timer_---ELID---);
-            timer_---ELID--- = null;
+            window.cancelAnimationFrame(timer_---ELID---);
+            timer_---ELID--- = -1;
           } else {
-            timer_---ELID--- = setInterval(function () {
-                  el = document.getElementById('---ELID---');
-                  if (el) {
-                    _wi[---VIEWERID---].execute("next");
-                    getAndUpdateControlValues('timestep');
-                  } else {
-                    //Kill the timer if element missing
-                    clearInterval(timer_---ELID---);
-                  }
-                }, 75 );
+            timer_---ELID--- = 0;
+            startTimer_---ELID---();
             btn.value="\u25ae\u25ae";
             btn.style.fontSize = "10px"
           }
