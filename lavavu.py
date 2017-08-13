@@ -649,7 +649,7 @@ class Obj(object):
             The formatted colourmap data
         """
         cmid = self["colourmap"]
-        return self.instance.getcolourmap(cmid)
+        return self.instance.getcolourmap(cmid, string)
 
     def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         """
