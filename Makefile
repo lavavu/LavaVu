@@ -106,8 +106,9 @@ vpath %.cpp src:src/Main:src:src/jpeg:src/png
 vpath %.h src/Main:src:src/jpeg:src/png:src/sqlite3
 vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
-#A bit of a hack to make sure version.cpp is always rebuilt
-TMP := $(shell touch src/version.cpp)
+
+#Always run this script to update version.cpp if git version changes
+TMP := $(shell python version.py)
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp) $(wildcard src/png/*.cpp)
 
@@ -144,11 +145,8 @@ paths:
 	@mkdir -p $(PREFIX)
 	@mkdir -p $(HTMLPATH)
 
-version:
-	printf '#include "version.h"\nconst std::string version = "%s";\n' $(shell git describe --tags) > src/version.cpp
-
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) | version
+$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
 	$(CXX) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths

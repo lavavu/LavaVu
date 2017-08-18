@@ -50,6 +50,13 @@ code_base = os.path.dirname(this_sconscript_file)
 env.Install('bin/html/', Glob(src_dir + '/html/index.html'))
 env.Command(bin_dir + '/html/viewer.html', 'src/html/viewer.html', code_base + "/build-index.sh $SOURCE $TARGET gLucifer/Viewer/src/shaders")
 
+#Run version update check
+dir = os.getcwd()
+os.chdir(code_base)
+from subprocess import call
+call('version.py')
+os.chdir(dir)
+
 # Build our source files.
 # C++ sources
 srcs = Glob(src_dir + '/*.cpp')
