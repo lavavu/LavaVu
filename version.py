@@ -8,7 +8,8 @@ f = open('src/version.cpp', 'a+')
 content = f.read()
 
 if not version in content:
-    f.seek(0)
+    f.close()
+    f = open('src/version.cpp', 'w')
     print "Writing new version"
     f.write('#include "version.h"\nconst std::string version = "%s";\n' % version)
 else:
