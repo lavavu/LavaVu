@@ -261,6 +261,7 @@ Geometry* Model::createRenderer(const std::string& what)
   if (what == "volume")
     return new Volumes(drawstate);
   abort_program("Invalid renderer specified! '%s'\n", what.c_str());
+  return NULL;
 }
 
 void Model::load(const FilePath& fn)
@@ -1859,34 +1860,37 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
     View* view = views[v];
     json& vprops = view->properties.data;
 
-    float rotate[4], rota[3], translate[3], focus[3];
-    view->getCamera(rotate, translate, focus);
-    Quaternion qrot(rotate[0], rotate[1], rotate[2], rotate[3]);
-    qrot.toEuler(rota[0], rota[1], rota[2]);
-    json rot, ra, trans, foc, scale, min, max;
-    for (int i=0; i<4; i++)
+    if (view->initialised)
     {
-      rot.push_back(rotate[i]);
-      if (i>2) break;
-      ra.push_back(rota[i]);
-      trans.push_back(translate[i]);
-      foc.push_back(focus[i]);
-      scale.push_back(view->scale[i]);
-      min.push_back(view->min[i]);
-      max.push_back(view->max[i]);
-    }
+      float rotate[4], rota[3], translate[3], focus[3];
+      view->getCamera(rotate, translate, focus);
+      Quaternion qrot(rotate[0], rotate[1], rotate[2], rotate[3]);
+      qrot.toEuler(rota[0], rota[1], rota[2]);
+      json rot, ra, trans, foc, scale, min, max;
+      for (int i=0; i<4; i++)
+      {
+        rot.push_back(rotate[i]);
+        if (i>2) break;
+        ra.push_back(rota[i]);
+        trans.push_back(translate[i]);
+        foc.push_back(focus[i]);
+        scale.push_back(view->scale[i]);
+        min.push_back(view->min[i]);
+        max.push_back(view->max[i]);
+      }
 
-    vprops["rotate"] = rot;
-    vprops["xyzrotate"] = ra;
-    vprops["translate"] = trans;
-    vprops["focus"] = foc;
-    vprops["scale"] = scale;
-    //Can't set min/max properties from auto calc or will override future bounding box calc,
-    //useful to get the calculated bounding box, so export as "bounds"
-    json bounds;
-    bounds["min"] = min;
-    bounds["max"] = max;
-    vprops["bounds"] = bounds;
+      vprops["rotate"] = rot;
+      vprops["xyzrotate"] = ra;
+      vprops["translate"] = trans;
+      vprops["focus"] = foc;
+      vprops["scale"] = scale;
+      //Can't set min/max properties from auto calc or will override future bounding box calc,
+      //useful to get the calculated bounding box, so export as "bounds"
+      json bounds;
+      bounds["min"] = min;
+      bounds["max"] = max;
+      vprops["bounds"] = bounds;
+    }
 
     //Converts named colours to js readable
     if (vprops.count("background") > 0)
