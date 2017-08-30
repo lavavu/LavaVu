@@ -520,7 +520,7 @@ void Volumes::render(int i)
 
 ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles)
 {
-  ImageData *image = NULL;
+  ImageData* image = new ImageData();
   unsigned int inc = slices[draw];
   if (inc <= 0) inc = 1;
   for (unsigned int i = 0; i < geom.size(); i += inc)
