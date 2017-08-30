@@ -116,7 +116,6 @@ public:
   void setup();
   void reload(DrawingObject* obj);
   void redraw(bool reload=false);
-  unsigned int addColourMap(ColourMap* cmap=NULL);
   void loadWindows();
   void loadLinks();
   void loadLinks(DrawingObject* obj);
@@ -141,6 +140,8 @@ public:
   void storeFigure();
   int addFigure(std::string name="", const std::string& state="");
   void addObject(DrawingObject* obj);
+  ColourMap* addColourMap(std::string name="", std::string colours="", std::string properties="");
+  void updateColourMap(ColourMap* colourMap, std::string colours="", std::string properties="");
   DrawingObject* findObject(unsigned int id);
   View* defaultView();
 

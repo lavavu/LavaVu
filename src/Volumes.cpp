@@ -349,12 +349,10 @@ void Volumes::render(int i)
   glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
 
   //User settings
-  int cmapid = props["colourmap"];
   ColourMap* cmap = geom[i]->draw->colourMap;
   //if (cmap) cmap->calibrate(0, 1);
   //Setup gradient texture from colourmap if not yet loaded
   if (cmap && !cmap->texture) cmap->loadTexture();
-  bool hasColourMap = cmap && cmapid >= 0;
   //Use per-object clip box if set, otherwise use global clip
   /*
   float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->render->vertices[0][0]),
@@ -375,7 +373,7 @@ void Volumes::render(int i)
 
   glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
   glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
-  glUniform1i(prog->uniforms["uEnableColour"], hasColourMap ? 1 : 0);
+  glUniform1i(prog->uniforms["uEnableColour"], cmap ? 1 : 0);
   glUniform1f(prog->uniforms["uPower"], props["power"]);
   glUniform1i(prog->uniforms["uSamples"], props["samples"]);
   float opacity = props["opacity"], density = props["density"];
@@ -412,7 +410,7 @@ void Volumes::render(int i)
   GL_Error_Check;
 
   //Gradient texture
-  if (hasColourMap)
+  if (cmap)
   {
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(prog->uniforms["uTransferFunction"], 0);

@@ -218,19 +218,19 @@ void DrawState::reset()
     {
       "colourmap",
       {
-        -1,
+        "",
         "object",
-        "integer",
-        "id of the colourmap to use"
+        "string",
+        "name of the colourmap to use"
       }
     },
     {
       "opacitymap",
       {
-        -1,
+        "",
         "object",
-        "integer",
-        "id of opacity colourmap to use"
+        "string",
+        "name of the opacity colourmap to use"
       }
     },
     {

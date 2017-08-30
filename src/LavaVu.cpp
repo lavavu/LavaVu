@@ -1060,7 +1060,8 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
     addObject(vobj);
 
     //Demo colourmap, depth 
-    vobj->properties.data["colourmap"] = colourMap("volume", "#000000:0 #ff0000 #ff8800 #ffff77 #00ffff #3333ff");
+    ColourMap* cmap = addColourMap("volume", "#000000:0 #ff0000 #ff8800 #ffff77 #00ffff #3333ff");
+    vobj->properties.data["colourmap"] = cmap->name;
     //Add colour bar display
     colourBar(vobj);
 
@@ -1318,7 +1319,8 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   obj = addObject(new DrawingObject(drawstate, fn.base, props));
 
   //Default colourmap
-  obj->properties.data["colourmap"] = colourMap("elevation", "darkgreen yellow brown");
+  ColourMap* cmap = addColourMap("elevation", "darkgreen yellow brown");
+  obj->properties.data["colourmap"] = cmap->name;
 
   Vec3d vertex;
 
@@ -1527,8 +1529,8 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   //Add points object
   DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nlit=0\n"));
   //Demo colourmap, distance from model origin
-  int cmap = colourMap("particles", "#66bb33 #00ff00 #3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
-  obj->properties.data["colourmap"] = cmap;
+  ColourMap* cmap = addColourMap("particles", "#66bb33 #00ff00 #3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
+  obj->properties.data["colourmap"] = cmap->name;
   //Add colour bar display
   colourBar(obj);
   unsigned int pointsperswarm = numpoints/4; //4 swarms
@@ -1552,7 +1554,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
 
   //Add lines
   obj = addObject(new DrawingObject(drawstate, "line-segments", "lit=0\n"));
-  obj->properties.data["colourmap"] = cmap;
+  obj->properties.data["colourmap"] = cmap->name;
   for (int i=0; i < 50; i++)
   {
     float colour, ref[3];
@@ -2940,33 +2942,31 @@ std::string LavaVu::web(bool tofile)
   return jsonWriteFile(NULL, false, true);
 }
 
-int LavaVu::colourMap(std::string name, std::string colours, std::string properties)
+ColourMap* LavaVu::addColourMap(std::string name, std::string colours, std::string properties)
 {
-  if (!amodel) return -1;
+  if (!amodel) return NULL;
+  return amodel->addColourMap(name, colours, properties);
+}
 
-  for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
-  {
-    //If found by name, set colours and properties
-    if (name ==  amodel->colourMaps[i]->name)
-    {
-      amodel->colourMaps[i]->loadPalette(colours);
-      //Parse and merge property strings
-      amodel->colourMaps[i]->properties.parseSet(properties);
-      return i;
-    }
-  }
-
-  //Add a new colourmap if not found
-  ColourMap* cmap = new ColourMap(drawstate, name, properties);
-  cmap->loadPalette(colours);
-  amodel->colourMaps.push_back(cmap);
-  return amodel->colourMaps.size()-1;
+void LavaVu::updateColourMap(ColourMap* colourMap, std::string colours, std::string properties)
+{
+  if (!amodel || !colourMap) return;
+  amodel->updateColourMap(colourMap, colours, properties);
 }
 
 ColourMap* LavaVu::getColourMap(unsigned int id)
 {
   if (!amodel || amodel->colourMaps.size() <= id) return NULL;
   return amodel->colourMaps[id];
+}
+
+ColourMap* LavaVu::getColourMap(std::string name)
+{
+  if (!amodel) return NULL;
+  for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
+    if (name ==  amodel->colourMaps[i]->name)
+      return amodel->colourMaps[i];
+  return NULL;
 }
 
 DrawingObject* LavaVu::colourBar(DrawingObject* obj)

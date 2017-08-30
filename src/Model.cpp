@@ -438,6 +438,50 @@ void Model::addObject(DrawingObject* obj)
   objects.push_back(obj);
 }
 
+//Adds colourmap
+ColourMap* Model::addColourMap(std::string name, std::string colours, std::string properties)
+{
+  if (name.length() == 0)
+    name = "default";
+
+  //Check for existing and update instead if found
+  for (auto cm : colourMaps)
+  {
+    if (cm->name == name)
+    {
+      updateColourMap(cm, colours, properties);
+      return cm;
+    }
+  }
+
+  //Create a default greyscale map if no data provided
+  if (!colours.length()) colours = "#000000 #ffffff";
+
+  //Add a new colourmap
+  ColourMap* cmap = new ColourMap(drawstate, name, properties);
+  cmap->loadPalette(colours);
+  colourMaps.push_back(cmap);
+  return cmap;
+}
+
+//Loads colourmap
+void Model::updateColourMap(ColourMap* colourMap, std::string colours, std::string properties)
+{
+  if (!colourMap) return;
+
+  //Parse and merge property strings
+  colourMap->properties.parseSet(properties);
+  colourMap->loadPalette(colours);
+
+  //Update this and other objects using this map
+  for (auto o : objects)
+  {
+    o->setup();
+    if (o->colourMap == colourMap)
+      reload(o);
+  }
+}
+
 DrawingObject* Model::findObject(unsigned int id)
 {
   for (unsigned int i=0; i<objects.size(); i++)
@@ -471,8 +515,10 @@ void Model::reload(DrawingObject* obj)
   for (auto g : geometry)
     g->redrawObject(obj);
 
-  for (unsigned int i = 0; i < colourMaps.size(); i++)
-    colourMaps[i]->calibrated = false;
+  if (obj->colourMap)
+    obj->colourMap->calibrated = false;
+  if (obj->opacityMap)
+    obj->opacityMap->calibrated = false;
 }
 
 void Model::redraw(bool reload)
@@ -490,17 +536,6 @@ void Model::redraw(bool reload)
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
     colourMaps[i]->calibrated = false;
-}
-
-//Adds colourmap
-unsigned int Model::addColourMap(ColourMap* cmap)
-{
-  //Create a default greyscale map
-  if (!cmap) cmap = new ColourMap(drawstate, "default", "colours=#000000 #ffffff");
-  //Save colour map in list
-  colourMaps.push_back(cmap);
-  //Return index
-  return colourMaps.size()-1;
 }
 
 void Model::loadWindows()
@@ -753,9 +788,9 @@ void Model::loadLinks()
       //Find colourmap by id == index
       //Add colourmap to drawing object Colour & Opacity still suported, R/G/B are not
       if (data_type == lucColourValueData)
-        draw->properties.data["colourmap"] = colourmap_id-1;
+        draw->properties.data["colourmap"] = colourMaps[colourmap_id-1]->name;
       if (data_type == lucOpacityValueData)
-        draw->properties.data["opacitymap"] = colourmap_id-1;
+        draw->properties.data["opacitymap"] = colourMaps[colourmap_id-1]->name;
     }
   }
   sqlite3_finalize(statement);
@@ -788,7 +823,7 @@ void Model::loadLinks(DrawingObject* obj)
       if (colourMaps.size() < colourmap_id || !colourMaps[colourmap_id-1])
         abort_program("Invalid colourmap id %d\n", colourmap_id);
       //Add colourmap to drawing object by index
-      obj->properties.data["colourmap"] = colourmap_id-1;
+      obj->properties.data["colourmap"] = colourMaps[colourmap_id-1]->name;
     }
   }
   sqlite3_finalize(statement);
@@ -934,6 +969,7 @@ void Model::loadColourMaps()
   ColourMap* colourMap = NULL;
   while ( sqlite3_step(statement) == SQLITE_ROW)
   {
+    int id = sqlite3_column_int(statement, 0);
     char *cmname = (char*)sqlite3_column_text(statement, 1);
     minimum = sqlite3_column_double(statement, 2);
     maximum = sqlite3_column_double(statement, 3);
@@ -941,7 +977,9 @@ void Model::loadColourMaps()
     int discrete = sqlite3_column_int(statement, 5);
     std::string props;
     if (sqlite3_column_type(statement, 6) != SQLITE_NULL) props = (char*)sqlite3_column_text(statement, 6);
-    colourMap = new ColourMap(drawstate, cmname, props);
+    std::stringstream name;
+    name << cmname << "_" << id; //Prevent duplicate names by appending id
+    colourMap = new ColourMap(drawstate, name.str(), props);
     setColourMapProps(colourMap->properties, minimum, maximum, logscale, discrete);
     colourMaps.push_back(colourMap);
   }
@@ -974,8 +1012,6 @@ void Model::loadColourMapsLegacy()
   while ( sqlite3_step(statement) == SQLITE_ROW)
   {
     int id = sqlite3_column_int(statement, 0);
-    char idname[10];
-    sprintf(idname, "%d", id);
     char *cmname = NULL;
     if (!old) cmname = (char*)sqlite3_column_text(statement, 7);
 
@@ -989,7 +1025,11 @@ void Model::loadColourMapsLegacy()
       int discrete = sqlite3_column_int(statement, 4);
       std::string props;
       if (!old && sqlite3_column_type(statement, 8) != SQLITE_NULL) props = (char*)sqlite3_column_text(statement, 8);
-      colourMap = new ColourMap(drawstate, cmname ? cmname : idname, props);
+
+      std::stringstream name;
+      if (cmname) name << cmname << "_";
+      name << id; //Prevent duplicate names by appending id
+      colourMap = new ColourMap(drawstate, name.str(), props);
       colourMaps.push_back(colourMap);
       setColourMapProps(colourMap->properties, minimum, maximum, logscale, discrete);
       //Colours already parsed from properties?
@@ -2128,6 +2168,17 @@ void Model::jsonRead(std::string data)
     {
       //Not in imported list, assume hidden
       objects[i]->properties.data["visible"] = false;
+    }
+
+    //Convert colourmap to use name
+    json cm = inobjects[i]["colourmap"];
+    if (cm.is_number())
+    {
+      int cmid = cm;
+      if (cm >= 0 && cm < colourMaps.size())
+        inobjects[i]["colourmap"] = colourMaps[cmid]->name;
+      else
+        inobjects[i]["colourmap"] = "";
     }
     
     //Merge properties

@@ -2110,24 +2110,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       int cmap = lookupColourMap(parsed, "colourmap", next);
       std::string what = parsed.get("colourmap", next);
       //Only able to set the value colourmap now
-      if (cmap >= 0)
+      if (cmap >= 0 && amodel->colourMaps.size() > cmap)
       {
-        obj->properties.data["colourmap"] = cmap;
+        obj->properties.data["colourmap"] = amodel->colourMaps[cmap]->name;
         printMessage("%s colourmap set to %s (%d)", obj->name().c_str(), amodel->colourMaps[cmap]->name.c_str(), cmap);
       }
       else if (ival < 0 || what.length() == 0)
       {
-        obj->properties.data["colourmap"] = -1;
+        obj->properties.data["colourmap"] = "";
         printMessage("%s colourmap set to none", obj->name().c_str());
       }
       else
       {
         //No cmap id, parse a colourmap string
-        cmap = obj->properties["colourmap"];
+        ColourMap* cm = obj->getColourMap();
         if (what == "add")
         {
-          cmap = amodel->addColourMap();
-          obj->properties.data["colourmap"] = cmap;
+          cm = amodel->addColourMap();
+          obj->properties.data["colourmap"] = cm->name;
           if (what == "add")
             what = parsed.getall("colourmap", next+1);
           else
@@ -2139,20 +2139,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (what.length() > 0)
         {
           //Add new map if none set on object
-          json current = obj->properties["colourmap"];
-          if (current.is_number() && (int)current >= 0 && amodel->colourMaps.size() > 0)
-            cmap = (int)current;
-          else
-            cmap = amodel->addColourMap();
-          amodel->colourMaps[cmap]->loadPalette(what);
-          //amodel->colourMaps[cmap]->print();
-          obj->properties.data["colourmap"] = cmap;
-          //amodel->colourMaps[cmap]->calibrate(); //Recalibrate
+          if (!cm)
+            cm = amodel->addColourMap();
+          amodel->updateColourMap(cm, what);
+          //cm->print();
+          obj->properties.data["colourmap"] = cm->name;
+          //cm->calibrate(); //Recalibrate
         }
       }
       //Full object reload if colours updated
       //NOTE: This will not reload other objects using the same colourmap
-      amodel->reload(obj);
+      //amodel->reload(obj);
     }
   }
   else if (parsed.exists("colourbar"))
@@ -2295,7 +2292,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         {
           //Convert to colour values using colourmap parser
           ColourMap cmap(drawstate);
-          cmap.parse(data);
+          cmap.loadPalette(data);
           data = json::array();
           for (unsigned int i=0; i<cmap.colours.size(); i++)
             data.push_back((float)cmap.colours[i].colour.value);

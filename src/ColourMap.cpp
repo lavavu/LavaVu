@@ -63,42 +63,6 @@ ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
   }
 }
 
-void ColourMap::parse(std::string colourMapString)
-{
-  noValues = false;
-  const char *breakChars = " \t\n;";
-  char *charPtr;
-  char colourStr[64];
-  char *colourString = new char[colourMapString.size()+1];
-  strcpy(colourString, colourMapString.c_str());
-  char *colourMap_ptr = colourString;
-  colours.clear();
-  charPtr = strtok(colourMap_ptr, breakChars);
-  while (charPtr != NULL)
-  {
-    float value = 0.0;
-
-    // Parse out value if provided, otherwise assign a default
-    // input string: (OPTIONAL-VALUE)colour
-    if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
-    {
-      //Add parsed colour to the map with value
-      add(colourStr, value);
-    }
-    else
-    {
-      //Add parsed colour to the map
-      add(charPtr);
-    }
-
-    charPtr = strtok(NULL, breakChars);
-  }
-  delete[] colourString;
-
-  //Ensure at least two colours
-  while (colours.size() < 2) add(0xff000000);
-}
-
 void ColourMap::addAt(Colour& colour, float position)
 {
   //Adds by position, not "value"
@@ -372,7 +336,8 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_MULTISAMPLE);
 
-  if (!calibrated) calibrate(minimum, maximum);
+  //if (!calibrated) calibrate(minimum, maximum);
+  if (!calibrated) calibrate();
 
   // Draw larger background box for border, use font colour
   glColor4ubv(printColour.rgba);
@@ -636,8 +601,10 @@ void ColourMap::loadPalette(std::string data)
   //Three types of data accepted
   // a) Name of predefined colour map, if preceded with @ position data is ignored
   //   and only colours loaded at even spacing
-  // b) Space separated colour list (process with parse())
-  // c) Position=rgba colour palette (process here)
+  // b) Space separated colour list
+  // c) Position=rgba colour palette
+  noValues = false;
+  calibrated = false;
 
   bool nopos = false;
   if (data.at(0) == '@')
@@ -651,10 +618,42 @@ void ColourMap::loadPalette(std::string data)
 
   if (data.find("=") == std::string::npos)
   {
-     parse(data);
+    //Parse a whitespace separated list of colours with optional preceeding values
+    const char *breakChars = " \t\n;";
+    char *charPtr;
+    char colourStr[64];
+    char *colourString = new char[data.size()+1];
+    strcpy(colourString, data.c_str());
+    char *colourMap_ptr = colourString;
+    colours.clear();
+    charPtr = strtok(colourMap_ptr, breakChars);
+    while (charPtr != NULL)
+    {
+      float value = 0.0;
+
+      // Parse out value if provided, otherwise assign a default
+      // input string: (OPTIONAL-VALUE)colour
+      if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
+      {
+        //Add parsed colour to the map with value
+        add(colourStr, value);
+      }
+      else
+      {
+        //Add parsed colour to the map
+        add(charPtr);
+      }
+
+      charPtr = strtok(NULL, breakChars);
+    }
+    delete[] colourString;
+
+    //Ensure at least two colours
+    while (colours.size() < 2) add(0xff000000);
   }
   else
   {
+    //Parse a list of position=value colours, newline or semi-colon separated
     //Currently only support loading palettes with literal position data, not values to scale
     noValues = true;
     //Parse palette string into key/value pairs
@@ -690,11 +689,7 @@ void ColourMap::loadPalette(std::string data)
   }
 
   if (texture)
-  {
     loadTexture();
-    //delete texture;
-    //texture = NULL;
-  }
 
   //Strip positions
   if (nopos) noValues = true;

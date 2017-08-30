@@ -64,6 +64,7 @@ public:
   DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
+  ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
   void setup();
   TextureData* useTexture(ImageLoader* tex=NULL);
   std::string name() {return properties["name"];}

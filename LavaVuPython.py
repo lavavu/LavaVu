@@ -312,17 +312,36 @@ class DrawingObject(object):
         _LavaVuPython.DrawingObject_swiginit(self, _LavaVuPython.new_DrawingObject(*args))
     colourMap = _swig_property(_LavaVuPython.DrawingObject_colourMap_get, _LavaVuPython.DrawingObject_colourMap_set)
     __swig_destroy__ = _LavaVuPython.delete_DrawingObject
+DrawingObject.getColourMap = new_instancemethod(_LavaVuPython.DrawingObject_getColourMap, None, DrawingObject)
 DrawingObject_swigregister = _LavaVuPython.DrawingObject_swigregister
 DrawingObject_swigregister(DrawingObject)
 
 class ColourMap(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
+    name = _swig_property(_LavaVuPython.ColourMap_name_get, _LavaVuPython.ColourMap_name_set)
 
     def __init__(self, *args):
         _LavaVuPython.ColourMap_swiginit(self, _LavaVuPython.new_ColourMap(*args))
     getDefaultMapNames = staticmethod(_LavaVuPython.ColourMap_getDefaultMapNames)
     getDefaultMap = staticmethod(_LavaVuPython.ColourMap_getDefaultMap)
+
+        #def __getattr__(self, key):
+        #TODO: allow property set/get
+        #  print "hello"
+
+    def _setup(self, app, data, reverse=False, monochrome=False, propstring=""):
+        if not isinstance(data, str):
+    #Convert iterable maps to string format
+            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
+            data = '\n'.join(data)
+    #Load colourmap
+        app.updateColourMap(self, data, propstring)
+        if reverse:
+            self.flip()
+        if monochrome:
+            self.monochrome()
+
     __swig_destroy__ = _LavaVuPython.delete_ColourMap
 ColourMap.flip = new_instancemethod(_LavaVuPython.ColourMap_flip, None, ColourMap)
 ColourMap.monochrome = new_instancemethod(_LavaVuPython.ColourMap_monochrome, None, ColourMap)
@@ -369,7 +388,8 @@ LavaVu.image = new_instancemethod(_LavaVuPython.LavaVu_image, None, LavaVu)
 LavaVu.web = new_instancemethod(_LavaVuPython.LavaVu_web, None, LavaVu)
 LavaVu.video = new_instancemethod(_LavaVuPython.LavaVu_video, None, LavaVu)
 LavaVu.defaultModel = new_instancemethod(_LavaVuPython.LavaVu_defaultModel, None, LavaVu)
-LavaVu.colourMap = new_instancemethod(_LavaVuPython.LavaVu_colourMap, None, LavaVu)
+LavaVu.addColourMap = new_instancemethod(_LavaVuPython.LavaVu_addColourMap, None, LavaVu)
+LavaVu.updateColourMap = new_instancemethod(_LavaVuPython.LavaVu_updateColourMap, None, LavaVu)
 LavaVu.getColourMap = new_instancemethod(_LavaVuPython.LavaVu_getColourMap, None, LavaVu)
 LavaVu.colourBar = new_instancemethod(_LavaVuPython.LavaVu_colourBar, None, LavaVu)
 LavaVu.setState = new_instancemethod(_LavaVuPython.LavaVu_setState, None, LavaVu)

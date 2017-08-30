@@ -70,16 +70,36 @@ class DrawingObject
 public:
   DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
   ColourMap* colourMap;
+  ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
 };
 
 class ColourMap
 {
 public:
+  std::string name;
   ColourMap(DrawState& drawstate, std::string name="", std::string props="");
   void flip();
   void monochrome();
   static std::vector<std::string> getDefaultMapNames();
   static std::string getDefaultMap(std::string);
+
+  %pythoncode %{
+    #def __getattr__(self, key):
+    #TODO: allow property set/get
+    #  print "hello"
+
+    def _setup(self, app, data, reverse=False, monochrome=False, propstring=""):
+        if not isinstance(data, str):
+            #Convert iterable maps to string format
+            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
+            data = '\n'.join(data)
+        #Load colourmap
+        app.updateColourMap(self, data, propstring)
+        if reverse:
+            self.flip()
+        if monochrome:
+            self.monochrome()
+  %}
 };
 
 typedef std::shared_ptr<GeomData> Geom_Ptr;
@@ -113,8 +133,10 @@ public:
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
   void defaultModel();
-  int colourMap(std::string name, std::string colours="", std::string properties="");
+  ColourMap* addColourMap(std::string name, std::string colours="", std::string properties="");
+  void updateColourMap(ColourMap* colourMap, std::string colours, std::string properties="");
   ColourMap* getColourMap(unsigned int id);
+  ColourMap* getColourMap(std::string name);
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();

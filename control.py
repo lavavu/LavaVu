@@ -287,31 +287,24 @@ class FilterAction(PropertyAction):
         cmd = "filtermin" if self.property == "minimum" else "filtermax"
         return 'select ' + self.target["name"] + '; ' + cmd + ' ' + str(self.index) + ' " + value + "'
 
-class ColourmapAction(Action):
+class ColourMapAction(Action):
     """Colourmap change action triggered by a control
     """
     def __init__(self, target):
-        super(ColourmapAction, self).__init__(target)
+        super(ColourMapAction, self).__init__(target)
 
     def run(self, value):
         #Set a colourmap
-        # - using script command
-        return 'colourmap ' + str(self.target.id) + ' "' + value + '"'
-        """
-        # - using python interface
-        map = json.loads(value)
-        f = target["colourmaps"]
-        maps = target.instance["colourmaps"]
-        maps[index] = value
-        #print value
-        target.instance["colourmaps"] = maps
-        return "reload"
-        """
+        if self.target.id > 0:
+            self.target.colourmap(value)
+        return self.command
 
     def script(self):
         #Return script action for HTML export
         #Set a colourmap
-        return 'colourmap ' + str(self.target.id) + ' \\"" + value + "\\"' #Reload?
+        if self.target.id > 0:
+            return 'colourmap ' + str(self.target.id) + ' \\"" + value + "\\"' #Reload?
+        return ""
 
 class HTML(object):
     """A class to output HTML controls
@@ -738,10 +731,11 @@ class ColourMap(Control):
         super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
         self.maps = target.instance.state["colourmaps"]
-        if self.value is not None and self.value < len(self.maps):
-            self.map = self.maps[self.value]
+        for m in self.maps:
+            if m["name"] == self.value:
+                self.map = m
         #Replace action on the control
-        Action.actions[self.id] = ColourmapAction(target)
+        Action.actions[self.id] = ColourMapAction(target)
         self.selected = -1;
 
     def controls(self):
@@ -792,7 +786,7 @@ class ColourMapList(List):
         super(ColourMapList, self).__init__(target, options=options, command="reload", property="colourmap", *args, **kwargs)
 
         #Replace action on the control
-        Action.actions[self.id] = ColourmapAction(target)
+        Action.actions[self.id] = ColourMapAction(target)
 
 class ColourMaps(List):
     """A colourmap list selector, populated by the available colour maps,
@@ -801,19 +795,21 @@ class ColourMaps(List):
     def __init__(self, target, *args, **kwargs):
         #Load maps list
         self.maps = target.instance.state["colourmaps"]
-        options = [[-1, "None"]]
-        for m in range(len(self.maps)):
-            options.append([m, self.maps[m]["name"]])
-        #Mark selected
+        options = [["", "None"]]
         sel = target["colourmap"]
-        if sel is None: sel = -1
-        options[sel+1].append(True)
+        if sel is None: sel = ""
+        for m in range(len(self.maps)):
+            options.append([self.maps[m]["name"], self.maps[m]["name"]])
+            #Mark selected
+            if sel == self.maps[m]["name"]:
+                options[-1].append(True)
+                sel = m
 
         self.gradient = ColourMap(target)
         self.gradient.selected = sel #gradient editor needs to know selection index
         self.gradient.label = "" #Clear label
 
-        super(ColourMaps, self).__init__(target, options=options, command="reload", property="colourmap", *args, **kwargs)
+        super(ColourMaps, self).__init__(target, options=options, command="", property="colourmap", *args, **kwargs)
 
     def onchange(self):
         #Find the saved palette entry and load it

@@ -66,6 +66,42 @@ DrawingObject::~DrawingObject()
     delete texture;
 }
 
+ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* current)
+{
+  if (!drawstate.colourMaps) return NULL;
+  json prop = properties[propname];
+  if (prop.is_number())
+  {
+    //Attempt to load by id
+    printf("WARNING: Load colourmap by ID is deprecated, use name\n");
+    int cmapid = prop;
+    if (cmapid >= 0 && cmapid < (int)drawstate.colourMaps->size())
+    {
+      ColourMap* cmap = (*drawstate.colourMaps)[cmapid];
+      //Replace integer props with names
+      properties.data[propname] = cmap->name;
+      return cmap;
+    }
+  }
+  else if (prop.is_string())
+  {
+    //Attempt to load by name
+    std::string name = prop;
+    for (unsigned int i=0; i < drawstate.colourMaps->size(); i++)
+      if (name == (*drawstate.colourMaps)[i]->name)
+        return (*drawstate.colourMaps)[i];
+
+    //Not found, assume property is a colourmap data string instead
+    //Load the data string on existing map, if any
+    if (current)
+    {
+      current->loadPalette(name);
+      return current;
+    }
+  }
+  return NULL;
+}
+
 void DrawingObject::setup()
 {
   //Cache values for faster lookups during draw calls
@@ -77,15 +113,10 @@ void DrawingObject::setup()
   if (opacity > 1.0) opacity /= 255.0;
   //Disable opacity if zero or out of range
   if (opacity <= 0.0 || opacity > 1.0) opacity = 1.0; 
+
   //Cache colourmaps
-  colourMap = opacityMap = NULL;
-  if (drawstate.colourMaps)
-  {
-    int cmapid = properties["colourmap"];
-    if (cmapid >= 0 && cmapid < (int)drawstate.colourMaps->size()) colourMap = (*drawstate.colourMaps)[cmapid];
-    int omapid = properties["opacitymap"];
-    if (omapid >= 0 && omapid < (int)drawstate.colourMaps->size()) opacityMap = (*drawstate.colourMaps)[omapid];
-  }
+  colourMap = getColourMap("colourmap", colourMap);
+  opacityMap = getColourMap("opacitymap", opacityMap);
 
   //Cache the filter data
   //The cache stores filter values so we can avoid

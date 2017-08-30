@@ -144,9 +144,6 @@ class Obj(object):
 
     def __setitem__(self, key, value):
         #self.instance._get() #Ensure in sync
-        if key == "colourmap" and not isinstance(value,int):
-            self.colourmap(value)
-            return
         #Set new value and send
         self.dict[key] = value
         self._set()
@@ -505,7 +502,7 @@ class Obj(object):
             data = [data]
         self.instance.app.loadLabels(self.ref, data)
 
-    def colourmap(self, data, **kwargs):
+    def colourmap(self, data, reverse=False, monochrome=False, **kwargs):
         """
         Load colour map data for object
 
@@ -517,19 +514,20 @@ class Obj(object):
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
-            Creates a colourmap named objectname-default if it doesn't exist already
-
-        Returns
-        -------
-        colourmap: int
-            The id of the colourmap loaded/created
+            Creates a colourmap named objectname-default if object 
+            doesn't already have a colourmap
+        reverse: boolean
+            Reverse the order of the colours after loading
+        monochrome: boolean
+            Convert to greyscale
         """
-        #Load colourmap and set property on this object
-        cmap = self.instance.colourmap(self.name() + '-default', data, **kwargs)
-        self["colourmap"] = cmap
-        self.instance.app.reloadObject(self.ref)
-        return cmap
-
+        #Load colourmap on this object
+        ret = None
+        if self.ref.colourMap is None:
+            self.ref.colourMap = self.instance.app.addColourMap(self.name() + "_colourmap")
+            self["colourmap"] = self.ref.colourMap.name
+        self.ref.colourMap._setup(self.instance.app, data, reverse, monochrome, str(json.dumps(kwargs)))
+        
     def reload(self):
         """
         Fully reload the object's data, recalculating all parameters such as colours
@@ -866,6 +864,9 @@ class Viewer(object):
             #Get property dict
             self._proplist = convert_keys(json.loads(self.app.propertyList()))
 
+            for prop in self._proplist:
+                self[prop] = None
+
             #Get available commands
             self._cmdcategories = self.app.commandList()
             self._cmds = {}
@@ -978,7 +979,10 @@ class Viewer(object):
         if script and isinstance(script,list):
           args += script
         if arglist:
-            args += arglist
+            if isinstance(arglist, list):
+                args += arglist
+            else:
+                args += [str(arglist)]
         self.queue = usequeue
 
         if verbose:
@@ -1005,9 +1009,17 @@ class Viewer(object):
             return view[key]
         elif key in self.state:
             return self.state[key]
-        else:
+        elif key in self.state["properties"]:
             return self.state["properties"][key]
+        elif key in self._proplist:
+            return self._proplist[key][0]
         return None
+
+    def __dir__(self):
+        return [prop for prop in self._proplist]
+    
+    def _ipython_key_completions_():
+        return [prop for prop in self._proplist]
 
     def __setitem__(self, key, item):
         #Set view/global property
@@ -1121,8 +1133,6 @@ class Viewer(object):
         for key in kwargs.keys():
             if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
                 datasets[key] = kwargs.pop(key, None)
-            if key == "colourmap" and isinstance(kwargs[key], str):
-                cmapstr = kwargs.pop(key, None)
 
         #Call function to add/setup the object, all other args passed to properties dict
         if ref is None:
@@ -1138,10 +1148,6 @@ class Viewer(object):
             #Get the load function matching the data set (eg: vertices() ) and call on data
             func = getattr(obj, key)
             func(datasets[key])
-
-        if not cmapstr is None:
-            #Convert string colourmap
-            obj.colourmap(cmapstr)
 
         #Return wrapper obj
         return obj
@@ -1351,22 +1357,14 @@ class Viewer(object):
         Returns
         -------
         colourmap: int
-            The id of the colourmap loaded/created
+            The name of the colourmap loaded/created
         """
-        if not isinstance(data, str):
-            #Convert iterable maps to string format
-            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
-            data = '\n'.join(data)
-        #Load colourmap
-        id = self.app.colourMap(name, data, str(json.dumps(kwargs)))
-        cmap = self.app.getColourMap(id)
-        if reverse:
-            cmap.flip()
-        if monochrome:
-            cmap.monochrome()
-        return id
+        cmap = self.app.addColourMap(name)
+        cmap._setup(self.app, data, reverse, monochrome, str(json.dumps(kwargs)))
+        #TODO: Dict of colourmaps by name stored on Viewer (lv.colourmaps)
+        return cmap.name
 
-    def getcolourmap(self, cmid, string=True):
+    def getcolourmap(self, mapid, string=True):
         """
         Return colour map data as a string or list
         Either return format can be used to create/modify a colourmap
@@ -1374,8 +1372,8 @@ class Viewer(object):
 
         Parameters
         ----------
-        cmid: int
-            Identifier of the colourmap to retrieve
+        mapid: string/int
+            Name or index of the colourmap to retrieve
         string: boolean
             The default is to return the data as a string of colours separated by semi-colons
             To instead return a list of (position,[R,G,B,A]) tuples for easier automated processing in python,
@@ -1387,10 +1385,21 @@ class Viewer(object):
             The formatted colourmap data
         """
         #Return colourmap as a string/array that can be passed to re-create the map
+        self._get() #Ensure in sync
         arr = []
         cmaps = self.state["colourmaps"]
-        if cmid < 0 or cmid >= len(cmaps): return '' if string else arr
-        cm = cmaps[cmid]
+        print cmaps
+        cmap = None
+        if isinstance(mapid,str):
+            for cm in cmaps:
+                if cm["name"] == mapid:
+                    cmap = cm
+                    break
+            return '' if string else arr
+        else:
+            if mapid < 0 or mapid >= len(cmaps):
+                return '' if string else arr
+            cm = cmaps[mapid]
         if string:
             cmstr = '"""'
             for c in cm["colours"]:

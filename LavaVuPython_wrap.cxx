@@ -12980,6 +12980,143 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_DrawingObject_getColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  std::string arg2 ;
+  ColourMap *arg3 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp3 = 0 ;
+  int res3 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_getColourMap" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "DrawingObject_getColourMap" "', argument " "2"" of type '" "std::string const""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  res3 = SWIG_ConvertPtr(swig_obj[2], &argp3,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "DrawingObject_getColourMap" "', argument " "3"" of type '" "ColourMap *""'"); 
+  }
+  arg3 = reinterpret_cast< ColourMap * >(argp3);
+  {
+    try {
+      result = (ColourMap *)(arg1)->getColourMap(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DrawingObject_getColourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_getColourMap" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "DrawingObject_getColourMap" "', argument " "2"" of type '" "std::string const""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = (ColourMap *)(arg1)->getColourMap(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DrawingObject_getColourMap__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_getColourMap" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  {
+    try {
+      result = (ColourMap *)(arg1)->getColourMap();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DrawingObject_getColourMap(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"DrawingObject_getColourMap",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 1) {
+    return _wrap_DrawingObject_getColourMap__SWIG_2(self, argc, argv);
+  }
+  if (argc == 2) {
+    return _wrap_DrawingObject_getColourMap__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_DrawingObject_getColourMap__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'DrawingObject_getColourMap'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    DrawingObject::getColourMap(std::string const,ColourMap *)\n"
+    "    DrawingObject::getColourMap(std::string const)\n"
+    "    DrawingObject::getColourMap()\n");
+  return 0;
+}
+
+
 SWIGINTERN PyObject *_wrap_delete_DrawingObject(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   DrawingObject *arg1 = (DrawingObject *) 0 ;
@@ -13018,6 +13155,65 @@ SWIGINTERN PyObject *DrawingObject_swigregister(PyObject *SWIGUNUSEDPARM(self), 
 SWIGINTERN PyObject *DrawingObject_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   return SWIG_Python_InitShadowInstance(args);
 }
+
+SWIGINTERN PyObject *_wrap_ColourMap_name_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ColourMap *arg1 = (ColourMap *) 0 ;
+  std::string *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 = SWIG_OLDOBJ ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"ColourMap_name_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ColourMap_name_set" "', argument " "1"" of type '" "ColourMap *""'"); 
+  }
+  arg1 = reinterpret_cast< ColourMap * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    res2 = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ColourMap_name_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "ColourMap_name_set" "', argument " "2"" of type '" "std::string const &""'"); 
+    }
+    arg2 = ptr;
+  }
+  if (arg1) (arg1)->name = *arg2;
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res2)) delete arg2;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ColourMap_name_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ColourMap *arg1 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::string *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ColourMap_name_get" "', argument " "1"" of type '" "ColourMap *""'"); 
+  }
+  arg1 = reinterpret_cast< ColourMap * >(argp1);
+  result = (std::string *) & ((arg1)->name);
+  resultobj = SWIG_From_std_string(static_cast< std::string >(*result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
 
 SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
@@ -14914,7 +15110,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_addColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   std::string arg2 ;
@@ -14922,19 +15118,19 @@ SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(sel
   std::string arg4 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  int result;
+  ColourMap *result = 0 ;
   
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_colourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_addColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourMap" "', argument " "2"" of type '" "std::string""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addColourMap" "', argument " "2"" of type '" "std::string""'"); 
     }
     arg2 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
@@ -14943,7 +15139,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(sel
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourMap" "', argument " "3"" of type '" "std::string""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addColourMap" "', argument " "3"" of type '" "std::string""'"); 
     }
     arg3 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
@@ -14952,45 +15148,45 @@ SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(sel
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[3], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourMap" "', argument " "4"" of type '" "std::string""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addColourMap" "', argument " "4"" of type '" "std::string""'"); 
     }
     arg4 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
   }
   {
     try {
-      result = (int)(arg1)->colourMap(arg2,arg3,arg4);
+      result = (ColourMap *)(arg1)->addColourMap(arg2,arg3,arg4);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_From_int(static_cast< int >(result));
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_addColourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   std::string arg2 ;
   std::string arg3 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  int result;
+  ColourMap *result = 0 ;
   
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_colourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_addColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourMap" "', argument " "2"" of type '" "std::string""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addColourMap" "', argument " "2"" of type '" "std::string""'"); 
     }
     arg2 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
@@ -14999,91 +15195,213 @@ SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourMap" "', argument " "3"" of type '" "std::string""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addColourMap" "', argument " "3"" of type '" "std::string""'"); 
     }
     arg3 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
   }
   {
     try {
-      result = (int)(arg1)->colourMap(arg2,arg3);
+      result = (ColourMap *)(arg1)->addColourMap(arg2,arg3);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_From_int(static_cast< int >(result));
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_colourMap__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_LavaVu_addColourMap__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   std::string arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  int result;
+  ColourMap *result = 0 ;
   
   if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_colourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_addColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
   }
   arg1 = reinterpret_cast< LavaVu * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
     if (!SWIG_IsOK(res) || !ptr) {
-      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourMap" "', argument " "2"" of type '" "std::string""'"); 
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_addColourMap" "', argument " "2"" of type '" "std::string""'"); 
     }
     arg2 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
   }
   {
     try {
-      result = (int)(arg1)->colourMap(arg2);
+      result = (ColourMap *)(arg1)->addColourMap(arg2);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_From_int(static_cast< int >(result));
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
   return resultobj;
 fail:
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_colourMap(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_addColourMap(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
   PyObject *argv[5] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_colourMap",0,4,argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_addColourMap",0,4,argv))) SWIG_fail;
   --argc;
   if (argc == 2) {
-    return _wrap_LavaVu_colourMap__SWIG_2(self, argc, argv);
+    return _wrap_LavaVu_addColourMap__SWIG_2(self, argc, argv);
   }
   if (argc == 3) {
-    return _wrap_LavaVu_colourMap__SWIG_1(self, argc, argv);
+    return _wrap_LavaVu_addColourMap__SWIG_1(self, argc, argv);
   }
   if (argc == 4) {
-    return _wrap_LavaVu_colourMap__SWIG_0(self, argc, argv);
+    return _wrap_LavaVu_addColourMap__SWIG_0(self, argc, argv);
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_colourMap'.\n"
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_addColourMap'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    LavaVu::colourMap(std::string,std::string,std::string)\n"
-    "    LavaVu::colourMap(std::string,std::string)\n"
-    "    LavaVu::colourMap(std::string)\n");
+    "    LavaVu::addColourMap(std::string,std::string,std::string)\n"
+    "    LavaVu::addColourMap(std::string,std::string)\n"
+    "    LavaVu::addColourMap(std::string)\n");
   return 0;
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_updateColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  ColourMap *arg2 = (ColourMap *) 0 ;
+  std::string arg3 ;
+  std::string arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_updateColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_updateColourMap" "', argument " "2"" of type '" "ColourMap *""'"); 
+  }
+  arg2 = reinterpret_cast< ColourMap * >(argp2);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_updateColourMap" "', argument " "3"" of type '" "std::string""'"); 
+    }
+    arg3 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_updateColourMap" "', argument " "4"" of type '" "std::string""'"); 
+    }
+    arg4 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->updateColourMap(arg2,arg3,arg4);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_updateColourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  ColourMap *arg2 = (ColourMap *) 0 ;
+  std::string arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_updateColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_ColourMap, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_updateColourMap" "', argument " "2"" of type '" "ColourMap *""'"); 
+  }
+  arg2 = reinterpret_cast< ColourMap * >(argp2);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_updateColourMap" "', argument " "3"" of type '" "std::string""'"); 
+    }
+    arg3 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->updateColourMap(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_updateColourMap(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[5] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_updateColourMap",0,4,argv))) SWIG_fail;
+  --argc;
+  if (argc == 3) {
+    return _wrap_LavaVu_updateColourMap__SWIG_1(self, argc, argv);
+  }
+  if (argc == 4) {
+    return _wrap_LavaVu_updateColourMap__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_updateColourMap'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::updateColourMap(ColourMap *,std::string,std::string)\n"
+    "    LavaVu::updateColourMap(ColourMap *,std::string)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_getColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   unsigned int arg2 ;
@@ -15091,10 +15409,9 @@ SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *SWIGUNUSEDPARM(self), P
   int res1 = 0 ;
   unsigned int val2 ;
   int ecode2 = 0 ;
-  PyObject *swig_obj[2] ;
   ColourMap *result = 0 ;
   
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_getColourMap",2,2,swig_obj)) SWIG_fail;
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
@@ -15116,6 +15433,77 @@ SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *SWIGUNUSEDPARM(self), P
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_getColourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  std::string arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ColourMap *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getColourMap" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_getColourMap" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = (ColourMap *)(arg1)->getColourMap(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_getColourMap(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_getColourMap",0,2,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    int _v = 0;
+    {
+      {
+        int res = SWIG_AsVal_unsigned_SS_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+    }
+    if (!_v) goto check_1;
+    return _wrap_LavaVu_getColourMap__SWIG_0(self, argc, argv);
+  }
+check_1:
+  
+  if (argc == 2) {
+    return _wrap_LavaVu_getColourMap__SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_getColourMap'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::getColourMap(unsigned int)\n"
+    "    LavaVu::getColourMap(std::string)\n");
+  return 0;
 }
 
 
@@ -19304,9 +19692,12 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"new_DrawingObject", _wrap_new_DrawingObject, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_colourMap_set", _wrap_DrawingObject_colourMap_set, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_colourMap_get", (PyCFunction)_wrap_DrawingObject_colourMap_get, METH_O, NULL},
+	 { (char *)"DrawingObject_getColourMap", _wrap_DrawingObject_getColourMap, METH_VARARGS, NULL},
 	 { (char *)"delete_DrawingObject", (PyCFunction)_wrap_delete_DrawingObject, METH_O, NULL},
 	 { (char *)"DrawingObject_swigregister", DrawingObject_swigregister, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_swiginit", DrawingObject_swiginit, METH_VARARGS, NULL},
+	 { (char *)"ColourMap_name_set", _wrap_ColourMap_name_set, METH_VARARGS, NULL},
+	 { (char *)"ColourMap_name_get", (PyCFunction)_wrap_ColourMap_name_get, METH_O, NULL},
 	 { (char *)"new_ColourMap", _wrap_new_ColourMap, METH_VARARGS, NULL},
 	 { (char *)"ColourMap_flip", (PyCFunction)_wrap_ColourMap_flip, METH_O, NULL},
 	 { (char *)"ColourMap_monochrome", (PyCFunction)_wrap_ColourMap_monochrome, METH_O, NULL},
@@ -19342,7 +19733,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_web", _wrap_LavaVu_web, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_video", _wrap_LavaVu_video, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_defaultModel", (PyCFunction)_wrap_LavaVu_defaultModel, METH_O, NULL},
-	 { (char *)"LavaVu_colourMap", _wrap_LavaVu_colourMap, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_addColourMap", _wrap_LavaVu_addColourMap, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_updateColourMap", _wrap_LavaVu_updateColourMap, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_getColourMap", _wrap_LavaVu_getColourMap, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_colourBar", _wrap_LavaVu_colourBar, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_setState", _wrap_LavaVu_setState, METH_VARARGS, NULL},
