@@ -351,12 +351,21 @@ template<typename T>
 void Properties::toArray(const json& val, T* array, unsigned int size)
 {
   //Convert to a array of type T
-  for (unsigned int i=0; i<size; i++)
+  if (val.is_number())
   {
-    if (i >= val.size())
+    array[0] = (T)val;
+    for (unsigned int i=1; i<size; i++)
       array[i] = (T)0.0; //Zero pad if too short
-    else
-      array[i] = val[i];
+  }
+  else
+  {
+    for (unsigned int i=0; i<size; i++)
+    {
+      if (i >= val.size())
+        array[i] = (T)0.0; //Zero pad if too short
+      else
+        array[i] = (T)val[i];
+    }
   }
 }
 
