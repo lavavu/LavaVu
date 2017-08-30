@@ -2175,7 +2175,7 @@ void Model::jsonRead(std::string data)
     if (cm.is_number())
     {
       int cmid = cm;
-      if (cm >= 0 && cm < colourMaps.size())
+      if (cmid >= 0 && cmid < colourMaps.size())
         inobjects[i]["colourmap"] = colourMaps[cmid]->name;
       else
         inobjects[i]["colourmap"] = "";
