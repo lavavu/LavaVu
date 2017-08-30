@@ -55,14 +55,14 @@ void Vectors::update()
   Colour colour;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    if (geom[i]->render->vectors.size() < geom[i]->count) continue;
+    if (geom[i]->render->vectors.size() < geom[i]->count()) continue;
     Properties& props = geom[i]->draw->properties;
 
     //Create new data stores for output geometry
     tris->add(geom[i]->draw);
     lines->add(geom[i]->draw);
 
-    tot += geom[i]->count;
+    tot += geom[i]->count();
 
     float arrowHead = props["arrowhead"];
 
@@ -75,6 +75,7 @@ void Vectors::update()
                   scaling, 1/geom[i]->render->vectors.maximum, scaling/geom[i]->render->vectors.maximum);
       scaling *= 1.0/geom[i]->render->vectors.maximum;
     }
+
 
     //Load scaling factors from properties
     int quality = 4 * (int)props["glyphs"];
@@ -90,7 +91,7 @@ void Vectors::update()
     bool flat = props["flat"] || quality < 1;
 
     bool filter = geom[i]->draw->filterCache.size();
-    for (unsigned int v=0; v < geom[i]->count; v++)
+    for (unsigned int v=0; v < geom[i]->count(); v++)
     {
       if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
       Vec3d pos(geom[i]->render->vertices[v]);

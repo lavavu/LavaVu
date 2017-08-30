@@ -83,10 +83,10 @@ unsigned int Triangles::triCount()
     else
     {
       //Un-structured tri vertices
-      tris = geom[index]->count / 3;
-      if (tris * 3 != geom[index]->count) // || geom[index]->draw->properties["tristrip"])
+      tris = geom[index]->count() / 3;
+      if (tris * 3 != geom[index]->count()) // || geom[index]->draw->properties["tristrip"])
         //Tri-strip vertices
-        tris =  geom[index]->count - 2;
+        tris =  geom[index]->count() - 2;
       debug_print("Surface %d ", index);
     }
 
@@ -140,7 +140,7 @@ void Triangles::loadBuffers()
   unsigned int datasize = sizeof(float) * 8 + sizeof(Colour);   //Vertex(3), normal(3), texCoord(2) and 32-bit colour
   unsigned int vcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
-    vcount += geom[index]->count;
+    vcount += geom[index]->count();
   unsigned int bsize = vcount * datasize;
 
   //Initialise vertex buffer
@@ -163,13 +163,13 @@ void Triangles::loadBuffers()
     //Calibrate colour maps on range for this surface
     ColourLookup& getColour = geom[index]->colourCalibrate();
     unsigned int hasColours = geom[index]->colourCount();
-    if (hasColours > geom[index]->count) hasColours = geom[index]->count; //Limit to vertices
-    unsigned int colrange = hasColours ? geom[index]->count / hasColours : 1;
+    if (hasColours > geom[index]->count()) hasColours = geom[index]->count(); //Limit to vertices
+    unsigned int colrange = hasColours ? geom[index]->count() / hasColours : 1;
     if (colrange < 1) colrange = 1;
-    //if (hasColours) assert(colrange * hasColours == geom[index]->count);
-    //if (hasColours && colrange * hasColours != geom[index]->count)
-    //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count, hasColours);
-    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count, hasColours);
+    //if (hasColours) assert(colrange * hasColours == geom[index]->count());
+    //if (hasColours && colrange * hasColours != geom[index]->count())
+    //   debug_print("WARNING: Vertex Count %d not divisable by colour count %d\n", geom[index]->count(), hasColours);
+    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count(), hasColours);
 
     Colour colour;
     bool normals = geom[index]->render->normals.size() == geom[index]->render->vertices.size();
@@ -179,7 +179,7 @@ void Triangles::loadBuffers()
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
     shift *= 0.0001 * view->model_size;
     std::array<float,3> shiftvert;
-    for (unsigned int v=0; v < geom[index]->count; v++)
+    for (unsigned int v=0; v < geom[index]->count(); v++)
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
       unsigned int cidx = v / colrange;
@@ -215,7 +215,7 @@ void Triangles::loadBuffers()
       ptr += sizeof(Colour);
     }
     t2 = clock();
-    debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[index]->count);
+    debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[index]->count());
   }
 
   glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -316,8 +316,8 @@ void Triangles::draw()
       }
       else
       {
-        glDrawArrays(GL_TRIANGLES, start, geom[index]->count);
-        start += geom[index]->count;
+        glDrawArrays(GL_TRIANGLES, start, geom[index]->count());
+        start += geom[index]->count();
       }
     }
 

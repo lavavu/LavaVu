@@ -55,7 +55,7 @@ void GeomData::checkPointMinMax(float *coord)
 void GeomData::calcBounds()
 {
   //Loop through vertices and calculate bounds automatically for all elements
-  for (unsigned int j=0; j < count; j++)
+  for (unsigned int j=0; j < count(); j++)
     checkPointMinMax(render->vertices[j]);
 }
 
@@ -335,7 +335,7 @@ bool GeomData::filter(unsigned int idx)
     if (draw->filterCache[i].dataIdx < MAX_DATA_ARRAYS && size > 0)
     {
       //Have values but not enough for per-vertex? spread over range (eg: per triangle)
-      range = count / size;
+      range = count() / size;
       ridx = idx;
       if (range > 1) ridx = idx / range;
 
@@ -465,7 +465,7 @@ void Geometry::remove(DrawingObject* draw)
   {
     if (draw == geom[i]->draw)
     {
-      total -= geom[i]->count;
+      total -= geom[i]->count();
       //Now using shared_ptr so no need to delete
       geom.erase(geom.begin()+i);
       if (hidden.size() > (unsigned int)i) hidden.erase(hidden.begin()+i);
@@ -502,8 +502,6 @@ void Geometry::clearData(DrawingObject* draw, lucGeometryDataType dtype)
     if (draw == g->draw)
     {
       g->data[dtype]->clear();
-      if (dtype == lucVertexData)
-        g->count = 0; //Reset vertex count
     }
   }
   //std::cout << "CLEARED " << dtype << std::endl;
@@ -543,13 +541,13 @@ void Geometry::dump(std::ostream& csv, DrawingObject* draw)
       }
       else
       {
-        std::cout << "Collected " << geom[i]->count << " vertices/values (" << i << ")" << std::endl;
+        std::cout << "Collected " << geom[i]->count() << " vertices/values (" << i << ")" << std::endl;
         //Only supports dump of vertex, vector and scalar colour value
-        for (unsigned int v=0; v < geom[i]->count; v++)
+        for (unsigned int v=0; v < geom[i]->count(); v++)
         {
           csv << geom[i]->render->vertices[v][0] << ',' <<  geom[i]->render->vertices[v][1] << ',' << geom[i]->render->vertices[v][2];
 
-          if (geom[i]->colourData() && geom[i]->colourData()->size() == geom[i]->count)
+          if (geom[i]->colourData() && geom[i]->colourData()->size() == geom[i]->count())
             csv << ',' << geom[i]->colourData(v);
           if (geom[i]->render->vectors.size() > v)
             csv << ',' << geom[i]->render->vectors[v][0] << ',' <<  geom[i]->render->vectors[v][1] << ',' << geom[i]->render->vectors[v][2];
@@ -586,7 +584,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
   {
     if (geom[index]->draw == draw && drawable(index))
     {
-      std::cerr << "Collecting data for " << draw->name() << ", " << geom[index]->count << " vertices (" << index << ")" << std::endl;
+      std::cerr << "Collecting data for " << draw->name() << ", " << geom[index]->count() << " vertices (" << index << ")" << std::endl;
       json data;
       for (int data_type=lucMinDataType; data_type<=lucMaxDataType; data_type++)
       {
@@ -1014,7 +1012,7 @@ bool Geometry::drawable(unsigned int idx)
 {
   if (!geom[idx]->draw->properties["visible"]) return false;
   //Within bounds and not hidden
-  if (idx < geom.size() && geom[idx]->count > 0 && !hidden[idx])
+  if (idx < geom.size() && geom[idx]->count() > 0 && !hidden[idx])
   {
     //Not filtered by viewport?
     if (!view->filtered) return true;
@@ -1115,7 +1113,7 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   }
 
   //Allow spec width/height/depth in properties
-  if (!geomdata || geomdata->count == 0)
+  if (!geomdata || geomdata->count() == 0)
   {
     float dims[3];
     Properties::toArray<float>(draw->properties["dims"], dims, 3);
@@ -1142,7 +1140,7 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
   if (depth) geomdata->depth = depth;
 
   //Update the default type property on first read
-  if (geomdata->count == 0 && !geomdata->draw->properties.has("geometry"))
+  if (geomdata->count() == 0 && !geomdata->draw->properties.has("geometry"))
     geomdata->draw->properties.data["geometry"] = GeomData::names[type];
 
   //Read the data
@@ -1150,7 +1148,6 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
 
   if (dtype == lucVertexData)
   {
-    geomdata->count += n;
     total += n;
 
     //Update bounds on single vertex reads (except labels)
@@ -1313,7 +1310,7 @@ void Geometry::insertFixed(Geometry* fixed)
     //Create a shallow copy of member content
     *geom[i] = *fixed->geom[i];
 
-    //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count << " verts " << " = " << geom[i]->count << " value entries = " << fixed->geom[i]->values.size() << std::endl;
+    //std::cout << "IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count() << " verts " << " = " << geom[i]->count() << " value entries = " << fixed->geom[i]->values.size() << std::endl;
   }
 
   //Update total

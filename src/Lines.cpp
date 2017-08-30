@@ -69,7 +69,7 @@ void Lines::update()
   //Count lines
   linetotal = 0;
   for (unsigned int i=0; i<geom.size(); i++)
-    linetotal += geom[i]->count;
+    linetotal += geom[i]->count();
   if (linetotal == 0) return;
 
   //Copy data to Vertex Buffer Object
@@ -102,13 +102,13 @@ void Lines::update()
     ColourLookup& getColour = geom[i]->colourCalibrate();
 
     unsigned int hasColours = geom[i]->colourCount();
-    unsigned int colrange = hasColours ? geom[i]->count / hasColours : 1;
+    unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
     if (colrange < 1) colrange = 1;
-    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
+    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count(), hasColours);
 
     Colour colour;
     bool filter = geom[i]->draw->filterCache.size();
-    for (unsigned int v=0; v < geom[i]->count; v++)
+    for (unsigned int v=0; v < geom[i]->count(); v++)
     {
       if (filter && !internal && geom[i]->filter(v)) continue;
 

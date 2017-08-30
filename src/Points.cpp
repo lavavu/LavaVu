@@ -132,7 +132,7 @@ void Points::loadVertices()
   //Get eye distances and copy all particles into sorting array
   for (unsigned int s = 0; s < geom.size(); s++)
   {
-    debug_print("Swarm %d, points %d hidden? %s\n", s, geom[s]->count, (hidden[s] ? "yes" : "no"));
+    debug_print("Swarm %d, points %d hidden? %s\n", s, geom[s]->count(), (hidden[s] ? "yes" : "no"));
 
     //Calibrate colourMap
     ColourLookup& getColour = geom[s]->colourCalibrate();
@@ -149,7 +149,7 @@ void Points::loadVertices()
     //std::cout << geom[s]->draw->properties["sizeby"] << " : " << sizeidx << " : " << usesize << std::endl;
     Colour c;
 
-    for (unsigned int i = 0; i < geom[s]->count; i ++)
+    for (unsigned int i = 0; i < geom[s]->count(); i ++)
     {
       //Copy data to VBO entry
       if (ptr)
@@ -205,7 +205,7 @@ void Points::loadList()
     subSample = elements / maxCount + 0.5; //Rounded up
   elements = 0;
   uint32_t SEED;
-  for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count, s++)
+  for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count(), s++)
   {
     if (!drawable(s)) continue;
 
@@ -213,7 +213,7 @@ void Points::loadList()
     geom[s]->colourCalibrate();
 
     bool filter = geom[s]->draw->filterCache.size();
-    for (unsigned int i = 0; i < geom[s]->count; i ++)
+    for (unsigned int i = 0; i < geom[s]->count(); i ++)
     {
       if (filter && geom[s]->filter(i)) continue;
       // If subSampling, use a pseudo random distribution to select which particles to draw

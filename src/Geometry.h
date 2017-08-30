@@ -186,7 +186,6 @@ public:
   static std::string names[lucMaxType];
   static std::string datalabels[lucMaxDataType+1];
   DrawingObject* draw; //Parent drawing object
-  unsigned int count;  //Number of vertices
   unsigned int width;
   unsigned int height;
   unsigned int depth;
@@ -229,7 +228,7 @@ public:
   }
 
   GeomData(DrawingObject* draw, lucGeometryType type)
-    : draw(draw), count(0), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
+    : draw(draw), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
   {
     render = std::make_shared<RenderData>();
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
@@ -260,6 +259,8 @@ public:
     if (texture)
       delete texture;
   }
+
+  unsigned int count() {return data[lucVertexData]->size() / 3;}  //Number of vertices
 
   void checkPointMinMax(float *coord);
   void calcBounds();
@@ -409,14 +410,14 @@ public:
   {
     unsigned int count = 0;
     for (unsigned int i=0; i<geom.size(); i++)
-      if (!draw || draw == geom[i]->draw) count += geom[i]->count;
+      if (!draw || draw == geom[i]->draw) count += geom[i]->count();
     return count;
   }
   //Return vertex count of most recently used object
   unsigned int getVertexIdx(DrawingObject* draw)
   {
     Geom_Ptr geom = getObjectStore(draw);
-    if (geom) return geom->count;
+    if (geom) return geom->count();
     return 0;
   }
 };

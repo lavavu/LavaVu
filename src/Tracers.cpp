@@ -69,7 +69,7 @@ void Tracers::update()
       continue;
     }
 
-    int count = geom[i]->count;
+    int count = geom[i]->count();
     int datasteps = count / particles;
     int timesteps = (datasteps-1) * drawstate.gap + 1; //Multiply by gap between recorded steps
 

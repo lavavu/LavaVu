@@ -189,14 +189,14 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
       // Find Surface with Marching Cubes
       MarchingCubes();
 
-      t2 = clock(); debug_print("  Surface extraction (%d triangles) took %.4lf seconds.\n", surfaces->getObjectStore(target)->count/3, (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
+      t2 = clock(); debug_print("  Surface extraction (%d triangles) took %.4lf seconds.\n", surfaces->getObjectStore(target)->count()/3, (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
       if (target->properties["isowalls"])
       {
         //Create a new data store for walls
         surfaces->add(target);
         DrawWalls();
-        t2 = clock(); debug_print("  Surface wall extraction (%d triangles) took %.4lf seconds.\n", surfaces->getObjectStore(target)->count/3, (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
+        t2 = clock(); debug_print("  Surface wall extraction (%d triangles) took %.4lf seconds.\n", surfaces->getObjectStore(target)->count()/3, (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
       }
 
       //Adjust bounding box

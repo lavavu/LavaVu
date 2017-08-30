@@ -71,22 +71,22 @@ void Links::update()
     if (all2d || (props.getBool("flat", true) && !props["tubes"]))
     {
       unsigned int hasColours = geom[i]->colourCount();
-      unsigned int colrange = hasColours ? geom[i]->count / hasColours : 1;
+      unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
       if (colrange < 1) colrange = 1;
-      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count, hasColours);
+      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count(), hasColours);
 
       //Create a new segment
       if (linked) lines->add(geom[i]->draw);
 
       Colour colour;
       int count = 0;
-      for (unsigned int v=0; v < geom[i]->count; v++)
+      for (unsigned int v=0; v < geom[i]->count(); v++)
       {
         if (filter && geom[i]->filter(v)) continue;
 
         //Check length limit if applied (used for periodic boundary conditions)
         //NOTE: will not work with linked lines, require separated segments
-        if (limit > 0.f && v%2 == 0 && v < geom[i]->count-1)
+        if (limit > 0.f && v%2 == 0 && v < geom[i]->count()-1)
         {
           Vec3d line;
           vectorSubtract(line, geom[i]->render->vertices[v+1], geom[i]->render->vertices[v]);
@@ -140,7 +140,7 @@ void Links::update()
       float* oldpos = NULL;
       Colour colour;
       int count = 0;
-      for (unsigned int v=0; v < geom[i]->count; v++)
+      for (unsigned int v=0; v < geom[i]->count(); v++)
       {
         if (filter && geom[i]->filter(v)) continue;
         

@@ -82,7 +82,7 @@ void Shapes::update()
     unsigned int idxL = geom[i]->valuesLookup(geom[i]->draw->properties["lengthby"]);
 
     bool filter = geom[i]->draw->filterCache.size();
-    for (unsigned int v=0; v < geom[i]->count; v++)
+    for (unsigned int v=0; v < geom[i]->count(); v++)
     {
       if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
       //Scale the dimensions by variables (dynamic range options? by setting max/min?)

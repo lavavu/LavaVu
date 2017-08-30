@@ -74,14 +74,14 @@ void QuadSurfaces::update()
   {
     unsigned int quads = (geom[i]->width-1) * (geom[i]->height-1);
     quadverts += quads * 4;
-    total += geom[i]->count; //Actual vertices
+    total += geom[i]->count(); //Actual vertices
 
     bool hidden = !drawable(i); //Save flags
     debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hidden ? "yes" : "no"));
 
     //Get corners of strip
     float* posmin = geom[i]->render->vertices[0];
-    float* posmax = geom[i]->render->vertices[geom[i]->count - 1];
+    float* posmax = geom[i]->render->vertices[geom[i]->count() - 1];
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
                     posmin[2] + (posmax[2] - posmin[2]) * 0.5f
@@ -151,7 +151,7 @@ void QuadSurfaces::render()
   {
     t1=clock();
 
-    std::vector<Vec3d> normals(geom[index]->count);
+    std::vector<Vec3d> normals(geom[index]->count());
     std::vector<GLuint> indices;
 
     //Quad indices
@@ -159,7 +159,7 @@ void QuadSurfaces::render()
     tricount += quads; //For debug messages
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
-    if (vnormals && geom[index]->render->normals.size()/3 < geom[index]->count)
+    if (vnormals && geom[index]->render->normals.size()/3 < geom[index]->count())
     {
       calcGridNormals(index, normals);
       geom[index]->render->normals.clear();
@@ -175,7 +175,7 @@ void QuadSurfaces::render()
     }
 
     //Vertex index offset
-    voffset += geom[index]->count;
+    voffset += geom[index]->count();
     //Index offset
     elements += quads*4;
 

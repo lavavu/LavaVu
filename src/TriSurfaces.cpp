@@ -111,7 +111,7 @@ void TriSurfaces::loadMesh()
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
-    if (geom[index]->count == 0) continue;
+    if (geom[index]->count() == 0) continue;
 
     //Has index data, simply load the triangles
     if (geom[index]->render->indices.size() > 0)
@@ -144,14 +144,14 @@ void TriSurfaces::loadMesh()
     //Iterate, for duplicates replace indices with index of first
     //Remove duplicate vertices Triangles stored as list of indices
     unsigned int hasColours = geom[index]->colourCount();
-    bool vertColour = hasColours && (hasColours >= geom[index]->count);
+    bool vertColour = hasColours && (hasColours >= geom[index]->count());
     t1=tt=clock();
 
     //Add vertices to vector
-    std::vector<Vertex> verts(geom[index]->count);
-    std::vector<Vec3d> normals(vnormals ? geom[index]->count : 0);
+    std::vector<Vertex> verts(geom[index]->count());
+    std::vector<Vec3d> normals(vnormals ? geom[index]->count() : 0);
     std::vector<GLuint> indices;
-    for (unsigned int j=0; j < geom[index]->count; j++)
+    for (unsigned int j=0; j < geom[index]->count(); j++)
     {
       verts[j].id = verts[j].ref = j;
       verts[j].vert = geom[index]->render->vertices[j];
@@ -160,7 +160,7 @@ void TriSurfaces::loadMesh()
     debug_print("  %.4lf seconds to add to sort vector\n", (t2-t1)/(double)CLOCKS_PER_SEC);
 
     int triverts = 0;
-    bool grid = (geom[index]->width * geom[index]->height == geom[index]->count);
+    bool grid = (geom[index]->width * geom[index]->height == geom[index]->count());
     if (grid)
     {
       //Structured mesh grid, 2 triangles per element, 3 indices per tri
@@ -170,13 +170,13 @@ void TriSurfaces::loadMesh()
       if (vnormals && geom[index]->render->normals.size() == 0)
         calcGridNormals(index, normals);
       calcGridIndices(index, indices);
-      unique += geom[index]->count; //For calculating index offset (voffset)
+      unique += geom[index]->count(); //For calculating index offset (voffset)
       elements += triverts;
     }
     else
     {
       //Unstructured mesh, 1 index per vertex
-      triverts = geom[index]->count;
+      triverts = geom[index]->count();
       indices.resize(triverts);
       calcTriangleNormals(index, verts, normals);
       elements += triverts;
@@ -204,7 +204,6 @@ void TriSurfaces::loadMesh()
         geom[index]->data[lucNormalData] = &geom[index]->render->normals;
       }
       geom[index]->render->indices = UIntValues();
-      geom[index]->count = 0;
       geom[index]->data[lucVertexData] = &newverts;
       geom[index]->data[lucIndexData] = &geom[index]->render->indices;
       //Recreate value data as optimised version is smaller, re-load necessary values
@@ -234,7 +233,7 @@ void TriSurfaces::loadMesh()
           }
 
           //Save an index lookup entry (Grid indices loaded in previous step)
-          indices[verts[v].id] = geom[index]->count;
+          indices[verts[v].id] = geom[index]->count();
 
           //Replace verts & normals
           read(geom[index], 1, lucVertexData, verts[v].vert);
@@ -301,7 +300,7 @@ void TriSurfaces::loadList()
   unsigned int voffset = 0;
   unsigned int offset = 0; //Offset into centroid list, include all hidden/filtered
   tricount = 0;
-  for (unsigned int index = 0; index < geom.size(); voffset += geom[index]->count, index++)
+  for (unsigned int index = 0; index < geom.size(); voffset += geom[index]->count(), index++)
   {
     counts[index] = 0;
     if (!drawable(index)) 
@@ -444,7 +443,7 @@ void TriSurfaces::calcTriangleNormalsWithIndices(int index)
   t1 = clock();
   debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->render->indices.size()/3);
   //Calculate face normals for each triangle and copy to each face vertex
-  std::vector<Vec3d> normals(geom[index]->count);
+  std::vector<Vec3d> normals(geom[index]->count());
   for (unsigned int i=0; i<geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; i += 3)
   {
     //Copies for each vertex
