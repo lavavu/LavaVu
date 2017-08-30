@@ -82,16 +82,16 @@ void Tracers::update()
     int range = timesteps;
     //Skipped steps? Use closest available step
     if (drawstate.gap > 1) range = ceil(timesteps/(float)(drawstate.gap-1));
-    int end = drawstate.now; //datasteps-1;
-    int start = end - range + 1;
+    int end = drawstate.now;      //Finish at current step;
+    int start = end - range + 1;  //First step
     if (start < 0) start = 0;
     debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d)\n", particles, start, end, timesteps, datasteps);
 
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;
-    ColourMap* cmap = geom[i]->draw->colourMap;
     //Calibrate colour map on provided value range
     ColourLookup& getColour = geom[i]->colourCalibrate();
+    ColourMap* cmap = geom[i]->draw->colourMap;
     if (cmap && !geom[i]->colourData())
     {
       timecolour = true;
