@@ -993,6 +993,7 @@ class ObjectSelect(List):
         if key == "object":
             return self.object
         elif self.object > 0:
+            #Passtrough: Get from selected object
             return self.instance.objects.list[self.object-1][key]
         return None
 
@@ -1001,11 +1002,29 @@ class ObjectSelect(List):
         if key == "object":
             self.object = value
             #Copy object id
-            self.id = self.instance.objects.list[self.object-1].id
+            if self.object > 0:
+                self.id = self.instance.objects.list[self.object-1].id
+            else:
+                self.id = 0
             #Update controls
             #self.instance.control.update()
         elif self.object > 0:
+            #Passtrough: Set on selected object
             self.instance.objects.list[self.object-1][key] = value
+        else:
+            self.id = 0
+
+    #Undefined methods supported directly as LavaVu commands
+    def __getattr__(self, key):
+        #__getattr__ called if no attrib/method found
+        def any_method(*args, **kwargs):
+            #If member function exists on target, call it
+            if self.object > 0:
+                method = getattr(self.instance.objects.list[self.object-1], key, None)
+                if method and callable(method):
+                    return method(*args, **kwargs)
+
+        return any_method
 
 class ObjectTabs(ObjectSelect):
     """Object selection with control tabs for each object"""
@@ -1059,10 +1078,10 @@ class ControlFactory(object):
         """
         if type(ctrl) in self._container_types:
             #Save new container, further controls will be added to it
-            self._container = ctrl
-        elif self._container:
+            self._containers.append(ctrl)
+        elif len(self._containers):
             #Add to existing container
-            self._container.add(ctrl)
+            self._containers[-1].add(ctrl)
         else:
             #Add to global list
             self._content.append(ctrl)
@@ -1104,8 +1123,8 @@ class ControlFactory(object):
             chtml += c.html()
         if len(chtml):
             html = '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
-        if self._container:
-            html += self._container.html()
+        for c in self._containers:
+            html += c.html()
 
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
@@ -1169,5 +1188,5 @@ class ControlFactory(object):
         
     def clear(self):
         self._content = []
-        self._container = None
+        self._containers = []
 
