@@ -86,18 +86,26 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
   else if (prop.is_string())
   {
     //Attempt to load by name
-    std::string name = prop;
+    std::string data = prop;
+    if (data.length() == 0) return NULL;
+
+    //Search defined colourmaps by name
     for (unsigned int i=0; i < drawstate.colourMaps->size(); i++)
-      if (name == (*drawstate.colourMaps)[i]->name)
+      if (data == (*drawstate.colourMaps)[i]->name)
         return (*drawstate.colourMaps)[i];
 
     //Not found, assume property is a colourmap data string instead
-    //Load the data string on existing map, if any
-    if (current)
+    if (!current)
     {
-      current->loadPalette(name);
-      return current;
+      //Create a default colour map
+      current = new ColourMap(drawstate, name() + "_colourmap");
+      drawstate.colourMaps->push_back(current);
+      properties.data["colourmap"] = current->name;
     }
+
+    //Load the data string
+    current->loadPalette(data);
+    return current;
   }
   return NULL;
 }
