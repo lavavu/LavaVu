@@ -405,7 +405,7 @@ void DrawState::reset()
       }
     },
     {
-      "texturefile",
+      "texture",
       {
         "",
         "object",

@@ -167,9 +167,9 @@ TextureData* DrawingObject::useTexture(ImageLoader* tex)
   {
     if (texture)
       tex = texture;
-    else if (properties.has("texturefile"))
+    else if (properties.has("texture"))
     {
-      std::string texfn = properties["texturefile"];
+      std::string texfn = properties["texture"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
         tex = texture = new ImageLoader(texfn, properties["fliptexture"]);
@@ -178,7 +178,7 @@ TextureData* DrawingObject::useTexture(ImageLoader* tex)
       {
         if (texfn.length() > 0) debug_print("Texture File: %s not found!\n", texfn.c_str());
         //If load failed, skip from now on
-        properties.data["texturefile"] = "";
+        properties.data["texture"] = "";
       }
     }
   }
