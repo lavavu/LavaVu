@@ -1724,6 +1724,11 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
   // Draw
   if (arrowHeadSize > 0)
   {
+    // Previous implementation was head_scale as a ratio of length [0,1],
+    // now uses ratio to radius (> 1), so adjust if < 1
+    if (arrowHeadSize < 1.0)
+      arrowHeadSize = 0.5 * arrowHeadSize / RADIUS_DEFAULT_RATIO; // Convert from fraction of length to multiple of radius
+
     // Draw final section as arrow head
     // Position so centred on end of tube adjusted for arrowhead radius (tube radius * head size)
     // Too small a section to fit arrowhead? expand so length is at least 2*r ...

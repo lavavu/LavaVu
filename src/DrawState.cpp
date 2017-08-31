@@ -671,7 +671,7 @@ void DrawState::reset()
         2.0,
         "object(vector)",
         "real",
-        "Arrow head size as a multiple of width"
+        "Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius"
       }
     },
     {
