@@ -1649,7 +1649,7 @@ class Viewer(object):
                 from IPython.display import IFrame
                 display(IFrame("html/viewer.html#" + filename, width=resolution[0], height=resolution[1]))
             else:
-            self.app.web(True)
+                self.app.web(True)
         except (Exception) as e:
             print("WebGL output error: " + str(e))
             pass
