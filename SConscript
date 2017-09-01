@@ -54,7 +54,7 @@ env.Command(bin_dir + '/html/viewer.html', 'src/html/viewer.html', code_base + "
 dir = os.getcwd()
 os.chdir(code_base)
 from subprocess import call
-call('version.py')
+call('version.py', shell=True)
 os.chdir(dir)
 
 # Build our source files.
