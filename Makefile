@@ -179,10 +179,10 @@ swig : $(INC) LavaVuPython.i | paths
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
-	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --ldflags` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --libs` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC)
-	$(CXX) $(CPPFLAGS) `python-config --cflags` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
+	$(CXX) $(CPPFLAGS) `python-config --includes` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	bin/LavaVu -S -h -p0 : docs:properties quit > docs/Property-Reference.md
