@@ -1856,9 +1856,6 @@ void LavaVu::viewApply(int idx)
     aview->apply();
   GL_Error_Check;
 
-  //Scale text and 2d elements when downsampling output image
-  aview->scale2d = viewer->scale2d();
-
   //Set viewport based on window size
   aview->port(viewer->width, viewer->height);
   GL_Error_Check;

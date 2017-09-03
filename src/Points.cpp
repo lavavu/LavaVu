@@ -370,7 +370,7 @@ void Points::draw()
   GL_Error_Check;
 
   //Point size distance attenuation (disabled for 2d models)
-  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * view->scale2d; //Include 2d scale factor
+  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * drawstate.scale2d; //Include 2d scale factor
   if (view->is3d && drawstate.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
   {
     prog->setUniform("uPointScale", scale0 * view->model_size);

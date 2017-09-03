@@ -51,7 +51,6 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
   height = 0;             //Viewport height
-  scale2d = 1.0;
 
   x = xf;
   y = yf;
@@ -626,6 +625,7 @@ int View::switchCoordSystem()
 void View::zoomToFit(int margin)
 {
   if (margin < 0) margin = properties["margin"];
+  margin *= drawstate.scale2d; //Multiply by 2d scale factor
 
   // The bounding box of model
   GLfloat rect3d[8][3] = {{min[0], min[1], min[2]},
@@ -643,7 +643,7 @@ void View::zoomToFit(int margin)
   GLfloat projection[16];
   int viewport[4];
   int count = 0;
-  double error = 1, scale2d, adjust = ADJUST;
+  double error = 1, scalerect, adjust = ADJUST;
   glGetIntegerv(GL_VIEWPORT, viewport);
   glGetFloatv(GL_PROJECTION_MATRIX, projection);
 
@@ -698,8 +698,8 @@ void View::zoomToFit(int margin)
 
       xscale = width / rwidth;
       yscale = height / rheight;
-      if (xscale < yscale) scale2d = xscale;
-      else scale2d = yscale;
+      if (xscale < yscale) scalerect = xscale;
+      else scalerect = yscale;
     }
 
     // debug_print("BB new_min_x %f new_max_x %f === ", new_min_x, new_max_x);
@@ -709,8 +709,8 @@ void View::zoomToFit(int margin)
     //Self-adjusting: did we overshoot aim? - compare last error to current 2d scale
     if (count > 0)
     {
-      if ((error > 0 && scale2d < 1.0) ||
-          (error < 0 && scale2d > 1.0))
+      if ((error > 0 && scalerect < 1.0) ||
+          (error < 0 && scalerect > 1.0))
       {
         adjust *= 0.75;
         if (adjust > ADJUST) adjust = ADJUST;
@@ -724,13 +724,13 @@ void View::zoomToFit(int margin)
 
     // Try to guess the best value adjustment using error margin
     //If error (devergence from 1.0) is > 0, scale down, < 0 scale up
-    error = (scale2d - 1.0) / scale2d;
+    error = (scalerect - 1.0) / scalerect;
 
     //Adjust zoom translation by error * adjust (0.5 default)
     //float oldz = model_trans[2];
     model_trans[2] -= (model_trans[2] * error * adjust);
     //if (count > 4) {
-    //   debug_print("[%d iterations] ... 2D Scaling factor %f ", count, scale2d);
+    //   debug_print("[%d iterations] ... 2D Scaling factor %f ", count, scalerect);
     //   debug_print(" --> error: %f (adjust %f) zoom from %f to %f\n", error, adjust, oldz, model_trans[2]);
     //}
     count++;
@@ -741,9 +741,9 @@ void View::drawOverlay(Colour& colour, std::string& title)
 {
   //2D overlay objects, apply text scaling
   Viewport2d(width, height);
-  glScalef(scale2d, scale2d, scale2d);
-  int w = width / scale2d;
-  int h = height / scale2d;
+  glScalef(drawstate.scale2d, drawstate.scale2d, drawstate.scale2d);
+  int w = width / drawstate.scale2d;
+  int h = height / drawstate.scale2d;
   GL_Error_Check;
 
   //Colour bars
@@ -794,7 +794,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     //Default to vector font if downsampling and no other font requested
     Properties cbprops(drawstate.globals, drawstate.defaults);
-    if (scale2d != 1.0 && !objects[i]->properties.has("font"))
+    if (drawstate.scale2d != 1.0 && !objects[i]->properties.has("font"))
     {
       cbprops.data["font"] = "vector";
       cbprops.data["fontscale"] = 0.4*adjust;

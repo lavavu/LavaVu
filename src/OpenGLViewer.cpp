@@ -497,12 +497,16 @@ void OpenGLViewer::outputON(int w, int h, int channels)
     height = fbo.height;
   }
 
+    //Scale text and 2d elements when downsampling output image
+    app->drawstate.scale2d = pow(2, fbo.downsample-1);
+
   //Re-render frame first
   display();
 }
 
 void OpenGLViewer::outputOFF()
 {
+    app->drawstate.scale2d = 1.0;
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
   if (visible) fbo.disable();

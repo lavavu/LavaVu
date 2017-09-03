@@ -46,6 +46,7 @@ public:
 
   //View
   Camera* globalcam = NULL;
+  float scale2d = 1.0;
 
   //Fonts
   FontManager fonts;

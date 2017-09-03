@@ -164,7 +164,6 @@ public:
   ImageData* pixels(ImageData* image, int w, int h, int channels=3, bool flip=false);
   std::string image(const std::string& path="", int jpegquality=0, bool transparent=false);
 
-  float scale2d() {return pow(2, fbo.downsample-1);}
   void downSample(int q);
 
   void idleReset();

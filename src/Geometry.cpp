@@ -781,7 +781,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
   }
 
   //Default line width
-  float lineWidth = (float)geom[i]->draw->properties["linewidth"] * view->scale2d; //Include 2d scale factor
+  float lineWidth = (float)geom[i]->draw->properties["linewidth"] * drawstate.scale2d; //Include 2d scale factor
   glLineWidth(lineWidth);
 
   //Disable depth test by default for 2d lines, otherwise enable
@@ -959,12 +959,12 @@ void Geometry::labels()
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
       std::string font = geom[i]->draw->properties["font"];
-      if (view->scale2d != 1.0 && font != "vector")
+      if (drawstate.scale2d != 1.0 && font != "vector")
         geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
       //Default to object colour (if fontcolour provided will replace)
       Colour colour = Colour(geom[i]->draw->properties["colour"]);
       glColor3ubv(colour.rgba);
-      drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, view->scale2d);
+      drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, drawstate.scale2d);
 
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {

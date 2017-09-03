@@ -178,7 +178,7 @@ void Lines::draw()
         float scaling = props["scalelines"];
         //Don't apply object scaling to internal lines objects
         if (!internal) scaling *= (float)props["scaling"];
-        float lineWidth = (float)props["linewidth"] * scaling * view->scale2d; //Include 2d scale factor
+        float lineWidth = (float)props["linewidth"] * scaling * drawstate.scale2d; //Include 2d scale factor
         if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);
 
