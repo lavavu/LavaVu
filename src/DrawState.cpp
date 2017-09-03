@@ -687,10 +687,28 @@ void DrawState::reset()
     {
       "radius",
       {
+        0.02,
+        "object(vector)",
+        "real",
+        "Arrow shaft radius as ratio of vector length"
+      }
+    },
+    {
+      "length",
+      {
         0.0,
         "object(vector)",
         "real",
-        "Arrow fixed shaft radius, default is to calculate proportional to length"
+        "Arrow fixed length, default is to use vector magnitude"
+      }
+    },
+    {
+      "normalise",
+      {
+        1.0,
+        "object(vector)",
+        "real",
+        "Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant \"length\" property (if property length=0.0, this is ignored)."
       }
     },
     {

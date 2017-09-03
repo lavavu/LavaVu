@@ -56,7 +56,6 @@ void Vectors::update()
   for (unsigned int i=0; i<geom.size(); i++)
   {
     if (geom[i]->render->vectors.size() < geom[i]->count()) continue;
-    Properties& props = geom[i]->draw->properties;
 
     //Create new data stores for output geometry
     tris->add(geom[i]->draw);
@@ -64,18 +63,22 @@ void Vectors::update()
 
     tot += geom[i]->count();
 
+    Properties& props = geom[i]->draw->properties;
     float arrowHead = props["arrowhead"];
+    float normalise = props["normalise"];
+    float vscaling = props["scaling"];
+    float oscaling = props["scalevectors"];
+    float fixedlen = props["length"];
 
-    //Dynamic range?
-    float scaling = (float)props["scaling"] * (float)props["scalevectors"];
-
-    if (props["autoscale"] && geom[i]->render->vectors.maximum > 0)
+    //Dynamic range? Skip if has a fixed scaling property
+    if (props["autoscale"] && geom[i]->render->vectors.maximum > 0 && vscaling == 1.0)
     {
+      float autoscale = 0.1/geom[i]->render->vectors.maximum;
       debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n",
-                  scaling, 1/geom[i]->render->vectors.maximum, scaling/geom[i]->render->vectors.maximum);
-      scaling *= 1.0/geom[i]->render->vectors.maximum;
+                  vscaling*oscaling, vscaling*oscaling*autoscale, autoscale);
+      //Replace with the auto scale
+      vscaling = autoscale;
     }
-
 
     //Load scaling factors from properties
     int quality = 4 * (int)props["glyphs"];
@@ -83,14 +86,13 @@ void Vectors::update()
 
     //Default (0) = automatically calculated radius
     float radius = props["radius"];
-    radius *= scaling;
-
-    if (scaling <= 0) scaling = 1.0;
 
     ColourLookup& getColour = geom[i]->colourCalibrate();
     bool flat = props["flat"] || quality < 1;
 
     bool filter = geom[i]->draw->filterCache.size();
+    float scaling = vscaling * oscaling;
+    if (scaling <= 0) scaling = 1.0;
     for (unsigned int v=0; v < geom[i]->count(); v++)
     {
       if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
@@ -98,8 +100,21 @@ void Vectors::update()
       Vec3d vec(geom[i]->render->vectors[v]);
       getColour(colour, v);
 
+      //Constant length and normalise enabled
+      //scale the vectors by their length multiplied by constant length factor
+      //when this reaches 1, all vectors are scaled to the same size
+      if (fixedlen > 0.0 && normalise > 0.0)
+      {
+        float len = vec.magnitude();
+        vec.normalise();
+        if (normalise < 1.0)
+          scaling = oscaling * normalise * fixedlen + (1.0 - normalise) * (len * vscaling);
+        else
+          scaling = oscaling * fixedlen;
+      }
+
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
-      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, 0);
+      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, 0);
       //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
       lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
 
@@ -112,7 +127,7 @@ void Vectors::update()
 
       if (!flat && vec.magnitude() * scaling >= minL)
       {
-        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, radius, radius, arrowHead, quality);
+        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, quality);
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
         tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
       }

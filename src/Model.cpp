@@ -1428,9 +1428,10 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       int items = count / size;
       int width = sqlite3_column_int(statement, 9);
       if (height == 0) height = width > 0 ? items / width : 0;
-      //TODO: these should be used for value data if set!
-      //float minimum = (float)sqlite3_column_double(statement, 10);
-      //float maximum = (float)sqlite3_column_double(statement, 11);
+      float minimum = (float)sqlite3_column_double(statement, 10);
+      float maximum = (float)sqlite3_column_double(statement, 11);
+      //Clear if default
+      if (maximum - minimum == 1.0) maximum = minimum = 0.0;
       //Units field repurposed for data label
       const char *data_label = (const char*)sqlite3_column_text(statement, 13);
       const char *labels = (const char*)sqlite3_column_text(statement, 14);
@@ -1521,16 +1522,36 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
         case lucZLengthData:
         case lucSizeData:
         case lucMaxDataType:
+        {
+          json by;
           if (data_label && strlen(data_label) > 0)
+          {
             //Use provided label from units field
             g = active->read(obj, items, data, data_label);
+            by = data_label;
+          }
           else //Use default/legacy label
+          {
             g = active->read(obj, items, data, GeomData::datalabels[data_type]);
-          break;
+            by = GeomData::datalabels[data_type];
+          }
 
+          //copy max/min fields
+          unsigned int valueIdx = g->valuesLookup(by);
+          if (valueIdx < g->values.size())
+          {
+            g->values[valueIdx]->minimum = minimum;
+            g->values[valueIdx]->maximum = maximum;
+          }
+          break;
+        }
         default:
           //Non-value data
           g = active->read(obj, items, data_type, data, width, height, depth);
+
+          //copy max/min fields
+          g->data[data_type]->minimum = minimum;
+          g->data[data_type]->maximum = maximum;
       }
 
       //Set geom labels if any
@@ -2189,7 +2210,7 @@ void Model::jsonRead(std::string data)
     if (cm.is_number())
     {
       int cmid = cm;
-      if (cmid >= 0 && cmid < colourMaps.size())
+      if (cmid >= 0 && cmid < (int)colourMaps.size())
         inobjects[i]["colourmap"] = colourMaps[cmid]->name;
       else
         inobjects[i]["colourmap"] = "";

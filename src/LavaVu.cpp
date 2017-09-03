@@ -35,7 +35,6 @@
 
 //TODO:
 //Object property to exclude from bounding box calc
-//Vector property to skip scaling and plot all arrows at same size
 //Shader based cross sections of volume data sets
 //
 //Value data types independent from geometry types?

@@ -1505,8 +1505,9 @@ Quaternion Geometry::vectorRotation(Vec3d rvector)
 // Draws a 3d vector
 // pos: centre position at which to draw vector
 // scale: scaling factor for entire vector
-// radius: radius of cylinder sections to draw,
-//         if zero a default value is automatically calculated based on length & scale
+// radius0: radius of cylinder at arrow base,
+//          if zero a default value is automatically calculated based on length & scale multiplied by radius1
+// radius1: radius of cylinder at arrow head, or ratio for calculating radius from length if radius0==0
 // head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
 // segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
 #define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
@@ -1520,11 +1521,6 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
   std::vector<unsigned int> indices;
 
-  // Previous implementation was head_scale as a ratio of length [0,1],
-  // now uses ratio to radius (> 1), so adjust if < 1
-  if (head_scale > 0 && head_scale < 1.0)
-    head_scale = 0.5 * head_scale / RADIUS_DEFAULT_RATIO; // Convert from fraction of length to multiple of radius
-
   // Get circle coords
   drawstate.cacheCircleCoords(segment_count);
 
@@ -1536,10 +1532,21 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   if (length < FLT_EPSILON || std::isinf(length)) return;
 
   // Default shaft radius based on length of vector (2%)
-  if (radius0 == 0) radius0 = length * RADIUS_DEFAULT_RATIO;
+  if (radius0 == 0)
+  {
+    if (radius1 == 0) radius1 = RADIUS_DEFAULT_RATIO;
+    radius0 = radius1 = length * radius1;
+  }
   if (radius1 == 0) radius1 = radius0;
-  // Head radius based on shaft radius
-  float head_radius = head_scale * radius1;
+
+  // Head radius based on shaft radius or length
+  float head_radius = 0.0;
+  // If [0,1], ratio to length (diameter to length, so * 0.5)
+  // otherwise ratio to radius (> 1)
+  if (head_scale > 0 && head_scale < 1.0)
+    head_radius = 0.5 * head_scale * length;
+  else if (head_scale > 0)
+    head_radius = head_scale * radius1;
 
   // Vector is centered on pos[x,y,z]
   // Translate to the point of arrow -> position + vector/2
@@ -1724,8 +1731,8 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
   // Draw
   if (arrowHeadSize > 0)
   {
-    // Previous implementation was head_scale as a ratio of length [0,1],
-    // now uses ratio to radius (> 1), so adjust if < 1
+    // Head_scale as a ratio of length [0,1] makes no sense for trajectory,
+    // convert to ratio of radius (> 1) using default conversion ratio
     if (arrowHeadSize < 1.0)
       arrowHeadSize = 0.5 * arrowHeadSize / RADIUS_DEFAULT_RATIO; // Convert from fraction of length to multiple of radius
 
@@ -1740,6 +1747,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
       // Adjust to centre position
       pos = start + vector * 0.5;
     }
+
     // Draw the vector arrow
     drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, arrowHeadSize, segment_count);
 
