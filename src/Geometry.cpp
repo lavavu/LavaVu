@@ -1965,9 +1965,11 @@ void Glyphs::close()
 
 void Glyphs::setup(View* vp, float* min, float* max)
 {
-  lines->setup(vp, min, max);
-  tris->setup(vp, min, max);
+  //Only pass min/max to the master object,
+  //otherwise sub-renderer geometry will expand bounding box
   Geometry::setup(vp, min, max);
+  lines->setup(vp);
+  tris->setup(vp);
 }
 
 void Glyphs::display()
