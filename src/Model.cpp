@@ -391,19 +391,26 @@ int Model::addFigure(std::string name, const std::string& state)
   if (name.length() == 0) name = "(unnamed)";
   //Check for duplicate names
   bool found = false;
+  int count = 0;
+  std::string newname = name;
   do
   {
     found = false;
     for (auto n : fignames)
     {
-      //Duplicate name, add underscore until not a duplicate
-      if (n == name)
+      //Duplicate name, add number until not a duplicate
+      if (n == newname)
       {
         found = true;
-        name += "_";
+        std::stringstream ns;
+        ns << name << ++count;
+        newname = ns.str();
+        break;
       }
     }
   } while (found);
+
+  name = newname;
 
   fignames.push_back(name);
   if (state.length())
@@ -418,6 +425,8 @@ void Model::addObject(DrawingObject* obj)
 {
   //Check for duplicate names / objects
   bool found = false;
+  int count = 0;
+  std::string name = obj->name();
   do
   {
     found = false;
@@ -425,14 +434,19 @@ void Model::addObject(DrawingObject* obj)
     {
       //Duplicate object, skip
       if (o == obj) return;
-      //Duplicate name, add underscore until not a duplicate
-      if (o->name() == obj->name())
+      //Duplicate name, add number until not a duplicate
+      if (o->name() == name)
       {
         found = true;
-        obj->properties.data["name"] = obj->name() + "_";
+        std::stringstream ns;
+        ns << obj->name() << ++count;
+        name = ns.str();
+        break;
       }
     }
   } while (found);
+
+  obj->properties.data["name"] = name;
 
   //Create master drawing object list entry
   objects.push_back(obj);
