@@ -8,18 +8,21 @@ if (parent.IPython) {
 //(check in case this script imported twice, don't overwrite previous)
 var _wi = window._wi ? window._wi : [];
 var delay = 0;
-function debug_kernel(cmd) {
+var debug_mode = false;
+
+function exec_kernel(cmd) {
   //For debugging:
   //Run a python command in kernel and log output to console
   if (kernel) {
-    console.log(cmd);
-    //Debug callback
-    var callbacks = {'output' : function(out) {
-        if (!out.content.data) {console.log(JSON.stringify(out)); return;}
-        data = out.content.data['text/plain']
-        console.log("CMD: " + cmd + ", RESULT: " + data);
-      }
-    };
+    if (debug_mode) {
+      //Debug callback
+      var callbacks = {'output' : function(out) {
+          if (!out.content.data) {console.log(JSON.stringify(out)); return;}
+          data = out.content.data['text/plain']
+          console.log("CMD: " + cmd + ", RESULT: " + data);
+        }
+      };
+    }
     kernel.execute(cmd, {iopub: callbacks}, {silent: false});
   }
 }
@@ -66,7 +69,8 @@ var instant = true;
 WindowInteractor.prototype.execute = function(cmd, callback) {
   //console.log("execute: " + cmd);
   if (kernel) {
-    kernel.execute('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
+    exec_kernel('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
+    //kernel.execute('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
     this.get_image(callback);
   } else {
     //HTTP interface
@@ -105,12 +109,9 @@ WindowInteractor.prototype.do_action = function(id, val) {
 
     //kernel.execute('cmds = lavavu.control.action(' + id + ',' + val + ')');
     var cmd = 'cmds = lavavu.control.Action.do(' + id + ',' + val + ')';
-    //debug_kernel(cmd);
-    //debug_kernel('print cmds');
-    kernel.execute(cmd);
-    cmd = 'if len(cmds): lavavu.control.windows[' + this.id + '].commands(cmds)';
-    kernel.execute(cmd);
-    //debug_kernel(cmd);
+    exec_kernel(cmd);
+    cmd = 'if cmds: lavavu.control.windows[' + this.id + '].commands(cmds)';
+    exec_kernel(cmd);
     this.get_image();
   } else {
     //HTML control actions via http
