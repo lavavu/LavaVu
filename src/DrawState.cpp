@@ -1090,15 +1090,6 @@ void DrawState::reset()
       }
     },
     {
-      "antialias",
-      {
-        true,
-        "view", //Should be global?
-        "boolean",
-        "Enable multisample anti-aliasing, only works with interactive viewing"
-      }
-    },
-    {
       "quality",
       {
         2,
@@ -1232,6 +1223,15 @@ void DrawState::reset()
         "global",
         "integer[2]",
         "Window resolution X,Y"
+      }
+    },
+    {
+      "antialias",
+      {
+        true,
+        "global",
+        "boolean",
+        "Enable multisample anti-aliasing, only works with interactive viewing"
       }
     },
     {

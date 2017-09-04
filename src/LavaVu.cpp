@@ -2528,10 +2528,10 @@ void LavaVu::drawSceneBlended()
 
 void LavaVu::drawScene()
 {
-  if (!aview->properties["antialias"])
-    glDisable(GL_MULTISAMPLE);
-  else
+  if (drawstate.global("antialias"))
     glEnable(GL_MULTISAMPLE);
+  else
+    glDisable(GL_MULTISAMPLE);
 
   // Setup default state
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

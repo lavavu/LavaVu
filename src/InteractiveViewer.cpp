@@ -1873,8 +1873,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    aview->properties.data["antialias"] = !aview->properties["antialias"];
-    printMessage("Anti-aliasing %s", aview->properties["antialias"] ? "ON":"OFF");
+    drawstate.globals["antialias"] = !drawstate.global("antialias");
+    printMessage("Anti-aliasing %s", drawstate.global("antialias") ? "ON":"OFF");
   }
   else if (parsed.exists("valuerange"))
   {
