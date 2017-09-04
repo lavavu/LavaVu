@@ -881,7 +881,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float w = 0, h = 0;
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
-      aview->properties.data["resolution"] = json::array({w, h});
+      drawstate.globals["resolution"] = json::array({w, h});
       viewset = RESET_ZOOM; //Force check for resize and autozoom
     }
   }
@@ -1762,6 +1762,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     viewer->fullScreen();
+    drawstate.globals["resolution"] = json::array({viewer->width, viewer->height});
     printMessage("Full-screen is %s", viewer->fullscreen ? "ON":"OFF");
   }
   else if (parsed.exists("scaling"))

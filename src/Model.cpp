@@ -2094,6 +2094,13 @@ void Model::jsonRead(std::string data)
   
   json imported = json::parse(data);
 
+  //List of keys to ignore on import if already set
+  //(Default is to always replace if found in imported data,
+  // this is reversed for these keys, existing value takes precedence)
+  std::string skiplist[] = {"resolution", "antialias"};
+  for (auto del : skiplist)
+    if (drawstate.globals.count(del)) imported["properties"].erase(del);
+
   //Load globals, merge with existing values
   Properties::mergeJSON(drawstate.globals, imported["properties"]);
 
@@ -2117,6 +2124,11 @@ void Model::jsonRead(std::string data)
     }
 
     View* view = views[v];
+
+    //Process list of keys to ignore on import if already set
+    for (auto del : skiplist)
+      if (view->properties.has(del) || drawstate.globals.count(del))
+        inviews[v].erase(del);
 
     //Apply base properties with merge
     view->properties.merge(inviews[v]);

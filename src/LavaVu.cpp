@@ -1678,8 +1678,7 @@ void LavaVu::resize(int new_width, int new_height)
   }
 
   //Set resolution
-  //drawstate.globals["resolution"] = {new_width, new_height};
-  aview->properties.data["resolution"] = {new_width, new_height};
+  drawstate.globals["resolution"] = {new_width, new_height};
 
   amodel->redraw();
 }
@@ -1885,7 +1884,7 @@ void LavaVu::display(bool redraw)
     {
       //Resize if required
       int res[2];
-      Properties::toArray<int>(aview->properties["resolution"], res, 2);
+      Properties::toArray<int>(drawstate.global("resolution"), res, 2);
       if (res[0] > 0 && res[1] > 0 && (res[0] != viewer->width || res[1] != viewer->height))
       {
         viewer->setsize(res[0], res[1]);
@@ -2706,7 +2705,8 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   }
 
   if (!aview) aview = amodel->views[0];
-  json res = aview->properties["resolution"];
+
+  json res = drawstate.global("resolution");
 
   //Not yet opened or resized?
   if (!viewer->isopen)
