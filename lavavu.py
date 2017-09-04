@@ -6,6 +6,10 @@ NOTE: regarding sync of state between python and library
     property setting must always trigger a sync to lavavu
 - sync from lavavu to python is lazy, always need to call _get()
     before using state data
+#TODO:
+ - deprecate getobjects, accessing Viewer.objects should trigger _get
+ - zoom to fit in automated image output broken, initial timestep differs, margins out
+ - translation setting different if window aspect ratio changes
 """
 import json
 import math
@@ -534,7 +538,7 @@ class Obj(object):
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
-            Creates a colourmap named objectname-default if object 
+            Creates a colourmap named objectname_colourmap if object
             doesn't already have a colourmap
         reverse: boolean
             Reverse the order of the colours after loading
@@ -1486,6 +1490,17 @@ class Viewer(object):
         """
         return json.loads(self.app.getTimeSteps())
 
+    def steps(self):
+        """
+        Retrieve the time step data from loaded model
+
+        Returns
+        -------
+        timesteps: list
+            A list of all available time steps
+        """
+        return json.loads(self.app.getTimeSteps())
+
     def figures(self):
         """
         Retrieve the saved figures from loaded model
@@ -1753,10 +1768,12 @@ class Viewer(object):
             imagelist += glob.glob("*.jpg")
             imagelist.sort(key=os.path.getmtime)
             os.chdir(cwd)
-        for f in imagelist:
+
+        for f in sorted(imagelist):
             outfile = outputPath+f
             expfile = expectedPath+f
             results.append(self.testimage(expfile, outfile, tolerance))
+
         #Combined result
         overallResult = all(results)
         if not overallResult:

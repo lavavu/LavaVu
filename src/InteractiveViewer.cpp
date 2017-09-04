@@ -1258,8 +1258,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     aview->properties.data["far"] = fval;
   }
-  else if (parsed.exists("timestep"))  //Absolute
+  else if (parsed.exists("timestep") || parsed.exists("step"))  //Absolute
   {
+    std::string what = parsed.exists("timestep") ? "timestep" : "step";
     if (gethelp)
     {
       help += "Set timestep to view\n\n"
@@ -1269,11 +1270,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "down : switch to next timestep if available\n";
       return false;
     }
-    if (!parsed.has(ival, "timestep"))
+    if (!parsed.has(ival, what))
     {
-      if (parsed["timestep"] == "up")
+      if (parsed[what] == "up")
         ival = drawstate.now-1;
-      else if (parsed["timestep"] == "down")
+      else if (parsed[what] == "down")
         ival = drawstate.now+1;
       else
         ival = drawstate.now;
@@ -2110,7 +2111,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       int cmap = lookupColourMap(parsed, "colourmap", next);
       std::string what = parsed.get("colourmap", next);
       //Only able to set the value colourmap now
-      if (cmap >= 0 && amodel->colourMaps.size() > cmap)
+      if (cmap >= 0 && (int)amodel->colourMaps.size() > cmap)
       {
         obj->properties.data["colourmap"] = amodel->colourMaps[cmap]->name;
         printMessage("%s colourmap set to %s (%d)", obj->name().c_str(), amodel->colourMaps[cmap]->name.c_str(), cmap);
@@ -3347,7 +3348,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     return categories;
 
   std::vector<std::vector<std::string> > cmdlist = {
-    {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "timestep", "jump", "model", "reload", "redraw", "clear"},
+    {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
