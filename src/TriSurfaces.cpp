@@ -87,7 +87,8 @@ void TriSurfaces::update()
   if (reload || idxcount == 0)
   {
     idxcount = 0;
-    view->sort = true;
+    if (drawstate.global("sort") != 0)
+      view->sort = true;
   }
 }
 

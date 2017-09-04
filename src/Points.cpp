@@ -79,7 +79,8 @@ void Points::update()
     loadVertices();
 
   //Initial depth sort & render
-  view->sort = true;
+  if (drawstate.global("sort") != 0)
+    view->sort = true;
 
   //Always reload indices if redraw flagged
   if (redraw) idxcount = 0;
