@@ -66,9 +66,9 @@ def getproperty(target, propname):
     _lv = getviewer(target)
     if propname in target:
         return target[propname]
-    elif propname in _lv._proplist:
+    elif propname in _lv.properties:
         #Get property default
-        prop = _lv._proplist[propname]
+        prop = _lv.properties[propname]
         return prop[0]
     else:
         return None
