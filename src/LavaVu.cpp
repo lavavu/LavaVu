@@ -56,7 +56,7 @@
 #include "Main/CocoaViewer.h"
 
 //Viewer class implementation...
-LavaVu::LavaVu(std::string binpath, bool omegalib) : binpath(binpath)
+LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpath)
 {
   viewer = NULL;
   axis = NULL;

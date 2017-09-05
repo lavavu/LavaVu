@@ -66,11 +66,11 @@ void DrawState::reset()
   }
 
   colourMaps = NULL;
+}
 
+void DrawState::init()
+{
   //Setup default properties (once only)
-  if (properties.size() > 0)
-    return;
-
   properties = {
     {
       "renderlist",
@@ -1494,7 +1494,17 @@ void DrawState::reset()
         "integer",
         "Holds the current model timestep, read only, -1 indicates no time varying data loaded"
       }
+    },
+    {
+      "data",
+      {
+        {},
+        "global",
+        "dict",
+        "Holds a dictionary of data sets in the current model by label, read only"
+      }
     }
+
   };
 
   for (auto p : properties)

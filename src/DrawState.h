@@ -65,6 +65,7 @@ public:
   ~DrawState();
   std::string counterFilename();
   void reset();
+  void init();
   json& global(const std::string& key);
   bool has(const std::string& key);
   void cacheCircleCoords(int segment_count);

@@ -7,7 +7,6 @@ NOTE: regarding sync of state between python and library
 - sync from lavavu to python is lazy, always need to call _get()
     before using state data
 #TODO:
- - deprecate getobjects, accessing Viewer.objects should trigger _get
  - zoom to fit in automated image output broken, initial timestep differs, margins out
  - translation setting different if window aspect ratio changes
 """
@@ -100,7 +99,7 @@ default_args = []
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
-class Obj(object):
+class Obj(dict):
     """  
     The Object class provides an interface to a LavaVu drawing object
     Obj instances are created internally in the Viewer class and can
@@ -142,6 +141,9 @@ class Obj(object):
         #Create a control factory
         self.control = control.ControlFactory(self)
 
+        #Init prop dict for tab completion
+        super(Obj, self).__init__(**self.instance.properties)
+
     def name(self):
         """
         Get the object's name property
@@ -164,9 +166,16 @@ class Obj(object):
 
     def __getitem__(self, key):
         self.instance._get() #Ensure in sync
-        return self.dict[key]
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
+        if key in self.dict:
+            return self.dict[key]
+        #Default to the property lookup dict
+        return super(Obj, self).__getitem__(key)
 
     def __setitem__(self, key, value):
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
         #self.instance._get() #Ensure in sync
         #Set new value and send
         self.dict[key] = value
@@ -176,8 +185,10 @@ class Obj(object):
         return key in self.dict
 
     def __str__(self):
+        #Default string representation
         self.instance._get() #Ensure in sync
         return str('\n'.join(['%s=%s' % (k,json.dumps(v)) for k,v in self.dict.iteritems()]))
+        #return '[' + ', '.join(self.dict.keys()) + ']'
 
     #Interface for setting filters
     def include(self, *args, **kwargs):
@@ -771,7 +782,7 @@ class Objects(dict):
         #Default string representation is a comma separated list
         return '[' + ', '.join(self.keys()) + ']'
 
-class Viewer(object):
+class Viewer(dict):
     """  
     *The Viewer class provides an interface to a LavaVu session*
     
@@ -869,10 +880,16 @@ class Viewer(object):
         self.resolution = (640,480)
         self._ctr = 0
         self.app = None
-        self.objects = Objects(self)
+        self._objects = Objects(self)
         self.state = {}
         try:
             self.app = LavaVuPython.LavaVu(binpath, omegalib)
+
+            #Get property dict
+            self.properties = convert_keys(json.loads(self.app.propertyList()))
+            #Init prop dict for tab completion
+            super(Viewer, self).__init__(**self.properties)
+
             self.setup(arglist, database, figure, timestep, port, verbose, interactive, hidden, cache,
                        quality, writeimage, resolution, script, initscript, usequeue, *args, **kwargs)
 
@@ -884,9 +901,6 @@ class Viewer(object):
 
             #Create a control factory
             self.control = control.ControlFactory(self)
-
-            #Get property dict
-            self._proplist = convert_keys(json.loads(self.app.propertyList()))
 
             #Get available commands
             self._cmdcategories = self.app.commandList()
@@ -1032,20 +1046,16 @@ class Viewer(object):
             return self.state[key]
         elif key in self.state["properties"]:
             return self.state["properties"][key]
-        elif key in self._proplist:
-            return self._proplist[key][0]
+        elif key in self.properties:
+            return self.properties[key][0]
+        else:
+            raise ValueError(key + " : Invalid property name")
         return None
-
-    def __dir__(self):
-        return [prop for prop in self._proplist]
-    
-    def _ipython_key_completions_():
-        return [prop for prop in self._proplist]
 
     def __setitem__(self, key, item):
         #Set view/global property
-        #self.app.parseCommands("select") #Ensure no object selected
-        #self.app.parseCommands(key + '=' + str(item))
+        if not key in self.properties:
+            raise ValueError(key + " : Invalid property name")
         self._get()
         #self.state = json.loads(self.app.getState())
         view = self.state["views"][0]
@@ -1067,20 +1077,10 @@ class Viewer(object):
         properties.update(self.state["views"][0])
         return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.iteritems()]))
 
-    def _get(self):
-        #Import state from lavavu
-        self.state = convert_keys(json.loads(self.app.getState()))
-        self.objects._sync()
-
-    def _set(self):
-        #Export state to lavavu
-        #(include current object list state)
-        #self.state["objects"] = [obj.dict for obj in self.objects.list]
-        self.app.setState(json.dumps(self.state))
-
-    def getobjects(self):
+    @property
+    def objects(self):
         """
-        Get the list of active objects
+        Returns the list of active objects
 
         Returns
         -------
@@ -1089,7 +1089,34 @@ class Viewer(object):
             Can be printed, iterated or accessed as a dictionary by object name
         """
         self._get()
-        return self.objects
+        return self._objects
+
+    @property
+    def colourmaps(self):
+        """
+        Returns the list of active colourmaps
+
+        Returns
+        -------
+        colourmaps: (dict)
+            An dictionary containing the list of available colourmaps
+        """
+        self._get()
+        maps = {}
+        for cm in self.state["colourmaps"]:
+            maps[cm["name"]] = cm
+        return maps
+
+    def _get(self):
+        #Import state from lavavu
+        self.state = convert_keys(json.loads(self.app.getState()))
+        self._objects._sync()
+
+    def _set(self):
+        #Export state to lavavu
+        #(include current object list state)
+        #self.state["objects"] = [obj.dict for obj in self._objects.list]
+        self.app.setState(json.dumps(self.state))
 
     def commands(self, cmds):
         """
@@ -1188,9 +1215,9 @@ class Viewer(object):
         obj: Obj
             The object created
         """
-        if isinstance(self.objects, Objects) and name in self.objects:
+        if isinstance(self._objects, Objects) and name in self._objects:
             print("Object exists: " + name)
-            return self.objects[name]
+            return self._objects[name]
 
         #Put provided name in properties
         if name and len(name):
@@ -1243,22 +1270,22 @@ class Viewer(object):
         #Return object by name/ref or last in list if none provided
         #Get state and update object list
         self._get()
-        if len(self.objects.list) == 0:
+        if len(self._objects.list) == 0:
             print("WARNING: No objects exist!")
             return None
         #If name passed, find this object in updated list, if not just use the last
         if isinstance(identifier, str):
-            for obj in self.objects.list:
+            for obj in self._objects.list:
                 if obj["name"] == identifier:
                     return obj
         if isinstance(identifier, int):
-            if len(self.objects.list) >= identifier:
-                return self.objects.list[identifier-1]
+            if len(self._objects.list) >= identifier:
+                return self._objects.list[identifier-1]
         elif isinstance(identifier, LavaVuPython.DrawingObject):
-            for obj in self.objects.list:
+            for obj in self._objects.list:
                 if obj.ref == identifier:
                     return obj
-        return self.objects.list[-1]
+        return self._objects.list[-1]
 
     def file(self, filename, obj=None, **kwargs):
         """
@@ -1555,7 +1582,7 @@ class Viewer(object):
         compress: boolean
             Use zlib compression when writing the geometry data
         """
-        for obj in self.objects.list:
+        for obj in self._objects.list:
             #Update object data at current timestep
             if filter is None:
                 #Re-writes all data to db for object
@@ -1625,10 +1652,10 @@ class Viewer(object):
             Creates a PNG image with a transparent background
         """
         if is_notebook():
-                from IPython.display import display,Image,HTML
-                #Return inline image result
-                img = self.app.image("", resolution[0], resolution[1], 0, transparent)
-                display(HTML("<img src='%s'>" % img))
+            from IPython.display import display,Image,HTML
+            #Return inline image result
+            img = self.app.image("", resolution[0], resolution[1], 0, transparent)
+            display(HTML("<img src='%s'>" % img))
         else:
             #Not in IPython, call default image save routines (autogenerated filenames)
             self.app.image("*", resolution[0], resolution[1], 0, transparent)
@@ -2336,8 +2363,8 @@ def _markdown(mdstr):
     """Display markdown in IPython if available,
     otherwise just print it"""
     if is_notebook():
-            from IPython.display import display,Markdown
-            display(Markdown(mdstr))
+        from IPython.display import display,Markdown
+        display(Markdown(mdstr))
     else:
         #Not in IPython, just print
         print(mdstr)

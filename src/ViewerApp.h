@@ -51,7 +51,8 @@ public:
 
   OpenGLViewer* viewer;
 
-  ViewerApp() {}
+  ViewerApp() { drawstate.init(); }
+
   virtual ~ViewerApp() {}
 
   //INTERFACE:
