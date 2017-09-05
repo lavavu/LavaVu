@@ -516,7 +516,7 @@ void Volumes::render(int i)
   geom[i]->colourCalibrate();
 }
 
-ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles)
+ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, unsigned int& iw, unsigned int& ih, unsigned int& channels, int xtiles)
 {
   ImageData* image = new ImageData();
   unsigned int inc = slices[draw];
@@ -544,8 +544,8 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
         }
 
         //Copy slice image to tile region of image
-        for (int y=0; y<slice_image.height; y++)
-          for (int x=0; x<slice_image.width; x++)
+        for (unsigned int y=0; y<slice_image.height; y++)
+          for (unsigned int x=0; x<slice_image.width; x++)
             image->pixels[iw * (y + yoffset) + x + xoffset] = slice_image.pixels[y * slice_image.width + x];
 
         xoffset += geom[i]->width;
@@ -560,7 +560,7 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
     //Slices: load selected index volume only
     else if (index == i && geom[i]->draw == draw)
     {
-      int xoffset = 0, yoffset = 0;
+      unsigned int xoffset = 0, yoffset = 0;
 
       for (unsigned int j=i; j<i+slices[draw]; j++)
       {
@@ -578,8 +578,8 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, int& 
         }
 
         //Copy slice image to tile region of image
-        for (int y=0; y<slice_image.height; y++)
-          for (int x=0; x<slice_image.width; x++)
+        for (unsigned int y=0; y<slice_image.height; y++)
+          for (unsigned int x=0; x<slice_image.width; x++)
             image->pixels[iw * (y + yoffset) + x + xoffset] = slice_image.pixels[y * slice_image.width + x];
 
         xoffset += slice_image.width;
@@ -604,7 +604,7 @@ void Volumes::saveTiledImage(DrawingObject* draw, int xtiles)
   {
     if (geom[i]->draw == draw && drawable(i))
     {
-      int iw, ih, channels;
+      unsigned int iw, ih, channels;
       ImageData *image = getTiledImage(draw, i, iw, ih, channels, xtiles);
       if (!image) return;
       char path[FILE_PATH_MAX];
@@ -616,11 +616,10 @@ void Volumes::saveTiledImage(DrawingObject* draw, int xtiles)
   }
 }
 
-ImageData* Volumes::getSliceImage(ImageData* image, GeomData* slice, int offset)
+void Volumes::getSliceImage(ImageData* image, GeomData* slice, int offset)
 {
   int width = slice->width;
   int height = slice->height;
-  int channels = 0;
 
   if (slice->colourData() != nullptr)
   {
@@ -677,14 +676,12 @@ void Volumes::saveSliceImages(DrawingObject* draw, unsigned int index)
     if (geom[i]->depth > 1)
     {
       int size = geom[i]->width * geom[i]->height;
-      unsigned int xoffset = 0, yoffset = 0;
       for (unsigned int z=0; z<geom[i]->depth; z++)
       {
         getSliceImage(&image, geom[i].get(), z*size);
         //Write slice image
         char fn[256];
         sprintf(fn, "%s_%d.jpg", draw->name().c_str(), z);
-        printf(fn);
         image.write(fn);
       }
       break;
@@ -692,8 +689,6 @@ void Volumes::saveSliceImages(DrawingObject* draw, unsigned int index)
     //Slices: load selected index volume only
     else if (index == i && geom[i]->draw == draw)
     {
-      int xoffset = 0, yoffset = 0;
-
       for (unsigned int j=i; j<i+slices[draw]; j++)
       {
         getSliceImage(&image, geom[j].get());
@@ -737,7 +732,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       }*/
 
       //Get a tiled image for WebGL to use as a 2D texture...
-      int iw, ih, channels; //TODO: Support other pixel formats
+      unsigned int iw, ih, channels; //TODO: Support other pixel formats
       ImageData *image = getTiledImage(draw, i, iw, ih, channels, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
       std::string imagestr = getImageUrlString(image);

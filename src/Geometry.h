@@ -583,9 +583,9 @@ public:
   virtual void update();
   virtual void draw();
   void render(int i);
-  ImageData* getTiledImage(DrawingObject* draw, unsigned int index, int& iw, int& ih, int& channels, int xtiles=16);
+  ImageData* getTiledImage(DrawingObject* draw, unsigned int index, unsigned int& iw, unsigned int& ih, unsigned int& channels, int xtiles=16);
   void saveTiledImage(DrawingObject* draw, int xtiles=16);
-  ImageData* getSliceImage(ImageData* image, GeomData* slice, int offset=0);
+  void getSliceImage(ImageData* image, GeomData* slice, int offset=0);
   void saveSliceImages(DrawingObject* draw, unsigned int index);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
   void isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol=false);
