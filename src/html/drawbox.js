@@ -4,12 +4,10 @@
 function initBox(el, cmd_callback) {
   //console.log("INITBOX: " + el.id);
   var canvas = document.createElement("canvas");
-  canvas.id = "canvas";
-
   if (!el) el = document.body.firstChild;
+  canvas.id = "canvas_" + el.id;
+  canvas.imgtarget = el
   el.parentElement.appendChild(canvas);
-  //canvas.style.cssText = "position: absolute; z-index: 0; margin: 0px; padding: 0px; border: none; display: block;"
-  //canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: auto; top: 0; left: 0; bottom: 0; right: 0; z-index: 51; border: none;"
   canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: 0px; padding: 0px; top: 0; left: 0; bottom: 0; right: 0; z-index: 11; border: none;"
   viewer = new Viewer(canvas);
 
@@ -57,12 +55,36 @@ function canvasMouseDown(event, mouse) {
   return false;
 }
 
+var hideTimer;
+
 function canvasMouseMove(event, mouse) {
+  if (mouse.element && mouse.element.imgtarget) {
+    var rect = mouse.element.getBoundingClientRect();
+    x = event.clientX-rect.left;
+    y = event.clientY-rect.top;
+    if (x >= 0 && y >= 0 && x < rect.width && y < rect.height) {
+      mouse.element.imgtarget.nextElementSibling.style.display = "block";
+      if (hideTimer) 
+        clearTimeout(hideTimer);
+      hideTimer = setTimeout(function () {mouse.element.imgtarget.nextElementSibling.style.display = "none";}, 1000 );
+    }
+  }
+
   if (!mouse.isdown || !mouse.element.viewer) return true;
   mouse.element.viewer.rotating = false;
 
   //Switch buttons for translate/rotate
   var button = mouse.button;
+
+  if (mouse.element.viewer.mode == "Translate") {
+    //Swap buttons
+    if (button == 0)
+      button = 2
+    else if (button == 2)
+      button = 0;
+  } else if (mouse.element.viewer.mode == "Zoom") {
+      button = 100;
+  }
 
   //console.log(mouse.deltaX + "," + mouse.deltaY);
   switch (button)
@@ -80,6 +102,10 @@ function canvasMouseMove(event, mouse) {
       var adjust = mouse.element.viewer.modelsize / 1000;   //1/1000th of size
       mouse.element.viewer.translate[0] += mouse.deltaX * adjust;
       mouse.element.viewer.translate[1] -= mouse.deltaY * adjust;
+      break;
+    case 100:
+      var adjust = mouse.element.viewer.modelsize / 1000;   //1/1000th of size
+      mouse.element.viewer.translate[2] += mouse.deltaX * adjust;
       break;
   }
 

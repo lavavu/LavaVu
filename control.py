@@ -365,8 +365,18 @@ class Window(Container):
         style += 'float: ' + self.align + ';'
         if wrapper:
             style += ' margin-right: 10px;'
-        html = '<div style="' + style + '">\n'
+        html = ""
+        html += '<div style="' + style + '">\n'
         html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa;">\n'
+        html += """
+           <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
+             <select onchange="_wi[---VIEWERID---].box.mode = this.value;">
+               <option>Rotate</option>
+               <option>Translate</option>
+               <option>Zoom</option>
+             </select>
+             <input type="button" value="Reset" onclick="_wi[---VIEWERID---].execute('reset');">
+           </div>"""
         html += '</div>\n'
         #Display any contained controls
         if wrapper:

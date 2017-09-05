@@ -91,6 +91,13 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
     }
 
   }
+
+  //Reload state
+  if (this.img) {
+    var that = this;
+    updateBox(this.box, function(onget) {that.get_state(onget);});
+  }
+
   return false;
 }
 
