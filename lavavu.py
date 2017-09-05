@@ -911,19 +911,21 @@ class Viewer(dict):
                 self._allcmds += self._cmds[c]
 
             #Create command methods
+            selfdir = dir(self)
             for key in self._allcmds:
                 #Check if a method exists already
-                existing = getattr(self, key, None)
-                if existing:
-                    #Add the lavavu doc entry to the docstring
-                    doc = ""
-                    if existing.__doc__:
-                        if "Wraps LavaVu" in existing.__doc__: continue #Already modified
-                        doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
-                    doc += self.app.helpCommand(key, False)
-                    #These should all be wrapper for the matching lavavu commands
-                    #(Need to ensure we don't add methods that clash)
-                    existing.__func__.__doc__ = doc
+                if key in selfdir:
+                    existing = getattr(self, key, None)
+                    if existing:
+                        #Add the lavavu doc entry to the docstring
+                        doc = ""
+                        if existing.__doc__:
+                            if "Wraps LavaVu" in existing.__doc__: continue #Already modified
+                            doc += existing.__doc__ + '\n----\nWraps LavaVu script command of the same name:\n > **' + key + '**:\n'
+                        doc += self.app.helpCommand(key, False)
+                        #These should all be wrapper for the matching lavavu commands
+                        #(Need to ensure we don't add methods that clash)
+                        existing.__func__.__doc__ = doc
                 else:
                     #Use a closure to define a new method that runs this command
                     def cmdmethod(name):
@@ -1106,6 +1108,19 @@ class Viewer(dict):
         for cm in self.state["colourmaps"]:
             maps[cm["name"]] = cm
         return maps
+    @property
+    def step(self):
+        """    
+        step (int): Returns current timestep
+        """
+        return self.timestep()
+
+    @step.setter
+    def step(self, value):
+        """    
+        step (int): Sets current timestep
+        """
+        self.timestep(value)
 
     def _get(self):
         #Import state from lavavu
