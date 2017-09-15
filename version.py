@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 
-version = os.popen("git describe --tags").read()
+version = os.popen("git describe --tags --always").read()
 version = version.rstrip('\r\n')
 
 f = open('src/version.cpp', 'a+')
