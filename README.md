@@ -1,14 +1,17 @@
-# LavaVu #
+![# logo](http://owen.kaluza.id.au/Slides/2017-08-15/LavaVu.png)
 
 [![Build Status](https://travis-ci.org/OKaluza/LavaVu.svg?branch=master)](https://travis-ci.org/OKaluza/LavaVu)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
+![examplevis](http://owen.kaluza.id.au/Slides/2017-08-15/combined.png)
+
+
 LavaVu development is supported by the [Monash Immersive Visualisation Plaform](http://monash.edu.au/mivp) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
 
-The acronym stands for: **L**ightweight, **A**utomatable  **V**isualisation & **A**nalysis **V**iewing **U**tility, but "lava" is also a reference to its primary application as a viewer for geophysical simulations. It was also chosen to be unique enough to find the repository with google.
+The acronym stands for: lightweight, automatable  visualisation and analysis viewing utility, but "lava" is also a reference to its primary application as a viewer for geophysical simulations. It was also chosen to be unique enough to find the repository with google.
 
-The project sprang out of the gLucifer<sup>1</sup> framework for visualising geodynamics simulations when the OpenGL visualisation module was separated from the simulation and sampling libraries, but is now a more general purpose visualisation tool. gLucifer continues as a set of sampling tools for Underworld simulations as part of the [Underworld2](https://github.com/underworldcode/underworld2/) code. LavaVu provides the rendering library for creating 2d and 3d visualisations to view this sampled data, inline within interactive IPython notebooks and offline through saved visualisation databases and images/movies.
+The project started in the gLucifer<sup>1</sup> framework for visualising geodynamics simulations. The OpenGL visualisation module was separated from the simulation and sampling libraries and became a more general purpose visualisation tool. gLucifer continues as a set of sampling tools for Underworld simulations as part of the [Underworld2](https://github.com/underworldcode/underworld2/) code. LavaVu provides the rendering library for creating 2d and 3d visualisations to view this sampled data, inline within interactive IPython notebooks and offline through saved visualisation databases and images/movies.
 
 As a standalone tool it is a scriptable 3D visualisation tool capable of producing publication quality high res images and video output from time varying data sets along with HTML5 3D visualisations in WebGL.
 Rendering features include correctly and efficiently rendering large numbers of opaque and transparent points and surfaces and volume rendering by GPU ray-marching. There are also features for drawing vector fields and tracers (streamlines).
