@@ -1,7 +1,6 @@
 language: cpp
 dist: trusty
-sudo: required
-group: deprecated-2017Q3
+sudo: false
 notifications:
   slack: cavedev:0TKfIim9KQnrmiKExKFnKT9L
 matrix:
@@ -25,7 +24,7 @@ matrix:
 #before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 install:
-  - pip install numpy
+  - pip install --user numpy
 addons:
   apt:
     sources:
