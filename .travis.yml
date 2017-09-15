@@ -24,6 +24,7 @@ matrix:
 #before_install:
 #  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
 install:
+  - pip install 'requests[security]'
   - pip install numpy
 addons:
   apt:
