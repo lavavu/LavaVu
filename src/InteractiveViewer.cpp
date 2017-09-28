@@ -657,7 +657,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   bool redisplay = true;
 
   //Skip comments or empty lines
-  if (cmd.length() == 0 || cmd.at(0) == '#') return false;
+  if (cmd.length() == 0) return false;
+  if (cmd.at(0) == '#')
+  {
+    //If followed by valid object id, select it
+    std::string s = cmd.substr(1);
+    std::stringstream ss(s);
+    unsigned int id;
+    if (amodel && ss >> id && id > 0 && id <= amodel->objects.size())
+      return parseCommand("select " + s);
+    return false;
+  }
 
   //Save in history
   if (!gethelp)
