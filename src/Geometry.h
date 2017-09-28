@@ -478,11 +478,34 @@ public:
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
+class Points : public Geometry
+{
+  PIndex *pidx;
+  PIndex *swap;
+  unsigned int idxcount;
+  GLuint indexvbo, vbo;
+public:
+  Points(DrawState& drawstate);
+  virtual ~Points();
+  virtual void close();
+  virtual void update();
+  void loadVertices();
+  void loadList();
+  void depthSort();
+  void render();
+  int getPointType(int index=-1);
+  virtual void draw();
+  virtual void jsonWrite(DrawingObject* draw, json& obj);
+
+  void dumpJSON();
+};
+
 class Glyphs : public Geometry
 {
 protected:
   Lines* lines;
   TriSurfaces* tris;
+  Points* points;
 public:
   Glyphs(DrawState& drawstate);
   virtual ~Glyphs();
@@ -536,28 +559,6 @@ public:
   virtual void render();
   void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
   virtual void draw();
-};
-
-class Points : public Geometry
-{
-  PIndex *pidx;
-  PIndex *swap;
-  unsigned int idxcount;
-  GLuint indexvbo, vbo;
-public:
-  Points(DrawState& drawstate);
-  virtual ~Points();
-  virtual void close();
-  virtual void update();
-  void loadVertices();
-  void loadList();
-  void depthSort();
-  void render();
-  int getPointType(int index=-1);
-  virtual void draw();
-  virtual void jsonWrite(DrawingObject* draw, json& obj);
-
-  void dumpJSON();
 };
 
 class Imposter : public Geometry

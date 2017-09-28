@@ -73,6 +73,8 @@ void Points::close()
 
 void Points::update()
 {
+  if (total == 0) return;
+
   //Ensure vbo recreated if total changed
   //To force update, set geometry->reload = true
   if (reload || vbo == 0)

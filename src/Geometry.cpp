@@ -1948,7 +1948,8 @@ Glyphs::Glyphs(DrawState& drawstate) : Geometry(drawstate)
   //Create sub-renderers
   lines = new Lines(drawstate);
   tris = new TriSurfaces(drawstate);
-  tris->internal = lines->internal = true;
+  points = new Points(drawstate);
+  tris->internal = lines->internal = points->internal = true;
 }
 
 Glyphs::~Glyphs()
@@ -1956,6 +1957,7 @@ Glyphs::~Glyphs()
   close();
   delete lines;
   delete tris;
+  delete points;
 }
 
 void Glyphs::close()
@@ -1965,9 +1967,11 @@ void Glyphs::close()
     //Clear all generated geometry
     lines->clear();
     tris->clear();
+    points->clear();
   }
   lines->close();
   tris->close();
+  points->close();
   Geometry::close();
 }
 
@@ -1978,6 +1982,7 @@ void Glyphs::setup(View* vp, float* min, float* max)
   Geometry::setup(vp, min, max);
   lines->setup(vp);
   tris->setup(vp);
+  points->setup(vp);
 }
 
 void Glyphs::display()
@@ -1986,10 +1991,13 @@ void Glyphs::display()
   tris->reload = reload;
   lines->redraw = redraw;
   lines->reload = reload;
+  points->redraw = redraw;
+  points->reload = reload;
 
   //Need to call to clear the cached object
   lines->display();
   tris->display();
+  points->display();
 
   if (!reload && drawstate.global("gpucache"))
   {
@@ -2005,12 +2013,16 @@ void Glyphs::update()
 {
   tris->update();
   lines->update();
+  points->update();
 }
 
 void Glyphs::draw()
 {
   if (lines->total)
     lines->draw();
+
+  if (points->total)
+    points->draw();
 
   if (tris->total)
   {
@@ -2030,6 +2042,7 @@ void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
 {
   tris->jsonWrite(draw, obj);
   lines->jsonWrite(draw, obj);
+  points->jsonWrite(draw, obj);
 }
 
 Imposter::Imposter(DrawState& drawstate) : Geometry(drawstate)
