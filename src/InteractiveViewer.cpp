@@ -2800,6 +2800,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Delete geometry
       for (unsigned int i=0; i < amodel->geometry.size(); i++)
         amodel->geometry[i]->remove(list[c]);
+      for (unsigned int i=0; i < amodel->fixed.size(); i++)
+        amodel->fixed[i]->remove(list[c]);
+
+      for (unsigned int ts=0; ts < amodel->timesteps.size(); ts++)
+        for (unsigned int i=0; i < amodel->timesteps[ts]->cache.size(); i++)
+          amodel->timesteps[ts]->cache[i]->remove(list[c]);
       //Delete from model obj list
       for (unsigned int i=0; i<amodel->objects.size(); i++)
       {
