@@ -74,8 +74,6 @@ std::string GeomData::getLabels()
     int length = 1;
     for (unsigned int i=0; i < labels.size(); i++)
       length += labels[i].size() + 1;
-    labelptr = (char*)malloc(sizeof(char) * length);
-    labelptr[0] = '\0';
     //Copy labels
     for (unsigned int i=0; i < labels.size(); i++)
       ss << labels[i] << std::endl;

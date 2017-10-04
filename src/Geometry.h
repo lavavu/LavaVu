@@ -189,7 +189,6 @@ public:
   unsigned int width;
   unsigned int height;
   unsigned int depth;
-  char* labelptr;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   ImageLoader* texture; //Texture
   lucGeometryType type;   //Holds the object type
@@ -228,7 +227,7 @@ public:
   }
 
   GeomData(DrawingObject* draw, lucGeometryType type)
-    : draw(draw), width(0), height(0), depth(0), labelptr(NULL), opaque(false), type(type)
+    : draw(draw), width(0), height(0), depth(0), opaque(false), type(type)
   {
     render = std::make_shared<RenderData>();
     data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
@@ -253,9 +252,6 @@ public:
 
   ~GeomData()
   {
-    if (labelptr) free(labelptr);
-    labelptr = NULL;
-
     if (texture)
       delete texture;
   }
