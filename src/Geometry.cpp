@@ -499,7 +499,7 @@ void Geometry::clearData(DrawingObject* draw, lucGeometryDataType dtype)
   {
     if (draw == g->draw)
     {
-      g->data[dtype]->clear();
+      g->dataContainer(dtype)->clear();
     }
   }
   //std::cout << "CLEARED " << dtype << std::endl;
@@ -586,7 +586,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
       json data;
       for (int data_type=lucMinDataType; data_type<=lucMaxDataType; data_type++)
       {
-        DataContainer* dat = geom[index]->data[data_type];
+        DataContainer* dat = geom[index]->dataContainer((lucGeometryDataType)data_type);
         if (!dat)
         {
           //TODO: export all values with labels separately
@@ -1101,13 +1101,15 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   geomdata = getObjectStore(draw);
 
   //If dimensions specified, check if full dataset loaded
-  if (geomdata && geomdata->data[dtype] && geomdata->width > 0 && geomdata->height > 0)
+  assert(dtype <= lucMaxDataType);
+  if (geomdata && geomdata->width > 0 && geomdata->height > 0)
   {
+    DataContainer* container = geomdata->dataContainer(dtype);
     unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
-    if (size == geomdata->data[dtype]->count())
+    if (size == container->count())
       geomdata = nullptr;
-    //if (!geomdata) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, geomdata->data[dtype]->size(), 
-    //                       geomdata->data[dtype]->unitsize(), geomdata->data[dtype]->count());
+    //if (!geomdata) printf("LOAD COMPLETE dtype %d size %u ==  %u / %u == %u\n", dtype, size, container->size(), 
+    //                       container->unitsize(), container->count());
   }
 
   //Allow spec width/height/depth in properties
@@ -1142,7 +1144,8 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
     geomdata->draw->properties.data["geometry"] = GeomData::names[type];
 
   //Read the data
-  if (n > 0) geomdata->data[dtype]->read(n, data);
+  if (n > 0)
+    geomdata->dataContainer(dtype)->read(n, data);
 
   if (dtype == lucVertexData)
   {
@@ -1321,10 +1324,10 @@ bool Geometry::inFixed(DataContainer* block0)
   //Return true if a data block found in fixed data set
   for (Geom_Ptr p : geom)
   {
-    for (unsigned int data_type=0; data_type < p->data.size(); data_type++)
+    for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
     {
       //Get the data entries and compare
-      DataContainer* block1 = p->data[data_type];
+      DataContainer* block1 = p->dataContainer((lucGeometryDataType)data_type);
       if (block1 && block1 == block0) return true;
     }
     for (unsigned int j=0; j<p->values.size(); j++)

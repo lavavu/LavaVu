@@ -1550,8 +1550,9 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
           g = active->read(obj, items, data_type, data, width, height, depth);
 
           //copy max/min fields
-          g->data[data_type]->minimum = minimum;
-          g->data[data_type]->maximum = maximum;
+          DataContainer* container = g->dataContainer(data_type);
+          container->minimum = minimum;
+          container->maximum = maximum;
       }
 
       //Set geom labels if any
@@ -1769,10 +1770,10 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
   bool fixedOnly = step < 0; //Write all the fixed data at step -1, otherwise skip it
   for (unsigned int i=0; i<data.size(); i++)
   {
-    for (unsigned int data_type=0; data_type < data[i]->data.size(); data_type++)
+    for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
     {
       //Write the data entry
-      DataContainer* block = data[i]->data[data_type];
+      DataContainer* block = data[i]->dataContainer((lucGeometryDataType)data_type);
       if (inFixed(block) != fixedOnly) continue; //Skip fixed/unfixed
       if (!block || block->size() == 0) continue;
       if (infostream)

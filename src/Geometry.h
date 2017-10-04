@@ -86,14 +86,14 @@ class ColourLookup
 {
 public:
   DrawingObject* draw;
-  std::shared_ptr<RenderData> render;
+  Render_Ptr render;
   FloatValues* vals;
   FloatValues* ovals;
   float div255;
 
   ColourLookup() {}
 
-  void init(DrawingObject* draw, std::shared_ptr<RenderData> render, FloatValues* vals, FloatValues* ovals)
+  void init(DrawingObject* draw, Render_Ptr render, FloatValues* vals, FloatValues* ovals)
   {
     div255 = 1.0/255;
     this->draw = draw;
@@ -213,9 +213,8 @@ public:
 
   std::vector<std::string> labels;      //Optional vertex labels
 
-  std::vector<DataContainer*> data;
   std::vector<Values_Ptr> values;
-  std::shared_ptr<RenderData> render;
+  Render_Ptr render;
 
   static unsigned int byteSize(lucGeometryDataType type)
   {
@@ -230,17 +229,6 @@ public:
     : draw(draw), width(0), height(0), depth(0), opaque(false), type(type)
   {
     render = std::make_shared<RenderData>();
-    data.resize(MAX_DATA_ARRAYS); //Maximum increased to allow predefined data plus generic value data arrays
-    
-    data[lucVertexData] = (DataContainer*)&render->vertices;
-    data[lucVectorData] = (DataContainer*)&render->vectors;
-    data[lucNormalData] = (DataContainer*)&render->normals;
-    data[lucIndexData] = (DataContainer*)&render->indices;
-    data[lucRGBAData] = (DataContainer*)&render->colours;
-    data[lucTexCoordData] = (DataContainer*)&render->texCoords;
-    data[lucLuminanceData] = (DataContainer*)&render->luminance;
-    data[lucRGBData] = (DataContainer*)&render->rgb;
-
     texture = NULL;
 
     for (int i=0; i<3; i++)
@@ -256,7 +244,31 @@ public:
       delete texture;
   }
 
-  unsigned int count() {return data[lucVertexData]->size() / 3;}  //Number of vertices
+  unsigned int count() {return render->vertices.size() / 3;}  //Number of vertices
+
+  DataContainer* dataContainer(lucGeometryDataType type)
+  {
+    switch (type)
+    {
+      case lucVertexData:
+        return (DataContainer*)&render->vertices;
+      case lucVectorData:
+        return (DataContainer*)&render->vectors;
+      case lucNormalData:
+        return (DataContainer*)&render->normals;
+      case lucIndexData:
+        return (DataContainer*)&render->indices;
+      case lucRGBAData:
+        return (DataContainer*)&render->colours;
+      case lucTexCoordData:
+        return (DataContainer*)&render->texCoords;
+      case lucLuminanceData:
+        return (DataContainer*)&render->luminance;
+      case lucRGBData:
+        return (DataContainer*)&render->rgb;
+    }
+    return NULL;
+  }
 
   void checkPointMinMax(float *coord);
   void calcBounds();

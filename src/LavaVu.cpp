@@ -3242,7 +3242,7 @@ void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, fl
   //Get a view of internal geom array
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
-  DataContainer* dat = geom->data[dtype];
+  DataContainer* dat = geom->dataContainer(dtype);
   *array = (float*)dat->ref(0);
   *len = dat->size();
 }
@@ -3252,7 +3252,7 @@ void LavaVu::geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, uns
   //Get a view of internal geom array
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
-  DataContainer* dat = geom->data[dtype];
+  DataContainer* dat = geom->dataContainer(dtype);
   *array = (unsigned int*)dat->ref(0);
   *len = dat->size();
 }
@@ -3262,7 +3262,7 @@ void LavaVu::geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, un
   //Get a view of internal geom array
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
-  DataContainer* dat = geom->data[dtype];
+  DataContainer* dat = geom->dataContainer(dtype);
   *array = (unsigned char*)dat->ref(0);
   *len = dat->size();
 }

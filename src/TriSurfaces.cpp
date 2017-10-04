@@ -198,15 +198,22 @@ void TriSurfaces::loadMesh()
     else
     {
       //Switch out the optimised vertices and normals with the old data stores
-      Coord3DValues newverts = Coord3DValues();
-      if (vnormals) 
-      {
-        geom[index]->render->normals = Coord3DValues();
-        geom[index]->data[lucNormalData] = &geom[index]->render->normals;
-      }
-      geom[index]->render->indices = UIntValues();
-      geom[index]->data[lucVertexData] = &newverts;
-      geom[index]->data[lucIndexData] = &geom[index]->render->indices;
+      // - must maintain a copy of old RenderData to read from in optimisation
+      //   otherwise it will have been destroyed when new RenderData created
+      Render_Ptr olddata = geom[index]->render;
+      //Create a new store and copy original values
+      geom[index]->render = std::make_shared<RenderData>();
+
+      //Vertices, normals, indices (and colour values) may be replaced
+      //Rest just get copied over
+      if (!vnormals)
+        geom[index]->render->normals = olddata->normals;
+      geom[index]->render->vectors = olddata->vectors;
+      geom[index]->render->texCoords = olddata->texCoords;
+      geom[index]->render->colours = olddata->colours;
+      geom[index]->render->luminance = olddata->luminance;
+      geom[index]->render->rgb = olddata->rgb;
+
       //Recreate value data as optimised version is smaller, re-load necessary values
       FloatValues* oldvalues = geom[index]->colourData();
       Values_Ptr newvalues = NULL;
@@ -217,6 +224,7 @@ void TriSurfaces::loadMesh()
         newvalues->minimum = oldvalues->minimum;
         newvalues->maximum = oldvalues->maximum;
       }
+
       bool optimise = geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
       {
@@ -252,10 +260,7 @@ void TriSurfaces::loadMesh()
           indices[verts[v].id] = indices[verts[v].ref];
         }
       }
-      //Replace vertex containers
-      geom[index]->render->vertices = newverts;
-      geom[index]->data[lucVertexData] = &geom[index]->render->vertices;
-      //printf("OBJ %s EL %d, optimised vertices: %d\n", geom[index]->draw->name().c_str(), index, geom[index]->render->vertices.size());
+
       if (newvalues)
         geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
     }
