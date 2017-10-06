@@ -1665,7 +1665,6 @@ void LavaVu::reloadShaders()
 
 void LavaVu::resize(int new_width, int new_height)
 {
-  //On resizes after initial size set, adjust point scaling
   if (new_width > 0)
   {
     float size0 = viewer->width * viewer->height;
@@ -1774,9 +1773,13 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     float omin[3] = {min[0], min[1], min[2]};
     float omax[3] = {max[0], max[1], max[2]};
 
-    //If no range, flag invalid with +/-inf, will be expanded in setView
     for (int i=0; i<3; i++)
+    {
+      //If no range, flag invalid with +/-inf, will be expanded in setView
       if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
+      //Ensure supplied min/max in correct order
+      if (min[i] > max[i]) std::swap(min[i], max[i]);
+    }
 
     //Expand bounds by all geometry objects
     for (auto g : amodel->geometry)
@@ -1786,7 +1789,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     aview->port(viewer->width, viewer->height);
 
     //Update the model bounding box - use global bounds if provided and sane in at least 2 dimensions
-    if (max[0]-min[0] > EPSILON && max[1]-min[1] > EPSILON)
+    if (fabs(max[0]-min[0]) > EPSILON && fabs(max[1]-min[1]) > EPSILON)
     {
       debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from global properties\n",
                   min[0], min[1], min[2],
