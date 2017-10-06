@@ -332,12 +332,19 @@ bool GeomData::filter(unsigned int idx)
     size = values[draw->filterCache[i].dataIdx]->size();
     if (draw->filterCache[i].dataIdx < MAX_DATA_ARRAYS && size > 0)
     {
+      //Tracer filter? check if enough data for per step filter, if not assume per tracer
+      if (type == lucTracerType && draw->filterCache[i].elements > 0 && size == draw->filterCache[i].elements)
+      {
+        //debug_print("FILTER PER-TRACER by %d : %d ==> %d\n", draw->filterCache[i].elements, idx, idx % draw->filterCache[i].elements);
+        idx %= draw->filterCache[i].elements;
+      }
+
       //Have values but not enough for per-vertex? spread over range (eg: per triangle)
       range = count() / size;
       ridx = idx;
       if (range > 1) ridx = idx / range;
 
-      //std::cout << "Filtering on index: " << filter.dataIdx << " " << size << " values" << std::endl;
+      //std::cout << "Filtering on index: " << draw->filterCache[i].dataIdx << " " << size << " values" << std::endl;
       min = draw->filterCache[i].minimum;
       max = draw->filterCache[i].maximum;
       Values_Ptr v = values[draw->filterCache[i].dataIdx];
@@ -361,6 +368,7 @@ bool GeomData::filter(unsigned int idx)
         value = (*v)[ridx];
 
       //if (idx%10000==0) std::cout << min << " < " << value << " < " << max << std::endl;
+      //std::cout << min << " < " << value << " < " << max << std::endl;
       
       //"out" flag indicates values between the filter range are skipped - exclude
       if (draw->filterCache[i].out)
@@ -396,6 +404,7 @@ bool GeomData::filter(unsigned int idx)
       }
     }
   }
+  //std::cout << "(Not filtered)\n";
   return false;
 }
 

@@ -136,26 +136,30 @@ void DrawingObject::setup()
     float min = filters[i]["minimum"];
     float max = filters[i]["maximum"];
 
-    int j = filterCache.size();
     filterCache.push_back(Filter());
-    filterCache[j].by = filters[i]["by"];
-    filterCache[j].map = filters[i]["map"];
-    filterCache[j].out = filters[i]["out"];
-    filterCache[j].inclusive = filters[i]["inclusive"];
+    filterCache[i].by = filters[i]["by"];
+    filterCache[i].map = filters[i]["map"];
+    filterCache[i].out = filters[i]["out"];
+    filterCache[i].inclusive = filters[i]["inclusive"];
     if (min > max)
     {
       //Swap and change to an out filter
-      filterCache[j].minimum = max;
-      filterCache[j].maximum = min;
-      filterCache[j].out = !filterCache[j].out;
+      filterCache[i].minimum = max;
+      filterCache[i].maximum = min;
+      filterCache[i].out = !filterCache[i].out;
       //Also flip the inclusive flag
-      filterCache[j].inclusive = !filterCache[j].inclusive;
+      filterCache[i].inclusive = !filterCache[i].inclusive;
     }
     else
     {
-      filterCache[j].minimum = min;
-      filterCache[j].maximum = max;
+      filterCache[i].minimum = min;
+      filterCache[i].maximum = max;
     }
+    //For tracer filtering
+    float dims[3];
+    Properties::toArray<float>(properties["dims"], dims, 3);
+    if (dims[0] > 0 && dims[1] == 0 && dims[2] == 0)
+      filterCache[i].elements = dims[0];
   }
 }
 

@@ -123,6 +123,7 @@ typedef struct
   bool map;
   bool out;
   bool inclusive;
+  int elements;
 } Filter;
 
 //General purpose geometry data store types...
