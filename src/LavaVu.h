@@ -240,7 +240,6 @@ public:
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();
-  std::string getFigures();
   std::string getTimeSteps();
   void addTimeStep(int step);
 

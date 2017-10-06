@@ -20,6 +20,7 @@
 #include "src/version.h"
 #include "src/LavaVu.h"
 #include "src/ViewerTypes.h"
+#include "src/Model.h"
 #include "src/DrawingObject.h"
 #include "src/ColourMap.h"
 %}
@@ -71,6 +72,16 @@ public:
   DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
   ColourMap* colourMap;
   ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
+  std::string name();
+};
+
+class Model
+{
+public:
+  std::vector<std::string> fignames;
+  std::vector<std::string> figures;
+  int figure;
+  Model(DrawState& drawstate);
 };
 
 class ColourMap
@@ -86,7 +97,6 @@ public:
   %pythoncode %{
     #def __getattr__(self, key):
     #TODO: allow property set/get
-    #  print "hello"
 
     def _setup(self, app, data, reverse=False, monochrome=False, propstring=""):
         if not isinstance(data, str):
@@ -140,7 +150,6 @@ public:
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();
-  std::string getFigures();
   std::string getTimeSteps();
   void addTimeStep(int step);
 

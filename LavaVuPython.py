@@ -313,8 +313,22 @@ class DrawingObject(object):
     colourMap = _swig_property(_LavaVuPython.DrawingObject_colourMap_get, _LavaVuPython.DrawingObject_colourMap_set)
     __swig_destroy__ = _LavaVuPython.delete_DrawingObject
 DrawingObject.getColourMap = new_instancemethod(_LavaVuPython.DrawingObject_getColourMap, None, DrawingObject)
+DrawingObject.name = new_instancemethod(_LavaVuPython.DrawingObject_name, None, DrawingObject)
 DrawingObject_swigregister = _LavaVuPython.DrawingObject_swigregister
 DrawingObject_swigregister(DrawingObject)
+
+class Model(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    fignames = _swig_property(_LavaVuPython.Model_fignames_get, _LavaVuPython.Model_fignames_set)
+    figures = _swig_property(_LavaVuPython.Model_figures_get, _LavaVuPython.Model_figures_set)
+    figure = _swig_property(_LavaVuPython.Model_figure_get, _LavaVuPython.Model_figure_set)
+
+    def __init__(self, drawstate):
+        _LavaVuPython.Model_swiginit(self, _LavaVuPython.new_Model(drawstate))
+    __swig_destroy__ = _LavaVuPython.delete_Model
+Model_swigregister = _LavaVuPython.Model_swigregister
+Model_swigregister(Model)
 
 class ColourMap(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
@@ -328,7 +342,6 @@ class ColourMap(object):
 
         #def __getattr__(self, key):
         #TODO: allow property set/get
-        #  print "hello"
 
     def _setup(self, app, data, reverse=False, monochrome=False, propstring=""):
         if not isinstance(data, str):
@@ -394,7 +407,6 @@ LavaVu.getColourMap = new_instancemethod(_LavaVuPython.LavaVu_getColourMap, None
 LavaVu.colourBar = new_instancemethod(_LavaVuPython.LavaVu_colourBar, None, LavaVu)
 LavaVu.setState = new_instancemethod(_LavaVuPython.LavaVu_setState, None, LavaVu)
 LavaVu.getState = new_instancemethod(_LavaVuPython.LavaVu_getState, None, LavaVu)
-LavaVu.getFigures = new_instancemethod(_LavaVuPython.LavaVu_getFigures, None, LavaVu)
 LavaVu.getTimeSteps = new_instancemethod(_LavaVuPython.LavaVu_getTimeSteps, None, LavaVu)
 LavaVu.addTimeStep = new_instancemethod(_LavaVuPython.LavaVu_addTimeStep, None, LavaVu)
 LavaVu.resetViews = new_instancemethod(_LavaVuPython.LavaVu_resetViews, None, LavaVu)

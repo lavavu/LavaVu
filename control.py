@@ -463,7 +463,7 @@ class Tabs(Container):
                 #Add header items
                 classes = 'lvbutton lvctrl tab_---ELID---'
                 if t == 0: classes += ' lvseltab'
-                html += '<button class="' + classes + '" onclick="openTab_---ELID---(this, this.innerHTML)">---LABEL---</button>\n'
+                html += '<button class="' + classes + '" onclick="openTab_---ELID---(this, this.innerHTML)">---LABEL---</button>'
                 html = html.replace('---LABEL---', self.tabs[t])
             html += "</div>\n"
         for t in range(len(self.tabs)):

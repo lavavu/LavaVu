@@ -2991,24 +2991,6 @@ std::string LavaVu::getState()
   return amodel->jsonWrite();
 }
 
-std::string LavaVu::getFigures()
-{
-  if (!amodel) return "[]";
-  std::stringstream ss;
-  ss << "[\n";
-  for (unsigned int s=0; s<amodel->figures.size(); s++)
-  {
-    amodel->loadFigure(s);
-    amodel->jsonWrite(ss);
-    if (s < amodel->figures.size()-1) ss << ",\n";
-  }
-  //Export current state only if no figures
-  if (amodel->figures.size() == 0)
-    amodel->jsonWrite(ss);
-  ss << "]\n";
-  return ss.str();
-}
-
 std::string LavaVu::getTimeSteps()
 {
   if (!amodel) return "[]";

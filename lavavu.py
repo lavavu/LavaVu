@@ -99,10 +99,10 @@ default_args = []
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
-class Obj(dict):
+class Object(dict):
     """  
     The Object class provides an interface to a LavaVu drawing object
-    Obj instances are created internally in the Viewer class and can
+    Object instances are created internally in the Viewer class and can
     be retrieved from the object list
 
     New objects are also created using viewer methods
@@ -120,8 +120,7 @@ class Obj(dict):
     >>> import lavavu
     >>> lv = lavavu.Viewer()
     >>> lv.test()
-    >>> objects = lv.getobjects()
-    >>> print(objects)
+    >>> print(lv.objects)
 
     Object properties can be passed in when created or set by using as a dictionary:
 
@@ -142,8 +141,9 @@ class Obj(dict):
         self.control = control.ControlFactory(self)
 
         #Init prop dict for tab completion
-        super(Obj, self).__init__(**self.instance.properties)
+        super(Object, self).__init__(**self.instance.properties)
 
+    @property
     def name(self):
         """
         Get the object's name property
@@ -171,7 +171,7 @@ class Obj(dict):
         if key in self.dict:
             return self.dict[key]
         #Default to the property lookup dict
-        return super(Obj, self).__getitem__(key)
+        return super(Object, self).__getitem__(key)
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -183,6 +183,9 @@ class Obj(dict):
 
     def __contains__(self, key):
         return key in self.dict
+
+    def __repr__(self):
+        return str(self.ref)
 
     def __str__(self):
         #Default string representation
@@ -310,6 +313,7 @@ class Obj(dict):
         #Pass a single value to include/exclude exact value
         #Pass a tuple for exclusive range (min < val < max)
         # list for inclusive range (min <= val <= max)
+        self.instance._get() #Ensure have latest data
         if isinstance(values, float) or isinstance(values, int):
             values = [values,values]
         filter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
@@ -343,7 +347,7 @@ class Obj(dict):
         This allows manually closing the active element so all new data is loaded into a new element
         """
         #TODO: use ref? requires new function in LavaVu
-        self.instance.append(self.id) #self.name())
+        self.instance.append(self.id) #self.name)
 
     def triangles(self, data, split=0):
         """
@@ -358,7 +362,7 @@ class Obj(dict):
             Split triangles this many times on loading
         """
         if split > 1:
-            self.instance.app.loadTriangles(self.ref, data, self.name(), split)
+            self.instance.app.loadTriangles(self.ref, data, self.name, split)
         else:
             self.vertices(data)
 
@@ -559,9 +563,10 @@ class Obj(dict):
         #Load colourmap on this object
         ret = None
         if self.ref.colourMap is None:
-            self.ref.colourMap = self.instance.app.addColourMap(self.name() + "_colourmap")
+            self.ref.colourMap = self.instance.app.addColourMap(self.name + "_colourmap")
             self["colourmap"] = self.ref.colourMap.name
         self.ref.colourMap._setup(self.instance.app, data, reverse, monochrome, str(json.dumps(kwargs)))
+        return self.ref.colourMap.name
         
     def reload(self):
         """
@@ -611,7 +616,7 @@ class Obj(dict):
 
         Returns
         -------
-        colourbar: Obj
+        colourbar: Object
             The colourbar object created
         """
         #Create a new colourbar for this object
@@ -707,7 +712,7 @@ class Obj(dict):
 
         Returns
         -------
-        obj: Obj
+        obj: Object
             The isosurface object created/converted
         """
         #Generate and return an isosurface object, 
@@ -715,7 +720,7 @@ class Obj(dict):
         isobj = self
         if not convert:
             #Create a new object for the surface
-            if name is None: name = self.name() + "_surface"
+            if name is None: name = self.name + "_surface"
             isobj = self.instance.add(name, **kwargs)
             isobj["geometry"] = "triangles"
         else:
@@ -761,7 +766,7 @@ class Objects(dict):
                 self.list.append(self[obj["name"]])
             else:
                 #Create a new object wrapper
-                o = Obj(obj, self.instance)
+                o = Object(obj, self.instance)
                 self[obj["name"]] = o
                 self.list.append(o)
             #Flag sync
@@ -778,9 +783,73 @@ class Objects(dict):
             else:
                 self[name].found = False
 
+    def __repr__(self):
+        rep = '{\n'
+        for key in self.keys():
+            rep += '"' + key + '": {},'
+        rep += '}\n'
+
     def __str__(self):
         #Default string representation is a comma separated list
-        return '[' + ', '.join(self.keys()) + ']'
+        return ', '.join(self.keys())
+
+class Fig(dict):
+    """  
+    The Fig class wraps a figure
+    """
+    def __init__(self, instance, name):
+        self.instance = instance
+        self.name = name
+        #Init prop dict for tab completion
+        super(Fig, self).__init__(**self.instance.properties)
+
+    def __getitem__(self, key):
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
+        #Activate this figure on viewer
+        self.load()
+        #Return key on viewer instance
+        if key in self.instance:
+            return self.instance[key]
+        #Default to the property lookup dict
+        return super(Fig, self).__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
+        #Activate this figure on viewer
+        self.load()
+        #Set new value
+        self.instance[key] = value
+        #Save changes
+        self.save()
+
+    def __repr__(self):
+        return '{"' + self.name + '"}'
+
+    def __str__(self):
+        return self.name
+
+    def load(self):
+        #Activate this figure on viewer
+        self.instance.figure(self.name)
+
+    def save(self):
+        #Save changes
+        self.instance.savefigure(self.name)
+
+    def show(self, *args, **kwargs):
+        #Activate this figure on viewer
+        self.load()
+        #Render
+        self.instance.display(*args, **kwargs)
+
+    def image(self, *args, **kwargs):
+        #Activate this figure on viewer
+        self.load()
+        #Render
+        return self.instance.image(*args, **kwargs)
+
 
 class Viewer(dict):
     """  
@@ -1072,6 +1141,12 @@ class Viewer(dict):
     def __contains__(self, key):
         return key in self.state or key in self.state["properties"] or key in self.state["views"][0]
 
+
+    def __repr__(self):
+        self._get()
+        #return '{"' + self.state["properties"]["caption"] + '"}'
+        return '{}'
+
     def __str__(self):
         #View/global props to string
         self._get()
@@ -1082,7 +1157,7 @@ class Viewer(dict):
     @property
     def objects(self):
         """
-        Returns the list of active objects
+        Returns the active objects
 
         Returns
         -------
@@ -1108,6 +1183,68 @@ class Viewer(dict):
         for cm in self.state["colourmaps"]:
             maps[cm["name"]] = cm
         return maps
+
+    @property
+    def figures(self):
+        """
+        Retrieve the saved figures from loaded model
+        Dict returned contains Fig objects which can be used to modify the figure
+
+        Returns
+        -------
+        figures: dict
+            A dictionary of all available figures by name
+        """
+        if not self.app.amodel:
+            return {}
+        figs = self.app.amodel.fignames
+        figures = {}
+        for fig in figs:
+            figures[fig] = Fig(self, name=fig)
+        return figures
+
+    def Figure(self, name, objects=None, **kwargs):
+        """
+        Create a figure
+
+        Parameters
+        ----------
+        name: str
+            Name of the figure
+        objects: list
+            List of objects or object names to include in the figure, others will be hidden
+
+        Returns
+        -------
+        figure: Figure
+            Figure object
+        """
+        #Show only objects in list
+        if objects and isinstance(objects, list):
+            #Hide all first
+            for o in self._objects:
+                self._objects[o]["visible"] = False
+            #Show by name or Object
+            for o in objects:
+                if isinstance(o, str):
+                    if o in self._objects:
+                        o["visible"] = True
+                else:
+                    if o in self._objects.list:
+                        o["visible"] = True
+
+        #Create a new figure
+        self.savefigure(name)
+        #Sync list
+        figs = self.figures
+        #Get figure wrapper object
+        fig = figs[name]
+        #Additional keyword args = properties
+        for key in kwargs:
+            fig[key] = kwargs[key]
+        #Return figure
+        return fig
+
     @property
     def step(self):
         """    
@@ -1204,7 +1341,7 @@ class Viewer(dict):
             self.app.setObject(ref, str(json.dumps(kwargs)))
 
         #Get the created/update object
-        obj = self.getobject(ref)
+        obj = self.Object(ref)
 
         #Read any property data sets (allows object creation and load with single prop dict)
         for key in datasets:
@@ -1227,7 +1364,7 @@ class Viewer(dict):
 
         Returns
         -------
-        obj: Obj
+        obj: Object
             The object created
         """
         if isinstance(self._objects, Objects) and name in self._objects:
@@ -1265,9 +1402,9 @@ class Viewer(dict):
         obj.vertices(vertices)
         return obj
 
-    def getobject(self, identifier=None):
+    def Object(self, identifier=None, **kwargs):
         """
-        Get a visualisation object
+        Get or create a visualisation object
 
         Parameters
         ----------
@@ -1276,31 +1413,51 @@ class Viewer(dict):
             If a number, lookup object by index
             If an object reference, lookup the Object by reference
             If omitted, return the last object in the list
+            If no matching object found and string identifier provided, creates an empty object
+        **kwargs:
+            Set of properties passed to the object
 
         Returns
         -------
-        obj: Obj
+        obj: Object
             The object located
         """
         #Return object by name/ref or last in list if none provided
         #Get state and update object list
         self._get()
+        o = None
         if len(self._objects.list) == 0:
             print("WARNING: No objects exist!")
-            return None
         #If name passed, find this object in updated list, if not just use the last
-        if isinstance(identifier, str):
+        elif isinstance(identifier, str):
             for obj in self._objects.list:
-                if obj["name"] == identifier:
-                    return obj
-        if isinstance(identifier, int):
+                if obj.name == identifier:
+                    o = obj
+                    break
+            #Not found? Create
+            if not o:
+                return self.add(identifier, **kwargs)
+        elif isinstance(identifier, int):
+            #Lookup by index
             if len(self._objects.list) >= identifier:
-                return self._objects.list[identifier-1]
+                o = self._objects.list[identifier-1]
         elif isinstance(identifier, LavaVuPython.DrawingObject):
+            #Lookup by swig wrapped object
             for obj in self._objects.list:
-                if obj.ref == identifier:
-                    return obj
-        return self._objects.list[-1]
+                #Can't compare swig wrapper objects directly,
+                #so use the name
+                if obj.name == identifier.name():
+                    o = obj
+                    break
+        else:
+            #Last resort: last object in list
+            o = self._objects.list[-1]
+
+        if o is not None:
+            self.app.setObject(o.ref, str(json.dumps(kwargs)))
+            return o
+        print "WARNING: Object not found and could not be created: ",identifier
+        return None
 
     def file(self, filename, obj=None, **kwargs):
         """
@@ -1310,7 +1467,7 @@ class Viewer(dict):
         ----------
         filename: str
             Name of the file to load
-        obj: Obj
+        obj: Object
             Vis object to load the file data into,
             if not provided a default will be created
         """
@@ -1320,7 +1477,7 @@ class Viewer(dict):
 
         #Get last object added if none provided
         if obj is None:
-            obj = self.getobject()
+            obj = self.Object()
 
         #Setups up new object, all other args passed to properties dict
         return self._setupobject(obj.ref, **kwargs)
@@ -1333,7 +1490,7 @@ class Viewer(dict):
         ----------
         files: str
             Specification of the files to load
-        obj: Obj
+        obj: Object
             Vis object to load the data into,
             if not provided a default will be created
         """
@@ -1350,12 +1507,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        obj: Obj (optional)
+        obj: Object (optional)
             Vis object the colour bar applies to
 
         Returns
         -------
-        colourbar: Obj
+        colourbar: Object
             The colourbar object created
         """
         #Create a new colourbar
@@ -1542,25 +1699,6 @@ class Viewer(dict):
             A list of all available time steps
         """
         return json.loads(self.app.getTimeSteps())
-
-    def figures(self):
-        """
-        Retrieve the saved figures from loaded model
-        List returned contains full figure state data by default
-        These data sets can be loaded with the restore() method
-
-        Returns
-        -------
-        figures: dict
-            A dictionary of all available figure data by name
-        """
-        figs = convert_keys(json.loads(self.app.getFigures()))
-        #Convert from list to dict (TODO: export as dict in getFigures)
-        figures = {}
-        for fig in figs:
-            if "figure" in fig:
-                figures[fig["figure"]] = fig["figure"]
-        return figures
 
     def addstep(self, step=-1):
         """
@@ -1977,7 +2115,7 @@ class Viewer(dict):
 class Geometry(list):
     """  
     The Geometry class provides an interface to a drawing object's internal data
-    Geometry instances are created internally in the Obj class with the data() method
+    Geometry instances are created internally in the Object class with the data() method
 
     Example
     -------
