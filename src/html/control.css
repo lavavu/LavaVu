@@ -11,15 +11,15 @@
 
 .checkerboard {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4jWP4TwAcOHAAL2YYNWBYGEBIASEwasCwMAAALvidroqDalkAAAAASUVORK5CYII=");}
 
-.palette {margin: 3px; border:1px solid #000; border: 1px dotted #000;}
+.palette { margin: 3px; border:1px solid #000; border: 1px dotted #000;}
 
-.lvtab {border: 1px solid #999; padding: 5px;}
-.lvtabbar{width:100%;overflow:hidden}.center .lvtabbar{display:inline-block;width:auto}
-.lvtabbar .lvtabbar-item{padding:8px 16px;float:left;width:auto;border:none;outline:none;display:block}
-.lvtabbar .dropdown-hover,.lvtabbar .dropdown-click{position:static;float:left}
-.lvtabbar .lvbutton{white-space:normal}
+.lvtab    { border: 1px solid #999; padding: 5px; }
+.lvtabbar { width:100%; overflow:hidden; margin-top: 5px; }
+.lvtabbar .lvtabbar-item { padding:4px 8px; float:left; width:auto; border:none; outline:none; display:block; }
+.lvtabbar .dropdown-hover,.lvtabbar .dropdown-click { position:static; float:left; }
+.lvtabbar .lvbutton { white-space:normal; }
 
-.lvbutton:hover{color:#000!important;background-color:#ccc!important; border: 1px solid #999; border-bottom: 0}
-.lvbutton{border: 1px solid #999; border-bottom: 0; display:inline-block;outline:0;padding:8px 16px;vertical-align:middle;overflow:hidden;text-decoration:none;color:inherit;background-color:inherit;text-align:center;cursor:pointer;white-space:nowrap}
+.lvbutton:hover { color:#000!important; background-color:#ccc!important; border: 1px solid #999; border-bottom: 0; }
+.lvbutton { border: 1px solid #999; border-bottom: 0; border-radius: 5px 5px 0px 0px; margin-right: 3px; display:inline-block; outline:0; padding:4px 8px; vertical-align:middle; overflow:hidden; text-decoration:none; color:inherit; background-color:inherit; text-align:center; cursor:pointer; white-space:nowrap; }
 
-.lvseltab,.hover-lvseltab:hover{color:#fff!important;background-color:#555!important}
+.lvseltab,.hover-lvseltab:hover { color:#fff!important; background-color:#555!important; }

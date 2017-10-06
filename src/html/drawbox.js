@@ -77,12 +77,12 @@ function canvasMouseMove(event, mouse) {
   var button = mouse.button;
 
   if (mouse.element.viewer.mode == "Translate") {
-    //Swap buttons
+    //Swap rotate/translate buttons
     if (button == 0)
       button = 2
     else if (button == 2)
       button = 0;
-  } else if (mouse.element.viewer.mode == "Zoom") {
+  } else if (button==0 && mouse.element.viewer.mode == "Zoom") {
       button = 100;
   }
 
