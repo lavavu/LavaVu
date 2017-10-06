@@ -46,6 +46,7 @@ void Tracers::update()
   //Convert tracers to triangles/lines
   lines->clear();
   tris->clear();
+  points->clear();
   //All tracers stored as single vertex/value block
   //Contains vertex/value for every tracer particle at each timestep
   //Number of particles is number of entries divided by number of timesteps
@@ -60,6 +61,7 @@ void Tracers::update()
     //Create a new data stores for output geometry
     tris->add(geom[i]->draw);
     lines->add(geom[i]->draw);
+    points->add(geom[i]->draw);
 
     //Calculate particle count using data count / data steps
     unsigned int particles = geom[i]->width;
@@ -102,13 +104,14 @@ void Tracers::update()
     bool taper = props["taper"];
     bool fade = props["fade"];
     int quality = 4 * (int)props["glyphs"];
-    float size0 = props["scaling"];
-    size0 *= 0.001;
+    float size0 = 0.001 * (float)props["scaling"];
     float limit = props.getFloat("limit", view->model_size * 0.3);
     float factor = props["scaling"];
     float scaling = props["scaletracers"];
     factor *= scaling * drawstate.gap * 0.0005;
     float arrowSize = props["arrowhead"];
+    bool flat = props["flat"] || quality < 1;
+    bool connect = props["connect"];
     //Iterate individual tracers
     float size = 0;
     for (unsigned int p=0; p < particles; p++)
@@ -117,7 +120,6 @@ void Tracers::update()
       Colour colour, oldColour;
       float radius, oldRadius = 0;
       size = size0;
-      bool flat = props["flat"] || quality < 1;
       //Loop through time steps
       for (int step=start; step <= end; step++)
       {
@@ -138,7 +140,7 @@ void Tracers::update()
           }
         }
 
-        //TODO: test filtering
+        //Filtering
         int pp = step * particles + pidx;
         if (!drawable(i) || (filter && geom[i]->filter(pp))) continue;
 
@@ -148,23 +150,35 @@ void Tracers::update()
         //Get colour either from supplied colour values or time step
         if (timecolour)
           colour = cmap->getfast(drawstate.timesteps[step]->time);
-        else
-          getColour(colour, pp);
+        else if (geom[i]->colourCount() > particles)
+          getColour(colour, pp); //Have a colour value per particle and ste;p
+        else if (geom[i]->colourCount() <= particles)
+          getColour(colour, p);  //Fixed colour value per particle regardless of step
 
         //Fade out
         if (fade) colour.a = 255 * (step-start) / (float)(end-start);
 
         radius = scaling * size;
 
-        // Draw section
-        if (step > start)
+        //Un-connected? Draw points at each position only
+        if (!connect)
         {
+          points->read(geom[i]->draw, 1, lucVertexData, pos);
+          points->read(geom[i]->draw, 1, lucRGBAData, &colour);
+        }
+        // Draw connected section
+        else if (oldpos)
+        {
+
           if (flat)
           {
-            lines->read(geom[i]->draw, 1, lucVertexData, oldpos);
-            lines->read(geom[i]->draw, 1, lucVertexData, pos);
-            lines->read(geom[i]->draw, 1, lucRGBAData, &oldColour);
-            lines->read(geom[i]->draw, 1, lucRGBAData, &colour);
+            if (limit == 0.f || (Vec3d(pos) - Vec3d(oldpos)).magnitude() <= limit)
+            {
+              lines->read(geom[i]->draw, 1, lucVertexData, oldpos);
+              lines->read(geom[i]->draw, 1, lucVertexData, pos);
+              lines->read(geom[i]->draw, 1, lucRGBAData, &oldColour);
+              lines->read(geom[i]->draw, 1, lucRGBAData, &colour);
+            }
           }
           else
           {

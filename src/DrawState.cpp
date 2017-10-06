@@ -168,7 +168,7 @@ void DrawState::init()
         false,
         "object",
         "boolean",
-        "Renders surfaces as flat shaded, lines/vectors as 2d, faster but no 3d or lighting"
+        "Renders surfaces as flat shaded, lines/vectors/tracers as 2d, faster but no 3d or lighting"
       }
     },
     {
@@ -748,6 +748,15 @@ void DrawState::init()
       }
     },
     {
+      "connect",
+      {
+        true,
+        "object(tracer)",
+        "boolean",
+        "Set falst to render tracers as points instead of connected lines"
+      }
+    },
+    {
       "scaletracers",
       {
         1.0,
@@ -1294,7 +1303,7 @@ void DrawState::init()
         false,
         "global",
         "boolean",
-        "Enable rendering points as proper 3d spherical meshes"
+        "Enable rendering points as proper 3d spherical meshes, TODO: deprecate and implement as a renderer type 'particles' that can plot points or spheres"
       }
     },
     {
