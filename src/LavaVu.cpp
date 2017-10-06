@@ -33,6 +33,10 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+//BUGS:
+//Model db not showing on title bar
+//Movie command broken
+//
 //TODO:
 //Object property to exclude from bounding box calc
 //Shader based cross sections of volume data sets
@@ -1358,7 +1362,7 @@ void LavaVu::readOBJ(const FilePath& fn)
   if (!err.empty())
   {
     std::cerr << "Error loading OBJ file: " << fn.full << " - " << err << std::endl;
-    return;
+    //return; //Could just be a warning, continue anyway
   }
 
   if (verbose)
