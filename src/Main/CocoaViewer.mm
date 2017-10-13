@@ -229,7 +229,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = LeftButton;
-  viewer->mouseState ^= (int)pow(2, button);
+  viewer->mouseState ^= (int)pow(2, (float)button);
   redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Left mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
