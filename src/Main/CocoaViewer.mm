@@ -354,12 +354,12 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
 
   //NSLog(@"Update");
   if (redisplay)
+  { 
     viewer->display();
-  redisplay = false;
+    redisplay = false;
+    CGLFlushDrawable((CGLContextObj)[[self openGLContext] CGLContextObj]);
+  }
 
-  // EndTemp
-
-  CGLFlushDrawable((CGLContextObj)[[self openGLContext] CGLContextObj]);
   CGLUnlockContext((CGLContextObj)[[self openGLContext] CGLContextObj]);
 
   if (viewer->quitProgram)   // Update loop returns false
