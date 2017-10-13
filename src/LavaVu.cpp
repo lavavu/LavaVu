@@ -2035,10 +2035,7 @@ void LavaVu::display(bool redraw)
 
     //Print help message (displayed for one frame only)
     if (help.length())
-    {
       displayText(help);
-      help = "";
-    }
   }
 
   //Display object list if enabled
@@ -2461,8 +2458,6 @@ void LavaVu::displayMessage()
     text(message, 10, 10, 1.0);
 
     Viewport2d(0, 0);
-
-    message[0] = 0;
   }
 }
 

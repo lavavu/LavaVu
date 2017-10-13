@@ -271,6 +271,10 @@ bool LavaVu::parseChar(unsigned char key)
   bool msg = false;
   historyline = -1;
 
+  //Clear any on screen status/help text
+  message[0] = '\0';
+  help = "";
+
   //ALT commands
   if (viewer->keyState.alt)
   {
