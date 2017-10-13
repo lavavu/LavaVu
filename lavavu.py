@@ -1203,6 +1203,18 @@ class Viewer(dict):
             figures[fig] = Fig(self, name=fig)
         return figures
 
+    @property
+    def steps(self):
+        """
+        Retrieve the time step data from loaded model
+
+        Returns
+        -------
+        timesteps: list
+            A list of all available time steps
+        """
+        return self.timesteps()
+
     def Figure(self, name, objects=None, **kwargs):
         """
         Create a figure
@@ -1679,17 +1691,6 @@ class Viewer(dict):
             self.app.setState(state_file.read())
 
     def timesteps(self):
-        """
-        Retrieve the time step data from loaded model
-
-        Returns
-        -------
-        timesteps: list
-            A list of all available time steps
-        """
-        return json.loads(self.app.getTimeSteps())
-
-    def steps(self):
         """
         Retrieve the time step data from loaded model
 
