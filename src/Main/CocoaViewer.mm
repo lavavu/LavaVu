@@ -229,7 +229,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = LeftButton;
-  viewer->mouseState ^= (int)pow(2, (float)button);
+  viewer->mouseState ^= (int)pow(2.0, (float)button);
   redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Left mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
@@ -251,7 +251,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = RightButton;
-  viewer->mouseState ^= (int)pow(2, button);
+  viewer->mouseState ^= (int)pow(2.0, (float)button);
   redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Right mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
@@ -273,7 +273,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   [appLock lock];
   NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil];
   MouseButton button = MiddleButton;
-  viewer->mouseState ^= (int)pow(2, button);
+  viewer->mouseState ^= (int)pow(2.0, (float)button);
   redisplay = viewer->mousePress(button, true, (int)point.x, viewer->height-(int)point.y);
   //NSLog(@"Middle mouse down: %lf, %lf", point.x, point.y);
   [appLock unlock];
