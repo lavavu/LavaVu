@@ -1547,17 +1547,21 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "(Requires libavcodec)\n\n"
               "**Usage:** movie [startstep] [endstep]\n\n"
               "startstep (integer) : first frame timestep (defaults to first)\n"
-              "endstep (integer) : last frame timestep (defaults to final)\n";
+              "endstep (integer) : last frame timestep (defaults to final)\n"
+              "fps (integer) : fps, default=30\n";
       return false;
     }
 
     int start = -1;
     int end = -1;
+    int fps = 30;
     if (parsed.has(ival, "movie"))
       end = ival;
     if (parsed.has(ival, "movie", 1))
       start = ival;
-    video("", 30, viewer->outwidth, viewer->outheight, start, end);
+    if (parsed.has(ival, "movie", 2))
+      fps = ival;
+    video("", fps, viewer->outwidth, viewer->outheight, start, end);
   }
   else if (parsed.exists("play"))
   {
@@ -3371,7 +3375,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "export", "save"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
