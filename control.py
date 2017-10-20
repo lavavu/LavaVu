@@ -200,7 +200,7 @@ class Action(object):
 
     @staticmethod
     def export(html):
-        #Dump all output to control.html in current directory
+        #Dump all output to control.html in current directory & htmlpath
         if not htmlpath: return
         #Process actions
         actionjs = '<script type="text/Javascript">\nvar actions = [\n'
@@ -216,18 +216,22 @@ class Action(object):
         #Add init and finish
         actionjs += '  null];\nfunction init() {_wi[0] = new WindowInteractor(0);}\n</script>'
 
-        #Write the file
-        hfile = open("control.html", "w")
-        hfile.write('<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">')
-        hfile.write(getcss())
-        hfile.write(fragmentShader)
-        hfile.write(vertexShader)
-        hfile.write(getjslibs())
-        hfile.write(actionjs)
-        hfile.write('</head>\n<body onload="init();">\n')
-        hfile.write(html)
-        hfile.write("\n</body>\n</html>\n")
-        hfile.close()
+        def writefile(fn):
+            hfile = open(fn, "w")
+            hfile.write('<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">')
+            hfile.write(getcss())
+            hfile.write(fragmentShader)
+            hfile.write(vertexShader)
+            hfile.write(getjslibs())
+            hfile.write(actionjs)
+            hfile.write('</head>\n<body onload="init();">\n')
+            hfile.write(html)
+            hfile.write("\n</body>\n</html>\n")
+            hfile.close()
+
+        #Write the file, locally and in htmlpath
+        writefile("control.html")
+        writefile(os.path.join(htmlpath, "control.html"))
 
 class PropertyAction(Action):
     """Property change action triggered by a control
@@ -972,7 +976,7 @@ class ObjectSelect(List):
     """
     def __init__(self, viewer, objects=None, *args, **kwargs):
         if not isviewer(viewer):
-            print "Can't add ObjectSelect control to an Object, must add to Viewer"
+            print("Can't add ObjectSelect control to an Object, must add to Viewer")
             return
         self.instance = viewer
         if objects is None:
@@ -1193,7 +1197,7 @@ class ControlFactory(object):
                 js = "updateControlValues(" + jso + ");"
                 display(Javascript(js))
         except (NameError, ImportError, ValueError) as e:
-            print str(e)
+            print(str(e))
             pass
         
     def clear(self):
