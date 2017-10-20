@@ -458,6 +458,9 @@ ColourMap* Model::addColourMap(std::string name, std::string colours, std::strin
   if (name.length() == 0)
     name = "default";
 
+  //Create a default greyscale map if no data provided
+  if (!colours.length()) colours = "#000000 #ffffff";
+
   //Check for existing and update instead if found
   for (auto cm : colourMaps)
   {
@@ -467,9 +470,6 @@ ColourMap* Model::addColourMap(std::string name, std::string colours, std::strin
       return cm;
     }
   }
-
-  //Create a default greyscale map if no data provided
-  if (!colours.length()) colours = "#000000 #ffffff";
 
   //Add a new colourmap
   ColourMap* cmap = new ColourMap(drawstate, name, properties);
