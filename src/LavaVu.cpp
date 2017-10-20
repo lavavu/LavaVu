@@ -835,7 +835,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
 
   //Detect volume atlas and load
-  if (width > volres[0] && height > volres[1])
+  if (width > volres[0] && height > volres[1] && width % (int)volres[0] == 0 && height % (int)volres[1] == 0)
   {
     debug_print("Attempting to load image as Volume Atlas %d %d => %f %f @ %d bpp\n", width, height, volres[0], volres[1], channels);
     RawImageFlip(imageData, width, height, channels);
