@@ -2751,6 +2751,9 @@ std::string LavaVu::encodeVideo(std::string filename, int fps)
       filename += ".mp4"; //Default to mp4
     int w = viewer->outwidth ? viewer->outwidth : viewer->width;
     int h = viewer->outwidth ? viewer->outheight : viewer->height;
+    //Ensure multiple of 2
+    if (h % 2 != 0) h -= 1;
+    if (w % 2 != 0) w -= 1;
     viewer->outputON(w, h, 3);
     encoder = new VideoEncoder(filename.c_str(), w, h, fps);
     return filename;
