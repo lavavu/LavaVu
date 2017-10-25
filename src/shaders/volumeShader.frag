@@ -46,6 +46,9 @@ uniform float uDiffuse;
 uniform float uSpecular;
 uniform vec3 uLightPos;
 
+vec3 bbMin;
+vec3 bbMax;
+
 //#define tex3D(pos) interpolate_tricubic_fast(pos)
 //#define tex3D(pos) texture3Dfrom2D(pos).x
 
@@ -82,12 +85,12 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
   //Detect bounding box hit (walls)
   if (uIsoWalls > 0)
   {
-    if (pos.x <= uBBMin.x) return vec3(-1.0, 0.0, 0.0);
-    if (pos.x >= uBBMax.x) return vec3(1.0, 0.0, 0.0);
-    if (pos.y <= uBBMin.y) return vec3(0.0, -1.0, 0.0);
-    if (pos.y >= uBBMax.y) return vec3(0.0, 1.0, 0.0);
-    if (pos.z <= uBBMin.z) return vec3(0.0, 0.0, -1.0);
-    if (pos.z >= uBBMax.z) return vec3(0.0, 0.0, 1.0);
+    if (pos.x <= bbMin.x) return vec3(-1.0, 0.0, 0.0);
+    if (pos.x >= bbMax.x) return vec3(1.0, 0.0, 0.0);
+    if (pos.y <= bbMin.y) return vec3(0.0, -1.0, 0.0);
+    if (pos.y >= bbMax.y) return vec3(0.0, 1.0, 0.0);
+    if (pos.z <= bbMin.z) return vec3(0.0, 0.0, -1.0);
+    if (pos.z >= bbMax.z) return vec3(0.0, 0.0, 1.0);
   }
 
   //Calculate normal
@@ -110,8 +113,8 @@ vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
 {
   //Intersect ray with bounding box
   vec3 rayInvDirection = 1.0 / rayDirection;
-  vec3 bbMinDiff = (uBBMin - rayOrigin) * rayInvDirection;
-  vec3 bbMaxDiff = (uBBMax - rayOrigin) * rayInvDirection;
+  vec3 bbMinDiff = (bbMin - rayOrigin) * rayInvDirection;
+  vec3 bbMaxDiff = (bbMax - rayOrigin) * rayInvDirection;
   vec3 imax = max(bbMaxDiff, bbMinDiff);
   vec3 imin = min(bbMaxDiff, bbMinDiff);
   float back = min(imax.x, min(imax.y, imax.z));
@@ -121,6 +124,8 @@ vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
 
 void main()
 {
+    bbMin = clamp(uBBMin, vec3(0.0), vec3(1.0));
+    bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
     //Compute eye space coord from window space to get the ray direction
     mat4 invMVMatrix = transpose(uMVMatrix);
     //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
@@ -174,7 +179,7 @@ void main()
 #else
       //This is slower but allows IE 11 to render, break on non-uniform condition causes it to fail
       if (i == uSamples) break;
-      if (all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
+      if (all(greaterThanEqual(pos, bbMin)) && all(lessThanEqual(pos, bbMax)))
 #endif
       {
         //Get density 
@@ -206,7 +211,7 @@ void main()
           }
 
           //Skip edges unless flagged to draw
-          if (uIsoWalls > 0 || all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
+          if (uIsoWalls > 0 || all(greaterThanEqual(pos, bbMin)) && all(lessThanEqual(pos, bbMax)))
           {
             vec4 value = vec4(uIsoColour.rgb, 1.0);
 
