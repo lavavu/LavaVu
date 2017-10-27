@@ -409,14 +409,7 @@ void OpenGLViewer::display(bool redraw)
 
     if (app->parseCommands(cmd))
     {
-      //For what was this needed? test...
-      //We're about to call display anyway regardless, if setting should probably return after
-      if (app->drawstate.omegalib)
-      {
-        //Is this needed for Omegalib mode param updates?
-        postdisplay = true;
-      }
-      else
+      if (!app->drawstate.omegalib)
       {
         //This break causes server commands to back up and not all be processed in loop
         //However, animate "play" repeats forever without display if not enabled
