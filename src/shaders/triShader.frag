@@ -33,14 +33,14 @@ void main(void)
     return;
   }
   
-  const float shininess = 100.0; //Size of highlight (higher is smaller)
+  const float shininess = 50.0; //Size of highlight (higher is smaller)
   const vec3 light = vec3(1.0);  //Colour of light
 
   //Head light, lightPos=(0,0,0) - vPosEye
   vec3 lightDir = normalize(uLightPos - vPosEye);
 
   //Calculate diffuse lighting
-  vec3 N = vNormal;
+  vec3 N = normalize(vNormal);
 
   //Default normal...
   if (dot(N,N) < 0.01)
