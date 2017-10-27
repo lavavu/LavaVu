@@ -630,8 +630,8 @@ bool LavaVu::parseCommands(std::string cmd)
   if (cmd.length() == 0) return false;
   bool redisplay = false;
 
-  //Json 
-  if (cmd.at(0) == '{')
+  //Json, ignore if truncated
+  if (cmd.at(0) == '{' && cmd.length() > 100)
   {
     amodel->jsonRead(cmd);
     return true;
