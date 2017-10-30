@@ -91,6 +91,7 @@ protected:
   int dumpid;
   int model;
   int tracersteps;
+  bool sorting = false;
 
   //Interaction: Key command entry
   std::string entry;
@@ -166,6 +167,7 @@ public:
   virtual void resize(int new_width, int new_height);
   virtual void display(bool redraw=true);
   virtual void close();
+  void sort();
 
   // Virtual functions for interactivity
   virtual bool mouseMove(int x, int y);

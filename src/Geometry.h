@@ -382,6 +382,7 @@ public:
   virtual void display(); //Display saved geometry
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();    //Implementation should draw geometry here...
+  virtual void sort();    //Threaded sort function
   void labels();  //Draw labels
   std::vector<Geom_Ptr> getAllObjects(DrawingObject* draw);
   Geom_Ptr getObjectStore(DrawingObject* draw);
@@ -462,12 +463,12 @@ public:
   virtual void close();
   virtual void update();
   virtual void loadMesh();
+  virtual void sort();    //Threaded sort function
   void loadList();
   void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
   void calcTriangleNormalsWithIndices(int index);
   void calcGridNormals(int i, std::vector<Vec3d> &normals);
   void calcGridIndices(int i, std::vector<GLuint> &indices);
-  void depthSort();
   virtual void render();
   virtual void draw();
 };
@@ -499,7 +500,7 @@ public:
   virtual void update();
   void loadVertices();
   void loadList();
-  void depthSort();
+  virtual void sort();    //Threaded sort function
   void render();
   int getPointType(int index=-1);
   virtual void draw();
@@ -564,6 +565,7 @@ public:
   virtual ~QuadSurfaces();
   virtual void display();
   virtual void update();
+  virtual void sort();    //Threaded sort function
   virtual void render();
   void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
   virtual void draw();

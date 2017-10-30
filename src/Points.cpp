@@ -80,10 +80,6 @@ void Points::update()
   if (reload || vbo == 0)
     loadVertices();
 
-  //Initial depth sort & render
-  if (drawstate.global("sort") != 0)
-    view->sort = true;
-
   //Always reload indices if redraw flagged
   if (redraw) idxcount = 0;
 
@@ -236,24 +232,23 @@ void Points::loadList()
 }
 
 //Depth sort the particles before drawing, called whenever the viewing angle has changed
-void Points::depthSort()
+void Points::sort()
 {
+  //List not yet loaded, wait
+  //if (!pidx || !total == 0 || elements == 0 || !view->is3d) return;
+  if (!pidx || !view->is3d) return;
+
   clock_t t1,t2;
   t1 = clock();
-  if (elements == 0) return;
-
-  //Calculate min/max distances from view plane
-  float maxdist, mindist;
-  view->getMinMaxDistance(&mindist, &maxdist);
 
   //Update eye distances, clamping distance to integer between 0 and USHRT_MAX
-  float multiplier = (float)USHRT_MAX / (maxdist - mindist);
+  float multiplier = (float)USHRT_MAX / (view->maxdist - view->mindist);
   float fdistance;
   for (unsigned int i = 0; i < elements; i++)
   {
     //Distance from viewing plane is -eyeZ
     fdistance = eyeDistance(view->modelView, pidx[i].vertex);
-    pidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
+    pidx[i].distance = (unsigned short)(multiplier * (fdistance - view->mindist));
   }
   t2 = clock();
   debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC);
@@ -264,7 +259,9 @@ void Points::depthSort()
   t2 = clock();
   debug_print("  %.4lf seconds to sort %d points\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
   t1 = clock();
-  GL_Error_Check;
+
+  //Force update after sort
+  idxcount = 0;
 }
 
 //Reloads points into display list or VBO, required after data update and depth sort
@@ -273,14 +270,6 @@ void Points::render()
   clock_t t1,t2,tt;
   if (total == 0 || elements == 0) return;
   assert(pidx);
-
-  //First, depth sort the particles
-  //if (view->is3d && view->sort)
-  if (view->sort)
-  {
-    debug_print("Depth sorting %d of %d particles...\n", elements, total);
-    depthSort();
-  }
 
   tt = t1 = clock();
 
@@ -359,10 +348,8 @@ void Points::draw()
   setState(0, prog); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
-  //if (view->sort || idxcount != elements) render();
-  if (view->sort || idxcount == 0) render();
+  if (idxcount != elements) render();
   //After render(), elements holds unfiltered count, idxcount is filtered
-  //idxcount = idxcount;
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   glEnable(GL_POINT_SPRITE);

@@ -1874,6 +1874,35 @@ void LavaVu::viewApply(int idx)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void LavaVu::sort()
+{
+  //Run the renderer sort functions in a thread
+  if (!sorting)
+  {
+    //Calculate min/max distances from view plane
+    aview->getMinMaxDistance();
+
+    std::thread t([&]
+      {
+        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        if (!sorting)
+        {
+          sorting = true;
+
+          std::lock_guard<std::mutex> guard(drawstate.sortmutex);
+
+          for (auto g : amodel->geometry)
+            g->sort();
+
+          queueCommands("display");
+        }
+        sorting = false;
+      }
+    );
+    t.detach();
+  }
+}
+
 // Render
 void LavaVu::display(bool redraw)
 {
@@ -1905,14 +1934,10 @@ void LavaVu::display(bool redraw)
   }
 
   //Always redraw the active view, others only if flag set
-  if (aview)
-  {
-    if (!viewer->mouseState && (int)drawstate.global("sort") < 0 && aview->rotated)
-    {
-      aview->sort = true;
-      aview->rotated = false;
-    }
-  }
+  
+  //Ensures sort gets called, if animation timer disabled
+  if (animate == 0 && aview && aview->rotated) // && !viewer->mouseState)
+    queueCommands("idle");
 
   //Turn filtering of objects on/off
   if (amodel->views.size() > 1 || models.size() > 1)
@@ -2045,8 +2070,6 @@ void LavaVu::display(bool redraw)
   double time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
   if (time > 0.1)
     debug_print("%.4lf seconds to render scene\n", time);
-
-  aview->sort = false;
 
 #ifdef HAVE_LIBAVCODEC
   if (encoder)

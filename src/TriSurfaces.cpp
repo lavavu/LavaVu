@@ -84,12 +84,8 @@ void TriSurfaces::update()
   if (reload || !tidx || tricount == 0 || tricount*3 != idxcount)
     loadList();
 
-  if (reload || idxcount == 0)
-  {
+  if (reload)
     idxcount = 0;
-    if (drawstate.global("sort") != 0)
-      view->sort = true;
-  }
 }
 
 void TriSurfaces::loadMesh()
@@ -588,20 +584,16 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
 }
 
 //Depth sort the triangles before drawing, called whenever the viewing angle has changed
-void TriSurfaces::depthSort()
+void TriSurfaces::sort()
 {
   //Skip if nothing to render or in 2d
-  if (tricount == 0 || elements == 0 || !view->is3d) return;
+  if (!tidx || tricount == 0 || elements == 0 || !view->is3d) return;
   clock_t t1,t2;
   t1 = clock();
   assert(tidx);
 
-  //Calculate min/max distances from view plane
-  float maxdist, mindist;
-  view->getMinMaxDistance(&mindist, &maxdist);
-
   //Update eye distances, clamping int distance to integer between 1 and 65534
-  float multiplier = (USHRT_MAX-1.0) / (maxdist - mindist);
+  float multiplier = (USHRT_MAX-1.0) / (view->maxdist - view->mindist);
   unsigned int opaqueCount = 0;
   float fdistance;
   for (unsigned int i = 0; i < tricount; i++)
@@ -612,8 +604,8 @@ void TriSurfaces::depthSort()
     {
       assert(tidx[i].vertex);
       fdistance = eyeDistance(view->modelView, tidx[i].vertex);
-      fdistance = std::min(maxdist, std::max(mindist, fdistance)); //Clamp to range
-      tidx[i].distance = (unsigned short)(multiplier * (fdistance - mindist));
+      fdistance = std::min(view->maxdist, std::max(view->mindist, fdistance)); //Clamp to range
+      tidx[i].distance = (unsigned short)(multiplier * (fdistance - view->mindist));
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);
       //Reverse as radix sort is ascending and we want to draw by distance descending
       //tidx[i].distance = USHRT_MAX - (unsigned short)(multiplier * (fdistance - mindist));
@@ -638,6 +630,9 @@ void TriSurfaces::depthSort()
   t2 = clock();
   debug_print("  %.4lf seconds to sort %d triangles\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount);
   t1 = clock();
+
+  //Force update after sort
+  idxcount = 0;
 }
 
 //Reloads triangle indices, required after data update and depth sort
@@ -647,12 +642,7 @@ void TriSurfaces::render()
   if (tricount == 0 || elements == 0) return;
   assert(tidx);
 
-  //First, depth sort the triangles
-  if (view->is3d && view->sort)
-  {
-    depthSort();
-  }
-  else if (idxcount == elements)
+  if (idxcount == elements)
   {
     //Nothing has changed, skip
     debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
@@ -717,10 +707,7 @@ void TriSurfaces::draw()
   if (elements == 0) return;
 
   //Re-render the triangles if view has rotated
-  if (view->sort || idxcount != elements) render();
-
-  GL_Error_Check;
-  if (elements == 0) return;
+  if (idxcount != elements) render();
 
   // Draw using vertex buffer object
   clock_t t0 = clock();

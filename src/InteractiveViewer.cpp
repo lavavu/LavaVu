@@ -121,14 +121,9 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
     viewer->button = btn;
     viewer->last_x = x;
     viewer->last_y = y;
-    //Flag rotation in progress
-    if (btn == LeftButton && !viewer->keyState.alt && !viewer->keyState.shift)
-        aview->rotating = true;
   }
   else
   {
-    aview->rotating = false;
-
     //switch (viewer->button)
     switch (btn)
     {
@@ -2930,9 +2925,16 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
     {
       //User requested sort
-      aview->sort = true;
       aview->rotated = false;
+      sort();
     }
+  }
+  else if (parsed.exists("display"))
+  {
+    //Internal usage, no help
+    if (gethelp) return false;
+    //Simply return true to render a frame
+    return true;
   }
   else if (parsed.exists("idle"))
   {
@@ -2940,10 +2942,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp) return false;
 
     //Timer sort?
-    if ((int)drawstate.global("sort") > 0 && aview->rotated)
+    //if ((int)drawstate.global("sort") > 0 && aview->rotated)
+    if (aview->rotated)
     {
-      aview->sort = true;
       aview->rotated = false;
+      sort();
     }
 
     //Command playback

@@ -83,8 +83,6 @@ public:
   bool filtered; //Filter objects in view by object list
   bool scaled;
   bool rotated;  //Flags whether view has rotated since last redraw
-  bool rotating;  //Flags whether view is currently being rotated
-  bool sort;
 
   // view params
   float x;          // X offset [0,1]
@@ -138,6 +136,7 @@ public:
   float eye_shift;           // Stereo eye shift factor
   float eye_sep_ratio;       // Eye separation ratio to focal length
   float modelView[16];
+  float maxdist, mindist;
 
   View(DrawState& drawstate, float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
 
@@ -148,7 +147,7 @@ public:
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
   void checkClip(float& near_clip, float& far_clip);
-  void getMinMaxDistance(float* mindist, float* maxdist);
+  void getMinMaxDistance();
   void autoRotate();
   std::string rotateString();
   std::string translateString();

@@ -31,6 +31,7 @@ public:
 
   //Mutex for thread safe updates
   std::mutex mutex;
+  std::mutex sortmutex;
 
   //TimeStep
   std::vector<TimeStep*> timesteps; //Active model timesteps

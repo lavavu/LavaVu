@@ -776,9 +776,6 @@ void Geometry::setState(unsigned int i, Shader* prog)
       glShadeModel(GL_FLAT);
     else
       glShadeModel(GL_SMOOTH);
-
-    //Disable transparent surfaces whilst rotating
-    if (view->rotating) glDisable(GL_BLEND);
   }
   else
   {
@@ -927,6 +924,8 @@ void Geometry::display()
 
   if (reload || redraw || newcount != drawcount)
   {
+    //Prevent update while sorting
+    std::lock_guard<std::mutex> guard(drawstate.sortmutex);
     update();
     reload = false;
   }
@@ -952,6 +951,11 @@ void Geometry::update()
 void Geometry::draw()
 {
   //Draw virtual to be implemented
+}
+
+void Geometry::sort()
+{
+  //Threaded sort virtual to be implemented
 }
 
 void Geometry::labels()

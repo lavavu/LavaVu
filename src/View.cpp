@@ -43,7 +43,7 @@ View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : 
   fov = 45.0f; //60.0     //Field of view - important to adjust for stereo viewing
   focal_length = focal_length_adj = 0.0; //Stereo zero parallex distance adjustment
   scene_shift = 0.0;      //Stereo projection shift
-  rotated = rotating = sort = false;
+  rotated = false;
 
   near = nearc;
   far = farc;
@@ -192,13 +192,13 @@ void View::checkClip(float& near_clip, float& far_clip)
   if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
 }
 
-void View::getMinMaxDistance(float* mindist, float* maxdist)
+void View::getMinMaxDistance()
 {
   //Save min/max distance
   float vert[3], dist;
   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
-  *maxdist = -HUGE_VAL;
-  *mindist = HUGE_VAL;
+  maxdist = -HUGE_VAL;
+  mindist = HUGE_VAL;
   for (int i=0; i<2; i++)
   {
     vert[0] = i==0 ? min[0] : max[0];
@@ -209,13 +209,13 @@ void View::getMinMaxDistance(float* mindist, float* maxdist)
       {
         vert[2] = k==0 ? min[2] : max[2];
         dist = eyeDistance(modelView, vert);
-        if (dist < *mindist) *mindist = dist;
-        if (dist > *maxdist) *maxdist = dist;
+        if (dist < mindist) mindist = dist;
+        if (dist > maxdist) maxdist = dist;
       }
     }
   }
-  if (*maxdist == *mindist) *maxdist += 0.0000001;
-  //printf("DISTANCE MIN %f MAX %f\n", *mindist, *maxdist);
+  if (maxdist == mindist) maxdist += 0.0000001;
+  //printf("DISTANCE MIN %f MAX %f\n", mindist, maxdist);
 }
 
 void View::autoRotate()
@@ -319,6 +319,7 @@ void View::rotate(float degrees, Vec3d axis)
   nrot.fromAxisAngle(axis, degrees);
   nrot.normalise();
   *rotation = nrot * *rotation;
+  rotated = true;
 }
 
 void View::rotate(float degreesX, float degreesY, float degreesZ)

@@ -48,8 +48,6 @@ QuadSurfaces::~QuadSurfaces()
 void QuadSurfaces::display()
 {
   GL_Error_Check;
-  if (view->is3d && view->sort)
-    redraw = true; //Recalc cross section order
   Geometry::display();
 }
 
@@ -58,9 +56,6 @@ void QuadSurfaces::update()
   clock_t t1,t2,tt;
   t1 = tt = clock();
   // Update and depth sort surfaces..
-  //Calculate distances from view plane
-  float maxdist, mindist;
-  view->getMinMaxDistance(&mindist, &maxdist);
 
   tt=clock();
   if (geom.size() == 0) return;
@@ -89,8 +84,8 @@ void QuadSurfaces::update()
 
     //Calculate distance from viewing plane
     geom[i]->distance = eyeDistance(view->modelView, pos);
-    if (geom[i]->distance < mindist) mindist = geom[i]->distance;
-    if (geom[i]->distance > maxdist) maxdist = geom[i]->distance;
+    if (geom[i]->distance < view->mindist) view->mindist = geom[i]->distance;
+    if (geom[i]->distance > view->maxdist) view->maxdist = geom[i]->distance;
     //printf("%d)  %f %f %f distance = %f\n", i, pos[0], pos[1], pos[2], geom[i]->distance);
     surf_sort.push_back(Distance(i, geom[i]->distance));
 
@@ -120,6 +115,13 @@ void QuadSurfaces::update()
     loadBuffers();
   }
 }
+
+void QuadSurfaces::sort()
+{
+  if (view->is3d)
+    redraw = true; //Recalc cross section order
+}
+
 
 void QuadSurfaces::render()
 {
