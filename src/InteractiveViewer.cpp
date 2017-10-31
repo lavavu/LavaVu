@@ -693,7 +693,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
   //Check for commands that require viewer to be open and view initialised,
   //if found, open the viewer / setup view first
-  if (!gethelp && (!viewer->isopen || (aview && !aview->initialised)))
+  if (!gethelp && viewer->isopen && aview && !aview->initialised)
+  //Fails on MacOS if viewer not open (isopen=false), can't open viewer from here
+  //if (!gethelp && (!viewer->isopen || (aview && !aview->initialised)))
   {
     std::vector<std::string> viewcmds = commandList("View");
 
