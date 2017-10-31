@@ -75,6 +75,7 @@ bool FBO::create(int w, int h)
   //Skip if already created at this size
   if (enabled && frame && texture && depth && width==w && height==h)
   {
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame);
     target = GL_COLOR_ATTACHMENT0_EXT;
     glDrawBuffer(target);
     GL_Error_Check;
