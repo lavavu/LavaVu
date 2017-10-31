@@ -107,6 +107,7 @@ help * [ENTER] where * is a command -- detailed help for a command\n\
 /////////////////////////////////////////////////////////////////////////////////
 bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
 {
+  message[0] = '\0';
   //Only process on mouse release
   static bool translated = false;
   bool redraw = false;
@@ -207,6 +208,7 @@ bool LavaVu::mouseMove(int x, int y)
 
 bool LavaVu::mouseScroll(float scroll)
 {
+  message[0] = '\0';
   //Only process on mouse release
   //Process wheel scrolling
   //CTRL+ALT+SHIFT = eye-separation adjust
