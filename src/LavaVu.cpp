@@ -1223,6 +1223,8 @@ void LavaVu::readHeightMap(const FilePath& fn)
     return;
   }
 
+  Geometry* active = amodel->getRenderer((lucGeometryType)geomtype);
+
   for (int j=0; j<sz; j++)
   {
     file.seekg(header + j*size*cols, std::ios::beg);
@@ -1280,9 +1282,9 @@ void LavaVu::readHeightMap(const FilePath& fn)
       if (vertex[1] > max[1]) max[1] = vertex[1];
 
       //Add grid point
-      amodel->geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
+      active->read(obj, 1, lucVertexData, vertex.ref(), gridx, gridz);
       //Colour by height
-      amodel->geometry[geomtype]->read(obj, 1, &colourval, "height");
+      active->read(obj, 1, &colourval, "height");
 
       vertex[0] += xdim * subsample;
     }
@@ -1308,6 +1310,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
 
   int geomtype = lucTriangleType;
   //int geomtype = lucGridType;
+  Geometry* active = amodel->getRenderer((lucGeometryType)geomtype);
 
   float heightrange = 10.0;
   float min[3] = {0, 0, 0};
@@ -1342,9 +1345,9 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
       if (vertex[1] > max[1]) max[1] = vertex[1];
 
       //Add grid point
-      amodel->geometry[geomtype]->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
+      active->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
       //Colour by height
-      amodel->geometry[geomtype]->read(obj, 1, &colourval, "height");
+      active->read(obj, 1, &colourval, "height");
     }
   }
 }
@@ -1522,75 +1525,84 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   Geometry* tris = amodel->getRenderer(lucTriangleType);
   Geometry* points = amodel->getRenderer(lucPointType);
   Geometry* lines = amodel->getRenderer(lucLineType);
-  if (!tris || !points || !lines) return;
   float RANGE = 2.f;
   float min[3] = {-RANGE,-RANGE,-RANGE};
   float max[3] = {RANGE,RANGE,RANGE};
   //float dims[3] = {RANGE*2.f,RANGE*2.f,RANGE*2.f};
   viewer->title = "Test Pattern";
 
-  //Add points object
-  DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nlit=0\n"));
   //Demo colourmap, distance from model origin
   ColourMap* cmap = addColourMap("particles", "#66bb33 #00ff00 #3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
-  obj->properties.data["colourmap"] = cmap->name;
-  //Add colour bar display
-  colourBar(obj);
-  unsigned int pointsperswarm = numpoints/4; //4 swarms
-  srand(0); //Use a deterministic seed for tests
-  for (unsigned int i=0; i < numpoints; i++)
+
+  //Add points object
+  if (points)
   {
-    float colour, ref[3];
-    ref[0] = min[0] + (max[0] - min[0]) * frand;
-    ref[1] = min[1] + (max[1] - min[1]) * frand;
-    ref[2] = min[2] + (max[2] - min[2]) * frand;
+    DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nlit=0\n"));
+    obj->properties.data["colourmap"] = cmap->name;
+    //Add colour bar display
+    colourBar(obj);
+    unsigned int pointsperswarm = numpoints/4; //4 swarms
+    srand(0); //Use a deterministic seed for tests
+    for (unsigned int i=0; i < numpoints; i++)
+    {
+      float colour, ref[3];
+      ref[0] = min[0] + (max[0] - min[0]) * frand;
+      ref[1] = min[1] + (max[1] - min[1]) * frand;
+      ref[2] = min[2] + (max[2] - min[2]) * frand;
 
-    //Demo colourmap value: distance from model origin
-    colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
+      //Demo colourmap value: distance from model origin
+      colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-    points->read(obj, 1, lucVertexData, ref);
-    points->read(obj, 1, &colour, "demo colours");
+      points->read(obj, 1, lucVertexData, ref);
+      points->read(obj, 1, &colour, "demo colours");
 
-    if (i % pointsperswarm == pointsperswarm-1 && i != numpoints-1)
-        points->add(obj);
+      if (i % pointsperswarm == pointsperswarm-1 && i != numpoints-1)
+          points->add(obj);
+    }
   }
 
   //Add lines
-  obj = addObject(new DrawingObject(drawstate, "line-segments", "lit=0\n"));
-  obj->properties.data["colourmap"] = cmap->name;
-  for (int i=0; i < 50; i++)
+  if (lines)
   {
-    float colour, ref[3];
-    ref[0] = min[0] + (max[0] - min[0]) * frand;
-    ref[1] = min[1] + (max[1] - min[1]) * frand;
-    ref[2] = min[2] + (max[2] - min[2]) * frand;
+    DrawingObject* obj = addObject(new DrawingObject(drawstate, "line-segments", "lit=0\n"));
+    obj->properties.data["colourmap"] = cmap->name;
+    for (int i=0; i < 50; i++)
+    {
+      float colour, ref[3];
+      ref[0] = min[0] + (max[0] - min[0]) * frand;
+      ref[1] = min[1] + (max[1] - min[1]) * frand;
+      ref[2] = min[2] + (max[2] - min[2]) * frand;
 
-    //Demo colourmap value: distance from model origin
-    colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
+      //Demo colourmap value: distance from model origin
+      colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
 
-    lines->read(obj, 1, lucVertexData, ref);
-    lines->read(obj, 1, &colour, "demo colours");
+      lines->read(obj, 1, lucVertexData, ref);
+      lines->read(obj, 1, &colour, "demo colours");
+    }
   }
 
   //Add some triangles
-  float verts[3][12] = {
-    {-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
-    {-2,0,-2,  2,0,-2,  -2,0,2,  2,0,2},
-    {0,-2,-2,  0,2,-2,   0,-2,2, 0,2,2}
-  };
-  char axischar[3] = {'Z', 'Y', 'X'};
-  for (int i=0; i<3; i++)
+  if (tris)
   {
-    char label[64];
-    sprintf(label, "%c-cross-section", axischar[i]);
-    obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\n"));
-    Colour c;
-    c.value = (0xff000000 | 0xff<<(8*i));
-    obj->properties.data["colour"] = c.toJson();
-    //tris->read(obj, 4, lucVertexData, verts[i], 2, 2);
-    //Read 2 triangles and split recursively for a nicer surface
-    tris->addTriangle(obj, &verts[i][0], &verts[i][1*3], &verts[i][3*3], 8);
-    tris->addTriangle(obj, &verts[i][0*3], &verts[i][3*3], &verts[i][2*3], 8);
+    float verts[3][12] = {
+      {-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
+      {-2,0,-2,  2,0,-2,  -2,0,2,  2,0,2},
+      {0,-2,-2,  0,2,-2,   0,-2,2, 0,2,2}
+    };
+    char axischar[3] = {'Z', 'Y', 'X'};
+    for (int i=0; i<3; i++)
+    {
+      char label[64];
+      sprintf(label, "%c-cross-section", axischar[i]);
+      DrawingObject* obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\n"));
+      Colour c;
+      c.value = (0xff000000 | 0xff<<(8*i));
+      obj->properties.data["colour"] = c.toJson();
+      //tris->read(obj, 4, lucVertexData, verts[i], 2, 2);
+      //Read 2 triangles and split recursively for a nicer surface
+      tris->addTriangle(obj, &verts[i][0], &verts[i][1*3], &verts[i][3*3], 8);
+      tris->addTriangle(obj, &verts[i][0*3], &verts[i][3*3], &verts[i][2*3], 8);
+    }
   }
 }
 
