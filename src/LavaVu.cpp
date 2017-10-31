@@ -2453,6 +2453,7 @@ void LavaVu::printMessage(const char *fmt, ...)
 
 void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colour* colour)
 {
+  if (!viewer->isopen) return;
   //Black on white or reverse depending on background
   Colour scol = aview->textColour;
   scol.invert();
@@ -2478,6 +2479,7 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
 void LavaVu::displayMessage()
 {
+  if (!viewer->isopen) return;
   //Skip if no message or recording frames to video
   if (strlen(message) && !encoder)
   {
@@ -2494,6 +2496,7 @@ void LavaVu::displayMessage()
 
 void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
 {
+  if (!viewer->isopen) return;
   //Set viewport to entire window
   aview->port(0, 0, viewer->width, viewer->height);
   Viewport2d(viewer->width, viewer->height);
