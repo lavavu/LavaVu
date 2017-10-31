@@ -924,7 +924,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsePropertySet(cmd)) return true;
     if (verbose) std::cerr << "Model/View required to execute command: " << cmd << ", deferred" << std::endl;
     //Add to the queue to be processed once open
-    viewer->commands.push_back(cmd);
+    queueCommands(cmd);
     return false;
   }
   else if (parsed.exists("save"))
@@ -1693,8 +1693,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       return true;  //Skip record
     }
-    else
-      return parseCommands(last_cmd);
+    else if (linehistory.size() > 0)
+      //Manual repeat from line history (ENTER)
+      return parseCommands(linehistory.back());
   }
   else if (parsed.exists("axis"))
   {
