@@ -77,6 +77,7 @@ void TriSurfaces::update()
     loadBuffers();
 
     //Initial render
+    //sort();
     //render();
   }
 
@@ -353,6 +354,8 @@ void TriSurfaces::loadList()
 
   t2 = clock();
   debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
+
+  sort();
 }
 
 void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)
@@ -591,6 +594,9 @@ void TriSurfaces::sort()
   clock_t t1,t2;
   t1 = clock();
   assert(tidx);
+
+  //Calculate min/max distances from view plane
+  view->getMinMaxDistance();
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (USHRT_MAX-1.0) / (view->maxdist - view->mindist);

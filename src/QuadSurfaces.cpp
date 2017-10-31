@@ -45,12 +45,6 @@ QuadSurfaces::~QuadSurfaces()
   TriSurfaces::close();
 }
 
-void QuadSurfaces::display()
-{
-  GL_Error_Check;
-  Geometry::display();
-}
-
 void QuadSurfaces::update()
 {
   clock_t t1,t2,tt;
@@ -83,6 +77,7 @@ void QuadSurfaces::update()
                    };
 
     //Calculate distance from viewing plane
+    view->getMinMaxDistance();
     geom[i]->distance = eyeDistance(view->modelView, pos);
     if (geom[i]->distance < view->mindist) view->mindist = geom[i]->distance;
     if (geom[i]->distance > view->maxdist) view->maxdist = geom[i]->distance;

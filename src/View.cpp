@@ -196,7 +196,6 @@ void View::getMinMaxDistance()
 {
   //Save min/max distance
   float vert[3], dist;
-  glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
   maxdist = -HUGE_VAL;
   mindist = HUGE_VAL;
   for (int i=0; i<2; i++)
@@ -305,12 +304,14 @@ void View::setRotation(float x, float y, float z, float w)
   rotation->y = y;
   rotation->z = z;
   rotation->w = w;
+  rotated = true;
 }
 
 void View::setRotation(float x, float y, float z)
 {
   //Convert from Euler angles
   rotation->fromEuler(x, y, z);
+  rotated = true;
 }
 
 void View::rotate(float degrees, Vec3d axis)
@@ -587,6 +588,8 @@ void View::apply(bool use_fp, bool use_rotate)
     glScalef(1.0, 1.0, -1.0);
   }
   GL_Error_Check;
+  //Store the matrix
+  glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
 }
 
 bool View::scaleSwitch()

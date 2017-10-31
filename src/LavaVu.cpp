@@ -1874,31 +1874,31 @@ void LavaVu::viewApply(int idx)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void LavaVu::sort()
+void LavaVu::sort(bool sync)
 {
-  //Run the renderer sort functions in a thread
-  if (!sorting)
+  //Run the renderer sort functions
+  //by default in a thread
+  if (sync)
   {
-    //Calculate min/max distances from view plane
-    aview->getMinMaxDistance();
-
+    //Synchronous immediate sort
+    std::lock_guard<std::mutex> guard(drawstate.sortmutex);
+    for (auto g : amodel->geometry)
+      g->sort();
+  }
+  else if (!sorting)
+  {
     std::thread t([&]
-      {
-        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        if (!sorting)
-        {
-          sorting = true;
+    {
+      //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      std::lock_guard<std::mutex> guard(drawstate.sortmutex);
 
-          std::lock_guard<std::mutex> guard(drawstate.sortmutex);
+      for (auto g : amodel->geometry)
+        g->sort();
 
-          for (auto g : amodel->geometry)
-            g->sort();
+      queueCommands("display");
+      sorting = false;
+    });
 
-          queueCommands("display");
-        }
-        sorting = false;
-      }
-    );
     t.detach();
   }
 }
@@ -1933,11 +1933,19 @@ void LavaVu::display(bool redraw)
     resetViews(viewset == RESET_ZOOM);
   }
 
-  //Always redraw the active view, others only if flag set
-  
-  //Ensures sort gets called, if animation timer disabled
-  if (animate == 0 && aview && aview->rotated) // && !viewer->mouseState)
-    queueCommands("idle");
+  //Sort
+  if (aview && aview->rotated) // && !viewer->mouseState)
+  {
+    //Immediate sort
+    if (drawstate.automate)
+    {
+      aview->rotated = false;
+      sort(true);
+    }
+    //Async sort - ensures sort gets called, if animation timer disabled
+    else if (animate == 0)
+      queueCommands("idle");
+  }
 
   //Turn filtering of objects on/off
   if (amodel->views.size() > 1 || models.size() > 1)

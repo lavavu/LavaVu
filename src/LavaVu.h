@@ -167,7 +167,7 @@ public:
   virtual void resize(int new_width, int new_height);
   virtual void display(bool redraw=true);
   virtual void close();
-  void sort();
+  void sort(bool sync=false);
 
   // Virtual functions for interactivity
   virtual bool mouseMove(int x, int y);

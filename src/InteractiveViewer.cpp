@@ -136,12 +136,9 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
       redraw = true;
       break;
     case LeftButton:
-      if (!viewer->keyState.alt && !viewer->keyState.shift)
-        aview->rotated = true;
       redraw = true;
       break;
     case MiddleButton:
-      aview->rotated = true;
       break;
     case RightButton:
       if (!viewer->keyState.alt && !viewer->keyState.shift)
@@ -989,7 +986,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         aview->setRotation(x, y, z, w);
       else
         aview->setRotation(x, y, z);
-      aview->rotated = true;  //Flag rotation finished
     }
   }
   else if (parsed.exists("translation"))
@@ -1042,7 +1038,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       parsed.has(zr, "rotate", 2);
     }
     aview->rotate(xr, yr, zr);
-    aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "rotatex"))
   {
@@ -1055,7 +1050,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     aview->rotate(fval, 0, 0);
-    aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "rotatey"))
   {
@@ -1068,7 +1062,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     aview->rotate(0, fval, 0);
-    aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "rotatez"))
   {
@@ -1081,7 +1074,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     aview->rotate(0, 0, fval);
-    aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.exists("autorotate"))
   {
@@ -1092,7 +1084,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     aview->autoRotate();
-    aview->rotated = true;  //Flag rotation finished
   }
   else if (parsed.has(fval, "zoom"))
   {
@@ -2926,7 +2917,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //User requested sort
       aview->rotated = false;
-      sort();
+      sort(true);
     }
   }
   else if (parsed.exists("display"))

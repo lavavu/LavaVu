@@ -266,8 +266,9 @@ public:
         return (DataContainer*)&render->luminance;
       case lucRGBData:
         return (DataContainer*)&render->rgb;
+      default:
+	return NULL;
     }
-    return NULL;
   }
 
   void checkPointMinMax(float *coord);
@@ -564,7 +565,6 @@ class QuadSurfaces : public TriSurfaces
 public:
   QuadSurfaces(DrawState& drawstate);
   virtual ~QuadSurfaces();
-  virtual void display();
   virtual void update();
   virtual void sort();    //Threaded sort function
   virtual void render();

@@ -229,6 +229,8 @@ void Points::loadList()
   t2 = clock();
   debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
   t1 = clock();
+
+  sort();
 }
 
 //Depth sort the particles before drawing, called whenever the viewing angle has changed
@@ -240,6 +242,9 @@ void Points::sort()
 
   clock_t t1,t2;
   t1 = clock();
+
+  //Calculate min/max distances from view plane
+  view->getMinMaxDistance();
 
   //Update eye distances, clamping distance to integer between 0 and USHRT_MAX
   float multiplier = (float)USHRT_MAX / (view->maxdist - view->mindist);
