@@ -2015,6 +2015,13 @@ void Glyphs::setup(View* vp, float* min, float* max)
   points->setup(vp);
 }
 
+void Glyphs::sort()
+{
+  lines->sort();
+  tris->sort();
+  points->sort();
+}
+
 void Glyphs::display()
 {
   tris->redraw = redraw;

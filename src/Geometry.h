@@ -521,6 +521,7 @@ public:
   virtual void close();
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
   virtual void display();
+  virtual void sort();    //Threaded sort function
   virtual void update();
   virtual void draw();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
