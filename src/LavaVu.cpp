@@ -1542,13 +1542,12 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     //Add colour bar display
     colourBar(obj);
     unsigned int pointsperswarm = numpoints/4; //4 swarms
-    srand(0); //Use a deterministic seed for tests
     for (unsigned int i=0; i < numpoints; i++)
     {
       float colour, ref[3];
-      ref[0] = min[0] + (max[0] - min[0]) * frand;
-      ref[1] = min[1] + (max[1] - min[1]) * frand;
-      ref[2] = min[2] + (max[2] - min[2]) * frand;
+      ref[0] = min[0] + (max[0] - min[0]) * drawstate.random_d();
+      ref[1] = min[1] + (max[1] - min[1]) * drawstate.random_d();
+      ref[2] = min[2] + (max[2] - min[2]) * drawstate.random_d();
 
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
@@ -1569,9 +1568,9 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     for (int i=0; i < 50; i++)
     {
       float colour, ref[3];
-      ref[0] = min[0] + (max[0] - min[0]) * frand;
-      ref[1] = min[1] + (max[1] - min[1]) * frand;
-      ref[2] = min[2] + (max[2] - min[2]) * frand;
+      ref[0] = min[0] + (max[0] - min[0]) * drawstate.random_d();
+      ref[1] = min[1] + (max[1] - min[1]) * drawstate.random_d();
+      ref[2] = min[2] + (max[2] - min[2]) * drawstate.random_d();
 
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));

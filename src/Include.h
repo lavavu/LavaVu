@@ -25,6 +25,7 @@
 #include <typeinfo>
 #include <thread>
 #include <mutex>
+#include <random>
 
 //C headers
 #include <assert.h>

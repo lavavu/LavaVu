@@ -62,6 +62,10 @@ public:
   //Property metadata / documentation
   std::vector<std::pair<std::string,json>> properties;
 
+  // Engines - mersenne twister
+  std::mt19937 eng0, eng1;
+  std::uniform_real_distribution<float> dist;
+
   DrawState();
   ~DrawState();
   std::string counterFilename();
@@ -70,6 +74,9 @@ public:
   json& global(const std::string& key);
   bool has(const std::string& key);
   void cacheCircleCoords(int segment_count);
+
+  float random() {return dist(eng0);}
+  float random_d() {return dist(eng1);}
 
 };
 

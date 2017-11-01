@@ -40,8 +40,6 @@
 
 #define INBUF_SIZE 65535
 
-#define frand (rand() / (float) RAND_MAX)
-
 //Fast random int with fixed seed for deterministic random sample (SEED should be uint32_t)
 #define SHR3(SEED) (SEED^=(SEED<<13), SEED^=(SEED>>17), SEED^=(SEED<<5))
 

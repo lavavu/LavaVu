@@ -1,6 +1,6 @@
 #include "DrawState.h"
 
-DrawState::DrawState() : prog()
+DrawState::DrawState() : prog(), eng0(std::random_device()()), eng1(0), dist(0, 1)
 {
   borderobj = axisobj = rulerobj = NULL;
   omegalib = false;
