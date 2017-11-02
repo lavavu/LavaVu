@@ -110,10 +110,14 @@ vpath %.cc src
 #Always run this script to update version.cpp if git version changes
 TMP := $(shell python version.py)
 
-SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp) $(wildcard src/png/*.cpp)
+SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp)
+INC := $(wildcard src/*.h) $(wildcard src/Main/*.h)
 
-INC := $(wildcard src/*.h)
-#INC := $(SRC:%.cpp=%.h)
+ifneq ($(LIBPNG), 1)
+	SRC += $(wildcard src/png/*.cpp)
+	INC += $(wildcard src/png/*.h)
+endif
+
 OBJ := $(SRC:%.cpp=%.o)
 #Strip paths (src) from sources
 OBJS = $(notdir $(OBJ))

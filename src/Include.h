@@ -54,7 +54,9 @@
 //Utils
 #include "jpeg/jpge.h"
 #include "jpeg/jpgd.h"
+#if not defined HAVE_LIBPNG
 #include "png/lodepng.h"
+#endif
 #include "json.hpp"
 // for convenience
 using json = nlohmann::json;
