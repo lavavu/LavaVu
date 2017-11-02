@@ -9,6 +9,7 @@ lavavu/LavaVu
 lavavu/html/*
 build/*
 lavavu.egg-info/*
+dist/*
 tmp/*
 *.log
 *.o

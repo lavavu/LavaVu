@@ -1,0 +1,6 @@
+include LavaVu
+include Makefile
+include version.py
+include build-index.sh
+include LavaVuPython_wrap.cxx
+recursive-include src *.cpp *.c *.h *.hpp *.mm *.frag *.vert *.js *.css *.html

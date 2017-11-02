@@ -1,6 +1,6 @@
 #Install path
 PREFIX ?= lavavu
-APREFIX = $(realpath $(PREFIX))
+RPATH = '$$ORIGIN'
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
@@ -46,14 +46,14 @@ ifeq ($(OS), Darwin)
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
   LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
-  LIBLINK=-Wl,-rpath $(APREFIX)
+  LIBLINK=-Wl,-rpath $(RPATH)
 else
   #Linux 
   LIBS=-ldl -lpthread -lm -lGL -lz
   DEFINES += -DUSE_FONTS
   LIBEXT=so
   LIBBUILD=-shared
-  LIBLINK=-Wl,-rpath=$(APREFIX)
+  LIBLINK=-Wl,-rpath=$(RPATH)
 ifeq ($(GLUT), 1)
   #GLUT optional
   LIBS+= -lglut
