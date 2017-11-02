@@ -925,7 +925,7 @@ void Geometry::display()
   if (reload || redraw || newcount != drawcount)
   {
     //Prevent update while sorting
-    std::lock_guard<std::mutex> guard(drawstate.sortmutex);
+    std::lock_guard<std::mutex> guard(sortmutex);
     update();
     reload = false;
   }

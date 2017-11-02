@@ -121,9 +121,9 @@ public:
 
   int view;
 
-  Model* amodel; //Active model
-  View* aview;   //Active viewport
-  DrawingObject* aobject; //Selected object
+  Model* amodel = NULL; //Active model
+  View* aview = NULL;   //Active viewport
+  DrawingObject* aobject = NULL; //Selected object
 
   LavaVu(std::string binpath, bool omegalib=false);
   void defaults();

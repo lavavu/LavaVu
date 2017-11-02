@@ -357,6 +357,7 @@ public:
   unsigned int total;     //Total entries of all objects in container
   bool redraw;    //Redraw flag
   bool reload;    //Reload and redraw flag
+  std::mutex sortmutex;
 
   Geometry(DrawState& drawstate);
   virtual ~Geometry();

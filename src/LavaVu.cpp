@@ -1699,6 +1699,13 @@ void LavaVu::resize(int new_width, int new_height)
 
 void LavaVu::close()
 {
+  if (amodel)
+  {
+    //Wait until all sort threads done
+    for (auto g : amodel->geometry)
+      std::lock_guard<std::mutex> guard(g->sortmutex);
+  }
+
   //Need to call display to switch contexts before freeing OpenGL resources
   if (viewer)
     viewer->display(false);
@@ -1892,19 +1899,22 @@ void LavaVu::sort(bool sync)
   if (sync)
   {
     //Synchronous immediate sort
-    std::lock_guard<std::mutex> guard(drawstate.sortmutex);
     for (auto g : amodel->geometry)
+    {
+      std::lock_guard<std::mutex> guard(g->sortmutex);
       g->sort();
+    }
   }
   else if (!sorting)
   {
     std::thread t([&]
     {
       //std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      std::lock_guard<std::mutex> guard(drawstate.sortmutex);
-
       for (auto g : amodel->geometry)
+      {
+        std::lock_guard<std::mutex> guard(g->sortmutex);
         g->sort();
+      }
 
       queueCommands("display");
       sorting = false;
