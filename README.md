@@ -42,8 +42,8 @@ The simplest way to get started on a Unix OS (Mac/Linux) is clone this repositor
   make -j4
 ```
 
-If all goes well the viewer will be built and ready to run in ./bin, try running with:
-  bin/LavaVu
+If all goes well the viewer will be built and ready to run in ./lavavu, try running with:
+  lavavu/LavaVu
 
 ### Dependencies ###
 

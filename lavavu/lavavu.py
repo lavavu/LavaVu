@@ -42,20 +42,10 @@ def is_notebook():
     # check for `kernel` attribute on the IPython instance
     return getattr(get_ipython(), 'kernel', None) is not None
 
-#Attempt to import swig module
-libpath = "bin"
-version = ""
-try:
-    #This file should be found one dir above bin dir containing built modules
-    binpath = os.path.join(os.path.dirname(__file__), 'bin')
-    sys.path.append(binpath)
-    import LavaVuPython
-    modpath = os.path.abspath(os.path.dirname(__file__))
-    libpath = os.path.join(modpath, "bin")
-    version = LavaVuPython.version
-except (Exception) as e:
-    print("LavaVu visualisation module load failed: " + str(e))
-    raise
+#import swig module
+import LavaVuPython
+libpath = os.path.abspath(os.path.dirname(__file__))
+version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 

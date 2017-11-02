@@ -1,5 +1,5 @@
 #Install path
-PREFIX ?= bin
+PREFIX ?= lavavu
 APREFIX = $(realpath $(PREFIX))
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
@@ -196,5 +196,9 @@ docs: src/LavaVu.cpp src/DrawState.h
 
 clean:
 	-rm -f *~ $(OPATH)/*.o
-	-rm -rf $(PREFIX)
+	-rm -f $(PREFIX)/*.frag
+	-rm -f $(PREFIX)/*.vert
+	-rm -f $(PREFIX)/*.so
+	-rm -f $(PREFIX)/LavaVu
+	-rm -rf $(PREFIX)/html
 

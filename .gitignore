@@ -1,6 +1,12 @@
 # use glob syntax.
 syntax: glob
-bin/*
+src/version.cpp
+lavavu/LavaVu
+lavavu/*.vert
+lavavu/*.frag
+lavavu/*.so
+lavavu/LavaVu
+lavavu/html/*
 tmp/*
 *.log
 *.o
