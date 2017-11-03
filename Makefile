@@ -1,6 +1,5 @@
 #Install path
 PREFIX ?= lavavu
-RPATH = '$$ORIGIN'
 PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
@@ -37,7 +36,7 @@ endif
 OS := $(shell uname)
 ifeq ($(OS), Darwin)
   SWIGFLAGS= -undefined suppress -flat_namespace
-  CFLAGS += -Wno-c++14-extensions -Wno-shift-negative-value
+  CFLAGS += -Wno-unknown-warning-option -Wno-c++14-extensions -Wno-shift-negative-value
   #Mac OS X with Cocoa + CGL
   CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
   LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
@@ -45,15 +44,14 @@ ifeq ($(OS), Darwin)
   APPLEOBJ=$(OPATH)/CocoaViewer.o
   LIBEXT=dylib
   LIBBUILD=-dynamiclib
-  LIBINSTALL=-dynamiclib -install_name @rpath/lib$(PROGNAME).$(LIBEXT)
-  LIBLINK=-Wl,-rpath $(RPATH)
+  LIBINSTALL=-install_name @loader_path/lib$(PROGNAME).$(LIBEXT)
 else
   #Linux 
   LIBS=-ldl -lpthread -lm -lGL -lz
   DEFINES += -DUSE_FONTS
   LIBEXT=so
   LIBBUILD=-shared
-  LIBLINK=-Wl,-rpath=$(RPATH)
+  LIBLINK=-Wl,-rpath=$$ORIGIN
 ifeq ($(GLUT), 1)
   #GLUT optional
   LIBS+= -lglut

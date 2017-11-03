@@ -76,7 +76,7 @@ if __name__ == "__main__":
           packages          = ['lavavu'],
           install_requires  = ['numpy'],
           platforms         = ['any'],
-          scripts           = ['LavaVu'],
+          scripts           = ['LV'],
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
