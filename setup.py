@@ -69,7 +69,7 @@ if __name__ == "__main__":
           author            = "Owen Kaluza",
           author_email      = "owen.kaluza@monash.edu",
           url               = "https://github.com/OKaluza/LavaVu",
-          version           = "1.2.11",
+          version           = "1.2.13",
           license           = "LGPL-3",
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/OKaluza/LavaVu/wiki for more info',
