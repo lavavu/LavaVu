@@ -17,12 +17,12 @@
 %}
 
 %{
-#include "src/version.h"
-#include "src/LavaVu.h"
-#include "src/ViewerTypes.h"
-#include "src/Model.h"
-#include "src/DrawingObject.h"
-#include "src/ColourMap.h"
+#include "version.h"
+#include "LavaVu.h"
+#include "ViewerTypes.h"
+#include "Model.h"
+#include "DrawingObject.h"
+#include "ColourMap.h"
 %}
 
 %include "exception.i"
@@ -56,7 +56,7 @@ namespace std
 %apply (unsigned int** ARGOUTVIEW_ARRAY1, int* DIM1) {(unsigned int** array, int* len)};
 %apply (unsigned char* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(unsigned char* array, int width, int height, int depth)};
 
-%include "src/ViewerTypes.h"
+%include "ViewerTypes.h"
 
 const std::string version;
 

@@ -3680,12 +3680,12 @@ SWIGINTERNINLINE PyObject*
 }
 
 
-#include "src/version.h"
-#include "src/LavaVu.h"
-#include "src/ViewerTypes.h"
-#include "src/Model.h"
-#include "src/DrawingObject.h"
-#include "src/ColourMap.h"
+#include "version.h"
+#include "LavaVu.h"
+#include "ViewerTypes.h"
+#include "Model.h"
+#include "DrawingObject.h"
+#include "ColourMap.h"
 
 
 namespace swig {

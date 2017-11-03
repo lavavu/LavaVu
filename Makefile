@@ -168,7 +168,7 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 	$(CXX) $(CPPFLAGS) $(DEFINES) -o $@ -c $^ 
 
 #Python interface
-SWIGSRC = LavaVuPython_wrap.cxx
+SWIGSRC = src/LavaVuPython_wrap.cxx
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
 NUMPYINC = $(shell python -c 'import numpy; print numpy.get_include()')
 ifneq ($(NUMPYINC),)
@@ -177,8 +177,8 @@ SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
 endif
 
 .PHONY: swig
-swig : $(INC) LavaVuPython.i | paths
-	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP LavaVuPython.i
+swig : $(INC) src/LavaVuPython.i | paths
+	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --libs` -lLavaVu -L$(PREFIX) $(LIBLINK)
