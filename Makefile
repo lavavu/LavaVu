@@ -51,7 +51,7 @@ else
   DEFINES += -DUSE_FONTS
   LIBEXT=so
   LIBBUILD=-shared
-  LIBLINK=-Wl,-rpath=$$ORIGIN
+  LIBLINK=-Wl,-rpath='$$ORIGIN'
 ifeq ($(GLUT), 1)
   #GLUT optional
   LIBS+= -lglut
