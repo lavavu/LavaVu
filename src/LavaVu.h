@@ -139,7 +139,7 @@ public:
   std::string exportData(lucExportType type, DrawingObject* obj=NULL);
 
   void parseProperties(std::string& properties);
-  void parseProperty(std::string& data);
+  void parseProperty(std::string data);
   void printProperties();
   void printDefaultProperties();
 

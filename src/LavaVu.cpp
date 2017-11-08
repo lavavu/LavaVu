@@ -34,8 +34,10 @@
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
 //BUGS:
+//Animate speed can't be changed once started
 //Model db not showing on title bar
 //Movie command broken
+//Tracer filter not applied on initial load (non-db)
 //
 //TODO:
 //Object property to exclude from bounding box calc
@@ -613,10 +615,21 @@ void LavaVu::parseProperties(std::string& properties)
     parseProperty(line);
 };
 
-void LavaVu::parseProperty(std::string& data)
+void LavaVu::parseProperty(std::string data)
 {
   //Set properties of selected object or view/globals
   std::string key = data.substr(0,data.find("="));
+
+  //Special syntax allows object selection in property set command
+  // obj:key=value
+  if (key.find(":") != std::string::npos)
+  {
+    size_t pos = data.find(":");
+    std::string sel = data.substr(0,pos);
+    parseCommand("select " + sel);
+    data = data.substr(pos+1);
+  }
+
   if (aobject)
   {
     //Properties reserved for colourmaps can be set from any objects that use that map
