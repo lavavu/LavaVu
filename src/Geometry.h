@@ -358,6 +358,7 @@ public:
   bool redraw;    //Redraw flag
   bool reload;    //Reload and redraw flag
   std::mutex sortmutex;
+  std::mutex loadmutex;
 
   Geometry(DrawState& drawstate);
   virtual ~Geometry();
@@ -457,6 +458,7 @@ class TriSurfaces : public Triangles
   friend class QuadSurfaces; //Allow private access from QuadSurfaces
   TIndex *tidx;
   TIndex *swap;
+  unsigned int* indexlist;
   unsigned int tricount;
   std::vector<Vec3d> centroids;
 public:
@@ -493,6 +495,7 @@ class Points : public Geometry
 {
   PIndex *pidx;
   PIndex *swap;
+  unsigned int* indexlist;
   unsigned int idxcount;
   GLuint indexvbo, vbo;
 public:

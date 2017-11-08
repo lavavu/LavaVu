@@ -40,6 +40,7 @@ Points::Points(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucPointType;
   pidx = swap = NULL;
+  indexlist = NULL;
   idxcount = 0;
   indexvbo = 0;
   vbo = 0;
@@ -68,7 +69,11 @@ void Points::close()
     delete[] pidx;
   if (swap)
     delete[] swap;
+  if (indexlist)
+    delete[] indexlist;
+
   pidx = swap = NULL;
+  indexlist = NULL;
 }
 
 void Points::update()
@@ -194,7 +199,9 @@ void Points::loadList()
   pidx = new PIndex[total];
   if (swap) delete[] swap;
   swap = new PIndex[total];
-  if (pidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total);
+  if (indexlist) delete[] indexlist;
+  indexlist = new unsigned int[total];
+  if (pidx == NULL || swap == NULL || indexlist == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total * 2 + sizeof(unsigned int) * total);
   if (geom.size() == 0) return;
   int offset = 0;
   unsigned int maxCount = drawstate.global("pointmaxcount");
@@ -238,7 +245,7 @@ void Points::sort()
 {
   //List not yet loaded, wait
   //if (!pidx || !total == 0 || elements == 0 || !view->is3d) return;
-  if (!pidx || !view->is3d) return;
+  if (!pidx) return;
 
   clock_t t1,t2;
   t1 = clock();
@@ -260,10 +267,41 @@ void Points::sort()
   t1 = clock();
 
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
-  radix_sort<PIndex>(pidx, swap, elements, 2);
-  t2 = clock();
-  debug_print("  %.4lf seconds to sort %d points\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
+  if (view->is3d)
+  {
+    radix_sort<PIndex>(pidx, swap, elements, 2);
+    t2 = clock();
+    debug_print("  %.4lf seconds to sort %d points\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
+  }
+
+  //Re-map vertex indices in sorted order
   t1 = clock();
+  //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
+  std::lock_guard<std::mutex> guard(loadmutex);
+  //Reverse order farthest to nearest
+  int distSample = drawstate.global("pointdistsample");
+  uint32_t SEED;
+  idxcount = 0;
+  for(int i=elements-1; i>=0; i--)
+  {
+    //Distance based sub-sampling
+    if (distSample > 0)
+    {
+      SEED = pidx[i].index; //Reset the seed for determinism based on index
+      int subSample = 1 + distSample * pidx[i].distance / USHRT_MAX; //[1,distSample]
+      if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
+    }
+    indexlist[idxcount] = pidx[i].index;
+    idxcount ++;
+  }
+
+  t2 = clock();
+  if (distSample)
+    debug_print("  %.4lf seconds to load %d indices (dist-sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, distSample);
+  else
+    debug_print("  %.4lf seconds to load %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
+  t1 = clock();
+  GL_Error_Check;
 
   //Force update after sort
   idxcount = 0;
@@ -288,42 +326,14 @@ void Points::render()
   //Initialise particle buffer
   if (glIsBuffer(indexvbo))
   {
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, total * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-    debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
+    //Lock the update mutex, to wait for any updates to the indexlist to finish
+    std::lock_guard<std::mutex> guard(loadmutex);
+    idxcount = elements;
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxcount * sizeof(GLuint), indexlist, GL_DYNAMIC_DRAW);
+    debug_print("  %d byte IBO uploaded %d indices\n", idxcount * sizeof(GLuint), idxcount);
   }
   else
     abort_program("IBO creation failed!\n");
-  GL_Error_Check;
-
-  //Re-map vertex indices in sorted order
-  t1 = clock();
-  GLuint *ptr = (GLuint*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-  if (!ptr) abort_program("glMapBuffer failed");
-  //Reverse order farthest to nearest
-  int distSample = drawstate.global("pointdistsample");
-  uint32_t SEED;
-  idxcount = 0;
-  for(int i=elements-1; i>=0; i--)
-  {
-    //Distance based sub-sampling
-    if (distSample > 0)
-    {
-      SEED = pidx[i].index; //Reset the seed for determinism based on index
-      int subSample = 1 + distSample * pidx[i].distance / USHRT_MAX; //[1,distSample]
-      if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
-    }
-    ptr[idxcount] = pidx[i].index;
-    idxcount++;
-  }
-
-  glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-  t2 = clock();
-  if (distSample)
-    debug_print("  %.4lf seconds to upload %d indices (dist-sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, distSample);
-  else
-    debug_print("  %.4lf seconds to upload %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
-  t1 = clock();
   GL_Error_Check;
 
   t2 = clock();

@@ -42,6 +42,7 @@ TriSurfaces::TriSurfaces(DrawState& drawstate) : Triangles(drawstate)
 {
   tricount = 0;
   tidx = swap = NULL;
+  indexlist = NULL;
 }
 
 void TriSurfaces::close()
@@ -53,8 +54,11 @@ void TriSurfaces::close()
     delete[] tidx;
   if (swap)
     delete[] swap;
+  if (indexlist)
+    delete[] indexlist;
 
   tidx = swap = NULL;
+  indexlist = NULL;
 }
 
 void TriSurfaces::update()
@@ -75,10 +79,6 @@ void TriSurfaces::update()
 
     //Send the data to the GPU via VBO
     loadBuffers();
-
-    //Initial render
-    //sort();
-    //render();
   }
 
   //Reload the list if count changes
@@ -293,7 +293,9 @@ void TriSurfaces::loadList()
   tidx = new TIndex[total];
   if (swap) delete[] swap;
   swap = new TIndex[total];
-  if (tidx == NULL || swap == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(TIndex) * total);
+  if (indexlist) delete[] indexlist;
+  indexlist = new unsigned int[total*3];
+  if (tidx == NULL || swap == NULL || indexlist == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(TIndex) * total * 2 + sizeof(unsigned int) * total*3);
 
   //Element counts to actually plot (exclude filtered/hidden) per geom entry
   counts.clear();
@@ -590,7 +592,7 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
 void TriSurfaces::sort()
 {
   //Skip if nothing to render or in 2d
-  if (!tidx || tricount == 0 || elements == 0 || !view->is3d) return;
+  if (!tidx || tricount == 0 || elements == 0) return;
   clock_t t1,t2;
   t1 = clock();
   assert(tidx);
@@ -630,12 +632,36 @@ void TriSurfaces::sort()
     debug_print("No sort necessary\n");
     return;
   }
+  if (tricount > total)
+  {
+    //Will overflow tidx buffer (this should not happen!)
+    fprintf(stderr, "Too many triangles! %d > %d\n", tricount, total);
+    tricount = total;
+  }
 
-  //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
-  radix_sort<TIndex>(tidx, swap, tricount, 2);
-  t2 = clock();
-  debug_print("  %.4lf seconds to sort %d triangles\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount);
+  if (view->is3d)
+  {
+    //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
+    radix_sort<TIndex>(tidx, swap, tricount, 2);
+    t2 = clock();
+    debug_print("  %.4lf seconds to sort %d triangles\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount);
+  }
+
+  //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   t1 = clock();
+  std::lock_guard<std::mutex> guard(loadmutex);
+  unsigned int *ptr = indexlist;
+  for(int i=tricount-1; i>=0; i--)
+  {
+    idxcount += 3;
+    assert((unsigned int)(ptr-indexlist) < 3 * tricount * sizeof(unsigned int));
+    //Copy index bytes
+    memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
+    ptr += 3;
+  }
+
+  t2 = clock();
+  debug_print("  %.4lf seconds to save %d triangle indices\n", (t2-t1)/(double)CLOCKS_PER_SEC, tricount*3);
 
   //Force update after sort
   idxcount = 0;
@@ -654,13 +680,6 @@ void TriSurfaces::render()
     debug_print("Redraw skipped, cached %d == %d\n", idxcount, elements);
     return;
   }
-  if (tricount > total)
-  {
-    //Will overflow tidx buffer
-    fprintf(stderr, "Too many triangles! %d > %d\n", tricount, total);
-    tricount = total;
-  }
-
   t1 = clock();
 
   //Prepare the Index buffer
@@ -672,34 +691,16 @@ void TriSurfaces::render()
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
   {
-    //DYNAMIC_DRAW is really really slow on Quadro K5000s in CAVE2, nVidia 340 drivers
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-    debug_print("  %d byte IBO prepared for %d indices\n", elements * sizeof(GLuint), elements);
+    //Lock the update mutex, to wait for any updates to the indexlist to finish
+    std::lock_guard<std::mutex> guard(loadmutex);
+    idxcount = tricount*3;
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxcount * sizeof(GLuint), indexlist, GL_DYNAMIC_DRAW);
+    debug_print("  %d byte IBO uploaded %d indices\n", idxcount * sizeof(GLuint), idxcount);
   }
   else
     abort_program("IBO creation failed\n");
   GL_Error_Check;
 
-  //Re-map vertex indices in sorted order
-  unsigned char *p, *ptr;
-  t1 = clock();
-  ptr = p = (unsigned char*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-  GL_Error_Check;
-  if (!p) abort_program("glMapBuffer failed");
-  //Reverse order farthest to nearest
-  idxcount = 0;
-  for(int i=tricount-1; i>=0; i--)
-  //for(int i=0; i<tricount; i++)
-  {
-    idxcount += 3;
-    assert((unsigned int)(ptr-p) < 3 * tricount * sizeof(GLuint));
-    //Copies index bytes
-    memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
-    ptr += sizeof(GLuint) * 3;
-  }
-  glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-  GL_Error_Check;
   t2 = clock();
   debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, tricount);
   t1 = clock();
