@@ -2073,12 +2073,12 @@ void LavaVu::display(bool redraw)
     framecount++;
     if (diff.count() > 1.0f)
     {
-      fps = framecount / diff.count();
+      fps = framecount / (float)diff.count();
       framecount = 0;
       frametime = now;
     }
     std::stringstream ss;
-    ss << "FPS: " << fps;
+    ss << "FPS: " << std::setprecision(3) << fps;
     displayText(ss.str(), 1);
   }
 
