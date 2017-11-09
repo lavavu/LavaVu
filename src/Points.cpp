@@ -301,7 +301,6 @@ void Points::sort()
   else
     debug_print("  %.4lf seconds to load %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
   t1 = clock();
-  GL_Error_Check;
 
   //Force update after sort
   idxcount = 0;
