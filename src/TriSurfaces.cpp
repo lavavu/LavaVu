@@ -598,7 +598,7 @@ void TriSurfaces::sort()
   assert(tidx);
 
   //Calculate min/max distances from view plane
-  view->getMinMaxDistance();
+  view->getMinMaxDistance(true);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (USHRT_MAX-1.0) / (view->maxdist - view->mindist);
@@ -611,7 +611,8 @@ void TriSurfaces::sort()
     if (tidx[i].distance < USHRT_MAX)
     {
       assert(tidx[i].vertex);
-      fdistance = eyeDistance(view->modelView, tidx[i].vertex);
+      fdistance = eyePlaneDistance(view->modelView, tidx[i].vertex);
+      //fdistance = view->eyeDistance(tidx[i].vertex);
       fdistance = std::min(view->maxdist, std::max(view->mindist, fdistance)); //Clamp to range
       tidx[i].distance = (unsigned short)(multiplier * (fdistance - view->mindist));
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);

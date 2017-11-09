@@ -192,7 +192,7 @@ void View::checkClip(float& near_clip, float& far_clip)
   if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
 }
 
-void View::getMinMaxDistance()
+void View::getMinMaxDistance(bool eyePlane)
 {
   //Save min/max distance
   float vert[3], dist;
@@ -207,7 +207,14 @@ void View::getMinMaxDistance()
       for (int k=0; k<2; k++)
       {
         vert[2] = k==0 ? min[2] : max[2];
-        dist = eyeDistance(modelView, vert);
+        if (eyePlane)
+        {
+          dist = eyePlaneDistance(modelView, vert);
+        }
+        else
+        {
+          dist = eyeDistance(vert);
+        }
         if (dist < mindist) mindist = dist;
         if (dist > maxdist) maxdist = dist;
       }

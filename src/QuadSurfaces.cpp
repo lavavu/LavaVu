@@ -58,6 +58,7 @@ void QuadSurfaces::update()
   debug_print("Reloading and sorting %d quad surfaces...\n", geom.size());
   total = 0;
   surf_sort.clear();
+  view->getMinMaxDistance();
   unsigned int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
@@ -77,8 +78,7 @@ void QuadSurfaces::update()
                    };
 
     //Calculate distance from viewing plane
-    view->getMinMaxDistance();
-    geom[i]->distance = eyeDistance(view->modelView, pos);
+    geom[i]->distance = view->eyeDistance(pos);
     if (geom[i]->distance < view->mindist) view->mindist = geom[i]->distance;
     if (geom[i]->distance > view->maxdist) view->maxdist = geom[i]->distance;
     //printf("%d)  %f %f %f distance = %f\n", i, pos[0], pos[1], pos[2], geom[i]->distance);

@@ -104,7 +104,7 @@
 #define vectorMagnitude(v) sqrt(dotProduct(v,v));
 
 //Get eye pos vector z by multiplying vertex by modelview matrix
-#define eyeDistance(M,V) -(M[2] * V[0] + M[6] * V[1] + M[10] * V[2] + M[14]);
+#define eyePlaneDistance(M,V) -(M[2] * V[0] + M[6] * V[1] + M[10] * V[2] + M[14]);
 
 #define printVertex(v) printf("%9f,%9f,%9f\n",v[0],v[1],v[2]);
 // Print out a matrix

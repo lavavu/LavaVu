@@ -147,7 +147,7 @@ public:
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
   void checkClip(float& near_clip, float& far_clip);
-  void getMinMaxDistance();
+  void getMinMaxDistance(bool eyePlane=false);
   void autoRotate();
   std::string rotateString();
   std::string translateString();
@@ -182,6 +182,14 @@ public:
   //Utility functions
   void drawOverlay(Colour& colour, std::string& title);
   void setBackground();
+
+  inline float eyeDistance(const Vec3d& vec)
+  {
+    float rX = -(modelView[0] * vec.x + modelView[4] * vec.y + modelView[8] * vec.z + modelView[12]);
+    float rY = -(modelView[1] * vec.x + modelView[5] * vec.y + modelView[9] * vec.z + modelView[13]);
+    float rZ = -(modelView[2] * vec.x + modelView[6] * vec.y + modelView[10] * vec.z + modelView[14]);
+    return sqrt(rX*rX+rY*rY+rZ*rZ);
+  }
 };
 
 #endif //View__

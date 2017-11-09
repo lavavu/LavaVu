@@ -251,7 +251,7 @@ void Points::sort()
   t1 = clock();
 
   //Calculate min/max distances from view plane
-  view->getMinMaxDistance();
+  view->getMinMaxDistance(true);
 
   //Update eye distances, clamping distance to integer between 0 and USHRT_MAX
   float multiplier = (float)USHRT_MAX / (view->maxdist - view->mindist);
@@ -259,7 +259,8 @@ void Points::sort()
   for (unsigned int i = 0; i < elements; i++)
   {
     //Distance from viewing plane is -eyeZ
-    fdistance = eyeDistance(view->modelView, pidx[i].vertex);
+    fdistance = eyePlaneDistance(view->modelView, pidx[i].vertex);
+    //fdistance = view->eyeDistance(pidx[i].vertex);
     pidx[i].distance = (unsigned short)(multiplier * (fdistance - view->mindist));
   }
   t2 = clock();
