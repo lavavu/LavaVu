@@ -726,13 +726,17 @@ void TriSurfaces::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
+    int offset = 0;
     glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-    glNormalPointer(GL_FLOAT, stride, (GLvoid*)(3*sizeof(float))); // Load normal x,y,z, offset 3 float
-    glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(6*sizeof(float))); // Load texcoord x,y
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(8*sizeof(float)));   // Load rgba, offset 6 float
     glEnableClientState(GL_VERTEX_ARRAY);
+    offset += 3;
+    glNormalPointer(GL_FLOAT, stride, (GLvoid*)(offset*sizeof(float))); // Load normal x,y,z, offset 3 float
     glEnableClientState(GL_NORMAL_ARRAY);
+    offset += 3;
+    glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(offset*sizeof(float))); // Load texcoord x,y
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    offset += 2;
+    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(offset*sizeof(float)));   // Load rgba, offset 6 float
     glEnableClientState(GL_COLOR_ARRAY);
 
     unsigned int start = 0;

@@ -111,7 +111,7 @@ void Points::loadVertices()
   if (glIsBuffer(vbo))
   {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_DYNAMIC_DRAW);
     debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
   }
   else

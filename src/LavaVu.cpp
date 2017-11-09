@@ -1536,6 +1536,7 @@ void LavaVu::readOBJ(const FilePath& fn)
 void LavaVu::createDemoModel(unsigned int numpoints)
 {
   Geometry* tris = amodel->getRenderer(lucTriangleType);
+  Geometry* grid = NULL; //amodel->getRenderer(lucGridType);
   Geometry* points = amodel->getRenderer(lucPointType);
   Geometry* lines = amodel->getRenderer(lucLineType);
   float RANGE = 2.f;
@@ -1594,7 +1595,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   }
 
   //Add some triangles
-  if (tris)
+  if (tris || grid)
   {
     float verts[3][12] = {
       {-2,-2,0,  2,-2,0,  -2,2,0,  2,2,0},
@@ -1610,10 +1611,17 @@ void LavaVu::createDemoModel(unsigned int numpoints)
       Colour c;
       c.value = (0xff000000 | 0xff<<(8*i));
       obj->properties.data["colour"] = c.toJson();
-      //tris->read(obj, 4, lucVertexData, verts[i], 2, 2);
-      //Read 2 triangles and split recursively for a nicer surface
-      tris->addTriangle(obj, &verts[i][0], &verts[i][1*3], &verts[i][3*3], 8);
-      tris->addTriangle(obj, &verts[i][0*3], &verts[i][3*3], &verts[i][2*3], 8);
+      if (grid)
+      {
+        //Read corners as quads
+        grid->read(obj, 4, lucVertexData, &verts[i][0], 2, 2);
+      }
+      else
+      {
+        //Read 2 triangles and split recursively for a nicer surface
+        tris->addTriangle(obj, &verts[i][0], &verts[i][3], &verts[i][9], 8);
+        tris->addTriangle(obj, &verts[i][0], &verts[i][9], &verts[i][6], 8);
+      }
     }
   }
 }
