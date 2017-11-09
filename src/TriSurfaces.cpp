@@ -162,7 +162,7 @@ void TriSurfaces::loadMesh()
     if (grid)
     {
       //Structured mesh grid, 2 triangles per element, 3 indices per tri
-      int els = (geom[index]->width-1) * (geom[index]->height-1);
+      int els = geom[index]->gridElements2d();
       triverts = els * 6;
       indices.resize(triverts);
       if (vnormals && geom[index]->render->normals.size() == 0)

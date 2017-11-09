@@ -284,6 +284,14 @@ public:
   float colourData(unsigned int idx);
   FloatValues* valueData(unsigned int vidx);
   float valueData(unsigned int vidx, unsigned int idx);
+
+  unsigned int gridElements2d()
+  {
+    //Return number of quad elements in a 2d grid
+    //with underflow prevention check
+    if (width == 0 || height == 0) return 0;
+    return (width-1) * (height-1);
+  }
 };
 
 class Distance

@@ -62,7 +62,7 @@ void QuadSurfaces::update()
   unsigned int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    unsigned int quads = (geom[i]->width-1) * (geom[i]->height-1);
+    unsigned int quads = geom[i]->gridElements2d();
     quadverts += quads * 4;
     total += geom[i]->count(); //Actual vertices
 
@@ -117,7 +117,6 @@ void QuadSurfaces::sort()
     redraw = true; //Recalc cross section order
 }
 
-
 void QuadSurfaces::render()
 {
   //Update quad index buffer
@@ -152,7 +151,7 @@ void QuadSurfaces::render()
     std::vector<GLuint> indices;
 
     //Quad indices
-    unsigned int quads = (geom[index]->width-1) * (geom[index]->height-1);
+    unsigned int quads = geom[index]->gridElements2d();
     tricount += quads; //For debug messages
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
     debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
@@ -254,13 +253,13 @@ void QuadSurfaces::draw()
       for (unsigned int g=0; g<geom.size(); g++)
       {
         if (g == id) break;
-        start += 4 * (geom[g]->width-1) * (geom[g]->height-1); //geom[g]->render->indices.size();
+        start += 4 * geom[g]->gridElements2d();
       }
 
       //int id = i; //Sorting disabled
       setState(id, drawstate.prog[lucGridType]); //Set draw state settings for this object
       //fprintf(stderr, "(%d) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
-      glDrawRangeElements(GL_QUADS, 0, elements, 4 * (geom[id]->width-1) * (geom[id]->height-1), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+      glDrawRangeElements(GL_QUADS, 0, elements, 4 * geom[id]->gridElements2d(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
       //printf("%d) rendered, distance = %f (%f)\n", id, geom[id]->distance, surf_sort[i].distance);
     }
     //fprintf(stderr, "DRAWING ALL QUADS: %d\n", elements);
