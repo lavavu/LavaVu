@@ -597,6 +597,7 @@ public:
 
 class Volumes : public Imposter
 {
+  std::vector<Distance> vol_sort;
 public:
   GLuint colourTexture;
   std::map<DrawingObject*, unsigned int> slices;
@@ -605,6 +606,7 @@ public:
   ~Volumes();
   virtual void close();
   virtual void update();
+  virtual void sort();    //Threaded sort function
   virtual void draw();
   void render(int i);
   ImageData* getTiledImage(DrawingObject* draw, unsigned int index, unsigned int& iw, unsigned int& ih, unsigned int& channels, int xtiles=16);

@@ -70,29 +70,92 @@ void Volumes::draw()
   //clock_t t1,t2,tt;
   //t1 = tt = clock();
 
+  //Lock the update mutex and copy the sorted vector
+  //Allows further sorting to continue in background while rendering
+  std::vector<Distance> vol_sorted;
+  {
+    if (vol_sort.size() == 0)
+      sort();
+    std::lock_guard<std::mutex> guard(loadmutex);
+    vol_sorted = vol_sort;
+  }
+
   //Each object can only have one volume,
   //but each volume can consist of separate slices or a single cube
-  DrawingObject* current = NULL;
-  for (unsigned int i=0; i<geom.size(); i++)
+
+  //Render in reverse sorted order
+  for (int i=vol_sorted.size()-1; i>=0; i--)
   {
-    if (!drawable(i)) continue;
+    unsigned int id = vol_sorted[i].id;
+    if (!drawable(id)) continue;
 
-    if (current != geom[i]->draw)
-    {
-      current = geom[i]->draw;
+    setState(id, drawstate.prog[lucVolumeType]); //Set draw state settings for this object
+    render(id);
 
-      setState(i, drawstate.prog[lucVolumeType]); //Set draw state settings for this object
-      render(i);
-
-      GL_Error_Check;
-    }
+    GL_Error_Check;
   }
 
   glUseProgram(0);
   glBindTexture(GL_TEXTURE_3D, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
   //t2 = clock(); debug_print("  Draw %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
+}
 
+void Volumes::sort()
+{
+  clock_t t1,t2,tt;
+  t1 = tt = clock();
+  // depth sort volumes..
+
+  tt=clock();
+  if (slices.size() == 0) return;
+
+  //Lock the update mutex
+  std::lock_guard<std::mutex> guard(loadmutex);
+
+  //Get element/quad count
+  debug_print("Sorting %lu volume entries...\n", geom.size());
+  vol_sort.clear();
+  view->getMinMaxDistance();
+  unsigned int index = 0;
+  for (unsigned int i=0; i<slices.size(); i++)
+  {
+    //Get corners of cube
+    float* posmin = geom[index]->render->vertices[0];
+    float* posmax = geom[index]->render->vertices[1];
+    float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
+                    posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
+                    posmin[2] + (posmax[2] - posmin[2]) * 0.5f
+                   };
+
+    //Object rotation/translation
+    if (geom[index]->draw->properties.has("translate"))
+    {
+      float trans[3];
+      Properties::toArray<float>(geom[index]->draw->properties["translate"], trans, 3);
+      pos[0] += trans[0];
+      pos[1] += trans[1];
+      pos[2] += trans[2];
+    }
+
+    //Calculate distance from viewing plane
+    geom[index]->distance = view->eyeDistance(pos);
+    if (geom[index]->distance < view->mindist) view->mindist = geom[index]->distance;
+    if (geom[index]->distance > view->maxdist) view->maxdist = geom[index]->distance;
+    //printf("%d)  %f %f %f distance = %f (min %f, max %f)\n", i, pos[0], pos[1], pos[2], geom[index]->distance, view->mindist, view->maxdist);
+    vol_sort.push_back(Distance(index, geom[index]->distance));
+
+    index += slices[geom[i]->draw];
+  }
+  t2 = clock();
+  debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+
+  //Sort
+  std::sort(vol_sort.begin(), vol_sort.end());
+  t2 = clock();
+  debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
 }
 
 void Volumes::update()

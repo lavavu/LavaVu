@@ -75,7 +75,7 @@ void DrawState::init()
     {
       "renderlist",
       {
-        "volume sortedtriangles quads vectors tracers shapes sortedpoints labels lines",
+        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume",
         "all",
         "string",
         "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,labels,lines,links"
@@ -303,7 +303,7 @@ void DrawState::init()
         {0.1,-0.1,2.0},
         "object",
         "real[3]",
-        "Light position X Y Z"
+        "Light position X Y Z relative to camera position (follows camera)"
       }
     },
     {
