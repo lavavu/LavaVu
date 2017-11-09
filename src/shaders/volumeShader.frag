@@ -26,9 +26,9 @@ uniform float uContrast;
 uniform float uSaturation;
 uniform float uPower;
 
-uniform mat4 uPMatrix;
-uniform mat4 uInvPMatrix;
 uniform mat4 uMVMatrix;
+uniform mat4 uMVPMatrix;
+uniform mat4 uInvMVPMatrix;
 uniform mat4 uNMatrix;
 uniform vec4 uViewport;
 uniform int uSamples;
@@ -126,18 +126,20 @@ void main()
 {
     bbMin = clamp(uBBMin, vec3(0.0), vec3(1.0));
     bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
+
     //Compute eye space coord from window space to get the ray direction
     mat4 invMVMatrix = transpose(uMVMatrix);
     //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
     //Window ->[VP^]-> NDC ->[/w]-> Clip ->[P^]-> EyeSpace ->[MV^]-> ObjectSpace
     vec4 ndcPos;
     ndcPos.xy = ((2.0 * gl_FragCoord.xy) - (2.0 * uViewport.xy)) / (uViewport.zw) - 1.0;
-    ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
-               (gl_DepthRange.far - gl_DepthRange.near);
+    //ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
+    //           (gl_DepthRange.far - gl_DepthRange.near);
+    ndcPos.z = 2.0 * gl_FragCoord.z - 1.0;
     ndcPos.w = 1.0;
     vec4 clipPos = ndcPos / gl_FragCoord.w;
     //vec4 eyeSpacePos = uInvPMatrix * clipPos;
-    vec3 rayDirection = normalize((invMVMatrix * uInvPMatrix * clipPos).xyz);
+    vec3 rayDirection = normalize((uInvMVPMatrix * clipPos).xyz);
 
     //Ray origin from the camera position
     vec4 camPos = -vec4(uMVMatrix[3]);  //4th column of modelview
@@ -186,7 +188,8 @@ void main()
         float density = tex3D(pos);
 
         //Set the depth point to where transmissivity drops below threshold
-        if (T > depthT) depthHit = pos;
+        if (T > depthT)
+          depthHit = pos;
 
 #define ISOSURFACE
 #ifdef ISOSURFACE
@@ -215,7 +218,7 @@ void main()
           {
             vec4 value = vec4(uIsoColour.rgb, 1.0);
 
-            vec3 normal = mat3(uNMatrix) * isoNormal(pos, shift, density);
+            vec3 normal = normalize((uNMatrix * vec4(isoNormal(pos, shift, density), 1.0)).xyz);
 
             vec3 light = value.rgb;
             lighting(pos, normal, light);
@@ -276,7 +279,9 @@ void main()
     float depth = 1.0; //Default to far limit
     if (T < depthT)
     {
-      vec4 clip_space_pos = uPMatrix * uMVMatrix * vec4(depthHit, 1.0);
+      //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
+      vec4 clip_space_pos = vec4(depthHit, 1.0);
+      clip_space_pos = uMVPMatrix * clip_space_pos;
       //Get in normalised device coords [-1,1]
       float ndc_depth = clip_space_pos.z / clip_space_pos.w;
       //Convert to depth range, default [0,1] but may have been modified

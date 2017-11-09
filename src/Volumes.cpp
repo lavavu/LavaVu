@@ -389,16 +389,27 @@ void Volumes::update()
 
 void Volumes::render(int i)
 {
+  Properties& props = geom[i]->draw->properties;
+
   float dims[3] = {geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0],
                    geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1],
                    geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]
                   };
 
+  //Object scaling
+  if (props.has("scale"))
+  {
+    float scale[3];
+    Properties::toArray<float>(props["scale"], scale, 3);
+    dims[0] *= scale[0];
+    dims[1] *= scale[1];
+    dims[2] *= scale[2];
+  }
+
   GL_Error_Check;
   Shader* prog = drawstate.prog[lucVolumeType];
 
   //Uniform variables
-  Properties& props = geom[i]->draw->properties;
   float viewport[4];
   glGetFloatv(GL_VIEWPORT, viewport);
   TextureData* voltexture = geom[i]->draw->useTexture(geom[i]->texture);
@@ -491,7 +502,9 @@ void Volumes::render(int i)
   float nMatrix[16];
   float pMatrix[16];
   float invPMatrix[16];
-  glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
+  float matrix[16];
+  float mvpMatrix[16];
+  float invMVPMatrix[16];
 
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
   glPushMatrix();
@@ -532,32 +545,53 @@ void Volumes::render(int i)
   if (rotatable)
     view->getRotation().apply();
 
-  //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n", dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
-  glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to origin
+  //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n",
+  //       dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
+  glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to our origin
+
+  //Get the mvMatrix scaled by volume size
+  //(used for depth calculations)
+  glPushMatrix();
+    glScalef(dims[0], dims[1], dims[2]);
+    glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
+  glPopMatrix();
+
+  //Invert the scaling for raymarching
   glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
-  //glScalef(1.0/dims[0]*view->scale[0], 1.0/dims[1]*view->scale[1], 1.0/dims[2]*view->scale[2]);
+
+  //Get the normal matrix
+  glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
+  //Invert and transpose to get correct normal matrix even when non-uniform scaling used
+  if (!gluInvertMatrixf(nMatrix, nMatrix)) abort_program("Uninvertable matrix!");
+  transposeMatrixf(nMatrix);
+
+  //Apply model scaling, inverse squared
   glScalef(1.0/(view->scale[0]*view->scale[0]), 1.0/(view->scale[1]*view->scale[1]), 1.0/(view->scale[2]*view->scale[2]));
 
-  //Object scaling
-  if (props.has("scale"))
-  {
-    float scale[3];
-    Properties::toArray<float>(props["scale"], scale, 3);
-    glScalef(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
-  }
-
+  //Get the mv matrix used for ray marching at this point
   glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);
+
+  //Restore matrix
   glPopMatrix();
+
+  //Get the projection matrix and invert
   glGetFloatv(GL_PROJECTION_MATRIX, pMatrix);
   if (!gluInvertMatrixf(pMatrix, invPMatrix)) abort_program("Uninvertable matrix!");
   GL_Error_Check;
 
-  //Projection and modelview matrices
-  glUniformMatrix4fv(prog->uniforms["uPMatrix"], 1, GL_FALSE, pMatrix);
-  glUniformMatrix4fv(prog->uniforms["uInvPMatrix"], 1, GL_FALSE, invPMatrix);
+  //Raymarching modelview and normal matrices
   glUniformMatrix4fv(prog->uniforms["uMVMatrix"], 1, GL_FALSE, mvMatrix);
-  nMatrix[12] = nMatrix[13] = nMatrix[14] = 0; //Removing translation works as long as no non-uniform scaling
   glUniformMatrix4fv(prog->uniforms["uNMatrix"], 1, GL_FALSE, nMatrix);
+
+  //Calculate the combined modelview projection matrix
+  multMatrixf(mvpMatrix, matrix, pMatrix);
+  //Calculate the combined inverse modelview projection matrix
+  transposeMatrixf(mvMatrix);
+  multMatrixf(invMVPMatrix, invPMatrix, mvMatrix);
+
+  //Combined projection and modelview matrices and inverses
+  glUniformMatrix4fv(prog->uniforms["uInvMVPMatrix"], 1, GL_FALSE, invMVPMatrix);
+  glUniformMatrix4fv(prog->uniforms["uMVPMatrix"], 1, GL_FALSE, mvpMatrix);
   GL_Error_Check;
 
   //State...

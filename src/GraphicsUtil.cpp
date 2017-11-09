@@ -209,6 +209,27 @@ bool gluInvertMatrixf(const float m[16], float invOut[16])
   return true;
 }
 
+void transposeMatrixf(float m[16])
+{
+  std::swap(m[1], m[4]);
+  std::swap(m[2], m[8]);
+  std::swap(m[3], m[12]);
+  std::swap(m[6], m[9]);
+  std::swap(m[7], m[13]);
+  std::swap(m[11], m[14]);
+}
+
+void multMatrixf(float r[16], const float a[16], const float b[16])
+{
+  for (int i = 0; i < 4; i++)
+  {
+    r[i*4]   = a[i*4] * b[0] + a[i*4+1] * b[4]     + a[i*4+2] * b[2 * 4]     + a[i*4+3] * b[3 * 4];
+    r[i*4+1] = a[i*4] * b[1] + a[i*4+1] * b[4 + 1] + a[i*4+2] * b[2 * 4 + 1] + a[i*4+3] * b[3 * 4 + 1];
+    r[i*4+2] = a[i*4] * b[2] + a[i*4+1] * b[4 + 2] + a[i*4+2] * b[2 * 4 + 2] + a[i*4+3] * b[3 * 4 + 2];
+    r[i*4+3] = a[i*4] * b[3] + a[i*4+1] * b[4 + 3] + a[i*4+2] * b[2 * 4 + 3] + a[i*4+3] * b[3 * 4 + 3];
+  }
+}
+
 void Viewport2d(int width, int height)
 {
   if (width && height)

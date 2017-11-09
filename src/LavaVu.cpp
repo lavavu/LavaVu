@@ -1686,7 +1686,7 @@ void LavaVu::reloadShaders()
   //Volume ray marching shaders
   if (drawstate.prog[lucVolumeType]) delete drawstate.prog[lucVolumeType];
   drawstate.prog[lucVolumeType] = new Shader("volumeShader.vert", "volumeShader.frag");
-  const char* vUniforms[] = {"uPMatrix", "uInvPMatrix", "uMVMatrix", "uNMatrix",
+  const char* vUniforms[] = {"uMVMatrix", "uInvMVPMatrix", "uMVPMatrix", "uNMatrix",
                              "uVolume", "uTransferFunction", "uBBMin", "uBBMax",
                              "uResolution", "uEnableColour",
                              "uBrightness", "uContrast", "uSaturation", 
