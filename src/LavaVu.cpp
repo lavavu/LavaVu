@@ -1818,20 +1818,8 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     Properties::toArray<float>(aview->properties["min"], min, 3);
     Properties::toArray<float>(aview->properties["max"], max, 3);
 
-    float omin[3] = {min[0], min[1], min[2]};
-    float omax[3] = {max[0], max[1], max[2]};
-
-    for (int i=0; i<3; i++)
-    {
-      //If no range, flag invalid with +/-inf, will be expanded in setView
-      if (omax[i]-omin[i] <= EPSILON) omax[i] = -(omin[i] = HUGE_VAL);
-      //Ensure supplied min/max in correct order
-      if (min[i] > max[i]) std::swap(min[i], max[i]);
-    }
-
-    //Expand bounds by all geometry objects
-    for (auto g : amodel->geometry)
-      g->setup(aview, omin, omax);
+    //Calculate the model bounds by contained geometry
+    amodel->calculateBounds(aview, min, max);
 
     //Set viewport based on window size
     aview->port(viewer->width, viewer->height);
@@ -1847,15 +1835,15 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     else
     {
       debug_print("Applied Model bounds %f,%f,%f - %f,%f,%f from geometry\n",
-                  omin[0], omin[1], omin[2],
-                  omax[0], omax[1], omax[2]);
-      aview->init(false, omin, omax);
+                  amodel->min[0], amodel->min[1], amodel->min[2],
+                  amodel->max[0], amodel->max[1], amodel->max[2]);
+      aview->init(false, amodel->min, amodel->max);
     }
 
     //Update actual bounding box max/min/range - it is possible for the view box to be smaller
     clearMinMax(drawstate.min, drawstate.max);
-    compareCoordMinMax(drawstate.min, drawstate.max, omin);
-    compareCoordMinMax(drawstate.min, drawstate.max, omax);
+    compareCoordMinMax(drawstate.min, drawstate.max, amodel->min);
+    compareCoordMinMax(drawstate.min, drawstate.max, amodel->max);
     //Apply viewport/global dims if valid
     if (min[0] != max[0] && min[1] != max[1])
     {
@@ -3541,7 +3529,6 @@ void LavaVu::queueCommands(std::string cmds)
   //Push command onto queue to be processed in the viewer thread
   pthread_mutex_lock(&viewer->cmd_mutex);
   viewer->commands.push_back(cmds);
-  debug_print("QCMD: %s\n", cmds.c_str());
   viewer->postdisplay = true;
   pthread_mutex_unlock(&viewer->cmd_mutex);
 }

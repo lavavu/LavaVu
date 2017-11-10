@@ -107,6 +107,8 @@ public:
   DrawingObject* axisobj;
   DrawingObject* rulerobj;
 
+  float min[3], max[3]; //Calculated model bounding box
+
   Geometry* getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers);
   Geometry* getRenderer(lucGeometryType type);
   Geometry* getRenderer(const std::string& what);
@@ -199,6 +201,7 @@ public:
   void writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step, bool compressdata);
   void deleteObject(unsigned int id);
   void backup(Database& fromdb, Database& todb);
+  void calculateBounds(View* aview, float* default_min=NULL, float* default_max=NULL);
   void objectBounds(DrawingObject* draw, float* min, float* max);
 
   std::string jsonWrite(bool objdata=false);
