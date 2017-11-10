@@ -230,6 +230,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       std::cout << "| -q#     | quality, web server jpeg quality (0=don't serve images)\n";
       std::cout << "| -n#     | number of threads to launch for web server #\n";
       std::cout << "| -Q      | quiet mode, no status updates to screen\n";
+      std::cout << "| -s      | stereo, request a quad-buffer stereo context\n";
       std::cout << "\n";
       std::cout << "|         | Model options\n";
       std::cout << "| ------- | -------------\n";
@@ -379,6 +380,10 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'h':
         //Invisible window requested
         viewer->visible = false;
+        break;
+      case 's':
+        //Stereo context requested
+        viewer->stereo = true;
         break;
       case 'W':
       case 'I':
