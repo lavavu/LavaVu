@@ -350,21 +350,27 @@ template<typename T>
 void Properties::toArray(const json& val, T* array, unsigned int size)
 {
   //Convert to a array of type T
-  if (val.is_number())
+  try
   {
-    array[0] = (T)val;
-    for (unsigned int i=1; i<size; i++)
-      array[i] = (T)0.0; //Zero pad if too short
-  }
-  else
-  {
-    for (unsigned int i=0; i<size; i++)
+    if (val.is_number())
     {
-      if (i >= val.size())
+      array[0] = (T)val;
+      for (unsigned int i=1; i<size; i++)
         array[i] = (T)0.0; //Zero pad if too short
-      else
-        array[i] = (T)val[i];
     }
+    else
+    {
+      for (unsigned int i=0; i<size; i++)
+      {
+        array[i] = (T)0.0; //Zero pad if too short
+        if (i < val.size())
+          array[i] = (T)val[i];
+      }
+    }
+  }
+  catch (const std::domain_error& e)
+  {
+    std::cout << "Invalid value in property: " << val << std::endl;
   }
 }
 
