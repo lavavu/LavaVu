@@ -251,7 +251,7 @@ void Points::sort()
   t1 = clock();
 
   //Calculate min/max distances from view plane
-  view->getMinMaxDistance(true);
+  calcDistanceRange(true);
 
   //Update eye distances, clamping distance to integer between 0 and USHRT_MAX
   float multiplier = (float)USHRT_MAX / (view->maxdist - view->mindist);

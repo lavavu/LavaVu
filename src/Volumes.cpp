@@ -116,7 +116,10 @@ void Volumes::sort()
   //Get element/quad count
   debug_print("Sorting %lu volume entries...\n", geom.size());
   vol_sort.clear();
-  view->getMinMaxDistance();
+
+  //Calculate min/max distances from viewer
+  calcDistanceRange();
+
   unsigned int index = 0;
   for (unsigned int i=0; i<slices.size(); i++)
   {

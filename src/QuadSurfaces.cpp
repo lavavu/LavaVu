@@ -58,7 +58,10 @@ void QuadSurfaces::update()
   debug_print("Reloading and sorting %d quad surfaces...\n", geom.size());
   total = 0;
   surf_sort.clear();
-  view->getMinMaxDistance();
+
+  //Calculate min/max distances from viewer
+  calcDistanceRange();
+
   unsigned int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {

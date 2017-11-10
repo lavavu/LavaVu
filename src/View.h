@@ -147,7 +147,7 @@ public:
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
   void checkClip(float& near_clip, float& far_clip);
-  void getMinMaxDistance(bool eyePlane=false);
+  void getMinMaxDistance(float* min, float* max, bool eyePlane=false);
   void autoRotate();
   std::string rotateString();
   std::string translateString();

@@ -598,7 +598,7 @@ void TriSurfaces::sort()
   assert(tidx);
 
   //Calculate min/max distances from view plane
-  view->getMinMaxDistance(true);
+  calcDistanceRange(true);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
   float multiplier = (USHRT_MAX-1.0) / (view->maxdist - view->mindist);

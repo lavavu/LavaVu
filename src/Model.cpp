@@ -1898,6 +1898,27 @@ void Model::backup(Database& fromdb, Database& todb)
   }
 }
 
+void Model::calculateBounds(View* aview, float* default_min, float* default_max)
+{
+  if (default_min && default_max)
+  {
+    for (int i=0; i<3; i++)
+    {
+      //Ensure supplied min/max in correct order
+      if (default_min[i] > default_max[i]) std::swap(default_min[i], default_max[i]);
+      //Init with defaults
+      min[i] = default_min[i];
+      max[i] = default_max[i];
+      //If no range, flag invalid with +/-inf, will be expanded in setView
+      if (max[i]-min[i] <= EPSILON) max[i] = -(min[i] = HUGE_VAL);
+    }
+  }
+
+  //Expand bounds by all geometry objects
+  for (auto g : geometry)
+    g->setup(aview, min, max);
+}
+
 void Model::objectBounds(DrawingObject* draw, float* min, float* max)
 {
   if (!min || !max) return;

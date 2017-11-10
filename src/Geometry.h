@@ -412,6 +412,7 @@ public:
   json getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
+  void calcDistanceRange(bool eyePlane=false);
   void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);

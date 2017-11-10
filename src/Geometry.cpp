@@ -1078,6 +1078,27 @@ void Geometry::setup(View* vp, float* min, float* max)
   //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
 }
 
+void Geometry::calcDistanceRange(bool eyePlane)
+{
+  //Calculate min/max distances from viewer
+  float min[3], max[3];
+  //float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF}, max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
+  Properties::toArray<float>(view->properties["min"], min, 3);
+  Properties::toArray<float>(view->properties["max"], max, 3);
+
+  //Iterate the selected viewport's drawing objects
+  //Apply geometry bounds from all object data within this viewport
+  for (unsigned int o=0; o<view->objects.size(); o++)
+    if (view->objects[o]->properties["visible"])
+      objectBounds(view->objects[o], min, max);
+
+  //Calculate viewer distance using current modelview
+  view->getMinMaxDistance(min, max, eyePlane);
+
+  //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
+  //printf("Final view range...%f - %f\n", view->mindist, view->maxdist);
+}
+
 void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
 {
   if (!min || !max) return;
@@ -1090,8 +1111,8 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
       if (std::isinf(geom[g]->max[i]) || std::isinf(geom[g]->min[i]))
       {
         geom[g]->calcBounds();
-        //debug_print("No bounding dims provided for object %s (el %d), calculated ...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), g, 
-        //            geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+        //printf("No bounding dims provided for object %s (el %d), calculated ...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), g, 
+        //        geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
         break;
       }
     }
@@ -1103,6 +1124,8 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
       //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), 
       //       geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
     }
+
+    //Apply object rotation/translation?
   }
 }
 
