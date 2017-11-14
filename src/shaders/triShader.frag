@@ -17,6 +17,7 @@ uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform bool uOpaque;
 uniform vec3 uLightPos;
+uniform bool uCalcNormal;
 
 void main(void)
 {
@@ -43,7 +44,7 @@ void main(void)
   vec3 N = normalize(vNormal);
 
   //Default normal...
-  if (dot(N,N) < 0.01)
+  if (uCalcNormal || dot(N,N) < 0.01)
   {
     vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
     vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
