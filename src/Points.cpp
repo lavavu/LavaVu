@@ -84,7 +84,7 @@ void Points::update()
   {
     //Un-structured vertices
     total += geom[index]->count();
-    debug_print(" %s, points %d hidden? %s\n", geom[index]->draw->name().c_str(), geom[index]->count(, (!drawable(index) ? "yes" : "no"));
+    debug_print(" %s, points %d hidden? %s\n", geom[index]->draw->name().c_str(), geom[index]->count(), (!drawable(index) ? "yes" : "no"));
   }
   if (total == 0) return;
 
