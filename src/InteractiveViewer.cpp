@@ -371,8 +371,11 @@ bool LavaVu::parseChar(unsigned char key)
       entry = "";
     break;
   case KEY_ENTER:
-    if (entry.length() == 0)
+    if (entry.length() == 0 || entry == "repeat")
+    {
+      entry = "";
       return parseCommands("repeat");
+    }
     if (entry.length() == 1)
     {
       char ck = entry.at(0);
