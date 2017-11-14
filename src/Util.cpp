@@ -68,9 +68,19 @@ bool FileExists(const std::string& name)
 
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {
-  //Try the PATH env var if argv0 contains no path info
   std::string bpath = "";
-  if (!argv0 || strlen(argv0) == 0 || strcmp(argv0, progname) == 0)
+  char result[FILE_PATH_MAX];
+  FilePath xpath;
+
+  //Get from /proc on Linux
+  ssize_t count = readlink("/proc/self/exe", result, FILE_PATH_MAX);
+  if (count > 0)
+  {
+    xpath.parse(result);
+    bpath = xpath.path;
+  }
+  //Try the PATH env var if argv0 contains no path info
+  else if (!argv0 || strlen(argv0) == 0 || strcmp(argv0, progname) == 0)
   {
     std::stringstream path(getenv("PATH"));
     std::string pathentry;
@@ -91,8 +101,12 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
   }
   else
   {
-    FilePath xpath;
-    xpath.parse(argv0);
+    //Resolve argv[0] with readlink in case it's a symlink
+    count = readlink(argv0, result, FILE_PATH_MAX);
+    if (count > 0)
+      xpath.parse(result);
+    else
+      xpath.parse(argv0);
     bpath = xpath.path;
   }
 
