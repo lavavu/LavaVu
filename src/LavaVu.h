@@ -92,6 +92,9 @@ protected:
   int model;
   int tracersteps;
   bool sorting = false;
+  std::thread sort_thread;
+  std::mutex sort_mutex;
+  std::condition_variable sortcv;
 
   //Interaction: Key command entry
   std::string entry;
@@ -168,7 +171,7 @@ public:
   virtual void resize(int new_width, int new_height);
   virtual void display(bool redraw=true);
   virtual void close();
-  void sort(bool sync=false);
+  bool sort(bool sync=false);
 
   // Virtual functions for interactivity
   virtual bool mouseMove(int x, int y);

@@ -189,6 +189,12 @@ void LavaVu::defaults()
 
 LavaVu::~LavaVu()
 {
+  if (sort_thread.joinable())
+  {
+    sortcv.notify_one();
+    sort_thread.join();
+  }
+
   close();
 
   Server::Delete();
@@ -1906,7 +1912,7 @@ void LavaVu::viewApply(int idx)
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void LavaVu::sort(bool sync)
+bool LavaVu::sort(bool sync)
 {
   //Run the renderer sort functions
   //by default in a thread
@@ -1918,24 +1924,51 @@ void LavaVu::sort(bool sync)
       std::lock_guard<std::mutex> guard(g->sortmutex);
       g->sort();
     }
+    return true;
   }
-  else if (!sorting)
+
+  //Use sorting thread
+  if (!sort_thread.joinable())
   {
-    std::thread t([&]
+    sort_thread = std::thread([&]
     {
-      //std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      for (auto g : amodel->geometry)
+      while (true)
       {
-        std::lock_guard<std::mutex> guard(g->sortmutex);
-        g->sort();
+        //Wait for sort request
+        std::unique_lock<std::mutex> lk(sort_mutex);
+        sortcv.wait(lk, [&]{return sorting || viewer->quitProgram;});
+
+        if (viewer->quitProgram)
+          return;
+
+        //std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        for (auto g : amodel->geometry)
+        {
+          std::lock_guard<std::mutex> guard(g->sortmutex);
+          g->sort();
+        }
+
+        queueCommands("display");
+
+        // Manual unlocking is done before notifying, to avoid waking up
+        // the waiting thread only to block again (see notify_one for details)
+        sorting = false;
+        lk.unlock();
+        sortcv.notify_one();
       }
-
-      queueCommands("display");
-      sorting = false;
     });
-
-    t.detach();
   }
+
+  //Notify worker thread ready to sort (if not already sorting)
+  if (sort_mutex.try_lock())
+  {
+    sorting = true;
+    sort_mutex.unlock();
+  }
+  else
+    return false;
+  sortcv.notify_one();
+  return true;
 }
 
 // Render

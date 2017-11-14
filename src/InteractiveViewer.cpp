@@ -2929,8 +2929,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Sort required?
     if (aview->rotated)
     {
-      aview->rotated = false;
-      sort();
+      //Sort returns true if the sort was initiated, otherwise false
+      aview->rotated = !sort();
     }
 
     //Command playback

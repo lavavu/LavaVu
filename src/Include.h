@@ -25,6 +25,7 @@
 #include <typeinfo>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <random>
 
 //C headers
