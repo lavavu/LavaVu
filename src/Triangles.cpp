@@ -241,9 +241,7 @@ void Triangles::render()
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
   {
-    //DYNAMIC_DRAW is really really slow on Quadro K5000s in CAVE2, nVidia 340 drivers
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
     debug_print("  %d byte IBO prepared for %d indices\n", elements * sizeof(GLuint), elements);
   }
   else
@@ -256,17 +254,37 @@ void Triangles::render()
 
   //Upload vertex indices
   unsigned int offset = 0;
+  unsigned int voffset = 0;
   idxcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
-    if (geom[index]->render->indices.size() > 0)
+    unsigned int indices = geom[index]->render->indices.size();
+    if (drawable(index))
     {
-      unsigned int elements = geom[index]->render->indices.size();
-      glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, elements * sizeof(GLuint), geom[index]->render->indices.ref());
-      idxcount += elements;
-      counts[index] = elements;
-      offset += counts[index];
+      if (indices > 0)
+      {
+        //Create the index list, adding offset from previous element vertices
+        unsigned int indexlist[indices];
+        for(int i=0; i<indices; i++)
+          indexlist[i] = voffset + geom[index]->render->indices[i];
+
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist);
+        //printf("%d upload %d indices, voffset %d\n", index, indices, voffset);
+        counts[index] = indices;
+        offset += indices;
+        GL_Error_Check;
+      }
+      else
+      {
+        //No indices, just raw vertices
+        counts[index] = geom[index]->count();
+        //printf("%d upload NO indices, %d vertices, voffset %d\n", index, counts[index], voffset);
+      }
+      idxcount += counts[index];
     }
+
+    //Vertex index offset
+    voffset += geom[index]->count();
   }
 
   GL_Error_Check;
@@ -312,17 +330,19 @@ void Triangles::draw()
     {
       if (counts[index] == 0) continue;
       setState(index, drawstate.prog[lucTriangleType]); //Set draw state settings for this object
-      //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
       if (geom[index]->render->indices.size() > 0)
       {
-        glDrawRangeElements(GL_TRIANGLES, 0, elements, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-        start += counts[index];
+        //Draw with index buffer
+        glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+        //printf("DRAW %d from %d by INDEX\n", counts[index], start);
       }
       else
       {
+        //Draw directly from vertex buffer
         glDrawArrays(GL_TRIANGLES, start, geom[index]->count());
-        start += geom[index]->count();
+        //printf("DRAW %d from %d by VERTEX\n", geom[index]->count(), start);
       }
+      start += counts[index];
     }
 
     time = ((clock()-t1)/(double)CLOCKS_PER_SEC);

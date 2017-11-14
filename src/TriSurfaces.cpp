@@ -222,7 +222,7 @@ void TriSurfaces::loadMesh()
         newvalues->maximum = oldvalues->maximum;
       }
 
-      bool optimise = geom[index]->draw->properties["optimise"];
+      bool optimise = vnormals && geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
       {
         //Re-write optimised data with unique vertices only
@@ -353,6 +353,7 @@ void TriSurfaces::loadList()
       }
       tricount++;
       counts[index] += 3; //Element count
+
     }
     //printf("INDEX %d TRIS %d ELS %d offset = %d, tricount = %d VOFFSET = %d\n", index, counts[index]/3, counts[index], offset, tricount, voffset);
   }
@@ -403,7 +404,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   //Search for duplicates and replace references to normals
   int match = 0;
   int dupcount = 0;
-  bool optimise = geom[index]->draw->properties["optimise"];
+  bool optimise = normal && geom[index]->draw->properties["optimise"];
   for (unsigned int v=1; v<verts.size(); v++)
   {
     if (optimise && verts[match] == verts[v])
@@ -637,6 +638,7 @@ void TriSurfaces::sort()
     debug_print("No sort necessary\n");
     return;
   }
+
   if (tricount > total)
   {
     //Will overflow tidx buffer (this should not happen!)
@@ -753,7 +755,7 @@ void TriSurfaces::draw()
       {
         setState(index, drawstate.prog[lucTriangleType]); //Set draw state settings for this object
         //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
-        glDrawRangeElements(GL_TRIANGLES, 0, elements, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+        glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
       }
       else
@@ -772,17 +774,8 @@ void TriSurfaces::draw()
     //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
     if (start < (unsigned int)elements)
     {
-      if (start > 0)
-      {
-        //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", elements-start);
-        glDrawRangeElements(GL_TRIANGLES, 0, elements, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-      }
-      else
-      {
-        //Render all triangles - elements is the number of indices. 3 indices needed to make a single triangle
-        //(If there is no separate opaque/transparent geometry)
-        glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_INT, (GLvoid*)0);
-      }
+      //Render all remaining triangles - elements is the number of indices. 3 indices needed to make a single triangle
+      glDrawElements(GL_TRIANGLES, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
     }
 
     time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
