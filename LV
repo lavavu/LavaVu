@@ -1,1 +1,6 @@
-lavavu/LavaVu
+#!/usr/bin/env python
+#Run interactive with args via python
+import lavavu
+import sys
+lv = lavavu.Viewer(arglist=sys.argv, interactive=True, hidden=False)
+
