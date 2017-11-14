@@ -78,6 +78,14 @@ void Points::close()
 
 void Points::update()
 {
+  //Get point count
+  total = 0;
+  for (unsigned int index = 0; index < geom.size(); index++)
+  {
+    //Un-structured vertices
+    total += geom[index]->count();
+    debug_print(" %s, points %d hidden? %s\n", geom[index]->draw->name().c_str(), pts, (!drawable(index) ? "yes" : "no"));
+  }
   if (total == 0) return;
 
   //Ensure vbo recreated if total changed
@@ -141,6 +149,12 @@ void Points::loadVertices()
     //Calibrate colourMap
     ColourLookup& getColour = geom[s]->colourCalibrate();
 
+    unsigned int hasColours = geom[s]->colourCount();
+    if (hasColours > geom[s]->count()) hasColours = geom[s]->count(); //Limit to vertices
+    unsigned int colrange = hasColours ? geom[s]->count() / hasColours : 1;
+    if (colrange < 1) colrange = 1;
+    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[s]->count(), hasColours);
+
     Properties& props = geom[s]->draw->properties;
     float psize0 = props["pointsize"];
     float scaling = props["scaling"];
@@ -151,7 +165,7 @@ void Points::loadVertices()
     unsigned int sizeidx = geom[s]->valuesLookup(geom[s]->draw->properties["sizeby"]);
     bool usesize = geom[s]->valueData(sizeidx) != NULL;
     //std::cout << geom[s]->draw->properties["sizeby"] << " : " << sizeidx << " : " << usesize << std::endl;
-    Colour c;
+    Colour colour;
 
     for (unsigned int i = 0; i < geom[s]->count(); i ++)
     {
@@ -162,8 +176,12 @@ void Points::loadVertices()
         //Copies vertex bytes
         memcpy(ptr, geom[s]->render->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
-        getColour(c, i);
-        memcpy(ptr, &c, sizeof(Colour));
+        //getColour(c, i);
+        //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
+        unsigned int cidx = i / colrange;
+        if (cidx * colrange == i)
+          getColour(colour, cidx);
+        memcpy(ptr, &colour, sizeof(Colour));
         ptr += sizeof(Colour);
         //Optional per-object size/type
         if (attribs)
