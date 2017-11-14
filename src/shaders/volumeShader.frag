@@ -257,7 +257,7 @@ void main()
           T *= 1.0 - value.a;
         }
       }
-	  
+
       //Next sample...
       pos += step;
     }
@@ -291,7 +291,7 @@ void main()
         depth = 0.0;
 
       //depth = 0.5 * (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
-      //                        gl_DepthRange.near + gl_DepthRange.far);
+      //                 gl_DepthRange.near + gl_DepthRange.far);
     }
 
     gl_FragDepth = depth;

@@ -273,7 +273,7 @@ void main()
           T *= 1.0 - value.a;
         }
       }
-	  
+
       //Next sample...
       pos += step;
     }

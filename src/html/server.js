@@ -19,7 +19,7 @@ function keyPress(event) {
   var code = 0;
   var key = 0;
   if (event.which && event.charCode != 0)
-     code = event.which; //charc = String.fromCharCode(event.which);	  // All others
+     code = event.which; //charc = String.fromCharCode(event.which); // All others
   else
      // ie or special key
      code = event.keyCode;
