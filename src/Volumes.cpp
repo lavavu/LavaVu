@@ -388,6 +388,20 @@ void Volumes::update()
   GL_Error_Check;
   t2 = clock();
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
+
+  if (!drawstate.global("sort"))
+  {
+    vol_sort.clear();
+    //Create the default un-sorted list
+    unsigned int index = 0;
+    for (unsigned int i=0; i<slices.size(); i++)
+    {
+      vol_sort.push_back(Distance(index, 0));
+      index += slices[geom[i]->draw];
+    }
+  }
+  else
+    sort();
 }
 
 void Volumes::render(int i)

@@ -336,6 +336,9 @@ void TriSurfaces::loadList()
       tidx[tricount].index[2] = geom[index]->render->indices[t+2] + voffset;
       tidx[tricount].distance = 0;
 
+      //Create the default un-sorted index list
+      memcpy(&indexlist[tricount*3], &tidx[tricount].index, sizeof(GLuint) * 3);
+
       //All opaque triangles at start
       if (geom[index]->opaque)
       {
@@ -357,7 +360,8 @@ void TriSurfaces::loadList()
   t2 = clock();
   debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
 
-  sort();
+  if (drawstate.global("sort"))
+    sort();
 }
 
 void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)

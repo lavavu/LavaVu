@@ -203,7 +203,7 @@ void Points::loadList()
   indexlist = new unsigned int[total];
   if (pidx == NULL || swap == NULL || indexlist == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total * 2 + sizeof(unsigned int) * total);
   if (geom.size() == 0) return;
-  int offset = 0;
+  int voffset = 0;
   unsigned int maxCount = drawstate.global("pointmaxcount");
   unsigned int subSample = drawstate.global("pointsubsample");
   //Auto-sub-sample if maxcount set
@@ -211,7 +211,7 @@ void Points::loadList()
     subSample = elements / maxCount + 0.5; //Rounded up
   elements = 0;
   uint32_t SEED;
-  for (unsigned int s = 0; s < geom.size(); offset += geom[s]->count(), s++)
+  for (unsigned int s = 0; s < geom.size(); voffset += geom[s]->count(), s++)
   {
     if (!drawable(s)) continue;
 
@@ -227,7 +227,7 @@ void Points::loadList()
       SEED = i; //Reset the seed for determinism based on index
       if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
 
-      pidx[elements].index = offset + i;
+      pidx[elements].index = indexlist[elements] = voffset + i;
       pidx[elements].vertex = geom[s]->render->vertices[i];
       pidx[elements].distance = 0;
       elements++;
@@ -237,7 +237,8 @@ void Points::loadList()
   debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
   t1 = clock();
 
-  sort();
+  if (drawstate.global("sort"))
+    sort();
 }
 
 //Depth sort the particles before drawing, called whenever the viewing angle has changed

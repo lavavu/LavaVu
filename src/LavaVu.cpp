@@ -164,7 +164,7 @@ void LavaVu::defaults()
   //Omegalib defaults
   if (drawstate.omegalib)
   {
-    drawstate.globals["sort"] = 0;
+    drawstate.globals["sort"] = false;
     drawstate.globals["vectorfont"] = true;
   }
   message[0] = '\0';
@@ -1969,7 +1969,7 @@ void LavaVu::display(bool redraw)
   }
 
   //Sort
-  if (aview && aview->rotated) // && !viewer->mouseState)
+  if (drawstate.global("sort") && aview && aview->rotated)
   {
     //Immediate sort
     if (drawstate.automate)

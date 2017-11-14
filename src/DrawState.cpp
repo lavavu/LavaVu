@@ -1471,10 +1471,10 @@ void DrawState::init()
     {
       "sort",
       {
-        -1,
+        true,
         "global",
-        "integer",
-        "Automatic depth sorting, -1=on, 0=disabled, >0=timer"
+        "boolean",
+        "Automatic depth sorting enabled"
       }
     },
     {

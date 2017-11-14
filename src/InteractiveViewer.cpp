@@ -2888,34 +2888,23 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Sort geometry on demand (with idle timer)\n\n"
-              "**Usage:** sort on/off/timer\n\n"
+              "**Usage:** sort on/off\n\n"
               "on : (default) sort after model rotation\n"
               "off : no sorting\n"
-              "timer : sort after 1.5 second timeout\n"
-              "If no options passed, flags re-sort required\n";
+              "If no options passed, does immediate re-sort\n";
       return false;
     }
 
     if (parsed["sort"] == "off")
     {
       //Disables all sorting
-      drawstate.globals["sort"] = 0;
+      drawstate.globals["sort"] = false;
       printMessage("Geometry sorting has been disabled");
-    }
-    else if (parsed["sort"] == "timer")
-    {
-      //Enables sort on timer
-      //Disables sort on rotate mode
-      drawstate.globals["sort"] = TIMER_IDLE;
-      viewer->idleTimer(TIMER_IDLE); //Start idle redisplay timer (default 1.5 seconds)
-      printMessage("Sort geometry on timer instead of rotation enabled");
     }
     else if (parsed["sort"] == "on")
     {
       //Enables sort on rotate mode
-      //Disables sort on timer
-      drawstate.globals["sort"] = -1;
-      viewer->idleTimer(0); //Stop/disable idle redisplay timer
+      drawstate.globals["sort"] = true;
       printMessage("Sort geometry on rotation enabled");
     }
     else
@@ -2937,8 +2926,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Internal usage, no help
     if (gethelp) return false;
 
-    //Timer sort?
-    //if ((int)drawstate.global("sort") > 0 && aview->rotated)
+    //Sort required?
     if (aview->rotated)
     {
       aview->rotated = false;

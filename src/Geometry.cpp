@@ -826,7 +826,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     //Apply global 'opacity' only if no per-object setting (which is applied with colour)
     if (!geom[i]->draw->properties.has("opacity"))
       opacity *= (float)drawstate.global("opacity");
-    bool allopaque = (drawstate.global("sort") == 0);
+    bool allopaque = !drawstate.global("sort");
     if (allopaque) opacity = 1.0;
     prog->setUniformf("uOpacity", opacity);
     prog->setUniformi("uLighting", lighting);
