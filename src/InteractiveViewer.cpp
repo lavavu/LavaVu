@@ -3097,7 +3097,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     printMessage("Reloading shaders");
     reloadShaders();
-    return false;
+    return true;
   }
   else if (parsed.exists("blend"))
   {
