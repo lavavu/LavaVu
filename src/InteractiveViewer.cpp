@@ -659,9 +659,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
   //Skip comments or empty lines
   if (cmd.length() == 0) return false;
+
+  //Select shortcuts
   if (cmd.at(0) == '#')
   {
-    //If followed by valid object id, select it
+    //## to de-select
+    if (cmd.length() == 2 && cmd.at(1) == '#')
+      return parseCommand("select");
+    //# followed by valid object id, select it
     std::string s = cmd.substr(1);
     std::stringstream ss(s);
     unsigned int id;
