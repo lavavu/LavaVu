@@ -1105,6 +1105,28 @@ void Model::freeze()
   //Freeze fixed geometry
   fixed = geometry;
 
+  for (auto g : fixed)
+  {
+    for (unsigned int i=0; i<g->geom.size(); i++)
+    {
+      //Following doesn't apply to tracers as
+      //all their data is stored in fixed geometry,
+      //so loading new data into the fixed RenderData is OK
+      if (g->type != lucTracerType)
+      {
+        if (g->geom[i]->render->vertices.count() > g->geom[i]->width * g->geom[i]->height)
+        {
+          //Mark the GeomData entry as complete by setting width*height=count,
+          //any new data will be loaded into another container
+          //(Prevents g data being polluted by newly loaded data)
+          //printf("FIXED DATA VERTEX LIMIT: %dx%d ==> %dx%d\n", g->geom[i]->width, g->geom[i]->height, g->geom[i]->render->vertices.count(), 1);
+          g->geom[i]->width = g->geom[i]->render->vertices.count();
+          g->geom[i]->height = 1;
+        }
+      }
+    }
+  }
+
   //Need new geometry containers after freeze
   //(Or new data will be appended to the frozen containers!)
   init();
@@ -1474,6 +1496,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
         if (data_type == lucIndexData || data_type == lucNormalData) continue;
       }*/
       active = getRenderer(type);
+      if (!active) continue; //Can't render this data
 
       unsigned char* buffer = NULL;
       if (bytes != (unsigned int)(count * GeomData::byteSize(data_type)))

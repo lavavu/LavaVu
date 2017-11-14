@@ -1344,24 +1344,8 @@ void Geometry::insertFixed(Geometry* fixed)
     if (geom.size() == i)
       add(fixed->geom[i]->draw); //Insert new if not enough records
 
-    //Save own RenderData
-    Render_Ptr r = geom[i]->render;
-
     //Create a shallow copy of member content
     *geom[i] = *fixed->geom[i];
-
-    //Following doesn't apply to tracers, 
-    //all their data is stored in fixed so loading into fixed RenderData is OK
-    if (type != lucTracerType)
-    {
-      //RenderData default copy constructor shallow copy needs some adjustments here
-      // - Use our own RenderData struct, don't want to share with the one copied from fixed
-      geom[i]->render = r;
-      // - Copy all the std::vector elements, their data elements remain the same (pointers) but
-      //   now any new elements will be added to our own std::vector, NOT the original from fixed data
-      //   This prevents new data erroneously being loaded into the fixed data store
-      *geom[i]->render = *fixed->geom[i]->render;
-    }
 
     //std::cout << i << ") IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count() << " verts, value entries = " << fixed->geom[i]->values.size() << std::endl;
   }

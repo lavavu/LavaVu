@@ -267,7 +267,7 @@ public:
       case lucRGBData:
         return (DataContainer*)&render->rgb;
       default:
-	return NULL;
+        return NULL;
     }
   }
 
