@@ -71,8 +71,19 @@ void Vectors::update()
     float fixedlen = props["length"];
 
     //Dynamic range? Skip if has a fixed scaling property
-    if (props["autoscale"] && geom[i]->render->vectors.maximum > 0 && vscaling == 1.0)
+    if (props["autoscale"] && vscaling == 1.0)
     {
+      if (geom[i]->render->vectors.maximum == 0.0)
+      {
+        //Get and store the maximum length
+        for (unsigned int v=0; v < geom[i]->count(); v++)
+        {
+          Vec3d vec(geom[i]->render->vectors[v]);
+          float mag = vec.magnitude();
+          if (mag > geom[i]->render->vectors.maximum)
+            geom[i]->render->vectors.maximum = mag;
+        }
+      }
       float autoscale = 0.1/geom[i]->render->vectors.maximum;
       debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n",
                   vscaling*oscaling, vscaling*oscaling*autoscale, autoscale);
