@@ -3022,6 +3022,12 @@ void LavaVu::init()
   viewer->init();
 }
 
+bool LavaVu::event()
+{
+  viewer->execute();
+  return !viewer->quitProgram;
+}
+
 std::string LavaVu::image(std::string filename, int width, int height, int jpegquality, bool transparent)
 {
   if (!amodel || !viewer->isopen) return "";
