@@ -1131,11 +1131,16 @@ class Viewer(dict):
     def __contains__(self, key):
         return key in self.state or key in self.state["properties"] or key in self.state["views"][0]
 
-
     def __repr__(self):
         self._get()
         #return '{"' + self.state["properties"]["caption"] + '"}'
         return '{}'
+
+    def __eq__(self, other):
+        #Necessary because being forced to inherit from dict to support buggy IPython key completion
+        #means we get dict equality, which we _really_ don't want
+        #Two Viewer objects should never be equal unless they refer to the same object
+        return id(self) == id(other)
 
     def __str__(self):
         #View/global props to string
