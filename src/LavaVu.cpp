@@ -177,7 +177,7 @@ void LavaVu::defaults()
   entry = "";
 
   loop = false;
-  animate = 0;
+  animate = false;
   repeat = 0;
   encoder = NULL;
 
@@ -1948,7 +1948,8 @@ bool LavaVu::sort(bool sync)
           g->sort();
         }
 
-        queueCommands("display");
+        if (!animate)
+          queueCommands("display");
 
         // Manual unlocking is done before notifying, to avoid waking up
         // the waiting thread only to block again (see notify_one for details)
@@ -2010,9 +2011,9 @@ void LavaVu::display(bool redraw)
       aview->rotated = false;
       sort(true);
     }
-    //Async sort - ensures sort gets called, if animation timer disabled
-    else if (animate == 0)
-      queueCommands("idle");
+    //Async sort
+    else
+      queueCommands("asyncsort");
   }
 
   //Turn filtering of objects on/off

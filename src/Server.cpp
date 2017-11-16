@@ -55,8 +55,8 @@ Server::~Server()
 void Server::open(int width, int height)
 {
   if (!port) return;
-  //Enable the animation timer
-  //viewer->animate(250);   //1/4 sec timer
+  //Enable the timer
+  //viewer->setTimer(250);   //1/4 sec timer
   struct mg_callbacks callbacks;
 
   char ports[16], threadstr[16];

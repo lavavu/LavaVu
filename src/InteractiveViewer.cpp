@@ -112,9 +112,9 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   static bool translated = false;
   bool redraw = false;
   int scroll = 0;
-  if (down) idle = viewer->getIdleTime();
+  if (down) idle = viewer->idle;
 
-  viewer->idleReset(); //Reset idle timer
+  viewer->idle = 0; //Reset idle timer
   if (down)
   {
     translated = false;
@@ -166,7 +166,7 @@ bool LavaVu::mouseMove(int x, int y)
   int dy = y - viewer->last_y;
   viewer->last_x = x;
   viewer->last_y = y;
-  viewer->idleReset(); //Reset idle timer
+  viewer->idle = 0; //Reset idle timer
 
   //For mice with no right button, ctrl+left
   if (viewer->keyState.ctrl && viewer->button == LeftButton)
@@ -238,7 +238,7 @@ bool LavaVu::mouseScroll(float scroll)
 
 bool LavaVu::keyPress(unsigned char key, int x, int y)
 {
-  viewer->idleReset(); //Reset idle timer
+  viewer->idle = 0; //Reset idle timer
   //if (viewPorts) viewSelect(viewFromPixel(x, y));  //Update active viewport
   return parseChar(key);
 }
@@ -420,13 +420,15 @@ bool LavaVu::parseChar(unsigned char key)
     }
     else
     {
-      //Add to linehistory if not a duplicate of previous entry
-      int lend = linehistory.size()-1;
-      if (lend < 0 || entry != linehistory[lend])
-        linehistory.push_back(entry);
-
       //Execute
       response = parseCommands(entry);
+      //Add to linehistory if not a duplicate of previous entry
+      if (last_cmd == entry) //If last_cmd does not match, returned early so skip
+      {
+        int lend = linehistory.size()-1;
+        if (lend < 0 || entry != linehistory[lend])
+          linehistory.push_back(entry);
+      }
       //Clear
       entry = "";
     }
@@ -1568,8 +1570,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
     {
       //Play loop
-      if (animate < 1) animate = TIMER_INC;
-      viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
+      viewer->animateTimer(); //Start idle redisplay timer for frequent frame updates
       replay.clear();
       last_cmd = "next";
       replay.push_back(last_cmd);
@@ -1606,8 +1607,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    viewer->idleTimer(0); //Stop idle redisplay timer
+    viewer->animateTimer(0); //Stop idle redisplay timer
+    animate = false;
     loop = false;
+    repeat = 0;
+    replay.clear();
   }
   else if (parsed.exists("images"))
   {
@@ -1637,14 +1641,27 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    if (parsed.has(ival, "animate"))
-      animate = ival;
-    else if (animate > 0)
-      animate = 0;
+    //Start idle redisplay timer for frequent frame updates
+    if (parsed.has(ival, "animate") && ival > 0)
+    {
+      viewer->animateTimer(ival);
+      animate = true;
+      printMessage("Animate mode %d millseconds", viewer->timer_animate);
+    }
+    else if (animate)
+    {
+      animate = false;
+      loop = false;
+      repeat = 0;
+      viewer->animateTimer(0);
+      printMessage("Animate mode disabled");
+    }
     else
-      animate = TIMER_INC;
-    viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
-    printMessage("Animate mode %d millseconds", animate);
+    {
+      animate = true;
+      viewer->animateTimer();
+      printMessage("Animate mode %d millseconds", viewer->timer_animate);
+    }
     return true; //No record
   }
   else if (parsed.exists("repeat"))
@@ -1652,46 +1669,26 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Repeat commands from history\n\n"
-              "**Usage:** repeat count\n\n"
-              "count (integer) : repeat the last entered command count times\n\n"
-              "**Usage:** repeat history count (animate)\n\n"
-              "count (integer) : repeat every command in history buffer count times\n";
+              "**Usage:** repeat [count=1] [N=1]\n\n"
+              "count (integer) : repeat commands count times\n"
+              "N (integer) : repeat the last N commands\n";
       return false;
     }
 
-    //Repeat N commands from history
-    if (parsed["repeat"] == "history" && parsed.has(ival, "repeat", 1))
-    {
-      if (animate > 0 && repeat == 0)
-      {
-        repeat = ival;
-        replay = history;
-        viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
-      }
-      else
-      {
-        for (int r=0; r<ival; r++)
-        {
-          for (unsigned int l=0; l<history.size(); l++)
-            parseCommands(history[l]);
-        }
-      }
-      return true; //Skip record
-    }
-    //Repeat last command N times
+    //Repeat last N commands from history count times
     else if (parsed.has(ival, "repeat"))
     {
-      if (animate > 0)
+      int N;
+      if (parsed.has(N, "repeat", 1))
       {
-        repeat = ival;
-        replay.push_back(last_cmd);
-        viewer->idleTimer(animate); //Start idle redisplay timer for frequent frame updates
+        if (linehistory.size() < N) N = linehistory.size();
+        std::copy(std::end(linehistory) - N, std::end(linehistory), std::back_inserter(replay));
       }
       else
-      {
-        for (int r=0; r<ival; r++)
-          parseCommands(last_cmd);
-      }
+        replay.push_back(last_cmd);
+      animate = true;
+      repeat = ival;
+      viewer->animateTimer(); //Start idle redisplay timer for frequent frame updates
       return true;  //Skip record
     }
     else if (linehistory.size() > 0)
@@ -2918,7 +2915,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Simply return true to render a frame
     return true;
   }
-  else if (parsed.exists("idle"))
+  else if (parsed.exists("asyncsort"))
   {
     //Internal usage, no help
     if (gethelp) return false;
@@ -2929,6 +2926,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Sort returns true if the sort was initiated, otherwise false
       aview->rotated = !sort();
     }
+    return false;
+  }
+  else if (parsed.exists("idle"))
+  {
+    //Internal usage, no help
+    if (gethelp) return false;
 
     //Command playback
     if (repeat != 0)
@@ -2939,7 +2942,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       repeat--;
       if (repeat == 0)
       {
-        viewer->idleTimer(0); //Disable idle redisplay timer
+        viewer->animateTimer(0); //Disable idle redisplay timer
         replay.clear();
       }
     }
@@ -3334,7 +3337,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
 
   last_cmd = cmd;
-  if (animate && redisplay) viewer->postdisplay = true;
+  //if (animate && redisplay) viewer->postdisplay = true;
   return redisplay;
 }
 

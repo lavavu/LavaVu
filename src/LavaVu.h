@@ -116,7 +116,7 @@ protected:
 
 public:
   bool loop;
-  int animate;
+  bool animate;
   bool status;
   bool objectlist;
   char message[MAX_MSG];

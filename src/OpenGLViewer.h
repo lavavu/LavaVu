@@ -37,10 +37,6 @@
 #ifndef OpenGLViewer__
 #define OpenGLViewer__
 
-//Timer increment in ms
-#define TIMER_INC 10
-#define TIMER_IDLE 1500
-
 #include "GraphicsUtil.h"
 #include "ApplicationInterface.h"
 #include "OutputInterface.h"
@@ -89,16 +85,21 @@ class OpenGLViewer : public ApplicationInterface, public FrameBuffer
 private:
 
 protected:
-  int timer;
+  int timer = 0;
+  int elapsed = 0;
+  int animate = 0; //Redisplay when idle for # milliseconds
 
-  int idle;
-  int displayidle; //Redisplay when idle for # milliseconds
   std::vector<OutputInterface*> outputs; //Additional output attachments
   std::vector<InputInterface*> inputs; //Additional input attachments
   FBO fbo;
   int savewidth, saveheight;
 
 public:
+  int idle = 0;
+  //Timer increments in ms
+  int timer_msec = 10;
+  int timer_animate = 50;
+
   ApplicationInterface* app;
   std::deque<std::string> commands;
   pthread_mutex_t cmd_mutex;
@@ -132,7 +133,7 @@ public:
   virtual void resize(int new_width, int new_height);
   virtual void display(bool redraw=true);
   virtual void close();
-  virtual void animate(int msec);
+  virtual void setTimer(int msec);
 
   // Default virtual functions for interactivity (call application interface)
   virtual bool mouseMove(int x, int y)
@@ -166,9 +167,7 @@ public:
 
   void downSample(int q);
 
-  void idleReset();
-  void idleTimer(int display=TIMER_IDLE);
-  unsigned int getIdleTime() {return idle;}
+  void animateTimer(int msec=-1);
 
   void addOutput(OutputInterface* output)
   {

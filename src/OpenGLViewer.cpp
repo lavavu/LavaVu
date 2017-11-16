@@ -219,9 +219,7 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
 {
   app = NULL;
   keyState.shift = keyState.ctrl = keyState.alt = 0;
-  idle = displayidle = 0;
 
-  timer = 0;
   visible = true;
 
   title = "LavaVu";
@@ -233,7 +231,7 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
 
 OpenGLViewer::~OpenGLViewer()
 {
-  animate(0);
+  setTimer(0);
 }
 
 void OpenGLViewer::open(int w, int h)
@@ -300,7 +298,7 @@ void OpenGLViewer::init()
   {
     isopen = true;
     //Begin polling for input
-    animate(TIMER_INC);
+    setTimer(timer_msec);
   }
 
   //Call open on any output interfaces
@@ -358,15 +356,15 @@ void OpenGLViewer::close()
 
 void OpenGLViewer::execute()
 {
-  //Default event processing, sleep for TIMER_INC microseconds
+  //Default event processing, sleep for timer_msec milliseconds
 
   //New frame? call display
   if (postdisplay || pollInput())
     display();
 #ifdef _WIN32
-  Sleep(TIMER_INC);
+  Sleep(timer_msec);
 #else
-  usleep(TIMER_INC * 1000);   // usleep takes sleep time in us (1 millionth of a second)
+  usleep(timer_msec * 1000);   // usleep takes sleep time in us (1 millionth of a second)
 #endif
 }
 
@@ -414,7 +412,7 @@ void OpenGLViewer::display(bool redraw)
       {
         //This break causes server commands to back up and not all be processed in loop
         //However, animate "play" repeats forever without display if not enabled
-        if (displayidle > 0)
+        if (animate > 0)
           break;
       }
     }
@@ -565,17 +563,17 @@ void OpenGLViewer::downSample(int q)
     fbo.downsample = ds;
   }
 }
-void OpenGLViewer::idleReset()
-{
-  //Reset idle timer to zero if active
-  if (idle > 0) idle = 0;
-}
 
-void OpenGLViewer::idleTimer(int display)
+void OpenGLViewer::animateTimer(int msec)
 {
-  //Start idle timer
-  idle = 0;
-  displayidle = display;
+  //Start animation timer
+  elapsed = idle = 0;
+  if (msec < 0)
+    msec = timer_animate;
+  else if (msec > 0)
+    timer_animate = msec;
+
+  animate = msec;
 }
 
 bool OpenGLViewer::pollInput()
@@ -599,12 +597,13 @@ bool OpenGLViewer::pollInput()
     }
   }
 
-  //Idle timer
-  idle += TIMER_INC;
-  if (displayidle > 0 && idle > displayidle)
+  //Animate timer
+  elapsed += timer_msec;
+  idle += timer_msec;
+  if (animate > 0 && elapsed > animate)
   {
     commands.push_back("idle");
-    idle = 0;
+    elapsed = 0;
     parsed = true;
   }
 
@@ -612,7 +611,7 @@ bool OpenGLViewer::pollInput()
   return parsed;
 }
 
-void OpenGLViewer::animate(int msec)
+void OpenGLViewer::setTimer(int msec)
 {
   timer = msec;
 }

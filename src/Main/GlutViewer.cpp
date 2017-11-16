@@ -161,7 +161,7 @@ void GlutViewer::fullScreen()
   debug_print("fullscreen %d sw %d sh %d\n", fullscreen, savewidth, saveheight);
 }
 
-void GlutViewer::animate(int msec)
+void GlutViewer::setTimer(int msec)
 {
   glutTimerFunc(msec, glut_timer, msec);
 }
