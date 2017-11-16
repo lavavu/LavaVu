@@ -18,9 +18,10 @@ import glob
 import control
 import numpy
 
-if __name__ != 'glucifer.lavavu' and 'glucifer.lavavu' in sys.modules:
+if __name__ != 'glucifer.lavavu.lavavu' and 'glucifer.lavavu.lavavu' in sys.modules:
     #Already imported, some paths issue causes double import
     raise RuntimeError("LavaVu module provided by glucifer exists, please don't import separately")
+
 def is_ipython():
     try:
         if __IPYTHON__:
