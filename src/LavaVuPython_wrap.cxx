@@ -14539,6 +14539,35 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_event(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_event" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      result = (bool)(arg1)->event();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_image__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -19968,6 +19997,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_parseCommands", _wrap_LavaVu_parseCommands, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_render", (PyCFunction)_wrap_LavaVu_render, METH_O, NULL},
 	 { (char *)"LavaVu_init", (PyCFunction)_wrap_LavaVu_init, METH_O, NULL},
+	 { (char *)"LavaVu_event", (PyCFunction)_wrap_LavaVu_event, METH_O, NULL},
 	 { (char *)"LavaVu_image", _wrap_LavaVu_image, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_web", _wrap_LavaVu_web, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_video", _wrap_LavaVu_video, METH_VARARGS, NULL},

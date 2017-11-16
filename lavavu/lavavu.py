@@ -2102,6 +2102,23 @@ class Viewer(dict):
         """
         self.state["views"][0] = convert_keys(json.loads(view))
 
+    def event(self):
+        """
+        Process input events
+        allows running interactive event loop while animating from python
+        eg:
+
+        >>> while (lv.event()):
+        >>>     #...build next frame here...
+        >>>     lv.render()
+
+        Returns
+        -------
+        boolean:
+            False if user quit program, True otherwise
+        """
+        return self.app.event()
+
 #Wrapper for list of geomdata objects
 class Geometry(list):
     """  

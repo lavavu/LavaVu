@@ -397,6 +397,7 @@ LavaVu.loadFile = new_instancemethod(_LavaVuPython.LavaVu_loadFile, None, LavaVu
 LavaVu.parseCommands = new_instancemethod(_LavaVuPython.LavaVu_parseCommands, None, LavaVu)
 LavaVu.render = new_instancemethod(_LavaVuPython.LavaVu_render, None, LavaVu)
 LavaVu.init = new_instancemethod(_LavaVuPython.LavaVu_init, None, LavaVu)
+LavaVu.event = new_instancemethod(_LavaVuPython.LavaVu_event, None, LavaVu)
 LavaVu.image = new_instancemethod(_LavaVuPython.LavaVu_image, None, LavaVu)
 LavaVu.web = new_instancemethod(_LavaVuPython.LavaVu_web, None, LavaVu)
 LavaVu.video = new_instancemethod(_LavaVuPython.LavaVu_video, None, LavaVu)

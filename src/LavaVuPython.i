@@ -139,6 +139,7 @@ public:
   bool parseCommands(std::string cmd);
   void render();
   void init();
+  bool event();
   std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
