@@ -83,6 +83,18 @@ def convert_keys(dictionary):
     return dict((k.encode('utf-8'), convert_keys(v)) 
         for k, v in dictionary.items())
 
+def convert_args(dictionary):
+    """Convert a kwargs dict to a json string argument list
+       Ensure all elements can be converted
+       Currently only supports converting numpy args with tolist()
+    """
+    for el in dictionary:
+        try:
+            dictionary[el] = dictionary[el].tolist()
+        except AttributeError:
+            pass
+    return str(json.dumps(dictionary))
+
 #Echo image test fail output to console
 echo_fails = False
 default_args = []
@@ -492,6 +504,22 @@ class Object(dict):
             data = numpy.asarray(data, dtype=numpy.uint32)
         self._loadScalar(data, LavaVuPython.lucIndexData)
 
+    def rgb(self, data):
+        """
+        Load rgb data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy uint8 array of rgb values
+            values are loaded as 8 bit unsigned integer values
+        """
+
+        #Accepts only uint8 indices
+        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint8:
+            data = numpy.asarray(data, dtype=numpy.uint8)
+        self._loadScalar(data, LavaVuPython.lucRGBData)
+
     def texture(self, data, width, height, channels=4, flip=True):
         """
         Load raw texture data for object
@@ -555,7 +583,7 @@ class Object(dict):
         if self.ref.colourMap is None:
             self.ref.colourMap = self.instance.app.addColourMap(self.name + "_colourmap")
             self["colourmap"] = self.ref.colourMap.name
-        self.ref.colourMap._setup(self.instance.app, data, reverse, monochrome, str(json.dumps(kwargs)))
+        self.ref.colourMap._setup(self.instance.app, data, reverse, monochrome, convert_args(kwargs))
         return self.ref.colourMap.name
         
     def reload(self):
@@ -1118,7 +1146,6 @@ class Viewer(dict):
         if not key in self.properties:
             raise ValueError(key + " : Invalid property name")
         self._get()
-        #self.state = json.loads(self.app.getState())
         view = self.state["views"][0]
         if key in view:
             view[key] = item
@@ -1343,9 +1370,9 @@ class Viewer(dict):
 
         #Call function to add/setup the object, all other args passed to properties dict
         if ref is None:
-            ref = self.app.createObject(str(json.dumps(kwargs)))
+            ref = self.app.createObject(convert_args(kwargs))
         else:
-            self.app.setObject(ref, str(json.dumps(kwargs)))
+            self.app.setObject(ref, convert_args(kwargs))
 
         #Get the created/update object
         obj = self.Object(ref)
@@ -1461,9 +1488,9 @@ class Viewer(dict):
             o = self._objects.list[-1]
 
         if o is not None:
-            self.app.setObject(o.ref, str(json.dumps(kwargs)))
+            self.app.setObject(o.ref, convert_args(kwargs))
             return o
-        print "WARNING: Object not found and could not be created: ",identifier
+        print("WARNING: Object not found and could not be created: ",identifier)
         return None
 
     def file(self, filename, obj=None, **kwargs):
@@ -1587,7 +1614,7 @@ class Viewer(dict):
             The name of the colourmap loaded/created
         """
         cmap = self.app.addColourMap(name)
-        cmap._setup(self.app, data, reverse, monochrome, str(json.dumps(kwargs)))
+        cmap._setup(self.app, data, reverse, monochrome, convert_args(kwargs))
         #TODO: Dict of colourmaps by name stored on Viewer (lv.colourmaps)
         return cmap.name
 
@@ -1925,14 +1952,14 @@ class Viewer(dict):
         """
         results = []
         if not os.path.isdir(expectedPath):
-            print "No expected data, copying found images to expected folder..."
+            print("No expected data, copying found images to expected folder...")
             os.makedirs(expectedPath)
             from shutil import copyfile
             if not imagelist:
                 #Get all images in cwd
                 imagelist = glob.glob("*.png")
                 imagelist += glob.glob("*.jpg")
-            print imagelist
+            print(imagelist)
             for image in imagelist:
                 copyfile(image, os.path.join(expectedPath, image))
 
@@ -2071,18 +2098,22 @@ class Viewer(dict):
         self._get()
         me = getVariableName(self)
         if not me: me = "lv"
-        qrot = self.state["views"][0]["rotate"]
-        rot = self.state["views"][0]["xyzrotate"]
-        tr = self.state["views"][0]["translate"]
-        for r in range(3):
-            rot[r] = round(rot[r], 3)
-            tr[r] = round(tr[r], 3)
-        qrot[3] = round(qrot[3], 3)
-        print(me + ".translation(" + str(tr)[1:-1] + ")")
-        print(me + ".rotation(" + str(rot)[1:-1] + ")")
         #Also print in terminal for debugging
         self.commands("camera")
-        return {"translation" : tr, "xyzrotation" : rot, "rotation" : qrot}
+        #Export from first view
+        if len(self.state["views"]) and self.state["views"][0]:
+            qrot = self.state["views"][0]["rotate"]
+            rot = self.state["views"][0]["xyzrotate"]
+            tr = self.state["views"][0]["translate"]
+            for r in range(3):
+                rot[r] = round(rot[r], 3)
+                tr[r] = round(tr[r], 3)
+            qrot[3] = round(qrot[3], 3)
+            print(me + ".translation(" + str(tr)[1:-1] + ")")
+            print(me + ".rotation(" + str(rot)[1:-1] + ")")
+            return {"translation" : tr, "xyzrotation" : rot, "rotation" : qrot}
+        else:
+            return {}
 
     def getview(self):
         """
