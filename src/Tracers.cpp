@@ -150,9 +150,9 @@ void Tracers::update()
         //Get colour either from supplied colour values or time step
         if (timecolour)
           colour = cmap->getfast(drawstate.timesteps[step]->time);
-        else if (geom[i]->colourCount() > particles)
+        else if ((unsigned int)geom[i]->colourCount() > particles)
           getColour(colour, pp); //Have a colour value per particle and ste;p
-        else if (geom[i]->colourCount() <= particles)
+        else if ((unsigned int)geom[i]->colourCount() <= particles)
           getColour(colour, p);  //Fixed colour value per particle regardless of step
 
         //Fade out

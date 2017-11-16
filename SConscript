@@ -24,10 +24,10 @@ d = "."
 mod_name = env['ESCAPE']('"' + ''.join(d.split('/')) + '"')
 # Binary install dir and rpath
 if env['prefix'] == env.GetLaunchDir():
-   bin_dir = os.path.join(env['prefix'], env['build_dir'], "bin");
+   bin_dir = os.path.join(env['prefix'], env['build_dir'], "lavavu");
    rpath = [os.path.join(env['prefix'], env['build_dir'], "lib")]
 else:
-   bin_dir = os.path.join(env['prefix'], "bin");
+   bin_dir = os.path.join(env['prefix'], "lavavu");
    rpath = [os.path.join(env['prefix'], "lib")]
 
 cpp_defs = [('CURR_MODULE_NAME', mod_name)] + [('USE_FONTS')]
@@ -39,15 +39,18 @@ env['CPPDEFINES'] += cpp_defs
 src_dir = 'src'
 inc_dir = 'include/LavaVu/Viewer/'
 
+# Install python scripts
+env.Install('lavavu/', Glob(src_dir + '/../lavavu/*.py'))
+
 # Install the shaders
-env.Install('bin/', Glob(src_dir + '/shaders/*.vert'))
-env.Install('bin/', Glob(src_dir + '/shaders/*.frag'))
+env.Install('lavavu/', Glob(src_dir + '/shaders/*.vert'))
+env.Install('lavavu/', Glob(src_dir + '/shaders/*.frag'))
 # Install the html source
-env.Install('bin/html/', Glob(src_dir + '/html/*.js'))
-env.Install('bin/html/', Glob(src_dir + '/html/*.css'))
+env.Install('lavavu/html/', Glob(src_dir + '/html/*.js'))
+env.Install('lavavu/html/', Glob(src_dir + '/html/*.css'))
 this_sconscript_file = (lambda x:x).func_code.co_filename
 code_base = os.path.dirname(this_sconscript_file)
-env.Install('bin/html/', Glob(src_dir + '/html/index.html'))
+env.Install('lavavu/html/', Glob(src_dir + '/html/index.html'))
 env.Command(bin_dir + '/html/viewer.html', 'src/html/viewer.html', code_base + "/build-index.sh $SOURCE $TARGET gLucifer/Viewer/src/shaders")
 
 #Run version update check

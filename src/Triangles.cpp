@@ -265,7 +265,7 @@ void Triangles::render()
       {
         //Create the index list, adding offset from previous element vertices
         unsigned int indexlist[indices];
-        for(int i=0; i<indices; i++)
+        for(unsigned int i=0; i<indices; i++)
           indexlist[i] = voffset + geom[index]->render->indices[i];
 
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist);

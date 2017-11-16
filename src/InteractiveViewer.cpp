@@ -1681,7 +1681,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       int N;
       if (parsed.has(N, "repeat", 1))
       {
-        if (linehistory.size() < N) N = linehistory.size();
+        if ((int)linehistory.size() < N) N = (int)linehistory.size();
         std::copy(std::end(linehistory) - N, std::end(linehistory), std::back_inserter(replay));
       }
       else
