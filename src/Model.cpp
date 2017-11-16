@@ -1243,6 +1243,8 @@ void Model::clearStep()
   //Clear and tell all geometry objects they need to reload data
   for (auto g : geometry)
   {
+    //Wait until all sort threads done
+    std::lock_guard<std::mutex> guard(g->sortmutex);
     //Release any graphics memory and clear
     g->close();
   }
