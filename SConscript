@@ -93,7 +93,7 @@ env['LIBPATH'] += [build_lib]
 #Add the renderer library
 libs = ['LavaVu'] + env.get('LIBS', [])
 #Build the executable
-env.Program('bin/LavaVu', main, LIBS=libs)
+env.Program('lavavu/LavaVu', main, LIBS=libs)
 
 #Build as a shared library (Experimental)
 main = env.SharedObject('lvlib', Glob(src_dir + '/Main/main.cpp'), CPPDEFINES=env['CPPDEFINES'])
