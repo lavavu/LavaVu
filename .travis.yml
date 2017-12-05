@@ -21,8 +21,8 @@ matrix:
       compiler: clang   
     - os: osx
       compiler: gcc 
-#before_install:
-#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then alias pip='pip2'; fi
 install:
   - pip install --user numpy
 addons:
