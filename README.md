@@ -43,7 +43,7 @@ The simplest way to get started on a Unix OS (Mac/Linux) is clone this repositor
 ```
 
 If all goes well the viewer will be built, try running with:
-  ./LavaVu
+  ./lavavu/LavaVu
 
 ### Dependencies ###
 

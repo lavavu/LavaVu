@@ -29,3 +29,6 @@ html/*
 notebooks/.ipynb_checkpoints/*
 notebooks/html/*
 compiler_flags
+edit*.sh
+notebooks/*
+!notebooks/*.ipynb
