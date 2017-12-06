@@ -199,7 +199,7 @@ void Lines::render()
           indexlist[i] = voffset + geom[index]->render->indices[i];
 
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist);
-        printf("%d upload %d indices, voffset %d\n", index, indices, voffset);
+        //printf("%d upload %d indices, voffset %d\n", index, indices, voffset);
         counts[index] = indices;
         offset += indices;
         GL_Error_Check;
@@ -208,7 +208,7 @@ void Lines::render()
       {
         //No indices, just raw vertices
         counts[index] = geom[index]->count();
-        printf("%d upload NO indices, %d vertices, voffset %d\n", index, counts[index], voffset);
+        //printf("%d upload NO indices, %d vertices, voffset %d\n", index, counts[index], voffset);
       }
       idxcount += counts[index];
     }
