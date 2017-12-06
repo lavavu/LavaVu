@@ -21,9 +21,6 @@ matrix:
     - os: osx
       compiler: clang   
       install: pip2 install --user numpy
-    - os: osx
-      compiler: gcc 
-      install: pip2 install --user numpy
 addons:
   apt:
     sources:
