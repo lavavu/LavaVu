@@ -96,6 +96,63 @@ def convert_args(dictionary):
             pass
     return str(json.dumps(dictionary))
 
+def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
+    """
+    Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
+
+    Implemented from FORTRAN 77 code from D.A. Green, 2011, BASI, 39, 289.
+    "A colour scheme for the display of astronomical intensity images"
+    http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
+
+    Parameters
+    ----------
+    samples: int
+        Number of colour samples to produce
+    start: float
+        Start colour [0,3] 1=red,2=green,3=blue
+    rot: float
+        Rotations through spectrum, negative to reverse direction
+    sat: float
+        Colour saturation grayscale to full [0,1], >1 to oversaturate
+    gamma: float
+        Gamma correction [0,1]
+    alpha: list,tuple
+        Alpha [min,max] for transparency ramp
+
+    Returns
+    -------
+    colours: list
+        List of colours ready to be loaded by colourmap()
+    """
+
+    colours = []
+
+    if not isinstance(alpha,list) and not isinstance(alpha,tuple):
+        #Convert as boolean
+        if alpha: alpha = [0,1]
+
+    for i in range(0,samples+1):
+        fract = i / float(samples)
+        angle = 2.0 * math.pi * (start / 3.0 + 1.0 + rot * fract)
+        amp = sat * fract * (1 - fract)
+        fract = pow(fract, gamma)
+
+        r = fract + amp * (-0.14861 * math.cos(angle) + 1.78277 * math.sin(angle))
+        g = fract + amp * (-0.29227 * math.cos(angle) - 0.90649 * math.sin(angle))
+        b = fract + amp * (+1.97294 * math.cos(angle))
+
+        r = max(min(r, 1.0), 0.0)
+        g = max(min(g, 1.0), 0.0)
+        b = max(min(b, 1.0), 0.0)
+        a = 1.0
+        if alpha:
+            a = alpha[0] + (alpha[1]-alpha[0]) * fract
+
+        colours.append((fract, 'rgba(%d,%d,%d,%d)' % (r*0xff, g*0xff, b*0xff, a*0xff)))
+
+    return colours
+
+
 #Echo image test fail output to console
 echo_fails = False
 default_args = []
@@ -139,6 +196,7 @@ class Object(dict):
     def __init__(self, idict, instance, *args, **kwargs):
         self.dict = idict
         self.instance = instance
+        if not "filters" in self.dict: self.dict["filters"] = []
 
         #Create a control factory
         self.control = control.ControlFactory(self)
@@ -489,7 +547,7 @@ class Object(dict):
             data = numpy.asarray(data, dtype=numpy.uint32)
             self.colours(data)
 
-    def indices(self, data):
+    def indices(self, data, offset=0):
         """
         Load index data for object
 
@@ -498,11 +556,18 @@ class Object(dict):
         data: list,array
             Pass a list or numpy uint32 array of indices
             indices are loaded as 32 bit unsigned integer values
+        offset: integer
+            Specify an initial index offset, for 1-based indices pass offset=1
+            Default is zero-based
         """
 
         #Accepts only uint32 indices
         if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint32:
             data = numpy.asarray(data, dtype=numpy.uint32)
+        if offset > 0:
+            #Convert indices to offset 0 before loading by subtracting offset
+            data = numpy.subtract(data, offset)
+        #Load indices
         self._loadScalar(data, LavaVuPython.lucIndexData)
 
     def rgb(self, data):
@@ -560,7 +625,7 @@ class Object(dict):
             data = [data]
         self.instance.app.loadLabels(self.ref, data)
 
-    def colourmap(self, data, reverse=False, monochrome=False, **kwargs):
+    def colourmap(self, data=cubeHelix(), reverse=False, monochrome=False, **kwargs):
         """
         Load colour map data for object
 
@@ -1588,7 +1653,7 @@ class Viewer(dict):
         """
         return LavaVuPython.ColourMap.getDefaultMap(name)
 
-    def colourmap(self, name, data, reverse=False, monochrome=False, **kwargs):
+    def colourmap(self, name, data=cubeHelix(), reverse=False, monochrome=False, **kwargs):
         """
         Load or create a colour map
 
@@ -2321,63 +2386,6 @@ class GeomData(object):
         
     def __str__(self):
         return [key for key, value in geomtypes.items() if value == self.data.type][0]
-
-
-def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
-    """
-    Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
-
-    Implemented from FORTRAN 77 code from D.A. Green, 2011, BASI, 39, 289.
-    "A colour scheme for the display of astronomical intensity images"
-    http://adsabs.harvard.edu/abs/2011arXiv1108.5083G
-
-    Parameters
-    ----------
-    samples: int
-        Number of colour samples to produce
-    start: float
-        Start colour [0,3] 1=red,2=green,3=blue
-    rot: float
-        Rotations through spectrum, negative to reverse direction
-    sat: float
-        Colour saturation grayscale to full [0,1], >1 to oversaturate
-    gamma: float
-        Gamma correction [0,1]
-    alpha: list,tuple
-        Alpha [min,max] for transparency ramp
-
-    Returns
-    -------
-    colours: list
-        List of colours ready to be loaded by colourmap()
-    """
-
-    colours = []
-
-    if not isinstance(alpha,list) and not isinstance(alpha,tuple):
-        #Convert as boolean
-        if alpha: alpha = [0,1]
-
-    for i in range(0,samples+1):
-        fract = i / float(samples)
-        angle = 2.0 * math.pi * (start / 3.0 + 1.0 + rot * fract)
-        amp = sat * fract * (1 - fract)
-        fract = pow(fract, gamma)
-
-        r = fract + amp * (-0.14861 * math.cos(angle) + 1.78277 * math.sin(angle))
-        g = fract + amp * (-0.29227 * math.cos(angle) - 0.90649 * math.sin(angle))
-        b = fract + amp * (+1.97294 * math.cos(angle))
-                
-        r = max(min(r, 1.0), 0.0)
-        g = max(min(g, 1.0), 0.0)
-        b = max(min(b, 1.0), 0.0)
-        a = 1.0
-        if alpha:
-            a = alpha[0] + (alpha[1]-alpha[0]) * fract
-
-        colours.append((fract, 'rgba(%d,%d,%d,%d)' % (r*0xff, g*0xff, b*0xff, a*0xff)))
-
-    return colours
 
 def loadCPT(fn, positions=True):
     """

@@ -925,6 +925,9 @@ class Filter(Control):
     """
     def __init__(self, target, filteridx, label=None, range=None, step=None):
         self.label = label
+        if len(target["filters"]) <= filteridx:
+            print("Filter index out of range: ", filteridx, len(target["filters"]))
+            return None
         self.filter = target["filters"][filteridx]
 
         #Default label - data set name
