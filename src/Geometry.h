@@ -488,14 +488,16 @@ public:
 
 class Lines : public Geometry
 {
-  GLuint vbo;
-  unsigned int linetotal;
+  unsigned int idxcount;
   std::vector<unsigned int> counts;
+  GLuint indexvbo, vbo;
+  unsigned int linetotal;
 public:
   Lines(DrawState& drawstate);
   virtual ~Lines();
   virtual void close();
   virtual void update();
+  virtual void render();
   virtual void draw();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };

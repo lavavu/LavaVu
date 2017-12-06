@@ -38,7 +38,9 @@
 Lines::Lines(DrawState& drawstate) : Geometry(drawstate)
 {
   type = lucLineType;
+  idxcount = 0;
   vbo = 0;
+  indexvbo = 0;
   linetotal = 0;
 }
 
@@ -53,7 +55,10 @@ void Lines::close()
   {
     if (vbo)
       glDeleteBuffers(1, &vbo);
+    if (indexvbo)
+      glDeleteBuffers(1, &indexvbo);
     vbo = 0;
+    indexvbo = 0;
 
     reload = true;
   }
@@ -71,6 +76,8 @@ void Lines::update()
   for (unsigned int i=0; i<geom.size(); i++)
     linetotal += geom[i]->count();
   if (linetotal == 0) return;
+
+  if (reload) idxcount = 0;
 
   //Copy data to Vertex Buffer Object
   // VBO - copy normals/colours/positions to buffer object
@@ -133,7 +140,11 @@ void Lines::update()
     t2 = clock();
     debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, counts[i]);
     t1 = clock();
-    elements += counts[i];
+    //Indexed
+    if (geom[i]->render->indices.size() > 0)
+      elements += geom[i]->render->indices.size();
+    else
+      elements += geom[i]->count();
   }
 
   glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -144,17 +155,91 @@ void Lines::update()
   debug_print("Plotted %d lines in %.4lf seconds\n", linetotal, (t1-tt)/(double)CLOCKS_PER_SEC);
 }
 
+//Reloads line indices
+void Lines::render()
+{
+  clock_t t1,t2;
+  t1 = clock();
+  if (elements == 0) return;
+
+  //Prepare the Index buffer
+  if (!indexvbo)
+    glGenBuffers(1, &indexvbo);
+
+  //Always set data size again in case changed
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
+  GL_Error_Check;
+  if (glIsBuffer(indexvbo))
+  {
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
+    debug_print("  %d byte IBO prepared for %d indices\n", elements * sizeof(GLuint), elements);
+  }
+  else
+    abort_program("IBO creation failed\n");
+  GL_Error_Check;
+
+  //Element counts to actually plot (exclude filtered/hidden) per geom entry
+  counts.clear();
+  counts.resize(geom.size());
+
+  //Upload vertex indices
+  unsigned int offset = 0;
+  unsigned int voffset = 0;
+  idxcount = 0;
+  for (unsigned int index = 0; index < geom.size(); index++)
+  {
+    unsigned int indices = geom[index]->render->indices.size();
+    if (drawable(index))
+    {
+      if (indices > 0)
+      {
+        //Create the index list, adding offset from previous element vertices
+        unsigned int indexlist[indices];
+        for(unsigned int i=0; i<indices; i++)
+          indexlist[i] = voffset + geom[index]->render->indices[i];
+
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist);
+        printf("%d upload %d indices, voffset %d\n", index, indices, voffset);
+        counts[index] = indices;
+        offset += indices;
+        GL_Error_Check;
+      }
+      else
+      {
+        //No indices, just raw vertices
+        counts[index] = geom[index]->count();
+        printf("%d upload NO indices, %d vertices, voffset %d\n", index, counts[index], voffset);
+      }
+      idxcount += counts[index];
+    }
+
+    //Vertex index offset
+    voffset += geom[index]->count();
+  }
+
+  GL_Error_Check;
+  t2 = clock();
+  debug_print("  %.4lf seconds to upload %d indices\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
+  t1 = clock();
+  //After render(), elements holds unfiltered count, idxcount is filtered
+  elements = idxcount;
+}
+
 void Lines::draw()
 {
+  //Re-render if count changes
+  if (idxcount != elements) render();
+
   // Draw using vertex buffer object
   glPushAttrib(GL_ENABLE_BIT);
   clock_t t0 = clock();
   double time;
   int stride = 3 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
   int offset = 0;
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo))
   {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
     glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -182,10 +267,22 @@ void Lines::draw()
         if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);
 
-        if (props["link"])
-          glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
+        if (geom[i]->render->indices.size() > 0)
+        {
+          //Draw with index buffer
+          if (props["link"])
+            glDrawElements(GL_LINE_STRIP, counts[i], GL_UNSIGNED_INT, (GLvoid*)(offset*sizeof(GLuint)));
+          else
+            glDrawElements(GL_LINES, counts[i], GL_UNSIGNED_INT, (GLvoid*)(offset*sizeof(GLuint)));
+        }
         else
-          glDrawArrays(GL_LINES, offset, counts[i]);
+        {
+          //Draw directly from vertex buffer
+          if (props["link"])
+            glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
+          else
+            glDrawArrays(GL_LINES, offset, counts[i]);
+        }
       }
 
       offset += counts[i];
@@ -195,6 +292,7 @@ void Lines::draw()
     glDisableClientState(GL_COLOR_ARRAY);
   }
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   GL_Error_Check;
 
   //Restore state
