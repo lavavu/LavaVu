@@ -21,7 +21,11 @@ To release a new verison:
 
     >>> python setup.py tag
 
-    3) Publish the release to PyPi
+    3) Rebuild to update version in library
+
+    >>> make
+
+    4) Publish the release to PyPi
 
     >>> python setup.py publish
 """

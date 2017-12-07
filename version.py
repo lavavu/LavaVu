@@ -2,8 +2,8 @@
 import os
 
 version = os.popen("git describe --tags --always").read()
-#Strip trailing newline and 'v' prefix
-version = version.rstrip('\r\n')[1:]
+#Strip trailing newline
+version = version.rstrip('\r\n')
 #Replace first - with .
 version = version.replace('-', '.', 1)
 
