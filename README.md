@@ -33,8 +33,23 @@ Development happens in the "master" branch with stable releases tagged.
 
 ### How do I get set up? ###
 
-The simplest way to get started on a Unix OS (Mac/Linux) is clone this repository and build from source:
-(You will need to first install git)
+It's now in the python package index, so you can install with *pip*:
+
+```
+pip install --user lavavu
+```
+
+Try it out:
+
+```
+python
+> import lavavu
+> lv = lavavu.Viewer() #Create a viewer
+> lv.test()            #Create some sample data
+> lv.interactive()     #Open an interactive viewer window
+```
+
+Alternatively, clone this repository with *git* and build from source:
 
 ```
   git clone https://github.com/OKaluza/LavaVu
@@ -47,13 +62,9 @@ If all goes well the viewer will be built, try running with:
 
 ### Dependencies ###
 
-To build the python interface requires swig (http://www.swig.org/)
-
-For video output, requires: libavcodec, libavformat, libavutil, libswscale
-
-TODO:
-
-Releases: prebuilt versions for Windows, Mac, Linux
+* To use with python requires python 2.7+ and NumPy
+* For video output, requires: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
+* To build the python interface from source requires swig (http://www.swig.org/)
 
 ### Who do I talk to? ###
 
