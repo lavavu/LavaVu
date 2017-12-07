@@ -9,15 +9,35 @@ from subprocess import call
 from multiprocessing import cpu_count
 from ctypes.util import find_library
 
+#Current version
+version = "1.2.14"
+
+"""
+To release a new verison:
+
+    1) Edit the version number above
+
+    2) Tag the release with git
+
+    >>> python setup.py tag
+
+    3) Publish the release to PyPi
+
+    >>> python setup.py publish
+"""
+
+#Run with "tag" arg to create a release tag
 if sys.argv[-1] == 'tag':
     os.system("git tag -a %s -m 'version %s'" % (version, version))
     os.system("git push --tags")
     sys.exit()
 
+#Run with "publish" arg to upload the release
 if sys.argv[-1] == 'publish':
     os.system("python setup.py sdist upload")
     sys.exit()
 
+#Class to do the custom library build with make
 class LVBuild(build):
     def run(self):
         # Run original build code
@@ -69,7 +89,7 @@ if __name__ == "__main__":
           author            = "Owen Kaluza",
           author_email      = "owen.kaluza@monash.edu",
           url               = "https://github.com/OKaluza/LavaVu",
-          version           = "1.2.13",
+          version           = version,
           license           = "LGPL-3",
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/OKaluza/LavaVu/wiki for more info',
