@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.14"
+version = "1.2.15"
 
 """
 To release a new verison:
@@ -28,6 +28,8 @@ To release a new verison:
     4) Publish the release to PyPi
 
     >>> python setup.py publish
+
+    (If this fails, check ~/.pypirc and try upgrading pip: pip install -U pip setuptools)
 """
 
 #Run with "tag" arg to create a release tag
@@ -40,6 +42,53 @@ if sys.argv[-1] == 'tag':
 if sys.argv[-1] == 'publish':
     os.system("python setup.py sdist upload")
     sys.exit()
+
+#From https://stackoverflow.com/a/28949827/866759
+def check_libraries(libraries, headers):
+    """check if the C module can be build by trying to compile a small
+    program against the passed library with passed headers"""
+
+    import tempfile
+    import shutil
+
+    import distutils.sysconfig
+    import distutils.ccompiler
+    from distutils.errors import CompileError, LinkError
+
+    # write a temporary .c file to compile
+    c_code = "int main(int argc, char* argv[]) { return 0; }"
+    #Add headers
+    for header in headers:
+        c_code = "#include <" + header + ">\n" + c_code
+
+    tmp_dir = tempfile.mkdtemp(prefix = 'tmp_comp__')
+    bin_file_name = os.path.join(tmp_dir, 'test_comp')
+    file_name = bin_file_name + '.c'
+    with open(file_name, 'w') as fp:
+        fp.write(c_code)
+
+    # and try to compile it
+    compiler = distutils.ccompiler.new_compiler()
+    assert isinstance(compiler, distutils.ccompiler.CCompiler)
+    distutils.sysconfig.customize_compiler(compiler)
+
+    try:
+        compiler.link_executable(
+            compiler.compile([file_name]),
+            bin_file_name,
+            libraries=libraries,
+        )
+    except CompileError:
+        print('Libraries ' + str(libraries) + ' test compile error')
+        ret_val = False
+    except LinkError:
+        print('Libraries ' + str(libraries) + ' test link error')
+        ret_val = False
+    else:
+        print('Libraries ' + str(libraries) + ' found and passed compile test')
+        ret_val = True
+    shutil.rmtree(tmp_dir)
+    return ret_val
 
 #Class to do the custom library build with make
 class LVBuild(build):
@@ -60,11 +109,15 @@ class LVBuild(build):
             pass
 
         # Optional external libraries
-        if find_library('png'):
+        if find_library('png') and check_libraries(['png'], ['png.h']):
             cmd.append('LIBPNG=1')
-        if find_library('tiff'):
+        if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
             cmd.append('TIFF=1')
-        if find_library('avcodec') and find_library('avformat') and find_library('avutil') and find_library('swscale'):
+        if (find_library('avcodec') and find_library('avformat')
+            and find_library('avutil') and find_library('swscale')
+            and check_libraries(['avcodec', 'avformat', 'avutil', 'swscale'],
+                ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
+                 'libavutil/imgutils.h', 'libswscale/swscale.h'])):
             cmd.append('VIDEO=1')
 
         #Debug build
