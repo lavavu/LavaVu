@@ -1,7 +1,14 @@
 #!/usr/bin/env python
 import os
 
-version = os.popen("git describe --tags --always").read()
+version = os.popen("git describe --tags --always 2> /dev/null").read()
+if len(version) == 0:
+    #Just report the current release version
+    import setup
+    version = setup.version
+    print version
+    exit()
+
 #Strip trailing newline
 version = version.rstrip('\r\n')
 #Replace first - with .
