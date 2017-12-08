@@ -4,6 +4,7 @@ PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
 SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
+PYTHON ?= python2
 
 #Object files path
 OPATH ?= tmp
@@ -106,7 +107,7 @@ vpath %.c src/mongoose:src/sqlite3
 vpath %.cc src
 
 #Always run this script to update version.cpp if git version changes
-TMP := $(shell python version.py)
+TMP := $(shell $(PYTHON) version.py)
 
 SRC := $(wildcard src/*.cpp) $(wildcard src/Main/*Viewer.cpp) $(wildcard src/jpeg/*.cpp)
 INC := $(wildcard src/*.h) $(wildcard src/Main/*.h)
@@ -170,7 +171,7 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 #Python interface
 SWIGSRC = src/LavaVuPython_wrap.cxx
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
-NUMPYINC = $(shell python -c 'import numpy; print numpy.get_include()')
+NUMPYINC = $(shell $(PYTHON) -c 'import numpy; print numpy.get_include()')
 ifneq ($(NUMPYINC),)
 #Skip build if numpy not found
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
@@ -181,10 +182,10 @@ swig : $(INC) src/LavaVuPython.i | paths
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
-	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `python-config --libs` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `$(PYTHON)-config --libs` -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC)
-	$(CXX) $(CPPFLAGS) `python-config --includes` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
+	$(CXX) $(CPPFLAGS) `$(PYTHON)-config --includes` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	$(PROGRAM) -S -h -p0 : docs:properties quit > docs/Property-Reference.md
