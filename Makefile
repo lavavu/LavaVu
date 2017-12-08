@@ -4,7 +4,15 @@ PROGNAME = LavaVu
 PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
 SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
+
+#Ensure default python is python 2, if not use python2
+PYVERFULL := $(wordlist 2,4,$(subst ., ,$(shell python --version 2>&1)))
+PYVERMAJOR := $(word 1,${PYVERFULL})
+ifeq ($(PYVERMAJOR),3)
 PYTHON ?= python2
+else
+PYTHON ?= python
+endif
 
 #Object files path
 OPATH ?= tmp
