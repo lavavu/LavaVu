@@ -2024,9 +2024,18 @@ void Glyphs::setup(View* vp, float* min, float* max)
 
 void Glyphs::sort()
 {
-  lines->sort();
-  tris->sort();
-  points->sort();
+  {
+    std::lock_guard<std::mutex> guard(lines->sortmutex);
+    lines->sort();
+  }
+  {
+    std::lock_guard<std::mutex> guard(tris->sortmutex);
+    tris->sort();
+  }
+  {
+    std::lock_guard<std::mutex> guard(points->sortmutex);
+    points->sort();
+  }
 }
 
 void Glyphs::display()
