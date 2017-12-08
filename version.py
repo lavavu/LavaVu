@@ -6,7 +6,7 @@ if len(version) == 0:
     #Just report the current release version
     import setup
     version = setup.version
-    print version
+    print(version)
     exit()
 
 #Strip trailing newline
@@ -22,10 +22,10 @@ if __name__ == "__main__":
     if not version in content:
         f.close()
         f = open('src/version.cpp', 'w')
-        print "Writing new version: " + version
+        print("Writing new version: " + version)
         f.write('#include "version.h"\nconst std::string version = "%s";\n' % version)
     else:
-        print "Version matches: " + version
+        print("Version matches: " + version)
 
     f.close()
 

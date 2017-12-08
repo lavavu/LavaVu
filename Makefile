@@ -179,7 +179,7 @@ $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
 #Python interface
 SWIGSRC = src/LavaVuPython_wrap.cxx
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os
-NUMPYINC = $(shell $(PYTHON) -c 'import numpy; print numpy.get_include()')
+NUMPYINC = $(shell $(PYTHON) -c 'import numpy; print(numpy.get_include())')
 ifneq ($(NUMPYINC),)
 #Skip build if numpy not found
 SWIGOBJ = $(OPATH)/LavaVuPython_wrap.os

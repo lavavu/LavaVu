@@ -71,6 +71,9 @@ datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "values":    LavaVuPython.lucMaxDataType}
 
 def convert_keys(dictionary):
+    if (sys.version_info > (3, 0)):
+        #Not necessary in python3...
+        return dictionary
     """Recursively converts dictionary keys
        and unicode values to utf-8 strings."""
     if isinstance(dictionary, list):
@@ -2138,7 +2141,7 @@ class Viewer(dict):
 
         """
         if self in control.windows:
-            print "Viewer window exists, only one instance per Viewer permitted"
+            print("Viewer window exists, only one instance per Viewer permitted")
             return
         self.control.Window()
         self.control.show()
