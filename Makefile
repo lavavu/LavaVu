@@ -5,14 +5,9 @@ PROGRAM = $(PREFIX)/$(PROGNAME)
 LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
 SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
 
-#Ensure default python is python 2, if not use python2
-PYVERFULL := $(wordlist 2,4,$(subst ., ,$(shell python --version 2>&1)))
-PYVERMAJOR := $(word 1,${PYVERFULL})
-ifeq ($(PYVERMAJOR),3)
-PYTHON ?= python2
-else
 PYTHON ?= python
-endif
+PYLIB ?= `python-config --libs`
+PYINC ?= `python-config --includes`
 
 #Object files path
 OPATH ?= tmp
@@ -200,10 +195,10 @@ swig : $(INC) src/LavaVuPython.i | paths
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
-	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) `$(PYTHON)-config --libs` -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) ${PYLIB} -lLavaVu -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC)
-	$(CXX) $(CPPFLAGS) `$(PYTHON)-config --includes` -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
+	$(CXX) $(CPPFLAGS) ${PYINC} -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/DrawState.h
 	$(PROGRAM) -S -h -p0 : docs:properties quit > docs/Property-Reference.md
