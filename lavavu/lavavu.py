@@ -2107,7 +2107,7 @@ class Viewer(dict):
                     with open(outfile, mode='rb') as f:
                         data = f.read()
                         import base64
-                        print("data:image/png;base64,",str(base64.b64encode(data),'utf-8'))
+                        print("data:image/png;base64,",base64.b64encode(data).decode('ascii'))
                 else:
                     print("Buffer:")
                     print(self.app.image(""))
