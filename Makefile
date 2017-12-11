@@ -139,12 +139,22 @@ ALLOBJS += $(APPLEOBJ)
 default: install
 
 .PHONY: install
-install: $(PROGRAM) $(SWIGLIB)
+install: $(PROGRAM) $(SWIGLIB) $(HTMLPATH)/viewer.html
 	cp src/shaders/*.* $(PREFIX)
 	cp -R src/html/*.js $(HTMLPATH)
 	cp -R src/html/*.css $(HTMLPATH)
-	/bin/bash build-index.sh src/html/viewer.html $(HTMLPATH)/viewer.html src/shaders
 	cp src/html/index.html $(HTMLPATH)/index.html
+
+$(HTMLPATH)/viewer.html: src/html/viewer.html src/shaders/*.frag src/shaders/*.vert
+	sed -e "/Point vertex shader/    r src/shaders/pointShaderWEBGL.vert"  \
+      -e "/Point fragment shader/  r src/shaders/pointShaderWEBGL.frag"  \
+      -e "/Tri vertex shader/      r src/shaders/triShaderWEBGL.vert"    \
+      -e "/Tri fragment shader/    r src/shaders/triShaderWEBGL.frag"    \
+      -e "/Volume vertex shader/   r src/shaders/volumeShaderWEBGL.vert" \
+      -e "/Volume fragment shader/ r src/shaders/volumeShaderWEBGL.frag" \
+      -e "/Line vertex shader/     r src/shaders/lineShaderWEBGL.vert"   \
+      -e "/Line fragment shader/   r src/shaders/lineShaderWEBGL.frag"   \
+			< src/html/viewer.html > $(HTMLPATH)/viewer.html
 
 .PHONY: force
 $(OPATH)/compiler_flags: force | paths

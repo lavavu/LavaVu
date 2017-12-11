@@ -1,5 +1,4 @@
 include LV
 include Makefile
 include version.py
-include build-index.sh
 recursive-include src *.cpp *.c *.cxx *.h *.hpp *.mm *.frag *.vert *.js *.css *.html
