@@ -87,17 +87,22 @@ def convert_keys(dictionary):
     return dict((k.encode('utf-8'), convert_keys(v)) 
         for k, v in dictionary.items())
 
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, numpy.integer):
+            return int(obj)
+        elif isinstance(obj, numpy.floating):
+            return float(obj)
+        elif isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+        else:
+            return super(CustomEncoder, self).default(obj)
+
 def convert_args(dictionary):
     """Convert a kwargs dict to a json string argument list
-       Ensure all elements can be converted
-       Currently only supports converting numpy args with tolist()
+       Ensure all elements can be converted by using custom encoder
     """
-    for el in dictionary:
-        try:
-            dictionary[el] = dictionary[el].tolist()
-        except AttributeError:
-            pass
-    return str(json.dumps(dictionary))
+    return str(json.dumps(dictionary, cls=CustomEncoder))
 
 def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
     """
@@ -254,7 +259,7 @@ class Object(dict):
     def __str__(self):
         #Default string representation
         self.instance._get() #Ensure in sync
-        return str('\n'.join(['%s=%s' % (k,json.dumps(v)) for k,v in self.dict.iteritems()]))
+        return str('\n'.join(['%s=%s' % (k,json.dumps(v)) for k,v in self.dict.items()]))
         #return '[' + ', '.join(self.dict.keys()) + ']'
 
     #Interface for setting filters
@@ -864,7 +869,7 @@ class Objects(dict):
             self.list[-1].ref = self.instance.app.getObject(_id)
             
         #Delete any objects from stored dict that are no longer present
-        for name in self.keys():
+        for name in list(self):
             if not self[name].found:
                 del self[name]
             else:
@@ -1243,7 +1248,7 @@ class Viewer(dict):
         self._get()
         properties = self.state["properties"]
         properties.update(self.state["views"][0])
-        return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.iteritems()]))
+        return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.items()]))
 
     @property
     def objects(self):
@@ -1433,7 +1438,7 @@ class Viewer(dict):
         #Strip data keys from kwargs and put aside for loading
         datasets = {}
         cmapstr = None
-        for key in kwargs.keys():
+        for key in list(kwargs):
             if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
                 datasets[key] = kwargs.pop(key, None)
 
@@ -2102,7 +2107,7 @@ class Viewer(dict):
                     with open(outfile, mode='rb') as f:
                         data = f.read()
                         import base64
-                        print("data:image/png;base64,",base64.b64encode(data))
+                        print("data:image/png;base64,",str(base64.b64encode(data),'utf-8'))
                 else:
                     print("Buffer:")
                     print(self.app.image(""))
@@ -2527,7 +2532,7 @@ def printH5(h5):
     """
     print("------ ",h5.filename," ------")
     ks = h5.keys()
-    for key in ks[:10]:
+    for key in ks:
         print(h5[key])
     for item in h5.attrs.keys():
         print(item + ":", h5.attrs[item])
