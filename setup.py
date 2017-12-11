@@ -5,12 +5,13 @@ from setuptools.command.install import install
 from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
 from distutils.command.build import build
+import distutils
 from subprocess import call
 from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.15"
+version = "1.2.28"
 
 """
 To release a new verison:
@@ -97,10 +98,14 @@ class LVBuild(build):
         build.run(self)
 
         # Build with make
+        installdir = os.path.join(self.build_lib, 'lavavu')
         cmd = [
             'make',
             'OPATH=' + os.path.abspath(self.build_temp),
-            'PREFIX=' + os.path.join(self.build_lib, 'lavavu'),
+            'PREFIX=' + installdir,
+            'PYTHON=' + sys.executable,
+            'PYINC=-I' + distutils.sysconfig.get_python_inc(),
+            'PYLIB=-L' + distutils.sysconfig.get_python_lib(),
         ]
 
         try:
