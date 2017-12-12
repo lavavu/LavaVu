@@ -1722,20 +1722,22 @@ class Viewer(dict):
                 if cm["name"] == mapid:
                     cmap = cm
                     break
-            return '' if string else arr
+            if cmap is None:
+                return '' if string else arr
         else:
             if mapid < 0 or mapid >= len(cmaps):
                 return '' if string else arr
-            cm = cmaps[mapid]
+            cmap = cmaps[mapid]
+
         if string:
             cmstr = '"""'
-            for c in cm["colours"]:
+            for c in cmap["colours"]:
                 cmstr += "%6.4f=%s; " % (c["position"],c["colour"])
             cmstr += '"""\n'
             return cmstr
         else:
             import re
-            for c in cm["colours"]:
+            for c in cmap["colours"]:
                 comp = re.findall(r"[\d\.]+", c["colour"])
                 comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
                 arr.append((c["position"], comp))
