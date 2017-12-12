@@ -367,6 +367,9 @@ bool GeomData::filter(unsigned int idx)
       else
         value = (*v)[ridx];
 
+      //Always filter nan/inf
+      if (std::isnan(value) || std::isinf(value)) return true;
+
       //if (idx%10000==0) std::cout << min << " < " << value << " < " << max << std::endl;
       //std::cout << min << " < " << value << " < " << max << std::endl;
       
