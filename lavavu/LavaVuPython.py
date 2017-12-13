@@ -339,22 +339,6 @@ class ColourMap(object):
         _LavaVuPython.ColourMap_swiginit(self, _LavaVuPython.new_ColourMap(*args))
     getDefaultMapNames = staticmethod(_LavaVuPython.ColourMap_getDefaultMapNames)
     getDefaultMap = staticmethod(_LavaVuPython.ColourMap_getDefaultMap)
-
-        #def __getattr__(self, key):
-        #TODO: allow property set/get
-
-    def _setup(self, app, data, reverse=False, monochrome=False, propstring=""):
-        if not isinstance(data, str):
-    #Convert iterable maps to string format
-            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
-            data = '\n'.join(data)
-    #Load colourmap
-        app.updateColourMap(self, data, propstring)
-        if reverse:
-            self.flip()
-        if monochrome:
-            self.monochrome()
-
     __swig_destroy__ = _LavaVuPython.delete_ColourMap
 ColourMap.flip = new_instancemethod(_LavaVuPython.ColourMap_flip, None, ColourMap)
 ColourMap.monochrome = new_instancemethod(_LavaVuPython.ColourMap_monochrome, None, ColourMap)
@@ -405,6 +389,7 @@ LavaVu.defaultModel = new_instancemethod(_LavaVuPython.LavaVu_defaultModel, None
 LavaVu.addColourMap = new_instancemethod(_LavaVuPython.LavaVu_addColourMap, None, LavaVu)
 LavaVu.updateColourMap = new_instancemethod(_LavaVuPython.LavaVu_updateColourMap, None, LavaVu)
 LavaVu.getColourMap = new_instancemethod(_LavaVuPython.LavaVu_getColourMap, None, LavaVu)
+LavaVu.setColourMap = new_instancemethod(_LavaVuPython.LavaVu_setColourMap, None, LavaVu)
 LavaVu.colourBar = new_instancemethod(_LavaVuPython.LavaVu_colourBar, None, LavaVu)
 LavaVu.setState = new_instancemethod(_LavaVuPython.LavaVu_setState, None, LavaVu)
 LavaVu.getState = new_instancemethod(_LavaVuPython.LavaVu_getState, None, LavaVu)

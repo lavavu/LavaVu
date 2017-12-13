@@ -3079,6 +3079,17 @@ ColourMap* LavaVu::getColourMap(std::string name)
   return NULL;
 }
 
+void LavaVu::setColourMap(ColourMap* target, std::string properties, bool replace)
+{
+  if (!amodel || !target) return;
+  if (replace)
+    //Simply parse and replace property dict
+    target->properties.data = json::parse(properties);
+  else
+    //Parse and merge property strings
+    target->properties.parseSet(properties);
+}
+
 DrawingObject* LavaVu::colourBar(DrawingObject* obj)
 {
   //Add colour bar display to specified object

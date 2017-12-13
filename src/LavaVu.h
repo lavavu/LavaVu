@@ -244,6 +244,7 @@ public:
   void updateColourMap(ColourMap* colourMap, std::string colours, std::string properties="");
   ColourMap* getColourMap(unsigned int id);
   ColourMap* getColourMap(std::string name);
+  void setColourMap(ColourMap* target, std::string properties, bool replace=false);
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();

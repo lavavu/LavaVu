@@ -93,23 +93,6 @@ public:
   void monochrome();
   static std::vector<std::string> getDefaultMapNames();
   static std::string getDefaultMap(std::string);
-
-  %pythoncode %{
-    #def __getattr__(self, key):
-    #TODO: allow property set/get
-
-    def _setup(self, app, data, reverse=False, monochrome=False, propstring=""):
-        if not isinstance(data, str):
-            #Convert iterable maps to string format
-            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
-            data = '\n'.join(data)
-        #Load colourmap
-        app.updateColourMap(self, data, propstring)
-        if reverse:
-            self.flip()
-        if monochrome:
-            self.monochrome()
-  %}
 };
 
 typedef std::shared_ptr<GeomData> Geom_Ptr;
@@ -148,6 +131,7 @@ public:
   void updateColourMap(ColourMap* colourMap, std::string colours, std::string properties="");
   ColourMap* getColourMap(unsigned int id);
   ColourMap* getColourMap(std::string name);
+  void setColourMap(ColourMap* target, std::string properties, bool replace=false);
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();

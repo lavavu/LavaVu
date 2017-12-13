@@ -598,6 +598,7 @@ void ColourMap::loadTexture(bool repeat)
 
 void ColourMap::loadPalette(std::string data)
 {
+  if (data.length() == 0) return;
   //Three types of data accepted
   // a) Name of predefined colour map, if preceded with @ position data is ignored
   //   and only colours loaded at even spacing

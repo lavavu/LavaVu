@@ -17,6 +17,7 @@ import os
 import glob
 import control
 import numpy
+import re
 
 if __name__ != 'glucifer.lavavu.lavavu' and 'glucifer.lavavu.lavavu' in sys.modules:
     #Already imported, some paths issue causes double import
@@ -201,8 +202,8 @@ class Object(dict):
     >>> obj.help('opacity')
 
     """
-    def __init__(self, idict, instance, *args, **kwargs):
-        self.dict = idict
+    def __init__(self, instance, *args, **kwargs):
+        self.dict = kwargs
         self.instance = instance
         if not "filters" in self.dict: self.dict["filters"] = []
 
@@ -245,6 +246,8 @@ class Object(dict):
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
             raise ValueError(key + " : Invalid property name")
+        if key == "colourmap" and isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
+            value = value.name #Use name instead of object when setting colourmap on object
         #self.instance._get() #Ensure in sync
         #Set new value and send
         self.dict[key] = value
@@ -633,13 +636,15 @@ class Object(dict):
             data = [data]
         self.instance.app.loadLabels(self.ref, data)
 
-    def colourmap(self, data=cubeHelix(), reverse=False, monochrome=False, **kwargs):
+    def colourmap(self, data=None, reverse=False, monochrome=False, **kwargs):
         """
         Load colour map data for object
 
         Parameters
         ----------
         data: list,str
+            If not provided, just returns the colourmap
+            (A default is created if none exists)
             Provided colourmap data can be
             - a string,
             - list of colour strings,
@@ -651,14 +656,29 @@ class Object(dict):
             Reverse the order of the colours after loading
         monochrome: boolean
             Convert to greyscale
+
+        Returns
+        -------
+        colourmap: ColourMap(dict)
+            The wrapper object of the colourmap loaded/created
         """
+        if data is None:
+            cmid = self["colourmap"]
+            if cmid:
+                #Just return the existing map
+                return ColourMap(cmid, self.instance)
+            else:
+                #Proceeed to create a new map with default data
+                data = cubeHelix()
+
         #Load colourmap on this object
         ret = None
         if self.ref.colourMap is None:
             self.ref.colourMap = self.instance.app.addColourMap(self.name + "_colourmap")
             self["colourmap"] = self.ref.colourMap.name
-        self.ref.colourMap._setup(self.instance.app, data, reverse, monochrome, convert_args(kwargs))
-        return self.ref.colourMap.name
+        c = ColourMap(self.ref.colourMap, self.instance)
+        c.update(data, reverse, monochrome, **kwargs)
+        return c
         
     def reload(self):
         """
@@ -858,7 +878,7 @@ class Objects(dict):
                 self.list.append(self[obj["name"]])
             else:
                 #Create a new object wrapper
-                o = Object(obj, self.instance)
+                o = Object(self.instance, **obj)
                 self[obj["name"]] = o
                 self.list.append(o)
             #Flag sync
@@ -884,6 +904,227 @@ class Objects(dict):
     def __str__(self):
         #Default string representation is a comma separated list
         return ', '.join(self.keys())
+
+class _ColourComponents():
+    """Class to allow modifying colour components directly as an array
+    """
+    def __init__(self, key, parent):
+        self.parent = parent
+        self.key = key
+        self.list = self.parent.list[self.key][1]
+
+    def __getitem__(self, key):
+        self.list = self.parent.list[self.key][1]
+        return self.list[key]
+
+    def __setitem__(self, key, value):
+        self.list = self.parent.list[self.key][1]
+        self.list[key] = value
+        self.parent[self.key] = self.list
+
+    def __str__(self):
+        return str(self.list)
+
+class _ColourList():
+    """Class to allow modifying colour list directly as an array
+    """
+    def __init__(self, parent):
+        self.parent = parent
+        self.list = self.parent.tolist()
+
+    def __getitem__(self, key):
+        self.parent._get() #Ensure in sync
+        self.list = self.parent.tolist()
+        return _ColourComponents(key, self)
+
+    def __setitem__(self, key, value):
+        self.list = self.parent.tolist()
+        self.list[key] = (self.list[key][0], value)
+        self.parent.update(self.list)
+
+    def __str__(self):
+        return str([c[1] for c in self.list])
+
+class _PositionList(_ColourList):
+    """Class to allow modifying position list directly as an array
+    """
+    def __init__(self, parent):
+        self.parent = parent
+        self.list = self.parent.tolist()
+
+    def __getitem__(self, key):
+        self.parent._get() #Ensure in sync
+        self.list = self.parent.tolist()
+        return self.list[key][0]
+
+    def __setitem__(self, key, value):
+        self.list = self.parent.tolist()
+        self.list[key] = (value, self.list[key][1])
+        #Sort by position
+        self.list = sorted(self.list, key=lambda tup: tup[0])
+        #Ensure first and last are always 0 and 1
+        if self.list[0][0]  != 0.0: self.list[0]  = (0.0, self.list[0][1])
+        if self.list[-1][0] != 1.0: self.list[-1] = (1.0, self.list[-1][1])
+        self.parent.update(self.list)
+
+    def __str__(self):
+        return str([c[0] for c in self.list])
+
+#Wrapper class for colourmap
+#handles property updating via internal dict
+class ColourMap(dict):
+    """
+    The ColourMap class provides an interface to a LavaVu ColourMap
+    ColourMap instances are created internally in the Viewer class and can
+    be retrieved from the colourmaps list
+
+    New colourmaps are also created using viewer methods
+
+    Parameters
+    ----------
+    **kwargs:
+        Initial set of properties passed to the created colourmap
+
+    """
+    def __init__(self, ref, instance, *args, **kwargs):
+        self.instance = instance
+        if isinstance(ref, LavaVuPython.ColourMap):
+            self.ref = ref
+        else:
+            self.ref = self.instance.app.getColourMap(ref)
+
+        self.dict = kwargs
+        self._get() #Sync
+
+        #Init prop dict for tab completion
+        super(ColourMap, self).__init__(**self.instance.properties)
+
+    @property
+    def name(self):
+        """
+        Get the colourmap name property
+
+        Returns
+        -------
+        name: str
+            The name of the colourmap
+        """
+        return self.ref.name
+
+    @property
+    def colours(self):
+        """
+        Returns the list of colours
+
+        Returns
+        -------
+        colours: (list)
+            A list of colours
+         """
+        self._get()
+        return _ColourList(self)
+
+    @property
+    def positions(self):
+        """
+        Returns the list of colour positions
+
+        Returns
+        -------
+        positions: (list)
+            A list of colour positions [0,1]
+         """
+        self._get()
+        return _PositionList(self)
+
+    def _set(self):
+        #Send updated props (via ref in case name changed)
+        self.instance.app.setColourMap(self.ref, convert_args(self.dict))
+
+    def _get(self):
+        self.instance._get() #Ensure in sync
+        #Update prop dict
+        for cm in self.instance.state["colourmaps"]:
+            if cm["name"] == self.ref.name:
+                #self.colours = cm["colours"]
+                self.dict.update(cm)
+                #self.dict.pop("colours", None)
+                #print self.dict
+
+    def __getitem__(self, key):
+        self._get() #Ensure in sync
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
+        if key in self.dict:
+            return self.dict[key]
+        #Default to the property lookup dict
+        return super(ColourMap, self).__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
+        #Set new value and send
+        self.dict[key] = value
+        self._set()
+
+    def __contains__(self, key):
+        return key in self.dict
+
+    def tolist(self):
+        """
+        Get the colourmap data as a python list
+
+        Returns
+        -------
+        list:
+            The colour and position data which can be used to re-create the colourmap
+        """
+        arr = []
+        for c in self["colours"]:
+            comp = re.findall(r"[\d\.]+", c["colour"])
+            comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
+            arr.append((c["position"], comp))
+        return arr
+
+    def __repr__(self):
+        return self.__str__().replace(';', '\n')
+
+    def __str__(self):
+        #Default string representation
+        cmstr = '"""'
+        for c in self["colours"]:
+            cmstr += "%6.4f=%s; " % (c["position"],c["colour"])
+        cmstr += '"""\n'
+        return cmstr
+
+    def update(self, data, reverse=False, monochrome=False, **kwargs):
+        """
+        Update the colour map data
+
+        Parameters
+        ----------
+        data: list,str
+            Provided colourmap data can be
+            - a string,
+            - list of colour strings,
+            - list of position,value tuples
+            - or a built in colourmap name
+        reverse: boolean
+            Reverse the order of the colours after loading
+        monochrome: boolean
+            Convert to greyscale
+        """
+        if not isinstance(data, str):
+            #Convert iterable maps to string format
+            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
+            data = '\n'.join(data)
+        #Load colourmap data
+        self.instance.app.updateColourMap(self.ref, data, convert_args(kwargs))
+        if reverse:
+            self.ref.flip()
+        if monochrome:
+            self.ref.monochrome()
+        self._get() #Ensure in sync
 
 class Fig(dict):
     """  
@@ -1258,7 +1499,7 @@ class Viewer(dict):
         Returns
         -------
         objects: Objects(dict)
-            An dictionary wrapper containing the list of available visualisation objects
+            A dictionary wrapper containing the list of available visualisation objects
             Can be printed, iterated or accessed as a dictionary by object name
         """
         self._get()
@@ -1272,12 +1513,12 @@ class Viewer(dict):
         Returns
         -------
         colourmaps: (dict)
-            An dictionary containing the list of available colourmaps
-        """
+            A dictionary containing the available colourmaps as ColourMap() wrapper objects
+         """
         self._get()
         maps = {}
         for cm in self.state["colourmaps"]:
-            maps[cm["name"]] = cm
+            maps[cm["name"]] = ColourMap(cm["name"], self)
         return maps
 
     @property
@@ -1567,6 +1808,27 @@ class Viewer(dict):
         print("WARNING: Object not found and could not be created: ",identifier)
         return None
 
+    def ColourMap(self, identifier=None, **kwargs):
+        """
+        Get or create a colourmap
+
+        Parameters
+        ----------
+        identifier: str,int,Object (Optional)
+            If a string, lookup an object by name
+            If a number, lookup object by index
+            If an object reference, lookup the Object by reference
+            If omitted, return the last object in the list
+            If no matching object found and string identifier provided, creates an empty object
+        **kwargs:
+            Set of properties passed to the object
+
+        Returns
+        -------
+        obj: Object
+            The object located
+        """
+
     def file(self, filename, obj=None, **kwargs):
         """
         Load a database or model file
@@ -1684,13 +1946,12 @@ class Viewer(dict):
 
         Returns
         -------
-        colourmap: int
-            The name of the colourmap loaded/created
+        colourmap: ColourMap(dict)
+            The wrapper object of the colourmap loaded/created
         """
-        cmap = self.app.addColourMap(name)
-        cmap._setup(self.app, data, reverse, monochrome, convert_args(kwargs))
-        #TODO: Dict of colourmaps by name stored on Viewer (lv.colourmaps)
-        return cmap.name
+        c = ColourMap(self.app.addColourMap(name), self)
+        c.update(data, reverse, monochrome, **kwargs)
+        return c
 
     def getcolourmap(self, mapid, string=True):
         """
@@ -1712,36 +1973,11 @@ class Viewer(dict):
         mapdata: str/list
             The formatted colourmap data
         """
-        #Return colourmap as a string/array that can be passed to re-create the map
-        self._get() #Ensure in sync
-        arr = []
-        cmaps = self.state["colourmaps"]
-        cmap = None
-        if isinstance(mapid,str):
-            for cm in cmaps:
-                if cm["name"] == mapid:
-                    cmap = cm
-                    break
-            if cmap is None:
-                return '' if string else arr
-        else:
-            if mapid < 0 or mapid >= len(cmaps):
-                return '' if string else arr
-            cmap = cmaps[mapid]
-
+        c = ColourMap(mapid, self)
         if string:
-            cmstr = '"""'
-            for c in cmap["colours"]:
-                cmstr += "%6.4f=%s; " % (c["position"],c["colour"])
-            cmstr += '"""\n'
-            return cmstr
+            return c.__str__()
         else:
-            import re
-            for c in cmap["colours"]:
-                comp = re.findall(r"[\d\.]+", c["colour"])
-                comp = [int(comp[0]), int(comp[1]), int(comp[2]), int(255*float(comp[3]))]
-                arr.append((c["position"], comp))
-            return arr
+            return c.tolist()
 
     def clear(self, objects=True, colourmaps=True):
         """
