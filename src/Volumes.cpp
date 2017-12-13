@@ -478,8 +478,8 @@ void Volumes::render(int i)
   glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
   glUniform1i(prog->uniforms["uIsoWalls"], (bool)props["isowalls"]);
   glUniform1i(prog->uniforms["uFilter"], (bool)props["tricubicfilter"]);
-  float dminmax[2] = {props["dminclip"],
-                      props["dmaxclip"]};
+  float dminmax[2] = {props["minclip"],
+                      props["maxclip"]};
   glUniform2fv(prog->uniforms["uDenMinMax"], 1, dminmax);
   GL_Error_Check;
 

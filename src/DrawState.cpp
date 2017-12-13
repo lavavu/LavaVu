@@ -622,7 +622,7 @@ void DrawState::init()
       }
     },
     {
-      "dminclip",
+      "minclip",
       {
         0.0,
         "object(volume)",
@@ -631,7 +631,7 @@ void DrawState::init()
       }
     },
     {
-      "dmaxclip",
+      "maxclip",
       {
         1.0,
         "object(volume)",
