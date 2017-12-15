@@ -236,12 +236,13 @@ class Object(dict):
 
     def __getitem__(self, key):
         self.instance._get() #Ensure in sync
-        if not key in self.instance.properties:
-            raise ValueError(key + " : Invalid property name")
         if key in self.dict:
             return self.dict[key]
-        #Default to the property lookup dict
-        return super(Object, self).__getitem__(key)
+        if not key in self.instance.properties:
+            raise ValueError(key + " : Invalid property name")
+        #Default to the property lookup dict (default is first element)
+        prop = super(Object, self).__getitem__(key)
+        return prop[0]
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1057,8 +1058,9 @@ class ColourMap(dict):
             raise ValueError(key + " : Invalid property name")
         if key in self.dict:
             return self.dict[key]
-        #Default to the property lookup dict
-        return super(ColourMap, self).__getitem__(key)
+        #Default to the property lookup dict (default is first element)
+        prop = super(ColourMap, self).__getitem__(key)
+        return prop[0]
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1144,8 +1146,9 @@ class Fig(dict):
         #Return key on viewer instance
         if key in self.instance:
             return self.instance[key]
-        #Default to the property lookup dict
-        return super(Fig, self).__getitem__(key)
+        #Default to the property lookup dict (default is first element)
+        prop = super(Fig, self).__getitem__(key)
+        return prop[0]
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1451,7 +1454,7 @@ class Viewer(dict):
         elif key in self.state["properties"]:
             return self.state["properties"][key]
         elif key in self.properties:
-            return self.properties[key][0]
+            return self.properties[key][0] #Default from prop list
         else:
             raise ValueError(key + " : Invalid property name")
         return None
