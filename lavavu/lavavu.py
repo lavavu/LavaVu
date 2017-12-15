@@ -943,6 +943,11 @@ class _ColourList():
         self.list[key] = (self.list[key][0], value)
         self.parent.update(self.list)
 
+    def __delitem__(self, key):
+        self.list = self.parent.tolist()
+        del self.list[key]
+        self.parent.update(self.list)
+
     def __str__(self):
         return str([c[1] for c in self.list])
 
@@ -963,9 +968,6 @@ class _PositionList(_ColourList):
         self.list[key] = (value, self.list[key][1])
         #Sort by position
         self.list = sorted(self.list, key=lambda tup: tup[0])
-        #Ensure first and last are always 0 and 1
-        if self.list[0][0]  != 0.0: self.list[0]  = (0.0, self.list[0][1])
-        if self.list[-1][0] != 1.0: self.list[-1] = (1.0, self.list[-1][1])
         self.parent.update(self.list)
 
     def __str__(self):
@@ -1116,6 +1118,10 @@ class ColourMap(dict):
         monochrome: boolean
             Convert to greyscale
         """
+        if isinstance(data, list) and len(data) > 1:
+            #Ensure first and last positions of list data are always 0 and 1
+            if data[0][0]  != 0.0: data[0]  = (0.0, data[0][1])
+            if data[-1][0] != 1.0: data[-1] = (1.0, data[-1][1])
         if not isinstance(data, str):
             #Convert iterable maps to string format
             data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
