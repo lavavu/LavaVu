@@ -45,6 +45,11 @@ std::string GeomData::datalabels[lucMaxDataType+1] = {"vertices", "normals", "ve
                                           "luminance", "rgb", "values"
                                          };
 
+std::ostream & operator<<(std::ostream &os, const Vertex& v)
+{
+  return os << "[" << v.vert[0] << "," << v.vert[1] << "," << v.vert[2] << "]";
+}
+
 //Track min/max coords
 void GeomData::checkPointMinMax(float *coord)
 {

@@ -38,7 +38,7 @@
 #endif
 
 #include "GraphicsUtil.h"
-#include  "base64.h"
+#include "base64.h"
 #include <string.h>
 #include <math.h>
 

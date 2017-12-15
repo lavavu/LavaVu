@@ -330,6 +330,8 @@ public:
     //Comparison for equality
     return fabs(vert[0] - rhs.vert[0]) < 0.001 && fabs(vert[1] - rhs.vert[1]) < 0.001 && fabs(vert[2] - rhs.vert[2]) < 0.001;
   }
+
+  friend std::ostream& operator<<(std::ostream& stream, const Vertex& v);
 };
 
 //Comparison for sort by id
