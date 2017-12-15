@@ -116,7 +116,7 @@ void QuadSurfaces::update()
 
 void QuadSurfaces::sort()
 {
-  if (view->is3d)
+  if (view && view->is3d)
     redraw = true; //Recalc cross section order
 }
 
