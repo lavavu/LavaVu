@@ -2005,13 +2005,13 @@ void LavaVu::display(bool redraw)
   //Sort
   if (session.global("sort") && aview && aview->rotated)
   {
-    //Immediate sort
-    if (session.automate)
+    //Immediate sort (when automating and no visible viewer window)
+    if (drawstate.automate && !viewer->visible)
     {
       aview->rotated = false;
       sort(true);
     }
-    //Async sort
+    //Async sort (interactive mode)
     else
       queueCommands("asyncsort");
   }
