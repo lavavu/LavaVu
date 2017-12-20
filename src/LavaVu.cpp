@@ -2006,7 +2006,7 @@ void LavaVu::display(bool redraw)
   if (session.global("sort") && aview && aview->rotated)
   {
     //Immediate sort (when automating and no visible viewer window)
-    if (drawstate.automate && !viewer->visible)
+    if (session.automate && !viewer->visible)
     {
       aview->rotated = false;
       sort(true);
