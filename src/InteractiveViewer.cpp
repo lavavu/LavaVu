@@ -2075,7 +2075,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       amodel->redraw(true); //Redraw & reload all
 
-    if (model < 0 || !loadModelStep(model, amodel->step())) return false;
+    loadModelStep(model, amodel->step());
   }
   else if (parsed.exists("zerocam"))
   {
