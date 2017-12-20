@@ -1,5 +1,6 @@
 import os, platform
 Import('env')
+from sys import version_info as _vi
 
 #
 # Need to make a copy because SCons uses the environment
@@ -13,7 +14,10 @@ env = env.Clone()
 #############################################
 # Switch env to LavaVu base!
 values = {}
-execfile("graphics.cfg", globals(), values)
+if _vi >= (2, 7, 0):
+    exec(open("graphics.cfg").read(), globals(), values)
+else:
+    execfile("graphics.cfg", globals(), values)
 env._dict.update(values)
 #############################################
 
@@ -48,7 +52,11 @@ env.Install('lavavu/', Glob(src_dir + '/shaders/*.frag'))
 # Install the html source
 env.Install('lavavu/html/', Glob(src_dir + '/html/*.js'))
 env.Install('lavavu/html/', Glob(src_dir + '/html/*.css'))
-this_sconscript_file = (lambda x:x).func_code.co_filename
+if _vi >= (2, 7, 0):
+    this_sconscript_file = (lambda x:x).__code__.co_filename
+else:
+    this_sconscript_file = (lambda x:x).func_code.co_filename
+
 code_base = os.path.dirname(this_sconscript_file)
 env.Install('lavavu/html/', Glob(src_dir + '/html/index.html'))
 env.Command(bin_dir + '/html/viewer.html', 'src/html/viewer.html', code_base + "/build-index.sh $SOURCE $TARGET gLucifer/Viewer/src/shaders")
