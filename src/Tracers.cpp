@@ -36,7 +36,7 @@
 #include "Geometry.h"
 #include "TimeStep.h"
 
-Tracers::Tracers(DrawState& drawstate) : Glyphs(drawstate)
+Tracers::Tracers(Session& session) : Glyphs(session)
 {
   type = lucTracerType;
 }
@@ -73,7 +73,7 @@ void Tracers::update()
 
     int count = geom[i]->count();
     int datasteps = count / particles;
-    int timesteps = (datasteps-1) * drawstate.gap + 1; //Multiply by gap between recorded steps
+    int timesteps = (datasteps-1) * session.gap + 1; //Multiply by gap between recorded steps
 
     //Per-Swarm step limit
     int drawSteps = props["steps"];
@@ -83,8 +83,8 @@ void Tracers::update()
     //Get start and end indices
     int range = timesteps;
     //Skipped steps? Use closest available step
-    if (drawstate.gap > 1) range = ceil(timesteps/(float)(drawstate.gap-1));
-    int end = drawstate.now;      //Finish at current step;
+    if (session.gap > 1) range = ceil(timesteps/(float)(session.gap-1));
+    int end = session.now;      //Finish at current step;
     int start = end - range + 1;  //First step
     if (start < 0) start = 0;
     debug_print("Tracing %d positions from step indices %d to %d (timesteps %d datasteps %d)\n", particles, start, end, timesteps, datasteps);
@@ -97,7 +97,7 @@ void Tracers::update()
     if (cmap && !geom[i]->colourData())
     {
       timecolour = true;
-      cmap->calibrate(drawstate.timesteps[start]->time, drawstate.timesteps[end]->time);
+      cmap->calibrate(session.timesteps[start]->time, session.timesteps[end]->time);
     }
 
     //Get properties
@@ -108,7 +108,7 @@ void Tracers::update()
     float limit = props.getFloat("limit", view->model_size * 0.3);
     float factor = props["scaling"];
     float scaling = props["scaletracers"];
-    factor *= scaling * drawstate.gap * 0.0005;
+    factor *= scaling * session.gap * 0.0005;
     float arrowSize = props["arrowhead"];
     bool flat = props["flat"] || quality < 1;
     bool connect = props["connect"];
@@ -149,7 +149,7 @@ void Tracers::update()
 
         //Get colour either from supplied colour values or time step
         if (timecolour)
-          colour = cmap->getfast(drawstate.timesteps[step]->time);
+          colour = cmap->getfast(session.timesteps[step]->time);
         else if ((unsigned int)geom[i]->colourCount() > particles)
           getColour(colour, pp); //Have a colour value per particle and ste;p
         else if ((unsigned int)geom[i]->colourCount() <= particles)

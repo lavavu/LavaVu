@@ -813,7 +813,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Use this to load multiple volumes as timesteps into the same object
-    volume = new DrawingObject(drawstate, "volume");
+    volume = new DrawingObject(session, "volume");
     printMessage("Created static volume object");
   }
   else if (parsed.exists("clearvolume"))
@@ -842,13 +842,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    float value = drawstate.global(action);
+    float value = session.global(action);
     if (value == 0.0) value = 1.0;
     if (fval > 1.0)
       value = fval / 255.0;
     else
       value = fval;
-    drawstate.globals[action] = value;
+    session.globals[action] = value;
     printMessage("Set global %s to %.2f", action.c_str(), value);
   }
   else if (parsed.exists("interactive"))
@@ -859,7 +859,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    if (drawstate.omegalib) return false;
+    if (session.omegalib) return false;
     viewer->quitProgram = false;
     //viewer->show();
     //viewer->loop(true);
@@ -890,7 +890,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float w = 0, h = 0;
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
-      drawstate.globals["resolution"] = json::array({w, h});
+      session.globals["resolution"] = json::array({w, h});
       viewset = RESET_ZOOM; //Force check for resize and autozoom
     }
   }
@@ -1276,11 +1276,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(ival, what))
     {
       if (parsed[what] == "up")
-        ival = drawstate.now-1;
+        ival = session.now-1;
       else if (parsed[what] == "down")
-        ival = drawstate.now+1;
+        ival = session.now+1;
       else
-        ival = drawstate.now;
+        ival = session.now;
     }
     else //Convert to step idx
       ival = amodel->nearestTimeStep(ival);
@@ -1304,7 +1304,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //Relative jump
-    if (amodel->setTimeStep(drawstate.now+ival) >= 0)
+    if (amodel->setTimeStep(session.now+ival) >= 0)
     {
       printMessage("Jump to timestep %d", amodel->step());
       resetViews(); //Update the viewports
@@ -1343,7 +1343,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (ival < 0) ival = models.size()-1;
     if (ival >= (int)models.size()) ival = 0;
     if (!loadModelStep(ival, amodel->step())) return false;  //Invalid
-    amodel->setTimeStep(drawstate.now); //Reselect ensures all loaded correctly
+    amodel->setTimeStep(session.now); //Reselect ensures all loaded correctly
     printMessage("Load model %d", model);
   }
   else if (parsed.exists("savefigure"))
@@ -1588,11 +1588,11 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    int old = drawstate.now;
+    int old = session.now;
     if (amodel->timesteps.size() < 2) return false;
-    amodel->setTimeStep(drawstate.now+1);
+    amodel->setTimeStep(session.now+1);
     //Allow loop back to start when using next command
-    if (drawstate.now > 0 && drawstate.now == old)
+    if (session.now > 0 && session.now == old)
       amodel->setTimeStep(0);
     resetViews(); //Update the viewports
 
@@ -1738,10 +1738,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       aview->properties.data[what] = !current;
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
-    else if (drawstate.defaults.count(what) > 0 && drawstate.global(what).is_boolean())
+    else if (session.defaults.count(what) > 0 && session.global(what).is_boolean())
     {
-      bool current = drawstate.global(what);
-      drawstate.global(what) = !current;
+      bool current = session.global(what);
+      session.global(what) = !current;
       printMessage("Property '%s' set to %s", what.c_str(), !current ? "ON" : "OFF");
     }
   }
@@ -1765,7 +1765,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     viewer->fullScreen();
-    drawstate.globals["resolution"] = json::array({viewer->width, viewer->height});
+    session.globals["resolution"] = json::array({viewer->width, viewer->height});
     printMessage("Full-screen is %s", viewer->fullscreen ? "ON":"OFF");
   }
   else if (parsed.exists("scaling"))
@@ -1877,8 +1877,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
-    drawstate.globals["antialias"] = !drawstate.global("antialias");
-    printMessage("Anti-aliasing %s", drawstate.global("antialias") ? "ON":"OFF");
+    session.globals["antialias"] = !session.global("antialias");
+    printMessage("Anti-aliasing %s", session.global("antialias") ? "ON":"OFF");
   }
   else if (parsed.exists("valuerange"))
   {
@@ -2031,8 +2031,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Remove any existing fixed bounds
     aview->properties.data.erase("min");
     aview->properties.data.erase("max");
-    drawstate.globals.erase("min");
-    drawstate.globals.erase("max");
+    session.globals.erase("min");
+    session.globals.erase("max");
     //Update the viewports and recalc bounding box
     resetViews();
     //Update fixed bounds
@@ -2296,7 +2296,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         if (data.is_string())
         {
           //Convert to colour values using colourmap parser
-          ColourMap cmap(drawstate);
+          ColourMap cmap(session);
           cmap.loadPalette(data);
           data = json::array();
           for (unsigned int i=0; i<cmap.colours.size(); i++)
@@ -2411,12 +2411,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed["pointtype"];
     if (what == "all")
     {
-      int pt = drawstate.global("pointtype");
+      int pt = session.global("pointtype");
       if (parsed.has(ival, "pointtype", 1))
-        drawstate.globals["pointtype"] = ival % 5;
+        session.globals["pointtype"] = ival % 5;
       else
-        drawstate.globals["pointtype"] = (pt+1) % 5;
-      printMessage("Point type %d", (int)drawstate.globals["pointtype"]);
+        session.globals["pointtype"] = (pt+1) % 5;
+      printMessage("Point type %d", (int)session.globals["pointtype"]);
     }
     else
     {
@@ -2456,15 +2456,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     if (parsed.has(ival, "pointsample"))
-      drawstate.globals["pointsubsample"] = ival;
+      session.globals["pointsubsample"] = ival;
     else if (parsed["pointsample"] == "up")
-      drawstate.globals["pointsubsample"] = (int)drawstate.global("pointsubsample") / 2;
+      session.globals["pointsubsample"] = (int)session.global("pointsubsample") / 2;
     else if (parsed["pointsample"] == "down")
-      drawstate.globals["pointsubsample"] = (int)drawstate.global("pointsubsample") * 2;
-    if ((int)drawstate.global("pointsubsample") < 1) drawstate.globals["pointsubsample"] = 1;
+      session.globals["pointsubsample"] = (int)session.global("pointsubsample") * 2;
+    if ((int)session.global("pointsubsample") < 1) session.globals["pointsubsample"] = 1;
     Geometry* pts = amodel->getRenderer("points");
     if (pts) pts->redraw = true;
-    printMessage("Point sampling %d", (int)drawstate.global("pointsubsample"));
+    printMessage("Point sampling %d", (int)session.global("pointsubsample"));
   }
   else if (parsed.exists("image"))
   {
@@ -2480,7 +2480,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (filename.length() > 0)
       viewer->image(filename);
     else
-      viewer->image(drawstate.counterFilename());
+      viewer->image(session.counterFilename());
 
     if (viewer->outwidth > 0)
       printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);
@@ -2650,17 +2650,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (active)
     {
       std::string key = "scale" + what;
-      float scale = drawstate.global(key);
+      float scale = session.global(key);
       if (parsed.has(fval, "scale", 1))
-        drawstate.globals[key] = fval > 0.0 ? fval : 1.0;
+        session.globals[key] = fval > 0.0 ? fval : 1.0;
       else if (parsed.get("scale", 1) == "up")
-        drawstate.globals[key] = scale * 1.5;
+        session.globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
-        drawstate.globals[key] = scale / 1.5;
+        session.globals[key] = scale / 1.5;
       //No need to redraw points when scaled
       if (active->type != lucPointType)
         active->redraw = true;
-      printMessage("%s scaling set to %f", what.c_str(), (float)drawstate.globals[key]);
+      printMessage("%s scaling set to %f", what.c_str(), (float)session.globals[key]);
     }
     else
     {
@@ -2892,13 +2892,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (parsed["sort"] == "off")
     {
       //Disables all sorting
-      drawstate.globals["sort"] = false;
+      session.globals["sort"] = false;
       printMessage("Geometry sorting has been disabled");
     }
     else if (parsed["sort"] == "on")
     {
       //Enables sort on rotate mode
-      drawstate.globals["sort"] = true;
+      session.globals["sort"] = true;
       printMessage("Sort geometry on rotation enabled");
     }
     else
@@ -3033,7 +3033,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string name = parsed["add"];
-    aobject = addObject(new DrawingObject(drawstate, name));
+    aobject = addObject(new DrawingObject(session, name));
     if (aobject)
     {
       std::string type = parsed.get("add", 1);
@@ -3438,7 +3438,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     std::string TOC;
     std::stringstream content;
     std::string last;
-    for (auto p : drawstate.properties)
+    for (auto p : session.properties)
     {
       std::string name = p.first;
       json prop = p.second;
@@ -3477,7 +3477,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
   else if (cmd.at(0) == '@')
   {
     std::string pname = cmd.substr(1);
-    for (auto p : drawstate.properties)
+    for (auto p : session.properties)
     {
       if (p.first == pname)
       {
@@ -3523,7 +3523,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
 std::string LavaVu::propertyList()
 {
   json properties = {};
-  for (auto p : drawstate.properties)
+  for (auto p : session.properties)
   {
     //json entry = p.second;
     std::string key = p.first;

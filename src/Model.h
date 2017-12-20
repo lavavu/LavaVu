@@ -38,7 +38,7 @@
 
 #include "sqlite3/sqlite3.h"
 
-#include "DrawState.h"
+#include "Session.h"
 #include "Util.h"
 #include "GraphicsUtil.h"
 #include "ColourMap.h"
@@ -85,7 +85,7 @@ private:
   int now;            //Loaded step per model
 
 public:
-  DrawState& drawstate;
+  Session& session;
   Database database;
 
   std::vector<std::string> fignames;
@@ -133,7 +133,7 @@ public:
   void loadColourMapsLegacy();
   void setColourMapProps(Properties& properties, float  minimum, float maximum, bool logscale, bool discrete);
 
-  Model(DrawState& drawstate);
+  Model(Session& session);
   void load(const FilePath& fn);
   void init();
   ~Model();

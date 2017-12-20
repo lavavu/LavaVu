@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Lines::Lines(DrawState& drawstate) : Geometry(drawstate)
+Lines::Lines(Session& session) : Geometry(session)
 {
   type = lucLineType;
   idxcount = 0;
@@ -51,7 +51,7 @@ Lines::~Lines()
 
 void Lines::close()
 {
-  if (!drawstate.global("gpucache"))
+  if (!session.global("gpucache"))
   {
     if (vbo)
       glDeleteBuffers(1, &vbo);
@@ -257,13 +257,13 @@ void Lines::draw()
       if (drawable(i))
       {
         //Set draw state
-        setState(i, drawstate.prog[lucLineType]);
+        setState(i, session.prog[lucLineType]);
 
         //Lines specific state
         float scaling = props["scalelines"];
         //Don't apply object scaling to internal lines objects
         if (!internal) scaling *= (float)props["scaling"];
-        float lineWidth = (float)props["linewidth"] * scaling * drawstate.scale2d; //Include 2d scale factor
+        float lineWidth = (float)props["linewidth"] * scaling * session.scale2d; //Include 2d scale factor
         if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);
 

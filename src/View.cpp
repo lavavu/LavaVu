@@ -36,7 +36,7 @@
 #include "View.h"
 #include "Model.h"
 
-View::View(DrawState& drawstate, float xf, float yf, float nearc, float farc) : properties(drawstate.globals, drawstate.defaults), drawstate(drawstate)
+View::View(Session& session, float xf, float yf, float nearc, float farc) : properties(session.globals, session.defaults), session(session)
 {
   // default view params
   eye_sep_ratio = 0.03f;  //Eye separation ratio to focal length
@@ -228,9 +228,9 @@ void View::autoRotate()
 {
   //If model is 2d plane on X or Y axis, rotate to face camera
   bool unrotated = (rotation->x == 0.0 && rotation->y == 0.0 && rotation->z == 0.0);
-  if (unrotated && drawstate.min[0] == drawstate.max[0])
+  if (unrotated && session.min[0] == session.max[0])
     rotate(0, 90, 0);
-  if (unrotated && drawstate.min[1] == drawstate.max[1])
+  if (unrotated && session.min[1] == session.max[1])
     rotate(-90, 0, 0);
 }
 
@@ -518,14 +518,14 @@ void View::apply(bool use_fp, bool use_rotate)
   int orientation = properties["coordsystem"];
   if (properties["globalcam"])
   {
-    if (!drawstate.globalcam) 
-      drawstate.globalcam = new Camera(localcam);
+    if (!session.globalcam) 
+      session.globalcam = new Camera(localcam);
 
     //Global camera override
-    rotate_centre = drawstate.globalcam->rotate_centre;
-    focal_point = drawstate.globalcam->focal_point;
-    model_trans = drawstate.globalcam->model_trans;
-    rotation = &drawstate.globalcam->rotation;
+    rotate_centre = session.globalcam->rotate_centre;
+    focal_point = session.globalcam->focal_point;
+    model_trans = session.globalcam->model_trans;
+    rotation = &session.globalcam->rotation;
   }
   else
   {
@@ -539,7 +539,7 @@ void View::apply(bool use_fp, bool use_rotate)
   GL_Error_Check;
   // Setup view transforms
   glMatrixMode(GL_MODELVIEW);
-  if (!drawstate.omegalib)
+  if (!session.omegalib)
   {
     glLoadIdentity();
     GL_Error_Check;
@@ -581,7 +581,7 @@ void View::apply(bool use_fp, bool use_rotate)
   // Translate to align eye with model centre - view focal point
   //glTranslatef(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
   //if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
-  if (use_fp && !drawstate.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  if (use_fp && !session.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
   // Switch coordinate system if applicable and set default polygon front faces
@@ -636,7 +636,7 @@ int View::switchCoordSystem()
 void View::zoomToFit(int margin)
 {
   if (margin < 0) margin = properties["margin"];
-  margin *= drawstate.scale2d; //Multiply by 2d scale factor
+  margin *= session.scale2d; //Multiply by 2d scale factor
 
   // The bounding box of model
   GLfloat rect3d[8][3] = {{min[0], min[1], min[2]},
@@ -752,9 +752,9 @@ void View::drawOverlay(Colour& colour, std::string& title)
 {
   //2D overlay objects, apply text scaling
   Viewport2d(width, height);
-  glScalef(drawstate.scale2d, drawstate.scale2d, drawstate.scale2d);
-  int w = width / drawstate.scale2d;
-  int h = height / drawstate.scale2d;
+  glScalef(session.scale2d, session.scale2d, session.scale2d);
+  int w = width / session.scale2d;
+  int h = height / session.scale2d;
   GL_Error_Check;
 
   //Colour bars
@@ -767,8 +767,8 @@ void View::drawOverlay(Colour& colour, std::string& title)
     objects[i]->setup(); //Required to cache colouring values
     ColourMap* cmap = objects[i]->colourMap;
     //Use the first available colourmap by default
-    if (!cmap && drawstate.colourMaps && drawstate.colourMaps->size() > 0)
-      cmap = (*drawstate.colourMaps)[0];
+    if (!cmap && session.colourMaps && session.colourMaps->size() > 0)
+      cmap = (*session.colourMaps)[0];
     if (!cmap) continue;
 
     float position = objects[i]->properties["position"];
@@ -804,8 +804,8 @@ void View::drawOverlay(Colour& colour, std::string& title)
     if (breadth < 1.0) breadth *= hh;
 
     //Default to vector font if downsampling and no other font requested
-    Properties cbprops(drawstate.globals, drawstate.defaults);
-    if (drawstate.scale2d != 1.0 && !objects[i]->properties.has("font"))
+    Properties cbprops(session.globals, session.defaults);
+    if (session.scale2d != 1.0 && !objects[i]->properties.has("font"))
     {
       cbprops.data["font"] = "vector";
       cbprops.data["fontscale"] = 0.4*adjust;
@@ -818,11 +818,11 @@ void View::drawOverlay(Colour& colour, std::string& title)
     if (margin == 0)
     {
       //Calculate a sensible default margin
-      drawstate.fonts.setFont(cbprops);
+      session.fonts.setFont(cbprops);
       if (vertical)
-        margin = 18 + drawstate.fonts.printWidth("1.000001");
+        margin = 18 + session.fonts.printWidth("1.000001");
       else
-        margin = 7 + drawstate.fonts.printWidth("1.1");
+        margin = 7 + session.fonts.printWidth("1.1");
     }
 
     //Position: if in range [0,1] they are a ratio of window size so multiply to get pixels
@@ -841,7 +841,7 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     if (!opposite) start_B = hh - start_B - breadth;
 
-    cmap->draw(drawstate, cbprops, start_A, start_B, length, breadth, colour, vertical);
+    cmap->draw(session, cbprops, start_A, start_B, length, breadth, colour, vertical);
     GL_Error_Check;
   }
 
@@ -851,10 +851,10 @@ void View::drawOverlay(Colour& colour, std::string& title)
   if (title.length())
   {
     glColor3ubv(colour.rgba);
-    drawstate.fonts.setFont(properties, "vector", 1.0);
-    if (drawstate.fonts.charset == FONT_VECTOR)
-      drawstate.fonts.fontscale *= 0.6*adjust; //Scale down vector font slightly for title
-    drawstate.fonts.print(0.5 * (w - drawstate.fonts.printWidth(title.c_str())), h - 3 - drawstate.fonts.printWidth("W"), title.c_str());
+    session.fonts.setFont(properties, "vector", 1.0);
+    if (session.fonts.charset == FONT_VECTOR)
+      session.fonts.fontscale *= 0.6*adjust; //Scale down vector font slightly for title
+    session.fonts.print(0.5 * (w - session.fonts.printWidth(title.c_str())), h - 3 - session.fonts.printWidth("W"), title.c_str());
   }
 
   GL_Error_Check;
@@ -873,6 +873,6 @@ void View::setBackground()
   textColour.value = 0xff000000;
   if (avg < 127) 
     textColour.value = 0xffffffff;
-  drawstate.defaults["colour"] = textColour.toJson();
+  session.defaults["colour"] = textColour.toJson();
 }
 

@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Vectors::Vectors(DrawState& drawstate) : Glyphs(drawstate)
+Vectors::Vectors(Session& session) : Glyphs(session)
 {
   type = lucVectorType;
 }

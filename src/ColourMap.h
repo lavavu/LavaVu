@@ -35,7 +35,7 @@
 
 #include "Util.h"
 #include "GraphicsUtil.h"
-#include "DrawState.h"
+#include "Session.h"
 
 #ifndef ColourMap__
 #define ColourMap__
@@ -77,7 +77,7 @@ public:
   bool opaque;
   TextureData* texture;
 
-  ColourMap(DrawState& drawstate, std::string name="", std::string props="");
+  ColourMap(Session& session, std::string name="", std::string props="");
   ~ColourMap()
   {
     if (texture) delete texture;
@@ -98,7 +98,7 @@ public:
   Colour get(float value);
   float scaleValue(float value);
   Colour getFromScaled(float scaledValue);
-  void draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical);
+  void draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical);
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);

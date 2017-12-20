@@ -72,7 +72,7 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpat
   verbose = dbpath = false;
   frametime = std::chrono::system_clock::now();
   fps = framecount = 0;
-  drawstate.omegalib = omegalib;
+  session.omegalib = omegalib;
   historyline = -1;
   last_cmd = multiline = "";
 
@@ -137,14 +137,14 @@ void LavaVu::defaults()
   }
 
   //Reset state
-  drawstate.reset();
+  session.reset();
 
   //Clear any queued commands
   viewer->commands.clear();
 
-  axis = new Triangles(drawstate);
-  rulers = new Lines(drawstate);
-  border = new QuadSurfaces(drawstate);
+  axis = new Triangles(session);
+  rulers = new Lines(session);
+  border = new QuadSurfaces(session);
 
   initfigure = 0;
   viewset = RESET_NO;
@@ -162,10 +162,10 @@ void LavaVu::defaults()
   writeimage = false;
   writemovie = 0;
   //Omegalib defaults
-  if (drawstate.omegalib)
+  if (session.omegalib)
   {
-    drawstate.globals["sort"] = false;
-    drawstate.globals["vectorfont"] = true;
+    session.globals["sort"] = false;
+    session.globals["vectorfont"] = true;
   }
   message[0] = '\0';
   volume = NULL;
@@ -288,7 +288,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         //return from run() immediately after loading
         //All actions to be performed by subsequent 
         //library calls
-        drawstate.automate = true;
+        session.automate = true;
         break;
       case 'f':
         ss >> initfigure;
@@ -313,13 +313,13 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'r':
         ss >> vars[0] >> x >> vars[1];
-        drawstate.globals["resolution"] = json::array({vars[0], vars[1]});
+        session.globals["resolution"] = json::array({vars[0], vars[1]});
         break;
       case 'N':
-        drawstate.globals["noload"] = true;
+        session.globals["noload"] = true;
         break;
       case 'A':
-        drawstate.globals["hideall"] = true;
+        session.globals["hideall"] = true;
         break;
       case 'v':
         parseCommands("verbose on");
@@ -329,30 +329,30 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'c':
         ss >> vars[0];
-        if (vars[0]) drawstate.globals["cache"] = true;
+        if (vars[0]) session.globals["cache"] = true;
         break;
       case 't':
         //Use alpha channel in png output
-        drawstate.globals["pngalpha"] = true;
+        session.globals["pngalpha"] = true;
         break;
       case 'y':
         //Swap y & z axis on import
-        drawstate.globals["swapyz"] = true;
+        session.globals["swapyz"] = true;
         break;
       case 'T':
         //Split triangles
         ss >> vars[0];
-        drawstate.globals["trisplit"] = vars[0];
+        session.globals["trisplit"] = vars[0];
         break;
       case 'C':
         //Global camera
-        drawstate.globals["globalcam"] = true;
+        session.globals["globalcam"] = true;
         break;
       case 'V':
         {
           float res[3];
           ss >> res[0] >> x >> res[1] >> x >> res[2];
-          drawstate.globals["volres"] = {res[0], res[1], res[2]};
+          session.globals["volres"] = {res[0], res[1], res[2]};
         }
         break;
       case 'd':
@@ -408,7 +408,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'e':
         //Add new timesteps after loading files
-        drawstate.globals["filestep"] = true;
+        session.globals["filestep"] = true;
         break;
       default:
         //Attempt to interpret as timestep
@@ -433,7 +433,7 @@ void LavaVu::arguments(std::vector<std::string> args)
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
-  //drawstate.now = startstep;
+  //session.now = startstep;
 
   //Add default script
   if (defaultScript.length() && FileExists(defaultScript))
@@ -509,12 +509,12 @@ void LavaVu::run(std::vector<std::string> args)
 
           if (writeimage)
           {
-            std::cout << "... Writing image(s) for model/figure " << drawstate.global("caption")
+            std::cout << "... Writing image(s) for model/figure " << session.global("caption")
                       << " Timesteps: " << startstep << " to " << endstep << std::endl;
           }
           if (writemovie)
           {
-            std::cout << "... Writing movie for model/figure " << drawstate.global("caption")
+            std::cout << "... Writing movie for model/figure " << session.global("caption")
                       << " Timesteps: " << startstep << " to " << endstep << std::endl;
             //Other formats?? avi/mpeg4?
             encodeVideo("", writemovie);
@@ -538,7 +538,7 @@ void LavaVu::run(std::vector<std::string> args)
   else
   {
     //Cache data if enabled
-    if (drawstate.global("cache")) //>= amodel->timesteps.size())
+    if (session.global("cache")) //>= amodel->timesteps.size())
     {
       debug_print("Caching all geometry data...\n");
       for (auto m : models)
@@ -552,7 +552,7 @@ void LavaVu::run(std::vector<std::string> args)
   }
 
   //If automation mode turned on, return at this point
-  if (drawstate.automate) return;
+  if (session.automate) return;
 
   //Start event loop
   if (viewer->visible)
@@ -644,7 +644,7 @@ void LavaVu::parseProperty(std::string data)
   if (aobject)
   {
     //Properties reserved for colourmaps can be set from any objects that use that map
-    if (aobject->colourMap && std::find(drawstate.colourMapProps.begin(), drawstate.colourMapProps.end(), key) != drawstate.colourMapProps.end())
+    if (aobject->colourMap && std::find(session.colourMapProps.begin(), session.colourMapProps.end(), key) != session.colourMapProps.end())
     {
       aobject->colourMap->properties.parse(data);
       if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << aobject->colourMap->name
@@ -657,7 +657,7 @@ void LavaVu::parseProperty(std::string data)
                              << ", DATA: " << aobject->properties.data << std::endl;
     }
   }
-  else if (aview && std::find(drawstate.viewProps.begin(), drawstate.viewProps.end(), key) != drawstate.viewProps.end())
+  else if (aview && std::find(session.viewProps.begin(), session.viewProps.end(), key) != session.viewProps.end())
   {
     aview->properties.parse(data);
     if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
@@ -666,9 +666,9 @@ void LavaVu::parseProperty(std::string data)
   else
   {
     //Properties not found on view are set globally
-    Properties temp(drawstate.globals, drawstate.defaults);
+    Properties temp(session.globals, session.defaults);
     temp.parse(data, true);
-    if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << drawstate.globals << std::endl;
+    if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
     //TODO: do this only for certain properties
     //viewset = RESET_ZOOM; //Force check for resize and autozoom
   }
@@ -682,14 +682,14 @@ void LavaVu::printProperties()
   else
   {
     std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
-    std::cerr << "GLOBAL: " << std::setw(2) << drawstate.globals << std::endl;
+    std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
   }
 }
 
 void LavaVu::printDefaultProperties()
 {
   //Show default properties
-  std::cerr << std::setw(2) << drawstate.defaults << std::endl;
+  std::cerr << std::setw(2) << session.defaults << std::endl;
 }
 
 void LavaVu::readRawVolume(const FilePath& fn)
@@ -706,9 +706,9 @@ void LavaVu::readRawVolume(const FilePath& fn)
   file.close();
 
   float volmin[3], volmax[3], volres[3];
-  Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
-  Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
-  Properties::toArray<float>(drawstate.global("volres"), volres, 3);
+  Properties::toArray<float>(session.global("volmin"), volmin, 3);
+  Properties::toArray<float>(session.global("volmax"), volmax, 3);
+  Properties::toArray<float>(session.global("volres"), volres, 3);
 
   readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volmin, volmax);
 }
@@ -762,7 +762,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   }
 
   float inscale[3];
-  Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
+  Properties::toArray<float>(session.global("inscale"), inscale, 3);
 
   //Scale geometry by input scaling factor
   for (int i=0; i<3; i++)
@@ -780,14 +780,14 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
   //Loads full volume, optionally as slices
   Geometry* volumes = amodel->getRenderer(lucVolumeType);
   if (!volumes) return;
-  bool splitslices = drawstate.global("slicevolumes");
-  bool dumpslices = drawstate.global("slicedump");
+  bool splitslices = session.global("slicevolumes");
+  bool dumpslices = session.global("slicedump");
   if (splitslices || dumpslices)
   {
     //Slicing is slower but allows sub-sampling and cropping
     GLubyte* ptr = data;
     int slicesize = width * height;
-    json volss = drawstate.global("volsubsample");
+    json volss = session.global("volsubsample");
     //TODO: average samples instead of discarding
     int ss = volss[2];
     char path[FILE_PATH_MAX];
@@ -813,7 +813,7 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
   {
     //Create volume object, or if static volume object exists, use it
     DrawingObject *vobj = volume;
-    if (!vobj) vobj = new DrawingObject(drawstate, fn.base);
+    if (!vobj) vobj = new DrawingObject(session, fn.base);
     addObject(vobj);
 
     //Define the bounding cube by corners
@@ -850,13 +850,13 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   Geometry* volumes = amodel->getRenderer(lucVolumeType);
   if (!volumes) return;
 
-  int outChannels = drawstate.global("volchannels");
-  json volss = drawstate.global("volsubsample");
+  int outChannels = session.global("volchannels");
+  json volss = session.global("volsubsample");
   float volmin[3], volmax[3], volres[3], inscale[3];
-  Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
-  Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
-  Properties::toArray<float>(drawstate.global("volres"), volres, 3);
-  Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
+  Properties::toArray<float>(session.global("volmin"), volmin, 3);
+  Properties::toArray<float>(session.global("volmax"), volmax, 3);
+  Properties::toArray<float>(session.global("volres"), volres, 3);
+  Properties::toArray<float>(session.global("inscale"), inscale, 3);
 
   //Detect volume atlas and load
   if (width > volres[0] && height > volres[1] && width % (int)volres[0] == 0 && height % (int)volres[1] == 0)
@@ -893,7 +893,7 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   if (!vobj)
   {
     count = 0;
-    vobj = addObject(new DrawingObject(drawstate, name));
+    vobj = addObject(new DrawingObject(session, name));
     //Scale geometry by input scaling factor
     for (int i=0; i<3; i++)
     {
@@ -1039,7 +1039,7 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
     imageData = (GLubyte*)_TIFFmalloc(npixels * channels * sizeof(GLubyte));
     if (imageData)
     {
-      json volss = drawstate.global("volsubsample");
+      json volss = session.global("volsubsample");
       int d = TIFFNumberOfDirectories(tif);
       int ds = volss[2];
       if (d > 1) std::cout << "TIFF contains " << d << " pages, sub-sampling z " << ds << std::endl;
@@ -1072,13 +1072,13 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
   if (!vobj)
   {
     float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toArray<float>(drawstate.global("volmin"), volmin, 3);
-    Properties::toArray<float>(drawstate.global("volmax"), volmax, 3);
-    Properties::toArray<float>(drawstate.global("volres"), volres, 3);
-    Properties::toArray<float>(drawstate.global("inscale"), inscale, 3);
+    Properties::toArray<float>(session.global("volmin"), volmin, 3);
+    Properties::toArray<float>(session.global("volmax"), volmax, 3);
+    Properties::toArray<float>(session.global("volres"), volres, 3);
+    Properties::toArray<float>(session.global("inscale"), inscale, 3);
     unsigned int samples = (width+height+depth)*0.6;
     if (samples < 128) samples = 128;
-    vobj = new DrawingObject(drawstate, "volume");
+    vobj = new DrawingObject(session, "volume");
     json props = {
       {"density",    50},
       {"samples",    samples}
@@ -1232,7 +1232,7 @@ void LavaVu::readHeightMap(const FilePath& fn)
   //opacity [0,1]
   DrawingObject *obj;
   std::string props = "colour=[238,238,204]\ncullface=0\ntexturefile=" + texfile + "\n";
-  obj = addObject(new DrawingObject(drawstate, fn.base, props));
+  obj = addObject(new DrawingObject(session, fn.base, props));
   int gridx = ceil(sx / (float)subsample);
   int gridz = ceil(sz / (float)subsample);
 
@@ -1346,7 +1346,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   std::string texfile = fn.base + "-texture." + fn.ext;
   DrawingObject *obj;
   std::string props = "cullface=0\ntexturefile=" + texfile + "\n";
-  obj = addObject(new DrawingObject(drawstate, fn.base, props));
+  obj = addObject(new DrawingObject(session, fn.base, props));
 
   //Default colourmap
   ColourMap* cmap = addColourMap("elevation", "darkgreen yellow brown");
@@ -1403,7 +1403,7 @@ void LavaVu::readOBJ(const FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(drawstate, fn.base, "colour=[128,128,128]\n"));
+  if (!tobj) tobj = addObject(new DrawingObject(session, fn.base, "colour=[128,128,128]\n"));
 
   for (size_t i = 0; i < shapes.size(); i++)
   {
@@ -1465,8 +1465,8 @@ void LavaVu::readOBJ(const FilePath& fn)
     //Can be overridden by setting trisplit (-T#) (but will break textures)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
-    int trisplit = drawstate.global("trisplit");
-    bool swapY = drawstate.global("swapyz");
+    int trisplit = session.global("trisplit");
+    bool swapY = session.global("swapyz");
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     int vi;
     if (trisplit == 0 || attrib.texcoords.size())
@@ -1562,7 +1562,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   //Add points object
   if (points)
   {
-    DrawingObject* obj = addObject(new DrawingObject(drawstate, "particles", "opacity=0.75\nlit=0\n"));
+    DrawingObject* obj = addObject(new DrawingObject(session, "particles", "opacity=0.75\nlit=0\n"));
     obj->properties.data["colourmap"] = cmap->name;
     //Add colour bar display
     colourBar(obj);
@@ -1570,9 +1570,9 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     for (unsigned int i=0; i < numpoints; i++)
     {
       float colour, ref[3];
-      ref[0] = min[0] + (max[0] - min[0]) * drawstate.random_d();
-      ref[1] = min[1] + (max[1] - min[1]) * drawstate.random_d();
-      ref[2] = min[2] + (max[2] - min[2]) * drawstate.random_d();
+      ref[0] = min[0] + (max[0] - min[0]) * session.random_d();
+      ref[1] = min[1] + (max[1] - min[1]) * session.random_d();
+      ref[2] = min[2] + (max[2] - min[2]) * session.random_d();
 
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
@@ -1588,14 +1588,14 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   //Add lines
   if (lines)
   {
-    DrawingObject* obj = addObject(new DrawingObject(drawstate, "line-segments", "lit=0\n"));
+    DrawingObject* obj = addObject(new DrawingObject(session, "line-segments", "lit=0\n"));
     obj->properties.data["colourmap"] = cmap->name;
     for (int i=0; i < 50; i++)
     {
       float colour, ref[3];
-      ref[0] = min[0] + (max[0] - min[0]) * drawstate.random_d();
-      ref[1] = min[1] + (max[1] - min[1]) * drawstate.random_d();
-      ref[2] = min[2] + (max[2] - min[2]) * drawstate.random_d();
+      ref[0] = min[0] + (max[0] - min[0]) * session.random_d();
+      ref[1] = min[1] + (max[1] - min[1]) * session.random_d();
+      ref[2] = min[2] + (max[2] - min[2]) * session.random_d();
 
       //Demo colourmap value: distance from model origin
       colour = sqrt(pow(ref[0]-min[0], 2) + pow(ref[1]-min[1], 2) + pow(ref[2]-min[2], 2));
@@ -1618,7 +1618,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
     {
       char label[64];
       sprintf(label, "%c-cross-section", axischar[i]);
-      DrawingObject* obj = addObject(new DrawingObject(drawstate, label, "opacity=0.5\n"));
+      DrawingObject* obj = addObject(new DrawingObject(session, label, "opacity=0.5\n"));
       Colour c;
       c.value = (0xff000000 | 0xff<<(8*i));
       obj->properties.data["colour"] = c.toJson();
@@ -1667,36 +1667,36 @@ void LavaVu::open(int width, int height)
 void LavaVu::reloadShaders()
 {
   //Point shaders
-  if (drawstate.prog[lucPointType]) delete drawstate.prog[lucPointType];
-  drawstate.prog[lucPointType] = new Shader("pointShader.vert", "pointShader.frag");
+  if (session.prog[lucPointType]) delete session.prog[lucPointType];
+  session.prog[lucPointType] = new Shader("pointShader.vert", "pointShader.frag");
   const char* pUniforms[] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", 
                              "uTextured", "uTexture", "uClipMin", "uClipMax",
                              "uBrightness", "uContrast", "uSaturation",
                              "uAmbient", "uDiffuse", "uSpecular", "uOpaque", "uLightPos"};
-  drawstate.prog[lucPointType]->loadUniforms(pUniforms, sizeof(pUniforms)/sizeof(char*));
+  session.prog[lucPointType]->loadUniforms(pUniforms, sizeof(pUniforms)/sizeof(char*));
   const char* pAttribs[] = {"aSize", "aPointType"};
-  drawstate.prog[lucPointType]->loadAttribs(pAttribs, sizeof(pAttribs)/sizeof(char*));
+  session.prog[lucPointType]->loadAttribs(pAttribs, sizeof(pAttribs)/sizeof(char*));
 
   //Line shaders
-  if (drawstate.prog[lucLineType]) delete drawstate.prog[lucLineType];
-  drawstate.prog[lucLineType] = new Shader("lineShader.vert", "lineShader.frag");
+  if (session.prog[lucLineType]) delete session.prog[lucLineType];
+  session.prog[lucLineType] = new Shader("lineShader.vert", "lineShader.frag");
   const char* lUniforms[] = {"uOpacity", "uClipMin", "uClipMax", 
                              "uBrightness", "uContrast", "uSaturation", "uOpaque"};
-  drawstate.prog[lucLineType]->loadUniforms(lUniforms, sizeof(lUniforms)/sizeof(char*));
+  session.prog[lucLineType]->loadUniforms(lUniforms, sizeof(lUniforms)/sizeof(char*));
 
   //Triangle shaders
-  if (drawstate.prog[lucTriangleType]) delete drawstate.prog[lucTriangleType];
-  drawstate.prog[lucTriangleType] = new Shader("triShader.vert", "triShader.frag");
+  if (session.prog[lucTriangleType]) delete session.prog[lucTriangleType];
+  session.prog[lucTriangleType] = new Shader("triShader.vert", "triShader.frag");
   const char* tUniforms[] = {"uOpacity", "uLighting", "uTextured", "uTexture",
                              "uCalcNormal", "uClipMin", "uClipMax",
                              "uBrightness", "uContrast", "uSaturation",
                              "uAmbient", "uDiffuse", "uSpecular", "uOpaque", "uLightPos"};
-  drawstate.prog[lucTriangleType]->loadUniforms(tUniforms, sizeof(tUniforms)/sizeof(char*));
-  drawstate.prog[lucGridType] = drawstate.prog[lucTriangleType];
+  session.prog[lucTriangleType]->loadUniforms(tUniforms, sizeof(tUniforms)/sizeof(char*));
+  session.prog[lucGridType] = session.prog[lucTriangleType];
 
   //Volume ray marching shaders
-  if (drawstate.prog[lucVolumeType]) delete drawstate.prog[lucVolumeType];
-  drawstate.prog[lucVolumeType] = new Shader("volumeShader.vert", "volumeShader.frag");
+  if (session.prog[lucVolumeType]) delete session.prog[lucVolumeType];
+  session.prog[lucVolumeType] = new Shader("volumeShader.vert", "volumeShader.frag");
   const char* vUniforms[] = {"uMVMatrix", "uInvMVPMatrix", "uMVPMatrix", "uNMatrix",
                              "uVolume", "uTransferFunction", "uBBMin", "uBBMax",
                              "uResolution", "uEnableColour",
@@ -1705,9 +1705,9 @@ void LavaVu::reloadShaders()
                              "uPower", "uViewport", "uSamples", "uDensityFactor",
                              "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls",
                              "uFilter", "uRange", "uDenMinMax", "uLightPos"};
-  drawstate.prog[lucVolumeType]->loadUniforms(vUniforms, sizeof(vUniforms)/sizeof(char*));
+  session.prog[lucVolumeType]->loadUniforms(vUniforms, sizeof(vUniforms)/sizeof(char*));
   const char* vAttribs[] = {"aVertexPosition"};
-  drawstate.prog[lucVolumeType]->loadAttribs(vAttribs, sizeof(vAttribs)/sizeof(char*));
+  session.prog[lucVolumeType]->loadAttribs(vAttribs, sizeof(vAttribs)/sizeof(char*));
 }
 
 void LavaVu::resize(int new_width, int new_height)
@@ -1724,7 +1724,7 @@ void LavaVu::resize(int new_width, int new_height)
   }
 
   //Set resolution
-  drawstate.globals["resolution"] = {new_width, new_height};
+  session.globals["resolution"] = {new_width, new_height};
 
   amodel->redraw();
 }
@@ -1778,7 +1778,7 @@ void LavaVu::resetViews(bool autozoom)
 
   //Set viewer title
   std::stringstream title;
-  std::string name = drawstate.global("caption");
+  std::string name = session.global("caption");
   std::string vpt = aview->properties["title"];
   if (vpt.length() > 0)
     title << aview->properties["title"];
@@ -1810,7 +1810,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   //Called when timestep/model changed (new model data)
   //Set model size from geometry / bounding box and apply auto zoom
   //- View bounds used for camera calc and border (view->min/max)
-  //- Actual bounds used by geometry clipping etc (drawstate.min/max)
+  //- Actual bounds used by geometry clipping etc (session.min/max)
   //NOTE: sometimes we can reach this call before the GL context is created, hence the check
   if (viewer->isopen && setBounds)
   {
@@ -1847,19 +1847,19 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
     }
 
     //Update actual bounding box max/min/range - it is possible for the view box to be smaller
-    clearMinMax(drawstate.min, drawstate.max);
-    compareCoordMinMax(drawstate.min, drawstate.max, amodel->min);
-    compareCoordMinMax(drawstate.min, drawstate.max, amodel->max);
+    clearMinMax(session.min, session.max);
+    compareCoordMinMax(session.min, session.max, amodel->min);
+    compareCoordMinMax(session.min, session.max, amodel->max);
     //Apply viewport/global dims if valid
     if (min[0] != max[0] && min[1] != max[1])
     {
-      compareCoordMinMax(drawstate.min, drawstate.max, min);
-      compareCoordMinMax(drawstate.min, drawstate.max, max);
+      compareCoordMinMax(session.min, session.max, min);
+      compareCoordMinMax(session.min, session.max, max);
     }
-    getCoordRange(drawstate.min, drawstate.max, drawstate.dims);
+    getCoordRange(session.min, session.max, session.dims);
     debug_print("Calculated Actual bounds %f,%f,%f - %f,%f,%f \n",
-                drawstate.min[0], drawstate.min[1], drawstate.min[2],
-                drawstate.max[0], drawstate.max[1], drawstate.max[2]);
+                session.min[0], session.min[1], session.min[2],
+                session.max[0], session.max[1], session.max[2]);
 
     // Apply step autozoom if set (applied based on detected bounding box)
     int zstep = aview->properties["zoomstep"];
@@ -1978,18 +1978,18 @@ void LavaVu::display(bool redraw)
   if (!viewer->isopen) return;
 
   //Lock the state mutex, prevent updates while drawing
-  std::lock_guard<std::mutex> guard(drawstate.mutex);
+  std::lock_guard<std::mutex> guard(session.mutex);
 
   clock_t t1 = clock();
 
   //Viewport reset flagged
   if (viewset > 0)
   {
-    if (!viewer->imagemode && !drawstate.omegalib)
+    if (!viewer->imagemode && !session.omegalib)
     {
       //Resize if required
       int res[2];
-      Properties::toArray<int>(drawstate.global("resolution"), res, 2);
+      Properties::toArray<int>(session.global("resolution"), res, 2);
       if (res[0] > 0 && res[1] > 0 && (res[0] != viewer->width || res[1] != viewer->height))
       {
         viewer->setsize(res[0], res[1]);
@@ -2003,10 +2003,10 @@ void LavaVu::display(bool redraw)
   }
 
   //Sort
-  if (drawstate.global("sort") && aview && aview->rotated)
+  if (session.global("sort") && aview && aview->rotated)
   {
     //Immediate sort
-    if (drawstate.automate)
+    if (session.automate)
     {
       aview->rotated = false;
       sort(true);
@@ -2027,7 +2027,7 @@ void LavaVu::display(bool redraw)
   else //Single viewport, always disable filter
     aview->filtered = false;
 
-  if (drawstate.omegalib)
+  if (session.omegalib)
   {
     drawSceneBlended();
   }
@@ -2114,7 +2114,7 @@ void LavaVu::display(bool redraw)
   }
 
   //Calculate FPS
-  if (drawstate.global("fps"))
+  if (session.global("fps"))
   {
     auto now = std::chrono::system_clock::now();
     std::chrono::duration<float> diff = now-frametime;
@@ -2202,16 +2202,16 @@ void LavaVu::drawAxis()
   //Use a fixed size to fill the viewport,
   //actual size determined by viewport dimensions
   float length = 0.175;
-  if (!drawstate.axisobj)
+  if (!session.axisobj)
   {
     //printf("Generating axis vectors %f != %f\n", oldlen, length);
-    drawstate.axisobj = new DrawingObject(drawstate);
-    if (!aview->hasObject(drawstate.axisobj)) aview->addObject(drawstate.axisobj);
-    axis->add(drawstate.axisobj);
+    session.axisobj = new DrawingObject(session);
+    if (!aview->hasObject(session.axisobj)) aview->addObject(session.axisobj);
+    axis->add(session.axisobj);
     axis->setup(aview);
     axis->clear();
     axis->type = lucVectorType;
-    drawstate.axisobj->properties.data = {
+    session.axisobj->properties.data = {
       {"wireframe",    false},
       {"clip",         false},
       {"opacity",      1.0},
@@ -2230,8 +2230,8 @@ void LavaVu::drawAxis()
       vector[c] = 1.0;
       pos[c] = length/2;
       colour.rgba[c] = 255;
-      axis->drawVector(drawstate.axisobj, pos, vector, length, radius, radius, headsize, 16);
-      axis->read(drawstate.axisobj, 1, lucRGBAData, &colour.value);
+      axis->drawVector(session.axisobj, pos, vector, length, radius, radius, headsize, 16);
+      axis->read(session.axisobj, 1, lucRGBAData, &colour.value);
     }
     axis->update();
   }
@@ -2243,15 +2243,15 @@ void LavaVu::drawAxis()
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
-  drawstate.fonts.charset = FONT_VECTOR;
-  drawstate.fonts.fontscale = length*6.0;
+  session.fonts.charset = FONT_VECTOR;
+  session.fonts.fontscale = length*6.0;
   glColor3ubv(aview->textColour.rgba);
   float pos = length/2;
   float LH = length * 0.1;
-  drawstate.fonts.print3dBillboard(pos, -LH, 0, "X");
-  drawstate.fonts.print3dBillboard(-LH, pos, 0, "Y");
+  session.fonts.print3dBillboard(pos, -LH, 0, "X");
+  session.fonts.print3dBillboard(-LH, pos, 0, "Y");
   if (aview->is3d)
-    drawstate.fonts.print3dBillboard(-LH, -LH, pos, "Z");
+    session.fonts.print3dBillboard(-LH, -LH, pos, "Z");
 
   glPopAttrib();
 
@@ -2273,10 +2273,10 @@ void LavaVu::drawRulers()
 {
   if (!aview->properties["rulers"]) return;
   infostream = NULL;
-  DrawingObject* obj = drawstate.rulerobj;
+  DrawingObject* obj = session.rulerobj;
   rulers->clear();
   rulers->setup(aview);
-  if (!obj) obj = new DrawingObject(drawstate, "", "wireframe=false\nclip=false\nlit=false\nopacity=1.0\nalpha=1.0\n");
+  if (!obj) obj = new DrawingObject(session, "", "wireframe=false\nclip=false\nlit=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
@@ -2416,10 +2416,10 @@ void LavaVu::drawBorder()
     bordersize = 0.0;
   if (bordersize <= 0.0) return;
 
-  DrawingObject* obj = drawstate.borderobj;
+  DrawingObject* obj = session.borderobj;
   border->clear();
   border->setup(aview);
-  if (!obj) obj = drawstate.borderobj = new DrawingObject(drawstate, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
+  if (!obj) obj = session.borderobj = new DrawingObject(session, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
   if (!aview->is3d) obj->properties.data["depthtest"] = false;
@@ -2529,10 +2529,10 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
   //Shadow
   glColor3ubv(scol.rgba);
-  drawstate.fonts.charset = FONT_VECTOR;
-  drawstate.fonts.fontscale = scale;
+  session.fonts.charset = FONT_VECTOR;
+  session.fonts.fontscale = scale;
 
-  drawstate.fonts.print(xpos+1, ypos-1, str.c_str());
+  session.fonts.print(xpos+1, ypos-1, str.c_str());
 
   //Use provided text colour or calculated
   if (colour)
@@ -2540,7 +2540,7 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   else
     glColor3ubv(aview->textColour.rgba);
 
-  drawstate.fonts.print(xpos, ypos, str.c_str());
+  session.fonts.print(xpos, ypos, str.c_str());
 
   //Revert to normal colour
   glColor3ubv(aview->textColour.rgba);
@@ -2618,13 +2618,13 @@ void LavaVu::drawSceneBlended()
     break;
   }
 
-  if (!drawstate.omegalib)
+  if (!session.omegalib)
   {
     std::string title = aview->properties["title"];
     //Timestep macro ##
     size_t pos =  title.find("##");
-    if (pos != std::string::npos && (int)drawstate.timesteps.size() >= drawstate.now)
-      title.replace(pos, 2, std::to_string(drawstate.timesteps[drawstate.now]->step));
+    if (pos != std::string::npos && (int)session.timesteps.size() >= session.now)
+      title.replace(pos, 2, std::to_string(session.timesteps[session.now]->step));
     drawAxis();
     aview->drawOverlay(aview->textColour, title);
   }
@@ -2632,7 +2632,7 @@ void LavaVu::drawSceneBlended()
 
 void LavaVu::drawScene()
 {
-  if (drawstate.global("antialias"))
+  if (session.global("antialias"))
     glEnable(GL_MULTISAMPLE);
   else
     glDisable(GL_MULTISAMPLE);
@@ -2649,7 +2649,7 @@ void LavaVu::drawScene()
   for (auto g : amodel->geometry)
     g->display();
 
-  if (!drawstate.omegalib)
+  if (!session.omegalib)
     drawBorder();
   drawRulers();
 
@@ -2677,7 +2677,7 @@ bool LavaVu::loadFile(const std::string& file)
     //Open database file, if a non-db model already loaded, load into that
     if (models.size() == 0 || (amodel && amodel->database))
     {
-      amodel = new Model(drawstate);
+      amodel = new Model(session);
       models.push_back(amodel);
     }
 
@@ -2735,7 +2735,7 @@ bool LavaVu::loadFile(const std::string& file)
   if (!amodel) defaultModel();
 
   //setting prop "filestep=true" allows automatically adding timesteps before each file loaded
-  if (drawstate.global("filestep")) parseCommands("newstep");
+  if (session.global("filestep")) parseCommands("newstep");
 
   //Load other data by type
   if (fn.type == "dem")
@@ -2768,7 +2768,7 @@ bool LavaVu::loadFile(const std::string& file)
 void LavaVu::defaultModel()
 {
   //Adds a default model, window & viewport
-  amodel = new Model(drawstate);
+  amodel = new Model(session);
   models.push_back(amodel);
 
   //Set a default view
@@ -2782,15 +2782,15 @@ void LavaVu::defaultModel()
 bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
   if (models.size() == 0) defaultModel();
-  if (model_idx == model && at_timestep >= 0 && at_timestep == drawstate.now) return false; //No change
+  if (model_idx == model && at_timestep >= 0 && at_timestep == session.now) return false; //No change
   if (model_idx >= (int)models.size()) return false;
 
   //Save active model as selected
   amodel = models[model_idx];
   model = model_idx;
 
-  //Save active colourmaps list on drawstate
-  drawstate.colourMaps = &amodel->colourMaps;
+  //Save active colourmaps list on session
+  session.colourMaps = &amodel->colourMaps;
 
   //Have a database model loaded already?
   if (amodel->objects.size() > 0)
@@ -2802,16 +2802,16 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
     if (amodel->database)
     {
       if (at_timestep < 0)
-        amodel->setTimeStep(drawstate.now);
+        amodel->setTimeStep(session.now);
       else
         amodel->setTimeStep(amodel->nearestTimeStep(at_timestep));
-      if (verbose) std::cerr << "Loading vis '" << drawstate.global("caption") << "', timestep: " << amodel->step() << std::endl;
+      if (verbose) std::cerr << "Loading vis '" << session.global("caption") << "', timestep: " << amodel->step() << std::endl;
     }
   }
 
   if (!aview) aview = amodel->views[0];
 
-  json res = drawstate.global("resolution");
+  json res = session.global("resolution");
 
   //Not yet opened or resized?
   if (!viewer->isopen)
@@ -2848,7 +2848,7 @@ std::string LavaVu::encodeVideo(std::string filename, int fps)
   if (!encoder)
   {
     if (filename.length() == 0) 
-      filename = drawstate.counterFilename() + ".mp4";
+      filename = session.counterFilename() + ".mp4";
     FilePath fp(filename);
     if (fp.ext.length() == 0) 
       filename += ".mp4"; //Default to mp4
@@ -2902,7 +2902,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
 
       if (images)
       {
-        std::string title = drawstate.global("caption");
+        std::string title = session.global("caption");
         std::ostringstream filess;
         filess << title << '-' << std::setw(5) << std::setfill('0') << amodel->step();
         viewer->image(filess.str());
@@ -2950,7 +2950,7 @@ std::string LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   //Write new JSON format objects
   char filename[FILE_PATH_MAX];
   char ext[6];
-  std::string name = drawstate.global("caption");
+  std::string name = session.global("caption");
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
   if (obj)
@@ -3036,7 +3036,7 @@ std::string LavaVu::image(std::string filename, int width, int height, int jpegq
   viewer->outwidth = width;
   viewer->outheight = height;
   //Pass asterisk to generate filename automatically
-  if (filename == "*") filename = drawstate.counterFilename();
+  if (filename == "*") filename = session.counterFilename();
   //Write image to file if filename provided or return as string (base64 data url)
   return viewer->image(filename, jpegquality, transparent);
 }
@@ -3095,7 +3095,7 @@ DrawingObject* LavaVu::colourBar(DrawingObject* obj)
   //Add colour bar display to specified object
   std::string name = "colourbar";
   if (obj) name = obj->name() + "_colourbar";
-  DrawingObject* cbar = addObject(new DrawingObject(drawstate, name, "colourbar=1\n"));
+  DrawingObject* cbar = addObject(new DrawingObject(session, name, "colourbar=1\n"));
   if (obj)
     cbar->properties.data["colourmap"] = obj->properties["colourmap"];
   return cbar;
@@ -3151,7 +3151,7 @@ void LavaVu::setObject(DrawingObject* target, std::string properties, bool repla
 DrawingObject* LavaVu::createObject(std::string properties)
 {
   if (!amodel) defaultModel();
-  DrawingObject* obj = addObject(new DrawingObject(drawstate));
+  DrawingObject* obj = addObject(new DrawingObject(session));
 
   //Parse and merge property strings
   setObject(obj, properties);

@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Shapes::Shapes(DrawState& drawstate) : Glyphs(drawstate)
+Shapes::Shapes(Session& session) : Glyphs(session)
 {
   type = lucShapeType;
 }

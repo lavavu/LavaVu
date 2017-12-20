@@ -36,7 +36,7 @@
 #include "ColourMap.h"
 #include "GraphicsUtil.h"
 #include "ViewerTypes.h"
-#include "DrawState.h"
+#include "Session.h"
 
 #ifndef DrawingObject__
 #define DrawingObject__
@@ -44,7 +44,7 @@
 //Holds parameters for a drawing object
 class DrawingObject
 {
-  DrawState& drawstate;
+  Session& session;
 public:
   unsigned int dbid;
   bool skip;
@@ -61,7 +61,7 @@ public:
   //Default texture
   ImageLoader* texture;
 
-  DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
+  DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
   ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);

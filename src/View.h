@@ -35,7 +35,7 @@
 
 #include "GraphicsUtil.h"
 #include "DrawingObject.h"
-#include "DrawState.h"
+#include "Session.h"
 
 #ifndef View__
 #define View__
@@ -112,7 +112,7 @@ public:
   Colour textColour;
 
 private:
-  DrawState& drawstate;
+  Session& session;
   Camera* localcam;
   float* rotate_centre;      // Centre of rotation
   float* focal_point;        // Focal point
@@ -138,7 +138,7 @@ public:
   float modelView[16];
   float maxdist, mindist;
 
-  View(DrawState& drawstate, float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
+  View(Session& session, float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
 
   ~View();
 

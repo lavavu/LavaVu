@@ -36,7 +36,7 @@
 #include "Geometry.h"
 #include "IsoSurface.h"
 
-Volumes::Volumes(DrawState& drawstate) : Imposter(drawstate)
+Volumes::Volumes(Session& session) : Imposter(session)
 {
   type = lucVolumeType;
 }
@@ -89,7 +89,7 @@ void Volumes::draw()
     unsigned int id = vol_sorted[i].id;
     if (!drawable(id)) continue;
 
-    setState(id, drawstate.prog[lucVolumeType]); //Set draw state settings for this object
+    setState(id, session.prog[lucVolumeType]); //Set draw state settings for this object
     render(id);
 
     GL_Error_Check;
@@ -389,7 +389,7 @@ void Volumes::update()
   t2 = clock();
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 
-  if (!drawstate.global("sort"))
+  if (!session.global("sort"))
   {
     vol_sort.clear();
     //Create the default un-sorted list
@@ -424,7 +424,7 @@ void Volumes::render(int i)
   }
 
   GL_Error_Check;
-  Shader* prog = drawstate.prog[lucVolumeType];
+  Shader* prog = session.prog[lucVolumeType];
 
   //Uniform variables
   float viewport[4];

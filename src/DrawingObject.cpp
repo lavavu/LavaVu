@@ -36,11 +36,11 @@
 #include "DrawingObject.h"
 #include "Model.h"
 
-DrawingObject::DrawingObject(DrawState& drawstate, std::string name, std::string props, unsigned int id)
-  : drawstate(drawstate), dbid(id), properties(drawstate.globals, drawstate.defaults)
+DrawingObject::DrawingObject(Session& session, std::string name, std::string props, unsigned int id)
+  : session(session), dbid(id), properties(session.globals, session.defaults)
 {
   texture = NULL;
-  skip = drawstate.global("noload");
+  skip = session.global("noload");
 
   //Fix any names with spaces
   std::replace(name.begin(), name.end(), ' ', '_');
@@ -68,16 +68,16 @@ DrawingObject::~DrawingObject()
 
 ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* current)
 {
-  if (!drawstate.colourMaps) return NULL;
+  if (!session.colourMaps) return NULL;
   json prop = properties[propname];
   if (prop.is_number())
   {
     //Attempt to load by id
     printf("WARNING: Load colourmap by ID is deprecated, use name\n");
     int cmapid = prop;
-    if (cmapid >= 0 && cmapid < (int)drawstate.colourMaps->size())
+    if (cmapid >= 0 && cmapid < (int)session.colourMaps->size())
     {
-      ColourMap* cmap = (*drawstate.colourMaps)[cmapid];
+      ColourMap* cmap = (*session.colourMaps)[cmapid];
       //Replace integer props with names
       properties.data[propname] = cmap->name;
       return cmap;
@@ -90,16 +90,16 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     if (data.length() == 0) return NULL;
 
     //Search defined colourmaps by name
-    for (unsigned int i=0; i < drawstate.colourMaps->size(); i++)
-      if (data == (*drawstate.colourMaps)[i]->name)
-        return (*drawstate.colourMaps)[i];
+    for (unsigned int i=0; i < session.colourMaps->size(); i++)
+      if (data == (*session.colourMaps)[i]->name)
+        return (*session.colourMaps)[i];
 
     //Not found, assume property is a colourmap data string instead
     if (!current)
     {
       //Create a default colour map
-      current = new ColourMap(drawstate, name() + "_colourmap");
-      drawstate.colourMaps->push_back(current);
+      current = new ColourMap(session, name() + "_colourmap");
+      session.colourMaps->push_back(current);
       properties.data["colourmap"] = current->name;
     }
 

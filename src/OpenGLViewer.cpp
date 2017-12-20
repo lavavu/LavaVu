@@ -408,7 +408,7 @@ void OpenGLViewer::display(bool redraw)
 
     if (app->parseCommands(cmd))
     {
-      if (!app->drawstate.omegalib)
+      if (!app->session.omegalib)
       {
         //This break causes server commands to back up and not all be processed in loop
         //However, animate "play" repeats forever without display if not enabled
@@ -490,7 +490,7 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   }
 
     //Scale text and 2d elements when downsampling output image
-    app->drawstate.scale2d = pow(2, fbo.downsample-1);
+    app->session.scale2d = pow(2, fbo.downsample-1);
 
   //Re-render frame first
   display();
@@ -498,7 +498,7 @@ void OpenGLViewer::outputON(int w, int h, int channels)
 
 void OpenGLViewer::outputOFF()
 {
-    app->drawstate.scale2d = 1.0;
+    app->session.scale2d = 1.0;
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
   if (visible) fbo.disable();
@@ -534,7 +534,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   assert(isopen);
   FilePath filepath(path);
   if (filepath.type == "jpeg" || filepath.type == "jpg") jpegquality = 95;
-  bool alphapng = !jpegquality && (transparent || app->drawstate.global("pngalpha"));
+  bool alphapng = !jpegquality && (transparent || app->session.global("pngalpha"));
   int channels = 3;
   if (alphapng) channels = 4;
   std::string retImg;

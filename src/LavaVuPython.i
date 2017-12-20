@@ -69,7 +69,7 @@ class OpenGLViewer
 class DrawingObject
 {
 public:
-  DrawingObject(DrawState& drawstate, std::string name="", std::string props="", unsigned int id=0);
+  DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ColourMap* colourMap;
   ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
   std::string name();
@@ -81,14 +81,14 @@ public:
   std::vector<std::string> fignames;
   std::vector<std::string> figures;
   int figure;
-  Model(DrawState& drawstate);
+  Model(Session& session);
 };
 
 class ColourMap
 {
 public:
   std::string name;
-  ColourMap(DrawState& drawstate, std::string name="", std::string props="");
+  ColourMap(Session& session, std::string name="", std::string props="");
   void flip();
   void monochrome();
   static std::vector<std::string> getDefaultMapNames();

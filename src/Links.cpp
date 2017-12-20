@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Links::Links(DrawState& drawstate, bool all2Dflag) : Glyphs(drawstate)
+Links::Links(Session& session, bool all2Dflag) : Glyphs(session)
 {
   type = lucLineType;
   all2d = all2Dflag;

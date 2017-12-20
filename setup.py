@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.28"
+version = "1.2.30"
 
 """
 To release a new verison:
@@ -46,7 +46,7 @@ if sys.argv[-1] == 'publish':
 
 #From https://stackoverflow.com/a/28949827/866759
 def check_libraries(libraries, headers):
-    """check if the C module can be build by trying to compile a small
+    """check if the C module can be built by trying to compile a small
     program against the passed library with passed headers"""
 
     import tempfile

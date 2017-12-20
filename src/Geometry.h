@@ -33,7 +33,7 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#include "DrawState.h"
+#include "Session.h"
 #include "Util.h"
 #include "GraphicsUtil.h"
 #include "DrawingObject.h"
@@ -359,7 +359,7 @@ protected:
   DrawingObject* cached;
 
 public:
-  DrawState& drawstate;
+  Session& session;
   //Store the actual maximum bounding box
   bool allhidden, internal, unscale;
   Vec3d iscale; //Factors for un-scaling
@@ -370,7 +370,7 @@ public:
   std::mutex sortmutex;
   std::mutex loadmutex;
 
-  Geometry(DrawState& drawstate);
+  Geometry(Session& session);
   virtual ~Geometry();
 
   void clear(); //Called before new data loaded
@@ -452,7 +452,7 @@ protected:
   std::vector<unsigned int> counts;
   GLuint indexvbo, vbo;
 public:
-  Triangles(DrawState& drawstate);
+  Triangles(Session& session);
   virtual ~Triangles() {close();}
   virtual void close();
   unsigned int triCount();
@@ -473,7 +473,7 @@ class TriSurfaces : public Triangles
   unsigned int tricount;
   std::vector<Vec3d> centroids;
 public:
-  TriSurfaces(DrawState& drawstate);
+  TriSurfaces(Session& session);
   virtual ~TriSurfaces() {close();}
   virtual void close();
   virtual void update();
@@ -495,7 +495,7 @@ class Lines : public Geometry
   GLuint indexvbo, vbo;
   unsigned int linetotal;
 public:
-  Lines(DrawState& drawstate);
+  Lines(Session& session);
   virtual ~Lines();
   virtual void close();
   virtual void update();
@@ -512,7 +512,7 @@ class Points : public Geometry
   unsigned int idxcount;
   GLuint indexvbo, vbo;
 public:
-  Points(DrawState& drawstate);
+  Points(Session& session);
   virtual ~Points();
   virtual void close();
   virtual void update();
@@ -534,7 +534,7 @@ protected:
   TriSurfaces* tris;
   Points* points;
 public:
-  Glyphs(DrawState& drawstate);
+  Glyphs(Session& session);
   virtual ~Glyphs();
   virtual void close();
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
@@ -549,7 +549,7 @@ class Links : public Glyphs
 {
   bool all2d, any3d;
 public:
-  Links(DrawState& drawstate, bool all2Dflag=false);
+  Links(Session& session, bool all2Dflag=false);
   ~Links() {close();}
   virtual void update();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
@@ -558,21 +558,21 @@ public:
 class Vectors : public Glyphs
 {
 public:
-  Vectors(DrawState& drawstate);
+  Vectors(Session& session);
   virtual void update();
 };
 
 class Tracers : public Glyphs
 {
 public:
-  Tracers(DrawState& drawstate);
+  Tracers(Session& session);
   virtual void update();
 };
 
 class Shapes : public Glyphs
 {
 public:
-  Shapes(DrawState& drawstate);
+  Shapes(Session& session);
   virtual void update();
 };
 
@@ -580,7 +580,7 @@ class QuadSurfaces : public TriSurfaces
 {
   std::vector<Distance> surf_sort;
 public:
-  QuadSurfaces(DrawState& drawstate);
+  QuadSurfaces(Session& session);
   virtual ~QuadSurfaces();
   virtual void update();
   virtual void sort();    //Threaded sort function
@@ -593,7 +593,7 @@ class Imposter : public Geometry
 {
   GLuint vbo;
 public:
-  Imposter(DrawState& drawstate);
+  Imposter(Session& session);
   virtual ~Imposter() {close();}
   virtual void close();
   virtual void update();
@@ -607,7 +607,7 @@ public:
   GLuint colourTexture;
   std::map<DrawingObject*, unsigned int> slices;
 
-  Volumes(DrawState& drawstate);
+  Volumes(Session& session);
   ~Volumes();
   virtual void close();
   virtual void update();

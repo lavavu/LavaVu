@@ -36,7 +36,7 @@
 #ifndef LavaVu__
 #define LavaVu__
 
-#include "DrawState.h"
+#include "Session.h"
 #include "Util.h"
 #include "GraphicsUtil.h"
 #include "ColourMap.h"

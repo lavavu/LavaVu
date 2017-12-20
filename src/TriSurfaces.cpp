@@ -38,7 +38,7 @@
 //Triangle centroid for depth sorting
 #define centroid(v1,v2,v3) {centroids.emplace_back((v1[0]+v2[0]+v3[0])/3, (v1[1]+v2[1]+v3[1])/3, (v1[2]+v2[2]+v3[2])/3);}
 
-TriSurfaces::TriSurfaces(DrawState& drawstate) : Triangles(drawstate)
+TriSurfaces::TriSurfaces(Session& session) : Triangles(session)
 {
   tricount = 0;
   tidx = swap = NULL;
@@ -47,7 +47,7 @@ TriSurfaces::TriSurfaces(DrawState& drawstate) : Triangles(drawstate)
 
 void TriSurfaces::close()
 {
-  if (!drawstate.global("gpucache"))
+  if (!session.global("gpucache"))
     Triangles::close();
 
   if (tidx)
@@ -361,7 +361,7 @@ void TriSurfaces::loadList()
   t2 = clock();
   debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
 
-  if (drawstate.global("sort"))
+  if (session.global("sort"))
     sort();
 }
 
@@ -753,7 +753,7 @@ void TriSurfaces::draw()
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
       {
-        setState(index, drawstate.prog[lucTriangleType]); //Set draw state settings for this object
+        setState(index, session.prog[lucTriangleType]); //Set draw state settings for this object
         //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
         glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
@@ -768,7 +768,7 @@ void TriSurfaces::draw()
 
     //Set draw state settings for first non-opaque object
     //NOTE: per-object textures do not work with transparency!
-    setState(tridx, drawstate.prog[lucTriangleType]);
+    setState(tridx, session.prog[lucTriangleType]);
 
     //Draw remaining elements (transparent, depth sorted)
     //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);

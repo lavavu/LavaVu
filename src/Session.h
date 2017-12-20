@@ -1,7 +1,7 @@
-class DrawState;
+class Session;
 
-#ifndef DrawState__
-#define DrawState__
+#ifndef Session__
+#define Session__
 
 #include "TimeStep.h"
 
@@ -11,7 +11,7 @@ class DrawState;
 #define PROPDOC     3
 
 //Class to hold global draw state
-class DrawState
+class Session
 {
 public:
   //Properties
@@ -65,8 +65,8 @@ public:
   std::mt19937 eng0, eng1;
   std::uniform_real_distribution<float> dist;
 
-  DrawState();
-  ~DrawState();
+  Session();
+  ~Session();
   std::string counterFilename();
   void reset();
   void init();
@@ -79,5 +79,5 @@ public:
 
 };
 
-#endif // DrawState__
+#endif // Session__
 

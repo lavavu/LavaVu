@@ -440,8 +440,8 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
   return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
-Geometry::Geometry(DrawState& drawstate) : view(NULL), elements(0),
-                       cached(NULL), drawstate(drawstate),
+Geometry::Geometry(Session& session) : view(NULL), elements(0),
+                       cached(NULL), session(session),
                        allhidden(false), internal(false), unscale(false),
                        type(lucMinType), total(0), redraw(true), reload(true)
 {
@@ -531,11 +531,11 @@ void Geometry::compareMinMax(float* min, float* max)
     compareCoordMinMax(min, max, geom[i]->min);
     compareCoordMinMax(min, max, geom[i]->max);
     //Also update global min/max
-    compareCoordMinMax(drawstate.min, drawstate.max, geom[i]->min);
-    compareCoordMinMax(drawstate.min, drawstate.max, geom[i]->max);
+    compareCoordMinMax(session.min, session.max, geom[i]->min);
+    compareCoordMinMax(session.min, session.max, geom[i]->max);
   }
   //Update global bounding box size
-  getCoordRange(drawstate.min, drawstate.max, drawstate.dims);
+  getCoordRange(session.min, session.max, session.dims);
 }
 
 void Geometry::dump(std::ostream& csv, DrawingObject* draw)
@@ -793,7 +793,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
   }
 
   //Default line width
-  float lineWidth = (float)geom[i]->draw->properties["linewidth"] * drawstate.scale2d; //Include 2d scale factor
+  float lineWidth = (float)geom[i]->draw->properties["linewidth"] * session.scale2d; //Include 2d scale factor
   glLineWidth(lineWidth);
 
   //Disable depth test by default for 2d lines, otherwise enable
@@ -833,8 +833,8 @@ void Geometry::setState(unsigned int i, Shader* prog)
     float opacity = (float)geom[i]->draw->properties["alpha"];
     //Apply global 'opacity' only if no per-object setting (which is applied with colour)
     if (!geom[i]->draw->properties.has("opacity"))
-      opacity *= (float)drawstate.global("opacity");
-    bool allopaque = !drawstate.global("sort");
+      opacity *= (float)session.global("opacity");
+    bool allopaque = !session.global("sort");
     if (allopaque) opacity = 1.0;
     prog->setUniformf("uOpacity", opacity);
     prog->setUniformi("uLighting", lighting);
@@ -870,15 +870,15 @@ void Geometry::setState(unsigned int i, Shader* prog)
                         view->is3d ? (float)geom[i]->draw->properties["zmax"] : HUGE_VALF);
         if (geom[i]->draw->properties["clipmap"])
         {
-          Vec3d dims(drawstate.dims);
-          Vec3d dmin(drawstate.min);
+          Vec3d dims(session.dims);
+          Vec3d dmin(session.min);
           clipMin *= dims;
           clipMin += dmin;
           clipMax *= dims;
           clipMax += dmin;
         }
-        //printf("Dimensions %f,%f,%f - %f,%f,%f\n", drawstate.min[0], drawstate.min[1], 
-        //       drawstate.min[2], drawstate.max[0], drawstate.max[1], drawstate.max[2]);
+        //printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1], 
+        //       session.min[2], session.max[0], session.max[1], session.max[2]);
         //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(), 
         //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
       }
@@ -978,12 +978,12 @@ void Geometry::labels()
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
       std::string font = geom[i]->draw->properties["font"];
-      if (drawstate.scale2d != 1.0 && font != "vector")
+      if (session.scale2d != 1.0 && font != "vector")
         geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
       //Default to object colour (if fontcolour provided will replace)
       Colour colour = Colour(geom[i]->draw->properties["colour"]);
       glColor3ubv(colour.rgba);
-      drawstate.fonts.setFont(geom[i]->draw->properties, "small", 1.0, drawstate.scale2d);
+      session.fonts.setFont(geom[i]->draw->properties, "small", 1.0, session.scale2d);
 
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
@@ -992,7 +992,7 @@ void Geometry::labels()
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
         //Preceed with ! for right align, | for centre
-        float shift = drawstate.fonts.printWidth("XX")*FONT_SCALE_3D/view->scale[1]; //Vertical shift
+        float shift = session.fonts.printWidth("XX")*FONT_SCALE_3D/view->scale[1]; //Vertical shift
         char alignchar = ' ';
         char alignchar2 = ' ';
         if (labstr.length() > 1) alignchar = labstr.at(0);
@@ -1017,7 +1017,7 @@ void Geometry::labels()
 
         if (labstr.length() > 0)
         {
-          drawstate.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, view->scale);
+          session.fonts.print3dBillboard(p[0], p[1]-shift, p[2], labstr.c_str(), align, view->scale);
         }
       }
     }
@@ -1567,7 +1567,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   std::vector<unsigned int> indices;
 
   // Get circle coords
-  drawstate.cacheCircleCoords(segment_count);
+  session.cacheCircleCoords(segment_count);
 
   // Render a 3d arrow, cone with base for head, cylinder for shaft
 
@@ -1616,17 +1616,17 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       int vertex_index = getVertexIdx(draw);
 
       // Base of shaft
-      Vec3d vertex0 = Vec3d(radius0 * drawstate.x_coords[v], radius0 * drawstate.y_coords[v], -halflength); // z = Shaft length to base of head
+      Vec3d vertex0 = Vec3d(radius0 * session.x_coords[v], radius0 * session.y_coords[v], -halflength); // z = Shaft length to base of head
       Vec3d vertex = translate + rot * vertex0;
 
       //Read triangle vertex, normal
       read(draw, 1, lucVertexData, vertex.ref());
-      Vec3d normal = rot * Vec3d(drawstate.x_coords[v], drawstate.y_coords[v], 0);
+      Vec3d normal = rot * Vec3d(session.x_coords[v], session.y_coords[v], 0);
       //normal.normalise();
       read(draw, 1, lucNormalData, normal.ref());
 
       // Top of shaft
-      Vec3d vertex1 = Vec3d(radius1 * drawstate.x_coords[v], radius1 * drawstate.y_coords[v], -headD+halflength);
+      Vec3d vertex1 = Vec3d(radius1 * session.x_coords[v], radius1 * session.y_coords[v], -headD+halflength);
       vertex = translate + rot * vertex1;
 
       //Read triangle vertex, normal
@@ -1678,10 +1678,10 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       int vertex_index = getVertexIdx(draw);
 
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = translate + rot * Vec3d(head_radius * drawstate.x_coords[v], head_radius * drawstate.y_coords[v], -headD+halflength);
+      Vec3d vertex1 = translate + rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength);
 
       //Calculate normal at base
-      Vec3d normal1 = rot * Vec3d(head_radius * drawstate.x_coords[v], head_radius * drawstate.y_coords[v], 0);
+      Vec3d normal1 = rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], 0);
       normal1.normalise();
 
       //Duplicate pinnacle vertex as each facet needs a different normal
@@ -1719,7 +1719,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     {
       int vertex_index = getVertexIdx(draw);
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = rot * Vec3d(head_radius * drawstate.x_coords[v], head_radius * drawstate.y_coords[v], -headD+halflength);
+      Vec3d vertex1 = rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength);
 
       vertex1 = translate + vertex1;
 
@@ -1930,7 +1930,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   if (radii.y < 0) radii.y = -radii.y;
   if (radii.z < 0) radii.z = -radii.z;
   if (segment_count < 0) segment_count = -segment_count;
-  drawstate.cacheCircleCoords(segment_count);
+  session.cacheCircleCoords(segment_count);
 
   std::vector<unsigned int> indices;
   for (j=0; j<segment_count/2; j++)
@@ -1941,7 +1941,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       int vertex_index = getVertexIdx(draw);
       // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
       int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
-      edge = Vec3d(drawstate.y_coords[circ_index] * drawstate.y_coords[i], drawstate.x_coords[circ_index], drawstate.y_coords[circ_index] * drawstate.x_coords[i]);
+      edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
       pos = centre + rot * (radii * edge);
 
       tex[0] = i/(float)segment_count;
@@ -1955,7 +1955,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
-      edge = Vec3d(drawstate.y_coords[circ_index] * drawstate.y_coords[i], drawstate.x_coords[circ_index], drawstate.y_coords[circ_index] * drawstate.x_coords[i]);
+      edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
       pos = centre + rot * (radii * edge);
 
       tex[0] = i/(float)segment_count;
@@ -1988,12 +1988,12 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
 //Class to handle geometry types with sub-geometry glyphs drawn
 //at vertices consisting of lines and/or triangles
-Glyphs::Glyphs(DrawState& drawstate) : Geometry(drawstate)
+Glyphs::Glyphs(Session& session) : Geometry(session)
 {
   //Create sub-renderers
-  lines = new Lines(drawstate);
-  tris = new TriSurfaces(drawstate);
-  points = new Points(drawstate);
+  lines = new Lines(session);
+  tris = new TriSurfaces(session);
+  points = new Points(session);
   tris->internal = lines->internal = points->internal = true;
 }
 
@@ -2007,7 +2007,7 @@ Glyphs::~Glyphs()
 
 void Glyphs::close()
 {
-  if (!drawstate.global("gpucache"))
+  if (!session.global("gpucache"))
   {
     //Clear all generated geometry
     lines->clear();
@@ -2060,7 +2060,7 @@ void Glyphs::display()
   tris->display();
   points->display();
 
-  if (!reload && drawstate.global("gpucache"))
+  if (!reload && session.global("gpucache"))
   {
     //Skip re-gen of internal geometry shapes
     redraw = false;
@@ -2106,7 +2106,7 @@ void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
   points->jsonWrite(draw, obj);
 }
 
-Imposter::Imposter(DrawState& drawstate) : Geometry(drawstate)
+Imposter::Imposter(Session& session) : Geometry(session)
 {
   vbo = 0;
 }

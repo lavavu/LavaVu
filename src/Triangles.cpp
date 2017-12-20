@@ -35,7 +35,7 @@
 
 #include "Geometry.h"
 
-Triangles::Triangles(DrawState& drawstate) : Geometry(drawstate)
+Triangles::Triangles(Session& session) : Geometry(session)
 {
   type = lucTriangleType;
   idxcount = 0;
@@ -329,7 +329,7 @@ void Triangles::draw()
     for (unsigned int index = 0; index < geom.size(); index++)
     {
       if (counts[index] == 0) continue;
-      setState(index, drawstate.prog[lucTriangleType]); //Set draw state settings for this object
+      setState(index, session.prog[lucTriangleType]); //Set draw state settings for this object
       if (geom[index]->render->indices.size() > 0)
       {
         //Draw with index buffer

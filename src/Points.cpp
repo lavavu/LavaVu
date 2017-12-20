@@ -36,7 +36,7 @@
 #include "GraphicsUtil.h"
 #include "Geometry.h"
 
-Points::Points(DrawState& drawstate) : Geometry(drawstate)
+Points::Points(Session& session) : Geometry(session)
 {
   type = lucPointType;
   pidx = swap = NULL;
@@ -53,7 +53,7 @@ Points::~Points()
 
 void Points::close()
 {
-  if (!drawstate.global("gpucache"))
+  if (!session.global("gpucache"))
   {
     if (vbo)
       glDeleteBuffers(1, &vbo);
@@ -108,7 +108,7 @@ void Points::loadVertices()
 
   // VBO - copy normals/colours/positions to buffer object for quick display
   int datasize;
-  if (drawstate.global("pointattribs"))
+  if (session.global("pointattribs"))
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
@@ -161,7 +161,7 @@ void Points::loadVertices()
     //printf("psize %f scaling %f\n", psize0, scaling);
     psize0 *= scaling;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
-    bool attribs = drawstate.global("pointattribs");
+    bool attribs = session.global("pointattribs");
     unsigned int sizeidx = geom[s]->valuesLookup(geom[s]->draw->properties["sizeby"]);
     bool usesize = geom[s]->valueData(sizeidx) != NULL;
     //std::cout << geom[s]->draw->properties["sizeby"] << " : " << sizeidx << " : " << usesize << std::endl;
@@ -222,8 +222,8 @@ void Points::loadList()
   if (pidx == NULL || swap == NULL || indexlist == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total * 2 + sizeof(unsigned int) * total);
   if (geom.size() == 0) return;
   int voffset = 0;
-  unsigned int maxCount = drawstate.global("pointmaxcount");
-  unsigned int subSample = drawstate.global("pointsubsample");
+  unsigned int maxCount = session.global("pointmaxcount");
+  unsigned int subSample = session.global("pointsubsample");
   //Auto-sub-sample if maxcount set
   if (maxCount > 0 && elements > maxCount)
     subSample = elements / maxCount + 0.5; //Rounded up
@@ -255,7 +255,7 @@ void Points::loadList()
   debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
   t1 = clock();
 
-  if (drawstate.global("sort"))
+  if (session.global("sort"))
     sort();
 }
 
@@ -299,7 +299,7 @@ void Points::sort()
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   std::lock_guard<std::mutex> guard(loadmutex);
   //Reverse order farthest to nearest
-  int distSample = drawstate.global("pointdistsample");
+  int distSample = session.global("pointdistsample");
   uint32_t SEED;
   idxcount = 0;
   for(int i=elements-1; i>=0; i--)
@@ -368,7 +368,7 @@ int Points::getPointType(int index)
     else
       return -1; //Use global 
   }
-  return drawstate.global("pointtype");
+  return session.global("pointtype");
 }
 
 void Points::draw()
@@ -378,7 +378,7 @@ void Points::draw()
   double time;
   GL_Error_Check;
 
-  Shader* prog = drawstate.prog[lucPointType];
+  Shader* prog = session.prog[lucPointType];
   setState(0, prog); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
@@ -394,8 +394,8 @@ void Points::draw()
   GL_Error_Check;
 
   //Point size distance attenuation (disabled for 2d models)
-  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * drawstate.scale2d; //Include 2d scale factor
-  if (view->is3d && drawstate.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
+  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * session.scale2d; //Include 2d scale factor
+  if (view->is3d && session.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
   {
     prog->setUniform("uPointScale", scale0 * view->model_size);
     prog->setUniform("uPointDist", 1);
@@ -412,7 +412,7 @@ void Points::draw()
 
   // Draw using vertex buffer object
   int stride = 3 * sizeof(float) + sizeof(Colour);
-  bool attribs = drawstate.global("pointattribs");
+  bool attribs = session.global("pointattribs");
   if (attribs)
     stride += 2 * sizeof(float);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);

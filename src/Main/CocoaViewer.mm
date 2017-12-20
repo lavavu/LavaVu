@@ -460,7 +460,7 @@ CocoaViewer::~CocoaViewer()
 
 void CocoaViewer::open(int w, int h)
 {
-  if (!visible || app->drawstate.automate) 
+  if (!visible || app->session.automate) 
   {
     //Use CGL viewer for offscreen/automated
     CGLViewer::open(w, h);
@@ -595,9 +595,9 @@ void CocoaViewer::display(bool redraw)
 void CocoaViewer::execute()
 {
   postdisplay = true;
-  if (app->drawstate.automate) 
+  if (app->session.automate) 
   {
-    app->drawstate.automate = false;
+    app->session.automate = false;
     visible = true;
     open(width, height);
   }

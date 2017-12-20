@@ -46,8 +46,8 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
   return os << cv.value << " --> " << cv.position << "=" << cv.colour;
 }
 
-ColourMap::ColourMap(DrawState& drawstate, std::string name, std::string props)
-  : noValues(false), log(false), discrete(false), name(name), properties(drawstate.globals, drawstate.defaults),
+ColourMap::ColourMap(Session& session, std::string name, std::string props)
+  : noValues(false), log(false), discrete(false), name(name), properties(session.globals, session.defaults),
     minimum(0), maximum(1), calibrated(false), opaque(true), texture(NULL)
 {
   precalc = new Colour[samples];
@@ -331,7 +331,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 //#define VERT2D(x, y, swap) swap ? glVertex2f(y+0.5, x+0.5) : glVertex2f(x+0.5, y+0.5);
 #define RECT2D(x0, y0, x1, y1, s) {glBegin(GL_QUADS); VERT2D(x0, y0, s); VERT2D(x1, y0, s); VERT2D(x1, y1, s); VERT2D(x0, y1, s); glEnd();}
 
-void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
+void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
 {
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_MULTISAMPLE);
@@ -341,7 +341,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
   // Draw larger background box for border, use font colour
   glColor4ubv(printColour.rgba);
-  drawstate.fonts.setFont(colourbarprops);
+  session.fonts.setFont(colourbarprops);
   int border = colourbarprops["outline"];
   glDisable(GL_CULL_FACE);
   //glColor4ubv(printColour.rgba);
@@ -409,7 +409,7 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
 
   //Labels / tick marks
   glColor4ubv(printColour.rgba);
-  drawstate.fonts.setFont(colourbarprops);
+  session.fonts.setFont(colourbarprops);
   float tickValue;
   unsigned int ticks = colourbarprops["ticks"];
   json tickValues = colourbarprops["tickvalues"];
@@ -529,20 +529,20 @@ void ColourMap::draw(DrawState& drawstate, Properties& colourbarprops, int start
         sprintf(string, format.c_str(), tickValue);
       }
 
-      if (drawstate.fonts.charset > FONT_VECTOR)
+      if (session.fonts.charset > FONT_VECTOR)
       {
         if (vertical)
-          drawstate.fonts.rasterPrint(starty + breadth + 10, xpos,  string);
+          session.fonts.rasterPrint(starty + breadth + 10, xpos,  string);
         else
-          drawstate.fonts.rasterPrint(xpos - (int) (0.5 * (float)drawstate.fonts.rasterPrintWidth(string)),  starty - 10, string);
+          session.fonts.rasterPrint(xpos - (int) (0.5 * (float)session.fonts.rasterPrintWidth(string)),  starty - 10, string);
       }
       else
       {
         glEnable(GL_MULTISAMPLE);
         if (vertical)
-          drawstate.fonts.print(starty + breadth + 10, xpos - (int) (0.5 * (float)drawstate.fonts.printWidth("W")),  string);
+          session.fonts.print(starty + breadth + 10, xpos - (int) (0.5 * (float)session.fonts.printWidth("W")),  string);
         else
-          drawstate.fonts.print(xpos - (int) (0.5 * (float)drawstate.fonts.printWidth(string)),  starty - 5 - drawstate.fonts.printWidth("W"), string);
+          session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)),  starty - 5 - session.fonts.printWidth("W"), string);
         glDisable(GL_MULTISAMPLE);
       }
     }

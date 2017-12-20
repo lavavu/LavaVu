@@ -36,7 +36,7 @@
 #ifndef ApplicationInterface__
 #define ApplicationInterface__
 
-#include "DrawState.h"
+#include "Session.h"
 
 //Mouse/keyboard input definitions
 typedef enum
@@ -60,7 +60,7 @@ typedef struct
 class ApplicationInterface
 {
 public:
-  DrawState drawstate;
+  Session session;
 
   virtual void open(int width, int height) = 0;
   virtual void close() = 0;

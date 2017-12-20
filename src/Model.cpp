@@ -180,7 +180,7 @@ bool Database::issue(const char* fmt, ...)
   return true;
 }
 
-Model::Model(DrawState& drawstate) : now(-1), drawstate(drawstate), figure(-1)
+Model::Model(Session& session) : now(-1), session(session), figure(-1)
 {
   //Create new geometry containers
   init();
@@ -237,29 +237,29 @@ Geometry* Model::getRenderer(const std::string& what)
 Geometry* Model::createRenderer(const std::string& what)
 {
   if (what == "points") //TODO: unsorted points base class
-    return new Points(drawstate);
+    return new Points(session);
   if (what == "sortedpoints")
-    return new Points(drawstate);
+    return new Points(session);
   if (what == "labels")
-    return new Geometry(drawstate);
+    return new Geometry(session);
   if (what == "vectors")
-    return new Vectors(drawstate);
+    return new Vectors(session);
   if (what == "tracers")
-    return new Tracers(drawstate);
+    return new Tracers(session);
   if (what == "triangles")
-    return new Triangles(drawstate);
+    return new Triangles(session);
   if (what == "sortedtriangles")
-    return new TriSurfaces(drawstate);
+    return new TriSurfaces(session);
   if (what == "quads")
-    return new QuadSurfaces(drawstate);
+    return new QuadSurfaces(session);
   if (what == "shapes")
-    return new Shapes(drawstate);
+    return new Shapes(session);
   if (what == "lines")
-    return new Lines(drawstate);
+    return new Lines(session);
   if (what == "links")
-    return new Links(drawstate);
+    return new Links(session);
   if (what == "volume")
-    return new Volumes(drawstate);
+    return new Volumes(session);
   abort_program("Invalid renderer specified! '%s'\n", what.c_str());
   return NULL;
 }
@@ -289,7 +289,7 @@ View* Model::defaultView()
   if (views.size() == 0)
   {
     //Default view
-    View* view = new View(drawstate);
+    View* view = new View(session);
     views.push_back(view);
   }
 
@@ -312,7 +312,7 @@ void Model::init()
 {
   //All renderers are switchable and user defined based on "renderers" global property
   geometry.clear();
-  std::string renderlist = drawstate.global("renderlist");
+  std::string renderlist = session.global("renderlist");
   std::istringstream iss(renderlist);
   std::string s;
   while (getline( iss, s, ' '))
@@ -322,7 +322,7 @@ void Model::init()
 
   for (auto g : geometry)
   {
-    bool hideall = drawstate.global("hideall");
+    bool hideall = session.global("hideall");
     if (hideall)
       g->hideShowAll(true);
   }
@@ -364,9 +364,9 @@ bool Model::loadFigure(int fig)
 
   //Set window caption
   if (fignames[figure].length() > 0)
-    drawstate.globals["caption"] = fignames[figure];
+    session.globals["caption"] = fignames[figure];
   else if (!database.memory) 
-    drawstate.globals["caption"] = database.file.base;
+    session.globals["caption"] = database.file.base;
   return true;
 }
 
@@ -472,7 +472,7 @@ ColourMap* Model::addColourMap(std::string name, std::string colours, std::strin
   }
 
   //Add a new colourmap
-  ColourMap* cmap = new ColourMap(drawstate, name, properties);
+  ColourMap* cmap = new ColourMap(session, name, properties);
   cmap->loadPalette(colours);
   colourMaps.push_back(cmap);
   return cmap;
@@ -600,13 +600,13 @@ void Model::loadWindows()
           max[i] = -FLT_MAX;
       }
 
-      drawstate.globals["caption"] = wtitle;
-      drawstate.globals["resolution"] = {width, height};
-      drawstate.globals["min"] = {min[0], min[1], min[2]};
-      drawstate.globals["max"] = {max[0], max[1], max[2]};
+      session.globals["caption"] = wtitle;
+      session.globals["resolution"] = {width, height};
+      session.globals["min"] = {min[0], min[1], min[2]};
+      session.globals["max"] = {max[0], max[1], max[2]};
       //Support legacy colour field
-      if (colour.value != 0 && !drawstate.globals.count("colour"))
-        drawstate.globals["background"] = colour.toJson();
+      if (colour.value != 0 && !session.globals.count("colour"))
+        session.globals["background"] = colour.toJson();
 
       //Link the window viewports, objects & colourmaps
       loadLinks();
@@ -636,7 +636,7 @@ void Model::loadViewports()
     float farc = (float)sqlite3_column_double(statement, 4);
 
     //Create the view object and add to list
-    views.push_back(new View(drawstate, x, y, nearc, farc));
+    views.push_back(new View(session, x, y, nearc, farc));
   }
   sqlite3_finalize(statement);
 
@@ -732,7 +732,7 @@ void Model::loadObjects()
     std::string props = "";
     if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
       props = std::string((char*)sqlite3_column_text(statement, 4));
-    DrawingObject* obj = new DrawingObject(drawstate, otitle, props, object_id);
+    DrawingObject* obj = new DrawingObject(session, otitle, props, object_id);
 
     //Convert old colour/opacity from hard coded fields if provided
     if (sqlite3_column_type(statement, 2) != SQLITE_NULL)
@@ -863,7 +863,7 @@ int Model::loadTimeSteps(bool scan)
   //Don't reload timesteps when data has been cached
   if (useCache() && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
-  drawstate.gap = 1;
+  session.gap = 1;
   int rows = 0;
   int last_step = 0;
 
@@ -881,7 +881,7 @@ int Model::loadTimeSteps(bool scan)
       sqlite3_finalize(statement2);
       addTimeStep(step, time);
       //Save gap
-      if (step - last_step > drawstate.gap) drawstate.gap = step - last_step;
+      if (step - last_step > session.gap) session.gap = step - last_step;
       last_step = step;
 
       //No geometry in current db? Check for attachment db
@@ -932,7 +932,7 @@ int Model::loadTimeSteps(bool scan)
 
   //Copy to static for use in Tracers etc
   if (infostream) std::cerr << timesteps.size() << " timesteps loaded\n";
-  drawstate.timesteps = timesteps;
+  session.timesteps = timesteps;
   return timesteps.size();
 }
 
@@ -993,7 +993,7 @@ void Model::loadColourMaps()
     if (sqlite3_column_type(statement, 6) != SQLITE_NULL) props = (char*)sqlite3_column_text(statement, 6);
     std::stringstream name;
     name << cmname << "_" << id; //Prevent duplicate names by appending id
-    colourMap = new ColourMap(drawstate, name.str(), props);
+    colourMap = new ColourMap(session, name.str(), props);
     setColourMapProps(colourMap->properties, minimum, maximum, logscale, discrete);
     colourMaps.push_back(colourMap);
   }
@@ -1043,7 +1043,7 @@ void Model::loadColourMapsLegacy()
       std::stringstream name;
       if (cmname) name << cmname << "_";
       name << id; //Prevent duplicate names by appending id
-      colourMap = new ColourMap(drawstate, name.str(), props);
+      colourMap = new ColourMap(session, name.str(), props);
       colourMaps.push_back(colourMap);
       setColourMapProps(colourMap->properties, minimum, maximum, logscale, discrete);
       //Colours already parsed from properties?
@@ -1138,7 +1138,7 @@ bool Model::useCache()
 {
   //Use cache if no database loaded, or turned on by global parameter
   if (!database) return true;
-  return drawstate.global("cache");
+  return session.global("cache");
 }
 
 void Model::cacheLoad()
@@ -1148,20 +1148,20 @@ void Model::cacheLoad()
   {
     setTimeStep(i);
     if (i%10==0) std::cout << '|';
-    if (drawstate.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
+    if (session.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
     debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), database.file.base.c_str());
   }
   //Cache final step
   setTimeStep(0);
   std::cout << std::endl;
   //Clear current step to ensure selected is loaded from cache
-  drawstate.now = now = -1;
+  session.now = now = -1;
 }
 
 void Model::cacheStep()
 {
   //Don't cache if out of range
-  if (!useCache() || drawstate.now < 0 || step() < 0 || (int)timesteps.size() <= drawstate.now) return;
+  if (!useCache() || session.now < 0 || step() < 0 || (int)timesteps.size() <= session.now) return;
 
   debug_print("~~~ Caching geometry @ %d (step %d) : %s), geom memory usage: %.3f mb\n", step(), now, database.file.base.c_str(), membytes__/1000000.0f);
 
@@ -1203,14 +1203,14 @@ void Model::cacheStep()
 
 bool Model::restoreStep()
 {
-  if (drawstate.now < 0 || !useCache()) return false;
-  if (timesteps[drawstate.now]->cache.size() == 0)
+  if (session.now < 0 || !useCache()) return false;
+  if (timesteps[session.now]->cache.size() == 0)
     return false; //Nothing cached this step
 
   //Load the cache and save loaded timestep
   clearStep();
-  timesteps[drawstate.now]->read(geometry);
-  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), drawstate.now, database.file.base.c_str());
+  timesteps[session.now]->read(geometry);
+  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), session.now, database.file.base.c_str());
 
   //Some data shouldn't be cached and
   //needs to be preserved from previous active settings
@@ -1273,7 +1273,7 @@ int Model::nearestTimeStep(int requested)
   int idx;
   if (timesteps.size() == 0 && loadTimeSteps() == 0) return -1;
   //if (loadTimeSteps() == 0 || timesteps.size() == 0) return -1;
-  //if (timesteps.size() == 1 && drawstate.now >= 0 && ) return -1;  //Single timestep
+  //if (timesteps.size() == 1 && session.now >= 0 && ) return -1;  //Single timestep
 
   for (idx=0; idx < (int)timesteps.size(); idx++)
     if (timesteps[idx]->step >= requested) break;
@@ -1296,7 +1296,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
   {
-    drawstate.globals["timestep"] = drawstate.now = now = -1;
+    session.globals["timestep"] = session.now = now = -1;
     return -1;
   }
 
@@ -1305,7 +1305,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
     stepidx = timesteps.size()-1;
 
   //Unchanged...
-  if (now >= 0 && stepidx == now && drawstate.now == now) return -1;
+  if (now >= 0 && stepidx == now && session.now == now) return -1;
 
   //Setting initial step?
   bool first = (now < 0);
@@ -1314,10 +1314,10 @@ int Model::setTimeStep(int stepidx, bool skipload)
   cacheStep();
 
   //Set the new timestep index
-  debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, drawstate.now, stepidx);
-  drawstate.timesteps = timesteps; //Set to current model timestep vector
-  drawstate.now = now = stepidx;
-  drawstate.globals["timestep"] = step(); //Save property for read access
+  debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, session.now, stepidx);
+  session.timesteps = timesteps; //Set to current model timestep vector
+  session.now = now = stepidx;
+  session.globals["timestep"] = step(); //Save property for read access
   debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
 
   if (!restoreStep())
@@ -1333,14 +1333,14 @@ int Model::setTimeStep(int stepidx, bool skipload)
       clearObjects();
 
     //Import fixed data first
-    if (drawstate.now >= 0) 
+    if (session.now >= 0) 
       loadFixed();
 
     //Load new data
     if (database && !skipload)
     {
       //Detach any attached db file and attach n'th timestep database if available
-      database.attach(timesteps[drawstate.now]);
+      database.attach(timesteps[session.now]);
 
       if (useCache())
         //Attempt caching all geometry from database at start
@@ -1490,7 +1490,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       }
 
       //Create object and set parameters
-      if (type == lucPointType && drawstate.global("pointspheres")) type = lucShapeType;
+      if (type == lucPointType && session.global("pointspheres")) type = lucShapeType;
       /* Convert grid to tris
        * - need to skip index/normal data as it is setup for tri strips
       if (type == lucGridType) {
@@ -1858,10 +1858,10 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
   for (int c=0; c<3; c++)
   {
     min[c] = data->min[c];
-    if (!ISFINITE(min[c])) min[c] = drawstate.min[c];
+    if (!ISFINITE(min[c])) min[c] = session.min[c];
     if (!ISFINITE(min[c])) min[c] = 0.0;
     max[c] = data->max[c];
-    if (!ISFINITE(max[c])) max[c] = drawstate.max[c];
+    if (!ISFINITE(max[c])) max[c] = session.max[c];
     if (!ISFINITE(max[c])) max[c] = 0.0;
   }
 
@@ -1964,11 +1964,11 @@ std::string Model::jsonWrite(bool objdata)
 void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 {
   //Write new JSON format objects
-  // - globals are all stored on / sourced from drawstate.globals
+  // - globals are all stored on / sourced from session.globals
   // - views[] list holds view properies (previously single instance in "options")
-  std::lock_guard<std::mutex> guard(drawstate.mutex);
+  std::lock_guard<std::mutex> guard(session.mutex);
   json exported;
-  json properties = drawstate.globals;
+  json properties = session.globals;
   json cmaps = json::array();
   json outobjects = json::array();
   json outviews = json::array();
@@ -2137,7 +2137,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 
 void Model::jsonRead(std::string data)
 {
-  std::lock_guard<std::mutex> guard(drawstate.mutex);
+  std::lock_guard<std::mutex> guard(session.mutex);
   
   json imported = json::parse(data);
 
@@ -2146,10 +2146,10 @@ void Model::jsonRead(std::string data)
   // this is reversed for these keys, existing value takes precedence)
   std::string skiplist[] = {"resolution", "antialias"};
   for (auto del : skiplist)
-    if (drawstate.globals.count(del)) imported["properties"].erase(del);
+    if (session.globals.count(del)) imported["properties"].erase(del);
 
   //Load globals, merge with existing values
-  Properties::mergeJSON(drawstate.globals, imported["properties"]);
+  Properties::mergeJSON(session.globals, imported["properties"]);
 
   json inviews;
   //If "options" exists (old format) read it as first view properties
@@ -2164,7 +2164,7 @@ void Model::jsonRead(std::string data)
     if (v >= views.size())
     {
       //Insert a view
-      View* view = new View(drawstate);
+      View* view = new View(session);
       views.push_back(view);
       //Insert all objects for now
       view->objects = objects;
@@ -2174,7 +2174,7 @@ void Model::jsonRead(std::string data)
 
     //Process list of keys to ignore on import if already set
     for (auto del : skiplist)
-      if (view->properties.has(del) || drawstate.globals.count(del))
+      if (view->properties.has(del) || session.globals.count(del))
         inviews[v].erase(del);
 
     //Apply base properties with merge
@@ -2255,7 +2255,7 @@ void Model::jsonRead(std::string data)
     /*if (i >= objects.size())
     {
       std::string name = inobjects[i]["name"];
-      addObject(new DrawingObject(drawstate, name));
+      addObject(new DrawingObject(session, name));
     }*/
 
     if (i >= inobjects.size())

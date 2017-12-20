@@ -1,6 +1,6 @@
-#include "DrawState.h"
+#include "Session.h"
 
-DrawState::DrawState() : prog(), eng0(std::random_device()()), eng1(0), dist(0, 1)
+Session::Session() : prog(), eng0(std::random_device()()), eng1(0), dist(0, 1)
 {
   borderobj = axisobj = rulerobj = NULL;
   omegalib = false;
@@ -12,7 +12,7 @@ DrawState::DrawState() : prog(), eng0(std::random_device()()), eng1(0), dist(0, 
   y_coords = NULL;
 }
 
-DrawState::~DrawState()
+Session::~Session()
 {
   fonts.reset();
 
@@ -22,7 +22,7 @@ DrawState::~DrawState()
   if (y_coords != NULL) delete[] y_coords;
 }
 
-std::string DrawState::counterFilename()
+std::string Session::counterFilename()
 {
   //Apply image counter to default filename when multiple images/videos output
   std::string title = global("caption");
@@ -43,7 +43,7 @@ std::string DrawState::counterFilename()
   return filename;
 }
 
-void DrawState::reset()
+void Session::reset()
 {
   globals = json::object();
 
@@ -68,7 +68,7 @@ void DrawState::reset()
   colourMaps = NULL;
 }
 
-void DrawState::init()
+void Session::init()
 {
   //Setup default properties (once only)
   properties = {
@@ -1542,21 +1542,21 @@ void DrawState::init()
 }
 
 //Return a global parameter (or default if not set)
-json& DrawState::global(const std::string& key)
+json& Session::global(const std::string& key)
 {
   if (has(key)) return globals[key];
   return defaults[key];
 }
 
 //Return true if a global parameter has been set
-bool DrawState::has(const std::string& key)
+bool Session::has(const std::string& key)
 {
   return (globals.count(key) > 0 && !globals[key].is_null());
 }
 
 // Calculates a set of points on a unit circle for a given number of segments
 // Used to optimised rendering circular objects when segment count isn't changed
-void DrawState::cacheCircleCoords(int segment_count)
+void Session::cacheCircleCoords(int segment_count)
 {
   // Recalc required? Only done first time called and when segment count changes
   if (segment_count == 0 || segments == segment_count) return;

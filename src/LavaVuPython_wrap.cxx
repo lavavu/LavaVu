@@ -3009,7 +3009,7 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_ColourMap swig_types[0]
-#define SWIGTYPE_p_DrawState swig_types[1]
+#define SWIGTYPE_p_Session swig_types[1]
 #define SWIGTYPE_p_DrawingObject swig_types[2]
 #define SWIGTYPE_p_GeomData swig_types[3]
 #define SWIGTYPE_p_LavaVu swig_types[4]
@@ -12721,7 +12721,7 @@ SWIGINTERN PyObject *OpenGLViewer_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObj
 
 SWIGINTERN PyObject *_wrap_new_DrawingObject__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   std::string arg2 ;
   std::string arg3 ;
   unsigned int arg4 ;
@@ -12732,14 +12732,14 @@ SWIGINTERN PyObject *_wrap_new_DrawingObject__SWIG_0(PyObject *SWIGUNUSEDPARM(se
   DrawingObject *result = 0 ;
   
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
@@ -12779,7 +12779,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_DrawingObject__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   std::string arg2 ;
   std::string arg3 ;
   void *argp1 = 0 ;
@@ -12787,14 +12787,14 @@ SWIGINTERN PyObject *_wrap_new_DrawingObject__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   DrawingObject *result = 0 ;
   
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
@@ -12829,21 +12829,21 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_DrawingObject__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   std::string arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   DrawingObject *result = 0 ;
   
   if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
@@ -12869,20 +12869,20 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_DrawingObject__SWIG_3(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   DrawingObject *result = 0 ;
   
   if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_DrawingObject" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     try {
       result = (DrawingObject *)new DrawingObject(*arg1);
@@ -12921,10 +12921,10 @@ SWIGINTERN PyObject *_wrap_new_DrawingObject(PyObject *self, PyObject *args) {
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_DrawingObject'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    DrawingObject::DrawingObject(DrawState &,std::string,std::string,unsigned int)\n"
-    "    DrawingObject::DrawingObject(DrawState &,std::string,std::string)\n"
-    "    DrawingObject::DrawingObject(DrawState &,std::string)\n"
-    "    DrawingObject::DrawingObject(DrawState &)\n");
+    "    DrawingObject::DrawingObject(Session &,std::string,std::string,unsigned int)\n"
+    "    DrawingObject::DrawingObject(Session &,std::string,std::string)\n"
+    "    DrawingObject::DrawingObject(Session &,std::string)\n"
+    "    DrawingObject::DrawingObject(Session &)\n");
   return 0;
 }
 
@@ -13344,7 +13344,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_Model(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject *swig_obj[1] ;
@@ -13352,14 +13352,14 @@ SWIGINTERN PyObject *_wrap_new_Model(PyObject *SWIGUNUSEDPARM(self), PyObject *a
   
   if (!args) SWIG_fail;
   swig_obj[0] = args;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Model" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_Model" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_Model" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_Model" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     try {
       result = (Model *)new Model(*arg1);
@@ -13474,7 +13474,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   std::string arg2 ;
   std::string arg3 ;
   void *argp1 = 0 ;
@@ -13482,14 +13482,14 @@ SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self),
   ColourMap *result = 0 ;
   
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
@@ -13524,21 +13524,21 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   std::string arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   ColourMap *result = 0 ;
   
   if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
@@ -13564,20 +13564,20 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_ColourMap__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
-  DrawState *arg1 = 0 ;
+  Session *arg1 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   ColourMap *result = 0 ;
   
   if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_DrawState,  0 );
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_Session,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ColourMap" "', argument " "1"" of type '" "Session &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "DrawState &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_ColourMap" "', argument " "1"" of type '" "Session &""'"); 
   }
-  arg1 = reinterpret_cast< DrawState * >(argp1);
+  arg1 = reinterpret_cast< Session * >(argp1);
   {
     try {
       result = (ColourMap *)new ColourMap(*arg1);
@@ -13613,9 +13613,9 @@ SWIGINTERN PyObject *_wrap_new_ColourMap(PyObject *self, PyObject *args) {
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_ColourMap'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    ColourMap::ColourMap(DrawState &,std::string,std::string)\n"
-    "    ColourMap::ColourMap(DrawState &,std::string)\n"
-    "    ColourMap::ColourMap(DrawState &)\n");
+    "    ColourMap::ColourMap(Session &,std::string,std::string)\n"
+    "    ColourMap::ColourMap(Session &,std::string)\n"
+    "    ColourMap::ColourMap(Session &)\n");
   return 0;
 }
 
@@ -20177,7 +20177,7 @@ static PyMethodDef SwigMethods[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_ColourMap = {"_p_ColourMap", "ColourMap *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_DrawState = {"_p_DrawState", "DrawState *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_DrawingObject = {"_p_DrawingObject", "DrawingObject *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_GeomData = {"_p_GeomData", "GeomData *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_LavaVu = {"_p_LavaVu", "LavaVu *", 0, 0, (void*)0, 0};
@@ -20208,7 +20208,7 @@ static swig_type_info _swigt__p_value_type = {"_p_value_type", "value_type *", 0
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ColourMap,
-  &_swigt__p_DrawState,
+  &_swigt__p_Session,
   &_swigt__p_DrawingObject,
   &_swigt__p_GeomData,
   &_swigt__p_LavaVu,
@@ -20239,7 +20239,7 @@ static swig_type_info *swig_type_initial[] = {
 };
 
 static swig_cast_info _swigc__p_ColourMap[] = {  {&_swigt__p_ColourMap, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_DrawState[] = {  {&_swigt__p_DrawState, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_DrawingObject[] = {  {&_swigt__p_DrawingObject, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GeomData[] = {  {&_swigt__p_GeomData, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_LavaVu[] = {  {&_swigt__p_LavaVu, 0, 0, 0},{0, 0, 0, 0}};
@@ -20270,7 +20270,7 @@ static swig_cast_info _swigc__p_value_type[] = {  {&_swigt__p_value_type, 0, 0, 
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ColourMap,
-  _swigc__p_DrawState,
+  _swigc__p_Session,
   _swigc__p_DrawingObject,
   _swigc__p_GeomData,
   _swigc__p_LavaVu,
