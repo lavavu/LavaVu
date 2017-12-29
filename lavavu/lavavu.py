@@ -948,6 +948,20 @@ class _ColourList():
         del self.list[key]
         self.parent.update(self.list)
 
+    def __iadd__(self, value):
+        self.append(value)
+
+    def __add__(self, value):
+        self.append(value)
+
+    def append(self, value, position=1.0):
+        self.list = self.parent.tolist()
+        if isinstance(value, tuple):
+            self.list.append(value)
+        else:
+            self.list.append((position, value))
+        self.parent.update(self.list)
+
     def __str__(self):
         return str([c[1] for c in self.list])
 
@@ -966,8 +980,6 @@ class _PositionList(_ColourList):
     def __setitem__(self, key, value):
         self.list = self.parent.tolist()
         self.list[key] = (value, self.list[key][1])
-        #Sort by position
-        self.list = sorted(self.list, key=lambda tup: tup[0])
         self.parent.update(self.list)
 
     def __str__(self):
@@ -1026,6 +1038,11 @@ class ColourMap(dict):
          """
         self._get()
         return _ColourList(self)
+
+    @colours.setter
+    def colours(self, value):
+        #Dummy setter to allow +/+= on colours list
+        pass
 
     @property
     def positions(self):
@@ -1119,6 +1136,8 @@ class ColourMap(dict):
             Convert to greyscale
         """
         if isinstance(data, list) and len(data) > 1:
+            #Sort by position
+            data = sorted(data, key=lambda tup: tup[0])
             #Ensure first and last positions of list data are always 0 and 1
             if data[0][0]  != 0.0: data[0]  = (0.0, data[0][1])
             if data[-1][0] != 1.0: data[-1] = (1.0, data[-1][1])
