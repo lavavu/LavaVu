@@ -139,7 +139,7 @@ public:
   void run(std::vector<std::string> args={});
   void clearAll(bool objects=false, bool colourmaps=false);
 
-  std::string exportData(lucExportType type, DrawingObject* obj=NULL);
+  std::string exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename="exported.gldb");
 
   void parseProperties(std::string& properties);
   void parseProperty(std::string data);
@@ -227,7 +227,6 @@ public:
   std::vector<std::string> commandList(std::string category="");
   std::string helpCommand(std::string cmd="", bool heading=true);
   std::string propertyList();
-  void dumpCSV(DrawingObject* obj=NULL);
   std::string jsonWriteFile(DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonReadFile(std::string fn);

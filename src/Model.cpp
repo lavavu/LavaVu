@@ -1670,8 +1670,8 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   }
 
   // Remove existing static data
-  outdb.issue("drop table IF EXISTS object");
-  outdb.issue("drop table IF EXISTS state");
+  //outdb.issue("drop table IF EXISTS object");
+  //outdb.issue("drop table IF EXISTS state");
 
   // Create new tables when not present
   outdb.issue("create table IF NOT EXISTS geometry (id INTEGER PRIMARY KEY ASC, object_id INTEGER, timestep INTEGER, rank INTEGER, idx INTEGER, type INTEGER, data_type INTEGER, size INTEGER, count INTEGER, width INTEGER, minimum REAL, maximum REAL, dim_factor REAL, units VARCHAR(32), minX REAL, minY REAL, minZ REAL, maxX REAL, maxY REAL, maxZ REAL, labels VARCHAR(2048), properties VARCHAR(2048), data BLOB, FOREIGN KEY (object_id) REFERENCES object (id) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (timestep) REFERENCES timestep (id) ON DELETE CASCADE ON UPDATE CASCADE)");
@@ -1680,7 +1680,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
     "create table IF NOT EXISTS timestep (id INTEGER PRIMARY KEY ASC, time REAL, dim_factor REAL, units VARCHAR(32), properties VARCHAR(2048))");
 
   outdb.issue(
-    "create table object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))");
+    "create table IF NOT EXISTS object (id INTEGER PRIMARY KEY ASC, name VARCHAR(256), colourmap_id INTEGER, colour INTEGER, opacity REAL, properties VARCHAR(2048))");
 
   //Write state
   writeState(outdb);

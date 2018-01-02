@@ -531,8 +531,10 @@ void LavaVu::run(std::vector<std::string> args)
       Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
       if (tris) tris->loadMesh();  //Optimise triangle meshes before export
       DrawingObject* obj = NULL;
+      std::vector<DrawingObject*> objs;
       if (dumpid > 0) obj = amodel->findObject(dumpid);
-      exportData(dump, obj);
+      if (obj) objs.push_back(obj);
+      exportData(dump, objs);
     }
   }
   else
@@ -585,32 +587,59 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
   aobject = NULL;
 }
 
-std::string LavaVu::exportData(lucExportType type, DrawingObject* obj)
+std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename)
 {
   //Export data
   viewer->display();
-  if (type == lucExportJSON)
+
+  if (type == lucExportJSON || type == lucExportJSONP)
   {
-    return jsonWriteFile(obj);
+    if (list.size() == 0)
+      return jsonWriteFile(NULL, type == lucExportJSONP);
+
+    for (unsigned int c=0; c<list.size(); c++)
+      jsonWriteFile(list[c], type == lucExportJSONP);
   }
-  else if (type == lucExportJSONP)
+  else if (type == lucExportGLDB || type == lucExportGLDBZ)
   {
-    return jsonWriteFile(obj, true);
-  }
-  else if (type == lucExportGLDB)
-  {
-    amodel->writeDatabase("exported.gldb", obj);
-    return "exported.gldb";
-  }
-  else if (type == lucExportGLDBZ)
-  {
-    amodel->writeDatabase("exported.gldb", obj, true);
-    return "exported.gldb";
+    if (list.size() == 0)
+      amodel->writeDatabase(filename.c_str(), NULL, type == lucExportGLDBZ);
+    else
+    {
+      for (unsigned int c=0; c<list.size(); c++)
+        amodel->writeDatabase(filename.c_str(), list[c], type == lucExportGLDBZ);
+    }
+    return filename;
   }
   else if (type == lucExportCSV)
   {
-    dumpCSV(obj);
-    return "CSV files";
+    std::string files;
+    for (unsigned int i=0; i < amodel->objects.size(); i++)
+    {
+      if (!amodel->objects[i]->skip && (list.size() == 0 || std::find(list.begin(), list.end(), amodel->objects[i]) != list.end()))
+      {
+        for (auto g : amodel->geometry)
+        {
+          std::ostringstream ss;
+          g->dump(ss, amodel->objects[i]);
+
+          std::string results = ss.str();
+          if (results.size() > 0)
+          {
+            char filename[FILE_PATH_MAX];
+            sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name().c_str(),
+                    GeomData::names[g->type].c_str(), amodel->stepInfo());
+            std::ofstream csv;
+            csv.open(filename, std::ios::out | std::ios::trunc);
+            std::cout << " * Writing object " << amodel->objects[i]->name() << " to " << filename << std::endl;
+            csv << results;
+            csv.close();
+            files += std::string(filename) + ",";
+          }
+        }
+      }
+    }
+    return files;
   }
   return "";
 }
@@ -2913,34 +2942,6 @@ void LavaVu::writeSteps(bool images, int start, int end)
       if (encoder)
         viewer->display();
 #endif
-    }
-  }
-}
-
-void LavaVu::dumpCSV(DrawingObject* obj)
-{
-  for (unsigned int i=0; i < amodel->objects.size(); i++)
-  {
-    if (!amodel->objects[i]->skip && (!obj || amodel->objects[i] == obj))
-    {
-      for (auto g : amodel->geometry)
-      {
-        std::ostringstream ss;
-        g->dump(ss, amodel->objects[i]);
-
-        std::string results = ss.str();
-        if (results.size() > 0)
-        {
-          char filename[FILE_PATH_MAX];
-          sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name().c_str(),
-                  GeomData::names[g->type].c_str(), amodel->stepInfo());
-          std::ofstream csv;
-          csv.open(filename, std::ios::out | std::ios::trunc);
-          std::cout << " * Writing object " << amodel->objects[i]->name() << " to " << filename << std::endl;
-          csv << results;
-          csv.close();
-        }
-      }
     }
   }
 }

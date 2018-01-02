@@ -554,8 +554,6 @@ std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const 
     DrawingObject* obj = lookupObject(parsed, key, c+start);
     if (obj)
       list.push_back(obj);
-    else
-      break;
   }
   return list;
 }
@@ -1904,33 +1902,52 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Export object data\n\n"
-              "**Usage:** export [format] [object]\n\n"
-              "format (string) : json/csv/db/dbz (default: dbz = compressed db)\n"
-              "object (integer/string) : the index or name of the object to export (see: \"list objects\")\n"
-              "object_name (string) : the name of the object to export (see: \"list objects\")\n"
+      help += "Export model database\n\n"
+              "**Usage:** export [filename] [objects] [uncompressed]\n\n"
+              "filename (string) : the name of the file to export to, extension must be .gldb\n"
+              "objects (integer/string) : the indices or names of the objects to export (see: \"list objects\")\n"
+              "uncompressed : add this to skip the zlib compression step in the export process\n"
               "If object ommitted all will be exported\n";
       return false;
     }
 
-    std::string what = parsed["export"];
-    lucExportType type = what == "json" ? lucExportJSON : (what == "csv" ? lucExportCSV : (what == "db" ? lucExportGLDB : lucExportGLDBZ));
-    //Export drawing object by name/ID match
+    bool compress = (cmd.find("uncompressed") == std::string::npos);
+    std::string dbfn = parsed["export"];
+    if (dbfn.find(".gldb") == std::string::npos) dbfn = "exported.gldb";
     std::vector<DrawingObject*> list = lookupObjects(parsed, "export");
-    if (list.size() == 0)
+    exportData(compress ? lucExportGLDBZ : lucExportGLDB, list, dbfn);
+    printMessage("Database export complete");
+  }
+  else if (parsed.exists("csv"))
+  {
+    if (gethelp)
     {
-      //Only export all if no other spec provided
-      std::string fn = exportData(type);
-      printMessage("Dumped all objects to %s", fn.c_str());
+      help += "Export CSV data\n\n"
+              "**Usage:** csv [objects]\n\n"
+              "objects (integer/string) : the indices or names of the objects to export (see: \"list objects\")\n"
+              "If object ommitted all will be exported\n";
+      return false;
     }
-    else
+
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "csv");
+    exportData(lucExportCSV, list);
+    printMessage("CSV export complete");
+  }
+  else if (parsed.exists("json"))
+  {
+    if (gethelp)
     {
-      for (unsigned int c=0; c<list.size(); c++)
-      {
-        std::string fn = exportData(type, list[c]);
-        printMessage("Dumped object %s to %s", list[c]->name().c_str(), fn.c_str());
-      }
+      help += "Export json data\n\n"
+              "**Usage:** json [object]\n\n"
+              "objects (integer/string) : the indices or names of the objects to export (see: \"list objects\")\n"
+              "If object ommitted all will be exported\n";
+      return false;
     }
+
+
+    std::vector<DrawingObject*> list = lookupObjects(parsed, "json");
+    exportData(lucExportJSON, list);
+    printMessage("JSON export complete");
   }
   else if (parsed.exists("list"))
   {
@@ -3362,7 +3379,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "save"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "csv", "json", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
