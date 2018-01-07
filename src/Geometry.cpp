@@ -770,7 +770,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
 
   //Surface specific options
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  if (type == lucTriangleType || type == lucGridType || TriangleBased(type))
+  if (TriangleBased(type))
   {
     //Disable lighting and polygon faces in wireframe mode
     if (geom[i]->draw->properties["wireframe"])
@@ -851,7 +851,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     if (texture)
       prog->setUniform("uTexture", (int)texture->unit);
 
-    if (geom[i]->render->normals.size() == 0 && (type == lucTriangleType || TriangleBased(type)))
+    if (geom[i]->render->normals.size() == 0 && TriangleBased(type))
       prog->setUniform("uCalcNormal", 1);
     else
       prog->setUniform("uCalcNormal", 0);

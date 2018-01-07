@@ -48,7 +48,7 @@
 #define Geometry__
 
 //Types based on triangle renderer
-#define TriangleBased(type) (type == lucShapeType || type == lucVectorType || type == lucTracerType)
+#define TriangleBased(type) (type == lucTriangleType || type == lucGridType || type == lucShapeType || type == lucVectorType || type == lucTracerType)
 
 // Point indices + distance for sorting
 typedef struct
