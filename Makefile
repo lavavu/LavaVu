@@ -135,21 +135,22 @@ default: install
 
 .PHONY: install
 install: $(PROGRAM) $(SWIGLIB) $(HTMLPATH)/viewer.html
-	cp src/shaders/*.* $(PREFIX)
-	cp -R src/html/*.js $(HTMLPATH)
-	cp -R src/html/*.css $(HTMLPATH)
-	cp src/html/index.html $(HTMLPATH)/index.html
+	@if [ $(PREFIX) != "lavavu" ]; then \
+	cp -R lavavu/*.py $(PREFIX); \
+	cp -R lavavu/shaders/*.* $(PREFIX)/shaders; \
+	cp -R lavavu/html/*.* $(HTMLPATH); \
+	fi
 
-$(HTMLPATH)/viewer.html: src/html/viewer.html src/shaders/*.frag src/shaders/*.vert
-	sed -e "/Point vertex shader/    r src/shaders/pointShaderWEBGL.vert"  \
-      -e "/Point fragment shader/  r src/shaders/pointShaderWEBGL.frag"  \
-      -e "/Tri vertex shader/      r src/shaders/triShaderWEBGL.vert"    \
-      -e "/Tri fragment shader/    r src/shaders/triShaderWEBGL.frag"    \
-      -e "/Volume vertex shader/   r src/shaders/volumeShaderWEBGL.vert" \
-      -e "/Volume fragment shader/ r src/shaders/volumeShaderWEBGL.frag" \
-      -e "/Line vertex shader/     r src/shaders/lineShaderWEBGL.vert"   \
-      -e "/Line fragment shader/   r src/shaders/lineShaderWEBGL.frag"   \
-			< src/html/viewer.html > $(HTMLPATH)/viewer.html
+$(HTMLPATH)/viewer.html: lavavu/html/viewer_template.html lavavu/shaders/*.frag lavavu/shaders/*.vert
+	sed -e "/Point vertex shader/    r lavavu/shaders/pointShaderWEBGL.vert"  \
+      -e "/Point fragment shader/  r lavavu/shaders/pointShaderWEBGL.frag"  \
+      -e "/Tri vertex shader/      r lavavu/shaders/triShaderWEBGL.vert"    \
+      -e "/Tri fragment shader/    r lavavu/shaders/triShaderWEBGL.frag"    \
+      -e "/Volume vertex shader/   r lavavu/shaders/volumeShaderWEBGL.vert" \
+      -e "/Volume fragment shader/ r lavavu/shaders/volumeShaderWEBGL.frag" \
+      -e "/Line vertex shader/     r lavavu/shaders/lineShaderWEBGL.vert"   \
+      -e "/Line fragment shader/   r lavavu/shaders/lineShaderWEBGL.frag"   \
+			< lavavu/html/viewer_template.html > $(HTMLPATH)/viewer.html
 
 .PHONY: force
 $(OPATH)/compiler_flags: force | paths
@@ -160,6 +161,7 @@ paths:
 	@mkdir -p $(OPATH)
 	@mkdir -p $(PREFIX)
 	@mkdir -p $(HTMLPATH)
+	@mkdir -p $(PREFIX)/shaders
 
 #Rebuild *.cpp
 $(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
@@ -208,9 +210,11 @@ docs: src/LavaVu.cpp src/Session.h
 
 clean:
 	-rm -f *~ $(OPATH)/*.o
-	-rm -f $(PREFIX)/*.frag
-	-rm -f $(PREFIX)/*.vert
 	-rm -f $(PREFIX)/*.so
 	-rm -f $(PREFIX)/LavaVu
-	-rm -rf $(PREFIX)/html
+	@if [ $(PREFIX) != "lavavu" ]; then \
+	-rm -rf $(PREFIX)/html; \
+	-rm -rf $(PREFIX)/shaders; \
+	-rm -f $(PREFIX)/*.py; \
+	fi
 

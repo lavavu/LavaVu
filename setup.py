@@ -159,6 +159,7 @@ if __name__ == "__main__":
           install_requires  = ['numpy'],
           platforms         = ['any'],
           scripts           = ['LV'],
+          package_data      = {'lavavu': ['lavavu/shaders/*.*', 'lavavu/html/*.*']},
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
@@ -172,6 +173,11 @@ if __name__ == "__main__":
             'Topic :: Multimedia :: Graphics :: 3D Rendering',
             'Topic :: Scientific/Engineering :: Visualization',
             'Development Status :: 4 - Beta',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.4',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
           ],
           cmdclass = {'build': LVBuild, 'install': LVInstall, 'develop': LVDevelop, 'egg_info': LVEggInfo},
           )

@@ -1,0 +1,983 @@
+<html>
+
+<head>
+<title>LavaVu Interface</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<link rel="stylesheet" type="text/css" href="styles.css">
+<script type="text/javascript" src="gl-matrix-min.js"></script>
+<script type="text/javascript" src="OK-min.js"></script>
+<script type="text/javascript" src="draw.js"></script>
+<script type="text/javascript" src="server.js"></script>
+
+<script id="particle-vs" type="x-shader/x-vertex">
+precision highp float;
+//Point vertex shader
+attribute vec3 aVertexPosition;
+attribute vec4 aVertexColour;
+attribute float aVertexSize;
+attribute float aPointType;
+
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+
+uniform float uPointScale;
+uniform float uOpacity;
+uniform vec4 uColour;
+
+varying vec4 vColour;
+varying vec3 vPosEye;
+varying float vPointType;
+
+void main(void)
+{
+  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+  vPosEye = vec3(mvPosition);
+  gl_Position = uPMatrix * mvPosition;
+  if (uColour.a > 0.0)
+    vColour = uColour;
+  else
+    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
+  // calculate window-space point size
+  float eyeDist = length(mvPosition);
+  float size = max(1.0, aVertexSize);
+  gl_PointSize = uPointScale * size / eyeDist;
+  vPointType = aPointType;
+}
+
+
+</script>
+
+<script id="particle-fs" type="x-shader/x-fragment">
+precision highp float;
+//Point fragment shader
+uniform int uPointType;
+varying vec4 vColour;
+varying vec3 vPosEye;
+varying float vPointType;
+void main(void)
+{
+  // calculate normal from point coordinates
+  vec3 N;
+  N.xy = gl_PointCoord * vec2(2.0, -2.0) + vec2(-1.0, 1.0);
+  float mag = dot(N.xy, N.xy);
+  if (vColour.a < 0.05 || mag > 1.0) discard;   // kill pixels outside circle radius and transparent pixels
+
+  int pointType = uPointType;
+  if (vPointType >= 0.0) pointType = int(ceil(vPointType));
+
+  if (pointType < 2)
+  {
+    if (pointType == -1)
+      gl_FragColor = vColour; //vec4(vColour.rgb, 1.0);      //Simple
+    else if (pointType == 1)
+    //  gl_FragColor = vec4(vColour.rgb, vColour.a * 1.0-sqrt(mag));  // 
+      gl_FragColor = vec4(vColour.rgb, vColour.a * exp((-mag*mag)/1.28));  //Gaussian
+    else
+      gl_FragColor = vec4(vColour.rgb, vColour.a * 1.0-mag);      //Linear
+    return; //No lighting effects, finish here`
+  }
+
+  // calculate lighting
+  vec3 specolour = vec3(1.0, 1.0, 1.0);   //Colour of specular light
+  vec3 diffcolour = vec3(1.0, 1.0, 1.0);  //Colour of diffuse light
+  vec3 ambcolour = vec3(0.1, 0.1, 0.1);   //Colour of ambient light
+  N.z = sqrt(1.0-mag);
+  vec3 lightDir = normalize(vec3(1.0,1.0,1.0) - vPosEye);
+  float diffuse = max(0.0, dot(lightDir, N));
+
+  // compute the specular term if diffuse is larger than zero 
+  float specular = 0.0;
+  if (pointType == 3 && diffuse > 0.0)
+  {
+    float shininess = 32.0;
+    vec3 lightPos = lightDir*2.0;        //Fixed light position
+    // normalize the half-vector, and then compute the 
+    // cosine (dot product) with the normal
+    vec3 halfVector = normalize(lightPos - vec3(gl_PointCoord, 0));
+    float NdotHV = max(dot(N, halfVector), 0.0);
+    specular = pow(NdotHV, shininess);
+  }
+
+  vec3 lightWeighting = ambcolour + diffcolour * diffuse;
+  gl_FragColor = vec4(vColour.rgb * lightWeighting + specolour * specular, vColour.a);
+}
+
+
+</script>
+
+<script id="triangle-vs" type="x-shader/x-vertex">
+precision highp float;
+//Tri vertex shader
+attribute vec3 aVertexPosition;
+attribute vec3 aVertexNormal;
+attribute vec4 aVertexColour;
+attribute vec2 aVertexTexCoord;
+attribute float aVertexObjectID;
+
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+uniform mat4 uNMatrix;
+
+uniform vec4 uColour;
+uniform bool uCalcNormal;
+
+varying vec4 vColour;
+varying vec3 vNormal;
+varying vec3 vPosEye;
+varying vec2 vTexCoord;
+varying vec3 vVertex;
+
+varying float vObjectID;
+
+void main(void)
+{
+  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+    mvPosition -= 0.00001*aVertexObjectID;
+  vPosEye = vec3(mvPosition);
+  gl_Position = uPMatrix * mvPosition;
+
+  if (uCalcNormal || dot(aVertexNormal,aVertexNormal) < 0.01)
+    vNormal = vec3(0.0);
+  else
+    vNormal = normalize(mat3(uNMatrix) * aVertexNormal);
+
+  if (uColour.a > 0.0)
+    vColour = uColour;
+  else
+    vColour = aVertexColour;
+
+  vTexCoord = aVertexTexCoord;
+  vObjectID = aVertexObjectID;
+  vVertex = aVertexPosition;
+}
+
+
+</script>
+
+<script id="triangle-fs" type="x-shader/x-fragment">
+precision highp float;
+//Tri fragment shader
+#extension GL_OES_standard_derivatives : enable
+
+varying vec4 vColour;
+varying vec3 vNormal;
+varying vec3 vPosEye;
+varying vec2 vTexCoord;
+varying float vObjectID;
+varying vec3 vVertex;
+uniform float uOpacity;
+uniform bool uLighting;
+uniform float uBrightness;
+uniform float uContrast;
+uniform float uSaturation;
+uniform float uAmbient;
+uniform float uDiffuse;
+uniform float uSpecular;
+uniform bool uTextured;
+uniform sampler2D uTexture;
+uniform vec3 uClipMin;
+uniform vec3 uClipMax;
+
+uniform int uCullFace[64];
+
+void main(void)
+{
+  //Clip planes in X/Y/Z (shift seems to be required on nvidia)
+  if (any(lessThan(vVertex, uClipMin - vec3(0.01))) || any(greaterThan(vVertex, uClipMax + vec3(0.01)))) discard;
+
+  vec4 fColour = vColour;
+  if (uTextured) 
+    fColour = texture2D(uTexture, vTexCoord);
+
+  //Get properties by object ID
+  int cullface = 0;
+  for (int i=0; i<=64; i++)
+    if (abs(vObjectID - float(i)) <= 0.001) cullface = uCullFace[i];
+  //Back-face culling
+  if (cullface > 0 && dot(vPosEye, vNormal) > 0.0) discard;
+
+  //TODO: uniforms for rest of light params!
+  const float shininess = 100.0; //Size of highlight (higher is smaller)
+  const vec3 light = vec3(1.0, 1.0, 1.0);  //Colour of light
+
+  //Head light, lightPos=(0,0,0) - vPosEye
+  vec3 lightDir = normalize(-vPosEye);
+
+  //Calculate diffuse lighting
+  vec3 N = vNormal;
+
+  //Default normal...
+  if (dot(N,N) < 0.01)
+  {
+    //Requires extension: OES_standard_derivatives
+    vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
+    vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
+    N = normalize(cross(fdx,fdy)); 
+  }
+
+  float diffuse = abs(dot(N, lightDir));
+
+   //Compute the specular term
+   vec3 specular = vec3(0.0,0.0,0.0);
+   if (diffuse > 0.0 && uSpecular > 0.0)
+   {
+      vec3 specolour = vec3(1.0, 1.0, 1.0);   //Color of light
+      //Normalize the half-vector
+      //vec3 halfVector = normalize(vPosEye + lightDir);
+      vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
+      //Compute cosine (dot product) with the normal (abs for two-sided)
+      float NdotHV = abs(dot(N, halfVector));
+      specular = specolour * pow(NdotHV, shininess);
+   }
+
+  vec3 lightWeighting = light * (uAmbient + diffuse * uDiffuse + specular * uSpecular);
+  float alpha = fColour.a;
+  if (uOpacity > 0.0) alpha *= uOpacity;
+  vec4 colour = vec4(fColour.rgb * lightWeighting, alpha);
+
+  //Brightness adjust
+  colour += uBrightness;
+  //Saturation & Contrast adjust
+  const vec4 LumCoeff = vec4(0.2125, 0.7154, 0.0721, 0.0);
+  vec4 AvgLumin = vec4(0.5, 0.5, 0.5, 0.0);
+  vec4 intensity = vec4(dot(colour, LumCoeff));
+  colour = mix(intensity, colour, uSaturation);
+  colour = mix(AvgLumin, colour, uContrast);
+  colour.a = alpha;
+
+  if (alpha < 0.01) discard;
+
+  gl_FragColor = colour;
+}
+
+</script>
+
+<script id="line-vs" type="x-shader/x-vertex">
+precision highp float;
+//Line vertex shader
+attribute vec3 aVertexPosition;
+attribute vec4 aVertexColour;
+
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+
+uniform vec4 uColour;
+uniform float uOpacity;
+
+varying vec4 vColour;
+
+void main(void)
+{
+  vec4 mvPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+  gl_Position = uPMatrix * mvPosition;
+  if (uColour.a > 0.0)
+    vColour = uColour;
+  else
+    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
+}
+
+
+</script>
+
+<script id="line-fs" type="x-shader/x-fragment">
+precision highp float;
+//Line fragment shader
+varying vec4 vColour;
+
+void main(void)
+{
+  gl_FragColor = vColour;
+}
+</script>
+
+<script id="volume-vs" type="x-shader/x-vertex">
+precision highp float;
+//Volume vertex shader
+precision highp float;
+attribute vec3 aVertexPosition;
+void main(void)
+{
+  gl_Position = vec4(aVertexPosition, 1.0);
+}
+
+</script>
+
+<script id="volume-fs" type="x-shader/x-fragment">
+precision highp float;
+//Volume fragment shader
+/*
+ * Copyright (c) 2014, Monash University. All rights reserved.
+ * Author: Owen Kaluza - owen.kaluza ( at ) monash.edu
+ *
+ * Licensed under the GNU Lesser General Public License
+ * https://www.gnu.org/licenses/lgpl.html
+ */
+precision highp float;
+
+//Defined dynamically before compile...
+//const vec2 slices = vec2(16.0,16.0);
+//const int maxSamples = 256;
+
+uniform sampler2D uVolume;
+uniform sampler2D uTransferFunction;
+
+uniform vec3 uBBMin;
+uniform vec3 uBBMax;
+uniform vec3 uResolution;
+
+uniform bool uEnableColour;
+
+uniform float uBrightness;
+uniform float uContrast;
+uniform float uSaturation;
+uniform float uPower;
+
+uniform mat4 uPMatrix;
+uniform mat4 uInvPMatrix;
+uniform mat4 uMVMatrix;
+uniform mat4 uNMatrix;
+uniform vec4 uViewport;
+uniform int uSamples;
+uniform float uDensityFactor;
+uniform float uIsoValue;
+uniform vec4 uIsoColour;
+uniform float uIsoSmooth;
+uniform int uIsoWalls;
+uniform int uFilter;
+uniform vec2 uRange;
+uniform vec2 uDenMinMax;
+
+//#define tex3D(pos) interpolate_tricubic_fast(pos)
+//#define tex3D(pos) texture3Dfrom2D(pos).x
+
+vec2 islices = vec2(1.0 / slices.x, 1.0 / slices.y);
+
+vec4 texture3Dfrom2D(vec3 pos)
+{
+  //Get z slice index and position between two slices
+  float Z = pos.z * (slices.x * slices.y - 1.0);
+  int slice = int(Z); //Index of first slice
+
+  //X & Y coords of sample scaled to slice size
+  vec2 sampleOffset = pos.xy * islices;
+  //Offsets in 2D texture of given slice indices
+  //(add offsets to scaled position within slice to get sample positions)
+  float A = float(slice) * islices.x;
+  float B = float(slice+1) * islices.x;
+  vec2 z1offset = vec2(fract(A), floor(A) / slices.y) + sampleOffset;
+  vec2 z2offset = vec2(fract(B), floor(B) / slices.y) + sampleOffset;
+  
+  //Interpolate the final value by position between slices [0,1]
+  return mix(texture2D(uVolume, z1offset), texture2D(uVolume, z2offset), fract(Z));
+}
+
+float interpolate_tricubic_fast(vec3 coord);
+
+float tex3D(vec3 pos) 
+{
+  if (uFilter > 0)
+    return interpolate_tricubic_fast(pos);
+  return texture3Dfrom2D(pos).x;
+}
+
+// It seems WebGL has no transpose
+mat4 transpose(in mat4 m)
+{
+  return mat4(
+              vec4(m[0].x, m[1].x, m[2].x, m[3].x),
+              vec4(m[0].y, m[1].y, m[2].y, m[3].y),
+              vec4(m[0].z, m[1].z, m[2].z, m[3].z),
+              vec4(m[0].w, m[1].w, m[2].w, m[3].w)
+             );
+}
+
+//Light moves with camera
+const vec3 lightPos = vec3(0.5, 0.5, 5.0);
+const float ambient = 0.2;
+const float diffuse = 0.8;
+const vec3 diffColour = vec3(1.0, 1.0, 1.0);  //Colour of diffuse light
+const vec3 ambColour = vec3(0.2, 0.2, 0.2);   //Colour of ambient light
+
+void lighting(in vec3 pos, in vec3 normal, inout vec3 colour)
+{
+  vec4 vertPos = uMVMatrix * vec4(pos, 1.0);
+  //vec3 lightDir = normalize(lightPos - vertPos.xyz);
+  vec3 lightDir = normalize(-vertPos.xyz);
+  vec3 lightWeighting = ambColour + diffColour * diffuse * clamp(abs(dot(normal, lightDir)), 0.1, 1.0);
+
+  colour *= lightWeighting;
+}
+
+vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
+{
+  //Detect bounding box hit (walls)
+  if (uIsoWalls > 0)
+  {
+    if (pos.x <= uBBMin.x) return vec3(-1.0, 0.0, 0.0);
+    if (pos.x >= uBBMax.x) return vec3(1.0, 0.0, 0.0);
+    if (pos.y <= uBBMin.y) return vec3(0.0, -1.0, 0.0);
+    if (pos.y >= uBBMax.y) return vec3(0.0, 1.0, 0.0);
+    if (pos.z <= uBBMin.z) return vec3(0.0, 0.0, -1.0);
+    if (pos.z >= uBBMax.z) return vec3(0.0, 0.0, 1.0);
+  }
+
+  //Calculate normal
+  /*return normalize(vec3(density) - vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
+                                        tex3D(vec3(pos.x, pos.y+shift.y, pos.z)), 
+                                        tex3D(vec3(pos.x, pos.y, pos.z+shift.z))));
+  */
+  //Compute central difference gradient 
+  //(slow, faster way would be to precompute a gradient texture)
+  vec3 pos1 = vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
+                   tex3D(vec3(pos.x, pos.y+shift.y, pos.z)), 
+                   tex3D(vec3(pos.x, pos.y, pos.z+shift.z)));
+  vec3 pos2 = vec3(tex3D(vec3(pos.x-shift.x, pos.y, pos.z)), 
+                   tex3D(vec3(pos.x, pos.y-shift.y, pos.z)), 
+                   tex3D(vec3(pos.x, pos.y, pos.z-shift.z)));
+  return normalize(pos1 - pos2);
+}
+
+vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
+{
+  //Intersect ray with bounding box
+  vec3 rayInvDirection = 1.0 / rayDirection;
+  vec3 bbMinDiff = (uBBMin - rayOrigin) * rayInvDirection;
+  vec3 bbMaxDiff = (uBBMax - rayOrigin) * rayInvDirection;
+  vec3 imax = max(bbMaxDiff, bbMinDiff);
+  vec3 imin = min(bbMaxDiff, bbMinDiff);
+  float back = min(imax.x, min(imax.y, imax.z));
+  float front = max(max(imin.x, 0.0), max(imin.y, imin.z));
+  return vec2(back, front);
+}
+
+void main()
+{
+    //Compute eye space coord from window space to get the ray direction
+    mat4 invMVMatrix = transpose(uMVMatrix);
+    //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
+    //Window ->[VP^]-> NDC ->[/w]-> Clip ->[P^]-> EyeSpace ->[MV^]-> ObjectSpace
+    vec4 ndcPos;
+    ndcPos.xy = ((2.0 * gl_FragCoord.xy) - (2.0 * uViewport.xy)) / (uViewport.zw) - 1.0;
+    ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
+               (gl_DepthRange.far - gl_DepthRange.near);
+    ndcPos.w = 1.0;
+    vec4 clipPos = ndcPos / gl_FragCoord.w;
+    //vec4 eyeSpacePos = uInvPMatrix * clipPos;
+    vec3 rayDirection = normalize((invMVMatrix * uInvPMatrix * clipPos).xyz);
+
+    //Ray origin from the camera position
+    vec4 camPos = -vec4(uMVMatrix[3]);  //4th column of modelview
+    vec3 rayOrigin = (invMVMatrix * camPos).xyz;
+
+    //Calc step
+    float stepSize = 1.732 / float(uSamples); //diagonal of [0,1] normalised coord cube = sqrt(3)
+
+    //Intersect ray with bounding box
+    vec2 intersection = rayIntersectBox(rayDirection, rayOrigin);
+    //Subtract small increment to avoid errors on front boundary
+    intersection.y -= 0.000001;
+    //Discard points outside the box (no intersection)
+    if (intersection.x <= intersection.y) discard;
+
+    vec3 rayStart = rayOrigin + rayDirection * intersection.y;
+    vec3 rayStop = rayOrigin + rayDirection * intersection.x;
+
+    vec3 step = normalize(rayStop-rayStart) * stepSize;
+    vec3 pos = rayStart;
+
+    float T = 1.0;
+    vec3 colour = vec3(0.0);
+    bool inside = false;
+    vec3 shift = uIsoSmooth / uResolution;
+    //Number of samples to take along this ray before we pass out back of volume...
+    float travel = distance(rayStop, rayStart) / stepSize;
+    int samples = int(ceil(travel));
+    float range = uRange.y - uRange.x;
+    if (range <= 0.0) range = 1.0;
+    //Scale isoValue
+    float isoValue = uRange.x + uIsoValue * range;
+  
+    //Raymarch, front to back
+    for (int i=0; i < maxSamples; ++i)
+    {
+      //Render samples until we pass out back of cube or fully opaque
+#ifndef IE11
+      if (i == samples || T < 0.01) break;
+#else
+      //This is slower but allows IE 11 to render, break on non-uniform condition causes it to fail
+      if (i == uSamples) break;
+      if (all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
+#endif
+      {
+        //Get density 
+        float density = tex3D(pos);
+
+#define ISOSURFACE
+#ifdef ISOSURFACE
+        //Passed through isosurface?
+        if (isoValue > uRange.x && ((!inside && density >= isoValue) || (inside && density < isoValue)))
+        {
+          inside = !inside;
+          //Find closer to exact position by iteration
+          //http://sizecoding.blogspot.com.au/2008/08/isosurfaces-in-glsl.html
+          float exact;
+          float a = intersection.y + (float(i)*stepSize);
+          float b = a - stepSize;
+          for (int j = 0; j < 5; j++)
+          {
+            exact = (b + a) * 0.5;
+            pos = rayDirection * exact + rayOrigin;
+            density = tex3D(pos);
+            if (density - isoValue < 0.0)
+              b = exact;
+            else
+              a = exact;
+          }
+
+          //Skip edges unless flagged to draw
+          if (uIsoWalls > 0 || all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
+          {
+            vec4 value = vec4(uIsoColour.rgb, 1.0);
+
+            vec3 normal = mat3(uNMatrix) * isoNormal(pos, shift, density);
+
+            vec3 light = value.rgb;
+            lighting(pos, normal, light);
+            //Front-to-back blend equation
+            colour += T * uIsoColour.a * light;
+            //Render normals
+            //colour += T * abs(isoNormal(pos, shift, density));
+            T *= (1.0 - uIsoColour.a);
+          }
+        }
+#endif
+
+        if (uDensityFactor > 0.0)
+        {
+          //Normalise the density over provided range
+          density = (density - uRange.x) / range;
+          density = clamp(density, 0.0, 1.0);
+          if (density < uDenMinMax[0] || density > uDenMinMax[1])
+          {
+            //Skip to next sample...
+            pos += step;
+            continue;
+          }
+
+          density = pow(density, uPower); //Apply power
+
+          vec4 value;
+          if (uEnableColour)
+            value = texture2D(uTransferFunction, vec2(density, 0.5));
+          else
+            value = vec4(density);
+
+          value *= uDensityFactor * stepSize;
+
+          //Color
+          colour += T * value.rgb;
+          //Alpha
+          T *= 1.0 - value.a;
+        }
+      }
+
+      //Next sample...
+      pos += step;
+    }
+
+    //Apply brightness, saturation & contrast
+    colour += uBrightness;
+    const vec3 LumCoeff = vec3(0.2125, 0.7154, 0.0721);
+    vec3 AvgLumin = vec3(0.5, 0.5, 0.5);
+    vec3 intensity = vec3(dot(colour, LumCoeff));
+    colour = mix(intensity, colour, uSaturation);
+    colour = mix(AvgLumin, colour, uContrast);
+
+    if (T > 0.95) discard;
+    gl_FragColor = vec4(colour, 1.0 - T);
+
+#ifdef WRITE_DEPTH
+    /* Write the depth !Not supported in WebGL without extension */
+    vec4 clip_space_pos = uPMatrix * uMVMatrix * vec4(rayStart, 1.0);
+    float ndc_depth = clip_space_pos.z / clip_space_pos.w;
+    float depth = (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
+                     gl_DepthRange.near + gl_DepthRange.far) / 2.0;
+    gl_FragDepth = depth;
+#endif
+}
+
+float interpolate_tricubic_fast(vec3 coord)
+{
+/* License applicable to this function:
+Copyright (c) 2008-2013, Danny Ruijters. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+*  Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+*  Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+*  Neither the name of the copyright holders nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+The views and conclusions contained in the software and documentation are
+those of the authors and should not be interpreted as representing official
+policies, either expressed or implied.
+
+When using this code in a scientific project, please cite one or all of the
+following papers:
+*  Daniel Ruijters and Philippe Thévenaz,
+   GPU Prefilter for Accurate Cubic B-Spline Interpolation, 
+   The Computer Journal, vol. 55, no. 1, pp. 15-20, January 2012.
+*  Daniel Ruijters, Bart M. ter Haar Romeny, and Paul Suetens,
+   Efficient GPU-Based Texture Interpolation using Uniform B-Splines,
+   Journal of Graphics Tools, vol. 13, no. 4, pp. 61-69, 2008.
+*/
+  // shift the coordinate from [0,1] to [-0.5, nrOfVoxels-0.5]
+  vec3 nrOfVoxels = uResolution; //textureSize3D(tex, 0));
+  vec3 coord_grid = coord * nrOfVoxels - 0.5;
+  vec3 index = floor(coord_grid);
+  vec3 fraction = coord_grid - index;
+  vec3 one_frac = 1.0 - fraction;
+
+  vec3 w0 = 1.0/6.0 * one_frac*one_frac*one_frac;
+  vec3 w1 = 2.0/3.0 - 0.5 * fraction*fraction*(2.0-fraction);
+  vec3 w2 = 2.0/3.0 - 0.5 * one_frac*one_frac*(2.0-one_frac);
+  vec3 w3 = 1.0/6.0 * fraction*fraction*fraction;
+
+  vec3 g0 = w0 + w1;
+  vec3 g1 = w2 + w3;
+  vec3 mult = 1.0 / nrOfVoxels;
+  vec3 h0 = mult * ((w1 / g0) - 0.5 + index);  //h0 = w1/g0 - 1, move from [-0.5, nrOfVoxels-0.5] to [0,1]
+  vec3 h1 = mult * ((w3 / g1) + 1.5 + index);  //h1 = w3/g1 + 1, move from [-0.5, nrOfVoxels-0.5] to [0,1]
+
+  // fetch the eight linear interpolations
+  // weighting and fetching is interleaved for performance and stability reasons
+  float tex000 = texture3Dfrom2D(h0).r;
+  float tex100 = texture3Dfrom2D(vec3(h1.x, h0.y, h0.z)).r;
+  tex000 = mix(tex100, tex000, g0.x);  //weigh along the x-direction
+  float tex010 = texture3Dfrom2D(vec3(h0.x, h1.y, h0.z)).r;
+  float tex110 = texture3Dfrom2D(vec3(h1.x, h1.y, h0.z)).r;
+  tex010 = mix(tex110, tex010, g0.x);  //weigh along the x-direction
+  tex000 = mix(tex010, tex000, g0.y);  //weigh along the y-direction
+  float tex001 = texture3Dfrom2D(vec3(h0.x, h0.y, h1.z)).r;
+  float tex101 = texture3Dfrom2D(vec3(h1.x, h0.y, h1.z)).r;
+  tex001 = mix(tex101, tex001, g0.x);  //weigh along the x-direction
+  float tex011 = texture3Dfrom2D(vec3(h0.x, h1.y, h1.z)).r;
+  float tex111 = texture3Dfrom2D(h1).r;
+  tex011 = mix(tex111, tex011, g0.x);  //weigh along the x-direction
+  tex001 = mix(tex011, tex001, g0.y);  //weigh along the y-direction
+
+  return mix(tex001, tex000, g0.z);  //weigh along the z-direction
+}
+
+</script>
+
+</head>
+
+<body onload="initPage();" oncontextmenu="return false;">
+
+  <div id="progress" class="popup" style="display: none; width: 310px; height: 32px;">
+    <span id="progressmessage"></span><span id="progressstatus"></span>
+    <div id="progressbar" style="width: 300px; height: 10px; background: #58f;"></div>
+  </div>
+
+  <canvas id="canvas" class="canvas"></canvas>
+  <img id="frame" class="server" style="display: none; position: absolute; top: 0px; left: 0px; z-index: -1;"></img>
+
+  <div id="hidden" style="display: none">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAPCAYAAAA2yOUNAAAAj0lEQVQokWNIjHT8/+zZs//Pnj37/+TJk/9XLp/+f+bEwf9HDm79v2Prqv9aKrz/GUYVEaeoMDMQryJXayWIoi0bFmFV1NWS+z/E1/Q/AwMDA0NVcez/LRsWoSia2luOUAADVcWx/xfO6/1/5fLp/1N7y//HhlmhKoCBgoyA/w3Vyf8jgyyxK4CBUF8zDAUAAJRXY0G1eRgAAAAASUVORK5CYII=" id="slider">
+    <canvas id="gradient" width="2048" height="1"></canvas>
+  </div>
+
+<div class="toolbox" id="params">
+  <h3>Global Settings</h3>
+  <div class="toolclose" onclick="toggle('properties-controls');">&#x25BE;</div>
+  <hr>
+  <div id="properties-controls" style="display: block;">
+    <!-- Clip controls -->
+    <table>
+    <tr>
+      <td>X min</td>
+      <td>
+         <input id="global-xmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-xmin" id="global-xmin-out">0</output>
+      </td>
+    </tr>
+    <tr>
+      <td>X max</td>
+      <td>
+         <input id="global-xmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-xmax" id="global-xmax-out">0</output>
+      </td>
+    </tr>
+    <tr>
+      <td>Y min</td>
+      <td>
+         <input id="global-ymin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-ymin" id="global-ymin-out">0</output>
+      </td>
+    </tr>
+    <tr>
+      <td>Y max</td>
+      <td>
+         <input id="global-ymax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-ymax" id="global-ymax-out">0</output>
+      </td>
+    </tr>
+    <tr>
+      <td>Z min</td>
+      <td>
+         <input id="global-zmin" type="range" min="0" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-zmin" id="global-zmin-out">0</output>
+      </td>
+    </tr>
+    <tr>
+      <td>Z max</td>
+      <td>
+         <input id="global-zmax" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();">
+         <output for="global-zmax" id="global-zmax-out">0</output>
+      </td>
+    </tr>
+    <tr><td>Brightness</td>
+       <td>
+          <input id="global-brightness" type="range" min="-1" max="1" value="0" step="0.01" onchange="viewer.setProperties();">
+          <output for="global-brightness" id="global-brightness-out">0</output>
+       </td>
+    </tr>
+    <tr><td>Contrast</td>
+       <td>
+          <input id="global-contrast" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
+          <output for="global-contrast" id="global-contrast-out">1</output>
+       </td>
+    </tr>
+    <tr><td>Saturation</td>
+       <td>
+          <input id="global-saturation" type="range" min="0" max="2" value="1" step="0.01" onchange="viewer.setProperties();">
+          <output for="global-saturation" id="global-saturation-out">1</output>
+       </td>
+    </tr>
+    <tr><td>Point Scaling</td>
+       <td>
+          <input id="pointScale" type="range" min="1" max="100" value="10" step="1" onchange="viewer.setProperties();"/>
+          <output for="pointScale" id="pointScale-out">5</output>
+       </td>
+    </tr>
+    <tr><td>Opacity</td>
+       <td>
+          <input id="global-opacity" type="range" min="0" max="1" value="1" step="0.01" onchange="viewer.setProperties();"/>
+          <output for="global-opacity" id="global-opacity-out">1</output>
+       </td>
+    </tr>
+    <tr><td>Point Type</td><td>
+    <select id="globalPointType" onchange="viewer.setProperties();" value="0">
+    <option value="0" selected>Transparent - Gaussian</option>
+    <option value="1">Transparent - Linear</option>
+    <option value="2">Solid sphere</option>
+    <option value="3">Sphere with highlight</option>
+    <option value="4">Flat</option>
+    </select>
+    </td></tr>
+    <tr><td>Background</td><td>
+    <select id="bgColour" onchange="viewer.setProperties();">
+    <option value="" selected></option>
+    <option value="0">black</option>
+    <option value="1">white</option>
+    <option value="0.65">light grey</option>
+    <option value="0.25">dark grey</option>
+    </select>
+    </td></tr>
+
+    <tr><td>Zoom</td><td>
+    <input id="zoomin" type="button" value=" + " onclick="viewer.zoom(0.05)"/>
+    <input id="zoomout" type="button" value=" - " onclick="viewer.zoom(-0.05)"/>
+    </td></tr>
+
+    <tr><td></td><td>
+    <input id="resetview" type="button" value="Reset camera" onclick="viewer.reset()"/>
+    </td></tr>
+
+
+    <tr>
+      <td>Left-click</td>
+      <td>
+        <input type="radio" name="mode" id="rmode" value="rotate" checked="checked"/> Rotate
+        <input type="radio" name="mode" id="tmode" value="translate" /> Translate
+      </td>
+    </tr>
+    <tr><td>Bounding box</td><td><input name="border" id="border" type="checkbox" checked="" onchange="viewer.setProperties();"></td></tr>
+    <tr><td>Axes</td><td><input name="axes" id="axes" type="checkbox" checked="" onchange="viewer.setProperties();"></td></tr>
+
+        <!--tr><td>Auto-subsample</td><td><input name="subsample" id="subsample" type="checkbox" checked="checked" onchange="viewer.draw();"></td></tr-->
+        <tr class="client"><td>Immediate sort</td><td><input name="immsort" id="immsort" type="checkbox" onchange="viewer.draw();"></td></tr>
+        <tr class="client"><td>Interactive render</td><td><input name="interactive" id="interactive" type="checkbox" onchange="viewer.draw();"></td></tr>
+
+        <tr class="server">
+          <td>Timestep</td>
+          <td>
+            <input id="timestep" type="range" min="0" max="100" value="50" onchange="viewer.setTimeStep();">
+            <br>
+            <input type="button" value="&larr;" onclick="requestData('/command=timestep up');">
+            <input type="button" value="&rarr;" onclick="requestData('/command=timestep down');">
+          </td>
+        </tr>
+        <tr class="server"><td>Commands</td><td><input type="text" id="cmdInput" onkeypress="keyPressCommand(event, this);"></td></tr>
+    </table>
+      
+    <hr>
+    <input type="button" class="server" value="Resize" onclick="resizeToWindow();">
+    <input type="button" class="server" value="Connect" onclick="connectWindow();"><br>
+    <input type="button" value="Import" onclick="document.getElementById('fileupload').click();">
+    <input name="file" id="fileupload" type="file" onchange="fileSelected(this.files)" style="display: none;">
+    <input name="export" id="export" type="button" value="Export" onclick="viewer.exportFile();">
+    <hr>
+    <input type="button" value="Objects" onclick="objectlist.toggle();">
+    <!--input type="button" value="Console" onClick="OK.debug_on = true; messages.toggle();"-->
+    <input id="sort" type="button" value="Sort" onClick="document.body.style.cursor = 'wait'; this.style.display = 'none'; viewer.draw(); document.body.style.cursor = 'default';" style="display: none; float: right;">
+  </div>
+
+</div>
+
+<div class="toolbox" id="objectlist" style="max-height: 500px;">
+  <div class="toolclose" onclick="window.objectlist.hide();">&times;</div>
+  <h3>Objects</h3>
+  <hr>
+  <div id="objects" class="scroll">
+  </div>
+  <hr>
+  <span class="client">Update selected (visible) objects</span>
+  <input id="apply" class="right client" type="button" value="Apply" onClick="viewer.apply();" disabled>
+</div>
+
+<div class="toolbox" id="properties"><div>
+  <div class="toolclose" onclick="window.properties.hide();">&times;</div>
+  <h3><span id="obj_name"></span> properties</h3>
+  <hr>
+  <div id="props">
+    <input id="opacity" type="range" min="0" max="1" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Opacity
+    <output for="opacity" id="opacity-out">1</output>
+    <br>
+    <!--input id="brightness" type="range" min="-100" max="100" value="0">Brightness<br>
+    <input id="contrast" type="range" min="0" max="200" value="100">Contrast<br>
+    <input id="saturation" type="range" min="0" max="200" value="100">Saturation<br-->
+    <!-- Particle controls -->
+    <div class="point-obj">
+       <input id="pointSize" type="range" min="1" max="100" value="10" step="1" oninput="document.getElementById(this.id+'-out').value = this.value/10.0;">
+       Point Size
+       <output for="pointSize" id="pointSize-out">1</output>
+    </div>
+    <div class="point-obj">Point Type<br>
+      <select id="pointType">
+      <option value="-1" selected>Default</option>
+      <option value="0">Transparent - Gaussian</option>
+      <option value="1">Transparent - Linear</option>
+      <option value="2">Solid sphere</option>
+      <option value="3">Sphere with highlight</option>
+      <option value="4">Flat</option>
+      </select>
+    </div>
+    <!-- Surface controls -->
+    <div class="surface-obj">
+      <input id="wireframe" type="checkbox"><label for="wireframe">Wireframe</label>
+      <input id="cullface" type="checkbox"><label for="cullface">Cull faces</label>
+    </div>
+    <!-- Volume controls -->
+    <div class="volume-obj">
+       <input id="density" type="range" min="0" max="100" value="10" step="1" oninput="document.getElementById(this.id+'-out').value = this.value;">Density
+       <output for="" id="density-out">10</output>
+    </div>
+    <div class="volume-obj">
+       <input id="power" type="range" min="0.01" max="5" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Power
+       <output for="power" id="power-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="samples" type="range" min="32" max="2048" value="256" step="1" oninput="document.getElementById(this.id+'-out').value = this.value;">Samples
+       <output for="samples" id="samples-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isovalue" type="range" min="0" max="1" value="0" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Isovalue
+       <output for="isovalue" id="isovalue-out">0</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isosmooth" type="range" min="0.1" max="3" value="0.1" step="0.1" oninput="document.getElementById(this.id+'-out').value = this.value;">Isosmooth
+       <output for="isosmooth" id="isosmooth-out">0.1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isoalpha" type="range" min="0" max="1" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Isoalpha
+       <output for="isoalpha" id="isoalpha-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="dminclip" type="range" min="0" max="1" value="0" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Density Clip Min
+       <output for="dminclip" id="dminclip-out">0</output>
+    </div>
+    <div class="volume-obj">
+       <input id="dmaxclip" type="range" min="0" max="1" value="1" step="0.01" oninput="document.getElementById(this.id+'-out').value = this.value;">Density Clip Max
+       <output for="dmaxclip" id="dmaxclip-out">1</output>
+    </div>
+    <div class="volume-obj">
+       <input id="isowalls" type="checkbox">
+       <label for="isowalls">Draw Walls</label>
+    </div>
+    <div class="volume-obj">
+       <input id="isofilter" type="checkbox">
+       <label for="isofilter">Filter</label>
+    </div>
+    <!-- Clip controls >
+    <hr>
+    <div>
+      <span>
+      <input id="xmin" type="range" min="0" max="1" value="0" step="1">X min
+      <input id="xmax" type="range" min="0" max="1" value="1" step="1">X max
+      </span>
+    </div>
+    <div>
+      <span>
+      <input id="ymin" type="range" min="0" max="1" value="0" step="1">Y min
+      <input id="ymax" type="range" min="0" max="1" value="1" step="1">Y max
+      </span>
+    </div>
+    <div>
+      <span>
+      <input id="zmin" type="range" min="0" max="1" value="0" step="1">Z min
+      <input id="zmax" type="range" min="0" max="1" value="1" step="1">Z max
+      </span>
+    </div-->
+  </div>
+  <hr>
+  Colour<br>
+  <div id="colour-edit">
+    <div id="colour" class="colourbg checkerboard">
+      <div id="colour_set" class="colour" onmousedown="viewer.gradient.edit(this);"></div>
+      </div>
+  </div>
+  <br>
+  Colourmap
+  <br>
+  <select id="colourmap-presets" onchange="viewer.setColourMap(this.value);">
+    <option value="-1">None</option>
+  </select>
+  <input type="button" value=" + " onClick="viewer.addColourMap();">
+  <br>
+  <canvas id="palette" width="512" height="24" class="palette checkerboard"></canvas>
+  <div id="log"><input id="logscale" type="checkbox"><label for="logscale">LogScale</label></div>
+  <hr>
+  <input type="button" class="right" value="Apply" onClick="viewer.setObjectProperties(); viewer">
+</div></div>
+</body>
+
+</html>

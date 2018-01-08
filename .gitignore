@@ -2,11 +2,8 @@
 syntax: glob
 src/version.cpp
 lavavu/LavaVu
-lavavu/*.vert
-lavavu/*.frag
 lavavu/*.so
 lavavu/LavaVu
-lavavu/html/*
 build/*
 lavavu.egg-info/*
 dist/*
