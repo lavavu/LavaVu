@@ -162,9 +162,14 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
     return colours
 
 
-#Echo image test fail output to console
-echo_fails = False
-default_args = []
+#Module settings
+#must be an object or won't be referenced from __init__.py import
+#(enures values are passed on when set externally)
+settings = {}
+#Default arguments for viewer creation
+settings["default_args"] = []
+#Dump base64 encoded images on test failure for debugging
+settings["echo_fails"] = False
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
@@ -1402,8 +1407,7 @@ class Viewer(dict):
 
         """
         #Convert options to args
-        global default_args
-        args = default_args[:]
+        args = settings["default_args"][:]
         if not initscript:
           args += ["-S"]
         if verbose:
@@ -2365,15 +2369,14 @@ class Viewer(dict):
             print("%s: %s Image comp errors %f, not"\
                   " within tolerance %g of reference image."\
                 % (failed, outfile, diff, tolerance))
-            global echo_fails
-            if echo_fails:
+            if settings["echo_fails"]:
                 print("__________________________________________")
                 if len(outfile):
                     print(outfile)
                     with open(outfile, mode='rb') as f:
                         data = f.read()
                         import base64
-                        print("data:image/png;base64,",base64.b64encode(data).decode('ascii'))
+                        print("data:image/png;base64," + base64.b64encode(data).decode('ascii'))
                 else:
                     print("Buffer:")
                     print(self.app.image(""))
