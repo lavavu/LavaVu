@@ -113,7 +113,7 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpat
 
   //Shader path (default to program path if not set)
   if (binpath.back() != '/') binpath += "/";
-  if (Shader::path.length() == 0) Shader::path = binpath;
+  if (Shader::path.length() == 0) Shader::path = binpath + "shaders/";
   //Set default web server path
   Server::htmlpath = binpath + "html";
 
