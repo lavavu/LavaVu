@@ -324,8 +324,8 @@ class Model(object):
     figures = _swig_property(_LavaVuPython.Model_figures_get, _LavaVuPython.Model_figures_set)
     figure = _swig_property(_LavaVuPython.Model_figure_get, _LavaVuPython.Model_figure_set)
 
-    def __init__(self, drawstate):
-        _LavaVuPython.Model_swiginit(self, _LavaVuPython.new_Model(drawstate))
+    def __init__(self, session):
+        _LavaVuPython.Model_swiginit(self, _LavaVuPython.new_Model(session))
     __swig_destroy__ = _LavaVuPython.delete_Model
 Model_swigregister = _LavaVuPython.Model_swigregister
 Model_swigregister(Model)

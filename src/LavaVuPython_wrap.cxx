@@ -3009,12 +3009,12 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_ColourMap swig_types[0]
-#define SWIGTYPE_p_Session swig_types[1]
-#define SWIGTYPE_p_DrawingObject swig_types[2]
-#define SWIGTYPE_p_GeomData swig_types[3]
-#define SWIGTYPE_p_LavaVu swig_types[4]
-#define SWIGTYPE_p_Model swig_types[5]
-#define SWIGTYPE_p_OpenGLViewer swig_types[6]
+#define SWIGTYPE_p_DrawingObject swig_types[1]
+#define SWIGTYPE_p_GeomData swig_types[2]
+#define SWIGTYPE_p_LavaVu swig_types[3]
+#define SWIGTYPE_p_Model swig_types[4]
+#define SWIGTYPE_p_OpenGLViewer swig_types[5]
+#define SWIGTYPE_p_Session swig_types[6]
 #define SWIGTYPE_p_View swig_types[7]
 #define SWIGTYPE_p_allocator_type swig_types[8]
 #define SWIGTYPE_p_char swig_types[9]
@@ -20177,12 +20177,12 @@ static PyMethodDef SwigMethods[] = {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_ColourMap = {"_p_ColourMap", "ColourMap *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_DrawingObject = {"_p_DrawingObject", "DrawingObject *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_GeomData = {"_p_GeomData", "GeomData *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_LavaVu = {"_p_LavaVu", "LavaVu *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Model = {"_p_Model", "Model *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_OpenGLViewer = {"_p_OpenGLViewer", "OpenGLViewer *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_Session = {"_p_Session", "Session *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_View = {"_p_View", "View *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_allocator_type = {"_p_allocator_type", "allocator_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
@@ -20208,12 +20208,12 @@ static swig_type_info _swigt__p_value_type = {"_p_value_type", "value_type *", 0
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ColourMap,
-  &_swigt__p_Session,
   &_swigt__p_DrawingObject,
   &_swigt__p_GeomData,
   &_swigt__p_LavaVu,
   &_swigt__p_Model,
   &_swigt__p_OpenGLViewer,
+  &_swigt__p_Session,
   &_swigt__p_View,
   &_swigt__p_allocator_type,
   &_swigt__p_char,
@@ -20239,12 +20239,12 @@ static swig_type_info *swig_type_initial[] = {
 };
 
 static swig_cast_info _swigc__p_ColourMap[] = {  {&_swigt__p_ColourMap, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_DrawingObject[] = {  {&_swigt__p_DrawingObject, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_GeomData[] = {  {&_swigt__p_GeomData, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_LavaVu[] = {  {&_swigt__p_LavaVu, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Model[] = {  {&_swigt__p_Model, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_OpenGLViewer[] = {  {&_swigt__p_OpenGLViewer, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_Session[] = {  {&_swigt__p_Session, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_View[] = {  {&_swigt__p_View, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_allocator_type[] = {  {&_swigt__p_allocator_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
@@ -20270,12 +20270,12 @@ static swig_cast_info _swigc__p_value_type[] = {  {&_swigt__p_value_type, 0, 0, 
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ColourMap,
-  _swigc__p_Session,
   _swigc__p_DrawingObject,
   _swigc__p_GeomData,
   _swigc__p_LavaVu,
   _swigc__p_Model,
   _swigc__p_OpenGLViewer,
+  _swigc__p_Session,
   _swigc__p_View,
   _swigc__p_allocator_type,
   _swigc__p_char,
