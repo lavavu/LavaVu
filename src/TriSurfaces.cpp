@@ -45,6 +45,11 @@ TriSurfaces::TriSurfaces(Session& session) : Triangles(session)
   indexlist = NULL;
 }
 
+TriSurfaces::~TriSurfaces()
+{
+  close();
+}
+
 void TriSurfaces::close()
 {
   if (!session.global("gpucache"))
@@ -64,17 +69,16 @@ void TriSurfaces::close()
 void TriSurfaces::update()
 {
   // Update triangles...
-  unsigned int lastcount = total;
   unsigned int drawelements = triCount();
   if (drawelements == 0) return;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
   //if ((lastcount != total && reload) || !tidx)
-  if (lastcount != total || reload || vbo == 0)
+  if (centroids.size() != total || reload || vbo == 0)
   {
     //Load & optimise the mesh data (on first load and if total changes)
-    if (!tidx || lastcount != total)
+    if (centroids.size() != total)
       loadMesh();
 
     //Send the data to the GPU via VBO
@@ -275,7 +279,7 @@ void TriSurfaces::loadMesh()
     debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
   }
 
-  //debug_print("  *** There were %d unique vertices out of %d total. Buffer allocated for %d\n", unique, total*3, bsize/datasize);
+  //debug_print("  *** There were %d unique vertices out of %d total.\n", unique, total*3);
   t2 = clock();
   debug_print("  %.4lf seconds to optimise triangle mesh\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }

@@ -474,7 +474,7 @@ class TriSurfaces : public Triangles
   std::vector<Vec3d> centroids;
 public:
   TriSurfaces(Session& session);
-  virtual ~TriSurfaces() {close();}
+  virtual ~TriSurfaces();
   virtual void close();
   virtual void update();
   virtual void loadMesh();
