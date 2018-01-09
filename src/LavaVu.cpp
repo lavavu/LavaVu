@@ -1951,7 +1951,9 @@ bool LavaVu::sort(bool sync)
     for (auto g : amodel->geometry)
     {
       std::lock_guard<std::mutex> guard(g->sortmutex);
-      g->sort();
+      //Not required if reload flagged, will be done in update()
+      if (!g->reload)
+        g->sort();
     }
     return true;
   }
@@ -2029,20 +2031,6 @@ void LavaVu::display(bool redraw)
     }
     //Update the viewports
     resetViews(viewset == RESET_ZOOM);
-  }
-
-  //Sort
-  if (session.global("sort") && aview && aview->rotated)
-  {
-    //Immediate sort (when automating and no visible viewer window)
-    if (session.automate && !viewer->visible)
-    {
-      aview->rotated = false;
-      sort(true);
-    }
-    //Async sort (interactive mode)
-    else
-      queueCommands("asyncsort");
   }
 
   //Turn filtering of objects on/off
@@ -2616,6 +2604,20 @@ void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
 
 void LavaVu::drawSceneBlended()
 {
+  //Sort requried?
+  if (session.global("sort") && aview && aview->rotated)
+  {
+    //Immediate sort (when automating and no visible viewer window)
+    if (session.automate && !viewer->visible)
+    {
+      aview->rotated = false;
+      sort(true);
+    }
+    //Async sort (interactive mode)
+    else
+      queueCommands("asyncsort");
+  }
+
   switch (viewer->blend_mode)
   {
   case BLEND_NORMAL:
