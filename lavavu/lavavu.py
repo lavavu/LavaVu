@@ -444,22 +444,54 @@ class Object(dict):
         else:
             self.vertices(data)
 
-    def _loadScalar(self, data, dtype):
-        #Passes a scalar dataset (float/uint8/uint32)
+    def _convert(self, data, dtype=None):
+        #Prepare a data set
         if not isinstance(data, numpy.ndarray):
-            data = numpy.asarray(data, dtype=numpy.float32)
-        if data.dtype == numpy.float32:
-            self.instance.app.arrayFloat(self.ref, data.ravel(), dtype)
-        elif data.dtype == numpy.uint32:
-            self.instance.app.arrayUInt(self.ref, data.ravel(), dtype)
-        elif data.dtype == numpy.uint8:
-            self.instance.app.arrayUChar(self.ref, data.ravel(), dtype)
+            #Convert to numpy array first
+            data = numpy.asarray(data)
+        #Transform to requested data type if provided
+        if dtype != None and data.dtype != dtype:
+            data = data.astype(dtype)
 
-    def _loadVector(self, data, dtype):
+        #Always convert float64 to float32
+        if data.dtype == numpy.float64:
+            data = data.astype(numpy.float32)
+
+        #Masked array? Set fill value to NaN
+        if numpy.ma.is_masked(data):
+            if data.fill_value != numpy.nan:
+                print("Warning: setting masked array fill to NaN, was: ", data.fill_value)
+                numpy.ma.set_fill_value(data, numpy.nan)
+            data = data.filled()
+
+        return data
+
+    def _loadScalar(self, data, geomdtype):
+        #Passes a scalar dataset (float/uint8/uint32)
+        data = self._convert(data)
+        #Load as flattened 1d array
+        #(ravel() returns view rather than copy if possible, flatten() always copies)
+        if data.dtype == numpy.float32:
+            self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+        elif data.dtype == numpy.uint32:
+            self.instance.app.arrayUInt(self.ref, data.ravel(), geomdtype)
+        elif data.dtype == numpy.uint8:
+            self.instance.app.arrayUChar(self.ref, data.ravel(), geomdtype)
+
+    def _loadVector(self, data, geomdtype):
         #Passes a vector dataset (float)
-        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.float32:
-            data = numpy.asarray(data, dtype=numpy.float32)
-        self.instance.app.arrayFloat(self.ref, data.ravel(), dtype)
+        data = self._convert(data, numpy.float32)
+
+        #Reshape vector data if first dim is 3 and last dim is not 3
+        shape = data.shape
+        #Data provided as separate x,y,z columns?
+        if len(shape) >= 2 and shape[-1] != 3 and shape[0] == 3:
+            #Re-arrange to array of [x,y,z] triples
+            data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+
+        #Load as flattened 1d array
+        #(ravel() returns view rather than copy if possible, flatten() always copies)
+        self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
 
     def data(self, filter=None):
         """
@@ -488,34 +520,34 @@ class Object(dict):
 
     def vertices(self, data=None):
         """
-        Load vertex data for object
+        Load 3d vertex data for object
 
         Parameters
         ----------
         data: list,array
-            Pass a list or numpy float32 array of vertices
+            Pass a list or numpy float32 3d array of vertices
         """
         self._loadVector(data, LavaVuPython.lucVertexData)
 
     def normals(self, data):
         """
-        Load normal data for object
+        Load 3d normal data for object
 
         Parameters
         ----------
         data: list,array
-            Pass a list or numpy float32 array of normals
+            Pass a list or numpy float32 3d array of normals
         """
         self._loadVector(data, LavaVuPython.lucNormalData)
 
     def vectors(self, data):
         """
-        Load vector data for object
+        Load 3d vector data for object
 
         Parameters
         ----------
         data: list,array
-            Pass a list or numpy float32 array of vectors
+            Pass a list or numpy float32 3d array of vectors
         """
         self._loadVector(data, LavaVuPython.lucVectorData)
 
@@ -530,8 +562,7 @@ class Object(dict):
         label: str
             Label for this data set
         """
-        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.float32:
-            data = numpy.asarray(data, dtype=numpy.float32)
+        data = self._convert(data, numpy.float32)
         self.instance.app.arrayFloat(self.ref, data.ravel(), label)
 
     def colours(self, data):
@@ -579,8 +610,7 @@ class Object(dict):
         """
 
         #Accepts only uint32 indices
-        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint32:
-            data = numpy.asarray(data, dtype=numpy.uint32)
+        data = self._convert(data, numpy.uint32)
         if offset > 0:
             #Convert indices to offset 0 before loading by subtracting offset
             data = numpy.subtract(data, offset)
@@ -598,9 +628,8 @@ class Object(dict):
             values are loaded as 8 bit unsigned integer values
         """
 
-        #Accepts only uint8 indices
-        if not isinstance(data, numpy.ndarray) or data.dtype != numpy.uint8:
-            data = numpy.asarray(data, dtype=numpy.uint8)
+        #Accepts only uint8 rgb triples
+        data = self._convert(data, numpy.uint8)
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
     def texture(self, data, width, height, channels=4, flip=True):
@@ -623,7 +652,7 @@ class Object(dict):
             (default is enabled as usually required for OpenGL but can be disabled)
         """
         if not isinstance(data, numpy.ndarray):
-            data = numpy.asarray(data, dtype=numpy.uint32)
+            data = self._convert(data, numpy.uint32)
         if data.dtype == numpy.uint32:
             self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip)
         elif data.dtype == numpy.uint8:
