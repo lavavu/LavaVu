@@ -250,7 +250,7 @@ function Viewer(canvas) {
   this.canvas = canvas;
   if (!canvas) {alert("Invalid Canvas"); return;}
   try {
-    this.webgl = new WebGL(this.canvas, {antialias: true, premultipliedAlpha: false});
+    this.webgl = new WebGL(this.canvas, {antialias: true}); //, premultipliedAlpha: false});
     this.gl = this.webgl.gl;
     canvas.addEventListener("webglcontextlost", function(event) {
       event.preventDefault();
@@ -376,7 +376,7 @@ Viewer.prototype.draw = function() {
 
   this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
   //this.gl.clearColor(1, 1, 1, 0);
-  this.gl.clearColor(0.5, 0.5, 0.5, 0);
+  this.gl.clearColor(0, 0, 0, 0);
   this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
   this.webgl.view(this);
