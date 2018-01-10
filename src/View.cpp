@@ -177,7 +177,7 @@ void View::checkClip(float& near_clip, float& far_clip)
   {
     //NOTE: Too much clip plane range can lead to depth buffer precision problems
     //Near clip should be as far away as possible as greater precision reserved for near
-    float min_dist = model_size / 10.0;  //Estimate of min dist between viewer and geometry
+    float min_dist = model_size / 100.0;  //Estimate of min dist between viewer and geometry
     float aspectRatio = 1.33;
     if (width && height)
       aspectRatio = width / (float)height;
