@@ -1485,6 +1485,13 @@ class Viewer(dict):
                 args += [str(arglist)]
         self.queue = usequeue
 
+        #Additional keyword args as property settings
+        for key in kwargs:
+            if isinstance(kwargs[key], str):
+                args += [key + '="' + kwargs[key] + '"']
+            else:
+                args += [key + '=' + str(kwargs[key])]
+
         if verbose:
             print(args)
 
@@ -1493,9 +1500,6 @@ class Viewer(dict):
             if database:
                 #Load objects/state
                 self._get()
-            #Additional keyword args = properties
-            for key in kwargs:
-                self[key] = kwargs[key]
         except (RuntimeError) as e:
             print("LavaVu Run error: " + str(e))
             pass
@@ -1909,6 +1913,10 @@ class Viewer(dict):
         #Get last object added if none provided
         if obj is None:
             obj = self.Object()
+        if obj is None:
+            if not "json" in filename and not "script" in filename:
+                print("WARNING: No objects exist after file load: " + filename)
+            return None
 
         #Setups up new object, all other args passed to properties dict
         return self._setupobject(obj.ref, **kwargs)
