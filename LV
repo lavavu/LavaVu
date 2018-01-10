@@ -2,5 +2,5 @@
 #Run interactive with args via python
 import lavavu
 import sys
-lv = lavavu.Viewer(arglist=sys.argv, interactive=True, hidden=False)
+lv = lavavu.Viewer(arglist=sys.argv[1:], interactive=True, hidden=False)
 
