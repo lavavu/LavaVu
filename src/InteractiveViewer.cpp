@@ -2807,36 +2807,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     for (unsigned int c=0; c<list.size(); c++)
     {
       printMessage("%s deleted", list[c]->name().c_str());
-      //Delete geometry
-      for (unsigned int i=0; i < amodel->geometry.size(); i++)
-        amodel->geometry[i]->remove(list[c]);
-      for (unsigned int i=0; i < amodel->fixed.size(); i++)
-        amodel->fixed[i]->remove(list[c]);
 
-      for (unsigned int ts=0; ts < amodel->timesteps.size(); ts++)
-        for (unsigned int i=0; i < amodel->timesteps[ts]->cache.size(); i++)
-          amodel->timesteps[ts]->cache[i]->remove(list[c]);
-      //Delete from model obj list
-      for (unsigned int i=0; i<amodel->objects.size(); i++)
-      {
-        if (list[c] == amodel->objects[i])
-        {
-          amodel->objects.erase(amodel->objects.begin()+i);
-          break;
-        }
-      }
-      //Delete from viewport obj list
-      for (unsigned int i=0; i<aview->objects.size(); i++)
-      {
-        if (list[c] == aview->objects[i])
-        {
-          aview->objects.erase(aview->objects.begin()+i);
-          break;
-        }
-      }
-      //Free memory
-      delete list[c];
-      amodel->redraw();
+      //Delete object and geometry
+      amodel->deleteObject(list[c]);
     }
   }
   else if (parsed.exists("deletedb"))
@@ -2858,7 +2831,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Delete the loaded object data
       parseCommand("delete " + list[c]->name());
       //Delete from db
-      amodel->deleteObject(list[c]->dbid);
+      amodel->deleteObjectRecord(list[c]->dbid);
     }
   }
   else if (parsed.exists("merge"))

@@ -182,12 +182,13 @@ bool Database::issue(const char* fmt, ...)
 
 Model::Model(Session& session) : now(-1), session(session), figure(-1)
 {
-  //Create new geometry containers
-  init();
 }
 
 Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers)
 {
+  //Create new geometry containers if required
+  if (geometry.size() == 0) init();
+
   //Return renderer of type specified if found
   for (auto g : renderers)
   {
@@ -1479,9 +1480,6 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
         laststep = timestep;
       }
 
-      //Create new geometry containers if required
-      if (geometry.size() == 0) init();
-
       if (type == lucTracerType)
       {
         height = 0;
@@ -1901,7 +1899,7 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
   //       objid, step, type, dtype, data->width, data->height, data->depth, block->size(), labels.c_str());
 }
 
-void Model::deleteObject(unsigned int id)
+void Model::deleteObjectRecord(unsigned int id)
 {
   if (!database) return;
   database.reopen(true);  //Open writable
@@ -1944,15 +1942,59 @@ void Model::calculateBounds(View* aview, float* default_min, float* default_max)
     g->setup(aview, min, max);
 }
 
-void Model::objectBounds(DrawingObject* draw, float* min, float* max)
+void Model::objectBounds(DrawingObject* obj, float* min, float* max)
 {
   if (!min || !max) return;
   for (int i=0; i<3; i++)
     max[i] = -(min[i] = HUGE_VAL);
   //Expand bounds by all geometry objects
   for (auto g : geometry)
-    g->objectBounds(draw, min, max);
+    g->objectBounds(obj, min, max);
 }
+
+void Model::deleteObject(DrawingObject* obj)
+{
+  //Delete geometry
+  for (unsigned int i=0; i < geometry.size(); i++)
+    geometry[i]->remove(obj);
+
+  for (unsigned int i=0; i < fixed.size(); i++)
+    fixed[i]->remove(obj);
+
+  for (unsigned int ts=0; ts < timesteps.size(); ts++)
+    for (unsigned int i=0; i < timesteps[ts]->cache.size(); i++)
+      timesteps[ts]->cache[i]->remove(obj);
+
+  //Delete from model obj list
+  for (unsigned int i=0; i<objects.size(); i++)
+  {
+    if (obj == objects[i])
+    {
+      objects.erase(objects.begin()+i);
+      break;
+    }
+  }
+
+  //Delete from viewport obj list
+  for (unsigned int v=0; v < views.size(); v++)
+  {
+    for (unsigned int i=0; i<views[v]->objects.size(); i++)
+    {
+      if (obj == views[v]->objects[i])
+      {
+        views[v]->objects.erase(views[v]->objects.begin()+i);
+        break;
+      }
+    }
+  }
+
+  //Free memory
+  delete obj;
+
+  //Flag redraw
+  redraw();
+}
+
 
 std::string Model::jsonWrite(bool objdata)
 {
@@ -2073,6 +2115,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       if (!objdata)
       {
         //Data labels
+        //loadFixed(); //Ensure any fixed data in place (TEST)
         json dict;
         for (auto g : geometry)
         {

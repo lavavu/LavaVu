@@ -83,25 +83,27 @@ class Model
 {
 private:
   int now;            //Loaded step per model
+  Session& session;
+
+  //Static geometry
+  std::vector<Geometry*> fixed;
+  //Previous timestep geometry
+  std::vector<Geometry*> olddata;
 
 public:
-  Session& session;
-  Database database;
 
+  Database database;
+  int figure;
   std::vector<std::string> fignames;
   std::vector<std::string> figures;
-  int figure;
+
+  //Current timestep geometry
+  std::vector<Geometry*> geometry;
 
   std::vector<TimeStep*> timesteps;
   std::vector<View*> views;
   std::vector<DrawingObject*> objects;
   std::vector<ColourMap*> colourMaps;
-
-  std::vector<Geometry*> fixed;     //Static geometry
-  //Current timestep geometry
-  std::vector<Geometry*> geometry;
-  //Previous timestep geometry
-  std::vector<Geometry*> olddata;
 
   DrawingObject* borderobj;
   DrawingObject* axisobj;
@@ -199,10 +201,11 @@ public:
   void deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject* obj, int step);
   void writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step, bool compress);
   void writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeometryDataType dtype, unsigned int objid, Geom_Ptr data, DataContainer* block, int step, bool compressdata);
-  void deleteObject(unsigned int id);
+  void deleteObjectRecord(unsigned int id);
   void backup(Database& fromdb, Database& todb);
   void calculateBounds(View* aview, float* default_min=NULL, float* default_max=NULL);
-  void objectBounds(DrawingObject* draw, float* min, float* max);
+  void objectBounds(DrawingObject* obj, float* min, float* max);
+  void deleteObject(DrawingObject* obj);
 
   std::string jsonWrite(bool objdata=false);
   void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
