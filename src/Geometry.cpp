@@ -299,6 +299,7 @@ unsigned int GeomData::valuesLookup(const json& by)
 {
   //Gets a valid value index by property, either actual index or string label
   unsigned int valueIdx = MAX_DATA_ARRAYS+1;
+  if (!values.size()) return valueIdx;
   if (by.is_string())
   {
     //Lookup index from label
@@ -313,11 +314,9 @@ unsigned int GeomData::valuesLookup(const json& by)
     }
     if (valueIdx > MAX_DATA_ARRAYS) debug_print("Label: %s not found!\n", label.c_str());
   }
-  else if (by.is_number())
+  //Numerical index, check in range
+  else if (by.is_number() && by < values.size())
     valueIdx = by;
-
-  //Check for sane range
-  if (valueIdx >= values.size()) valueIdx = MAX_DATA_ARRAYS+1;
 
   return valueIdx;
 }
