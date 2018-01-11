@@ -177,6 +177,10 @@ $(LIBRARY): $(ALLOBJS) | paths
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
+src/sqlite3/sqlite3.c:
+	#Ensure the submodule is checked out
+	git submodule update --init
+
 $(OPATH)/sqlite3.o : sqlite3.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
