@@ -1921,23 +1921,27 @@ class Viewer(dict):
         #Setups up new object, all other args passed to properties dict
         return self._setupobject(obj.ref, **kwargs)
     
-    def files(self, filespec, obj=None, **kwargs):
+    def files(self, files, obj=None, **kwargs):
         """
         Load data from a series of files (using wildcards or a list)
 
         Parameters
         ----------
         files: str
-            Specification of the files to load
+            Specification of the files to load, either a list of full paths or a file spec string such as *.gldb
         obj: Object
             Vis object to load the data into,
             if not provided a default will be created
         """
         #Load list of files with glob
-        filelist = glob.glob(filespec)
+        filelist = []
+        if isinstance(files, list) or isinstance(files, tuple):
+            filelist = files
+        elif isinstance(files, str):
+            filelist = sorted(glob.glob(filespec))
         obj = None
-        for infile in sorted(filelist):
-            obj = self.file(infile, kwargs)
+        for infile in filelist:
+            obj = self.file(infile, **kwargs)
         return obj
 
     def colourbar(self, obj=None, **kwargs):
