@@ -1,3 +1,4 @@
+#version 130
 //flat varying vec4 vColour;
 varying vec4 vColour;
 varying vec3 vNormal;
