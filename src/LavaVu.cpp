@@ -479,9 +479,6 @@ void LavaVu::run(std::vector<std::string> args)
     //Load vis data for each model and write image
     if (!writeimage && !writemovie && dump != lucExportJSON && dump != lucExportJSONP)
       viewer->isopen = true; //Skip open
-    //Save current figure state
-    //(allows command line args to be applied correctly to last loaded figure before output)
-    amodel->storeFigure();
     for (unsigned int m=0; m < models.size(); m++)
     {
       //Load the data
@@ -500,8 +497,8 @@ void LavaVu::run(std::vector<std::string> args)
         if (amodel->figures.size() == 0) amodel->addFigure();
         for (unsigned int f=0; f < amodel->figures.size(); f++)
         {
-          if (amodel->figure != (int)f)
-            amodel->loadFigure(f);
+          if (initfigure != 0) f = initfigure-1;
+          amodel->loadFigure(f);
 
           resetViews(true);
           viewer->display();
