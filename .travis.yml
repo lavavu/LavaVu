@@ -13,7 +13,7 @@ matrix:
       before_script:
         - export CXX="g++-4.9";
         - export CC="gcc-4.9";
-        - git clone https://github.com/mivp/LavaVuTesting
+        - git clone --depth 1 https://github.com/mivp/LavaVuTesting
         - sh -e /etc/init.d/xvfb start
         #- Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         - sleep 3 # give xvfb some time to start
