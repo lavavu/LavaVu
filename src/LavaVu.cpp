@@ -2298,7 +2298,9 @@ void LavaVu::drawRulers()
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
-  obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * 0.5*aview->model_size;
+  float font_scale_factor = 0.25*aview->model_size;
+  if (!aview->is3d) font_scale_factor *= 2;
+  obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * font_scale_factor;
   obj->properties.data["font"] = "vector";
   //Colour for labels
   obj->properties.data["colour"] = aview->textColour.toJson();
