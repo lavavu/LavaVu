@@ -1,3 +1,7 @@
 [submodule "docs"]
 	path = docs
 	url = https://github.com/OKaluza/LavaVu.wiki.git
+[submodule "src/sqlite3"]
+	path = src/sqlite3
+	url = https://github.com/Okaluza/sqlite3
+	branch = master
