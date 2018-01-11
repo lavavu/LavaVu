@@ -304,6 +304,7 @@ unsigned int GeomData::valuesLookup(const json& by)
   {
     //Lookup index from label
     std::string label = by;
+    if (label.length() == 0) return valueIdx;
     for (unsigned int j=0; j < values.size(); j++)
     {
       if (values[j]->label == label)
@@ -315,7 +316,7 @@ unsigned int GeomData::valuesLookup(const json& by)
     if (valueIdx > MAX_DATA_ARRAYS) debug_print("Label: %s not found!\n", label.c_str());
   }
   //Numerical index, check in range
-  else if (by.is_number() && by < values.size())
+  else if (by.is_number() && (int)by < values.size())
     valueIdx = by;
 
   return valueIdx;
