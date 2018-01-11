@@ -533,8 +533,8 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
 {
   assert(isopen);
   FilePath filepath(path);
-  if (filepath.type == "jpeg" || filepath.type == "jpg") jpegquality = 95;
-  bool alphapng = !jpegquality && (transparent || app->session.global("pngalpha"));
+  if ((filepath.type == "jpeg" || filepath.type == "jpg") && jpegquality == 0) jpegquality = 95;
+  bool alphapng = jpegquality == 0 && (transparent || app->session.global("pngalpha"));
   int channels = 3;
   if (alphapng) channels = 4;
   std::string retImg;
