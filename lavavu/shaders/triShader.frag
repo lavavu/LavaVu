@@ -44,7 +44,7 @@ void main(void)
   vec3 N = normalize(vNormal);
 
   //Default normal...
-  if (uCalcNormal || dot(N,N) < 0.01)
+  if (uCalcNormal || dot(N,N) < 0.01 || any(isnan(N)))
   {
     vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
     vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
