@@ -191,6 +191,7 @@ LavaVu::~LavaVu()
 {
   if (sort_thread.joinable())
   {
+    viewer->quitProgram = true;
     sortcv.notify_one();
     sort_thread.join();
   }
