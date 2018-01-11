@@ -1559,6 +1559,12 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
             by = GeomData::datalabels[data_type];
           }
 
+          //Set as the opacity/size data if in these categories
+          if (data_type == lucOpacityValueData)
+            obj->properties.data["opacityby"] = by;
+          if (data_type == lucSizeData)
+            obj->properties.data["sizeby"] = by;
+
           //copy max/min fields
           unsigned int valueIdx = g->valuesLookup(by);
           if (valueIdx < g->values.size())

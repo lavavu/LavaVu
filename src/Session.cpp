@@ -435,7 +435,7 @@ void Session::init()
     {
       "opacityby",
       {
-        1,
+        "",
         "object",
         "string or integer",
         "Index or label of data set to apply transparency to object by (requires opacity map)"
@@ -516,7 +516,7 @@ void Session::init()
     {
       "sizeby",
       {
-        1,
+        "",
         "object(point)",
         "string or integer",
         "Index or label of data set to apply to point sizes"
