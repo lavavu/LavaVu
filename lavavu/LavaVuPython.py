@@ -378,6 +378,7 @@ class LavaVu(object):
     __swig_destroy__ = _LavaVuPython.delete_LavaVu
 LavaVu.run = new_instancemethod(_LavaVuPython.LavaVu_run, None, LavaVu)
 LavaVu.loadFile = new_instancemethod(_LavaVuPython.LavaVu_loadFile, None, LavaVu)
+LavaVu.parseProperty = new_instancemethod(_LavaVuPython.LavaVu_parseProperty, None, LavaVu)
 LavaVu.parseCommands = new_instancemethod(_LavaVuPython.LavaVu_parseCommands, None, LavaVu)
 LavaVu.render = new_instancemethod(_LavaVuPython.LavaVu_render, None, LavaVu)
 LavaVu.init = new_instancemethod(_LavaVuPython.LavaVu_init, None, LavaVu)

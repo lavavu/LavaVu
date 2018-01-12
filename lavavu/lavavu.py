@@ -254,10 +254,8 @@ class Object(dict):
             raise ValueError(key + " : Invalid property name")
         if key == "colourmap" and isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
             value = value.name #Use name instead of object when setting colourmap on object
-        #self.instance._get() #Ensure in sync
-        #Set new value and send
-        self.dict[key] = value
-        self._set()
+        self.instance.app.parseProperty(key + '=' + str(value), self.ref)
+        self.instance._get() #Ensure in sync
 
     def __contains__(self, key):
         return key in self.dict
@@ -392,14 +390,20 @@ class Object(dict):
         #Pass a tuple for exclusive range (min < val < max)
         # list for inclusive range (min <= val <= max)
         self.instance._get() #Ensure have latest data
+        filterlist = []
+        if "filters" in self:
+            filterlist = self["filters"]
+
         if isinstance(values, float) or isinstance(values, int):
             values = [values,values]
-        filter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
+        newfilter = {"by" : label, "minimum" : values[0], "maximum" : values[1], "map" : map, "out" : out, "inclusive" : False}
         if isinstance(values, list) or values[0] == values[1]:
-            filter["inclusive"] = True
-        if not "filters" in self: self["filters"] = []
-        self["filters"].append(filter)
-        self._set()
+            newfilter["inclusive"] = True
+
+        filterlist.append(newfilter)
+
+        self.instance.app.parseProperty('filters=' + json.dumps(filterlist), self.ref)
+        self.instance._get() #Ensure in sync
         return len(self["filters"])-1
 
     def datasets(self):
@@ -1525,15 +1529,8 @@ class Viewer(dict):
         #Set view/global property
         if not key in self.properties:
             raise ValueError(key + " : Invalid property name")
+        self.app.parseProperty(key + '=' + str(item))
         self._get()
-        view = self.state["views"][0]
-        if key in view:
-            view[key] = item
-        elif key in self.state:
-            self.state[key] = item
-        else:
-            self.state["properties"][key] = item
-        self._set()
 
     def __contains__(self, key):
         return key in self.state or key in self.state["properties"] or key in self.state["views"][0]

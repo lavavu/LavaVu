@@ -71,14 +71,16 @@ void Session::reset()
 void Session::init()
 {
   //Setup default properties (once only)
-  properties = {
+  std::vector<std::pair<std::string,json>> property_data =
+  {
     {
       "renderlist",
       {
         "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume",
         "all",
         "string",
-        "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,labels,lines,links"
+        "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,labels,lines,links",
+        true, 0
       }
     },
     {
@@ -87,7 +89,8 @@ void Session::init()
         "vector",
         "all",
         "string",
-        "Font typeface vector/small/fixed/sans/serif"
+        "Font typeface vector/small/fixed/sans/serif",
+        true, 0
       }
     },
     {
@@ -96,7 +99,8 @@ void Session::init()
         1.0,
         "all",
         "real",
-        "Font scaling, note that only the 'vector' font scales well"
+        "Font scaling, note that only the 'vector' font scales well",
+        true, 0
       }
     },
     {
@@ -105,7 +109,8 @@ void Session::init()
         {0,0,0,0},
         "all",
         "colour",
-        "Font colour RGB(A)"
+        "Font colour RGB(A)",
+        true, 0
       }
     },
     {
@@ -114,7 +119,8 @@ void Session::init()
         "",
         "object",
         "string",
-        "Name of object"
+        "Name of object",
+        true, 0
       }
     },
     {
@@ -123,7 +129,8 @@ void Session::init()
         true,
         "object",
         "boolean",
-        "Set to false to hide object"
+        "Set to false to hide object",
+        true, 0
       }
     },
     {
@@ -132,7 +139,8 @@ void Session::init()
         "points",
         "object",
         "string",
-        "Geometry type to load when adding new data"
+        "Geometry type to load when adding new data",
+        true, 0
       }
     },
     {
@@ -141,7 +149,8 @@ void Session::init()
         true,
         "object",
         "boolean",
-        "Apply lighting to object"
+        "Apply lighting to object",
+        true, 0
       }
     },
     {
@@ -150,7 +159,8 @@ void Session::init()
         false,
         "object",
         "boolean",
-        "Cull back facing polygons of object surfaces"
+        "Cull back facing polygons of object surfaces",
+        true, 0
       }
     },
     {
@@ -159,7 +169,8 @@ void Session::init()
         false,
         "object",
         "boolean",
-        "Render object surfaces as wireframe"
+        "Render object surfaces as wireframe",
+        true, 0
       }
     },
     {
@@ -168,7 +179,8 @@ void Session::init()
         false,
         "object",
         "boolean",
-        "Renders surfaces as flat shaded, lines/vectors/tracers as 2d, faster but no 3d or lighting"
+        "Renders surfaces as flat shaded, lines/vectors/tracers as 2d, faster but no 3d or lighting",
+        true, 0
       }
     },
     {
@@ -177,7 +189,8 @@ void Session::init()
         true,
         "object",
         "boolean",
-        "Set to false to disable depth test when drawing object so always drawn regardless of 3d position"
+        "Set to false to disable depth test when drawing object so always drawn regardless of 3d position",
+        true, 0
       }
     },
     {
@@ -186,7 +199,8 @@ void Session::init()
         {0,0,0},
         "object",
         "integer[3]",
-        "width/height/depth override for geometry"
+        "width/height/depth override for geometry",
+        true, 0
       }
     },
     {
@@ -195,7 +209,8 @@ void Session::init()
         false,
         "object",
         "boolean",
-        "Set to true to apply the view rotation to this object"
+        "Set to true to apply the view rotation to this object",
+        true, 0
       }
     },
     {
@@ -204,7 +219,8 @@ void Session::init()
         0.,
         "object",
         "real",
-        "Apply a shift to object position by this amount multiplied by model size, to fix depth fighting when visualising objects drawn at same depth"
+        "Apply a shift to object position by this amount multiplied by model size, to fix depth fighting when visualising objects drawn at same depth",
+        true, 0
       }
     },
     {
@@ -213,7 +229,8 @@ void Session::init()
         {0,0,0,255},
         "object",
         "colour",
-        "Object colour RGB(A)"
+        "Object colour RGB(A)",
+        true, 2
       }
     },
     {
@@ -222,7 +239,8 @@ void Session::init()
         "",
         "object",
         "string",
-        "name of the colourmap to use"
+        "name of the colourmap to use",
+        false, 2
       }
     },
     {
@@ -231,7 +249,8 @@ void Session::init()
         "",
         "object",
         "string",
-        "name of the opacity colourmap to use"
+        "name of the opacity colourmap to use",
+        false, 2
       }
     },
     {
@@ -240,7 +259,8 @@ void Session::init()
         1.0,
         "object",
         "real [0,1]",
-        "Opacity of object where 0 is transparent and 1 is opaque"
+        "Opacity of object where 0 is transparent and 1 is opaque",
+        true, 2
       }
     },
     {
@@ -249,7 +269,8 @@ void Session::init()
         0.0,
         "object",
         "real [-1,1]",
-        "Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)"
+        "Brightness of object from -1 (full dark) to 0 (default) to 1 (full light)",
+        true, 0
       }
     },
     {
@@ -258,7 +279,8 @@ void Session::init()
         1.0,
         "object",
         "real [0,2]",
-        "Contrast of object from 0 (none, grey) to 2 (max)"
+        "Contrast of object from 0 (none, grey) to 2 (max)",
+        true, 0
       }
     },
     {
@@ -267,7 +289,8 @@ void Session::init()
         1.0,
         "object",
         "real [0,2]",
-        "Saturation of object from 0 (greyscale) to 2 (fully saturated)"
+        "Saturation of object from 0 (greyscale) to 2 (fully saturated)",
+        true, 0
       }
     },
     {
@@ -276,7 +299,8 @@ void Session::init()
         0.4,
         "object",
         "real [0,1]",
-        "Ambient lighting level (background constant light)"
+        "Ambient lighting level (background constant light)",
+        true, 0
       }
     },
     {
@@ -285,7 +309,8 @@ void Session::init()
         0.65,
         "object",
         "real [0,1]",
-        "Diffuse lighting level (shading light/dark)"
+        "Diffuse lighting level (shading light/dark)",
+        true, 0
       }
     },
     {
@@ -294,7 +319,8 @@ void Session::init()
         0.0,
         "object",
         "real [0,1]",
-        "Specular highlight lighting level (spot highlights)"
+        "Specular highlight lighting level (spot highlights)",
+        true, 0
       }
     },
     {
@@ -303,7 +329,8 @@ void Session::init()
         {0.1,-0.1,2.0},
         "object",
         "real[3]",
-        "Light position X Y Z relative to camera position (follows camera)"
+        "Light position X Y Z relative to camera position (follows camera)",
+        true, 0
       }
     },
     {
@@ -312,7 +339,8 @@ void Session::init()
         true,
         "object",
         "boolean",
-        "Allow object to be clipped"
+        "Allow object to be clipped",
+        true, 0
       }
     },
     {
@@ -321,7 +349,8 @@ void Session::init()
         true,
         "object",
         "boolean",
-        "Clipping mapped to range normalised [0,1]"
+        "Clipping mapped to range normalised [0,1]",
+        true, 0
       }
     },
     {
@@ -330,7 +359,8 @@ void Session::init()
         -FLT_MAX,
         "object",
         "real [0,1]",
-        "Object clipping, minimum x"
+        "Object clipping, minimum x",
+        true, 0
       }
     },
     {
@@ -339,7 +369,8 @@ void Session::init()
         -FLT_MAX,
         "object",
         "real [0,1]",
-        "Object clipping, maximum y"
+        "Object clipping, maximum y",
+        true, 0
       }
     },
     {
@@ -348,7 +379,8 @@ void Session::init()
         -FLT_MAX,
         "object",
         "real [0,1]",
-        "Object clipping, minimum z"
+        "Object clipping, minimum z",
+        true, 0
       }
     },
     {
@@ -357,7 +389,8 @@ void Session::init()
         FLT_MAX,
         "object",
         "real [0,1]",
-        "Object clipping, maximum x"
+        "Object clipping, maximum x",
+        true, 0
       }
     },
     {
@@ -366,7 +399,8 @@ void Session::init()
         FLT_MAX,
         "object",
         "real [0,1]",
-        "Object clipping, maximum y"
+        "Object clipping, maximum y",
+        true, 0
       }
     },
     {
@@ -375,7 +409,8 @@ void Session::init()
         FLT_MAX,
         "object",
         "real [0,1]",
-        "Object clipping, maximum z"
+        "Object clipping, maximum z",
+        true, 0
       }
     },
     {
@@ -384,7 +419,8 @@ void Session::init()
         json::array(),
         "object",
         "object",
-        "Filter list"
+        "Filter list",
+        true, 1
       }
     },
     {
@@ -393,7 +429,8 @@ void Session::init()
         2,
         "object",
         "integer [0,n]",
-        "Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)"
+        "Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)",
+        true, 0
       }
     },
     {
@@ -402,7 +439,8 @@ void Session::init()
         1.0,
         "object",
         "real",
-        "Object scaling factor"
+        "Object scaling factor",
+        true, 0
       }
     },
     {
@@ -411,7 +449,8 @@ void Session::init()
         "",
         "object",
         "string",
-        "External texture image file path to load and apply to surface or points"
+        "External texture image file path to load and apply to surface or points",
+        true, 0
       }
     },
     {
@@ -420,7 +459,8 @@ void Session::init()
         true,
         "object",
         "boolean",
-        "Flip texture image after loading, usually required"
+        "Flip texture image after loading, usually required",
+        true, 0
       }
     },
     {
@@ -429,7 +469,8 @@ void Session::init()
         0,
         "object",
         "string or integer",
-        "Index or label of data set to colour object by (requires colour map)"
+        "Index or label of data set to colour object by (requires colour map)",
+        false, 2
       }
     },
     {
@@ -438,7 +479,8 @@ void Session::init()
         "",
         "object",
         "string or integer",
-        "Index or label of data set to apply transparency to object by (requires opacity map)"
+        "Index or label of data set to apply transparency to object by (requires opacity map)",
+        false, 2
       }
     },
     {
@@ -447,7 +489,8 @@ void Session::init()
         0,
         "object(line)",
         "real",
-        "Line length limit, can be used to skip drawing line segments that cross periodic boundary"
+        "Line length limit, can be used to skip drawing line segments that cross periodic boundary",
+        true, 0
       }
     },
     {
@@ -456,7 +499,8 @@ void Session::init()
         false,
         "object(line)",
         "boolean",
-        "To chain line vertices into longer lines set to true"
+        "To chain line vertices into longer lines set to true",
+        true, 0
       }
     },
     {
@@ -465,7 +509,8 @@ void Session::init()
         1.0,
         "object(line)",
         "real",
-        "Line scaling multiplier, applies to all line objects"
+        "Line scaling multiplier, applies to all line objects",
+        true, 0
       }
     },
     {
@@ -474,7 +519,8 @@ void Session::init()
         1.0,
         "object(line)",
         "real",
-        "Line width scaling"
+        "Line width scaling",
+        true, 0
       }
     },
     {
@@ -483,7 +529,8 @@ void Session::init()
         false,
         "object(line)",
         "boolean",
-        "Draw lines as 3D tubes"
+        "Draw lines as 3D tubes",
+        true, 0
       }
     },
     {
@@ -492,7 +539,8 @@ void Session::init()
         1.0,
         "object(point)",
         "real",
-        "Point size scaling"
+        "Point size scaling",
+        true, 2
       }
     },
     {
@@ -501,7 +549,8 @@ void Session::init()
         1,
         "object(point)",
         "integer/string",
-        "Point type 0/blur, 1/smooth, 2/sphere, 3/shiny, 4/flat"
+        "Point type 0/blur, 1/smooth, 2/sphere, 3/shiny, 4/flat",
+        true, 0
       }
     },
     {
@@ -510,7 +559,8 @@ void Session::init()
         1.0,
         "object(point)",
         "real",
-        "Point scaling multiplier, applies to all points objects"
+        "Point scaling multiplier, applies to all points objects",
+        true, 0
       }
     },
     {
@@ -519,7 +569,8 @@ void Session::init()
         "",
         "object(point)",
         "string or integer",
-        "Index or label of data set to apply to point sizes"
+        "Index or label of data set to apply to point sizes",
+        false, 2
       }
     },
     {
@@ -528,7 +579,8 @@ void Session::init()
         false,
         "object(surface)",
         "boolean",
-        "If opaque flag is set skips depth sorting step and allows individual surface properties to be applied"
+        "If opaque flag is set skips depth sorting step and allows individual surface properties to be applied",
+        true, 0
       }
     },
     {
@@ -537,7 +589,8 @@ void Session::init()
         true,
         "object(surface)",
         "boolean",
-        "Disable this flag to skip the mesh optimisation step"
+        "Disable this flag to skip the mesh optimisation step",
+        true, 0
       }
     },
     {
@@ -546,7 +599,8 @@ void Session::init()
         true,
         "object(surface)",
         "boolean",
-        "Disable this flag to skip calculating vertex normals"
+        "Disable this flag to skip calculating vertex normals",
+        true, 0
       }
     },
     {
@@ -555,7 +609,8 @@ void Session::init()
         1.0,
         "object(volume)",
         "real",
-        "Power used when applying transfer function, 1.0=linear mapping"
+        "Power used when applying transfer function, 1.0=linear mapping",
+        true, 0
       }
     },
     {
@@ -564,7 +619,8 @@ void Session::init()
         256,
         "object(volume)",
         "integer",
-        "Number of samples to take per ray cast, higher = better quality, slower"
+        "Number of samples to take per ray cast, higher = better quality, slower",
+        true, 0
       }
     },
     {
@@ -573,7 +629,8 @@ void Session::init()
         5.0,
         "object(volume)",
         "real",
-        "Density multiplier for volume data"
+        "Density multiplier for volume data",
+        true, 0
       }
     },
     {
@@ -582,7 +639,8 @@ void Session::init()
         FLT_MAX,
         "object(volume)",
         "real",
-        "Isovalue for dynamic isosurface"
+        "Isovalue for dynamic isosurface",
+        true, 0
       }
     },
     {
@@ -591,7 +649,8 @@ void Session::init()
         1.0,
         "object(volume)",
         "real [0,1]",
-        "Transparency value for isosurface"
+        "Transparency value for isosurface",
+        true, 0
       }
     },
     {
@@ -600,7 +659,8 @@ void Session::init()
         0.1,
         "object(volume)",
         "real",
-        "Isosurface smoothing factor for normal calculation"
+        "Isosurface smoothing factor for normal calculation",
+        true, 0
       }
     },
     {
@@ -609,7 +669,8 @@ void Session::init()
         true,
         "object(volume)",
         "boolean",
-        "Connect isosurface enclosed area with walls"
+        "Connect isosurface enclosed area with walls",
+        true, 0
       }
     },
     {
@@ -618,7 +679,8 @@ void Session::init()
         false,
         "object(volume)",
         "boolean",
-        "Apply a tricubic filter for increased smoothness"
+        "Apply a tricubic filter for increased smoothness",
+        true, 0
       }
     },
     {
@@ -627,7 +689,8 @@ void Session::init()
         0.0,
         "object(volume)",
         "real",
-        "Minimum density value to map, lower discarded"
+        "Minimum density value to map, lower discarded",
+        true, 0
       }
     },
     {
@@ -636,7 +699,8 @@ void Session::init()
         1.0,
         "object(volume)",
         "real",
-        "Maximum density value to map, higher discarded"
+        "Maximum density value to map, higher discarded",
+        true, 0
       }
     },
     {
@@ -645,7 +709,8 @@ void Session::init()
         false,
         "object(volume)",
         "boolean",
-        "Compress volume textures where possible"
+        "Compress volume textures where possible",
+        true, 0
       }
     },
     {
@@ -654,7 +719,8 @@ void Session::init()
         {0,0,0},
         "object(volume)",
         "int[3]",
-        "Volume texture size limit (for crop)"
+        "Volume texture size limit (for crop)",
+        true, 0
       }
     },
     {
@@ -663,7 +729,8 @@ void Session::init()
         {0,0,0},
         "object(volume)",
         "int[3]",
-        "Volume texture offset (for crop)"
+        "Volume texture offset (for crop)",
+        true, 0
       }
     },
     {
@@ -672,7 +739,8 @@ void Session::init()
         5.0,
         "object(vector)",
         "real",
-        "Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius"
+        "Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius",
+        true, 0
       }
     },
     {
@@ -681,7 +749,8 @@ void Session::init()
         1.0,
         "object(vector)",
         "real",
-        "Vector scaling multiplier, applies to all vector objects"
+        "Vector scaling multiplier, applies to all vector objects",
+        true, 0
       }
     },
     {
@@ -690,7 +759,8 @@ void Session::init()
         0.02,
         "object(vector)",
         "real",
-        "Arrow shaft radius as ratio of vector length"
+        "Arrow shaft radius as ratio of vector length",
+        true, 0
       }
     },
     {
@@ -699,7 +769,8 @@ void Session::init()
         0.0,
         "object(vector)",
         "real",
-        "Arrow fixed length, default is to use vector magnitude"
+        "Arrow fixed length, default is to use vector magnitude",
+        true, 0
       }
     },
     {
@@ -708,7 +779,8 @@ void Session::init()
         1.0,
         "object(vector)",
         "real",
-        "Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant \"length\" property (if property length=0.0, this is ignored)."
+        "Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant \"length\" property (if property length=0.0, this is ignored).",
+        true, 0
       }
     },
     {
@@ -717,7 +789,8 @@ void Session::init()
         true,
         "object(vector)",
         "boolean",
-        "Automatically scale vectors based on maximum magnitude"
+        "Automatically scale vectors based on maximum magnitude",
+        true, 0
       }
     },
     {
@@ -726,7 +799,8 @@ void Session::init()
         0,
         "object(tracer)",
         "integer",
-        "Number of time steps to trace particle path"
+        "Number of time steps to trace particle path",
+        true, 0
       }
     },
     {
@@ -735,7 +809,8 @@ void Session::init()
         true,
         "object(tracer)",
         "boolean",
-        "Taper width of tracer arrow up as we get closer to current timestep"
+        "Taper width of tracer arrow up as we get closer to current timestep",
+        true, 0
       }
     },
     {
@@ -744,7 +819,8 @@ void Session::init()
         false,
         "object(tracer)",
         "boolean",
-        "Fade opacity of tracer arrow in from transparent as we get closer to current timestep"
+        "Fade opacity of tracer arrow in from transparent as we get closer to current timestep",
+        true, 0
       }
     },
     {
@@ -753,7 +829,8 @@ void Session::init()
         true,
         "object(tracer)",
         "boolean",
-        "Set falst to render tracers as points instead of connected lines"
+        "Set falst to render tracers as points instead of connected lines",
+        true, 0
       }
     },
     {
@@ -762,7 +839,8 @@ void Session::init()
         1.0,
         "object(tracer)",
         "real",
-        "Tracer scaling multiplier, applies to all tracer objects"
+        "Tracer scaling multiplier, applies to all tracer objects",
+        true, 0
       }
     },
     {
@@ -771,7 +849,8 @@ void Session::init()
         1.0,
         "object(shape)",
         "real",
-        "Shape width scaling factor"
+        "Shape width scaling factor",
+        true, 0
       }
     },
     {
@@ -780,7 +859,8 @@ void Session::init()
         1.0,
         "object(shape)",
         "real",
-        "Shape height scaling factor"
+        "Shape height scaling factor",
+        true, 0
       }
     },
     {
@@ -789,7 +869,8 @@ void Session::init()
         1.0,
         "object(shape)",
         "real",
-        "Shape length scaling factor"
+        "Shape length scaling factor",
+        true, 0
       }
     },
     {
@@ -798,7 +879,8 @@ void Session::init()
         0,
         "object(shape)",
         "integer",
-        "Shape type: 0=ellipsoid, 1=cuboid"
+        "Shape type: 0=ellipsoid, 1=cuboid",
+        true, 0
       }
     },
     {
@@ -807,7 +889,8 @@ void Session::init()
         1.0,
         "object(shape)",
         "real",
-        "Shape scaling multiplier, applies to all shape objects"
+        "Shape scaling multiplier, applies to all shape objects",
+        true, 0
       }
     },
     {
@@ -816,7 +899,8 @@ void Session::init()
         "widths",
         "object(shape)",
         "string or integer",
-        "Index or label of data set to apply to shape widths"
+        "Index or label of data set to apply to shape widths",
+        false, 2
       }
     },
     {
@@ -825,7 +909,8 @@ void Session::init()
         "heights",
         "object(shape)",
         "string or integer",
-        "Index or label of data set to apply to shape heights"
+        "Index or label of data set to apply to shape heights",
+        false, 2
       }
     },
     {
@@ -834,7 +919,8 @@ void Session::init()
         "lengths",
         "object(shape)",
         "string or integer",
-        "Index or label of data set to apply to shape lengths"
+        "Index or label of data set to apply to shape lengths",
+        false, 2
       }
     },
     {
@@ -843,7 +929,8 @@ void Session::init()
         false,
         "colourbar",
         "boolean",
-        "Indicates object is a colourbar"
+        "Indicates object is a colourbar",
+        true, 0
       }
     },
     {
@@ -852,7 +939,8 @@ void Session::init()
         "bottom",
         "colourbar",
         "string",
-        "Alignment of colour bar to screen edge, top/bottom/left/right"
+        "Alignment of colour bar to screen edge, top/bottom/left/right",
+        true, 0
       }
     },
     {
@@ -861,7 +949,8 @@ void Session::init()
         {0, 0},
         "colourbar",
         "real[2]",
-        "Dimensions of colour bar (length/breadth) in pixels or viewport size ratio"
+        "Dimensions of colour bar (length/breadth) in pixels or viewport size ratio",
+        true, 0
       }
     },
     {
@@ -870,7 +959,8 @@ void Session::init()
         0,
         "colourbar",
         "integer",
-        "Number of additional tick marks to draw besides start and end"
+        "Number of additional tick marks to draw besides start and end",
+        true, 0
       }
     },
     {
@@ -879,7 +969,8 @@ void Session::init()
         json::array(),
         "colourbar",
         "float[]",
-        "Values of intermediate tick marks"
+        "Values of intermediate tick marks",
+        true, 0
       }
     },
     {
@@ -888,7 +979,8 @@ void Session::init()
         true,
         "colourbar",
         "boolean",
-        "Set to false to disable drawing of intermediate tick values"
+        "Set to false to disable drawing of intermediate tick values",
+        true, 0
       }
     },
     {
@@ -897,7 +989,8 @@ void Session::init()
         "%.5g",
         "colourbar",
         "string",
-        "Format specifier for tick values, eg: %.3[f/e/g] standard, scientific, both"
+        "Format specifier for tick values, eg: %.3[f/e/g] standard, scientific, both",
+        true, 0
       }
     },
     {
@@ -906,7 +999,8 @@ void Session::init()
         1.0,
         "colourbar",
         "real",
-        "Multiplier to scale tick values"
+        "Multiplier to scale tick values",
+        true, 0
       }
     },
     {
@@ -915,7 +1009,8 @@ void Session::init()
         1.0,
         "colourbar",
         "integer",
-        "Outline width to draw around colour bar"
+        "Outline width to draw around colour bar",
+        true, 0
       }
     },
     {
@@ -924,7 +1019,8 @@ void Session::init()
         0,
         "colourbar",
         "real",
-        "Margin to parallel edge in pixels or viewport size ratio"
+        "Margin to parallel edge in pixels or viewport size ratio",
+        true, 0
       }
     },
     {
@@ -933,7 +1029,8 @@ void Session::init()
         0,
         "colourbar",
         "real",
-        "Margin to perpendicular edge in pixels or viewport size ratio, >0=towards left/bottom, 0=centre (horizontal only), <0=towards right/top"
+        "Margin to perpendicular edge in pixels or viewport size ratio, >0=towards left/bottom, 0=centre (horizontal only), <0=towards right/top",
+        true, 0
       }
     },
     {
@@ -942,7 +1039,8 @@ void Session::init()
         false,
         "colourbar",
         "boolean",
-        "Set to true to label discrete bins rather than tick points"
+        "Set to true to label discrete bins rather than tick points",
+        true, 0
       }
     },
     {
@@ -951,7 +1049,8 @@ void Session::init()
         false,
         "colourmap",
         "boolean",
-        "Set to true to use log scales"
+        "Set to true to use log scales",
+        true, 0
       }
     },
     {
@@ -960,7 +1059,8 @@ void Session::init()
         false,
         "colourmap",
         "boolean",
-        "Set to true to apply colours as discrete values rather than gradient"
+        "Set to true to apply colours as discrete values rather than gradient",
+        true, 0
       }
     },
     {
@@ -969,7 +1069,8 @@ void Session::init()
         json::array(),
         "colourmap",
         "colours",
-        "Colour list, see [Colour map lists] for more information"
+        "Colour list, see [Colour map lists] for more information",
+        true, 0
       }
     },
     {
@@ -978,7 +1079,8 @@ void Session::init()
         {0.0, 0.0},
         "colourmap",
         "real[2]",
-        "Fixed scale range, default is to automatically calculate range based on data min/max"
+        "Fixed scale range, default is to automatically calculate range based on data min/max",
+        true, 0
       }
     },
     {
@@ -987,7 +1089,8 @@ void Session::init()
         false,
         "colourmap",
         "boolean",
-        "Set to true to lock colourmap ranges to current values"
+        "Set to true to lock colourmap ranges to current values",
+        true, 0
       }
     },
     {
@@ -996,7 +1099,8 @@ void Session::init()
         "",
         "view",
         "string",
-        "Title to display at top centre of view"
+        "Title to display at top centre of view",
+        true, 0
       }
     },
     {
@@ -1005,7 +1109,8 @@ void Session::init()
         -1,
         "view",
         "integer",
-        "When to apply camera auto-zoom to fit model to window, -1=never, 0=first timestep only, 1=every timestep"
+        "When to apply camera auto-zoom to fit model to window, -1=never, 0=first timestep only, 1=every timestep",
+        true, 0
       }
     },
     {
@@ -1014,7 +1119,8 @@ void Session::init()
         20,
         "view",
         "integer",
-        "Margin in pixels to leave around edge of model when to applying camera auto-zoom"
+        "Margin in pixels to leave around edge of model when to applying camera auto-zoom",
+        true, 0
       }
     },
     {
@@ -1023,7 +1129,8 @@ void Session::init()
         false,
         "view",
         "boolean",
-        "Draw rulers around object axes"
+        "Draw rulers around object axes",
+        true, 0
       }
     },
     {
@@ -1032,7 +1139,8 @@ void Session::init()
         "xyz",
         "view",
         "string",
-        "Which figure axes to draw rulers beside (xyzXYZ) lowercase = min, capital = max "
+        "Which figure axes to draw rulers beside (xyzXYZ) lowercase = min, capital = max ",
+        true, 0
       }
     },
     {
@@ -1041,7 +1149,8 @@ void Session::init()
         5,
         "view",
         "integer",
-        "Number of tick marks to display on rulers"
+        "Number of tick marks to display on rulers",
+        true, 0
       }
     },
     {
@@ -1050,7 +1159,8 @@ void Session::init()
         1.5,
         "view",
         "real",
-        "Width of ruler lines"
+        "Width of ruler lines",
+        true, 0
       }
     },
     {
@@ -1059,7 +1169,8 @@ void Session::init()
         1.0,
         "view",
         "integer",
-        "Border width around model boundary, 0=disabled"
+        "Border width around model boundary, 0=disabled",
+        true, 0
       }
     },
     {
@@ -1068,7 +1179,8 @@ void Session::init()
         false,
         "view",
         "boolean",
-        "Draw filled background box around model boundary"
+        "Draw filled background box around model boundary",
+        true, 0
       }
     },
     {
@@ -1077,7 +1189,8 @@ void Session::init()
         "grey",
         "view",
         "colour",
-        "Colour of model boundary border"
+        "Colour of model boundary border",
+        true, 0
       }
     },
     {
@@ -1086,7 +1199,8 @@ void Session::init()
         true,
         "view",
         "boolean",
-        "Draw X/Y/Z legend showing model axes orientation"
+        "Draw X/Y/Z legend showing model axes orientation",
+        true, 0
       }
     },
     {
@@ -1095,7 +1209,8 @@ void Session::init()
         0.1,
         "view",
         "real",
-        "Axis legend scaling factor"
+        "Axis legend scaling factor",
+        true, 0
       }
     },
     {
@@ -1104,7 +1219,8 @@ void Session::init()
         2,
         "view", //Should be global?
         "integer",
-        "Read only: Over-sample antialiasing level, for off-screen rendering"
+        "Read only: Over-sample antialiasing level, for off-screen rendering",
+        true, 0
       }
     },
 
@@ -1114,7 +1230,8 @@ void Session::init()
         {0.,0.,0.,1.},
         "view",
         "real[4]",
-        "Camera rotation quaternion [x,y,z,w]"
+        "Camera rotation quaternion [x,y,z,w]",
+        true, 0
       }
     },
     {
@@ -1123,7 +1240,8 @@ void Session::init()
         {0.,0.,0.},
         "view",
         "real[3]",
-        "Camera rotation as Euler angles [x,y,z] - output only"
+        "Camera rotation as Euler angles [x,y,z] - output only",
+        true, 0
       }
     },
     {
@@ -1132,7 +1250,8 @@ void Session::init()
         {0.,0.,0.},
         "view",
         "real[3]",
-        "Camera translation [x,y,z]"
+        "Camera translation [x,y,z]",
+        true, 0
       }
     },
     {
@@ -1141,7 +1260,8 @@ void Session::init()
         {0.,0.,0.},
         "view",
         "real[3]",
-        "Camera focal point [x,y,z]"
+        "Camera focal point [x,y,z]",
+        true, 0
       }
     },
     {
@@ -1150,7 +1270,8 @@ void Session::init()
         {1.,1.,1.},
         "view",
         "real[3]",
-        "Global model scaling factors [x,y,z]"
+        "Global model scaling factors [x,y,z]",
+        true, 0
       }
     },
     {
@@ -1159,7 +1280,8 @@ void Session::init()
         {0,0,0},
         "view",
         "real[3]",
-        "Global model minimum bounds [x,y,z]"
+        "Global model minimum bounds [x,y,z]",
+        true, 0
       }
     },
     {
@@ -1168,7 +1290,8 @@ void Session::init()
         {0,0,0},
         "view",
         "real[3]",
-        "Global model maximum bounds [x,y,z]"
+        "Global model maximum bounds [x,y,z]",
+        true, 0
       }
     },
     {
@@ -1177,7 +1300,8 @@ void Session::init()
         0.0,
         "view",
         "real",
-        "Near clipping plane position, adjusts where geometry close to the camera is clipped"
+        "Near clipping plane position, adjusts where geometry close to the camera is clipped",
+        true, 0
       }
     },
     {
@@ -1186,7 +1310,8 @@ void Session::init()
         0.0,
         "view",
         "real",
-        "Far clip plane position, adjusts where far geometry is clipped"
+        "Far clip plane position, adjusts where far geometry is clipped",
+        true, 0
       }
     },
     {
@@ -1195,7 +1320,8 @@ void Session::init()
         1,
         "view",
         "integer",
-        "Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed"
+        "Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed",
+        true, 0
       }
     },
     {
@@ -1204,7 +1330,8 @@ void Session::init()
         false,
         "view",
         "boolean",
-        "Enable to follow the model bounding box centre with camera as it changes"
+        "Enable to follow the model bounding box centre with camera as it changes",
+        true, 0
       }
     },
     {
@@ -1213,7 +1340,8 @@ void Session::init()
         json::array(),
         "global",
         "real[][]",
-        "Read only bounding box (min/max)"
+        "Read only bounding box (min/max)",
+        true, 0
       }
     },
     {
@@ -1222,7 +1350,8 @@ void Session::init()
         "default",
         "global",
         "string",
-        "Title for caption area and image output filenames"
+        "Title for caption area and image output filenames",
+        true, 0
       }
     },
     {
@@ -1231,7 +1360,8 @@ void Session::init()
         {1024,768},
         "global",
         "integer[2]",
-        "Window resolution X,Y"
+        "Window resolution X,Y",
+        true, 0
       }
     },
     {
@@ -1240,7 +1370,8 @@ void Session::init()
         true,
         "global",
         "boolean",
-        "Enable multisample anti-aliasing, only works with interactive viewing"
+        "Enable multisample anti-aliasing, only works with interactive viewing",
+        true, 0
       }
     },
     {
@@ -1249,7 +1380,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Turn on to display FPS count"
+        "Turn on to display FPS count",
+        true, 0
       }
     },
     {
@@ -1258,7 +1390,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Turn on to automatically add and switch to a new timestep after loading a data file"
+        "Turn on to automatically add and switch to a new timestep after loading a data file",
+        true, 0
       }
     },
     {
@@ -1267,7 +1400,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Turn on to set initial state of all loaded objects to hidden"
+        "Turn on to set initial state of all loaded objects to hidden",
+        true, 0
       }
     },
     {
@@ -1276,7 +1410,8 @@ void Session::init()
         {0,0,0,255},
         "global",
         "colour",
-        "Background colour RGB(A)"
+        "Background colour RGB(A)",
+        true, 0
       }
     },
     {
@@ -1285,7 +1420,8 @@ void Session::init()
         1.0,
         "global",
         "real [0,1]",
-        "Global opacity multiplier where 0 is transparent and 1 is opaque, this is combined with \"opacity\" prop"
+        "Global opacity multiplier where 0 is transparent and 1 is opaque, this is combined with \"opacity\" prop",
+        true, 0
       }
     },
     {
@@ -1294,7 +1430,18 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Disables initial loading of object data from database, only object names loaded, use the \"load\" command to subsequently load selected object data"
+        "Disables initial loading of object data from database, only object names loaded, use the \"load\" command to subsequently load selected object data",
+        true, 0
+      }
+    },
+    {
+      "merge",
+      {
+        false,
+        "global",
+        "boolean",
+        "Enable to load subsequent databases into the current model, if disabled then each database is loaded into a new model",
+        true, 0
       }
     },
     {
@@ -1303,7 +1450,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Enable rendering points as proper 3d spherical meshes, TODO: deprecate and implement as a renderer type 'particles' that can plot points or spheres"
+        "Enable rendering points as proper 3d spherical meshes, TODO: deprecate and implement as a renderer type 'particles' that can plot points or spheres",
+        true, 0
       }
     },
     {
@@ -1312,7 +1460,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Enable transparent png output"
+        "Enable transparent png output",
+        true, 0
       }
     },
     {
@@ -1321,7 +1470,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Enable imported model y/z axis swap"
+        "Enable imported model y/z axis swap",
+        true, 0
       }
     },
     {
@@ -1330,7 +1480,8 @@ void Session::init()
         0,
         "global",
         "integer",
-        "Imported model triangle subdivision level. Can also be set to 1 to force vertex normals to be recalculated by ignoring any present in the loaded model data."
+        "Imported model triangle subdivision level. Can also be set to 1 to force vertex normals to be recalculated by ignoring any present in the loaded model data.",
+        true, 0
       }
     },
     {
@@ -1339,7 +1490,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Enable global camera for all models (default is separate cam for each)"
+        "Enable global camera for all models (default is separate cam for each)",
+        true, 0
       }
     },
     {
@@ -1348,7 +1500,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Always use vector font regardless of individual object properties"
+        "Always use vector font regardless of individual object properties",
+        true, 0
       }
     },
     {
@@ -1357,7 +1510,8 @@ void Session::init()
         1,
         "global",
         "integer",
-        "Volume rendering output channels 1 (luminance) 3/4 (rgba)"
+        "Volume rendering output channels 1 (luminance) 3/4 (rgba)",
+        true, 0
       }
     },
     {
@@ -1366,7 +1520,8 @@ void Session::init()
         {256,256,256},
         "global",
         "integer[3]",
-        "Volume rendering data voxel resolution X Y Z"
+        "Volume rendering data voxel resolution X Y Z",
+        true, 0
       }
     },
     {
@@ -1375,7 +1530,8 @@ void Session::init()
         {0.,0.,0.},
         "global",
         "real[3]",
-        "Volume rendering min bound X Y Z"
+        "Volume rendering min bound X Y Z",
+        true, 0
       }
     },
     {
@@ -1384,7 +1540,8 @@ void Session::init()
         {1.,1.,1.},
         "global",
         "real[3]",
-        "Volume rendering max bound X Y Z"
+        "Volume rendering max bound X Y Z",
+        true, 0
       }
     },
     {
@@ -1393,7 +1550,8 @@ void Session::init()
         {1,1,1},
         "global",
         "int[3]",
-        "Volume rendering subsampling factor X Y Z"
+        "Volume rendering subsampling factor X Y Z",
+        true, 0
       }
     },
     {
@@ -1402,7 +1560,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Convert full volume data sets to slices (allows cropping and sub-sampling)"
+        "Convert full volume data sets to slices (allows cropping and sub-sampling)",
+        true, 0
       }
     },
     {
@@ -1411,7 +1570,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Export full volume data sets to slices"
+        "Export full volume data sets to slices",
+        true, 0
       }
     },
     {
@@ -1420,7 +1580,8 @@ void Session::init()
         {1.,1.,1.},
         "global",
         "real[3]",
-        "Geometry input scaling X Y Z"
+        "Geometry input scaling X Y Z",
+        true, 0
       }
     },
     {
@@ -1429,7 +1590,8 @@ void Session::init()
         0,
         "global",
         "integer",
-        "Point render sub-sampling factor"
+        "Point render sub-sampling factor",
+        true, 0
       }
     },
     {
@@ -1438,7 +1600,8 @@ void Session::init()
         0,
         "global",
         "integer",
-        "Point render maximum count before auto sub-sampling"
+        "Point render maximum count before auto sub-sampling",
+        true, 0
       },
     },
     {
@@ -1447,7 +1610,8 @@ void Session::init()
         0,
         "global",
         "integer",
-        "Point distance sub-sampling factor"
+        "Point distance sub-sampling factor",
+        true, 0
       }
     },
     {
@@ -1456,7 +1620,8 @@ void Session::init()
         true,
         "global",
         "boolean",
-        "Point size/type attributes can be applied per object (requires more GPU ram)"
+        "Point size/type attributes can be applied per object (requires more GPU ram)",
+        true, 0
       }
     },
     {
@@ -1465,7 +1630,8 @@ void Session::init()
         true,
         "global",
         "boolean",
-        "Point distance size attenuation (points shrink when further from viewer ie: perspective)"
+        "Point distance size attenuation (points shrink when further from viewer ie: perspective)",
+        true, 0
       }
     },
     {
@@ -1474,7 +1640,8 @@ void Session::init()
         true,
         "global",
         "boolean",
-        "Automatic depth sorting enabled"
+        "Automatic depth sorting enabled",
+        true, 0
       }
     },
     {
@@ -1483,7 +1650,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Cache timestep varying data in ram"
+        "Cache timestep varying data in ram",
+        true, 0
       }
     },
     {
@@ -1492,7 +1660,8 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Cache timestep varying data on gpu as well as ram (only if model size permits)"
+        "Cache timestep varying data on gpu as well as ram (only if model size permits)",
+        true, 0
       }
     },
     {
@@ -1501,7 +1670,8 @@ void Session::init()
         -1,
         "global",
         "integer",
-        "Holds the current model timestep, read only, -1 indicates no time varying data loaded"
+        "Holds the current model timestep, read only, -1 indicates no time varying data loaded",
+        true, 0
       }
     },
     {
@@ -1510,17 +1680,19 @@ void Session::init()
         {},
         "global",
         "dict",
-        "Holds a dictionary of data sets in the current model by label, read only"
+        "Holds a dictionary of data sets in the current model by label, read only",
+        true, 0
       }
     }
 
   };
 
-  for (auto p : properties)
+  for (auto p : property_data)
   {
     //Copy default values
     std::string key = p.first;
     defaults[key] = p.second[PROPDEFAULT];
+    properties[key] = p.second;
 
     //Save view properties
     std::string target = p.second[PROPTARGET];

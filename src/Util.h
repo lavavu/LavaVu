@@ -339,10 +339,10 @@ public:
   int getInt(const std::string& key, int def);
   bool getBool(const std::string& key, bool def);
   void parseSet(const std::string& properties);
-  void parse(const std::string& property, bool global=false);
+  void parse(const std::string& property, bool global=false, bool strict=true);
   void merge(json& other);
-  void checkall();
-  bool typecheck(json& val, const std::string& key);
+  void checkall(bool strict=true);
+  bool typecheck(json& val, const std::string& key, bool strict=true);
 
 };
 

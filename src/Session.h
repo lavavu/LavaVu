@@ -9,6 +9,8 @@ class Session;
 #define PROPTARGET  1
 #define PROPTYPE    2
 #define PROPDOC     3
+#define PROPSTRICT  4
+#define PROPREDRAW  5
 
 //Class to hold global draw state
 class Session
@@ -59,7 +61,7 @@ public:
   std::vector<std::string> viewProps;
 
   //Property metadata / documentation
-  std::vector<std::pair<std::string,json>> properties;
+  json properties;
 
   // Engines - mersenne twister
   std::mt19937 eng0, eng1;

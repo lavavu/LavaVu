@@ -524,33 +524,48 @@ void Model::setup()
   }
 }
 
-void Model::reload(DrawingObject* obj)
+void Model::reloadRedraw(DrawingObject* obj, bool reload)
 {
-  //Full data reload on selected object only
-  for (auto g : geometry)
-    g->redrawObject(obj);
+  //Reload or redraw by object or all
+  if (obj)
+  {
+    //Reload or redraw selected object only
+    for (auto g : geometry)
+      g->redrawObject(obj, reload);
 
-  if (obj->colourMap)
-    obj->colourMap->calibrated = false;
-  if (obj->opacityMap)
-    obj->opacityMap->calibrated = false;
+    if (obj->colourMap)
+      obj->colourMap->calibrated = false;
+    if (obj->opacityMap)
+      obj->opacityMap->calibrated = false;
+  }
+  else
+  {
+    //Flag reload on all objects...
+    for (auto g : geometry)
+    {
+      if (reload)
+        //Full data reload...
+        g->reload = true;
+      else
+        //Just flag a redraw, will only be reloaded if vertex count changed
+        g->redraw = true;
+    }
+
+    for (unsigned int i = 0; i < colourMaps.size(); i++)
+      colourMaps[i]->calibrated = false;
+  }
 }
 
-void Model::redraw(bool reload)
+void Model::redraw(DrawingObject* obj)
 {
-  //Flag redraw on all objects...
-  for (auto g : geometry)
-  {
-    if (reload) 
-      //Full data reload...
-      g->reload = true;
-    else
-      //Just flag a redraw, will only be reloaded if vertex count changed
-      g->redraw = true;
-  }
+  //Flag redraw
+  reloadRedraw(obj, false);
+}
 
-  for (unsigned int i = 0; i < colourMaps.size(); i++)
-    colourMaps[i]->calibrated = false;
+void Model::reload(DrawingObject* obj)
+{
+  //Flag full reload
+  reloadRedraw(obj, true);
 }
 
 void Model::loadWindows()
@@ -2328,8 +2343,10 @@ void Model::jsonRead(std::string data)
     objects[i]->properties.merge(inobjects[i]);
   }
 
-  bool reload = (imported["reload"].is_boolean() && imported["reload"]);
-  redraw(reload);
+  if ((imported["reload"].is_boolean() && imported["reload"]))
+    reload();
+  else
+    redraw();
 }
 
 

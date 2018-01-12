@@ -119,6 +119,7 @@ public:
   void run(std::vector<std::string> args={});
 
   bool loadFile(const std::string& file);
+  bool parseProperty(std::string data, DrawingObject* obj=NULL);
   bool parseCommands(std::string cmd);
   void render();
   void init();

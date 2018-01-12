@@ -118,8 +118,9 @@ public:
 
   void clearObjects();
   void setup();
-  void reload(DrawingObject* obj);
-  void redraw(bool reload=false);
+  void reload(DrawingObject* obj=NULL);
+  void redraw(DrawingObject* obj=NULL);
+  void reloadRedraw(DrawingObject* obj, bool reload);
   void loadWindows();
   void loadLinks();
   void loadLinks(DrawingObject* obj);

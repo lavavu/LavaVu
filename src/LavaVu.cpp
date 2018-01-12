@@ -644,19 +644,22 @@ std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> l
 
 //Property containers now using json
 //Parse lines with delimiter, ie: key=value
-void LavaVu::parseProperties(std::string& properties)
+void LavaVu::parseProperties(std::string& properties, DrawingObject* obj)
 {
   //Process all lines
   std::stringstream ss(properties);
   std::string line;
   while(std::getline(ss, line))
-    parseProperty(line);
+    parseProperty(line, obj);
 };
 
-void LavaVu::parseProperty(std::string data)
+bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
 {
+  std::size_t pos = data.find("=");
+  if (pos == std::string::npos) return false;
   //Set properties of selected object or view/globals
-  std::string key = data.substr(0,data.find("="));
+  std::string key = data.substr(0,pos);
+  json prop = session.properties[key]; //Get metadata
 
   //Special syntax allows object selection in property set command
   // obj:key=value
@@ -666,24 +669,29 @@ void LavaVu::parseProperty(std::string data)
     std::string sel = data.substr(0,pos);
     parseCommand("select " + sel);
     data = data.substr(pos+1);
+    obj = aobject;
   }
 
-  if (aobject)
+  if (obj)
   {
     //Properties reserved for colourmaps can be set from any objects that use that map
-    if (aobject->colourMap &&
-        (aobject->colourMap->properties.has(key) ||
+    if (obj->colourMap &&
+        (obj->colourMap->properties.has(key) ||
          std::find(session.colourMapProps.begin(), session.colourMapProps.end(), key) != session.colourMapProps.end()))
     {
-      aobject->colourMap->properties.parse(data);
-      if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << aobject->colourMap->name
-                             << ", DATA: " << aobject->colourMap->properties.data << std::endl;
+      obj->colourMap->properties.parse(data);
+      if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << obj->colourMap->name
+                             << ", DATA: " << obj->colourMap->properties.data << std::endl;
     }
     else
     {
-      aobject->properties.parse(data);
-      if (verbose) std::cerr << "OBJECT " << std::setw(2) << aobject->name()
-                             << ", DATA: " << aobject->properties.data << std::endl;
+      obj->properties.parse(data, false, prop[PROPSTRICT]);
+      if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
+                             << ", DATA: " << obj->properties.data << std::endl;
+      //Reload required for object prop set?
+      int reload = prop[PROPREDRAW];
+      if (reload > 0)
+        amodel->reloadRedraw(obj, reload > 1); //2 == full reload, 1= redraw only
     }
   }
   else if (aview &&
@@ -703,6 +711,8 @@ void LavaVu::parseProperty(std::string data)
     //TODO: do this only for certain properties
     //viewset = RESET_ZOOM; //Force check for resize and autozoom
   }
+
+  return true;
 }
 
 void LavaVu::printProperties()
@@ -2709,8 +2719,8 @@ bool LavaVu::loadFile(const std::string& file)
   //Database files always create their own Model object
   if (fn.type == "gldb" || fn.type == "db" || fn.full.find("file:") != std::string::npos)
   {
-    //Open database file, if a non-db model already loaded, load into that
-    if (models.size() == 0 || (amodel && amodel->database))
+    //Open database file, if a non-db model already loaded, load into that (unless disabled with "merge" property)
+    if (models.size() == 0 || (amodel && amodel->database && !session.global("merge")))
     {
       amodel = new Model(session);
       models.push_back(amodel);
@@ -3095,6 +3105,15 @@ void LavaVu::setColourMap(ColourMap* target, std::string properties, bool replac
   else
     //Parse and merge property strings
     target->properties.parseSet(properties);
+
+  //All objects using this colourmap require redraw
+  for (unsigned int i=0; i < amodel->objects.size(); i++)
+  {
+    ColourMap* cmap = amodel->objects[i]->getColourMap("colourmap");
+    ColourMap* omap = amodel->objects[i]->getColourMap("opacitymap");
+    if (cmap == target || omap == target)
+      amodel->redraw(amodel->objects[i]);
+  }
 }
 
 DrawingObject* LavaVu::colourBar(DrawingObject* obj)

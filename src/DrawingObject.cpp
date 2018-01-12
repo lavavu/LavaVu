@@ -73,7 +73,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
   if (prop.is_number())
   {
     //Attempt to load by id
-    printf("WARNING: Load colourmap by ID is deprecated, use name\n");
+    //printf("WARNING: Load colourmap by ID is deprecated, use name\n");
     int cmapid = prop;
     if (cmapid >= 0 && cmapid < (int)session.colourMaps->size())
     {

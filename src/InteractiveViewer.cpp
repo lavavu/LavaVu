@@ -922,7 +922,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   else if (!gethelp && (!amodel || !aview))
   {
     //Attempt to parse as property=value first
-    if (parsePropertySet(cmd)) return true;
+    if (parseProperty(cmd, aobject)) return true;
     if (verbose) std::cerr << "Model/View required to execute command: " << cmd << ", deferred" << std::endl;
     //Add to the queue to be processed once open
     queueCommands(cmd);
@@ -2087,10 +2087,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (amodel->database)
       amodel->loadTimeSteps();
 
-    if (obj)
-      amodel->reload(obj); //Redraw & reload specific
-    else
-      amodel->redraw(true); //Redraw & reload all
+    amodel->reload(obj); //Redraw & reload
 
     loadModelStep(model, amodel->step());
   }
@@ -2558,7 +2555,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else if (val.length() > 0)
     {
-      parsePropertySet("background=" + parsed["background"]);
+      parseProperty("background=" + parsed["background"]);
       aview->background = Colour(aview->properties["background"]);
     }
     else
@@ -2734,7 +2731,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
             obj->properties.data["scaling"] = sc / 1.5;
           printMessage("%s scaling set to %f", obj->name().c_str(), (float)obj->properties["scaling"]);
           //Reload required for per-object scaling
-          amodel->redraw(true);
+          amodel->reload();
         }
       }
     }
@@ -2865,7 +2862,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     //Update the views
     resetViews(false);
-    amodel->redraw(true); //Redraw & reload
+    amodel->reload(); //Redraw & reload
   }
   else if (parsed.exists("sort"))
   {
@@ -3315,7 +3312,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       printMessage("Go to timestep %d", amodel->step());
       resetViews(); //Update the viewports
     }
-    else if (parsePropertySet(cmd))
+    else if (parseProperty(cmd, aobject))
     {
       redisplay = true; //Redisplay after prop change
     }
@@ -3329,17 +3326,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   last_cmd = cmd;
   //if (animate && redisplay) viewer->postdisplay = true;
   return redisplay;
-}
-
-bool LavaVu::parsePropertySet(std::string cmd)
-{
-  std::size_t found = cmd.find("=");
-  json jval;
-  if (found == std::string::npos) return false;
-  parseProperty(cmd);
-  //Don't force full data reload on property set!
-  //if (aobject) amodel->redraw(aobject);
-  return true;
 }
 
 std::vector<std::string> LavaVu::commandList(std::string category)
@@ -3429,9 +3415,10 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     std::stringstream content;
     std::string last;
     for (auto p : session.properties)
+    for (auto it = session.properties.begin(); it != session.properties.end(); ++it)
     {
-      std::string name = p.first;
-      json prop = p.second;
+      std::string name = it.key();
+      json prop = it.value();
       std::string target = prop[PROPTARGET];
       json defp = prop[PROPDEFAULT];
       std::string def = defp.dump();
@@ -3467,11 +3454,11 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
   else if (cmd.at(0) == '@')
   {
     std::string pname = cmd.substr(1);
-    for (auto p : session.properties)
+    for (auto it = session.properties.begin(); it != session.properties.end(); ++it)
     {
-      if (p.first == pname)
+      if (it.key() == pname)
       {
-        json prop = p.second;
+        json prop = it.value();
         std::string target = prop[PROPTARGET];
         json defp = prop[PROPDEFAULT];
         std::string def = defp.dump();
@@ -3512,15 +3499,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
 
 std::string LavaVu::propertyList()
 {
-  json properties = {};
-  for (auto p : session.properties)
-  {
-    //json entry = p.second;
-    std::string key = p.first;
-    properties[key] = p.second;
-  }
-
   std::stringstream ss;
-  ss << properties;
+  ss << session.properties;
   return ss.str();
 }

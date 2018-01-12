@@ -387,7 +387,7 @@ public:
   void hideShowAll(bool hide);
   bool show(unsigned int idx);
   void showObj(DrawingObject* draw, bool state);
-  void redrawObject(DrawingObject* draw);
+  void redrawObject(DrawingObject* draw, bool reload=false);
   void setValueRange(DrawingObject* draw);
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init

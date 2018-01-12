@@ -726,7 +726,7 @@ void Geometry::setValueRange(DrawingObject* draw)
   }
 }
 
-void Geometry::redrawObject(DrawingObject* draw)
+void Geometry::redrawObject(DrawingObject* draw, bool reload)
 {
   for (unsigned int i = 0; i < geom.size(); i++)
   {
@@ -735,7 +735,8 @@ void Geometry::redrawObject(DrawingObject* draw)
       debug_print("Reloading object: %s\n", draw->name().c_str());
       //Flag reload of texture
       if (geom[i]->texture) geom[i]->texture->texture->width = 0;
-      reload = true;
+      this->reload = reload;
+      redraw = true;
       return;
     }
   }

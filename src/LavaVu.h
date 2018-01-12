@@ -141,8 +141,8 @@ public:
 
   std::string exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename="exported.gldb");
 
-  void parseProperties(std::string& properties);
-  void parseProperty(std::string data);
+  void parseProperties(std::string& properties, DrawingObject* obj=NULL);
+  bool parseProperty(std::string data, DrawingObject* obj=NULL);
   void printProperties();
   void printDefaultProperties();
 
@@ -183,7 +183,6 @@ public:
   float parseCoord(const std::string& str);
   virtual bool parseCommands(std::string cmd);
   bool parseCommand(std::string cmd, bool gethelp=false);
-  bool parsePropertySet(std::string cmd);
   virtual std::string requestData(std::string key);
   //***
 

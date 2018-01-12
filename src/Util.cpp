@@ -189,7 +189,7 @@ void Properties::parseSet(const std::string& properties)
 }
 
 //Property containers now using json
-void Properties::parse(const std::string& property, bool global)
+void Properties::parse(const std::string& property, bool global, bool strict)
 {
   //Parse a key=value property where value is a json object
   json& dest = global ? globals : data; //Parse into data by default
@@ -247,7 +247,7 @@ void Properties::parse(const std::string& property, bool global)
   }
 
   //Run a type check
-  checkall();
+  checkall(strict);
 }
 
 void Properties::mergeJSON(json& dest, json& src)
@@ -268,14 +268,14 @@ void Properties::merge(json& other)
   checkall();
 }
 
-void Properties::checkall()
+void Properties::checkall(bool strict)
 {
   //Ensure all loaded values are of correct types by checking against default types
   for (json::iterator it = data.begin(); it != data.end(); ++it)
   {
     if (!it.value().is_null())
     {
-      if (!typecheck(data[it.key()], it.key()))
+      if (!typecheck(data[it.key()], it.key(), strict))
         debug_print("DATA key: %s had incorrect type\n", it.key().c_str());
     }
   }
@@ -285,13 +285,13 @@ void Properties::checkall()
   {
     if (!it.value().is_null())
     {
-      if (!typecheck(globals[it.key()], it.key()))
+      if (!typecheck(globals[it.key()], it.key(), strict))
         debug_print("GLOBAL key: %s had incorrect type\n", it.key().c_str());
     }
   }
 }
 
-bool Properties::typecheck(json& val, const std::string& key)
+bool Properties::typecheck(json& val, const std::string& key, bool strict)
 {
   if (key == "colourby" || key == "opacityby" || key == "sizeby" ||
       key == "widthby" || key == "heightby" || key == "lengthby")
@@ -345,7 +345,8 @@ bool Properties::typecheck(json& val, const std::string& key)
     else
       val = (float)val;
   }
-  if (def.is_string() && !val.is_string())
+  //Only convert to string if strict checking enabled (some props can be string or number)
+  if (strict && def.is_string() && !val.is_string())
   {
     //String conversion
     debug_print("Attempting to coerce value to STRING\n");
