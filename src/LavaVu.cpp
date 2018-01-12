@@ -686,12 +686,12 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     else
     {
       obj->properties.parse(data, false, prop[PROPSTRICT]);
-      if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
-                             << ", DATA: " << obj->properties.data << std::endl;
       //Reload required for object prop set?
       int reload = prop[PROPREDRAW];
       if (reload > 0)
         amodel->reloadRedraw(obj, reload > 1); //2 == full reload, 1= redraw only
+      if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
+                             << ", DATA: " << obj->properties.data << ", reload? " << reload << std::endl;
     }
   }
   else if (aview &&

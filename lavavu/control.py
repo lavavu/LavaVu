@@ -279,7 +279,7 @@ class FilterAction(PropertyAction):
         #Set a filter range
         f = self.target["filters"]
         f[self.index][self.property] = value
-        self.target["filters"] = f
+        self.target["filters"] = json.dumps(f)
         #return "#" + str(f) + "; redraw"
         #return "redraw"
         return self.command
