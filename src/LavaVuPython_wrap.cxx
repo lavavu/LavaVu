@@ -16654,6 +16654,41 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_appendToObject(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_appendToObject",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_appendToObject" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_appendToObject" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  {
+    try {
+      (arg1)->appendToObject(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_loadTriangles__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -20243,6 +20278,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_createObject", _wrap_LavaVu_createObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_getObject", _wrap_LavaVu_getObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_reloadObject", _wrap_LavaVu_reloadObject, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_appendToObject", _wrap_LavaVu_appendToObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_loadTriangles", _wrap_LavaVu_loadTriangles, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_loadColours", _wrap_LavaVu_loadColours, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_loadLabels", _wrap_LavaVu_loadLabels, METH_VARARGS, NULL},

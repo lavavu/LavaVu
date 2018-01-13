@@ -3040,16 +3040,15 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string o = parsed["append"];
+    DrawingObject* obj;
     if (o.length())
-      aobject = lookupObject(parsed, "append");
-    if (aobject)
+      obj = lookupObject(parsed, "append");
+    else
+      obj = aobject;
+    if (obj)
     {
-      Geometry* container = lookupObjectContainer(aobject);
-      if (container) 
-      {
-        container->add(aobject);
-        printMessage("Appended to object: %s", aobject->name().c_str());
-      }
+      appendToObject(obj);
+      printMessage("Appended to object: %s", obj->name().c_str());
     }
   }
   else if (parsed.exists("select"))

@@ -428,8 +428,7 @@ class Object(dict):
 
         This allows manually closing the active element so all new data is loaded into a new element
         """
-        #TODO: use ref? requires new function in LavaVu
-        self.instance.append(self.id) #self.name)
+        self.instance.app.appendToObject(self.ref)
 
     def triangles(self, data, split=0):
         """

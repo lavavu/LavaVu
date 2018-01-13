@@ -3217,6 +3217,15 @@ void LavaVu::reloadObject(DrawingObject* target)
   amodel->reload(target);
 }
 
+void LavaVu::appendToObject(DrawingObject* target)
+{
+  //Append data container to specified object
+  if (!amodel || !target) return;
+  Geometry* container = lookupObjectContainer(target);
+  if (container)
+    container->add(target);
+}
+
 void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split)
 {
   Geometry* container = lookupObjectContainer(target);

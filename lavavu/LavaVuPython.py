@@ -401,6 +401,7 @@ LavaVu.setObject = new_instancemethod(_LavaVuPython.LavaVu_setObject, None, Lava
 LavaVu.createObject = new_instancemethod(_LavaVuPython.LavaVu_createObject, None, LavaVu)
 LavaVu.getObject = new_instancemethod(_LavaVuPython.LavaVu_getObject, None, LavaVu)
 LavaVu.reloadObject = new_instancemethod(_LavaVuPython.LavaVu_reloadObject, None, LavaVu)
+LavaVu.appendToObject = new_instancemethod(_LavaVuPython.LavaVu_appendToObject, None, LavaVu)
 LavaVu.loadTriangles = new_instancemethod(_LavaVuPython.LavaVu_loadTriangles, None, LavaVu)
 LavaVu.loadColours = new_instancemethod(_LavaVuPython.LavaVu_loadColours, None, LavaVu)
 LavaVu.loadLabels = new_instancemethod(_LavaVuPython.LavaVu_loadLabels, None, LavaVu)
