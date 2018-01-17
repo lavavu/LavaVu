@@ -481,7 +481,7 @@ class Object(dict):
         elif data.dtype == numpy.uint8:
             self.instance.app.arrayUChar(self.ref, data.ravel(), geomdtype)
 
-    def _loadVector(self, data, geomdtype):
+    def _loadVector(self, data, geomdtype, magnitude=None):
         #Passes a vector dataset (float)
         data = self._convert(data, numpy.float32)
 
@@ -491,6 +491,15 @@ class Object(dict):
         if len(shape) >= 2 and shape[-1] != 3 and shape[0] == 3:
             #Re-arrange to array of [x,y,z] triples
             data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+
+        if magnitude is not None:
+            axis = len(data.shape)-1
+            mag = numpy.linalg.norm(data,axis=axis)
+            if isinstance(magnitude, str):
+                label = magnitude
+            else:
+                label = "magnitude"
+            self.instance.app.arrayFloat(self.ref, mag.ravel(), label)
 
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
@@ -543,7 +552,7 @@ class Object(dict):
         """
         self._loadVector(data, LavaVuPython.lucNormalData)
 
-    def vectors(self, data):
+    def vectors(self, data, magnitude=False):
         """
         Load 3d vector data for object
 
@@ -551,8 +560,10 @@ class Object(dict):
         ----------
         data: list,array
             Pass a list or numpy float32 3d array of vectors
+        magnitude: str
+            Pass a label to calculate the magnitude and save under provided name (for use in colouring etc)
         """
-        self._loadVector(data, LavaVuPython.lucVectorData)
+        self._loadVector(data, LavaVuPython.lucVectorData, magnitude)
 
     def values(self, data, label="default"):
         """
