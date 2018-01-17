@@ -960,16 +960,6 @@ void Model::loadFixed()
       geometry[i]->insertFixed(fixed[i]);
 }
 
-bool Model::inFixed(DataContainer* block0)
-{
-  //Return true if a data block found in fixed data set
-  for (Geometry* g : fixed)
-  {
-    if (g->inFixed(block0)) return true;
-  }
-  return false;
-}
-
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
 {
   unsigned int len = (ts == 0 ? 1 : (int)log10((float)ts) + 1);
@@ -1123,24 +1113,39 @@ void Model::freeze()
 
   for (auto g : fixed)
   {
-    for (unsigned int i=0; i<g->geom.size(); i++)
+    for (Geom_Ptr p : g->geom)
     {
+      //Flag all fixed data blocks
+      for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
+      {
+        DataContainer* block = p->dataContainer((lucGeometryDataType)data_type);
+        if (block)
+          block->fixed = true;
+      }
+      for (unsigned int j=0; j<p->values.size(); j++)
+      {
+        DataContainer* block = (DataContainer*)p->values[j].get();
+        if (block)
+          block->fixed = true;
+      }
+
       //Following doesn't apply to tracers as
       //all their data is stored in fixed geometry,
       //so loading new data into the fixed RenderData is OK
       if (g->type != lucTracerType)
       {
-        if (g->geom[i]->render->vertices.count() > g->geom[i]->width * g->geom[i]->height)
+        if (p->render->vertices.count() > p->width * p->height)
         {
           //Mark the GeomData entry as complete by setting width*height=count,
           //any new data will be loaded into another container
           //(Prevents g data being polluted by newly loaded data)
           //printf("FIXED DATA VERTEX LIMIT: %dx%d ==> %dx%d\n", g->geom[i]->width, g->geom[i]->height, g->geom[i]->render->vertices.count(), 1);
-          g->geom[i]->width = g->geom[i]->render->vertices.count();
-          g->geom[i]->height = 1;
+          p->width = p->render->vertices.count();
+          p->height = 1;
         }
       }
     }
+
   }
 
   //Need new geometry containers after freeze
@@ -1818,22 +1823,22 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
     {
       //Write the data entry
       DataContainer* block = data[i]->dataContainer((lucGeometryDataType)data_type);
-      if (inFixed(block) != fixedOnly) continue; //Skip fixed/unfixed
       if (!block || block->size() == 0) continue;
-      if (infostream)
-        std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
-                  << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
+      if (g->type == lucTracerType) block->fixed = true; //All tracer data is fixed
+      if (block->fixed != fixedOnly) continue; //Skip fixed/unfixed
+      std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
+                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
     }
     for (unsigned int j=0; j<data[i]->values.size(); j++)
     {
       //Write the value data entry
       DataContainer* block = (DataContainer*)data[i]->values[j].get();
-      if (inFixed(block) != fixedOnly) continue; //Skip fixed/unfixed
       if (!block || block->size() == 0) continue;
-      if (infostream)
-        std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
-                  << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
+      if (g->type == lucTracerType) block->fixed = true; //All tracer data is fixed
+      if (block->fixed != fixedOnly) continue; //Skip fixed/unfixed
+      std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
+                << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       //TODO: fix to write/read labels for data values from database, preferably in a separate table?
       //This hack will work for up to 7 value data sets for now
       //Filters and colourby properties will need modification though

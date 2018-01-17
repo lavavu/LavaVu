@@ -138,8 +138,9 @@ public:
   float minimum;
   float maximum;
   std::string label;
+  bool fixed;
 
-  DataContainer() : next(0), datasize(1), offset(0), minimum(0), maximum(0), label("") {}
+  DataContainer() : next(0), datasize(1), offset(0), minimum(0), maximum(0), label(""), fixed(false) {}
 
   //Pure virtual methods
   virtual unsigned int bytes() = 0;

@@ -127,7 +127,6 @@ public:
   void clearTimeSteps();
   int loadTimeSteps(bool scan=false);
   void loadFixed();
-  bool inFixed(DataContainer* block0);
   std::string checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit=1);
   void loadViewports();
   void loadViewCamera(int viewport_id);
