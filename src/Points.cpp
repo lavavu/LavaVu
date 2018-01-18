@@ -243,7 +243,7 @@ void Points::loadList()
     geom[s]->colourCalibrate();
 
     //Override opaque if pointtype requires opacity (1/2) unless explicitly set
-    if (geom[s]->opaqueCheck() && geom[s]->draw->properties["pointtype"] < 2 && !geom[s]->draw->properties["opaque"])
+    if (geom[s]->opaqueCheck() && (int)geom[s]->draw->properties["pointtype"] < 2 && !geom[s]->draw->properties["opaque"])
       geom[s]->opaque = false;
 
     bool filter = geom[s]->draw->filterCache.size();
