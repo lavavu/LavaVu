@@ -3613,8 +3613,7 @@ void LavaVu::queueCommands(std::string cmds)
 {
   //Thread safe command processing
   //Push command onto queue to be processed in the viewer thread
-  pthread_mutex_lock(&viewer->cmd_mutex);
+  std::lock_guard<std::mutex> guard(viewer->cmd_mutex);
   viewer->commands.push_back(cmds);
   viewer->postdisplay = true;
-  pthread_mutex_unlock(&viewer->cmd_mutex);
 }

@@ -38,7 +38,6 @@
 #include <time.h>
 #include <float.h>
 #include <ctype.h>
-#include <pthread.h>
 
 //Include the decompression routines
 #if defined HAVE_LIBPNG and not defined USE_ZLIB

@@ -22,8 +22,8 @@ protected:
   OpenGLViewer* viewer;
 
   // Thread sync
-  pthread_mutex_t cs_mutex;
-  pthread_cond_t condition_var;
+  std::mutex cs_mutex;
+  std::condition_variable cv;
 
   int client_id;
   bool updated;

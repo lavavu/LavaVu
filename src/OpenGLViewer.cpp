@@ -224,9 +224,6 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
 
   title = "LavaVu";
   output_path = "";
-
-  /* Init mutex */
-  pthread_mutex_init(&cmd_mutex, NULL);
 }
 
 OpenGLViewer::~OpenGLViewer()
@@ -391,10 +388,12 @@ void OpenGLViewer::display(bool redraw)
   while (commands.size() > 0)
   {
     //Critical section
-    pthread_mutex_lock(&cmd_mutex);
-    std::string cmd = commands.front();
-    commands.pop_front();
-    pthread_mutex_unlock(&cmd_mutex);
+    std::string cmd;
+    {
+      std::lock_guard<std::mutex> guard(cmd_mutex);
+      cmd = commands.front();
+      commands.pop_front();
+    }
 
     //Idle posted?
     idling = cmd.find("idle") != std::string::npos;
@@ -581,7 +580,7 @@ bool OpenGLViewer::pollInput()
   //Delete parsed commands from front of queue
   //while (commands.front().length() == 0)
   // commands.pop_front();
-  pthread_mutex_lock(&cmd_mutex);
+  std::lock_guard<std::mutex> guard(cmd_mutex);
 
   //Check for input at stdin...
   bool parsed = false;
@@ -607,7 +606,6 @@ bool OpenGLViewer::pollInput()
     parsed = true;
   }
 
-  pthread_mutex_unlock(&cmd_mutex);
   return parsed;
 }
 

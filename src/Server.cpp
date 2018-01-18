@@ -39,14 +39,11 @@ Server::Server(OpenGLViewer* viewer) : viewer(viewer)
   client_id = 0;
   synched[0] = true;
   ctx = NULL;
-  // Initialize mutex and condition variable objects
-  pthread_mutex_init(&cs_mutex, NULL);
-  pthread_cond_init (&condition_var, NULL);
 }
 
 Server::~Server()
 {
-  pthread_cond_broadcast(&condition_var);  //Display complete signal
+  cv.notify_all(); //Display complete signal
   if (ctx)
     mg_stop(ctx);
 }
@@ -109,7 +106,7 @@ void Server::display()
   if (quality < 50) quality = 90;  //Ensure valid
 
   //If not currently sending an image, update the image data
-  if (pthread_mutex_trylock(&cs_mutex) == 0)
+  if (cs_mutex.try_lock())
   {
     //CRITICAL SECTION
     // Read the pixels (flipped)
@@ -146,10 +143,9 @@ void Server::display()
       {
         iter->second = false; //Flag update waiting
       }
-      pthread_cond_broadcast(&condition_var);  //Display complete signal to all waiting clients
-      //pthread_cond_signal(&condition_var);  //Display complete signal
+      cv.notify_all(); //Display complete signal to all waiting clients
     }
-    pthread_mutex_unlock(&cs_mutex); //END CRITICAL SECTION
+    cs_mutex.unlock(); //END CRITICAL SECTION
   }
   else
   {
@@ -238,7 +234,7 @@ int Server::request(struct mg_connection *conn)
     mg_printf(conn, "HTTP/1.1 200 OK\r\n"
               "Content-Type: text/plain\r\n\r\n");
     _self->updated = true; //Force update
-    pthread_cond_broadcast(&_self->condition_var);  //Display complete signal
+    _self->cv.notify_all(); //Display complete signal to all waiting clients
   }
   else if (strstr(request_info->uri, "/objects") != NULL || 
            strstr(request_info->uri, "/getstate") != NULL)
@@ -266,14 +262,13 @@ int Server::request(struct mg_connection *conn)
     const size_t equals = data.find('=');
     const size_t amp = data.find('&');
     //Push command onto queue to be processed in the viewer thread
-    pthread_mutex_lock(&_self->viewer->cmd_mutex);
+    std::lock_guard<std::mutex> guard(_self->viewer->cmd_mutex);
     if (amp != std::string::npos)
       _self->viewer->commands.push_back(data.substr(equals+1, amp-equals-1));
     else
       _self->viewer->commands.push_back(data.substr(equals+1));
     debug_print("CMD: %s\n", data.substr(equals+1).c_str());
     _self->viewer->postdisplay = true;
-    pthread_mutex_unlock(&_self->viewer->cmd_mutex);
     if (strstr(request_info->uri, "icommand=") != NULL)
       id = 0;  //Image requested with command, use default client id
     else
@@ -293,12 +288,11 @@ int Server::request(struct mg_connection *conn)
     if (post_data_len)
     {
       //Push command onto queue to be processed in the viewer thread
-      pthread_mutex_lock(&_self->viewer->cmd_mutex);
+      std::lock_guard<std::mutex> guard(_self->viewer->cmd_mutex);
       //Seems post data string can exceed data length or be missing terminator
       post_data[post_data_len] = 0;
       _self->viewer->commands.push_back(std::string(post_data));
       _self->viewer->postdisplay = true;
-      pthread_mutex_unlock(&_self->viewer->cmd_mutex);
     }
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty OK response required
   }
@@ -306,19 +300,17 @@ int Server::request(struct mg_connection *conn)
   {
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
     std::string data = request_info->uri+1;
-    pthread_mutex_lock(&_self->viewer->cmd_mutex);
+    std::lock_guard<std::mutex> guard(_self->viewer->cmd_mutex);
     _self->viewer->commands.push_back("key " + data);
     _self->viewer->postdisplay = true;
-    pthread_mutex_unlock(&_self->viewer->cmd_mutex);
   }
   else if (strstr(request_info->uri, "/mouse=") != NULL)
   {
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty response, prevent XML errors
     std::string data = request_info->uri+1;
-    pthread_mutex_lock(&_self->viewer->cmd_mutex);
+    std::lock_guard<std::mutex> guard(_self->viewer->cmd_mutex);
     _self->viewer->commands.push_back("mouse " + data);
     _self->viewer->postdisplay = true;
-    pthread_mutex_unlock(&_self->viewer->cmd_mutex);
   }
   else if (strstr(request_info->uri, "/render") != NULL)
   {
@@ -344,19 +336,10 @@ int Server::request(struct mg_connection *conn)
     _self->synched[id] = true;
     }
     //Image update requested, wait until data available then send
-    pthread_t tid;
-    tid = pthread_self();
-    pthread_mutex_lock(&_self->cs_mutex);
+    std::thread::id tid = std::this_thread::get_id();
+    std::unique_lock<std::mutex> lk(_self->cs_mutex);
     debug_print("CLIENT %d THREAD ID %u ENTERING WAIT STATE (synched %d)\n", id, tid, _self->synched[id]);
-
-    //while (!_self->updated && !_self->viewer->quitProgram)
-    while (_self->synched[id] && !_self->viewer->quitProgram)
-    {
-      debug_print("CLIENT %d THREAD ID %u WAITING\n", id, tid);
-      //This doesn't seem to be needed, causes constant display updates even when no changes
-      //_self->viewer->notIdle(1000); //Starts the idle timer (1 second before display fired)
-      pthread_cond_wait(&_self->condition_var, &_self->cs_mutex);
-    }
+    _self->cv.wait(lk, [&]{return !_self->synched[id] || _self->viewer->quitProgram;});
     debug_print("CLIENT %d THREAD ID %u RESUMED, quit? %d\n", id, tid, _self->viewer->quitProgram);
 
     if (!_self->viewer->quitProgram)
@@ -372,7 +355,6 @@ int Server::request(struct mg_connection *conn)
       _self->updated = false;
       _self->synched[id] = true;
     }
-    pthread_mutex_unlock(&_self->cs_mutex);
   }
 
   // Returning non-zero tells mongoose that our function has replied to

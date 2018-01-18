@@ -102,7 +102,7 @@ public:
 
   ApplicationInterface* app;
   std::deque<std::string> commands;
-  pthread_mutex_t cmd_mutex;
+  std::mutex cmd_mutex;
 
   GLboolean stereoBuffer, doubleBuffer;
   bool visible;
