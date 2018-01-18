@@ -177,11 +177,11 @@ $(LIBRARY): $(ALLOBJS) | paths
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
-src/sqlite3/sqlite3.c:
+src/sqlite3/sqlite3.c src/sqlite3/sqlite3.h:
 	#Ensure the submodule is checked out
 	git submodule update --init
 
-$(OPATH)/sqlite3.o : sqlite3.c
+$(OPATH)/sqlite3.o : src/sqlite3/sqlite3.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 $(OPATH)/CocoaViewer.o : src/Main/CocoaViewer.mm
