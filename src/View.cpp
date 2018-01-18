@@ -192,12 +192,18 @@ void View::checkClip(float& near_clip, float& far_clip)
   if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
 }
 
-void View::getMinMaxDistance(float* min, float* max, bool eyePlane)
+void View::getMinMaxDistance(float* min, float* max, float range[2], float mv[16], bool eyePlane)
 {
+  //Preserve the modelView at time of calculations
+  {
+    std::lock_guard<std::mutex> guard(matrix_lock);
+    memcpy(mv, &modelView, sizeof(float)*16);
+  }
+
   //Save min/max distance
   float vert[3], dist;
-  maxdist = -HUGE_VAL;
-  mindist = HUGE_VAL;
+  range[0] = HUGE_VAL;
+  range[1] = -HUGE_VAL;
   for (int i=0; i<2; i++)
   {
     vert[0] = i==0 ? min[0] : max[0];
@@ -209,19 +215,19 @@ void View::getMinMaxDistance(float* min, float* max, bool eyePlane)
         vert[2] = k==0 ? min[2] : max[2];
         if (eyePlane)
         {
-          dist = eyePlaneDistance(modelView, vert);
+          dist = eyePlaneDistance(mv, vert);
         }
         else
         {
-          dist = eyeDistance(vert);
+          dist = eyeDistance(mv, vert);
         }
-        if (dist < mindist) mindist = dist;
-        if (dist > maxdist) maxdist = dist;
+        if (dist < range[0]) range[0] = dist;
+        if (dist > range[1]) range[1] = dist;
       }
     }
   }
-  if (maxdist == mindist) maxdist += 0.0000001;
-  //printf("DISTANCE MIN %f MAX %f\n", mindist, maxdist);
+  if (range[1] == range[0]) range[1] += 0.0000001;
+  //printf("DISTANCE MIN %f MAX %f\n", range[0], range[1]);
 }
 
 void View::autoRotate()
@@ -596,6 +602,7 @@ void View::apply(bool use_fp, bool use_rotate)
   }
   GL_Error_Check;
   //Store the matrix
+  std::lock_guard<std::mutex> guard(matrix_lock);
   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
 }
 

@@ -222,6 +222,11 @@ void Points::loadList()
   if (pidx == NULL || swap == NULL || indexlist == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total * 2 + sizeof(unsigned int) * total);
   if (geom.size() == 0) return;
   int voffset = 0;
+
+  //Element counts to actually plot (exclude filtered/hidden) per geom entry
+  counts.clear();
+  counts.resize(geom.size());
+
   unsigned int maxCount = session.global("pointmaxcount");
   unsigned int subSample = session.global("pointsubsample");
   //Auto-sub-sample if maxcount set
@@ -231,10 +236,15 @@ void Points::loadList()
   uint32_t SEED;
   for (unsigned int s = 0; s < geom.size(); voffset += geom[s]->count(), s++)
   {
+    counts[s] = 0;
     if (!drawable(s)) continue;
 
     //Calibrate colourMap - required to re-cache filter settings (TODO: split filter reload into another function?)
     geom[s]->colourCalibrate();
+
+    //Override opaque if pointtype requires opacity (1/2) unless explicitly set
+    if (geom[s]->opaqueCheck() && geom[s]->draw->properties["pointtype"] < 2 && !geom[s]->draw->properties["opaque"])
+      geom[s]->opaque = false;
 
     bool filter = geom[s]->draw->filterCache.size();
     for (unsigned int i = 0; i < geom[s]->count(); i ++)
@@ -248,7 +258,16 @@ void Points::loadList()
       pidx[elements].index = indexlist[elements] = voffset + i;
       pidx[elements].vertex = geom[s]->render->vertices[i];
       pidx[elements].distance = 0;
+
+      if (geom[s]->opaque)
+      {
+        //All opaque points at start
+        pidx[elements].distance = USHRT_MAX;
+        pidx[elements].vertex = NULL;
+      }
+
       elements++;
+      counts[s] ++; //Element count
     }
   }
   t2 = clock();
@@ -270,21 +289,40 @@ void Points::sort()
   t1 = clock();
 
   //Calculate min/max distances from view plane
-  calcDistanceRange(true);
+  float distanceRange[2], modelView[16];
+  view->getMinMaxDistance(min, max, distanceRange, modelView, true);
 
-  //Update eye distances, clamping distance to integer between 0 and USHRT_MAX
-  float multiplier = (float)USHRT_MAX / (view->maxdist - view->mindist);
+  //Update eye distances, clamping distance to integer between 0 and USHRT_MAX-1
+  //float multiplier = (float)USHRT_MAX / (distanceRange[1] - distanceRange[0]);
+  float multiplier = (USHRT_MAX-1.0) / (distanceRange[1] - distanceRange[0]);
   float fdistance;
+  unsigned int opaqueCount = 0;
   for (unsigned int i = 0; i < elements; i++)
   {
-    //Distance from viewing plane is -eyeZ
-    fdistance = eyePlaneDistance(view->modelView, pidx[i].vertex);
-    //fdistance = view->eyeDistance(pidx[i].vertex);
-    pidx[i].distance = (unsigned short)(multiplier * (fdistance - view->mindist));
+    //Max dist 65535 reserved for opaque triangles
+    if (pidx[i].distance < USHRT_MAX)
+    {
+      //Distance from viewing plane is -eyeZ
+      fdistance = eyePlaneDistance(modelView, pidx[i].vertex);
+      //fdistance = view->eyeDistance(modelView, pidx[i].vertex);
+      //float d = floor(multiplier * (fdistance - distanceRange[0])) + 0.5;
+      //assert(d < USHRT_MAX);
+      //assert(d >= 0);
+      pidx[i].distance = (unsigned short)(multiplier * (fdistance - distanceRange[0]));
+    }
+    else
+      opaqueCount++;
   }
   t2 = clock();
   debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
+
+  //Skip sort if all opaque
+  if (opaqueCount == elements)
+  {
+    debug_print("No sort necessary\n");
+    return;
+  }
 
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
   if (view->is3d)
@@ -308,8 +346,8 @@ void Points::sort()
     if (distSample > 0)
     {
       SEED = pidx[i].index; //Reset the seed for determinism based on index
-      int subSample = 1 + distSample * pidx[i].distance / USHRT_MAX; //[1,distSample]
-      if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
+      int subSample = 1 + distSample * pidx[i].distance / (USHRT_MAX-1.0); //[1,distSample]
+      //if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
     }
     indexlist[idxcount] = pidx[i].index;
     idxcount ++;
@@ -331,7 +369,7 @@ void Points::render()
 {
   clock_t t1,t2,tt;
   if (total == 0 || elements == 0) return;
-  assert(pidx);
+  assert(indexlist);
 
   tt = t1 = clock();
 
@@ -441,22 +479,41 @@ void Points::draw()
         glEnableVertexAttribArray(aPointType);
         glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(4*sizeof(float)+sizeof(Colour)));
       }
+    }
 
-      //Draw the points
-      glDrawElements(GL_POINTS, idxcount, GL_UNSIGNED_INT, (GLvoid*)0);
+    unsigned int start = 0;
+    int defidx = 0;
+    //for (int index = 0; index<geom.size(); index++)
+    for (int index = geom.size()-1; index >= 0; index--)
+    {
+      if (counts[index] == 0) continue;
+      if (geom[index]->opaque)
+      {
+        setState(index, session.prog[lucPointType]); //Set draw state settings for this object
+        //fprintf(stderr, "(%d, %s) DRAWING OPAQUE POINTS: %d (%d to %d)\n", index, geom[index]->draw->name().c_str(), counts[index], start, (start+counts[index]));
+        glDrawElements(GL_POINTS, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+        start += counts[index];
+      }
+      else
+        defidx = index;
+    }
 
+    //Draw remaining elements (transparent, depth sorted)
+    if (start < (unsigned int)elements)
+    {
+      //Set draw state settings for first non-opaque object
+      //NOTE: per-object properties do not work with transparency!
+      setState(defidx, session.prog[lucPointType]);
+
+      //Render all remaining points - elements is the number of indices. 3 indices needed to make a single triangle
+      //fprintf(stderr, "(*) DRAWING TRANSPARENT POINTS: %d\n", (elements-start));
+      glDrawElements(GL_POINTS, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+    }
+
+    if (attribs)
+    {
       if (aSize >= 0) glDisableVertexAttribArray(aSize);
       if (aPointType >= 0) glDisableVertexAttribArray(aPointType);
-    }
-    else
-    {
-      //Use generic default values
-      glVertexAttrib1f(aPointType, -1.0);
-      glVertexAttrib1f(aSize, 1.0);
-      GL_Error_Check;
-
-      //Draw the points
-      glDrawElements(GL_POINTS, idxcount, GL_UNSIGNED_INT, (GLvoid*)0);
     }
 
     glDisableClientState(GL_VERTEX_ARRAY);

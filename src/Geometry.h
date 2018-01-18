@@ -208,8 +208,8 @@ public:
   float distance;
 
   //Bounding box of content
-  float min[3];
-  float max[3];
+  float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
+  float max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
 
   std::vector<std::string> labels;      //Optional vertex labels
 
@@ -230,12 +230,6 @@ public:
   {
     render = std::make_shared<RenderData>();
     texture = NULL;
-
-    for (int i=0; i<3; i++)
-    {
-      min[i] = HUGE_VAL;
-      max[i] = -HUGE_VAL;
-    }
   }
 
   ~GeomData()
@@ -292,6 +286,8 @@ public:
     if (width == 0 || height == 0) return 0;
     return (width-1) * (height-1);
   }
+
+  bool opaqueCheck(); //Return true if object does not require transparency
 };
 
 class Distance
@@ -357,10 +353,14 @@ protected:
   unsigned int elements;
   unsigned int drawcount;
   DrawingObject* cached;
+  std::vector<unsigned int> counts;
 
 public:
   Session& session;
-  //Store the actual maximum bounding box
+  //Maximum bounding box of all content
+  float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
+  float max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
+
   bool allhidden, internal, unscale;
   Vec3d iscale; //Factors for un-scaling
   lucGeometryType type;   //Holds the object type
@@ -413,7 +413,6 @@ public:
   json getDataLabels(DrawingObject* draw);
   int size() {return geom.size();}
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
-  void calcDistanceRange(bool eyePlane=false);
   void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);
@@ -448,7 +447,6 @@ class Triangles : public Geometry
 {
 protected:
   unsigned int idxcount;
-  std::vector<unsigned int> counts;
   GLuint indexvbo, vbo;
 public:
   Triangles(Session& session);
@@ -490,7 +488,6 @@ public:
 class Lines : public Geometry
 {
   unsigned int idxcount;
-  std::vector<unsigned int> counts;
   GLuint indexvbo, vbo;
   unsigned int linetotal;
 public:

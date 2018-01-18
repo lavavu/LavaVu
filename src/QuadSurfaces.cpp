@@ -60,7 +60,8 @@ void QuadSurfaces::update()
   surf_sort.clear();
 
   //Calculate min/max distances from viewer
-  calcDistanceRange();
+  float distanceRange[2], modelView[16];
+  view->getMinMaxDistance(min, max, distanceRange, modelView);
 
   unsigned int quadverts = 0;
   for (unsigned int i=0; i<geom.size(); i++)
@@ -81,14 +82,11 @@ void QuadSurfaces::update()
                    };
 
     //Calculate distance from viewing plane
-    geom[i]->distance = view->eyeDistance(pos);
-    if (geom[i]->distance < view->mindist) view->mindist = geom[i]->distance;
-    if (geom[i]->distance > view->maxdist) view->maxdist = geom[i]->distance;
+    geom[i]->distance = view->eyeDistance(modelView, pos);
+    if (geom[i]->distance < distanceRange[0]) distanceRange[0] = geom[i]->distance;
+    if (geom[i]->distance > distanceRange[1]) distanceRange[1] = geom[i]->distance;
     //printf("%d)  %f %f %f distance = %f\n", i, pos[0], pos[1], pos[2], geom[i]->distance);
     surf_sort.push_back(Distance(i, geom[i]->distance));
-
-    //Disable triangle sorting for these surfaces
-    geom[i]->opaque = true;
   }
   if (total == 0) return;
   t2 = clock();
@@ -261,8 +259,8 @@ void QuadSurfaces::draw()
 
       //int id = i; //Sorting disabled
       setState(id, session.prog[lucGridType]); //Set draw state settings for this object
-      //fprintf(stderr, "(%d) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
-      glDrawRangeElements(GL_QUADS, 0, elements, 4 * geom[id]->gridElements2d(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+      //fprintf(stderr, "(%d, %s) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->draw->name().c_str(), geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
+      glDrawElements(GL_QUADS, 4 * geom[id]->gridElements2d(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
       //printf("%d) rendered, distance = %f (%f)\n", id, geom[id]->distance, surf_sort[i].distance);
     }
     //fprintf(stderr, "DRAWING ALL QUADS: %d\n", elements);

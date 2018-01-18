@@ -129,6 +129,8 @@ private:
 
   float near, far;
 
+  std::mutex matrix_lock;
+
 public:
   std::vector<DrawingObject*> objects;     // Contains these objects
   float fov;                 // Field of view
@@ -136,7 +138,6 @@ public:
   float eye_shift;           // Stereo eye shift factor
   float eye_sep_ratio;       // Eye separation ratio to focal length
   float modelView[16];
-  float maxdist, mindist;
 
   View(Session& session, float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
 
@@ -147,7 +148,7 @@ public:
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
   void checkClip(float& near_clip, float& far_clip);
-  void getMinMaxDistance(float* min, float* max, bool eyePlane=false);
+  void getMinMaxDistance(float* min, float* max, float range[2], float modelView[16], bool eyePlane=false);
   void autoRotate();
   std::string rotateString();
   std::string translateString();
@@ -183,7 +184,7 @@ public:
   void drawOverlay(Colour& colour, std::string& title);
   void setBackground();
 
-  inline float eyeDistance(const Vec3d& vec)
+  inline float eyeDistance(const float modelView[16], const Vec3d& vec)
   {
     float rX = -(modelView[0] * vec.x + modelView[4] * vec.y + modelView[8] * vec.z + modelView[12]);
     float rY = -(modelView[1] * vec.x + modelView[5] * vec.y + modelView[9] * vec.z + modelView[13]);

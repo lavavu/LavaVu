@@ -440,6 +440,26 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
   return fv ? (*fv)[idx] : HUGE_VALF;
 }
 
+bool GeomData::opaqueCheck()
+{
+  //Return Opacity flag - default transparency enabled
+
+  //Per-object wireframe works only when drawing opaque objects
+  //(can't set per-objects properties when all triangles collected and sorted)
+  opaque = (draw->properties["wireframe"] || draw->properties["opaque"]);
+
+  //If using a colourmap without transparency, and no opacity prop, flag opaque
+  if (draw->colourMap && values.size() > draw->colourIdx &&
+      draw->colourMap->opaque &&
+      (float)draw->properties["opacity"] == 1.0 &&
+      (float)draw->properties["alpha"] == 1.0)
+  {
+    opaque = true;
+  }
+  //Value is cached for future lookups
+  return opaque;
+}
+
 Geometry::Geometry(Session& session) : view(NULL), elements(0),
                        cached(NULL), session(session),
                        allhidden(false), internal(false), unscale(false),
@@ -759,6 +779,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
   if (draw == cached) return;
   cached = draw;
 
+  //printf("SETSTATE %s\n", geom[i]->draw->name().c_str());
   bool lighting = geom[i]->draw->properties["lit"];
   //Don't light surfaces in 2d models
   if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal) lighting = false;
@@ -847,7 +868,8 @@ void Geometry::setState(unsigned int i, Shader* prog)
     prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
     prog->setUniform3f("uLightPos", geom[i]->draw->properties["lightpos"]);
     prog->setUniformi("uTextured", texture && texture->unit >= 0);
-    prog->setUniformf("uOpaque", allopaque);
+    prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
+    //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
 
     if (texture)
       prog->setUniform("uTexture", (int)texture->unit);
@@ -911,24 +933,6 @@ void Geometry::display()
   {
     if (drawable(i))
       newcount++;
-
-    //Opacity flag - default transparency enabled
-    geom[i]->opaque = false;
-
-    //Per-object wireframe works only when drawing opaque objects
-    //(can't set per-objects properties when all triangles collected and sorted)
-    geom[i]->opaque = (geom[i]->draw->properties["wireframe"] || 
-                       geom[i]->draw->properties["opaque"]);
-
-    //If using a colourmap without transparency, and no opacity prop, flag opaque
-    if (geom[i]->draw->colourMap && geom[i]->values.size() > geom[i]->draw->colourIdx && 
-        geom[i]->draw->colourMap->opaque && 
-        (float)geom[i]->draw->properties["opacity"] == 1.0 &&
-        (float)geom[i]->draw->properties["alpha"] == 1.0)
-    {
-      geom[i]->opaque = true;
-    }
-
   }
 
   if (reload || redraw || newcount != drawcount)
@@ -1085,53 +1089,54 @@ void Geometry::setup(View* vp, float* min, float* max)
     if (view->objects[o]->properties["visible"])
       objectBounds(view->objects[o], min, max);
   //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
-}
 
-void Geometry::calcDistanceRange(bool eyePlane)
-{
-  //Calculate min/max distances from viewer
-  float min[3], max[3];
-  //float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF}, max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
-  Properties::toArray<float>(view->properties["min"], min, 3);
-  Properties::toArray<float>(view->properties["max"], max, 3);
-
-  //Iterate the selected viewport's drawing objects
-  //Apply geometry bounds from all object data within this viewport
+  //Repeat to save min/max for this range including view bounds
+  Properties::toArray<float>(view->properties["min"], this->min, 3);
+  Properties::toArray<float>(view->properties["max"], this->max, 3);
   for (unsigned int o=0; o<view->objects.size(); o++)
+  {
     if (view->objects[o]->properties["visible"])
-      objectBounds(view->objects[o], min, max);
-
-  //Calculate viewer distance using current modelview
-  view->getMinMaxDistance(min, max, eyePlane);
-
-  //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
-  //printf("Final view range...%f - %f\n", view->mindist, view->maxdist);
+    {
+      for (auto g : geom)
+      {
+        if (g->draw == view->objects[o])
+        {
+          compareCoordMinMax(this->min, this->max, g->min);
+          compareCoordMinMax(this->min, this->max, g->max);
+          //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), 
+          //       geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+        }
+      }
+    }
+  }
 }
 
 void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
 {
   if (!min || !max) return;
   //Get geometry bounds from all object data
-  for (unsigned int g=0; g<geom.size(); g++)
+  for (auto g : geom)
   {
+    if (!g->count()) continue;
+
     //If no range, must calculate
     for (int i=0; i<3; i++)
     {
-      if (std::isinf(geom[g]->max[i]) || std::isinf(geom[g]->min[i]))
+      if (std::isinf(g->max[i]) || std::isinf(g->min[i]))
       {
-        geom[g]->calcBounds();
-        //printf("No bounding dims provided for object %s (el %d), calculated ...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), g, 
-        //        geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+        g->calcBounds();
+        //printf("No bounding dims provided for object %s (el %d), calculated ...%f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(), g, 
+        //        g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
         break;
       }
     }
 
-    if (geom[g]->draw == draw)
+    if (g->draw == draw)
     {
-      compareCoordMinMax(min, max, geom[g]->min);
-      compareCoordMinMax(min, max, geom[g]->max);
-      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), 
-      //       geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
+      compareCoordMinMax(min, max, g->min);
+      compareCoordMinMax(min, max, g->max);
+      //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(), 
+      //       g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
     }
 
     //Apply object rotation/translation?

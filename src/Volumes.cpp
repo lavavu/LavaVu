@@ -118,7 +118,8 @@ void Volumes::sort()
   vol_sort.clear();
 
   //Calculate min/max distances from viewer
-  calcDistanceRange();
+  float distanceRange[2], modelView[16];
+  view->getMinMaxDistance(min, max, distanceRange, modelView);
 
   unsigned int index = 0;
   for (unsigned int i=0; i<slices.size(); i++)
@@ -142,10 +143,10 @@ void Volumes::sort()
     }
 
     //Calculate distance from viewing plane
-    geom[index]->distance = view->eyeDistance(pos);
-    if (geom[index]->distance < view->mindist) view->mindist = geom[index]->distance;
-    if (geom[index]->distance > view->maxdist) view->maxdist = geom[index]->distance;
-    //printf("%d)  %f %f %f distance = %f (min %f, max %f)\n", i, pos[0], pos[1], pos[2], geom[index]->distance, view->mindist, view->maxdist);
+    geom[index]->distance = view->eyeDistance(modelView, pos);
+    if (geom[index]->distance < distanceRange[0]) distanceRange[0] = geom[index]->distance;
+    if (geom[index]->distance > distanceRange[1]) distanceRange[1] = geom[index]->distance;
+    //printf("%d)  %f %f %f distance = %f (min %f, max %f)\n", i, pos[0], pos[1], pos[2], geom[index]->distance, distanceRange[0], distanceRange[1]);
     vol_sort.push_back(Distance(index, geom[index]->distance));
 
     index += slices[geom[i]->draw];

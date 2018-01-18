@@ -323,6 +323,7 @@ void TriSurfaces::loadList()
     geom[index]->colourCalibrate();
 
     bool filter = geom[index]->draw->filterCache.size();
+    bool opaque = geom[index]->opaqueCheck();
     for (unsigned int t = 0; t < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; t+=3, offset++)
     {
       //voffset is offset of the last vertex added to the vbo from the previous object
@@ -344,7 +345,7 @@ void TriSurfaces::loadList()
       memcpy(&indexlist[tricount*3], &tidx[tricount].index, sizeof(GLuint) * 3);
 
       //All opaque triangles at start
-      if (geom[index]->opaque)
+      if (opaque)
       {
         tidx[tricount].distance = USHRT_MAX;
         tidx[tricount].vertex = NULL;
@@ -607,10 +608,11 @@ void TriSurfaces::sort()
   assert(tidx);
 
   //Calculate min/max distances from view plane
-  calcDistanceRange(true);
+  float distanceRange[2], modelView[16];
+  view->getMinMaxDistance(min, max, distanceRange, modelView, true);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
-  float multiplier = (USHRT_MAX-1.0) / (view->maxdist - view->mindist);
+  float multiplier = (USHRT_MAX-1.0) / (distanceRange[1] - distanceRange[0]);
   unsigned int opaqueCount = 0;
   float fdistance;
   for (unsigned int i = 0; i < tricount; i++)
@@ -620,10 +622,10 @@ void TriSurfaces::sort()
     if (tidx[i].distance < USHRT_MAX)
     {
       assert(tidx[i].vertex);
-      fdistance = eyePlaneDistance(view->modelView, tidx[i].vertex);
-      //fdistance = view->eyeDistance(tidx[i].vertex);
-      fdistance = std::min(view->maxdist, std::max(view->mindist, fdistance)); //Clamp to range
-      tidx[i].distance = (unsigned short)(multiplier * (fdistance - view->mindist));
+      fdistance = eyePlaneDistance(modelView, tidx[i].vertex);
+      //fdistance = view->eyeDistance(modelView, tidx[i].vertex);
+      fdistance = std::min(distanceRange[1], std::max(distanceRange[0], fdistance)); //Clamp to range
+      tidx[i].distance = (unsigned short)(multiplier * (fdistance - distanceRange[0]));
       //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, tidx[i].vertex[0], tidx[i].vertex[1], tidx[i].vertex[2]);
       //Reverse as radix sort is ascending and we want to draw by distance descending
       //tidx[i].distance = USHRT_MAX - (unsigned short)(multiplier * (fdistance - mindist));
@@ -661,14 +663,13 @@ void TriSurfaces::sort()
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   t1 = clock();
   std::lock_guard<std::mutex> guard(loadmutex);
-  unsigned int *ptr = indexlist;
+  idxcount = 0;
   for(int i=tricount-1; i>=0; i--)
   {
-    idxcount += 3;
-    assert((unsigned int)(ptr-indexlist) < 3 * tricount * sizeof(unsigned int));
+    assert(idxcount < 3 * tricount * sizeof(unsigned int));
     //Copy index bytes
-    memcpy(ptr, tidx[i].index, sizeof(GLuint) * 3);
-    ptr += 3;
+    memcpy(&indexlist[idxcount], tidx[i].index, sizeof(GLuint) * 3);
+    idxcount += 3;
   }
 
   t2 = clock();
@@ -750,15 +751,14 @@ void TriSurfaces::draw()
     glEnableClientState(GL_COLOR_ARRAY);
 
     unsigned int start = 0;
-    //Reverse order of objects to match index array layout (opaque objects last)
     int tridx = 0;
-    for (int index = geom.size()-1; index >= 0; index--)
+    for (int index = 0; index<geom.size(); index++)
     {
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
       {
         setState(index, session.prog[lucTriangleType]); //Set draw state settings for this object
-        //fprintf(stderr, "(%d) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, counts[index]/3, start/3, (start+counts[index])/3);
+        //fprintf(stderr, "(%d %s) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, geom[index]->draw->name().c_str(), counts[index]/3, start/3, (start+counts[index])/3);
         glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
       }
@@ -767,23 +767,24 @@ void TriSurfaces::draw()
     }
 
     time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
-    if (time > 0.005) debug_print("  %.4lf seconds to draw opaque triangles\n", time);
+    if (time > 0.005) debug_print("  %.4lf seconds to draw %d opaque triangles\n", time, start);
     t1 = clock();
 
-    //Set draw state settings for first non-opaque object
-    //NOTE: per-object textures do not work with transparency!
-    setState(tridx, session.prog[lucTriangleType]);
-
     //Draw remaining elements (transparent, depth sorted)
-    //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
     if (start < (unsigned int)elements)
     {
+      //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
+      //Set draw state settings for first non-opaque object
+      //NOTE: per-object textures do not work with transparency!
+      setState(tridx, session.prog[lucTriangleType]);
+
       //Render all remaining triangles - elements is the number of indices. 3 indices needed to make a single triangle
       glDrawElements(GL_TRIANGLES, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-    }
 
-    time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
-    if (time > 0.005) debug_print("  %.4lf seconds to draw %d transparent triangles\n", time, (elements-start)/3);
+      time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
+      if (time > 0.005) debug_print("  %.4lf seconds to draw %d transparent triangles\n", time, (elements-start)/3);
+      //printf("  %.4lf seconds to draw %d transparent triangles\n", time, (elements-start)/3);
+    }
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
