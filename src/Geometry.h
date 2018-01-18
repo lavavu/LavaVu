@@ -392,6 +392,7 @@ public:
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void setState(unsigned int i, Shader* prog=NULL);
+  void updateBoundingBox();
   virtual void display(); //Display saved geometry
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();    //Implementation should draw geometry here...

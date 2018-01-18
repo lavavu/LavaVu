@@ -913,6 +913,33 @@ void Geometry::setState(unsigned int i, Shader* prog)
   GL_Error_Check;
 }
 
+
+void Geometry::updateBoundingBox()
+{
+    //view->rotated = true;
+    //Save min/max bounding box including sub-renderer geometry
+    //including view bounds
+    Properties::toArray<float>(view->properties["min"], this->min, 3);
+    Properties::toArray<float>(view->properties["max"], this->max, 3);
+    for (unsigned int o=0; o<view->objects.size(); o++)
+    {
+      if (view->objects[o]->properties["visible"])
+      {
+        for (auto g : geom)
+        {
+          if (g->draw == view->objects[o])
+          {
+            compareCoordMinMax(this->min, this->max, g->min);
+            compareCoordMinMax(this->min, this->max, g->max);
+            //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(), 
+            //       g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
+          }
+        }
+      }
+    }
+    //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
+}
+
 void Geometry::display()
 {
   //Skip if view not open or nothing to draw
@@ -1090,25 +1117,7 @@ void Geometry::setup(View* vp, float* min, float* max)
       objectBounds(view->objects[o], min, max);
   //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
 
-  //Repeat to save min/max for this range including view bounds
-  Properties::toArray<float>(view->properties["min"], this->min, 3);
-  Properties::toArray<float>(view->properties["max"], this->max, 3);
-  for (unsigned int o=0; o<view->objects.size(); o++)
-  {
-    if (view->objects[o]->properties["visible"])
-    {
-      for (auto g : geom)
-      {
-        if (g->draw == view->objects[o])
-        {
-          compareCoordMinMax(this->min, this->max, g->min);
-          compareCoordMinMax(this->min, this->max, g->max);
-          //printf("Applied bounding dims from object %s...%f,%f,%f - %f,%f,%f\n", geom[g]->draw->name().c_str(), 
-          //       geom[g]->min[0], geom[g]->min[1], geom[g]->min[2], geom[g]->max[0], geom[g]->max[1], geom[g]->max[2]);
-        }
-      }
-    }
-  }
+
 }
 
 void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)

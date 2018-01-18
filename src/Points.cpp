@@ -274,6 +274,8 @@ void Points::loadList()
   debug_print("  %.4lf seconds to update %d/%d particles into sort array\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements, total);
   t1 = clock();
 
+  updateBoundingBox();
+
   if (session.global("sort"))
     sort();
 }

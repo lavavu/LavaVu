@@ -60,6 +60,7 @@ void QuadSurfaces::update()
   surf_sort.clear();
 
   //Calculate min/max distances from viewer
+  if (reload) updateBoundingBox();
   float distanceRange[2], modelView[16];
   view->getMinMaxDistance(min, max, distanceRange, modelView);
 

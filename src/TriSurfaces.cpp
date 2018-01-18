@@ -366,6 +366,8 @@ void TriSurfaces::loadList()
   t2 = clock();
   debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
 
+  updateBoundingBox();
+
   if (session.global("sort"))
     sort();
 }
