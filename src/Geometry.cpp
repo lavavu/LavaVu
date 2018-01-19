@@ -1550,7 +1550,6 @@ Quaternion Geometry::vectorRotation(Vec3d rvector)
 // radius1: radius of cylinder at arrow head, or ratio for calculating radius from length if radius0==0
 // head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
 // segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
-#define RADIUS_DEFAULT_RATIO 0.02   // Default radius as a ratio of length
 void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count)
 {
   //Setup orientation using alignment vector
@@ -1571,11 +1570,11 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   float halflength = length*0.5;
   if (length < FLT_EPSILON || std::isinf(length)) return;
 
-  // Default shaft radius based on length of vector (2%)
+  // Default shaft radius based on length of vector (2%) otherwise use an exact passed value
   if (radius0 == 0)
   {
-    if (radius1 == 0) radius1 = RADIUS_DEFAULT_RATIO;
-    radius0 = radius1 = length * radius1;
+    if (radius1 == 0) radius1 = length * draw->radius_default;
+    radius0 = radius1;
   }
   if (radius1 == 0) radius1 = radius0;
 
@@ -1774,7 +1773,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     // Head_scale as a ratio of length [0,1] makes no sense for trajectory,
     // convert to ratio of radius (> 1) using default conversion ratio
     if (arrowHeadSize < 1.0)
-      arrowHeadSize = 0.5 * arrowHeadSize / RADIUS_DEFAULT_RATIO; // Convert from fraction of length to multiple of radius
+      arrowHeadSize = 0.5 * arrowHeadSize / draw->radius_default; // Convert from fraction of length to multiple of radius
 
     // Draw final section as arrow head
     // Position so centred on end of tube adjusted for arrowhead radius (tube radius * head size)

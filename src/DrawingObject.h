@@ -52,6 +52,7 @@ public:
   float opacity;
   Colour colour;
   unsigned int colourIdx;
+  float radius_default;
   ColourMap* colourMap; //Cached references
   ColourMap* opacityMap;
   std::vector<Filter> filterCache;

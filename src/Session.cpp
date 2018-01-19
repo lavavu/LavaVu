@@ -734,13 +734,23 @@ void Session::init()
       }
     },
     {
+      "scalemax",
+      {
+        0.0,
+        "object(vector)",
+        "real",
+        "Length scaling maximum, sets the range over which vectors will be scaled [0,scalemax]. Default automatically calculated based on data max",
+        true, 1
+      }
+    },
+    {
       "arrowhead",
       {
         5.0,
         "object(vector)",
         "real",
         "Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius",
-        true, 0
+        true, 1
       }
     },
     {
@@ -760,7 +770,17 @@ void Session::init()
         "object(vector)",
         "real",
         "Arrow shaft radius as ratio of vector length",
-        true, 0
+        true, 1
+      }
+    },
+    {
+      "thickness",
+      {
+        0.0,
+        "object(vector)",
+        "real",
+        "Arrow shaft thickness as fixed value (overrides \"radius\")",
+        true, 1
       }
     },
     {
@@ -770,7 +790,7 @@ void Session::init()
         "object(vector)",
         "real",
         "Arrow fixed length, default is to use vector magnitude",
-        true, 0
+        true, 1
       }
     },
     {
@@ -780,7 +800,7 @@ void Session::init()
         "object(vector)",
         "real",
         "Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant \"length\" property (if property length=0.0, this is ignored).",
-        true, 0
+        true, 1
       }
     },
     {
@@ -790,7 +810,7 @@ void Session::init()
         "object(vector)",
         "boolean",
         "Automatically scale vectors based on maximum magnitude",
-        true, 0
+        true, 1
       }
     },
     {
@@ -800,7 +820,7 @@ void Session::init()
         "object(tracer)",
         "integer",
         "Number of time steps to trace particle path",
-        true, 0
+        true, 1
       }
     },
     {
@@ -810,7 +830,7 @@ void Session::init()
         "object(tracer)",
         "boolean",
         "Taper width of tracer arrow up as we get closer to current timestep",
-        true, 0
+        true, 1
       }
     },
     {
@@ -820,7 +840,7 @@ void Session::init()
         "object(tracer)",
         "boolean",
         "Fade opacity of tracer arrow in from transparent as we get closer to current timestep",
-        true, 0
+        true, 1
       }
     },
     {
@@ -829,8 +849,8 @@ void Session::init()
         true,
         "object(tracer)",
         "boolean",
-        "Set falst to render tracers as points instead of connected lines",
-        true, 0
+        "Set false to render tracers as points instead of connected lines",
+        true, 1
       }
     },
     {

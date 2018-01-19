@@ -161,6 +161,9 @@ void DrawingObject::setup()
     if (dims[0] > 0 && dims[1] == 0 && dims[2] == 0)
       filterCache[i].elements = dims[0];
   }
+
+  //Default vector radius ratio
+  radius_default = properties["radius"];
 }
 
 TextureData* DrawingObject::useTexture(ImageLoader* tex)

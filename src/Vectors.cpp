@@ -51,11 +51,14 @@ void Vectors::update()
   Vec3d scale(view->scale);
   tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
   tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
-  float minL = view->model_size * 0.01; //Minimum length for visibility
   Colour colour;
   for (unsigned int i=0; i<geom.size(); i++)
   {
-    if (geom[i]->render->vectors.size() < geom[i]->count()) continue;
+    if (geom[i]->render->vectors.size() < geom[i]->count())
+    {
+      debug_print("Insufficient vector values for vertices %d < %d\n", geom[i]->render->vectors.size(), geom[i]->count());
+      continue;
+    }
 
     //Create new data stores for output geometry
     tris->add(geom[i]->draw);
@@ -70,9 +73,18 @@ void Vectors::update()
     float oscaling = props["scalevectors"];
     float fixedlen = props["length"];
 
+    //Scale up by factor of model size order of magnitude
+    float order = floor(log10(view->model_size));
+    order = pow(10,order);
+
     //Dynamic range? Skip if has a fixed scaling property
     if (props["autoscale"] && vscaling == 1.0)
     {
+      //Check has maximum property
+      if (props.has("scalemax"))
+        geom[i]->render->vectors.maximum = props["scalemax"];
+
+      //printf("VEC CUR MAX: %f\n", geom[i]->render->vectors.maximum);
       if (geom[i]->render->vectors.maximum == 0.0)
       {
         //Get and store the maximum length
@@ -80,23 +92,28 @@ void Vectors::update()
         {
           Vec3d vec(geom[i]->render->vectors[v]);
           float mag = vec.magnitude();
+
+          if (std::isnan(mag) || std::isinf(mag)) continue;
           if (mag > geom[i]->render->vectors.maximum)
             geom[i]->render->vectors.maximum = mag;
         }
       }
+      //printf("VEC NEW MAX: %f\n", geom[i]->render->vectors.maximum);
       float autoscale = 0.1/geom[i]->render->vectors.maximum;
       debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n",
                   vscaling*oscaling, vscaling*oscaling*autoscale, autoscale);
+      //printf("[Adjusted vector scaling from %.2e by %.2e to %.2e ] (ORDER %f)\n",
+      //            vscaling*oscaling, vscaling*oscaling*autoscale, autoscale, order);
       //Replace with the auto scale
-      vscaling = autoscale;
+      vscaling = autoscale * order;
     }
 
     //Load scaling factors from properties
     int quality = 4 * (int)props["glyphs"];
     //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
 
-    //Default (0) = automatically calculated radius
-    float radius = props["radius"];
+    //Default (0) = automatically calculated radius based on length and "radius" property
+    float radius = props["thickness"];
 
     ColourLookup& getColour = geom[i]->colourCalibrate();
     bool flat = props["flat"] || quality < 1;
@@ -136,7 +153,7 @@ void Vectors::update()
         vec *= scale;
       }
 
-      if (!flat && vec.magnitude() * scaling >= minL)
+      if (!flat)
       {
         tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, quality);
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
