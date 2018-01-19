@@ -137,7 +137,7 @@ public:
   void setState(std::string state);
   std::string getState();
   std::string getTimeSteps();
-  void addTimeStep(int step);
+  void addTimeStep(int step, std::string properties="");
 
   void resetViews(bool autozoom=false);
 

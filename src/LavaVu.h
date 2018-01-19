@@ -247,7 +247,7 @@ public:
   void setState(std::string state);
   std::string getState();
   std::string getTimeSteps();
-  void addTimeStep(int step);
+  void addTimeStep(int step, std::string properties="");
 
   void setObject(DrawingObject* target, std::string properties, bool replace=false);
   DrawingObject* createObject(std::string properties);

@@ -665,11 +665,18 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
   // obj:key=value
   if (key.find(":") != std::string::npos)
   {
-    size_t pos = data.find(":");
+    pos = data.find(":");
     std::string sel = data.substr(0,pos);
     parseCommand("select " + sel);
     data = data.substr(pos+1);
     obj = aobject;
+  }
+  //@prop : temporal property
+  if (key.at(0) == '@')
+  {
+    if (session.now < 0) return false;
+    data = data.substr(1);
+    session.timesteps[session.now]->properties.parse(data);
   }
 
   if (obj)
@@ -1820,9 +1827,9 @@ void LavaVu::resetViews(bool autozoom)
   //Set viewer title
   std::stringstream title;
   std::string name = session.global("caption");
-  std::string vpt = aview->properties["title"];
-  if (vpt.length() > 0)
-    title << aview->properties["title"];
+  std::string vptitle = aview->properties["title"];
+  if (vptitle.length() > 0)
+    title << vptitle;
   else
     title << "LavaVu";
   if (name.length() > 0)
@@ -3155,11 +3162,11 @@ std::string LavaVu::getTimeSteps()
   return ss.str();
 }
 
-void LavaVu::addTimeStep(int step)
+void LavaVu::addTimeStep(int step, std::string properties)
 {
   if (step < 0)
     step = amodel->step()+1;
-  amodel->addTimeStep(step);
+  amodel->addTimeStep(step, step, properties);
   amodel->setTimeStep(step);
 }
 

@@ -895,7 +895,11 @@ int Model::loadTimeSteps(bool scan)
       sqlite3_stmt* statement2 = database.select("SELECT count(id) from geometry where timestep = %d", step);
       int geomcount = sqlite3_column_int(statement2, 0);
       sqlite3_finalize(statement2);
-      addTimeStep(step, time);
+      //Get timestep props
+      std::string props = "";
+      if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
+        props = std::string((char*)sqlite3_column_text(statement, 4));
+      addTimeStep(step, time, props);
       //Save gap
       if (step - last_step > session.gap) session.gap = step - last_step;
       last_step = step;
@@ -940,7 +944,7 @@ int Model::loadTimeSteps(bool scan)
           timesteps[0]->path = path;
         }
         else
-          addTimeStep(ts, 0.0, path);
+          addTimeStep(ts, 0.0, "", path);
       }
     }
     debug_print("Scanning complete, found %d steps.\n", timesteps.size());
@@ -1373,6 +1377,9 @@ int Model::setTimeStep(int stepidx, bool skipload)
     }
   }
 
+  //Load temporal properties
+  Properties::mergeJSON(session.globals, session.timesteps[session.now]->properties.data);
+
   return rows;
 }
 
@@ -1740,7 +1747,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   {
     outdb.issue("delete from timestep where id == '%d'", i);
     outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s');", 
-                timesteps[i]->step, timesteps[i]->time, "", timesteps[i]->step);
+                timesteps[i]->step, timesteps[i]->time,  timesteps[i]->properties.data.dump().c_str(), timesteps[i]->step);
 
     //Get data at this timestep
     setTimeStep(i);

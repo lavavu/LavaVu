@@ -44,12 +44,14 @@ public:
   int step;
   float time;
   std::string path;
+  //Timestep properties data...
+  Properties properties;
 
   //Cached data
   std::vector<Geometry*> cache;
 
-  TimeStep(int step, float time, const std::string& path="") : step(step), time(time), path(path) {}
-  TimeStep() : step(0), time(0) {}
+  TimeStep(json& globals, json& defaults, int step, float time, std::string props="", const std::string& path="") : properties(globals, defaults), step(step), time(time), path(path) {properties.parseSet(props);}
+  TimeStep(json& globals, json& defaults) : properties(globals, defaults), step(0), time(0) {}
 
   ~TimeStep()
   {

@@ -2115,7 +2115,7 @@ class Viewer(dict):
         """
         return json.loads(self.app.getTimeSteps())
 
-    def addstep(self, step=-1):
+    def addstep(self, step=-1, **kwargs):
         """
         Add a new time step
 
@@ -2123,8 +2123,10 @@ class Viewer(dict):
         ----------
         step: int (Optional)
             Time step number, default is current + 1
+        **kwargs:
+            Timestep specific properties passed to the created object
         """
-        self.app.addTimeStep(step)
+        self.app.addTimeStep(step, convert_args(kwargs))
 
     def render(self):
         """        
