@@ -1994,7 +1994,9 @@ bool LavaVu::sort(bool sync)
         for (auto g : amodel->geometry)
         {
           std::lock_guard<std::mutex> guard(g->sortmutex);
-          g->sort();
+          //Not required if reload flagged, will be done in update()
+          if (!g->reload)
+            g->sort();
         }
 
         if (!animate)
