@@ -99,6 +99,7 @@ public:
   //Timer increments in ms
   int timer_msec = 10;
   int timer_animate = 50;
+  bool timeloop = false;
 
   ApplicationInterface* app;
   std::deque<std::string> commands;

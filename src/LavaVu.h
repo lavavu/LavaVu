@@ -115,7 +115,6 @@ protected:
   float fps;
 
 public:
-  bool loop;
   bool animate;
   bool status;
   bool objectlist;

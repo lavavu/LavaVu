@@ -604,6 +604,8 @@ bool OpenGLViewer::pollInput()
     commands.push_back("idle");
     elapsed = 0;
     parsed = true;
+    if (timeloop)
+      commands.push_back(std::string("next auto"));
   }
 
   return parsed;

@@ -176,7 +176,6 @@ void LavaVu::defaults()
   //Interaction command prompt
   entry = "";
 
-  loop = false;
   animate = false;
   repeat = 0;
   encoder = NULL;

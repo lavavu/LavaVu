@@ -346,7 +346,7 @@ bool LavaVu::parseChar(unsigned char key)
     case 'L':
       return parseCommands("scale lines down");
     case ' ':
-      if (loop)
+      if (viewer->timeloop)
         return parseCommands("stop");
       else
         return parseCommands("play");
@@ -695,7 +695,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else
       return false;
   }
-  //std::cout << "CMD: " << cmd << std::endl;
+
+  //if (!gethelp) std::cout << "CMD: " << cmd << std::endl;
 
   //Parse the line
   PropertyParser parsed = PropertyParser();
@@ -859,8 +860,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (session.omegalib) return false;
     viewer->quitProgram = false;
-    //viewer->show();
-    //viewer->loop(true);
     viewer->loop();
   }
   else if (parsed.exists("open"))
@@ -1569,12 +1568,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       //Play loop
       viewer->animateTimer(); //Start idle redisplay timer for frequent frame updates
-      replay.clear();
-      last_cmd = "next";
-      replay.push_back(last_cmd);
       repeat = -1; //Infinite
-      loop = true;
-      viewer->commands.push_back(std::string("next"));
+      viewer->timeloop = true;
     }
     return true;  //Skip record
   }
@@ -1594,8 +1589,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->setTimeStep(0);
     resetViews(); //Update the viewports
 
-    if (loop)
-      viewer->commands.push_back(std::string("next"));
+    if (parsed["next"] == "auto")
+      return false; //Skip record to history if automated
   }
   else if (parsed.exists("stop"))
   {
@@ -1605,9 +1600,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    viewer->timeloop = false;
     viewer->animateTimer(0); //Stop idle redisplay timer
     animate = false;
-    loop = false;
     repeat = 0;
     replay.clear();
   }
@@ -1649,7 +1644,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (animate)
     {
       animate = false;
-      loop = false;
+      viewer->timeloop = false;
       repeat = 0;
       viewer->animateTimer(0);
       printMessage("Animate mode disabled");
@@ -2933,7 +2928,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         replay.clear();
       }
     }
-    return true; //Skip record
+    return false; //true; //Skip record
   }
   //Special commands for passing keyboard/mouse actions directly (web server mode)
   else if (parsed.exists("mouse"))
