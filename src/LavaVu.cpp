@@ -1914,7 +1914,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       aview->zoomToFit();
 
     //Apply auto rotate once all commands processed
-    if (aview->initialised)
+    if (aview->initialised && (session.min[0] == session.max[0] || session.min[1] == session.max[1]))
       parseCommand("autorotate");
   }
   else
