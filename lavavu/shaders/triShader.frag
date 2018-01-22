@@ -1,4 +1,4 @@
-#version 130
+//#version 130 //Needed for isnan but will not work on macOS with legacy profile
 //flat varying vec4 vColour;
 varying vec4 vColour;
 varying vec3 vNormal;
@@ -32,6 +32,12 @@ void calcColour(vec3 colour, float alpha)
   colour = mix(AvgLumin, colour, uContrast);
 
   gl_FragColor = vec4(colour, alpha);
+}
+
+//Until we can use OpenGL 3+ we need our own isnan function
+bool isnan( float val )
+{
+  return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
 }
 
 void main(void)
