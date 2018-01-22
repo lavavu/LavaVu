@@ -35,9 +35,12 @@ void calcColour(vec3 colour, float alpha)
 }
 
 //Until we can use OpenGL 3+ we need our own isnan function
-bool isnan( float val )
+bool isnan(vec3 val)
 {
-  return ( val < 0.0 || 0.0 < val || val == 0.0 ) ? false : true;
+  if (!(val.x < 0.0 || 0.0 < val.x || val.x == 0.0)) return true;
+  if (!(val.y < 0.0 || 0.0 < val.y || val.y == 0.0)) return true;
+  if (!(val.z < 0.0 || 0.0 < val.z || val.z == 0.0)) return true;
+  return false;
 }
 
 void main(void)
@@ -70,7 +73,8 @@ void main(void)
   vec3 N = normalize(vNormal);
 
   //Default normal...
-  if (uCalcNormal || dot(N,N) < 0.01 || any(isnan(N)))
+  if (uCalcNormal || dot(N,N) < 0.01 || isnan(N))
+  //if (uCalcNormal || dot(N,N) < 0.01 || any(isnan(N)))
   {
     vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
     vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
