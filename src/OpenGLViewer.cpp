@@ -368,6 +368,7 @@ void OpenGLViewer::execute()
 void OpenGLViewer::loop(bool interactive)
 {
   //Event loop processing
+  if (visible) show();
   while (!quitProgram)
   {
     if (interactive)

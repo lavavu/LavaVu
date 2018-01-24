@@ -151,6 +151,17 @@ void X11Viewer::show()
 {
   if (!visible || !Xdisplay) return;
   OpenGLViewer::show();
+
+  //Notify active window, raises window even if already mapped
+  XEvent xev;
+  memset(&xev, 0, sizeof(xev));
+  xev.type = ClientMessage;
+  xev.xclient.window = win;
+  xev.xclient.message_type = XInternAtom(Xdisplay, "_NET_ACTIVE_WINDOW", False);
+  xev.xclient.format = 32;
+
+  XSendEvent(Xdisplay, DefaultRootWindow(Xdisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
+
   XMapRaised( Xdisplay, win ); // Show the window
 
   // Update title
@@ -304,16 +315,13 @@ void X11Viewer::execute()
 void X11Viewer::fullScreen()
 {
   XEvent xev;
-  Atom wm_state = XInternAtom(Xdisplay, "_NET_WM_STATE", False);
-  Atom full_screen = XInternAtom(Xdisplay, "_NET_WM_STATE_FULLSCREEN", False);
-
   memset(&xev, 0, sizeof(xev));
   xev.type = ClientMessage;
   xev.xclient.window = win;
-  xev.xclient.message_type = wm_state;
+  xev.xclient.message_type = XInternAtom(Xdisplay, "_NET_WM_STATE", False);
   xev.xclient.format = 32;
   xev.xclient.data.l[0] = fullscreen ? 0 : 1;
-  xev.xclient.data.l[1] = full_screen;
+  xev.xclient.data.l[1] = XInternAtom(Xdisplay, "_NET_WM_STATE_FULLSCREEN", False);
   xev.xclient.data.l[2] = 0;
 
   XSendEvent(Xdisplay, DefaultRootWindow(Xdisplay), False, SubstructureNotifyMask, &xev);
