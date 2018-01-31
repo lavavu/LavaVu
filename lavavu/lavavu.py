@@ -1945,7 +1945,7 @@ class Viewer(dict):
         if isinstance(files, list) or isinstance(files, tuple):
             filelist = files
         elif isinstance(files, str):
-            filelist = sorted(glob.glob(filespec))
+            filelist = sorted(glob.glob(files))
         obj = None
         for infile in filelist:
             obj = self.file(infile, **kwargs)
