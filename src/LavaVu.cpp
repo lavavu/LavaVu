@@ -2836,7 +2836,7 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
   if (models.size() == 0) defaultModel();
   if (model_idx == model && at_timestep >= 0 && at_timestep == session.now) return false; //No change
-  if (model_idx >= (int)models.size()) return false;
+  if (model_idx < 0 || model_idx >= (int)models.size()) return false;
 
   //Save active model as selected
   amodel = models[model_idx];
