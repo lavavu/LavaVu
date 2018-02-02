@@ -4,6 +4,10 @@ class Session;
 #define Session__
 
 #include "TimeStep.h"
+#include "GraphicsUtil.h"
+#include "Util.h"
+#include "Shaders.h"
+#include "View.h"
 
 #define PROPDEFAULT 0
 #define PROPTARGET  1

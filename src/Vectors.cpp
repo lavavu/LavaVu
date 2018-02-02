@@ -100,17 +100,15 @@ void Vectors::update()
       }
       //printf("VEC NEW MAX: %f\n", geom[i]->render->vectors.maximum);
       float autoscale = 0.1/geom[i]->render->vectors.maximum;
-      debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ]\n",
-                  vscaling*oscaling, vscaling*oscaling*autoscale, autoscale);
-      //printf("[Adjusted vector scaling from %.2e by %.2e to %.2e ] (ORDER %f)\n",
-      //            vscaling*oscaling, vscaling*oscaling*autoscale, autoscale, order);
+      debug_print("[Adjusted vector scaling from %.2e by %.2e to %.2e ] (ORDER %f)\n",
+                  vscaling*oscaling, vscaling*oscaling*autoscale, autoscale, order);
       //Replace with the auto scale
       vscaling = autoscale * order;
     }
 
     //Load scaling factors from properties
     int quality = 4 * (int)props["glyphs"];
-    //debug_print("Scaling %f arrowhead %f quality %d %d\n", scaling, arrowHead, glyphs);
+    //debug_print("Scaling %f * %f arrowhead %f quality %d\n", vscaling, oscaling, arrowHead, quality);
 
     //Default (0) = automatically calculated radius based on length and "radius" property
     float radius = props["thickness"];

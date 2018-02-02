@@ -881,6 +881,9 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
 
 void Volumes::isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol)
 {
+  //Ensure data is loaded for this step
+  merge(session.now, session.now);
+
   //Isosurface extract
   Isosurface iso(geom, surfaces, target);
 

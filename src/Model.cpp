@@ -216,12 +216,7 @@ Geometry* Model::getRenderer(const std::string& what)
   if (what == "vectors")
     return getRenderer(lucVectorType);
   if (what == "tracers")
-  {
-    //Tracers are always in fixed data once loaded
-    if (fixed.size())
-      return getRenderer(lucTracerType, fixed);
     return getRenderer(lucTracerType);
-  }
   if (what == "triangles")
     return getRenderer(lucTriangleType);
   if (what == "quads")
@@ -319,7 +314,7 @@ void Model::init()
   while (getline( iss, s, ' '))
     geometry.push_back(createRenderer(s));
 
-  debug_print("Created %d new geometry containers: %s\n", geometry.size(), renderlist.c_str());
+  debug_print("Created %d new geometry containers: %s\n", (int)geometry.size(), renderlist.c_str());
 
   for (auto g : geometry)
   {
@@ -334,10 +329,6 @@ Model::~Model()
   for (auto g : geometry)
     delete g;
   geometry.clear();
-
-  for (auto g : fixed)
-    delete g;
-  fixed.clear();
 
   clearTimeSteps();
 
@@ -504,14 +495,14 @@ DrawingObject* Model::findObject(unsigned int id)
   return NULL;
 }
 
-void Model::clearObjects()
+void Model::clearObjects(bool fixed)
 {
   if (membytes__ > 0 && geometry.size() > 0)
     debug_print("Clearing geometry, geom memory usage before clear %.3f mb\n", membytes__/1000000.0f);
 
   //Clear containers...
   for (auto g : geometry)
-    g->clear();
+    g->clear(fixed);
 }
 
 void Model::setup()
@@ -862,11 +853,7 @@ void Model::loadLinks(DrawingObject* obj)
 void Model::clearTimeSteps()
 {
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
-  {
-    //Clear the store first to avoid deleting active (double free)
-    timesteps[idx]->cache.clear();
     delete timesteps[idx];
-  }
   timesteps.clear();
 }
 
@@ -879,9 +866,7 @@ int Model::loadTimeSteps(bool scan)
   //Don't reload timesteps when data has been cached
   if (useCache() && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
-  session.gap = 1;
   int rows = 0;
-  int last_step = 0;
 
   //Scan for additional timestep files with corresponding entries in timestep table
   if (!scan && database && !database.memory)
@@ -900,9 +885,6 @@ int Model::loadTimeSteps(bool scan)
       if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
         props = std::string((char*)sqlite3_column_text(statement, 4));
       addTimeStep(step, time, props);
-      //Save gap
-      if (step - last_step > session.gap) session.gap = step - last_step;
-      last_step = step;
 
       //No geometry in current db? Check for attachment db
       if (geomcount == 0)
@@ -954,14 +936,6 @@ int Model::loadTimeSteps(bool scan)
   if (infostream) std::cerr << timesteps.size() << " timesteps loaded\n";
   session.timesteps = timesteps;
   return timesteps.size();
-}
-
-void Model::loadFixed()
-{
-  //Insert fixed geometry records
-  if (fixed.size() > 0) 
-    for (unsigned int i=0; i<geometry.size(); i++)
-      geometry[i]->insertFixed(fixed[i]);
 }
 
 std::string Model::checkFileStep(unsigned int ts, const std::string& basename, unsigned int limit)
@@ -1107,72 +1081,14 @@ void Model::setColourMapProps(Properties& properties, float minimum, float maxim
   }
 }
 
-void Model::freeze()
-{
-  //Read any fixed records from the database first
-  loadFixedGeometry();
-
-  //Freeze fixed geometry
-  fixed = geometry;
-
-  for (auto g : fixed)
-  {
-    for (Geom_Ptr p : g->geom)
-    {
-      //Flag all fixed data blocks
-      for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
-      {
-        DataContainer* block = p->dataContainer((lucGeometryDataType)data_type);
-        if (block)
-          block->fixed = true;
-      }
-      for (unsigned int j=0; j<p->values.size(); j++)
-      {
-        DataContainer* block = (DataContainer*)p->values[j].get();
-        if (block)
-          block->fixed = true;
-      }
-
-      //Following doesn't apply to tracers as
-      //all their data is stored in fixed geometry,
-      //so loading new data into the fixed RenderData is OK
-      if (g->type != lucTracerType)
-      {
-        if (p->render->vertices.count() > p->width * p->height)
-        {
-          //Mark the GeomData entry as complete by setting width*height=count,
-          //any new data will be loaded into another container
-          //(Prevents g data being polluted by newly loaded data)
-          //printf("FIXED DATA VERTEX LIMIT: %dx%d ==> %dx%d\n", g->geom[i]->width, g->geom[i]->height, g->geom[i]->render->vertices.count(), 1);
-          p->width = p->render->vertices.count();
-          p->height = 1;
-        }
-      }
-    }
-
-  }
-
-  //Need new geometry containers after freeze
-  //(Or new data will be appended to the frozen containers!)
-  init();
-  if (timesteps.size() == 0) addTimeStep();
-  //loadFixed();
-}
-
-bool Model::useCache()
-{
-  //Use cache if no database loaded, or turned on by global parameter
-  if (!database) return true;
-  return session.global("cache");
-}
-
 void Model::cacheLoad()
 {
   std::cout << "Loading " << timesteps.size() << " steps\n";
   for (unsigned int i=0; i<timesteps.size(); i++)
   {
     setTimeStep(i);
-    if (i%10==0) std::cout << '|';
+    if (i > 0 && i%10==0) std::cout << std::setw(4) << i << " " << std::flush;
+    if (i > 0 && i%50==0) std::cout << std::endl;
     if (session.now != (int)i) break; //All cached in loadGeometry (doesn't work for split db timesteps so still need this loop)
     debug_print("Cached time %d : %d/%d (%s)\n", step(), i+1, timesteps.size(), database.file.base.c_str());
   }
@@ -1181,105 +1097,6 @@ void Model::cacheLoad()
   std::cout << std::endl;
   //Clear current step to ensure selected is loaded from cache
   session.now = now = -1;
-}
-
-void Model::cacheStep()
-{
-  //Don't cache if out of range
-  if (!useCache() || session.now < 0 || step() < 0 || (int)timesteps.size() <= session.now) return;
-
-  debug_print("~~~ Caching geometry @ %d (step %d) : %s), geom memory usage: %.3f mb\n", step(), now, database.file.base.c_str(), membytes__/1000000.0f);
-
-  //Copy all elements
-  if (membytes__ > 0)
-  {
-    clearStep();
-    if (!timesteps[now]->cache.size())
-    {
-      printf(".");
-      fflush(stdout);
-    }
-    timesteps[now]->write(geometry);  //Cache at current model step, not global step
-    debug_print("~~~ Cached step, at: %d\n", step());
-    //Save the previous step data for reference
-    olddata = geometry;
-    //Objects have been moved into cache, clear from active list
-    geometry.clear();
-  }
-  else
-    debug_print("~~~ Nothing to cache\n");
-
-  //TODO: fix support for partial caching?
-  /*/Remove if over limit
-  if (cache.size() > GeomCache::size)
-  {
-     GeomCache* cached = cache.front();
-     cache.pop_front();
-     //Clear containers...
-     for (unsigned int i=0; i < cached->store.size(); i++)
-     {
-        cached->store[i]->clear();
-        delete cached->store[i];
-     }
-     debug_print("~~~ Deleted oldest cached step (%d)\n", cached->step);
-     delete cached;
-  }*/
-}
-
-bool Model::restoreStep()
-{
-  if (session.now < 0 || !useCache()) return false;
-  if (timesteps[session.now]->cache.size() == 0)
-    return false; //Nothing cached this step
-
-  //Load the cache and save loaded timestep
-  clearStep();
-  timesteps[session.now]->read(geometry);
-  debug_print("~~~ Cache hit at ts %d (idx %d), loading! %s\n", step(), session.now, database.file.base.c_str());
-
-  //Some data shouldn't be cached and
-  //needs to be preserved from previous active settings
-  for (unsigned int g=0; g<olddata.size(); g++)
-  {
-    geometry[g]->hidden = olddata[g]->hidden;
-    geometry[g]->allhidden = olddata[g]->allhidden;
-  }
-  olddata.clear();
-
-  /*/Switch geometry containers
-  labels = geometry[lucLabelType];
-  points = (Points*)geometry[lucPointType];
-  vectors = (Vectors*)geometry[lucVectorType];
-  tracers = (Tracers*)geometry[lucTracerType];
-  quadSurfaces = (QuadSurfaces*)geometry[lucGridType];
-  volumes = (Volumes*)geometry[lucVolumeType];
-  triSurfaces = (TriSurfaces*)geometry[lucTriangleType];
-  lines = geometry[lucLineType];
-  shapes = (Shapes*)geometry[lucShapeType];*/
-
-  debug_print("~~~ Geom memory usage after load: %.3f mb\n", membytes__/1000000.0f);
-  //Redraw display
-  redraw();
-  return true;
-}
-
-void Model::clearStep()
-{
-  //Clear and tell all geometry objects they need to reload data
-  for (auto g : geometry)
-  {
-    //Wait until all sort threads done
-    std::lock_guard<std::mutex> guard(g->sortmutex);
-    //Release any graphics memory and clear
-    g->close();
-  }
-}
-
-void Model::printCache()
-{
-  debug_print("-----------CACHE %d steps\n", timesteps.size());
-  for (unsigned int idx=0; idx < timesteps.size(); idx++)
-    debug_print(" %d: has %d records\n", idx, timesteps[idx]->cache.size());
 }
 
 //Set time step if available, otherwise return false and leave unchanged
@@ -1312,73 +1129,107 @@ int Model::nearestTimeStep(int requested)
   return idx;
 }
 
+void Model::addTimeStep(int step, double time, const std::string& props, const std::string& path)
+{
+  if (time == -HUGE_VAL) time = step;
+  timesteps.push_back(new TimeStep(session.globals, session.defaults, step, time, props, path));
+  //Update gap
+  int tlen = timesteps.size();
+  if (tlen > 1)
+  {
+    int diff = timesteps[tlen-1]->step - timesteps[tlen-2]->step;
+    if (diff > session.gap)
+      session.gap = diff;
+  }
+}
+
 //Load data at specified timestep
 int Model::setTimeStep(int stepidx, bool skipload)
 {
-  int rows = 0;
+  int rows = -1;
   clock_t t1 = clock();
+  bool caching = useCache();
 
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
   {
     session.globals["timestep"] = session.now = now = -1;
-    return -1;
   }
-
-  if (stepidx < 0) stepidx = 0; //return -1;
-  if (stepidx >= (int)timesteps.size())
-    stepidx = timesteps.size()-1;
-
-  //Unchanged...
-  if (now >= 0 && stepidx == now && session.now == now) return -1;
-
-  //Setting initial step?
-  bool first = (now < 0);
-
-  //Cache currently loaded data
-  cacheStep();
-
-  //Set the new timestep index
-  debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, session.now, stepidx);
-  session.timesteps = timesteps; //Set to current model timestep vector
-  session.now = now = stepidx;
-  session.globals["timestep"] = step(); //Save property for read access
-  debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
-
-  if (!restoreStep())
+  else
   {
-    //Create new geometry containers if required
-    if (geometry.size() == 0) init();
+    rows = 0;
 
-    if (first)
-      //Freeze any existing geometry as non time-varying when first step loaded
-      freeze();
-    else
-      //Normally just clear any existing geometry
-      clearObjects();
+    if (stepidx < 0) stepidx = 0; //return -1;
+    if (stepidx >= (int)timesteps.size())
+      stepidx = timesteps.size()-1;
 
-    //Import fixed data first
-    if (session.now >= 0) 
-      loadFixed();
-
-    //Load new data
-    if (database && !skipload)
+    //Unchanged...
+    //if (now >= 0 && stepidx == now && session.now == now)
+    //  return -1;
+    if (now < 0 || stepidx != now || session.now != now)
     {
-      //Detach any attached db file and attach n'th timestep database if available
-      database.attach(timesteps[session.now]);
+      //Setting initial step?
+      bool first = (now < 0);
 
-      if (useCache())
-        //Attempt caching all geometry from database at start
-        rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step);
+      //Create new geometry containers if required
+      if (geometry.size() == 0)
+      {
+        init();
+        loadFixedGeometry();
+      }
       else
-        rows += loadGeometry();
+      {
+        //Clear and tell all geometry objects they need to reload data
+        for (auto g : geometry)
+        {
+          //Wait until all sort threads done
+          std::lock_guard<std::mutex> guard(g->sortmutex);
+          //Release any graphics memory and clear
+          g->close();
+        }
+      }
 
-      debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
+      //Set the new timestep index
+      debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, session.now, stepidx);
+      session.timesteps = timesteps; //Set to current model timestep vector
+      session.now = now = stepidx;
+      session.globals["timestep"] = step(); //Save property for read access
+      debug_print("TimeStep set to: %d (%d)\n", step(), stepidx);
+
+      reload();
+      
+      if (!caching)
+        //Not caching timesteps from database, clear current step data
+        clearObjects();
+
+      //Load the new step data if it isn't already in memory
+      if (!caching || !timesteps[now]->loaded)
+      {
+        //Load new data
+        if (database && !skipload)
+        {
+          //Detach any attached db file and attach n'th timestep database if available
+          database.attach(timesteps[session.now]);
+
+          if (caching)
+          {
+            //Attempt caching all geometry from database at start
+            rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step);
+            std::cout << '.' << std::flush;
+          }
+          else
+            rows += loadGeometry();
+
+          debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
+        }
+
+      }
     }
   }
 
   //Load temporal properties
-  Properties::mergeJSON(session.globals, session.timesteps[session.now]->properties.data);
+  if (session.now >= 0)
+    Properties::mergeJSON(session.globals, session.timesteps[session.now]->properties.data);
 
   return rows;
 }
@@ -1503,9 +1354,22 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       // - disabled when using attached databases (cached in loop via cacheLoad())
       if (cache && laststep != timestep && !database.attached)
       {
+        std::cout << '~' << std::flush;
+        if (timestep > 0 && timestep%10==0) std::cout << std::setw(4) << timestep << " " << std::flush;
+        if (timestep > 0 && timestep%50==0) std::cout << std::endl;
         setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
         laststep = timestep;
       }
+      // Similar required when loading tracers in loadFixedData
+      if (type == lucTracerType && laststep != timestep)
+      {
+        setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
+        laststep = timestep;
+      }
+
+      //Flag loaded
+      if (now >= 0)
+        timesteps[now]->loaded = true;
 
       if (type == lucTracerType)
       {
@@ -1553,9 +1417,9 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
 
       tbytes += bytes;   //Byte counter
 
-      //Always add a new element for each new vertex geometry record except Tracers,
+      //Always add a new element for each new vertex geometry record
       //not suitable if writing db on multiple procs!
-      if (data_type == lucVertexData && type != lucTracerType) active->add(obj);
+      if (data_type == lucVertexData) active->add(obj);
 
       //Read data block
       Geom_Ptr g;
@@ -1731,14 +1595,6 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   }
 
   //Write timesteps & objects...
-  //(Only write timestep where doesn't exist already)
-  if (timesteps.size() == 0)
-  {
-    //Create a default timestep
-    outdb.issue("delete from timestep where id == '0'");
-    outdb.issue("insert into timestep (id, time) values (0, 0);");
-    writeObjects(outdb, obj, 0, compress);
-  }
 
   //Write any fixed data
   writeObjects(outdb, obj, -1, compress);
@@ -1747,13 +1603,14 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   {
     outdb.issue("delete from timestep where id == '%d'", i);
     outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s');", 
-                timesteps[i]->step, timesteps[i]->time,  timesteps[i]->properties.data.dump().c_str(), timesteps[i]->step);
+                i, timesteps[i]->time,  timesteps[i]->properties.data.dump().c_str());
 
     //Get data at this timestep
-    setTimeStep(i);
+    //(Only required to support writing database from another database without caching enabled)
+    //setTimeStep(i);
 
     //Write object data
-    writeObjects(outdb, obj, step(), compress);
+    writeObjects(outdb, obj, i, compress);
   }
 
   outdb.issue("COMMIT");
@@ -1821,9 +1678,8 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
   //Clear existing data of this type before writing, allows object data updates to db
   deleteGeometry(outdb, g->type, obj, step);
 
-  std::vector<Geom_Ptr> data = g->getAllObjects(obj);
+  std::vector<Geom_Ptr> data = g->getAllObjectsAt(obj, step);
   //Loop through and write out all object data
-  bool fixedOnly = step < 0; //Write all the fixed data at step -1, otherwise skip it
   for (unsigned int i=0; i<data.size(); i++)
   {
     for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
@@ -1831,8 +1687,6 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       //Write the data entry
       DataContainer* block = data[i]->dataContainer((lucGeometryDataType)data_type);
       if (!block || block->size() == 0) continue;
-      if (g->type == lucTracerType) block->fixed = true; //All tracer data is fixed
-      if (block->fixed != fixedOnly) continue; //Skip fixed/unfixed
       std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
@@ -1842,8 +1696,6 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
       //Write the value data entry
       DataContainer* block = (DataContainer*)data[i]->values[j].get();
       if (!block || block->size() == 0) continue;
-      if (g->type == lucTracerType) block->fixed = true; //All tracer data is fixed
-      if (block->fixed != fixedOnly) continue; //Skip fixed/unfixed
       std::cerr << step << "] Writing geometry (values[" << j << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
       //TODO: fix to write/read labels for data values from database, preferably in a separate table?
@@ -1990,13 +1842,6 @@ void Model::deleteObject(DrawingObject* obj)
   //Delete geometry
   for (unsigned int i=0; i < geometry.size(); i++)
     geometry[i]->remove(obj);
-
-  for (unsigned int i=0; i < fixed.size(); i++)
-    fixed[i]->remove(obj);
-
-  for (unsigned int ts=0; ts < timesteps.size(); ts++)
-    for (unsigned int i=0; i < timesteps[ts]->cache.size(); i++)
-      timesteps[ts]->cache[i]->remove(obj);
 
   //Delete from model obj list
   for (unsigned int i=0; i<objects.size(); i++)
@@ -2148,7 +1993,6 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       if (!objdata)
       {
         //Data labels
-        //loadFixed(); //Ensure any fixed data in place (TEST)
         json dict;
         for (auto g : geometry)
         {

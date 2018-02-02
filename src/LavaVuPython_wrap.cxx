@@ -13765,6 +13765,82 @@ SWIGINTERN PyObject *ColourMap_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap_GeomData_step_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  GeomData *arg1 = (GeomData *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  std::shared_ptr< GeomData > tempshared1 ;
+  std::shared_ptr< GeomData > *smartarg1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomData_step_set",2,2,swig_obj)) SWIG_fail;
+  {
+    int newmem = 0;
+    res1 = SWIG_ConvertPtrAndOwn(swig_obj[0], &argp1, SWIGTYPE_p_std__shared_ptrT_GeomData_t, 0 |  0 , &newmem);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomData_step_set" "', argument " "1"" of type '" "GeomData *""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      tempshared1 = *reinterpret_cast< std::shared_ptr<  GeomData > * >(argp1);
+      delete reinterpret_cast< std::shared_ptr<  GeomData > * >(argp1);
+      arg1 = const_cast< GeomData * >(tempshared1.get());
+    } else {
+      smartarg1 = reinterpret_cast< std::shared_ptr<  GeomData > * >(argp1);
+      arg1 = const_cast< GeomData * >((smartarg1 ? smartarg1->get() : 0));
+    }
+  }
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomData_step_set" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  if (arg1) (arg1)->step = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomData_step_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  GeomData *arg1 = (GeomData *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  std::shared_ptr< GeomData > tempshared1 ;
+  std::shared_ptr< GeomData > *smartarg1 = 0 ;
+  PyObject *swig_obj[1] ;
+  int result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  {
+    int newmem = 0;
+    res1 = SWIG_ConvertPtrAndOwn(swig_obj[0], &argp1, SWIGTYPE_p_std__shared_ptrT_GeomData_t, 0 |  0 , &newmem);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomData_step_get" "', argument " "1"" of type '" "GeomData *""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      tempshared1 = *reinterpret_cast< std::shared_ptr<  GeomData > * >(argp1);
+      delete reinterpret_cast< std::shared_ptr<  GeomData > * >(argp1);
+      arg1 = const_cast< GeomData * >(tempshared1.get());
+    } else {
+      smartarg1 = reinterpret_cast< std::shared_ptr<  GeomData > * >(argp1);
+      arg1 = const_cast< GeomData * >((smartarg1 ? smartarg1->get() : 0));
+    }
+  }
+  result = (int) ((arg1)->step);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_GeomData_type_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   GeomData *arg1 = (GeomData *) 0 ;
@@ -20302,6 +20378,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_ColourMap", (PyCFunction)_wrap_delete_ColourMap, METH_O, NULL},
 	 { (char *)"ColourMap_swigregister", ColourMap_swigregister, METH_VARARGS, NULL},
 	 { (char *)"ColourMap_swiginit", ColourMap_swiginit, METH_VARARGS, NULL},
+	 { (char *)"GeomData_step_set", _wrap_GeomData_step_set, METH_VARARGS, NULL},
+	 { (char *)"GeomData_step_get", (PyCFunction)_wrap_GeomData_step_get, METH_O, NULL},
 	 { (char *)"GeomData_type_set", _wrap_GeomData_type_set, METH_VARARGS, NULL},
 	 { (char *)"GeomData_type_get", (PyCFunction)_wrap_GeomData_type_get, METH_O, NULL},
 	 { (char *)"new_GeomData", _wrap_new_GeomData, METH_VARARGS, NULL},

@@ -3283,17 +3283,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->reload(aobject);
     }
   }
-  else if (parsed.exists("freeze"))
-  {
-    if (gethelp)
-    {
-      help += "Fix currently loaded geometry as not time-varying\n\n"
-              "This data will then exist for all time steps\n";
-      return false;
-    }
-
-    amodel->freeze();
-  }
   else
   {
     //If value parses as integer and contains nothing else

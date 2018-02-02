@@ -77,10 +77,13 @@ void TriSurfaces::update()
   //if ((lastcount != total && reload) || !tidx)
   if (centroids.size() != total || reload || vbo == 0)
   {
-    //Load & optimise the mesh data (on first load and if total changes)
-    if (centroids.size() != total)
-      loadMesh();
+    //Load & optimise the mesh data (including updating centroids)
+    loadMesh();
+    redraw = true;
+  }
 
+  if (redraw) //Vertices possibly not updated but colours or properties?
+  {
     //Send the data to the GPU via VBO
     loadBuffers();
   }

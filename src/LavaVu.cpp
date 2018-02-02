@@ -524,9 +524,12 @@ void LavaVu::run(std::vector<std::string> args)
         }
       }
 
-      //Export data
+      //Export data (this will be a bit broken for time varying data)
       Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
       if (tris) tris->loadMesh();  //Optimise triangle meshes before export
+      //Need to call merge to get timestep data
+      //for (auto g : geometry)
+      //  g->merge(startstep, startstep);
       DrawingObject* obj = NULL;
       std::vector<DrawingObject*> objs;
       if (dumpid > 0) obj = amodel->findObject(dumpid);
@@ -2242,12 +2245,13 @@ void LavaVu::drawAxis()
   float length = 0.175;
   if (!session.axisobj)
   {
-    //printf("Generating axis vectors %f != %f\n", oldlen, length);
+    //Ensure loaded without set timestep
     session.axisobj = new DrawingObject(session);
+    session.axisobj->fixed = true; //All data is fixed
     if (!aview->hasObject(session.axisobj)) aview->addObject(session.axisobj);
     axis->add(session.axisobj);
     axis->setup(aview);
-    axis->clear();
+    axis->clear(true);
     axis->type = lucVectorType;
     session.axisobj->properties.data = {
       {"wireframe",    false},
@@ -2274,7 +2278,7 @@ void LavaVu::drawAxis()
     axis->update();
   }
 
-  axis->display();
+  axis->display(true); //Display with forced data update
 
   //Labels
   glUseProgram(0);
@@ -2312,7 +2316,7 @@ void LavaVu::drawRulers()
   if (!aview->properties["rulers"]) return;
   infostream = NULL;
   DrawingObject* obj = session.rulerobj;
-  rulers->clear();
+  rulers->clear(true);
   rulers->setup(aview);
   if (!obj) obj = new DrawingObject(session, "", "wireframe=false\nclip=false\nlit=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
@@ -2371,7 +2375,7 @@ void LavaVu::drawRulers()
     drawRuler(obj, sta, end, aview->min[2], aview->max[2], ticks, 2, -1);
   }
 
-  rulers->display();
+  rulers->display(true); //Display with forced data update
 
   //Restore info/error stream
   if (verbose) infostream = stderr;
@@ -2457,7 +2461,7 @@ void LavaVu::drawBorder()
   if (bordersize <= 0.0) return;
 
   DrawingObject* obj = session.borderobj;
-  border->clear();
+  border->clear(true);
   border->setup(aview);
   if (!obj) obj = session.borderobj = new DrawingObject(session, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
@@ -2503,7 +2507,7 @@ void LavaVu::drawBorder()
     border->read(obj, 1, lucVertexData, maxvert.ref());
   }
 
-  border->display();
+  border->display(true); //Display with forced data update
 
   //Restore info/error stream
   if (verbose) infostream = stderr;
@@ -2677,7 +2681,7 @@ void LavaVu::drawSceneBlended()
     std::string title = aview->properties["title"];
     //Timestep macro ##
     size_t pos =  title.find("##");
-    if (pos != std::string::npos && (int)session.timesteps.size() >= session.now)
+    if (pos != std::string::npos && session.now >= 0 && (int)session.timesteps.size() >= session.now)
       title.replace(pos, 2, std::to_string(session.timesteps[session.now]->step));
     drawAxis();
     aview->drawOverlay(aview->textColour, title);
@@ -3332,6 +3336,7 @@ void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, un
 //GeomData interface, for loading/acessing geom store directly
 std::vector<Geom_Ptr> LavaVu::getAllGeometry(DrawingObject* target)
 {
+  //TODO: filter by timestep?
   std::vector<Geom_Ptr> list;
   if (!amodel || !target) return list;
   for (auto g : amodel->geometry)

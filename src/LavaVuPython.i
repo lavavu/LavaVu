@@ -100,6 +100,7 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 class GeomData
 {
 public:
+  int step; //Timestep
   lucGeometryType type;   //Holds the object type
   GeomData(DrawingObject* draw, lucGeometryType type);
 };

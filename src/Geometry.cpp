@@ -337,19 +337,12 @@ bool GeomData::filter(unsigned int idx)
     size = values[draw->filterCache[i].dataIdx]->size();
     if (draw->filterCache[i].dataIdx < MAX_DATA_ARRAYS && size > 0)
     {
-      //Tracer filter? check if enough data for per step filter, if not assume per tracer
-      if (type == lucTracerType && draw->filterCache[i].elements > 0 && size == draw->filterCache[i].elements)
-      {
-        //debug_print("FILTER PER-TRACER by %d : %d ==> %d\n", draw->filterCache[i].elements, idx, idx % draw->filterCache[i].elements);
-        idx %= draw->filterCache[i].elements;
-      }
-
       //Have values but not enough for per-vertex? spread over range (eg: per triangle)
       range = count() / size;
       ridx = idx;
       if (range > 1) ridx = idx / range;
 
-      //std::cout << "Filtering on index: " << draw->filterCache[i].dataIdx << " " << size << " values" << std::endl;
+      //if (idx%1000==0) std::cout << "Filtering on index: " << draw->filterCache[i].dataIdx << " " << size << " values" << std::endl;
       min = draw->filterCache[i].minimum;
       max = draw->filterCache[i].maximum;
       Values_Ptr v = values[draw->filterCache[i].dataIdx];
@@ -472,7 +465,7 @@ Geometry::Geometry(Session& session) : view(NULL), elements(0),
 Geometry::~Geometry()
 {
   //Free GeomData elements
-  clear();
+  clear(true);
 }
 
 //Virtuals to implement
@@ -482,11 +475,25 @@ void Geometry::close() //Called on quit or gl context destroy
   cached = NULL;
 }
 
-void Geometry::clear()
+void Geometry::clear(bool fixed)
 {
   total = 0;
   reload = true;
-  geom.clear();
+  if (fixed)
+  {
+    records.clear();
+  }
+  else
+  {
+    for (int i = records.size()-1; i>=0; i--)
+    {
+      if (records[i]->step >= 0 && records[i]->type != lucTracerType)
+      {
+        //Now using shared_ptr so no need to delete
+        records.erase(records.begin()+i);
+      }
+    }
+  }
   
   //Ensure cache cleared
   cached = NULL;
@@ -496,14 +503,12 @@ void Geometry::remove(DrawingObject* draw)
 {
   //Same as clear but for specific drawing object
   reload = true;
-  for (int i = geom.size()-1; i>=0; i--)
+  for (int i = records.size()-1; i>=0; i--)
   {
-    if (draw == geom[i]->draw)
+    if (draw == records[i]->draw)
     {
-      total -= geom[i]->count();
       //Now using shared_ptr so no need to delete
-      geom.erase(geom.begin()+i);
-      if (hidden.size() > (unsigned int)i) hidden.erase(hidden.begin()+i);
+      records.erase(records.begin()+i);
     }
   }
 }
@@ -511,7 +516,7 @@ void Geometry::remove(DrawingObject* draw)
 void Geometry::clearValues(DrawingObject* draw, std::string label)
 {
   reload = true;
-  for (auto g : geom)
+  for (auto g : records)
   {
     if (draw == g->draw)
     {
@@ -532,7 +537,7 @@ void Geometry::clearValues(DrawingObject* draw, std::string label)
 void Geometry::clearData(DrawingObject* draw, lucGeometryDataType dtype)
 {
   reload = true;
-  for (auto g : geom)
+  for (auto g : records)
   {
     if (draw == g->draw)
     {
@@ -546,13 +551,13 @@ void Geometry::compareMinMax(float* min, float* max)
 {
   //Compare passed min/max with min/max of all geometry
   //(Used by parent to get bounds of sub-renderer objects)
-  for (unsigned int i = 0; i < geom.size(); i++)
+  for (unsigned int i = 0; i < records.size(); i++)
   {
-    compareCoordMinMax(min, max, geom[i]->min);
-    compareCoordMinMax(min, max, geom[i]->max);
+    compareCoordMinMax(min, max, records[i]->min);
+    compareCoordMinMax(min, max, records[i]->max);
     //Also update global min/max
-    compareCoordMinMax(session.min, session.max, geom[i]->min);
-    compareCoordMinMax(session.min, session.max, geom[i]->max);
+    compareCoordMinMax(session.min, session.max, records[i]->min);
+    compareCoordMinMax(session.min, session.max, records[i]->max);
   }
   //Update global bounding box size
   getCoordRange(session.min, session.max, session.dims);
@@ -560,6 +565,7 @@ void Geometry::compareMinMax(float* min, float* max)
 
 void Geometry::dump(std::ostream& csv, DrawingObject* draw)
 {
+  //Just dumps currently loaded data, not all timesteps
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     if (geom[i]->draw == draw)
@@ -602,6 +608,7 @@ void Geometry::jsonWrite(DrawingObject* draw, json& obj)
 void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
 {
   //Export all geometry to json
+  //Just dumps currently loaded data, not all timesteps
   //TODO: json model needs to store value data separately by label
   std::string& typelabel = GeomData::names[type];
   if (typelabel == "quads") typelabel = "triangles";
@@ -729,7 +736,7 @@ void Geometry::showObj(DrawingObject* draw, bool state)
 
 void Geometry::setValueRange(DrawingObject* draw)
 {
-  for (auto g : geom)
+  for (auto g : records)
   {
     if (g->colourData() && (!draw || g->draw == draw))
     {
@@ -748,14 +755,14 @@ void Geometry::setValueRange(DrawingObject* draw)
 
 void Geometry::redrawObject(DrawingObject* draw, bool reload)
 {
-  for (unsigned int i = 0; i < geom.size(); i++)
+  for (unsigned int i = 0; i < records.size(); i++)
   {
-    if (geom[i]->draw == draw)
+    if (records[i]->draw == draw)
     {
       debug_print("Reloading object: %s\n", draw->name().c_str());
       //Trigger reload of volume textures (ie: those not loaded from files)
-      if (geom[i]->texture->fn.empty())
-        geom[i]->texture->clear();
+      if (records[i]->texture->fn.empty())
+        records[i]->texture->clear();
       this->reload = reload;
       redraw = true;
       return;
@@ -766,6 +773,119 @@ void Geometry::redrawObject(DrawingObject* draw, bool reload)
 void Geometry::init() //Called on GL init
 {
   reload = true;
+}
+
+void Geometry::merge(int start, int end)
+{
+  // Note - can't yet load partially fixed RenderData structure (but we couldn't before either)
+  // would require splitting RenderData components
+
+  //This function writes the "geom" list containing
+  //all renderable geometry
+  // - All fixed (render+value) data
+  // - All variable (render+value) data at the specified timestep range
+  // - All mixed (fixed render + variable value) data at the specified timestep range
+  geom.clear();
+  
+  //First process fixed records
+  for (unsigned int i=0; i<records.size(); i++)
+  {
+    //printf("STEP %d (%d - %d)\n", records[i]->step, start, end);
+    if (records[i]->step == -1)
+    {
+      //WARNING: Careful with this: any value modified by the renderer in this newly created GeomData entry
+      //will be lost subsequently, if this matters, values need to be copied back to records entry somehow
+      Geom_Ptr geomdata = std::make_shared<GeomData>(records[i]->draw, type, -1);
+      //Create a shallow copy of member content
+      *geomdata = *records[i];
+      geom.push_back(geomdata);
+      //printf("%d Added fixed record for %s, complete? %d\n", i, records[i]->draw->name().c_str(), records[i]->count() > 0);
+
+      //Just copy ref
+      //geom.push_back(records[i]);
+    }
+  }
+
+  //Now process each step in turn
+  for (int step=start; step<=end; step++)
+  {
+    for (unsigned int i=0; i<records.size(); i++)
+    {
+      if (step >= 0 && records[i]->step == step)
+      {
+        //Three possible cases:
+        //- Data is complete:
+        //  - check previous loaded record with same drawing object
+        //    - Not incomplete? Load as completely variable
+        //    - Found incomplete? Load and merge with incomplete fixed data
+        //- Data is incomplete:
+        //  - Find previous loaded record for same drawing object
+        //    Merge with the fixed record
+        bool iscomplete = records[i]->count() > 0;
+        //Find the previous record with this object in the geom list
+        int pos = -1;
+        for (pos=geom.size()-1; pos>=0; pos--)
+        {
+          if (geom[pos]->draw == records[i]->draw)
+          {
+            //printf("%d FOUND MATCH IN FIXED %p == %p\n", pos, geom[pos]->draw, records[i]->draw);
+            break;
+          }
+        }
+        
+        //If, already have vertex data, or no fixed match found, or fixed match is incomplete: just copy as is
+        if (iscomplete || pos < 0 || geom[pos]->count() == 0) 
+        {
+          //Just reference it
+          geom.push_back(records[i]);
+          //Geom_Ptr geomdata = std::make_shared<GeomData>(records[i]->draw, type, step);
+          //*geomdata = *records[i];
+          //geom.push_back(geomdata);
+          //printf("%d/%d Copy record @ %d for %s, complete? %d\n", i, pos, step, records[i]->draw->name().c_str(), records[i]->count() > 0);
+        }
+        else
+        {
+          //Merge with previous entry
+          //printf("%d/%d Merging record @ %d for %s, complete? %d/%d\n", i, pos, step, records[i]->draw->name().c_str(), records[i]->count() > 0, geom[pos]->count() > 0);
+          geom[pos]->step = step; //Set geom step
+          for (auto vals : records[i]->values)
+          {
+            //Only insert if not already done
+            json by = vals->label;
+            if (geom[pos]->valuesLookup(by) <= MAX_DATA_ARRAYS);
+              geom[pos]->values.push_back(vals);
+          }
+
+          //Just copy entire render block now
+          if (records[i]->render->vertices.size() > 0)
+            geom[pos]->render = records[i]->render;
+          //Below can't work until we store each render data type as shared pointers
+          /*/All render data blocks
+          for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
+          {
+            DataContainer* block = geom[pos]->dataContainer((lucGeometryDataType)data_type);
+            if (block && block->size() == 0)
+            {
+              DataContainer* srcblock = records[i]->dataContainer((lucGeometryDataType)data_type);
+              *block = *srcblock; //Copy records
+            }
+          }*/
+        }
+
+      }
+    }
+  }
+
+  //if (records.size())
+  //  printf("%s GEOM %u RECORDS %u\n", records[0]->draw->name().c_str(), geom.size(), records.size());
+  //geom = records;
+
+  int total = 0;
+  for (unsigned int i=0; i<geom.size(); i++)
+    total += geom[i]->count();
+  //if (total > 0) std::cout << geom.size() << " : NEW TOTAL == " << total << std::endl;
+  fixedVertices = total;
+  //std::cout << fixed->total << " + NEW TOTAL == " << total << std::endl;
 }
 
 void Geometry::setState(unsigned int i, Shader* prog)
@@ -941,15 +1061,20 @@ void Geometry::updateBoundingBox()
     //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 }
 
-void Geometry::display()
+void Geometry::display(bool refresh)
 {
   //Skip if view not open or nothing to draw
-  if (!view || !view->width || !total) return;
+  if (!view || !view->width) return;
 
-  //Draw data, then labels
-  GL_Error_Check;
+  //TimeStep changed or step refresh requested
+  if (refresh || timestep != session.now)
+  {
+    merge(session.now, session.now);
+    timestep = session.now;
+  }
 
   //Default to no shaders
+  GL_Error_Check;
   glUseProgram(0);
 
   //Clear cached object
@@ -1062,9 +1187,14 @@ void Geometry::labels()
 //ie: has data, in range, not hidden and in viewport object list
 bool Geometry::drawable(unsigned int idx)
 {
+  //Ensure enough hidden flag entries
+  while (hidden.size() < geom.size())
+    hidden.push_back(allhidden);
+
+  if (idx >= geom.size()) return false;
   if (!geom[idx]->draw->properties["visible"]) return false;
   //Within bounds and not hidden
-  if (idx < geom.size() && geom[idx]->count() > 0 && !hidden[idx])
+  if (geom[idx]->count() > 0 && !hidden[idx])
   {
     //Not filtered by viewport?
     if (!view->filtered) return true;
@@ -1081,27 +1211,39 @@ std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 {
   //Get passed object's data store
   std::vector<Geom_Ptr> geomlist;
-  for (unsigned int i=0; i<geom.size(); i++)
-    if (geom[i]->draw == draw)
-      geomlist.push_back(geom[i]);
+  for (unsigned int i=0; i<records.size(); i++)
+    if (records[i]->draw == draw)
+      geomlist.push_back(records[i]);
+  return geomlist;
+}
+
+std::vector<Geom_Ptr> Geometry::getAllObjectsAt(DrawingObject* draw, int step)
+{
+  //Get passed object's data store
+  std::vector<Geom_Ptr> geomlist;
+  for (unsigned int i=0; i<records.size(); i++)
+    if (records[i]->draw == draw && records[i]->step == step)
+      geomlist.push_back(records[i]);
   return geomlist;
 }
 
 Geom_Ptr Geometry::getObjectStore(DrawingObject* draw)
 {
-  //Get passed object's most recently added data store
-  for (int i=geom.size()-1; i>=0; i--)
-    if (geom[i]->draw == draw) return geom[i];
+  //Get passed object's most recently added data store (iff timestep matches or all fixed)
+  for (int i=records.size()-1; i>=0; i--)
+    if (records[i]->draw == draw && (draw->fixed || records[i]->step == session.now))
+      return records[i];
   return nullptr;
 }
 
 Geom_Ptr Geometry::add(DrawingObject* draw)
 {
-  Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type);
-  geom.push_back(geomdata);
-  if (hidden.size() < geom.size()) hidden.push_back(allhidden);
+  int timestep = session.now;
+  if (draw->fixed) timestep = -1;
+  Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type, timestep);
+  records.push_back(geomdata);
   //if (allhidden) draw->properties.data["visible"] = false;
-  //debug_print("%d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", geom.size(), GeomData::names[type].c_str(), draw->name().c_str(), geom.size(), geomdata, allhidden);
+  //debug_print("(TS %d) %d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", session.now, records.size(), GeomData::names[type].c_str(), draw->name().c_str(), records.size(), geomdata, allhidden);
   return geomdata;
 }
 
@@ -1116,18 +1258,18 @@ void Geometry::setup(View* vp, float* min, float* max)
   for (unsigned int o=0; o<view->objects.size(); o++)
     if (view->objects[o]->properties["visible"])
       objectBounds(view->objects[o], min, max);
-  //printf("Final bounding dims...%f,%f,%f - %f,%f,%f\n", min[0], min[1], min[2], max[0], max[1], max[2]);
 
-
+  //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 }
 
 void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
 {
   if (!min || !max) return;
   //Get geometry bounds from all object data
-  for (auto g : geom)
+  for (auto g : records)
   {
     if (!g->count()) continue;
+    if (g->step >= 0 && g->step != session.now) continue;
 
     //If no range, must calculate
     for (int i=0; i<3; i++)
@@ -1209,8 +1351,6 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
 
   if (dtype == lucVertexData)
   {
-    total += n;
-
     //Update bounds on single vertex reads (except labels)
     if (n == 1 && type != lucLabelType) // && !internal)
     {
@@ -1318,11 +1458,11 @@ void Geometry::setupObject(DrawingObject* draw)
   std::vector<float> minimums;
   std::vector<float> maximums;
 
-  for (unsigned int i=0; i<geom.size(); i++)
+  for (auto g : records)
   {
-    if (geom[i]->draw == draw)
+    if (g->draw == draw && (g->step < 0 || g->step == session.now))
     {
-      for (unsigned int d=0; d<geom[i]->values.size(); d++)
+      for (unsigned int d=0; d<g->values.size(); d++)
       {
         //Store max/min per value index
         if (minimums.size() <= d)
@@ -1331,7 +1471,7 @@ void Geometry::setupObject(DrawingObject* draw)
           maximums.push_back(-HUGE_VAL);
         }
 
-        Values_Ptr flvals = geom[i]->values[d];
+        Values_Ptr flvals = g->values[d];
         FloatValues& fvals = *flvals;
         for (unsigned int c=0; c < fvals.size(); c++)
         {
@@ -1344,39 +1484,19 @@ void Geometry::setupObject(DrawingObject* draw)
     }
   }
 
-  for (unsigned int i=0; i<geom.size(); i++)
+  for (auto g : records)
   {
-    if (geom[i]->draw == draw)
+    if (g->draw == draw && (g->step < 0 || g->step == session.now))
     {
-      for (unsigned int d=0; d<geom[i]->values.size(); d++)
+      for (unsigned int d=0; d<g->values.size(); d++)
       {
         if (minimums[d] > maximums[d]) continue;
-        //std::cout << "Updating data range for " << draw->name() << " == " << minimums[d] << " - " << maximums[d] << std::endl;
-        Values_Ptr fvals = geom[i]->values[d];
+        //std::cout << session.now << " Updating data range for " << draw->name() << " == " << minimums[d] << " - " << maximums[d] << std::endl;
+        Values_Ptr fvals = g->values[d];
         fvals->setup(minimums[d], maximums[d]); //, label);
       }
     }
   }
-}
-
-void Geometry::insertFixed(Geometry* fixed)
-{
-  if (geom.size() > 0) return; //Not permitted to load fixed data if any existing data loaded already
-
-  for (unsigned int i=0; i<fixed->geom.size(); i++)
-  {
-    if (geom.size() == i)
-      add(fixed->geom[i]->draw); //Insert new if not enough records
-
-    //Create a shallow copy of member content
-    *geom[i] = *fixed->geom[i];
-
-    //std::cout << i << ") IMPORTED FIXED DATA RECORDS FOR " << fixed->geom[i]->draw->name() << ", " << fixed->geom[i]->count() << " verts, value entries = " << fixed->geom[i]->values.size() << std::endl;
-  }
-
-  //Update total
-  total += fixed->total;
-  //std::cout << fixed->total << " + NEW TOTAL == " << total << std::endl;
 }
 
 void Geometry::label(DrawingObject* draw, const char* labels)
@@ -1429,22 +1549,23 @@ json Geometry::getDataLabels(DrawingObject* draw)
   //(used for colouring and filtering)
   json list = json::array();
   DrawingObject* last = NULL;
-  for (unsigned int i = 0; i < geom.size(); i++)
+  for (unsigned int i = 0; i < records.size(); i++)
   {
-    if ((!draw || geom[i]->draw == draw) && geom[i]->draw != last)
+    if (records[i]->step > 0) continue; //Structure repeats after first timestep
+    if ((!draw || records[i]->draw == draw) && records[i]->draw != last)
     {
-      for (unsigned int v = 0; v < geom[i]->values.size(); v++)
+      for (unsigned int v = 0; v < records[i]->values.size(); v++)
       {
         std::stringstream ss;
         json entry;
-        entry["label"] = geom[i]->values[v]->label;
-        entry["minimum"] = geom[i]->values[v]->minimum;
-        entry["maximum"] = geom[i]->values[v]->maximum;
-        entry["size"] = geom[i]->values[v]->size();
+        entry["label"] = records[i]->values[v]->label;
+        entry["minimum"] = records[i]->values[v]->minimum;
+        entry["maximum"] = records[i]->values[v]->maximum;
+        entry["size"] = records[i]->values[v]->size();
         list.push_back(entry);
       }
       //No need to repeat for every element as they will all have the same data sets per object
-      last = geom[i]->draw;
+      last = records[i]->draw;
     }
   }
   return list;
@@ -1802,12 +1923,12 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
       drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, 0.0, segment_count);
 //         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
 //          Vec3d centre(pos);
-//         drawSphere(geom, centre, radius, segment_count);
+//         drawSphere(records, centre, radius, segment_count);
     }
     // Finish with sphere, closes gaps in angled joins
 //          Vec3d centre(coord1);
 //      if (length > radius * 0.10)
-//         drawSphere(geom, centre, radius, segment_count);
+//         drawSphere(records, centre, radius, segment_count);
   }
 
 }
@@ -1843,7 +1964,7 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
     /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
     verts[i] = rot * verts[i];
     verts[i] += Vec3d(pos);
-    //geom->checkPointMinMax(verts[i].ref());
+    //records->checkPointMinMax(verts[i].ref());
   }
 
   if (quads)
@@ -2041,7 +2162,7 @@ void Glyphs::sort()
   }
 }
 
-void Glyphs::display()
+void Glyphs::display(bool refresh)
 {
   tris->redraw = redraw;
   tris->reload = reload;
@@ -2062,11 +2183,16 @@ void Glyphs::display()
   }
 
   //Render in parent display call
-  Geometry::display();
+  Geometry::display(refresh);
 }
 
 void Glyphs::update()
 {
+  //No fixed or time varying support
+  tris->geom = tris->records;
+  lines->geom = lines->records;
+  points->geom = points->records;
+
   tris->update();
   lines->update();
   points->update();

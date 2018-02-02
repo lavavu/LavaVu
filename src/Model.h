@@ -85,8 +85,6 @@ private:
   int now;            //Loaded step per model
   Session& session;
 
-  //Static geometry
-  std::vector<Geometry*> fixed;
   //Previous timestep geometry
   std::vector<Geometry*> olddata;
 
@@ -116,7 +114,7 @@ public:
   Geometry* getRenderer(const std::string& what);
   Geometry* createRenderer(const std::string& what);
 
-  void clearObjects();
+  void clearObjects(bool fixed=false);
   void setup();
   void reload(DrawingObject* obj=NULL);
   void redraw(DrawingObject* obj=NULL);
@@ -149,17 +147,15 @@ public:
   DrawingObject* findObject(unsigned int id);
   View* defaultView();
 
-  //Data fix
-  void freeze();
-
-  //Timestep caching
   void cacheLoad();
 private:
-  bool useCache();
-  void cacheStep();
-  bool restoreStep();
   void clearStep();
-  void printCache();
+  bool useCache()
+  {
+    //Use cache if no database loaded, or turned on by global parameter
+    if (!database) return true;
+    return session.global("cache");
+  }
 
 public:
   int step()
@@ -182,12 +178,7 @@ public:
 
   bool hasTimeStep(int ts);
   int nearestTimeStep(int requested);
-  void addTimeStep(int step=0, double time=-HUGE_VAL, const std::string& props="", const std::string& path="")
-  {
-    if (time == -HUGE_VAL) time = step;
-    timesteps.push_back(new TimeStep(session.globals, session.defaults, step, time, props, path));
-  }
-
+  void addTimeStep(int step=0, double time=-HUGE_VAL, const std::string& props="", const std::string& path="");
   int setTimeStep(int stepidx, bool skipload=false);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1);
   int loadFixedGeometry();

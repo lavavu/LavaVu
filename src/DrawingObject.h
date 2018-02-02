@@ -50,6 +50,7 @@ class DrawingObject
 public:
   unsigned int dbid;
   bool skip;
+  bool fixed = false;
   //Cached values for faster lookup
   float opacity;
   Colour colour;

@@ -36,7 +36,7 @@
 #ifndef TimeStep__
 #define TimeStep__
 
-#include "Geometry.h"
+#include "Util.h"
 
 class TimeStep
 {
@@ -46,29 +46,10 @@ public:
   std::string path;
   //Timestep properties data...
   Properties properties;
-
-  //Cached data
-  std::vector<Geometry*> cache;
+  bool loaded = false;
 
   TimeStep(json& globals, json& defaults, int step, float time, std::string props="", const std::string& path="") : properties(globals, defaults), step(step), time(time), path(path) {properties.parseSet(props);}
   TimeStep(json& globals, json& defaults) : properties(globals, defaults), step(0), time(0) {}
-
-  ~TimeStep()
-  {
-    //Free cached geometry
-    for (unsigned int i=0; i < cache.size(); i++)
-      delete cache[i];
-  }
-
-  void write(std::vector<Geometry*> &data)
-  {
-    cache = data;
-  }
-
-  void read(std::vector<Geometry*> &data)
-  {
-    data = cache;
-  }
 };
 
 #endif

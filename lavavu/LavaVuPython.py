@@ -356,6 +356,7 @@ ColourMap_getDefaultMap = _LavaVuPython.ColourMap_getDefaultMap
 class GeomData(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
+    step = _swig_property(_LavaVuPython.GeomData_step_get, _LavaVuPython.GeomData_step_set)
     type = _swig_property(_LavaVuPython.GeomData_type_get, _LavaVuPython.GeomData_type_set)
 
     def __init__(self, draw, type):

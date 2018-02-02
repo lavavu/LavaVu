@@ -65,6 +65,44 @@ typedef struct
   float* vertex; //Pointer to vertex to calc distance from (usually centroid)
 } TIndex;
 
+template <class T> class SortData
+{
+  public:
+    T* sort = NULL;
+    T* swap = NULL;
+    unsigned int* indices = NULL;
+    unsigned int size = 0;
+    unsigned int order = 1; //Points=1, Tris=3
+    std::vector<unsigned int> counts;
+
+    SortData() {}
+    ~SortData() {clear();}
+
+    void clear()
+    {
+      if (sort) delete[] sort;
+      if (swap) delete[] swap;
+      if (indices) delete[] indices;
+      sort = swap = NULL;
+      indices = NULL;
+      size = 0;
+      counts.clear();
+    }
+
+    void allocate(unsigned int newsize, unsigned int order=1)
+    {
+      if (newsize == size) return;
+      clear();
+      size = newsize;
+      this->order = order;
+      sort = new T[newsize];
+      swap = new T[newsize];
+      indices = new unsigned int[newsize*order];
+      if (sort == NULL || swap == NULL || indices == NULL)
+        abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(T) * size * 2 + sizeof(unsigned int) * size*order);
+    }
+};
+
 //All the fixed data types for rendering
 typedef struct
 {
@@ -192,6 +230,7 @@ public:
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
   Texture_Ptr texture;
   lucGeometryType type;   //Holds the object type
+  int step = -1; //Holds the timestep
 
   //Colour/Opacity lookup functors
   ColourLookup _getColour;
@@ -225,8 +264,8 @@ public:
     return sizeof(float);
   }
 
-  GeomData(DrawingObject* draw, lucGeometryType type)
-    : draw(draw), width(0), height(0), depth(0), opaque(false), type(type)
+  GeomData(DrawingObject* draw, lucGeometryType type, int step=-1)
+    : draw(draw), width(0), height(0), depth(0), opaque(false), type(type), step(step)
   {
     render = std::make_shared<RenderData>();
     texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
@@ -343,17 +382,19 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 //Container class for a list of geometry objects
 class Geometry
 {
-  friend class Model;
 protected:
   View* view;
+  std::vector<Geom_Ptr> records;
   std::vector<Geom_Ptr> geom;
   std::vector<bool> hidden;
   unsigned int elements;
   unsigned int drawcount;
   DrawingObject* cached;
   std::vector<unsigned int> counts;
+  unsigned int fixedVertices = 0;
 
 public:
+  int timestep = -2;
   Session& session;
   //Maximum bounding box of all content
   float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
@@ -362,7 +403,7 @@ public:
   bool allhidden, internal, unscale;
   Vec3d iscale; //Factors for un-scaling
   lucGeometryType type;   //Holds the object type
-  unsigned int total;     //Total entries of all objects in container
+  unsigned int total;     //Total vertices renderable of all objects in container at current step
   bool redraw;    //Redraw flag
   bool reload;    //Reload and redraw flag
   std::mutex sortmutex;
@@ -371,7 +412,7 @@ public:
   Geometry(Session& session);
   virtual ~Geometry();
 
-  void clear(); //Called before new data loaded
+  void clear(bool fixed=false); //Called before new data loaded
   void remove(DrawingObject* draw);
   void clearValues(DrawingObject* draw, std::string label="");
   void clearData(DrawingObject* draw, lucGeometryDataType dtype);
@@ -389,14 +430,16 @@ public:
   void setValueRange(DrawingObject* draw);
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
+  void merge(int start, int end);
   void setState(unsigned int i, Shader* prog=NULL);
   void updateBoundingBox();
-  virtual void display(); //Display saved geometry
+  virtual void display(bool refresh=false); //Display saved geometry
   virtual void update();  //Implementation should create geometry here...
   virtual void draw();    //Implementation should draw geometry here...
   virtual void sort();    //Threaded sort function
   void labels();  //Draw labels
   std::vector<Geom_Ptr> getAllObjects(DrawingObject* draw);
+  std::vector<Geom_Ptr> getAllObjectsAt(DrawingObject* draw, int step);
   Geom_Ptr getObjectStore(DrawingObject* draw);
   Geom_Ptr add(DrawingObject* draw);
   Geom_Ptr read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
@@ -405,12 +448,11 @@ public:
   Geom_Ptr read(Geom_Ptr geom, unsigned int n, const void* data, std::string label);
   void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
   void setupObject(DrawingObject* draw);
-  void insertFixed(Geometry* fixed);
   void label(DrawingObject* draw, const char* labels);
   void label(DrawingObject* draw, std::vector<std::string> labels);
   void print();
   json getDataLabels(DrawingObject* draw);
-  int size() {return geom.size();}
+  int size() {return records.size();}
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
   void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
@@ -429,8 +471,8 @@ public:
   unsigned int getVertexCount(DrawingObject* draw)
   {
     unsigned int count = 0;
-    for (unsigned int i=0; i<geom.size(); i++)
-      if (!draw || draw == geom[i]->draw) count += geom[i]->count();
+    for (unsigned int i=0; i<records.size(); i++)
+      if (!draw || draw == records[i]->draw) count += records[i]->count();
     return count;
   }
   //Return vertex count of most recently used object
@@ -462,7 +504,9 @@ public:
 
 class TriSurfaces : public Triangles
 {
+  friend class Glyphs;
   friend class QuadSurfaces; //Allow private access from QuadSurfaces
+  //SortData<TIndex> sdat;
   TIndex *tidx;
   TIndex *swap;
   unsigned int* indexlist;
@@ -486,6 +530,7 @@ public:
 
 class Lines : public Geometry
 {
+  friend class Glyphs;
   unsigned int idxcount;
   GLuint indexvbo, vbo;
 public:
@@ -500,6 +545,8 @@ public:
 
 class Points : public Geometry
 {
+  friend class Glyphs;
+  //SortData<PIndex> sdat;
   PIndex *pidx;
   PIndex *swap;
   unsigned int* indexlist;
@@ -532,7 +579,7 @@ public:
   virtual ~Glyphs();
   virtual void close();
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
-  virtual void display();
+  virtual void display(bool refresh=false);
   virtual void sort();    //Threaded sort function
   virtual void update();
   virtual void draw();
