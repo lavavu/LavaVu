@@ -1457,38 +1457,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string what = parsed[action];
-    std::vector<DrawingObject*> list = lookupObjects(parsed, action);
     Geometry* active = amodel->getRenderer(what);
-    if (list.size())
-    {
-      //Hide/show by name/ID match in all drawing objects
-      for (unsigned int c=0; c<list.size(); c++)
-      {
-        if (list[c]->skip)
-        {
-          std::ostringstream ss;
-          ss << "load " << list[c]->name();
-          return parseCommands(ss.str());
-        }
-        else
-        {
-          //Hide/show all data for this object
-          bool vis = (action == "show");
-          for (auto g : amodel->geometry)
-            g->showObj(list[c], vis);
-          list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
-          printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
-        }
-      }
-    }
-    else if (what == "all")
-    {
-      for (auto g : amodel->geometry)
-        g->hideShowAll(action == "hide");
-      return true;
-    }
+    std::vector<DrawingObject*> list = lookupObjects(parsed, action);
     //Have selected a geometry type?
-    else if (active)
+    if (active)
     {
       int id;
       std::string range = parsed.get(action, 1);
@@ -1524,6 +1496,35 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         printMessage("%s all %s", action.c_str(), what.c_str());
       }
     }
+    else if (list.size())
+    {
+      //Hide/show by name/ID match in all drawing objects
+      for (unsigned int c=0; c<list.size(); c++)
+      {
+        if (list[c]->skip)
+        {
+          std::ostringstream ss;
+          ss << "load " << list[c]->name();
+          return parseCommands(ss.str());
+        }
+        else
+        {
+          //Hide/show all data for this object
+          bool vis = (action == "show");
+          for (auto g : amodel->geometry)
+            g->showObj(list[c], vis);
+          list[c]->properties.data["visible"] = vis; //This allows hiding of objects without geometry (colourbars)
+          printMessage("%s object %s", action.c_str(), list[c]->name().c_str());
+        }
+      }
+    }
+    else if (what == "all")
+    {
+      for (auto g : amodel->geometry)
+        g->hideShowAll(action == "hide");
+      return true;
+    }
+
   }
   else if (parsed.exists("movie"))
   {
