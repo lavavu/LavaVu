@@ -725,7 +725,7 @@ void ImageLoader::load()
   if (texture) return;
 
   //No file, requires manual load
-  if (fn.full.length() == 0) return;
+  if (fn.empty()) return;
 
   //Load texture file
   GLubyte* imageData = read();
@@ -756,6 +756,7 @@ void ImageLoader::load(GLubyte* imageData, GLuint width, GLuint height, GLuint c
 GLubyte* ImageLoader::read()
 {
   //Load image file
+  clear();
   texture = new TextureData();
   GLubyte* imageData = NULL;
   if (fn.type == "jpg" || fn.type == "jpeg")

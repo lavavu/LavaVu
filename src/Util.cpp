@@ -69,7 +69,7 @@ bool FileExists(const std::string& name)
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {
   std::string bpath = "";
-  char result[FILE_PATH_MAX];
+  char result[FILE_PATH_MAX] = "\0";
   FilePath xpath;
 
   //Get from /proc on Linux

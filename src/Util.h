@@ -108,6 +108,8 @@ public:
       base = file;
     }
   }
+
+  bool empty() {return full.empty();}
 };
 
 std::string GetBinaryPath(const char* argv0, const char* progname);
