@@ -644,6 +644,16 @@ void Session::init()
       }
     },
     {
+      "isovalues",
+      {
+        json::array(),
+        "object(volume)",
+        "real[]",
+        "Isovalues to extract from volume into mesh isosurface",
+        true, 0
+      }
+    },
+    {
       "isoalpha",
       {
         1.0,
