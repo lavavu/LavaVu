@@ -490,7 +490,6 @@ class Lines : public Geometry
 {
   unsigned int idxcount;
   GLuint indexvbo, vbo;
-  unsigned int linetotal;
 public:
   Lines(Session& session);
   virtual ~Lines();

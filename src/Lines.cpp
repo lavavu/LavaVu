@@ -41,7 +41,7 @@ Lines::Lines(Session& session) : Geometry(session)
   idxcount = 0;
   vbo = 0;
   indexvbo = 0;
-  linetotal = 0;
+  total = 0;
 }
 
 Lines::~Lines()
@@ -69,13 +69,13 @@ void Lines::update()
   //Skip update if count hasn't changed
   //To force update, set geometry->reload = true
   if (reload) elements = 0;
-  if (elements > 0 && (linetotal == (unsigned int)elements || total == 0)) return;
+  if (elements > 0 && (total == (unsigned int)elements)) return;
 
   //Count lines
-  linetotal = 0;
+  total = 0;
   for (unsigned int i=0; i<geom.size(); i++)
-    linetotal += geom[i]->count();
-  if (linetotal == 0) return;
+    total += geom[i]->count();
+  if (total == 0) return;
 
   if (reload) idxcount = 0;
 
@@ -84,7 +84,7 @@ void Lines::update()
   unsigned char *p, *ptr;
   ptr = p = NULL;
   int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
-  int bsize = linetotal * datasize;
+  int bsize = total * datasize;
   //Initialise vertex buffer
   if (!vbo) glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -152,7 +152,7 @@ void Lines::update()
   GL_Error_Check;
 
   t1 = clock();
-  debug_print("Plotted %d lines in %.4lf seconds\n", linetotal, (t1-tt)/(double)CLOCKS_PER_SEC);
+  debug_print("Plotted %d lines in %.4lf seconds\n", total, (t1-tt)/(double)CLOCKS_PER_SEC);
 }
 
 //Reloads line indices
