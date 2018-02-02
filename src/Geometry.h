@@ -190,7 +190,7 @@ public:
   unsigned int height;
   unsigned int depth;
   bool opaque;   //Flag for opaque geometry, render first, don't depth sort
-  ImageLoader* texture; //Texture
+  Texture_Ptr texture;
   lucGeometryType type;   //Holds the object type
 
   //Colour/Opacity lookup functors
@@ -229,13 +229,11 @@ public:
     : draw(draw), width(0), height(0), depth(0), opaque(false), type(type)
   {
     render = std::make_shared<RenderData>();
-    texture = NULL;
+    texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
   }
 
   ~GeomData()
   {
-    if (texture)
-      delete texture;
   }
 
   unsigned int count() {return render->vertices.size() / 3;}  //Number of vertices
@@ -417,7 +415,7 @@ public:
   void objectBounds(DrawingObject* draw, float* min, float* max);
   void move(Geometry* other);
   void toImage(unsigned int idx);
-  void setTexture(DrawingObject* draw, ImageLoader* tex);
+  void setTexture(DrawingObject* draw, Texture_Ptr tex);
   void loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true);
   Quaternion vectorRotation(Vec3d rvector);
   void drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count=24);

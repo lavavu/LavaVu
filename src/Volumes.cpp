@@ -58,8 +58,7 @@ void Volumes::close()
   {
     if (!geom[i]->draw->properties["gpucache"] && geom[i]->texture)
     {
-      delete geom[i]->texture;
-      geom[i]->texture = NULL;
+      geom[i]->texture->clear();
       reload = true;
     }
   }
@@ -187,7 +186,7 @@ void Volumes::update()
 
   //Count and group 2D slices
   slices.clear();
-  DrawingObject* draw = geom[0]->draw;
+  DrawingObject* draw = geom[0]->draw; //TODO: multiple slice groups
   unsigned int count = 0;
   for (unsigned int i=0; i<=geom.size(); i++)
   {
@@ -216,10 +215,9 @@ void Volumes::update()
     {
       DrawingObject* current = geom[i]->draw;
       bool texcompress = current->properties["compresstextures"];
-      if (!geom[i]->texture || !geom[i]->texture->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
+      if (geom[i]->texture->empty())
       {
         //Determine type of data then load the texture
-        if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
         unsigned int bpv = 4;
         if (geom[i]->render->colours.size() > 0)
         {
@@ -246,7 +244,7 @@ void Volumes::update()
     //Collection of 2D slices
     DrawingObject* current = geom[i]->draw;
     bool texcompress = current->properties["compresstextures"];
-    if (!geom[i]->texture || !geom[i]->texture->texture || geom[i]->texture->texture->width == 0) //Width set to 0 to flag reload
+    if (geom[i]->texture->empty())
     {
       if (!geom[i]->height)
       {
@@ -283,7 +281,6 @@ void Volumes::update()
         debug_print("Cropping volume %d x %d ==> %d x %d @ %d,%d\n", geom[i]->width, geom[i]->height, dims[0], dims[1], (int)texoffset[0], (int)texoffset[1]);
 
       //Init/allocate/bind texture
-      if (!geom[i]->texture) geom[i]->texture = new ImageLoader(); //Add a new texture container
       unsigned int bpv = 4;
       int type = 0;
       GL_Error_Check;

@@ -1493,7 +1493,8 @@ void LavaVu::readOBJ(const FilePath& fn)
             texpath = fn.path + "/" + texpath;
 
           //Add per-object texture
-          tris->setTexture(tobj, new ImageLoader(texpath));
+          Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
+          tris->setTexture(tobj, texture);
         }
         else
         {

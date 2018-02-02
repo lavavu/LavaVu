@@ -41,6 +41,8 @@
 #ifndef DrawingObject__
 #define DrawingObject__
 
+typedef std::shared_ptr<ImageLoader> Texture_Ptr;
+
 //Holds parameters for a drawing object
 class DrawingObject
 {
@@ -60,14 +62,14 @@ public:
   //Object properties data...
   Properties properties;
   //Default texture
-  ImageLoader* texture;
+  Texture_Ptr texture;
 
   DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
   ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
   void setup();
-  TextureData* useTexture(ImageLoader* tex=NULL);
+  TextureData* useTexture(Texture_Ptr tex=nullptr);
   std::string name() {return properties["name"];}
 };
 

@@ -62,8 +62,6 @@ DrawingObject::DrawingObject(Session& session, std::string name, std::string pro
 
 DrawingObject::~DrawingObject()
 {
-  if (texture)
-    delete texture;
 }
 
 ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* current)
@@ -166,7 +164,7 @@ void DrawingObject::setup()
   radius_default = properties["radius"];
 }
 
-TextureData* DrawingObject::useTexture(ImageLoader* tex)
+TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 {
   GL_Error_Check;
   //Use/load default texture
@@ -179,7 +177,7 @@ TextureData* DrawingObject::useTexture(ImageLoader* tex)
       std::string texfn = properties["texture"];
       if (texfn.length() > 0 && FileExists(texfn))
       {
-        tex = texture = new ImageLoader(texfn, properties["fliptexture"]);
+        tex = texture = std::make_shared<ImageLoader>(texfn, properties["fliptexture"]);
       }
       else
       {
