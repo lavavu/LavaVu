@@ -414,9 +414,9 @@ void View::print()
   printf("%s\n", rotateString().c_str());
   printf("------------------------------\n");
 #ifdef DEBUG
-  GLfloat modelView[16];
-  glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
-  printMatrix(modelView);
+  GLfloat modelview[16];
+  glGetFloatv(GL_MODELVIEW_MATRIX, modelview);
+  printMatrix(modelview);
 #endif
 }
 
@@ -657,7 +657,7 @@ void View::zoomToFit(int margin)
   };
 
   //3d rect vertices, object and window coords
-  GLfloat modelView[16];
+  GLfloat modelview[16];
   GLfloat projection[16];
   int viewport[4];
   int count = 0;
@@ -674,11 +674,11 @@ void View::zoomToFit(int margin)
 
     // Set camera and get modelview matrix defined by viewpoint
     apply();
-    glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
+    glGetFloatv(GL_MODELVIEW_MATRIX, modelview);
     for (i = 0; i < 8; i++)
     {
       gluProjectf(rect3d[i][0], rect3d[i][1], rect3d[i][2],
-                  modelView, projection, viewport, &win3d[i][0]);
+                  modelview, projection, viewport, &win3d[i][0]);
       //Save max/min x and y - define bounding 2d rectangle
       if (win3d[i][0] < min_x) min_x = win3d[i][0];
       if (win3d[i][0] > max_x) max_x = win3d[i][0];
