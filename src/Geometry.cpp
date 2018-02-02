@@ -753,8 +753,9 @@ void Geometry::redrawObject(DrawingObject* draw, bool reload)
     if (geom[i]->draw == draw)
     {
       debug_print("Reloading object: %s\n", draw->name().c_str());
-      //Flag reload of texture
-      if (geom[i]->texture) geom[i]->texture->texture->width = 0;
+      //Trigger reload of volume textures (ie: those not loaded from files)
+      if (geom[i]->texture->fn.empty())
+        geom[i]->texture->clear();
       this->reload = reload;
       redraw = true;
       return;
