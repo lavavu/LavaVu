@@ -860,7 +860,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (session.omegalib) return false;
     viewer->quitProgram = false;
+    viewer->visible = true;
     viewer->loop();
+    viewer->visible = false;
   }
   else if (parsed.exists("open"))
   {

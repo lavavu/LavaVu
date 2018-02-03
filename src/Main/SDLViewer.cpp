@@ -172,9 +172,9 @@ void SDLViewer::createWindow(int width, int height)
   }
 }
 
-void SDLViewer::show()
+void SDLViewer::title(std::string title)
 {
-  OpenGLViewer::show();
+  if (!visible || !isopen) return;
   // Update title
   SDL_WM_SetCaption(title.c_str(), NULL);
 }

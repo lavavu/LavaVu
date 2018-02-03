@@ -163,12 +163,23 @@ void X11Viewer::show()
   XSendEvent(Xdisplay, DefaultRootWindow(Xdisplay), False, SubstructureRedirectMask | SubstructureNotifyMask, &xev);
 
   XMapRaised( Xdisplay, win ); // Show the window
+}
 
+void X11Viewer::title(std::string title)
+{
+  if (!visible || !Xdisplay || !isopen) return;
   // Update title
   XTextProperty Xtitle;
   char* titlestr = (char*)title.c_str();
   XStringListToTextProperty(&titlestr, 1, &Xtitle);  //\/ argv, argc, normal_hints, wm_hints, class_hints
   XSetWMProperties(Xdisplay, win, &Xtitle, &Xtitle, NULL, 0, sHints, wmHints, NULL);
+}
+
+void X11Viewer::hide()
+{
+  if (!visible || !Xdisplay) return;
+  OpenGLViewer::hide();
+  XUnmapWindow( Xdisplay, win ); // Hide the window
 }
 
 void X11Viewer::display(bool redraw)
@@ -203,7 +214,7 @@ void X11Viewer::execute()
     FD_SET(x11_fd, &in_fds);
 
     //Ensure window visible for interaction
-    fbo.downsample = 1; //Disable any downsampled output mode
+    //fbo.downsample = 1; //Disable any downsampled output mode
     show();
   }
 

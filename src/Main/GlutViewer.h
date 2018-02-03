@@ -59,6 +59,7 @@ public:
   void open(int width, int height);
   void setsize(int width, int height);
   void show();
+  void title(std::string title);
   void display(bool redraw=true);
   void execute();
   void fullScreen();

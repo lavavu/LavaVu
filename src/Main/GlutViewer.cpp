@@ -111,6 +111,11 @@ void GlutViewer::show()
     //Restore to set width & height
     glutReshapeWindow(width, height);
   }
+}
+
+void GlutViewer::title(std::string title)
+{
+  if (!visible || !isopen) return;
   // Update title
   glutSetWindowTitle(title.c_str());
 }

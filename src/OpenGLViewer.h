@@ -120,7 +120,6 @@ public:
 
   int blend_mode;
   int outwidth, outheight;
-  std::string title;
   std::string output_path;
   bool imagemode;
 
@@ -155,7 +154,8 @@ public:
   }
 
   virtual void show();
-  virtual void setTitle() {}
+  virtual void hide();
+  virtual void title(std::string title) {}
   virtual void execute();
   void loop(bool interactive=true);
 

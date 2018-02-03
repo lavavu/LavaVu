@@ -222,7 +222,6 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
 
   visible = true;
 
-  title = "LavaVu";
   output_path = "";
 }
 
@@ -311,6 +310,12 @@ void OpenGLViewer::show()
   if (fbo.enabled) fbo.disable();
 }
 
+void OpenGLViewer::hide()
+{
+  fbo.enabled = true; //Always use fbo for hidden window
+  visible = false;
+}
+
 void OpenGLViewer::setsize(int w, int h)
 {
   //Resize fbo
@@ -376,6 +381,9 @@ void OpenGLViewer::loop(bool interactive)
     else
       OpenGLViewer::execute();
   }
+  if (visible) hide();
+    if (interactive)
+      execute();
 }
 
 // Render

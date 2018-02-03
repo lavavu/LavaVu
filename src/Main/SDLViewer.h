@@ -58,8 +58,8 @@ public:
 
   //Function implementations
   void open(int width, int height);
+  void title(std::string title);
   void setsize(int width, int height);
-  void show();
   void display(bool redraw=true);
   void execute();
   void fullScreen();

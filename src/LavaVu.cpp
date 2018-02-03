@@ -1274,7 +1274,7 @@ void LavaVu::readHeightMap(const FilePath& fn)
   range[0] = fabs(max[0] - min[0]);
   range[2] = fabs(max[2] - min[2]);
 
-  viewer->title = fn.base;
+  session.globals["caption"] = fn.base;
 
   //Create a height map grid
   int sx=cols, sz=rows;
@@ -1390,7 +1390,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   float min[3] = {0, 0, 0};
   float max[3] = {(float)image.width, heightrange, (float)image.height};
 
-  viewer->title = fn.base;
+  session.globals["caption"] = fn.base;
 
   //Create a height map grid
   std::string texfile = fn.base + "-texture." + fn.ext;
@@ -1605,7 +1605,7 @@ void LavaVu::createDemoModel(unsigned int numpoints)
   float min[3] = {-RANGE,-RANGE,-RANGE};
   float max[3] = {RANGE,RANGE,RANGE};
   //float dims[3] = {RANGE*2.f,RANGE*2.f,RANGE*2.f};
-  viewer->title = "Test Pattern";
+  session.globals["caption"] = "Test Pattern";
 
   //Demo colourmap, distance from model origin
   ColourMap* cmap = addColourMap("particles", "#66bb33 #00ff00 #3333ff #00ffff #ffff77 #ff8800 #ff0000 #000000");
@@ -1841,9 +1841,9 @@ void LavaVu::resetViews(bool autozoom)
   if (amodel->timesteps.size() > 1)
     title << " - timestep " << std::setw(5) << std::setfill('0') << amodel->stepInfo();
 
-  viewer->title = title.str();
+  //Update title
+  viewer->title(title.str());
 
-  if (viewer->isopen && viewer->visible) viewer->show(); //Update title etc
 }
 
 //Called when view changed

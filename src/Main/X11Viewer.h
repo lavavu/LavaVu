@@ -80,6 +80,8 @@ public:
   void open(int w, int h);
   void setsize(int width, int height);
   void show();
+  void hide();
+  void title(std::string title);
   void display(bool redraw=true);
   void execute();
   void fullScreen();
