@@ -61,8 +61,7 @@ void TriSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  //if ((lastcount != total && reload) || !sorter.buffer)
-  if (centroids.size() != total || reload || vbo == 0)
+  if (centroids.size() != total || vbo == 0 || (reload && (!allVertsFixed || internal)))
   {
     //Load & optimise the mesh data (including updating centroids)
     loadMesh();
@@ -75,12 +74,13 @@ void TriSurfaces::update()
     loadBuffers();
   }
 
-  //Reload the list if count changes
-  if (reload || !sorter.indices.size() || sorter.indices.size() != tricount*3)
-  loadList();
-
+  //Always reload indices if reload flagged
   if (reload)
     sorter.changed = true;
+
+  //Reload the sort array?
+  if (sorter.size != total || !allVertsFixed || counts.size() != geom.size())
+    loadList();
 }
 
 void TriSurfaces::loadMesh()

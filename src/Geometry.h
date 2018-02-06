@@ -494,7 +494,8 @@ protected:
   unsigned int drawcount;
   DrawingObject* cached;
   std::vector<unsigned int> counts;
-  unsigned int fixedVertices = 0;
+  bool allVertsFixed = false;
+  bool allDataFixed = false;
 
 public:
   int timestep = -2;

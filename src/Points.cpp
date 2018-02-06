@@ -73,15 +73,16 @@ void Points::update()
 
   //Ensure vbo recreated if total changed
   //To force update, set geometry->reload = true
-  if (reload || vbo == 0)
+  if ((reload && !allVertsFixed) || vbo == 0)
     loadVertices();
 
   //Always reload indices if redraw flagged
-  if (redraw)
+  if (reload)
     sorter.changed = true;
 
-  //Reload the sort array
-  loadList();
+  //Reload the sort array?
+  if (sorter.size != total || !allVertsFixed || counts.size() != geom.size())
+    loadList();
 }
 
 void Points::loadVertices()

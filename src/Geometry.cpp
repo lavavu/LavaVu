@@ -511,6 +511,9 @@ void Geometry::remove(DrawingObject* draw)
       records.erase(records.begin()+i);
     }
   }
+
+  //Ensure temporal data gets reloaded
+  geom.clear();
 }
 
 void Geometry::clearValues(DrawingObject* draw, std::string label)
@@ -787,6 +790,7 @@ void Geometry::merge(int start, int end)
   // - All variable (render+value) data at the specified timestep range
   // - All mixed (fixed render + variable value) data at the specified timestep range
   geom.clear();
+  int fixedVertices = 0;
   
   //First process fixed records
   for (unsigned int i=0; i<records.size(); i++)
@@ -801,11 +805,14 @@ void Geometry::merge(int start, int end)
       *geomdata = *records[i];
       geom.push_back(geomdata);
       //printf("%d (%s) Added fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
+      fixedVertices += geomdata->count();
 
       //Just copy ref
       //geom.push_back(records[i]);
     }
   }
+
+  allDataFixed = true;
 
   //Now process each step in turn
   for (int step=start; step<=end; step++)
@@ -814,6 +821,7 @@ void Geometry::merge(int start, int end)
     {
       if (step >= 0 && records[i]->step == step)
       {
+        allDataFixed = false;
         //Three possible cases:
         //- Data is complete:
         //  - check previous loaded record with same drawing object
@@ -888,6 +896,8 @@ void Geometry::merge(int start, int end)
   int total = 0;
   for (unsigned int i=0; i<geom.size(); i++)
     total += geom[i]->count();
+
+  allVertsFixed = (total == fixedVertices);
 }
 
 void Geometry::setState(unsigned int i, Shader* prog)
@@ -1069,7 +1079,7 @@ void Geometry::display(bool refresh)
   if (!view || !view->width) return;
 
   //TimeStep changed or step refresh requested
-  if (refresh || timestep != session.now)
+  if (refresh || timestep != session.now || geom.size() == 0)
   {
     merge(session.now, session.now);
     timestep = session.now;

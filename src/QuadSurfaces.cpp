@@ -107,7 +107,8 @@ void QuadSurfaces::update()
   {
     elements = quadverts;
     //Load & optimise the mesh data
-    render();
+    if (sorter.size != total || !allVertsFixed || counts.size() != geom.size())
+      render();
     //Send the data to the GPU via VBO
     loadBuffers();
   }
