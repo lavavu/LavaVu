@@ -630,7 +630,8 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
       json data;
       for (int data_type=lucMinDataType; data_type<=lucMaxDataType; data_type++)
       {
-        DataContainer* dat = geom[index]->dataContainer((lucGeometryDataType)data_type);
+        Data_Ptr datp = geom[index]->dataContainer((lucGeometryDataType)data_type);
+        DataContainer* dat = datp.get();
         if (!dat)
         {
           //TODO: export all values with labels separately
@@ -799,7 +800,7 @@ void Geometry::merge(int start, int end)
       //Create a shallow copy of member content
       *geomdata = *records[i];
       geom.push_back(geomdata);
-      //printf("%d Added fixed record for %s, complete? %d\n", i, records[i]->draw->name().c_str(), records[i]->count() > 0);
+      //printf("%d (%s) Added fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
 
       //Just copy ref
       //geom.push_back(records[i]);
@@ -838,6 +839,7 @@ void Geometry::merge(int start, int end)
         {
           //Just reference it
           geom.push_back(records[i]);
+          //printf("%d (%s) Added variable record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
           //Geom_Ptr geomdata = std::make_shared<GeomData>(records[i]->draw, type, step);
           //*geomdata = *records[i];
           //geom.push_back(geomdata);
@@ -856,36 +858,36 @@ void Geometry::merge(int start, int end)
               geom[pos]->values.push_back(vals);
           }
 
-          //Just copy entire render block now
-          if (records[i]->render->vertices.size() > 0)
-            geom[pos]->render = records[i]->render;
-          //Below can't work until we store each render data type as shared pointers
-          /*/All render data blocks
-          for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
-          {
-            DataContainer* block = geom[pos]->dataContainer((lucGeometryDataType)data_type);
-            if (block && block->size() == 0)
-            {
-              DataContainer* srcblock = records[i]->dataContainer((lucGeometryDataType)data_type);
-              *block = *srcblock; //Copy records
-            }
-          }*/
+          //Copy hard coded render data types
+          if (geom[pos]->_vertices->size() == 0)
+            geom[pos]->_vertices = records[i]->_vertices;
+          if (geom[pos]->_normals->size() == 0)
+            geom[pos]->_normals = records[i]->_normals;
+          if (geom[pos]->_vectors->size() == 0)
+            geom[pos]->_vectors = records[i]->_vectors;
+          if (geom[pos]->_indices->size() == 0)
+            geom[pos]->_indices = records[i]->_indices;
+          if (geom[pos]->_colours->size() == 0)
+            geom[pos]->_colours = records[i]->_colours;
+          if (geom[pos]->_texCoords->size() == 0)
+            geom[pos]->_texCoords = records[i]->_texCoords;
+          if (geom[pos]->_luminance->size() == 0)
+            geom[pos]->_luminance = records[i]->_luminance;
+          if (geom[pos]->_rgb->size() == 0)
+            geom[pos]->_rgb = records[i]->_rgb;
+
+          //Update references in render container
+          geom[pos]->setRenderData();
         }
 
       }
     }
   }
 
-  //if (records.size())
-  //  printf("%s GEOM %u RECORDS %u\n", records[0]->draw->name().c_str(), geom.size(), records.size());
-  //geom = records;
-
+  //Update total vertex count
   int total = 0;
   for (unsigned int i=0; i<geom.size(); i++)
     total += geom[i]->count();
-  //if (total > 0) std::cout << geom.size() << " : NEW TOTAL == " << total << std::endl;
-  fixedVertices = total;
-  //std::cout << fixed->total << " + NEW TOTAL == " << total << std::endl;
 }
 
 void Geometry::setState(unsigned int i, Shader* prog)
@@ -1306,7 +1308,7 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   assert(dtype <= lucMaxDataType);
   if (geomdata && geomdata->width > 0 && geomdata->height > 0)
   {
-    DataContainer* container = geomdata->dataContainer(dtype);
+    Data_Ptr container = geomdata->dataContainer(dtype);
     unsigned int size = geomdata->width * geomdata->height * (geomdata->depth > 0 ? geomdata->depth : 1);
     if (size == container->count())
       geomdata = nullptr;

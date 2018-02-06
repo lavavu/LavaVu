@@ -195,28 +195,30 @@ void TriSurfaces::loadMesh()
       //Replace normals
       if (vnormals)
       {
-        geom[index]->render->normals = Coord3DValues();
+        geom[index]->_normals = std::make_shared<Coord3DValues>();
         read(geom[index], normals.size(), lucNormalData, &normals[0]);
       }
     }
     else
     {
       //Switch out the optimised vertices and normals with the old data stores
-      // - must maintain a copy of old RenderData to read from in optimisation
-      //   otherwise it will have been destroyed when new RenderData created
-      Render_Ptr olddata = geom[index]->render;
-      //Create a new store and copy original values
-      geom[index]->render = std::make_shared<RenderData>();
+      // - must maintain a copy of old containers to read from in optimisation
+      //   otherwise will get destroyed when new containers replace them
+      Float3_Ptr old_vertices = geom[index]->_vertices;
+      Float3_Ptr old_normals = geom[index]->_normals;
+      UInt_Ptr old_indices = geom[index]->_indices;
+
+      //Create a new stores for replaced values
+      geom[index]->_vertices = std::make_shared<Coord3DValues>();
+      geom[index]->_indices = std::make_shared<UIntValues>();
 
       //Vertices, normals, indices (and colour values) may be replaced
       //Rest just get copied over
-      if (!vnormals)
-        geom[index]->render->normals = olddata->normals;
-      geom[index]->render->vectors = olddata->vectors;
-      geom[index]->render->texCoords = olddata->texCoords;
-      geom[index]->render->colours = olddata->colours;
-      geom[index]->render->luminance = olddata->luminance;
-      geom[index]->render->rgb = olddata->rgb;
+      if (vnormals)
+        geom[index]->_normals = std::make_shared<Coord3DValues>();
+
+      //Update references
+      geom[index]->setRenderData();
 
       //Recreate value data as optimised version is smaller, re-load necessary values
       FloatValues* oldvalues = geom[index]->colourData();

@@ -1470,7 +1470,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
           g = active->read(obj, items, data_type, data, width, height, depth);
 
           //copy max/min fields
-          DataContainer* container = g->dataContainer(data_type);
+          Data_Ptr container = g->dataContainer(data_type);
           container->minimum = minimum;
           container->maximum = maximum;
       }
@@ -1685,11 +1685,11 @@ void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int 
     for (unsigned int data_type=0; data_type <= lucMaxDataType; data_type++)
     {
       //Write the data entry
-      DataContainer* block = data[i]->dataContainer((lucGeometryDataType)data_type);
+      Data_Ptr block = data[i]->dataContainer((lucGeometryDataType)data_type);
       if (!block || block->size() == 0) continue;
       std::cerr << step << "] Writing geometry (type[" << data_type << "] * " << block->size()
                 << ") for object : " << obj->dbid << " => " << obj->name() << ", compress: " << compressdata << std::endl;
-      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block, step, compressdata);
+      writeGeometryRecord(outdb, g->type, (lucGeometryDataType)data_type, obj->dbid, data[i], block.get(), step, compressdata);
     }
     for (unsigned int j=0; j<data[i]->values.size(); j++)
     {

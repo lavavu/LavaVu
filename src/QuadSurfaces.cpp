@@ -69,7 +69,9 @@ void QuadSurfaces::update()
   {
     unsigned int quads = geom[i]->gridElements2d();
     quadverts += quads * 4;
-    total += geom[i]->count(); //Actual vertices
+    unsigned int verts = geom[i]->count(); //Actual vertices
+    if (verts == 0) continue;
+    total += verts;
 
     bool hidden = !drawable(i); //Save flags
     debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hidden ? "yes" : "no"));

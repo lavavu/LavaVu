@@ -104,20 +104,30 @@ template <class T> class SortData
 };
 
 //All the fixed data types for rendering
-typedef struct
+class RenderData
 {
-  Coord3DValues vertices;
-  Coord3DValues vectors;
-  Coord3DValues normals;
-  UIntValues indices;
-  UIntValues colours;
-  Coord2DValues texCoords;
-  UCharValues luminance;
-  UCharValues rgb;
-} RenderData;
+ public:
+  Coord3DValues& vertices;
+  Coord3DValues& vectors;
+  Coord3DValues& normals;
+  UIntValues& indices;
+  UIntValues& colours;
+  Coord2DValues& texCoords;
+  UCharValues& luminance;
+  UCharValues& rgb;
+
+  RenderData(Coord3DValues& vertices, Coord3DValues& vectors, Coord3DValues& normals, UIntValues& indices, UIntValues& colours, Coord2DValues& texCoords, UCharValues& luminance, UCharValues& rgb)
+   : vertices(vertices), vectors(vectors), normals(normals), indices(indices), colours(colours), texCoords(texCoords), luminance(luminance), rgb(rgb) {}
+
+};
 
 //Shared pointer so we can pass these around without issues
 typedef std::shared_ptr<RenderData> Render_Ptr;
+typedef std::shared_ptr<DataContainer> Data_Ptr;
+typedef std::shared_ptr<Coord3DValues> Float3_Ptr;
+typedef std::shared_ptr<Coord2DValues> Float2_Ptr;
+typedef std::shared_ptr<UIntValues> UInt_Ptr;
+typedef std::shared_ptr<UCharValues> UChar_Ptr;
 
 //Colour lookup functors
 class ColourLookup
@@ -253,6 +263,11 @@ public:
   std::vector<std::string> labels;      //Optional vertex labels
 
   std::vector<Values_Ptr> values;
+  Float3_Ptr _vertices, _vectors, _normals;
+  UInt_Ptr _indices, _colours;
+  Float2_Ptr _texCoords;
+  UChar_Ptr _luminance, _rgb;
+
   Render_Ptr render;
 
   static unsigned int byteSize(lucGeometryDataType type)
@@ -267,40 +282,65 @@ public:
   GeomData(DrawingObject* draw, lucGeometryType type, int step=-1)
     : draw(draw), width(0), height(0), depth(0), opaque(false), type(type), step(step)
   {
-    render = std::make_shared<RenderData>();
     texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
+
+    _vertices = std::make_shared<Coord3DValues>();
+    _vectors = std::make_shared<Coord3DValues>();
+    _normals = std::make_shared<Coord3DValues>();
+    _indices = std::make_shared<UIntValues>();
+    _colours = std::make_shared<UIntValues>();
+    _texCoords = std::make_shared<Coord2DValues>();
+    _luminance = std::make_shared<UCharValues>();
+    _rgb = std::make_shared<UCharValues>();
+
+    setRenderData();
   }
 
   ~GeomData()
   {
   }
 
-  unsigned int count() {return render->vertices.size() / 3;}  //Number of vertices
+  unsigned int count() {return render->vertices.count();}  //Number of vertices
 
-  DataContainer* dataContainer(lucGeometryDataType type)
+  void setRenderData()
+  {
+    //Required if any of the render data containers modified
+    render = std::make_shared<RenderData>(*_vertices, *_vectors, *_normals, *_indices, *_colours, *_texCoords, *_luminance, *_rgb);
+  }
+
+  Data_Ptr dataContainer(lucGeometryDataType type)
   {
     switch (type)
     {
       case lucVertexData:
-        return (DataContainer*)&render->vertices;
+        return std::static_pointer_cast<DataContainer>(_vertices);
       case lucVectorData:
-        return (DataContainer*)&render->vectors;
+        return std::static_pointer_cast<DataContainer>(_vectors);
       case lucNormalData:
-        return (DataContainer*)&render->normals;
+        return std::static_pointer_cast<DataContainer>(_normals);
       case lucIndexData:
-        return (DataContainer*)&render->indices;
+        return std::static_pointer_cast<DataContainer>(_indices);
       case lucRGBAData:
-        return (DataContainer*)&render->colours;
+        return std::static_pointer_cast<DataContainer>(_colours);
       case lucTexCoordData:
-        return (DataContainer*)&render->texCoords;
+        return std::static_pointer_cast<DataContainer>(_texCoords);
       case lucLuminanceData:
-        return (DataContainer*)&render->luminance;
+        return std::static_pointer_cast<DataContainer>(_luminance);
       case lucRGBData:
-        return (DataContainer*)&render->rgb;
+        return std::static_pointer_cast<DataContainer>(_rgb);
       default:
-        return NULL;
+        return nullptr;
     }
   }
+
+  Coord3DValues& vertices()   {return *_vertices;}
+  Coord3DValues& vectors()    {return *_vectors;}
+  Coord3DValues& normals()    {return *_normals;}
+  UIntValues& indices()       {return *_indices;}
+  UIntValues& colours()       {return *_colours;}
+  Coord2DValues& texCoords()  {return *_texCoords;}
+  UCharValues& luminance()    {return *_luminance;}
+  UCharValues& rgb()          {return *_rgb;}
 
   void checkPointMinMax(float *coord);
   void calcBounds();
