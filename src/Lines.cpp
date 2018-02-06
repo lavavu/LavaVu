@@ -46,22 +46,16 @@ Lines::Lines(Session& session) : Geometry(session)
 
 Lines::~Lines()
 {
-  close();
+  if (vbo)
+    glDeleteBuffers(1, &vbo);
+  if (indexvbo)
+    glDeleteBuffers(1, &indexvbo);
+  vbo = 0;
+  indexvbo = 0;
 }
 
 void Lines::close()
 {
-  if (!session.global("gpucache"))
-  {
-    if (vbo)
-      glDeleteBuffers(1, &vbo);
-    if (indexvbo)
-      glDeleteBuffers(1, &indexvbo);
-    vbo = 0;
-    indexvbo = 0;
-
-    reload = true;
-  }
 }
 
 void Lines::update()

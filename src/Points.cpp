@@ -39,41 +39,24 @@
 Points::Points(Session& session) : Geometry(session)
 {
   type = lucPointType;
-  pidx = swap = NULL;
-  indexlist = NULL;
-  idxcount = 0;
   indexvbo = 0;
   vbo = 0;
 }
 
 Points::~Points()
 {
-  close();
+  if (vbo)
+    glDeleteBuffers(1, &vbo);
+  if (indexvbo)
+    glDeleteBuffers(1, &indexvbo);
+  vbo = 0;
+  indexvbo = 0;
+
+  sorter.clear();
 }
 
 void Points::close()
 {
-  if (!session.global("gpucache"))
-  {
-    if (vbo)
-      glDeleteBuffers(1, &vbo);
-    if (indexvbo)
-      glDeleteBuffers(1, &indexvbo);
-    vbo = 0;
-    indexvbo = 0;
-
-    reload = true;
-  }
-
-  if (pidx)
-    delete[] pidx;
-  if (swap)
-    delete[] swap;
-  if (indexlist)
-    delete[] indexlist;
-
-  pidx = swap = NULL;
-  indexlist = NULL;
 }
 
 void Points::update()
@@ -94,10 +77,11 @@ void Points::update()
     loadVertices();
 
   //Always reload indices if redraw flagged
-  if (redraw) idxcount = 0;
+  if (redraw)
+    sorter.changed = true;
 
   //Reload the sort array
-  loadList(); 
+  loadList();
 }
 
 void Points::loadVertices()
@@ -213,13 +197,8 @@ void Points::loadList()
   t1 = clock();
 
   //Create sorting array
-  if (pidx) delete[] pidx;
-  pidx = new PIndex[total];
-  if (swap) delete[] swap;
-  swap = new PIndex[total];
-  if (indexlist) delete[] indexlist;
-  indexlist = new unsigned int[total];
-  if (pidx == NULL || swap == NULL || indexlist == NULL) abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(PIndex) * total * 2 + sizeof(unsigned int) * total);
+  sorter.allocate(total);
+
   if (geom.size() == 0) return;
   int voffset = 0;
 
@@ -255,15 +234,15 @@ void Points::loadList()
       SEED = i; //Reset the seed for determinism based on index
       if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
 
-      pidx[elements].index = indexlist[elements] = voffset + i;
-      pidx[elements].vertex = geom[s]->render->vertices[i];
-      pidx[elements].distance = 0;
+      sorter.buffer[elements].index = sorter.indices[elements] = voffset + i;
+      sorter.buffer[elements].vertex = geom[s]->render->vertices[i];
+      sorter.buffer[elements].distance = 0;
 
       if (geom[s]->opaque)
       {
         //All opaque points at start
-        pidx[elements].distance = USHRT_MAX;
-        pidx[elements].vertex = NULL;
+        sorter.buffer[elements].distance = USHRT_MAX;
+        sorter.buffer[elements].vertex = NULL;
       }
 
       elements++;
@@ -284,8 +263,8 @@ void Points::loadList()
 void Points::sort()
 {
   //List not yet loaded, wait
-  //if (!pidx || !total == 0 || elements == 0 || !view->is3d) return;
-  if (!pidx) return;
+  //if (!sorter.buffer || !total == 0 || elements == 0 || !view->is3d) return;
+  if (!sorter.buffer) return;
 
   clock_t t1,t2;
   t1 = clock();
@@ -302,15 +281,15 @@ void Points::sort()
   for (unsigned int i = 0; i < elements; i++)
   {
     //Max dist 65535 reserved for opaque triangles
-    if (pidx[i].distance < USHRT_MAX)
+    if (sorter.buffer[i].distance < USHRT_MAX)
     {
       //Distance from viewing plane is -eyeZ
-      fdistance = eyePlaneDistance(modelView, pidx[i].vertex);
-      //fdistance = view->eyeDistance(modelView, pidx[i].vertex);
+      fdistance = eyePlaneDistance(modelView, sorter.buffer[i].vertex);
+      //fdistance = view->eyeDistance(modelView, sorter.buffer[i].vertex);
       //float d = floor(multiplier * (fdistance - distanceRange[0])) + 0.5;
       //assert(d < USHRT_MAX);
       //assert(d >= 0);
-      pidx[i].distance = (unsigned short)(multiplier * (fdistance - distanceRange[0]));
+      sorter.buffer[i].distance = (unsigned short)(multiplier * (fdistance - distanceRange[0]));
     }
     else
       opaqueCount++;
@@ -329,7 +308,7 @@ void Points::sort()
   //Depth sort using 2-byte key radix sort, 10 times faster than equivalent quicksort
   if (view->is3d)
   {
-    radix_sort<PIndex>(pidx, swap, elements, 2);
+    sorter.sort(elements);
     t2 = clock();
     debug_print("  %.4lf seconds to sort %d points\n", (t2-t1)/(double)CLOCKS_PER_SEC, elements);
   }
@@ -341,17 +320,17 @@ void Points::sort()
   //Reverse order farthest to nearest
   int distSample = session.global("pointdistsample");
   uint32_t SEED;
-  idxcount = 0;
+  int idxcount = 0;
   for(int i=elements-1; i>=0; i--)
   {
     //Distance based sub-sampling
     if (distSample > 0)
     {
-      SEED = pidx[i].index; //Reset the seed for determinism based on index
-      int subSample = 1 + distSample * pidx[i].distance / (USHRT_MAX-1.0); //[1,distSample]
+      SEED = sorter.buffer[i].index; //Reset the seed for determinism based on index
+      int subSample = 1 + distSample * sorter.buffer[i].distance / (USHRT_MAX-1.0); //[1,distSample]
       //if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
     }
-    indexlist[idxcount] = pidx[i].index;
+    sorter.indices[idxcount] = sorter.buffer[i].index;
     idxcount ++;
   }
 
@@ -363,7 +342,7 @@ void Points::sort()
   t1 = clock();
 
   //Force update after sort
-  idxcount = 0;
+  sorter.changed = true;
 }
 
 //Reloads points into display list or VBO, required after data update and depth sort
@@ -371,7 +350,7 @@ void Points::render()
 {
   clock_t t1,t2,tt;
   if (total == 0 || elements == 0) return;
-  assert(indexlist);
+  assert(sorter.indices.size());
 
   tt = t1 = clock();
 
@@ -385,11 +364,10 @@ void Points::render()
   //Initialise particle buffer
   if (glIsBuffer(indexvbo))
   {
-    //Lock the update mutex, to wait for any updates to the indexlist to finish
+    //Lock the update mutex, to wait for any updates to the sorter.indices to finish
     std::lock_guard<std::mutex> guard(loadmutex);
-    idxcount = elements;
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxcount * sizeof(GLuint), indexlist, GL_DYNAMIC_DRAW);
-    debug_print("  %d byte IBO uploaded %d indices\n", idxcount * sizeof(GLuint), idxcount);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sorter.indices.size() * sizeof(GLuint), sorter.indices.data(), GL_DYNAMIC_DRAW);
+    debug_print("  %d byte IBO uploaded %d indices\n", sorter.indices.size() * sizeof(GLuint), sorter.indices.size());
   }
   else
     abort_program("IBO creation failed!\n");
@@ -422,8 +400,7 @@ void Points::draw()
   setState(0, prog); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
-  if (idxcount != elements) render();
-  //After render(), elements holds unfiltered count, idxcount is filtered
+  if (sorter.changed) render();
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   glEnable(GL_POINT_SPRITE);
@@ -457,7 +434,7 @@ void Points::draw()
     stride += 2 * sizeof(float);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-  if (idxcount > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
+  if (sorter.size > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
     //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
     glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only

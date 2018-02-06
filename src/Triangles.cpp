@@ -38,12 +38,11 @@
 Triangles::Triangles(Session& session) : Geometry(session)
 {
   type = lucTriangleType;
-  idxcount = 0;
   vbo = 0;
   indexvbo = 0;
 }
 
-void Triangles::close()
+Triangles::~Triangles()
 {
   if (vbo)
     glDeleteBuffers(1, &vbo);
@@ -51,7 +50,18 @@ void Triangles::close()
     glDeleteBuffers(1, &indexvbo);
   vbo = 0;
   indexvbo = 0;
+}
 
+
+void Triangles::close()
+{
+  /*if (vbo)
+    glDeleteBuffers(1, &vbo);
+  if (indexvbo)
+    glDeleteBuffers(1, &indexvbo);
+  vbo = 0;
+  indexvbo = 0;
+*/
   reload = true;
 }
 
@@ -97,7 +107,9 @@ unsigned int Triangles::triCount()
   }
 
   //When objects hidden/shown drawable count changes, so need to reallocate
-  if (elements != drawelements) idxcount = 0;
+  if (elements != drawelements)
+    counts.clear();
+
   elements = drawelements;
 
   return drawelements;
@@ -122,7 +134,8 @@ void Triangles::update()
     //render();
   }
 
-  if (reload) idxcount = 0;
+  if (reload)
+    counts.clear();
 }
 
 void Triangles::loadBuffers()
@@ -255,7 +268,7 @@ void Triangles::render()
   //Upload vertex indices
   unsigned int offset = 0;
   unsigned int voffset = 0;
-  idxcount = 0;
+  unsigned int idxcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     unsigned int indices = geom[index]->render->indices.size();
@@ -300,8 +313,9 @@ void Triangles::draw()
   GL_Error_Check;
   if (elements == 0) return;
 
-  //Re-render the triangles if count changes
-  if (idxcount != elements) render();
+  //Re-render the triangles if required
+  if (counts.size() == 0)
+    render();
 
   // Draw using vertex buffer object
   clock_t t0 = clock();

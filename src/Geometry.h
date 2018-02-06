@@ -65,28 +65,83 @@ typedef struct
   float* vertex; //Pointer to vertex to calc distance from (usually centroid)
 } TIndex;
 
-template <class T> class SortData
+template <typename T>
+void radix(char byte, long N, T *source, T *dest)
+//void radix(char byte, char size, long N, unsigned char *src, unsigned char *dst)
+{
+  // Radix counting sort of 1 byte, 8 bits = 256 bins
+  int size = sizeof(T);
+  long count[256], index[256];
+  int i;
+  memset(count, 0, sizeof(count)); //Clear counts
+  unsigned char* src = (unsigned char*)source;
+  //unsigned char* dst = (unsigned char*)dest;
+
+  //Create histogram, count occurences of each possible byte value 0-255
+  for (i=0; i<N; i++)
+    count[src[i*size+byte]]++;
+
+  //Calculate number of elements less than each value (running total through array)
+  //This becomes the offset index into the sorted array
+  //(eg: there are 5 smaller values so place me in 6th position = 5)
+  index[0]=0;
+  for (i=1; i<256; i++) index[i] = index[i-1] + count[i-1];
+
+  //Finally, re-arrange data by index positions
+  for (i=0; i<N; i++ )
+  {
+    int val = src[i*size + byte];  //Get value
+    memcpy(&dest[index[val]], &source[i], size);
+    //memcpy(&dst[index[val]*size], &src[i*size], size);
+    index[val]++; //Increment index to push next element with same value forward one
+  }
+}
+
+template <typename T>
+void radix_sort(T *source, T* swap, long N, char bytes)
+{
+  assert(bytes % 2 == 0);
+  //debug_print("Radix X sort: %d items %d bytes. Byte: ", N, size);
+  // Sort bytes from least to most significant
+  for (char x = 0; x < bytes; x += 2)
+  {
+    radix<T>(x, N, source, swap);
+    radix<T>(x+1, N, swap, source);
+    //radix_sort_byte(x, N, (unsigned char*)source, (unsigned char*)temp, size);
+    //radix_sort_byte(x+1, N, (unsigned char*)temp, (unsigned char*)source, size);
+  }
+}
+
+template <typename T>
+void radix_sort(T *source, long N, char bytes)
+{
+  T* temp = (T*)malloc(N*sizeof(T));
+  radix_sort(source, temp, N, bytes);
+  free(temp);
+}
+
+template <class T>
+class SortData
 {
   public:
-    T* sort = NULL;
+    T* buffer = NULL;
     T* swap = NULL;
-    unsigned int* indices = NULL;
     unsigned int size = 0;
     unsigned int order = 1; //Points=1, Tris=3
-    std::vector<unsigned int> counts;
+    std::vector<unsigned int> indices;
+    bool changed;
 
     SortData() {}
     ~SortData() {clear();}
 
     void clear()
     {
-      if (sort) delete[] sort;
+      changed = true;
+      if (buffer) delete[] buffer;
       if (swap) delete[] swap;
-      if (indices) delete[] indices;
-      sort = swap = NULL;
-      indices = NULL;
+      buffer = swap = NULL;
       size = 0;
-      counts.clear();
+      indices.clear();
     }
 
     void allocate(unsigned int newsize, unsigned int order=1)
@@ -95,11 +150,19 @@ template <class T> class SortData
       clear();
       size = newsize;
       this->order = order;
-      sort = new T[newsize];
+      buffer = new T[newsize];
       swap = new T[newsize];
-      indices = new unsigned int[newsize*order];
-      if (sort == NULL || swap == NULL || indices == NULL)
-        abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(T) * size * 2 + sizeof(unsigned int) * size*order);
+      indices.resize(newsize*order);
+      if (buffer == NULL || swap == NULL)
+        abort_program("Memory allocation error (failed to allocate %d bytes)", sizeof(T) * size * 2);
+      changed = true;
+    }
+
+    void sort(unsigned int N)
+    {
+      //Sort by each byte of 2 byte index
+      radix<T>(0, N, buffer, swap);
+      radix<T>(1, N, swap, buffer);
     }
 };
 
@@ -527,11 +590,10 @@ public:
 class Triangles : public Geometry
 {
 protected:
-  unsigned int idxcount;
   GLuint indexvbo, vbo;
 public:
   Triangles(Session& session);
-  virtual ~Triangles() {close();}
+  virtual ~Triangles();
   virtual void close();
   unsigned int triCount();
   virtual void update();
@@ -546,10 +608,7 @@ class TriSurfaces : public Triangles
 {
   friend class Glyphs;
   friend class QuadSurfaces; //Allow private access from QuadSurfaces
-  //SortData<TIndex> sdat;
-  TIndex *tidx;
-  TIndex *swap;
-  unsigned int* indexlist;
+  SortData<TIndex> sorter;
   unsigned int tricount;
   std::vector<Vec3d> centroids;
 public:
@@ -586,11 +645,7 @@ public:
 class Points : public Geometry
 {
   friend class Glyphs;
-  //SortData<PIndex> sdat;
-  PIndex *pidx;
-  PIndex *swap;
-  unsigned int* indexlist;
-  unsigned int idxcount;
+  SortData<PIndex> sorter;
   GLuint indexvbo, vbo;
 public:
   Points(Session& session);
@@ -707,62 +762,5 @@ public:
 //Sorting util functions
 int compareXYZ(const void *a, const void *b);
 int comparePoint(const void *a, const void *b);
-
-template <typename T>
-void radix(char byte, long N, T *source, T *dest)
-//void radix(char byte, char size, long N, unsigned char *src, unsigned char *dst)
-{
-  // Radix counting sort of 1 byte, 8 bits = 256 bins
-  int size = sizeof(T);
-  long count[256], index[256];
-  int i;
-  memset(count, 0, sizeof(count)); //Clear counts
-  unsigned char* src = (unsigned char*)source;
-  //unsigned char* dst = (unsigned char*)dest;
-
-  //Create histogram, count occurences of each possible byte value 0-255
-  for (i=0; i<N; i++)
-    count[src[i*size+byte]]++;
-
-  //Calculate number of elements less than each value (running total through array)
-  //This becomes the offset index into the sorted array
-  //(eg: there are 5 smaller values so place me in 6th position = 5)
-  index[0]=0;
-  for (i=1; i<256; i++) index[i] = index[i-1] + count[i-1];
-
-  //Finally, re-arrange data by index positions
-  for (i=0; i<N; i++ )
-  {
-    int val = src[i*size + byte];  //Get value
-    memcpy(&dest[index[val]], &source[i], size);
-    //memcpy(&dst[index[val]*size], &src[i*size], size);
-    index[val]++; //Increment index to push next element with same value forward one
-  }
-}
-
-
-template <typename T>
-void radix_sort(T *source, T* swap, long N, char bytes)
-{
-  assert(bytes % 2 == 0);
-  //debug_print("Radix X sort: %d items %d bytes. Byte: ", N, size);
-  // Sort bytes from least to most significant
-  for (char x = 0; x < bytes; x += 2)
-  {
-    radix<T>(x, N, source, swap);
-    radix<T>(x+1, N, swap, source);
-    //radix_sort_byte(x, N, (unsigned char*)source, (unsigned char*)temp, size);
-    //radix_sort_byte(x+1, N, (unsigned char*)temp, (unsigned char*)source, size);
-  }
-}
-
-
-template <typename T>
-void radix_sort(T *source, long N, char bytes)
-{
-  T* temp = (T*)malloc(N*sizeof(T));
-  radix_sort(source, temp, N, bytes);
-  free(temp);
-}
 
 #endif //Geometry__
