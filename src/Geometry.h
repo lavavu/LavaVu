@@ -453,7 +453,7 @@ public:
   virtual ~Geometry();
 
   void clear(bool fixed=false); //Called before new data loaded
-  void remove(DrawingObject* draw);
+  virtual void remove(DrawingObject* draw);
   void clearValues(DrawingObject* draw, std::string label="");
   void clearData(DrawingObject* draw, lucGeometryDataType dtype);
   virtual void close(); //Called on quit & before gl context recreated
@@ -618,6 +618,7 @@ public:
   Glyphs(Session& session);
   virtual ~Glyphs();
   virtual void close();
+  virtual void remove(DrawingObject* draw);
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
   virtual void display(bool refresh=false);
   virtual void sort();    //Threaded sort function

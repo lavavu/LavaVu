@@ -2138,6 +2138,14 @@ void Glyphs::close()
   Geometry::close();
 }
 
+void Glyphs::remove(DrawingObject* draw)
+{
+  lines->remove(draw);
+  tris->remove(draw);
+  points->remove(draw);
+  Geometry::remove(draw);
+}
+
 void Glyphs::setup(View* vp, float* min, float* max)
 {
   //Only pass min/max to the master object,
