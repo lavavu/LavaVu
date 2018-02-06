@@ -1680,7 +1680,7 @@ void Session::init()
         false,
         "global",
         "boolean",
-        "Cache timestep varying data in ram",
+        "Cache all time varying data in ram on initial load",
         true, 0
       }
     },
@@ -1691,6 +1691,16 @@ void Session::init()
         "global",
         "boolean",
         "Cache timestep varying data on gpu as well as ram (only if model size permits)",
+        true, 0
+      }
+    },
+    {
+      "clearstep",
+      {
+        false,
+        "global",
+        "boolean",
+        "Clear all time varying data from previous step on loading another",
         true, 0
       }
     },

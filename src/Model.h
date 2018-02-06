@@ -148,14 +148,6 @@ public:
   View* defaultView();
 
   void cacheLoad();
-private:
-  void clearStep();
-  bool useCache()
-  {
-    //Use cache if no database loaded, or turned on by global parameter
-    if (!database) return true;
-    return session.global("cache");
-  }
 
 public:
   int step()

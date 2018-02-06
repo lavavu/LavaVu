@@ -863,8 +863,8 @@ int Model::loadTimeSteps(bool scan)
   std::string base = database.file.base;
   std::string basename = base.substr(0, base.find_last_not_of("0123456789") + 1);
 
-  //Don't reload timesteps when data has been cached
-  if (useCache() && timesteps.size() > 0) return timesteps.size();
+  //Don't reload timesteps when all data has been cached on initial load
+  if (!scan && session.global("cache") && timesteps.size() > 0) return timesteps.size();
   clearTimeSteps();
   int rows = 0;
 
@@ -1148,7 +1148,6 @@ int Model::setTimeStep(int stepidx, bool skipload)
 {
   int rows = -1;
   clock_t t1 = clock();
-  bool caching = useCache();
 
   //Default timestep only? Skip load
   if (timesteps.size() == 0)
@@ -1198,12 +1197,13 @@ int Model::setTimeStep(int stepidx, bool skipload)
 
       reload();
       
-      if (!caching)
+      bool clear = session.global("clearstep");
+      if (clear)
         //Not caching timesteps from database, clear current step data
         clearObjects();
 
       //Load the new step data if it isn't already in memory
-      if (!caching || !timesteps[now]->loaded)
+      if (clear || !timesteps[now]->loaded)
       {
         //Load new data
         if (database && !skipload)
@@ -1211,7 +1211,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
           //Detach any attached db file and attach n'th timestep database if available
           database.attach(timesteps[session.now]);
 
-          if (caching)
+          if (session.global("cache"))
           {
             //Attempt caching all geometry from database at start
             rows += loadGeometry(0, 0, timesteps[timesteps.size()-1]->step);
