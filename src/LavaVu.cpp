@@ -695,12 +695,8 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     else
     {
       obj->properties.parse(data, false, prop[PROPSTRICT]);
-      //Reload required for object prop set?
-      int reload = prop[PROPREDRAW];
-      if (reload > 0)
-        amodel->reloadRedraw(obj, reload > 1); //2 == full reload, 1= redraw only
       if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
-                             << ", DATA: " << obj->properties.data << ", reload? " << reload << std::endl;
+                             << ", DATA: " << obj->properties.data << std::endl;
     }
   }
   else if (aview &&
@@ -720,6 +716,19 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     //TODO: do this only for certain properties
     //viewset = RESET_ZOOM; //Force check for resize and autozoom
   }
+
+  //Reload required for prop set?
+  //1 = redraw only
+  //2 = full data reload
+  //3 = full reload and view reset
+  //4 = full reload and view reset with autozoom
+  int reload = prop[PROPREDRAW];
+  if (amodel && reload > 0)
+    amodel->reloadRedraw(obj, reload > 1);
+  if (reload > 2)
+    viewset = RESET_YES; //Force bounds check
+  if (reload > 3)
+    viewset = RESET_ZOOM; //Force check for resize and autozoom
 
   return true;
 }
