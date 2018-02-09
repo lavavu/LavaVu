@@ -152,14 +152,6 @@ public:
   virtual void erase(unsigned int start, unsigned int end) = 0;
   virtual void* ref(unsigned i=0) = 0;
 
-  void setup(float min, float max)
-  {
-    //if (min < minimum) minimum = min;
-    //if (max > maximum) maximum = max;
-    minimum = min;
-    maximum = max;
-  }
-
   unsigned int size()
   {
     //Returns size in base data type
@@ -258,6 +250,14 @@ class FloatValues : public DataValues<float>
 {
  public:
   FloatValues() {}
+
+  void minmax()
+  {
+    if (minimum < maximum) return;
+    auto minmax = std::minmax_element(value.begin(), value.begin()+size());
+    minimum = *minmax.first;
+    maximum = *minmax.second;
+  }
 };
 
 class UIntValues : public DataValues<unsigned int>

@@ -103,7 +103,9 @@ ColourLookup& GeomData::colourCalibrate()
   FloatValues* ovals = valueData(opacityIdx);
   if (omap && ovals)
   {
-    omap->calibrate(ovals);
+    auto range = draw->ranges[ovals->label];
+    omap->calibrate(range.data());
+
     //Init the mapped opacity lookup functor
     mappedOpacity = true;
   }
@@ -121,7 +123,9 @@ ColourLookup& GeomData::colourCalibrate()
   if (cmap && vals)
   {
     //Calibrate the colour map
-    cmap->calibrate(vals);
+    auto range = draw->ranges[vals->label];
+    cmap->calibrate(range.data());
+
     if (mappedOpacity)
     {
       _getColourMappedOpacityMapped.init(draw, render, vals, ovals);
@@ -354,11 +358,12 @@ bool GeomData::filter(unsigned int idx)
         ColourMap* cmap = draw->colourMap;
         if (cmap)
           value = cmap->scaleValue((*v)[ridx]);
-        else
+        else if (v != nullptr)
         {
-          value = values[draw->filterCache[i].dataIdx]->maximum - values[draw->filterCache[i].dataIdx]->minimum;
-          min = values[draw->filterCache[i].dataIdx]->minimum + min * value;
-          max = values[draw->filterCache[i].dataIdx]->minimum + max * value;
+          auto range = draw->ranges[v->label];
+          value = range[1] - range[0];
+          min = range[0] + min * value;
+          max = range[0] + max * value;
           value = (*v)[ridx];
         }
       }
@@ -742,17 +747,10 @@ void Geometry::setValueRange(DrawingObject* draw)
 {
   for (auto g : records)
   {
-    if (g->colourData() && (!draw || g->draw == draw))
+    if (g->colourData() && (!draw || g->draw == draw) && g->draw->colourMap)
     {
-      //Get local min and max for each element from colourValues
-      g->colourData()->minimum = HUGE_VAL;
-      g->colourData()->maximum = -HUGE_VAL;
-      for (unsigned int v=0; v < g->colourData()->size(); v++)
-      {
-        // Check min/max against each value
-        if (g->colourData(v) > g->colourData()->maximum) g->colourData()->maximum = g->colourData(v);
-        if (g->colourData(v) < g->colourData()->minimum) g->colourData()->minimum = g->colourData(v);
-      }
+      auto range = g->draw->ranges[g->colourData()->label];
+      g->draw->colourMap->properties.data["range"] = json::array({range[0], range[1]});
     }
   }
 }
@@ -1464,48 +1462,67 @@ void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int
   }
 }
 
-void Geometry::setupObject(DrawingObject* draw)
+void Geometry::scanDataRange(DrawingObject* draw)
 {
-  //Scan all data for min/max
-  std::vector<float> minimums;
-  std::vector<float> maximums;
+  //Scan all data for min/max (SLOW! make sure only done once on load)
+  std::map<std::string, std::array<float,2> > ranges;
 
   for (auto g : records)
   {
-    if (g->draw == draw && (g->step < 0 || g->step == session.now))
+    if ((!draw || draw == g->draw) && (!g->draw->properties["steprange"] || g->step < 0 || g->step == session.now))
     {
       for (unsigned int d=0; d<g->values.size(); d++)
       {
-        //Store max/min per value index
-        if (minimums.size() <= d)
+        Values_Ptr vals = g->values[d];
+        FloatValues& fvals = *vals;
+
+        if (g->draw->ranges.find(fvals.label) != g->draw->ranges.end())
         {
-          minimums.push_back(HUGE_VAL);
-          maximums.push_back(-HUGE_VAL);
+          //std::cout << session.now << " Skip updating data range for " << g->draw->name() << std::endl; 
+          continue; //Skip if defined already
         }
 
-        Values_Ptr flvals = g->values[d];
-        FloatValues& fvals = *flvals;
-        for (unsigned int c=0; c < fvals.size(); c++)
+        //Store max/min per value label
+        auto range = std::array<float,2>({HUGE_VALF, -HUGE_VALF});
+        if (ranges.find(fvals.label) != ranges.end())
+          range = ranges[fvals.label];
+
+        //Get local range, skip if already cached
+        fvals.minmax();
+
+        //Apply local element range to data range for object
+        if (fvals.minimum < range[0])
+          range[0] = fvals.minimum;
+        if (fvals.maximum > range[1])
+          range[1] = fvals.maximum;
+
+        if (range[0] < range[1])
         {
-          if (fvals[c] < minimums[d])
-            minimums[d] = fvals[c];
-          if (fvals[c] > maximums[d])
-            maximums[d] = fvals[c];
+          //std::cout << session.now << " *Updating data range for " << g->draw->name() << " : " 
+          //          << fvals.label << " ==> [" << range[0] << ", " << range[1] << "]" << std::endl;
+          ranges[fvals.label] = range;
         }
       }
     }
   }
 
+  //Once we have scanned full range, update with the final values
   for (auto g : records)
   {
-    if (g->draw == draw && (g->step < 0 || g->step == session.now))
+    if ((!draw || draw == g->draw) && (!g->draw->properties["steprange"] || g->step < 0 || g->step == session.now))
     {
       for (unsigned int d=0; d<g->values.size(); d++)
       {
-        if (minimums[d] > maximums[d]) continue;
-        //std::cout << session.now << " Updating data range for " << draw->name() << " == " << minimums[d] << " - " << maximums[d] << std::endl;
-        Values_Ptr fvals = g->values[d];
-        fvals->setup(minimums[d], maximums[d]); //, label);
+        Values_Ptr vals = g->values[d];
+        FloatValues& fvals = *vals;
+
+        if (ranges.find(fvals.label) == ranges.end())
+          continue; //Skip if not set
+
+        auto range = ranges[fvals.label];
+        //std::cout << session.now << " Updating data range for " << g->draw->name() << " : " 
+        //          << fvals.label << " ==> [" << range[0] << ", " << range[1] << "]" << std::endl;
+        g->draw->updateRange(fvals.label, range[0], range[1]);
       }
     }
   }
@@ -1570,9 +1587,10 @@ json Geometry::getDataLabels(DrawingObject* draw)
       {
         std::stringstream ss;
         json entry;
+        auto range = records[i]->draw->ranges[records[i]->values[v]->label];
         entry["label"] = records[i]->values[v]->label;
-        entry["minimum"] = records[i]->values[v]->minimum;
-        entry["maximum"] = records[i]->values[v]->maximum;
+        entry["minimum"] = range[0];
+        entry["maximum"] = range[1];
         entry["size"] = records[i]->values[v]->size();
         list.push_back(entry);
       }

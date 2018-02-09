@@ -64,6 +64,32 @@ DrawingObject::~DrawingObject()
 {
 }
 
+void DrawingObject::updateRange(const std::string& label, const float& min, const float& max)
+{
+  if (max <= min) return;
+
+  //If no existing entry, create default
+  auto range = std::array<float,2>({HUGE_VALF, -HUGE_VALF});
+  if (ranges.find(label) != ranges.end())
+    range = ranges[label];
+
+  bool modified = false;
+  if (min < range[0])
+  {
+    range[0] = min;
+    modified = true;
+  }
+  if (max > range[1])
+  {
+    range[1] = max;
+    modified = true;
+  }
+
+  //Replace if data modified
+  if (modified)
+    ranges[label] = range;
+}
+
 ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* current)
 {
   if (!session.colourMaps) return NULL;
@@ -200,4 +226,5 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
   glDisable(GL_TEXTURE_3D);
   return NULL;
 }
+
 

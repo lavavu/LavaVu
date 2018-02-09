@@ -507,11 +507,22 @@ void Model::clearObjects(bool fixed)
 
 void Model::setup()
 {
+  //Adjust the steprange default, should be off if all steps loaded
+  if (!database || session.global("cache"))
+  {
+    session.properties["steprange"][PROPDEFAULT] = false;
+    session.defaults["steprange"] = false;
+  }
+
   //Setup min/max on all object data
   for (unsigned int i=0; i < objects.size(); i++)
   {
+    //Clear existing data, only needed if using per step ranges
+    if (objects[i]->properties["steprange"])
+      objects[i]->ranges.clear();
+
     for (auto g : geometry)
-      g->setupObject(objects[i]);
+      g->scanDataRange(objects[i]);
   }
 }
 

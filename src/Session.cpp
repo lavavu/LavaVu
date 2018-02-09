@@ -144,6 +144,16 @@ void Session::init()
       }
     },
     {
+      "steprange",
+      {
+        true,
+        "object",
+        "boolean",
+        "Calculate dynamic range values per step rather than over full time range",
+        true, 3
+      }
+    },
+    {
       "lit",
       {
         true,
@@ -1731,7 +1741,6 @@ void Session::init()
   {
     //Copy default values
     std::string key = p.first;
-    defaults[key] = p.second[PROPDEFAULT];
     properties[key] = p.second;
 
     //Save view properties

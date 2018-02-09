@@ -1880,7 +1880,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   {
     if (gethelp)
     {
-      help += "Adjust colourmaps on each object to fit actual value range\n";
+      help += "Adjust colourmaps on object to fit actual value range\n";
       return false;
     }
 
@@ -1891,7 +1891,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       for (auto g : amodel->geometry)
         g->setValueRange(obj);
-      printMessage("ColourMap scales set to local value range");
+      printMessage("ColourMap scales set to value range");
       //Colour change so force full reload
       amodel->reload(aobject);
     }

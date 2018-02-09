@@ -551,6 +551,7 @@ public:
   Geom_Ptr read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
   Geom_Ptr read(Geom_Ptr geom, unsigned int n, const void* data, std::string label);
   void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
+  void scanDataRange(DrawingObject* draw);
   void setupObject(DrawingObject* draw);
   void label(DrawingObject* draw, const char* labels);
   void label(DrawingObject* draw, std::vector<std::string> labels);
