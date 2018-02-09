@@ -1313,7 +1313,6 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
   int tbytes = 0;
   int ret;
   Geometry* active = NULL;
-  int laststep = -2;
   do
   {
     ret = sqlite3_step(statement);
@@ -1352,19 +1351,17 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
 
       //Bulk load: switch timestep and cache if timestep changes!
       // - disabled when using attached databases (cached in loop via cacheLoad())
-      if (cache && laststep != timestep && !database.attached)
+      if (cache && step() != timestep && !database.attached)
       {
         std::cout << '~' << std::flush;
         if (timestep > 0 && timestep%10==0) std::cout << std::setw(4) << timestep << " " << std::flush;
         if (timestep > 0 && timestep%50==0) std::cout << std::endl;
         setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
-        laststep = timestep;
       }
       // Similar required when loading tracers in loadFixedData
-      if (type == lucTracerType && laststep != timestep)
+      if (type == lucTracerType && step() != timestep)
       {
         setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
-        laststep = timestep;
       }
 
       //Flag loaded
