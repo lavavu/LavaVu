@@ -73,7 +73,7 @@ void Points::update()
 
   //Ensure vbo recreated if total changed
   //To force update, set geometry->reload = true
-  if ((reload && !allVertsFixed) || vbo == 0)
+  if (reload && !allDataFixed || vbo == 0)
     loadVertices();
 
   //Always reload indices if redraw flagged
