@@ -476,7 +476,7 @@ void Model::updateColourMap(ColourMap* colourMap, std::string colours, std::stri
   if (!colourMap) return;
 
   //Parse and merge property strings
-  colourMap->properties.parseSet(properties);
+  session.parseSet(colourMap->properties, properties);
   colourMap->loadPalette(colours);
 
   //Update this and other objects using this map
@@ -726,7 +726,7 @@ void Model::loadViewCamera(int viewport_id)
     v->translate(translate[0], translate[1], translate[2]);
     v->rotate(rotate[0], rotate[1], rotate[2]);
     v->setScale(scale[0], scale[1], scale[2]);
-    v->properties.parseSet(std::string(vprops));
+    session.parseSet(v->properties, std::string(vprops));
     v->properties["coordsystem"] = orientation;
   }
   sqlite3_finalize(statement);
@@ -1143,9 +1143,11 @@ int Model::nearestTimeStep(int requested)
 void Model::addTimeStep(int step, double time, const std::string& props, const std::string& path)
 {
   if (time == -HUGE_VAL) time = step;
-  timesteps.push_back(new TimeStep(session.globals, session.defaults, step, time, props, path));
-  //Update gap
+  timesteps.push_back(new TimeStep(session.globals, session.defaults, step, time, path));
   int tlen = timesteps.size();
+  //Parse temporal properties
+  session.parseSet(timesteps[tlen-1]->properties, props);
+  //Update gap
   if (tlen > 1)
   {
     int diff = timesteps[tlen-1]->step - timesteps[tlen-2]->step;

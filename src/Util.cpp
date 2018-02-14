@@ -167,89 +167,6 @@ bool Properties::getBool(const std::string& key, bool def)
   return def;
 }
 
-//Parse multi-line string
-void Properties::parseSet(const std::string& properties)
-{
-  //Properties can be provided as valid json object {...}
-  //in which case, parse directly
-  if (properties.length() > 1 && properties.at(0) == '{')
-  {
-    json props = json::parse(properties);
-    merge(props);
-  }
-  //Otherwise, provided as single prop=value per line 
-  //where value is a parsable as json
-  else
-  {
-    std::stringstream ss(properties);
-    std::string line;
-    while (std::getline(ss, line))
-      parse(line);
-  }
-}
-
-//Property containers now using json
-void Properties::parse(const std::string& property, bool global, bool strict)
-{
-  //Parse a key=value property where value is a json object
-  json& dest = global ? globals : data; //Parse into data by default
-  std::string key, value;
-  size_t pos = property.find("=");
-  key = property.substr(0,pos);
-  value = property.substr(pos+1);
-  if (value.length() > 0)
-  {
-    //Ignore case
-    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
-    //std::cerr << "Key " << key << " == " << value << std::endl;
-    std::string valuel = value;
-    std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
-    
-    try
-    {
-      //Parse simple increments and decrements
-      int end = key.length()-1;
-      char prev = key.at(end);
-      if (prev == '+' || prev == '-' || prev == '*')
-      {
-        std::string mkey = key.substr(0,end);
-        std::stringstream ss(value);
-        float parsedval;
-        ss >> parsedval;
-        float val = dest[mkey];
-        if (prev == '+')
-          dest[mkey] = val + parsedval;
-        else if (prev == '-')
-          dest[mkey] = val - parsedval;
-        else if (prev == '*')
-          dest[mkey] = val * parsedval;
-
-      }
-      else if (valuel == "true")
-      {
-        dest[key] = true;
-      }
-      else if (valuel == "false")
-      {
-        dest[key] = false;
-      }
-      else
-      {
-        dest[key] = json::parse(value);
-      }
-    }
-    catch (std::exception& e)
-    {
-      //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
-      //Treat as a string value
-      dest[key] = value;
-    }
-  }
-
-  //Run a type check
-  checkall(strict);
-}
-
 void Properties::mergeJSON(json& dest, json& src)
 {
   //Merge: keep existing values, replace any imported
@@ -271,27 +188,24 @@ void Properties::merge(json& other)
 void Properties::checkall(bool strict)
 {
   //Ensure all loaded values are of correct types by checking against default types
-  for (json::iterator it = data.begin(); it != data.end(); ++it)
-  {
-    if (!it.value().is_null())
-    {
-      if (!typecheck(data[it.key()], it.key(), strict))
-        debug_print("DATA key: %s had incorrect type\n", it.key().c_str());
-    }
-  }
+  check(data, defaults, strict);
+  check(globals, defaults, strict);
+}
 
-  //Check globals
-  for (json::iterator it = globals.begin(); it != globals.end(); ++it)
+void Properties::check(json& props, json& defaults, bool strict)
+{
+  //Ensure all loaded values are of correct types by checking against default types
+  for (json::iterator it = props.begin(); it != props.end(); ++it)
   {
     if (!it.value().is_null())
     {
-      if (!typecheck(globals[it.key()], it.key(), strict))
-        debug_print("GLOBAL key: %s had incorrect type\n", it.key().c_str());
+      if (!typecheck(props[it.key()], defaults, it.key(), strict))
+        debug_print("DATA key: %s had incorrect type\n", it.key().c_str());
     }
   }
 }
 
-bool Properties::typecheck(json& val, const std::string& key, bool strict)
+bool Properties::typecheck(json& val, json& defaults, const std::string& key, bool strict)
 {
   if (key == "colourby" || key == "opacityby" || key == "sizeby" ||
       key == "widthby" || key == "heightby" || key == "lengthby")

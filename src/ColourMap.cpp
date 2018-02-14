@@ -53,7 +53,7 @@ ColourMap::ColourMap(Session& session, std::string name, std::string props)
   precalc = new Colour[samples];
   background.value = 0xff000000;
 
-  properties.parseSet(props);
+  session.parseSet(properties, props);
 
   if (properties.has("colours"))
   {

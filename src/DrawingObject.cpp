@@ -49,7 +49,7 @@ DrawingObject::DrawingObject(Session& session, std::string name, std::string pro
   if (name.length())
     properties.data["name"] = name;
 
-  properties.parseSet(props);
+  session.parseSet(properties, props);
 
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}

@@ -68,6 +68,104 @@ void Session::reset()
   colourMaps = NULL;
 }
 
+int Session::parse(Properties* target, const std::string& property)
+{
+  //Parse a key=value property where value is a json object
+
+  //If Properties object provided, parse into its data, otherwise into globals
+  json& dest = target ? target->data : globals;
+
+  std::string key, value;
+  size_t pos = property.find("=");
+  key = property.substr(0,pos);
+
+  //Check a valid key provided
+  if (properties.count(key) == 0)
+  {
+    std::cerr << key << " : Invalid property name" << std::endl;
+    return 0;
+  }
+
+  json prop = properties[key]; //Get metadata
+
+  value = property.substr(pos+1);
+  if (value.length() > 0)
+  {
+    //Ignore case
+    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+    //std::cerr << "Key " << key << " == " << value << std::endl;
+    std::string valuel = value;
+    std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
+
+    try
+    {
+      //Parse simple increments and decrements
+      int end = key.length()-1;
+      char prev = key.at(end);
+      if (prev == '+' || prev == '-' || prev == '*')
+      {
+        std::string mkey = key.substr(0,end);
+        std::stringstream ss(value);
+        float parsedval;
+        ss >> parsedval;
+        float val = dest[mkey];
+        if (prev == '+')
+          dest[mkey] = val + parsedval;
+        else if (prev == '-')
+          dest[mkey] = val - parsedval;
+        else if (prev == '*')
+          dest[mkey] = val * parsedval;
+
+      }
+      else if (valuel == "true")
+      {
+        dest[key] = true;
+      }
+      else if (valuel == "false")
+      {
+        dest[key] = false;
+      }
+      else
+      {
+        dest[key] = json::parse(value);
+      }
+    }
+    catch (std::exception& e)
+    {
+      //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
+      //Treat as a string value
+      dest[key] = value;
+    }
+  }
+
+  //Run a type check
+  //checkall(strict);
+  Properties::check(dest, defaults, prop[PROPSTRICT]);
+
+  return prop[PROPREDRAW];
+}
+
+//Parse multi-line string
+void Session::parseSet(Properties& target, const std::string& properties)
+{
+  //Properties can be provided as valid json object {...}
+  //in which case, parse directly
+  if (properties.length() > 1 && properties.at(0) == '{')
+  {
+    json props = json::parse(properties);
+    target.merge(props);
+  }
+  //Otherwise, provided as single prop=value per line
+  //where value is a parsable as json
+  else
+  {
+    std::stringstream ss(properties);
+    std::string line;
+    while (std::getline(ss, line))
+      parse(&target, line);
+  }
+}
+
 void Session::init()
 {
   //Setup default properties (once only)

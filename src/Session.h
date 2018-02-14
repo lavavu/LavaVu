@@ -75,6 +75,8 @@ public:
   ~Session();
   std::string counterFilename();
   void reset();
+  int parse(Properties* target, const std::string& property);
+  void parseSet(Properties& target, const std::string& properties);
   void init();
   json& global(const std::string& key);
   bool has(const std::string& key);

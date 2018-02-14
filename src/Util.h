@@ -340,11 +340,10 @@ public:
   float getFloat(const std::string& key, float def);
   int getInt(const std::string& key, int def);
   bool getBool(const std::string& key, bool def);
-  void parseSet(const std::string& properties);
-  void parse(const std::string& property, bool global=false, bool strict=true);
   void merge(json& other);
   void checkall(bool strict=true);
-  bool typecheck(json& val, const std::string& key, bool strict=true);
+  static void check(json& props, json& defaults, bool strict=true);
+  static bool typecheck(json& val, json& defaults, const std::string& key, bool strict=true);
 
 };
 
