@@ -120,6 +120,35 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
   return bpath;
 }
 
+std::ostream & operator<<(std::ostream &os, const Range& range)
+{
+  return os << "[" << range.minimum << "," << range.maximum << "]";
+}
+
+bool Range::update(const float& min, const float& max)
+{
+  bool modified = false;
+  if (min < minimum)
+  {
+    minimum = min;
+    modified = true;
+  }
+  if (max > maximum)
+  {
+    maximum = max;
+    modified = true;
+  }
+  return modified;
+}
+
+void FloatValues::minmax()
+{
+  if (minimum < maximum) return;
+  auto minmax = std::minmax_element(value.begin(), value.begin()+next);
+  minimum = *minmax.first;
+  maximum = *minmax.second;
+}
+
 bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
 
 json& Properties::operator[](const std::string& key)

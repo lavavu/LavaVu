@@ -61,7 +61,7 @@ public:
   std::vector<Filter> filterCache;
 
   //Data min/max values
-  std::map<std::string, std::array<float,2> > ranges;
+  std::map<std::string, Range> ranges;
 
   //Object properties data...
   Properties properties;
@@ -71,7 +71,7 @@ public:
   DrawingObject(Session& session, std::string name="", std::string props="", unsigned int id=0);
   ~DrawingObject();
 
-  void updateRange(const std::string& label, const float& min, const float& max);
+  void updateRange(const std::string& label, const Range& newRange);
   ColourMap* getColourMap(const std::string propname="colourmap", ColourMap* current=NULL);
   void setup();
   TextureData* useTexture(Texture_Ptr tex=nullptr);

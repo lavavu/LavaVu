@@ -104,7 +104,7 @@ ColourLookup& GeomData::colourCalibrate()
   if (omap && ovals)
   {
     auto range = draw->ranges[ovals->label];
-    omap->calibrate(range.data());
+    omap->calibrate(&range);
 
     //Init the mapped opacity lookup functor
     mappedOpacity = true;
@@ -124,7 +124,7 @@ ColourLookup& GeomData::colourCalibrate()
   {
     //Calibrate the colour map
     auto range = draw->ranges[vals->label];
-    cmap->calibrate(range.data());
+    cmap->calibrate(&range);
 
     if (mappedOpacity)
     {
@@ -361,9 +361,9 @@ bool GeomData::filter(unsigned int idx)
         else if (v != nullptr)
         {
           auto range = draw->ranges[v->label];
-          value = range[1] - range[0];
-          min = range[0] + min * value;
-          max = range[0] + max * value;
+          value = range.maximum - range.minimum;
+          min = range.minimum + min * value;
+          max = range.minimum + max * value;
           value = (*v)[ridx];
         }
       }
@@ -750,7 +750,7 @@ void Geometry::setValueRange(DrawingObject* draw)
     if (g->colourData() && (!draw || g->draw == draw) && g->draw->colourMap)
     {
       auto range = g->draw->ranges[g->colourData()->label];
-      g->draw->colourMap->properties.data["range"] = json::array({range[0], range[1]});
+      g->draw->colourMap->properties.data["range"] = json::array({range.minimum, range.maximum});
     }
   }
 }
@@ -1465,25 +1465,30 @@ void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int
 void Geometry::scanDataRange(DrawingObject* draw)
 {
   //Scan all data for min/max (SLOW! make sure only done once on load)
-  std::map<std::string, std::array<float,2> > ranges;
+  std::map<std::string, Range> ranges;
+
+  //if (records.size())
+  //  std::cout << GeomData::names[type] << " @ " << session.now << ">> SCANNING: " << draw->name() << " : " << records.size() << std::endl;
 
   for (auto g : records)
   {
-    if ((!draw || draw == g->draw) && (!g->draw->properties["steprange"] || g->step < 0 || g->step == session.now))
+    if ((!draw || draw == g->draw) && (session.now < 0 || !g->draw->properties["steprange"] || g->step < 0 || g->step == session.now))
     {
       for (unsigned int d=0; d<g->values.size(); d++)
       {
         Values_Ptr vals = g->values[d];
         FloatValues& fvals = *vals;
 
-        if (g->draw->ranges.find(fvals.label) != g->draw->ranges.end())
+        //If already defined, and valid, skip the range update
+        auto range = g->draw->ranges[fvals.label];
+        if (range.valid())
         {
-          //std::cout << session.now << " Skip updating data range for " << g->draw->name() << std::endl; 
+          //std::cout << session.now << " Skip updating data range for " << fvals.label << " : " << g->draw->name() << std::endl; 
           continue; //Skip if defined already
         }
 
         //Store max/min per value label
-        auto range = std::array<float,2>({HUGE_VALF, -HUGE_VALF});
+        range = Range();
         if (ranges.find(fvals.label) != ranges.end())
           range = ranges[fvals.label];
 
@@ -1491,17 +1496,9 @@ void Geometry::scanDataRange(DrawingObject* draw)
         fvals.minmax();
 
         //Apply local element range to data range for object
-        if (fvals.minimum < range[0])
-          range[0] = fvals.minimum;
-        if (fvals.maximum > range[1])
-          range[1] = fvals.maximum;
-
-        if (range[0] < range[1])
-        {
-          //std::cout << session.now << " *Updating data range for " << g->draw->name() << " : " 
-          //          << fvals.label << " ==> [" << range[0] << ", " << range[1] << "]" << std::endl;
-          ranges[fvals.label] = range;
-        }
+        //std::cout << session.now << " *Updating data range for " << g->draw->name() << " : " 
+        //          << fvals.label << " ==> " << range << std::endl;
+        ranges[fvals.label].update(fvals.minimum, fvals.maximum);
       }
     }
   }
@@ -1509,7 +1506,7 @@ void Geometry::scanDataRange(DrawingObject* draw)
   //Once we have scanned full range, update with the final values
   for (auto g : records)
   {
-    if ((!draw || draw == g->draw) && (!g->draw->properties["steprange"] || g->step < 0 || g->step == session.now))
+    if ((!draw || draw == g->draw) && (session.now < 0 || !g->draw->properties["steprange"] || g->step < 0 || g->step == session.now))
     {
       for (unsigned int d=0; d<g->values.size(); d++)
       {
@@ -1521,8 +1518,8 @@ void Geometry::scanDataRange(DrawingObject* draw)
 
         auto range = ranges[fvals.label];
         //std::cout << session.now << " Updating data range for " << g->draw->name() << " : " 
-        //          << fvals.label << " ==> [" << range[0] << ", " << range[1] << "]" << std::endl;
-        g->draw->updateRange(fvals.label, range[0], range[1]);
+        //          << fvals.label << " ==> " << range << std::endl;
+        g->draw->updateRange(fvals.label, range);
       }
     }
   }
@@ -1577,11 +1574,11 @@ json Geometry::getDataLabels(DrawingObject* draw)
   //the index and label of the associated value data sets
   //(used for colouring and filtering)
   json list = json::array();
-  DrawingObject* last = NULL;
   for (unsigned int i = 0; i < records.size(); i++)
   {
-    if (records[i]->step > 0) continue; //Structure repeats after first timestep
-    if ((!draw || records[i]->draw == draw) && records[i]->draw != last)
+    if (records[i]->step > 0)
+      break; //Structure repeats after first timestep (assumes sorted with fixed first)
+    if (!draw || records[i]->draw == draw)
     {
       for (unsigned int v = 0; v < records[i]->values.size(); v++)
       {
@@ -1589,13 +1586,11 @@ json Geometry::getDataLabels(DrawingObject* draw)
         json entry;
         auto range = records[i]->draw->ranges[records[i]->values[v]->label];
         entry["label"] = records[i]->values[v]->label;
-        entry["minimum"] = range[0];
-        entry["maximum"] = range[1];
+        entry["minimum"] = range.minimum;
+        entry["maximum"] = range.maximum;
         entry["size"] = records[i]->values[v]->size();
         list.push_back(entry);
       }
-      //No need to repeat for every element as they will all have the same data sets per object
-      last = records[i]->draw;
     }
   }
   return list;

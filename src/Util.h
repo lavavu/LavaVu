@@ -114,6 +114,20 @@ public:
 
 std::string GetBinaryPath(const char* argv0, const char* progname);
 
+class Range
+{
+ public:
+  //This class defines a min/max range
+  //default constructor initialises a null range correctly for comparisons
+  float minimum;
+  float maximum;
+  Range(const float& min=HUGE_VALF, const float& max=-HUGE_VALF) : minimum(min), maximum(max) {}
+  bool valid() const {return minimum < maximum;}
+  float* data() {return &minimum;}
+  bool update(const float& min, const float& max);
+  friend std::ostream& operator<<(std::ostream& stream, const Range& range);
+};
+
 typedef struct
 {
   json by;
@@ -251,13 +265,7 @@ class FloatValues : public DataValues<float>
  public:
   FloatValues() {}
 
-  void minmax()
-  {
-    if (minimum < maximum) return;
-    auto minmax = std::minmax_element(value.begin(), value.begin()+size());
-    minimum = *minmax.first;
-    maximum = *minmax.second;
-  }
+  void minmax();
 };
 
 class UIntValues : public DataValues<unsigned int>

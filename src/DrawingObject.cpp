@@ -64,29 +64,19 @@ DrawingObject::~DrawingObject()
 {
 }
 
-void DrawingObject::updateRange(const std::string& label, const float& min, const float& max)
+void DrawingObject::updateRange(const std::string& label, const Range& newRange)
 {
-  if (max <= min) return;
+  if (!newRange.valid()) return;
+
+  //std::cout << name() << " UPDATE RANGE: " << label << " [" << newRange.minimum << "," << newRange.maximum << "]\n";
 
   //If no existing entry, create default
-  auto range = std::array<float,2>({HUGE_VALF, -HUGE_VALF});
+  auto range = Range();
   if (ranges.find(label) != ranges.end())
     range = ranges[label];
 
-  bool modified = false;
-  if (min < range[0])
-  {
-    range[0] = min;
-    modified = true;
-  }
-  if (max > range[1])
-  {
-    range[1] = max;
-    modified = true;
-  }
-
   //Replace if data modified
-  if (modified)
+  if (range.update(newRange.minimum, newRange.maximum))
     ranges[label] = range;
 }
 

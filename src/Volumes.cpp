@@ -489,7 +489,7 @@ void Volumes::render(int i)
     auto range = geom[i]->draw->ranges[geom[i]->colourData()->label];
     //For non float type, normalise isovalue to range [0,1] to match data
     if (geom[i]->texture->type != VOLUME_FLOAT)
-      isoval = (isoval - range[0]) / (range[1] - range[0]);
+      isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
     //std::cout << "IsoValue " << isoval << std::endl;
     //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
     glUniform2fv(prog->uniforms["uRange"], 1, range.data());
@@ -743,8 +743,8 @@ void Volumes::getSliceImage(ImageData* image, GeomData* slice, int offset)
     image->allocate(width, height, 1); //Luminance
     image->clear();
     auto dataRange = slice->draw->ranges[slice->colourData()->label];
-    float min = dataRange[0];
-    float range = dataRange[1] - min;
+    float min = dataRange.minimum;
+    float range = dataRange.maximum - min;
     for (int y=0; y<height; y++)
     {
       for (int x=0; x<width; x++)
