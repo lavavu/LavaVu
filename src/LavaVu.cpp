@@ -679,9 +679,10 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     if (session.now < 0) return false;
     data = data.substr(1);
     reload = session.parse(&session.timesteps[session.now]->properties, data);
+    //Re-apply to active step
+    Properties::mergeJSON(session.globals, session.timesteps[session.now]->properties.data);
   }
-
-  if (obj)
+  else if (obj)
   {
     //Properties reserved for colourmaps can be set from any objects that use that map
     if (obj->colourMap &&
@@ -710,7 +711,7 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
   else
   {
     //Properties not found on view are set globally
-    session.parse(NULL, data);
+    reload = session.parse(NULL, data);
     if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
     //TODO: do this only for certain properties
     //viewset = RESET_ZOOM; //Force check for resize and autozoom
