@@ -688,8 +688,9 @@ void TriSurfaces::render()
   {
     //Lock the update mutex, to wait for any updates to the indexlist to finish
     std::lock_guard<std::mutex> guard(loadmutex);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sorter.indices.size() * sizeof(GLuint), sorter.indices.data(), GL_DYNAMIC_DRAW);
-    debug_print("  %d byte IBO uploaded %d indices\n", sorter.indices.size() * sizeof(GLuint), sorter.indices.size());
+    //NOTE: tricount holds the filtered count of triangles to actually render as opposed to total in buffer
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, tricount * 3 * sizeof(GLuint), sorter.indices.data(), GL_DYNAMIC_DRAW);
+    debug_print("  %d byte IBO uploaded %d indices (%d tris)\n", tricount*3 * sizeof(GLuint), tricount*3, tricount);
   }
   else
     abort_program("IBO creation failed\n");
@@ -698,8 +699,8 @@ void TriSurfaces::render()
   t2 = clock();
   debug_print("  %.4lf seconds to upload %d indices (%d tris)\n", (t2-t1)/(double)CLOCKS_PER_SEC, sorter.indices.size(), tricount);
   t1 = clock();
-  //After render(), elements holds unfiltered count, idxcount is filtered
-  elements = sorter.indices.size();
+  //After render(), copy filtered count to elements, indices.size() is unfiltered
+  elements = tricount * 3;
 }
 
 void TriSurfaces::draw()
