@@ -78,6 +78,8 @@ int Session::parse(Properties* target, const std::string& property)
   std::string key, value;
   size_t pos = property.find("=");
   key = property.substr(0,pos);
+  //Ignore case
+  std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
   //Check a valid key provided
   if (properties.count(key) == 0)
@@ -91,8 +93,6 @@ int Session::parse(Properties* target, const std::string& property)
   value = property.substr(pos+1);
   if (value.length() > 0)
   {
-    //Ignore case
-    std::transform(key.begin(), key.end(), key.begin(), ::tolower);
     //std::cerr << "Key " << key << " == " << value << std::endl;
     std::string valuel = value;
     std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
