@@ -256,6 +256,9 @@ void TriSurfaces::loadMesh()
 
       if (newvalues)
         geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
+
+      //Update the rendering references as some containers have been replaced
+      geom[index]->setRenderData();
     }
 
     t2 = clock();
