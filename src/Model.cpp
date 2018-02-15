@@ -1235,8 +1235,9 @@ int Model::setTimeStep(int stepidx, bool skipload)
 
           debug_print("%.4lf seconds to load %d geometry records from database\n", (clock()-t1)/(double)CLOCKS_PER_SEC, rows);
         }
-
       }
+      else
+        debug_print("Step loaded from cache\n");
     }
   }
 
@@ -1378,7 +1379,7 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       }
 
       //Flag loaded
-      if (now >= 0)
+      if (now >= 0 && cache)
         timesteps[now]->loaded = true;
 
       if (type == lucTracerType)
