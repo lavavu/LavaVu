@@ -2524,7 +2524,7 @@ void LavaVu::drawBorder()
 void LavaVu::displayObjectList(bool console)
 {
   //Print available objects by id to screen and stderr
-  int offset = 0;
+  int offset = 1;
   if (console) std::cerr << "------------------------------------------" << std::endl;
   for (unsigned int i=0; i < amodel->objects.size(); i++)
   {
