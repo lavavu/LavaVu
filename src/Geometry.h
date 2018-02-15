@@ -160,6 +160,7 @@ class SortData
 
     void sort(unsigned int N)
     {
+      if (N > size) abort_program("Sort count out of range");
       //Sort by each byte of 2 byte index
       radix<T>(0, N, buffer, swap);
       radix<T>(1, N, swap, buffer);

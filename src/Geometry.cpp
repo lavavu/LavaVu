@@ -779,9 +779,6 @@ void Geometry::init() //Called on GL init
 
 void Geometry::merge(int start, int end)
 {
-  // Note - can't yet load partially fixed RenderData structure (but we couldn't before either)
-  // would require splitting RenderData components
-
   //This function writes the "geom" list containing
   //all renderable geometry
   // - All fixed (render+value) data
@@ -789,24 +786,19 @@ void Geometry::merge(int start, int end)
   // - All mixed (fixed render + variable value) data at the specified timestep range
   geom.clear();
   int fixedVertices = 0;
+
+  std::vector<Geom_Ptr> fixed;
   
-  //First process fixed records
+  //First locate fixed records
   for (unsigned int i=0; i<records.size(); i++)
   {
     //printf("STEP %d (%d - %d)\n", records[i]->step, start, end);
     if (records[i]->step == -1)
     {
-      //WARNING: Careful with this: any value modified by the renderer in this newly created GeomData entry
-      //will be lost subsequently, if this matters, values need to be copied back to records entry somehow
-      Geom_Ptr geomdata = std::make_shared<GeomData>(records[i]->draw, type, -1);
-      //Create a shallow copy of member content
-      *geomdata = *records[i];
-      geom.push_back(geomdata);
-      //printf("%d (%s) Added fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
-      fixedVertices += geomdata->count();
+      fixed.push_back(records[i]);
+      //printf("%d (%s) Found fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
 
-      //Just copy ref
-      //geom.push_back(records[i]);
+      fixedVertices += records[i]->count();
     }
   }
 
@@ -828,66 +820,103 @@ void Geometry::merge(int start, int end)
         //- Data is incomplete:
         //  - Find previous loaded record for same drawing object
         //    Merge with the fixed record
-        bool iscomplete = records[i]->count() > 0;
-        //Find the previous record with this object in the geom list
+
+        //Find the previous record with this object in the fixed list
         int pos = -1;
-        for (pos=geom.size()-1; pos>=0; pos--)
+        Geom_Ptr merge_source = nullptr;
+        Geom_Ptr merge_dest = nullptr;
+        for (pos=fixed.size()-1; pos>=0; pos--)
         {
-          if (geom[pos]->draw == records[i]->draw)
+          if (fixed[pos]->draw == records[i]->draw)
           {
-            //printf("%d FOUND MATCH IN FIXED %p == %p\n", pos, geom[pos]->draw, records[i]->draw);
+            //Vertices in fixed?
+            if (fixed[pos]->count() > 0)
+            {
+              merge_dest = fixed[pos];
+              merge_source = records[i];
+              //printf("%d (%s) BASE: Added fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), fixed[pos]->draw->name().c_str(), fixed[pos]->count() > 0);
+              //Use fixed entry as base, copy its reference
+              geom.push_back(fixed[pos]);
+              //Erase from fixed list
+              fixed.erase(fixed.begin()+pos);
+            }
+            else
+            {
+              //Use as source and copy records to varying entry
+              merge_source = fixed[pos];
+            }
             break;
           }
         }
         
-        //If, already have vertex data, or no fixed match found, or fixed match is incomplete: just copy as is
-        if (iscomplete || pos < 0 || geom[pos]->count() == 0) 
+        //Vertices in varying?
+        if (records[i]->count() > 0)
         {
-          //Just reference it
+          //Use time-varying entry as base, copy its reference
           geom.push_back(records[i]);
-          //printf("%d (%s) Added variable record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
-          //Geom_Ptr geomdata = std::make_shared<GeomData>(records[i]->draw, type, step);
-          //*geomdata = *records[i];
-          //geom.push_back(geomdata);
+          //printf("%d (%s) BASE: Added variable record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
           //printf("%d/%d Copy record @ %d for %s, complete? %d\n", i, pos, step, records[i]->draw->name().c_str(), records[i]->count() > 0);
+          merge_dest = records[i];
         }
-        else
+
+        if (merge_source && merge_dest)
         {
+
           //Merge with previous entry
-          //printf("%d/%d Merging record @ %d for %s, complete? %d/%d\n", i, pos, step, records[i]->draw->name().c_str(), records[i]->count() > 0, geom[pos]->count() > 0);
-          geom[pos]->step = step; //Set geom step
-          for (auto vals : records[i]->values)
+          //printf("%d/%d Merging record @ %d for %s, complete? %d/%d\n", i, pos, step, merge_source->draw->name().c_str(), merge_source->count() > 0, merge_dest->count() > 0);
+          for (auto vals : merge_source->values)
           {
             //Only insert if not already done
             json by = vals->label;
-            if (geom[pos]->valuesLookup(by) <= MAX_DATA_ARRAYS);
-              geom[pos]->values.push_back(vals);
+            std::string labl = by;
+            unsigned int idx = merge_dest->valuesLookup(by);
+            if (idx <= MAX_DATA_ARRAYS)
+            {
+              //Replace
+              //printf(" - REPLACE %s\n", labl.c_str());
+              //merge_dest->values.push_back(vals);
+              merge_dest->values[idx] = vals;
+            }
+            else
+            {
+              //printf(" - APPEND %s\n", labl.c_str());
+              //Append (none existing)
+              merge_dest->values.push_back(vals);
+            }
           }
 
           //Copy hard coded render data types
-          if (geom[pos]->_vertices->size() == 0)
-            geom[pos]->_vertices = records[i]->_vertices;
-          if (geom[pos]->_normals->size() == 0)
-            geom[pos]->_normals = records[i]->_normals;
-          if (geom[pos]->_vectors->size() == 0)
-            geom[pos]->_vectors = records[i]->_vectors;
-          if (geom[pos]->_indices->size() == 0)
-            geom[pos]->_indices = records[i]->_indices;
-          if (geom[pos]->_colours->size() == 0)
-            geom[pos]->_colours = records[i]->_colours;
-          if (geom[pos]->_texCoords->size() == 0)
-            geom[pos]->_texCoords = records[i]->_texCoords;
-          if (geom[pos]->_luminance->size() == 0)
-            geom[pos]->_luminance = records[i]->_luminance;
-          if (geom[pos]->_rgb->size() == 0)
-            geom[pos]->_rgb = records[i]->_rgb;
+          // - data in source always overwrites data in dest if present
+          if (merge_source->_vertices->size() > 0)
+            merge_dest->_vertices = merge_source->_vertices;
+          if (merge_source->_normals->size() > 0)
+            merge_dest->_normals = merge_source->_normals;
+          if (merge_source->_vectors->size() > 0)
+            merge_dest->_vectors = merge_source->_vectors;
+          if (merge_source->_indices->size() > 0)
+            merge_dest->_indices = merge_source->_indices;
+          if (merge_source->_colours->size() > 0)
+            merge_dest->_colours = merge_source->_colours;
+          if (merge_source->_texCoords->size() > 0)
+            merge_dest->_texCoords = merge_source->_texCoords;
+          if (merge_source->_luminance->size() > 0)
+            merge_dest->_luminance = merge_source->_luminance;
+          if (merge_source->_rgb->size() > 0)
+            merge_dest->_rgb = merge_source->_rgb;
 
           //Update references in render container
-          geom[pos]->setRenderData();
+          merge_dest->setRenderData();
         }
 
       }
     }
+  }
+
+  //Add any remaining fixed entries
+  for (auto f : fixed)
+  {
+    //printf("(%s) FIXED: Added fixed record for %s, complete? %d\n", GeomData::names[type].c_str(), f->draw->name().c_str(), f->count() > 0);
+    geom.push_back(f);
   }
 
   //Update total vertex count
@@ -896,6 +925,7 @@ void Geometry::merge(int start, int end)
     total += geom[i]->count();
 
   allVertsFixed = (total == fixedVertices);
+  //printf("geom %d entries, %d verts, All fixed? %d All verts fixed? %d\n", (int)geom.size(), total, allDataFixed, allVertsFixed);
 }
 
 void Geometry::setState(unsigned int i, Shader* prog)
@@ -1077,7 +1107,7 @@ void Geometry::display(bool refresh)
   if (!view || !view->width) return;
 
   //TimeStep changed or step refresh requested
-  if (refresh || timestep != session.now || geom.size() == 0)
+  if (refresh || timestep != session.now || (geom.size() == 0 && records.size() > 0))
   {
     merge(session.now, session.now);
     timestep = session.now;
@@ -1253,7 +1283,7 @@ Geom_Ptr Geometry::add(DrawingObject* draw)
   Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type, timestep);
   records.push_back(geomdata);
   //if (allhidden) draw->properties.data["visible"] = false;
-  //debug_print("(TS %d) %d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", session.now, records.size(), GeomData::names[type].c_str(), draw->name().c_str(), records.size(), geomdata, allhidden);
+  //debug_print("(TS %d) %d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", timestep, records.size(), GeomData::names[type].c_str(), draw->name().c_str(), records.size(), geomdata, allhidden);
   return geomdata;
 }
 
