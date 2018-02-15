@@ -1589,12 +1589,12 @@ void Geometry::label(DrawingObject* draw, std::vector<std::string> labels)
   }
 }
 
-void Geometry::print()
+void Geometry::print(std::ostream& os)
 {
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    std::cout << GeomData::names[type] << " [" << i << "] - "
-              << (drawable(i) ? "shown" : "hidden") << std::endl;
+    os << GeomData::names[type] << " [" << i << "] - "
+       << (drawable(i) ? "shown" : "hidden") << std::endl;
   }
 }
 

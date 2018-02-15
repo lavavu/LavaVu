@@ -2190,7 +2190,7 @@ void LavaVu::display(bool redraw)
   }
 
   //Display object list if enabled
-  if (objectlist)
+  if (objectlist && help.length() == 0)
     displayObjectList(false);
 
   double time = ((clock()-t1)/(double)CLOCKS_PER_SEC);

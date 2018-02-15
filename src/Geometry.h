@@ -556,7 +556,7 @@ public:
   void setupObject(DrawingObject* draw);
   void label(DrawingObject* draw, const char* labels);
   void label(DrawingObject* draw, std::vector<std::string> labels);
-  void print();
+  void print(std::ostream& os);
   json getDataLabels(DrawingObject* draw);
   int size() {return records.size();}
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);

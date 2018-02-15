@@ -1961,67 +1961,49 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    std::ostringstream ss;
     if (parsed["list"] == "elements")
     {
       //Print available elements by id
       for (auto g : amodel->geometry)
-        g->print();
-      viewer->display(false);  //Immediate display
-      return false;
+        g->print(ss);
+
     }
     else if (parsed["list"] == "colourmaps")
     {
       int offset = 0;
-      std::cerr << "ColourMaps:\n===========\n";
+      ss << "ColourMaps:\n===========\n";
       for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
-      {
         if (amodel->colourMaps[i])
-        {
-          std::ostringstream ss;
-          ss << std::setw(5) << (i+1) << " : " << amodel->colourMaps[i]->name;
-
-          displayText(ss.str(), ++offset);
-          std::cerr << ss.str() << std::endl;
-        }
-      }
-      viewer->display(false);  //Immediate display
-      return false;
+          ss << std::setw(5) << (i+1) << " : " << amodel->colourMaps[i]->name << std::endl;
     }
     else if (parsed["list"] == "data")
     {
       int offset = 0;
       std::vector<std::string> list;
       if (aobject)
-      {
-        displayText("Data sets for: " + aobject->name(), ++offset);
-        std::cout << ("Data sets for: " + aobject->name()) << std::endl;
-      }
-      displayText("-----------------------------------------", ++offset);
-      std::cout << "-----------------------------------------" << std::endl;
+        ss << ("Data sets for: " + aobject->name()) << std::endl;
+      ss << "-----------------------------------------" << std::endl;
       for (auto g : amodel->geometry)
       {
         json list = g->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
-          std::stringstream ss;
           ss << "[" << l << "] " << list[l]["label"]
-           << " (range: " << list[l]["minimum"]
-           << " to " << list[l]["maximum"] << ")"
-           << " -- " << list[l]["size"] << "";
-          displayText(ss.str(), ++offset);
-          std::cerr << ss.str() << std::endl;
+             << " (range: " << list[l]["minimum"]
+             << " to " << list[l]["maximum"] << ")"
+             << " -- " << list[l]["size"] << std::endl;
         }
       }
-      displayText("-----------------------------------------", ++offset);
-      std::cout << "-----------------------------------------" << std::endl;
-      viewer->display(false);  //Immediate display
-      return false;
+      ss << "-----------------------------------------" << std::endl;
     }
-    else //if (parsed["list"] == "objects")
+    else
     {
       objectlist = !objectlist;
       displayObjectList(true);
     }
+    std::cerr << ss.str();
+    help = ss.str();
   }
   else if (parsed.exists("reset"))
   {
@@ -2613,7 +2595,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     //Output camera view xml and translation/rotation commands
     aview->print();
-    return false;
+    redisplay = false;
   }
   else if (parsed.has(fval, "modelscale"))
   {
@@ -3192,9 +3174,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(step, "newstep"))
         step = -1;
     addTimeStep(step);
-
-    //Don't record
-    return false;
   }
   else if (parsed.exists("filter") || parsed.exists("filterout"))
   {
