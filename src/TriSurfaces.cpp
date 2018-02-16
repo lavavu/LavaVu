@@ -256,10 +256,10 @@ void TriSurfaces::loadMesh()
 
       if (newvalues)
         geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
-
-      //Update the rendering references as some containers have been replaced
-      geom[index]->setRenderData();
     }
+
+    //Update the rendering references as some containers have been replaced
+    geom[index]->setRenderData();
 
     t2 = clock();
     debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC);
