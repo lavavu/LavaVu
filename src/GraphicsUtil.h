@@ -234,6 +234,13 @@ public:
   Vec3d(float x, float y, float z) : x(x), y(y), z(z) {}
   Vec3d(float pos[3]) : x(pos[0]), y(pos[1]), z(pos[2]) {}
 
+  void check()
+  {
+    if (std::isnan(x) || std::isinf(x)) x = 0;
+    if (std::isnan(y) || std::isinf(y)) y = 0;
+    if (std::isnan(z) || std::isinf(z)) z = 0;
+  }
+
   float& operator[] (unsigned int i)
   {
     if (i==0) return x;
@@ -324,6 +331,7 @@ public:
   void normalise()
   {
     float mag = magnitude();
+    if (mag < EPSILON) return;
     x /= mag;
     y /= mag;
     z /= mag;
