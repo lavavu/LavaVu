@@ -1562,6 +1562,8 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   Database outdb;
   if (path)
   {
+    if (FileExists(path))
+      remove(path);
     outdb = Database(FilePath(path));
     if (!outdb.open(true))
     {
