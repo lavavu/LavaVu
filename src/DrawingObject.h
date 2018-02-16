@@ -55,6 +55,7 @@ public:
   float opacity;
   Colour colour;
   unsigned int colourIdx;
+  unsigned int opacityIdx;
   float radius_default;
   ColourMap* colourMap; //Cached references
   ColourMap* opacityMap;

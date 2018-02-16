@@ -171,7 +171,13 @@ void Tracers::update()
         //  getColour(colour, pp); //Have a colour value per particle and step
         //else if ((unsigned int)records[rec]->colourCount() <= particles)
         else
+        {
+          //Need to re-init lookup functor to this data block
+          FloatValues* vals = records[rec]->colourData();
+          FloatValues* ovals = records[rec]->valueData(records[rec]->draw->opacityIdx);
+          getColour.init(records[rec]->draw, records[rec]->render, vals, ovals);
           getColour(colour, p);  //Fixed colour value per particle regardless of step
+        }
 
         //Fade out
         if (fade) colour.a = 255 * (step-start) / (float)(end-start);

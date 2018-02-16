@@ -99,8 +99,8 @@ ColourLookup& GeomData::colourCalibrate()
   //Calibrate opacity map if provided
   ColourMap* omap = draw->opacityMap;
   bool mappedOpacity = false;
-  unsigned int opacityIdx = valuesLookup(draw->properties["opacityby"]);
-  FloatValues* ovals = valueData(opacityIdx);
+  draw->opacityIdx = valuesLookup(draw->properties["opacityby"]);
+  FloatValues* ovals = valueData(draw->opacityIdx);
   if (omap && ovals)
   {
     auto range = draw->ranges[ovals->label];

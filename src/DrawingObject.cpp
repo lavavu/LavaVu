@@ -56,6 +56,7 @@ DrawingObject::DrawingObject(Session& session, std::string name, std::string pro
 
   properties.data["visible"] = true;
   colourIdx = 0; //Default colouring data is first value block
+  opacityIdx = MAX_DATA_ARRAYS+1;
   colourMap = opacityMap = NULL;
   setup();
 }
