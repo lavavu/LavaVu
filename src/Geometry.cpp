@@ -1940,7 +1940,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
   //Exceeds max length? Draw endpoint only
   if (maxLength > 0.f && length > maxLength)
   {
-    drawSphere(draw, end, radius0, segment_count);
+    //drawSphere(draw, end, radius0, segment_count);
     return;
   }
 
