@@ -2280,8 +2280,9 @@ void LavaVu::drawAxis()
       vector[c] = 1.0;
       pos[c] = length/2;
       colour.rgba[c] = 255;
+      Geom_Ptr tg = axis->read(session.axisobj, 0, lucVertexData, NULL);
       axis->drawVector(session.axisobj, pos, vector, length, radius, radius, headsize, 16);
-      axis->read(session.axisobj, 1, lucRGBAData, &colour.value);
+      tg->_colours->read1(colour.value);
     }
     axis->update();
   }
@@ -2403,7 +2404,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
   //Draw ruler line
   float pos[3] = {start[0] + vec[0] * 0.5f, start[1] + vec[1] * 0.5f, start[2] + vec[2] * 0.5f};
   rulers->drawVector(obj, pos, vec, 1.0, 0, 0, 0, 0);
-  rulers->add(obj); //Add new object for ticks
+  Geom_Ptr lg = rulers->add(obj); //Add new object for ticks
 
   std::string align = "";
   for (int i = 0; i < ticks; i++)
@@ -2449,11 +2450,10 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     while(end > label && isspace(*end)) end--;
     *(end+1) = 0; //Null terminator
 
-    Geom_Ptr geomdata = rulers->getObjectStore(obj);
     std::string blank = "";
-    geomdata->label(blank);
+    lg->label(blank);
     std::string labelstr = align + "  " + label + "  ";
-    geomdata->label(labelstr);
+    lg->label(labelstr);
   }
 }
 
