@@ -1735,10 +1735,11 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   //Scale vector
   Vec3d vec = vector * scale;
 
-  std::vector<unsigned int> indices;
-
   // Get circle coords
   session.cacheCircleCoords(segment_count);
+
+  //Get the geom ptr
+  Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
 
   // Render a 3d arrow, cone with base for head, cylinder for shaft
 
@@ -1773,10 +1774,10 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     // Draw Line
     Vec3d vertex0 = Vec3d(0,0,-halflength);
     Vec3d vertex = translate + rot * vertex0;
-    read(draw, 1, lucVertexData, vertex.ref());
+    g->readVertex(vertex.ref());
     vertex0.z = halflength;
     vertex = translate + rot * vertex0;
-    read(draw, 1, lucVertexData, vertex.ref());
+    g->readVertex(vertex.ref());
     return;
   }
   else if (length > headD)
@@ -1784,37 +1785,37 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     int v;
     for (v=0; v <= segment_count; v++)
     {
-      int vertex_index = getVertexIdx(draw);
+      unsigned int vertex_index = g->count();
 
       // Base of shaft
       Vec3d vertex0 = Vec3d(radius0 * session.x_coords[v], radius0 * session.y_coords[v], -halflength); // z = Shaft length to base of head
       Vec3d vertex = translate + rot * vertex0;
 
       //Read triangle vertex, normal
-      read(draw, 1, lucVertexData, vertex.ref());
+      g->readVertex(vertex.ref());
       Vec3d normal = rot * Vec3d(session.x_coords[v], session.y_coords[v], 0);
       //normal.normalise();
-      read(draw, 1, lucNormalData, normal.ref());
+      g->_normals->read(1, normal.ref());
 
       // Top of shaft
       Vec3d vertex1 = Vec3d(radius1 * session.x_coords[v], radius1 * session.y_coords[v], -headD+halflength);
       vertex = translate + rot * vertex1;
 
       //Read triangle vertex, normal
-      read(draw, 1, lucVertexData, vertex.ref());
-      read(draw, 1, lucNormalData, normal.ref());
+      g->readVertex(vertex.ref());
+      g->_normals->read(1, normal.ref());
 
       //Triangle strip indices
       if (v > 0)
       {
         //First tri
-        indices.push_back(vertex_index-2);
-        indices.push_back(vertex_index-1);
-        indices.push_back(vertex_index);
+        g->_indices->read1(vertex_index-2);
+        g->_indices->read1(vertex_index-1);
+        g->_indices->read1(vertex_index);
         //Second tri
-        indices.push_back(vertex_index-1);
-        indices.push_back(vertex_index+1);
-        indices.push_back(vertex_index);
+        g->_indices->read1(vertex_index-1);
+        g->_indices->read1(vertex_index+1);
+        g->_indices->read1(vertex_index);
       }
     }
   }
@@ -1830,7 +1831,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   {
     int v;
     // Pinnacle vertex is at point of arrow
-    int pt = getVertexIdx(draw);
+    unsigned int pt = g->count();
     Vec3d pinnacle = translate + rot * Vec3d(0, 0, halflength);
 
     // First pair of vertices on circle define a triangle when combined with pinnacle
@@ -1846,7 +1847,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     // Subsequent vertices describe outer edges of cone base
     for (v=segment_count; v >= 0; v--)
     {
-      int vertex_index = getVertexIdx(draw);
+      unsigned int vertex_index = g->count();
 
       // Calc next vertex from unit circle coords
       Vec3d vertex1 = translate + rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength);
@@ -1856,57 +1857,54 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       normal1.normalise();
 
       //Duplicate pinnacle vertex as each facet needs a different normal
-      read(draw, 1, lucVertexData, vertex.ref());
+      g->readVertex(vertex.ref());
       //Balance between smoothness (normal) and highlighting angle of cone (normal1)
       Vec3d avgnorm = normal * 0.4 + normal1 * 0.6;
       avgnorm.normalise();
-      read(draw, 1, lucNormalData, avgnorm.ref());
+      g->_normals->read(1, avgnorm.ref());
 
       //Read triangle vertex, normal
-      read(draw, 1, lucVertexData, vertex1.ref());
-      read(draw, 1, lucNormalData, avgnorm.ref());
+      g->readVertex(vertex1.ref());
+      g->_normals->read(1, avgnorm.ref());
 
       //Triangle fan indices
       if (v < segment_count)
       {
-        indices.push_back(vertex_index);    //Pinnacle vertex
-        indices.push_back(vertex_index-1);  //Previous vertex
-        indices.push_back(vertex_index+1);  //Current vertex
+        g->_indices->read1(vertex_index);    //Pinnacle vertex
+        g->_indices->read1(vertex_index-1);  //Previous vertex
+        g->_indices->read1(vertex_index+1);  //Current vertex
       }
     }
 
     // Flatten cone for circle base -> set common point to share z-coord
     // Centre of base circle, normal facing back along arrow
-    pt = getVertexIdx(draw);
+    pt = g->count();
     pinnacle = rot * Vec3d(0,0,-headD+halflength);
     vertex = translate + pinnacle;
     normal = rot * Vec3d(0.0f, 0.0f, -1.0f);
     //Read triangle vertex, normal
-    read(draw, 1, lucVertexData, vertex.ref());
-    read(draw, 1, lucNormalData, normal.ref());
+    g->readVertex(vertex.ref());
+    g->_normals->read(1, normal.ref());
 
     // Repeat vertices for outer edges of cone base
     for (v=0; v<=segment_count; v++)
     {
-      int vertex_index = getVertexIdx(draw);
+      unsigned int vertex_index = g->count();
       // Calc next vertex from unit circle coords
       Vec3d vertex1 = rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength);
 
       vertex1 = translate + vertex1;
 
       //Read triangle vertex, normal
-      read(draw, 1, lucVertexData, vertex1.ref());
-      read(draw, 1, lucNormalData, normal.ref());
+      g->readVertex(vertex1.ref());
+      g->_normals->read(1, normal.ref());
 
       //Triangle fan indices
-      indices.push_back(pt);
-      indices.push_back(vertex_index-1);
-      indices.push_back(vertex_index);
+      g->_indices->read1(pt);
+      g->_indices->read1(vertex_index-1);
+      g->_indices->read1(vertex_index);
     }
   }
-
-  //Read the triangle indices
-  read(draw, indices.size(), lucIndexData, &indices[0]);
 }
 
 // Draws a trajectory vector between two coordinates,
@@ -1998,9 +1996,12 @@ void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternio
 
 void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads)
 {
-   Vec3d min = dims * -0.5f; //Vec3d(-0.5f * width, -0.5f * height, -0.5f * depth);
-   Vec3d max = min + dims; //Vec3d(min[0] + width, min[1] + height, min[2] + depth);
+  Vec3d min = dims * -0.5f; //Vec3d(-0.5f * width, -0.5f * height, -0.5f * depth);
+  Vec3d max = min + dims; //Vec3d(min[0] + width, min[1] + height, min[2] + depth);
   
+  //Get the geom ptr
+  Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
+
   //Corner vertices
   Vec3d verts[8] =
   {
@@ -2016,66 +2017,103 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
 
   for (int i=0; i<8; i++)
   {
-    /* Multiplying a quaternion q with a vector v applies the q-rotation to v */
+    // Multiplying a quaternion q with a vector v applies the q-rotation to v
     verts[i] = rot * verts[i];
     verts[i] += Vec3d(pos);
-    //records->checkPointMinMax(verts[i].ref());
+    g->checkPointMinMax(verts[i].ref());
   }
 
   if (quads)
   {
     //Back
-    read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
-    read(draw, 1, lucVertexData, verts[3].ref());
-    read(draw, 1, lucVertexData, verts[1].ref());
-    read(draw, 1, lucVertexData, verts[2].ref());
+    g = read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
+    g->readVertex(verts[3].ref());
+    g->readVertex(verts[1].ref());
+    g->readVertex(verts[2].ref());
 
     //Front
-    read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
-    read(draw, 1, lucVertexData, verts[5].ref());
-    read(draw, 1, lucVertexData, verts[7].ref());
-    read(draw, 1, lucVertexData, verts[6].ref());
+    g = read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
+    g->readVertex(verts[5].ref());
+    g->readVertex(verts[7].ref());
+    g->readVertex(verts[6].ref());
 
     //Bottom
-    read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
-    read(draw, 1, lucVertexData, verts[1].ref());
-    read(draw, 1, lucVertexData, verts[4].ref());
-    read(draw, 1, lucVertexData, verts[5].ref());
+    g = read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
+    g->readVertex(verts[1].ref());
+    g->readVertex(verts[4].ref());
+    g->readVertex(verts[5].ref());
 
     //Top
-    read(draw, 1, lucVertexData, verts[7].ref(), 2, 2);
-    read(draw, 1, lucVertexData, verts[6].ref());
-    read(draw, 1, lucVertexData, verts[3].ref());
-    read(draw, 1, lucVertexData, verts[2].ref());
+    g = read(draw, 1, lucVertexData, verts[7].ref(), 2, 2);
+    g->readVertex(verts[6].ref());
+    g->readVertex(verts[3].ref());
+    g->readVertex(verts[2].ref());
 
     //Left
-    read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
-    read(draw, 1, lucVertexData, verts[7].ref());
-    read(draw, 1, lucVertexData, verts[0].ref());
-    read(draw, 1, lucVertexData, verts[3].ref());
+    g = read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
+    g->readVertex(verts[7].ref());
+    g->readVertex(verts[0].ref());
+    g->readVertex(verts[3].ref());
 
     //Right
-    read(draw, 1, lucVertexData, verts[5].ref(), 2, 2);
-    read(draw, 1, lucVertexData, verts[1].ref());
-    read(draw, 1, lucVertexData, verts[6].ref());
-    read(draw, 1, lucVertexData, verts[2].ref());
+    g = read(draw, 1, lucVertexData, verts[5].ref(), 2, 2);
+    g->readVertex(verts[1].ref());
+    g->readVertex(verts[6].ref());
+    g->readVertex(verts[2].ref());
   }
   else
   {
     //Triangle indices
-    unsigned vertex_index = (unsigned)getVertexIdx(draw);
-    unsigned int indices[36] =
-    {
-      0+vertex_index, 1+vertex_index, 2+vertex_index, 2+vertex_index, 3+vertex_index, 0+vertex_index,
-      3+vertex_index, 2+vertex_index, 6+vertex_index, 6+vertex_index, 7+vertex_index, 3+vertex_index,
-      7+vertex_index, 6+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 7+vertex_index,
-      4+vertex_index, 0+vertex_index, 3+vertex_index, 3+vertex_index, 7+vertex_index, 4+vertex_index,
-      0+vertex_index, 1+vertex_index, 5+vertex_index, 5+vertex_index, 4+vertex_index, 0+vertex_index,
-      1+vertex_index, 5+vertex_index, 6+vertex_index, 6+vertex_index, 2+vertex_index, 1+vertex_index
-    };
+    unsigned vertex_index = g->count();
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+1);
+    g->_indices->read1(vertex_index+2);
 
-    read(draw, 8, lucVertexData, verts[0].ref());
-    read(draw, 36, lucIndexData, indices);
+    g->_indices->read1(vertex_index+2);
+    g->_indices->read1(vertex_index+3);
+    g->_indices->read1(vertex_index);
+
+    g->_indices->read1(vertex_index+3);
+    g->_indices->read1(vertex_index+2);
+    g->_indices->read1(vertex_index+6);
+
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+7);
+    g->_indices->read1(vertex_index+3);
+
+    g->_indices->read1(vertex_index+7);
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+5);
+
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index+7);
+
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+3);
+
+    g->_indices->read1(vertex_index+3);
+    g->_indices->read1(vertex_index+7);
+    g->_indices->read1(vertex_index+4);
+
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+1);
+    g->_indices->read1(vertex_index+5);
+
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index);
+
+    g->_indices->read1(vertex_index+1);
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+6);
+
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+2);
+    g->_indices->read1(vertex_index+1);
+
+    g->_vertices->read(8, verts[0].ref());
   }
 }
 
@@ -2103,7 +2141,10 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   if (segment_count < 0) segment_count = -segment_count;
   session.cacheCircleCoords(segment_count);
 
-  std::vector<unsigned int> indices;
+  //Get the geom ptr
+  Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
+//Geom_Ptr g = nullptr;
+
   for (j=0; j<segment_count/2; j++)
   {
     //Triangle strip vertices
@@ -2119,10 +2160,11 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       tex[1] = 2*(j+1)/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
-      read(draw, 1, lucVertexData, pos.ref());
+      g->readVertex(pos.ref());
+      //g = read(draw, 1, lucVertexData, pos.ref());
       normal = rot * -edge;
-      read(draw, 1, lucNormalData, normal.ref());
-      read(draw, 1, lucTexCoordData, tex);
+      g->_normals->read(1, normal.ref());
+      g->_texCoords->read(1, tex);
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
@@ -2133,28 +2175,25 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       tex[1] = 2*j/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
-      read(draw, 1, lucVertexData, pos.ref());
+      g->readVertex(pos.ref());
       normal = rot * -edge;
-      read(draw, 1, lucNormalData, normal.ref());
-      read(draw, 1, lucTexCoordData, tex);
+      g->_normals->read(1, normal.ref());
+      g->_texCoords->read(1, tex);
 
       //Triangle strip indices
       if (i > 0)
       {
         //First tri
-        indices.push_back(vertex_index-2);
-        indices.push_back(vertex_index-1);
-        indices.push_back(vertex_index);
+        g->_indices->read1(vertex_index-2);
+        g->_indices->read1(vertex_index-1);
+        g->_indices->read1(vertex_index);
         //Second tri
-        indices.push_back(vertex_index-1);
-        indices.push_back(vertex_index+1);
-        indices.push_back(vertex_index);
+        g->_indices->read1(vertex_index-1);
+        g->_indices->read1(vertex_index+1);
+        g->_indices->read1(vertex_index);
       }
     }
   }
-
-  //Read the triangle indices
-  read(draw, indices.size(), lucIndexData, &indices[0]);
 }
 
 //Class to handle geometry types with sub-geometry glyphs drawn

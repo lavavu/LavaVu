@@ -149,20 +149,18 @@ class DataContainer
 protected:
   unsigned int next;
   unsigned int datasize;
-  unsigned int offset;
 public:
   float minimum;
   float maximum;
   std::string label;
 
-  DataContainer() : next(0), datasize(1), offset(0), minimum(0), maximum(0), label("") {}
+  DataContainer() : next(0), datasize(1), minimum(0), maximum(0), label("") {}
 
   //Pure virtual methods
   virtual unsigned int bytes() = 0;
   virtual void read(unsigned int n, const void* data) = 0;
   virtual void resize(unsigned long size) = 0;
   virtual void clear() = 0;
-  virtual void setOffset() = 0;
   virtual void erase(unsigned int start, unsigned int end) = 0;
   virtual void* ref(unsigned i=0) = 0;
 
@@ -194,6 +192,8 @@ public:
   virtual ~DataValues() {membytes__ -= sizeof(dtype)*value.size();}
 
   unsigned int bytes() {return sizeof(dtype)*size();}
+
+  virtual void read1(const dtype& data) = 0;
 
   virtual void read(unsigned int n, const void* data)
   {
@@ -238,23 +238,15 @@ public:
     unsigned int count = value.size();
     if (count == 0) return;
     value.clear();
-    offset = 0;
     membytes__ -= sizeof(dtype)*count;
     next = 0;
     //printf("============== MEMORY total %.3f mb, removed %d ==============\n", membytes__/1000000.0f, count);
-  }
-
-  //Update saved position
-  void setOffset()
-  {
-    offset = value.size();
   }
 
   void erase(unsigned int start, unsigned int end)
   {
     //erase elements:
     value.erase(value.begin()+start, value.begin()+end);
-    if (offset > 0) offset -= start;
     membytes__ -= sizeof(dtype)*(end - start);
     //printf("============== MEMORY total %.3f mb, erased %d ==============\n", membytes__/1000000.0f, (end - start));
   }
@@ -264,6 +256,7 @@ class FloatValues : public DataValues<float>
 {
  public:
   FloatValues() {}
+  void read1(const float& data) {read(1, &data);}
 
   void minmax();
 };
@@ -272,12 +265,14 @@ class UIntValues : public DataValues<unsigned int>
 {
  public:
   UIntValues() {}
+  void read1(const unsigned int& data) {read(1, &data);}
 };
 
 class UCharValues : public DataValues<unsigned char>
 {
  public:
   UCharValues() {}
+  void read1(const unsigned char& data) {read(1, &data);}
 };
 
 class Coord3DValues : public FloatValues

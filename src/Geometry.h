@@ -334,6 +334,13 @@ public:
 
   Render_Ptr render;
 
+  void readVertex(float* data)
+  {
+    //Shortcut to read single vertex and with bounding box update
+    _vertices->read(1, data);
+    checkPointMinMax(data);
+  }
+
   static unsigned int byteSize(lucGeometryDataType type)
   {
     if (type == lucIndexData || type == lucRGBAData)
