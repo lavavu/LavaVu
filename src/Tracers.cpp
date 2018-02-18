@@ -187,8 +187,9 @@ void Tracers::update()
         //Un-connected? Draw points at each position only
         if (!connect)
         {
-          points->read(records[rec]->draw, 1, lucVertexData, pos);
-          points->read(records[rec]->draw, 1, lucRGBAData, &colour);
+          Geom_Ptr g = points->read(records[rec]->draw, 0, lucVertexData, NULL);
+          g->readVertex(pos);
+          g->_colours->read1(colour.value);
         }
         // Draw connected section
         else if (oldpos)
@@ -198,10 +199,11 @@ void Tracers::update()
           {
             if (limit == 0.f || (Vec3d(pos) - Vec3d(oldpos)).magnitude() <= limit)
             {
-              lines->read(records[rec]->draw, 1, lucVertexData, oldpos);
-              lines->read(records[rec]->draw, 1, lucVertexData, pos);
-              lines->read(records[rec]->draw, 1, lucRGBAData, &oldColour);
-              lines->read(records[rec]->draw, 1, lucRGBAData, &colour);
+              Geom_Ptr g = lines->read(records[rec]->draw, 0, lucVertexData, NULL);
+              g->readVertex(oldpos);
+              g->readVertex(pos);
+              g->_colours->read1(oldColour.value);
+              g->_colours->read1(colour.value);
             }
           }
           else
@@ -209,9 +211,10 @@ void Tracers::update()
             //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
             float arrowHead = -1;
             if (step == end) arrowHead = arrowSize; //records[rec]->draw->properties["arrowhead"].ToFloat(2.0);
-            int diff = tris->getVertexIdx(records[rec]->draw);
+            Geom_Ptr g = tris->read(records[rec]->draw, 0, lucVertexData, NULL);
+            int diff = g->count();
             tris->drawTrajectory(records[rec]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
-            diff = tris->getVertexIdx(records[rec]->draw) - diff;
+            diff = g->count() - diff;
             //Per vertex colours
             for (int c=0; c<diff; c++)
             {
@@ -219,7 +222,7 @@ void Tracers::update()
               //(Every second vertex is at top of shaft, first quality*2 are shaft verts)
               Colour& col = oldColour;
               if (c%2==1 || c > quality*2) col = colour;
-              tris->read(records[rec]->draw, 1, lucRGBAData, &col);
+              g->_colours->read1(col.value);
             }
           }
         }

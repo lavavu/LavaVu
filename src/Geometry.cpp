@@ -2143,14 +2143,13 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
-//Geom_Ptr g = nullptr;
 
   for (j=0; j<segment_count/2; j++)
   {
     //Triangle strip vertices
     for (i=0; i<=segment_count; i++)
     {
-      int vertex_index = getVertexIdx(draw);
+      int vertex_index = g->count();
       // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
       int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
@@ -2161,7 +2160,6 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
-      //g = read(draw, 1, lucVertexData, pos.ref());
       normal = rot * -edge;
       g->_normals->read(1, normal.ref());
       g->_texCoords->read(1, tex);

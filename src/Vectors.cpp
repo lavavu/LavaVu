@@ -61,8 +61,8 @@ void Vectors::update()
     }
 
     //Create new data stores for output geometry
-    tris->add(geom[i]->draw);
-    lines->add(geom[i]->draw);
+    Geom_Ptr tg = tris->add(geom[i]->draw);
+    Geom_Ptr lg = lines->add(geom[i]->draw);
 
     tot += geom[i]->count();
 
@@ -142,7 +142,7 @@ void Vectors::update()
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
       lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, 0);
       //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
-      lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+      lg->_colours->read1(colour.value);
 
       //Scale position & vector manually (global scaling is disabled to avoid distorting glyphs)
       if (tris->unscale)
@@ -155,7 +155,7 @@ void Vectors::update()
       {
         tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, quality);
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
-        tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+        tg->_colours->read1(colour.value);
       }
 
     }

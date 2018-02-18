@@ -52,7 +52,7 @@ void Shapes::update()
     Properties& props = geom[i]->draw->properties;
 
     //Create a new data store for output geometry
-    tris->add(geom[i]->draw);
+    Geom_Ptr tg = tris->add(geom[i]->draw);
 
     float scaling = props["scaling"];
 
@@ -126,7 +126,7 @@ void Shapes::update()
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
       getColour(colour, v);
-      tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+      tg->_colours->read1(colour.value);
     }
 
     //Adjust bounding box

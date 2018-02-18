@@ -588,13 +588,6 @@ public:
       if (!draw || draw == records[i]->draw) count += records[i]->count();
     return count;
   }
-  //Return vertex count of most recently used object
-  unsigned int getVertexIdx(DrawingObject* draw)
-  {
-    Geom_Ptr geom = getObjectStore(draw);
-    if (geom) return geom->count();
-    return 0;
-  }
 };
 
 class Triangles : public Geometry

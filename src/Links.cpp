@@ -111,8 +111,8 @@ void Links::update()
         if (cidx >= hasColours) cidx = hasColours - 1;
         getColour(colour, cidx);
 
-        lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->render->vertices[v][0]);
-        lines->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+        Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->render->vertices[v][0]);
+        g->_colours->read1(colour.value);
 
         //Count of vertices actually plotted
         count++;
@@ -127,7 +127,7 @@ void Links::update()
       any3d = true; //Flag 3d tubes drawn
 
       //Create a new data store for output geometry
-      tris->add(geom[i]->draw);
+      Geom_Ptr g = tris->add(geom[i]->draw);
 
       //3d lines - using triangle sub-renderer
       geom[i]->draw->properties.data["lit"] = true; //Override lit
@@ -151,7 +151,7 @@ void Links::update()
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
           //Per line colours (can do this as long as sub-renderer always outputs same tri count)
           getColour(colour, v);
-          tris->read(geom[i]->draw, 1, lucRGBAData, &colour.value);
+          g->_colours->read1(colour.value);
         }
         oldpos = pos;
 
