@@ -646,7 +646,7 @@ class Object(dict):
         data = self._convert(data, numpy.uint8)
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
-    def texture(self, data, width, height, channels=4, flip=True):
+    def texture(self, data, width, height, channels=4, flip=True, mipmaps=True):
         """
         Load raw texture data for object
 
@@ -664,13 +664,15 @@ class Object(dict):
         flip: boolean
             flip the texture vertically after loading
             (default is enabled as usually required for OpenGL but can be disabled)
+        mipmaps: boolean
+            generate mipmaps (slow)
         """
         if not isinstance(data, numpy.ndarray):
             data = self._convert(data, numpy.uint32)
         if data.dtype == numpy.uint32:
-            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip)
+            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps)
         elif data.dtype == numpy.uint8:
-            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip)
+            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, mipmaps)
 
     def labels(self, data):
         """

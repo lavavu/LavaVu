@@ -185,7 +185,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 {
   GL_Error_Check;
   //Use/load default texture
-  if (!tex)
+  if (!tex->texture)
   {
     if (texture)
       tex = texture;

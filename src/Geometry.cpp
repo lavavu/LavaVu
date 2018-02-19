@@ -1658,20 +1658,26 @@ void Geometry::toImage(unsigned int idx)
 void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
 {
   Geom_Ptr geomdata = getObjectStore(draw);
-  geomdata->texture = tex;
-  //std::cout << "SET TEXTURE ON " << draw->name() << std::endl;
-  //Must be opaque to draw with own texture
-  geomdata->opaque = true;
+  if (geomdata)
+  {
+    geomdata->texture = tex;
+    //Must be opaque to draw with own texture
+    geomdata->opaque = true;
+  }
 }
 
-void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip)
+void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps)
 {
   Geom_Ptr geomdata = getObjectStore(draw);
-  geomdata->texture->flip = flip;
-  geomdata->texture->load(data, width, height, channels);
-  //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
-  //Must be opaque to draw with own texture (TODO: obj properties in shader)
-  geomdata->opaque = true;
+  if (geomdata)
+  {
+    //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
+    geomdata->texture->flip = flip;
+    geomdata->texture->mipmaps = mipmaps;
+    geomdata->texture->load(data, width, height, channels);
+    //Must be opaque to draw with own texture (TODO: obj properties in shader)
+    geomdata->opaque = true;
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2270,6 +2276,13 @@ void Glyphs::display(bool refresh)
   lines->reload = reload;
   points->redraw = redraw;
   points->reload = reload;
+
+  if (geom.size() > 0 && geom[0]->texture->texture)
+  {
+    tris->setTexture(geom[0]->draw, geom[0]->texture);
+    lines->setTexture(geom[0]->draw, geom[0]->texture);
+    points->setTexture(geom[0]->draw, geom[0]->texture);
+  }
 
   //Need to call to clear the cached object
   lines->display();
