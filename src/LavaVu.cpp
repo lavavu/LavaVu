@@ -163,10 +163,7 @@ void LavaVu::defaults()
   writemovie = 0;
   //Omegalib defaults
   if (session.omegalib)
-  {
-    session.globals["sort"] = false;
     session.globals["vectorfont"] = true;
-  }
   message[0] = '\0';
   volume = NULL;
 
