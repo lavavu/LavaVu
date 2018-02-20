@@ -2103,8 +2103,10 @@ class Viewer(dict):
             Name of the file to load
 
         """
-        with open(filename, "r") as state_file:
-            self.app.setState(state_file.read())
+
+        if os.path.exists(filename):
+            with open(filename, "r") as state_file:
+                self.app.setState(state_file.read())
 
     def timesteps(self):
         """
