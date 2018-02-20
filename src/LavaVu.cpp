@@ -2171,9 +2171,12 @@ void LavaVu::display(bool redraw)
       framecount = 0;
       frametime = now;
     }
-    std::stringstream ss;
-    ss << "FPS: " << std::setprecision(3) << fps;
-    displayText(ss.str(), 1);
+    if (!session.omegalib)
+    {
+      std::stringstream ss;
+      ss << "FPS: " << std::setprecision(3) << fps;
+      displayText(ss.str(), 1);
+    }
   }
 
   if (viewer->visible && !viewer->imagemode)
