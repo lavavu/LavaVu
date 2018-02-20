@@ -187,13 +187,13 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
   //Use/load default texture
   if (tex->empty())
   {
-    if (texture)
-    {
-      tex = texture;
-    }
-    else if (tex->source)
+    if (tex->source)
     {
       tex->build();
+    }
+    else if (texture)
+    {
+      tex = texture;
     }
     else if (properties.has("texture"))
     {

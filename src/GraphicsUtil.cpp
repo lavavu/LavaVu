@@ -758,7 +758,9 @@ void ImageLoader::load(ImageData* image)
 void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
 {
   //Load new raw data
-  clearTexture();
+  if (texture)
+    texture->width = 0; //Flag empty rather than delete, avoids OpenGL calls for use in other threads
+
   if (source && (source->width != width || source->height != height || source->channels != channels))
     clearSource();
   if (!source)
@@ -920,28 +922,26 @@ int ImageLoader::build()
 {
   if (!source) return 0;
   if (!texture)
-  {
     texture = new TextureData();
 
-    //Build texture from raw data
-    glActiveTexture(GL_TEXTURE0 + texture->unit);
-    glBindTexture(GL_TEXTURE_2D, texture->id);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  //Build texture from raw data
+  glActiveTexture(GL_TEXTURE0 + texture->unit);
+  glBindTexture(GL_TEXTURE_2D, texture->id);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    // use linear filtering
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    if (mipmaps)
-    {
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);    //set so texImage2d will gen mipmaps
-    }
-    else
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-    //Load the texture data based on bits per pixel
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  // use linear filtering
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  if (mipmaps)
+  {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);    //set so texImage2d will gen mipmaps
   }
+  else
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  //Load the texture data based on bits per pixel
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   switch (source->channels)
   {
