@@ -185,10 +185,16 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 {
   GL_Error_Check;
   //Use/load default texture
-  if (!tex->texture)
+  if (tex->empty())
   {
     if (texture)
+    {
       tex = texture;
+    }
+    else if (tex->source)
+    {
+      tex->build();
+    }
     else if (properties.has("texture"))
     {
       std::string texfn = properties["texture"];
@@ -205,7 +211,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
     }
   }
 
-  if (tex)
+  if (tex && !tex->empty())
   {
     //On first call only loads data from external file if provided
     //Then, and on subsequent calls, simply returns the preloaded texture

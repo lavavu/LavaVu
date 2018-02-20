@@ -165,6 +165,14 @@ public:
     allocated = true;
   }
 
+  void allocate()
+  {
+    if (width * height * channels <= 0) return;
+    release();
+    pixels = new GLubyte[size()];
+    allocated = true;
+  }
+
   void release()
   {
     if (allocated)
@@ -765,28 +773,51 @@ class ImageLoader
 public:
   FilePath fn;
   bool mipmaps;
+  bool bgr;
   bool flip;
-  TextureData* texture;
+  TextureData* texture = NULL;
+  ImageData* source = NULL;
   int type;
 
-  ImageLoader(bool flip=true) : mipmaps(true), flip(flip), texture(NULL), type(VOLUME_NONE) {}
-  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), mipmaps(true), flip(flip), texture(NULL), type(VOLUME_NONE) {}
+  ImageLoader(bool flip=true) : mipmaps(true), bgr(false), flip(flip), type(VOLUME_NONE) {}
+  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), mipmaps(true), bgr(false), flip(flip), type(VOLUME_NONE) {}
 
   TextureData* use();
   void load();
-  void load(GLubyte* imageData, GLuint width, GLuint height, GLuint channels);
-  GLubyte* read();
-  GLubyte* loadPPM();
-  GLubyte* loadPNG();
-  GLubyte* loadJPEG(int req_channels=0);
-  GLubyte* loadTIFF();
-  int build(GLubyte* imageData);
+  void load(ImageData* image);
+  void read();
+  void loadPPM();
+  void loadPNG();
+  void loadJPEG(int req_channels=0);
+  void loadTIFF();
+  int build();
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
   void load3Dslice(int slice, void* data);
   bool empty() {return !texture || !texture->width;}
+  void loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true, bool mipmaps=true, bool bgr=false);
 
-  void clear()  {if (texture) delete texture; texture = NULL;}
-  ~ImageLoader() {clear();}
+  void clear()
+  {
+    clearTexture();
+    clearSource();
+  }
+
+  void clearTexture()
+  {
+    if (texture) delete texture; 
+    texture = NULL;
+  }
+
+  void clearSource()
+  {
+    if (source) delete source;
+    source = NULL;
+  }
+
+  ~ImageLoader()
+  {
+    clear();
+  }
 };
 
 class ImageFile : public ImageData
@@ -796,10 +827,12 @@ public:
   {
     //Use the texture loader to read any supported image
     ImageLoader tex(fn.full);
-    pixels = tex.read();
-    width = tex.texture->width;
-    height = tex.texture->height;
-    channels = tex.texture->channels;
+    tex.read();
+    pixels = tex.source->pixels;
+    width = tex.source->width;
+    height = tex.source->height;
+    channels = tex.source->channels;
+    tex.source = NULL; //Prevent it being deleted
   }
 };
 

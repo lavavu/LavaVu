@@ -729,69 +729,77 @@ void ImageLoader::load()
   //Already loaded
   if (texture) return;
 
-  //No file, requires manual load
-  if (fn.empty()) return;
+  //No file, requires source data
+  if (fn.empty() && !source) return;
 
   //Load texture file
-  GLubyte* imageData = read();
+  if (!source)
+    read();
+
   //Build texture
-  build(imageData);
-  //Dispose of data
-  delete[] imageData;
+  build();
 }
 
-void ImageLoader::load(GLubyte* imageData, GLuint width, GLuint height, GLuint channels)
+void ImageLoader::load(ImageData* image)
 {
   //Load image from data
-  if (!imageData) abort_program("NULL image data\n");
-  if (!texture)
-    texture = new TextureData();
+  if (!image) abort_program("NULL image data\n");
 
-  texture->width = width;
-  texture->height = height;
-  texture->channels = channels;
+  //source = ImageData(width, height, channels, imageData);
+  source = image;
 
   //Requires flip on load for OpenGL
-  if (flip) RawImageFlip(imageData, texture->width, texture->height, texture->channels);
+  if (source && flip) source->flip();
 
   //Build texture
-  build(imageData);
+  build();
 }
 
-GLubyte* ImageLoader::read()
+void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
+{
+  //Load new raw data
+  clearTexture();
+  if (source && (source->width != width || source->height != height || source->channels != channels))
+    clearSource();
+  if (!source)
+    source = new ImageData(width, height, channels); //Allocate buffer
+  this->flip = flip;
+  this->mipmaps = mipmaps;
+  this->bgr = bgr;
+  source->copy(data);
+}
+
+void ImageLoader::read()
 {
   //Load image file
   clear();
-  texture = new TextureData();
-  GLubyte* imageData = NULL;
   if (fn.type == "jpg" || fn.type == "jpeg")
-    imageData = loadJPEG();
+    loadJPEG();
   if (fn.type == "png")
-    imageData = loadPNG();
+    loadPNG();
   if (fn.type == "ppm")
-    imageData = loadPPM();
+    loadPPM();
   if (fn.type == "tif" || fn.type == "tiff")
-    imageData = loadTIFF();
+    loadTIFF();
 
   //Requires flip on load for OpenGL
-  if (imageData && flip) RawImageFlip(imageData, texture->width, texture->height, texture->channels);
-
-  return imageData;
+  if (source && flip) source->flip();
 }
 
 // Loads a PPM image
-GLubyte* ImageLoader::loadPPM()
+void ImageLoader::loadPPM()
 {
   bool readTag = false, readWidth = false, readHeight = false, readColourCount = false;
   char stringBuffer[241];
   int ppmType, colourCount;
-  GLubyte *imageData;
+  source = new ImageData();
 
   FILE* imageFile = fopen(fn.full.c_str(), "rb");
   if (imageFile == NULL)
   {
+    clearSource();
     debug_print("Cannot open '%s'\n", fn.full.c_str());
-    return 0;
+    return;
   }
 
   while (!readTag || !readWidth || !readHeight || !readColourCount)
@@ -817,12 +825,12 @@ GLubyte* ImageLoader::loadPPM()
       }
       else if ( !readWidth )
       {
-        sscanf( charPtr, "%u", &texture->width );
+        sscanf( charPtr, "%u", &source->width );
         readWidth = true;
       }
       else if ( !readHeight )
       {
-        sscanf( charPtr, "%u", &texture->height );
+        sscanf( charPtr, "%u", &source->height );
         readHeight = true;
       }
       else if ( !readColourCount )
@@ -843,116 +851,118 @@ GLubyte* ImageLoader::loadPPM()
   // Only allow PPM images of type P6 and with 256 colours
   if ( ppmType != 6 || colourCount != 255 ) abort_program("Unable to load PPM Texture file, incorrect format");
 
-  texture->channels = 3;
-  imageData = new GLubyte[texture->width*texture->height*texture->channels];
+  source->channels = 3;
+  source->allocate();
 
-  for (unsigned int j = 0; j<texture->height; j++)
-    if (fread(&imageData[texture->width * j * texture->channels], texture->channels, texture->width, imageFile) < texture->width) 
+  for (unsigned int j = 0; j<source->height; j++)
+    if (fread(&source->pixels[source->width * j * source->channels], source->channels, source->width, imageFile) < source->width) 
       abort_program("PPM Read Error");
   fclose(imageFile);
-  return imageData;
 }
 
-GLubyte* ImageLoader::loadPNG()
+void ImageLoader::loadPNG()
 {
-  GLubyte *imageData;
-
   std::ifstream file(fn.full.c_str(), std::ios::binary);
   if (!file)
   {
     debug_print("Cannot open '%s'\n", fn.full.c_str());
-    return 0;
+    return;
   }
-  imageData = (GLubyte*)read_png(file, texture->channels, texture->width, texture->height);
+  source = new ImageData();
+  source->pixels = (GLubyte*)read_png(file, source->channels, source->width, source->height);
+  source->allocated = true; //Allocated by read_png()
 
   file.close();
-
-  return imageData;
 }
 
-GLubyte* ImageLoader::loadJPEG(int req_channels)
+void ImageLoader::loadJPEG(int req_channels)
 {
+  source = new ImageData();
   int width, height, channels;
-  GLubyte* imageData = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, req_channels);
+  source->pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, req_channels);
 
-  texture->width = width;
-  texture->height = height;
-  texture->channels = req_channels ? req_channels : channels;
-
-  return imageData;
+  source->width = width;
+  source->height = height;
+  source->channels = req_channels ? req_channels : channels;
+  source->allocated = true; //Allocated by decompress_jpeg_image_from_file()
 }
 
-GLubyte* ImageLoader::loadTIFF()
+void ImageLoader::loadTIFF()
 {
-  GLubyte* imageData = NULL;
+  source = new ImageData();
 #ifdef HAVE_LIBTIFF
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)
   {
-    unsigned int width, height, channels;
     size_t npixels;
-    TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
-    TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
-    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &channels);
-    npixels = width * height;
-    texture->channels = 4;
-    imageData = new GLubyte[npixels * texture->channels * sizeof(GLubyte)];   // Reserve Memory
-    if (imageData)
+    TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &source->width);
+    TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &source->height);
+    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &source->channels);
+    //source->channels = 4;
+    source->allocate();   // Reserve Memory
+    if (source->pixels)
     {
-      if (TIFFReadRGBAImage(tif, width, height, (uint32*)imageData, 0))
+      if (TIFFReadRGBAImage(tif, source->width, source->height, (uint32*)source->pixels, 0))
       {
-        texture->width = width;
-        texture->height = height;
+        //Succeeded
       }
+      else
+        clear();
     }
     TIFFClose(tif);
   }
 #else
   abort_program("[Load Texture] Require libTIFF to load TIFF images\n");
 #endif
-  return imageData;
 }
 
-int ImageLoader::build(GLubyte* imageData)
+int ImageLoader::build()
 {
-  GLenum format = texture->channels == 3 ? GL_RGB : GL_RGBA;
-  //Build texture from raw data
-  glActiveTexture(GL_TEXTURE0 + texture->unit);
-  glBindTexture(GL_TEXTURE_2D, texture->id);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-  // use linear filtering
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  if (mipmaps)
+  if (!source) return 0;
+  if (!texture)
   {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);    //set so texImage2d will gen mipmaps
-  }
-  else
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    texture = new TextureData();
 
-  //Load the texture data based on bits per pixel
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  switch (texture->channels)
+    //Build texture from raw data
+    glActiveTexture(GL_TEXTURE0 + texture->unit);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // use linear filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if (mipmaps)
+    {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);    //set so texImage2d will gen mipmaps
+    }
+    else
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    //Load the texture data based on bits per pixel
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  }
+
+  switch (source->channels)
   {
   case 1:
-    if (!format) format = GL_ALPHA;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, source->width, source->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, source->pixels);
     break;
   case 2:
-    if (!format) format = GL_LUMINANCE_ALPHA;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, source->width, source->height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, source->pixels);
     break;
   case 3:
-    if (!format) format = GL_BGR;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, source->width, source->height, 0, bgr ? GL_BGR : GL_RGB, GL_UNSIGNED_BYTE, source->pixels);
     break;
   case 4:
-    if (!format) format = GL_BGRA;
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture->width, texture->height, 0, format, GL_UNSIGNED_BYTE, imageData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, source->width, source->height, 0, bgr ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, source->pixels);
     break;
   }
+
+  //Copy metadata
+  texture->width = source->width;
+  texture->height = source->height;
+  texture->channels = source->channels;
 
   return 1;
 }

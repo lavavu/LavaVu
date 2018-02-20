@@ -646,7 +646,7 @@ class Object(dict):
         data = self._convert(data, numpy.uint8)
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
-    def texture(self, data, width, height, channels=4, flip=True, mipmaps=True):
+    def texture(self, data, width, height, channels=4, flip=True, mipmaps=True, bgr=False):
         """
         Load raw texture data for object
 
@@ -666,13 +666,15 @@ class Object(dict):
             (default is enabled as usually required for OpenGL but can be disabled)
         mipmaps: boolean
             generate mipmaps (slow)
+        bgr: boolean
+            rgb data is in BGR/BGRA format instead of RGB/RGBA
         """
         if not isinstance(data, numpy.ndarray):
             data = self._convert(data, numpy.uint32)
         if data.dtype == numpy.uint32:
-            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps)
+            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
         elif data.dtype == numpy.uint8:
-            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, mipmaps)
+            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
 
     def labels(self, data):
         """

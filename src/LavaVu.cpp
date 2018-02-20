@@ -3324,18 +3324,18 @@ void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::strin
     container->read(target, len, array, label);
 }
 
-void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool mipmaps)
+void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool mipmaps, bool bgr)
 {
   Geometry* container = lookupObjectContainer(target);
   if (container)
-    container->loadTexture(target, array, width, height, channels, flip, mipmaps);
+    container->loadTexture(target, array, width, height, channels, flip, mipmaps, bgr);
 }
 
-void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool mipmaps)
+void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool mipmaps, bool bgr)
 {
   Geometry* container = lookupObjectContainer(target);
   if (container)
-    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, mipmaps);
+    container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, mipmaps, bgr);
 }
 
 //GeomData interface, for loading/acessing geom store directly

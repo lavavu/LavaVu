@@ -764,7 +764,9 @@ void Geometry::redrawObject(DrawingObject* draw, bool reload)
       debug_print("Reloading object: %s\n", draw->name().c_str());
       //Trigger reload of volume textures (ie: those not loaded from files)
       if (records[i]->texture->fn.empty())
-        records[i]->texture->clear();
+      {
+        records[i]->texture->clearTexture();
+      }
       this->reload = reload;
       redraw = true;
       return;
@@ -1666,15 +1668,13 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
   }
 }
 
-void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps)
+void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
 {
   Geom_Ptr geomdata = getObjectStore(draw);
   if (geomdata)
   {
     //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
-    geomdata->texture->flip = flip;
-    geomdata->texture->mipmaps = mipmaps;
-    geomdata->texture->load(data, width, height, channels);
+    geomdata->texture->loadData(data, width, height, channels, flip, mipmaps, bgr);
     //Must be opaque to draw with own texture (TODO: obj properties in shader)
     geomdata->opaque = true;
   }
@@ -2277,7 +2277,7 @@ void Glyphs::display(bool refresh)
   points->redraw = redraw;
   points->reload = reload;
 
-  if (geom.size() > 0 && geom[0]->texture->texture)
+  if (geom.size() > 0 && (geom[0]->texture->texture || geom[0]->texture->source))
   {
     tris->setTexture(geom[0]->draw, geom[0]->texture);
     lines->setTexture(geom[0]->draw, geom[0]->texture);
