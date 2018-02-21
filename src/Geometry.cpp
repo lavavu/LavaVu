@@ -781,6 +781,13 @@ void Geometry::init() //Called on GL init
 
 void Geometry::merge(int start, int end)
 {
+  if (type == lucTracerType)
+  {
+    start = 0;
+    end = 0;
+    if (session.timesteps.size())
+      end = session.timesteps.back()->step;
+  }
   //This function writes the "geom" list containing
   //all renderable geometry
   // - All fixed (render+value) data

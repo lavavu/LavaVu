@@ -50,9 +50,9 @@ void Tracers::update()
   int t = 0;
   for (unsigned int i=0; i<records.size(); i++)
   {
-    if (laststep > -2 && records[i]->step != laststep)
+    if (laststep > -2 && geom[i]->step != laststep)
       break;
-    laststep = records[i]->step;
+    laststep = geom[i]->step;
     t++;
   }
 
@@ -71,16 +71,16 @@ void Tracers::update()
   tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
   for (unsigned int i=0; i<t; i++)
   {
-    Properties& props = records[i]->draw->properties;
-    bool filter = records[i]->draw->filterCache.size();
+    Properties& props = geom[i]->draw->properties;
+    bool filter = geom[i]->draw->filterCache.size();
 
     //Create a new data stores for output geometry
-    tris->add(records[i]->draw);
-    lines->add(records[i]->draw);
-    points->add(records[i]->draw);
+    tris->add(geom[i]->draw);
+    lines->add(geom[i]->draw);
+    points->add(geom[i]->draw);
 
     //Calculate particle count using data count / data steps
-    unsigned int particles = records[i]->width;
+    unsigned int particles = geom[i]->width;
     if (particles == 0)
     {
       printf("WARNING: No particles to trace\n");
@@ -107,9 +107,9 @@ void Tracers::update()
     //Calibrate colour maps on timestep if no value data
     bool timecolour = false;
     //Calibrate colour map on provided value range
-    ColourLookup& getColour = records[i]->colourCalibrate();
-    ColourMap* cmap = records[i]->draw->colourMap;
-    if (cmap && !records[i]->colourData())
+    ColourLookup& getColour = geom[i]->colourCalibrate();
+    ColourMap* cmap = geom[i]->draw->colourMap;
+    if (cmap && !geom[i]->colourData())
     {
       timecolour = true;
       cmap->calibrate(session.timesteps[start]->time, session.timesteps[end]->time);
@@ -145,37 +145,33 @@ void Tracers::update()
         int rec = i + step*t;
 
         //Lookup by provided particle index?
-        int pidx = p;
-        if (records[rec]->render->indices.size() > 0)
+        if (geom[rec]->render->indices.size() > 0)
         {
           for (unsigned int x=0; x<particles; x++)
           {
-            if (records[rec]->render->indices[x] == p)
+            if (geom[rec]->render->indices[x] == p)
             {
-              pidx = x;
+              p = x;
               break;
             }
           }
         }
 
         //Filtering
-        if (!drawable(i) || (filter && records[rec]->filter(p))) continue;
+        if (!drawable(rec) || (filter && geom[rec]->filter(p))) continue;
 
-        float* pos = records[rec]->render->vertices[p];
-        //printf("p %d step %d POS = %f,%f,%f\n", p, step, pos[0], pos[1], pos[2]);
+        float* pos = geom[rec]->render->vertices[p];
+        //printf("rec %d p %d step %d POS = %f,%f,%f\n", rec, p, step, pos[0], pos[1], pos[2]);
 
         //Get colour either from supplied colour values or time step
         if (timecolour)
           colour = cmap->getfast(session.timesteps[step]->time);
-        //else if ((unsigned int)records[rec]->colourCount() > particles)
-        //  getColour(colour, pp); //Have a colour value per particle and step
-        //else if ((unsigned int)records[rec]->colourCount() <= particles)
-        else
+        else if ((unsigned int)geom[rec]->colourCount() == particles)
         {
           //Need to re-init lookup functor to this data block
-          FloatValues* vals = records[rec]->colourData();
-          FloatValues* ovals = records[rec]->valueData(records[rec]->draw->opacityIdx);
-          getColour.init(records[rec]->draw, records[rec]->render, vals, ovals);
+          FloatValues* vals = geom[rec]->colourData();
+          FloatValues* ovals = geom[rec]->valueData(geom[rec]->draw->opacityIdx);
+          getColour.init(geom[rec]->draw, geom[rec]->render, vals, ovals);
           getColour(colour, p);  //Fixed colour value per particle regardless of step
         }
 
@@ -187,7 +183,7 @@ void Tracers::update()
         //Un-connected? Draw points at each position only
         if (!connect)
         {
-          Geom_Ptr g = points->read(records[rec]->draw, 0, lucVertexData, NULL);
+          Geom_Ptr g = points->read(geom[rec]->draw, 0, lucVertexData, NULL);
           g->readVertex(pos);
           g->_colours->read1(colour.value);
         }
@@ -199,7 +195,7 @@ void Tracers::update()
           {
             if (limit == 0.f || (Vec3d(pos) - Vec3d(oldpos)).magnitude() <= limit)
             {
-              Geom_Ptr g = lines->read(records[rec]->draw, 0, lucVertexData, NULL);
+              Geom_Ptr g = lines->read(geom[rec]->draw, 0, lucVertexData, NULL);
               g->readVertex(oldpos);
               g->readVertex(pos);
               g->_colours->read1(oldColour.value);
@@ -210,10 +206,10 @@ void Tracers::update()
           {
             //Coord scaling passed to drawTrajectory (as global scaling disabled to avoid distorting glyphs)
             float arrowHead = -1;
-            if (step == end) arrowHead = arrowSize; //records[rec]->draw->properties["arrowhead"].ToFloat(2.0);
-            Geom_Ptr g = tris->read(records[rec]->draw, 0, lucVertexData, NULL);
+            if (step == end) arrowHead = arrowSize; //geom[rec]->draw->properties["arrowhead"].ToFloat(2.0);
+            Geom_Ptr g = tris->read(geom[rec]->draw, 0, lucVertexData, NULL);
             int diff = g->count();
-            tris->drawTrajectory(records[rec]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
+            tris->drawTrajectory(geom[rec]->draw, oldpos, pos, oldRadius, radius, arrowHead, view->scale, limit, quality);
             diff = g->count() - diff;
             //Per vertex colours
             for (int c=0; c<diff; c++)
@@ -237,8 +233,8 @@ void Tracers::update()
     if (taper) debug_print("Tapered tracers from %f to %f (step %f)\n", size0, size, factor);
 
     //Adjust bounding box
-    //tris->compareMinMax(records[i]->min, records[i]->max);
-    //lines->compareMinMax(records[i]->min, records[i]->max);
+    //tris->compareMinMax(geom[i]->min, geom[i]->max);
+    //lines->compareMinMax(geom[i]->min, geom[i]->max);
   }
   GL_Error_Check;
 
