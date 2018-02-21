@@ -201,6 +201,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
       if (texfn.length() > 0 && FileExists(texfn))
       {
         tex = texture = std::make_shared<ImageLoader>(texfn, properties["fliptexture"]);
+        tex->load();
       }
       else
       {
@@ -211,17 +212,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
     }
   }
 
-  if (tex && !tex->empty())
-  {
-    //On first call only loads data from external file if provided
-    //Then, and on subsequent calls, simply returns the preloaded texture
-    return tex->use();
-  }
-
-  //No texture:
-  glDisable(GL_TEXTURE_2D);
-  glDisable(GL_TEXTURE_3D);
-  return NULL;
+  return tex->use();
 }
 
 

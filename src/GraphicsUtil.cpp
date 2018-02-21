@@ -698,9 +698,7 @@ GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outw
 
 TextureData* ImageLoader::use()
 {
-  load();
-
-  if (texture && texture->width)
+  if (!empty())
   {
     if (texture->depth > 1)
     {
