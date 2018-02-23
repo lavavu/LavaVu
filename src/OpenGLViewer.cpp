@@ -472,6 +472,7 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   //debug_print("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
 
   //Redraw blended output for transparent PNG
+  blend_mode = BLEND_NORMAL;
   if (channels == 4) blend_mode = BLEND_PNG;
 
   //Enable FBO for image output
@@ -495,10 +496,10 @@ void OpenGLViewer::outputON(int w, int h, int channels)
     //Use the fbo size for output
     width = fbo.width;
     height = fbo.height;
-  }
 
     //Scale text and 2d elements when downsampling output image
     app->session.scale2d = pow(2, fbo.downsample-1);
+  }
 
   //Re-render frame first
   display();
@@ -506,7 +507,8 @@ void OpenGLViewer::outputON(int w, int h, int channels)
 
 void OpenGLViewer::outputOFF()
 {
-    app->session.scale2d = 1.0;
+  //Undo 2d scaling for downsampling
+  app->session.scale2d = 1.0;
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
   if (visible) fbo.disable();
