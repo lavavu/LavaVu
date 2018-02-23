@@ -164,7 +164,7 @@ paths:
 	@mkdir -p $(PREFIX)/shaders
 
 #Rebuild *.cpp
-$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC)
+$(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) | src/sqlite3/sqlite3.c
 	$(CXX) $(CPPFLAGS) $(DEFINES) -c $< -o $@
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths
