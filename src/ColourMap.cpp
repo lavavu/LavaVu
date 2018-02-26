@@ -562,23 +562,29 @@ void ColourMap::setComponent(int component_index)
 
 void ColourMap::loadTexture(bool repeat)
 {
-  if (!texture) texture = new TextureData();
+  if (!texture) texture = new ImageLoader();
+  texture->nearest = true;
+  texture->repeat = repeat;
   calibrate(0, 1);
-  unsigned char paletteData[4*samples];
+  ImageData* paletteData = new ImageData(samples, 1, 4);
   Colour col;
   for (int i=0; i<samples; i++)
   {
     col = get(i / (float)(samples-1));
     //if (i%64==0) printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
-    paletteData[i*4] = col.r;
-    paletteData[i*4+1] = col.g;
-    paletteData[i*4+2] = col.b;
-    paletteData[i*4+3] = col.a;
+    paletteData->pixels[i*4] = col.r;
+    paletteData->pixels[i*4+1] = col.g;
+    paletteData->pixels[i*4+2] = col.b;
+    paletteData->pixels[i*4+3] = col.a;
   }
 
+  texture->load(paletteData);
+  delete paletteData;
+return;
+
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture->id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, samples, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, paletteData);
+  glBindTexture(GL_TEXTURE_2D, texture->texture->id);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, samples, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, paletteData->pixels);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -594,6 +600,8 @@ void ColourMap::loadTexture(bool repeat)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   }
   glBindTexture(GL_TEXTURE_2D, 0);
+
+  delete paletteData;
 }
 
 void ColourMap::loadPalette(std::string data)

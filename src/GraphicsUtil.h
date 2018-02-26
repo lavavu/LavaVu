@@ -774,13 +774,15 @@ public:
   FilePath fn;
   bool mipmaps;
   bool bgr;
+  bool nearest;
+  bool repeat;
   bool flip;
   TextureData* texture = NULL;
   ImageData* source = NULL;
   int type;
 
-  ImageLoader(bool flip=true) : mipmaps(true), bgr(false), flip(flip), type(VOLUME_NONE) {}
-  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), mipmaps(true), bgr(false), flip(flip), type(VOLUME_NONE) {}
+  ImageLoader(bool flip=true) : mipmaps(true), bgr(false), nearest(false), repeat(true), flip(flip), type(VOLUME_NONE) {}
+  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), mipmaps(true), bgr(false), nearest(false), repeat(true), flip(flip), type(VOLUME_NONE) {}
 
   TextureData* use();
   void load();

@@ -505,9 +505,8 @@ void Volumes::render(int i)
   //Gradient texture
   if (cmap)
   {
-    glActiveTexture(GL_TEXTURE0);
-    glUniform1i(prog->uniforms["uTransferFunction"], 0);
-    glBindTexture(GL_TEXTURE_2D, cmap->texture->id);
+    TextureData* tex = cmap->texture->use();
+    glUniform1i(prog->uniforms["uTransferFunction"], tex->unit);
   }
 
   //Volume texture
