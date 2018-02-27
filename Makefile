@@ -6,8 +6,8 @@ LIBRARY = $(PREFIX)/lib$(PROGNAME).$(LIBEXT)
 SWIGLIB = $(PREFIX)/_$(PROGNAME)Python.so
 
 PYTHON ?= python
-PYLIB ?= `python-config --libs`
-PYINC ?= `python-config --includes`
+PYLIB ?= -L$(shell $(PYTHON) -c 'from distutils import sysconfig; print(sysconfig.get_python_lib())')
+PYINC ?= -I$(shell $(PYTHON) -c 'from distutils import sysconfig; print(sysconfig.get_python_inc())')
 
 #Object files path
 OPATH ?= tmp
