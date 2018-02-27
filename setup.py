@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.30"
+version = "1.2.32"
 
 """
 To release a new verison:
@@ -26,7 +26,8 @@ To release a new verison:
 
     >>> make
 
-    4) Publish the release to PyPi
+    4) Publish the release to PyPi,
+    ensure this is done in a clean checkout with no other source changes!
 
     >>> python setup.py publish
 
