@@ -1658,7 +1658,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       viewer->animateTimer();
       printMessage("Animate mode %d millseconds", viewer->timer_animate);
     }
-    return true; //No record
   }
   else if (parsed.exists("repeat"))
   {
@@ -1980,7 +1979,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (parsed["list"] == "data")
     {
       int offset = 0;
-      std::vector<std::string> list;
       if (aobject)
         ss << ("Data sets for: " + aobject->name()) << std::endl;
       ss << "-----------------------------------------" << std::endl;
