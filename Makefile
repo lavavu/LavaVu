@@ -42,7 +42,7 @@ ifeq ($(OS), Darwin)
   SWIGFLAGS= -undefined suppress -flat_namespace
   CFLAGS += -Wno-unknown-warning-option -Wno-c++14-extensions -Wno-shift-negative-value
   #Mac OS X with Cocoa + CGL
-  CFLAGS += -FCocoa -FOpenGL -I/usr/include/malloc -stdlib=libc++
+  CFLAGS += -FCocoa -FOpenGL -stdlib=libc++
   LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_CGL
   APPLEOBJ=$(OPATH)/CocoaViewer.o
