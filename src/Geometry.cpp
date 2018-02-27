@@ -805,7 +805,8 @@ void Geometry::merge(int start, int end)
     if (records[i]->step == -1)
     {
       fixed.push_back(records[i]);
-      //printf("%d (%s) Found fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
+      //printf("%d (%s) Found fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(),
+      //       records[i]->draw->name().c_str(), records[i]->count() > 0);
 
       fixedVertices += records[i]->count();
     }
@@ -843,17 +844,19 @@ void Geometry::merge(int start, int end)
             {
               merge_dest = fixed[pos];
               merge_source = records[i];
-              //printf("%d (%s) BASE: Added fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(), fixed[pos]->draw->name().c_str(), fixed[pos]->count() > 0);
+              //printf("%d (%s) BASE: Added fixed record for %s, complete? %d\n", i, GeomData::names[type].c_str(),
+              //       fixed[pos]->draw->name().c_str(), fixed[pos]->count() > 0);
               //Use fixed entry as base, copy its reference
               geom.push_back(fixed[pos]);
-              //Erase from fixed list
-              fixed.erase(fixed.begin()+pos);
             }
             else
             {
               //Use as source and copy records to varying entry
               merge_source = fixed[pos];
             }
+
+            //Erase from fixed list
+            fixed.erase(fixed.begin()+pos);
             break;
           }
         }
@@ -863,7 +866,8 @@ void Geometry::merge(int start, int end)
         {
           //Use time-varying entry as base, copy its reference
           geom.push_back(records[i]);
-          //printf("%d (%s) BASE: Added variable record for %s, complete? %d\n", i, GeomData::names[type].c_str(), records[i]->draw->name().c_str(), records[i]->count() > 0);
+          //printf("%d (%s) BASE: Added variable record for %s, complete? %d\n", i, GeomData::names[type].c_str(),
+          //       records[i]->draw->name().c_str(), records[i]->count() > 0);
           //printf("%d/%d Copy record @ %d for %s, complete? %d\n", i, pos, step, records[i]->draw->name().c_str(), records[i]->count() > 0);
           merge_dest = records[i];
         }
@@ -872,7 +876,8 @@ void Geometry::merge(int start, int end)
         {
 
           //Merge with previous entry
-          //printf("%d/%d Merging record @ %d for %s, complete? %d/%d\n", i, pos, step, merge_source->draw->name().c_str(), merge_source->count() > 0, merge_dest->count() > 0);
+          //printf("%d/%d Merging record @ %d for %s, complete? %d/%d\n", i, pos, step, merge_source->draw->name().c_str(),
+          //       merge_source->count() > 0, merge_dest->count() > 0);
           for (auto vals : merge_source->values)
           {
             //Only insert if not already done
@@ -883,13 +888,12 @@ void Geometry::merge(int start, int end)
             {
               //Replace
               //printf(" - REPLACE %s\n", labl.c_str());
-              //merge_dest->values.push_back(vals);
               merge_dest->values[idx] = vals;
             }
             else
             {
-              //printf(" - APPEND %s\n", labl.c_str());
               //Append (none existing)
+              //printf(" - APPEND %s\n", labl.c_str());
               merge_dest->values.push_back(vals);
             }
           }
@@ -924,7 +928,8 @@ void Geometry::merge(int start, int end)
   //Add any remaining fixed entries
   for (auto f : fixed)
   {
-    //printf("(%s) FIXED: Added fixed record for %s, complete? %d\n", GeomData::names[type].c_str(), f->draw->name().c_str(), f->count() > 0);
+    //printf("(%s) FIXED: Added fixed record for %s, complete? %d\n", GeomData::names[type].c_str(),
+    //       f->draw->name().c_str(), f->count() > 0);
     geom.push_back(f);
   }
 
@@ -934,7 +939,9 @@ void Geometry::merge(int start, int end)
     total += geom[i]->count();
 
   allVertsFixed = (total == fixedVertices);
-  //printf("geom %d entries, %d verts, All fixed? %d All verts fixed? %d\n", (int)geom.size(), total, allDataFixed, allVertsFixed);
+  //if (geom.size() > 0)
+  //  printf("%d records, %d geom entries, %d verts, All fixed? %d All verts fixed? %d (%s : %s)\n", (int)records.size(),
+  //         (int)geom.size(), total, allDataFixed, allVertsFixed, GeomData::names[type].c_str(), geom[0]->draw->name().c_str());
 }
 
 void Geometry::setState(unsigned int i, Shader* prog)
