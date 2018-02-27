@@ -441,19 +441,30 @@ float GeomData::valueData(unsigned int vidx, unsigned int idx)
 bool GeomData::opaqueCheck()
 {
   //Return Opacity flag - default transparency enabled
-
-  //Per-object wireframe works only when drawing opaque objects
-  //(can't set per-objects properties when all triangles collected and sorted)
-  opaque = (draw->properties["wireframe"] || draw->properties["opaque"]);
-
-  //If using a colourmap without transparency, and no opacity prop, flag opaque
-  if (draw->colourMap && values.size() > draw->colourIdx &&
-      draw->colourMap->opaque &&
-      (float)draw->properties["opacity"] == 1.0 &&
-      (float)draw->properties["alpha"] == 1.0)
+  if (draw->properties.has("opaque"))
   {
-    opaque = true;
+    //If explicitly set, just use set value
+    opaque = draw->properties["opaque"];
   }
+  else
+  {
+    //Check for any properties that preclude transparency
+
+    //Per-object wireframe works only when drawing opaque objects
+    //(can't set per-objects properties when all triangles collected and sorted)
+    opaque = (draw->properties["wireframe"] || draw->properties["opaque"]);
+
+    //If using a colourmap without transparency, and no opacity prop, flag opaque
+    if (draw->colourMap && values.size() > draw->colourIdx &&
+        draw->colourMap->opaque &&
+        !draw->properties.has("opacityby") &&
+        (float)draw->properties["opacity"] == 1.0 &&
+        (float)draw->properties["alpha"] == 1.0)
+    {
+      opaque = true;
+    }
+  }
+
   //Value is cached for future lookups
   return opaque;
 }
