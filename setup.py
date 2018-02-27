@@ -6,7 +6,7 @@ from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
 from distutils.command.build import build
 import distutils
-from subprocess import call
+import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
 
@@ -129,7 +129,16 @@ class LVBuild(build):
         #cmd.append('CONFIG=debug')
 
         def compile():
-            call(cmd, cwd= os.path.dirname(os.path.abspath(__file__)))
+            try:
+                output = subprocess.check_output(cmd, cwd=os.path.dirname(os.path.abspath(__file__)),
+                                                 stderr=subprocess.STDOUT, universal_newlines=True)
+            except subprocess.CalledProcessError as e:
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+                print("Build Failed!\n")
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+                print("{}\n".format(e.output))
+                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+                raise e
 
         self.execute(compile, [], 'Compiling LavaVu')
 
