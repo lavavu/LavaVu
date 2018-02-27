@@ -1299,7 +1299,7 @@ Geom_Ptr Geometry::add(DrawingObject* draw)
   Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type, timestep);
   records.push_back(geomdata);
   //if (allhidden) draw->properties.data["visible"] = false;
-  //debug_print("(TS %d) %d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", timestep, records.size(), GeomData::names[type].c_str(), draw->name().c_str(), records.size(), geomdata, allhidden);
+  //printf("(TS %d) %d NEW %s DATA STORE CREATED FOR %s size %d ptr %p hidden %d\n", timestep, records.size(), GeomData::names[type].c_str(), draw->name().c_str(), records.size(), geomdata, allhidden);
   return geomdata;
 }
 
@@ -1620,21 +1620,22 @@ json Geometry::getDataLabels(DrawingObject* draw)
   //the index and label of the associated value data sets
   //(used for colouring and filtering)
   json list = json::array();
-  for (unsigned int i = 0; i < records.size(); i++)
+  for (unsigned int i = 0; i < geom.size(); i++)
   {
-    if (records[i]->step > 0)
-      break; //Structure repeats after first timestep (assumes sorted with fixed first)
-    if (!draw || records[i]->draw == draw)
+    //If multiple steps loaded (ie: tracers) skip all except first
+    if (geom[i]->step > 0)
+      break;
+    if (!draw || geom[i]->draw == draw)
     {
-      for (unsigned int v = 0; v < records[i]->values.size(); v++)
+      for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {
         std::stringstream ss;
         json entry;
-        auto range = records[i]->draw->ranges[records[i]->values[v]->label];
-        entry["label"] = records[i]->values[v]->label;
+        auto range = geom[i]->draw->ranges[geom[i]->values[v]->label];
+        entry["label"] = geom[i]->values[v]->label;
         entry["minimum"] = range.minimum;
         entry["maximum"] = range.maximum;
-        entry["size"] = records[i]->values[v]->size();
+        entry["size"] = geom[i]->values[v]->size();
         list.push_back(entry);
       }
     }
