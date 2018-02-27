@@ -61,10 +61,6 @@
 // for convenience
 using json = nlohmann::json;
 
-#ifdef HAVE_LIBTIFF
-#include <tiffio.h>
-#endif
-
 #ifndef _WIN32
 #include <sys/poll.h>
 #include <unistd.h>

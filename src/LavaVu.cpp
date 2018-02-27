@@ -60,6 +60,9 @@
 #include "Main/GlutViewer.h"
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
+#ifdef HAVE_LIBTIFF
+#include <tiffio.h>
+#endif
 
 //Viewer class implementation...
 LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpath)

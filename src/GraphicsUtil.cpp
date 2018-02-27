@@ -46,6 +46,10 @@
 #include <gl2ps.h>
 #endif
 
+#ifdef HAVE_LIBTIFF
+#include <tiffio.h>
+#endif
+
 void compareCoordMinMax(float* min, float* max, float *coord)
 {
   for (int i=0; i<3; i++)
