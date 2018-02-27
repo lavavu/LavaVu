@@ -588,6 +588,13 @@ public:
       if (!draw || draw == records[i]->draw) count += records[i]->count();
     return count;
   }
+
+  void expandHidden()
+  {
+    //Ensure enough hidden flag entries
+    while (hidden.size() < geom.size())
+      hidden.push_back(allhidden);
+  }
 };
 
 class Triangles : public Geometry

@@ -715,6 +715,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
 bool Geometry::hide(unsigned int idx)
 {
   if (idx >= geom.size()) return false;
+  expandHidden();
   if (hidden[idx]) return false;
   hidden[idx] = true;
   redraw = true;
@@ -723,6 +724,7 @@ bool Geometry::hide(unsigned int idx)
 
 void Geometry::hideShowAll(bool hide)
 {
+  expandHidden();
   for (unsigned int i=0; i<hidden.size(); i++)
   {
     hidden[i] = hide;
@@ -735,6 +737,7 @@ void Geometry::hideShowAll(bool hide)
 bool Geometry::show(unsigned int idx)
 {
   if (idx >= geom.size()) return false;
+  expandHidden();
   if (!hidden[idx]) return false;
   hidden[idx] = false;
   redraw = true;
@@ -743,6 +746,7 @@ bool Geometry::show(unsigned int idx)
 
 void Geometry::showObj(DrawingObject* draw, bool state)
 {
+  expandHidden();
   for (unsigned int i = 0; i < geom.size(); i++)
   {
     //std::cerr << i << " owned by object " << geom[i]->draw->id << std::endl;
@@ -1254,10 +1258,7 @@ void Geometry::labels()
 //ie: has data, in range, not hidden and in viewport object list
 bool Geometry::drawable(unsigned int idx)
 {
-  //Ensure enough hidden flag entries
-  while (hidden.size() < geom.size())
-    hidden.push_back(allhidden);
-
+  expandHidden();
   if (idx >= geom.size()) return false;
   if (!geom[idx]->draw->properties["visible"]) return false;
   //Within bounds and not hidden
