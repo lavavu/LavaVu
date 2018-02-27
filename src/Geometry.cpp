@@ -1631,16 +1631,19 @@ json Geometry::getDataLabels(DrawingObject* draw)
   //the index and label of the associated value data sets
   //(used for colouring and filtering)
   json list = json::array();
+  if (geom.size() == 0)
+    merge(session.now, session.now);
+  int laststep = -1;
   for (unsigned int i = 0; i < geom.size(); i++)
   {
-    //If multiple steps loaded (ie: tracers) skip all except first
-    if (geom[i]->step > 0)
+    //Skip all except first (for tracers which have all steps merged)
+    if (geom[i]->step > 0 && laststep >= 0)
       break;
+    laststep = geom[i]->step;
     if (!draw || geom[i]->draw == draw)
     {
       for (unsigned int v = 0; v < geom[i]->values.size(); v++)
       {
-        std::stringstream ss;
         json entry;
         auto range = geom[i]->draw->ranges[geom[i]->values[v]->label];
         entry["label"] = geom[i]->values[v]->label;
