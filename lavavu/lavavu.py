@@ -2554,6 +2554,27 @@ class Viewer(dict):
         """
         return self.app.event()
 
+    def interactive(self, force=False):
+        """
+        Opens an external interactive window
+        Disabled from IPython without force=True as this blocks the kernel
+        In MacOS will never return so kernel halts on closing the window
+        TODO: Use an interactive web viewer window instead but with instant mouse/keyboard feedback
+
+        >>> lv.interactive()
+        >>> #Will not return until interactive window is closed
+
+        Parameters
+        ----------
+        force: boolean
+            Set to True to open the window, even if running in IPython
+        """
+        if force or not is_notebook():
+            return self.commands("interactive")
+        else:
+            print("External interactive viewer window disabled from within IPython notebook")
+            print("to force, use interactive(force=True)")
+
 #Wrapper for list of geomdata objects
 class Geometry(list):
     """  
