@@ -876,8 +876,8 @@ void Geometry::merge(int start, int end)
           }
         }
         
-        //Vertices in varying?
-        if (records[i]->count() > 0)
+        //Vertices in varying? (Or no fixed record to merge with)
+        if (records[i]->count() > 0 || !merge_dest)
         {
           //Use time-varying entry as base, copy its reference
           geom.push_back(records[i]);
