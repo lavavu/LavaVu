@@ -187,6 +187,16 @@ void Session::init()
       }
     },
     {
+      "glyphrenderlist",
+      {
+        "sortedtriangles points lines",
+        "all",
+        "string",
+        "List of renderers created for glyph rendering and order they are displayed.",
+        true, 0
+      }
+    },
+    {
       "font",
       {
         "vector",

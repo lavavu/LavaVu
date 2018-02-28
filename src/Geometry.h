@@ -61,6 +61,13 @@ typedef struct
 typedef struct
 {
   unsigned short distance;
+  GLuint index[2]; //global indices
+  float* vertex; //Pointer to vertex to calc distance from (usually centre)
+} LIndex;
+
+typedef struct
+{
+  unsigned short distance;
   GLuint index[3]; //global indices
   float* vertex; //Pointer to vertex to calc distance from (usually centroid)
 } TIndex;
@@ -616,7 +623,6 @@ public:
 
 class TriSurfaces : public Triangles
 {
-  friend class Glyphs;
   friend class QuadSurfaces; //Allow private access from QuadSurfaces
   SortData<TIndex> sorter;
   unsigned int tricount;
@@ -639,22 +645,40 @@ public:
 
 class Lines : public Geometry
 {
-  friend class Glyphs;
+protected:
   unsigned int idxcount;
   GLuint indexvbo, vbo;
 public:
   Lines(Session& session);
   virtual ~Lines();
   virtual void close();
+  unsigned int lineCount();
   virtual void update();
+  void loadBuffers();
   virtual void render();
   virtual void draw();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
 };
 
+class LinesSorted : public Lines
+{
+  SortData<TIndex> sorter;
+  unsigned int linecount;
+  std::vector<Vec3d> centres;
+public:
+  LinesSorted(Session& session);
+  virtual ~LinesSorted();
+  virtual void close();
+  virtual void update();
+  void loadLines();
+  virtual void sort();    //Threaded sort function
+  void loadList();
+  virtual void render();
+  virtual void draw();
+};
+
 class Points : public Geometry
 {
-  friend class Glyphs;
   SortData<PIndex> sorter;
   GLuint indexvbo, vbo;
 public:
@@ -676,8 +700,9 @@ public:
 class Glyphs : public Geometry
 {
 protected:
+  //Sub-renderers
   Lines* lines;
-  TriSurfaces* tris;
+  Triangles* tris;
   Points* points;
 public:
   Glyphs(Session& session);
@@ -772,5 +797,7 @@ public:
 //Sorting util functions
 int compareXYZ(const void *a, const void *b);
 int comparePoint(const void *a, const void *b);
+
+Geometry* createRenderer(Session& session, const std::string& what);
 
 #endif //Geometry__

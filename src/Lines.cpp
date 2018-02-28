@@ -58,7 +58,54 @@ void Lines::close()
 {
 }
 
+unsigned int Lines::lineCount()
+{
+  total = 0;
+  unsigned int drawelements = 0;
+  for (unsigned int index = 0; index < geom.size(); index++)
+  {
+    unsigned int v = geom[index]->count();
+    //Indexed?
+    if (geom[index]->render->indices.size() > 0)
+      v = geom[index]->render->indices.size();
+
+    total += v;
+    bool hidden = !drawable(index);
+    if (!hidden) drawelements += v; //Count drawable
+    debug_print(" %s, lines %d hidden? %s\n", geom[index]->draw->name().c_str(), v/2, (hidden ? "yes" : "no"));
+  }
+
+  //When objects hidden/shown drawable count changes, so need to reallocate
+  if (elements != drawelements)
+    counts.clear();
+
+  elements = drawelements;
+
+  return drawelements;
+}
+
 void Lines::update()
+{
+  unsigned int lastcount = total;
+  unsigned int drawelements = lineCount();
+  if (drawelements == 0) return;
+
+  //Only reload the vbo data when required
+  //Not needed when objects hidden/shown but required if colours changed
+  if (lastcount != total || reload || vbo == 0)
+  {
+    //Send the data to the GPU via VBO
+    loadBuffers();
+
+    //Initial render
+    //render();
+  }
+
+  if (reload)
+    counts.clear();
+}
+
+void Lines::loadBuffers()
 {
   //Skip update if count hasn't changed
   //To force update, set geometry->reload = true
@@ -66,10 +113,8 @@ void Lines::update()
   if (elements > 0 && (total == (unsigned int)elements)) return;
 
   //Count lines
-  total = 0;
-  for (unsigned int i=0; i<geom.size(); i++)
-    total += geom[i]->count();
-  if (total == 0) return;
+  unsigned int drawelements = lineCount();
+  if (drawelements == 0) return;
 
   if (reload) idxcount = 0;
 

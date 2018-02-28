@@ -230,36 +230,6 @@ Geometry* Model::getRenderer(const std::string& what)
   return NULL;
 }
 
-Geometry* Model::createRenderer(const std::string& what)
-{
-  if (what == "points") //TODO: unsorted points base class
-    return new Points(session);
-  if (what == "sortedpoints")
-    return new Points(session);
-  if (what == "labels")
-    return new Geometry(session);
-  if (what == "vectors")
-    return new Vectors(session);
-  if (what == "tracers")
-    return new Tracers(session);
-  if (what == "triangles")
-    return new Triangles(session);
-  if (what == "sortedtriangles")
-    return new TriSurfaces(session);
-  if (what == "quads")
-    return new QuadSurfaces(session);
-  if (what == "shapes")
-    return new Shapes(session);
-  if (what == "lines")
-    return new Lines(session);
-  if (what == "links")
-    return new Links(session);
-  if (what == "volume")
-    return new Volumes(session);
-  abort_program("Invalid renderer specified! '%s'\n", what.c_str());
-  return NULL;
-}
-
 void Model::load(const FilePath& fn)
 {
   //Open database file
@@ -306,13 +276,13 @@ View* Model::defaultView()
 
 void Model::init()
 {
-  //All renderers are switchable and user defined based on "renderers" global property
+  //All renderers are switchable and user defined based on "renderlist" global property
   geometry.clear();
   std::string renderlist = session.global("renderlist");
   std::istringstream iss(renderlist);
   std::string s;
-  while (getline( iss, s, ' '))
-    geometry.push_back(createRenderer(s));
+  while (getline(iss, s, ' '))
+    geometry.push_back(createRenderer(session, s));
 
   debug_print("Created %d new geometry containers: %s\n", (int)geometry.size(), renderlist.c_str());
 

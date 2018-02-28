@@ -112,7 +112,6 @@ public:
   Geometry* getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers);
   Geometry* getRenderer(lucGeometryType type);
   Geometry* getRenderer(const std::string& what);
-  Geometry* createRenderer(const std::string& what);
 
   void clearObjects(bool fixed=false);
   void setup();

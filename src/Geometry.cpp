@@ -1805,7 +1805,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   // Translate to the point of arrow -> position + vector/2
   float headD = head_radius*2;
   //Output is lines only if using very low quality setting
-  if (segment_count < 4)
+  if (type == lucLineType)
   {
     // Draw Line
     Vec3d vertex0 = Vec3d(0,0,-halflength);
@@ -2235,9 +2235,35 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 Glyphs::Glyphs(Session& session) : Geometry(session)
 {
   //Create sub-renderers
-  lines = new Lines(session);
-  tris = new TriSurfaces(session);
-  points = new Points(session);
+  //All renderers are switchable and user defined based on "glyphrenderlist" global property
+  std::string renderlist = session.global("glyphrenderlist");
+  std::istringstream iss(renderlist);
+  std::string s;
+  while (getline(iss, s, ' '))
+  {
+    Geometry* renderer = createRenderer(session, s);
+    renderer->internal = true;
+
+    switch (renderer->type)
+    {
+      case lucLineType:
+        lines = (Lines*)renderer;
+        break;
+      case lucTriangleType:
+        tris = (Triangles*)renderer;
+        break;
+      case lucPointType:
+        points = (Points*)renderer;
+        break;
+      default:
+        delete renderer;
+    }
+  }
+
+  if (!lines) lines = new Lines(session);
+  if (!tris) tris = (Triangles*)(new TriSurfaces(session));
+  if (!points) points = new Points(session);
+
   tris->internal = lines->internal = points->internal = true;
 }
 
@@ -2332,9 +2358,9 @@ void Glyphs::display(bool refresh)
 void Glyphs::update()
 {
   //No fixed or time varying support
-  tris->geom = tris->records;
-  lines->geom = lines->records;
-  points->geom = points->records;
+  tris->merge(session.now, session.now);
+  lines->merge(session.now, session.now);
+  points->merge(session.now, session.now);
 
   tris->update();
   lines->update();
@@ -2415,4 +2441,37 @@ void Imposter::update()
       glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
   }
 }
+
+Geometry* createRenderer(Session& session, const std::string& what)
+{
+  if (what == "points") //TODO: unsorted points base class
+    return new Points(session);
+  if (what == "sortedpoints")
+    return new Points(session);
+  if (what == "labels")
+    return new Geometry(session);
+  if (what == "vectors")
+    return new Vectors(session);
+  if (what == "tracers")
+    return new Tracers(session);
+  if (what == "triangles")
+    return new Triangles(session);
+  if (what == "sortedtriangles")
+    return new TriSurfaces(session);
+  if (what == "quads")
+    return new QuadSurfaces(session);
+  if (what == "shapes")
+    return new Shapes(session);
+  if (what == "lines")
+    return new Lines(session);
+  if (what == "sortedlines")
+    return new LinesSorted(session);
+  if (what == "links")
+    return new Links(session);
+  if (what == "volume")
+    return new Volumes(session);
+  abort_program("Invalid renderer specified! '%s'\n", what.c_str());
+  return NULL;
+}
+
 
