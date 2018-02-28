@@ -792,7 +792,7 @@ public:
   void loadPNG();
   void loadJPEG(int req_channels=0);
   void loadTIFF();
-  int build();
+  int build(ImageData* image);
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
   void load3Dslice(int slice, void* data);
   bool empty() {return !texture || !texture->width;}

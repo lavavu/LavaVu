@@ -187,9 +187,9 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
   //Use/load default texture
   if (tex->empty())
   {
-    if (tex->source)
+    if (tex->source || !tex->fn.empty())
     {
-      tex->build();
+      tex->load();
     }
     else if (texture)
     {
@@ -212,6 +212,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
     }
   }
 
+  GL_Error_Check;
   return tex->use();
 }
 

@@ -75,7 +75,7 @@ public:
   float maximum;
   bool calibrated;
   bool opaque;
-  ImageLoader* texture;
+  ImageLoader* texture = NULL;
 
   ColourMap(Session& session, std::string name="", std::string props="");
   ~ColourMap()

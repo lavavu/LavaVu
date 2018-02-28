@@ -704,7 +704,7 @@ TextureData* ImageLoader::use()
 {
   if (!empty())
   {
-    if (texture->depth > 1)
+    if (texture->depth > 0)
     {
       glEnable(GL_TEXTURE_3D);
       glActiveTexture(GL_TEXTURE0 + texture->unit);
@@ -716,6 +716,7 @@ TextureData* ImageLoader::use()
       glActiveTexture(GL_TEXTURE0 + texture->unit);
       glBindTexture(GL_TEXTURE_2D, texture->id);
     }
+    GL_Error_Check;
     //printf("USE TEXTURE: (id %d unit %d)\n", texture->id, texture->unit);
     return texture;
   }
@@ -728,33 +729,34 @@ TextureData* ImageLoader::use()
 
 void ImageLoader::load()
 {
+  //Load texture from internal data
+
   //Already loaded
   if (texture) return;
 
   //No file, requires source data
-  if (fn.empty() && !source) return;
-
-  //Load texture file
   if (!source)
+  {
+    if (fn.empty()) return;
+
+    //Load texture file
     read();
+  }
 
   //Build texture
-  build();
+  build(source);
 }
 
 void ImageLoader::load(ImageData* image)
 {
-  //Load image from data
+  //Load image from provided external data
   if (!image) abort_program("NULL image data\n");
 
-  //source = ImageData(width, height, channels, imageData);
-  source = image;
-
   //Requires flip on load for OpenGL
-  if (source && flip) source->flip();
+  if (flip) image->flip();
 
   //Build texture
-  build();
+  build(image);
 }
 
 void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
@@ -920,9 +922,9 @@ void ImageLoader::loadTIFF()
 #endif
 }
 
-int ImageLoader::build()
+int ImageLoader::build(ImageData* image)
 {
-  if (!source) return 0;
+  if (!image) return 0;
   if (!texture)
     texture = new TextureData();
 
@@ -961,26 +963,26 @@ int ImageLoader::build()
   //Load the texture data based on bits per pixel
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  switch (source->channels)
+  switch (image->channels)
   {
   case 1:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, source->width, source->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, source->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, image->width, image->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 2:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, source->width, source->height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, source->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, image->width, image->height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 3:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, source->width, source->height, 0, bgr ? GL_BGR : GL_RGB, GL_UNSIGNED_BYTE, source->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, bgr ? GL_BGR : GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 4:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, source->width, source->height, 0, bgr ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, source->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->width, image->height, 0, bgr ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, image->pixels);
     break;
   }
 
   //Copy metadata
-  texture->width = source->width;
-  texture->height = source->height;
-  texture->channels = source->channels;
+  texture->width = image->width;
+  texture->height = image->height;
+  texture->channels = image->channels;
 
   return 1;
 }
