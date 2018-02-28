@@ -81,6 +81,14 @@ int Session::parse(Properties* target, const std::string& property)
   //Ignore case
   std::transform(key.begin(), key.end(), key.begin(), ::tolower);
 
+  //Parse simple increments and decrements
+  int end = key.length()-1;
+  char prev = key.at(end);
+  if (prev == '+' || prev == '-' || prev == '*')
+  {
+    key = key.substr(0,end);
+  }
+
   //Check a valid key provided
   if (properties.count(key) == 0)
   {
@@ -100,21 +108,18 @@ int Session::parse(Properties* target, const std::string& property)
     try
     {
       //Parse simple increments and decrements
-      int end = key.length()-1;
-      char prev = key.at(end);
       if (prev == '+' || prev == '-' || prev == '*')
       {
-        std::string mkey = key.substr(0,end);
         std::stringstream ss(value);
         float parsedval;
         ss >> parsedval;
-        float val = dest[mkey];
+        float val = dest[key];
         if (prev == '+')
-          dest[mkey] = val + parsedval;
+          dest[key] = val + parsedval;
         else if (prev == '-')
-          dest[mkey] = val - parsedval;
+          dest[key] = val - parsedval;
         else if (prev == '*')
-          dest[mkey] = val * parsedval;
+          dest[key] = val * parsedval;
 
       }
       else if (valuel == "true")
