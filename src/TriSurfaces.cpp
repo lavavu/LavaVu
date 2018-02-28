@@ -61,7 +61,7 @@ void TriSurfaces::update()
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  if (centroids.size() != total || vbo == 0 || (reload && (!allVertsFixed || internal)))
+  if (centroids.size() != total/3 || vbo == 0 || (reload && (!allVertsFixed || internal)))
   {
     //Load & optimise the mesh data (including updating centroids)
     loadMesh();
@@ -79,7 +79,7 @@ void TriSurfaces::update()
     sorter.changed = true;
 
   //Reload the sort array?
-  if (sorter.size != total || !allVertsFixed || counts.size() != geom.size())
+  if (sorter.size != total/3 || !allVertsFixed || counts.size() != geom.size())
     loadList();
 }
 
@@ -91,7 +91,7 @@ void TriSurfaces::loadMesh()
   clock_t t1,t2,tt;
   tt=clock();
 
-  debug_print("Loading %d triangles...\n", total);
+  debug_print("Loading %d triangles...\n", total/3);
 
   //Calculate normals, delete duplicate verts, calc indices
   GLuint unique = 0;
@@ -99,7 +99,7 @@ void TriSurfaces::loadMesh()
   elements = 0;
   //Reset triangle centroid data
   centroids.clear();
-  centroids.reserve(total);
+  centroids.reserve(total/3);
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
@@ -274,7 +274,7 @@ void TriSurfaces::loadMesh()
     debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
   }
 
-  //debug_print("  *** There were %d unique vertices out of %d total.\n", unique, total*3);
+  //debug_print("  *** There were %d unique vertices out of %d total.\n", unique, total);
   t2 = clock();
   debug_print("  %.4lf seconds to optimise triangle mesh\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
@@ -285,10 +285,10 @@ void TriSurfaces::loadList()
   clock_t t2,tt;
   tt=clock();
 
-  debug_print("Loading up to %d triangles into list...\n", total);
+  debug_print("Loading up to %d triangles into list...\n", total/3);
 
   //Create sorting array
-  sorter.allocate(total, 3);
+  sorter.allocate(total/3, 3);
 
   //Element counts to actually plot (exclude filtered/hidden) per geom entry
   counts.clear();
@@ -316,7 +316,7 @@ void TriSurfaces::loadList()
     for (unsigned int t = 0; t < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; t+=3, offset++)
     {
       //voffset is offset of the last vertex added to the vbo from the previous object
-      assert(offset < total);
+      assert(offset < total/3);
       if (!internal && filter)
       {
         //If any vertex filtered, skip whole tri
@@ -636,11 +636,11 @@ void TriSurfaces::sort()
     return;
   }
 
-  if (tricount > total)
+  if (tricount > total/3)
   {
     //Will overflow sorter.buffer buffer (this should not happen!)
-    fprintf(stderr, "Too many triangles! %d > %d\n", tricount, total);
-    tricount = total;
+    fprintf(stderr, "Too many triangles! %d > %d\n", tricount, total/3);
+    tricount = total/3;
   }
 
   if (view->is3d)

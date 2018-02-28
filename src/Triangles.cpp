@@ -55,13 +55,6 @@ Triangles::~Triangles()
 
 void Triangles::close()
 {
-  /*if (vbo)
-    glDeleteBuffers(1, &vbo);
-  if (indexvbo)
-    glDeleteBuffers(1, &indexvbo);
-  vbo = 0;
-  indexvbo = 0;
-*/
   reload = true;
 }
 
@@ -100,7 +93,7 @@ unsigned int Triangles::triCount()
       debug_print("Surface %d ", index);
     }
 
-    total += tris;
+    total += tris*3;
     bool hidden = !drawable(index);
     if (!hidden) drawelements += tris*3; //Count drawable
     debug_print(" %s, triangles %d hidden? %s\n", geom[index]->draw->name().c_str(), tris, (hidden ? "yes" : "no"));
@@ -118,14 +111,14 @@ unsigned int Triangles::triCount()
 void Triangles::update()
 {
   // Update triangles...
-  unsigned int lastcount = total;
+  unsigned int lastcount = total/3;
   unsigned int drawelements = triCount();
   if (drawelements == 0) return;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  //if ((lastcount != total && reload) || !tidx)
-  if ((lastcount != total && reload) || vbo == 0)
+  //if ((lastcount != total/3 && reload) || !tidx)
+  if ((lastcount != total/3 && reload) || vbo == 0)
   {
     //Send the data to the GPU via VBO
     loadBuffers();
