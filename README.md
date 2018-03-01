@@ -38,6 +38,9 @@ It's now in the python package index, so you can install with *pip*:
 ```
 pip install --user lavavu
 ```
+This needs to compile the library as binaries are not provided, so you may need some developer tools and headers first on Linux.
+eg: Ubuntu:
+`sudo apt install build-essential libgl1-mesa-dev libx11-dev`
 
 Try it out:
 
@@ -62,6 +65,7 @@ If all goes well the viewer will be built, try running with:
 
 ### Dependencies ###
 
+* OpenGL and Zlib, present on most systems, headers may need to be installed
 * To use with python requires python 2.7+ and NumPy
 * For video output, requires: libavcodec, libavformat, libavutil, libswscale (from FFmpeg / libav)
 * To build the python interface from source requires swig (http://www.swig.org/)
