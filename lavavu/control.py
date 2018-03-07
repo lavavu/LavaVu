@@ -738,19 +738,20 @@ class Colour(Control):
         html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
-class ColourMap(Control):
+class Gradient(Control):
     """A colourmap editor
     """
     def __init__(self, target, *args, **kwargs):
-        super(ColourMap, self).__init__(target, property="colourmap", command="", *args, **kwargs)
+        super(Gradient, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
         self.maps = target.instance.state["colourmaps"]
+        self.map = None
         for m in self.maps:
             if m["name"] == self.value:
                 self.map = m
+        self.selected = -1;
         #Replace action on the control
         Action.actions[self.id] = ColourMapAction(target)
-        self.selected = -1;
 
     def controls(self):
         html = self.labelhtml()
@@ -783,7 +784,10 @@ class ColourMap(Control):
             if m < len(self.maps)-1: mapstr += ','
         mapstr += ']'
         html = html.replace('---COLOURMAPS---', mapstr)
-        html = html.replace('---COLOURMAP---', json.dumps(self.map["colours"]))
+        if self.map:
+            html = html.replace('---COLOURMAP---', json.dumps(self.map["colours"]))
+        else:
+            html = html.replace('---COLOURMAP---', '"black white"')
         html = html.replace('---SELID---', str(self.selected))
         html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
@@ -819,7 +823,7 @@ class ColourMaps(List):
                 options[-1].append(True)
                 sel = m
 
-        self.gradient = ColourMap(target)
+        self.gradient = Gradient(target)
         self.gradient.selected = sel #gradient editor needs to know selection index
         self.gradient.label = "" #Clear label
 
@@ -1110,6 +1114,19 @@ class ControlFactory(object):
             #Add to master list - not cleared after display
             allcontrols.append(ctrl)
 
+    def getid(self):
+        viewerid = len(windows)
+        if isviewer(self._target):
+            try:
+                #Find viewer id
+                viewerid = windows.index(self._target)
+            except (ValueError):
+                #Append the current viewer ref
+                windows.append(self._target)
+                #Use viewer instance just added
+                viewerid = len(windows)-1
+        return viewerid
+
     def show(self, fallback=None):
         """
         Displays all added controls including viewer if any
@@ -1122,16 +1139,7 @@ class ControlFactory(object):
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
-        viewerid = len(windows)
-        if isviewer(self._target):
-            try:
-                #Find viewer id
-                viewerid = windows.index(self._target)
-            except (ValueError):
-                #Append the current viewer ref
-                windows.append(self._target)
-                #Use viewer instance just added
-                viewerid = len(windows)-1
+        viewerid = self.getid()
 
         #Generate the HTML
         html = ""

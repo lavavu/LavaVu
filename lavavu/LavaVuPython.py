@@ -312,6 +312,7 @@ class DrawingObject(object):
     def __init__(self, *args):
         _LavaVuPython.DrawingObject_swiginit(self, _LavaVuPython.new_DrawingObject(*args))
     colourMap = _swig_property(_LavaVuPython.DrawingObject_colourMap_get, _LavaVuPython.DrawingObject_colourMap_set)
+    opacityMap = _swig_property(_LavaVuPython.DrawingObject_opacityMap_get, _LavaVuPython.DrawingObject_opacityMap_set)
     __swig_destroy__ = _LavaVuPython.delete_DrawingObject
 DrawingObject.getColourMap = new_instancemethod(_LavaVuPython.DrawingObject_getColourMap, None, DrawingObject)
 DrawingObject.name = new_instancemethod(_LavaVuPython.DrawingObject_name, None, DrawingObject)

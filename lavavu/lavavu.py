@@ -732,6 +732,64 @@ class Object(dict):
         c = ColourMap(self.ref.colourMap, self.instance)
         c.update(data, reverse, monochrome, **kwargs)
         return c
+
+    def opacitymap(self, data=None, **kwargs):
+        """
+        Load opacity map data for object
+
+        Parameters
+        ----------
+        data: list,str
+            If not provided, just returns the opacity map
+            (A default is created if none exists)
+            Provided opacity map data can be
+            - list of opacity values,
+            - list of position,opacity tuples
+            Creates an opacity map named objectname_opacitymap if object
+            doesn't already have an opacity map
+
+        Returns
+        -------
+        opacitymap: ColourMap(dict)
+            The wrapper object of the opacity map loaded/created
+        """
+        colours = []
+        if data is None:
+            cmid = self["opacitymap"]
+            if cmid:
+                #Just return the existing map
+                return ColourMap(cmid, self.instance)
+            else:
+                #Proceeed to create a new map with default data
+                colours = ["black:0", "black"]
+        #Create colour list using provided opacities
+        elif isinstance(data, list) and len(data) > 1:
+            if isinstance(data[0], list) or isinstance(data[0], tuple) and len(data[0]) > 1:
+                #Contains positions
+                for entry in data:
+                    colours.append((entry[0], "black:" + str(entry[1])))
+                #Ensure first and last positions of list data are always 0 and 1
+                if colours[0][0]  != 0.0: colours[0]  = (0.0, colours[0][1])
+                if colours[-1][0] != 1.0: colours[-1] = (1.0, colours[-1][1])
+            else:
+                #Opacity only
+                for entry in data:
+                    colours.append("black:" + str(entry))
+        else:
+            print("Only list data is supported for opacity maps, length of list must be at least 2")
+            return None
+
+        #Load opacity map on this object
+        ret = None
+        if self.ref.opacityMap is None:
+            self.ref.opacityMap = self.instance.app.addColourMap(self.name + "_opacitymap")
+            self["opacitymap"] = self.ref.opacityMap.name
+        c = ColourMap(self.ref.opacityMap, self.instance)
+        c.update(colours, **kwargs)
+        opby = self["opacityby"]
+        if len(str(opby)) == 0:
+            self["opacityby"] = 0 #Use first field by default
+        return c
         
     def reload(self):
         """
@@ -1187,7 +1245,7 @@ class ColourMap(dict):
         monochrome: boolean
             Convert to greyscale
         """
-        if isinstance(data, list) and len(data) > 1:
+        if isinstance(data, list) and len(data) > 1 and not isinstance(data[0], str) and len(data[0]) > 1:
             #Sort by position
             data = sorted(data, key=lambda tup: tup[0])
             #Ensure first and last positions of list data are always 0 and 1

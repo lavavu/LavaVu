@@ -13033,6 +13033,58 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_DrawingObject_opacityMap_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  ColourMap *arg2 = (ColourMap *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"DrawingObject_opacityMap_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_opacityMap_set" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_ColourMap, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "DrawingObject_opacityMap_set" "', argument " "2"" of type '" "ColourMap *""'"); 
+  }
+  arg2 = reinterpret_cast< ColourMap * >(argp2);
+  if (arg1) (arg1)->opacityMap = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_DrawingObject_opacityMap_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  DrawingObject *arg1 = (DrawingObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  ColourMap *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "DrawingObject_opacityMap_get" "', argument " "1"" of type '" "DrawingObject *""'"); 
+  }
+  arg1 = reinterpret_cast< DrawingObject * >(argp1);
+  result = (ColourMap *) ((arg1)->opacityMap);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ColourMap, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_DrawingObject_getColourMap__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   DrawingObject *arg1 = (DrawingObject *) 0 ;
@@ -20847,6 +20899,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"new_DrawingObject", _wrap_new_DrawingObject, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_colourMap_set", _wrap_DrawingObject_colourMap_set, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_colourMap_get", (PyCFunction)_wrap_DrawingObject_colourMap_get, METH_O, NULL},
+	 { (char *)"DrawingObject_opacityMap_set", _wrap_DrawingObject_opacityMap_set, METH_VARARGS, NULL},
+	 { (char *)"DrawingObject_opacityMap_get", (PyCFunction)_wrap_DrawingObject_opacityMap_get, METH_O, NULL},
 	 { (char *)"DrawingObject_getColourMap", _wrap_DrawingObject_getColourMap, METH_VARARGS, NULL},
 	 { (char *)"DrawingObject_name", (PyCFunction)_wrap_DrawingObject_name, METH_O, NULL},
 	 { (char *)"delete_DrawingObject", (PyCFunction)_wrap_delete_DrawingObject, METH_O, NULL},
