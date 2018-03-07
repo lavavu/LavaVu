@@ -18,6 +18,7 @@ protected:
   //Server& operator=(Server const&) {} // assignment operator is protected
 
   static Server* _self;
+  static int refs;
 
   OpenGLViewer* viewer;
 
@@ -35,16 +36,12 @@ public:
   static std::string htmlpath;
   static bool render;
 
-  unsigned char* jpeg;
-  int jpeg_bytes;
+  unsigned char* image_file_data;
+  unsigned int image_file_bytes;
 
   //Public instance constructor/getter
   static Server* Instance(OpenGLViewer* viewer);
-  static void Delete()
-  {
-    if (_self) delete _self;
-    _self = NULL;
-  }
+  static void Delete();
   static bool running() { return _self != NULL;}
   virtual ~Server();
   struct mg_context* ctx;

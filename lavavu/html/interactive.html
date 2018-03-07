@@ -1,0 +1,25 @@
+<html>
+
+<head>
+<title>LavaVu Interface</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<link rel="stylesheet" type="text/css" href="styles.css">
+<script type="text/javascript" src="OK-min.js"></script>
+<script type="text/javascript" src="interactive.js"></script>
+
+</head>
+
+<body onload="initServerPage();" oncontextmenu="return false;">
+  <img id="frame" style="position: absolute; top: 0px; left: 0px; z-index: -1;"></img>
+  <div id="mode" style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
+    <select id="mode_select" onchange='this.blur();'>
+      <option>Rotate</option>
+      <option>Translate</option>
+      <option>Zoom</option>
+    </select>
+    <input type="button" value="Reset" onclick="requestData('/command=reset');">
+  </div>
+</body>
+
+</html>

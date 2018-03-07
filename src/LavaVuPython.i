@@ -62,8 +62,9 @@ const std::string version;
 
 class OpenGLViewer
 {
-  public:
-    bool quitProgram;
+public:
+  bool quitProgram;
+  int port;
 };
 
 class DrawingObject

@@ -10,11 +10,11 @@
 #endif
 
 #include "base64.h"
-#include "jpeg/jpge.h"
 
 #define MAX_POST_LEN 32767
 
 Server* Server::_self = NULL; //Static
+int Server::refs = 0;
 
 //Defaults
 int Server::port = 8080;
@@ -27,14 +27,32 @@ Server* Server::Instance(OpenGLViewer* viewer)
 {
   if (!_self)   // Only allow one instance of class to be generated.
     _self = new Server(viewer);
+  else
+    _self->viewer = viewer; //Replace viewer
 
+  //Increment reference count
+  refs++;
+  //printf("Server Instance Retrieved (%d)\n", refs);
   return _self;
+}
+
+void Server::Delete()
+{
+  if (!_self) return;
+  refs--;
+  //printf("Server Instance Discarded (%d)\n", refs);
+  //Only delete when no more references
+  if (refs == 0)
+  {
+    delete _self;
+    _self = NULL;
+  }
 }
 
 Server::Server(OpenGLViewer* viewer) : viewer(viewer)
 {
   imageCache = NULL;
-  jpeg = NULL;
+  image_file_data = NULL;
   updated = false;
   client_id = 0;
   synched[0] = true;
@@ -52,6 +70,12 @@ Server::~Server()
 void Server::open(int width, int height)
 {
   if (!port) return;
+  if (ctx)
+  {
+    std::cerr << "HTTP server already running" << std::endl;
+    viewer->port = port;
+    return;
+  }
   //Enable the timer
   //viewer->setTimer(250);   //1/4 sec timer
   struct mg_callbacks callbacks;
@@ -71,7 +95,22 @@ void Server::open(int width, int height)
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.begin_request = &Server::request;
   if ((ctx = mg_start(&callbacks, NULL, options)) == NULL)
-    std::cerr << "HTTP server open failed" << std::endl;
+  {
+    if (port < 9000)
+    {
+      //Try another port
+      port++;
+      open(width, height);
+    }
+    else
+    {
+      std::cerr << "HTTP server open failed" << std::endl;
+    }
+    return;
+  }
+
+  viewer->port = port;
+  std::cerr << "HTTP server running on port " << port << std::endl;
 }
 
 void Server::resize(int new_width, int new_height)
@@ -103,46 +142,21 @@ void Server::display()
 {
   //Image serving can be disabled by global prop
   if (!ctx || !render) return;
-  if (quality < 50) quality = 90;  //Ensure valid
+  if (quality < 50 || quality > 100) quality = -1;  //Ensure valid, use PNG if not in [50,100] range
 
   //If not currently sending an image, update the image data
   if (cs_mutex.try_lock())
   {
     //CRITICAL SECTION
     // Read the pixels (flipped)
-    ImageData *image = viewer->pixels(NULL, 3, true);
+    ImageData *image = viewer->pixels(NULL, 3); //, true);
 
     if (!compare(image))
     {
-      // Writes JPEG image to memory buffer.
-      // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
-      // If return value is true, jpeg_bytes will be set to the size of the compressed data.
-      jpeg_bytes = viewer->width * viewer->height * 3;
-      if (jpeg) delete[] jpeg;
-      jpeg = new unsigned char[jpeg_bytes];
-
-      // Fill in the compression parameter structure.
-      jpge::params params;
-      params.m_quality = quality;
-      params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
-
-      if (compress_image_to_jpeg_file_in_memory(jpeg, jpeg_bytes, viewer->width, viewer->height, 3,
-          (const unsigned char *)image->pixels, params))
-      {
-        debug_print("JPEG compressed, size %d\n", jpeg_bytes);
-      }
-      else
-        debug_print("JPEG compress error\n");
-
-      //Deleted in compare
-      //delete image;
-
+      image_file_data = getImageBytes(image, &image_file_bytes, quality);
       updated = true; //Set new frame rendered flag
-      std::map<int,bool>::iterator iter;
-      for (iter = synched.begin(); iter != synched.end(); ++iter)
-      {
+      for (auto iter = synched.begin(); iter != synched.end(); ++iter)
         iter->second = false; //Flag update waiting
-      }
       cv.notify_all(); //Display complete signal to all waiting clients
     }
     cs_mutex.unlock(); //END CRITICAL SECTION
@@ -329,12 +343,13 @@ int Server::request(struct mg_connection *conn)
   //Respond with an image frame
   if (id >= 0)
   {
-    if (!Server::render) {
+    if (!Server::render)
+    {
       Server::render = true;
       _self->updated = true; //Force update
-    _self->viewer->postdisplay = true;
-    _self->synched[id] = true;
+      _self->synched[id] = true;
     }
+
     //Image update requested, wait until data available then send
     std::thread::id tid = std::this_thread::get_id();
     std::unique_lock<std::mutex> lk(_self->cs_mutex);
@@ -344,13 +359,16 @@ int Server::request(struct mg_connection *conn)
 
     if (!_self->viewer->quitProgram)
     {
-      //debug_print("Sending JPEG %d bytes...\n", _self->jpeg_bytes);
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
-      mg_printf(conn, "Content-Length: %d\r\n", _self->jpeg_bytes);
+      //debug_print("Sending image %d bytes...\n", _self->image_file_bytes);
+      if (quality > 0)
+        mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n");
+      else
+        mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\n");
+      mg_printf(conn, "Content-Length: %d\r\n", _self->image_file_bytes);
       //Allow cross-origin requests
       mg_printf(conn, "Access-Control-Allow-Origin: *\r\n\r\n");
       //Write raw
-      mg_write(conn, _self->jpeg, _self->jpeg_bytes);
+      mg_write(conn, _self->image_file_data, _self->image_file_bytes);
 
       _self->updated = false;
       _self->synched[id] = true;

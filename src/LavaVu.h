@@ -109,7 +109,6 @@ protected:
   Lines* rulers;
   QuadSurfaces* border;
 
-  unsigned int idle;
   std::chrono::time_point<std::chrono::system_clock> frametime;
   int framecount;
   float fps;

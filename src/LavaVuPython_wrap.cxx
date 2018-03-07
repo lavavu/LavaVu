@@ -5454,22 +5454,6 @@ SWIG_AsVal_bool (PyObject *obj, bool *val)
 
 
 SWIGINTERN int
-SWIG_AsVal_unsigned_SS_int (PyObject * obj, unsigned int *val)
-{
-  unsigned long v;
-  int res = SWIG_AsVal_unsigned_SS_long (obj, &v);
-  if (SWIG_IsOK(res)) {
-    if ((v > UINT_MAX)) {
-      return SWIG_OverflowError;
-    } else {
-      if (val) *val = static_cast< unsigned int >(v);
-    }
-  }  
-  return res;
-}
-
-
-SWIGINTERN int
 SWIG_AsVal_int (PyObject * obj, int *val)
 {
   long v;
@@ -5479,6 +5463,22 @@ SWIG_AsVal_int (PyObject * obj, int *val)
       return SWIG_OverflowError;
     } else {
       if (val) *val = static_cast< int >(v);
+    }
+  }  
+  return res;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_unsigned_SS_int (PyObject * obj, unsigned int *val)
+{
+  unsigned long v;
+  int res = SWIG_AsVal_unsigned_SS_long (obj, &v);
+  if (SWIG_IsOK(res)) {
+    if ((v > UINT_MAX)) {
+      return SWIG_OverflowError;
+    } else {
+      if (val) *val = static_cast< unsigned int >(v);
     }
   }  
   return res;
@@ -12655,6 +12655,58 @@ SWIGINTERN PyObject *_wrap_OpenGLViewer_quitProgram_get(PyObject *SWIGUNUSEDPARM
   arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
   result = (bool) ((arg1)->quitProgram);
   resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_port_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_port_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_port_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_port_set" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  if (arg1) (arg1)->port = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_port_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  int result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_port_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (int) ((arg1)->port);
+  resultobj = SWIG_From_int(static_cast< int >(result));
   return resultobj;
 fail:
   return NULL;
@@ -20786,6 +20838,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"List_swiginit", List_swiginit, METH_VARARGS, NULL},
 	 { (char *)"OpenGLViewer_quitProgram_set", _wrap_OpenGLViewer_quitProgram_set, METH_VARARGS, NULL},
 	 { (char *)"OpenGLViewer_quitProgram_get", (PyCFunction)_wrap_OpenGLViewer_quitProgram_get, METH_O, NULL},
+	 { (char *)"OpenGLViewer_port_set", _wrap_OpenGLViewer_port_set, METH_VARARGS, NULL},
+	 { (char *)"OpenGLViewer_port_get", (PyCFunction)_wrap_OpenGLViewer_port_get, METH_O, NULL},
 	 { (char *)"new_OpenGLViewer", (PyCFunction)_wrap_new_OpenGLViewer, METH_NOARGS, NULL},
 	 { (char *)"delete_OpenGLViewer", (PyCFunction)_wrap_delete_OpenGLViewer, METH_O, NULL},
 	 { (char *)"OpenGLViewer_swigregister", OpenGLViewer_swigregister, METH_VARARGS, NULL},

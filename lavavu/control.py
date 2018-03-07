@@ -1207,3 +1207,16 @@ class ControlFactory(object):
         self._content = []
         self._containers = []
 
+    def interactive(self, port=8080, resolution=(640,480)):
+        """Display popup interactive viewer window
+        """
+        if not htmlpath: return
+        try:
+            if __IPYTHON__:
+                from IPython.display import display,Javascript
+                js = 'var win = window.open("http://localhost:---PORT---/interactive.html", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=' + str(resolution[0]) + ',height=' + str(resolution[1]) + '");'
+                js = js.replace('---PORT---', str(port))
+                display(Javascript(js))
+        except (NameError, ImportError):
+            pass
+

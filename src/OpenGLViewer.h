@@ -100,6 +100,7 @@ public:
   int timer_msec = 10;
   int timer_animate = 50;
   bool timeloop = false;
+  int port = 0; //Server port
 
   ApplicationInterface* app;
   std::deque<std::string> commands;

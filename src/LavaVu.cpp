@@ -197,7 +197,8 @@ LavaVu::~LavaVu()
 
   close();
 
-  Server::Delete();
+  if (viewer->port > 0)
+    Server::Delete();
 
 #ifdef HAVE_LIBAVCODEC
   if (encoder) delete encoder;
@@ -305,7 +306,7 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'q':
         //Web server JPEG quality
         ss >> Server::quality;
-        if (Server::quality > 0) Server::render = true;
+        if (Server::quality != 0) Server::render = true;
         break;
       case 'n':
         //Web server threads
@@ -464,7 +465,9 @@ void LavaVu::run(std::vector<std::string> args)
 
   //Add server attachments to the viewer
   if (Server::port > 0)
+  {
     viewer->addOutput(Server::Instance(viewer));
+  }
 
   //If server running, always stay open (persist flag)
   bool persist = Server::running();
@@ -2182,7 +2185,7 @@ void LavaVu::display(bool redraw)
     }
   }
 
-  if (viewer->visible && !viewer->imagemode)
+  if (viewer->visible && !viewer->imagemode || message[0] == ':')
   {
     //Print current info message (displayed for one frame only)
     if (status) displayMessage();

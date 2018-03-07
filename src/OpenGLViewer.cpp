@@ -321,8 +321,7 @@ void OpenGLViewer::setsize(int w, int h)
   //Resize fbo
   display(false); //Ensure correct context active
   if (fbo.enabled && fbo.create(w, h))
-    //Reset the viewer size
-    resize(w, h);
+    resize(fbo.width, fbo.height);  //Reset the viewer size
 }
 
 void OpenGLViewer::resize(int new_width, int new_height)
@@ -373,7 +372,9 @@ void OpenGLViewer::execute()
 void OpenGLViewer::loop(bool interactive)
 {
   //Event loop processing
-  if (visible) show();
+  if (visible)
+    show();
+
   while (!quitProgram)
   {
     if (interactive)
@@ -381,6 +382,7 @@ void OpenGLViewer::loop(bool interactive)
     else
       OpenGLViewer::execute();
   }
+
   if (visible) hide();
     if (interactive)
       execute();
@@ -507,15 +509,21 @@ void OpenGLViewer::outputON(int w, int h, int channels)
 
 void OpenGLViewer::outputOFF()
 {
-  //Undo 2d scaling for downsampling
-  app->session.scale2d = 1.0;
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
-  if (visible) fbo.disable();
+  if (visible)
+  {
+    fbo.disable();
+    //Undo 2d scaling for downsampling
+    app->session.scale2d = 1.0;
+    //Restore settings
+    blend_mode = BLEND_NORMAL;
+  }
+
+  //Restore size
   width = savewidth;
   height = saveheight;
-  //Restore settings
-  blend_mode = BLEND_NORMAL;
+
   savewidth = saveheight = 0;
 }
 

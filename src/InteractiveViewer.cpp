@@ -35,6 +35,7 @@
 
 #include "LavaVu.h"
 #include "ColourMap.h"
+#include "Server.h"
 
 #define HELP_INTERACTION "\
 \n## User Interface commands\n\n\
@@ -112,9 +113,7 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
   static bool translated = false;
   bool redraw = false;
   int scroll = 0;
-  if (down) idle = viewer->idle;
 
-  viewer->idle = 0; //Reset idle timer
   if (down)
   {
     translated = false;
@@ -156,6 +155,10 @@ bool LavaVu::mousePress(MouseButton btn, bool down, int x, int y)
 
     viewer->button = NoButton;
   }
+
+  if (!down)
+    viewer->idle = 0; //Reset idle timer
+
   return redraw;
 }
 
@@ -166,7 +169,8 @@ bool LavaVu::mouseMove(int x, int y)
   int dy = y - viewer->last_y;
   viewer->last_x = x;
   viewer->last_y = y;
-  viewer->idle = 0; //Reset idle timer
+  if (viewer->button)
+    viewer->idle = 0; //Reset idle timer
 
   //For mice with no right button, ctrl+left
   if (viewer->keyState.ctrl && viewer->button == LeftButton)
@@ -228,11 +232,12 @@ bool LavaVu::mouseScroll(float scroll)
     history.push_back(aview->adjustStereo(scroll, 0, 0));
   else if (viewer->keyState.ctrl)
     //Slower zoom
-    history.push_back(aview->zoom(scroll * 0.1/sqrt(idle+1)));
+    history.push_back(aview->zoom(scroll * 0.1/sqrt(viewer->idle+1)));
   else
     //Default zoom
-    history.push_back(aview->zoom(scroll * 0.25/sqrt(idle+1)));
+    history.push_back(aview->zoom(scroll * 0.25/sqrt(viewer->idle+1)));
 
+  viewer->idle = 0; //Reset idle timer
   return true;
 }
 
@@ -850,19 +855,51 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     session.globals[action] = value;
     printMessage("Set global %s to %.2f", action.c_str(), value);
   }
+  else if (parsed.exists("server"))
+  {
+    if (gethelp)
+    {
+      help += "Start web server\n\n"
+              "**Usage:** server [port]\n\n"
+              "port (integer) : server port, default 8080 or next available\n";
+      return false;
+    }
+
+    //Add server attachment if not running
+    if (viewer->port == 0 || !Server::running())
+    {
+      if (parsed.has(ival, "server"))
+        Server::port = ival;
+      if (Server::port == 0)
+        Server::port = 8080;
+      //Server::render = true;
+      Server* instance = Server::Instance(viewer);
+      viewer->addOutput(instance);
+      instance->open(viewer->width, viewer->height);
+    }
+    return false;
+  }
   else if (parsed.exists("interactive"))
   {
     if (gethelp)
     {
-      help += "Switch to interactive mode, for use in scripts\n";
+      help += "Switch to interactive mode, for use in scripts\n\n"
+              "**Usage:** interactive [noshow]\n\n"
+              "noshow (literal) : default is to show visible interactive window, set this to activate event loop\n"
+              "without showing window, can use browser interactive mode\n";
       return false;
     }
 
     if (session.omegalib) return false;
     viewer->quitProgram = false;
-    viewer->visible = true;
-    viewer->loop();
+    bool interactive = true;
+    if (parsed["interactive"] == "noshow")
+      interactive = false;
+    viewer->visible = interactive;
+    viewer->loop(interactive);
     viewer->visible = false;
+
+    return false;
   }
   else if (parsed.exists("open"))
   {
@@ -1590,7 +1627,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Allow loop back to start when using next command
     if (session.now > 0 && session.now == old)
       amodel->setTimeStep(0);
-    resetViews(); //Update the viewports
 
     if (parsed["next"] == "auto")
       return false; //Skip record to history if automated
@@ -2928,6 +2964,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     int x = props.Int("x");
     int y = props.Int("y");
     int button = props.Int("button");
+    viewer->button = LeftButton;
+    if (button==1) viewer->button = MiddleButton;
+    if (button==2) viewer->button = RightButton;
     int spin = props.Int("spin");
     std::string action = props["mouse"];
     std::string modifiers = props["modifiers"];
@@ -3310,7 +3349,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
-    {"next", "play", "stop", "open", "interactive"},
+    {"next", "play", "stop", "open", "server", "interactive", "display"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
      "verbose", "toggle", "createvolume", "clearvolume"}
   };

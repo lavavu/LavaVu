@@ -295,6 +295,7 @@ class OpenGLViewer(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
     quitProgram = _swig_property(_LavaVuPython.OpenGLViewer_quitProgram_get, _LavaVuPython.OpenGLViewer_quitProgram_set)
+    port = _swig_property(_LavaVuPython.OpenGLViewer_port_get, _LavaVuPython.OpenGLViewer_port_set)
 
     def __init__(self):
         _LavaVuPython.OpenGLViewer_swiginit(self, _LavaVuPython.new_OpenGLViewer())

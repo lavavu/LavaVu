@@ -2190,8 +2190,8 @@ class Viewer(dict):
             filename of saved image or encoded image as string data
         """
         if resolution is None:
-            return self.app.image(filename, 0, 0, 0, transparent);
-        return self.app.image(filename, resolution[0], resolution[1], 0, transparent);
+            return self.app.image(filename, 0, 0, 0, transparent)
+        return self.app.image(filename, resolution[0], resolution[1], 0, transparent)
 
     def frame(self, resolution=None):
         """
@@ -2209,7 +2209,7 @@ class Viewer(dict):
         """
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
-        return self.app.image("", resolution[0], resolution[1], 90);
+        return self.app.image("", resolution[0], resolution[1], 90)
 
     def display(self, resolution=(0,0), transparent=False):
         """        
@@ -2256,13 +2256,12 @@ class Viewer(dict):
                 #TODO: build single html file instead with inline scripts/data/custom controls
                 #Create link to web content directory
                 if not os.path.isdir("html"):
-                    htmldir = os.path.join(binpath, 'html')
-                    os.symlink(htmldir, 'html')
+                    os.symlink(control.htmlpath, 'html')
                 from IPython.display import display,Image,HTML
                 #Write files to disk first, can be passed directly on url but is slow for large datasets
                 filename = "input.json"
                 text_file = open("html/" + filename, "w")
-                text_file.write(self.app.web());
+                text_file.write(self.app.web())
                 text_file.close()
                 from IPython.display import IFrame
                 display(IFrame("html/viewer.html#" + filename, width=resolution[0], height=resolution[1]))
@@ -2554,26 +2553,45 @@ class Viewer(dict):
         """
         return self.app.event()
 
-    def interactive(self, force=False):
+    def interactive(self, native=False, resolution=None):
         """
         Opens an external interactive window
-        Disabled from IPython without force=True as this blocks the kernel
-        In MacOS will never return so kernel halts on closing the window
-        TODO: Use an interactive web viewer window instead but with instant mouse/keyboard feedback
+        Unless native=True is passed, will open an interactive web window
+        for interactive control via web browser
 
-        >>> lv.interactive()
-        >>> #Will not return until interactive window is closed
+        This starts an event handling loop which blocks python execution until the window is closed
 
         Parameters
         ----------
-        force: boolean
-            Set to True to open the window, even if running in IPython
+        native: boolean
+            Set to True to open the native window, disabled by default as
+            on MacOS we can't return from the native event loop and this prevents
+            further python commands being processed
         """
-        if force or not is_notebook():
+        if native:
             return self.commands("interactive")
         else:
-            print("External interactive viewer window disabled from within IPython notebook")
-            print("to force, use interactive(force=True)")
+            try:
+                #Start the server if not running
+                if self.app.viewer.port == 0:
+                    self.commands("server")
+                if is_notebook():
+                    if resolution is None: resolution = self.resolution
+                    self.control.interactive(self.app.viewer.port, resolution)
+                    #Need a small delay to let the injected javascript popup run
+                    import time
+                    time.sleep(0.1)
+                else:
+                    import webbrowser
+                    url = "http://localhost:" + str(self.app.viewer.port) + "/interactive.html"
+                    webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
+
+                #Start event loop, without showing viewer window (blocking)
+                self.commands("interactive noshow")
+
+            except (Exception) as e:
+                print("Interactive launch error: " + str(e))
+                pass
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
