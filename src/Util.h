@@ -79,6 +79,7 @@ public:
 
   void parse(std::string fp)
   {
+    if (fp.length() == 0) return;
     full = fp;
     //From: http://stackoverflow.com/a/8520815/866759
     // Remove directory if present.

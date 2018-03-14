@@ -3501,9 +3501,10 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   //- read from disk if path provided
   //- read from framebuffer otherwise
   ImageData* image = NULL;
+  ImageLoader img;
   if (path.length() > 0)
   {
-    ImageLoader img(path);
+    img.fn.parse(path);
     img.read();
     image = img.source;
     //printf("Reading file %s %d x %d @ %d (requested %d)\n", path.c_str(), image->width, image->height, image->channels, outchannels);
@@ -3537,8 +3538,8 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     if (skipalpha && i%4==3) continue;
     data[idx++] = image->pixels[i] * r255;
   }
-  //Free image data
-  if (image)
+  //Free image data if we allocated it
+  if (image && path.length() == 0)
     delete image;
   return data;
 }
