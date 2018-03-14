@@ -201,8 +201,11 @@ public:
     unsigned int oldsize = value.size();
     if (oldsize < size)
     {
-      //Always at least double size for efficiency
-      if (size < oldsize*2) size = oldsize*2;
+      //Always at least double size for efficiency when reading 1 value at a time
+      if (n == 1 && size < oldsize*2)
+        size = oldsize*2;
+      else if (n > 1)
+        size = oldsize + n;
       resize(size);
     }
     memcpy(&value[next], data, n * sizeof(dtype));
