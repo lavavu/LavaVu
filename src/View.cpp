@@ -474,6 +474,7 @@ void View::projection(int eye)
   //Ensure clip planes valid, calculate if not provided in properties
   near = properties["near"];
   far = properties["far"];
+  fov = properties["aperture"];
   checkClip(near, far);
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,

@@ -1468,6 +1468,16 @@ void Session::init()
       }
     },
     {
+      "aperture",
+      {
+        45.0,
+        "view",
+        "real",
+        "Aperture or Field-Of-View in degrees",
+        true, 0
+      }
+    },
+    {
       "coordsystem",
       {
         1,
