@@ -161,8 +161,7 @@ public:
     width = w;
     height = h;
     channels = c;
-    pixels = new GLubyte[size()];
-    allocated = true;
+    allocate();
   }
 
   void allocate()
@@ -178,9 +177,7 @@ public:
     if (allocated)
     {
       if (pixels)
-      {
         delete[] pixels;
-      }
       pixels = NULL;
       allocated = false;
     }
@@ -816,28 +813,16 @@ public:
     source = NULL;
   }
 
+  void newSource()
+  {
+    clearSource();
+    source = new ImageData();
+  }
+
   ~ImageLoader()
   {
     clear();
   }
 };
-
-class ImageFile : public ImageData
-{
-public:
-  ImageFile(const FilePath& fn)
-  {
-    //Use the texture loader to read any supported image
-    ImageLoader tex(fn.full);
-    tex.read();
-    pixels = tex.source->pixels;
-    width = tex.source->width;
-    height = tex.source->height;
-    channels = tex.source->channels;
-    tex.source = NULL; //Prevent it being deleted
-  }
-};
-
-
 
 #endif //GraphicsUtil__

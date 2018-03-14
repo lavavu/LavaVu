@@ -768,7 +768,7 @@ void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint ch
   if (source && (source->width != width || source->height != height || source->channels != channels))
     clearSource();
   if (!source)
-    source = new ImageData(width, height, channels); //Allocate buffer
+    newSource();
   this->flip = flip;
   this->mipmaps = mipmaps;
   this->bgr = bgr;
@@ -798,7 +798,7 @@ void ImageLoader::loadPPM()
   bool readTag = false, readWidth = false, readHeight = false, readColourCount = false;
   char stringBuffer[241];
   int ppmType, colourCount;
-  source = new ImageData();
+  newSource();
 
   FILE* imageFile = fopen(fn.full.c_str(), "rb");
   if (imageFile == NULL)
@@ -874,7 +874,7 @@ void ImageLoader::loadPNG()
     debug_print("Cannot open '%s'\n", fn.full.c_str());
     return;
   }
-  source = new ImageData();
+  newSource();
   source->pixels = (GLubyte*)read_png(file, source->channels, source->width, source->height);
   source->allocated = true; //Allocated by read_png()
 
@@ -883,7 +883,7 @@ void ImageLoader::loadPNG()
 
 void ImageLoader::loadJPEG(int req_channels)
 {
-  source = new ImageData();
+  newSource();
   int width, height, channels;
   source->pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, req_channels);
 
@@ -895,7 +895,7 @@ void ImageLoader::loadJPEG(int req_channels)
 
 void ImageLoader::loadTIFF()
 {
-  source = new ImageData();
+  newSource();
 #ifdef HAVE_LIBTIFF
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)

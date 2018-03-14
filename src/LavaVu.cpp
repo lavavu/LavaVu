@@ -899,9 +899,11 @@ void LavaVu::readVolumeSlice(const FilePath& fn)
     volume = NULL;  //Ensure new volume created
   }
 
-  ImageFile image(fn);
-  if (image.pixels)
-    readVolumeSlice(fn.base, image.pixels, image.width, image.height, image.channels);
+  //Use the texture loader to read any supported image
+  ImageLoader img(fn.full);
+  img.read();
+  if (img.source->pixels)
+    readVolumeSlice(fn.base, img.source->pixels, img.source->width, img.source->height, img.source->channels);
   else
     debug_print("Slice load failed: %s\n", fn.full.c_str());
 }
@@ -1389,9 +1391,10 @@ void LavaVu::readHeightMap(const FilePath& fn)
 
 void LavaVu::readHeightMapImage(const FilePath& fn)
 {
-  ImageFile image(fn);
+  ImageLoader image(fn.full);
+  image.read();
 
-  if (!image.pixels) return;
+  if (!image.source || !image.source->pixels) return;
 
   int geomtype = lucTriangleType;
   //int geomtype = lucGridType;
@@ -1399,7 +1402,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
 
   float heightrange = 10.0;
   float min[3] = {0, 0, 0};
-  float max[3] = {(float)image.width, heightrange, (float)image.height};
+  float max[3] = {(float)image.source->width, heightrange, (float)image.source->height};
 
   session.globals["caption"] = fn.base;
 
@@ -1416,13 +1419,13 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   Vec3d vertex;
 
   //Use red channel as luminance for now
-  for (unsigned int z=0; z<image.height; z++)
+  for (unsigned int z=0; z<image.source->height; z++)
   {
     vertex[2] = z;
-    for (unsigned int x=0; x<image.width; x++)
+    for (unsigned int x=0; x<image.source->width; x++)
     {
       vertex[0] = x;
-      vertex[1] = heightrange * image.pixels[(z*image.width+x)*image.channels] / 255.0;
+      vertex[1] = heightrange * image.source->pixels[(z*image.source->width+x)*image.source->channels] / 255.0;
 
       float colourval = vertex[1];
 
@@ -1430,7 +1433,7 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
       if (vertex[1] > max[1]) max[1] = vertex[1];
 
       //Add grid point
-      active->read(obj, 1, lucVertexData, vertex.ref(), image.width, image.height);
+      active->read(obj, 1, lucVertexData, vertex.ref(), image.source->width, image.source->height);
       //Colour by height
       active->read(obj, 1, &colourval, "height");
     }
@@ -3498,11 +3501,11 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
   //- read from disk if path provided
   //- read from framebuffer otherwise
   ImageData* image = NULL;
-  ImageFile* img = NULL;
   if (path.length() > 0)
   {
-    img = new ImageFile(path);
-    image = (ImageData*)img;
+    ImageLoader img(path);
+    img.read();
+    image = img.source;
     //printf("Reading file %s %d x %d @ %d (requested %d)\n", path.c_str(), image->width, image->height, image->channels, outchannels);
     //Will discard alpha but adding alpha channel not supported for now
     if ((unsigned int)outchannels > image->channels)
@@ -3535,9 +3538,7 @@ std::vector<float> LavaVu::imageArray(std::string path, int width, int height, i
     data[idx++] = image->pixels[i] * r255;
   }
   //Free image data
-  if (img)
-    delete img;
-  else
+  if (image)
     delete image;
   return data;
 }
