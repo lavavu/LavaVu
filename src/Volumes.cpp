@@ -491,12 +491,21 @@ void Volumes::render(int i)
     if (geom[i]->texture->type != VOLUME_FLOAT)
       isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
     //std::cout << "IsoValue " << isoval << std::endl;
-    //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
+    //std::cout << "Range " << range.minimum << " : " << range.maximum << std::endl;
     glUniform2fv(prog->uniforms["uRange"], 1, range.data());
   }
   else
   {
     float range[2] = {0.0, 1.0};
+    ColourMap* cmap = geom[i]->draw->colourMap;
+    if (cmap)
+    {
+      Properties::toArray<float>(cmap->properties["range"], range, 2);
+      Range rangeobj;
+      rangeobj.update(range[0], range[1]);
+      cmap->calibrate(&rangeobj);
+    }
+    //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
     glUniform2fv(prog->uniforms["uRange"], 1, range);
   }
   glUniform1f(prog->uniforms["uIsoValue"], isoval);
