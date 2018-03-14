@@ -2611,7 +2611,7 @@ class Viewer(dict):
         """
         return self.app.event()
 
-    def interactive(self, native=False, resolution=None):
+    def interact(self, native=False, resolution=None):
         """
         Opens an external interactive window
         Unless native=True is passed, will open an interactive web window
