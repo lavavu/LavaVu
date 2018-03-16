@@ -336,7 +336,7 @@ public:
   void normalise()
   {
     float mag = magnitude();
-    if (mag < EPSILON) return;
+    if (mag == 0.0) return;
     x /= mag;
     y /= mag;
     z /= mag;
