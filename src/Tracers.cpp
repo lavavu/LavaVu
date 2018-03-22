@@ -60,9 +60,9 @@ void Tracers::update()
   debug_print("Tracer records %d elements %d stride %d\n", (int)records.size(), t, datasteps);
 
   //Convert tracers to triangles/lines
-  lines->clear();
-  tris->clear();
-  points->clear();
+  lines->clear(true);
+  tris->clear(true);
+  points->clear(true);
   //All tracers stored as single vertex/value block
   //Contains vertex/value for every tracer particle at each timestep
   //Number of particles is number of entries divided by number of timesteps

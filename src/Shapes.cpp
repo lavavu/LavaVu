@@ -43,7 +43,7 @@ Shapes::Shapes(Session& session) : Glyphs(session)
 void Shapes::update()
 {
   //Convert shapes to triangles
-  tris->clear();
+  tris->clear(true);
   Vec3d scale(view->scale);
   tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
   tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
