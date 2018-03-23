@@ -50,8 +50,8 @@ void Links::update()
   //To force update, set geometry->reload = true
   //if (elements > 0 && (linetotal == (unsigned int)elements || total == 0)) return;
 
-  tris->clear();
-  lines->clear();
+  tris->clear(true);
+  lines->clear(true);
 
   clock_t t1,t2,tt;
   tt=clock();
