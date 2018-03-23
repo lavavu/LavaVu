@@ -69,14 +69,16 @@ void QuadSurfaces::update()
   {
     unsigned int quads = geom[i]->gridElements2d();
     quadverts += quads * 4;
-    total += geom[i]->count(); //Actual vertices
+    unsigned int v = geom[i]->count();
+    if (v < 4) continue;
+    total += v; //Actual vertices
 
     bool hidden = !drawable(i); //Save flags
     debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hidden ? "yes" : "no"));
 
     //Get corners of strip
     float* posmin = geom[i]->render->vertices[0];
-    float* posmax = geom[i]->render->vertices[geom[i]->count() - 1];
+    float* posmax = geom[i]->render->vertices[v - 1];
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
                     posmin[2] + (posmax[2] - posmin[2]) * 0.5f
