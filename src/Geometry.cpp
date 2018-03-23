@@ -2241,6 +2241,7 @@ Glyphs::Glyphs(Session& session) : Geometry(session)
   std::string s;
   while (getline(iss, s, ' '))
   {
+    //std::cout << "CREATING: " << s << std::endl;
     Geometry* renderer = createRenderer(session, s);
     renderer->internal = true;
 
@@ -2260,9 +2261,10 @@ Glyphs::Glyphs(Session& session) : Geometry(session)
     }
   }
 
-  if (!lines) lines = new Lines(session);
-  if (!tris) tris = (Triangles*)(new TriSurfaces(session));
-  if (!points) points = new Points(session);
+  //Placeholder null renderers
+  if (!lines) lines = (Lines*)(new Geometry(session));
+  if (!tris) tris = (Triangles*)(new Geometry(session));
+  if (!points) points = (Points*)(new Geometry(session));
 
   tris->internal = lines->internal = points->internal = true;
 }
