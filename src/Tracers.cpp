@@ -43,21 +43,23 @@ Tracers::Tracers(Session& session) : Glyphs(session)
 
 void Tracers::update()
 {
-  if (records.size() == 0) return;
+  //Require at least 2 steps to trace
+  if (geom.size() < 2) return;
 
   //Enumerate steps and elements
   int laststep = -2;
   int t = 0;
-  for (unsigned int i=0; i<records.size(); i++)
+  for (unsigned int i=0; i<geom.size(); i++)
   {
+    //printf("-- EL %d/%d STEP %d\n", i, geom.size(), geom[i]->step);
     if (laststep > -2 && geom[i]->step != laststep)
       break;
     laststep = geom[i]->step;
     t++;
   }
 
-  int datasteps = records.size() / t;
-  debug_print("Tracer records %d elements %d stride %d\n", (int)records.size(), t, datasteps);
+  int datasteps = geom.size() / t;
+  debug_print("Tracer records %d elements %d stride %d\n", (int)geom.size(), t, datasteps);
 
   //Convert tracers to triangles/lines
   lines->clear(true);
