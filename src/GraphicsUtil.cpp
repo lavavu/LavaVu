@@ -768,7 +768,10 @@ void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint ch
   if (source && (source->width != width || source->height != height || source->channels != channels))
     clearSource();
   if (!source)
+  {
     newSource();
+    source->allocate(width, height, channels);
+  }
   this->flip = flip;
   this->mipmaps = mipmaps;
   this->bgr = bgr;
@@ -924,7 +927,8 @@ void ImageLoader::loadTIFF()
 
 int ImageLoader::build(ImageData* image)
 {
-  if (!image) return 0;
+  if (!image && !source) return 0;
+  if (!image) image = source;
   if (!texture)
     texture = new TextureData();
 
