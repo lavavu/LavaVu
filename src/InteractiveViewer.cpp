@@ -1948,7 +1948,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     bool compress = (cmd.find("uncompressed") == std::string::npos);
     std::string dbfn = parsed["export"];
-    if (dbfn.find(".gldb") == std::string::npos) dbfn = "exported.gldb";
+    if (dbfn.find(".gldb") == std::string::npos)
+    {
+      if (dbfn.length())
+        dbfn += ".gldb";
+      else
+        dbfn = "exported.gldb";
+    }
     std::vector<DrawingObject*> list = lookupObjects(parsed, "export");
     exportData(compress ? lucExportGLDBZ : lucExportGLDB, list, dbfn);
     printMessage("Database export complete");
