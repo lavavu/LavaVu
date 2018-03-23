@@ -1210,13 +1210,15 @@ void Geometry::labels()
       if (session.scale2d != 1.0 && font != "vector")
         geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
       //Default to object colour (if fontcolour provided will replace)
-      Colour colour = Colour(geom[i]->draw->properties["colour"]);
-      glColor3ubv(colour.rgba);
+      Colour colour;
+      ColourLookup& getColour = geom[i]->colourCalibrate();
       session.fonts.setFont(geom[i]->draw->properties, "small", 1.0, session.scale2d);
 
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
         float* p = geom[i]->render->vertices[j];
+        getColour(colour, j);
+        glColor3ubv(colour.rgba);
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
