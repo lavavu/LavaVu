@@ -380,6 +380,14 @@ public:
 
   unsigned int count() {return render->vertices.count();}  //Number of vertices
 
+  void vertexColours(Colour* colour, unsigned int startcount)
+  {
+    //Load per vertex colours given initial count before vertices generated
+    unsigned int diff = count() - startcount;
+    for (int c=0; c<diff; c++)
+      _colours->read1(colour->value);
+  }
+
   void setRenderData()
   {
     //Required if any of the render data containers modified
@@ -580,12 +588,12 @@ public:
   void setTexture(DrawingObject* draw, Texture_Ptr tex);
   void loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true, bool mipmaps=true, bool bgr=false);
   Quaternion vectorRotation(Vec3d rvector);
-  void drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count=24);
-  void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength=0.f, int segment_count=24);
-  void drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads=false);
-  void drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads=false);
-  void drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count=24);
-  void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24);
+  void drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count=24, Colour* colour=NULL);
+  void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength=0.f, int segment_count=24, Colour* colour=NULL);
+  void drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads=false, Colour* colour=NULL);
+  void drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads=false, Colour* colour=NULL);
+  void drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count=24, Colour* colour=NULL);
+  void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count=24, Colour* colour=NULL);
 
   //Return total vertex count
   unsigned int getVertexCount(DrawingObject* draw)

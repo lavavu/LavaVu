@@ -138,11 +138,10 @@ void Vectors::update()
         else
           scaling = oscaling * fixedlen;
       }
-
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
-      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, 0);
+      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, 0, &colour);
       //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
-      lg->_colours->read1(colour.value);
+      //lg->_colours->read1(colour.value);
 
       //Scale position & vector manually (global scaling is disabled to avoid distorting glyphs)
       if (tris->unscale)
@@ -153,9 +152,9 @@ void Vectors::update()
 
       if (!flat)
       {
-        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, quality);
+        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, quality, &colour);
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
-        tg->_colours->read1(colour.value);
+        //tg->_colours->read1(colour.value);
       }
 
     }

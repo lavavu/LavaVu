@@ -1765,7 +1765,7 @@ Quaternion Geometry::vectorRotation(Vec3d rvector)
 // radius1: radius of cylinder at arrow head, or ratio for calculating radius from length if radius0==0
 // head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
 // segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
-void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count)
+void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, float scale, float radius0, float radius1, float head_scale, int segment_count, Colour* colour)
 {
   //Setup orientation using alignment vector
   Quaternion rot = vectorRotation(vector);
@@ -1778,6 +1778,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
+  unsigned int voffset = g->count();
 
   // Render a 3d arrow, cone with base for head, cylinder for shaft
 
@@ -1943,6 +1944,8 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       g->_indices->read1(vertex_index);
     }
   }
+
+  if (colour) g->vertexColours(colour, voffset);
 }
 
 // Draws a trajectory vector between two coordinates,
@@ -1953,7 +1956,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 // segment_count: number of primitives to draw circular geometry with, 16 is usally a good default
 // scale: scaling factor for each direction
 // maxLength: length limit, sections exceeding this will be skipped
-void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count)
+void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength, int segment_count, Colour* colour)
 {
   float length = 0;
   Vec3d vector, pos;
@@ -2001,7 +2004,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     }
 
     // Draw the vector arrow
-    drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, arrowHeadSize, segment_count);
+    drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, arrowHeadSize, segment_count, colour);
 
   }
   else
@@ -2011,7 +2014,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     //if (length > radius1 * 0.30)
     {
       // Join last set of points with this set
-      drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, 0.0, segment_count);
+      drawVector(draw, pos.ref(), vector.ref(), 1.0, radius0, radius1, 0.0, segment_count, colour);
 //         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
 //          Vec3d centre(pos);
 //         drawSphere(records, centre, radius, segment_count);
@@ -2024,21 +2027,22 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
 
 }
 
-void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads)
+void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool quads, Colour* colour)
 {
   //float pos[3] = {min[0] + 0.5f*(max[0] - min[0]), min[1] + 0.5f*(max[1] - min[1]), min[2] + 0.5f*(max[2] - min[2])};
   Vec3d dims = max - min;
   Vec3d pos = min + dims * 0.5f;
-  drawCuboidAt(draw, pos, dims, rot, quads);
+  drawCuboidAt(draw, pos, dims, rot, quads, colour);
 }
 
-void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads)
+void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool quads, Colour* colour)
 {
   Vec3d min = dims * -0.5f; //Vec3d(-0.5f * width, -0.5f * height, -0.5f * depth);
   Vec3d max = min + dims; //Vec3d(min[0] + width, min[1] + height, min[2] + depth);
   
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
+  unsigned int voffset = g->count();
 
   //Corner vertices
   Vec3d verts[8] =
@@ -2153,21 +2157,23 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
 
     g->_vertices->read(8, verts[0].ref());
   }
+
+  if (colour) g->vertexColours(colour, voffset);
 }
 
-void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count)
+void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, float radius, int segment_count, Colour* colour)
 {
   //Case of ellipsoid where all 3 radii are equal
   Vec3d radii = Vec3d(radius, radius, radius);
   Quaternion qrot;
-  drawEllipsoid(draw, centre, radii, qrot, segment_count);
+  drawEllipsoid(draw, centre, radii, qrot, segment_count, colour);
 }
 
 // Create a 3d ellipsoid given centre point, 3 radii and number of triangle segments to use
 // Based on algorithm and equations from:
 // http://local.wasp.uwa.edu.au/~pbourke/texture_colour/texturemap/index.html
 // http://paulbourke.net/geometry/sphere/
-void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count)
+void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, int segment_count, Colour* colour)
 {
   int i,j;
   Vec3d edge, pos, normal;
@@ -2181,6 +2187,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
+  unsigned int voffset = g->count();
 
   for (j=0; j<segment_count/2; j++)
   {
@@ -2230,6 +2237,8 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       }
     }
   }
+
+  if (colour) g->vertexColours(colour, voffset);
 }
 
 //Class to handle geometry types with sub-geometry glyphs drawn
