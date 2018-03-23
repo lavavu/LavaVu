@@ -1887,12 +1887,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (cmd.length() > 0)
     {
       help = helpCommand(cmd);
+      if (help.length() == 0) return false;
       help = "~~~~~~~~~~~~~~~~~~~~~~~~\n" + cmd + "\n~~~~~~~~~~~~~~~~~~~~~~~~\n" + help;
       std::cout << help;
     }
     else
     {
       help = helpCommand(cmd);
+      if (help.length() == 0) return false;
       help = "~~~~~~~~~~~~~~~~~~~~~~~~\nhelp\n~~~~~~~~~~~~~~~~~~~~~~~~\n"
              "For detailed help on a command, type:\n\nhelp command [ENTER]" + help;
       std::cout << HELP_INTERACTION;
@@ -3488,6 +3490,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     if (heading) markdown << "\n### " << cmd << "\n\n";
     help = "";
     parseCommand(cmd + " 1.0", true);
+    if (help.length() == 0) return helpCommand("@" + cmd); //No command, try prop
     std::string line;
     std::stringstream ss(help);
     while(std::getline(ss, line))
