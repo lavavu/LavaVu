@@ -40,7 +40,7 @@ pip install --user lavavu
 ```
 This needs to compile the library as binaries are not provided, so you may need some developer tools and headers first on Linux.
 eg: Ubuntu:
-`sudo apt install build-essential libgl1-mesa-dev libx11-dev`
+`sudo apt install build-essential libgl1-mesa-dev libx11-dev zlib1g-dev`
 
 Try it out:
 
