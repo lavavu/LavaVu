@@ -766,6 +766,7 @@ public:
   virtual void sort();    //Threaded sort function
   virtual void render();
   void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
+  void calcGridVertices(int i, std::vector<Vec3d> &vertices);
   virtual void draw();
 };
 

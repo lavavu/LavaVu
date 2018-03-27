@@ -166,7 +166,17 @@ void QuadSurfaces::render()
       geom[index]->render->normals.clear();
       geom[index]->render->normals.read(normals.size(), normals[0].ref());
     }
-    if (geom[index]->render->indices.size() != quads*4)
+
+    //Special case: colour count == grid elements
+    if (geom[index]->colourCount() == (geom[index]->width-1) * (geom[index]->height-1))
+    {
+      //Re-vertex to separate elements - required to plot colours per grid quad
+      std::vector<Vec3d> vertices(quads*4);
+      calcGridVertices(index, vertices);
+      geom[index]->render->vertices.clear();
+      geom[index]->render->vertices.read(vertices.size(), &vertices[0]);
+    }
+    else if (geom[index]->render->indices.size() != quads*4)
     {
       indices.resize(quads*4);
       calcGridIndices(index, indices, voffset);
@@ -199,7 +209,6 @@ void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned
   t1=clock();
   debug_print("Calculating indices for grid quad surface %d... ", i);
 
-  // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   unsigned int o = 0;
   for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
   {
@@ -219,6 +228,41 @@ void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned
       indices[o++] = offset1 + vertoffset;
       indices[o++] = offset3 + vertoffset;
       indices[o++] = offset2 + vertoffset;
+    }
+  }
+  t2 = clock();
+  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+}
+
+void QuadSurfaces::calcGridVertices(int i, std::vector<Vec3d> &vertices)
+{
+  //Normals: calculate from surface geometry
+  if (geom[i]->height == 0 || geom[i]->width == 0) return;
+  clock_t t1,t2;
+  t1=clock();
+  debug_print("Calculating non-shared vertices for grid quad surface %d... ", i);
+
+  // Calculate vertices to render each grid element without shared vertices
+  unsigned int o = 0;
+  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
+  {
+    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
+    {
+      //Add indices for two triangles per grid element
+      unsigned int offset0 = j * geom[i]->width + k;
+      unsigned int offset1 = (j+1) * geom[i]->width + k;
+      unsigned int offset2 = j * geom[i]->width + k + 1;
+      unsigned int offset3 = (j+1) * geom[i]->width + k + 1;
+
+      //assert(offset2 + vertoffset < total);
+      assert(o <= vertices.size()-4);
+
+      //Quads...
+      vertices[o++] = geom[i]->render->vertices[offset0];
+      vertices[o++] = geom[i]->render->vertices[offset1];
+      vertices[o++] = geom[i]->render->vertices[offset3];
+      vertices[o++] = geom[i]->render->vertices[offset2];
     }
   }
   t2 = clock();
@@ -266,6 +310,20 @@ void QuadSurfaces::draw()
       //fprintf(stderr, "(%d, %s) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->draw->name().c_str(), geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
       glDrawElements(GL_QUADS, 4 * geom[id]->gridElements2d(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
       //printf("%d) rendered, distance = %f (%f)\n", id, geom[id]->distance, surf_sort[i].distance);
+
+      if (geom[id]->render->indices.size() > 0)
+      {
+        //Draw with index buffer
+        //glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+        glDrawElements(GL_QUADS, 4 * geom[id]->gridElements2d(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+        //printf("DRAW %d from %d by INDEX\n", counts[index], start);
+      }
+      else
+      {
+        //Draw directly from vertex buffer
+        glDrawArrays(GL_QUADS, start, geom[id]->count());
+        //printf("DRAW %d from %d by VERTEX\n", geom[index]->count(), start);
+      }
     }
     //fprintf(stderr, "DRAWING ALL QUADS: %d\n", elements);
     //glDrawElements(GL_QUADS, elements, GL_UNSIGNED_INT, (GLvoid*)(0));
