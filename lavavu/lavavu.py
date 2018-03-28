@@ -702,7 +702,7 @@ class Object(dict):
         """
         self._loadVector(data, LavaVuPython.lucNormalData)
 
-    def vectors(self, data, magnitude=False):
+    def vectors(self, data, magnitude=None):
         """
         Load 3d vector data for object
 
