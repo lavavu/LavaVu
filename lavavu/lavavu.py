@@ -105,6 +105,105 @@ def convert_args(dictionary):
     """
     return str(json.dumps(dictionary, cls=CustomEncoder))
 
+def grid2d(corners=((0.,0.), (1.,1.)), dims=[2,2]):
+    """
+    Generate a 2d grid of vertices
+
+    Parameters
+    ----------
+    corners: tuple/list
+        top left and bottom right corner vertices (2d)
+    dims: tuple/list
+        dimensions of grid nodes, number of vertices to generate in each direction
+
+    Returns
+    -------
+    vertices: np array
+        The 3d vertices of the generated 2d grid (z coord is zero)
+    """
+    print dims
+    x = numpy.linspace(corners[0][0], corners[1][0], dims[0], dtype='float32')
+    y = numpy.linspace(corners[0][1], corners[1][1], dims[1], dtype='float32')
+    z = numpy.zeros(1)
+    xx, yy, zz = numpy.meshgrid(x, y, z)
+    vertices = numpy.vstack((xx,yy,zz)).reshape([3, -1]).transpose()
+    return vertices.reshape(dims[1],dims[0],3)
+
+def grid3d(corners=((0.,0.,0.), (1.,0.,0.), (0.,1.,0.), (1.,1.,0.)), dims=[2,2]):
+    """
+    Generate a 2d grid of vertices in 3d space
+
+    Parameters
+    ----------
+    corners: tuple/list
+        3 or 4 corner vertices (3d)
+    dims: tuple/list
+        dimensions of grid nodes, number of vertices to generate in each direction
+
+    Returns
+    -------
+    vertices: np array
+        The 3d vertices of the generated 2d grid
+    """
+    if len(dims) < 2:
+        print("Must provide 2d grid index dimensions")
+        return None
+    if len(corners) < 3:
+        print("Must provide 3 or 4 corners of grid")
+        return None
+    if any([len(el) < 3 for el in corners]):
+        print("Must provide 3d coordinates of grid corners")
+        return None
+
+    if len(corners) < 4:
+        #Calculate 4th corner
+        A = numpy.array(corners[0])
+        B = numpy.array(corners[1])
+        C = numpy.array(corners[2])
+        AB = numpy.linalg.norm(A-B)
+        AC = numpy.linalg.norm(A-C)
+        BC = numpy.linalg.norm(B-C)
+        MAX = max([AB, AC, BC])
+        #Create new point opposite longest side of triangle
+        if BC == MAX:
+            D = B + C - A
+            corners = numpy.array([A, B, C, D])
+        elif AC == MAX:
+            D = A + C - B
+            corners = numpy.array([A, D, B, C])
+        else:
+            D = A + B - C
+            corners = numpy.array([D, A, B, C])
+    else:
+        #Sort to ensure vertex order correct
+        def vertex_compare(v0, v1):
+            if v0[0] < v1[0]: return 1
+            if v0[1] < v1[1]: return 1
+            if v0[2] < v1[2]: return 1
+            return -1
+        import functools
+        corners = sorted(list(corners), key = functools.cmp_to_key(vertex_compare))
+
+    def lerp(coord0, coord1, samples):
+        """Linear interpolation between two 3d points"""
+        x = numpy.linspace(coord0[0], coord1[0], samples, dtype='float32')
+        y = numpy.linspace(coord0[1], coord1[1], samples, dtype='float32')
+        z = numpy.linspace(coord0[2], coord1[2], samples, dtype='float32')
+        return numpy.vstack((x,y,z)).reshape([3, -1]).transpose()
+
+    w = dims[0]
+    h = dims[1]
+    lines = numpy.zeros(shape=(h,w,3), dtype='float32')
+    top = lerp(corners[0], corners[1], dims[0])
+    bot = lerp(corners[2], corners[3], dims[0])
+    lines[0,:] = top
+    lines[h-1:] = bot
+    for i in range(w):
+        line = lerp(top[i], bot[i], h)
+        for j in range(1,h-1):
+            lines[j,i] = line[j]
+    return lines
+
 def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
     """
     Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
