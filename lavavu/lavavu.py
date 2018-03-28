@@ -119,15 +119,14 @@ def grid2d(corners=((0.,0.), (1.,1.)), dims=[2,2]):
     Returns
     -------
     vertices: np array
-        The 3d vertices of the generated 2d grid (z coord is zero)
+        The 2d vertices of the generated grid
     """
     print dims
     x = numpy.linspace(corners[0][0], corners[1][0], dims[0], dtype='float32')
     y = numpy.linspace(corners[0][1], corners[1][1], dims[1], dtype='float32')
-    z = numpy.zeros(1)
-    xx, yy, zz = numpy.meshgrid(x, y, z)
-    vertices = numpy.vstack((xx,yy,zz)).reshape([3, -1]).transpose()
-    return vertices.reshape(dims[1],dims[0],3)
+    xx, yy = numpy.meshgrid(x, y)
+    vertices = numpy.vstack((xx,yy)).reshape([2, -1]).transpose()
+    return vertices.reshape(dims[1],dims[0],2)
 
 def grid3d(corners=((0.,0.,0.), (1.,0.,0.), (0.,1.,0.), (1.,1.,0.)), dims=[2,2]):
     """
@@ -649,8 +648,8 @@ class Object(dict):
             #Re-arrange to array of [x,y] triples
             data = numpy.vstack((data[0],data[1])).reshape([2, -1]).transpose()
 
-        #Add 3rd dimension Z column
-        data = numpy.insert(data, 2, values=0, axis=1)
+        #Add 3rd dimension to last column
+        data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
 
         #Now can be loaded by library
         self._loadVector(data, geomdtype, magnitude)
@@ -2072,20 +2071,31 @@ class Viewer(dict):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def grid(self, name=None, width=0, height=0, dims=[2,2], vertices=None, *args, **kwargs):
-        #Creates a quads object, 
-        obj = self._addtype("quads", name, dims=dims, *args, **kwargs)
-        if width > 0 and height > 0 and vertices is None:
-            vertices = []
-            yc = 0.0
-            for y in range(dims[1]):
-                xc = 0.0
-                for x in range(dims[0]):
-                    vertices.append([xc, yc, 0])
-                    xc += width / float(dims[0])
-                yc += height / float(dims[1])
-        obj.vertices(vertices)
-        return obj
+    def grid(self, name=None, vertices=None, *args, **kwargs):
+        """
+        Create a grid object, calls quads() with calculated dimensions
+
+        Parameters
+        ----------
+        name: str (Optional)
+            Name of the object
+        vertices: array/list
+            3d Array of grid vertices, first 2 dimensions specify grid size
+        **kwargs:
+            Set of properties passed to the object
+
+        Returns
+        -------
+        obj: Object
+            The object created
+        """
+        #Creates a quads object, get dims from vertices
+        vertices = numpy.array(vertices)
+        if len(vertices.shape) != 3:
+            print("Provided vertices do not form a grid of vertices (dimensions must be 3)")
+            return None
+        dims = (vertices.shape[1], vertices.shape[0])
+        return self.quads(name, dims=dims, vertices=vertices, *args, **kwargs)
 
     def Object(self, identifier=None, **kwargs):
         """
@@ -2105,7 +2115,7 @@ class Viewer(dict):
         Returns
         -------
         obj: Object
-            The object located
+            The object located/created
         """
         #Return object by name/ref or last in list if none provided
         #Get state and update object list
