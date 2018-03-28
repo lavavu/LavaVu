@@ -71,7 +71,7 @@ datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "rgb":       LavaVuPython.lucRGBData,
              "values":    LavaVuPython.lucMaxDataType}
 
-def convert_keys(dictionary):
+def _convert_keys(dictionary):
     if (sys.version_info > (3, 0)):
         #Not necessary in python3...
         return dictionary
@@ -79,13 +79,13 @@ def convert_keys(dictionary):
        and unicode values to utf-8 strings."""
     if isinstance(dictionary, list):
         for i in range(len(dictionary)):
-            dictionary[i] = convert_keys(dictionary[i])
+            dictionary[i] = _convert_keys(dictionary[i])
         return dictionary
     if not isinstance(dictionary, dict):
         if isinstance(dictionary, unicode):
             return dictionary.encode('utf-8')
         return dictionary
-    return dict((k.encode('utf-8'), convert_keys(v)) 
+    return dict((k.encode('utf-8'), _convert_keys(v))
         for k, v in dictionary.items())
 
 class CustomEncoder(json.JSONEncoder):
@@ -99,7 +99,7 @@ class CustomEncoder(json.JSONEncoder):
         else:
             return super(CustomEncoder, self).default(obj)
 
-def convert_args(dictionary):
+def _convert_args(dictionary):
     """Convert a kwargs dict to a json string argument list
        Ensure all elements can be converted by using custom encoder
     """
@@ -1327,7 +1327,7 @@ class ColourMap(dict):
 
     def _set(self):
         #Send updated props (via ref in case name changed)
-        self.instance.app.setColourMap(self.ref, convert_args(self.dict))
+        self.instance.app.setColourMap(self.ref, _convert_args(self.dict))
 
     def _get(self):
         self.instance._get() #Ensure in sync
@@ -1442,7 +1442,7 @@ class ColourMap(dict):
                     return
 
             #Load colourmap data
-            self.instance.app.updateColourMap(self.ref, data, convert_args(kwargs))
+            self.instance.app.updateColourMap(self.ref, data, _convert_args(kwargs))
 
         if reverse:
             self.ref.flip()
@@ -1613,7 +1613,7 @@ class Viewer(dict):
             self.app = LavaVuPython.LavaVu(binpath, omegalib)
 
             #Get property dict
-            self.properties = convert_keys(json.loads(self.app.propertyList()))
+            self.properties = _convert_keys(json.loads(self.app.propertyList()))
             #Init prop dict for tab completion
             super(Viewer, self).__init__(**self.properties)
 
@@ -1638,7 +1638,7 @@ class Viewer(dict):
                 self._allcmds += self._cmds[c]
 
             #Create command methods
-            selfdir = dir(self)
+            selfdir = dir(self)  #Functions on Viewer
             for key in self._allcmds:
                 #Check if a method exists already
                 if key in selfdir:
@@ -1668,6 +1668,15 @@ class Viewer(dict):
                     method.__doc__ = self.app.helpCommand(key, False)
                     #Add the new method
                     self.__setattr__(key, method)
+
+            #Add module functions to Viewer object
+            mod = sys.modules[__name__]
+            import inspect
+            for name in dir(mod):
+                element = getattr(mod, name)
+                if callable(element) and name[0] != '_' and not inspect.isclass(element):
+                    #Add the new method
+                    self.__setattr__(name, element)
 
             #Add object by geom type shortcut methods
             #(allows calling add by geometry type, eg: obj = lavavu.lines())
@@ -1931,7 +1940,7 @@ class Viewer(dict):
 
     def _get(self):
         #Import state from lavavu
-        self.state = convert_keys(json.loads(self.app.getState()))
+        self.state = _convert_keys(json.loads(self.app.getState()))
         self._objects._sync()
 
     def _set(self):
@@ -2008,9 +2017,9 @@ class Viewer(dict):
 
         #Call function to add/setup the object, all other args passed to properties dict
         if ref is None:
-            ref = self.app.createObject(convert_args(kwargs))
+            ref = self.app.createObject(_convert_args(kwargs))
         else:
-            self.app.setObject(ref, convert_args(kwargs))
+            self.app.setObject(ref, _convert_args(kwargs))
 
         #Get the created/update object
         obj = self.Object(ref)
@@ -2130,7 +2139,7 @@ class Viewer(dict):
             o = self._objects.list[-1]
 
         if o is not None:
-            self.app.setObject(o.ref, convert_args(kwargs))
+            self.app.setObject(o.ref, _convert_args(kwargs))
             return o
         print("WARNING: Object not found and could not be created: ",identifier)
         return None
@@ -2383,7 +2392,7 @@ class Viewer(dict):
         **kwargs:
             Timestep specific properties passed to the created object
         """
-        self.app.addTimeStep(step, convert_args(kwargs))
+        self.app.addTimeStep(step, _convert_args(kwargs))
 
     def render(self):
         """        
@@ -2785,7 +2794,7 @@ class Viewer(dict):
         view: str
             json string containing saved view settings
         """
-        self.state["views"][0] = convert_keys(json.loads(view))
+        self.state["views"][0] = _convert_keys(json.loads(view))
 
     def event(self):
         """
