@@ -702,6 +702,10 @@ GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outw
 
 TextureData* ImageLoader::use()
 {
+  //If have data but texture not loaded, load it
+  if (empty() && source)
+    build();
+
   if (!empty())
   {
     if (texture->depth > 0)

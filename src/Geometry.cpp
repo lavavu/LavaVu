@@ -1706,8 +1706,8 @@ void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLu
   if (geomdata)
   {
     //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
+    //NOTE: must only load the data here, can't make OpenGL calls as can be called async
     geomdata->texture->loadData(data, width, height, channels, flip, mipmaps, bgr);
-    geomdata->texture->build();
     //Must be opaque to draw with own texture (TODO: obj properties in shader)
     geomdata->opaque = true;
   }
