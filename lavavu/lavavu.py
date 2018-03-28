@@ -620,7 +620,7 @@ class Object(dict):
             if shape[-1] != 3 and shape[0] == 3:
                 #Re-arrange to array of [x,y,z] triples
                 data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
-            elif shape[-1] == 2 or shape[0] == 2:
+            elif (shape[-1] == 2 and shape[0] != 3) or (shape[0] == 2 and shape[-1] != 3):
                 #Interpret as 2d data... must add 3rd dimension
                 return self._loadVector2d(data, geomdtype, magnitude)
 
