@@ -1999,10 +1999,12 @@ class Viewer(dict):
     def _setupobject(self, ref=None, **kwargs):
         #Strip data keys from kwargs and put aside for loading
         datasets = {}
-        cmapstr = None
+        cmapdata = None
         for key in list(kwargs):
             if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
                 datasets[key] = kwargs.pop(key, None)
+            if key == "colourmap":
+                cmapdata = kwargs.pop(key, None)
 
         #Call function to add/setup the object, all other args passed to properties dict
         if ref is None:
@@ -2018,6 +2020,10 @@ class Viewer(dict):
             #Get the load function matching the data set (eg: vertices() ) and call on data
             func = getattr(obj, key)
             func(datasets[key])
+
+        #Set the colourmap, so python colourmap setting features can be used
+        if cmapdata:
+            obj.colourmap(cmapdata)
 
         #Return wrapper obj
         return obj
