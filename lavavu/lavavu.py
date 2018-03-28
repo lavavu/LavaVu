@@ -725,14 +725,15 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,str
+        data: list,str,ColourMap
             If not provided, just returns the colourmap
             (A default is created if none exists)
             Provided colourmap data can be
             - a string,
             - list of colour strings,
             - list of position,value tuples
-            - or a built in colourmap name
+            - a built in colourmap name
+            - An existing ColourMap object
             Creates a colourmap named objectname_colourmap if object
             doesn't already have a colourmap
         reverse: boolean
@@ -745,6 +746,7 @@ class Object(dict):
         colourmap: ColourMap(dict)
             The wrapper object of the colourmap loaded/created
         """
+        cmap = None
         if data is None:
             cmid = self["colourmap"]
             if cmid:
@@ -753,15 +755,21 @@ class Object(dict):
             else:
                 #Proceeed to create a new map with default data
                 data = cubeHelix()
+        elif isinstance(data, ColourMap):
+            #Passed a colourmap object
+            cmap = data
+            self.ref.colourMap = data.ref
+            data = None
+        else:
+            #Load colourmap on this object
+            if self.ref.colourMap is None:
+                self.ref.colourMap = self.instance.app.addColourMap(self.name + "_colourmap")
+                self["colourmap"] = self.ref.colourMap.name
+            cmap = ColourMap(self.ref.colourMap, self.instance)
 
-        #Load colourmap on this object
-        ret = None
-        if self.ref.colourMap is None:
-            self.ref.colourMap = self.instance.app.addColourMap(self.name + "_colourmap")
-            self["colourmap"] = self.ref.colourMap.name
-        c = ColourMap(self.ref.colourMap, self.instance)
-        c.update(data, reverse, monochrome, **kwargs)
-        return c
+        #Update with any passed args, colour data etc
+        cmap.update(data, reverse, monochrome, **kwargs)
+        return cmap
 
     def opacitymap(self, data=None, **kwargs):
         """
@@ -1258,7 +1266,7 @@ class ColourMap(dict):
         cmstr += '"""\n'
         return cmstr
 
-    def update(self, data, reverse=False, monochrome=False, **kwargs):
+    def update(self, data=None, reverse=False, monochrome=False, **kwargs):
         """
         Update the colour map data
 
@@ -1275,45 +1283,47 @@ class ColourMap(dict):
         monochrome: boolean
             Convert to greyscale
         """
-        if isinstance(data, list) and len(data) > 1 and not isinstance(data[0], str) and len(data[0]) > 1:
-            #Position,value tuples?
-            ln = len(data[0])
-            if ln == 2:
-                #Sort by position
-                data = sorted(data, key=lambda tup: tup[0])
-                #Ensure first and last positions of list data are always 0 and 1
-                if data[0][0]  != 0.0: data[0]  = (0.0, data[0][1])
-                if data[-1][0] != 1.0: data[-1] = (1.0, data[-1][1])
-            #R,G,B(,A)
-            elif ln >= 3:
-                colours = []
-                for c in data:
-                    c = list(c)
-                    if c[0] <= 1.0 and c[1] <= 1.0 and c[2] <= 1.0:
-                        #Convert to range [0,255] if all in range [0,1]
-                        c[0] *= 0xff;
-                        c[1] *= 0xff;
-                        c[2] *= 0xff;
-                    #R,G,B,A only
-                    if ln > 3:
-                        if c[3] > 1.0: c[3] /= 0xff; #Convert alpha range to [0,1]
-                        colours.append('rgba(%d,%d,%d,%f)' % (c[0], c[1], c[2], c[3]))
-                    else:
-                        colours.append('rgb(%d,%d,%d)' % (c[0], c[1], c[2]))
-                data = colours
-        if not isinstance(data, str):
-            #Convert iterable maps to string format
-            data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
-            data = '\n'.join(data)
-        elif re.match('^[\w_]+$', data) is not None:
-            #Single word of alphanumeric characters, if not a built-in map, try matplotlib
-            if data not in self.instance.defaultcolourmaps():
-                print('"' + str(data) + '" unknown, attempting to find colourmap in matplotlib')
-                self.update(matplotlib_colourmap(data))
-                return
+        if data is not None:
+            if isinstance(data, list) and len(data) > 1 and not isinstance(data[0], str) and len(data[0]) > 1:
+                #Position,value tuples?
+                ln = len(data[0])
+                if ln == 2:
+                    #Sort by position
+                    data = sorted(data, key=lambda tup: tup[0])
+                    #Ensure first and last positions of list data are always 0 and 1
+                    if data[0][0]  != 0.0: data[0]  = (0.0, data[0][1])
+                    if data[-1][0] != 1.0: data[-1] = (1.0, data[-1][1])
+                #R,G,B(,A)
+                elif ln >= 3:
+                    colours = []
+                    for c in data:
+                        c = list(c)
+                        if c[0] <= 1.0 and c[1] <= 1.0 and c[2] <= 1.0:
+                            #Convert to range [0,255] if all in range [0,1]
+                            c[0] *= 0xff;
+                            c[1] *= 0xff;
+                            c[2] *= 0xff;
+                        #R,G,B,A only
+                        if ln > 3:
+                            if c[3] > 1.0: c[3] /= 0xff; #Convert alpha range to [0,1]
+                            colours.append('rgba(%d,%d,%d,%f)' % (c[0], c[1], c[2], c[3]))
+                        else:
+                            colours.append('rgb(%d,%d,%d)' % (c[0], c[1], c[2]))
+                    data = colours
+            if not isinstance(data, str):
+                #Convert iterable maps to string format
+                data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
+                data = '\n'.join(data)
+            elif re.match('^[\w_]+$', data) is not None:
+                #Single word of alphanumeric characters, if not a built-in map, try matplotlib
+                if data not in self.instance.defaultcolourmaps():
+                    print('"' + str(data) + '" unknown, attempting to find colourmap in matplotlib')
+                    self.update(matplotlib_colourmap(data))
+                    return
 
-        #Load colourmap data
-        self.instance.app.updateColourMap(self.ref, data, convert_args(kwargs))
+            #Load colourmap data
+            self.instance.app.updateColourMap(self.ref, data, convert_args(kwargs))
+
         if reverse:
             self.ref.flip()
         if monochrome:
