@@ -617,9 +617,13 @@ class Object(dict):
         #Reshape vector data if first dim is 3 and last dim is not 3
         shape = data.shape
         #Data provided as separate x,y,z columns?
-        if len(shape) >= 2 and shape[-1] != 3 and shape[0] == 3:
-            #Re-arrange to array of [x,y,z] triples
-            data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+        if len(shape) >= 2:
+            if shape[-1] != 3 and shape[0] == 3:
+                #Re-arrange to array of [x,y,z] triples
+                data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+            elif shape[-1] == 2 or shape[0] == 2:
+                #Interpret as 2d data... must add 3rd dimension
+                return self._loadVector2d(data, geomdtype, magnitude)
 
         if magnitude is not None:
             axis = len(data.shape)-1
@@ -633,6 +637,23 @@ class Object(dict):
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+
+    def _loadVector2d(self, data, geomdtype, magnitude=None):
+        #Passes a vector dataset (float)
+        data = self._convert(data, numpy.float32)
+
+        #Reshape vector data if first dim is 3 and last dim is not 3
+        shape = data.shape
+        #Data provided as separate x,y,z columns?
+        if len(shape) >= 2 and shape[-1] != 2 and shape[0] == 2:
+            #Re-arrange to array of [x,y] triples
+            data = numpy.vstack((data[0],data[1])).reshape([2, -1]).transpose()
+
+        #Add 3rd dimension Z column
+        data = numpy.insert(data, 2, values=0, axis=1)
+
+        #Now can be loaded by library
+        self._loadVector(data, geomdtype, magnitude)
 
     def data(self, filter=None):
         """
