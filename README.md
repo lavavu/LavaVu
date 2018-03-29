@@ -28,8 +28,7 @@ Side-by-side and quad buffer stereoscopic 3D support is also provided for other 
 ### This repository ###
 
 This is the public source code repository for all development on the project.
-Currently I am the sole developer but contributions are welcome.
-Development happens in the "master" branch with stable releases tagged.
+Development happens in the "master" branch with stable releases tagged, so if you just check out master, be aware that things can be unstable or broken from time to time.
 
 ### How do I get set up? ###
 
