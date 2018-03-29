@@ -471,6 +471,7 @@ public:
     props[key] = prop_values();
 
     //Read values into vector until stream empty
+    size_t last = 0;
     while (iss.good())
     {
       std::string value;
@@ -478,12 +479,14 @@ public:
       //Detect quotes, if found read until end quote if any
       if (value.length() > 0 && value.at(0) == '"')
       {
-        size_t start = line.find('"');
+        size_t start = line.find('"', last);
         size_t end = line.find('"', start+1);
         if (end <= start) continue;
         iss.seekg(end+2, std::ios_base::beg);
         value = line.substr(start+1, end-start-1);
+        last = end+2;
       }
+
       props[key].push_back(value);
       //std::cerr << key << " => " << value << std::endl;
     }
