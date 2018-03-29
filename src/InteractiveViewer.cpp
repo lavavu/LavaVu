@@ -940,21 +940,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     viewer->quitProgram = true;
   }
-  else if (parsed.exists("record"))
-  {
-    if (gethelp)
-    {
-      help += "Encode video of all frames displayed at specified framerate\n"
-              "(Requires libavcodec)\n\n"
-              "**Usage:** record (framerate)\n\n"
-              "framerate (integer): frames per second (default 30)\n";
-      return false;
-    }
-
-    //Default to 30 fps
-    if (!parsed.has(ival, "record")) ival = 30;
-    encodeVideo("", ival);
-  }
   //******************************************************************************
   //Following commands require a model!
   else if (!gethelp && (!amodel || !aview))
@@ -1564,30 +1549,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return true;
     }
 
-  }
-  else if (parsed.exists("movie"))
-  {
-    if (gethelp)
-    {
-      help += "Encode video of model running from current timestep to specified timestep\n"
-              "(Requires libavcodec)\n\n"
-              "**Usage:** movie [startstep] [endstep]\n\n"
-              "startstep (integer) : first frame timestep (defaults to first)\n"
-              "endstep (integer) : last frame timestep (defaults to final)\n"
-              "fps (integer) : fps, default=30\n";
-      return false;
-    }
-
-    int start = -1;
-    int end = -1;
-    int fps = 30;
-    if (parsed.has(ival, "movie"))
-      end = ival;
-    if (parsed.has(ival, "movie", 1))
-      start = ival;
-    if (parsed.has(ival, "movie", 2))
-      fps = ival;
-    video("", fps, viewer->outwidth, viewer->outheight, start, end);
   }
   else if (parsed.exists("play"))
   {
@@ -2502,27 +2463,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (pts) pts->redraw = true;
     printMessage("Point sampling %d", (int)session.global("pointsubsample"));
   }
-  else if (parsed.exists("image"))
-  {
-    if (gethelp)
-    {
-      help += "Save an image of the current view\n"
-              "**Usage:** image [filename]\n\n"
-              "filename (string) : optional base filename without extension\n";
-      return false;
-    }
-
-    std::string filename = parsed["image"];
-    if (filename.length() > 0)
-      viewer->image(filename);
-    else
-      viewer->image(session.counterFilename());
-
-    if (viewer->outwidth > 0)
-      printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);
-    else
-      printMessage("Saved image %d x %d", viewer->width, viewer->height);
-  }
   else if (parsed.has(ival, "outwidth"))
   {
     if (gethelp)
@@ -3309,6 +3249,76 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Full data reload
       amodel->reload(aobject);
     }
+  }
+  //******************************************************************************
+  else if (!viewer->isopen)
+  {
+    //Following commands all require open viewer
+    //Attempt to parse as property=value first
+    if (parseProperty(cmd, aobject)) return true;
+    if (verbose) std::cerr << "Viewer must be open to execute command: " << cmd << ", deferred" << std::endl;
+    //TODO: categorise other commands that require GL context in the same way
+    queueCommands(cmd);
+    return false;
+  }
+  else if (parsed.exists("image"))
+  {
+    if (gethelp)
+    {
+      help += "Save an image of the current view\n"
+              "**Usage:** image [filename]\n\n"
+              "filename (string) : optional base filename without extension\n";
+      return false;
+    }
+    std::string filename = parsed["image"];
+    if (filename.length() > 0)
+      viewer->image(filename);
+    else
+      viewer->image(session.counterFilename());
+
+    if (viewer->outwidth > 0)
+      printMessage("Saved image %d x %d", viewer->outwidth, viewer->outheight);
+    else
+      printMessage("Saved image %d x %d", viewer->width, viewer->height);
+  }
+  else if (parsed.exists("movie"))
+  {
+    if (gethelp)
+    {
+      help += "Encode video of model running from current timestep to specified timestep\n"
+              "(Requires libavcodec)\n\n"
+              "**Usage:** movie [startstep] [endstep]\n\n"
+              "startstep (integer) : first frame timestep (defaults to first)\n"
+              "endstep (integer) : last frame timestep (defaults to final)\n"
+              "fps (integer) : fps, default=30\n";
+      return false;
+    }
+
+    int start = -1;
+    int end = -1;
+    int fps = 30;
+    if (parsed.has(ival, "movie"))
+      end = ival;
+    if (parsed.has(ival, "movie", 1))
+      start = ival;
+    if (parsed.has(ival, "movie", 2))
+      fps = ival;
+    video("", fps, viewer->outwidth, viewer->outheight, start, end);
+  }
+  else if (parsed.exists("record"))
+  {
+    if (gethelp)
+    {
+      help += "Encode video of all frames displayed at specified framerate\n"
+              "(Requires libavcodec)\n\n"
+              "**Usage:** record (framerate)\n\n"
+              "framerate (integer): frames per second (default 30)\n";
+      return false;
+    }
+
+    //Default to 30 fps
+    if (!parsed.has(ival, "record")) ival = 30;
+    encodeVideo("", ival);
   }
   else
   {
