@@ -1188,6 +1188,9 @@ int Model::setTimeStep(int stepidx, bool skipload)
       //Load the new step data if it isn't already in memory
       if (clear || !timesteps[now]->loaded)
       {
+        //Flag loaded
+        timesteps[now]->loaded = true;
+
         //Load new data
         if (database && !skipload)
         {
@@ -1207,7 +1210,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
         }
       }
       else
-        debug_print("Step loaded from cache\n");
+        debug_print("Step already cached\n");
     }
   }
 
@@ -1347,10 +1350,6 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       {
         setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
       }
-
-      //Flag loaded
-      if (now >= 0 && cache)
-        timesteps[now]->loaded = true;
 
       if (type == lucTracerType)
       {

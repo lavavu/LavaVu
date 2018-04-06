@@ -85,9 +85,6 @@ private:
   int now;            //Loaded step per model
   Session& session;
 
-  //Previous timestep geometry
-  std::vector<Geometry*> olddata;
-
 public:
 
   Database database;
