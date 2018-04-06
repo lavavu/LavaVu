@@ -78,6 +78,8 @@ View::View(Session& session, float xf, float yf, float nearc, float farc) : prop
     max[i]               = 0.0;
   }
 
+  iscale = Vec3d(1.0, 1.0, 1.0);
+
   is3d = true;
 }
 
@@ -361,6 +363,8 @@ void View::setScale(float x, float y, float z, bool replace)
     scale[1] *= y;
     scale[2] *= z;
   }
+
+  iscale = Vec3d(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
 }
 
 std::string View::zoom(float factor)
@@ -578,6 +582,7 @@ void View::apply(bool use_fp, bool use_rotate)
     // Enable automatic rescaling of normal vectors when scaling is turned on
     //glEnable(GL_RESCALE_NORMAL);
     glEnable(GL_NORMALIZE);
+    iscale = Vec3d(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
   }
   GL_Error_Check;
 

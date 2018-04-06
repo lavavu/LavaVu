@@ -44,9 +44,6 @@ void Shapes::update()
 {
   //Convert shapes to triangles
   tris->clear(true);
-  Vec3d scale(view->scale);
-  tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
-  tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
   for (unsigned int i=0; i<geom.size(); i++)
   {
     Properties& props = geom[i]->draw->properties;
@@ -110,19 +107,14 @@ void Shapes::update()
       if (geom[i]->render->vectors.size() > 0)
       {
         Vec3d vec(geom[i]->render->vectors[v]);
-        if (tris->unscale)
-          vec *= scale;
         rot = vectorRotation(vec);
       }
 
-      if (tris->unscale)
-        pos *= scale;
-
       //Create shape
       if (shape == 1)
-        tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot);
+        tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot, view->iscale);
       else
-        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, quality);
+        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, view->iscale, quality);
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
       getColour(colour, v);

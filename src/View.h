@@ -99,6 +99,7 @@ public:
 
   // Scene scaling
   float scale[3];
+  Vec3d iscale; //Factors for un-scaling
 
   float model_size;   //Scalar magnitude of model dimensions = length of diagonal of bounding box
 

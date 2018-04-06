@@ -2285,12 +2285,13 @@ void LavaVu::drawAxis()
     {
       float vector[3] = {0, 0, 0};
       float pos[3] = {0, 0, 0};
+      Vec3d scale = Vec3d(1.0, 1.0, 1.0);
       Colour colour = {0, 0, 0, 255};
       vector[c] = 1.0;
       pos[c] = length/2;
       colour.rgba[c] = 255;
       Geom_Ptr tg = axis->read(session.axisobj, 0, lucVertexData, NULL);
-      axis->drawVector(session.axisobj, pos, vector, length, radius, radius, headsize, 16);
+      axis->drawVector(session.axisobj, pos, vector, scale, length, radius, radius, headsize, 16);
       tg->_colours->read1(colour.value);
     }
     axis->update();
@@ -2412,7 +2413,8 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
 
   //Draw ruler line
   float pos[3] = {start[0] + vec[0] * 0.5f, start[1] + vec[1] * 0.5f, start[2] + vec[2] * 0.5f};
-  rulers->drawVector(obj, pos, vec, 1.0, 0, 0, 0, 0);
+  Vec3d scale = Vec3d(1.0, 1.0, 1.0);
+  rulers->drawVector(obj, pos, vec, scale, 1.0, 0, 0, 0, 0);
   Geom_Ptr lg = rulers->add(obj); //Add new object for ticks
 
   std::string align = "";
@@ -2429,7 +2431,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
       height /= aview->scale[1];
       float tvec[3] = {0, tickdir*height, 0};
       float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height*tickdir * 0.5f, start[2]};
-      rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
+      rulers->drawVector(obj, tpos, tvec, scale, 1.0, 0, 0, 0, 0);
       align = tickdir > 0 ? "|" : "|^"; //Centre (reverse vertical shift if flipped)
     }
     else if (axis == 1)
@@ -2437,7 +2439,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
       height /= aview->scale[0];
       float tvec[3] = {tickdir*height, 0, 0};
       float tpos[3] = {start[0] + height*tickdir * 0.5f, start[1] + vec[1] * scaledPos, start[2]};
-      rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
+      rulers->drawVector(obj, tpos, tvec, scale, 1.0, 0, 0, 0, 0);
       align = tickdir > 0 ? "!_" : "_"; //Right/Left align no vertical shift
     }
     else if (axis == 2)
@@ -2445,7 +2447,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
       height /= aview->scale[1];
       float tvec[3] = {0, height, 0};
       float tpos[3] = {start[0], start[1] + height*tickdir * 0.5f, start[2] + vec[2] * scaledPos};
-      rulers->drawVector(obj, tpos, tvec, 1.0, 0, 0, 0, 0);
+      rulers->drawVector(obj, tpos, tvec, scale, 1.0, 0, 0, 0, 0);
       align = tickdir > 0 ? "!_" : "_"; //Right/Left align no vertical shift
     }
 
@@ -2508,8 +2510,9 @@ void LavaVu::drawBorder()
   {
     // Draw model bounding box with optional filled background surface
     Quaternion qrot;
+    Vec3d scale = Vec3d(1.0, 1.0, 1.0);
     //Min/max swapped to draw inverted box, see through to back walls
-    border->drawCuboid(obj, maxvert, minvert, qrot, true);
+    border->drawCuboid(obj, maxvert, minvert, qrot, scale, true);
   }
   else
   {

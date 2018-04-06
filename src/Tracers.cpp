@@ -68,9 +68,6 @@ void Tracers::update()
   //All tracers stored as single vertex/value block
   //Contains vertex/value for every tracer particle at each timestep
   //Number of particles is number of entries divided by number of timesteps
-  Vec3d scale(view->scale);
-  tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
-  tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
   for (unsigned int i=0; i<t; i++)
   {
     Properties& props = geom[i]->draw->properties;
@@ -145,6 +142,11 @@ void Tracers::update()
 
         //Current record, interleaved elements and timesteps
         int rec = i + step*t;
+        if (rec >= geom.size())
+        {
+          printf("WARNING: Step %d out of range %d\n", rec, (int)geom.size());
+          break;
+        }
 
         //Lookup by provided particle index?
         if (geom[rec]->render->indices.size() > 0)

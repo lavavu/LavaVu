@@ -48,9 +48,6 @@ void Vectors::update()
   clock_t t1,tt;
   tt=clock();
   int tot = 0;
-  Vec3d scale(view->scale);
-  tris->unscale = view->scale[0] != 1.0 || view->scale[1] != 1.0 || view->scale[2] != 1.0;
-  tris->iscale = Vec3d(1.0/view->scale[0], 1.0/view->scale[1], 1.0/view->scale[2]);
   Colour colour;
   for (unsigned int i=0; i<geom.size(); i++)
   {
@@ -139,20 +136,13 @@ void Vectors::update()
           scaling = oscaling * fixedlen;
       }
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
-      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, 0, &colour);
+      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), view->iscale, scaling, 0, radius, arrowHead, 0, &colour);
       //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
       //lg->_colours->read1(colour.value);
 
-      //Scale position & vector manually (global scaling is disabled to avoid distorting glyphs)
-      if (tris->unscale)
-      {
-        pos *= scale;
-        vec *= scale;
-      }
-
       if (!flat)
       {
-        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), scaling, 0, radius, arrowHead, quality, &colour);
+        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), view->iscale, scaling, 0, radius, arrowHead, quality, &colour);
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
         //tg->_colours->read1(colour.value);
       }
