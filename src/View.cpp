@@ -179,6 +179,7 @@ void View::checkClip(float& near_clip, float& far_clip)
   {
     //NOTE: Too much clip plane range can lead to depth buffer precision problems
     //Near clip should be as far away as possible as greater precision reserved for near
+    if (model_size == 0 || !ISFINITE(model_size)) model_size = 1.0;
     float min_dist = model_size / 100.0;  //Estimate of min dist between viewer and geometry
     float aspectRatio = 1.33;
     if (width && height)
@@ -272,15 +273,22 @@ void View::getCamera(float rotate[4], float translate[3], float focus[3])
 
 std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
 {
-  fov += aperture;
+  fov = properties["aperture"];
+  if (aperture < 10)
+    fov += aperture;
+  else
+    fov = aperture;
   if (fov < 10) fov = 10;
-  if (fov > 100) fov = 100;
+  if (fov > 170) fov = 170;
+  properties["aperture"] = fov;
+
   focal_length_adj += focal_len;
   eye_sep_ratio += eye_sep;
+
   //if (eye_sep_ratio < 0) eye_sep_ratio = 0;
   debug_print("STEREO: Aperture %f Focal Length Adj %f Eye Separation %f\n", fov, focal_length_adj, eye_sep_ratio);
   std::ostringstream ss;
-  if (aperture) ss << "aperture " << aperture;
+  if (aperture) ss << "aperture " << fov;
   if (focal_len) ss << "focallength " << focal_len;
   if (eye_sep) ss << "eyeseparation " << eye_sep;
   return ss.str();
