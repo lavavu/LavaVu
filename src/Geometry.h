@@ -508,6 +508,7 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 //Container class for a list of geometry objects
 class Geometry
 {
+  friend class Model; //Allow private access from Model
 protected:
   View* view;
   std::vector<Geom_Ptr> records;
@@ -706,6 +707,7 @@ public:
 
 class Glyphs : public Geometry
 {
+  friend class Model; //Allow private access from Model
 protected:
   //Sub-renderers
   Lines* lines;

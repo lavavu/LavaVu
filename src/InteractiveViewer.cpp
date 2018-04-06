@@ -1894,6 +1894,23 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->reload(aobject);
     }
   }
+  else if (parsed.exists("bake"))
+  {
+    if (gethelp)
+    {
+      help += "'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level\n"
+              "glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)\n"
+              "This removes the ability to change the glyph properties used to create primitives,\n"
+              "but makes the meshes render much faster in animations as they don't need to be regenerated\n\n"
+              "**Usage:** bake [object]\n\n"
+              "object (integer/string) : the index or name of object to bake, defaults to all (see: \"list objects\")\n";
+      return false;
+    }
+
+    DrawingObject* obj = lookupObject(parsed, "bake");
+    amodel->bake(obj);
+    printMessage("Model baked");
+  }
   else if (parsed.exists("export"))
   {
     if (gethelp)
@@ -3358,7 +3375,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "record", "export", "csv", "json", "save"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "export", "csv", "json", "save"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},

@@ -540,6 +540,61 @@ void Model::reload(DrawingObject* obj)
   reloadRedraw(obj, true);
 }
 
+void Model::bake(DrawingObject* obj)
+{
+  //Convert all Glyphs type elements into their primitives (triangles/lines/points)
+  //Will no longer be able to be scaled etc but can be cached and loaded much faster
+  Lines* lines = (Lines*)getRenderer(lucLineType);
+  Triangles* tris = (Triangles*)getRenderer(lucTriangleType);
+  Points* points = (Points*)getRenderer(lucPointType);
+  int savestep = step();
+  for (unsigned int idx=0; idx < timesteps.size(); idx++)
+  {
+    //Change the step
+    setTimeStep(idx);
+    std::cout << now << " " << std::flush;
+
+    //Re-calc data ranges
+    setup();
+
+    //TODO: also bake in colour info to RGBA?
+
+    for (auto g : geometry)
+    {
+      //dynamic_cast only works if a valid descendant class
+      Glyphs* glyphs = dynamic_cast<Glyphs*>(g);
+      if (glyphs)
+      {
+        //Redraw/merge
+        glyphs->display();
+
+        //Copy entries
+        //printf("L %d T %d P %d\n", glyphs->lines->records.size(), glyphs->tris->records.size(), glyphs->points->records.size());
+        for (auto gp : glyphs->lines->records)
+          lines->records.push_back(gp);
+        for (auto gp : glyphs->tris->records)
+          tris->records.push_back(gp);
+        for (auto gp : glyphs->points->records)
+          points->records.push_back(gp);
+      }
+    }
+  }
+
+  std::cout << std::endl;
+
+  //Restore step
+  setTimeStep(savestep);
+
+  //Clear old glyph data
+  for (auto g : geometry)
+  {
+    Glyphs* glyphs = dynamic_cast<Glyphs*>(g);
+    if (glyphs)
+      glyphs->clear(true);
+  }
+
+}
+
 void Model::loadWindows()
 {
   //Load state from database if available

@@ -115,6 +115,8 @@ public:
   void reload(DrawingObject* obj=NULL);
   void redraw(DrawingObject* obj=NULL);
   void reloadRedraw(DrawingObject* obj, bool reload);
+  void bake(DrawingObject* obj);
+
   void loadWindows();
   void loadLinks();
   void loadLinks(DrawingObject* obj);
