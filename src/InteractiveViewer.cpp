@@ -364,9 +364,9 @@ bool LavaVu::parseChar(unsigned char key)
   switch (key)
   {
   case KEY_RIGHT:
-    return parseCommands("timestep down");
+    return parseCommands("timestep +");
   case KEY_LEFT:
-    return parseCommands("timestep up");
+    return parseCommands("timestep -");
   case KEY_ESC:
     //Don't quit immediately on ESC by request, if entry, then clear, 
     msg = true;
@@ -1288,17 +1288,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Set timestep to view\n\n"
-              "**Usage:** timestep up/down/value\n\n"
+              "**Usage:** timestep -/+/value\n\n"
               "value (integer) : the timestep to view\n"
-              "up : switch to previous timestep if available\n"
-              "down : switch to next timestep if available\n";
+              "- : switch to previous timestep if available\n"
+              "+ : switch to next timestep if available\n";
       return false;
     }
     if (!parsed.has(ival, what))
     {
-      if (parsed[what] == "up")
+      if (parsed[what] == "-")
         ival = session.now-1;
-      else if (parsed[what] == "down")
+      else if (parsed[what] == "+")
         ival = session.now+1;
       else
         ival = session.now;
@@ -1588,7 +1588,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Allow loop back to start when using next command
     if (session.now > 0 && session.now == old)
       amodel->setTimeStep(0);
-
+    resetViews();
     if (parsed["next"] == "auto")
       return false; //Skip record to history if automated
   }
