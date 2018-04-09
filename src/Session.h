@@ -78,6 +78,7 @@ public:
   int parse(Properties* target, const std::string& property);
   void parseSet(Properties& target, const std::string& properties);
   void init();
+  void init(std::vector<std::pair<std::string,json>>& property_data);
   json& global(const std::string& key);
   bool has(const std::string& key);
   void cacheCircleCoords(int segment_count);

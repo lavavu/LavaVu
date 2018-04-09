@@ -1860,6 +1860,12 @@ void Session::init()
 
   };
 
+  //Call init with default data
+  init(property_data);
+}
+
+void Session::init(std::vector<std::pair<std::string,json>>& property_data)
+{
   for (auto p : property_data)
   {
     //Copy default values

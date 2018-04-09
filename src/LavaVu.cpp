@@ -114,6 +114,9 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpat
 
   viewer->app = (ApplicationInterface*)this;
 
+  //Initialise the session
+  session.init();
+
   //Shader path (default to program path if not set)
   if (binpath.back() != '/') binpath += "/";
   if (Shader::path.length() == 0) Shader::path = binpath + "shaders/";

@@ -51,7 +51,7 @@ public:
 
   OpenGLViewer* viewer;
 
-  ViewerApp() { session.init(); }
+  ViewerApp() {}
 
   virtual ~ViewerApp() {}
 
