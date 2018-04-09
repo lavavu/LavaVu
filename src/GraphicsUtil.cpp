@@ -1103,7 +1103,7 @@ std::string ImageData::write(const std::string& path)
 
     jpge::params params;
     params.m_quality = 95;
-    params.m_subsampling = jpge::H2V1;   //H2V2/H2V1/H1V1-none/0-grayscale
+    params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
     if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, channels, pixels, params))
     {
       fprintf(stderr, "[write_jpeg] File %s could not be saved\n", filepath.full.c_str());
