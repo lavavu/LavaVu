@@ -75,8 +75,8 @@ public:
   ~Session();
   std::string counterFilename();
   void reset();
-  int parse(Properties* target, const std::string& property);
-  void parseSet(Properties& target, const std::string& properties);
+  int parse(Properties* target, const std::string& property, bool validate=true);
+  void parseSet(Properties& target, const std::string& properties, bool validate=true);
   void init();
   void init(std::vector<std::pair<std::string,json>>& property_data);
   json& global(const std::string& key);
