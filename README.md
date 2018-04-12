@@ -37,17 +37,19 @@ It's now in the python package index, so you can install with *pip*:
 ```
 pip install --user lavavu
 ```
-This needs to compile the library as binaries are not provided, so you may need some developer tools and headers first on Linux.
-eg: Ubuntu:
+
+> If you don't have pip available, you can try `sudo easy_install pip` or just install [Anaconda](https://www.anaconda.com/download), which comes with pip and a whole lot of other useful packages for scientific work with python. Once in anaconda `pip install lavavu` will install the package.
+
+> Currently no binaries are provided and the installer needs to compile the library, so on Linux you may need some developer tools and headers first, eg: for Ubuntu:
 `sudo apt install build-essential libgl1-mesa-dev libx11-dev zlib1g-dev`
 
-Try it out:
+To try it out:
 
 ```
 python
 > import lavavu
 > lv = lavavu.Viewer() #Create a viewer
-> lv.test()            #Create some sample data
+> lv.test()            #Plot some sample data
 > lv.interactive()     #Open an interactive viewer window
 ```
 
