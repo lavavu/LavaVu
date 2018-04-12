@@ -121,7 +121,6 @@ def grid2d(corners=((0.,0.), (1.,1.)), dims=[2,2]):
     vertices: np array
         The 2d vertices of the generated grid
     """
-    print dims
     x = numpy.linspace(corners[0][0], corners[1][0], dims[0], dtype='float32')
     y = numpy.linspace(corners[0][1], corners[1][1], dims[1], dtype='float32')
     xx, yy = numpy.meshgrid(x, y)

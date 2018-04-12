@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.32"
+version = "1.2.35"
 
 """
 To release a new verison:
