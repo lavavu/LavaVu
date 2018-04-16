@@ -80,6 +80,12 @@ ifdef SHADER_PATH
 DEFINES += -DSHADER_PATH=\"$(SHADER_PATH)\"
 endif
 
+#Use OPENGL_LIB/INC variables if defined
+ifdef OPENGL_LIB
+LIBDIR = $(OPENGL_LIB)
+CFLAGS += -I$(OPENGL_INC)
+endif
+
 #Add a libpath (useful for linking specific libGL)
 ifdef LIBDIR
   LIBS+= -L$(LIBDIR) -Wl,-rpath=$(LIBDIR)
