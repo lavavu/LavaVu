@@ -57,10 +57,127 @@ ColourMap::ColourMap(Session& session, std::string name, std::string props)
 
   if (properties.has("colours"))
   {
-    loadPalette(properties["colours"]);
+    loadPaletteJSON(properties["colours"]);
+
     //Erase the colour list? Or keep it for export?
     //properties.data.erase("colours");
   }
+}
+
+void ColourMap::loadPaletteJSON(json& data)
+{
+  if (data.is_string())
+    loadPalette(properties["colours"]);
+  else if (data.is_array())
+  {
+    //Load from json array
+    colours.clear();
+    for (auto el : data)
+      add(el);
+  }
+}
+
+void ColourMap::loadPalette(std::string data)
+{
+  if (data.length() == 0) return;
+  //Three types of data accepted
+  // a) Name of predefined colour map, if preceded with @ position data is ignored
+  //   and only colours loaded at even spacing
+  // b) Space separated colour list
+  // c) Position=rgba colour palette
+  noValues = false;
+  calibrated = false;
+
+  bool nopos = false;
+  if (data.at(0) == '@')
+  {
+    //Strip position data after loading
+    data = data.substr(1);
+    nopos = true;
+  }
+  std::string map = getDefaultMap(data);
+  if (map.length() > 0) data = map;
+
+  if (data.find("=") == std::string::npos)
+  {
+    //Parse a whitespace separated list of colours with optional preceeding values
+    const char *breakChars = " \t\n;";
+    char *charPtr;
+    char colourStr[64];
+    char *colourString = new char[data.size()+1];
+    strcpy(colourString, data.c_str());
+    char *colourMap_ptr = colourString;
+    colours.clear();
+    charPtr = strtok(colourMap_ptr, breakChars);
+    while (charPtr != NULL)
+    {
+      float value = 0.0;
+
+      // Parse out value if provided, otherwise assign a default
+      // input string: (OPTIONAL-VALUE)colour
+      if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
+      {
+        //Add parsed colour to the map with value
+        add(colourStr, value);
+      }
+      else
+      {
+        //Add parsed colour to the map
+        add(charPtr);
+      }
+
+      charPtr = strtok(NULL, breakChars);
+    }
+    delete[] colourString;
+
+    //Ensure at least two colours
+    while (colours.size() < 2) add(0xff000000);
+  }
+  else
+  {
+    //Parse a list of position=value colours, newline or semi-colon separated
+    //Currently only support loading palettes with literal position data, not values to scale
+    noValues = true;
+    //Parse palette string into key/value pairs
+    std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
+    std::stringstream is(data);
+    colours.clear();
+    std::string line;
+    while(std::getline(is, line))
+    {
+      std::istringstream iss(line);
+      float pos;
+      char delim;
+      std::string value;
+      if (iss >> pos && pos >= 0.0 && pos <= 1.0)
+      {
+        iss >> delim;
+        std::getline(iss, value); //Read rest of stream into value
+        Colour colour(value);
+        //Add to colourmap
+        addAt(colour, pos);
+      }
+      else
+      {
+        //Background?
+        std::size_t pos = line.find("=") + 1;
+        if (line.substr(0, pos) == "Background=")
+        {
+          Colour c(line.substr(pos));
+          background = c;
+        }
+      }
+    }
+  }
+
+  if (texture)
+    loadTexture();
+
+  //Strip positions
+  if (nopos) noValues = true;
+
+  //Ensure at least two colours
+  while (colours.size() < 2) add(0xff000000);
 }
 
 void ColourMap::addAt(Colour& colour, float position)
@@ -110,9 +227,49 @@ void ColourMap::add(float *components, float pvalue)
 {
   Colour colour;
   for (int c=0; c<4; c++)  //Convert components from floats to bytes
-    colour.rgba[c] = 255 * components[c];
+  {
+    if (components[c] <= 1.0)
+      colour.rgba[c] = 255 * components[c];
+  }
 
   add(colour.value, pvalue);
+}
+
+void ColourMap::add(json& entry, float pos)
+{
+  //std::cout << pos << " : " << entry << std::endl;
+  if (entry.size() == 1)
+  {
+    std::string s = entry;
+    if (pos < 0.0)
+      add(s);
+    else
+      add(s, pos);
+  }
+  if (entry.size() == 2)
+  {
+    //Position, colour
+    float pos = entry[0];
+    //Rescurse
+    add(entry[1], pos);
+  }
+  else if (entry.size() >= 3)
+  {
+    int sz = entry.size();
+    float components[sz];
+    Properties::toArray<float>(entry, components, sz);
+    Colour colour;
+    for (int c=0; c<sz; c++)  //Convert components from floats to bytes
+    {
+      if (components[c] <= 1.0)
+        colour.rgba[c] = 255 * components[c];
+    }
+
+    if (pos < 0.0)
+      add(colour.value);
+    else
+      add(colour.value, pos);
+  }
 }
 
 void ColourMap::calc()
@@ -581,109 +738,6 @@ void ColourMap::loadTexture(bool repeat)
 
   texture->load(paletteData);
   delete paletteData;
-}
-
-void ColourMap::loadPalette(std::string data)
-{
-  if (data.length() == 0) return;
-  //Three types of data accepted
-  // a) Name of predefined colour map, if preceded with @ position data is ignored
-  //   and only colours loaded at even spacing
-  // b) Space separated colour list
-  // c) Position=rgba colour palette
-  noValues = false;
-  calibrated = false;
-
-  bool nopos = false;
-  if (data.at(0) == '@')
-  {
-    //Strip position data after loading
-    data = data.substr(1);
-    nopos = true;
-  }
-  std::string map = getDefaultMap(data);
-  if (map.length() > 0) data = map;
-
-  if (data.find("=") == std::string::npos)
-  {
-    //Parse a whitespace separated list of colours with optional preceeding values
-    const char *breakChars = " \t\n;";
-    char *charPtr;
-    char colourStr[64];
-    char *colourString = new char[data.size()+1];
-    strcpy(colourString, data.c_str());
-    char *colourMap_ptr = colourString;
-    colours.clear();
-    charPtr = strtok(colourMap_ptr, breakChars);
-    while (charPtr != NULL)
-    {
-      float value = 0.0;
-
-      // Parse out value if provided, otherwise assign a default
-      // input string: (OPTIONAL-VALUE)colour
-      if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
-      {
-        //Add parsed colour to the map with value
-        add(colourStr, value);
-      }
-      else
-      {
-        //Add parsed colour to the map
-        add(charPtr);
-      }
-
-      charPtr = strtok(NULL, breakChars);
-    }
-    delete[] colourString;
-
-    //Ensure at least two colours
-    while (colours.size() < 2) add(0xff000000);
-  }
-  else
-  {
-    //Parse a list of position=value colours, newline or semi-colon separated
-    //Currently only support loading palettes with literal position data, not values to scale
-    noValues = true;
-    //Parse palette string into key/value pairs
-    std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
-    std::stringstream is(data);
-    colours.clear();
-    std::string line;
-    while(std::getline(is, line))
-    {
-      std::istringstream iss(line);
-      float pos;
-      char delim;
-      std::string value;
-      if (iss >> pos && pos >= 0.0 && pos <= 1.0)
-      {
-        iss >> delim;
-        std::getline(iss, value); //Read rest of stream into value
-        Colour colour(value);
-        //Add to colourmap
-        addAt(colour, pos);
-      }
-      else
-      {
-        //Background?
-        std::size_t pos = line.find("=") + 1;
-        if (line.substr(0, pos) == "Background=")
-        {
-          Colour c(line.substr(pos));
-          background = c;
-        }
-      }
-    }
-  }
-
-  if (texture)
-    loadTexture();
-
-  //Strip positions
-  if (nopos) noValues = true;
-
-  //Ensure at least two colours
-  while (colours.size() < 2) add(0xff000000);
 }
 
 void ColourMap::print()

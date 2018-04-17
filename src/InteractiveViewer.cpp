@@ -573,26 +573,6 @@ Geometry* LavaVu::lookupObjectContainer(DrawingObject* obj, std::string gtype)
   return container;
 }
 
-int LavaVu::lookupColourMap(PropertyParser& parsed, const std::string& key, int idx)
-{
-  //Try index(id) first
-  int id = parsed.Int(key, -1, idx);
-  if (id > 0 && id <= (int)amodel->colourMaps.size()) return -1;
-
-  //Find by name match in all colour maps
-  std::string what = parsed.get(key, idx);
-  std::transform(what.begin(), what.end(), what.begin(), ::tolower);
-  for (unsigned int i=0; i<amodel->colourMaps.size(); i++)
-  {
-    if (!amodel->colourMaps[i]) continue;
-    std::string namekey = amodel->colourMaps[i]->name;
-    std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
-    if (namekey == what)
-      return i;
-  }
-  return -1;
-}
-
 float LavaVu::parseCoord(const json& val)
 {
   if (val.is_string())
@@ -2106,15 +2086,14 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Set colourmap on object\n\n"
-              "**Usage:** colourmap object [colourmap / \"add\" | \"data\"]\n\n"
+              "**Usage:** colourmap object [colourmap / data]\n\n"
               "object (integer/string) : the index or name of the object to set (see: \"list objects\")\n"
               "colourmap (integer/string) : the index or name of the colourmap to apply (see: \"list colourmaps\")\n"
-              "add : add a new colourmap to selected object\n"
-              "data (string) : data to load into selected object's colourmap\n";
+              "data (string) : data to load into selected object's colourmap, if no colourmap one will be added\n";
       return false;
     }
 
-    //Set colourmap on object by name/ID match
+    //Legacy: set colourmap on object by name/ID match
     DrawingObject* obj = aobject;
     int next = 0;
     //Select by id, or active as fallback
@@ -2126,49 +2105,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     if (obj)
     {
-      int cmap = lookupColourMap(parsed, "colourmap", next);
-      std::string what = parsed.get("colourmap", next);
-      //Only able to set the value colourmap now
-      if (cmap >= 0 && (int)amodel->colourMaps.size() > cmap)
-      {
-        obj->properties.data["colourmap"] = amodel->colourMaps[cmap]->name;
-        printMessage("%s colourmap set to %s (%d)", obj->name().c_str(), amodel->colourMaps[cmap]->name.c_str(), cmap);
-      }
-      else if (ival < 0 || what.length() == 0)
-      {
-        obj->properties.data["colourmap"] = "";
-        printMessage("%s colourmap set to none", obj->name().c_str());
-      }
-      else
-      {
-        //No cmap id, parse a colourmap string
-        ColourMap* cm = obj->getColourMap();
-        if (what == "add")
-        {
-          cm = amodel->addColourMap();
-          obj->properties.data["colourmap"] = cm->name;
-          if (what == "add")
-            what = parsed.getall("colourmap", next+1);
-          else
-            what = "";
-        }
-        else
-          what = parsed.getall("colourmap", next);
-
-        if (what.length() > 0)
-        {
-          //Add new map if none set on object
-          if (!cm)
-            cm = amodel->addColourMap();
-          amodel->updateColourMap(cm, what);
-          //cm->print();
-          obj->properties.data["colourmap"] = cm->name;
-          //cm->calibrate(); //Recalibrate
-        }
-      }
-      //Full object reload if colours updated
-      //NOTE: This will not reload other objects using the same colourmap
-      //amodel->reload(obj);
+      //Now uses single execution path for setting colourmaps via property set
+      parseProperty("colourmap=" + parsed.getall("colourmap", next), obj);
     }
   }
   else if (parsed.exists("colourbar"))

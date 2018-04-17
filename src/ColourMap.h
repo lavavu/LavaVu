@@ -91,6 +91,7 @@ public:
   void add(unsigned int* colours, int count);
   void add(unsigned int colour, float pvalue);
   void add(float *components, float pvalue);
+  void add(json& entry, float pos=-1.0);
   void calc();
   void calibrate(float min, float max);
   void calibrate(Range* dataRange=NULL);
@@ -102,6 +103,7 @@ public:
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);
+  void loadPaletteJSON(json& data);
   void print();
   void flip();
   void monochrome();
