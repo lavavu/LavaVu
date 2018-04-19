@@ -15,9 +15,8 @@ function initBox(el, cmd_callback) {
   canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
   //Following two settings should probably be defaults?
   canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
-  //canvas.mouse.setDefault();
   canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
-  defaultMouse = document.mouse = canvas.mouse;
+  canvas.mouse.setDefault();
 
   //Attach viewer object to canvas
   canvas.viewer = viewer;

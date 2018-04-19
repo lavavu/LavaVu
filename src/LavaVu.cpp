@@ -1792,7 +1792,8 @@ void LavaVu::resize(int new_width, int new_height)
   }
 
   //Set resolution
-  session.globals["resolution"] = {new_width, new_height};
+  if (viewer->visible)
+    session.globals["resolution"] = {new_width, new_height};
 
   amodel->redraw();
 }

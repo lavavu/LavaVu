@@ -64,6 +64,7 @@ ImageData* FrameBuffer::pixels(ImageData* image, int channels, bool flip)
 bool FBO::create(int w, int h)
 {
 #ifdef GL_FRAMEBUFFER_EXT
+printf("W %d H %d\n", w, h);
   //Re-render at specified output size (in a framebuffer object if available)
   if (downsample > 1)
   {
@@ -79,7 +80,7 @@ bool FBO::create(int w, int h)
     target = GL_COLOR_ATTACHMENT0_EXT;
     glDrawBuffer(target);
     GL_Error_Check;
-    debug_print("FBO already exists, enabling %d x %d (downsampling %d)\n", width, height, downsample);
+    printf("FBO already exists, enabling %d x %d (downsampling %d)\n", width, height, downsample);
     return false;
   }
 
@@ -135,7 +136,7 @@ bool FBO::create(int w, int h)
   else
   {
     // Override buffers
-    debug_print("FBO setup completed successfully %d x %d (downsampling %d)\n", width, height, downsample);
+    printf("FBO setup completed successfully %d x %d (downsampling %d)\n", width, height, downsample);
     enabled = true;
     target = GL_COLOR_ATTACHMENT0_EXT;
     glDrawBuffer(target);
@@ -163,7 +164,7 @@ void FBO::disable()
 {
 //Show a previously hidden window
 #ifdef GL_FRAMEBUFFER_EXT
-  debug_print("FBO disabled\n");
+  printf("FBO disabled\n");
   enabled = false;
   glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   glDrawBuffer(GL_BACK);
@@ -198,7 +199,7 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
   glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
   assert(w==(unsigned int)outw && h==(unsigned int)outh);
-  debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
+  printf("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
 #endif
 
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
@@ -240,7 +241,7 @@ void OpenGLViewer::open(int w, int h)
   //Set width/height or use defaults
   width = w > 0 ? w : 1024;
   height = h > 0 ? h : 768;
-  debug_print("Window opened %d x %d\n", width, height);
+  printf("Window opened %d x %d\n", width, height);
 }
 
 void OpenGLViewer::init()
@@ -260,7 +261,7 @@ void OpenGLViewer::init()
   glGetBooleanv(GL_STEREO, &stereoBuffer);
   glGetBooleanv(GL_DOUBLEBUFFER, &doubleBuffer);
 
-  debug_print("Stereo %d Double-buffer %d RGBA Mode = %d, Alpha bits = %d, Depth bits = %d, Stencil bits = %d, Accum bits = %d, Texture units %d, SampleBuffers %d, Samples %d\n", stereoBuffer, doubleBuffer, b, i, d, s, a, u, sb, ss);
+  printf("Stereo %d Double-buffer %d RGBA Mode = %d, Alpha bits = %d, Depth bits = %d, Stencil bits = %d, Accum bits = %d, Texture units %d, SampleBuffers %d, Samples %d\n", stereoBuffer, doubleBuffer, b, i, d, s, a, u, sb, ss);
 
   //Load OpenGL extensions
   OpenGL_Extensions_Init();
@@ -333,7 +334,7 @@ void OpenGLViewer::resize(int new_width, int new_height)
 
     width = new_width;
     height = new_height;
-    debug_print("%d x %d resized \n", width, height);
+    printf("%d x %d resized \n", width, height);
 
     //Call resize on any output interfaces
     for (unsigned int o=0; o<outputs.size(); o++)
@@ -471,7 +472,7 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   if (!w) w = width;
   if (!h) h = height;
   assert(w && h);
-  //debug_print("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
+  //printf("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
 
   //Redraw blended output for transparent PNG
   blend_mode = BLEND_NORMAL;

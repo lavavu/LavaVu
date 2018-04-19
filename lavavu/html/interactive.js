@@ -1,13 +1,17 @@
 /////////////////////////////////////////////////////////////////////////
 //Server Event handling
-var defaultMouse;
 
 function initServerPage() {
   //Use image frame
   img = document.getElementById('frame');
   //Image canvas event handling
   img.mouse = new Mouse(img, new MouseEventHandler(serverMouseClick, serverMouseWheel, serverMouseMove, serverMouseDown));
-  defaultMouse = document.mouse = img.mouse;
+
+    //Following two settings should probably be defaults?
+    img.mouse.moveUpdate = true; //Continual update of deltaX/Y
+    img.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
+
+  document.mouse = defaultMouse = img.mouse.setDefault();
 
   //Initiate the server update
   requestData('/connect', parseConnectionRequest);
@@ -60,7 +64,7 @@ function keyPress(event) {
   if (key == 114 && modifiers == 'C' || key == 82 && modifiers == 'CS') return;
 
   //console.log("PRESS Code: " + code + " Key: " + key);
-  requestData('/key=' + key + ',modifiers=' + modifiers + ",x=" + defaultMouse.x + ",y=" + defaultMouse.y);
+  requestData('/key=' + key + ',modifiers=' + modifiers + ",x=" + this.mouse.x + ",y=" + this.mouse.y);
 }
 
 function getModifiers(event) {
@@ -132,15 +136,12 @@ function serverMouseMove(event, mouse) {
     else if (button == 2)
       button = 0;
   } else if (button==0 && modeStr == "Zoom") {
-    if (mouse.previousX) {
       //event.spin = (mouse.x - mouse.previousX) / 5.0;
       //console.log(event.spin);
       //serverMouseWheel(event, mouse);
-      spincount += Math.sign(mouse.x - mouse.previousX);
+      spincount += Math.sign(mouse.x - mouse.deltaX);
       var request = "/mouse=scroll,spin=" + spincount + ",modifiers=C,x=" + document.mouse.x + ",y=" + document.mouse.y;
       spintimeout = setTimeout("requestData('" + request + "'); spincount = 0;", 5);
-    }
-    mouse.previousX = mouse.x;
     return false;
   }
 
@@ -167,7 +168,7 @@ function requestData(data, callback) {
   var http = new XMLHttpRequest();
   // the url of the script where we send the asynchronous call
   var url = data.replace(/\n/g, ';'); //Replace newlines with semi-colon
-  //console.log(url);
+ console.log(url);
 
   //Add count to url to prevent caching
   if (data) {
