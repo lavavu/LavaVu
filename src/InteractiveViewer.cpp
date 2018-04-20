@@ -2879,7 +2879,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     viewer->keyState.ctrl = modifiers.find('C')+1;
     viewer->keyState.alt = modifiers.find('A')+1;
 
-    printf("%s button %d x %d y %d spin %d modkeys %s\n", action.c_str(), button, x, y, spin, modifiers.c_str());
+    //printf("%s button %d x %d y %d spin %d modkeys %s\n", action.c_str(), button, x, y, spin, modifiers.c_str());
 
     //viewer->button = (MouseButton)button; //if (viewer->keyState.ctrl && viewer->button == LeftButton)
     // XOR state of three mouse buttons to the mouseState variable
@@ -3299,8 +3299,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
 
   last_cmd = cmd;
-  if (animate && redisplay) viewer->postdisplay = true;
- if (!gethelp) std::cout << redisplay << " - CMD: " << cmd << std::endl;
+  //if (animate && redisplay) viewer->postdisplay = true;
   return redisplay;
 }
 

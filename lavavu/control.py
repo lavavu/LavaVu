@@ -231,8 +231,7 @@ class Action(object):
 
         #Write the file, locally and in htmlpath
         writefile("control.html")
-        #This will fail if installed to non writable location
-        #writefile(os.path.join(htmlpath, "control.html"))
+        writefile(os.path.join(htmlpath, "control.html"))
 
 class PropertyAction(Action):
     """Property change action triggered by a control
