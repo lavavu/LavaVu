@@ -73,7 +73,7 @@ void Points::update()
 
   //Ensure vbo recreated if total changed
   //To force update, set geometry->reload = true
-  if ((reload && !allDataFixed) || vbo == 0)
+  if (reload || vbo == 0)
     loadVertices();
 
   //Always reload indices if redraw flagged
@@ -460,6 +460,7 @@ void Points::draw()
         glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(4*sizeof(float)+sizeof(Colour)));
       }
     }
+    GL_Error_Check;
 
     unsigned int start = 0;
     int defidx = 0;
