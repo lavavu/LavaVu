@@ -26,13 +26,6 @@ std::string Colour::toString()
   return cs.str();
 }
 
-void Colour::setUniform(GLint uniform)
-{
-  float array[4];
-  toArray(array);
-  glUniform4fv(uniform, 1, array);
-}
-
 void Colour::toArray(float* array)
 {
   array[0] = r/255.0;

@@ -25,25 +25,33 @@ void main(void)
 
 Shader::Shader()
 {
-  //Use both default shaders
-  init("", "");
+  //If default constructor used, must manually call init, passing own shader source strings
 }
 
 Shader::Shader(const std::string& fshader)
 {
   //This constructor for a fragment shader only
   std::string fsrc = read_file(fshader);
-  init("", fsrc);
+  init("", "", fsrc);
 }
 
 Shader::Shader(const std::string& vshader, const std::string& fshader)
 {
-  //This constructor is for a single vertex and/or fragment shader only
+  //This constructor is for a single vertex and fragment shader only
   std::string vsrc = read_file(vshader);
   std::string fsrc = read_file(fshader);
-  init(vsrc, fsrc);
+  init("", vsrc, fsrc);
 }
 
+Shader::Shader(const std::string& gshader, const std::string& vshader, const std::string& fshader)
+{
+  //This constructor is for a geometry, vertex and fragment shader
+  std::string gsrc = read_file(gshader);
+  std::string vsrc = read_file(vshader);
+  std::string fsrc = read_file(fshader);
+  init(gsrc, vsrc, fsrc);
+}
+/*
 Shader::Shader(const std::string& shader, GLenum shader_type)
 {
   //This constructor is for a custom shader of specified type (eg: GL_COMPUTE_SHADER)
@@ -57,8 +65,14 @@ Shader::Shader(const std::string& shader, GLenum shader_type)
   //Attempts to load and build shader programs
   if (compile(src.c_str(), shader_type)) build();
 }
+*/
 
-void Shader::init(std::string vsrc, std::string fsrc)
+//Hack for no geom shader support
+#ifndef GL_GEOMETRY_SHADER
+#define GL_GEOMETRY_SHADER GL_VERTEX_SHADER
+#endif
+
+void Shader::init(std::string gsrc, std::string vsrc, std::string fsrc)
 {
   program = 0;
   for (auto s : shaders)
@@ -70,8 +84,13 @@ void Shader::init(std::string vsrc, std::string fsrc)
   if (fsrc.length() == 0) fsrc = std::string(fragmentShader);
   if (vsrc.length() == 0) vsrc = std::string(vertexShader);
   //Attempts to load and build shader programs
-  if (compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
-      compile(fsrc.c_str(), GL_FRAGMENT_SHADER)) build();
+  if ((gsrc.length() == 0 || compile(gsrc.c_str(), GL_GEOMETRY_SHADER)) &&
+      compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
+      compile(fsrc.c_str(), GL_FRAGMENT_SHADER))
+  {
+    //Compile succeeded, link program
+    build();
+  }
 }
 
 bool Shader::version()
@@ -176,34 +195,132 @@ void Shader::use()
   GL_Error_Check;
 }
 
-void Shader::loadUniforms(const char** names, int count)
+void Shader::loadUniforms()
 {
   if (!supported || !program) return;
-  for (int i=0; i<count; i++)
+  GLint uniform_count;
+  glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniform_count);
+  GLsizei len;
+  GLint size;
+  GLenum type;
+  char name[1024];
+  for (GLint i=0; i<uniform_count; i++)
   {
-    GLint loc = glGetUniformLocation(program, names[i]);
-    if (loc < 0)
-      debug_print("Uniform '%s' not found\n", names[i]);
-    uniforms[names[i]] = loc;
+    glGetActiveUniform(program, i, 1023, &len, &size, &type, name);
+    GLint location = glGetUniformLocation(program, name);
+    //NVidia returns name[0] for arrays, need to strip after [
+    char* nname = strchr(name, '[');
+    if (nname) nname[0] = '\0';
+    uniforms[name] = location;
+    uniform_types[name] = type;
+    //std::cout << "UNIFORM : " << name << " @ " << i << " type " << type << std::endl;
   }
 }
 
-void Shader::loadAttribs(const char** names, int count)
+void Shader::loadAttribs()
 {
   if (!supported || !program) return;
-  for (int i=0; i<count; i++)
+  GLint attrib_count;
+  glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &attrib_count);
+  GLsizei len;
+  GLint size;
+  GLenum type;
+  char name[1024];
+  for (GLint i=0; i<attrib_count; i++)
   {
-    GLint loc = glGetAttribLocation(program, names[i]);
-    if (loc < 0)
-      debug_print("Attrib '%s' not found\n", names[i]);
-    attribs[names[i]] = loc;
+    glGetActiveAttrib(program, i, 1023, &len, &size, &type, name);
+    GLint location = glGetAttribLocation(program, name);
+    attribs[name] = location;
+    //attrib_types[name] = type;
+    //std::cout << "ATTRIB : " << name << " @ " << i << " type " << type << std::endl;
   }
 }
 
-void Shader::setUniform(const char* name, int value)   {setUniformi(name, value);}
-void Shader::setUniform(const char* name, float value) {setUniformf(name, value);}
+void Shader::setUniform(const std::string& name, json& value)
+{
+  if (!supported || !program) return;
+  std::map<std::string,int>::iterator it = uniforms.find(name);
+  if (it == uniforms.end()) return;
 
-void Shader::setUniformi(const char* name, int value)
+  //Handle integer/float uniforms, singular, vector values (2,3 or 4) or scalar arrays (>4)
+  //NOTE: this is a bit error prone, probably need to flag int/float by parsing shader rather than
+  //detecting from the json dict
+  //std::cout << name << " => " << value << " " << " @ " << uniforms[name] << std::endl;
+  int dims = 1;
+  float* fdat = NULL;
+  int* idat = NULL;
+  if (value.is_array())
+  {
+    //Array values
+    dims = value.size();
+    fdat = new float[dims];
+    idat = new int[dims];
+    Properties::toArray<int>(value, idat, dims);
+    Properties::toArray<float>(value, fdat, dims);
+  }
+
+  GL_Error_Check
+
+  switch (uniform_types[name])
+  {
+    case GL_FLOAT:
+      if (dims == 1)
+        glUniform1f(uniforms[name], (float)value);
+      else //Array of scalars
+        glUniform1fv(uniforms[name], dims, fdat);
+      GL_Error_Print
+      break;
+    case GL_INT:
+    case GL_BOOL:
+      if (dims == 1)
+        glUniform1i(uniforms[name], (int)value);
+      else //Array of scalars
+        glUniform1iv(uniforms[name], dims, idat);
+      GL_Error_Print
+      break;
+    case GL_FLOAT_VEC2:
+      assert(dims>=2);
+      glUniform2fv(uniforms[name], 1, fdat);
+      GL_Error_Print
+      break;
+    case GL_INT_VEC2:
+      glUniform2iv(uniforms[name], 1, idat);
+      GL_Error_Print
+      break;
+    case GL_FLOAT_VEC3:
+      glUniform3fv(uniforms[name], 1, fdat);
+      GL_Error_Print
+      break;
+    case GL_INT_VEC3:
+      glUniform3iv(uniforms[name], 1, idat);
+      GL_Error_Print
+      break;
+    case GL_FLOAT_VEC4:
+      glUniform4fv(uniforms[name], 1, fdat);
+      GL_Error_Print
+      break;
+    case GL_INT_VEC4:
+      glUniform4iv(uniforms[name], 1, idat);
+      GL_Error_Print
+      break;
+  }
+
+  GL_Error_Check;
+  if (fdat) delete[] fdat;
+  if (idat) delete[] idat;
+}
+
+void Shader::setUniform(const std::string& name, int value)   {setUniformi(name, value);}
+void Shader::setUniform(const std::string& name, float value) {setUniformf(name, value);}
+
+void Shader::setUniform(const std::string& name, Colour& colour)
+{
+  float array[4];
+  colour.toArray(array);
+  setUniform4f(name, array);
+}
+
+void Shader::setUniformi(const std::string& name, int value)
 {
   if (!supported || !program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
@@ -215,7 +332,7 @@ void Shader::setUniformi(const char* name, int value)
   }
 }
 
-void Shader::setUniformf(const char* name, float value)
+void Shader::setUniformf(const std::string& name, float value)
 {
   if (!supported || !program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
@@ -227,7 +344,7 @@ void Shader::setUniformf(const char* name, float value)
   }
 }
 
-void Shader::setUniform3f(const char* name, json value)
+void Shader::setUniform2f(const std::string& name, float value[2])
 {
   if (!supported || !program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
@@ -235,11 +352,46 @@ void Shader::setUniform3f(const char* name, json value)
   {
     GLint loc = uniforms[name];
     if (loc >= 0)
-    {
-      float fval[3];
-      Properties::toArray<float>(value, fval, 3);
-      glUniform3fv(loc, 1, fval);
-    }
+      glUniform2fv(loc, 1, value);
+    GL_Error_Check;
+  }
+}
+
+void Shader::setUniform3f(const std::string& name, float value[3])
+{
+  if (!supported || !program) return;
+  std::map<std::string,int>::iterator it = uniforms.find(name);
+  if (it != uniforms.end())
+  {
+    GLint loc = uniforms[name];
+    if (loc >= 0)
+      glUniform3fv(loc, 1, value);
+    GL_Error_Check;
+  }
+}
+
+void Shader::setUniform4f(const std::string& name, float value[4])
+{
+  if (!supported || !program) return;
+  std::map<std::string,int>::iterator it = uniforms.find(name);
+  if (it != uniforms.end())
+  {
+    GLint loc = uniforms[name];
+    if (loc >= 0)
+      glUniform4fv(loc, 1, value);
+    GL_Error_Check;
+  }
+}
+
+void Shader::setUniformMatrixf(const std::string& name, float matrix[16], bool transpose)
+{
+  if (!supported || !program) return;
+  std::map<std::string,int>::iterator it = uniforms.find(name);
+  if (it != uniforms.end())
+  {
+    GLint loc = uniforms[name];
+    if (loc >= 0)
+      glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, matrix);
     GL_Error_Check;
   }
 }

@@ -368,7 +368,7 @@ void LinesSorted::draw()
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
       {
-        setState(index, session.prog[lucLineType]); //Set draw state settings for this object
+        setState(index); //Set draw state settings for this object
         //fprintf(stderr, "(%d %s) DRAWING OPAQUE LINES: %d (%d to %d)\n", index, geom[index]->draw->name().c_str(), counts[index]/2, start/2, (start+counts[index])/2);
         glDrawElements(GL_LINES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
@@ -387,7 +387,7 @@ void LinesSorted::draw()
       //fprintf(stderr, "(*) DRAWING TRANSPARENT LINES: %d\n", (elements-start)/2);
       //Set draw state settings for first non-opaque object
       //NOTE: per-object textures do not work with transparency!
-      setState(lnidx, session.prog[lucLineType]);
+      setState(lnidx);
 
       //Render all remaining lines - elements is the number of indices. 2 indices needed to make a single line
       glDrawElements(GL_LINES, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));

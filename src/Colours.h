@@ -69,7 +69,6 @@ union Colour
   void invert();
   json toJson();
   std::string toString();
-  void setUniform(GLint uniform);
   void toArray(float* array);
 };
 

@@ -88,7 +88,7 @@ void Volumes::draw()
     unsigned int id = vol_sorted[i].id;
     if (!drawable(id)) continue;
 
-    setState(id, session.prog[lucVolumeType]); //Set draw state settings for this object
+    setState(id); //Set draw state settings for this object
     render(id);
 
     GL_Error_Check;
@@ -423,7 +423,7 @@ void Volumes::render(int i)
   }
 
   GL_Error_Check;
-  Shader* prog = session.prog[lucVolumeType];
+  Shader_Ptr prog = session.shaders[lucVolumeType];
 
   //Uniform variables
   float viewport[4];
@@ -435,8 +435,8 @@ void Volumes::render(int i)
     return;
   }
   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};
-  glUniform3fv(prog->uniforms["uResolution"], 1, res);
-  glUniform4fv(prog->uniforms["uViewport"], 1, viewport);
+  prog->setUniform3f("uResolution", res);
+  prog->setUniform4f("uViewport", viewport);
 
   //User settings
   ColourMap* cmap = geom[i]->draw->colourMap;
@@ -461,25 +461,25 @@ void Volumes::render(int i)
                     props.getFloat("zmax", 1.)
                    };
 
-  glUniform3fv(prog->uniforms["uBBMin"], 1, bbMin);
-  glUniform3fv(prog->uniforms["uBBMax"], 1, bbMax);
-  glUniform1i(prog->uniforms["uEnableColour"], cmap ? 1 : 0);
-  glUniform1f(prog->uniforms["uPower"], props["power"]);
-  glUniform1i(prog->uniforms["uSamples"], props["samples"]);
+  prog->setUniform3f("uBBMin", bbMin);
+  prog->setUniform3f("uBBMax", bbMax);
+  prog->setUniformi("uEnableColour", cmap ? 1 : 0);
+  prog->setUniformf("uPower", props["power"]);
+  prog->setUniformi("uSamples", props["samples"]);
   float opacity = props["opacity"], density = props["density"];
-  glUniform1f(prog->uniforms["uDensityFactor"], density * opacity);
+  prog->setUniformf("uDensityFactor", density * opacity);
   Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
   float isoval = props["isovalue"];
   float isoalpha = props["isoalpha"];
   if (isoval == FLT_MAX) isoalpha = 0.0; //Skip drawing isosurface if no isovalue set
   colour.a = 255.0 * isoalpha * (colour.a/255.0);
-  colour.setUniform(prog->uniforms["uIsoColour"]);
-  glUniform1f(prog->uniforms["uIsoSmooth"], props["isosmooth"]);
-  glUniform1i(prog->uniforms["uIsoWalls"], (bool)props["isowalls"]);
-  glUniform1i(prog->uniforms["uFilter"], (bool)props["tricubicfilter"]);
+  prog->setUniform("uIsoColour", colour);
+  prog->setUniformf("uIsoSmooth", props["isosmooth"]);
+  prog->setUniformi("uIsoWalls", (bool)props["isowalls"]);
+  prog->setUniformi("uFilter", (bool)props["tricubicfilter"]);
   float dminmax[2] = {props["minclip"],
                       props["maxclip"]};
-  glUniform2fv(prog->uniforms["uDenMinMax"], 1, dminmax);
+  prog->setUniform2f("uDenMinMax", dminmax);
   GL_Error_Check;
 
   //Field data requires normalisation to [0,1]
@@ -492,7 +492,7 @@ void Volumes::render(int i)
       isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
     //std::cout << "IsoValue " << isoval << std::endl;
     //std::cout << "Range " << range.minimum << " : " << range.maximum << std::endl;
-    glUniform2fv(prog->uniforms["uRange"], 1, range.data());
+    prog->setUniform2f("uRange", range.data());
   }
   else
   {
@@ -506,22 +506,22 @@ void Volumes::render(int i)
       cmap->calibrate(&rangeobj);
     }
     //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
-    glUniform2fv(prog->uniforms["uRange"], 1, range);
+    prog->setUniform2f("uRange", range);
   }
-  glUniform1f(prog->uniforms["uIsoValue"], isoval);
+  prog->setUniformf("uIsoValue", isoval);
   GL_Error_Check;
 
   //Gradient texture
   if (cmap)
   {
     TextureData* tex = cmap->texture->use();
-    glUniform1i(prog->uniforms["uTransferFunction"], tex->unit);
+    prog->setUniformi("uTransferFunction", tex->unit);
   }
 
   //Volume texture
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_3D, voltexture->id);
-  glUniform1i(prog->uniforms["uVolume"], 1);
+  prog->setUniformi("uVolume", 1);
   GL_Error_Check;
 
   //Get the matrices to send as uniform data
@@ -607,8 +607,8 @@ void Volumes::render(int i)
   GL_Error_Check;
 
   //Raymarching modelview and normal matrices
-  glUniformMatrix4fv(prog->uniforms["uMVMatrix"], 1, GL_FALSE, mvMatrix);
-  glUniformMatrix4fv(prog->uniforms["uNMatrix"], 1, GL_FALSE, nMatrix);
+  prog->setUniformMatrixf("uMVMatrix", mvMatrix);
+  prog->setUniformMatrixf("uNMatrix", nMatrix);
 
   //Calculate the combined modelview projection matrix
   multMatrixf(mvpMatrix, matrix, pMatrix);
@@ -617,8 +617,8 @@ void Volumes::render(int i)
   multMatrixf(invMVPMatrix, invPMatrix, mvMatrix);
 
   //Combined projection and modelview matrices and inverses
-  glUniformMatrix4fv(prog->uniforms["uInvMVPMatrix"], 1, GL_FALSE, invMVPMatrix);
-  glUniformMatrix4fv(prog->uniforms["uMVPMatrix"], 1, GL_FALSE, mvpMatrix);
+  prog->setUniformMatrixf("uInvMVPMatrix", invMVPMatrix);
+  prog->setUniformMatrixf("uMVPMatrix", mvpMatrix);
   GL_Error_Check;
 
   //State...

@@ -744,7 +744,7 @@ void TriSurfaces::draw()
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
       {
-        setState(index, session.prog[lucTriangleType]); //Set draw state settings for this object
+        setState(index); //Set draw state settings for this object
         //fprintf(stderr, "(%d %s) DRAWING OPAQUE TRIANGLES: %d (%d to %d)\n", index, geom[index]->draw->name().c_str(), counts[index]/3, start/3, (start+counts[index])/3);
         glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
@@ -763,7 +763,7 @@ void TriSurfaces::draw()
       //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
       //Set draw state settings for first non-opaque object
       //NOTE: per-object textures do not work with transparency!
-      setState(tridx, session.prog[lucTriangleType]);
+      setState(tridx);
 
       //Render all remaining triangles - elements is the number of indices. 3 indices needed to make a single triangle
       glDrawElements(GL_TRIANGLES, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));

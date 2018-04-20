@@ -296,7 +296,7 @@ void Lines::draw()
       if (drawable(i))
       {
         //Set draw state
-        setState(i, session.prog[lucLineType]);
+        setState(i);
 
         //Lines specific state
         float scaling = props["scalelines"];

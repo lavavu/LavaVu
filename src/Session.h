@@ -47,8 +47,8 @@ public:
   float *x_coords, *y_coords;  // Saves arrays of x,y points on circle for set segment count
   int segments = 0;    // Saves segment count for circle based objects
 
-  //TriSurfaces, Lines, Points, Volumes
-  Shader* prog[lucMaxType];
+  //Shaders by geometry type
+  Shader_Ptr shaders[lucMaxType];
 
   //View
   Camera* globalcam = NULL;

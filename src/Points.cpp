@@ -397,8 +397,7 @@ void Points::draw()
   double time;
   GL_Error_Check;
 
-  Shader* prog = session.prog[lucPointType];
-  setState(0, prog); //Set global draw state (using first object)
+  setState(0); //Set global draw state (using first object)
 
   //Re-render the particles if view has rotated
   if (sorter.changed) render();
@@ -413,6 +412,7 @@ void Points::draw()
 
   //Point size distance attenuation (disabled for 2d models)
   float scale0 = (float)geom[0]->draw->properties["scalepoints"] * session.scale2d; //Include 2d scale factor
+  Shader_Ptr prog = session.shaders[lucPointType];
   if (view->is3d && session.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
   {
     prog->setUniform("uPointScale", scale0 * view->model_size);
@@ -469,7 +469,7 @@ void Points::draw()
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
       {
-        setState(index, session.prog[lucPointType]); //Set draw state settings for this object
+        setState(index); //Set draw state settings for this object
         //fprintf(stderr, "(%d, %s) DRAWING OPAQUE POINTS: %d (%d to %d)\n", index, geom[index]->draw->name().c_str(), counts[index], start, (start+counts[index]));
         glDrawElements(GL_POINTS, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
         start += counts[index];
@@ -483,7 +483,7 @@ void Points::draw()
     {
       //Set draw state settings for first non-opaque object
       //NOTE: per-object properties do not work with transparency!
-      setState(defidx, session.prog[lucPointType]);
+      setState(defidx);
 
       //Render all remaining points - elements is the number of indices. 3 indices needed to make a single triangle
       //fprintf(stderr, "(*) DRAWING TRANSPARENT POINTS: %d\n", (elements-start));

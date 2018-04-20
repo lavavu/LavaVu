@@ -1,6 +1,6 @@
 #include "Session.h"
 
-Session::Session() : prog(), eng0(std::random_device()()), eng1(0), dist(0, 1)
+Session::Session() : shaders(), eng0(std::random_device()()), eng1(0), dist(0, 1)
 {
   borderobj = axisobj = rulerobj = NULL;
   omegalib = false;
@@ -257,6 +257,26 @@ void Session::init()
         "object",
         "string",
         "Geometry type to load when adding new data",
+        true, 0
+      }
+    },
+    {
+      "shaders",
+      {
+        json::array(),
+        "object",
+        "object",
+        "Custom shaders for rendering object, either filenames or source strings, provide either [fragment], [vertex, fragment] or [geometry, vertex, fragment]",
+        true, 0
+      }
+    },
+    {
+      "uniforms",
+      {
+        json::array(),
+        "object",
+        "object",
+        "Custom shader uniforms for rendering objects, list of uniform names, will be copied from property data",
         true, 0
       }
     },

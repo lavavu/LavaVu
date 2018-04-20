@@ -49,6 +49,8 @@ functions = [
 "glUniform3fv",
 "glUniform4fv",
 "glUniformMatrix4fv",
+"glGetActiveUniform",
+"glGetActiveAttrib",
 "glGetAttribLocation",
 "glEnableVertexAttribArray",
 "glVertexAttribPointer",

@@ -1734,48 +1734,20 @@ void LavaVu::open(int width, int height)
 
 void LavaVu::reloadShaders()
 {
-  //Point shaders
-  if (session.prog[lucPointType]) delete session.prog[lucPointType];
-  session.prog[lucPointType] = new Shader("pointShader.vert", "pointShader.frag");
-  const char* pUniforms[] = {"uPointScale", "uPointType", "uOpacity", "uPointDist", 
-                             "uTextured", "uTexture", "uClipMin", "uClipMax",
-                             "uBrightness", "uContrast", "uSaturation",
-                             "uAmbient", "uDiffuse", "uSpecular", "uOpaque", "uLightPos"};
-  session.prog[lucPointType]->loadUniforms(pUniforms, sizeof(pUniforms)/sizeof(char*));
-  const char* pAttribs[] = {"aSize", "aPointType"};
-  session.prog[lucPointType]->loadAttribs(pAttribs, sizeof(pAttribs)/sizeof(char*));
+  for (unsigned int type=0; type <= lucMaxType; type++)
+  {
+    if (session.shaders[type])
+      session.shaders[type] = NULL;
+  }
 
-  //Line shaders
-  if (session.prog[lucLineType]) delete session.prog[lucLineType];
-  session.prog[lucLineType] = new Shader("lineShader.vert", "lineShader.frag");
-  const char* lUniforms[] = {"uOpacity", "uClipMin", "uClipMax", 
-                             "uBrightness", "uContrast", "uSaturation", "uOpaque"};
-  session.prog[lucLineType]->loadUniforms(lUniforms, sizeof(lUniforms)/sizeof(char*));
+  for (unsigned int i=0; i<amodel->objects.size(); i++)
+  {
+    if (amodel->objects[i]->shader)
+      amodel->objects[i]->shader = nullptr;
+  }
 
-  //Triangle shaders
-  if (session.prog[lucTriangleType]) delete session.prog[lucTriangleType];
-  session.prog[lucTriangleType] = new Shader("triShader.vert", "triShader.frag");
-  const char* tUniforms[] = {"uOpacity", "uLighting", "uTextured", "uTexture",
-                             "uCalcNormal", "uClipMin", "uClipMax",
-                             "uBrightness", "uContrast", "uSaturation",
-                             "uAmbient", "uDiffuse", "uSpecular", "uOpaque", "uLightPos"};
-  session.prog[lucTriangleType]->loadUniforms(tUniforms, sizeof(tUniforms)/sizeof(char*));
-  session.prog[lucGridType] = session.prog[lucTriangleType];
-
-  //Volume ray marching shaders
-  if (session.prog[lucVolumeType]) delete session.prog[lucVolumeType];
-  session.prog[lucVolumeType] = new Shader("volumeShader.vert", "volumeShader.frag");
-  const char* vUniforms[] = {"uMVMatrix", "uInvMVPMatrix", "uMVPMatrix", "uNMatrix",
-                             "uVolume", "uTransferFunction", "uBBMin", "uBBMax",
-                             "uResolution", "uEnableColour",
-                             "uBrightness", "uContrast", "uSaturation", 
-                             "uAmbient", "uDiffuse", "uSpecular",
-                             "uPower", "uViewport", "uSamples", "uDensityFactor",
-                             "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls",
-                             "uFilter", "uRange", "uDenMinMax", "uLightPos"};
-  session.prog[lucVolumeType]->loadUniforms(vUniforms, sizeof(vUniforms)/sizeof(char*));
-  const char* vAttribs[] = {"aVertexPosition"};
-  session.prog[lucVolumeType]->loadAttribs(vAttribs, sizeof(vAttribs)/sizeof(char*));
+  resetViews();
+  amodel->redraw();
 }
 
 void LavaVu::resize(int new_width, int new_height)

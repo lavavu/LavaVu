@@ -558,7 +558,8 @@ public:
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void merge(int start, int end);
-  void setState(unsigned int i, Shader* prog=NULL);
+  Shader_Ptr getShader(DrawingObject* draw);
+  void setState(unsigned int i);
   void updateBoundingBox();
   virtual void display(bool refresh=false); //Display saved geometry
   virtual void update();  //Implementation should create geometry here...

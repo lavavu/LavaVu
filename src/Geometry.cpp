@@ -959,7 +959,103 @@ void Geometry::merge(int start, int end)
   //         (int)geom.size(), total, allDataFixed, allVertsFixed, GeomData::names[type].c_str(), geom[0]->draw->name().c_str());
 }
 
-void Geometry::setState(unsigned int i, Shader* prog)
+Shader_Ptr Geometry::getShader(DrawingObject* draw)
+{
+  //Use existing custom shader if found
+  if (draw->shader)
+    return draw->shader;
+
+  //Uses a custom shader?
+  if (draw->properties.has("shaders"))
+  {
+    //Init from property
+    json shaders = draw->properties["shaders"];
+    std::cout << shaders << std::endl;
+    if (shaders.size() == 1)
+    {
+      std::string f = shaders[0];
+      draw->shader = std::make_shared<Shader>(f);
+    }
+    else if (shaders.size() == 2)
+    {
+      std::string v = shaders[0];
+      std::string f = shaders[1];
+      draw->shader = std::make_shared<Shader>(v, f);
+    }
+    else if (shaders.size() == 3)
+    {
+      std::string g = shaders[0];
+      std::string v = shaders[1];
+      std::string f = shaders[2];
+      draw->shader = std::make_shared<Shader>(g, v, f);
+    }
+
+    //Get uniforms/attribs
+    draw->shader->loadUniforms();
+    draw->shader->loadAttribs();
+
+    return draw->shader;
+  }
+
+  //Get the base type for default shader
+  lucGeometryType btype;
+  switch (type)
+  {
+    case lucPointType:
+    case lucLineType:
+    case lucVolumeType:
+      btype = type;
+      break;
+    case lucTriangleType:
+    case lucGridType:
+    case lucVectorType:
+    case lucTracerType:
+    case lucShapeType:
+      btype = lucTriangleType;
+      break;
+    default:
+      btype = lucMinType;
+  }
+
+  //Already initialised?
+  if (session.shaders[btype])
+    return session.shaders[btype];
+
+  //Not found? init the default
+  if (btype == lucPointType)
+  {
+    //Point shaders
+    session.shaders[lucPointType] = std::make_shared<Shader>("pointShader.vert", "pointShader.frag");
+    session.shaders[lucPointType]->loadUniforms();
+    session.shaders[lucPointType]->loadAttribs();
+  }
+
+  if (btype == lucLineType)
+  {
+    //Line shaders
+    session.shaders[lucLineType] = std::make_shared<Shader>("lineShader.vert", "lineShader.frag");
+    session.shaders[lucLineType]->loadUniforms();
+  }
+
+  if (btype == lucTriangleType)
+  {
+    //Triangle shaders
+    session.shaders[lucTriangleType] = std::make_shared<Shader>("triShader.vert", "triShader.frag");
+    session.shaders[lucTriangleType]->loadUniforms();
+  }
+
+  if (btype == lucVolumeType)
+  {
+    //Volume ray marching shaders
+    session.shaders[lucVolumeType] = std::make_shared<Shader>("volumeShader.vert", "volumeShader.frag");
+    session.shaders[lucVolumeType]->loadUniforms();
+    session.shaders[lucVolumeType]->loadAttribs();
+  }
+
+  return session.shaders[btype];
+}
+
+void Geometry::setState(unsigned int i)
 {
   //NOTE: Transparent triangle surfaces/points are drawn as a single object so 
   //      no per-object state settings work, state applied is that of first in list
@@ -1039,9 +1135,45 @@ void Geometry::setState(unsigned int i, Shader* prog)
   draw->colour = draw->properties.getColour("colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
 
   //Uniforms for shader programs
+  Shader_Ptr prog = getShader(geom[i]->draw);
   if (prog && prog->program > 0)
   {
     prog->use();
+
+    //Custom uniforms?
+    if (draw->properties.has("uniforms"))
+    {
+      json uniforms = draw->properties["uniforms"];
+      //std::cout << uniforms << std::endl;
+      for (json::iterator it = uniforms.begin(); it != uniforms.end(); ++it)
+      {
+        //Attempt to find in properties and use that value if found
+        json prop;
+        std::string label = it.key();
+        if (draw->properties.has(label))
+          prop = draw->properties[label];
+        else
+          prop = it.value();
+        //std::cout << label << " ==> " << prop << std::endl;
+
+        //Special case: string data -> treat as colourmap!
+        if (prop.is_string())
+        {
+          if (geom[i]->draw->colourMap && geom[i]->draw->colourMap->texture)
+          {
+            prog->setUniformi(label, geom[i]->draw->colourMap->texture->texture->unit);
+            //std::cerr << label << " : Colourmap texture available on unit " << geom[i]->draw->colourMap->texture->texture->unit << std::endl;
+          }
+          else
+            std::cerr << label << " : No colourmap texture available! " << prop << std::endl;
+        }
+        else if (!prop.is_null())
+        {
+          prog->setUniform(label, prop);
+        }
+      }
+    }
+
     //Per-object "opacity" overrides global default if set
     //"alpha" is multiplied to affect all objects
     float opacity = (float)geom[i]->draw->properties["alpha"];
@@ -1058,7 +1190,7 @@ void Geometry::setState(unsigned int i, Shader* prog)
     prog->setUniformf("uAmbient", geom[i]->draw->properties["ambient"]);
     prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
     prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
-    prog->setUniform3f("uLightPos", geom[i]->draw->properties["lightpos"]);
+    prog->setUniform("uLightPos", geom[i]->draw->properties["lightpos"]);
     prog->setUniformi("uTextured", texture && texture->unit >= 0);
     prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
     //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
@@ -1098,8 +1230,8 @@ void Geometry::setState(unsigned int i, Shader* prog)
         //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
       }
 
-      glUniform3fv(prog->uniforms["uClipMin"], 1, clipMin.ref());
-      glUniform3fv(prog->uniforms["uClipMax"], 1, clipMax.ref());
+      prog->setUniform3f("uClipMin", clipMin.ref());
+      prog->setUniform3f("uClipMax", clipMax.ref());
     }
   }
   GL_Error_Check;

@@ -306,7 +306,7 @@ void QuadSurfaces::draw()
       }
 
       //int id = i; //Sorting disabled
-      setState(id, session.prog[lucGridType]); //Set draw state settings for this object
+      setState(id); //Set draw state settings for this object
       //fprintf(stderr, "(%d, %s) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->draw->name().c_str(), geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
       glDrawElements(GL_QUADS, 4 * geom[id]->gridElements2d(), GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
       //printf("%d) rendered, distance = %f (%f)\n", id, geom[id]->distance, surf_sort[i].distance);

@@ -58,6 +58,8 @@ PFNGLUNIFORM2FVPROC glUniform2fv;
 PFNGLUNIFORM3FVPROC glUniform3fv;
 PFNGLUNIFORM4FVPROC glUniform4fv;
 PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
+PFNGLGETACTIVEUNIFORMPROC glGetActiveUniform;
+PFNGLGETACTIVEATTRIBPROC glGetActiveAttrib;
 PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
@@ -120,6 +122,8 @@ void OpenGL_Extensions_Init()
   glUniform3fv = (PFNGLUNIFORM3FVPROC) GetProcAddress("glUniform3fv");
   glUniform4fv = (PFNGLUNIFORM4FVPROC) GetProcAddress("glUniform4fv");
   glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC) GetProcAddress("glUniformMatrix4fv");
+  glGetActiveUniform = (PFNGLGETACTIVEUNIFORMPROC) GetProcAddress("glGetActiveUniform");
+  glGetActiveAttrib = (PFNGLGETACTIVEATTRIBPROC) GetProcAddress("glGetActiveAttrib");
   glGetAttribLocation = (PFNGLGETATTRIBLOCATIONPROC) GetProcAddress("glGetAttribLocation");
   glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glEnableVertexAttribArray");
   glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) GetProcAddress("glVertexAttribPointer");

@@ -336,7 +336,7 @@ void Triangles::draw()
     for (unsigned int index = 0; index < geom.size(); index++)
     {
       if (counts[index] == 0) continue;
-      setState(index, session.prog[lucTriangleType]); //Set draw state settings for this object
+      setState(index); //Set draw state settings for this object
       if (geom[index]->render->indices.size() > 0)
       {
         //Draw with index buffer
