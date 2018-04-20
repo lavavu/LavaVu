@@ -180,6 +180,12 @@ void Session::parseSet(Properties& target, const std::string& properties, bool v
 
 void Session::init()
 {
+  //1) Default value
+  //2) Target of property
+  //3) Doc string
+  //4) Strict parsing flag
+  //5) Redraw level 0-4 (none, redraw only, full data reload, full reload and view reset, full reload and view reset with autozoom)
+
   //Setup default properties (once only)
   std::vector<std::pair<std::string,json>> property_data =
   {
@@ -1249,8 +1255,8 @@ void Session::init()
         json::array(),
         "colourmap",
         "colours",
-        "Colour list, see [Colour map lists] for more information",
-        true, 0
+        "Colour list (or string), see [Colour map lists] for more information",
+        false, 0
       }
     },
     {
