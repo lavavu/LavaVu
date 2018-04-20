@@ -203,7 +203,7 @@ public:
   void drawAxis();
 
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
-  std::string encodeVideo(std::string filename="", int fps=30);
+  std::string encodeVideo(std::string filename="", int fps=30, int quality=VIDEO_HIGHQ);
   void writeSteps(bool images, int start, int end=-1);
 
   //data loading

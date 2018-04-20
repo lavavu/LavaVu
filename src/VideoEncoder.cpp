@@ -307,7 +307,7 @@ void VideoEncoder::open_video()
      as long as they're aligned enough for the architecture, and
      they're freed appropriately (such as using av_free for buffers
      allocated with av_malloc) */
-  video_outbuf_size = 6000000;
+  video_outbuf_size = 12000000;
   video_outbuf = (uint8_t*)av_malloc(video_outbuf_size);
 
   /* allocate the encoded raw picture */

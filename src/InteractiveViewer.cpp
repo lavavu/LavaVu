@@ -3266,14 +3266,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Encode video of all frames displayed at specified framerate\n"
               "(Requires libavcodec)\n\n"
-              "**Usage:** record (framerate)\n\n"
-              "framerate (integer): frames per second (default 30)\n";
+              "**Usage:** record (framerate) (quality)\n\n"
+              "framerate (integer): frames per second (default 30)\n"
+              "quality (integer): 1=low/2=medium/3=high (default 3)\n";
       return false;
     }
 
     //Default to 30 fps
     if (!parsed.has(ival, "record")) ival = 30;
-    encodeVideo("", ival);
+    int quality;
+    if (!parsed.has(quality, "record", 1)) quality = 3;
+    encodeVideo("", ival, quality);
   }
   else
   {

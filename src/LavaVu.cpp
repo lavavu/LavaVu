@@ -2920,7 +2920,7 @@ std::string LavaVu::video(std::string filename, int fps, int width, int height, 
   return filename;
 }
 
-std::string LavaVu::encodeVideo(std::string filename, int fps)
+std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
 {
   //TODO: - make VideoEncoder use OutputInterface
   //      - make image frame output a default video output
@@ -2933,13 +2933,14 @@ std::string LavaVu::encodeVideo(std::string filename, int fps)
     FilePath fp(filename);
     if (fp.ext.length() == 0) 
       filename += ".mp4"; //Default to mp4
-    int w = viewer->outwidth ? viewer->outwidth : viewer->width;
-    int h = viewer->outwidth ? viewer->outheight : viewer->height;
+    int w = viewer->outwidth ? viewer->outwidth : 0;
+    int h = viewer->outheight ? viewer->outheight : 0;
     //Ensure multiple of 2
-    if (h % 2 != 0) h -= 1;
-    if (w % 2 != 0) w -= 1;
+    if (h > 0 && h % 2 != 0) h -= 1;
+    if (w > 0 && w % 2 != 0) w -= 1;
     viewer->outputON(w, h, 3);
-    encoder = new VideoEncoder(filename.c_str(), w, h, fps);
+    //printf("RECORDING AT %d x %d (requested %d x %d)\n", viewer->width, viewer->height);
+    encoder = new VideoEncoder(filename.c_str(), viewer->getOutWidth(), viewer->getOutHeight(), fps, quality);
     return filename;
   }
   else
