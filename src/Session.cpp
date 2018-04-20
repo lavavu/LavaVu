@@ -111,17 +111,20 @@ int Session::parse(Properties* target, const std::string& property, bool validat
       //Parse simple increments and decrements
       if (prev == '+' || prev == '-' || prev == '*')
       {
-        std::stringstream ss(value);
-        float parsedval;
-        ss >> parsedval;
+        json parsedval = json::parse(value);
         float val = dest[key];
         if (prev == '+')
-          dest[key] = val + parsedval;
+          val = val + (float)parsedval;
         else if (prev == '-')
-          dest[key] = val - parsedval;
+          val = val - (float)parsedval;
         else if (prev == '*')
-          dest[key] = val * parsedval;
+          val = val * (float)parsedval;
 
+        //Keep as int unless either side is float
+        if (dest[key].is_number_float() || parsedval.is_number_float())
+          dest[key] = val;
+        else
+          dest[key] = (int)val;
       }
       else if (valuel == "true")
       {
