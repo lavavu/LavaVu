@@ -3086,12 +3086,10 @@ std::string LavaVu::image(std::string filename, int width, int height, int jpegq
 {
   if (!amodel || !viewer->isopen) return "";
   //Set width/height override
-  viewer->outwidth = width;
-  viewer->outheight = height;
   //Pass asterisk to generate filename automatically
   if (filename == "*") filename = session.counterFilename();
   //Write image to file if filename provided or return as string (base64 data url)
-  return viewer->image(filename, jpegquality, transparent);
+  return viewer->image(filename, jpegquality, transparent, width, height);
 }
 
 std::string LavaVu::web(bool tofile)

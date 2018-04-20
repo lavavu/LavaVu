@@ -165,7 +165,7 @@ public:
   void outputOFF();
   ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
   ImageData* pixels(ImageData* image, int w, int h, int channels=3, bool flip=false);
-  std::string image(const std::string& path="", int jpegquality=0, bool transparent=false);
+  std::string image(const std::string& path="", int jpegquality=0, bool transparent=false, int w=0, int h=0);
 
   void downSample(int q);
 

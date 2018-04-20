@@ -547,7 +547,7 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels, bo
   return image;
 }
 
-std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool transparent)
+std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool transparent, int w, int h)
 {
   assert(isopen);
   FilePath filepath(path);
@@ -558,7 +558,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   std::string retImg;
 
   // Read the pixels
-  ImageData* image = pixels(NULL, outwidth, outheight, channels, false);
+  ImageData* image = pixels(NULL, w ? w : outwidth, h ? h : outheight, channels, false);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
