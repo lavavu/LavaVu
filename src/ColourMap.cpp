@@ -58,7 +58,6 @@ ColourMap::ColourMap(Session& session, std::string name, std::string props)
   if (properties.has("colours"))
   {
     loadPaletteJSON(properties["colours"]);
-
     //Erase the colour list? Or keep it for export?
     //properties.data.erase("colours");
   }
@@ -66,105 +65,117 @@ ColourMap::ColourMap(Session& session, std::string name, std::string props)
 
 void ColourMap::loadPaletteJSON(json& data)
 {
-  if (data.is_string())
-    loadPalette(properties["colours"]);
-  else if (data.is_array())
+  //Load from json array
+  if (data.is_array())
   {
-    //Load from json array
     colours.clear();
     for (auto el : data)
       add(el);
+  }
+  else if (data.is_string())
+  {
+    std::string s = data;
+    loadPalette(s);
   }
 }
 
 void ColourMap::loadPalette(std::string data)
 {
   if (data.length() == 0) return;
-  //Three types of data accepted
+  //Types of data accepted
   // a) Name of predefined colour map, if preceded with @ position data is ignored
   //   and only colours loaded at even spacing
   // b) Space separated colour list
   // c) Position=rgba colour palette
-  noValues = false;
-  calibrated = false;
-
+  // d) JSON arrays of [r,g,b(,a)] or [position, [r,g,b(,a)]] values
+  colours.clear();
   bool nopos = false;
-  if (data.at(0) == '@')
+  if (data.at(0) == '[')
   {
-    //Strip position data after loading
-    data = data.substr(1);
-    nopos = true;
-  }
-  std::string map = getDefaultMap(data);
-  if (map.length() > 0) data = map;
-
-  if (data.find("=") == std::string::npos)
-  {
-    //Parse a whitespace separated list of colours with optional preceeding values
-    const char *breakChars = " \t\n;";
-    char *charPtr;
-    char colourStr[64];
-    char *colourString = new char[data.size()+1];
-    strcpy(colourString, data.c_str());
-    char *colourMap_ptr = colourString;
-    colours.clear();
-    charPtr = strtok(colourMap_ptr, breakChars);
-    while (charPtr != NULL)
-    {
-      float value = 0.0;
-
-      // Parse out value if provided, otherwise assign a default
-      // input string: (OPTIONAL-VALUE)colour
-      if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
-      {
-        //Add parsed colour to the map with value
-        add(colourStr, value);
-      }
-      else
-      {
-        //Add parsed colour to the map
-        add(charPtr);
-      }
-
-      charPtr = strtok(NULL, breakChars);
-    }
-    delete[] colourString;
-
-    //Ensure at least two colours
-    while (colours.size() < 2) add(0xff000000);
+    //Load from json array
+    json j = json::parse(data);
+    loadPaletteJSON(j);
   }
   else
   {
-    //Parse a list of position=value colours, newline or semi-colon separated
-    //Currently only support loading palettes with literal position data, not values to scale
-    noValues = true;
-    //Parse palette string into key/value pairs
-    std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
-    std::stringstream is(data);
-    colours.clear();
-    std::string line;
-    while(std::getline(is, line))
+    noValues = false;
+    calibrated = false;
+
+    if (data.at(0) == '@')
     {
-      std::istringstream iss(line);
-      float pos;
-      char delim;
-      std::string value;
-      if (iss >> pos && pos >= 0.0 && pos <= 1.0)
+      //Strip position data after loading
+      data = data.substr(1);
+      nopos = true;
+    }
+    std::string map = getDefaultMap(data);
+    if (map.length() > 0) data = map;
+
+    if (data.find("=") == std::string::npos)
+    {
+      //Parse a whitespace separated list of colours with optional preceeding values
+      const char *breakChars = " \t\n;";
+      char *charPtr;
+      char colourStr[64];
+      char *colourString = new char[data.size()+1];
+      strcpy(colourString, data.c_str());
+      char *colourMap_ptr = colourString;
+      charPtr = strtok(colourMap_ptr, breakChars);
+      while (charPtr != NULL)
       {
-        iss >> delim;
-        std::getline(iss, value); //Read rest of stream into value
-        Colour colour(value);
-        //Add to colourmap
-        addAt(colour, pos);
-      }
-      else
-      {
-        //Background?
-        std::size_t pos = line.find("=") + 1;
-        if (line.substr(0, pos) == "Background=")
+        float value = 0.0;
+
+        // Parse out value if provided, otherwise assign a default
+        // input string: (OPTIONAL-VALUE)colour
+        if (sscanf(charPtr, "(%f)%s", &value, colourStr) == 2)
         {
-          Colour c(line.substr(pos));
-          background = c;
+          //Add parsed colour to the map with value
+          add(colourStr, value);
+        }
+        else
+        {
+          //Add parsed colour to the map
+          add(charPtr);
+        }
+
+        charPtr = strtok(NULL, breakChars);
+      }
+      delete[] colourString;
+
+      //Ensure at least two colours
+      while (colours.size() < 2) add(0xff000000);
+    }
+    else
+    {
+      //Parse a list of position=value colours, newline or semi-colon separated
+      //Currently only support loading palettes with literal position data, not values to scale
+      noValues = true;
+      //Parse palette string into key/value pairs
+      std::replace(data.begin(), data.end(), ';', '\n'); //Allow semi-colon separators
+      std::stringstream is(data);
+      std::string line;
+      while(std::getline(is, line))
+      {
+        std::istringstream iss(line);
+        float pos;
+        char delim;
+        std::string value;
+        if (iss >> pos && pos >= 0.0 && pos <= 1.0)
+        {
+          iss >> delim;
+          std::getline(iss, value); //Read rest of stream into value
+          Colour colour(value);
+          //Add to colourmap
+          addAt(colour, pos);
+        }
+        else
+        {
+          //Background?
+          std::size_t pos = line.find("=") + 1;
+          if (line.substr(0, pos) == "Background=")
+          {
+            Colour c(line.substr(pos));
+            background = c;
+          }
         }
       }
     }
@@ -230,6 +241,8 @@ void ColourMap::add(float *components, float pvalue)
   {
     if (components[c] <= 1.0)
       colour.rgba[c] = 255 * components[c];
+    else
+      colour.rgba[c] = components[c];
   }
 
   add(colour.value, pvalue);
@@ -244,13 +257,16 @@ void ColourMap::add(json& entry, float pos)
     if (pos < 0.0)
       add(s);
     else
-      add(s, pos);
+    {
+      Colour colour(s);
+      addAt(colour, pos);
+    }
   }
   if (entry.size() == 2)
   {
     //Position, colour
     float pos = entry[0];
-    //Rescurse
+    //Recursive add json colour
     add(entry[1], pos);
   }
   else if (entry.size() >= 3)
@@ -263,12 +279,14 @@ void ColourMap::add(json& entry, float pos)
     {
       if (components[c] <= 1.0)
         colour.rgba[c] = 255 * components[c];
+      else
+        colour.rgba[c] = components[c];
     }
 
     if (pos < 0.0)
       add(colour.value);
     else
-      add(colour.value, pos);
+      addAt(colour, pos);
   }
 }
 
@@ -374,6 +392,14 @@ void ColourMap::calibrate(float min, float max)
   calc();
 
   debug_print("ColourMap %s calibrated min %f, max %f, range %f ==> %d colours\n", name.c_str(), minimum, maximum, range, colours.size());
+
+  //Ensure positions valid
+  std::sort(colours.begin(), colours.end());
+  if (colours[0].position != 0.0)
+    colours[0].position == 0.0;
+  if (colours.size() > 1 && colours.back().position != 1.0)
+    colours.back().position = 1.0;
+
   //for (int i=0; i < colours.size(); i++)
   //   printf(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
   calibrated = true;
@@ -397,6 +423,14 @@ void ColourMap::calibrate(Range* dataRange)
   //Otherwise calibrate with existing values
   else
     calibrate(minimum, maximum);
+}
+
+float ColourMap::scalefast(float value)
+{
+  if (log)
+    return irange * ((LOG10(value) - LOG10(minimum)));
+  else
+    return irange * ((value - minimum));
 }
 
 Colour ColourMap::getfast(float value)
@@ -446,6 +480,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 {
   //printf(" scaled %f ", scaledValue);
   if (colours.size() == 0) return Colour();
+  if (colours.size() == 1) return colours[0].colour;
   // Check within range
   if (scaledValue >= 1.0)
     return colours.back().colour;
@@ -462,7 +497,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
     }
 
     if (i==0 || i==colours.size()) 
-      abort_program("Colour position %f not in range [%f,%f]", scaledValue, colours[0].position, colours.back().position);
+      abort_program("ColourMap %s (%d) Colour position %f not in range [%f,%f] min %f max %f", name.c_str(), (int)colours.size(), scaledValue, colours[0].position, colours.back().position, minimum, maximum);
 
     // Calculate interpolation factor [0,1] between colour at index and previous colour
     float interpolate = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);

@@ -53,6 +53,12 @@ public:
   }
   ColourVal(Colour& colour, float pvalue) : colour(colour), value(pvalue), position(0) {}
   ColourVal(Colour& colour) : colour(colour), value(HUGE_VAL), position(0) {}
+
+  bool operator<(const ColourVal &rhs) const
+  {
+    //Comparison for position sort
+    return position < rhs.position;
+  }
 };
 
 //ColourMap class
@@ -95,6 +101,7 @@ public:
   void calc();
   void calibrate(float min, float max);
   void calibrate(Range* dataRange=NULL);
+  float scalefast(float value);
   Colour getfast(float value);
   Colour get(float value);
   float scaleValue(float value);

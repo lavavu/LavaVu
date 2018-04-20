@@ -1402,42 +1402,14 @@ class ColourMap(dict):
             Convert to greyscale
         """
         if data is not None:
-            if isinstance(data, list) and len(data) > 1 and not isinstance(data[0], str) and len(data[0]) > 1:
-                #Position,value tuples?
-                ln = len(data[0])
-                if ln == 2:
-                    #Sort by position
-                    data = sorted(data, key=lambda tup: tup[0])
-                    #Ensure first and last positions of list data are always 0 and 1
-                    if data[0][0]  != 0.0: data[0]  = (0.0, data[0][1])
-                    if data[-1][0] != 1.0: data[-1] = (1.0, data[-1][1])
-                #R,G,B(,A)
-                elif ln >= 3:
-                    colours = []
-                    for c in data:
-                        c = list(c)
-                        if c[0] <= 1.0 and c[1] <= 1.0 and c[2] <= 1.0:
-                            #Convert to range [0,255] if all in range [0,1]
-                            c[0] *= 0xff;
-                            c[1] *= 0xff;
-                            c[2] *= 0xff;
-                        #R,G,B,A only
-                        if ln > 3:
-                            if c[3] > 1.0: c[3] /= 0xff; #Convert alpha range to [0,1]
-                            colours.append('rgba(%d,%d,%d,%f)' % (c[0], c[1], c[2], c[3]))
-                        else:
-                            colours.append('rgb(%d,%d,%d)' % (c[0], c[1], c[2]))
-                    data = colours
-            if not isinstance(data, str):
-                #Convert iterable maps to string format
-                data = ['='.join([str(i) for i in item]) if not isinstance(item, str) else str(item) for item in data]
-                data = '\n'.join(data)
-            elif re.match('^[\w_]+$', data) is not None:
+            if isinstance(data, str) and re.match('^[\w_]+$', data) is not None:
                 #Single word of alphanumeric characters, if not a built-in map, try matplotlib
                 if data not in self.instance.defaultcolourmaps():
-                    print('"' + str(data) + '" unknown, attempting to find colourmap in matplotlib')
-                    self.update(matplotlib_colourmap(data))
-                    return
+                    data = matplotlib_colourmap(data)
+                    if len(data) == 0:
+                        return
+            if not isinstance(data, str):
+                data = json.dumps(data)
 
             #Load colourmap data
             self.instance.app.updateColourMap(self.ref, data, _convert_args(kwargs))
@@ -2029,7 +2001,7 @@ class Viewer(dict):
             func(datasets[key])
 
         #Set the colourmap, so python colourmap setting features can be used
-        if cmapdata:
+        if cmapdata is not None:
             obj.colourmap(cmapdata)
 
         #Return wrapper obj
