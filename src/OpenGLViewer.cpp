@@ -67,7 +67,7 @@ bool FBO::create(int w, int h)
   //Re-render at specified output size (in a framebuffer object if available)
   if (downsample > 1)
   {
-    float factor = pow(2, downsample-1);
+    float factor = downsampleFactor();
     w *= factor;
     h *= factor;
   }
@@ -178,13 +178,14 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
 #ifdef GL_FRAMEBUFFER_EXT
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
   //Output width
-  float factor = 1.0/pow(2, downsample-1);
-  unsigned int w = width*factor;
-  unsigned int h = height*factor;
+  float factor = 1.0/downsampleFactor();
+  unsigned int w = getOutWidth();
+  unsigned int h = getOutHeight();
   if (!image)
     image = new ImageData(w, h, channels);
 
   // Read the pixels from mipmap image
+  //printf("(%d, %f) Bounds check %d x %d (%d) == %d x %d (%d)\n", downsample, factor, image->width, image->height, image->channels, w, h, channels);
   assert(image->width == w && image->height == h && image->channels == (unsigned int)channels);
   assert(w/factor == width && h/factor == height);
   assert(channels == 3 || channels == 4);
@@ -500,7 +501,7 @@ void OpenGLViewer::outputON(int w, int h, int channels)
     height = fbo.height;
 
     //Scale text and 2d elements when downsampling output image
-    app->session.scale2d = pow(2, fbo.downsample-1);
+    app->session.scale2d = fbo.downsampleFactor();
   }
 
   //Re-render frame first

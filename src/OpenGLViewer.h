@@ -51,6 +51,8 @@ public:
   FrameBuffer() : width(0), height(0) {}
   virtual ~FrameBuffer() {}
   virtual ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
+  virtual int getOutWidth() {return width;}
+  virtual int getOutHeight() {return height;}
 };
 
 class FBO : public FrameBuffer
@@ -78,6 +80,10 @@ public:
   void destroy();
   void disable();
   ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
+
+  float downsampleFactor()   {return pow(2, downsample-1);}
+  virtual int getOutWidth()  {return width / downsampleFactor();}
+  virtual int getOutHeight() {return height / downsampleFactor();}
 };
 
 class OpenGLViewer : public ApplicationInterface, public FrameBuffer
@@ -126,6 +132,9 @@ public:
 
   OpenGLViewer();
   virtual ~OpenGLViewer();
+
+  virtual int getOutWidth() {return (fbo.enabled ? fbo.getOutWidth() : getOutWidth());}
+  virtual int getOutHeight() {return (fbo.enabled ? fbo.getOutHeight() : getOutHeight());}
 
   //Window app management - called by derived classes, in turn call application interface virtuals
   virtual void open(int width=0, int height=0);
