@@ -113,30 +113,31 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     if (!current)
     {
       //Create a default colour map
-      current = new ColourMap(session, name() + "_colourmap");
+      current = new ColourMap(session, name() + "_" + propname);
       session.colourMaps->push_back(current);
     }
 
     //Load the data string
     current->loadPalette(data);
-    properties.data["colourmap"] = current->name;
-    return current;
   }
   else if (prop.is_array())
   {
     if (!current)
     {
       //Create a default colour map
-      current = new ColourMap(session, name() + "_colourmap");
+      current = new ColourMap(session, name() + "_" + propname);
       session.colourMaps->push_back(current);
     }
 
     //Load the data array
     current->loadPaletteJSON(prop);
-    properties.data["colourmap"] = current->name;
-    return current;
   }
-  return NULL;
+
+  if (current)
+    //Replace property data with name of loaded map
+    properties.data[propname] = current->name;
+
+  return current;
 }
 
 void DrawingObject::setup()
