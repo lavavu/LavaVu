@@ -708,20 +708,27 @@ TextureData* ImageLoader::use()
 
   if (!empty())
   {
+    GLenum ttype = GL_TEXTURE_2D;
     if (texture->depth > 0)
+      ttype = GL_TEXTURE_3D;
+
+    glEnable(ttype);
+    glActiveTexture(GL_TEXTURE0 + texture->unit);
+    glBindTexture(ttype, texture->id);
+    GL_Error_Check;
+    //printf("USE TEXTURE: (id %d unit %d)\n", texture->id, texture->unit);
+
+    if (repeat)
     {
-      glEnable(GL_TEXTURE_3D);
-      glActiveTexture(GL_TEXTURE0 + texture->unit);
-      glBindTexture(GL_TEXTURE_3D, texture->id);
+      glTexParameteri(ttype, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(ttype, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
     else
     {
-      glEnable(GL_TEXTURE_2D);
-      glActiveTexture(GL_TEXTURE0 + texture->unit);
-      glBindTexture(GL_TEXTURE_2D, texture->id);
+      glTexParameteri(ttype, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(ttype, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
-    GL_Error_Check;
-    //printf("USE TEXTURE: (id %d unit %d)\n", texture->id, texture->unit);
+
     return texture;
   }
 
@@ -939,16 +946,6 @@ int ImageLoader::build(ImageData* image)
   //Build texture from raw data
   glActiveTexture(GL_TEXTURE0 + texture->unit);
   glBindTexture(GL_TEXTURE_2D, texture->id);
-  if (repeat)
-  {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  }
-  else
-  {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  }
 
   // use linear filtering
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

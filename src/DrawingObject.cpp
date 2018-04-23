@@ -199,6 +199,7 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
 {
   GL_Error_Check;
   //Use/load default texture
+  tex->repeat = properties["repeat"];
   if (tex->empty())
   {
     if (tex->source || !tex->fn.empty())

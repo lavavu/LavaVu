@@ -631,6 +631,16 @@ void Session::init()
       }
     },
     {
+      "repeat",
+      {
+        false,
+        "object",
+        "boolean",
+        "Repeat texture image enabled, default is clamp to edges",
+        true, 0
+      }
+    },
+    {
       "colourby",
       {
         0,
