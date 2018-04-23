@@ -422,7 +422,7 @@ FloatValues* GeomData::colourData()
 float GeomData::colourData(unsigned int idx) 
 {
   if (values.size() == 0 || values.size() <= draw->colourIdx) return HUGE_VALF;
-  Values_Ptr fv = values[draw->colourIdx];
+  FloatValues* fv = values[draw->colourIdx].get();
   return (*fv)[idx];
 }
 
