@@ -203,7 +203,7 @@ void Session::init()
     {
       "renderlist",
       {
-        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume",
+        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume screen",
         "all",
         "string",
         "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,labels,lines,links",

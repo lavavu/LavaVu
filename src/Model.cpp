@@ -227,6 +227,8 @@ Geometry* Model::getRenderer(const std::string& what)
     return getRenderer(lucLineType);
   if (what == "volume")
     return getRenderer(lucVolumeType);
+  if (what == "screen")
+    return getRenderer(lucScreenType);
   return NULL;
 }
 

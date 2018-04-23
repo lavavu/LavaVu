@@ -21845,6 +21845,7 @@ SWIG_init(void) {
   SWIG_Python_SetConstant(d, "lucLineType",SWIG_From_int(static_cast< int >(lucLineType)));
   SWIG_Python_SetConstant(d, "lucShapeType",SWIG_From_int(static_cast< int >(lucShapeType)));
   SWIG_Python_SetConstant(d, "lucVolumeType",SWIG_From_int(static_cast< int >(lucVolumeType)));
+  SWIG_Python_SetConstant(d, "lucScreenType",SWIG_From_int(static_cast< int >(lucScreenType)));
   SWIG_Python_SetConstant(d, "lucMaxType",SWIG_From_int(static_cast< int >(lucMaxType)));
   SWIG_Python_SetConstant(d, "lucMinDataType",SWIG_From_int(static_cast< int >(lucMinDataType)));
   SWIG_Python_SetConstant(d, "lucVertexData",SWIG_From_int(static_cast< int >(lucVertexData)));

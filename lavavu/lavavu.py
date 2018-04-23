@@ -59,7 +59,8 @@ geomtypes = {"labels":    LavaVuPython.lucLabelType,
              "tracers":   LavaVuPython.lucTracerType,
              "lines":     LavaVuPython.lucLineType,
              "shapes":    LavaVuPython.lucShapeType,
-             "volume":    LavaVuPython.lucVolumeType}
+             "volume":    LavaVuPython.lucVolumeType,
+             "screen":    LavaVuPython.lucScreenType}
 
 datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "normals":   LavaVuPython.lucNormalData,

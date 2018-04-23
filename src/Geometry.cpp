@@ -1011,6 +1011,7 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     case lucVectorType:
     case lucTracerType:
     case lucShapeType:
+    case lucScreenType:
       btype = lucTriangleType;
       break;
     default:
@@ -2522,6 +2523,12 @@ void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
 Imposter::Imposter(Session& session) : Geometry(session)
 {
   vbo = 0;
+  type = lucScreenType;
+}
+
+Imposter::~Imposter()
+{
+  close();
 }
 
 void Imposter::close()
@@ -2539,10 +2546,13 @@ void Imposter::draw()
 
   //Draw two triangles to fill screen
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glVertexPointer(3, GL_FLOAT, 3 * sizeof(float), (GLvoid*)0); // Load vertex x,y,z only
+  glVertexPointer(3, GL_FLOAT, 5 * sizeof(float), (GLvoid*)0); // Load vertex x,y,z only
   glEnableClientState(GL_VERTEX_ARRAY);
+  glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(float), (GLvoid*)(3*sizeof(float))); // Load texcoord x,y
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   GL_Error_Check;
   
@@ -2556,12 +2566,28 @@ void Imposter::update()
   if (!vbo)
   {
     //Load 2 fullscreen triangles
-    float verts[12] = {1,1,0,  -1,1,0,  1,-1,0,  -1,-1,0};
+    float verts_texcoords[20] = {1,1,0,  1,0,
+                                -1,1,0,  0,0,
+                                 1,-1,0, 1,1,
+                                -1,-1,0, 0,1};
     //Initialise vertex buffer
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     if (glIsBuffer(vbo))
-      glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(verts_texcoords), verts_texcoords, GL_STATIC_DRAW);
+  }
+}
+
+void FullScreen::draw()
+{
+  for (int i=0; i<geom.size(); i++)
+  {
+    if (!drawable(i)) continue;
+
+    setState(i); //Set draw state settings for this object
+    Imposter::draw();
+
+    GL_Error_Check;
   }
 }
 
@@ -2593,6 +2619,8 @@ Geometry* createRenderer(Session& session, const std::string& what)
     return new Links(session);
   if (what == "volume")
     return new Volumes(session);
+  if (what == "screen")
+    return new FullScreen(session);
   abort_program("Invalid renderer specified! '%s'\n", what.c_str());
   return NULL;
 }

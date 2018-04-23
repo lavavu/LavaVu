@@ -271,6 +271,7 @@ lucTracerType = _LavaVuPython.lucTracerType
 lucLineType = _LavaVuPython.lucLineType
 lucShapeType = _LavaVuPython.lucShapeType
 lucVolumeType = _LavaVuPython.lucVolumeType
+lucScreenType = _LavaVuPython.lucScreenType
 lucMaxType = _LavaVuPython.lucMaxType
 lucMinDataType = _LavaVuPython.lucMinDataType
 lucVertexData = _LavaVuPython.lucVertexData

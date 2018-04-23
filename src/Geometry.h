@@ -777,9 +777,16 @@ class Imposter : public Geometry
   GLuint vbo;
 public:
   Imposter(Session& session);
-  virtual ~Imposter() {close();}
+  virtual ~Imposter();
   virtual void close();
   virtual void update();
+  virtual void draw();
+};
+
+class FullScreen : public Imposter
+{
+public:
+  FullScreen(Session& session) : Imposter(session) {}
   virtual void draw();
 };
 
