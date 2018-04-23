@@ -371,15 +371,17 @@ class Object(dict):
         self.instance._get() #Ensure in sync
         if key in self.dict:
             return self.dict[key]
+        #Check for valid key
         if not key in self.instance.properties:
-            raise ValueError(key + " : Invalid property name")
+            raise KeyError(key + " : Invalid property name")
         #Default to the property lookup dict (default is first element)
         prop = super(Object, self).__getitem__(key)
         return prop[0]
 
     def __setitem__(self, key, value):
+        #Check for valid key
         if not key in self.instance.properties:
-            raise ValueError(key + " : Invalid property name")
+            raise KeyError(key + " : Invalid property name")
         if key == "colourmap" and isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
             value = value.name #Use name instead of object when setting colourmap on object
         self.instance.app.parseProperty(key + '=' + json.dumps(value), self.ref)
