@@ -96,7 +96,6 @@ public:
   void add(unsigned int colour);
   void add(unsigned int* colours, int count);
   void add(unsigned int colour, float pvalue);
-  void add(float *components, float pvalue);
   void add(json& entry, float pos=-1.0);
   void calc();
   void calibrate(float min, float max);

@@ -107,6 +107,7 @@ void ColourMap::loadPalette(std::string data)
       data = data.substr(1);
       nopos = true;
     }
+
     std::string map = getDefaultMap(data);
     if (map.length() > 0) data = map;
 
@@ -234,20 +235,6 @@ void ColourMap::add(unsigned int colour, float pvalue)
   colours.push_back(ColourVal(c, pvalue));
 }
 
-void ColourMap::add(float *components, float pvalue)
-{
-  Colour colour;
-  for (int c=0; c<4; c++)  //Convert components from floats to bytes
-  {
-    if (components[c] <= 1.0)
-      colour.rgba[c] = 255 * components[c];
-    else
-      colour.rgba[c] = components[c];
-  }
-
-  add(colour.value, pvalue);
-}
-
 void ColourMap::add(json& entry, float pos)
 {
   //std::cout << pos << " : " << entry << std::endl;
@@ -271,18 +258,8 @@ void ColourMap::add(json& entry, float pos)
   }
   else if (entry.size() >= 3)
   {
-    int sz = entry.size();
-    float components[sz];
-    Properties::toArray<float>(entry, components, sz);
     Colour colour;
-    for (int c=0; c<sz; c++)  //Convert components from floats to bytes
-    {
-      if (components[c] <= 1.0)
-        colour.rgba[c] = 255 * components[c];
-      else
-        colour.rgba[c] = components[c];
-    }
-
+    colour.fromJSON(entry);
     if (pos < 0.0)
       add(colour.value);
     else
@@ -401,7 +378,7 @@ void ColourMap::calibrate(float min, float max)
     colours.back().position = 1.0;
 
   //for (int i=0; i < colours.size(); i++)
-  //   printf(" colour %d value %f pos %f\n", colours[i].colour, colours[i].value, colours[i].position);
+  //   std::cout << " colour " << colours[i].colour << " value " << colours[i].value << " pos " << colours[i].position << std::endl;
   calibrated = true;
 }
 
@@ -758,19 +735,16 @@ void ColourMap::loadTexture(bool repeat)
   texture->mipmaps = false;
   texture->nearest = true;
   texture->repeat = repeat;
-  calibrate(0, 1);
   ImageData* paletteData = new ImageData(samples, 1, 4);
   Colour col;
   for (int i=0; i<samples; i++)
   {
-    col = get(i / (float)(samples-1));
+    col = getFromScaled(i / (float)(samples-1));
     //if (i%64==0) printf("RGBA %d %d %d %d\n", col.r, col.g, col.b, col.a);
-    paletteData->pixels[i*4] = col.r;
-    paletteData->pixels[i*4+1] = col.g;
-    paletteData->pixels[i*4+2] = col.b;
-    paletteData->pixels[i*4+3] = col.a;
+    memcpy(&paletteData->pixels[i*4], col.rgba, 4);
   }
 
+  //paletteData->write("palette.png");
   texture->load(paletteData);
   delete paletteData;
 }
