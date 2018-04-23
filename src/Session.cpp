@@ -91,13 +91,24 @@ int Session::parse(Properties* target, const std::string& property, bool validat
   }
 
   //Check a valid key provided
-  if (validate && properties.count(key) == 0)
+  bool strict = false;
+  int redraw = 0;
+  if (properties.count(key) == 0)
   {
-    std::cerr << key << " : Invalid property name" << std::endl;
-    return 0;
+    //Strict validation of names, ensures typos etc cause errors
+    if (validate)
+    {
+      std::cerr << key << " : Invalid property name" << std::endl;
+      return 0;
+    }
   }
-
-  json prop = properties[key]; //Get metadata
+  else
+  {
+    //Get metadata
+    json prop = properties[key];
+    strict = prop[PROPSTRICT];
+    redraw = prop[PROPREDRAW];
+  }
 
   value = property.substr(pos+1);
   if (value.length() > 0)
@@ -152,9 +163,9 @@ int Session::parse(Properties* target, const std::string& property, bool validat
 
   //Run a type check
   //checkall(strict);
-  Properties::check(dest, defaults, prop[PROPSTRICT]);
+  Properties::check(dest, defaults, strict);
 
-  return prop[PROPREDRAW];
+  return redraw;
 }
 
 //Parse multi-line string
