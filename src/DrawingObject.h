@@ -61,6 +61,7 @@ public:
   float radius_default;
   ColourMap* colourMap; //Cached references
   ColourMap* opacityMap;
+  ColourMap* textureMap;
   std::vector<Filter> filterCache;
 
   //Data min/max values

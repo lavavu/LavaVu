@@ -5,6 +5,7 @@ varying vec4 vColour;
 varying vec3 vNormal;
 varying vec3 vPosEye;
 varying vec3 vVertex;
+varying vec2 vTextureCoord;
 
 void main(void)
 {
@@ -14,7 +15,7 @@ void main(void)
 
   vNormal = normalize(mat3(gl_NormalMatrix) * gl_Normal);
  
-  gl_TexCoord[0] = gl_MultiTexCoord0;
+  vTextureCoord = gl_MultiTexCoord0.st;
   vColour = gl_Color;
   vVertex = gl_Vertex.xyz;
 }

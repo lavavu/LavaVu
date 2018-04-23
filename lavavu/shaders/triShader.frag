@@ -4,6 +4,7 @@ varying vec4 vColour;
 varying vec3 vNormal;
 varying vec3 vPosEye;
 varying vec3 vVertex;
+varying vec2 vTextureCoord;
 uniform float uOpacity;
 uniform bool uLighting;
 uniform float uBrightness;
@@ -45,12 +46,12 @@ bool isnan(vec3 val)
 
 void main(void)
 {
-  //Clip planes in X/Y/Z (shift seems to be required on nvidia)
-  if (any(lessThan(vVertex, uClipMin - vec3(0.01))) || any(greaterThan(vVertex, uClipMax + vec3(0.01)))) discard;
+  //Clip planes in X/Y/Z
+  if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
 
   vec4 fColour = vColour;
   if (uTextured) 
-    fColour = texture2D(uTexture, gl_TexCoord[0].xy);
+    fColour = texture2D(uTexture, vTextureCoord);
 
   float alpha = fColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;

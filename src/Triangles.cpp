@@ -166,6 +166,9 @@ void Triangles::loadBuffers()
   {
     t1=tt=clock();
 
+    //Colour values to texture coords
+    ColourMap* texmap = geom[index]->draw->textureMap;
+    FloatValues* vals = geom[index]->colourData();
     //Calibrate colour maps on range for this surface
     ColourLookup& getColour = geom[index]->colourCalibrate();
     unsigned int hasColours = geom[index]->colourCount();
@@ -185,11 +188,12 @@ void Triangles::loadBuffers()
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
     shift *= 0.0001 * view->model_size;
     std::array<float,3> shiftvert;
+    float texCoord[2] = {0.0, 0.0};
     for (unsigned int v=0; v < geom[index]->count(); v++)
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
       unsigned int cidx = v / colrange;
-      if (cidx * colrange == v)
+      if (!texmap && cidx * colrange == v)
         getColour(colour, cidx);
 
       float* vert = geom[index]->render->vertices[v];
@@ -215,6 +219,13 @@ void Triangles::loadBuffers()
       //Copies texCoord bytes
       if (geom[index]->render->texCoords.size() > v)
         memcpy(ptr, &geom[index]->render->texCoords[v][0], sizeof(float) * 2);
+      else if (texmap && vals)
+      {
+        texCoord[0] = texmap->scalefast(geom[index]->colourData(v));
+        //if (v%100==0 || texCoord[0] <= 0.0) printf("(%f - %f) %f ==> %f\n", texmap->minimum, texmap->maximum, geom[index]->colourData(v), texCoord[0]);
+        memcpy(ptr, texCoord, sizeof(float) * 2);
+      }
+
       ptr += sizeof(float) * 2;
       //Copies colour bytes
       memcpy(ptr, &colour, sizeof(Colour));

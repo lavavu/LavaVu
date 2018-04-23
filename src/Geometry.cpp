@@ -1160,9 +1160,9 @@ void Geometry::setState(unsigned int i)
         //Special case: string data -> treat as colourmap!
         if (prop.is_string())
         {
-          if (geom[i]->draw->colourMap && geom[i]->draw->colourMap->texture)
+          if (geom[i]->draw->textureMap && geom[i]->draw->textureMap->texture)
           {
-            prog->setUniformi(label, geom[i]->draw->colourMap->texture->texture->unit);
+            prog->setUniformi(label, geom[i]->draw->textureMap->texture->texture->unit);
             //std::cerr << label << " : Colourmap texture available on unit " << geom[i]->draw->colourMap->texture->texture->unit << std::endl;
           }
           else

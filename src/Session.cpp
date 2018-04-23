@@ -616,7 +616,7 @@ void Session::init()
         "",
         "object",
         "string",
-        "External texture image file path to load and apply to surface or points",
+        "Apply a texture, either external texture image file path to load or colourmap",
         true, 0
       }
     },

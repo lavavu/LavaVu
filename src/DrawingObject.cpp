@@ -57,7 +57,7 @@ DrawingObject::DrawingObject(Session& session, std::string name, std::string pro
   properties.data["visible"] = true;
   colourIdx = 0; //Default colouring data is first value block
   opacityIdx = MAX_DATA_ARRAYS+1;
-  colourMap = opacityMap = NULL;
+  colourMap = opacityMap = textureMap = NULL;
   setup();
 }
 
@@ -221,6 +221,22 @@ TextureData* DrawingObject::useTexture(Texture_Ptr tex)
       }
       else
       {
+        //Value can be "colourmap" to use palette from colourmap prop
+        if (texfn == "colourmap")
+          textureMap = getColourMap("colourmap", colourMap);
+        //Or can be a literal colourmap list/name/array
+        else
+          textureMap = getColourMap("texture", textureMap);
+
+        if (textureMap)
+        {
+          //No texture provided, load the colourmap data as a texture
+          if (!textureMap->texture)
+            textureMap->loadTexture(tex->repeat); //Repeat enabled? switch by prop
+          if (textureMap->texture)
+            return textureMap->texture->use();
+        }
+
         if (texfn.length() > 0) debug_print("Texture File: %s not found!\n", texfn.c_str());
         //If load failed, skip from now on
         properties.data["texture"] = "";
