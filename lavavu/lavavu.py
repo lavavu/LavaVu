@@ -1714,7 +1714,7 @@ class Viewer(dict):
         #Resolution
         if resolution != None and isinstance(resolution,tuple) or isinstance(resolution,list):
           #Output res
-          args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
+          #args += ["-x" + str(resolution[0]) + "," + str(resolution[1])]
           #Interactive res
           args += ["-r" + str(resolution[0]) + "," + str(resolution[1])]
           self.resolution = resolution
