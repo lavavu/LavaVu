@@ -1184,7 +1184,7 @@ void Model::addTimeStep(int step, double time, const std::string& props, const s
 }
 
 //Load data at specified timestep
-int Model::setTimeStep(int stepidx, bool skipload)
+int Model::setTimeStep(int stepidx)
 {
   int rows = -1;
   clock_t t1 = clock();
@@ -1249,7 +1249,7 @@ int Model::setTimeStep(int stepidx, bool skipload)
         timesteps[now]->loaded = true;
 
         //Load new data
-        if (database && !skipload)
+        if (database)
         {
           //Detach any attached db file and attach n'th timestep database if available
           database.attach(timesteps[session.now]);
@@ -1400,12 +1400,16 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
         std::cout << '~' << std::flush;
         if (timestep > 0 && timestep%10==0) std::cout << std::setw(4) << timestep << " " << std::flush;
         if (timestep > 0 && timestep%50==0) std::cout << std::endl;
-        setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
+        //Change active timestep
+        session.now = now = nearestTimeStep(timestep);
+        //Flag all data loaded at this step
+        timesteps[now]->loaded = true;
       }
       // Similar required when loading tracers in loadFixedData
       if (type == lucTracerType && step() != timestep)
       {
-        setTimeStep(nearestTimeStep(timestep), true); //Set without loading data
+        //Change active timestep
+        session.now = now = nearestTimeStep(timestep);
       }
 
       if (type == lucTracerType)

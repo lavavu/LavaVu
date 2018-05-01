@@ -169,7 +169,7 @@ public:
   bool hasTimeStep(int ts);
   int nearestTimeStep(int requested);
   void addTimeStep(int step=0, double time=-HUGE_VAL, const std::string& props="", const std::string& path="");
-  int setTimeStep(int stepidx, bool skipload=false);
+  int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1);
   int loadFixedGeometry();
   int readGeometryRecords(sqlite3_stmt* statement, bool cache=true);
