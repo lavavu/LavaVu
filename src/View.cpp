@@ -587,9 +587,6 @@ void View::apply(bool use_fp, bool use_rotate)
   if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
   {
     glScalef(scale[0], scale[1], scale[2]);
-    // Enable automatic rescaling of normal vectors when scaling is turned on
-    //glEnable(GL_RESCALE_NORMAL);
-    glEnable(GL_NORMALIZE);
     iscale = Vec3d(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
   }
   GL_Error_Check;

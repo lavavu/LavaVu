@@ -112,9 +112,9 @@ void Shapes::update()
 
       //Create shape
       if (shape == 1)
-        tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot, view->iscale);
+        tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot, true);
       else
-        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, view->iscale, quality);
+        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, true, quality);
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
       getColour(colour, v);

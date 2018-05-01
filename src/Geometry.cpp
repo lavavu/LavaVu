@@ -1887,13 +1887,16 @@ Quaternion Geometry::vectorRotation(Vec3d rvector)
 // radius1: radius of cylinder at arrow head, or ratio for calculating radius from length if radius0==0
 // head_scale: scaling factor for head radius compared to shaft, if zero then no arrow head is drawn
 // segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
-void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, const Vec3d& scale3d, float scale, float radius0, float radius1, float head_scale, int segment_count, Colour* colour)
+void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, bool scale3d, float scale, float radius0, float radius1, float head_scale, int segment_count, Colour* colour)
 {
   //Setup orientation using alignment vector
   Quaternion rot = vectorRotation(vector);
 
   //Scale vector
   Vec3d vec = vector * scale;
+
+  const Vec3d& scale3 = scale3d ? view->scale : Vec3d(1.0, 1.0, 1.0);
+  const Vec3d& iscale = scale3d ? view->iscale : Vec3d(1.0, 1.0, 1.0);
 
   // Get circle coords
   session.cacheCircleCoords(segment_count);
@@ -1950,17 +1953,17 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
 
       // Base of shaft
       Vec3d vertex0 = Vec3d(radius0 * session.x_coords[v], radius0 * session.y_coords[v], -halflength); // z = Shaft length to base of head
-      Vec3d vertex = translate + rot * vertex0 * scale3d;
+      Vec3d vertex = translate + rot * vertex0 * iscale;
 
       //Read triangle vertex, normal
       g->readVertex(vertex.ref());
-      Vec3d normal = rot * Vec3d(session.x_coords[v], session.y_coords[v], 0);
-      //normal.normalise();
+      Vec3d normal = rot * Vec3d(session.x_coords[v], session.y_coords[v], 0) * scale3;
+      normal.normalise();
       g->_normals->read(1, normal.ref());
 
       // Top of shaft
       Vec3d vertex1 = Vec3d(radius1 * session.x_coords[v], radius1 * session.y_coords[v], -headD+halflength);
-      vertex = translate + rot * vertex1 * scale3d;
+      vertex = translate + rot * vertex1 * iscale;
 
       //Read triangle vertex, normal
       g->readVertex(vertex.ref());
@@ -1993,7 +1996,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     int v;
     // Pinnacle vertex is at point of arrow
     unsigned int pt = g->count();
-    Vec3d pinnacle = translate + rot * Vec3d(0, 0, halflength) * scale3d;
+    Vec3d pinnacle = translate + rot * Vec3d(0, 0, halflength) * iscale;
 
     // First pair of vertices on circle define a triangle when combined with pinnacle
     // First normal is between first and last triangle normals 1/|\seg-1
@@ -2011,7 +2014,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       unsigned int vertex_index = g->count();
 
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = translate + rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength) * scale3d;
+      Vec3d vertex1 = translate + rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength) * iscale;
 
       //Calculate normal at base
       Vec3d normal1 = rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], 0);
@@ -2020,8 +2023,9 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
       //Duplicate pinnacle vertex as each facet needs a different normal
       g->readVertex(vertex.ref());
       //Balance between smoothness (normal) and highlighting angle of cone (normal1)
-      Vec3d avgnorm = normal * 0.4 + normal1 * 0.6;
+      Vec3d avgnorm = normal * 0.4 + normal1 * 0.6 * scale3;
       avgnorm.normalise();
+      //avgnorm *= scale3;
       g->_normals->read(1, avgnorm.ref());
 
       //Read triangle vertex, normal
@@ -2040,9 +2044,9 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     // Flatten cone for circle base -> set common point to share z-coord
     // Centre of base circle, normal facing back along arrow
     pt = g->count();
-    pinnacle = rot * Vec3d(0,0,-headD+halflength) * scale3d;
+    pinnacle = rot * Vec3d(0,0,-headD+halflength) * iscale;
     vertex = translate + pinnacle;
-    normal = rot * Vec3d(0.0f, 0.0f, -1.0f);
+    normal = rot * Vec3d(0.0f, 0.0f, -1.0f) * scale3;
     //Read triangle vertex, normal
     g->readVertex(vertex.ref());
     g->_normals->read(1, normal.ref());
@@ -2052,7 +2056,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     {
       unsigned int vertex_index = g->count();
       // Calc next vertex from unit circle coords
-      Vec3d vertex1 = rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength) * scale3d;
+      Vec3d vertex1 = rot * Vec3d(head_radius * session.x_coords[v], head_radius * session.y_coords[v], -headD+halflength) * iscale;
 
       vertex1 = translate + vertex1;
 
@@ -2125,7 +2129,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     }
 
     // Draw the vector arrow
-    drawVector(draw, pos.ref(), vector.ref(), view->iscale, 1.0, radius0, radius1, arrowHeadSize, segment_count, colour);
+    drawVector(draw, pos.ref(), vector.ref(), true, 1.0, radius0, radius1, arrowHeadSize, segment_count, colour);
 
   }
   else
@@ -2135,7 +2139,7 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     //if (length > radius1 * 0.30)
     {
       // Join last set of points with this set
-      drawVector(draw, pos.ref(), vector.ref(), view->iscale, 1.0, radius0, radius1, 0.0, segment_count, colour);
+      drawVector(draw, pos.ref(), vector.ref(), true, 1.0, radius0, radius1, 0.0, segment_count, colour);
 //         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
 //          Vec3d centre(pos);
 //         drawSphere(records, centre, radius, segment_count);
@@ -2148,15 +2152,15 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
 
 }
 
-void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, const Vec3d& scale, bool quads, Colour* colour)
+void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool scale3d, bool quads, Colour* colour)
 {
   //float pos[3] = {min[0] + 0.5f*(max[0] - min[0]), min[1] + 0.5f*(max[1] - min[1]), min[2] + 0.5f*(max[2] - min[2])};
   Vec3d dims = max - min;
   Vec3d pos = min + dims * 0.5f;
-  drawCuboidAt(draw, pos, dims, rot, scale, quads, colour);
+  drawCuboidAt(draw, pos, dims, rot, scale3d, quads, colour);
 }
 
-void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, const Vec3d& scale, bool quads, Colour* colour)
+void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool scale3d, bool quads, Colour* colour)
 {
   Vec3d min = dims * -0.5f; //Vec3d(-0.5f * width, -0.5f * height, -0.5f * depth);
   Vec3d max = min + dims; //Vec3d(min[0] + width, min[1] + height, min[2] + depth);
@@ -2164,6 +2168,10 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
   unsigned int voffset = g->count();
+
+  Vec3d iscale = Vec3d(1.0, 1.0, 1.0);
+  if (scale3d)
+    iscale = view->iscale;
 
   //Corner vertices
   Vec3d verts[8] =
@@ -2181,7 +2189,7 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
   for (int i=0; i<8; i++)
   {
     // Multiplying a quaternion q with a vector v applies the q-rotation to v
-    verts[i] = rot * verts[i] * scale;
+    verts[i] = rot * verts[i] * iscale;
     verts[i] += Vec3d(pos);
     g->checkPointMinMax(verts[i].ref());
   }
@@ -2282,19 +2290,19 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
   if (colour) g->vertexColours(colour, voffset);
 }
 
-void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, const Vec3d& scale, float radius, int segment_count, Colour* colour)
+void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, bool scale3d, float radius, int segment_count, Colour* colour)
 {
   //Case of ellipsoid where all 3 radii are equal
   Vec3d radii = Vec3d(radius, radius, radius);
   Quaternion qrot;
-  drawEllipsoid(draw, centre, radii, qrot, scale, segment_count, colour);
+  drawEllipsoid(draw, centre, radii, qrot, scale3d, segment_count, colour);
 }
 
 // Create a 3d ellipsoid given centre point, 3 radii and number of triangle segments to use
 // Based on algorithm and equations from:
 // http://local.wasp.uwa.edu.au/~pbourke/texture_colour/texturemap/index.html
 // http://paulbourke.net/geometry/sphere/
-void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, const Vec3d& scale, int segment_count, Colour* colour)
+void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, bool scale3d, int segment_count, Colour* colour)
 {
   int i,j;
   Vec3d edge, pos, normal;
@@ -2305,6 +2313,9 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   if (radii.z < 0) radii.z = -radii.z;
   if (segment_count < 0) segment_count = -segment_count;
   session.cacheCircleCoords(segment_count);
+
+  const Vec3d& scale3 = scale3d ? view->scale : Vec3d(1.0, 1.0, 1.0);
+  const Vec3d& iscale = scale3d ? view->iscale : Vec3d(1.0, 1.0, 1.0);
 
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
@@ -2319,28 +2330,28 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       // Get index from pre-calculated coords which is back 1/4 circle from j+1 (same as forward 3/4circle)
       int circ_index = ((int)(1 + j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
-      pos = centre + rot * (radii * edge) * scale;
+      pos = centre + rot * (radii * edge) * iscale;
 
       tex[0] = i/(float)segment_count;
       tex[1] = 2*(j+1)/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
-      normal = rot * -edge;
+      normal = rot * -edge * scale3;
       g->_normals->read(1, normal.ref());
       g->_texCoords->read(1, tex);
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
       edge = Vec3d(session.y_coords[circ_index] * session.y_coords[i], session.x_coords[circ_index], session.y_coords[circ_index] * session.x_coords[i]);
-      pos = centre + rot * (radii * edge) * scale;
+      pos = centre + rot * (radii * edge) * iscale;
 
       tex[0] = i/(float)segment_count;
       tex[1] = 2*j/(float)segment_count;
 
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
-      normal = rot * -edge;
+      normal = rot * -edge * scale3;
       g->_normals->read(1, normal.ref());
       g->_texCoords->read(1, tex);
 
