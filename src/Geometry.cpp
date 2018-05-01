@@ -1939,7 +1939,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
     vertex0.z = halflength;
     vertex = translate + rot * vertex0;
     g->readVertex(vertex.ref());
-    return;
+    segment_count = 0;
   }
   else if (length > headD)
   {
