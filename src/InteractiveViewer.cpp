@@ -2725,6 +2725,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Delete object and geometry
       amodel->deleteObject(list[c]);
     }
+
+    aobject = NULL;
   }
   else if (parsed.exists("deletedb"))
   {
@@ -2747,6 +2749,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Delete from db
       amodel->deleteObjectRecord(list[c]->dbid);
     }
+
+    aobject = NULL;
   }
   else if (parsed.exists("merge"))
   {
