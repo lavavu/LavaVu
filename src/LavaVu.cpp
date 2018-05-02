@@ -333,7 +333,15 @@ void LavaVu::arguments(std::vector<std::string> args)
         break;
       case 'c':
         ss >> vars[0];
-        if (vars[0]) session.globals["cache"] = true;
+        //-1 : disable initial cache and clear step data on change
+        //0  : disable initial cache, step data still retained
+        //1  : enable initial cache
+        if (vars[0] < 0)
+          session.globals["clearsteps"] = true;
+        if (vars[0] <= 0)
+          session.globals["cache"] = false;
+        else if (vars[0] > 0)
+          session.globals["cache"] = true;
         break;
       case 't':
         //Use alpha channel in png output
