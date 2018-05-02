@@ -149,8 +149,8 @@ class DataContainer
 {
 protected:
   unsigned int next;
-  unsigned int datasize;
 public:
+  unsigned int datasize;
   float minimum;
   float maximum;
   std::string label;

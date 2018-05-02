@@ -1505,6 +1505,22 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   //Get passed object's most recently added data store
   geomdata = getObjectStore(draw);
 
+  //Convert older tracer databases, where all data is in a single fixed timestep block
+  if (geomdata && type == lucTracerType && width > 0 && width != n && n%width == 0 && n > 1)
+  {
+    Data_Ptr container = geomdata->dataContainer(dtype);
+    int steps = n / width;
+    //printf("WIDTH %d/%d = %d TS %d (%d)\n", n, width, steps, timestep, session.now);
+    int old = session.now;
+    for (int step=0; step < steps; step++)
+    {
+      session.now = step;
+      read(draw, width, dtype, (float*)data + (step*width*container->datasize), width, height, depth);
+    }
+    session.now = old;
+    return geomdata;
+  }
+
   //If dimensions specified, check if full dataset loaded
   assert(dtype <= lucMaxDataType);
   if (geomdata && geomdata->width > 0 && geomdata->height > 0)
