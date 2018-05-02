@@ -136,7 +136,7 @@ public:
   void init();
   ~Model();
 
-  bool loadFigure(int fig);
+  bool loadFigure(int fig, bool preserveGlobals=false);
   void storeFigure();
   int addFigure(std::string name="", const std::string& state="");
   void addObject(DrawingObject* obj);

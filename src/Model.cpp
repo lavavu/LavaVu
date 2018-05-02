@@ -317,13 +317,14 @@ Model::~Model()
     delete colourMaps[i];
 }
 
-bool Model::loadFigure(int fig)
+bool Model::loadFigure(int fig, bool preserveGlobals)
 {
   if (fig < 0 || figures.size() == 0) return false;
   if (fig >= (int)figures.size()) fig = 0;
   if (fig < 0) fig = figures.size()-1;
   figure = fig;
   assert(figure >= 0);
+  json globals = session.globals;
   jsonRead(figures[figure]);
 
   //Set window caption
@@ -331,6 +332,11 @@ bool Model::loadFigure(int fig)
     session.globals["caption"] = fignames[figure];
   else if (!database.memory) 
     session.globals["caption"] = database.file.base;
+
+  //Preserves existing global settings by merging after load
+  if (preserveGlobals)
+    Properties::mergeJSON(session.globals, globals);
+
   return true;
 }
 
@@ -612,7 +618,8 @@ void Model::loadWindows()
   {
     //Load the most recently added (last entry)
     //(so the previous state saved is restored on load)
-    loadFigure(figures.size()-1);
+    //Preserve the globals so command line arg settings are retained
+    loadFigure(figures.size()-1, true);
 
     //Load object links (colourmaps)
     for (auto o: objects)
