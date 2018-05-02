@@ -337,7 +337,7 @@ void LavaVu::arguments(std::vector<std::string> args)
         //0  : disable initial cache, step data still retained
         //1  : enable initial cache
         if (vars[0] < 0)
-          session.globals["clearsteps"] = true;
+          session.globals["clearstep"] = true;
         if (vars[0] <= 0)
           session.globals["cache"] = false;
         else if (vars[0] > 0)
