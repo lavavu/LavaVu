@@ -133,8 +133,8 @@ public:
   OpenGLViewer();
   virtual ~OpenGLViewer();
 
-  virtual int getOutWidth() {return (fbo.enabled ? fbo.getOutWidth() : getOutWidth());}
-  virtual int getOutHeight() {return (fbo.enabled ? fbo.getOutHeight() : getOutHeight());}
+  virtual int getOutWidth() {return (fbo.enabled ? fbo.getOutWidth() : FrameBuffer::getOutWidth());}
+  virtual int getOutHeight() {return (fbo.enabled ? fbo.getOutHeight() : FrameBuffer::getOutHeight());}
 
   //Window app management - called by derived classes, in turn call application interface virtuals
   virtual void open(int width=0, int height=0);
