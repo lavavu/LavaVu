@@ -74,7 +74,7 @@ public:
   Session();
   ~Session();
   std::string counterFilename();
-  void reset();
+  void reset(std::string& binpath);
   int parse(Properties* target, const std::string& property, bool validate=true);
   void parseSet(Properties& target, const std::string& properties, bool validate=true);
   void init();

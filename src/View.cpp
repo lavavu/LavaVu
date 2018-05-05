@@ -766,7 +766,7 @@ void View::zoomToFit(int margin)
   }
 }
 
-void View::drawOverlay(Colour& colour, std::string& title)
+void View::drawOverlay()
 {
   //2D overlay objects, apply text scaling
   Viewport2d(width, height);
@@ -859,16 +859,22 @@ void View::drawOverlay(Colour& colour, std::string& title)
 
     if (!opposite) start_B = hh - start_B - breadth;
 
-    cmap->draw(session, cbprops, start_A, start_B, length, breadth, colour, vertical);
+    cmap->draw(session, cbprops, start_A, start_B, length, breadth, textColour, vertical);
     GL_Error_Check;
   }
 
   GL_Error_Check;
 
   //Title
+  std::string title = properties["title"];
   if (title.length())
   {
-    glColor3ubv(colour.rgba);
+    //Timestep macro ##
+    size_t pos =  title.find("##");
+    if (pos != std::string::npos && session.now >= 0 && (int)session.timesteps.size() >= session.now)
+      title.replace(pos, 2, std::to_string(session.timesteps[session.now]->step));
+
+    glColor3ubv(textColour.rgba);
     session.fonts.setFont(properties, "vector", 1.0);
     if (session.fonts.charset == FONT_VECTOR)
       session.fonts.fontscale *= 0.6*adjust; //Scale down vector font slightly for title

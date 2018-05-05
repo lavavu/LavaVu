@@ -61,6 +61,14 @@ public:
   }
 };
 
+class ColourVert2d
+{
+ public:
+  float x, y;
+  Colour colour;
+  ColourVert2d(float x, float y, Colour& c) : x(x), y(y), colour(c) {};
+};
+
 //ColourMap class
 class ColourMap
 {
@@ -71,6 +79,7 @@ class ColourMap
   bool log; //Cached logscale setting
   bool discrete; //Cached discrete setting
   float range, irange;
+  GLuint vbo = 0;
 
 public:
   std::vector<ColourVal> colours;
@@ -86,6 +95,7 @@ public:
   ColourMap(Session& session, std::string name="", std::string props="");
   ~ColourMap()
   {
+    if (vbo) glDeleteBuffers(1, &vbo);
     if (texture) delete texture;
     delete[] precalc;
   }
@@ -105,6 +115,7 @@ public:
   Colour get(float value);
   float scaleValue(float value);
   Colour getFromScaled(float scaledValue);
+  void drawVertices(std::vector<ColourVert2d>& vertices, GLenum primitive);
   void draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical);
   void setComponent(int component_index);
   void loadTexture(bool repeat=false);

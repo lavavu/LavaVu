@@ -105,9 +105,9 @@ protected:
   std::string multiline;
   int historyline;
 
-  Triangles* axis;
-  Lines* rulers;
-  QuadSurfaces* border;
+  Triangles* axis = NULL;
+  Lines* rulers = NULL;
+  QuadSurfaces* border = NULL;
 
   std::chrono::time_point<std::chrono::system_clock> frametime;
   int framecount;

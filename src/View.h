@@ -182,7 +182,7 @@ public:
   bool scaleSwitch();
 
   //Utility functions
-  void drawOverlay(Colour& colour, std::string& title);
+  void drawOverlay();
   void setBackground();
 
   inline float eyeDistance(const float modelView[16], const Vec3d& vec)

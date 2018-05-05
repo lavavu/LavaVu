@@ -42,12 +42,13 @@
 #include <string.h>
 #include <math.h>
 
-#ifdef HAVE_GL2PS
-#include <gl2ps.h>
-#endif
-
 #ifdef HAVE_LIBTIFF
 #include <tiffio.h>
+#endif
+
+#ifdef USE_FONTS
+#include  "font.h"
+#include  "FontSans.h"
 #endif
 
 void compareCoordMinMax(float* min, float* max, float *coord)
@@ -269,7 +270,25 @@ void Viewport2d(int width, int height)
 }
 
 #ifdef USE_FONTS
-void FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d)
+void FontManager::init(std::string& path)
+{
+#ifdef USE_FONTS
+  // Load fonts
+  std::vector<float> vertices;
+  GenerateFontCharacters(vertices, path + "/font.bin");
+  //Initialise vertex buffer
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  GL_Error_Check;
+  //std::cout << vertices.size() * sizeof(GLfloat) << " bytes, " << vertices.size() << " float buffer loaded for vector font\n";
+
+  rasterSetupFonts();
+#endif
+}
+
+Colour FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d)
 {
   //fixed, small, sans, serif, vector
   std::string fonttype = def;
@@ -301,17 +320,67 @@ void FontManager::setFont(Properties& properties, std::string def, float scaling
   //For non-vector fonts
   if (charset > FONT_VECTOR)
     fontscale *= multiplier2d;
+
+  return colour;
 }
 
 void FontManager::printString(const char* str)
 {
-  if (charLists == 0 || !glIsList(charLists+1))   // Load font if not yet done
-    charLists = GenerateFontCharacters();
-
+  glPushMatrix();
+  glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_CULL_FACE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glListBase(charLists - 32);      // Set font display list base (space)
-  glCallLists(strlen(str), GL_UNSIGNED_BYTE, str);      // Display
+  glDisable(GL_TEXTURE_2D);
+
+  //Render the characters in loop
+  //1) Create index buffer data for each char
+  //2) Load and render index buffer
+  //3) Translate by char width
+  GLuint buffer[4];
+  if (!ibo) glGenBuffers(1, &ibo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+  int stride = 2 * sizeof(GLfloat);
+  GL_Error_Check;
+  glVertexPointer(2, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y
+  GL_Error_Check;
+  glEnableClientState(GL_VERTEX_ARRAY);
+  GL_Error_Check;
+
+  for (char c=0; c<strlen(str); c++)
+  {
+    //Render character
+    int i = (int)str[c] - 32;
+    std::vector<unsigned int> indices;
+    unsigned int offset = font_offsets[i]; //Vertex offsets of 2d vertices
+    //Load the tris
+    for (int t=0; t<font_tricounts[i]; t++)
+    {
+      assert(offset + t*3+2 < font_vertex_total);
+      //Tri: 3 * vertex indices
+      indices.push_back(offset + t*3);
+      indices.push_back(offset + t*3 + 1);
+      indices.push_back(offset + t*3 + 2);
+    }
+
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_DYNAMIC_DRAW);
+    GL_Error_Check;
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
+    GL_Error_Check;
+    
+    // Shift right width of character
+    glTranslated(font_charwidths[i], 0, 0);
+  }
+
+  GL_Error_Check;
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  GL_Error_Check;
+
+  glPopMatrix();
+  glPopAttrib();
 }
 
 void FontManager::printf(int x, int y, const char *fmt, ...)
@@ -397,29 +466,66 @@ int FontManager::printWidth(const char *string)
   return fontscale * w;
 }
 
-//Bitmap font stuff
+//Bitmap fonts
 void FontManager::rasterPrintString(const char* str)
 {
-  if (fontbase == 0)                        /* Load font if not yet done */
-    rasterSetupFonts();
-
-  if (charset > FONT_SERIF || charset < FONT_FIXED)      /* Character set valid? */
+  assert(r_vbo);
+  if (charset > FONT_SERIF || charset < FONT_FIXED) // Character set valid?
     charset = FONT_FIXED;
 
-  /* First save state of enable flags */
+  // First save state of enable flags
   glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_LIGHTING);
   glDisable(GL_CULL_FACE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-  glEnable(GL_TEXTURE_2D);                            /* Enable Texture Mapping */
+  glEnable(GL_TEXTURE_2D);  // Enable Texture Mapping
   glBindTexture(GL_TEXTURE_2D, fonttexture);
-  glListBase(fontbase - 32 + (96 * charset));      /* Choose the font and charset */
   glPushMatrix();
   if (fontscale >= 1.0) //Don't allow downscaling bitmap fonts
     glScalef(fontscale, fontscale, fontscale);
-  glCallLists(strlen(str),GL_UNSIGNED_BYTE, str);      /* Display */
+
+  if (!r_ibo) glGenBuffers(1, &r_ibo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, r_ibo);
+  glBindBuffer(GL_ARRAY_BUFFER, r_vbo);
+
+    int stride = 4 * sizeof(GLfloat);
+  GL_Error_Check;
+  glVertexPointer(2, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y
+  GL_Error_Check;
+  glEnableClientState(GL_VERTEX_ARRAY);
+  GL_Error_Check;
+  glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(2*sizeof(GLfloat))); // Load texcoord x,y
+  GL_Error_Check;
+  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  GL_Error_Check;
+  glBindTexture(GL_TEXTURE_2D, fonttexture);
+  GL_Error_Check;
+
+  for (char c=0; c<strlen(str); c++)
+  {
+    //Render character
+    int startidx = 0;
+    int stopidx = 384;
+    unsigned int i = (unsigned int)(str[c] - 32 + (96 * charset));      // Choose the font and charset
+    assert(4 * i + 3 < stopidx * 4 * 2 * 2);
+    GLuint buffer[4] = {4 * i, 4 * i + 1, 4 * i + 2, 4 * i + 3};
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof(GLuint), buffer, GL_DYNAMIC_DRAW);
+    GL_Error_Check;
+    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, (GLvoid*)0);
+    GL_Error_Check;
+    
+    // Shift right width of character + 1
+    glTranslated(bmpfont_charwidths[startidx + i]+1, 0, 0);
+  }
+
+  GL_Error_Check;
+  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
   glDisable(GL_TEXTURE_2D);                           /* Disable Texture Mapping */
+  GL_Error_Check;
 
   glPopMatrix();
   glPopAttrib();
@@ -427,33 +533,6 @@ void FontManager::rasterPrintString(const char* str)
 
 void FontManager::rasterPrint(int x, int y, const char *str)
 {
-#ifdef HAVE_GL2PS
-  int mode;
-  glGetIntegerv(GL_RENDER_MODE, &mode);
-  if (mode == GL_FEEDBACK)
-  {
-    /* call to gl2pText is required for text output using vector formats,
-     * as no text is stored in the GL feedback buffer */
-    glRasterPos2d(x, y+bmpfont_charheights[charset]);
-    switch (charset)
-    {
-    case FONT_FIXED:
-      gl2psText( str, "Courier", 12);
-      break;
-    case FONT_SMALL:
-      gl2psText( str, "Helvetica", 8);
-      break;
-    case FONT_NORMAL:
-      gl2psText( str, "Helvetica", 14);
-      break;
-    case FONT_SERIF:
-      gl2psText( str, "Times-Roman", 14);
-      break;
-    }
-    return;
-  }
-#endif
-
   glPushMatrix();
   //glLoadIdentity();
   glTranslated(x, y-bmpfont_charheights[charset], 0);
@@ -527,51 +606,62 @@ void FontManager::rasterSetupFonts()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   /* generate the texture from bitmap alpha data */
   glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, IMAGE_WIDTH, IMAGE_HEIGHT, 0, GL_ALPHA, GL_UNSIGNED_BYTE, fontdata);
-  fontbase = glGenLists(BMP_GLYPHS);
 
-  /* Build font display lists */
+  /* Build font data */
   rasterBuildFont(16, 16, 0, 384);      /* 16x16 glyphs, 16 columns - 4 fonts */
   delete [] pixel_data;
 }
 
 void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx)
 {
-  /* Build font display lists */
+  // Build font buffers
+  GLfloat buffer[stopidx][4][2][2]; //character, 4 vertices, vertex + texcoord, 2d(x,y)
   int i;
-  static float yoffset;
   float divX = IMAGE_WIDTH / (float)glyphsize;
   float divY = IMAGE_HEIGHT / (float)glyphsize;
   float glyphX = 1 / divX;   /* Width & height of a glyph in texture coords */
   float glyphY = 1 / divY;
   GLfloat cx = 0, cy = 0;         /* the character coordinates in our texture */
-  if (startidx == 0) yoffset = 0;
   glBindTexture(GL_TEXTURE_2D, fonttexture);
   for (i = 0; i < (stopidx - startidx); i++)
   {
     cx = (float) (i % columns) / divX;
-    cy = yoffset + (float) (i / columns) / divY;
-    glNewList(fontbase + startidx + i, GL_COMPILE);
-    glBegin(GL_QUADS);
-    glTexCoord2f(cx, cy + glyphY);
-    glVertex2i(0, 0);
-    glTexCoord2f(cx + glyphX, cy + glyphY);
-    glVertex2i(glyphsize, 0);
-    glTexCoord2f(cx + glyphX, cy);
-    glVertex2i(glyphsize, glyphsize);
-    glTexCoord2f(cx, cy);
-    glVertex2i(0, glyphsize);
-    glEnd();
-    /* Shift right width of character + 1 */
-    glTranslated(bmpfont_charwidths[startidx + i]+1, 0, 0);
-    glEndList();
+    cy = (float) (i / columns) / divY;
+    //Vertices
+    buffer[i][0][0][0] = 0;
+    buffer[i][0][0][1] = 0;
+    buffer[i][1][0][0] = glyphsize;
+    buffer[i][1][0][1] = 0;
+    buffer[i][2][0][0] = glyphsize;
+    buffer[i][2][0][1] = glyphsize;
+    buffer[i][3][0][0] = 0;
+    buffer[i][3][0][1] = glyphsize;
+    //Tex coords
+    buffer[i][0][1][0] = cx;
+    buffer[i][0][1][1] = cy + glyphY;
+    buffer[i][1][1][0] = cx + glyphX;
+    buffer[i][1][1][1] = cy + glyphY;
+    buffer[i][2][1][0] = cx + glyphX;
+    buffer[i][2][1][1] = cy;
+    buffer[i][3][1][0] = cx;
+    buffer[i][3][1][1] = cy;
+
   }
-  /* Save vertical offset to resume from */
-  yoffset = cy + glyphY;
+
+  //Initialise vertex buffer
+  glGenBuffers(1, &r_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, r_vbo);
+  assert(glIsBuffer(r_vbo));
+  int size = stopidx * 4 * 2 * 2;
+  glBufferData(GL_ARRAY_BUFFER, size * sizeof(GLfloat), buffer, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  GL_Error_Check;
+  //std::cout << size * sizeof(GLfloat) << " bytes, " << size << " float buffer loaded for raster font\n";
 }
 
 
 #else //USE_FONTS
-void FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d) {}
+Colour FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return Colour();}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str) {}

@@ -68,9 +68,6 @@
 LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpath)
 {
   viewer = NULL;
-  axis = NULL;
-  border = NULL;
-  rulers = NULL;
   encoder = NULL;
   verbose = dbpath = false;
   frametime = std::chrono::system_clock::now();
@@ -143,7 +140,7 @@ void LavaVu::defaults()
   }
 
   //Reset state
-  session.reset();
+  session.reset(binpath);
 
   //Clear any queued commands
   viewer->commands.clear();
@@ -1738,6 +1735,9 @@ void LavaVu::open(int width, int height)
     amodel->views[v]->port(width, height);
 
   reloadShaders();
+
+  //Load fonts
+  session.fonts.init(binpath);
 }
 
 void LavaVu::reloadShaders()
@@ -2678,13 +2678,8 @@ void LavaVu::drawSceneBlended()
 
   if (!session.omegalib)
   {
-    std::string title = aview->properties["title"];
-    //Timestep macro ##
-    size_t pos =  title.find("##");
-    if (pos != std::string::npos && session.now >= 0 && (int)session.timesteps.size() >= session.now)
-      title.replace(pos, 2, std::to_string(session.timesteps[session.now]->step));
     drawAxis();
-    aview->drawOverlay(aview->textColour, title);
+    aview->drawOverlay();
   }
 }
 

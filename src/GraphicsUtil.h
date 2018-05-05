@@ -39,11 +39,6 @@
 #include "Util.h"
 #include "Colours.h"
 
-#ifdef USE_FONTS
-#include  "font.h"
-#include  "FontSans.h"
-#endif
-
 #ifdef DEBUG
 #define GL_Error_Check_(fatal) \
   { \
@@ -660,8 +655,11 @@ void Viewport2d(int width, int height);
 
 class FontManager
 {
-  unsigned int fontbase, fonttexture;
-  GLuint charLists;
+  GLuint fonttexture;
+  GLuint r_vbo = 0;
+  GLuint r_ibo = 0;
+  GLuint vbo = 0;
+  GLuint ibo = 0;
   char buffer[4096];
 
 public:
@@ -675,7 +673,7 @@ public:
 
   ~FontManager()
   {
-    reset();
+    clear();
   }
 
   void clear()
@@ -683,28 +681,26 @@ public:
     //Vector font
     charset = FONT_DEFAULT;
     fontscale = 1.0;
-    charLists = 0;
 
     //Fixed (bitmap) fonts
-    fontbase = 0;
     fonttexture = 0;
-  }
 
-  void reset()
-  {
 #ifdef USE_FONTS
     // Delete fonts
-    if (charLists > 0) glDeleteLists(charLists, GLYPHS);
-
-    // Delete fixed fonts
-    if (fontbase > 0) glDeleteLists(fontbase, BMP_GLYPHS);
+    if (vbo) glDeleteBuffers(1, &vbo);
+    if (ibo) glDeleteBuffers(1, &ibo);
+    if (r_vbo) glDeleteBuffers(1, &r_vbo);
+    if (r_ibo) glDeleteBuffers(1, &r_ibo);
     if (fonttexture) glDeleteTextures(1, &fonttexture);
 #endif
-    clear();
+
+    vbo = ibo = r_vbo = r_ibo = 0;
   }
 
+  void init(std::string& binpath);
+
   //3d fonts
-  void setFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
+  Colour setFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str);

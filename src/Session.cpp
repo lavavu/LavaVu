@@ -14,7 +14,7 @@ Session::Session() : shaders(), eng0(std::random_device()()), eng1(0), dist(0, 1
 
 Session::~Session()
 {
-  fonts.reset();
+  fonts.clear();
 
   if (globalcam) delete globalcam;
 
@@ -43,8 +43,10 @@ std::string Session::counterFilename()
   return filename;
 }
 
-void Session::reset()
+void Session::reset(std::string& binpath)
 {
+  fonts.clear();
+
   globals = json::object();
 
   automate = false;
