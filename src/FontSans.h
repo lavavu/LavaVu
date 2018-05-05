@@ -67,7 +67,7 @@ int font_vertex_total = 0;
 
 void GenerateFontCharacters(std::vector<float>& vertices, std::string fontfile)
 {
-  std::ifstream input = std::ifstream(fontfile, std::ios::binary|std::ios::ate);
+  std::ifstream input(fontfile, std::ios::binary|std::ios::ate);
   if (input.good())
   {
     std::ifstream::pos_type pos = input.tellg();
