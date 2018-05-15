@@ -2202,6 +2202,7 @@ void LavaVu::display(bool redraw)
 void LavaVu::drawAxis()
 {
   bool doaxis = aview->properties["axis"];
+  if (!aview->is3d) doaxis &= aview->properties.has("axis");
   if (!doaxis) return;
   infostream = NULL;
 
