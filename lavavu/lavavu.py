@@ -18,10 +18,7 @@ import glob
 import control
 import numpy
 import re
-
-if __name__ != 'glucifer.lavavu.lavavu' and 'glucifer.lavavu.lavavu' in sys.modules:
-    #Already imported, some paths issue causes double import
-    raise RuntimeError("LavaVu module provided by glucifer exists, please don't import separately")
+import copy
 
 def is_ipython():
     try:
@@ -374,9 +371,11 @@ class Object(dict):
         #Check for valid key
         if not key in self.instance.properties:
             raise KeyError(key + " : Invalid property name")
-        #Default to the property lookup dict (default is first element)
+        #Default to the property lookup dict (default value is first element)
+        #(allows default values to be returned from prop get)
         prop = super(Object, self).__getitem__(key)
-        return prop[0]
+        #Must always return a copy to prevent modifying the defaults!
+        return copy.copy(prop[0])
 
     def __setitem__(self, key, value):
         #Check for valid key
@@ -1348,7 +1347,8 @@ class ColourMap(dict):
             return self.dict[key]
         #Default to the property lookup dict (default is first element)
         prop = super(ColourMap, self).__getitem__(key)
-        return prop[0]
+        #Must always return a copy to prevent modifying the defaults!
+        return copy.copy(prop[0])
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1443,7 +1443,8 @@ class Fig(dict):
             return self.instance[key]
         #Default to the property lookup dict (default is first element)
         prop = super(Fig, self).__getitem__(key)
-        return prop[0]
+        #Must always return a copy to prevent modifying the defaults!
+        return copy.copy(prop[0])
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1761,7 +1762,8 @@ class Viewer(dict):
         elif key in self.state["properties"]:
             return self.state["properties"][key]
         elif key in self.properties:
-            return self.properties[key][0] #Default from prop list
+            #Must always return a copy to prevent modifying the defaults!
+            return copy.copy(self.properties[key][0]) #Default from prop list
         else:
             raise ValueError(key + " : Invalid property name")
         return None
