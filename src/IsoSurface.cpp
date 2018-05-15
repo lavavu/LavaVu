@@ -62,6 +62,7 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
 
   for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
+    if (!geom[i]->width) continue;
     json isovalues = target->properties["isovalues"];
     if (!isovalues.size()) continue;
     DrawingObject* current = geom[i]->draw;

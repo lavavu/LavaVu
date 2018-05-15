@@ -205,7 +205,7 @@ void Volumes::update()
 
   for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
-    if (!drawable(i)) continue;
+    if (!drawable(i) || !geom[i]->width) continue;
 
     //Required to cache colour value info
     geom[i]->colourCalibrate();
