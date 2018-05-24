@@ -145,6 +145,7 @@ install: $(PROGRAM) $(SWIGLIB) $(HTMLPATH)/viewer.html
 	cp -R lavavu/*.py $(PREFIX); \
 	cp -R lavavu/shaders/*.* $(PREFIX)/shaders; \
 	cp -R lavavu/html/*.* $(HTMLPATH); \
+	cp lavavu/font.bin $(PREFIX)/; \
 	fi
 
 $(HTMLPATH)/viewer.html: lavavu/html/viewer_template.html lavavu/shaders/*.frag lavavu/shaders/*.vert
