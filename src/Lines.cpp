@@ -138,6 +138,7 @@ void Lines::loadBuffers()
 
   clock_t t1,t2,tt;
   tt=clock();
+  //Element counts to actually plot (exclude filtered/hidden) per geom entry
   counts.clear();
   counts.resize(geom.size());
   for (unsigned int i=0; i<geom.size(); i++)
@@ -146,6 +147,11 @@ void Lines::loadBuffers()
 
     //Calibrate colour maps on range for this object
     ColourLookup& getColour = geom[i]->colourCalibrate();
+
+    Properties& props = geom[i]->draw->properties;
+    float limit = props["limit"];
+    bool linked = props["link"];
+    if (linked) limit = 0.f;
 
     unsigned int hasColours = geom[i]->colourCount();
     unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
@@ -157,6 +163,20 @@ void Lines::loadBuffers()
     for (unsigned int v=0; v < geom[i]->count(); v++)
     {
       if (filter && !internal && geom[i]->filter(v)) continue;
+
+      //Check length limit if applied (used for periodic boundary conditions)
+      //Works only if not plotting linked lines
+      if (limit > 0.f && v%2 == 0 && v < geom[i]->count()-1)
+      {
+        Vec3d line;
+        vectorSubtract(line, geom[i]->render->vertices[v+1], geom[i]->render->vertices[v]);
+        if (line.magnitude() > limit)
+        {
+          //Skip next segment (two vertices)
+          v++;
+          continue;
+        }
+      }
 
       //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
       unsigned int cidx = v / colrange;
@@ -183,7 +203,7 @@ void Lines::loadBuffers()
     if (geom[i]->render->indices.size() > 0)
       elements += geom[i]->render->indices.size();
     else
-      elements += geom[i]->count();
+      elements += counts[i]; //geom[i]->count();
   }
 
   glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -217,10 +237,6 @@ void Lines::render()
     abort_program("IBO creation failed\n");
   GL_Error_Check;
 
-  //Element counts to actually plot (exclude filtered/hidden) per geom entry
-  counts.clear();
-  counts.resize(geom.size());
-
   //Upload vertex indices
   unsigned int offset = 0;
   unsigned int voffset = 0;
@@ -228,6 +244,7 @@ void Lines::render()
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     unsigned int indices = geom[index]->render->indices.size();
+    if (indices) counts[index] = 0; //Reset count
     if (drawable(index))
     {
       if (indices > 0)
@@ -243,12 +260,7 @@ void Lines::render()
         offset += indices;
         GL_Error_Check;
       }
-      else
-      {
-        //No indices, just raw vertices
-        counts[index] = geom[index]->count();
-        //printf("%d upload NO indices, %d vertices, voffset %d\n", index, counts[index], voffset);
-      }
+      //For raw vertices, just use the existing vertex count
       idxcount += counts[index];
     }
 
