@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.38"
+version = "1.2.39"
 
 """
 To release a new verison:
@@ -170,6 +170,7 @@ if __name__ == "__main__":
           platforms         = ['any'],
           scripts           = ['LV'],
           package_data      = {'lavavu': ['lavavu/shaders/*.*', 'lavavu/html/*.*', 'lavavu/font.bin']},
+          data_files        = [('lavavu', ['lavavu/font.bin'])],
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
