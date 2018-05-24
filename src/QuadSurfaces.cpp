@@ -132,7 +132,6 @@ void QuadSurfaces::render()
     glGenBuffers(1, &indexvbo);
 
   //Always set data size again in case changed
-  assert(elements);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
