@@ -579,7 +579,7 @@ public:
   void read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
   Geom_Ptr read(DrawingObject* draw, unsigned int n, const void* data, std::string label);
   Geom_Ptr read(Geom_Ptr geom, unsigned int n, const void* data, std::string label);
-  void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false);
+  void addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY=false, bool texCoords=false);
   void scanDataRange(DrawingObject* draw);
   void setupObject(DrawingObject* draw);
   void label(DrawingObject* draw, const char* labels);

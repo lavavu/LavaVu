@@ -1535,14 +1535,14 @@ void LavaVu::readOBJ(const FilePath& fn)
     }
 
     //Default is to load the indexed triangles and provided normals
-    //Can be overridden by setting trisplit (-T#) (but will break textures)
+    //Can be overridden by setting trisplit (-T#)
     //Setting to 1 will calculate our own normals and optimise mesh
     //Setting > 1 also divides triangles into smaller pieces first
     int trisplit = session.global("trisplit");
     bool swapY = session.global("swapyz");
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     int vi;
-    if (trisplit == 0 || attrib.texcoords.size())
+    if (trisplit == 0)
     {
       //Load, re-index to use indices for this shape only (the global list is for all shapes)
       int voffset = 0;
@@ -1583,12 +1583,27 @@ void LavaVu::readOBJ(const FilePath& fn)
     {
       for (size_t f = 0; f < shapes[i].mesh.indices.size(); f += 3)
       {
-        //This won't work with mapped textures (tex coords) ... calculated indices have incorrect order
-        tris->addTriangle(tobj,
+        if (attrib.texcoords.size())
+        {
+          float* v0 = &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3];
+          float* v1 = &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3];
+          float* v2 = &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3];
+          float* t0 = &attrib.texcoords[shapes[i].mesh.indices[f].texcoord_index*2];
+          float* t1 = &attrib.texcoords[shapes[i].mesh.indices[f+1].texcoord_index*2];
+          float* t2 = &attrib.texcoords[shapes[i].mesh.indices[f+2].texcoord_index*2];
+          float tv0[5] = {v0[0], v0[1], v0[2], t0[0], t0[1]};
+          float tv1[5] = {v1[0], v1[1], v1[2], t1[0], t1[1]};
+          float tv2[5] = {v2[0], v2[1], v2[2], t2[0], t2[1]};
+          tris->addTriangle(tobj, tv0, tv1, tv2, trisplit, swapY, true);
+        }
+        else
+        {
+          tris->addTriangle(tobj,
                      &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
                      &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3],
                      trisplit, swapY);
+        }
       }
     }
   }

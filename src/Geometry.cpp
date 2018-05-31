@@ -1064,7 +1064,20 @@ void Geometry::setState(unsigned int i)
   if (geom.size() <= i) return;
   DrawingObject* draw = geom[i]->draw;
 
-  //Only set state when object changes
+  //Textured? - can be per element, so always execute
+  TextureData* texture = draw->useTexture(geom[i]->texture);
+  GL_Error_Check;
+  if (texture)
+  {
+    //Combine texture with colourmap: Requires modulate mode
+    //GL_MODULATE/BLEND/REPLACE/DECAL
+    if (geom[i]->colourCount() > 0)
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    else
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+  }
+
+  //Only set rest of object state when object changes
   if (draw == cached) return;
   cached = draw;
 
@@ -1119,18 +1132,6 @@ void Geometry::setState(unsigned int i)
   else
     glEnable(GL_LIGHTING);
 
-  //Textured?
-  TextureData* texture = draw->useTexture(geom[i]->texture);
-  GL_Error_Check;
-  if (texture)
-  {
-    //Combine texture with colourmap: Requires modulate mode
-    //GL_MODULATE/BLEND/REPLACE/DECAL
-    if (geom[i]->colourCount() > 0)
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    else
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);  
-  }
 
   //Replace the default colour with a json value if present
   draw->colour = draw->properties.getColour("colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
@@ -1617,7 +1618,7 @@ Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::st
 }
 
 //Read a triangle with optional resursive splitting and y/z swap
-void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY)
+void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int level, bool swapY, bool texCoords)
 {
   level--;
   //Experimental: splitting triangles by size
@@ -1630,32 +1631,63 @@ void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int
 
   if (level <= 0) // || (dotProduct(a_b,a_b) < max && dotProduct(a_c,a_c) < max && dotProduct(b_c,b_c) < max))
   {
-    float A[3] = {a[0], a[2], a[1]};
-    float B[3] = {b[0], b[2], b[1]};
-    float C[3] = {c[0], c[2], c[1]};
+    float A[5] = {a[0], a[2], a[1], 0.f, 0.f};
+    float B[5] = {b[0], b[2], b[1], 0.f, 0.f};
+    float C[5] = {c[0], c[2], c[1], 0.f, 0.f};
+
     if (swapY)
     {
       a = A;
       b = B;
       c = C;
+      if (texCoords)
+      {
+        A[3] = a[3];
+        A[4] = a[4];
+        B[3] = b[3];
+        B[4] = b[4];
+        C[3] = c[3];
+        C[4] = c[4];
+      }
     }
 
     //Read the triangle
     read(obj, 1, lucVertexData, a);
     read(obj, 1, lucVertexData, b);
     read(obj, 1, lucVertexData, c);
+
+    if (texCoords)
+    {
+      read(obj, 1, lucTexCoordData, &a[3]);
+      read(obj, 1, lucTexCoordData, &b[3]);
+      read(obj, 1, lucTexCoordData, &c[3]);
+    }
   }
   else
   {
     //Process a triangle into 4 sub-triangles
-    float ab[3] = {0.5f*(a[0]+b[0]), 0.5f*(a[1]+b[1]), 0.5f*(a[2]+b[2])};
-    float ac[3] = {0.5f*(a[0]+c[0]), 0.5f*(a[1]+c[1]), 0.5f*(a[2]+c[2])};
-    float bc[3] = {0.5f*(b[0]+c[0]), 0.5f*(b[1]+c[1]), 0.5f*(b[2]+c[2])};
+    if (texCoords)
+    {
+      float ab[5] = {0.5f*(a[0]+b[0]), 0.5f*(a[1]+b[1]), 0.5f*(a[2]+b[2]), 0.5f*(a[3]+b[3]), 0.5f*(a[4]+b[4])};
+      float ac[5] = {0.5f*(a[0]+c[0]), 0.5f*(a[1]+c[1]), 0.5f*(a[2]+c[2]), 0.5f*(a[3]+c[3]), 0.5f*(a[4]+c[4])};
+      float bc[5] = {0.5f*(b[0]+c[0]), 0.5f*(b[1]+c[1]), 0.5f*(b[2]+c[2]), 0.5f*(b[3]+c[3]), 0.5f*(b[4]+c[4])};
 
-    addTriangle(obj, a, ab, ac, level);
-    addTriangle(obj, ab, b, bc, level);
-    addTriangle(obj, ac, bc, c, level);
-    addTriangle(obj, ab, bc, ac, level);
+      addTriangle(obj, a, ab, ac, level, swapY, true);
+      addTriangle(obj, ab, b, bc, level, swapY, true);
+      addTriangle(obj, ac, bc, c, level, swapY, true);
+      addTriangle(obj, ab, bc, ac, level, swapY, true);
+    }
+    else
+    {
+      float ab[3] = {0.5f*(a[0]+b[0]), 0.5f*(a[1]+b[1]), 0.5f*(a[2]+b[2])};
+      float ac[3] = {0.5f*(a[0]+c[0]), 0.5f*(a[1]+c[1]), 0.5f*(a[2]+c[2])};
+      float bc[3] = {0.5f*(b[0]+c[0]), 0.5f*(b[1]+c[1]), 0.5f*(b[2]+c[2])};
+
+      addTriangle(obj, a, ab, ac, level, swapY);
+      addTriangle(obj, ab, b, bc, level, swapY);
+      addTriangle(obj, ac, bc, c, level, swapY);
+      addTriangle(obj, ab, bc, ac, level, swapY);
+    }
   }
 }
 
@@ -1831,6 +1863,7 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
   Geom_Ptr geomdata = getObjectStore(draw);
   if (geomdata)
   {
+    //printf("Set texture on %p to %s\n", geomdata.get(), tex->fn.full.c_str());
     geomdata->texture = tex;
     //Must be opaque to draw with own texture
     geomdata->opaque = true;
