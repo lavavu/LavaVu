@@ -64,6 +64,7 @@ void TriSurfaces::update()
   if (centroids.size() != total/3 || vbo == 0 || (reload && (!allVertsFixed || internal)))
   {
     //Load & optimise the mesh data (including updating centroids)
+    tricount = 0;
     loadMesh();
     redraw = true;
   }
@@ -95,7 +96,6 @@ void TriSurfaces::loadMesh()
 
   //Calculate normals, delete duplicate verts, calc indices
   GLuint unique = 0;
-  tricount = 0;
   elements = 0;
   //Reset triangle centroid data
   centroids.clear();
@@ -559,6 +559,7 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
   clock_t t1,t2;
   t1=clock();
   debug_print("Calculating indices for grid tri surface %d... ", i);
+  bool flip = geom[i]->draw->properties["flip"];
 
   // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   unsigned int o = 0;
@@ -567,10 +568,12 @@ void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
     for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
     {
       //Add indices for two triangles per grid element
-      unsigned int offset0 = j * geom[i]->width + k;
-      unsigned int offset1 = (j+1) * geom[i]->width + k;
-      unsigned int offset2 = j * geom[i]->width + k + 1;
-      unsigned int offset3 = (j+1) * geom[i]->width + k + 1;
+      unsigned int j0 = flip ? j+1 : j;
+      unsigned int j1 = flip ? j : j+1;
+      unsigned int offset0 = j0 * geom[i]->width + k;
+      unsigned int offset1 = j1 * geom[i]->width + k;
+      unsigned int offset2 = j0 * geom[i]->width + k + 1;
+      unsigned int offset3 = j1 * geom[i]->width + k + 1;
       assert(o <= indices.size()-6);
       //Tri 1
       centroid(geom[i]->render->vertices[offset0], geom[i]->render->vertices[offset1], geom[i]->render->vertices[offset2]);
