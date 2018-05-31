@@ -193,7 +193,7 @@ public:
   void displayMessage();
   void drawColourBar(DrawingObject* draw, int startx, int starty, int length, int height);
   void drawScene(void);
-  void drawSceneBlended();
+  void drawSceneBlended(bool nosort=false);
 
   void drawRulers();
   void drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis, int tickdir=1);

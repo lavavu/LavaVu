@@ -2126,8 +2126,8 @@ void LavaVu::display(bool redraw)
       aview->projection(EYE_RIGHT);
       if (sideBySide) aview->port(viewer->width*0.5, 0, viewer->width*0.5, viewer->height);
       aview->apply();
-      // Draw scene
-      drawSceneBlended();
+      // Draw scene (no sort required this time)
+      drawSceneBlended(true);
 
       // Restore full-colour
       //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -2143,7 +2143,7 @@ void LavaVu::display(bool redraw)
 
         // Default non-stereo render
         aview->projection(EYE_CENTRE);
-        drawSceneBlended();
+        drawSceneBlended(v > 0);
       }
 
       if (view != selview)
@@ -2630,10 +2630,10 @@ void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
   Viewport2d(0, 0);
 }
 
-void LavaVu::drawSceneBlended()
+void LavaVu::drawSceneBlended(bool nosort)
 {
-  //Sort requried?
-  if (session.global("sort") && aview && aview->rotated)
+  //Sort requried? (only on first call per frame, by nosort flag)
+  if (!nosort && session.global("sort") && aview && aview->rotated)
   {
     //Immediate sort (when automating and no visible viewer window)
     if (session.automate && !viewer->visible)
