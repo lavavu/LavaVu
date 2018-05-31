@@ -1747,6 +1747,10 @@ class Viewer(dict):
                 args += [str(arglist)]
         self.queue = usequeue
 
+        #Switch the default background to white if in a browser notebook
+        if is_notebook() and "background" not in kwargs:
+            kwargs["background"] = "white"
+
         #Additional keyword args as property settings
         for key in kwargs:
             if isinstance(kwargs[key], str):
