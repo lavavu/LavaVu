@@ -783,6 +783,16 @@ void Session::init()
       }
     },
     {
+      "flip",
+      {
+        false,
+        "object(surface)",
+        "boolean",
+        "Set this flag to reverse the surface faces (currently implemented for grids only)",
+        true, 0
+      }
+    },
+    {
       "power",
       {
         1.0,

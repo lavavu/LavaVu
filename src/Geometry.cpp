@@ -2168,15 +2168,15 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
 
 }
 
-void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool scale3d, bool quads, Colour* colour)
+void Geometry::drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool scale3d, Colour* colour)
 {
   //float pos[3] = {min[0] + 0.5f*(max[0] - min[0]), min[1] + 0.5f*(max[1] - min[1]), min[2] + 0.5f*(max[2] - min[2])};
   Vec3d dims = max - min;
   Vec3d pos = min + dims * 0.5f;
-  drawCuboidAt(draw, pos, dims, rot, scale3d, quads, colour);
+  drawCuboidAt(draw, pos, dims, rot, scale3d, colour);
 }
 
-void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool scale3d, bool quads, Colour* colour)
+void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool scale3d, Colour* colour)
 {
   Vec3d min = dims * -0.5f; //Vec3d(-0.5f * width, -0.5f * height, -0.5f * depth);
   Vec3d max = min + dims; //Vec3d(min[0] + width, min[1] + height, min[2] + depth);
@@ -2210,48 +2210,51 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
     g->checkPointMinMax(verts[i].ref());
   }
 
-  if (quads)
-  {
-    //Back
-    g = read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
-    g->readVertex(verts[3].ref());
-    g->readVertex(verts[1].ref());
-    g->readVertex(verts[2].ref());
+  unsigned int vertex_index = g->count();
 
+  if (type == lucGridType)
+  {
     //Front
-    g = read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
-    g->readVertex(verts[5].ref());
-    g->readVertex(verts[7].ref());
-    g->readVertex(verts[6].ref());
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+1);
+    g->_indices->read1(vertex_index+2);
+    g->_indices->read1(vertex_index+3);
+
+    //Back
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index+7);
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+5);
 
     //Bottom
-    g = read(draw, 1, lucVertexData, verts[0].ref(), 2, 2);
-    g->readVertex(verts[1].ref());
-    g->readVertex(verts[4].ref());
-    g->readVertex(verts[5].ref());
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+1);
 
     //Top
-    g = read(draw, 1, lucVertexData, verts[7].ref(), 2, 2);
-    g->readVertex(verts[6].ref());
-    g->readVertex(verts[3].ref());
-    g->readVertex(verts[2].ref());
+    g->_indices->read1(vertex_index+3);
+    g->_indices->read1(vertex_index+2);
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+7);
 
     //Left
-    g = read(draw, 1, lucVertexData, verts[4].ref(), 2, 2);
-    g->readVertex(verts[7].ref());
-    g->readVertex(verts[0].ref());
-    g->readVertex(verts[3].ref());
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+3);
+    g->_indices->read1(vertex_index+7);
 
     //Right
-    g = read(draw, 1, lucVertexData, verts[5].ref(), 2, 2);
-    g->readVertex(verts[1].ref());
-    g->readVertex(verts[6].ref());
-    g->readVertex(verts[2].ref());
+    g->_indices->read1(vertex_index+1);
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+2);
   }
   else
   {
     //Triangle indices
-    unsigned vertex_index = g->count();
+
+    //Front
     g->_indices->read1(vertex_index);
     g->_indices->read1(vertex_index+1);
     g->_indices->read1(vertex_index+2);
@@ -2260,6 +2263,25 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
     g->_indices->read1(vertex_index+3);
     g->_indices->read1(vertex_index);
 
+    //Back
+    g->_indices->read1(vertex_index+7);
+    g->_indices->read1(vertex_index+6);
+    g->_indices->read1(vertex_index+5);
+
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index+7);
+
+    //Bottom
+    g->_indices->read1(vertex_index+4);
+    g->_indices->read1(vertex_index+5);
+    g->_indices->read1(vertex_index+1);
+
+    g->_indices->read1(vertex_index+1);
+    g->_indices->read1(vertex_index);
+    g->_indices->read1(vertex_index+4);
+
+    //Top
     g->_indices->read1(vertex_index+3);
     g->_indices->read1(vertex_index+2);
     g->_indices->read1(vertex_index+6);
@@ -2268,14 +2290,7 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
     g->_indices->read1(vertex_index+7);
     g->_indices->read1(vertex_index+3);
 
-    g->_indices->read1(vertex_index+7);
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+5);
-
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index+7);
-
+    //Left
     g->_indices->read1(vertex_index+4);
     g->_indices->read1(vertex_index);
     g->_indices->read1(vertex_index+3);
@@ -2284,14 +2299,7 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
     g->_indices->read1(vertex_index+7);
     g->_indices->read1(vertex_index+4);
 
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+1);
-    g->_indices->read1(vertex_index+5);
-
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index);
-
+    //Right
     g->_indices->read1(vertex_index+1);
     g->_indices->read1(vertex_index+5);
     g->_indices->read1(vertex_index+6);
@@ -2300,8 +2308,9 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
     g->_indices->read1(vertex_index+2);
     g->_indices->read1(vertex_index+1);
 
-    g->_vertices->read(8, verts[0].ref());
   }
+
+  g->_vertices->read(8, verts[0].ref());
 
   if (colour) g->vertexColours(colour, voffset);
 }
