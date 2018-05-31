@@ -103,7 +103,7 @@ def _convert_args(dictionary):
     """
     return str(json.dumps(dictionary, cls=CustomEncoder))
 
-def grid2d(corners=((0.,0.), (1.,1.)), dims=[2,2]):
+def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
     """
     Generate a 2d grid of vertices
 
@@ -125,7 +125,7 @@ def grid2d(corners=((0.,0.), (1.,1.)), dims=[2,2]):
     vertices = numpy.vstack((xx,yy)).reshape([2, -1]).transpose()
     return vertices.reshape(dims[1],dims[0],2)
 
-def grid3d(corners=((0.,0.,0.), (1.,0.,0.), (0.,1.,0.), (1.,1.,0.)), dims=[2,2]):
+def grid3d(corners=((0.,1.,0.), (1.,1.,0.), (0.,0.,0.), (1.,0.,0.)), dims=[2,2]):
     """
     Generate a 2d grid of vertices in 3d space
 
@@ -178,7 +178,7 @@ def grid3d(corners=((0.,0.,0.), (1.,0.,0.), (0.,1.,0.), (1.,1.,0.)), dims=[2,2])
             if v0[2] < v1[2]: return 1
             return -1
         import functools
-        corners = sorted(list(corners), key = functools.cmp_to_key(vertex_compare))
+        corners = sorted(list(corners), reverse=True, key=functools.cmp_to_key(vertex_compare))
 
     def lerp(coord0, coord1, samples):
         """Linear interpolation between two 3d points"""
@@ -610,21 +610,50 @@ class Object(dict):
         elif data.dtype == numpy.uint8:
             self.instance.app.arrayUChar(self.ref, data.ravel(), geomdtype)
 
+    def _dimsFromShape(self, shape, typefilter):
+        #Volume/quads? Use the shape as dims if not provided
+        D = self["dims"]
+        if len(shape) > 2 and D[0] == 0 and D[1] == 0 and self["geometry"] == typefilter:
+            if typefilter == 'quads':
+                #Use shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
+                D[0] = shape[1] #columns
+                D[1] = shape[0] #rows
+            elif typefilter == 'volume':
+                D = shape[:]
+            self["dims"] = D
+
     def _loadVector(self, data, geomdtype, magnitude=None):
+        """
+        Accepts 2d or 3d data as a list of vertices [[x,y,z]...] or [[x,y]...]
+         - If the last dimension is 2, a zero 3rd element is added to all vertices
+        Also accepts 2d or 3d data as columns [[x...], [y...], [z...]]
+         - In this case, there must be > 3 elements or cannot autodetect!
+         - If the last dimenion is not 3 (or 2) and the first is 3 (or 2)
+           the data will be re-arranged automatically
+        """
         #Passes a vector dataset (float)
         data = self._convert(data, numpy.float32)
 
-        #Reshape vector data if first dim is 3 and last dim is not 3
+        #Detection of structure based on shape
         shape = data.shape
-        #Data provided as separate x,y,z columns?
         if len(shape) >= 2:
-            if shape[-1] != 3 and shape[0] == 3:
+            #Data provided as separate x,y,z columns? (Must be > 3 elements)
+            if shape[-1] > 3 and shape[0] == 3:
                 #Re-arrange to array of [x,y,z] triples
                 data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
-            elif (shape[-1] == 2 and shape[0] != 3) or (shape[0] == 2 and shape[-1] != 3):
-                #Interpret as 2d data... must add 3rd dimension
-                return self._loadVector2d(data, geomdtype, magnitude)
+            elif shape[-1] > 3 and shape[0] == 2:
+                #Re-arrange to array of [x,y] pairs
+                data = numpy.vstack((data[0],data[1])).reshape([2, -1]).transpose()
 
+            #Now check for 2d vertices
+            if data.shape[-1] == 2:
+                #Interpret as 2d data... must add 3rd dimension
+                data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
+
+            #Quads? Use the shape as dims if not provided
+            self._dimsFromShape(shape, 'quads')
+
+        #Convenience option to load magnitude as a value array
         if magnitude is not None:
             axis = len(data.shape)-1
             mag = numpy.linalg.norm(data,axis=axis)
@@ -637,23 +666,6 @@ class Object(dict):
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
-
-    def _loadVector2d(self, data, geomdtype, magnitude=None):
-        #Passes a vector dataset (float)
-        data = self._convert(data, numpy.float32)
-
-        #Reshape vector data if first dim is 3 and last dim is not 3
-        shape = data.shape
-        #Data provided as separate x,y,z columns?
-        if len(shape) >= 2 and shape[-1] != 2 and shape[0] == 2:
-            #Re-arrange to array of [x,y] triples
-            data = numpy.vstack((data[0],data[1])).reshape([2, -1]).transpose()
-
-        #Add 3rd dimension to last column
-        data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
-
-        #Now can be loaded by library
-        self._loadVector(data, geomdtype, magnitude)
 
     def data(self, filter=None):
         """
@@ -675,12 +687,12 @@ class Object(dict):
         Example
         -------
         >>> data = obj.data()
-        >>> for el in obj.data:
+        >>> for el in data:
         >>>     print(el)
         """
         return Geometry(self, filter)
 
-    def vertices(self, data=None):
+    def vertices(self, data):
         """
         Load 3d vertex data for object
 
@@ -727,6 +739,10 @@ class Object(dict):
             Label for this data set
         """
         data = self._convert(data, numpy.float32)
+
+        #Volume? Use the shape as dims if not provided
+        self._dimsFromShape(data.shape, 'volume')
+
         self.instance.app.arrayFloat(self.ref, data.ravel(), label)
 
     def colours(self, data):
@@ -2012,7 +2028,7 @@ class Viewer(dict):
         #Return wrapper obj
         return obj
 
-    def add(self, name, **kwargs):
+    def add(self, name=None, **kwargs):
         """
         Add a visualisation object
 
@@ -2047,31 +2063,11 @@ class Viewer(dict):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def grid(self, name=None, vertices=None, *args, **kwargs):
+    def grid(self, *args, **kwargs):
         """
-        Create a grid object, calls quads() with calculated dimensions
-
-        Parameters
-        ----------
-        name: str (Optional)
-            Name of the object
-        vertices: array/list
-            3d Array of grid vertices, first 2 dimensions specify grid size
-        **kwargs:
-            Set of properties passed to the object
-
-        Returns
-        -------
-        obj: Object
-            The object created
+        Alias for quads, draw a quad grid
         """
-        #Creates a quads object, get dims from vertices
-        vertices = numpy.array(vertices)
-        if len(vertices.shape) != 3:
-            print("Provided vertices do not form a grid of vertices (dimensions must be 3)")
-            return None
-        dims = (vertices.shape[1], vertices.shape[0])
-        return self.quads(name, dims=dims, vertices=vertices, *args, **kwargs)
+        return self.quads(*args, **kwargs)
 
     def Object(self, identifier=None, **kwargs):
         """
@@ -2859,7 +2855,7 @@ class Geometry(list):
     Loop through data
 
     >>> data = obj.data()
-    >>> for el in obj.data:
+    >>> for el in data:
     >>>     print(el)
 
     """
