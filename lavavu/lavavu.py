@@ -2732,32 +2732,56 @@ class Viewer(dict):
         #Issue redisplay to active viewer
         self.control.redisplay()
 
-    def camera(self):
+    def camera(self, data=None):
         """
-        Get the current camera viewpoint
+        Get/set the current camera viewpoint
 
-        Displays camera in python code form that can be pasted and
+        Displays and returns camera in python form that can be pasted and
         executed to restore the same camera view
+
+        Parameters
+        ----------
+        data: dict
+            Camera view to apply if any
+
+        Returns
+        -------
+        result: dict
+            Current camera view or previous if applying a new view
         """
         self._get()
         me = getVariableName(self)
         if not me: me = "lv"
         #Also print in terminal for debugging
         self.commands("camera")
-        #Export from first view
+        #Get: export from first view
+        vdat = {}
         if len(self.state["views"]) and self.state["views"][0]:
-            qrot = self.state["views"][0]["rotate"]
-            rot = self.state["views"][0]["xyzrotate"]
-            tr = self.state["views"][0]["translate"]
-            for r in range(3):
-                rot[r] = round(rot[r], 3)
-                tr[r] = round(tr[r], 3)
-            qrot[3] = round(qrot[3], 3)
-            print(me + ".translation(" + str(tr)[1:-1] + ")")
-            print(me + ".rotation(" + str(rot)[1:-1] + ")")
-            return {"translation" : tr, "xyzrotation" : rot, "rotation" : qrot}
-        else:
-            return {}
+            def copyview(dst, src):
+                for key in ["translate", "rotate", "xyzrotate", "aperture"]:
+                    if key in src:
+                        dst[key] = copy.copy(src[key])
+                        #Round down arrays to max 3 decimal places
+                        try:
+                            for r in range(len(dst[key])):
+                                dst[key][r] = round(dst[key][r], 3)
+                        except:
+                            #Not a list/array
+                            pass
+
+            copyview(vdat, self.state["views"][0])
+
+            print(me + ".translation(" + str(vdat["translate"])[1:-1] + ")")
+            print(me + ".rotation(" + str(vdat["xyzrotate"])[1:-1] + ")")
+
+            #Set
+            if data is not None:
+                copyview(self.state["views"][0], data)
+                self._set()
+
+        #Return
+        return vdat
+
 
     def getview(self):
         """
@@ -2781,6 +2805,7 @@ class Viewer(dict):
             json string containing saved view settings
         """
         self.state["views"][0] = _convert_keys(json.loads(view))
+        #self._set() #? sync
 
     def event(self):
         """
