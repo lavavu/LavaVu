@@ -67,7 +67,7 @@ void Shapes::update()
     {
       dims[0] = dims[1] = dims[2] = (float)props["pointsize"] / 8.0;
       quality = 4 * props.getInt("glyphs", 4);
-      if (props["pointtype"] > 2 && !props.has("specular"))
+      if ((int)props["pointtype"] > 2 && !props.has("specular"))
         props["specular"] = 4;
     }
 
