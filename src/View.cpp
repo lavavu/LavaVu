@@ -280,7 +280,7 @@ std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
     fov = aperture;
   if (fov < 10) fov = 10;
   if (fov > 170) fov = 170;
-  properties["aperture"] = fov;
+  properties.data["aperture"] = fov;
 
   focal_length_adj += focal_len;
   eye_sep_ratio += eye_sep;
