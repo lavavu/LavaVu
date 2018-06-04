@@ -108,6 +108,7 @@ public:
 
   Geometry* getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers);
   Geometry* getRenderer(lucGeometryType type);
+  template <typename T>  Geometry* getRendererOfType();
   Geometry* getRenderer(const std::string& what);
 
   void clearObjects(bool fixed=false);

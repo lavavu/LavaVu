@@ -2666,6 +2666,8 @@ Geometry* createRenderer(Session& session, const std::string& what)
     return new Points(session);
   if (what == "sortedpoints")
     return new Points(session);
+  if (what == "spheres")
+    return new Spheres(session);
   if (what == "labels")
     return new Geometry(session);
   if (what == "vectors")

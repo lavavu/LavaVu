@@ -63,10 +63,12 @@ void Shapes::update()
     props.data["vertexnormals"] = (shape != 1);
     int quality = 4 * props.getInt("glyphs", 3);
     //Points drawn as shapes?
-    if (!geom[i]->draw->properties.has("shape"))
+    if (!geom[i]->draw->properties.has("shape") || type == lucPointType)
     {
       dims[0] = dims[1] = dims[2] = (float)props["pointsize"] / 8.0;
       quality = 4 * props.getInt("glyphs", 4);
+      if (props["pointtype"] > 2 && !props.has("specular"))
+        props["specular"] = 4;
     }
 
     if (scaling <= 0) scaling = 1.0;

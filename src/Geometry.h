@@ -734,9 +734,9 @@ public:
 
 class Links : public Glyphs
 {
-  bool all2d, any3d;
+  bool any3d;
 public:
-  Links(Session& session, bool all2Dflag=false);
+  Links(Session& session);
   ~Links() {close();}
   virtual void update();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
@@ -775,6 +775,13 @@ public:
   void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
   void calcGridVertices(int i, std::vector<Vec3d> &vertices);
   virtual void draw();
+};
+
+class Spheres : public Shapes
+{
+  //Render points as spheres
+public:
+  Spheres(Session& session) : Shapes(session) {type = lucPointType;}
 };
 
 class Imposter : public Geometry

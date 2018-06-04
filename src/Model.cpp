@@ -189,7 +189,7 @@ Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& rende
   //Create new geometry containers if required
   if (geometry.size() == 0) init();
 
-  //Return renderer of type specified if found
+  //Return first renderer of type specified if found
   for (auto g : renderers)
   {
     if (g->type == type)
@@ -207,8 +207,38 @@ Geometry* Model::getRenderer(lucGeometryType type)
   return getRenderer(type, geometry);
 }
 
+template <typename T>
+Geometry* Model::getRendererOfType()
+{
+  //Create new geometry containers if required
+  if (geometry.size() == 0) init();
+
+  //Return first renderer of type specified if found
+  for (auto g : geometry)
+  {
+    //dynamic_cast only works if a valid descendant class
+    T* obj = dynamic_cast<T*>(g);
+    if (obj)
+    {
+      return g;
+      break;
+    }
+  }
+  std::cout << "RENDERER NOT FOUND BY TYPE" << std::endl;
+  return NULL;
+}
+
 Geometry* Model::getRenderer(const std::string& what)
 {
+  //Define the renderers to use for all labelled geometry types
+
+  //Alias/special types: require a specific renderer if available
+  if (what == "links")
+    return getRendererOfType<Links>();
+  if (what == "spheres")
+    return getRendererOfType<Spheres>();
+
+  //Default/base types: use the default renderer for the type
   if (what == "points")
     return getRenderer(lucPointType);
   if (what == "labels")
@@ -1427,7 +1457,6 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       }
 
       //Create object and set parameters
-      if (type == lucPointType && session.global("pointspheres")) type = lucShapeType;
       /* Convert grid to tris
        * - need to skip index/normal data as it is setup for tri strips
       if (type == lucGridType) {

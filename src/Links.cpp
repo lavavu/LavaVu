@@ -35,17 +35,15 @@
 
 #include "Geometry.h"
 
-Links::Links(Session& session, bool all2Dflag) : Glyphs(session)
+Links::Links(Session& session) : Glyphs(session)
 {
   type = lucLineType;
-  all2d = all2Dflag;
   any3d = false;
 }
 
 void Links::update()
 {
   if (reload) elements = 0;
-  if (total == 0) return;
   //TODO: fix: Skip update if count hasn't changed
   //To force update, set geometry->reload = true
   //if (elements > 0 && (linetotal == (unsigned int)elements || total == 0)) return;
@@ -68,7 +66,9 @@ void Links::update()
     bool linked = props["link"];
     bool filter = geom[i]->draw->filterCache.size();
 
-    if (all2d || (props.getBool("flat", true) && !props["tubes"]))
+    //Draw simple 2d lines if flat=true and tubes=false
+    //(ie: enable 3d by switching either flag)
+    if (props.getBool("flat", true) && !props["tubes"])
     {
       unsigned int hasColours = geom[i]->colourCount();
       unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
@@ -176,6 +176,6 @@ void Links::jsonWrite(DrawingObject* draw, json& obj)
 {
   lines->jsonWrite(draw, obj);
   //Triangles rendered?
-  if (!all2d || any3d)
+  if (any3d)
     tris->jsonWrite(draw, obj);
 }

@@ -205,10 +205,10 @@ void Session::init()
     {
       "renderlist",
       {
-        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume screen",
+        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines links shapes volume screen",
         "all",
         "string",
-        "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,labels,lines,links",
+        "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,spheres,labels,lines,links",
         true, 0
       }
     },
@@ -1670,16 +1670,6 @@ void Session::init()
         "global",
         "boolean",
         "Enable to load subsequent databases into the current model, if disabled then each database is loaded into a new model",
-        true, 0
-      }
-    },
-    {
-      "pointspheres",
-      {
-        false,
-        "global",
-        "boolean",
-        "Enable rendering points as proper 3d spherical meshes, TODO: deprecate and implement as a renderer type 'particles' that can plot points or spheres",
         true, 0
       }
     },
