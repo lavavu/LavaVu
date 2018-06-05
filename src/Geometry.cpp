@@ -1539,7 +1539,7 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   }
 
   //Allow spec width/height/depth in properties
-  if (!geomdata || geomdata->count() == 0)
+  if (!geomdata || geomdata->count() == 0 || geomdata->width * geomdata->height == 0)
   {
     float dims[3];
     Properties::toArray<float>(draw->properties["dims"], dims, 3);
