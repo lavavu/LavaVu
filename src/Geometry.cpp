@@ -1006,16 +1006,19 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     case lucVolumeType:
       btype = type;
       break;
-    case lucTriangleType:
     case lucGridType:
+    case lucTriangleType:
     case lucVectorType:
     case lucTracerType:
     case lucShapeType:
     case lucScreenType:
+      //Everything else uses the triangle shader
       btype = lucTriangleType;
       break;
     default:
+      //Fallback shader, passthrough colour only
       btype = lucMinType;
+      break;
   }
 
   //Already initialised?
@@ -1051,6 +1054,13 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     session.shaders[lucVolumeType] = std::make_shared<Shader>("volumeShader.vert", "volumeShader.frag");
     session.shaders[lucVolumeType]->loadUniforms();
     session.shaders[lucVolumeType]->loadAttribs();
+  }
+
+  if (btype == lucMinType)
+  {
+    //Default colour only shader
+    session.shaders[lucMinType] = std::make_shared<Shader>("default.vert", "default.frag");
+    session.shaders[lucMinType]->loadUniforms();
   }
 
   return session.shaders[btype];
@@ -1104,6 +1114,7 @@ void Geometry::setState(unsigned int i)
       glDisable(GL_CULL_FACE);
     }
 
+    //TODO: replace with shader version for gl 3.2+
     if (geom[i]->draw->properties["flat"])
       glShadeModel(GL_FLAT);
     else
@@ -1114,6 +1125,7 @@ void Geometry::setState(unsigned int i)
     //Flat disables lighting for non surface types
     if (geom[i]->draw->properties["flat"]) lighting = false;
     glEnable(GL_BLEND);
+    glShadeModel(GL_SMOOTH);
   }
 
   //Default line width
@@ -1126,115 +1138,107 @@ void Geometry::setState(unsigned int i)
     glEnable(GL_DEPTH_TEST);
   else
     glDisable(GL_DEPTH_TEST);
-  
-  if (!lighting)
-    glDisable(GL_LIGHTING);
-  else
-    glEnable(GL_LIGHTING);
-
 
   //Replace the default colour with a json value if present
   draw->colour = draw->properties.getColour("colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
 
   //Uniforms for shader programs
   Shader_Ptr prog = getShader(geom[i]->draw);
-  if (prog && prog->program > 0)
+  assert(prog && prog->program > 0); //Should always get a shader now
+  prog->use();
+
+  //Custom uniforms?
+  if (draw->properties.has("uniforms"))
   {
-    prog->use();
-
-    //Custom uniforms?
-    if (draw->properties.has("uniforms"))
+    json uniforms = draw->properties["uniforms"];
+    //std::cout << uniforms << std::endl;
+    for (json::iterator it = uniforms.begin(); it != uniforms.end(); ++it)
     {
-      json uniforms = draw->properties["uniforms"];
-      //std::cout << uniforms << std::endl;
-      for (json::iterator it = uniforms.begin(); it != uniforms.end(); ++it)
+      //Attempt to find in properties and use that value if found
+      json prop;
+      std::string label = it.key();
+      if (draw->properties.has(label))
+        prop = draw->properties[label];
+      else
+        prop = it.value();
+      //std::cout << label << " ==> " << prop << std::endl;
+
+      //Special case: string data -> treat as colourmap!
+      if (prop.is_string())
       {
-        //Attempt to find in properties and use that value if found
-        json prop;
-        std::string label = it.key();
-        if (draw->properties.has(label))
-          prop = draw->properties[label];
+        if (geom[i]->draw->textureMap && geom[i]->draw->textureMap->texture)
+        {
+          prog->setUniformi(label, geom[i]->draw->textureMap->texture->texture->unit);
+          //std::cerr << label << " : Colourmap texture available on unit " << geom[i]->draw->colourMap->texture->texture->unit << std::endl;
+        }
         else
-          prop = it.value();
-        //std::cout << label << " ==> " << prop << std::endl;
-
-        //Special case: string data -> treat as colourmap!
-        if (prop.is_string())
-        {
-          if (geom[i]->draw->textureMap && geom[i]->draw->textureMap->texture)
-          {
-            prog->setUniformi(label, geom[i]->draw->textureMap->texture->texture->unit);
-            //std::cerr << label << " : Colourmap texture available on unit " << geom[i]->draw->colourMap->texture->texture->unit << std::endl;
-          }
-          else
-            std::cerr << label << " : No colourmap texture available! " << prop << std::endl;
-        }
-        else if (!prop.is_null())
-        {
-          prog->setUniform(label, prop);
-        }
+          std::cerr << label << " : No colourmap texture available! " << prop << std::endl;
       }
-    }
-
-    //Per-object "opacity" overrides global default if set
-    //"alpha" is multiplied to affect all objects
-    float opacity = (float)geom[i]->draw->properties["alpha"];
-    //Apply global 'opacity' only if no per-object setting (which is applied with colour)
-    if (!geom[i]->draw->properties.has("opacity"))
-      opacity *= (float)session.global("opacity");
-    bool allopaque = !session.global("sort");
-    if (allopaque) opacity = 1.0;
-    prog->setUniformf("uOpacity", opacity);
-    prog->setUniformi("uLighting", lighting);
-    prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
-    prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);
-    prog->setUniformf("uSaturation", geom[i]->draw->properties["saturation"]);
-    prog->setUniformf("uAmbient", geom[i]->draw->properties["ambient"]);
-    prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
-    prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
-    prog->setUniform("uLightPos", geom[i]->draw->properties["lightpos"]);
-    prog->setUniformi("uTextured", texture && texture->unit >= 0);
-    prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
-    //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
-
-    if (texture)
-      prog->setUniform("uTexture", (int)texture->unit);
-
-    if (geom[i]->render->normals.size() == 0 && TriangleBased(type))
-      prog->setUniform("uCalcNormal", 1);
-    else
-      prog->setUniform("uCalcNormal", 0);
-
-    if (prog->uniforms["uClipMin"])
-    {
-      Vec3d clipMin = Vec3d(-HUGE_VALF, -HUGE_VALF, -HUGE_VALF);
-      Vec3d clipMax = Vec3d(HUGE_VALF, HUGE_VALF, HUGE_VALF);
-      if (geom[i]->draw->properties["clip"])
+      else if (!prop.is_null())
       {
-        clipMin = Vec3d((float)geom[i]->draw->properties["xmin"],
-                        (float)geom[i]->draw->properties["ymin"],
-                        view->is3d ? (float)geom[i]->draw->properties["zmin"] : -HUGE_VALF);
-        clipMax = Vec3d((float)geom[i]->draw->properties["xmax"],
-                        (float)geom[i]->draw->properties["ymax"],
-                        view->is3d ? (float)geom[i]->draw->properties["zmax"] : HUGE_VALF);
-        if (geom[i]->draw->properties["clipmap"])
-        {
-          Vec3d dims(session.dims);
-          Vec3d dmin(session.min);
-          clipMin *= dims;
-          clipMin += dmin;
-          clipMax *= dims;
-          clipMax += dmin;
-        }
-        //printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1], 
-        //       session.min[2], session.max[0], session.max[1], session.max[2]);
-        //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(), 
-        //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
+        prog->setUniform(label, prop);
       }
-
-      prog->setUniform3f("uClipMin", clipMin.ref());
-      prog->setUniform3f("uClipMax", clipMax.ref());
     }
+  }
+
+  //Per-object "opacity" overrides global default if set
+  //"alpha" is multiplied to affect all objects
+  float opacity = (float)geom[i]->draw->properties["alpha"];
+  //Apply global 'opacity' only if no per-object setting (which is applied with colour)
+  if (!geom[i]->draw->properties.has("opacity"))
+    opacity *= (float)session.global("opacity");
+  bool allopaque = !session.global("sort");
+  if (allopaque) opacity = 1.0;
+  prog->setUniformf("uOpacity", opacity);
+  prog->setUniformi("uLighting", lighting);
+  prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
+  prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);
+  prog->setUniformf("uSaturation", geom[i]->draw->properties["saturation"]);
+  prog->setUniformf("uAmbient", geom[i]->draw->properties["ambient"]);
+  prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
+  prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
+  prog->setUniform("uLightPos", geom[i]->draw->properties["lightpos"]);
+  prog->setUniformi("uTextured", texture && texture->unit >= 0);
+  prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
+  //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
+
+  if (texture)
+    prog->setUniform("uTexture", (int)texture->unit);
+
+  if (geom[i]->render->normals.size() == 0 && TriangleBased(type))
+    prog->setUniform("uCalcNormal", 1);
+  else
+    prog->setUniform("uCalcNormal", 0);
+
+  if (prog->uniforms["uClipMin"])
+  {
+    Vec3d clipMin = Vec3d(-HUGE_VALF, -HUGE_VALF, -HUGE_VALF);
+    Vec3d clipMax = Vec3d(HUGE_VALF, HUGE_VALF, HUGE_VALF);
+    if (geom[i]->draw->properties["clip"])
+    {
+      clipMin = Vec3d((float)geom[i]->draw->properties["xmin"],
+                      (float)geom[i]->draw->properties["ymin"],
+                      view->is3d ? (float)geom[i]->draw->properties["zmin"] : -HUGE_VALF);
+      clipMax = Vec3d((float)geom[i]->draw->properties["xmax"],
+                      (float)geom[i]->draw->properties["ymax"],
+                      view->is3d ? (float)geom[i]->draw->properties["zmax"] : HUGE_VALF);
+      if (geom[i]->draw->properties["clipmap"])
+      {
+        Vec3d dims(session.dims);
+        Vec3d dmin(session.min);
+        clipMin *= dims;
+        clipMin += dmin;
+        clipMax *= dims;
+        clipMax += dmin;
+      }
+      //printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1],
+      //       session.min[2], session.max[0], session.max[1], session.max[2]);
+      //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(),
+      //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
+    }
+
+    prog->setUniform3f("uClipMin", clipMin.ref());
+    prog->setUniform3f("uClipMax", clipMax.ref());
   }
   GL_Error_Check;
 }
