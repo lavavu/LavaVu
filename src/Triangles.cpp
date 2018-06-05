@@ -61,7 +61,6 @@ void Triangles::close()
 unsigned int Triangles::triCount()
 {
   //Get triangle count
-  //TODO: support different output types, eg: GL_TRIANGLE_STRIP
   total = 0;
   unsigned int drawelements = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
@@ -138,7 +137,7 @@ void Triangles::loadBuffers()
   tt=t2=clock();
 
   //Update VBO...
-  debug_print("Reloading %d triangles...\n", elements);
+  debug_print("Reloading %d elements...\n", elements);
 
   // VBO - copy normals/colours/positions to buffer object
   unsigned char *p, *ptr;
@@ -166,6 +165,11 @@ void Triangles::loadBuffers()
   {
     t1=tt=clock();
 
+    //Calculate vertex normals?
+    bool vnormals = geom[index]->draw->properties["vertexnormals"];
+    debug_print("Mesh %d/%d has normals? %d == %d\n", index, geom.size(), geom[index]->render->normals.size(), geom[index]->render->vertices.size());
+    if (geom[index]->render->normals.size() != geom[index]->render->vertices.size()) vnormals = false;
+
     //Colour values to texture coords
     ColourMap* texmap = geom[index]->draw->textureMap;
     FloatValues* vals = geom[index]->colourData();
@@ -181,8 +185,6 @@ void Triangles::loadBuffers()
     debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count(), hasColours);
 
     Colour colour;
-    bool normals = geom[index]->render->normals.size() == geom[index]->render->vertices.size();
-    debug_print("Mesh %d/%d has normals? %d (%d == %d)\n", index, geom.size(), normals, geom[index]->render->normals.size(), geom[index]->render->vertices.size());
     float zero[3] = {0,0,0};
     float shift = geom[index]->draw->properties["shift"];
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
@@ -211,7 +213,7 @@ void Triangles::loadBuffers()
       memcpy(ptr, vert, sizeof(float) * 3);
       ptr += sizeof(float) * 3;
       //Copies normal bytes
-      if (normals)
+      if (vnormals)
         memcpy(ptr, &geom[index]->render->normals[v][0], sizeof(float) * 3);
       else
         memcpy(ptr, zero, sizeof(float) * 3);
@@ -271,7 +273,6 @@ void Triangles::render()
 
   //Upload vertex indices
   unsigned int offset = 0;
-  unsigned int voffset = 0;
   unsigned int idxcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
@@ -280,13 +281,8 @@ void Triangles::render()
     {
       if (indices > 0)
       {
-        //Create the index list, adding offset from previous element vertices
-        unsigned int indexlist[indices];
-        for(unsigned int i=0; i<indices; i++)
-          indexlist[i] = voffset + geom[index]->render->indices[i];
-
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist);
-        //printf("%d upload %d indices, voffset %d\n", index, indices, voffset);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), geom[index]->render->indices.ref());
+        //printf("%d upload %d indices\n", index, indices);
         counts[index] = indices;
         offset += indices;
         GL_Error_Check;
@@ -295,13 +291,10 @@ void Triangles::render()
       {
         //No indices, just raw vertices
         counts[index] = geom[index]->count();
-        //printf("%d upload NO indices, %d vertices, voffset %d\n", index, counts[index], voffset);
+        //printf("%d upload NO indices, %d vertices\n", index, counts[index]);
       }
       idxcount += counts[index];
     }
-
-    //Vertex index offset
-    voffset += geom[index]->count();
   }
 
   GL_Error_Check;
@@ -330,37 +323,44 @@ void Triangles::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    int offset = 0;
-    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-    glEnableClientState(GL_VERTEX_ARRAY);
-    offset += 3;
-    glNormalPointer(GL_FLOAT, stride, (GLvoid*)(offset*sizeof(float))); // Load normal x,y,z, offset 3 float
-    glEnableClientState(GL_NORMAL_ARRAY);
-    offset += 3;
-    glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(offset*sizeof(float))); // Load texcoord x,y
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    offset += 2;
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(offset*sizeof(float)));   // Load rgba, offset 6 float
-    glEnableClientState(GL_COLOR_ARRAY);
-
+    intptr_t vstart = 0; //Vertex buffer offset
     unsigned int start = 0;
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
     for (unsigned int index = 0; index < geom.size(); index++)
     {
-      if (counts[index] == 0) continue;
-      setState(index); //Set draw state settings for this object
-      if (geom[index]->render->indices.size() > 0)
+      if (counts[index] > 0)
       {
-        //Draw with index buffer
-        glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-        //printf("DRAW %d from %d by INDEX\n", counts[index], start);
+        unsigned int offset = 0;
+        glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)vstart); // Load vertex x,y,z only
+        offset += 3;
+        glNormalPointer(GL_FLOAT, stride, (GLvoid*)(vstart + offset*sizeof(float))); // Load normal x,y,z, offset 3 float
+        offset += 3;
+        glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(vstart + offset*sizeof(float))); // Load texcoord x,y
+        offset += 2;
+        glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(vstart + offset*sizeof(float)));   // Load rgba, offset 6 float
+
+
+        setState(index); //Set draw state settings for this object
+        if (geom[index]->render->indices.size() > 0)
+        {
+          //Draw with index buffer
+          glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+          //printf("DRAW %d from %d by INDEX vs %d\n", counts[index], start, vstart);
+        }
+        else
+        {
+          //Draw directly from vertex buffer
+          glDrawArrays(GL_TRIANGLES, start, geom[index]->count());
+          //printf("DRAW %d from %d by VERTEX vs %d\n", geom[index]->count(), start, vstart);
+        }
+        start += counts[index];
       }
-      else
-      {
-        //Draw directly from vertex buffer
-        glDrawArrays(GL_TRIANGLES, start, geom[index]->count());
-        //printf("DRAW %d from %d by VERTEX\n", geom[index]->count(), start);
-      }
-      start += counts[index];
+
+      //Vertex buffer offset (bytes) required because indices per object are zero based
+      vstart += stride * geom[index]->count();
     }
 
     time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
