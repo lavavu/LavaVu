@@ -203,12 +203,32 @@ void Session::init()
   std::vector<std::pair<std::string,json>> property_data =
   {
     {
+      "renderers",
+      {
+        json::array({{"labels"},
+                     {"points","sortedpoints","particles","spheres"},
+                     {"quads", "grid"},
+                     {"triangles","sortedtriangles","mesh","surface"},
+                     {"vectors", "arrows"},
+                     {"tracers", "streamlines"},
+                     {"lines","sortedlines","links","tubes"},
+                     {"shapes"},
+                     {"volume", "volumes"},
+                     {"screen", "fullscreen"},
+                     }),
+        "all",
+        "object",
+        "Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.",
+        true, 0
+      }
+    },
+    {
       "renderlist",
       {
-        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines links shapes volume screen",
+        "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume screen",
         "all",
         "string",
-        "List of renderers created and order they are displayed. Valid types are: volume,triangles,sortedtriangles,quads,vectors,tracers,shapes,points,sortedpoints,spheres,labels,lines,links",
+        "List of default renderers created and order they are displayed. For valid types see \"renderers\" property.",
         true, 0
       }
     },
@@ -278,7 +298,17 @@ void Session::init()
         "points",
         "object",
         "string",
-        "Geometry type to load when adding new data",
+        "Geometry renderer type to load into when adding new data",
+        true, 0
+      }
+    },
+    {
+      "renderer",
+      {
+        "",
+        "object",
+        "string",
+        "Create a custom renderer using label provided instead of using the default renderers, type of renderer created based on the \"geometry\" property",
         true, 0
       }
     },

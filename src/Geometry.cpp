@@ -2668,21 +2668,21 @@ Geometry* createRenderer(Session& session, const std::string& what)
 {
   if (what == "points") //TODO: unsorted points base class
     return new Points(session);
-  if (what == "sortedpoints")
+  if (what == "sortedpoints" || what == "particles")
     return new Points(session);
   if (what == "spheres")
     return new Spheres(session);
   if (what == "labels")
     return new Geometry(session);
-  if (what == "vectors")
+  if (what == "vectors" || what == "arrows")
     return new Vectors(session);
-  if (what == "tracers")
+  if (what == "tracers" || what == "streamlines")
     return new Tracers(session);
-  if (what == "triangles")
+  if (what == "mesh" || what == "surface")
     return new Triangles(session);
-  if (what == "sortedtriangles")
+  if (what == "triangles" || what == "sortedtriangles") //NOTE: default is sorted, but will use any triangle renderer
     return new TriSurfaces(session);
-  if (what == "quads")
+  if (what == "quads" || what == "grid")
     return new QuadSurfaces(session);
   if (what == "shapes")
     return new Shapes(session);
@@ -2690,14 +2690,14 @@ Geometry* createRenderer(Session& session, const std::string& what)
     return new Lines(session);
   if (what == "sortedlines")
     return new LinesSorted(session);
-  if (what == "links")
+  if (what == "links" || what == "tubes")
     return new Links(session);
-  if (what == "volume")
+  if (what == "volume" || what == "volumes")
     return new Volumes(session);
-  if (what == "screen")
+  if (what == "screen" || what == "fullscreen")
     return new FullScreen(session);
-  abort_program("Invalid renderer specified! '%s'\n", what.c_str());
-  return NULL;
+  //Default renderer, can just plot labels etc
+  return new Geometry(session);
 }
 
 

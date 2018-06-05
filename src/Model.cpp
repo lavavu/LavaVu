@@ -189,7 +189,7 @@ Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& rende
   //Create new geometry containers if required
   if (geometry.size() == 0) init();
 
-  //Return first renderer of type specified if found
+  //Return first renderer for primitive type specified if found
   for (auto g : renderers)
   {
     if (g->type == type)
@@ -213,7 +213,7 @@ Geometry* Model::getRendererOfType()
   //Create new geometry containers if required
   if (geometry.size() == 0) init();
 
-  //Return first renderer of type specified if found
+  //Return first renderer of type specified (or derived) if found
   for (auto g : geometry)
   {
     //dynamic_cast only works if a valid descendant class
@@ -224,41 +224,42 @@ Geometry* Model::getRendererOfType()
       break;
     }
   }
-  std::cout << "RENDERER NOT FOUND BY TYPE" << std::endl;
-  return NULL;
+
+  //Create and add one then
+  Geometry* g = new T(session);
+  geometry.push_back(g);
+  return g;
 }
 
 Geometry* Model::getRenderer(const std::string& what)
 {
-  //Define the renderers to use for all labelled geometry types
+  //Define the renderers to use for all labeled geometry types
 
-  //Alias/special types: require a specific renderer if available
+  //Specific types: require exact renderer if available, create one if not
   if (what == "links")
     return getRendererOfType<Links>();
   if (what == "spheres")
     return getRendererOfType<Spheres>();
+  if (what == "mesh")
+    return getRendererOfType<Mesh>();
 
-  //Default/base types: use the default renderer for the type
-  if (what == "points")
-    return getRenderer(lucPointType);
-  if (what == "labels")
-    return getRenderer(lucLabelType);
-  if (what == "vectors")
-    return getRenderer(lucVectorType);
-  if (what == "tracers")
-    return getRenderer(lucTracerType);
-  if (what == "triangles")
-    return getRenderer(lucTriangleType);
-  if (what == "quads")
-    return getRenderer(lucGridType);
-  if (what == "shapes")
-    return getRenderer(lucShapeType);
-  if (what == "lines")
-    return getRenderer(lucLineType);
-  if (what == "volume")
-    return getRenderer(lucVolumeType);
-  if (what == "screen")
-    return getRenderer(lucScreenType);
+  //Default/base types: use the default renderer for the type name
+  json renderers = session.global("renderers");
+  for (int i=0; i<renderers.size(); i++)
+    for (std::string s : renderers[i])
+      if (what == s)
+        return getRenderer((lucGeometryType)i);
+
+  //Must be a custom type, find by label if exists
+  for (auto g : geometry)
+  {
+    if (g->custom == what)
+    {
+      return g;
+      break;
+    }
+  }
+
   return NULL;
 }
 

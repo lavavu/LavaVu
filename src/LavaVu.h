@@ -217,7 +217,7 @@ public:
   DrawingObject* lookupObject(PropertyParser& parsed, const std::string& key, int idx=0);
   DrawingObject* lookupObject(const std::string& name, DrawingObject* def=NULL);
   std::vector<DrawingObject*> lookupObjects(PropertyParser& parsed, const std::string& key, int start=0);
-  Geometry* lookupObjectContainer(DrawingObject* obj, std::string gtype="");
+  Geometry* lookupObjectRenderer(DrawingObject* obj);
   int lookupColourMap(PropertyParser& parsed, const std::string& key, int idx=0);
   std::vector<std::string> commandList(std::string category="");
   std::string helpCommand(std::string cmd="", bool heading=true);

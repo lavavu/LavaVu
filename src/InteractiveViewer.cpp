@@ -563,14 +563,27 @@ std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const 
   return list;
 }
 
-Geometry* LavaVu::lookupObjectContainer(DrawingObject* obj, std::string gtype)
+Geometry* LavaVu::lookupObjectRenderer(DrawingObject* obj)
 {
   if (!obj) return NULL;
-  //If not provided, get the container type to load into from property  (defaults to points)
-  if (gtype.length() == 0)
-    gtype = obj->properties["geometry"];
-  Geometry* container = amodel->getRenderer(gtype);
-  return container;
+  //Get the container type to load into from property (defaults to points)
+  std::string gtype = obj->properties["geometry"];
+  std::string custom = obj->properties["renderer"];
+  Geometry* renderer = NULL;
+  if (custom.length())
+  {
+    renderer = amodel->getRenderer(custom);
+    if (!renderer)
+    {
+      //std::cout << "CREATING CUSTOM RENDERER " << gtype << " : " << custom << std::endl;
+      renderer = createRenderer(session, gtype);
+      renderer->custom = custom;
+      amodel->geometry.push_back(renderer);
+    }
+  }
+  else
+    renderer = amodel->getRenderer(gtype);
+  return renderer;
 }
 
 float LavaVu::parseCoord(const json& val)
@@ -2142,8 +2155,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       Colour c(parsed.get("colour"));
-      //Use the "geometry" property to get the type to read into
-      Geometry* active = lookupObjectContainer(aobject);
+      //Get renderer to read into
+      Geometry* active = lookupObjectRenderer(aobject);
       active->read(aobject, 1, lucRGBAData, &c.value);
       printMessage("%s colour appended %x", aobject->name().c_str(), c.value);
       //Full object reload if colours updated
@@ -2165,9 +2178,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed["value"];
     if (aobject && parsed.has(fval, "value", 1))
     {
-      //Use the "geometry" property to get the type to read into
-      std::string gtype = aobject->properties["geometry"];
-      Geometry* active = amodel->getRenderer(gtype);
+      //Get renderer to read into
+      Geometry* active = lookupObjectRenderer(aobject);
       active->read(aobject, 1, &fval, what);
       printMessage("%s value appended %f", aobject->name().c_str(), fval);
     }
@@ -2207,9 +2219,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           xyz[i] = parseCoord(parsed.get(action, i));
       }
 
-      //Use the "geometry" property to get the type to read into
-      std::string gtype = aobject->properties["geometry"];
-      Geometry* active = amodel->getRenderer(gtype);
+      //Get renderer to read into
+      Geometry* active = lookupObjectRenderer(aobject);
       active->read(aobject, 1, dtype, xyz);
       printMessage("%s %s appended", aobject->name().c_str(), action.c_str());
       //Full object reload if colours updated
@@ -2261,9 +2272,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         width = 1;
       }
 
-      //Use the "geometry" property to get the type to read into
-      std::string gtype = aobject->properties["geometry"];
-      Geometry* active = amodel->getRenderer(gtype);
+      //Get renderer to read into
+      Geometry* active = lookupObjectRenderer(aobject);
       if (!data.is_array() || data.size() == 0) return false;
       int size = data.size();
       if (data[0].is_array()) size *= data[0].size();
@@ -2312,9 +2322,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       std::string data = parsed["label"];
-      //Use the "geometry" property to get the type to read into
-      std::string gtype = aobject->properties["geometry"];
-      Geometry* active = amodel->getRenderer(gtype);
+      //Get renderer to read into
+      Geometry* active = lookupObjectRenderer(aobject);
       //Clear first
       active->label(aobject, NULL);
       //Set new labels

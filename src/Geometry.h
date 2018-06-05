@@ -529,6 +529,8 @@ protected:
 public:
   int timestep = -2;
   Session& session;
+  std::string custom = "";
+
   //Maximum bounding box of all content
   float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
   float max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
@@ -633,6 +635,12 @@ public:
   virtual void render();
   virtual void draw();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
+};
+
+class Mesh : public Triangles
+{
+public:
+  Mesh(Session& session) : Triangles(session) {}
 };
 
 class TriSurfaces : public Triangles

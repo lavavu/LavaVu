@@ -48,18 +48,16 @@ version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
-geomtypes = {"labels":    LavaVuPython.lucLabelType,
-             "points":    LavaVuPython.lucPointType,
-             "quads":     LavaVuPython.lucGridType,
-             "triangles": LavaVuPython.lucTriangleType,
-             "vectors":   LavaVuPython.lucVectorType,
-             "tracers":   LavaVuPython.lucTracerType,
-             "lines":     LavaVuPython.lucLineType,
-             "links":     LavaVuPython.lucLineType,
-             "shapes":    LavaVuPython.lucShapeType,
-             "spheres":   LavaVuPython.lucPointType,
-             "volume":    LavaVuPython.lucVolumeType,
-             "screen":    LavaVuPython.lucScreenType}
+geomtypes = [LavaVuPython.lucLabelType,
+             LavaVuPython.lucPointType,
+             LavaVuPython.lucGridType,
+             LavaVuPython.lucTriangleType,
+             LavaVuPython.lucVectorType,
+             LavaVuPython.lucTracerType,
+             LavaVuPython.lucLineType,
+             LavaVuPython.lucShapeType,
+             LavaVuPython.lucVolumeType,
+             LavaVuPython.lucScreenType]
 
 datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "normals":   LavaVuPython.lucNormalData,
@@ -1055,7 +1053,7 @@ class Object(dict):
         ----------
         filter: str
             Optional filter to type of geometry to be updated, if omitted all will be written
-            (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
+            (eg: labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
         compress: boolean
             Use zlib compression when writing the geometry data
         """
@@ -1065,7 +1063,7 @@ class Object(dict):
             self.instance.app.update(self.ref, compress)
         else:
             #Re-writes data to db for this object and geom type
-            self.instance.app.update(self.ref, geomtypes[filter], compress)
+            self.instance.app.update(self.ref, self.instance._getRendererType(filter), compress)
 
     def getcolourmap(self, string=True):
         """
@@ -1672,7 +1670,8 @@ class Viewer(dict):
 
             #Add object by geom type shortcut methods
             #(allows calling add by geometry type, eg: obj = lavavu.lines())
-            for key in geomtypes.keys():
+            self.renderers = self.properties["renderers"][0]
+            for key in [item for sublist in self.renderers for item in sublist]:
                 #Use a closure to define a new method to call addtype with this type
                 def addmethod(name):
                     def method(*args, **kwargs):
@@ -1686,6 +1685,14 @@ class Viewer(dict):
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
+
+    def _getRendererType(name):
+        """
+        Return the type index of a given renderer label
+        """
+        for i in range(len(self.renderers)):
+            if name in self.renderers[i]:
+                return geomtypes[i]
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
@@ -2069,12 +2076,6 @@ class Viewer(dict):
         kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
-    def grid(self, *args, **kwargs):
-        """
-        Alias for quads, draw a quad grid
-        """
-        return self.quads(*args, **kwargs)
-
     def Object(self, identifier=None, **kwargs):
         """
         Get or create a visualisation object
@@ -2413,7 +2414,7 @@ class Viewer(dict):
                 self.app.update(obj.ref, compress)
             else:
                 #Re-writes data to db for object and geom type
-                self.app.update(obj.ref, geomtypes[filter], compress)
+                self.app.update(obj.ref, self._getRendererType(filter), compress)
 
         #Update figure
         self.savefigure()
@@ -2899,7 +2900,7 @@ class Geometry(list):
             g = self.obj.instance.app.getGeometry(self.obj.ref, idx)
             #By default all elements are returned, even if object has multiple types 
             #Filter can be set to a type name to exclude other geometry types
-            if filter is None or g.type == geomtypes[filter]:
+            if filter is None or g.type == self._getRendererType(filter):
                 self.append(GeomData(g, obj.instance))
 
     def __str__(self):
@@ -3030,7 +3031,7 @@ class GeomData(object):
             self.instance.app.geometryArrayFloat(self.data, array, typename)
         
     def __str__(self):
-        return [key for key, value in geomtypes.items() if value == self.data.type][0]
+        return [key for key, value in geomtypes if value == self.data.type][0]
 
 def loadCPT(fn, positions=True):
     """
