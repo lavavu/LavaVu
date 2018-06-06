@@ -13,6 +13,7 @@ uniform float uSaturation;
 uniform float uAmbient;
 uniform float uDiffuse;
 uniform float uSpecular;
+uniform float uShininess;
 uniform bool uTextured;
 uniform sampler2D uTexture;
 uniform vec3 uClipMin;
@@ -64,7 +65,6 @@ void main(void)
     return;
   }
   
-  const float shininess = 50.0; //Size of highlight (higher is smaller)
   const vec3 light = vec3(1.0);  //Colour of light
 
   //Head light, lightPos=(0,0,0) - vPosEye
@@ -94,8 +94,9 @@ void main(void)
     vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
     //Compute cosine (dot product) with the normal (abs for two-sided)
     float NdotHV = abs(dot(N, halfVector));
+    float shininess = 250 * (1.0 - uShininess);
     specular = specolour * pow(NdotHV, shininess);
-    calcColour(fColour.rgb * light * (uAmbient + diffuse * uDiffuse + specular * uSpecular), alpha);
+    calcColour(fColour.rgb * light * (uAmbient + diffuse * uDiffuse) + (specular * uSpecular), alpha);
   }
   else
     calcColour(fColour.rgb * light * (uAmbient + diffuse * uDiffuse), alpha);

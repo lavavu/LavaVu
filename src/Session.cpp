@@ -523,6 +523,16 @@ void Session::init()
       }
     },
     {
+      "shininess",
+      {
+        0.5,
+        "object",
+        "real [0,1]",
+        "Specular shininess factor, controls size of highlight",
+        true, 0
+      }
+    },
+    {
       "lightpos",
       {
         {0.1,-0.1,2.0},
