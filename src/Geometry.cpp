@@ -1139,6 +1139,11 @@ void Geometry::setState(unsigned int i)
   else
     glDisable(GL_DEPTH_TEST);
 
+  if (geom[i]->draw->properties["depthwrite"])
+    glDepthMask(GL_TRUE);
+  else
+    glDepthMask(GL_FALSE);
+
   //Replace the default colour with a json value if present
   draw->colour = draw->properties.getColour("colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
 

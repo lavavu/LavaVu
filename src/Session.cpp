@@ -393,6 +393,16 @@ void Session::init()
       }
     },
     {
+      "depthwrite",
+      {
+        true,
+        "object",
+        "boolean",
+        "Set to false to disable depth buffer write when drawing object, so other objects behind it will still be drawn and will appear in front if drawn after this object",
+        true, 0
+      }
+    },
+    {
       "dims",
       {
         {0,0,0},
