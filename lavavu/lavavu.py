@@ -1424,9 +1424,9 @@ class ColourMap(dict):
             if isinstance(data, str) and re.match('^[\w_]+$', data) is not None:
                 #Single word of alphanumeric characters, if not a built-in map, try matplotlib
                 if data not in self.instance.defaultcolourmaps():
-                    data = matplotlib_colourmap(data)
-                    if len(data) == 0:
-                        return
+                    newdata = matplotlib_colourmap(data)
+                    if len(newdata) > 0:
+                        data = newdata
             if not isinstance(data, str):
                 data = json.dumps(data)
 
