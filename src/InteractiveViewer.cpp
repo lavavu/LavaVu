@@ -3219,7 +3219,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
   }
   //******************************************************************************
-  else if (!viewer->isopen)
+  else if (!gethelp && !viewer->isopen)
   {
     //Following commands all require open viewer
     //Attempt to parse as property=value first
