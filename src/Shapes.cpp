@@ -65,10 +65,12 @@ void Shapes::update()
     //Points drawn as shapes?
     if (!geom[i]->draw->properties.has("shape") || type == lucPointType)
     {
+      //Plotting points as spheres, set some defaults
       dims[0] = dims[1] = dims[2] = (float)props["pointsize"] / 8.0;
-      quality = 4 * props.getInt("glyphs", 4);
+      //Higher default sphere quality
+      quality = 4 * props.getInt("glyphs", 6);
       if ((int)props["pointtype"] > 2 && !props.has("specular"))
-        props["specular"] = 4;
+        props.data["specular"] = 1.0;
     }
 
     if (scaling <= 0) scaling = 1.0;
