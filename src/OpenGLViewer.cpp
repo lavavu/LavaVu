@@ -308,7 +308,7 @@ void OpenGLViewer::show()
   if (!isopen || !visible) return;
 
   //Show a previously hidden window
-  if (fbo.enabled) fbo.disable();
+  disableFBO();
 }
 
 void OpenGLViewer::hide()
@@ -440,7 +440,7 @@ void OpenGLViewer::display(bool redraw)
   }
 }
 
-void OpenGLViewer::outputON(int w, int h, int channels)
+void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
 {
   //This function switches to the defined output resolution
   //and enables downsampling if possible
@@ -472,6 +472,14 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   if (!w) w = width;
   if (!h) h = height;
   assert(w && h);
+
+  //Ensure multiple of 2 for video recording
+  if (vid)
+  {
+    if (h > 0 && h % 2 != 0) h -= 1;
+    if (w > 0 && w % 2 != 0) w -= 1;
+  }
+
   //debug_print("SWITCHING OUTPUT DIMS %d x %d TO %d x %d\n", width, height, w, h);
 
   //Redraw blended output for transparent PNG
@@ -479,7 +487,7 @@ void OpenGLViewer::outputON(int w, int h, int channels)
   if (channels == 4) blend_mode = BLEND_PNG;
 
   //Enable FBO for image output
-  if (visible && (w != width || h != height))
+  if (visible && (fbo.downsample > 1 || w != width || h != height))
     fbo.enabled = true;
 
   //Activate fbo if enabled
@@ -514,9 +522,7 @@ void OpenGLViewer::outputOFF()
   imagemode = false;
   if (visible)
   {
-    fbo.disable();
-    //Undo 2d scaling for downsampling
-    app->session.scale2d = 1.0;
+    disableFBO();
     //Restore settings
     blend_mode = BLEND_NORMAL;
   }
@@ -526,6 +532,14 @@ void OpenGLViewer::outputOFF()
   height = saveheight;
 
   savewidth = saveheight = 0;
+}
+
+void OpenGLViewer::disableFBO()
+{
+  if (fbo.enabled)
+    fbo.disable();
+  //Undo 2d scaling for downsampling
+  app->session.scale2d = 1.0;
 }
 
 ImageData* OpenGLViewer::pixels(ImageData* image, int channels, bool flip)

@@ -2923,11 +2923,8 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
       filename += ".mp4"; //Default to mp4
     int w = viewer->outwidth ? viewer->outwidth : 0;
     int h = viewer->outheight ? viewer->outheight : 0;
-    //Ensure multiple of 2
-    if (h > 0 && h % 2 != 0) h -= 1;
-    if (w > 0 && w % 2 != 0) w -= 1;
-    viewer->outputON(w, h, 3);
-    //printf("RECORDING AT %d x %d (requested %d x %d)\n", viewer->width, viewer->height);
+    //printf("RECORDING AT %d x %d (requested %d x %d)\n", w, h, viewer->width, viewer->height);
+    viewer->outputON(w, h, 3, true);
     encoder = new VideoEncoder(filename.c_str(), viewer->getOutWidth(), viewer->getOutHeight(), fps, quality);
     return filename;
   }
