@@ -94,7 +94,7 @@ void main(void)
     vec3 halfVector = normalize(vec3(0.0, 0.0, 1.0) + lightDir);
     //Compute cosine (dot product) with the normal (abs for two-sided)
     float NdotHV = abs(dot(N, halfVector));
-    float shininess = 250 * (1.0 - uShininess);
+    float shininess = 250.0 * (1.0 - uShininess);
     specular = specolour * pow(NdotHV, shininess);
     calcColour(fColour.rgb * light * (uAmbient + diffuse * uDiffuse) + (specular * uSpecular), alpha);
   }
