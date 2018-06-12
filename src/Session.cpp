@@ -16,6 +16,11 @@ Session::~Session()
 {
   fonts.clear();
 
+  if (borderobj) delete borderobj;
+  if (axisobj) delete axisobj;
+  if (rulerobj) delete rulerobj;
+  borderobj = axisobj = rulerobj = NULL;
+
   if (globalcam) delete globalcam;
 
   if (x_coords != NULL) delete[] x_coords;
@@ -45,16 +50,9 @@ std::string Session::counterFilename()
 
 void Session::reset(std::string& binpath)
 {
-  fonts.clear();
-
   globals = json::object();
 
   automate = false;
-
-  if (borderobj) delete borderobj;
-  if (axisobj) delete axisobj;
-  if (rulerobj) delete rulerobj;
-  borderobj = axisobj = rulerobj = NULL;
 
   now = -1;
   gap = 1;
