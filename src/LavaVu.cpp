@@ -2273,8 +2273,7 @@ void LavaVu::drawAxis()
       {"wireframe",    false},
       {"clip",         false},
       {"opacity",      1.0},
-      {"alpha",        1.0},
-      {"axislength",   length}
+      {"alpha",        1.0}
     };
 
     float headsize = 8.0;  //8 x radius (r = 0.01 * length)
@@ -2482,7 +2481,7 @@ void LavaVu::drawBorder()
   if (!obj) obj = session.borderobj = new DrawingObject(session, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   obj->properties.data["colour"] = aview->properties["bordercolour"];
-  if (!aview->is3d) obj->properties.data["depthtest"] = false;
+  obj->properties.data["depthtest"] = aview->is3d;
 
   infostream = NULL; //Disable debug output while drawing this
   bool filled = aview->properties["fillborder"];

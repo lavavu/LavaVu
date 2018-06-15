@@ -509,7 +509,6 @@ void Points::draw()
   glDisable(GL_ALPHA_TEST);
   glDisable(GL_TEXTURE_2D);
   glDepthFunc(GL_LESS);
-  glEnable(GL_DEPTH_TEST);
 
   time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
   if (time > 0.05)
