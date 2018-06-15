@@ -10,8 +10,8 @@ uniform bool uOpaque;
 
 void main(void)
 {
-  //Clip planes in X/Y/Z (shift seems to be required on nvidia)
-  if (any(lessThan(vVertex, uClipMin - vec3(0.01))) || any(greaterThan(vVertex, uClipMax + vec3(0.01)))) discard;
+  //Clip planes in X/Y/Z
+  if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
 
   vec4 colour = vColour;
   float alpha = colour.a;
