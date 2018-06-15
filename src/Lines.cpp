@@ -88,21 +88,14 @@ void Lines::update()
 {
   unsigned int lastcount = total;
   unsigned int drawelements = lineCount();
-  if (drawelements == 0) return;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  if (lastcount != total || reload || vbo == 0)
+  if (lastcount != total || reload || vbo == 0 || counts.size() == 0)
   {
     //Send the data to the GPU via VBO
     loadBuffers();
-
-    //Initial render
-    //render();
   }
-
-  if (reload)
-    counts.clear();
 }
 
 void Lines::loadBuffers()
@@ -110,7 +103,7 @@ void Lines::loadBuffers()
   //Skip update if count hasn't changed
   //To force update, set geometry->reload = true
   if (reload) elements = 0;
-  if (elements > 0 && (total == (unsigned int)elements)) return;
+  //if (elements > 0 && (total == (unsigned int)elements)) return;
 
   //Count lines
   unsigned int drawelements = lineCount();
@@ -219,7 +212,7 @@ void Lines::render()
 {
   clock_t t1,t2;
   t1 = clock();
-  if (elements == 0) return;
+  if (elements == 0 || counts.size() == 0) return;
 
   //Prepare the Index buffer
   if (!indexvbo)
@@ -241,6 +234,7 @@ void Lines::render()
   unsigned int offset = 0;
   unsigned int voffset = 0;
   idxcount = 0;
+  assert(counts.size() == geom.size());
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     unsigned int indices = geom[index]->render->indices.size();
@@ -260,7 +254,7 @@ void Lines::render()
         offset += indices;
         GL_Error_Check;
       }
-      //For raw vertices, just use the existing vertex count
+      //For vertices only, just use the existing vertex count
       idxcount += counts[index];
     }
 
@@ -295,12 +289,6 @@ void Lines::draw()
     glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
-
-    //Disable depth test on 2d models
-    if (view->is3d)
-      glEnable(GL_DEPTH_TEST);
-    else
-      glDisable(GL_DEPTH_TEST);
 
     for (unsigned int i=0; i<geom.size(); i++)
     {
