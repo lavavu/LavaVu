@@ -2186,7 +2186,7 @@ void LavaVu::display(bool redraw)
     }
   }
 
-  if (viewer->visible && !viewer->imagemode || message[0] == ':')
+  if ((viewer->visible && !viewer->imagemode) || message[0] == ':')
   {
     //Print current info message (displayed for one frame only)
     if (status) displayMessage();
