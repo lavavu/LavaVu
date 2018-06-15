@@ -1647,8 +1647,13 @@ class Viewer(dict):
                     #Use a closure to define a new method that runs this command
                     def cmdmethod(name):
                         def method(*args, **kwargs):
-                            args = [name] + [str(a) for a in args]
-                            self.commands(' '.join(args))
+                            arglist = [name]
+                            for a in args:
+                                if isinstance(a, (tuple, list)):
+                                    arglist += [str(b) for b in a]
+                                else:
+                                    arglist.append(str(a))
+                            self.commands(' '.join(arglist))
                         return method
 
                     #Create method that runs this command:
