@@ -487,6 +487,7 @@ void View::projection(int eye)
   near = properties["near"];
   far = properties["far"];
   fov = properties["aperture"];
+  bool ortho = properties["orthographic"];
   checkClip(near, far);
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
@@ -524,7 +525,16 @@ void View::projection(int eye)
   // Set up our projection transform
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, near, far);
+
+  //Orthographic mode?
+  if (ortho)
+  {
+    float x = aspectRatio * focal_length;
+    float y = focal_length;
+    glOrtho(-x, x, -y, y, near, far);
+  }
+  else
+    glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, near, far);
 
   // Return to model view
   glMatrixMode(GL_MODELVIEW);

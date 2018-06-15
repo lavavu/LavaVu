@@ -1482,11 +1482,22 @@ void Session::init()
         true, 0
       }
     },
+    { /* not yet implemented */
+      "axisbox",
+      {
+        {0, 0, 0, 0},
+        "view",
+        "real[4]",
+        "Custom dimensions of viewport for drawing the axis (x, y, width, height)",
+        true, 0
+      }
+    },
     {
       "quality",
       {
+        /* Unused, should be removed or applied */
         2,
-        "view", //Should be global?
+        "global",
         "integer",
         "Read only: Over-sample antialiasing level, for off-screen rendering",
         true, 0
@@ -1590,6 +1601,16 @@ void Session::init()
         "view",
         "real",
         "Aperture or Field-Of-View in degrees",
+        true, 0
+      }
+    },
+    {
+      "orthographic",
+      {
+        false,
+        "view",
+        "boolean",
+        "Enable to switch to an orthographic projection instead of the default perspective projection",
         true, 0
       }
     },
