@@ -2238,8 +2238,29 @@ void LavaVu::drawAxis()
 
   //Square viewport in lower left corner
   float size = aview->properties["axislength"];
-  size = 10 + (aview->width+aview->height)*2.0*size;
-  glViewport(aview->xpos, aview->ypos, size, size);
+  if (aview->properties.has("axisbox"))
+  {
+    float vp[4];
+    Properties::toArray<float>(aview->properties["axisbox"], vp, 4);
+
+    if (vp[2] == 0.0) vp[2] = size;
+    if (vp[3] == 0.0) vp[3] = size;
+
+    vp[0] = aview->width*vp[0];
+    vp[1] = aview->height*vp[1];
+
+    vp[2] = (aview->width+aview->height)*2.0*vp[2];
+    vp[3] = (aview->width+aview->height)*2.0*vp[3];
+
+    //printf("%f %f %f %f\n", vp[0], vp[1], vp[2], vp[3]);
+    glViewport(vp[0], vp[1], vp[2], vp[3]);
+  }
+  else
+  {
+    size = 10 + (aview->width+aview->height)*2.0*size;
+    glViewport(aview->xpos, aview->ypos, size, size);
+    //printf("%d %d %f %f\n", aview->xpos, aview->ypos, size, size);
+  }
 
   //Modelview (rotation only)
   glMatrixMode(GL_MODELVIEW);
@@ -2247,7 +2268,7 @@ void LavaVu::drawAxis()
   glLoadIdentity();
   //Offset from centre for an angled view in 3d
   if (aview->is3d)
-    glTranslatef(-0.25, -0.25, -1.0);
+    glTranslatef(-0.225, -0.225, -1.0);
   else
     glTranslatef(-0.35, -0.35, -1.0);
   //Apply model rotation

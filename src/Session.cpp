@@ -1480,13 +1480,13 @@ void Session::init()
         true, 0
       }
     },
-    { /* not yet implemented */
+    {
       "axisbox",
       {
         {0, 0, 0, 0},
         "view",
         "real[4]",
-        "Custom dimensions of viewport for drawing the axis (x, y, width, height)",
+        "Custom dimensions of viewport for drawing the axis (x, y, width, height) proportional to main viewport size",
         true, 0
       }
     },
