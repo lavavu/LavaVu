@@ -1210,7 +1210,7 @@ unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegqu
 {
   //Returns encoded image as binary data, caller must delete returned buffer!
   int size = image->size();
-  unsigned char* buffer = new unsigned char[size];
+  unsigned char* buffer = NULL;
   if (jpegquality <= 0)
   {
 #ifndef HAVE_LIBPNG
@@ -1222,6 +1222,7 @@ unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegqu
     write_png(ss, image->channels, image->width, image->height, image->pixels);
     //Base64 encode!
     std::string str = ss.str();
+    buffer = new unsigned char[str.length()];
     memcpy(buffer, str.c_str(), str.length());
     *outsize = str.length();
   }
@@ -1237,6 +1238,8 @@ unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegqu
     jpge::params params;
     params.m_quality = jpegquality;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
+    //Additional space for rare cases of tiny images where compressed output may require larger buffer
+    buffer = new unsigned char[size + 4096];
     if (compress_image_to_jpeg_file_in_memory(buffer, jpeg_bytes, image->width, image->height, image->channels, (const unsigned char *)image->pixels, params))
       debug_print("JPEG compressed, size %d\n", jpeg_bytes);
     else
@@ -1487,6 +1490,8 @@ void write_png(std::ostream& stream, int channels, int width, int height, void* 
     status = lodepng_encode24(&buffer, &buffersize, (const unsigned char*)data, width, height);
   else if (channels == 4)
     status = lodepng_encode32(&buffer, &buffersize, (const unsigned char*)data, width, height);
+  else if (channels == 1)
+    status = lodepng_encode_memory(&buffer, &buffersize, (const unsigned char*)data, width, height, LCT_GREY, 8); 
   else
     abort_program("Invalid channels %d\n", channels);
   if (status != 0)
