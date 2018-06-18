@@ -588,17 +588,18 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
 
   //Delete all objects? only works for active view/model
   if (objects)
-  {
-    if (aview) aview->objects.clear();
     amodel->objects.clear();
-  }
+
   if (colourmaps)
     amodel->colourMaps.clear();
 
-  aobject = NULL;
+  if (aview)
+    aview->clear(objects);
 
   //Reload
   loadModelStep(model, amodel->step());
+
+  aobject = NULL;
 }
 
 std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename)

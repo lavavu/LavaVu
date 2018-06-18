@@ -403,9 +403,9 @@ void View::reset()
   {
     model_trans[i] = 0;
     //Default focal point and rotation centre = model bounding box centre point
+    focal_point[i] = rotate_centre[i] = FLT_MIN;
     //if (focal_point[i] == FLT_MIN)
     //   focal_point[i] = min[i] + dims[i] / 2.0f;
-    rotate_centre[i] = focal_point[i];
   }
   rotation->identity();
   rotated = true;   //Flag rotation

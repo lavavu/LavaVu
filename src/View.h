@@ -144,6 +144,13 @@ public:
 
   ~View();
 
+  void clear(bool objects=true)
+  {
+    if (objects) this->objects.clear();
+    initialised = false;
+    reset();
+  }
+
   void addObject(DrawingObject* obj);
   bool hasObject(DrawingObject* obj);
 
