@@ -79,5 +79,15 @@ If all goes well the viewer will be built, try running with:
 For further documentation / examples, see the Wiki
 * https://github.com/OKaluza/LavaVu/wiki
 
+### Included libraries ###
+In order to avoid as many external dependencies as possible, the LavaVu sources include files from the following public domain or open source libraries, many thanks to the authors for making their code available!
+* SQLite3 https://www.sqlite.org
+* JSON for Modern C++ https://github.com/nlohmann/json
+* Mongoose (Cesanta) https://github.com/cesanta/mongoose
+* Tiny OBJ Loader https://github.com/syoyo/tinyobjloader
+* LodePNG https://github.com/lvandeve/lodepng
+* jpeg-compressor https://github.com/richgel999/jpeg-compressor
+* miniz  https://github.com/richgel999/miniz
+
 ---
 <sup>1</sup> [Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, *gLucifer: Next Generation Visualization Framework for High performance computational geodynamics*, 2008, Visual Geosciences](http://dx.doi.org/10.1007/s10069-008-0010-2)
