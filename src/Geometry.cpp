@@ -513,6 +513,8 @@ void Geometry::clear(bool fixed)
   
   //Ensure cache cleared
   cached = NULL;
+  //Ensure temporal data gets reloaded
+  geom.clear();
 }
 
 void Geometry::remove(DrawingObject* draw)
