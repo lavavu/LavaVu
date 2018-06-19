@@ -3467,7 +3467,7 @@ std::string LavaVu::imageJPEG(int width, int height, int quality)
 
   ImageData* image = viewer->pixels(NULL, width, height, 3, false);
   //Write JPEG to string
-  std::string retImg = getImageString(image, quality);
+  std::string retImg = image->getString(quality);
   delete image;
   return retImg;
 }
@@ -3478,7 +3478,7 @@ std::string LavaVu::imagePNG(int width, int height, int depth)
 
   ImageData* image = viewer->pixels(NULL, width, height, depth, false);
   //Write PNG to string
-  std::string retImg = getImageString(image);
+  std::string retImg = image->getString();
   delete image;
   return retImg;
 }

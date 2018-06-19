@@ -577,7 +577,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
-    retImg = getImageUrlString(image, jpegquality);
+    retImg = image->getURIString(jpegquality);
   else
     retImg = image->write(path);
 

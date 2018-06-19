@@ -859,7 +859,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       unsigned int iw, ih, channels; //TODO: Support other pixel formats
       ImageData *image = getTiledImage(draw, i, iw, ih, channels, 16); //16 * 256 = 4096^2 square texture
       if (!image) continue;
-      std::string imagestr = getImageUrlString(image);
+      std::string imagestr = image->getURIString();
       delete image;
       json res, scale;
       res.push_back((int)geom[i]->width);

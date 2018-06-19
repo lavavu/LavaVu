@@ -153,7 +153,7 @@ void Server::display()
 
     if (!compare(image))
     {
-      image_file_data = getImageBytes(image, &image_file_bytes, quality);
+      image_file_data = image->getBytes(&image_file_bytes, quality);
       updated = true; //Set new frame rendered flag
       for (auto iter = synched.begin(); iter != synched.end(); ++iter)
         iter->second = false; //Flag update waiting

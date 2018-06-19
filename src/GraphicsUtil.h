@@ -221,6 +221,11 @@ public:
   }
 
   std::string write(const std::string& path);
+
+  unsigned char* getBytes(unsigned int* outsize, int jpegquality);
+  std::string getString(int jpegquality=0);
+  std::string getBase64(int jpegquality=0);
+  std::string getURIString(int jpegquality=0);
 };
 
 //Generic 3d vector
@@ -730,11 +735,6 @@ void drawVector3d_( float pos[3], float vector[3], float scale, float radius, fl
 void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
 GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outwidth, int outheight, int offsetx=0, int offsety=0);
-
-unsigned char* getImageBytes(ImageData *image, unsigned int* outsize, int jpegquality);
-std::string getImageString(ImageData *image, int jpegquality=0);
-std::string getImageBase64(ImageData *image, int jpegquality=0);
-std::string getImageUrlString(ImageData *image, int jpegquality=0);
 
 //PNG utils
 void write_png(std::ostream& stream, int channels, int width, int height, void* data);
