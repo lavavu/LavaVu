@@ -3293,6 +3293,24 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (!parsed.has(quality, "record", 1)) quality = 3;
     encodeVideo("", ival, quality);
   }
+  else if (parsed.exists("tiles"))
+  {
+    if (gethelp)
+    {
+      help += "Save a tiled image of selected volume dataset\n"
+              "**Usage:** tiles (object)\n";
+      return false;
+    }
+    Volumes* vol = (Volumes*)amodel->getRenderer(lucVolumeType);
+    DrawingObject* obj = aobject;
+    if (!obj)
+      obj = lookupObject(parsed, "tiles");
+    if (vol && obj)
+    {
+      vol->saveTiledImage(obj);
+      printMessage("Saved tiled volume mosaic");
+    }
+  }
   else
   {
     //If value parses as integer and contains nothing else
@@ -3331,7 +3349,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "export", "csv", "json", "save"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "export", "csv", "json", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
