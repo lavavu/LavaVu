@@ -3425,11 +3425,10 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     std::string TOC;
     std::stringstream content;
     std::string last;
-    for (auto p : session.properties)
-    for (auto it = session.properties.begin(); it != session.properties.end(); ++it)
+    for (auto p : session.propKeys)
     {
-      std::string name = it.key();
-      json prop = it.value();
+      std::string name = p;
+      json prop = session.properties[name];
       std::string target = prop[PROPTARGET];
       json defp = prop[PROPDEFAULT];
       std::string def = defp.dump();

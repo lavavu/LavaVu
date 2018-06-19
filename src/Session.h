@@ -66,6 +66,8 @@ public:
 
   //Property metadata / documentation
   json properties;
+  //Requires order of insertion
+  std::vector<std::string> propKeys;
 
   // Engines - mersenne twister
   std::mt19937 eng0, eng1;

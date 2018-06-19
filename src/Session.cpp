@@ -1491,18 +1491,6 @@ void Session::init()
       }
     },
     {
-      "quality",
-      {
-        /* Unused, should be removed or applied */
-        2,
-        "global",
-        "integer",
-        "Read only: Over-sample antialiasing level, for off-screen rendering",
-        true, 0
-      }
-    },
-
-    {
       "rotate",
       {
         {0.,0.,0.,1.},
@@ -1629,6 +1617,17 @@ void Session::init()
         "view",
         "boolean",
         "Enable to follow the model bounding box centre with camera as it changes",
+        true, 0
+      }
+    },
+    {
+      "quality",
+      {
+        /* Unused, should be removed or applied */
+        2,
+        "global",
+        "integer",
+        "Read only: Over-sample antialiasing level, for off-screen rendering",
         true, 0
       }
     },
@@ -1996,6 +1995,9 @@ void Session::init(std::vector<std::pair<std::string,json>>& property_data)
     //Copy default values
     std::string key = p.first;
     properties[key] = p.second;
+
+    //Store order of keys
+    propKeys.push_back(key);
 
     //Save view properties
     std::string target = p.second[PROPTARGET];
