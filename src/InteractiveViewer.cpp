@@ -891,6 +891,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     viewer->visible = interactive;
     viewer->loop(interactive);
     viewer->visible = false;
+    viewer->quitProgram = false;
 
     return false;
   }

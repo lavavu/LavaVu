@@ -384,9 +384,11 @@ void OpenGLViewer::loop(bool interactive)
       OpenGLViewer::execute();
   }
 
-  if (visible) hide();
-    if (interactive)
-      execute();
+  if (visible)
+    hide();
+
+  if (interactive)
+    execute();
 }
 
 // Render

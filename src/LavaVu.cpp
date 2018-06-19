@@ -3086,6 +3086,7 @@ void LavaVu::init()
 bool LavaVu::event()
 {
   viewer->execute();
+  viewer->show();
   return !viewer->quitProgram;
 }
 
