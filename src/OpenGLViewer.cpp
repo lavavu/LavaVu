@@ -432,11 +432,23 @@ void OpenGLViewer::display(bool redraw)
   //Call the application display function
   app->display();
 
-  //Call display (and idle) on any output interfaces
+  //Call display on any output interfaces
   for (unsigned int o=0; o<outputs.size(); o++)
   {
-    if (idling) outputs[o]->idle();
-    outputs[o]->display();
+    if (outputs[o]->render)
+    {
+      //Create the frame buffer if not yet created
+      outputs[o]->alloc(width, height);
+
+      //Read the pixels
+      if (outputs[o]->width && outputs[o]->height && (outputs[o]->width != width || outputs[o]->height != height))
+        pixels(outputs[o]->buffer, outputs[o]->width, outputs[o]->height, outputs[o]->channels, outputs[o]->flip);
+      else
+        pixels(outputs[o]->buffer, outputs[o]->channels, outputs[o]->flip);
+
+      //Process in output display callback
+      outputs[o]->display();
+    }
   }
 }
 
@@ -449,10 +461,7 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
   assert(isopen);
 
   //Ensure correct GL context selected first
-  //Do a full display or setsize will be called again
-  //with the original display size before we output
-  //Also ensures correct resolution set by setsize if changed
-  display();
+  display(false);
 
   //Enable image mode for further display calls
   imagemode = true;
@@ -513,7 +522,7 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
   }
 
   //Re-render frame first
-  display();
+  app->display();
 }
 
 void OpenGLViewer::outputOFF()
@@ -555,6 +564,10 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels, bo
 {
   assert(isopen);
 
+  if (!w) w = outwidth;
+  if (!h) h = outheight;
+  if (!channels) channels = 3;
+
   outputON(w, h, channels);
   image = pixels(image, channels, flip);
   outputOFF();
@@ -573,7 +586,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   std::string retImg;
 
   // Read the pixels
-  ImageData* image = pixels(NULL, w ? w : outwidth, h ? h : outheight, channels, false);
+  ImageData* image = pixels(NULL, w, h, channels, false);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)

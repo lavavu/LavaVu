@@ -306,7 +306,6 @@ void LavaVu::arguments(std::vector<std::string> args)
       case 'q':
         //Web server JPEG quality
         ss >> Server::quality;
-        if (Server::quality != 0) Server::render = true;
         break;
       case 'n':
         //Web server threads
@@ -2053,22 +2052,26 @@ void LavaVu::display(bool redraw)
 
   clock_t t1 = clock();
 
+  if (session.globals.count("resolution") && !viewer->imagemode && !session.omegalib)
+  {
+    //Resize if required
+    int res[2];
+    Properties::toArray<int>(session.global("resolution"), res, 2);
+    if (res[0] > 0 && res[1] > 0 && (res[0] != viewer->width || res[1] != viewer->height))
+    {
+      //viewer->setsize(res[0], res[1]);
+      std::stringstream ss;
+      ss << "resize " << res[0] << " " << res[1];
+      queueCommands(ss.str());
+      viewer->postdisplay = true;
+      aview->initialised = false; //Force initial autozoom
+      return;
+    }
+  }
+
   //Viewport reset flagged
   if (viewset > 0)
   {
-    if (!viewer->imagemode && !session.omegalib)
-    {
-      //Resize if required
-      int res[2];
-      Properties::toArray<int>(session.global("resolution"), res, 2);
-      if (res[0] > 0 && res[1] > 0 && (res[0] != viewer->width || res[1] != viewer->height))
-      {
-        viewer->setsize(res[0], res[1]);
-        viewer->postdisplay = true;
-        aview->initialised = false; //Force initial autozoom
-        return;
-      }
-    }
     //Update the viewports
     resetViews(viewset == RESET_ZOOM);
   }
@@ -2207,15 +2210,6 @@ void LavaVu::display(bool redraw)
   double time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
   if (time > 0.1)
     debug_print("%.4lf seconds to render scene\n", time);
-
-#ifdef HAVE_LIBAVCODEC
-  if (encoder)
-  {
-    viewer->pixels(encoder->buffer, 3, true);
-    //bitrate settings?
-    encoder->frame();
-  }
-#endif
 }
 
 void LavaVu::drawAxis()
@@ -2934,8 +2928,7 @@ std::string LavaVu::video(std::string filename, int fps, int width, int height, 
 
 std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
 {
-  //TODO: - make VideoEncoder use OutputInterface
-  //      - make image frame output a default video output
+  //TODO: - make image frame output a default video output
   //        when libavcodec not available
 #ifdef HAVE_LIBAVCODEC
   if (!encoder)
@@ -2945,19 +2938,23 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
     FilePath fp(filename);
     if (fp.ext.length() == 0) 
       filename += ".mp4"; //Default to mp4
-    int w = viewer->outwidth ? viewer->outwidth : 0;
-    int h = viewer->outheight ? viewer->outheight : 0;
-    //printf("RECORDING AT %d x %d (requested %d x %d)\n", w, h, viewer->width, viewer->height);
-    viewer->outputON(w, h, 3, true);
-    encoder = new VideoEncoder(filename.c_str(), viewer->getOutWidth(), viewer->getOutHeight(), fps, quality);
+
+    //Enable output just to get the dimensions
+    viewer->outputON(viewer->outwidth, viewer->outheight, 3, true);
+    encoder = new VideoEncoder(filename.c_str(), fps, quality);
+    encoder->open(viewer->getOutWidth(), viewer->getOutHeight());
+    viewer->addOutput(encoder);
+    encoder->flip = true;
+    viewer->outputOFF();
     return filename;
   }
   else
   {
-    //Deleting the encoder completes the video
+    //Delete the encoder, completes the video
     delete encoder;
     encoder = NULL;
     viewer->outputOFF();
+    viewer->removeOutput(); //Deletes the output attachment
   }
 #else
   std::cout << "Video output disabled, libavcodec not found!" << std::endl;
@@ -3083,7 +3080,7 @@ void LavaVu::init()
 {
   if (viewer->isopen) return;
   viewer->open();
-  viewer->init();
+  viewer->init(); //Not called from open() in base class viewer
 }
 
 bool LavaVu::event()

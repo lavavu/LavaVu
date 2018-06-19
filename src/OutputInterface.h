@@ -36,18 +36,36 @@
 #ifndef OutputInterface__
 #define OutputInterface__
 
+#include "GraphicsUtil.h"
+
 //Interface for output appliances
 class OutputInterface
 {
 public:
+  bool render = false;
+  int width = 0, height = 0;
+  bool flip = false;
+  ImageData* buffer = NULL;
+  int channels = 3;
 
   virtual void open(int width, int height) = 0;
   virtual void close() = 0;
   virtual void resize(int new_width, int new_height) = 0;
   virtual void display() = 0;
-  virtual void idle() = 0;
 
   OutputInterface() {}
+  ~OutputInterface() { if (buffer) delete buffer; }
+
+  void alloc(int w=0, int h=0)
+  {
+    if (width == 0) width = w;
+    if (height == 0) height = w;
+    if (!buffer || buffer->width != width || buffer->height != height || buffer->channels != channels)
+    {
+      if (buffer) delete buffer;
+      buffer = new ImageData(width, height, channels);
+    }
+  }
 };
 
 #endif //OutputInterface__

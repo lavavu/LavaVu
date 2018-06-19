@@ -30,112 +30,14 @@
 #include "VideoEncoder.h"
 #include "GraphicsUtil.h"
 
-VideoEncoder::VideoEncoder(const char *filename, int width, int height, int fps, int quality) : width(width), height(height), fps(fps), quality(quality)
+VideoEncoder::VideoEncoder(const char *filename, int fps, int quality) : filename(filename), fps(fps), quality(quality)
 {
-  debug_print("Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
-  frame_count = 0;
-
-  //Create the frame buffer
-  buffer = new ImageData(width, height, 3);
-
-  /* initialize libavcodec, and register all codecs and formats */
-  av_register_all();
-
-  /* allocate the output media context */
-  oc = avformat_alloc_context();
-  if (!oc) abort_program("Memory error");
-  oc->oformat = defaultCodec(filename);
-  snprintf(oc->filename, sizeof(oc->filename), "%s", filename);
-
-  /* Codec override, use h264 for mp4 if available */
-  if (strstr(filename, ".mp4") && avcodec_find_encoder(AV_CODEC_ID_H264))
-    oc->oformat->video_codec = AV_CODEC_ID_H264; //h.264
-
-  /* add the audio and video streams using the default format codecs
-     and initialize the codecs */
-  video_st = NULL;
-  video_enc = NULL;
-  assert(oc->oformat->video_codec != AV_CODEC_ID_NONE);
-  if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
-    video_st = add_video_stream(oc->oformat->video_codec);
-
-  oc->oformat->audio_codec = AV_CODEC_ID_NONE;
-
-#ifdef HAVE_SWSCALE
-  //Get swscale context to convert RGB to YUV(420/422)
-  ctx = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, video_enc->pix_fmt, 0, 0, 0, 0);
-#endif
-
-#if LIBAVFORMAT_VERSION_MAJOR <= 52
-  av_set_parameters(oc, NULL);
-#endif
-
-  av_dump_format(oc, 0, filename, 1);
-
-  /* now that all the parameters are set, we can open the audio and
-     video codecs and allocate the necessary encode buffers */
-  if (video_st)
-    open_video();
-
-  /* open the output file */
-  if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0) abort_program("Could not open '%s'", filename);
-
-  /* write the stream header, if any */
-  /* also sets the output parameters (none). */
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(53,2,0)
-  int res = avformat_write_header(oc, NULL);
-#else
-  int res = av_write_header(oc);
-#endif
-  if (res != 0) abort_program("AV header write failed %d\n", res);
 }
 
 VideoEncoder::~VideoEncoder()
 {
-  /* OK: Moved this comment to here, writing extra frames or
-     we seem to skip the last few...
-   * No more frame to compress. The codec has a latency of a few
-     frames if using B frames, so we get the last frames by
-     passing the same picture again */
-  for (int i=0; i<20; i++)
-  {
-    picture->pts++;
-    write_video_frame();
-  }
-
-  /* write the trailer, if any.  the trailer must be written
-   * before you close the CodecContexts open when you wrote the
-   * header; otherwise write_trailer may try to use memory that
-   * was freed on av_codec_close() */
-  av_write_trailer(oc);
-
-  /* close each codec */
-  if (video_st)
-    close_video();
-
-  if (video_enc)
-    avcodec_free_context(&video_enc);
-
-  /* free the streams */
-  for(unsigned int i = 0; i < oc->nb_streams; i++)
-  {
-    //avcodec_close(oc->streams[i]->codec);
-    av_freep(&oc->streams[i]);
-  }
-
-#ifdef HAVE_SWSCALE
-  if (ctx)
-    sws_freeContext(ctx);
-#endif
-
-  /* close the output file */
-  avio_close(oc->pb);
-
-  /* free the stream */
-  av_free(oc);
-
-  //Free framebuffer
-  delete buffer;
+  //If not already closed, close recording
+  if (buffer) close();
 }
 
 /**************************************************************/
@@ -303,7 +205,7 @@ void VideoEncoder::open_video()
   assert(!(oc->oformat->flags & AVFMT_RAWPICTURE));
 
   /* allocate output buffer */
-  /* buffers passed into lav* can be allocated any way you prefer,
+  /* buffers passed into av* can be allocated any way you prefer,
      as long as they're aligned enough for the architecture, and
      they're freed appropriately (such as using av_free for buffers
      allocated with av_malloc) */
@@ -398,7 +300,124 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
   return fmt;
 }
 
-void VideoEncoder::frame(int channels)
+//OutputInterface
+void VideoEncoder::open(int w, int h)
+{
+  render = true; //Enable output frame rendering
+  flip = true; //Enable frame flipping on output interface
+  if (w) width = w;
+  if (h) height = h;
+
+  //Ensure multiple of 2
+  if (height % 2 != 0) height -= 1;
+  if (width % 2 != 0) width -= 1;
+
+  debug_print("Using libavformat %d.%d libavcodec %d.%d\n", LIBAVFORMAT_VERSION_MAJOR, LIBAVFORMAT_VERSION_MINOR, LIBAVCODEC_VERSION_MAJOR, LIBAVCODEC_VERSION_MINOR);
+  frame_count = 0;
+
+  /* initialize libavcodec, and register all codecs and formats */
+  av_register_all();
+
+  /* allocate the output media context */
+  oc = avformat_alloc_context();
+  if (!oc) abort_program("Memory error");
+  oc->oformat = defaultCodec(filename.c_str());
+  snprintf(oc->filename, sizeof(oc->filename), "%s", filename.c_str());
+
+  /* Codec override, use h264 for mp4 if available */
+  if (filename.find(".mp4") != std::string::npos && avcodec_find_encoder(AV_CODEC_ID_H264))
+    oc->oformat->video_codec = AV_CODEC_ID_H264; //h.264
+
+  /* add the audio and video streams using the default format codecs
+     and initialize the codecs */
+  video_st = NULL;
+  video_enc = NULL;
+  assert(oc->oformat->video_codec != AV_CODEC_ID_NONE);
+  if (oc->oformat->video_codec != AV_CODEC_ID_NONE)
+    video_st = add_video_stream(oc->oformat->video_codec);
+
+  oc->oformat->audio_codec = AV_CODEC_ID_NONE;
+
+#ifdef HAVE_SWSCALE
+  //Get swscale context to convert RGB to YUV(420/422)
+  ctx = sws_getContext(width, height, AV_PIX_FMT_RGB24, width, height, video_enc->pix_fmt, 0, 0, 0, 0);
+#endif
+
+#if LIBAVFORMAT_VERSION_MAJOR <= 52
+  av_set_parameters(oc, NULL);
+#endif
+
+  av_dump_format(oc, 0, filename.c_str(), 1);
+
+  /* now that all the parameters are set, we can open the audio and
+     video codecs and allocate the necessary encode buffers */
+  if (video_st)
+    open_video();
+
+  /* open the output file */
+  if (avio_open(&oc->pb, filename.c_str(), AVIO_FLAG_WRITE) < 0) abort_program("Could not open '%s'", filename.c_str());
+
+  /* write the stream header, if any */
+  /* also sets the output parameters (none). */
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(53,2,0)
+  int res = avformat_write_header(oc, NULL);
+#else
+  int res = av_write_header(oc);
+#endif
+  if (res != 0) abort_program("AV header write failed %d\n", res);
+}
+
+void VideoEncoder::close()
+{
+  /* OK: Moved this comment to here, writing extra frames or
+     we seem to skip the last few...
+   * No more frame to compress. The codec has a latency of a few
+     frames if using B frames, so we get the last frames by
+     passing the same picture again */
+  for (int i=0; i<20; i++)
+  {
+    picture->pts++;
+    write_video_frame();
+  }
+
+  /* write the trailer, if any.  the trailer must be written
+   * before you close the CodecContexts open when you wrote the
+   * header; otherwise write_trailer may try to use memory that
+   * was freed on av_codec_close() */
+  av_write_trailer(oc);
+
+  /* close each codec */
+  if (video_st)
+    close_video();
+
+  if (video_enc)
+    avcodec_free_context(&video_enc);
+
+  /* free the streams */
+  for(unsigned int i = 0; i < oc->nb_streams; i++)
+  {
+    //avcodec_close(oc->streams[i]->codec);
+    av_freep(&oc->streams[i]);
+  }
+
+#ifdef HAVE_SWSCALE
+  if (ctx)
+    sws_freeContext(ctx);
+#endif
+
+  /* close the output file */
+  avio_close(oc->pb);
+
+  /* free the stream */
+  av_free(oc);
+}
+
+void VideoEncoder::resize(int new_width, int new_height)
+{
+  std::cerr << "Cannot resize video encoder output while encoding\n";
+}
+
+void VideoEncoder::display()
 {
 #ifdef HAVE_SWSCALE
   uint8_t * inData[1] = { buffer->pixels }; // RGB24 have one plane

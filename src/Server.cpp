@@ -20,7 +20,6 @@ int Server::refs = 0;
 int Server::port = 8080;
 int Server::quality = 90;
 int Server::threads = 2;
-bool Server::render = false;
 std::string Server::htmlpath = "html";
 
 Server* Server::Instance(OpenGLViewer* viewer)
@@ -51,7 +50,6 @@ void Server::Delete()
 
 Server::Server(OpenGLViewer* viewer) : viewer(viewer)
 {
-  imageCache = NULL;
   image_file_data = NULL;
   updated = false;
   client_id = 0;
@@ -64,6 +62,7 @@ Server::~Server()
   cv.notify_all(); //Display complete signal
   if (ctx)
     mg_stop(ctx);
+  if (image_file_data) delete[] image_file_data;
 }
 
 // virtual functions for window management
@@ -115,33 +114,15 @@ void Server::open(int width, int height)
 
 void Server::resize(int new_width, int new_height)
 {
-}
-
-bool Server::compare(ImageData* image)
-{
-  bool match = false;
-  if (imageCache)
-  {
-    match = true;
-    if (image->size() != imageCache->size()) return false;
-    for (unsigned int i=0; i<image->size(); i++)
-    {
-      if (image->pixels[i] != imageCache->pixels[i])
-      {
-        match = false;
-        break;
-      }
-    }
-    delete imageCache;
-  }
-  imageCache = image;
-  return match;
+  width = new_width;
+  height = new_height;
+  alloc();
 }
 
 void Server::display()
 {
   //Image serving can be disabled by global prop
-  if (!ctx || !render) return;
+  if (!ctx) return;
   if (quality < 50 || quality > 100) quality = -1;  //Ensure valid, use PNG if not in [50,100] range
 
   //If not currently sending an image, update the image data
@@ -149,16 +130,14 @@ void Server::display()
   {
     //CRITICAL SECTION
     // Read the pixels (flipped)
-    ImageData *image = viewer->pixels(NULL, 3); //, true);
+    //ImageData *image = viewer->pixels(NULL, 3); //, true);
+    if (image_file_data) delete[] image_file_data;
+    image_file_data = buffer->getBytes(&image_file_bytes, quality);
+    updated = true; //Set new frame rendered flag
+    for (auto iter = synched.begin(); iter != synched.end(); ++iter)
+      iter->second = false; //Flag update waiting
+    cv.notify_all(); //Display complete signal to all waiting clients
 
-    if (!compare(image))
-    {
-      image_file_data = image->getBytes(&image_file_bytes, quality);
-      updated = true; //Set new frame rendered flag
-      for (auto iter = synched.begin(); iter != synched.end(); ++iter)
-        iter->second = false; //Flag update waiting
-      cv.notify_all(); //Display complete signal to all waiting clients
-    }
     cs_mutex.unlock(); //END CRITICAL SECTION
   }
   else
@@ -329,8 +308,8 @@ int Server::request(struct mg_connection *conn)
   else if (strstr(request_info->uri, "/render") != NULL)
   {
     //Enable/disable image serving
-    Server::render = !Server::render;
-    std::cerr << "Image serving  " << (Server::render ? "ENABLED" : "DISABLED") << std::endl;
+    _self->render = !_self->render;
+    std::cerr << "Image serving  " << (_self->render ? "ENABLED" : "DISABLED") << std::endl;
     mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"); //Empty OK response required
   }
   else
@@ -343,9 +322,9 @@ int Server::request(struct mg_connection *conn)
   //Respond with an image frame
   if (id >= 0)
   {
-    if (!Server::render)
+    if (!_self->render)
     {
-      Server::render = true;
+      _self->render = true;
       _self->updated = true; //Force update
       _self->synched[id] = true;
     }

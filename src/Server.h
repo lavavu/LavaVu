@@ -29,12 +29,10 @@ protected:
   int client_id;
   bool updated;
   std::map<int,bool> synched; //Client status
-  ImageData *imageCache;
 
 public:
   static int port, threads, quality;
   static std::string htmlpath;
-  static bool render;
 
   unsigned char* image_file_data;
   unsigned int image_file_bytes;
@@ -53,7 +51,6 @@ public:
   virtual void resize(int new_width, int new_height);
   virtual void display();
   virtual void close();
-  virtual void idle() {}
 
   bool compare(ImageData* image);
 };

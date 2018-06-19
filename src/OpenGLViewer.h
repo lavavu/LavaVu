@@ -186,6 +186,11 @@ public:
     outputs.push_back(output);
   }
 
+  void removeOutput()
+  {
+    outputs.pop_back();
+  }
+
   void addInput(InputInterface* input)
   {
     inputs.push_back(input);

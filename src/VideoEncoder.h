@@ -29,7 +29,7 @@
 #define VideoEncoder__
 
 #ifdef HAVE_LIBAVCODEC
-#include "GraphicsUtil.h"
+#include "OutputInterface.h"
 
 extern "C"
 {
@@ -102,18 +102,22 @@ extern "C"
 #define VIDEO_HIGHQ 3
 #define VIDEO_MEDQ 2
 #define VIDEO_LOWQ 1
-class VideoEncoder
+class VideoEncoder : public OutputInterface
 {
+  std::string filename = "";
 public:
-  ImageData* buffer;
-
-  VideoEncoder(const char *filename, int width, int height, int fps, int quality=VIDEO_HIGHQ);
+  VideoEncoder(const char *filename, int fps, int quality=VIDEO_HIGHQ);
   ~VideoEncoder();
-  void frame(int channels=3);
   AVOutputFormat *defaultCodec(const char *filename);
 
+  //OutputInterface
+  virtual void open(int w, int h);
+  virtual void close();
+  virtual void resize(int new_width, int new_height);
+  virtual void display();
+
 protected:
-  int width, height, fps;
+  int fps;
   int quality;
   AVFormatContext *oc;
   AVStream *video_st;
