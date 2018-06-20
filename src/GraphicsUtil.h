@@ -111,17 +111,17 @@
 
 #define printVertex(v) printf("%9f,%9f,%9f\n",v[0],v[1],v[2]);
 // Print out a matrix
-#ifndef M
-#define M(mat,row,col)  mat[col*4+row]
-#endif
+#define M_idx(row,col) (col*4+row)
 #define printMatrix(mat) {              \
         int r, p;                       \
-        printf("--------- --------- --------- ---------\n"); \
+        fprintf(stderr, "--------- --------- --------- ---------\n"); \
         for (r=0; r<4; r++) {           \
             for (p=0; p<4; p++)         \
-                printf("%9f ", M(mat, r,p)); \
-            printf("\n");               \
-        } printf("--------- --------- --------- ---------\n"); }
+                fprintf(stderr, "(%2d) %9f ", M_idx(r,p), mat[M_idx(r,p)]); \
+            fprintf(stderr, "\n");               \
+        } fprintf(stderr, "--------- --------- --------- ---------\n"); }
+
+#define identityMatrix {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
 
 void compareCoordMinMax(float* min, float* max, float *coord);
 void clearMinMax(float* min, float* max);
