@@ -1256,6 +1256,9 @@ Renderer.prototype.draw = function() {
     //Lighting position?
     //Uniform defaults
 
+    //Premultiplied alpha blending
+    this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
+
     if (viewer.gradient.mapid != vis.objects[this.id].colourmap) {
       //Map selected has changed, so update texture (used on initial render only)
       paletteUpdate({}, vis.objects[this.id].colourmap);
@@ -1342,6 +1345,9 @@ Renderer.prototype.draw = function() {
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, viewer.webgl.vertexPositionBuffer.numItems);
 
     viewer.webgl.modelView.pop();
+
+    //Restore default blending
+    this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
   }
 
   //Disable attribs
@@ -2118,6 +2124,7 @@ paletteLoad = function(palette) {
   palette.draw(gradient, false);
   //Cache colour values
   var pixels = context.getImageData(0, 0, MAXIDX+1, 1).data;
+
   palette.cache = [];
   for (var c=0; c<=MAXIDX; c++)
     palette.cache[c] = pixels[c*4] + (pixels[c*4+1] << 8) + (pixels[c*4+2] << 16) + (pixels[c*4+3] << 24);
