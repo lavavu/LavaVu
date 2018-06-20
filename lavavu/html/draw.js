@@ -2077,7 +2077,18 @@ function removeChildren(element) {
 }
 
 paletteUpdate = function(obj, id) {
+  //Convert name to index for now
+  if (typeof(id) == 'string') {
+    for (var i = 0; i < vis.colourmaps.length; i++) {
+      if (vis.colourmaps[i].name == id) {
+        id = i;
+        break;
+      }
+    }
+  }
+
   if (id != undefined) viewer.gradient.mapid = id;
+
   //Load colourmap change
   if (viewer.gradient.mapid < 0) return;
   var cmap = vis.colourmaps[viewer.gradient.mapid];
@@ -2088,8 +2099,10 @@ paletteUpdate = function(obj, id) {
   //Update colour data
   cmap.colours = cmap.palette.colours;
 
-  if (viewer.webgl)
+  if (viewer.webgl) {
+    var gradient = document.getElementById('gradient');
     viewer.webgl.updateTexture(viewer.webgl.gradientTexture, gradient, viewer.gl.TEXTURE1);  //Use 2nd texture unit
+  }
 }
 
 paletteLoad = function(palette) {
