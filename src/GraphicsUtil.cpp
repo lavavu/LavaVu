@@ -370,7 +370,7 @@ void FontManager::printString(const char* str)
     GL_Error_Check;
     
     // Shift right width of character
-    glTranslated(font_charwidths[i], 0, 0);
+    glTranslatef(font_charwidths[i], 0, 0);
   }
 
   GL_Error_Check;
@@ -393,23 +393,23 @@ void FontManager::print(int x, int y, const char *str)
 {
   if (charset > FONT_VECTOR) return rasterPrint(x, y, str);
   glPushMatrix();
-  glTranslated(x, y, 0);
+  glTranslatef(x, y, 0);
   glScaled(fontscale, fontscale, 1.0);
   printString(str);
   glPopMatrix();
 }
 
-void FontManager::print3d(double x, double y, double z, const char *str)
+void FontManager::print3d(float x, float y, float z, const char *str)
 {
   if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str);
   glPushMatrix();
-  glTranslated(x, y, z);
+  glTranslatef(x, y, z);
   glScaled(fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D, fontscale * FONT_SCALE_3D);
   printString(str);
   glPopMatrix();
 }
 
-void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align, float* scale)
+void FontManager::print3dBillboard(float x, float y, float z, const char *str, int align, float* scale)
 {
   if (charset > FONT_VECTOR) return rasterPrint3d(x, y, z, str, align > -1);
   float modelview[16];
@@ -426,7 +426,7 @@ void FontManager::print3dBillboard(double x, double y, double z, const char *str
 
   // save the current modelview matrix
   glPushMatrix();
-  glTranslated(x, y, z);
+  glTranslatef(x, y, z);
 
   // get the current modelview matrix
   glGetFloatv(GL_MODELVIEW_MATRIX , modelview);
@@ -516,7 +516,7 @@ void FontManager::rasterPrintString(const char* str)
     GL_Error_Check;
     
     // Shift right width of character + 1
-    glTranslated(bmpfont_charwidths[startidx + i]+1, 0, 0);
+    glTranslatef(bmpfont_charwidths[startidx + i]+1, 0, 0);
   }
 
   GL_Error_Check;
@@ -535,12 +535,12 @@ void FontManager::rasterPrint(int x, int y, const char *str)
 {
   glPushMatrix();
   //glLoadIdentity();
-  glTranslated(x, y-bmpfont_charheights[charset], 0);
+  glTranslatef(x, y-bmpfont_charheights[charset], 0);
   rasterPrintString(str);
   glPopMatrix();
 }
 
-void FontManager::rasterPrint3d(double x, double y, double z, const char *str, bool alignRight)
+void FontManager::rasterPrint3d(float x, float y, float z, const char *str, bool alignRight)
 {
   /* Calculate projected screen coords in viewport */
   float pos[3];
@@ -665,15 +665,15 @@ Colour FontManager::setFont(Properties& properties, std::string def, float scali
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}
 void FontManager::print(int x, int y, const char *str) {}
-void FontManager::print3d(double x, double y, double z, const char *str) {}
-void FontManager::print3dBillboard(double x, double y, double z, const char *str, int align, float* scale) {}
+void FontManager::print3d(float x, float y, float z, const char *str) {}
+void FontManager::print3dBillboard(float x, float y, float z, const char *str, int align, float* scale) {}
 int FontManager::printWidth(const char *string)
 {
   return 0;
 }
 void FontManager::rasterPrintString(const char* str) {}
 void FontManager::rasterPrint(int x, int y, const char *str) {}
-void FontManager::rasterPrint3d(double x, double y, double z, const char *str, bool alignRight) {}
+void FontManager::rasterPrint3d(float x, float y, float z, const char *str, bool alignRight) {}
 int FontManager::rasterPrintWidth(const char *string)
 {
   return 0;

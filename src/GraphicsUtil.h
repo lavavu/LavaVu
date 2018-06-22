@@ -709,14 +709,14 @@ public:
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
   void print(int x, int y, const char *str);
-  void print3d(double x, double y, double z, const char *str);
-  void print3dBillboard(double x, double y, double z, const char *str, int align=-1, float* scale=NULL);
+  void print3d(float x, float y, float z, const char *str);
+  void print3dBillboard(float x, float y, float z, const char *str, int align=-1, float* scale=NULL);
   int printWidth(const char *string);
 
   //Bitmap texture fonts
   void rasterPrintString(const char* str);
   void rasterPrint(int x, int y, const char* str);
-  void rasterPrint3d(double x, double y, double z, const char *str, bool alignRight=false);
+  void rasterPrint3d(float x, float y, float z, const char *str, bool alignRight=false);
   int rasterPrintWidth(const char *string);
   void rasterSetupFonts();
   void rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx);
