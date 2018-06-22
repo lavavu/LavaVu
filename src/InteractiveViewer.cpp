@@ -3429,11 +3429,11 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     {
       std::string name = p;
       json prop = session.properties[name];
-      std::string target = prop[PROPTARGET];
-      json defp = prop[PROPDEFAULT];
+      std::string target = prop["target"];
+      json defp = prop["default"];
       std::string def = defp.dump();
-      std::string type = prop[PROPTYPE];
-      std::string doc = prop[PROPDOC];
+      std::string type = prop["type"];
+      std::string doc = prop["desc"];
 
       if (defp.is_number())
       {
@@ -3469,11 +3469,11 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
       if (it.key() == pname)
       {
         json prop = it.value();
-        std::string target = prop[PROPTARGET];
-        json defp = prop[PROPDEFAULT];
+        std::string target = prop["target"];
+        json defp = prop["default"];
         std::string def = defp.dump();
-        std::string type = prop[PROPTYPE];
-        std::string doc = prop[PROPDOC];
+        std::string type = prop["type"];
+        std::string doc = prop["desc"];
 
         if (defp.is_number())
         {

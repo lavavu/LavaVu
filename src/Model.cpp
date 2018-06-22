@@ -519,7 +519,7 @@ void Model::setup()
   //Adjust the steprange default, should be off if all steps loaded
   if (!database || session.global("cache"))
   {
-    session.properties["steprange"][PROPDEFAULT] = false;
+    session.properties["steprange"]["default"] = false;
     session.defaults["steprange"] = false;
   }
 

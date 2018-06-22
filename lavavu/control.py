@@ -69,7 +69,7 @@ def getproperty(target, propname):
     elif propname in _lv.properties:
         #Get property default
         prop = _lv.properties[propname]
-        return prop[0]
+        return prop["default"]
     else:
         return None
 

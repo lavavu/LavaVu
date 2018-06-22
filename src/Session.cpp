@@ -106,8 +106,8 @@ int Session::parse(Properties* target, const std::string& property, bool validat
   {
     //Get metadata
     json prop = properties[key];
-    strict = prop[PROPSTRICT];
-    redraw = prop[PROPREDRAW];
+    strict = prop["strict"];
+    redraw = prop["redraw"];
   }
 
   value = property.substr(pos+1);
@@ -1994,13 +1994,21 @@ void Session::init(std::vector<std::pair<std::string,json>>& property_data)
   {
     //Copy default values
     std::string key = p.first;
-    properties[key] = p.second;
+    //Create an object dict rather than an array for easier lookup
+    json entry = {};
+    entry["default"] = p.second[0];
+    entry["target"] = p.second[1];
+    entry["type"] = p.second[2];
+    entry["desc"] = p.second[3];
+    entry["strict"] = p.second[4];
+    entry["redraw"] = p.second[5];
+    properties[key] = entry;
 
     //Store order of keys
     propKeys.push_back(key);
 
     //Save view properties
-    std::string target = p.second[PROPTARGET];
+    std::string target = entry["target"];
     //if (target.find("view") != std::string::npos)
     if (target == "view")
       viewProps.push_back(key);
@@ -2010,10 +2018,11 @@ void Session::init(std::vector<std::pair<std::string,json>>& property_data)
       colourMapProps.push_back(key);
 
     //Save defaults
-    defaults[key] = p.second[PROPDEFAULT];
+    defaults[key] = entry["default"];
   }
 
 #ifdef DEBUG
+  //std::cerr << std::setw(2) << properties << std::endl;
   //std::cerr << std::setw(2) << defaults << std::endl;
 #endif
 }

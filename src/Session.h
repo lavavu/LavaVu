@@ -9,13 +9,6 @@ class Session;
 #include "Shaders.h"
 #include "View.h"
 
-#define PROPDEFAULT 0
-#define PROPTARGET  1
-#define PROPTYPE    2
-#define PROPDOC     3
-#define PROPSTRICT  4
-#define PROPREDRAW  5
-
 //Class to hold global draw state
 class Session
 {

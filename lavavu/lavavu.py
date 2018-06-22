@@ -375,7 +375,7 @@ class Object(dict):
         #(allows default values to be returned from prop get)
         prop = super(Object, self).__getitem__(key)
         #Must always return a copy to prevent modifying the defaults!
-        return copy.copy(prop[0])
+        return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
         #Check for valid key
@@ -1364,7 +1364,7 @@ class ColourMap(dict):
         #Default to the property lookup dict (default is first element)
         prop = super(ColourMap, self).__getitem__(key)
         #Must always return a copy to prevent modifying the defaults!
-        return copy.copy(prop[0])
+        return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1460,7 +1460,7 @@ class Fig(dict):
         #Default to the property lookup dict (default is first element)
         prop = super(Fig, self).__getitem__(key)
         #Must always return a copy to prevent modifying the defaults!
-        return copy.copy(prop[0])
+        return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
         if not key in self.instance.properties:
@@ -1675,7 +1675,7 @@ class Viewer(dict):
 
             #Add object by geom type shortcut methods
             #(allows calling add by geometry type, eg: obj = lavavu.lines())
-            self.renderers = self.properties["renderers"][0]
+            self.renderers = self.properties["renderers"]["default"]
             for key in [item for sublist in self.renderers for item in sublist]:
                 #Use a closure to define a new method to call addtype with this type
                 def addmethod(name):
@@ -1797,7 +1797,7 @@ class Viewer(dict):
             return self.state["properties"][key]
         elif key in self.properties:
             #Must always return a copy to prevent modifying the defaults!
-            return copy.copy(self.properties[key][0]) #Default from prop list
+            return copy.copy(self.properties[key]["default"]) #Default from prop list
         else:
             raise ValueError(key + " : Invalid property name")
         return None
