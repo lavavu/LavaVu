@@ -603,7 +603,6 @@ void Volumes::render(int i)
 
   //Get the projection matrix and invert
   glGetFloatv(GL_PROJECTION_MATRIX, pMatrix);
-  if (!gluInvertMatrixf(pMatrix, invPMatrix)) abort_program("Uninvertable matrix!");
   GL_Error_Check;
 
   //Raymarching modelview and normal matrices
@@ -611,10 +610,12 @@ void Volumes::render(int i)
   prog->setUniformMatrixf("uNMatrix", nMatrix);
 
   //Calculate the combined modelview projection matrix
-  multMatrixf(mvpMatrix, matrix, pMatrix);
+  multMatrixf(mvpMatrix, pMatrix, matrix);
+
   //Calculate the combined inverse modelview projection matrix
+  if (!gluInvertMatrixf(pMatrix, invPMatrix)) abort_program("Uninvertable matrix!");
   transposeMatrixf(mvMatrix);
-  multMatrixf(invMVPMatrix, invPMatrix, mvMatrix);
+  multMatrixf(invMVPMatrix, mvMatrix, invPMatrix);
 
   //Combined projection and modelview matrices and inverses
   prog->setUniformMatrixf("uInvMVPMatrix", invMVPMatrix);
