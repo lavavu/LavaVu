@@ -282,13 +282,15 @@ void Model::load(const FilePath& fn)
 }
 
 
-View* Model::defaultView()
+View* Model::defaultView(Properties* properties)
 {
   //No views?
   if (views.size() == 0)
   {
     //Default view
     View* view = new View(session);
+    if (properties)
+      view->properties.merge(properties->data);
     views.push_back(view);
   }
 

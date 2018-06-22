@@ -144,7 +144,7 @@ public:
   ColourMap* addColourMap(std::string name="", std::string colours="", std::string properties="");
   void updateColourMap(ColourMap* colourMap, std::string colours="", std::string properties="");
   DrawingObject* findObject(unsigned int id);
-  View* defaultView();
+  View* defaultView(Properties* properties=NULL);
 
   void cacheLoad();
 

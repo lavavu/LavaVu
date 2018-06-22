@@ -2855,11 +2855,16 @@ bool LavaVu::loadFile(const std::string& file)
 void LavaVu::defaultModel()
 {
   //Adds a default model, window & viewport
+
+  //Use current view properties
+  Properties* props = NULL;
+  if (amodel && aview) props = &aview->properties;
+
   amodel = new Model(session);
   models.push_back(amodel);
 
   //Set a default view
-  aview = amodel->defaultView();
+  aview = amodel->defaultView(props);
 
   //Setup default colourmaps
   //amodel->initColourMaps();
