@@ -2070,7 +2070,7 @@ void LavaVu::display(bool redraw)
   }
 
   //Viewport reset flagged
-  if (viewset > 0)
+  if (viewset > 0 || !aview->initialised)
   {
     //Update the viewports
     resetViews(viewset == RESET_ZOOM);
