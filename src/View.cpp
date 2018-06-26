@@ -111,7 +111,7 @@ bool View::init(bool force, float* newmin, float* newmax)
   for (int i=0; i<3; i++)
   {
     //Invalid bounds! Skip
-    if (!ISFINITE(newmin[i]) || !ISFINITE(newmax[i])) return false;
+    if (!std::isfinite(newmin[i]) || !std::isfinite(newmax[i])) return false;
 
     if (properties["follow"])
     {
@@ -131,7 +131,7 @@ bool View::init(bool force, float* newmin, float* newmax)
 
   //Save magnitude of dimensions
   model_size = sqrt(dotProduct(dims,dims));
-  if (model_size == 0 || !ISFINITE(model_size)) return false;
+  if (model_size == 0 || !std::isfinite(model_size)) return false;
 
   //Check and calculate near/far clip planes
   near = properties["near"];
@@ -179,7 +179,7 @@ void View::checkClip(float& near_clip, float& far_clip)
   {
     //NOTE: Too much clip plane range can lead to depth buffer precision problems
     //Near clip should be as far away as possible as greater precision reserved for near
-    if (model_size == 0 || !ISFINITE(model_size)) model_size = 1.0;
+    if (model_size == 0 || !std::isfinite(model_size)) model_size = 1.0;
     float min_dist = model_size / 100.0;  //Estimate of min dist between viewer and geometry
     float aspectRatio = 1.33;
     if (width && height)

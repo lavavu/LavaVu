@@ -1823,11 +1823,11 @@ void Model::writeGeometryRecord(Database& outdb, lucGeometryType type, lucGeomet
   for (int c=0; c<3; c++)
   {
     min[c] = data->min[c];
-    if (!ISFINITE(min[c])) min[c] = session.min[c];
-    if (!ISFINITE(min[c])) min[c] = 0.0;
+    if (!std::isfinite(min[c])) min[c] = session.min[c];
+    if (!std::isfinite(min[c])) min[c] = 0.0;
     max[c] = data->max[c];
-    if (!ISFINITE(max[c])) max[c] = session.max[c];
-    if (!ISFINITE(max[c])) max[c] = 0.0;
+    if (!std::isfinite(max[c])) max[c] = session.max[c];
+    if (!std::isfinite(max[c])) max[c] = 0.0;
   }
 
   snprintf(SQL, SQL_QUERY_MAX, "insert into geometry (object_id, timestep, rank, idx, type, data_type, size, count, width, minimum, maximum, dim_factor, units, minX, minY, minZ, maxX, maxY, maxZ, labels, data) values (%d, %d, %d, %d, %d, %d, %d, %d, %d, %g, %g, %g, '%s', %g, %g, %g, %g, %g, %g, ?, ?)", objid, step, data->height, data->depth, type, dtype, block->unitsize(), block->size(), data->width, block->minimum, block->maximum, 0.0, block->label.c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
@@ -2127,6 +2127,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   exported["views"] = outviews;
   exported["colourmaps"] = cmaps;
   exported["objects"] = outobjects;
+  //exported["dictionary"] = session.properties; //Store for default info etc
   //Should not set this unless data changed for webgl?
   //exported["reload"] = true;
   exported["reload"] = objdata;

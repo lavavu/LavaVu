@@ -8,8 +8,6 @@
 #define __STDC_CONSTANT_MACROS
 #include <stdint.h>
 
-#define ISFINITE(val) (!std::isnan(val) && !std::isinf(val))
-
 //C++ STL
 #include <string>
 #include <sstream>
