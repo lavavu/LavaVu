@@ -2563,26 +2563,24 @@ class Viewer(dict):
             print("Video output error: " + str(e))
             pass
 
-    def imageBytes(self, width=640, height=480, channels=3):
+    def rawimage(self, resolution=(640, 480), channels=3):
         """
         Return raw image data
 
         Parameters
         ----------
-        width: int
-            Image width in pixels
-        height: int
-            Image height in pixels
+        resolution: tuple(int,int)
+            Image width and height in pixels
         channels: int
-            colour channels/depth in bytes (1=luminance, 3=RGB, 4=RGBA)
+            colour channels/depth in bytes (1=luminance, 3=RGB(default), 4=RGBA)
 
         Returns
         -------
         image: array
             Numpy array of the image data requested
         """
-        img = numpy.zeros(shape=(width,height,channels), dtype=numpy.uint8)
-        self.imageBuffer(img)
+        img = Image(resolution, channels)
+        self.app.imageBuffer(img.data)
         return img
 
     def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
@@ -3037,6 +3035,76 @@ class GeomData(object):
         
     def __str__(self):
         return [key for key, value in geomtypes if value == self.data.type][0]
+
+#Wrapper class for raw image data
+class Image(object):
+    """  
+    The Image class provides an interface to a raw image
+
+    Example
+    -------
+        
+    >>> img = lv.rawimage()
+    >>> img.write('out.png')
+    
+    TODO: load functions
+
+    """
+    def __init__(self, resolution=(640, 480), channels=3, value=255):
+        self.data = numpy.full(shape=(resolution[1], resolution[0], channels), fill_value=value, dtype=numpy.uint8)
+
+    def paste(self, source, resolution=(640,480), position=(0,0)):
+        """
+        Render another image to a specified position with this image
+
+        Parameters
+        ----------
+        source: array or lavavu.Viewer()
+            Numpy array containing raw image data to paste or a Viewer instance to source the frame from
+        resolution: tuple(int,int)
+            Sub-image width and height in pixels, if not provided source must be a numpy array of the correct dimensions
+        position: tuple(int,int)
+            Sub-image x,y offset in pixels
+
+        """
+        if not isinstance(source, numpy.ndarray):
+            source = source.rawimage(resolution, self.data.shape[2]).data
+
+        resolution = (source.shape[1], source.shape[0])
+        dest = (resolution[1] + position[1], resolution[0] + position[0])
+
+        if self.data.shape[0] < dest[0] or self.data.shape[1] < dest[1]:
+            raise ValueError("Base image too small for operation!" + str(self.data.shape) + " < " + str(dest))
+        if self.data.shape[2] != source.shape[2]:
+            raise ValueError("Base image and pasted image must have same bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
+        
+        self.data[position[1]:dest[0], position[0]:dest[1]] = source
+
+    def save(self, filename):
+        """
+        Save a raw image data to provided filename
+
+        Parameters
+        ----------
+        filename: str
+            Output filename (png/jpg supported, default is png if no extension)
+
+        Returns
+        -------
+        path: str
+            Path to the output image
+        """
+        return LavaVuPython.rawImageWrite(self.data, filename)
+
+    def display(self):
+        """        
+        Show the image as inline image within an ipython notebook.
+        """
+        if is_notebook():
+            from IPython.display import display,Image,HTML
+            #Return inline image result
+            img = self.save("")
+            display(HTML("<img src='%s'>" % img))
 
 def loadCPT(fn, positions=True):
     """

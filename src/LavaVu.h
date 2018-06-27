@@ -150,7 +150,7 @@ public:
   void readOBJ(const FilePath& fn);
   void readRawVolume(const FilePath& fn);
   void readXrwVolume(const FilePath& fn);
-  void readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float min[2], float max[3], int channels=1);
+  void readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float* scale=NULL, int channels=1);
   void readVolumeSlice(const FilePath& fn);
   void readVolumeSlice(const std::string& name, GLubyte* imageData, int width, int height, int channels, bool flip=false);
   void readVolumeTIFF(const FilePath& fn);
@@ -279,7 +279,7 @@ public:
   void geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, unsigned int** array, int* len);
   void geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
-  void imageBuffer(unsigned char* array, int width, int height, int depth);
+  void imageBuffer(unsigned char* array, int height, int width, int depth);
   std::string imageJPEG(int width, int height, int quality=95);
   std::string imagePNG(int width, int height, int depth);
 
@@ -293,5 +293,7 @@ public:
   void queueCommands(std::string cmds);
 
 };
+
+std::string rawImageWrite(unsigned char* array, int height, int width, int depth, std::string path, int jpegquality=0);
 
 #endif //LavaVu__

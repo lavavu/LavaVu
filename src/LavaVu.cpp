@@ -3457,11 +3457,26 @@ void LavaVu::geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, un
   *len = dat->size();
 }
 
-void LavaVu::imageBuffer(unsigned char* array, int width, int height, int depth)
+std::string rawImageWrite(unsigned char* array, int height, int width, int depth, std::string path, int jpegquality)
+{
+  // Read the pixels into provided buffer
+  ImageData buffer(width, height, depth);
+  buffer.copy(array);
+  buffer.flip(); //Writer expects OpenGL order, so flip
+  //Write PNG/JPEG to string or file
+  if (path.length() == 0)
+    return buffer.getURIString(jpegquality);
+  else
+    return buffer.write(path);
+}
+
+void LavaVu::imageBuffer(unsigned char* array, int height, int width, int depth)
 {
   if (!amodel || !viewer->isopen) return;
   // Read the pixels into provided buffer
-  viewer->pixels((ImageData*)array, width, height, depth, false);
+  ImageData* buffer = viewer->pixels(NULL, width, height, depth, true);
+  buffer->paste(array);
+  delete buffer;
 }
 
 std::string LavaVu::imageJPEG(int width, int height, int quality)

@@ -191,6 +191,11 @@ public:
     memcpy(pixels, data, size());
   }
 
+  void paste(GLubyte* data)
+  {
+    memcpy(data, pixels, size());
+  }
+
   void flip()
   {
     RawImageFlip(pixels, width, height, channels);

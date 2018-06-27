@@ -20806,6 +20806,124 @@ SWIGINTERN PyObject *LavaVu_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *a
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap_rawImageWrite__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  int arg4 ;
+  std::string arg5 ;
+  int arg6 ;
+  PyArrayObject *array1 = NULL ;
+  int val6 ;
+  int ecode6 = 0 ;
+  std::string result;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  {
+    array1 = obj_to_array_no_conversion(swig_obj[0], NPY_UBYTE);
+    if (!array1 || !require_dimensions(array1,3) || !require_contiguous(array1) ||
+      !require_native(array1)) SWIG_fail;
+    arg1 = (unsigned char*) array_data(array1);
+    arg2 = (int) array_size(array1,0);
+    arg3 = (int) array_size(array1,1);
+    arg4 = (int) array_size(array1,2);
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "rawImageWrite" "', argument " "5"" of type '" "std::string""'"); 
+    }
+    arg5 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  ecode6 = SWIG_AsVal_int(swig_obj[2], &val6);
+  if (!SWIG_IsOK(ecode6)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "rawImageWrite" "', argument " "6"" of type '" "int""'");
+  } 
+  arg6 = static_cast< int >(val6);
+  {
+    try {
+      result = rawImageWrite(arg1,arg2,arg3,arg4,arg5,arg6);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_rawImageWrite__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  unsigned char *arg1 = (unsigned char *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  int arg4 ;
+  std::string arg5 ;
+  PyArrayObject *array1 = NULL ;
+  std::string result;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  {
+    array1 = obj_to_array_no_conversion(swig_obj[0], NPY_UBYTE);
+    if (!array1 || !require_dimensions(array1,3) || !require_contiguous(array1) ||
+      !require_native(array1)) SWIG_fail;
+    arg1 = (unsigned char*) array_data(array1);
+    arg2 = (int) array_size(array1,0);
+    arg3 = (int) array_size(array1,1);
+    arg4 = (int) array_size(array1,2);
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "rawImageWrite" "', argument " "5"" of type '" "std::string""'"); 
+    }
+    arg5 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      result = rawImageWrite(arg1,arg2,arg3,arg4,arg5);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_rawImageWrite(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"rawImageWrite",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    return _wrap_rawImageWrite__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_rawImageWrite__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'rawImageWrite'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    rawImageWrite(unsigned char *,int,int,int,std::string,int)\n"
+    "    rawImageWrite(unsigned char *,int,int,int,std::string)\n");
+  return 0;
+}
+
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
 	 { (char *)"delete_SwigPyIterator", (PyCFunction)_wrap_delete_SwigPyIterator, METH_O, NULL},
@@ -21049,6 +21167,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_propertyList", (PyCFunction)_wrap_LavaVu_propertyList, METH_O, NULL},
 	 { (char *)"LavaVu_swigregister", LavaVu_swigregister, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_swiginit", LavaVu_swiginit, METH_VARARGS, NULL},
+	 { (char *)"rawImageWrite", _wrap_rawImageWrite, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 

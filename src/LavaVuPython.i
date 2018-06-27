@@ -54,7 +54,7 @@ namespace std
 %apply (float** ARGOUTVIEW_ARRAY1, int* DIM1) {(float** array, int* len)};
 %apply (unsigned char** ARGOUTVIEW_ARRAY1, int* DIM1) {(unsigned char** array, int* len)};
 %apply (unsigned int** ARGOUTVIEW_ARRAY1, int* DIM1) {(unsigned int** array, int* len)};
-%apply (unsigned char* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(unsigned char* array, int width, int height, int depth)};
+%apply (unsigned char* INPLACE_ARRAY3, int DIM1, int DIM2, int DIM3) {(unsigned char* array, int height, int width, int depth)};
 
 %include "ViewerTypes.h"
 
@@ -178,7 +178,7 @@ public:
   void geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, unsigned int** array, int* len);
   void geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
-  void imageBuffer(unsigned char* array, int width, int height, int depth);
+  void imageBuffer(unsigned char* array, int height, int width, int depth);
   std::string imageJPEG(int width, int height, int quality=95);
   std::string imagePNG(int width, int height, int depth);
 
@@ -195,4 +195,6 @@ public:
   std::vector<std::string> commandList(std::string category="");
   std::string propertyList();
 };
+
+std::string rawImageWrite(unsigned char* array, int height, int width, int depth, std::string path, int jpegquality=0);
 
