@@ -439,4 +439,8 @@ LavaVu_swigregister = _LavaVuPython.LavaVu_swigregister
 LavaVu_swigregister(LavaVu)
 
 
+def rawImageWrite(array, path, jpegquality=0):
+    return _LavaVuPython.rawImageWrite(array, path, jpegquality)
+rawImageWrite = _LavaVuPython.rawImageWrite
+
 
