@@ -111,7 +111,12 @@ bool View::init(bool force, float* newmin, float* newmax)
   for (int i=0; i<3; i++)
   {
     //Invalid bounds! Skip
-    if (!std::isfinite(newmin[i]) || !std::isfinite(newmax[i])) return false;
+    if (!std::isfinite(newmin[i]) || !std::isfinite(newmax[i]))
+    {
+      //Invalid bounds! Flag not initialised and wait until we have a model
+      initialised = false;
+      return false;
+    }
 
     if (properties["follow"])
     {
@@ -131,7 +136,12 @@ bool View::init(bool force, float* newmin, float* newmax)
 
   //Save magnitude of dimensions
   model_size = sqrt(dotProduct(dims,dims));
-  if (model_size == 0 || !std::isfinite(model_size)) return false;
+  if (model_size == 0 || !std::isfinite(model_size))
+  {
+    //Invalid bounds! Flag not initialised and wait until we have a model
+    initialised = false;
+    return false;
+  }
 
   //Check and calculate near/far clip planes
   near = properties["near"];

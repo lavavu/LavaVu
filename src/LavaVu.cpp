@@ -2022,14 +2022,17 @@ void LavaVu::display(bool redraw)
       std::stringstream ss;
       ss << "resize " << res[0] << " " << res[1];
       queueCommands(ss.str());
-      viewer->postdisplay = true;
-      aview->initialised = false; //Force initial autozoom
+      aview->initialised = false; //Force initial autozoom and redisplay
       return;
     }
   }
 
+  //View not yet initialised, call resetViews
+  if (!aview->initialised)
+    viewset = RESET_ZOOM;
+
   //Viewport reset flagged
-  if (viewset > 0 || !aview->initialised)
+  if (viewset > 0)
   {
     //Update the viewports
     resetViews(viewset == RESET_ZOOM);
