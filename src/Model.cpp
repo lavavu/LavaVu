@@ -1173,8 +1173,6 @@ void Model::cacheLoad()
   //Cache final step
   setTimeStep(0);
   std::cout << std::endl;
-  //Clear current step to ensure selected is loaded from cache
-  session.now = now = -1;
 }
 
 //Set time step if available, otherwise return false and leave unchanged
