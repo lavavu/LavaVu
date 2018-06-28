@@ -820,6 +820,7 @@ public:
   Volumes(Session& session);
   ~Volumes();
   virtual void close();
+  virtual void setup(View* vp, float* min=NULL, float* max=NULL);
   virtual void update();
   virtual void sort();    //Threaded sort function
   virtual void draw();

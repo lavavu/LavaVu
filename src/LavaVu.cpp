@@ -777,12 +777,10 @@ void LavaVu::readRawVolume(const FilePath& fn)
   file.read(&buffer[0], size);
   file.close();
 
-  float volmin[3], volmax[3], volres[3];
-  Properties::toArray<float>(session.global("volmin"), volmin, 3);
-  Properties::toArray<float>(session.global("volmax"), volmax, 3);
-  Properties::toArray<float>(session.global("volres"), volres, 3);
+  int volres[3];
+  Properties::toArray<int>(session.global("volres"), volres, 3);
 
-  readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volmin, volmax);
+  readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2]);
 }
 
 void LavaVu::readXrwVolume(const FilePath& fn)
@@ -790,15 +788,14 @@ void LavaVu::readXrwVolume(const FilePath& fn)
   //Xrw format volume data
   std::vector<char> buffer;
   unsigned int bytes = 0;
-  float volmin[3], volmax[3];
+  float volscale[3];
   int volres[3];
 #ifdef USE_ZLIB
   if (fn.type != "xrwu")
   {
     gzFile f = gzopen(fn.full.c_str(), "rb");
     gzread(f, (char*)volres, sizeof(int)*3);
-    gzread(f, (char*)volmax, sizeof(float)*3);
-    volmin[0] = volmin[1] = volmin[2] = 0;
+    gzread(f, (char*)volscale, sizeof(float)*3);
     bytes = volres[0]*volres[1]*volres[2];
     buffer.resize(bytes);
     int chunk = 100000000; //Read in 100MB chunks
@@ -824,8 +821,7 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     bytes = file.tellg();
     file.seekg(0, std::ios::beg);
     file.read((char*)volres, sizeof(int)*3);
-    file.read((char*)volmax, sizeof(float)*3);
-    volmin[0] = volmin[1] = volmin[2] = 0;
+    file.read((char*)volscale, sizeof(float)*3);
     bytes -= sizeof(int)*3 + sizeof(float)*3;
     if (!file.is_open() || bytes <= 0) abort_program("File error %s\n", fn.full.c_str());
     buffer.resize(bytes);
@@ -833,21 +829,10 @@ void LavaVu::readXrwVolume(const FilePath& fn)
     file.close();
   }
 
-  float inscale[3];
-  Properties::toArray<float>(session.global("inscale"), inscale, 3);
-
-  //Scale geometry by input scaling factor
-  for (int i=0; i<3; i++)
-  {
-    volmin[i] *= inscale[i];
-    volmax[i] *= inscale[i];
-    if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
-  }
-
-  readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volmin, volmax);
+  readVolumeCube(fn, (GLubyte*)buffer.data(), volres[0], volres[1], volres[2], volscale);
 }
 
-void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float min[2], float max[3], int channels)
+void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int height, int depth, float* scale, int channels)
 {
   //Loads full volume, optionally as slices
   Geometry* volumes = amodel->getRenderer(lucVolumeType);
@@ -888,10 +873,15 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
     if (!vobj) vobj = new DrawingObject(session, fn.base);
     addObject(vobj);
 
-    //Define the bounding cube by corners
     volumes->add(vobj);
-    volumes->read(vobj, 1, lucVertexData, min);
-    volumes->read(vobj, 1, lucVertexData, max);
+    //Apply provided scaling factor to volume cube (only apply first time through)
+    if (scale && !vobj->properties.has("volmax"))
+    {
+      float volmax[3];
+      Properties::toArray<float>(vobj->properties["volmax"], volmax, 3);
+      vobj->properties.data["volmax"] = json::array({scale[0]*volmax[0], scale[1]*volmax[0], scale[1]*volmax[2]});
+      std::cout << vobj->properties["volmax"] << std::endl;
+    }
 
     //Load full cube
     int bytes = channels * width * height * depth;
@@ -926,14 +916,11 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
 
   int outChannels = session.global("volchannels");
   json volss = session.global("volsubsample");
-  float volmin[3], volmax[3], volres[3], inscale[3];
-  Properties::toArray<float>(session.global("volmin"), volmin, 3);
-  Properties::toArray<float>(session.global("volmax"), volmax, 3);
-  Properties::toArray<float>(session.global("volres"), volres, 3);
-  Properties::toArray<float>(session.global("inscale"), inscale, 3);
+  int volres[3];
+  Properties::toArray<int>(session.global("volres"), volres, 3);
 
-  //Detect volume atlas and load (requires atlas in filename)
-  if (name.find("atlas") != std::string::npos && width > volres[0] && height > volres[1]) // && width % (int)volres[0] == 0 && height % (int)volres[1] == 0)
+  //Detect volume atlas and load (requires atlas/mosaic in filename)
+  if ((name.find("atlas") != std::string::npos || name.find("mosaic") != std::string::npos) && width > volres[0] && height > volres[1]) // && width % (int)volres[0] == 0 && height % (int)volres[1] == 0)
   {
     debug_print("Attempting to load image as Volume Atlas %d %d => %f %f @ %d bpp\n", width, height, volres[0], volres[1], channels);
     RawImageFlip(imageData, width, height, channels);
@@ -968,20 +955,8 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   {
     count = 0;
     vobj = addObject(new DrawingObject(session, name));
-    //Scale geometry by input scaling factor
-    for (int i=0; i<3; i++)
-    {
-      volmin[i] *= inscale[i];
-      volmax[i] *= inscale[i];
-      if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
-    }
-    //Define the bounding cube by corners
-    volumes->add(vobj);
-    volumes->read(vobj, 1, lucVertexData, volmin);
-    volumes->read(vobj, 1, lucVertexData, volmax);
   }
-  else
-    volumes->add(vobj);
+  volumes->add(vobj);
 
   //Flip if requested
   if (flip) RawImageFlip(imageData, width, height, channels);
@@ -1145,11 +1120,6 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
   if (!volumes) return;
   if (!vobj)
   {
-    float volmin[3], volmax[3], volres[3], inscale[3];
-    Properties::toArray<float>(session.global("volmin"), volmin, 3);
-    Properties::toArray<float>(session.global("volmax"), volmax, 3);
-    Properties::toArray<float>(session.global("volres"), volres, 3);
-    Properties::toArray<float>(session.global("inscale"), inscale, 3);
     unsigned int samples = (width+height+depth)*0.6;
     if (samples < 128) samples = 128;
     vobj = new DrawingObject(session, "volume");
@@ -1165,17 +1135,6 @@ void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned 
     vobj->properties.data["colourmap"] = cmap->name;
     //Add colour bar display
     colourBar(vobj);
-
-    //Scale geometry by input scaling factor
-    for (int i=0; i<3; i++)
-    {
-      volmin[i] *= inscale[i];
-      volmax[i] *= inscale[i];
-      if (verbose) std::cerr << i << " " << inscale[i] << " : MIN " << volmin[i] << " MAX " << volmax[i] << std::endl;
-    }
-    //Define the bounding cube by corners
-    volumes->read(vobj, 1, lucVertexData, volmin);
-    volumes->read(vobj, 1, lucVertexData, volmax);
   }
 
   unsigned int block = width/10;

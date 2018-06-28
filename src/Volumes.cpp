@@ -64,6 +64,31 @@ void Volumes::close()
   }
 }
 
+void Volumes::setup(View* vp, float* min, float* max)
+{
+  //Ensure data is loaded for this step
+  merge(session.now, session.now);
+
+  //Default volume bounding cube - load corner vertices if not provided
+  DrawingObject* draw = NULL;
+  for (unsigned int i=0; i<geom.size(); i++)
+  {
+    if ((geom[i]->depth > 1 || draw != geom[i]->draw) && geom[i]->count() < 2)
+    {
+      float volmin[3], volmax[3];
+      Properties::toArray<float>(geom[i]->draw->properties["volmin"], volmin, 3);
+      Properties::toArray<float>(geom[i]->draw->properties["volmax"], volmax, 3);
+      float dims[3];
+      Properties::toArray<float>(geom[i]->draw->properties["dims"], dims, 3);
+      read(geom[i], 1, lucVertexData, volmin, dims[0], dims[1], dims[2]);
+      read(geom[i], 1, lucVertexData, volmax, dims[0], dims[1], dims[2]);
+    }
+    draw = geom[i]->draw;
+  }
+
+  Geometry::setup(vp, min, max);
+}
+
 void Volumes::draw()
 {
   //clock_t t1,t2,tt;
@@ -125,8 +150,12 @@ void Volumes::sort()
   for (unsigned int i=0; i<slices.size(); i++)
   {
     //Get corners of cube
+    if (geom[index]->count() == 0) continue;
     float* posmin = geom[index]->render->vertices[0];
     float* posmax = geom[index]->render->vertices[1];
+
+
+
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
                     posmin[2] + (posmax[2] - posmin[2]) * 0.5f
@@ -186,7 +215,7 @@ void Volumes::update()
 
   //Count and group 2D slices
   slices.clear();
-  DrawingObject* draw = geom[0]->draw; //TODO: multiple slice groups
+  DrawingObject* draw = geom[0]->draw;
   unsigned int count = 0;
   for (unsigned int i=0; i<=geom.size(); i++)
   {
@@ -841,7 +870,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       json data, vertices, volume;
       int height = geom[i]->height;
       //Height needs calculating from values data?
-      if (!geom[i]->depth)
+      if (!geom[i]->height && geom[i]->colourData())
         height = geom[i]->colourData()->size() / geom[i]->width;
 
       /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
@@ -876,6 +905,13 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       volume["res"] = res;
       volume["scale"] = scale;
 
+      if (geom[i]->colourData())
+      {
+        auto range = geom[i]->draw->ranges[geom[i]->colourData()->label];
+        volume["minimum"] = range.minimum;
+        volume["maximum"] = range.maximum;
+      }
+
       volume["size"] = 1;
       //volume["count"] = ;
       volume["url"] = imagestr;
@@ -894,7 +930,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
 void Volumes::isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol)
 {
   //Ensure data is loaded for this step
-  merge(session.now, session.now);
+  setup(view);
 
   //Isosurface extract
   Isosurface iso(geom, surfaces, target);

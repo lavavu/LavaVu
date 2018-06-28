@@ -956,9 +956,8 @@ void Geometry::merge(int start, int end)
     total += geom[i]->count();
 
   allVertsFixed = (total == fixedVertices);
-  //if (geom.size() > 0)
-  //  printf("%d records, %d geom entries, %d verts, All fixed? %d All verts fixed? %d (%s : %s)\n", (int)records.size(),
-  //         (int)geom.size(), total, allDataFixed, allVertsFixed, GeomData::names[type].c_str(), geom[0]->draw->name().c_str());
+  //printf("(STEP %d) %d records, %d geom entries, %d verts, All fixed? %d All verts fixed? %d (%s : %s)\n", start, (int)records.size(),
+  //       (int)geom.size(), total, allDataFixed, allVertsFixed, GeomData::names[type].c_str(), geom.size() > 0 ? geom[0]->draw->name().c_str() : "??");
 }
 
 Shader_Ptr Geometry::getShader(DrawingObject* draw)

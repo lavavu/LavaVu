@@ -1862,16 +1862,6 @@ void Session::init()
       }
     },
     {
-      "inscale",
-      {
-        {1.,1.,1.},
-        "global",
-        "real[3]",
-        "Geometry input scaling X Y Z",
-        true, 0
-      }
-    },
-    {
       "pointsubsample",
       {
         0,
