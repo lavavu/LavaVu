@@ -50,7 +50,7 @@ public:
 
   FrameBuffer() : width(0), height(0) {}
   virtual ~FrameBuffer() {}
-  virtual ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
+  virtual ImageData* pixels(ImageData* image, int channels=3);
   virtual int getOutWidth() {return width;}
   virtual int getOutHeight() {return height;}
 };
@@ -79,7 +79,7 @@ public:
   bool create(int w, int h);
   void destroy();
   void disable();
-  ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
+  ImageData* pixels(ImageData* image, int channels=3);
 
   float downsampleFactor()   {return pow(2, downsample-1);}
   virtual int getOutWidth()  {return width / downsampleFactor();}
@@ -173,8 +173,8 @@ public:
   void outputON(int w, int h, int channels=3, bool vid=false);
   void outputOFF();
   void disableFBO();
-  ImageData* pixels(ImageData* image, int channels=3, bool flip=false);
-  ImageData* pixels(ImageData* image, int w, int h, int channels=3, bool flip=false);
+  ImageData* pixels(ImageData* image, int channels=3);
+  ImageData* pixels(ImageData* image, int w, int h, int channels=3);
   std::string image(const std::string& path="", int jpegquality=0, bool transparent=false, int w=0, int h=0);
 
   void downSample(int q);

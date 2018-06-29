@@ -2911,7 +2911,6 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
     encoder = new VideoEncoder(filename.c_str(), fps, quality);
     encoder->open(viewer->getOutWidth(), viewer->getOutHeight());
     viewer->addOutput(encoder);
-    encoder->flip = true;
     viewer->outputOFF();
     return filename;
   }
@@ -3436,7 +3435,8 @@ void LavaVu::imageBuffer(unsigned char* array, int height, int width, int depth)
 {
   if (!amodel || !viewer->isopen) return;
   // Read the pixels into provided buffer
-  ImageData* buffer = viewer->pixels(NULL, width, height, depth, true);
+  ImageData* buffer = viewer->pixels(NULL, width, height, depth);
+  buffer->flip(); //Flip Y axis so origin at top
   buffer->paste(array);
   delete buffer;
 }
@@ -3445,7 +3445,7 @@ std::string LavaVu::imageJPEG(int width, int height, int quality)
 {
   if (!amodel || !viewer->isopen) return "";
 
-  ImageData* image = viewer->pixels(NULL, width, height, 3, false);
+  ImageData* image = viewer->pixels(NULL, width, height, 3);
   //Write JPEG to string
   std::string retImg = image->getString(quality);
   delete image;
@@ -3456,7 +3456,7 @@ std::string LavaVu::imagePNG(int width, int height, int depth)
 {
   if (!amodel || !viewer->isopen) return "";
 
-  ImageData* image = viewer->pixels(NULL, width, height, depth, false);
+  ImageData* image = viewer->pixels(NULL, width, height, depth);
   //Write PNG to string
   std::string retImg = image->getString();
   delete image;

@@ -304,7 +304,6 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 void VideoEncoder::open(int w, int h)
 {
   render = true; //Enable output frame rendering
-  flip = true; //Enable frame flipping on output interface
   if (w) width = w;
   if (h) height = h;
 
@@ -419,6 +418,8 @@ void VideoEncoder::resize(int new_width, int new_height)
 
 void VideoEncoder::display()
 {
+  //OpenGL frame requires flipping
+  buffer->flip();
 #ifdef HAVE_SWSCALE
   uint8_t * inData[1] = { buffer->pixels }; // RGB24 have one plane
   int inLinesize[1] = { 3*width }; // RGB stride

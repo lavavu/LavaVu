@@ -132,13 +132,14 @@ void RawImageFlip(void* image, int width, int height, int channels);
 class ImageData  //Raw Image data
 {
 public:
-  GLuint   width;     // Image Width
-  GLuint   height;    // Image Height
-  GLuint   channels;  // Image Depth
-  GLubyte* pixels;     // Image data
-  bool allocated;
+  GLuint   width = 0;       // Image Width
+  GLuint   height = 0;      // Image Height
+  GLuint   channels = 4;    // Image Depth
+  GLubyte* pixels = NULL;   // Image data
+  bool allocated = false;
+  bool flipped = false;
 
-  ImageData(int w=0, int h=0, int c=4) : pixels(NULL), allocated(false)
+  ImageData(int w=0, int h=0, int c=4)
   {
     if (w && h && c)
       allocate(w, h, c);
@@ -196,9 +197,13 @@ public:
     memcpy(data, pixels, size());
   }
 
+
+  void outflip(bool png=false);
+
   void flip()
   {
     RawImageFlip(pixels, width, height, channels);
+    flipped = !flipped;
   }
 
   void clear()

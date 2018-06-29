@@ -44,7 +44,6 @@ class OutputInterface
 public:
   bool render = false;
   int width = 0, height = 0;
-  bool flip = false;
   ImageData* buffer = NULL;
   int channels = 3;
 

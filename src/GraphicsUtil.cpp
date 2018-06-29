@@ -1168,6 +1168,31 @@ void ImageLoader::load3Dslice(int slice, void* data)
   GL_Error_Check;
 }
 
+void ImageData::outflip(bool png)
+{
+  //Prepare the image buffer so the Y axis is as expected by the output library
+  //JPEG, LodePNG: Flip Y if sourced from OpenGL (Y origin should be at top, opposite of OpenGL)
+  //LibPNG: Flip Y if NOT sourced from OpenGL (Y origin should be at bottom as OpenGL)
+  if (png)
+  {
+#ifndef HAVE_LIBPNG
+    //Flip data sourced from framebuffer for LodePNG
+    if (flipped)
+      flip();
+#else
+    //LIBPNG expects flipped Y, leave OpenGL image as is, if NOT sourced from framebuffer, flip
+    if (!flipped)
+      flip();
+#endif
+  }
+  else
+  {
+    //Always flip data sourced from framebuffer for JPEG
+    if (flipped)
+      flip();
+  }
+}
+
 std::string ImageData::write(const std::string& path)
 {
   FilePath filepath(path);
@@ -1175,19 +1200,14 @@ std::string ImageData::write(const std::string& path)
   {
     //Write data to image file
     std::ofstream file(filepath.full, std::ios::binary);
-    //Requires y-flip as uses opposite y origin to OpenGL (except for libpng)
-#ifndef HAVE_LIBPNG
-    flip();
-#endif
+    outflip(true);  //Y-flip as necessary
     write_png(file, channels, width, height, pixels);
   }
   else if (filepath.type == "jpeg" || filepath.type == "jpg")
   {
     //JPEG support with built in encoder
     // Fill in the compression parameter structure.
-    //Requires y-flip as uses opposite y origin to OpenGL
-    flip();
-
+    outflip(false);  //Y-flip as necessary
     jpge::params params;
     params.m_quality = 95;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
@@ -1213,10 +1233,7 @@ unsigned char* ImageData::getBytes(unsigned int* outsize, int jpegquality)
   unsigned char* buffer = NULL;
   if (jpegquality <= 0)
   {
-#ifndef HAVE_LIBPNG
-    //Requires y-flip as uses opposite y origin to OpenGL
-    flip();
-#endif
+    outflip(true);  //Y-flip as necessary
     // Write png to stringstream
     std::stringstream ss;
     write_png(ss, channels, width, height, pixels);
@@ -1228,8 +1245,7 @@ unsigned char* ImageData::getBytes(unsigned int* outsize, int jpegquality)
   }
   else
   {
-    //Requires y-flip as uses opposite y origin to OpenGL
-    flip();
+    outflip(false);  //Y-flip as necessary
     // Writes JPEG image to memory buffer.
     // On entry, jpeg_bytes is the size of the output buffer pointed at by jpeg, which should be at least ~1024 bytes.
     // If return value is true, jpeg_bytes will be set to the size of the compressed data.

@@ -37,7 +37,7 @@
 #include "OpenGLViewer.h"
 
 // FBO buffers
-ImageData* FrameBuffer::pixels(ImageData* image, int channels, bool flip)
+ImageData* FrameBuffer::pixels(ImageData* image, int channels)
 {
   // Read the pixels
   assert(width && height);
@@ -55,8 +55,8 @@ ImageData* FrameBuffer::pixels(ImageData* image, int channels, bool flip)
   GL_Error_Check;
   glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image->pixels);
   GL_Error_Check;
-  if (flip)
-    image->flip();
+  //OpenGL buffer sourced images are always flipped in the Y axis
+  image->flipped = true;
   GL_Error_Check;
   return image;
 }
@@ -170,10 +170,10 @@ void FBO::disable()
 #endif
 }
 
-ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
+ImageData* FBO::pixels(ImageData* image, int channels)
 {
   if (!enabled || frame == 0 || downsample < 2)
-    return FrameBuffer::pixels(image, channels, flip);
+    return FrameBuffer::pixels(image, channels);
 
 #ifdef GL_FRAMEBUFFER_EXT
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
@@ -206,8 +206,8 @@ ImageData* FBO::pixels(ImageData* image, int channels, bool flip)
   GL_Error_Check;
   glBindTexture(GL_TEXTURE_2D, 0);
 
-  if (flip)
-    image->flip();
+  //OpenGL buffer sourced images are always flipped in the Y axis
+  image->flipped = true;
   GL_Error_Check;
 #endif
   return image;
@@ -444,9 +444,9 @@ void OpenGLViewer::display(bool redraw)
 
       //Read the pixels
       if (outputs[o]->width && outputs[o]->height && (outputs[o]->width != width || outputs[o]->height != height))
-        pixels(outputs[o]->buffer, outputs[o]->width, outputs[o]->height, outputs[o]->channels, outputs[o]->flip);
+        pixels(outputs[o]->buffer, outputs[o]->width, outputs[o]->height, outputs[o]->channels);
       else
-        pixels(outputs[o]->buffer, outputs[o]->channels, outputs[o]->flip);
+        pixels(outputs[o]->buffer, outputs[o]->channels);
 
       //Process in output display callback
       outputs[o]->display();
@@ -553,16 +553,16 @@ void OpenGLViewer::disableFBO()
   app->session.scale2d = 1.0;
 }
 
-ImageData* OpenGLViewer::pixels(ImageData* image, int channels, bool flip)
+ImageData* OpenGLViewer::pixels(ImageData* image, int channels)
 {
   assert(isopen);
   if (fbo.enabled)
-    return fbo.pixels(image, channels, flip);
+    return fbo.pixels(image, channels);
   else
-    return FrameBuffer::pixels(image, channels, flip);
+    return FrameBuffer::pixels(image, channels);
 }
 
-ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels, bool flip)
+ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels)
 {
   assert(isopen);
 
@@ -571,7 +571,7 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels, bo
   if (!channels) channels = 3;
 
   outputON(w, h, channels);
-  image = pixels(image, channels, flip);
+  image = pixels(image, channels);
   outputOFF();
 
   return image;
@@ -588,7 +588,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   std::string retImg;
 
   // Read the pixels
-  ImageData* image = pixels(NULL, w, h, channels, false);
+  ImageData* image = pixels(NULL, w, h, channels);
 
   //Write PNG/JPEG to string or file
   if (path.length() == 0)
