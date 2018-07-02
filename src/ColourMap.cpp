@@ -241,13 +241,28 @@ void ColourMap::add(json& entry, float pos)
   //std::cout << pos << " : " << entry << std::endl;
   if (entry.size() == 1)
   {
-    std::string s = entry;
-    if (pos < 0.0)
-      add(s);
+    if (entry.is_number())
+    {
+      //Single numeric value, load as shade and opacity
+      float f = entry;
+      if (f <= 1.0) f *= 255;
+      Colour colour(f, f, f, f);
+      if (pos < 0.0)
+        add(colour.value);
+      else
+        addAt(colour, pos);
+    }
     else
     {
-      Colour colour(s);
-      addAt(colour, pos);
+      //Parse colour string
+      std::string s = entry;
+      if (pos < 0.0)
+        add(s);
+      else
+      {
+        Colour colour(s);
+        addAt(colour, pos);
+      }
     }
   }
   if (entry.size() == 2)
