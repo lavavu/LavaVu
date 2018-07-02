@@ -69,6 +69,7 @@ void ColourMap::loadPaletteJSON(json& data)
   if (data.is_array())
   {
     colours.clear();
+    noValues = false;
     for (auto el : data)
       add(el);
   }
