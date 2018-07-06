@@ -698,37 +698,16 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
   }
   else if (obj)
   {
-    //Properties reserved for colourmaps can be set from any objects that use that map
-    if (obj->colourMap &&
-        (obj->colourMap->properties.has(key) ||
-         std::find(session.colourMapProps.begin(), session.colourMapProps.end(), key) != session.colourMapProps.end()))
-    {
-      reload = session.parse(&obj->colourMap->properties, data);
-      if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << obj->colourMap->name
-                             << ", DATA: " << obj->colourMap->properties.data << std::endl;
-    }
-    else
-    {
-      reload = session.parse(&obj->properties, data);
-      if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
-                             << ", DATA: " << obj->properties.data << std::endl;
-    }
-  }
-  else if (aview &&
-          (aview->properties.has(key) ||
-           std::find(session.viewProps.begin(), session.viewProps.end(), key) != session.viewProps.end()))
-  {
-    reload = session.parse(&aview->properties, data);
-    if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
-    viewset = RESET_ZOOM; //Force check for resize and autozoom
+    //Properties set on object or its colourmap
+    reload = session.parse(&obj->properties, data);
+    if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
+                           << ", DATA: " << obj->properties.data << std::endl;
   }
   else
   {
-    //Properties not found on view are set globally
+    //Properties set globally or on view
     reload = session.parse(NULL, data);
     if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
-    //TODO: do this only for certain properties
-    //viewset = RESET_ZOOM; //Force check for resize and autozoom
   }
 
   //Reload required for prop set?
@@ -1831,6 +1810,17 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   if (view >= (int)amodel->views.size()) view = 0;
 
   aview = amodel->views[view];
+
+  //View property pass-through
+  for (auto p : session.viewProps)
+  {
+    if (session.globals.count(p))
+    {
+      if (verbose) std::cerr << "GLOBAL ==> VIEW: " << p << std::endl;
+      aview->properties.data[p] = session.globals[p];
+      session.globals.erase(p); //Delete from global
+    }
+  }
 
   //Called when timestep/model changed (new model data)
   //Set model size from geometry / bounding box and apply auto zoom
