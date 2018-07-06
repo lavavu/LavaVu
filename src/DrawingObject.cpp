@@ -163,7 +163,7 @@ void DrawingObject::setup()
     {
       if (properties.has(p))
       {
-        if (verbose) std::cerr << "OBJECT ==> COLOURMAP " << p << std::endl;
+        //if (verbose) std::cerr << "OBJECT ==> COLOURMAP " << p << std::endl;
         colourMap->properties.data[p] = properties[p];
         properties.data.erase(p); //Delete from object
       }
