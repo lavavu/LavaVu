@@ -1398,6 +1398,28 @@ class ColourMap(dict):
             arr.append((c["position"], comp))
         return arr
 
+    def tohexstr(self):
+        """
+        Get the colourmap colour data as a string with hex rgb:a representation,
+        NOTE: ignores position data
+
+        Returns
+        -------
+        str:
+            The colour data which can be used to re-create the colourmap
+        """
+        def padhex2(i):
+            s = hex(int(i))
+            return s[2:].zfill(2)
+        string = "#"
+        for c in self["colours"]:
+            comp = re.findall(r"[\d\.]+", c["colour"])
+            string += padhex2(comp[0]) + padhex2(comp[1]) + padhex2(comp[2])
+            if comp[3] < 1.0:
+                string += ":" + str(comp[3])
+            string += " "
+        return string
+
     def __repr__(self):
         return self.__str__().replace(';', '\n')
 
