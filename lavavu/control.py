@@ -280,11 +280,8 @@ class FilterAction(PropertyAction):
         #Set a filter range
         f = self.target["filters"]
         f[self.index][self.property] = value
-        self.target["filters"] = json.dumps(f)
-        #return "#" + str(f) + "; redraw"
-        #return "redraw"
+        self.target["filters"] = f
         return self.command
-        #return "reload"
 
     def script(self):
         #Return script action for HTML export
