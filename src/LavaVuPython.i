@@ -135,7 +135,7 @@ public:
   void updateColourMap(ColourMap* colourMap, std::string colours, std::string properties="");
   ColourMap* getColourMap(unsigned int id);
   ColourMap* getColourMap(std::string name);
-  void setColourMap(ColourMap* target, std::string properties, bool replace=false);
+  void setColourMap(ColourMap* target, std::string properties);
   DrawingObject* colourBar(DrawingObject* obj=NULL);
   void setState(std::string state);
   std::string getState();
@@ -144,7 +144,7 @@ public:
 
   void resetViews(bool autozoom=false);
 
-  void setObject(DrawingObject* target, std::string properties, bool replace=false);
+  void setObject(DrawingObject* target, std::string properties);
   DrawingObject* createObject(std::string properties);
   DrawingObject* getObject(const std::string& name);
   DrawingObject* getObject(int id=-1);

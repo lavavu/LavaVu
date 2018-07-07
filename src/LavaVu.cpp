@@ -3094,15 +3094,11 @@ ColourMap* LavaVu::getColourMap(std::string name)
   return NULL;
 }
 
-void LavaVu::setColourMap(ColourMap* target, std::string properties, bool replace)
+void LavaVu::setColourMap(ColourMap* target, std::string properties)
 {
   if (!amodel || !target) return;
-  if (replace)
-    //Simply parse and replace property dict
-    target->properties.data = json::parse(properties);
-  else
-    //Parse and merge property strings
-    session.parseSet(target->properties, properties);
+  //Parse and merge property strings
+  session.parseSet(target->properties, properties);
 
   //All objects using this colourmap require redraw
   for (unsigned int i=0; i < amodel->objects.size(); i++)
@@ -3161,15 +3157,11 @@ void LavaVu::addTimeStep(int step, std::string properties)
   amodel->setTimeStep(step);
 }
 
-void LavaVu::setObject(DrawingObject* target, std::string properties, bool replace)
+void LavaVu::setObject(DrawingObject* target, std::string properties)
 {
   if (!amodel || !target) return;
-  if (replace)
-    //Simply parse and replace property dict
-    target->properties.data = json::parse(properties);
-  else
-    //Parse and merge property strings
-    session.parseSet(target->properties, properties);
+  //Parse and merge property strings
+  session.parseSet(target->properties, properties);
 }
 
 DrawingObject* LavaVu::createObject(std::string properties)
