@@ -81,7 +81,7 @@ void Points::update()
     sorter.changed = true;
 
   //Reload the sort array?
-  if (sorter.size != total || !allVertsFixed || counts.size() != geom.size())
+  if (sorter.size != total || !allVertsFixed || counts.size() != geom.size() || redraw)
     loadList();
 }
 
