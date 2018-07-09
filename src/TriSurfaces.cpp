@@ -153,6 +153,12 @@ void TriSurfaces::loadMesh()
 
     int triverts = 0;
     bool grid = (geom[index]->width * geom[index]->height == geom[index]->count());
+
+    //Mesh optimisation (duplicate vertex replacement) must be disabled with tex coords
+    //(Vertices may be shared by triangles, but each needs it's own texcoord and texcoords are stored with vertices)
+    bool hasTexCoords = geom[index]->render->texCoords.size()/2 == geom[index]->count();
+    bool optimise = !hasTexCoords && vnormals && geom[index]->draw->properties["optimise"];
+
     if (grid)
     {
       //Structured mesh grid, 2 triangles per element, 3 indices per tri
@@ -170,7 +176,7 @@ void TriSurfaces::loadMesh()
       //Unstructured mesh, 1 index per vertex
       triverts = geom[index]->count();
       indices.resize(triverts);
-      calcTriangleNormals(index, verts, normals);
+      calcTriangleNormals(index, verts, normals, optimise);
       elements += triverts;
     }
 
@@ -193,11 +199,15 @@ void TriSurfaces::loadMesh()
       //   otherwise will get destroyed when new containers replace them
       Float3_Ptr old_vertices = geom[index]->_vertices;
       Float3_Ptr old_normals = geom[index]->_normals;
+      Float2_Ptr old_texCoords = geom[index]->_texCoords;
       UInt_Ptr old_indices = geom[index]->_indices;
 
       //Create a new stores for replaced values
       geom[index]->_vertices = std::make_shared<Coord3DValues>();
       geom[index]->_indices = std::make_shared<UIntValues>();
+
+      if (hasTexCoords)
+        geom[index]->_texCoords = std::make_shared<Coord2DValues>();
 
       //Vertices, normals, indices (and colour values) may be replaced
       //Rest just get copied over
@@ -210,7 +220,7 @@ void TriSurfaces::loadMesh()
       //Recreate value data as optimised version is smaller, re-load necessary values
       FloatValues* oldvalues = geom[index]->colourData();
       Values_Ptr newvalues = NULL;
-      if (oldvalues)
+      if (optimise && oldvalues)
       {
         newvalues = Values_Ptr(new FloatValues());
         newvalues->label = oldvalues->label;
@@ -218,7 +228,6 @@ void TriSurfaces::loadMesh()
         newvalues->maximum = oldvalues->maximum;
       }
 
-      bool optimise = vnormals && geom[index]->draw->properties["optimise"];
       for (unsigned int v=0; v<verts.size(); v++)
       {
         //Re-write optimised data with unique vertices only
@@ -240,11 +249,11 @@ void TriSurfaces::loadMesh()
           //Replace verts & normals
           read(geom[index], 1, lucVertexData, verts[v].vert);
           if (vnormals)
-          {
-            //Normalise final vector first
-            normals[verts[v].id].normalise();
-            read(geom[index], 1, lucNormalData, normals[verts[v].id].ref());
-          }
+            read(geom[index], 1, lucNormalData, normals[verts[v].ref].ref());
+
+          if (hasTexCoords)
+            read(geom[index], 1, lucTexCoordData, &((*old_texCoords)[verts[v].id][0]));
+
           unique++;
         }
         else
@@ -361,7 +370,7 @@ void TriSurfaces::loadList()
     sort();
 }
 
-void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals)
+void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise)
 {
   clock_t t1,t2;
   t1 = clock();
@@ -400,10 +409,9 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   //Search for duplicates and replace references to normals
   int match = 0;
   int dupcount = 0;
-  bool optimise = normal && geom[index]->draw->properties["optimise"];
   for (unsigned int v=1; v<verts.size(); v++)
   {
-    if (optimise && verts[match] == verts[v])
+    if (verts[match] == verts[v])
     {
       // If the angle between a given face normal and the face normal
       // associated with the first triangle in the list of triangles for the
@@ -427,7 +435,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
           normals[verts[match].id] += normals[verts[v].id];
 
         //Colour value, add to matched
-        if (vertColour && geom[index]->colourData())
+        if (optimise && vertColour && geom[index]->colourData())
           geom[index]->colourData()->value[verts[match].id] += geom[index]->colourData()->value[verts[v].id];
 
         verts[match].vcount++;
@@ -443,6 +451,18 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   t2 = clock();
   debug_print("  %.4lf seconds to replace duplicates (%d/%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, dupcount, verts.size());
   t1 = clock();
+
+  for (unsigned int v=0; v<verts.size(); v++)
+  {
+    //Normalise final vectors
+    if (verts[v].id == verts[v].ref)
+      normals[verts[v].id].normalise();
+  }
+
+  t2 = clock();
+  debug_print("  %.4lf seconds to normalise\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+
+
 }
 
 void TriSurfaces::calcTriangleNormalsWithIndices(int index)

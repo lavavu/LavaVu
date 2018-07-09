@@ -1522,6 +1522,7 @@ void LavaVu::readOBJ(const FilePath& fn)
     }
     else
     {
+      //TriSplit enabled, don't use built in index data
       for (size_t f = 0; f < shapes[i].mesh.indices.size(); f += 3)
       {
         if (attrib.texcoords.size())

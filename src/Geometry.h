@@ -471,6 +471,7 @@ public:
 };
 
 //Class for surface vertices, sorting, collating & averaging normals
+#define VERT_EPSILON 0.001
 class Vertex
 {
 public:
@@ -492,7 +493,7 @@ public:
   bool operator==(const Vertex &rhs) const
   {
     //Comparison for equality
-    return fabs(vert[0] - rhs.vert[0]) < 0.001 && fabs(vert[1] - rhs.vert[1]) < 0.001 && fabs(vert[2] - rhs.vert[2]) < 0.001;
+    return fabs(vert[0] - rhs.vert[0]) < VERT_EPSILON && fabs(vert[1] - rhs.vert[1]) < VERT_EPSILON && fabs(vert[2] - rhs.vert[2]) < VERT_EPSILON;
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const Vertex& v);
@@ -657,7 +658,7 @@ public:
   virtual void loadMesh();
   virtual void sort();    //Threaded sort function
   void loadList();
-  void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals);
+  void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise=true);
   void calcTriangleNormalsWithIndices(int index);
   void calcGridNormals(int i, std::vector<Vec3d> &normals);
   void calcGridIndices(int i, std::vector<GLuint> &indices);
