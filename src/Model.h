@@ -119,7 +119,7 @@ public:
   void bake(DrawingObject* obj);
 
   void loadWindows();
-  void loadLinks();
+  void loadLinks(float* min, float* max);
   void loadLinks(DrawingObject* obj);
   void clearTimeSteps();
   int loadTimeSteps(bool scan=false);

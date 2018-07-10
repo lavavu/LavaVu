@@ -687,14 +687,12 @@ void Model::loadWindows()
 
       session.globals["caption"] = wtitle;
       session.globals["resolution"] = {width, height};
-      session.globals["min"] = {min[0], min[1], min[2]};
-      session.globals["max"] = {max[0], max[1], max[2]};
       //Support legacy colour field
       if (colour.value != 0 && !session.globals.count("colour"))
         session.globals["background"] = colour.toJson();
 
       //Link the window viewports, objects & colourmaps
-      loadLinks();
+      loadLinks(min, max);
     }
   }
   sqlite3_finalize(statement);
@@ -838,7 +836,7 @@ void Model::loadObjects()
 }
 
 //Load viewports in current window, objects in each viewport, colourmaps for each object
-void Model::loadLinks()
+void Model::loadLinks(float* min, float* max)
 {
   //Select statment to get all viewports in window and all objects in viewports
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
@@ -868,6 +866,9 @@ void Model::loadLinks()
       loadViewCamera(viewport_id);
       last_viewport = viewport_id;
       last_object = 0;  //Reset required, in case of single object which is shared between viewports
+      //Set the view bounds, passed from window
+      view->properties.data["min"] = {min[0], min[1], min[2]};
+      view->properties.data["max"] = {max[0], max[1], max[2]};
     }
 
     //Get drawing object
