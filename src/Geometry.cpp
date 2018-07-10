@@ -653,18 +653,23 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
       {
         Data_Ptr datp = geom[index]->dataContainer((lucGeometryDataType)data_type);
         DataContainer* dat = datp.get();
+        FloatValues* val_ptr = NULL;
         if (!dat)
         {
           //TODO: export all values with labels separately
           //Check in values and use if label matches
           for (auto vals : geom[index]->values)
           {
+            std::cout << vals->label << " == " << GeomData::datalabels[data_type] << std::endl;
             if (vals->label == GeomData::datalabels[data_type])
-              dat = (FloatValues*)vals.get();
+            {
+              dat = val_ptr = (FloatValues*)vals.get();
+              break;
+            }
           }
           //Use default colour values for "values" until multiple data sets supported in WebGL viewer
           if (!dat && data_type == lucColourValueData)
-            dat = geom[index]->colourData();
+            dat = val_ptr = geom[index]->colourData();
 
         }
         if (!dat) continue;
@@ -692,13 +697,22 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
             }
             el["data"] = values;
           }
-          data[GeomData::datalabels[data_type]] = el;
-          std::cout << " -- " <<  GeomData::datalabels[data_type] << " * " << length << " : " << dat->minimum << " - " << dat->maximum << std::endl;
-          if (dat->minimum < dat->maximum)
+
+          //Use cached min max for applicable data label
+          if (val_ptr)
+          {
+            el["minimum"] = geom[index]->draw->ranges[val_ptr->label].minimum;
+            el["maximum"] = geom[index]->draw->ranges[val_ptr->label].maximum;
+          }
+          //Use the local min/max data block
+          else if (dat->minimum < dat->maximum)
           {
             el["minimum"] = dat->minimum;
             el["maximum"] = dat->maximum;
           }
+
+          //Copy final data
+          data[GeomData::datalabels[data_type]] = el;
         }
       }
 
@@ -1492,7 +1506,7 @@ void Geometry::objectBounds(DrawingObject* draw, float* min, float* max)
       if (std::isinf(g->max[i]) || std::isinf(g->min[i]))
       {
         g->calcBounds();
-        //printf("No bounding dims provided for object %s (el %d), calculated ...%f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(), g, 
+        //printf("No bounding dims provided for object %s, calculated ...%f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(), 
         //        g->min[0], g->min[1], g->min[2], g->max[0], g->max[1], g->max[2]);
         break;
       }

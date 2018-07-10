@@ -513,30 +513,30 @@ void Volumes::render(int i)
 
   //Field data requires normalisation to [0,1]
   //Pass minimum,maximum in place of colourmap calibrate
+  Range range(0, 1);
   if (geom[i]->colourData())
   {
-    auto range = geom[i]->draw->ranges[geom[i]->colourData()->label];
+    range = geom[i]->draw->ranges[geom[i]->colourData()->label];
     //For non float type, normalise isovalue to range [0,1] to match data
-    if (geom[i]->texture->type != VOLUME_FLOAT)
-      isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
-    //std::cout << "IsoValue " << isoval << std::endl;
-    //std::cout << "Range " << range.minimum << " : " << range.maximum << std::endl;
+    //if (geom[i]->texture->type != VOLUME_FLOAT)
+    //  isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
     prog->setUniform2f("uRange", range.data());
   }
   else
   {
-    float range[2] = {0.0, 1.0};
+    float r[2] = {0.0, 1.0};
     ColourMap* cmap = geom[i]->draw->colourMap;
     if (cmap)
     {
-      Properties::toArray<float>(cmap->properties["range"], range, 2);
-      Range rangeobj;
-      rangeobj.update(range[0], range[1]);
-      cmap->calibrate(&rangeobj);
+      Properties::toArray<float>(cmap->properties["range"], r, 2);
+      range.update(r[0], r[1]);
+      cmap->calibrate(&range);
     }
     //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
-    prog->setUniform2f("uRange", range);
   }
+  //Normalise provided isovalue to match data range
+  isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
+  prog->setUniform2f("uRange", range.data());
   prog->setUniformf("uIsoValue", isoval);
   GL_Error_Check;
 
@@ -861,7 +861,9 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
 {
   update();  //Count slices etc...
   //Note: update() must be called first to fill slices[]
-  unsigned int inc = slices[draw];
+  auto it = slices.find(draw);
+  if (it == slices.end()) return;
+  unsigned int inc = it->second;
   if (inc <= 0) inc = 1;
   for (unsigned int i = 0; i < geom.size(); i += inc)
   {
@@ -874,11 +876,11 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
         height = geom[i]->colourData()->size() / geom[i]->width;
 
       /* This is for exporting the floating point volume data cube, may use in future when WebGL supports 3D textures...
-      printf("Exporting: %d width %d height %d depth %d\n", id, geom[i]->width, height, slices[draw]);
+      printf("Exporting: %d width %d height %d depth %d\n", id, geom[i]->width, height, inc);
       int sliceSize = geom[i]->width * height;
-      float* vol = new float[sliceSize * slices[draw]];
+      float* vol = new float[sliceSize * inc];
       size_t offset = 0;
-      for (int j=i; j<i+slices[draw]; j++)
+      for (int j=i; j<i+inc; j++)
       {
          size_t size = sliceSize * sizeof(float);
          memcpy(vol + offset, geom[j]->colourData()->ref(), size);
@@ -894,14 +896,15 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       json res, scale;
       res.push_back((int)geom[i]->width);
       res.push_back(height);
-      if (slices[draw])
-        res.push_back(slices[draw]);
+      if (inc > 1)
+        res.push_back(inc);
       else
         res.push_back(geom[i]->depth);
       //Scaling factors
       scale.push_back(geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0]);
       scale.push_back(geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1]);
       scale.push_back(geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]);
+
       volume["res"] = res;
       volume["scale"] = scale;
 
@@ -915,7 +918,7 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
       volume["size"] = 1;
       //volume["count"] = ;
       volume["url"] = imagestr;
-      //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * slices[draw] * sizeof(float)); //For 3D export
+      //volume["data"] = base64_encode(reinterpret_cast<const unsigned char*>(volume), sliceSize * inc * sizeof(float)); //For 3D export
       obj["volume"] = volume;
 
       //Write image to disk (for debugging)

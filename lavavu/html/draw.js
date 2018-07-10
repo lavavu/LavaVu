@@ -403,7 +403,8 @@ function checkPointMinMax(coord) {
 }
 
 function objVertexColour(obj, data, idx) {
-  return vertexColour(obj.colour, obj.opacity, obj.colourmap >= 0 ? vis.colourmaps[obj.colourmap] : null, data, idx);
+  var mapid = lookupMapId(obj.colourmap);
+  return vertexColour(obj.colour, obj.opacity, mapid >= 0 ? vis.colourmaps[mapid] : null, data, idx);
 }
 
 function safeLog10(val) {return val < Number.MIN_VALUE ? Math.log10(Number.MIN_VALUE) : Math.log10(val); }
@@ -670,7 +671,8 @@ function Renderer(gl, type, colour, border) {
     this.uniforms = ["uVolume", "uTransferFunction", "uEnableColour", "uFilter",
                      "uDensityFactor", "uPower", "uSaturation", "uBrightness", "uContrast", "uSamples",
                      "uViewport", "uBBMin", "uBBMax", "uResolution", "uRange", "uDenMinMax",
-                     "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uInvPMatrix"];
+                     "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uMVPMatrix", "uInvMVPMatrix",
+                     "uAmbient", "uDiffuse", "uSpecular", "uLightPos"];
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT];
   }
 
@@ -722,7 +724,6 @@ Renderer.prototype.init = function() {
     this.iscale = [1.0 / this.scaling[0], 1.0 / this.scaling[1], 1.0 / this.scaling[2]]
       
     var defines = "precision highp float;\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
-    defines += (!!window.MSInputMethodContext ? "#define IE11\n" : "#define NOT_IE11\n");
     var maxSamples = 1024; //interactive ? 1024 : 256;
     defines += "const int maxSamples = " + maxSamples + ";\n\n\n\n\n"; //Extra newlines so errors in main shader have correct line #
     fs = defines + getSourceFromElement('volume-fs');
@@ -907,6 +908,15 @@ function VertexBuffer(elements, size) {
 VertexBuffer.prototype.loadParticles = function(object) {
   for (var p in object.points) {
     var dat =  object.points[p];
+
+    /*console.log("loadParticles " + p);
+    if (dat.values)
+      console.log(object.name + " : " + dat.values.minimum + " -> " + dat.values.maximum);
+    if (object.colourmap >= 0)
+      console.log(object.name + " :: " + vis.colourmaps[object.colourmap].range[0] + " -> " + vis.colourmaps[object.colourmap].range[1]);
+    else
+      console.log(object.colourmap);*/
+
     for (var i=0; i<dat.vertices.data.length/3; i++) {
       var i3 = i*3;
       var vert = [dat.vertices.data[i3], dat.vertices.data[i3+1], dat.vertices.data[i3+2]];
@@ -1285,16 +1295,47 @@ Renderer.prototype.draw = function() {
       //For a volume cube other than [0,0,0] - [1,1,1], need to translate/scale here...
       viewer.webgl.modelView.translate([-this.scaling[0]*0.5, -this.scaling[1]*0.5, -this.scaling[2]*0.5]);  //Translate to origin
       //viewer.webgl.modelView.translate([-0.5, -0.5, -0.5]);  //Translate to origin
+
+      //Get the mvMatrix scaled by volume size
+      //(used for depth calculations)
+      viewer.webgl.modelView.push();
+        viewer.webgl.modelView.scale([this.scaling[0], this.scaling[1], this.scaling[2]]);
+        var matrix = mat4.create(viewer.webgl.modelView.matrix);
+      viewer.webgl.modelView.pop();
+
       //Inverse of scaling
       viewer.webgl.modelView.scale([this.iscale[0], this.iscale[1], this.iscale[2]]);
 
-      //Perspective matrix
-      viewer.webgl.setPerspective(viewer.fov, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 1000.0);
+      //Send the normal matrix now
+      viewer.webgl.setNormalMatrix();
+      //printMatrix(viewer.webgl.nMatrix);
 
-      //Get inverted matrix for volume shader
-      this.invPMatrix = mat4.create(viewer.webgl.perspective.matrix);
-      mat4.inverse(this.invPMatrix);
-      //console.log(JSON.stringify(viewer.webgl.modelView));
+      //Perspective matrix
+      //viewer.webgl.setPerspective(viewer.fov, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 1000.0);
+      //viewer.webgl.setPerspective(45.0, this.gl.viewportWidth / this.gl.viewportHeight, 0.014254, 34.641014);
+
+      //Apply model scaling, inverse squared
+      viewer.webgl.modelView.scale([1.0/(viewer.scale[0]*viewer.scale[0]), 1.0/(viewer.scale[1]*viewer.scale[1]), 1.0/(viewer.scale[2]*viewer.scale[2])]);
+
+      //Send default matrices now
+      //viewer.webgl.setMatrices();
+      //Model view matrix
+      viewer.webgl.gl.uniformMatrix4fv(viewer.webgl.program.mvMatrixUniform, false, viewer.webgl.modelView.matrix);
+      //Perspective matrix
+      viewer.webgl.gl.uniformMatrix4fv(viewer.webgl.program.pMatrixUniform, false, viewer.webgl.perspective.matrix);
+
+      //Combined ModelView * Projection
+      var MVPMatrix = mat4.create(viewer.webgl.perspective.matrix);
+      mat4.multiply(MVPMatrix, matrix);
+
+      //Combined InverseProjection * InverseModelView
+      var invPMatrix = mat4.create(viewer.webgl.perspective.matrix);
+      mat4.inverse(invPMatrix);
+      var invMVPMatrix = mat4.create(viewer.webgl.modelView.matrix);
+      mat4.transpose(invMVPMatrix);
+      mat4.multiply(invMVPMatrix, invPMatrix);
+
+      viewer.webgl.modelView.pop();
     }
 
     this.gl.activeTexture(this.gl.TEXTURE0);
@@ -1305,7 +1346,7 @@ Renderer.prototype.draw = function() {
 
     //Only render full quality when not interacting
     //this.gl.uniform1i(this.program.uniforms["uSamples"], this.samples);
-    //TODO: better default handling here!
+    //TODO: better default handling here - get default values from the properties dict, needs to be exported to a json file
     this.gl.uniform1i(this.program.uniforms["uSamples"], this.properties.samples || 256);
     this.gl.uniform1i(this.program.uniforms["uVolume"], 0);
     this.gl.uniform1i(this.program.uniforms["uTransferFunction"], 1);
@@ -1319,32 +1360,45 @@ Renderer.prototype.draw = function() {
     this.gl.uniform3fv(this.program.uniforms["uBBMax"], new Float32Array(bbmax));
     this.gl.uniform3fv(this.program.uniforms["uResolution"], new Float32Array(this.resolution));
 
-    this.gl.uniform1f(this.program.uniforms["uDensityFactor"], this.properties.density || 5);
+    this.gl.uniform1f(this.program.uniforms["uDensityFactor"], (this.properties.density != undefined ? this.properties.density : 5));
     // brightness and contrast
     this.gl.uniform1f(this.program.uniforms["uSaturation"], this.properties.saturation || 1.0);
     this.gl.uniform1f(this.program.uniforms["uBrightness"], this.properties.brightness || 0.0);
     this.gl.uniform1f(this.program.uniforms["uContrast"], this.properties.contrast || 1.0);
     this.gl.uniform1f(this.program.uniforms["uPower"], this.properties.power || 1.0);
 
-    this.gl.uniform1f(this.program.uniforms["uIsoValue"], this.properties.isovalue || 0.0);
-    var colour = new Colour(this.properties.colour);
-    colour.alpha = this.properties.isoalpha || 1.0;
-    this.gl.uniform4fv(this.program.uniforms["uIsoColour"], colour.rgbaGL());
-    this.gl.uniform1f(this.program.uniforms["uIsoSmooth"], this.properties.isosmooth || 1.0);
-    this.gl.uniform1i(this.program.uniforms["uIsoWalls"], this.properties.isowalls);
+    //Data value range for isoValue etc
+    var range = new Float32Array([0.0, 1.0]);
+    var isoval = this.properties.isovalue || 0.0;
+    if (vis.objects[this.id]["volume"].minimum != undefined && vis.objects[this.id]["volume"].maximum != undefined) {
+      var r = [vis.objects[this.id]["volume"].minimum, vis.objects[this.id]["volume"].maximum];
+      //Normalise isovalue to range [0,1] to match data (non-float textures always used in WebGL)
+      isoval = (isoval - r[0]) / (r[1] - r[0]);
+      //This is used in shader to normalize data to [0,1] when using float textures
+      //range[0] = r[0];
+      //range[1] = r[1];
+    }
 
-    //Data value range (default only for now)
-    this.gl.uniform2fv(this.program.uniforms["uRange"], new Float32Array([0.0, 1.0]));
+    this.gl.uniform2fv(this.program.uniforms["uRange"], range);
+    this.gl.uniform1f(this.program.uniforms["uIsoValue"], isoval);
+    var colour = new Colour(this.properties.colour || [220, 220, 200, 255]);
+    colour.alpha = (this.properties.isovalue == undefined ? 0.0 : (this.properties.isoalpha || 0.0));
+    this.gl.uniform4fv(this.program.uniforms["uIsoColour"], colour.rgbaGL());
+    this.gl.uniform1f(this.program.uniforms["uIsoSmooth"], this.properties.isosmooth || 0.1);
+    this.gl.uniform1i(this.program.uniforms["uIsoWalls"], this.properties.isowalls != undefined ? this.properties.isowalls : 1.0);
+
     //Density clip range
     this.gl.uniform2fv(this.program.uniforms["uDenMinMax"], new Float32Array([this.properties.mindensity || 0.0, this.properties.maxdensity || 1.0]));
+    this.gl.uniform1f(this.program.uniforms["uAmbient"], this.properties.ambient || 0.4);
+    this.gl.uniform1f(this.program.uniforms["uDiffuse"], this.properties.diffuse || 0.65);
+    this.gl.uniform1f(this.program.uniforms["uSpecular"], this.properties.specular || 0.0);
+    this.gl.uniform3fv(this.program.uniforms["uLightPos"], new Float32Array(this.properties.lightpos || [0.1,-0.1,2.0]));
 
     //Draw two triangles
     viewer.webgl.initDraw2d();
-    this.gl.uniformMatrix4fv(this.program.uniforms["uInvPMatrix"], false, this.invPMatrix);
-    viewer.webgl.setMatrices();
+    this.gl.uniformMatrix4fv(this.program.uniforms["uInvMVPMatrix"], false, invMVPMatrix);
+    this.gl.uniformMatrix4fv(this.program.uniforms["uMVPMatrix"], false, MVPMatrix);
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, viewer.webgl.vertexPositionBuffer.numItems);
-
-    viewer.webgl.modelView.pop();
 
     //Restore default blending
     this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
@@ -1980,8 +2034,9 @@ Viewer.prototype.setObjectProperties = function() {
   vis.objects[id].isofilter = document.getElementById('isofilter').checked;
   var colour = new Colour(document.getElementById('colour_set').style.backgroundColor);
   vis.objects[id].colour = colour.html();
-  if (vis.objects[id].colourmap >= 0)
-    vis.colourmaps[vis.objects[id].colourmap].logscale = document.getElementById('logscale').checked;
+  var mapid = lookupMapId(vis.objects[id].colourmap);
+  if (mapid >= 0)
+    vis.colourmaps[mapid].logscale = document.getElementById('logscale').checked;
 
   //Flag reload on WebGL objects
   for (var type in types) {
@@ -2082,17 +2137,22 @@ function removeChildren(element) {
   }
 }
 
-paletteUpdate = function(obj, id) {
-  //Convert name to index for now
+lookupMapId = function(id) {
   if (typeof(id) == 'string') {
     for (var i = 0; i < vis.colourmaps.length; i++) {
       if (vis.colourmaps[i].name == id) {
-        id = i;
+        return i;
         break;
       }
     }
   }
+  return id;
+}
 
+paletteUpdate = function(obj, id) {
+  //Convert name to index for now
+  //console.log("paletteUpdate " + id + " : " + obj.name);
+  id = lookupMapId(id);
   if (id != undefined) viewer.gradient.mapid = id;
 
   //Load colourmap change
@@ -2108,6 +2168,7 @@ paletteUpdate = function(obj, id) {
   if (viewer.webgl) {
     var gradient = document.getElementById('gradient');
     viewer.webgl.updateTexture(viewer.webgl.gradientTexture, gradient, viewer.gl.TEXTURE1);  //Use 2nd texture unit
+    //window.open(gradient.toDataURL());
   }
 }
 

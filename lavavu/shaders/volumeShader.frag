@@ -48,15 +48,18 @@ uniform vec3 uLightPos;
 
 vec3 bbMin;
 vec3 bbMax;
-
-//#define tex3D(pos) interpolate_tricubic_fast(pos)
-//#define tex3D(pos) texture3Dfrom2D(pos).x
+float irange = uRange.y - uRange.x;
 
 float tex3D(vec3 pos) 
 {
   //if (uFilter > 0)
   //  return interpolate_tricubic_fast(pos);
-  return texture3D(uVolume, pos).x; //from2D(pos).x;
+  //return texture3D(uVolume, pos).x;
+  float density = texture3D(uVolume, pos).x;
+  //Normalise the density over provided range
+  //(used for float textures only, all other formats are already [0,1])
+  density = (density - uRange.x) * irange;
+  return density;
 }
 
 // It seems WebGL has no transpose
@@ -94,10 +97,11 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
   }
 
   //Calculate normal
-  /*return normalize(vec3(density) - vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
+  /*
+  return normalize(vec3(density) - vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
                                         tex3D(vec3(pos.x, pos.y+shift.y, pos.z)), 
                                         tex3D(vec3(pos.x, pos.y, pos.z+shift.z))));
-  */
+  /*/
   //Compute central difference gradient 
   //(slow, faster way would be to precompute a gradient texture)
   vec3 pos1 = vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
@@ -107,6 +111,7 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
                    tex3D(vec3(pos.x, pos.y-shift.y, pos.z)), 
                    tex3D(vec3(pos.x, pos.y, pos.z-shift.z)));
   return normalize(pos1 - pos2);
+  //*/
 }
 
 vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
@@ -168,21 +173,15 @@ void main()
     //Number of samples to take along this ray before we pass out back of volume...
     float travel = distance(rayStop, rayStart) / stepSize;
     int samples = int(ceil(travel));
-    float range = uRange.y - uRange.x;
-    if (range <= 0.0) range = 1.0;
+    if (irange <= 0.0) irange = 1.0;
+    irange = 1.0 / irange;
   
     //Raymarch, front to back
     vec3 depthHit = rayStart;
     for (int i=0; i < maxSamples; ++i)
     {
       //Render samples until we pass out back of cube or fully opaque
-#ifndef IE11
       if (i == samples || T < 0.01) break;
-#else
-      //This is slower but allows IE 11 to render, break on non-uniform condition causes it to fail
-      if (i == uSamples) break;
-      if (all(greaterThanEqual(pos, bbMin)) && all(lessThanEqual(pos, bbMax)))
-#endif
       {
         //Get density 
         float density = tex3D(pos);
@@ -219,11 +218,12 @@ void main()
             vec4 value = vec4(uIsoColour.rgb, 1.0);
 
             vec3 normal = normalize((uNMatrix * vec4(isoNormal(pos, shift, density), 1.0)).xyz);
-
             vec3 light = value.rgb;
             lighting(pos, normal, light);
             //Front-to-back blend equation
             colour += T * uIsoColour.a * light;
+            //Render normals
+            //colour += T * abs(isoNormal(pos, shift, density));
             T *= (1.0 - uIsoColour.a);
           }
         }
@@ -231,8 +231,6 @@ void main()
 
         if (uDensityFactor > 0.0)
         {
-          //Normalise the density over provided range
-          density = (density - uRange.x) / range;
           density = clamp(density, 0.0, 1.0);
           if (density < uDenMinMax[0] || density > uDenMinMax[1])
           {

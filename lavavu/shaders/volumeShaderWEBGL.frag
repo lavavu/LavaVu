@@ -4,12 +4,15 @@
  *
  * Licensed under the GNU Lesser General Public License
  * https://www.gnu.org/licenses/lgpl.html
+ * (volume shader from sharevol https://github.com/OKaluza/sharevol)
  */
 precision highp float;
+#define NO_DEPTH_WRITE
 
 //Defined dynamically before compile...
 //const vec2 slices = vec2(16.0,16.0);
 //const int maxSamples = 256;
+const float depthT = 0.99; //Transmissivity threshold below which depth write applied
 
 uniform sampler2D uVolume;
 uniform sampler2D uTransferFunction;
@@ -25,9 +28,9 @@ uniform float uContrast;
 uniform float uSaturation;
 uniform float uPower;
 
-uniform mat4 uPMatrix;
-uniform mat4 uInvPMatrix;
 uniform mat4 uMVMatrix;
+uniform mat4 uMVPMatrix;
+uniform mat4 uInvMVPMatrix;
 uniform mat4 uNMatrix;
 uniform vec4 uViewport;
 uniform int uSamples;
@@ -40,28 +43,56 @@ uniform int uFilter;
 uniform vec2 uRange;
 uniform vec2 uDenMinMax;
 
-//#define tex3D(pos) interpolate_tricubic_fast(pos)
-//#define tex3D(pos) texture3Dfrom2D(pos).x
+uniform float uAmbient;
+uniform float uDiffuse;
+uniform float uSpecular;
+uniform vec3 uLightPos;
+
+vec3 bbMin;
+vec3 bbMax;
 
 vec2 islices = vec2(1.0 / slices.x, 1.0 / slices.y);
+float maxslice = slices.x * slices.y - 1.0;
+vec2 cmin = vec2(0.5/(slices.x*slices.y), 0.5/(slices.x*slices.y));
+vec2 cmax = vec2(1.0, 1.0) - cmin;
 
 vec4 texture3Dfrom2D(vec3 pos)
 {
   //Get z slice index and position between two slices
-  float Z = pos.z * (slices.x * slices.y - 1.0);
-  int slice = int(Z); //Index of first slice
+  float Z = pos.z * maxslice;
+  float slice = floor(Z); //Index of first slice
+  Z = fract(Z);
+  //Edge case at z max
+  if (int(slice) > int(maxslice)-1)
+  {
+    slice = maxslice-1.0;
+    Z = 1.0;
+  }
+  //Only start interpolation with next Z slice 1/3 from edges at first & last z slice
+  //(this approximates how 3d texture volume is sampled at edges with linear filtering
+  // due to edge sample being included in weighted average twice)
+  // - min z slice
+  else if (int(slice) == 0)
+  {
+    Z = max(0.0, (Z-0.33) * 1.5);
+  }
+  // - max z slice
+  else if (int(slice) == int(maxslice)-1)
+  {
+    Z = min(1.0, Z*1.5);
+  }
 
   //X & Y coords of sample scaled to slice size
-  vec2 sampleOffset = pos.xy * islices;
+  //(Clamp range at borders to prevent bleeding between tiles due to linear filtering)
+  vec2 sampleOffset = clamp(pos.xy, cmin, cmax) * islices;
   //Offsets in 2D texture of given slice indices
   //(add offsets to scaled position within slice to get sample positions)
-  float A = float(slice) * islices.x;
-  float B = float(slice+1) * islices.x;
+  float A = slice * islices.x;
+  float B = (slice+1.0) * islices.x;
   vec2 z1offset = vec2(fract(A), floor(A) / slices.y) + sampleOffset;
   vec2 z2offset = vec2(fract(B), floor(B) / slices.y) + sampleOffset;
-  
   //Interpolate the final value by position between slices [0,1]
-  return mix(texture2D(uVolume, z1offset), texture2D(uVolume, z2offset), fract(Z));
+  return mix(texture2D(uVolume, z1offset), texture2D(uVolume, z2offset), Z);
 }
 
 float interpolate_tricubic_fast(vec3 coord);
@@ -84,20 +115,13 @@ mat4 transpose(in mat4 m)
              );
 }
 
-//Light moves with camera
-const vec3 lightPos = vec3(0.5, 0.5, 5.0);
-const float ambient = 0.2;
-const float diffuse = 0.8;
-const vec3 diffColour = vec3(1.0, 1.0, 1.0);  //Colour of diffuse light
-const vec3 ambColour = vec3(0.2, 0.2, 0.2);   //Colour of ambient light
-
 void lighting(in vec3 pos, in vec3 normal, inout vec3 colour)
 {
   vec4 vertPos = uMVMatrix * vec4(pos, 1.0);
-  //vec3 lightDir = normalize(lightPos - vertPos.xyz);
-  vec3 lightDir = normalize(-vertPos.xyz);
-  vec3 lightWeighting = ambColour + diffColour * diffuse * clamp(abs(dot(normal, lightDir)), 0.1, 1.0);
-
+  //Light moves with camera at specified offset
+  vec3 lightDir = normalize(uLightPos - vertPos.xyz);
+  float diffuse = clamp(abs(dot(normal, lightDir)), 0.1, 1.0);
+  vec3 lightWeighting = vec3(uAmbient + diffuse * uDiffuse);
   colour *= lightWeighting;
 }
 
@@ -106,19 +130,20 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
   //Detect bounding box hit (walls)
   if (uIsoWalls > 0)
   {
-    if (pos.x <= uBBMin.x) return vec3(-1.0, 0.0, 0.0);
-    if (pos.x >= uBBMax.x) return vec3(1.0, 0.0, 0.0);
-    if (pos.y <= uBBMin.y) return vec3(0.0, -1.0, 0.0);
-    if (pos.y >= uBBMax.y) return vec3(0.0, 1.0, 0.0);
-    if (pos.z <= uBBMin.z) return vec3(0.0, 0.0, -1.0);
-    if (pos.z >= uBBMax.z) return vec3(0.0, 0.0, 1.0);
+    if (pos.x <= bbMin.x) return vec3(-1.0, 0.0, 0.0);
+    if (pos.x >= bbMax.x) return vec3(1.0, 0.0, 0.0);
+    if (pos.y <= bbMin.y) return vec3(0.0, -1.0, 0.0);
+    if (pos.y >= bbMax.y) return vec3(0.0, 1.0, 0.0);
+    if (pos.z <= bbMin.z) return vec3(0.0, 0.0, -1.0);
+    if (pos.z >= bbMax.z) return vec3(0.0, 0.0, 1.0);
   }
 
   //Calculate normal
-  /*return normalize(vec3(density) - vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
+  /*
+  return normalize(vec3(density) - vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
                                         tex3D(vec3(pos.x, pos.y+shift.y, pos.z)), 
                                         tex3D(vec3(pos.x, pos.y, pos.z+shift.z))));
-  */
+  /*/
   //Compute central difference gradient 
   //(slow, faster way would be to precompute a gradient texture)
   vec3 pos1 = vec3(tex3D(vec3(pos.x+shift.x, pos.y, pos.z)), 
@@ -128,14 +153,15 @@ vec3 isoNormal(in vec3 pos, in vec3 shift, in float density)
                    tex3D(vec3(pos.x, pos.y-shift.y, pos.z)), 
                    tex3D(vec3(pos.x, pos.y, pos.z-shift.z)));
   return normalize(pos1 - pos2);
+  //*/
 }
 
 vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
 {
   //Intersect ray with bounding box
   vec3 rayInvDirection = 1.0 / rayDirection;
-  vec3 bbMinDiff = (uBBMin - rayOrigin) * rayInvDirection;
-  vec3 bbMaxDiff = (uBBMax - rayOrigin) * rayInvDirection;
+  vec3 bbMinDiff = (bbMin - rayOrigin) * rayInvDirection;
+  vec3 bbMaxDiff = (bbMax - rayOrigin) * rayInvDirection;
   vec3 imax = max(bbMaxDiff, bbMinDiff);
   vec3 imin = min(bbMaxDiff, bbMinDiff);
   float back = min(imax.x, min(imax.y, imax.z));
@@ -145,18 +171,22 @@ vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
 
 void main()
 {
+    bbMin = clamp(uBBMin, vec3(0.0), vec3(1.0));
+    bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
+
     //Compute eye space coord from window space to get the ray direction
     mat4 invMVMatrix = transpose(uMVMatrix);
     //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
     //Window ->[VP^]-> NDC ->[/w]-> Clip ->[P^]-> EyeSpace ->[MV^]-> ObjectSpace
     vec4 ndcPos;
     ndcPos.xy = ((2.0 * gl_FragCoord.xy) - (2.0 * uViewport.xy)) / (uViewport.zw) - 1.0;
-    ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
-               (gl_DepthRange.far - gl_DepthRange.near);
+    //ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
+    //           (gl_DepthRange.far - gl_DepthRange.near);
+    ndcPos.z = 2.0 * gl_FragCoord.z - 1.0;
     ndcPos.w = 1.0;
     vec4 clipPos = ndcPos / gl_FragCoord.w;
     //vec4 eyeSpacePos = uInvPMatrix * clipPos;
-    vec3 rayDirection = normalize((invMVMatrix * uInvPMatrix * clipPos).xyz);
+    vec3 rayDirection = normalize((uInvMVPMatrix * clipPos).xyz);
 
     //Ray origin from the camera position
     vec4 camPos = -vec4(uMVMatrix[3]);  //4th column of modelview
@@ -185,30 +215,28 @@ void main()
     //Number of samples to take along this ray before we pass out back of volume...
     float travel = distance(rayStop, rayStart) / stepSize;
     int samples = int(ceil(travel));
-    float range = uRange.y - uRange.x;
-    if (range <= 0.0) range = 1.0;
-    //Scale isoValue
-    float isoValue = uRange.x + uIsoValue * range;
+    //float irange = uRange.y - uRange.x;
+    //if (irange <= 0.0) irange = 1.0;
+    //irange = 1.0 / irange;
   
     //Raymarch, front to back
+    vec3 depthHit = rayStart;
     for (int i=0; i < maxSamples; ++i)
     {
       //Render samples until we pass out back of cube or fully opaque
-#ifndef IE11
       if (i == samples || T < 0.01) break;
-#else
-      //This is slower but allows IE 11 to render, break on non-uniform condition causes it to fail
-      if (i == uSamples) break;
-      if (all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
-#endif
       {
         //Get density 
         float density = tex3D(pos);
 
+        //Set the depth point to where transmissivity drops below threshold
+        if (T > depthT)
+          depthHit = pos;
+
 #define ISOSURFACE
 #ifdef ISOSURFACE
         //Passed through isosurface?
-        if (isoValue > uRange.x && ((!inside && density >= isoValue) || (inside && density < isoValue)))
+        if (uIsoColour.a > 0.0 && ((!inside && density >= uIsoValue) || (inside && density < uIsoValue)))
         {
           inside = !inside;
           //Find closer to exact position by iteration
@@ -221,19 +249,18 @@ void main()
             exact = (b + a) * 0.5;
             pos = rayDirection * exact + rayOrigin;
             density = tex3D(pos);
-            if (density - isoValue < 0.0)
+            if (density - uIsoValue < 0.0)
               b = exact;
             else
               a = exact;
           }
 
           //Skip edges unless flagged to draw
-          if (uIsoWalls > 0 || all(greaterThanEqual(pos, uBBMin)) && all(lessThanEqual(pos, uBBMax)))
+          if (uIsoWalls > 0 || all(greaterThanEqual(pos, bbMin)) && all(lessThanEqual(pos, bbMax)))
           {
             vec4 value = vec4(uIsoColour.rgb, 1.0);
 
-            vec3 normal = mat3(uNMatrix) * isoNormal(pos, shift, density);
-
+            vec3 normal = normalize((uNMatrix * vec4(isoNormal(pos, shift, density), 1.0)).xyz);
             vec3 light = value.rgb;
             lighting(pos, normal, light);
             //Front-to-back blend equation
@@ -247,8 +274,6 @@ void main()
 
         if (uDensityFactor > 0.0)
         {
-          //Normalise the density over provided range
-          density = (density - uRange.x) / range;
           density = clamp(density, 0.0, 1.0);
           if (density < uDenMinMax[0] || density > uDenMinMax[1])
           {
@@ -286,15 +311,30 @@ void main()
     colour = mix(intensity, colour, uSaturation);
     colour = mix(AvgLumin, colour, uContrast);
 
-    if (T > 0.95) discard;
+    //TODO: alpha threshold uniform?
+    //if (T > depthT) discard;
     gl_FragColor = vec4(colour, 1.0 - T);
 
-#ifdef WRITE_DEPTH
-    /* Write the depth !Not supported in WebGL without extension */
-    vec4 clip_space_pos = uPMatrix * uMVMatrix * vec4(rayStart, 1.0);
-    float ndc_depth = clip_space_pos.z / clip_space_pos.w;
-    float depth = (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
-                     gl_DepthRange.near + gl_DepthRange.far) / 2.0;
+#ifndef NO_DEPTH_WRITE
+    // Write the depth (!Not supported in WebGL without extension)
+    float depth = 1.0; //Default to far limit
+    if (T < depthT)
+    {
+      //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
+      vec4 clip_space_pos = vec4(depthHit, 1.0);
+      clip_space_pos = uMVPMatrix * clip_space_pos;
+      //Get in normalised device coords [-1,1]
+      float ndc_depth = clip_space_pos.z / clip_space_pos.w;
+      //Convert to depth range, default [0,1] but may have been modified
+      if (ndc_depth >= -1.0 && ndc_depth <= 1.0)
+        depth = 0.5 * ndc_depth + 0.5;
+      else
+        depth = 0.0;
+
+      //depth = 0.5 * (((gl_DepthRange.far - gl_DepthRange.near) * ndc_depth) + 
+      //                 gl_DepthRange.near + gl_DepthRange.far);
+    }
+
     gl_FragDepth = depth;
 #endif
 }

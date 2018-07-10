@@ -2056,8 +2056,9 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       json obj = objects[i]->properties.data;
 
       //Include the object bounding box for WebGL
-      float min[3], max[3];
-      objectBounds(objects[i], min, max);
+      //float min[3], max[3];
+      //objectBounds(objects[i], min, max);
+      //Above doesn't work correctly, just use model bounds
       if (min[0] < max[0] && min[1] < max[1])
       {
         obj["min"] = {min[0], min[1], min[2]};
