@@ -1,9 +1,21 @@
-#version 120 //Required to use gl_PointCoord
 varying vec3 vPosEye;
 varying vec3 vVertex;
 varying float vPointType;
 varying float vPointSize;
 uniform int uPointType;
+varying vec4 vColour;
+#ifdef WEBGL
+//Until other uniforms supported, use constants
+const float uOpacity = 1.0;
+const float uBrightness = 0.0;
+const float uContrast = 1.0;
+const float uSaturation = 1.0;
+const float uAmbient = 0.4;
+const float uDiffuse = 0.65;
+const float uSpecular = 0.0;
+const bool uOpaque = false;
+const vec3 uLightPos = vec3(0.1,-0.1,2.0);
+#else
 uniform float uOpacity;
 uniform float uBrightness;
 uniform float uContrast;
@@ -17,6 +29,7 @@ uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform vec3 uLightPos;
+#endif
 
 void calcColour(vec3 colour, float alpha)
 {
@@ -37,19 +50,23 @@ void calcColour(vec3 colour, float alpha)
 
 void main(void)
 {
+#ifndef WEBGL
   //Clip planes in X/Y/Z
   if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
+#endif
 
-  float alpha = gl_Color.a;
+  float alpha = vColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
-  gl_FragColor = gl_Color;
-  float pointType = uPointType;
-  if (vPointType >= 0) pointType = vPointType;
-  pointType = floor(pointType + 0.5); //Round back to int
+  gl_FragColor = vColour;
 
+  int pointType = uPointType;
+  if (vPointType >= 0.0) pointType = int(floor(vPointType + 0.5)); //Round back to nearest int
+
+#ifndef WEBGL
   //Textured?
   if (uTextured)
      gl_FragColor = texture2D(uTexture, gl_PointCoord);
+#endif
 
   //Flat, square points, fastest, skip lighting
   if (pointType == 4)
@@ -81,7 +98,7 @@ void main(void)
     //Circular with no light/shading, just blur
     if (pointType == 0)
       alpha *= 1.0-sqrt(R); //Gaussian
-    else
+    else //TODO: allow disable blur for circular points
       alpha *= 1.0-R;       //Linear
 
     calcColour(gl_FragColor.rgb, alpha);
@@ -98,7 +115,7 @@ void main(void)
   if (pointType == 3 && diffuse > 0.0)
   {
     vec3 specular = vec3(0.0,0.0,0.0);
-    float shininess = 200; //Size of highlight
+    float shininess = 200.0; //Size of highlight
     vec3 specolour = vec3(1.0, 1.0, 1.0);   //Color of light
     //Normalize the half-vector
     //vec3 halfVector = normalize(vPosEye + lightDir);

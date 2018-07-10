@@ -644,7 +644,7 @@ function Renderer(gl, type, colour, border) {
   //Only two options for now, points and triangles
   if (type == "particle") {
     //Particle renderer
-    this.attributes = ["aVertexPosition", "aVertexColour", "aVertexSize", "aPointType"];
+    this.attributes = ["aVertexPosition", "aVertexColour", "aSize", "aPointType"];
     this.uniforms = ["uPointType", "uPointScale", "uOpacity", "uColour"];
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT,
@@ -695,6 +695,9 @@ Renderer.prototype.init = function() {
     }
   }
 
+  var fdefines = "#define WEBGL\n";
+  var vdefines = "#define WEBGL\n";
+
   if (this.type == "volume" && this.id && this.image) {
     //Setup two-triangle rendering
     viewer.webgl.init2dBuffers(this.gl.TEXTURE1); //Use 2nd texture unit
@@ -723,11 +726,15 @@ Renderer.prototype.init = function() {
                   this.image.height / this.res[1]];
     this.iscale = [1.0 / this.scaling[0], 1.0 / this.scaling[1], 1.0 / this.scaling[2]]
       
-    var defines = "#define WEBGL\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
     var maxSamples = 1024; //interactive ? 1024 : 256;
-    defines += "const int maxSamples = " + maxSamples + ";\n\n\n\n\n"; //Extra newlines so errors in main shader have correct line #
-    fs = defines + getSourceFromElement('volume-fs');
+    fdefines += "#define WEBGL\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
+    fdefines += "const int maxSamples = " + maxSamples + ";\n\n\n\n\n"; //Extra newlines so errors in main shader have correct line #
   }
+
+  vs = vdefines + getSourceFromElement(vs);
+  fs = fdefines + getSourceFromElement(fs);
+  console.log(fs);
+  console.log(vs);
 
   //Compile the shaders
   this.program = new WebGLProgram(this.gl, vs, fs);
@@ -925,7 +932,7 @@ VertexBuffer.prototype.loadParticles = function(object) {
       this.floats[this.offset+2] = vert[2];
       this.ints[this.offset+3] = objVertexColour(object, dat, i);
       this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * object.pointsize : object.pointsize;
-      this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype-1 : -1;
+      this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype : -1;
       this.offset += this.vertexSizeInFloats;
     }
   }
@@ -1194,11 +1201,11 @@ Renderer.prototype.draw = function() {
 
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, this.elementSize, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]);
-    this.gl.vertexAttribPointer(this.program.attributes["aVertexSize"], 1, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]);
+    this.gl.vertexAttribPointer(this.program.attributes["aSize"], 1, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]);
     this.gl.vertexAttribPointer(this.program.attributes["aPointType"], 1, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]);
 
     //Set uniforms...
-    this.gl.uniform1i(this.program.uniforms["uPointType"], viewer.pointType);
+    this.gl.uniform1i(this.program.uniforms["uPointType"], viewer.pointType || 0);
     this.gl.uniform1f(this.program.uniforms["uPointScale"], viewer.pointScale*viewer.modelsize);
 
     //Draw points
