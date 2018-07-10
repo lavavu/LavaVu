@@ -1,4 +1,3 @@
-//#version 130 //Needed for isnan but will not work on macOS with legacy profile
 //flat varying vec4 vColour;
 varying vec4 vColour;
 varying vec3 vNormal;

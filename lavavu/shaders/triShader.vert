@@ -1,6 +1,4 @@
-//version 130
 //flat varying vec4 vColour;
-#version 120
 varying vec4 vColour;
 varying vec3 vNormal;
 varying vec3 vPosEye;
