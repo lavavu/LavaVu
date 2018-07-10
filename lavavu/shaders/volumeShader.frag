@@ -6,13 +6,18 @@
  * https://www.gnu.org/licenses/lgpl.html
  * (volume shader from sharevol https://github.com/OKaluza/sharevol)
  */
-#version 120
-//precision highp float;
+#ifdef WEBGL
+uniform sampler2D uVolume;
+#define NO_DEPTH_WRITE
 
+#else
+//Included dynamically before compile in WebGL mode...
 const int maxSamples = 2048;
+uniform sampler3D uVolume;
+#endif
+
 const float depthT = 0.99; //Transmissivity threshold below which depth write applied
 
-uniform sampler3D uVolume;
 uniform sampler2D uTransferFunction;
 
 uniform vec3 uBBMin;
@@ -50,16 +55,60 @@ vec3 bbMin;
 vec3 bbMax;
 float irange = uRange.y - uRange.x;
 
-float tex3D(vec3 pos) 
+vec4 interpolate_tricubic_fast(vec3 coord);
+
+#ifdef WEBGL
+
+vec2 islices;
+float maxslice;
+vec2 cmin;
+vec2 cmax;
+
+vec4 sample(vec3 pos)
 {
-  //if (uFilter > 0)
-  //  return interpolate_tricubic_fast(pos);
-  //return texture3D(uVolume, pos).x;
-  float density = texture3D(uVolume, pos).x;
-  //Normalise the density over provided range
-  //(used for float textures only, all other formats are already [0,1])
-  density = (density - uRange.x) * irange;
-  return density;
+  //Get z slice index and position between two slices
+  float Z = pos.z * maxslice;
+  float slice = floor(Z); //Index of first slice
+  Z = fract(Z);
+  //Edge case at z max
+  if (int(slice) > int(maxslice)-1)
+  {
+    slice = maxslice-1.0;
+    Z = 1.0;
+  }
+  //Only start interpolation with next Z slice 1/3 from edges at first & last z slice
+  //(this approximates how 3d texture volume is sampled at edges with linear filtering
+  // due to edge sample being included in weighted average twice)
+  // - min z slice
+  else if (int(slice) == 0)
+  {
+    Z = max(0.0, (Z-0.33) * 1.5);
+  }
+  // - max z slice
+  else if (int(slice) == int(maxslice)-1)
+  {
+    Z = min(1.0, Z*1.5);
+  }
+
+  //X & Y coords of sample scaled to slice size
+  //(Clamp range at borders to prevent bleeding between tiles due to linear filtering)
+  vec2 sampleOffset = clamp(pos.xy, cmin, cmax) * islices;
+  //Offsets in 2D texture of given slice indices
+  //(add offsets to scaled position within slice to get sample positions)
+  float A = slice * islices.x;
+  float B = (slice+1.0) * islices.x;
+  vec2 z1offset = vec2(fract(A), floor(A) / slices.y) + sampleOffset;
+  vec2 z2offset = vec2(fract(B), floor(B) / slices.y) + sampleOffset;
+  //Interpolate the final value by position between slices [0,1]
+  return mix(texture2D(uVolume, z1offset), texture2D(uVolume, z2offset), Z);
+}
+
+float tex3D(vec3 pos)
+{
+  if (uFilter > 0)
+    return interpolate_tricubic_fast(pos).x;
+
+  return sample(pos).x;
 }
 
 // It seems WebGL has no transpose
@@ -72,6 +121,30 @@ mat4 transpose(in mat4 m)
               vec4(m[0].w, m[1].w, m[2].w, m[3].w)
              );
 }
+
+#else
+vec4 sample(vec3 pos)
+{
+  return texture3D(uVolume, pos);
+}
+
+float tex3D(vec3 pos)
+{
+  vec4 val;
+  if (uFilter > 0)
+    val = interpolate_tricubic_fast(pos);
+  else
+    val = sample(pos);
+
+  float density = val.x;
+
+  //Normalise the density over provided range
+  //(used for float textures only, all other formats are already [0,1])
+  density = (density - uRange.x) * irange;
+  return density;
+}
+
+#endif
 
 void lighting(in vec3 pos, in vec3 normal, inout vec3 colour)
 {
@@ -132,6 +205,13 @@ void main()
     bbMin = clamp(uBBMin, vec3(0.0), vec3(1.0));
     bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
 
+#ifdef WEBGL
+    islices = vec2(1.0 / slices.x, 1.0 / slices.y);
+    maxslice = slices.x * slices.y - 1.0;
+    cmin = vec2(0.5/(slices.x*slices.y), 0.5/(slices.x*slices.y));
+    cmax = vec2(1.0, 1.0) - cmin;
+#endif
+
     //Compute eye space coord from window space to get the ray direction
     mat4 invMVMatrix = transpose(uMVMatrix);
     //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
@@ -186,9 +266,11 @@ void main()
         //Get density 
         float density = tex3D(pos);
 
+#ifndef NO_DEPTH_WRITE
         //Set the depth point to where transmissivity drops below threshold
         if (T > depthT)
           depthHit = pos;
+#endif
 
 #define ISOSURFACE
 #ifdef ISOSURFACE
@@ -295,3 +377,83 @@ void main()
     gl_FragDepth = depth;
 #endif
 }
+
+vec4 interpolate_tricubic_fast(vec3 coord)
+{
+/* License applicable to this function:
+Copyright (c) 2008-2013, Danny Ruijters. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+*  Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+*  Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+*  Neither the name of the copyright holders nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+The views and conclusions contained in the software and documentation are
+those of the authors and should not be interpreted as representing official
+policies, either expressed or implied.
+
+When using this code in a scientific project, please cite one or all of the
+following papers:
+*  Daniel Ruijters and Philippe Thévenaz,
+   GPU Prefilter for Accurate Cubic B-Spline Interpolation, 
+   The Computer Journal, vol. 55, no. 1, pp. 15-20, January 2012.
+*  Daniel Ruijters, Bart M. ter Haar Romeny, and Paul Suetens,
+   Efficient GPU-Based Texture Interpolation using Uniform B-Splines,
+   Journal of Graphics Tools, vol. 13, no. 4, pp. 61-69, 2008.
+*/
+  // shift the coordinate from [0,1] to [-0.5, nrOfVoxels-0.5]
+  vec3 nrOfVoxels = uResolution; //textureSize3D(tex, 0));
+  vec3 coord_grid = coord * nrOfVoxels - 0.5;
+  vec3 index = floor(coord_grid);
+  vec3 fraction = coord_grid - index;
+  vec3 one_frac = 1.0 - fraction;
+
+  vec3 w0 = 1.0/6.0 * one_frac*one_frac*one_frac;
+  vec3 w1 = 2.0/3.0 - 0.5 * fraction*fraction*(2.0-fraction);
+  vec3 w2 = 2.0/3.0 - 0.5 * one_frac*one_frac*(2.0-one_frac);
+  vec3 w3 = 1.0/6.0 * fraction*fraction*fraction;
+
+  vec3 g0 = w0 + w1;
+  vec3 g1 = w2 + w3;
+  vec3 mult = 1.0 / nrOfVoxels;
+  vec3 h0 = mult * ((w1 / g0) - 0.5 + index);  //h0 = w1/g0 - 1, move from [-0.5, nrOfVoxels-0.5] to [0,1]
+  vec3 h1 = mult * ((w3 / g1) + 1.5 + index);  //h1 = w3/g1 + 1, move from [-0.5, nrOfVoxels-0.5] to [0,1]
+
+  // fetch the eight linear interpolations
+  // weighting and fetching is interleaved for performance and stability reasons
+  vec4 tex000 = sample(h0);
+  vec4 tex100 = sample(vec3(h1.x, h0.y, h0.z));
+  tex000 = mix(tex100, tex000, g0.x);  //weigh along the x-direction
+  vec4 tex010 = sample(vec3(h0.x, h1.y, h0.z));
+  vec4 tex110 = sample(vec3(h1.x, h1.y, h0.z));
+  tex010 = mix(tex110, tex010, g0.x);  //weigh along the x-direction
+  tex000 = mix(tex010, tex000, g0.y);  //weigh along the y-direction
+  vec4 tex001 = sample(vec3(h0.x, h0.y, h1.z));
+  vec4 tex101 = sample(vec3(h1.x, h0.y, h1.z));
+  tex001 = mix(tex101, tex001, g0.x);  //weigh along the x-direction
+  vec4 tex011 = sample(vec3(h0.x, h1.y, h1.z));
+  vec4 tex111 = sample(h1);
+  tex011 = mix(tex111, tex011, g0.x);  //weigh along the x-direction
+  tex001 = mix(tex011, tex001, g0.y);  //weigh along the y-direction
+
+  return mix(tex001, tex000, g0.z);  //weigh along the z-direction
+}
+

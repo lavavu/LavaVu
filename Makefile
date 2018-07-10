@@ -154,7 +154,7 @@ $(HTMLPATH)/viewer.html: lavavu/html/viewer_template.html lavavu/shaders/*.frag 
       -e "/Tri vertex shader/      r lavavu/shaders/triShaderWEBGL.vert"    \
       -e "/Tri fragment shader/    r lavavu/shaders/triShaderWEBGL.frag"    \
       -e "/Volume vertex shader/   r lavavu/shaders/volumeShaderWEBGL.vert" \
-      -e "/Volume fragment shader/ r lavavu/shaders/volumeShaderWEBGL.frag" \
+      -e "/Volume fragment shader/ r lavavu/shaders/volumeShader.frag" \
       -e "/Line vertex shader/     r lavavu/shaders/lineShaderWEBGL.vert"   \
       -e "/Line fragment shader/   r lavavu/shaders/lineShaderWEBGL.frag"   \
 			< lavavu/html/viewer_template.html > $(HTMLPATH)/viewer.html

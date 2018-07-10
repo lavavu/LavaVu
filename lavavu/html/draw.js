@@ -723,7 +723,7 @@ Renderer.prototype.init = function() {
                   this.image.height / this.res[1]];
     this.iscale = [1.0 / this.scaling[0], 1.0 / this.scaling[1], 1.0 / this.scaling[2]]
       
-    var defines = "precision highp float;\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
+    var defines = "#define WEBGL\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
     var maxSamples = 1024; //interactive ? 1024 : 256;
     defines += "const int maxSamples = " + maxSamples + ";\n\n\n\n\n"; //Extra newlines so errors in main shader have correct line #
     fs = defines + getSourceFromElement('volume-fs');
