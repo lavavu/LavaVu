@@ -30,5 +30,7 @@ void main(void)
     vColour = uColour;
   else
     vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
+
+  vVertex = aVertexPosition.xyz;
 }
 

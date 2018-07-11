@@ -39,7 +39,7 @@ void calcColour(vec3 colour, float alpha)
 void main(void)
 {
   //Clip planes in X/Y/Z
-  //if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
+  if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
 
   float alpha = vColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
