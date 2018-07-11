@@ -55,7 +55,6 @@ vec3 bbMin;
 vec3 bbMax;
 float irange = uRange.y - uRange.x;
 
-#define ENABLE_TRICUBIC
 #ifdef ENABLE_TRICUBIC
 float interpolate_tricubic_fast(vec3 coord);
 #endif
