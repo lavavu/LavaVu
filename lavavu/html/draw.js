@@ -721,6 +721,9 @@ Renderer.prototype.init = function() {
     var maxSamples = 1024; //interactive ? 1024 : 256;
     fdefines += "#define WEBGL\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
     fdefines += "const int maxSamples = " + maxSamples + ";\n";
+
+    if (this.properties.tricubicFilter)
+      fdefines += "#define ENABLE_TRICUBIC\n";
   }
 
   vs = vdefines + getSourceFromElement(vs);

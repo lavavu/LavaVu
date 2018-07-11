@@ -55,7 +55,9 @@ vec3 bbMin;
 vec3 bbMax;
 float irange = uRange.y - uRange.x;
 
+#ifdef ENABLE_TRICUBIC
 vec4 interpolate_tricubic_fast(vec3 coord);
+#endif
 
 #ifdef WEBGL
 
@@ -103,13 +105,16 @@ vec4 sample(vec3 pos)
   return mix(texture2D(uVolume, z1offset), texture2D(uVolume, z2offset), Z);
 }
 
+#ifdef ENABLE_TRICUBIC
 float tex3D(vec3 pos)
 {
   if (uFilter > 0)
     return interpolate_tricubic_fast(pos).x;
-
   return sample(pos).x;
 }
+#else
+#define tex3D(pos) sample(pos).x
+#endif
 
 // It seems WebGL has no transpose
 mat4 transpose(in mat4 m)
@@ -131,9 +136,11 @@ vec4 sample(vec3 pos)
 float tex3D(vec3 pos)
 {
   vec4 val;
+#ifdef ENABLE_TRICUBIC
   if (uFilter > 0)
     val = interpolate_tricubic_fast(pos);
   else
+#endif
     val = sample(pos);
 
   float density = val.x;
@@ -378,6 +385,7 @@ void main()
 #endif
 }
 
+#ifdef ENABLE_TRICUBIC
 vec4 interpolate_tricubic_fast(vec3 coord)
 {
 /* License applicable to this function:
@@ -456,4 +464,4 @@ following papers:
 
   return mix(tex001, tex000, g0.z);  //weigh along the z-direction
 }
-
+#endif
