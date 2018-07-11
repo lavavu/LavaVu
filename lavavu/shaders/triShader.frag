@@ -1,9 +1,9 @@
-//flat varying vec4 vColour;
 varying vec4 vColour;
 varying vec3 vNormal;
 varying vec3 vPosEye;
 varying vec3 vVertex;
-varying vec2 vTextureCoord;
+varying vec2 vTexCoord;
+
 uniform float uOpacity;
 uniform bool uLighting;
 uniform float uBrightness;
@@ -13,12 +13,20 @@ uniform float uAmbient;
 uniform float uDiffuse;
 uniform float uSpecular;
 uniform float uShininess;
+
 uniform bool uTextured;
 uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform bool uOpaque;
 uniform vec3 uLightPos;
+
+#ifdef WEBGL
+varying float vObjectID;
+uniform int uCullFace[64];
+#endif
+
+
 uniform bool uCalcNormal;
 
 void calcColour(vec3 colour, float alpha)
@@ -51,7 +59,7 @@ void main(void)
 
   vec4 fColour = vColour;
   if (uTextured) 
-    fColour = texture2D(uTexture, vTextureCoord);
+    fColour = texture2D(uTexture, vTexCoord);
 
   float alpha = fColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
@@ -76,6 +84,7 @@ void main(void)
   if (uCalcNormal || dot(N,N) < 0.01 || isnan(N))
   //if (uCalcNormal || dot(N,N) < 0.01 || any(isnan(N)))
   {
+    //Requires extension in WebGL: OES_standard_derivatives
     vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    
     vec3 fdy = vec3(dFdy(vPosEye.x),dFdy(vPosEye.y),dFdy(vPosEye.z));
     N = normalize(cross(fdx,fdy)); 

@@ -4,18 +4,7 @@ varying float vPointType;
 varying float vPointSize;
 uniform int uPointType;
 varying vec4 vColour;
-#ifdef WEBGL
-//Until other uniforms supported, use constants
-const float uOpacity = 1.0;
-const float uBrightness = 0.0;
-const float uContrast = 1.0;
-const float uSaturation = 1.0;
-const float uAmbient = 0.4;
-const float uDiffuse = 0.65;
-const float uSpecular = 0.0;
-const bool uOpaque = false;
-const vec3 uLightPos = vec3(0.1,-0.1,2.0);
-#else
+
 uniform float uOpacity;
 uniform float uBrightness;
 uniform float uContrast;
@@ -29,7 +18,6 @@ uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform vec3 uLightPos;
-#endif
 
 void calcColour(vec3 colour, float alpha)
 {
@@ -50,10 +38,8 @@ void calcColour(vec3 colour, float alpha)
 
 void main(void)
 {
-#ifndef WEBGL
   //Clip planes in X/Y/Z
-  if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
-#endif
+  //if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
 
   float alpha = vColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
@@ -62,11 +48,9 @@ void main(void)
   int pointType = uPointType;
   if (vPointType >= 0.0) pointType = int(floor(vPointType + 0.5)); //Round back to nearest int
 
-#ifndef WEBGL
   //Textured?
   if (uTextured)
      gl_FragColor = texture2D(uTexture, gl_PointCoord);
-#endif
 
   //Flat, square points, fastest, skip lighting
   if (pointType == 4)
@@ -123,7 +107,6 @@ void main(void)
     //Compute cosine (dot product) with the normal
     float NdotHV = max(dot(N, halfVector), 0.0);
     specular = specolour * pow(NdotHV, shininess);
-    //specular = vec3(1.0, 0.0, 0.0);
     calcColour(gl_FragColor.rgb * diffuse + specular, alpha);
   }
   else

@@ -644,16 +644,14 @@ function Renderer(gl, type, colour, border) {
   //Only two options for now, points and triangles
   if (type == "particle") {
     //Particle renderer
-    this.attributes = ["aVertexPosition", "aVertexColour", "aSize", "aPointType"];
-    this.uniforms = ["uPointType", "uPointScale", "uOpacity", "uColour"];
+    //Vertex3, Colour, Size, Type
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT,
                         Float32Array.BYTES_PER_ELEMENT,
                         Float32Array.BYTES_PER_ELEMENT];
   } else if (type == "triangle") {
     //Triangle renderer
-    this.attributes = ["aVertexPosition", "aVertexNormal", "aVertexColour", "aVertexTexCoord", "aVertexObjectID"];
-    this.uniforms = ["uColour", "uCullFace", "uOpacity", "uLighting", "uTextured", "uTexture", "uCalcNormal", "uClipMin", "uClipMax", "uBrightness", "uContrast", "uSaturation", "uAmbient", "uDiffuse", "uSpecular"];
+    //Vertex3, Normal3, Colour, TexCoord2, ObjectId+
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT,
@@ -661,18 +659,12 @@ function Renderer(gl, type, colour, border) {
                         4 * Uint8Array.BYTES_PER_ELEMENT];
   } else if (type == "line") {
     //Line renderer
-    this.attributes = ["aVertexPosition", "aVertexColour"],
-    this.uniforms = ["uColour", "uOpacity"]
+    //Vertex3, Colour
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT];
   } else if (type == "volume") {
     //Volume renderer
-    this.attributes = ["aVertexPosition"];
-    this.uniforms = ["uVolume", "uTransferFunction", "uEnableColour", "uFilter",
-                     "uDensityFactor", "uPower", "uSaturation", "uBrightness", "uContrast", "uSamples",
-                     "uViewport", "uBBMin", "uBBMax", "uResolution", "uRange", "uDenMinMax",
-                     "uIsoValue", "uIsoColour", "uIsoSmooth", "uIsoWalls", "uMVPMatrix", "uInvMVPMatrix",
-                     "uAmbient", "uDiffuse", "uSpecular", "uLightPos"];
+    //Vertex3
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT];
   }
 
@@ -695,7 +687,7 @@ Renderer.prototype.init = function() {
     }
   }
 
-  var fdefines = "#define WEBGL\n";
+  var fdefines = "#define WEBGL\n#extension GL_OES_standard_derivatives : enable\n";
   var vdefines = "#define WEBGL\n";
 
   if (this.type == "volume" && this.id && this.image) {
@@ -728,20 +720,25 @@ Renderer.prototype.init = function() {
       
     var maxSamples = 1024; //interactive ? 1024 : 256;
     fdefines += "#define WEBGL\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
-    fdefines += "const int maxSamples = " + maxSamples + ";\n\n\n\n\n"; //Extra newlines so errors in main shader have correct line #
+    fdefines += "const int maxSamples = " + maxSamples + ";\n";
   }
 
   vs = vdefines + getSourceFromElement(vs);
   fs = fdefines + getSourceFromElement(fs);
-  console.log(fs);
-  console.log(vs);
 
-  //Compile the shaders
-  this.program = new WebGLProgram(this.gl, vs, fs);
-  if (this.program.errors) OK.debug(this.program.errors);
-  //Setup attribs/uniforms (flag set to skip enabling attribs)
-  this.program.setup(this.attributes, this.uniforms, true);
-
+  try {
+    //Compile the shaders
+    this.program = new WebGLProgram(this.gl, vs, fs);
+    if (this.program.errors) OK.debug(this.program.errors);
+    //Setup attribs/uniforms (flag set to skip enabling attribs)
+    this.program.setup(undefined, undefined, true);
+    //this.program.setup(this.attributes, undefined, true);
+  } catch(e) {
+    console.log(fs);
+    console.log(vs);
+    console.error(e);
+    return false;
+  }
   return true;
 }
 
@@ -1182,10 +1179,13 @@ Renderer.prototype.draw = function() {
   this.gl.uniform1f(this.program.uniforms["uOpacity"], vis.properties.opacity || 1.0);
   this.gl.uniform1f(this.program.uniforms["uBrightness"], vis.properties.brightness || 0.0);
   this.gl.uniform1f(this.program.uniforms["uContrast"], vis.properties.contrast || 1.0);
+  this.gl.uniform1f(this.program.uniforms["uAmbient"], vis.properties.ambient || 0.4);
   this.gl.uniform1f(this.program.uniforms["uSaturation"], vis.properties.saturation || 1.0);
   this.gl.uniform1f(this.program.uniforms["uAmbient"], vis.properties.ambient || 0.4);
-  this.gl.uniform1f(this.program.uniforms["uDiffuse"], vis.properties.diffuse || 0.8);
+  this.gl.uniform1f(this.program.uniforms["uDiffuse"], vis.properties.diffuse || 0.65);
   this.gl.uniform1f(this.program.uniforms["uSpecular"], vis.properties.specular || 0.0);
+  this.gl.uniform1f(this.program.uniforms["uShininess"], vis.properties.shininess || 0.5);
+  this.gl.uniform3fv(this.program.uniforms["uLightPos"], new Float32Array(vis.properties.lightpos || [0.1,-0.1,2.0]));
   if (this.colour)
     this.gl.uniform4f(this.program.uniforms["uColour"], this.colour.red/255.0, this.colour.green/255.0, this.colour.blue/255.0, this.colour.alpha);
   var cmin = [vis.views[view].min[0] + viewer.dims[0] * (vis.properties.xmin || 0.0),
@@ -1220,7 +1220,8 @@ Renderer.prototype.draw = function() {
     this.gl.vertexAttribPointer(this.program.attributes["aVertexNormal"], 3, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]+this.attribSizes[1]);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexTexCoord"], 2, this.gl.FLOAT, true, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]);
-    this.gl.vertexAttribPointer(this.program.attributes["aVertexObjectID"], 1, this.gl.UNSIGNED_BYTE, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]+this.attribSizes[3]);
+    if (this.program.attributes["aVertexObjectID"] != undefined)
+      this.gl.vertexAttribPointer(this.program.attributes["aVertexObjectID"], 1, this.gl.UNSIGNED_BYTE, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]+this.attribSizes[3]);
 
     //Set uniforms...
     //this.gl.enable(this.gl.CULL_FACE);
@@ -1396,10 +1397,6 @@ Renderer.prototype.draw = function() {
 
     //Density clip range
     this.gl.uniform2fv(this.program.uniforms["uDenMinMax"], new Float32Array([this.properties.mindensity || 0.0, this.properties.maxdensity || 1.0]));
-    this.gl.uniform1f(this.program.uniforms["uAmbient"], this.properties.ambient || 0.4);
-    this.gl.uniform1f(this.program.uniforms["uDiffuse"], this.properties.diffuse || 0.65);
-    this.gl.uniform1f(this.program.uniforms["uSpecular"], this.properties.specular || 0.0);
-    this.gl.uniform3fv(this.program.uniforms["uLightPos"], new Float32Array(this.properties.lightpos || [0.1,-0.1,2.0]));
 
     //Draw two triangles
     viewer.webgl.initDraw2d();

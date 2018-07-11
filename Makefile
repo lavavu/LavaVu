@@ -151,12 +151,12 @@ install: $(PROGRAM) $(SWIGLIB) $(HTMLPATH)/viewer.html
 $(HTMLPATH)/viewer.html: lavavu/html/viewer_template.html lavavu/shaders/*.frag lavavu/shaders/*.vert
 	sed -e "/Point vertex shader/    r lavavu/shaders/pointShader.vert"  \
       -e "/Point fragment shader/  r lavavu/shaders/pointShader.frag"  \
-      -e "/Tri vertex shader/      r lavavu/shaders/triShaderWEBGL.vert"    \
-      -e "/Tri fragment shader/    r lavavu/shaders/triShaderWEBGL.frag"    \
-      -e "/Volume vertex shader/   r lavavu/shaders/volumeShaderWEBGL.vert" \
+      -e "/Tri vertex shader/      r lavavu/shaders/triShader.vert"    \
+      -e "/Tri fragment shader/    r lavavu/shaders/triShader.frag"    \
+      -e "/Volume vertex shader/   r lavavu/shaders/volumeShader.vert" \
       -e "/Volume fragment shader/ r lavavu/shaders/volumeShader.frag" \
-      -e "/Line vertex shader/     r lavavu/shaders/lineShaderWEBGL.vert"   \
-      -e "/Line fragment shader/   r lavavu/shaders/lineShaderWEBGL.frag"   \
+      -e "/Line vertex shader/     r lavavu/shaders/lineShader.vert"   \
+      -e "/Line fragment shader/   r lavavu/shaders/lineShader.frag"   \
 			< lavavu/html/viewer_template.html > $(HTMLPATH)/viewer.html
 
 .PHONY: force
