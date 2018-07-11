@@ -530,7 +530,6 @@ vec3 bbMin;
 vec3 bbMax;
 float irange = uRange.y - uRange.x;
 
-#define ENABLE_TRICUBIC
 #ifdef ENABLE_TRICUBIC
 float interpolate_tricubic_fast(vec3 coord);
 #endif
@@ -582,16 +581,14 @@ float sample(vec3 pos)
   return mix(texture2D(uVolume, z1offset).x, texture2D(uVolume, z2offset).x, Z);
 }
 
-#ifdef ENABLE_TRICUBIC
 float tex3D(vec3 pos)
 {
+#ifdef ENABLE_TRICUBIC
   if (uFilter > 0)
     return interpolate_tricubic_fast(pos);
+#endif
   return sample(pos);
 }
-#else
-#define tex3D(pos) sample(pos).x
-#endif
 
 // It seems WebGL has no transpose
 mat4 transpose(in mat4 m)

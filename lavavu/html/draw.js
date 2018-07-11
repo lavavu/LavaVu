@@ -1380,21 +1380,28 @@ Renderer.prototype.draw = function() {
 
     //Data value range for isoValue etc
     var range = new Float32Array([0.0, 1.0]);
-    var isoval = this.properties.isovalue || 0.0;
-    if (vis.objects[this.id]["volume"].minimum != undefined && vis.objects[this.id]["volume"].maximum != undefined) {
-      var r = [vis.objects[this.id]["volume"].minimum, vis.objects[this.id]["volume"].maximum];
-      //Normalise isovalue to range [0,1] to match data (non-float textures always used in WebGL)
-      isoval = (isoval - r[0]) / (r[1] - r[0]);
-      //This is used in shader to normalize data to [0,1] when using float textures
-      //range[0] = r[0];
-      //range[1] = r[1];
+    var isovalue = this.properties.isovalue;
+    var isoalpha = this.properties.isoalpha;
+    if (isoalpha == undefined) isoalpha = 1.0;
+    if (this.properties.isovalue != undefined) {
+      if (vis.objects[this.id]["volume"].minimum != undefined && vis.objects[this.id]["volume"].maximum != undefined) {
+        var r = [vis.objects[this.id]["volume"].minimum, vis.objects[this.id]["volume"].maximum];
+        //Normalise isovalue to range [0,1] to match data (non-float textures always used in WebGL)
+        isovalue = (isovalue - r[0]) / (r[1] - r[0]);
+        //This is used in shader to normalize data to [0,1] when using float textures
+        //range[0] = r[0];
+        //range[1] = r[1];
+      }
+    } else {
+      isoalpha = 0.0;
     }
 
     this.gl.uniform2fv(this.program.uniforms["uRange"], range);
-    this.gl.uniform1f(this.program.uniforms["uIsoValue"], isoval);
+    this.gl.uniform1f(this.program.uniforms["uIsoValue"], isovalue);
     var colour = new Colour(this.properties.colour || [220, 220, 200, 255]);
-    colour.alpha = (this.properties.isovalue == undefined ? 0.0 : (this.properties.isoalpha || 0.0));
+    colour.alpha = isoalpha;
     this.gl.uniform4fv(this.program.uniforms["uIsoColour"], colour.rgbaGL());
+
     this.gl.uniform1f(this.program.uniforms["uIsoSmooth"], this.properties.isosmooth || 0.1);
     this.gl.uniform1i(this.program.uniforms["uIsoWalls"], this.properties.isowalls != undefined ? this.properties.isowalls : 1.0);
 
