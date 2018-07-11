@@ -389,7 +389,7 @@ void ColourMap::calibrate(float min, float max)
   //Ensure positions valid
   std::sort(colours.begin(), colours.end());
   if (colours[0].position != 0.0)
-    colours[0].position == 0.0;
+    colours[0].position = 0.0;
   if (colours.size() > 1 && colours.back().position != 1.0)
     colours.back().position = 1.0;
 
