@@ -194,7 +194,7 @@ function sortTimer(ifexists) {
   }
   var element = document.getElementById("sort");
   element.style.display = 'block';
-  viewer.timer = setTimeout(function() {viewer.rotated = true; element.onclick.apply(element);}, 2000);
+  viewer.timer = setTimeout(function() {viewer.rotated = true; element.onclick.apply(element);}, 500);
 }
 
 function canvasMouseDown(event, mouse) {
@@ -921,6 +921,7 @@ VertexBuffer.prototype.loadParticles = function(object) {
     else
       console.log(object.colourmap);*/
 
+    if (!object.pointsize) object.pointsize = 1.0;
     for (var i=0; i<dat.vertices.data.length/3; i++) {
       var i3 = i*3;
       var vert = [dat.vertices.data[i3], dat.vertices.data[i3+1], dat.vertices.data[i3+2]];
@@ -1501,8 +1502,9 @@ function Viewer(canvas) {
     this.lines = new Renderer(this.gl, 'line');
     this.border = new Renderer(this.gl, 'line', 0xffffffff, true);
 
-    this.renderers.push(this.points);
+    //Defines draw order
     this.renderers.push(this.triangles);
+    this.renderers.push(this.points);
     this.renderers.push(this.lines);
     this.renderers.push(this.border);
 
