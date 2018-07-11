@@ -55,8 +55,9 @@ vec3 bbMin;
 vec3 bbMax;
 float irange = uRange.y - uRange.x;
 
+#define ENABLE_TRICUBIC
 #ifdef ENABLE_TRICUBIC
-vec4 interpolate_tricubic_fast(vec3 coord);
+float interpolate_tricubic_fast(vec3 coord);
 #endif
 
 #ifdef WEBGL
@@ -66,7 +67,7 @@ float maxslice;
 vec2 cmin;
 vec2 cmax;
 
-vec4 sample(vec3 pos)
+float sample(vec3 pos)
 {
   //Get z slice index and position between two slices
   float Z = pos.z * maxslice;
@@ -101,16 +102,17 @@ vec4 sample(vec3 pos)
   float B = (slice+1.0) * islices.x;
   vec2 z1offset = vec2(fract(A), floor(A) / slices.y) + sampleOffset;
   vec2 z2offset = vec2(fract(B), floor(B) / slices.y) + sampleOffset;
+
   //Interpolate the final value by position between slices [0,1]
-  return mix(texture2D(uVolume, z1offset), texture2D(uVolume, z2offset), Z);
+  return mix(texture2D(uVolume, z1offset).x, texture2D(uVolume, z2offset).x, Z);
 }
 
 #ifdef ENABLE_TRICUBIC
 float tex3D(vec3 pos)
 {
   if (uFilter > 0)
-    return interpolate_tricubic_fast(pos).x;
-  return sample(pos).x;
+    return interpolate_tricubic_fast(pos);
+  return sample(pos);
 }
 #else
 #define tex3D(pos) sample(pos).x
@@ -128,22 +130,20 @@ mat4 transpose(in mat4 m)
 }
 
 #else
-vec4 sample(vec3 pos)
+float sample(vec3 pos)
 {
-  return texture3D(uVolume, pos);
+  return texture3D(uVolume, pos).x;
 }
 
 float tex3D(vec3 pos)
 {
-  vec4 val;
+  float density;
 #ifdef ENABLE_TRICUBIC
   if (uFilter > 0)
-    val = interpolate_tricubic_fast(pos);
+    density = interpolate_tricubic_fast(pos);
   else
 #endif
-    val = sample(pos);
-
-  float density = val.x;
+    density = sample(pos);
 
   //Normalise the density over provided range
   //(used for float textures only, all other formats are already [0,1])
@@ -386,7 +386,7 @@ void main()
 }
 
 #ifdef ENABLE_TRICUBIC
-vec4 interpolate_tricubic_fast(vec3 coord)
+float interpolate_tricubic_fast(vec3 coord)
 {
 /* License applicable to this function:
 Copyright (c) 2008-2013, Danny Ruijters. All rights reserved.
@@ -428,7 +428,7 @@ following papers:
    Journal of Graphics Tools, vol. 13, no. 4, pp. 61-69, 2008.
 */
   // shift the coordinate from [0,1] to [-0.5, nrOfVoxels-0.5]
-  vec3 nrOfVoxels = uResolution; //textureSize3D(tex, 0));
+  vec3 nrOfVoxels = uResolution;
   vec3 coord_grid = coord * nrOfVoxels - 0.5;
   vec3 index = floor(coord_grid);
   vec3 fraction = coord_grid - index;
@@ -447,18 +447,18 @@ following papers:
 
   // fetch the eight linear interpolations
   // weighting and fetching is interleaved for performance and stability reasons
-  vec4 tex000 = sample(h0);
-  vec4 tex100 = sample(vec3(h1.x, h0.y, h0.z));
+  float tex000 = sample(h0);
+  float tex100 = sample(vec3(h1.x, h0.y, h0.z));
   tex000 = mix(tex100, tex000, g0.x);  //weigh along the x-direction
-  vec4 tex010 = sample(vec3(h0.x, h1.y, h0.z));
-  vec4 tex110 = sample(vec3(h1.x, h1.y, h0.z));
+  float tex010 = sample(vec3(h0.x, h1.y, h0.z));
+  float tex110 = sample(vec3(h1.x, h1.y, h0.z));
   tex010 = mix(tex110, tex010, g0.x);  //weigh along the x-direction
   tex000 = mix(tex010, tex000, g0.y);  //weigh along the y-direction
-  vec4 tex001 = sample(vec3(h0.x, h0.y, h1.z));
-  vec4 tex101 = sample(vec3(h1.x, h0.y, h1.z));
+  float tex001 = sample(vec3(h0.x, h0.y, h1.z));
+  float tex101 = sample(vec3(h1.x, h0.y, h1.z));
   tex001 = mix(tex101, tex001, g0.x);  //weigh along the x-direction
-  vec4 tex011 = sample(vec3(h0.x, h1.y, h1.z));
-  vec4 tex111 = sample(h1);
+  float tex011 = sample(vec3(h0.x, h1.y, h1.z));
+  float tex111 = sample(h1);
   tex011 = mix(tex111, tex011, g0.x);  //weigh along the x-direction
   tex001 = mix(tex011, tex001, g0.y);  //weigh along the y-direction
 

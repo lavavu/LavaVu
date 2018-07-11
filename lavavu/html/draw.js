@@ -719,10 +719,10 @@ Renderer.prototype.init = function() {
     this.iscale = [1.0 / this.scaling[0], 1.0 / this.scaling[1], 1.0 / this.scaling[2]]
       
     var maxSamples = 1024; //interactive ? 1024 : 256;
-    fdefines += "#define WEBGL\nconst highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
+    fdefines += "const highp vec2 slices = vec2(" + this.tiles[0] + "," + this.tiles[1] + ");\n";
     fdefines += "const int maxSamples = " + maxSamples + ";\n";
 
-    if (this.properties.tricubicFilter)
+    if (this.properties.tricubicfilter)
       fdefines += "#define ENABLE_TRICUBIC\n";
   }
 
@@ -735,7 +735,6 @@ Renderer.prototype.init = function() {
     if (this.program.errors) OK.debug(this.program.errors);
     //Setup attribs/uniforms (flag set to skip enabling attribs)
     this.program.setup(undefined, undefined, true);
-    //this.program.setup(this.attributes, undefined, true);
   } catch(e) {
     console.log(fs);
     console.log(vs);
@@ -1363,7 +1362,7 @@ Renderer.prototype.draw = function() {
     this.gl.uniform1i(this.program.uniforms["uVolume"], 0);
     this.gl.uniform1i(this.program.uniforms["uTransferFunction"], 1);
     this.gl.uniform1i(this.program.uniforms["uEnableColour"], this.properties.usecolourmap || 1);
-    this.gl.uniform1i(this.program.uniforms["uFilter"], this.properties.tricubicFilter || 0);
+    this.gl.uniform1i(this.program.uniforms["uFilter"], this.properties.tricubicfilter || 0);
     this.gl.uniform4fv(this.program.uniforms["uViewport"], new Float32Array([0, 0, this.gl.viewportWidth, this.gl.viewportHeight]));
 
     var bbmin = [this.properties.xmin || 0.0, this.properties.ymin || 0.0, this.properties.zmin || 0.0];
