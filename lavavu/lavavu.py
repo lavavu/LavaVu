@@ -1411,10 +1411,10 @@ class ColourMap(dict):
         def padhex2(i):
             s = hex(int(i))
             return s[2:].zfill(2)
-        string = "#"
+        string = ""
         for c in self["colours"]:
             comp = re.findall(r"[\d\.]+", c["colour"])
-            string += padhex2(comp[0]) + padhex2(comp[1]) + padhex2(comp[2])
+            string += "#" + padhex2(comp[0]) + padhex2(comp[1]) + padhex2(comp[2])
             if comp[3] < 1.0:
                 string += ":" + str(comp[3])
             string += " "
