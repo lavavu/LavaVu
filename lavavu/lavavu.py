@@ -3276,6 +3276,36 @@ def printH5(h5):
     for item in h5.attrs.keys():
         print(item + ":", h5.attrs[item])
 
+def download(url, filename=None, overwrite=False):
+    """
+    Download a file from an internet URL
+
+    Parameters
+    ----------
+    url: str
+        URL to request the file from
+    filename: str
+        Filename to save, default is to keep the same name in current directory
+    overwrite: boolean
+        Always overwrite file if it exists, default is to never overwrite
+    """
+    #Python 3 moved urlretrieve to request submodule
+    try:
+        from urllib.request import urlretrieve
+    except ImportError:
+        from urllib import urlretrieve
+
+    if filename is None:
+        filename = url[url.rfind("/")+1:]
+
+    if overwrite or not os.path.exists(filename):
+        print("Downloading: " + filename)
+        urlretrieve(url, filename)
+    else:
+        print(filename + " exists, skipped downloading.")
+
+    return filename
+
 def _docmd(doc):
     """Convert a docstring to markdown"""
     if doc is None: return ''
