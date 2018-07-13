@@ -279,6 +279,9 @@ void View::getCamera(float rotate[4], float translate[3], float focus[3])
   rotate[3] = rotation->w;
   memcpy(translate, model_trans, sizeof(float) * 3);
   memcpy(focus, focal_point, sizeof(float) * 3);
+  properties.data["aperture"] = fov;
+  properties.data["near"] = near;
+  properties.data["far"] = far;
 }
 
 std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)

@@ -316,6 +316,7 @@ Viewer.prototype.loadFile = function(source) {
   //console.log(JSON.stringify(this.vis.views[this.view],null, 2));
 
   if (this.vis.views[this.view]) {
+    this.fov = this.vis.views[this.view].aperture || 45;
     this.near_clip = this.vis.views[this.view].near || 0;
     this.far_clip = this.vis.views[this.view].far || 0;
     this.orientation = this.vis.views[this.view].orientation || 1;

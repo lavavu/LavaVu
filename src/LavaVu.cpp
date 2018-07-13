@@ -859,7 +859,7 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
       float volmax[3];
       Properties::toArray<float>(vobj->properties["volmax"], volmax, 3);
       vobj->properties.data["volmax"] = json::array({scale[0]*volmax[0], scale[1]*volmax[0], scale[1]*volmax[2]});
-      std::cout << vobj->properties["volmax"] << std::endl;
+      //std::cout << vobj->properties["volmax"] << std::endl;
     }
 
     //Load full cube

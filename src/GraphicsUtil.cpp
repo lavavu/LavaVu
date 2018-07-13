@@ -224,6 +224,11 @@ void transposeMatrixf(float m[16])
   std::swap(m[11], m[14]);
 }
 
+void copyMatrixf(const float in[16], float out[16])
+{
+  memcpy(out, in, sizeof(float) * 16);
+}
+
 void multMatrixf(float r[16], const float a[16], const float b[16])
 {
   for (int i = 0; i < 4; i++)

@@ -473,14 +473,6 @@ void Volumes::render(int i)
   //Setup gradient texture from colourmap if not yet loaded
   if (cmap && !cmap->texture) cmap->loadTexture();
   //Use per-object clip box if set, otherwise use global clip
-  /*
-  float bbMin[3] = {props.getFloat("xmin", 0.01) * geom[i]->render->vertices[0][0]),
-                    props.getFloat("ymin", 0.01) * geom[i]->render->vertices[0][1]),
-                    props.getFloat("zmin", 0.01) * geom[i]->render->vertices[0][2])};
-  float bbMax[3] = {props.getFloat("xmax", 0.99) * geom[i]->render->vertices[1][0]),
-                    props.getFloat("ymax", 0.99) * geom[i]->render->vertices[1][1]),
-                    props.getFloat("zmax", 0.99) * geom[i]->render->vertices[1][2])};
-  */
   float bbMin[3] = {props.getFloat("xmin", 0.),
                     props.getFloat("ymin", 0.),
                     props.getFloat("zmin", 0.)
@@ -558,6 +550,7 @@ void Volumes::render(int i)
   float nMatrix[16];
   float pMatrix[16];
   float invPMatrix[16];
+  float tmvMatrix[16];
   float matrix[16];
   float mvpMatrix[16];
   float invMVPMatrix[16];
@@ -636,6 +629,12 @@ void Volumes::render(int i)
 
   //Raymarching modelview and normal matrices
   prog->setUniformMatrixf("uMVMatrix", mvMatrix);
+
+  //Pass transpose too
+  copyMatrixf(mvMatrix, tmvMatrix);
+  transposeMatrixf(tmvMatrix);
+  prog->setUniformMatrixf("uTMVMatrix", tmvMatrix);
+
   prog->setUniformMatrixf("uNMatrix", nMatrix);
 
   //Calculate the combined modelview projection matrix
@@ -900,11 +899,14 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
         res.push_back(inc);
       else
         res.push_back(geom[i]->depth);
+      //Object scaling
+      float s[3] = {1.0, 1.0, 1.0};
+      if (geom[i]->draw->properties.has("scale"))
+        Properties::toArray<float>(geom[i]->draw->properties["scale"], s, 3);
       //Scaling factors
-      scale.push_back(geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0]);
-      scale.push_back(geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1]);
-      scale.push_back(geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]);
-
+      scale.push_back((geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0]) * s[0]);
+      scale.push_back((geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1]) * s[1]);
+      scale.push_back((geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]) * s[2]);
       volume["res"] = res;
       volume["scale"] = scale;
 

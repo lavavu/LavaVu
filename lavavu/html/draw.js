@@ -704,16 +704,15 @@ Renderer.prototype.init = function() {
     //Calculated scaling
     this.properties = vis.objects[this.id];
     this.res = vis.objects[this.id].volume["res"];
-    this.dims = vis.objects[this.id].volume["scale"];
-    this.scaling = this.dims;
-    //Auto compensate for differences in resolution..
+    this.scaling = vis.objects[this.id].volume["scale"];
+    /*/Auto compensate for differences in resolution..
     if (vis.objects[this.id].volume.autoscale) {
       //Divide all by the highest res
       var maxn = Math.max.apply(null, this.res);
-      this.scaling = [this.res[0] / maxn * this.dims[0], 
-                      this.res[1] / maxn * this.dims[1],
-                      this.res[2] / maxn * this.dims[2]];
-    }
+      this.scaling = [this.res[0] / maxn * vis.objects[this.id].volume["scale"][0], 
+                      this.res[1] / maxn * vis.objects[this.id].volume["scale"][1],
+                      this.res[2] / maxn * vis.objects[this.id].volume["scale"][2]];
+    }*/
     this.tiles = [this.image.width / this.res[0],
                   this.image.height / this.res[1]];
     this.iscale = [1.0 / this.scaling[0], 1.0 / this.scaling[1], 1.0 / this.scaling[2]]
@@ -1178,7 +1177,7 @@ Renderer.prototype.draw = function() {
     this.gl.enableVertexAttribArray(this.program.attributes[key]);
 
   //General uniform vars
-  this.gl.uniform1i(this.program.uniforms["uLighting"], 1);
+  this.gl.uniform1i(this.program.uniforms["uLighting"], vis.objects[0].lit);
   this.gl.uniform1f(this.program.uniforms["uOpacity"], vis.properties.opacity || 1.0);
   this.gl.uniform1f(this.program.uniforms["uBrightness"], vis.properties.brightness || 0.0);
   this.gl.uniform1f(this.program.uniforms["uContrast"], vis.properties.contrast || 1.0);
@@ -1271,11 +1270,6 @@ Renderer.prototype.draw = function() {
   } else if (this.type == "volume") {
     
     //Volume render
-    //
-    //Problems:
-    //Clipping at back of box
-    //Lighting position?
-    //Uniform defaults
 
     //Premultiplied alpha blending
     this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
@@ -1285,15 +1279,13 @@ Renderer.prototype.draw = function() {
       paletteUpdate({}, vis.objects[this.id].colourmap);
     }
 
-    //Setup volume camera
-    viewer.webgl.modelView.push();
-
     //Copy props
     this.properties = vis.objects[this.id];
     this.resolution = vis.objects[this.id].volume["res"];
     this.scaling = vis.objects[this.id].volume["scale"];
   
-    //this.rayCamera();
+    //Setup volume camera
+    viewer.webgl.modelView.push();
     {
       //Apply translation to origin, any rotation and scaling
       viewer.webgl.modelView.identity()
@@ -1303,16 +1295,15 @@ Renderer.prototype.draw = function() {
       var rotmat = quat4.toMat4(viewer.rotate);
       viewer.webgl.modelView.mult(rotmat);
 
+      //console.log("DIMS: " + (this.scaling) + " TRANS: " + [-this.scaling[0]*0.5, -this.scaling[1]*0.5, -this.scaling[2]*0.5] + " SCALE: " + [1.0/this.scaling[0], 1.0/this.scaling[1], 1.0/this.scaling[2]]);
       //For a volume cube other than [0,0,0] - [1,1,1], need to translate/scale here...
       viewer.webgl.modelView.translate([-this.scaling[0]*0.5, -this.scaling[1]*0.5, -this.scaling[2]*0.5]);  //Translate to origin
       //viewer.webgl.modelView.translate([-0.5, -0.5, -0.5]);  //Translate to origin
 
       //Get the mvMatrix scaled by volume size
       //(used for depth calculations)
-      viewer.webgl.modelView.push();
-        viewer.webgl.modelView.scale([this.scaling[0], this.scaling[1], this.scaling[2]]);
-        var matrix = mat4.create(viewer.webgl.modelView.matrix);
-      viewer.webgl.modelView.pop();
+      var matrix = mat4.create(viewer.webgl.modelView.matrix);
+      mat4.scale(matrix, [this.scaling[0], this.scaling[1], this.scaling[2]]);
 
       //Inverse of scaling
       viewer.webgl.modelView.scale([this.iscale[0], this.iscale[1], this.iscale[2]]);
@@ -1322,8 +1313,7 @@ Renderer.prototype.draw = function() {
       //printMatrix(viewer.webgl.nMatrix);
 
       //Perspective matrix
-      //viewer.webgl.setPerspective(viewer.fov, this.gl.viewportWidth / this.gl.viewportHeight, 0.1, 1000.0);
-      //viewer.webgl.setPerspective(45.0, this.gl.viewportWidth / this.gl.viewportHeight, 0.014254, 34.641014);
+      viewer.webgl.setPerspective(viewer.fov, this.gl.viewportWidth / this.gl.viewportHeight, viewer.near_clip, viewer.far_clip);
 
       //Apply model scaling, inverse squared
       viewer.webgl.modelView.scale([1.0/(viewer.scale[0]*viewer.scale[0]), 1.0/(viewer.scale[1]*viewer.scale[1]), 1.0/(viewer.scale[2]*viewer.scale[2])]);
@@ -1335,6 +1325,11 @@ Renderer.prototype.draw = function() {
       //Perspective matrix
       viewer.webgl.gl.uniformMatrix4fv(viewer.webgl.program.pMatrixUniform, false, viewer.webgl.perspective.matrix);
 
+      //Transpose of model view
+      var tMVMatrix = mat4.create(viewer.webgl.modelView.matrix);
+      mat4.transpose(tMVMatrix);
+      this.gl.uniformMatrix4fv(this.program.uniforms["uTMVMatrix"], false, tMVMatrix);
+
       //Combined ModelView * Projection
       var MVPMatrix = mat4.create(viewer.webgl.perspective.matrix);
       mat4.multiply(MVPMatrix, matrix);
@@ -1345,9 +1340,8 @@ Renderer.prototype.draw = function() {
       var invMVPMatrix = mat4.create(viewer.webgl.modelView.matrix);
       mat4.transpose(invMVPMatrix);
       mat4.multiply(invMVPMatrix, invPMatrix);
-
-      viewer.webgl.modelView.pop();
     }
+    viewer.webgl.modelView.pop();
 
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, viewer.webgl.textures[0]);
@@ -1489,9 +1483,9 @@ function Viewer(canvas) {
   this.translate = [0,0,0];
   this.rotate = quat4.create();
   quat4.identity(this.rotate);
-  this.fov = 45;
   this.focus = [0,0,0];
   this.centre = [0,0,0];
+  this.fov = 45.0;
   this.near_clip = this.far_clip = 0.0;
   this.modelsize = 1;
   this.scale = [1, 1, 1];
@@ -1595,6 +1589,7 @@ Viewer.prototype.loadFile = function(source) {
   loadColourMaps();
 
   if (vis.views[view]) {
+    this.fov = vis.views[view].aperture || 45;
     this.near_clip = vis.views[view].near || 0;
     this.far_clip = vis.views[view].far || 0;
     this.orientation = vis.views[view].orientation || 1;
@@ -1846,6 +1841,7 @@ Viewer.prototype.exportViews = function(nocam) {
     vis.views[view].translate = this.translate;
     vis.views[view].scale = this.scale;
   }
+  vis.views[view].aperture = this.fov;
   vis.views[view].near = this.near_clip;
   vis.views[view].far = this.far_clip;
   vis.views[view].border = this.showBorder ? 1 : 0;
@@ -2434,11 +2430,13 @@ Viewer.prototype.updateDims = function(view) {
 
   }
 
-  /*console.log("DIMS: " + this.dims[0] + "," + this.dims[1] + "," + this.dims[2]);
+  /*
+  console.log("DIMS: " + this.dims[0] + "," + this.dims[1] + "," + this.dims[2]);
   console.log("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
   console.log("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
   console.log("Rotate: " + this.rotate[0] + "," + this.rotate[1] + "," + this.rotate[2] + "," + this.rotate[3]);
-  console.log(JSON.stringify(view));*/
+  console.log(JSON.stringify(view));
+  */
 }
 
 function resizeToWindow() {

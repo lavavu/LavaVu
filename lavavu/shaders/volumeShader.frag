@@ -32,6 +32,7 @@ uniform float uSaturation;
 uniform float uPower;
 
 uniform mat4 uMVMatrix;
+uniform mat4 uTMVMatrix;
 uniform mat4 uMVPMatrix;
 uniform mat4 uInvMVPMatrix;
 uniform mat4 uNMatrix;
@@ -63,7 +64,8 @@ float interpolate_tricubic_fast(vec3 coord);
 
 vec2 islices = vec2(1.0 / slices.x, 1.0 / slices.y);
 float maxslice = slices.x * slices.y - 1.0;
-vec2 cmin = vec2(0.5/(slices.x*slices.y), 0.5/(slices.x*slices.y));
+//Clamp to a bit before halfway for the edge voxels
+vec2 cmin = vec2(0.55/(slices.x*slices.y), 0.55/(slices.x*slices.y));
 vec2 cmax = vec2(1.0, 1.0) - cmin;
 
 
@@ -120,17 +122,6 @@ float tex3D(vec3 pos)
     return interpolate_tricubic_fast(pos);
 #endif
   return sample(pos);
-}
-
-// It seems WebGL has no transpose
-mat4 transpose(in mat4 m)
-{
-  return mat4(
-              vec4(m[0].x, m[1].x, m[2].x, m[3].x),
-              vec4(m[0].y, m[1].y, m[2].y, m[3].y),
-              vec4(m[0].z, m[1].z, m[2].z, m[3].z),
-              vec4(m[0].w, m[1].w, m[2].w, m[3].w)
-             );
 }
 
 #else
@@ -215,7 +206,6 @@ void main()
     bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
 
     //Compute eye space coord from window space to get the ray direction
-    mat4 invMVMatrix = transpose(uMVMatrix);
     //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
     //Window ->[VP^]-> NDC ->[/w]-> Clip ->[P^]-> EyeSpace ->[MV^]-> ObjectSpace
     vec4 ndcPos;
@@ -230,7 +220,7 @@ void main()
 
     //Ray origin from the camera position
     vec4 camPos = -vec4(uMVMatrix[3]);  //4th column of modelview
-    vec3 rayOrigin = (invMVMatrix * camPos).xyz;
+    vec3 rayOrigin = (uTMVMatrix * camPos).xyz;
 
     //Calc step
     float stepSize = 1.732 / float(uSamples); //diagonal of [0,1] normalised coord cube = sqrt(3)
@@ -268,11 +258,9 @@ void main()
         //Get density 
         float density = tex3D(pos);
 
-#ifndef NO_DEPTH_WRITE
         //Set the depth point to where transmissivity drops below threshold
         if (T > depthT)
           depthHit = pos;
-#endif
 
 #define ISOSURFACE
 #ifdef ISOSURFACE

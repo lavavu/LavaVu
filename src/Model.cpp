@@ -2007,6 +2007,11 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       vprops["translate"] = trans;
       vprops["focus"] = foc;
       vprops["scale"] = scale;
+
+      vprops["aperture"] = view->properties["aperture"];
+      vprops["near"] = view->properties["near"];
+      vprops["far"] = view->properties["far"];
+
       //Can't set min/max properties from auto calc or will override future bounding box calc,
       //useful to get the calculated bounding box, so export as "bounds"
       json bounds;

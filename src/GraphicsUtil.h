@@ -664,6 +664,7 @@ int gluProjectf(float objx, float objy, float objz, float *windowCoordinate);
 int gluProjectf(float objx, float objy, float objz, float* modelview, float*projection, int* viewport, float *windowCoordinate);
 bool gluInvertMatrixf(const float m[16], float invOut[16]);
 void transposeMatrixf(float m[16]);
+void copyMatrixf(const float in[16], float out[16]);
 void multMatrixf(float r[16], const float a[16], const float b[16]);
 
 void Viewport2d(int width, int height);
