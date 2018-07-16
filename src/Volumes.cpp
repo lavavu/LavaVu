@@ -692,14 +692,16 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, unsig
 
         if (z==0)
         {
-          image->allocate(iw, ih, slice_image.channels);
+          channels = slice_image.channels;
+          image->allocate(iw, ih, channels);
           image->clear();
         }
 
         //Copy slice image to tile region of image
         for (unsigned int y=0; y<slice_image.height; y++)
           for (unsigned int x=0; x<slice_image.width; x++)
-            image->pixels[iw * (y + yoffset) + x + xoffset] = slice_image.pixels[y * slice_image.width + x];
+            for (unsigned int z=0; z<channels; z++)
+              image->pixels[iw*channels * (y + yoffset) + channels*(x + xoffset) + z] = slice_image.pixels[y*channels * slice_image.width + x*channels + z];
 
         xoffset += geom[i]->width;
         if (xoffset > iw-geom[i]->width)
@@ -724,16 +726,18 @@ ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, unsig
         {
           iw = slice_image.width * xtiles;
           ih = ceil(slices[draw] / (float)xtiles) * slice_image.height;
+          channels = slice_image.channels;
           if (ih == slice_image.height) iw = slice_image.width * slices[draw];
           debug_print("Exporting Image: %s width %d height %d depth %d --> %d x %d\n", draw->name().c_str(), slice_image.width, slice_image.height, slices[draw], iw, ih);
-          image->allocate(iw, ih, slice_image.channels);
+          image->allocate(iw, ih, channels);
           image->clear();
         }
 
         //Copy slice image to tile region of image
         for (unsigned int y=0; y<slice_image.height; y++)
           for (unsigned int x=0; x<slice_image.width; x++)
-            image->pixels[iw * (y + yoffset) + x + xoffset] = slice_image.pixels[y * slice_image.width + x];
+            for (unsigned int z=0; z<channels; z++)
+              image->pixels[iw*channels * (y + yoffset) + channels*(x + xoffset) + z] = slice_image.pixels[y*channels * slice_image.width + x*channels + z];
 
         xoffset += slice_image.width;
         if (xoffset > iw-slice_image.width)
@@ -774,25 +778,7 @@ void Volumes::getSliceImage(ImageData* image, GeomData* slice, int offset)
   int width = slice->width;
   int height = slice->height;
 
-  if (slice->colourData() != nullptr)
-  {
-    if (!height) height = slice->colourData()->size() / width;
-    image->allocate(width, height, 1); //Luminance
-    image->clear();
-    auto dataRange = slice->draw->ranges[slice->colourData()->label];
-    float min = dataRange.minimum;
-    float range = dataRange.maximum - min;
-    for (int y=0; y<height; y++)
-    {
-      for (int x=0; x<width; x++)
-      {
-        float val = slice->colourData(offset + y * width + x);
-        val = (val - min) / range * 255;
-        image->pixels[y * width + x] = (unsigned int)val;
-      }
-    }
-  }
-  else if (slice->render->colours.size() > 0)
+  if (slice->render->colours.size() > 0)
   {
     if (!height) height = slice->render->colours.size() / width;
     image->allocate(width, height, 4); //RGBA
@@ -815,6 +801,24 @@ void Volumes::getSliceImage(ImageData* image, GeomData* slice, int offset)
     image->clear();
 
     memcpy(image->pixels, slice->render->luminance.ref(offset), image->width*image->height);
+  }
+  else if (slice->colourData() != nullptr)
+  {
+    if (!height) height = slice->colourData()->size() / width;
+    image->allocate(width, height, 1); //Luminance
+    image->clear();
+    auto dataRange = slice->draw->ranges[slice->colourData()->label];
+    float min = dataRange.minimum;
+    float range = dataRange.maximum - min;
+    for (int y=0; y<height; y++)
+    {
+      for (int x=0; x<width; x++)
+      {
+        float val = slice->colourData(offset + y * width + x);
+        val = (val - min) / range * 255;
+        image->pixels[y * width + x] = (unsigned int)val;
+      }
+    }
   }
 }
 
