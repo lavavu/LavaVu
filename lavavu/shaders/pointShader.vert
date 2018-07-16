@@ -6,6 +6,9 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
 const int uPointDist = 1;   // Scale by distance
+
+varying vec4 vColour;
+
 #else
 #define aVertexPosition gl_Vertex.xyz
 #define aVertexColour gl_Color
@@ -14,6 +17,8 @@ const int uPointDist = 1;   // Scale by distance
 #define uPMatrix gl_ProjectionMatrix
 
 uniform int uPointDist;   // Scale by distance
+
+#define vColour gl_FrontColor
 #endif
 
 attribute float aSize;
@@ -24,11 +29,10 @@ uniform float uPointScale;   // scale to calculate size in pixels
 uniform vec4 uColour;
 uniform float uOpacity;
 
-varying vec4 vColour;
-varying float vPointType;
-varying vec3 vPosEye;
-varying float vPointSize;
 varying vec3 vVertex;
+varying float vPointSize;
+varying vec3 vPosEye;
+varying float vPointType;
 
 void main(void)
 {
@@ -55,7 +59,5 @@ void main(void)
     vColour = uColour;
   else
     vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
-
-  vColour = aVertexColour;
 }
 

@@ -1,10 +1,4 @@
-varying vec3 vPosEye;
-varying vec3 vVertex;
-varying float vPointType;
-varying float vPointSize;
 uniform int uPointType;
-varying vec4 vColour;
-
 uniform float uOpacity;
 uniform float uBrightness;
 uniform float uContrast;
@@ -18,6 +12,18 @@ uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform vec3 uLightPos;
+
+#ifdef WEBGL
+varying vec4 vColour;
+#else
+#define vColour gl_Color
+#endif
+
+varying vec3 vVertex;
+varying float vPointSize;
+varying vec3 vPosEye;
+varying float vPointType;
+
 
 void calcColour(vec3 colour, float alpha)
 {
@@ -49,8 +55,8 @@ void main(void)
   if (vPointType >= 0.0) pointType = int(floor(vPointType + 0.5)); //Round back to nearest int
 
   //Textured?
-  if (uTextured)
-     gl_FragColor = texture2D(uTexture, gl_PointCoord);
+  //if (uTextured)
+  //   gl_FragColor = texture2D(uTexture, gl_PointCoord);
 
   //Flat, square points, fastest, skip lighting
   if (pointType == 4)
