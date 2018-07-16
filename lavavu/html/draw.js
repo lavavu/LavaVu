@@ -2,8 +2,6 @@
 //TODO: 
 //Replace all control creation, update and set with automated routines from list of defined property controls
 // License: LGPLv3 for now
-var vis = {};
-var view = 0; //Active view
 var viewer;
 var params, properties, objectlist;
 var server = false;
@@ -75,6 +73,9 @@ function initPage(src, fn) {
 
     canvas.mouse.wheelTimer = true; //Accumulate wheel scroll (prevents too many events backing up)
     defaultMouse = document.mouse = canvas.mouse;
+
+    //Reference to viewer object on canvas for event handling
+    canvas.viewer = viewer;
 
     window.onresize = function() {viewer.drawTimed();};
   }
@@ -160,25 +161,25 @@ function progress(text) {
 
 function canvasMouseClick(event, mouse) {
   if (server) {
-    if (viewer.rotating)
-      sendCommand('' + viewer.getRotationString());
+    if (mouse.element.viewer.rotating)
+      sendCommand('' + mouse.element.viewer.getRotationString());
     else
-      sendCommand('' + viewer.getTranslationString());
+      sendCommand('' + mouse.element.viewer.getTranslationString());
   }
 
   //if (server) serverMouseClick(event, mouse); //Pass to server handler
-  if (viewer.rotating) {
-    viewer.rotating = false;
-    //viewer.reload = true;
+  if (mouse.element.viewer.rotating) {
+    mouse.element.viewer.rotating = false;
+    //mouse.element.viewer.reload = true;
     sortTimer();
   }
   if (!noui && document.getElementById("immsort").checked == true) {
     //No timers
-    viewer.draw();
-    viewer.rotated = true; 
+    mouse.element.viewer.draw();
+    mouse.element.viewer.rotated = true;
   }
 
-  viewer.draw();
+  mouse.element.viewer.draw();
   return false;
 }
 
@@ -209,8 +210,8 @@ function canvasMouseDown(event, mouse) {
 
 function canvasMouseMove(event, mouse) {
   //if (server) serverMouseMove(event, mouse); //Pass to server handler
-  if (!mouse.isdown || !viewer) return true;
-  viewer.rotating = false;
+  if (!mouse.isdown || !mouse.element.viewer) return true;
+  mouse.element.viewer.rotating = false;
 
   //Switch buttons for translate/rotate
   var button = mouse.button;
@@ -221,32 +222,32 @@ function canvasMouseMove(event, mouse) {
   switch (button)
   {
     case 0:
-      viewer.rotateY(mouse.deltaX/5);
-      viewer.rotateX(mouse.deltaY/5);
-      viewer.rotating = true;
+      mouse.element.viewer.rotateY(mouse.deltaX/5);
+      mouse.element.viewer.rotateX(mouse.deltaY/5);
+      mouse.element.viewer.rotating = true;
       sortTimer(true);  //Delay sort if queued
       break;
     case 1:
-      viewer.rotateZ(Math.sqrt(mouse.deltaX*mouse.deltaX + mouse.deltaY*mouse.deltaY)/5);
-      viewer.rotating = true;
+      mouse.element.viewer.rotateZ(Math.sqrt(mouse.deltaX*mouse.deltaX + mouse.deltaY*mouse.deltaY)/5);
+      mouse.element.viewer.rotating = true;
       sortTimer(true);  //Delay sort if queued
       break;
     case 2:
-      var adjust = viewer.modelsize / 1000;   //1/1000th of size
-      viewer.translate[0] += mouse.deltaX * adjust;
-      viewer.translate[1] -= mouse.deltaY * adjust;
+      var adjust = mouse.element.viewer.modelsize / 1000;   //1/1000th of size
+      mouse.element.viewer.translate[0] += mouse.deltaX * adjust;
+      mouse.element.viewer.translate[1] -= mouse.deltaY * adjust;
       break;
   }
 
   //Always draw border while interacting in server mode?
   if (server)
-    viewer.draw(true);
+    mouse.element.viewer.draw(true);
   //Draw border while interacting (automatically on for models > 500K vertices)
   //Hold shift to switch from default behaviour
-  else if (viewer.interactive) //document.getElementById("interactive").checked == true)
-    viewer.draw();
+  else if (mouse.element.viewer.interactive) //document.getElementById("interactive").checked == true)
+    mouse.element.viewer.draw();
   else
-    viewer.draw(!event.shiftKey);
+    mouse.element.viewer.draw(!event.shiftKey);
   return false;
 }
 
@@ -258,14 +259,14 @@ function canvasMouseWheel(event, mouse) {
   if (event.shiftKey) {
     var factor = event.spin * 0.01;
     if (zoomClipTimer) clearTimeout(zoomClipTimer);
-    zoomClipTimer = setTimeout(function () {viewer.zoomClip(factor);}, 100 );
+    zoomClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
   } else {
     if (zoomTimer) 
       clearTimeout(zoomTimer);
     zoomSpin += event.spin;
-    zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
+    zoomTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
     //Clear the box after a second
-    //setTimeout(function() {viewer.clear();}, 1000);
+    //setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
@@ -273,9 +274,9 @@ function canvasMouseWheel(event, mouse) {
 function canvasMousePinch(event, mouse) {
   if (event.distance != 0) {
     var factor = event.distance * 0.0001;
-    viewer.zoom(factor);
+    mouse.element.viewer.zoom(factor);
     //Clear the box after a second
-    //setTimeout(function() {viewer.clear();}, 1000);
+    //setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
@@ -319,7 +320,7 @@ function getImageDataURL(img) {
   return dataURL;
 }
 
-function defaultColourMaps() {
+function defaultColourMaps(vis) {
   //Add some default colourmaps
 
   if (!vis.colourmaps) vis.colourmaps = [];
@@ -380,7 +381,7 @@ function defaultColourMaps() {
   });
 }
 
-function loadColourMaps() {
+function loadColourMaps(vis) {
   //Load colourmaps
   if (!vis.colourmaps) return;
 
@@ -411,19 +412,6 @@ function loadColourMaps() {
   if (viewer) viewer.setColourMap(sel);
 }
 
-function checkPointMinMax(coord) {
-  for (var i=0; i<3; i++) {
-    vis.views[view].min[i] = Math.min(coord[i], vis.views[view].min[i]);
-    vis.views[view].max[i] = Math.max(coord[i], vis.views[view].max[i]);
-  }
-  //console.log(JSON.stringify(vis.views[view].min) + " -- " + JSON.stringify(vis.views[view].max));
-}
-
-function objVertexColour(obj, data, idx) {
-  var mapid = lookupMapId(obj.colourmap);
-  return vertexColour(obj.colour, obj.opacity, mapid >= 0 ? vis.colourmaps[mapid] : null, data, idx);
-}
-
 function safeLog10(val) {return val < Number.MIN_VALUE ? Math.log10(Number.MIN_VALUE) : Math.log10(val); }
 
 function vertexColour(colour, opacity, colourmap, data, idx) {
@@ -431,6 +419,7 @@ function vertexColour(colour, opacity, colourmap, data, idx) {
   if (data.values) {
     var colrange = data.vertices.data.length / (3*data.values.data.length);
     idx = Math.floor(idx/colrange);
+    console.log(colourmap);
     if (colourmap) {
       var min = 0;
       var max = 1;
@@ -695,6 +684,7 @@ Renderer.prototype.init = function() {
   if (this.type == "points" && !viewer.hasPoints) return false;
   var fs = this.type + '-fs';
   var vs = this.type + '-vs';
+  var vis = viewer.vis;
 
   //User defined shaders if provided...
   if (vis.shaders) {
@@ -771,6 +761,7 @@ Renderer.prototype.loadElements = function() {
   var start = new Date();
   var distances = [];
   var indices = [];
+  var vis = viewer.vis;
   //Only update the positions array when sorting due to update
   if (!this.positions || !viewer.rotated || this.type == 'line') {
     this.positions = [];
@@ -939,6 +930,8 @@ VertexBuffer.prototype.loadPoints = function(object) {
     else
       console.log(object.colourmap);*/
 
+    var map = viewer.lookupMap(object.colourmap);
+
     var psize = object.pointsize ? object.pointsize : vis.properties.pointsize;
     if (!psize) psize = 1.0;
 
@@ -948,7 +941,7 @@ VertexBuffer.prototype.loadPoints = function(object) {
       this.floats[this.offset] = vert[0];
       this.floats[this.offset+1] = vert[1];
       this.floats[this.offset+2] = vert[2];
-      this.ints[this.offset+3] = objVertexColour(object, dat, i);
+      this.ints[this.offset+3] = vertexColour(object.colour, object.opacity, map, dat, i)
       this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * psize : psize;
       this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype : -1;
       this.offset += this.vertexSizeInFloats;
@@ -968,10 +961,13 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
       calcCentroids = true;
       dat.centroids = [];
     }
+    //var vis = viewer.vis;
     //if (dat.values)
     //  console.log(object.name + " : " + dat.values.minimum + " -> " + dat.values.maximum);
     //if (object.colourmap >= 0)
     //  console.log(object.name + " :: " + vis.colourmaps[object.colourmap].range[0] + " -> " + vis.colourmaps[object.colourmap].range[1]);
+
+    var map = viewer.lookupMap(object.colourmap);
 
     for (var i=0; i<dat.indices.data.length/3; i++) {
       //Generate tex-coords
@@ -1000,7 +996,7 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
           this.floats[this.offset+4] = 0.0;
           this.floats[this.offset+5] = 0.0;
         }
-        this.ints[this.offset+6] = objVertexColour(object, dat, ids[j]);
+        this.ints[this.offset+6] = vertexColour(object.colour, object.opacity, map, dat, ids[j])
         if (dat.texcoords) {
           this.floats[this.offset+7] = dat.texcoords.data[ids[j]*2];
           this.floats[this.offset+8] = dat.texcoords.data[ids[j]*2+1];
@@ -1041,13 +1037,14 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
 VertexBuffer.prototype.loadLines = function(object) {
   for (var l in object.lines) {
     var dat =  object.lines[l];
+    var map = viewer.lookupMap(object.colourmap);
     for (var i=0; i<dat.vertices.data.length/3; i++) {
       var i3 = i*3;
       var vert = [dat.vertices.data[i3], dat.vertices.data[i3+1], dat.vertices.data[i3+2]];
       this.floats[this.offset] = vert[0];
       this.floats[this.offset+1] = vert[1];
       this.floats[this.offset+2] = vert[2];
-      this.ints[this.offset+3] = objVertexColour(object, dat, i);
+      this.ints[this.offset+3] = vertexColour(object.colour, object.opacity, map, dat, i)
       this.offset += this.vertexSizeInFloats;
     }
   }
@@ -1065,8 +1062,9 @@ VertexBuffer.prototype.update = function(gl) {
 }
 
 Renderer.prototype.updateBuffers = function() {
+  var vis = viewer.vis;
   if (this.border) {
-    this.box(vis.views[view].min, vis.views[view].max);
+    this.box(viewer.view.min, viewer.view.max);
     this.elements = 24;
     return;
   }
@@ -1158,6 +1156,7 @@ Renderer.prototype.box = function(min, max) {
 }
 
 Renderer.prototype.draw = function() {
+  var vis = viewer.vis;
   if (!vis.objects || !vis.objects.length) return;
   var start = new Date();
   var desc = "";
@@ -1211,12 +1210,12 @@ Renderer.prototype.draw = function() {
   this.gl.uniform3fv(this.program.uniforms["uLightPos"], new Float32Array(vis.properties.lightpos || [0.1,-0.1,2.0]));
   if (this.colour)
     this.gl.uniform4f(this.program.uniforms["uColour"], this.colour.red/255.0, this.colour.green/255.0, this.colour.blue/255.0, this.colour.alpha);
-  var cmin = [vis.views[view].min[0] + viewer.dims[0] * (vis.properties.xmin || 0.0),
-              vis.views[view].min[1] + viewer.dims[1] * (vis.properties.ymin || 0.0),
-              vis.views[view].min[2] + viewer.dims[2] * (vis.properties.zmin || 0.0)];
-  var cmax = [vis.views[view].min[0] + viewer.dims[0] * (vis.properties.xmax || 1.0),
-              vis.views[view].min[1] + viewer.dims[1] * (vis.properties.ymax || 1.0),
-              vis.views[view].min[2] + viewer.dims[2] * (vis.properties.zmax || 1.0)];
+  var cmin = [viewer.view.min[0] + viewer.dims[0] * (vis.properties.xmin || 0.0),
+              viewer.view.min[1] + viewer.dims[1] * (vis.properties.ymin || 0.0),
+              viewer.view.min[2] + viewer.dims[2] * (vis.properties.zmin || 0.0)];
+  var cmax = [viewer.view.min[0] + viewer.dims[0] * (vis.properties.xmax || 1.0),
+              viewer.view.min[1] + viewer.dims[1] * (vis.properties.ymax || 1.0),
+              viewer.view.min[2] + viewer.dims[2] * (vis.properties.zmax || 1.0)];
   this.gl.uniform3fv(this.program.uniforms["uClipMin"], new Float32Array(cmin));
   this.gl.uniform3fv(this.program.uniforms["uClipMax"], new Float32Array(cmax));
 
@@ -1459,13 +1458,13 @@ function minMaxDist()
   var maxdist = -Number.MAX_VALUE, mindist = Number.MAX_VALUE;
   for (i=0; i<2; i++)
   {
-     var x = i==0 ? vis.views[view].min[0] : vis.views[view].max[0];
+     var x = i==0 ? viewer.view.min[0] : viewer.view.max[0];
      for (var j=0; j<2; j++)
      {
-        var y = j==0 ? vis.views[view].min[1] : vis.views[view].max[1];
+        var y = j==0 ? viewer.view.min[1] : viewer.view.max[1];
         for (var k=0; k<2; k++)
         {
-           var z = k==0 ? vis.views[view].min[2] : vis.views[view].max[2];
+           var z = k==0 ? viewer.view.min[2] : viewer.view.max[2];
            var dist = eyeDistance(M2, [x, y, z]);
            if (dist < mindist) mindist = dist;
            if (dist > maxdist) maxdist = dist;
@@ -1479,6 +1478,7 @@ function minMaxDist()
 
 //This object holds the viewer details and calls the renderers
 function Viewer(canvas) {
+  this.vis = {};
   this.canvas = canvas;
   if (canvas)
   {
@@ -1585,11 +1585,11 @@ Viewer.prototype.loadFile = function(source) {
   DEBUG && console.log(time + " seconds to parse data");
 
   if (source.exported) {
-    if (!vis.views && !vis.views[view]) {DEBUG && console.log("Exported settings require loaded model"); return;}
+    if (!this.vis.views && !this.view) {DEBUG && console.log("Exported settings require loaded model"); return;}
     var old = this.toString();
     //Copy, overwriting if exists in source
-    if (source.views[view].rotate) vis.views[view].rotate = source.views[view].rotate;
-    Merge(vis, source);
+    if (source.views[0].rotate) this.vis.views[0].rotate = source.views[0].rotate;
+    Merge(this.vis, source);
     if (!source.reload) updated = false;  //No reload necessary
   } else {
     //Clear geometry
@@ -1597,31 +1597,35 @@ Viewer.prototype.loadFile = function(source) {
       this.renderers[r].elements = 0;
 
     //Replace
-    vis = source;
+    this.vis = vis = source;
 
     //Add default colour maps
-    defaultColourMaps();
+    defaultColourMaps(this.vis);
   }
+
+  var vis = this.vis;
+  //Set active view (always first for now)
+  this.view = vis.views[0];
 
   //Always set a bounding box, get from objects if not in view
   var objbb = false;
-  if (!vis.views[view].min || !vis.views[view].max) {
-    vis.views[view].min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
-    vis.views[view].max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
+  if (!this.view.min || !this.view.max) {
+    this.view.min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    this.view.max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
     objbb = true;
   }
-  //console.log(JSON.stringify(vis.views[view]));
+  //console.log(JSON.stringify(this.view));
 
   //Load some user options...
-  loadColourMaps();
+  loadColourMaps(this.vis);
 
-  if (vis.views[view]) {
-    this.fov = vis.views[view].aperture || 45;
-    this.near_clip = vis.views[view].near || 0;
-    this.far_clip = vis.views[view].far || 0;
-    this.orientation = vis.views[view].orientation || 1;
-    this.showBorder = vis.views[view].border == undefined ? true : vis.views[view].border > 0;
-    this.axes = vis.views[view].axis == undefined ? true : vis.views[view].axis;
+  if (this.view) {
+    this.fov = this.view.aperture || 45;
+    this.near_clip = this.view.near || 0;
+    this.far_clip = this.view.far || 0;
+    this.orientation = this.view.orientation || 1;
+    this.showBorder = this.view.border == undefined ? true : this.view.border > 0;
+    this.axes = this.view.axis == undefined ? true : this.view.axis;
   }
 
   this.pointScale = vis.properties.scalepoints || 1.0;
@@ -1710,20 +1714,20 @@ Viewer.prototype.loadFile = function(source) {
 
         //Apply object bounding box
         if (objbb && vis.objects[id].min)
-          checkPointMinMax(vis.objects[id].min);
+          this.checkPointMinMax(vis.objects[id].min);
         if (objbb && vis.objects[id].max)
-          checkPointMinMax(vis.objects[id].max);
+          this.checkPointMinMax(vis.objects[id].max);
 
         //Read vertices, values, normals, sizes, etc...
         for (var idx in vis.objects[id][type]) {
           //Only support following data types for now
-          decodeBase64(id, type, idx, 'vertices');
-          decodeBase64(id, type, idx, 'values');
-          decodeBase64(id, type, idx, 'normals');
-          decodeBase64(id, type, idx, 'texcoords');
-          decodeBase64(id, type, idx, 'colours', 'integer');
-          decodeBase64(id, type, idx, 'sizes');
-          decodeBase64(id, type, idx, 'indices', 'integer');
+          decodeBase64(vis.objects[id][type][idx], 'vertices');
+          decodeBase64(vis.objects[id][type][idx], 'values');
+          decodeBase64(vis.objects[id][type][idx], 'normals');
+          decodeBase64(vis.objects[id][type][idx], 'texcoords');
+          decodeBase64(vis.objects[id][type][idx], 'colours', 'integer');
+          decodeBase64(vis.objects[id][type][idx], 'sizes');
+          decodeBase64(vis.objects[id][type][idx], 'indices', 'integer');
 
           if (vis.objects[id][type][idx].vertices) {
             DEBUG && console.log("Loaded " + vis.objects[id][type][idx].vertices.data.length/3 + " vertices from " + name);
@@ -1777,7 +1781,7 @@ Viewer.prototype.loadFile = function(source) {
       }
     }
 
-    this.updateDims(vis.views[view]);
+    this.updateDims(this.view);
 
     if (!noui) {
       var div= document.createElement('div');
@@ -1832,6 +1836,14 @@ Viewer.prototype.loadFile = function(source) {
   }
 }
 
+Viewer.prototype.checkPointMinMax = function(coord) {
+  for (var i=0; i<3; i++) {
+    this.view.min[i] = Math.min(coord[i], this.view.min[i]);
+    this.view.max[i] = Math.max(coord[i], this.view.max[i]);
+  }
+  //console.log(JSON.stringify(this.view.min) + " -- " + JSON.stringify(this.view.max));
+}
+
 function Merge(obj1, obj2) {
   for (var p in obj2) {
     try {
@@ -1854,7 +1866,7 @@ Viewer.prototype.toString = function(nocam, reload) {
   var exp = {"objects"    : this.exportObjects(), 
              "colourmaps" : this.exportColourMaps(),
              "views"      : this.exportViews(nocam),
-             "properties" : vis.properties};
+             "properties" : this.vis.properties};
 
   exp.exported = true;
   exp.reload = reload ? true : false;
@@ -1867,30 +1879,33 @@ Viewer.prototype.toString = function(nocam, reload) {
 Viewer.prototype.exportViews = function(nocam) {
   //Update camera settings of current view
   if (nocam)
-    vis.views[view] = {};
+    this.view = {};
   else {
-    vis.views[view].rotate = this.getRotation();
-    vis.views[view].focus = this.focus;
-    vis.views[view].translate = this.translate;
-    vis.views[view].scale = this.scale;
+    this.view.rotate = this.getRotation();
+    this.view.focus = this.focus;
+    this.view.translate = this.translate;
+    this.view.scale = this.scale;
   }
-  vis.views[view].aperture = this.fov;
-  vis.views[view].near = this.near_clip;
-  vis.views[view].far = this.far_clip;
-  vis.views[view].border = this.showBorder ? 1 : 0;
-  vis.views[view].axis = this.axes;
-  //views[view].background = this.background.toString();
-  return vis.views;
+  this.view.aperture = this.fov;
+  this.view.near = this.near_clip;
+  this.view.far = this.far_clip;
+  this.view.border = this.showBorder ? 1 : 0;
+  this.view.axis = this.axes;
+  //this.view.background = this.background.toString();
+
+  //Always set first for now
+  this.views[views][0] = this.view;
+  return this.vis.views;
 }
 
 Viewer.prototype.exportObjects = function() {
   objs = [];
-  for (var id in vis.objects) {
+  for (var id in this.vis.objects) {
     objs[id] = {};
     //Skip geometry data
-    for (var type in vis.objects[id]) {
+    for (var type in this.vis.objects[id]) {
       if (type != "triangles" && type != "points" && type != 'lines' && type != "volume") {
-        objs[id][type] = vis.objects[id][type];
+        objs[id][type] = this.vis.objects[id][type];
       }
     }
   }
@@ -1899,13 +1914,13 @@ Viewer.prototype.exportObjects = function() {
 
 Viewer.prototype.exportColourMaps = function() {
   cmaps = [];
-  if (vis.colourmaps) {
-    for (var i=0; i<vis.colourmaps.length; i++) {
-      cmaps[i] = vis.colourmaps[i].palette.get();
+  if (this.vis.colourmaps) {
+    for (var i=0; i<this.vis.colourmaps.length; i++) {
+      cmaps[i] = this.vis.colourmaps[i].palette.get();
       //Copy additional properties
-      for (var type in vis.colourmaps[i]) {
+      for (var type in this.vis.colourmaps[i]) {
         if (type != "palette" && type != "colours")
-          cmaps[i][type] = vis.colourmaps[i][type];
+          cmaps[i][type] = this.vis.colourmaps[i][type];
       }
     }
   }
@@ -1918,6 +1933,7 @@ Viewer.prototype.exportFile = function() {
 
 Viewer.prototype.properties = function(id) {
   //Properties button clicked... Copy to controls
+  var vis = this.vis;
   properties.id = id;
   document.getElementById('obj_name').innerHTML = vis.objects[id].name;
   this.setColourMap(vis.objects[id].colourmap);
@@ -1958,19 +1974,19 @@ Viewer.prototype.properties = function(id) {
 Viewer.prototype.setProperties = function() {
   function setProp(name, fieldname) {
     if (fieldname == undefined) fieldname = name;
-    vis.properties[name] = document.getElementById('global-' + fieldname + '-out').value = parseFloat(document.getElementById('global-' + fieldname).value);
+    this.vis.properties[name] = document.getElementById('global-' + fieldname + '-out').value = parseFloat(document.getElementById('global-' + fieldname).value);
   }
 
-  viewer.pointScale = vis.properties.scalepoints = document.getElementById('pointScale-out').value = document.getElementById('pointScale').value / 10.0;
+  viewer.pointScale = this.vis.properties.scalepoints = document.getElementById('pointScale-out').value = document.getElementById('pointScale').value / 10.0;
   if (document.getElementById('globalPointType').value)
-    viewer.pointType = vis.properties.pointtype = parseInt(document.getElementById('globalPointType').value);
+    viewer.pointType = this.vis.properties.pointtype = parseInt(document.getElementById('globalPointType').value);
   viewer.showBorder = document.getElementById("border").checked;
   viewer.axes = document.getElementById("axes").checked;
   var c = document.getElementById("bgColour").value;
   if (c != "") {
     var cc = Math.round(255*c);
-    //vis.views[view].background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
-    vis.properties.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+    //this.view.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
+    this.vis.properties.background = "rgba(" + cc + "," + cc + "," + cc + ",1.0)"
   }
   setProp('opacity');
   setProp('brightness');
@@ -1989,7 +2005,7 @@ Viewer.prototype.setProperties = function() {
     ajaxPost('/post', this.toString(true, false)); //, callback, progress, headers)
     setTimeout(requestObjects, 100);
   } else {
-    viewer.applyBackground(vis.properties.background);
+    viewer.applyBackground(this.vis.properties.background);
     viewer.draw();
   }
 }
@@ -2028,9 +2044,9 @@ Viewer.prototype.addColourMap = function() {
     "colours": [{"position": 0, "colour": "rgba(0,0,0,0)"},{"position": 1,"colour": "rgba(255,255,255,1)"}
     ]
   }
-  vis.colourmaps.push(newmap);
+  this.vis.colourmaps.push(newmap);
 
-  loadColourMaps();
+  loadColourMaps(this.vis);
 
   //Select newly added
   var list = document.getElementById('colourmap-presets');
@@ -2039,7 +2055,7 @@ Viewer.prototype.addColourMap = function() {
 
 Viewer.prototype.setColourMap = function(id) {
   if (properties.id == undefined) return;
-  vis.objects[properties.id].colourmap = parseInt(id);
+  this.vis.objects[properties.id].colourmap = parseInt(id);
   if (id === undefined) id = -1;
   //Set new colourmap on active object
   document.getElementById('colourmap-presets').value = id;
@@ -2048,10 +2064,10 @@ Viewer.prototype.setColourMap = function(id) {
     document.getElementById('log').style.display = 'none';
   } else {
     //Draw palette UI
-    document.getElementById('logscale').checked = vis.colourmaps[id].logscale;
+    document.getElementById('logscale').checked = this.vis.colourmaps[id].logscale;
     document.getElementById('log').style.display = 'block';
     document.getElementById('palette').style.display = 'block';
-    viewer.gradient.palette = vis.colourmaps[id].palette;
+    viewer.gradient.palette = this.vis.colourmaps[id].palette;
     viewer.gradient.mapid = id; //Save the id
     viewer.gradient.update();
   }
@@ -2060,11 +2076,11 @@ Viewer.prototype.setColourMap = function(id) {
 Viewer.prototype.setObjectProperties = function() {
   //Copy from controls
   var id = properties.id;
-  function setProp(name) {vis.objects[id][name] = document.getElementById(name + '-out').value = parseFloat(document.getElementById(name).value);}
-  vis.objects[id].pointsize = document.getElementById('pointSize-out').value = document.getElementById('pointSize').value / 10.0;
-  vis.objects[id].pointtype = parseInt(document.getElementById('pointType').value);
-  vis.objects[id].wireframe = document.getElementById('wireframe').checked;
-  vis.objects[id].cullface = document.getElementById('cullface').checked;
+  function setProp(name) {this.vis.objects[id][name] = document.getElementById(name + '-out').value = parseFloat(document.getElementById(name).value);}
+  this.vis.objects[id].pointsize = document.getElementById('pointSize-out').value = document.getElementById('pointSize').value / 10.0;
+  this.vis.objects[id].pointtype = parseInt(document.getElementById('pointType').value);
+  this.vis.objects[id].wireframe = document.getElementById('wireframe').checked;
+  this.vis.objects[id].cullface = document.getElementById('cullface').checked;
   setProp('opacity');
   setProp('density');
   setProp('power');
@@ -2074,13 +2090,13 @@ Viewer.prototype.setObjectProperties = function() {
   setProp('isoalpha');
   setProp('dminclip');
   setProp('dmaxclip');
-  vis.objects[id].isowalls = document.getElementById('isowalls').checked;
-  vis.objects[id].isofilter = document.getElementById('isofilter').checked;
+  this.vis.objects[id].isowalls = document.getElementById('isowalls').checked;
+  this.vis.objects[id].isofilter = document.getElementById('isofilter').checked;
   var colour = new Colour(document.getElementById('colour_set').style.backgroundColor);
-  vis.objects[id].colour = colour.html();
-  var mapid = lookupMapId(vis.objects[id].colourmap);
+  this.vis.objects[id].colour = colour.html();
+  var mapid = this.lookupMapId(this.vis.objects[id].colourmap);
   if (mapid >= 0)
-    vis.colourmaps[mapid].logscale = document.getElementById('logscale').checked;
+    this.vis.colourmaps[mapid].logscale = document.getElementById('logscale').checked;
 
   //Flag reload on WebGL objects
   for (var r in this.renderers)
@@ -2100,10 +2116,10 @@ Viewer.prototype.action = function(id, reload, sort, el) {
   if (server) {
     var show = el.checked;
     if (show) {
-      vis.objects[id].visible = true;
+      this.vis.objects[id].visible = true;
       sendCommand('show ' + (id+1));
     } else {
-      vis.objects[id].visible = false;
+      this.vis.objects[id].visible = false;
       sendCommand('hide ' + (id+1));
     }
     return;
@@ -2122,13 +2138,13 @@ Viewer.prototype.apply = function() {
   this.draw();
 }
 
-function decodeBase64(id, type, idx, datatype, format) {
+function decodeBase64(obj, datatype, format) {
   if (!format) format = 'float';
-  if (!vis.objects[id][type][idx][datatype]) return null;
+  if (!obj[datatype]) return null;
   var buf;
-  if (typeof vis.objects[id][type][idx][datatype].data == 'string') {
+  if (typeof obj[datatype].data == 'string') {
     //Base64 encoded string
-    var decoded = atob(vis.objects[id][type][idx][datatype].data);
+    var decoded = atob(obj[datatype].data);
     var buffer = new ArrayBuffer(decoded.length);
     var bufView = new Uint8Array(buffer);
     for (var i=0, strLen=decoded.length; i<strLen; i++) {
@@ -2141,17 +2157,17 @@ function decodeBase64(id, type, idx, datatype, format) {
   } else {
     //Literal array
     if (format == 'float')
-      buf = new Float32Array(vis.objects[id][type][idx][datatype].data);
+      buf = new Float32Array(obj[datatype].data);
     else
-      buf = new Uint32Array(vis.objects[id][type][idx][datatype].data);
+      buf = new Uint32Array(obj[datatype].data);
   }
 
-  vis.objects[id][type][idx][datatype].data = buf;
-  vis.objects[id][type][idx][datatype].type = format;
+  obj[datatype].data = buf;
+  obj[datatype].type = format;
 
   if (datatype == 'values') {
-    if (!vis.objects[id][type][idx].values.minimum ||
-        !vis.objects[id][type][idx].values.maximum) {
+    if (!obj.values.minimum ||
+        !obj.values.maximum) {
       //Value field max min
       var minval = Number.MAX_VALUE, maxval = -Number.MAX_VALUE;
       for (var i=0; i<buf.length; i++) {
@@ -2162,10 +2178,10 @@ function decodeBase64(id, type, idx, datatype, format) {
       }
 
       //Set from data where none provided...
-      if (!vis.objects[id][type][idx].values.minimum)
-        vis.objects[id][type][idx].values.minimum = minval;
-      if (!vis.objects[id][type][idx].values.maximum)
-        vis.objects[id][type][idx].values.maximum = maxval;
+      if (!obj.values.minimum)
+        obj.values.minimum = minval;
+      if (!obj.values.maximum)
+        obj.values.maximum = maxval;
     }
   }
 }
@@ -2177,10 +2193,10 @@ function removeChildren(element) {
   }
 }
 
-lookupMapId = function(id) {
+Viewer.prototype.lookupMapId = function(id) {
   if (typeof(id) == 'string') {
-    for (var i = 0; i < vis.colourmaps.length; i++) {
-      if (vis.colourmaps[i].name == id) {
+    for (var i = 0; i < this.vis.colourmaps.length; i++) {
+      if (this.vis.colourmaps[i].name == id) {
         return i;
         break;
       }
@@ -2189,15 +2205,22 @@ lookupMapId = function(id) {
   return id;
 }
 
+Viewer.prototype.lookupMap = function(id) {
+  var mapid = this.lookupMapId(id);
+  if (mapid >= 0)
+    return this.vis.colourmaps[mapid];
+  return null;
+}
+
 paletteUpdate = function(obj, id) {
   //Convert name to index for now
   //console.log("paletteUpdate " + id + " : " + obj.name);
-  id = lookupMapId(id);
+  id = viewer.lookupMapId(id);
   if (id != undefined) viewer.gradient.mapid = id;
 
   //Load colourmap change
   if (viewer.gradient.mapid < 0) return;
-  var cmap = vis.colourmaps[viewer.gradient.mapid];
+  var cmap = viewer.vis.colourmaps[viewer.gradient.mapid];
   if (!cmap) return;
 
   paletteLoad(cmap.palette);
@@ -2351,7 +2374,7 @@ Viewer.prototype.rotation = function(deg, axis) {
 }
 
 Viewer.prototype.getRotation = function() {
-  return [viewer.rotate[0], viewer.rotate[1], viewer.rotate[2], viewer.rotate[3]];
+  return [this.rotate[0], this.rotate[1], this.rotate[2], this.rotate[3]];
 }
 
 Viewer.prototype.getRotationString = function() {
@@ -2366,7 +2389,7 @@ Viewer.prototype.getTranslationString = function() {
 
 Viewer.prototype.reset = function() {
   if (this.gl) {
-    this.updateDims(vis.views[view]);
+    this.updateDims(this.view);
     this.draw();
   }
 
@@ -2380,9 +2403,7 @@ Viewer.prototype.reset = function() {
 Viewer.prototype.zoom = function(factor) {
   if (this.gl) {
     var adj = factor * this.modelsize;
-    if (Math.abs(this.translate[2]) < this.modelsize) adj *= 0.1;
     this.translate[2] += adj;
-    if (this.translate[2] > this.modelsize*0.3) this.translate[2] = this.modelsize*0.3;
     this.draw();
   }
 
