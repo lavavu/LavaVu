@@ -29,7 +29,8 @@ function initPage(src, fn) {
         script.src = query;
         document.body.appendChild(script);
       } else {
-        document.getElementById('fileupload').style.display = "none";
+        var el = document.getElementById('fileupload');
+        if (el) el.style.display = "none";
         progress("Downloading model data from server...");
         ajaxReadFile(query, initPage, false, updateProgress);
       }
@@ -132,7 +133,8 @@ function initPage(src, fn) {
     var source = getSourceFromElement('source');
     if (source) {
       //Preloaded data
-      if (!noui) document.getElementById('fileupload').style.display = "none";
+      var el = document.getElementById('fileupload');
+      if (el) el.style.display = "none";
       viewer.loadFile(source);
     } else {
       //Demo objects
@@ -148,6 +150,7 @@ function loadData(data) {
 
 function progress(text) {
   var el = document.getElementById('progress');
+  if (!el) return;
   if (el.style.display == 'block' || text == undefined)
     //el.style.display = 'none';
     setTimeout("document.getElementById('progress').style.display = 'none';", 150);
