@@ -422,7 +422,6 @@ function vertexColour(colour, opacity, colourmap, data, idx) {
   if (data.values) {
     var colrange = data.vertices.data.length / (3*data.values.data.length);
     idx = Math.floor(idx/colrange);
-    console.log(colourmap);
     if (colourmap) {
       var min = 0;
       var max = 1;
@@ -935,7 +934,7 @@ VertexBuffer.prototype.loadPoints = function(object) {
 
     var map = viewer.lookupMap(object.colourmap);
 
-    var psize = object.pointsize ? object.pointsize : vis.properties.pointsize;
+    var psize = object.pointsize ? object.pointsize : viewer.vis.properties.pointsize;
     if (!psize) psize = 1.0;
 
     for (var i=0; i<dat.vertices.data.length/3; i++) {
