@@ -88,6 +88,8 @@ In order to avoid as many external dependencies as possible, the LavaVu sources 
 * LodePNG https://github.com/lvandeve/lodepng
 * jpeg-compressor https://github.com/richgel999/jpeg-compressor
 * miniz  https://github.com/richgel999/miniz
+* GPU Cubic B-Spline Interpolation (optional) in volume shader http://www.dannyruijters.nl/cubicinterpolation/ <sup>2</sup>
 
 ---
-<sup>1</sup> [Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, *gLucifer: Next Generation Visualization Framework for High performance computational geodynamics*, 2008, Visual Geosciences](http://dx.doi.org/10.1007/s10069-008-0010-2)
+<sup>1</sup> [Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, *gLucifer: Next Generation Visualization Framework for High performance computational geodynamics*, 2008, Visual Geosciences](http://dx.doi.org/10.1007/s10069-008-0010-2)  
+<sup>2</sup> Ruijters, Daniel & ter Haar Romeny, Bart & Suetens, Paul. (2008). Efficient GPU-Based Texture Interpolation using Uniform B-Splines. J. Graphics Tools. 13. 61-69. 10.1080/2151237X.2008.10129269.
