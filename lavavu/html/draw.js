@@ -257,8 +257,6 @@ var zoomSpin = 0;
 function canvasMouseWheel(event, mouse) {
   if (event.shiftKey) {
     var factor = event.spin * 0.01;
-    if (window.navigator.platform.indexOf("Mac") >= 0)
-      factor *= 0.1;
     if (zoomClipTimer) clearTimeout(zoomClipTimer);
     zoomClipTimer = setTimeout(function () {viewer.zoomClip(factor);}, 100 );
   } else {
@@ -929,11 +927,11 @@ function VertexBuffer(elements, size) {
   DEBUG && console.log("Created vertex buffer");
 }
 
-VertexBuffer.prototype.loadParticles = function(object) {
+VertexBuffer.prototype.loadPoints = function(object) {
   for (var p in object.points) {
     var dat =  object.points[p];
 
-    /*console.log("loadParticles " + p);
+    /*console.log("loadPoints " + p);
     if (dat.values)
       console.log(object.name + " : " + dat.values.minimum + " -> " + dat.values.maximum);
     if (object.colourmap >= 0)
@@ -941,7 +939,9 @@ VertexBuffer.prototype.loadParticles = function(object) {
     else
       console.log(object.colourmap);*/
 
-    if (!object.pointsize) object.pointsize = 1.0;
+    var psize = object.pointsize ? object.pointsize : vis.properties.pointsize;
+    if (!psize) psize = 1.0;
+
     for (var i=0; i<dat.vertices.data.length/3; i++) {
       var i3 = i*3;
       var vert = [dat.vertices.data[i3], dat.vertices.data[i3+1], dat.vertices.data[i3+2]];
@@ -949,7 +949,7 @@ VertexBuffer.prototype.loadParticles = function(object) {
       this.floats[this.offset+1] = vert[1];
       this.floats[this.offset+2] = vert[2];
       this.ints[this.offset+3] = objVertexColour(object, dat, i);
-      this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * object.pointsize : object.pointsize;
+      this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * psize : psize;
       this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype : -1;
       this.offset += this.vertexSizeInFloats;
     }
@@ -1111,7 +1111,7 @@ Renderer.prototype.updateBuffers = function() {
 
     for (var id in vis.objects)
       if (vis.objects[id].points)
-        buffer.loadParticles(vis.objects[id]);
+        buffer.loadPoints(vis.objects[id]);
 
   } else if (this.type == "lines") {
     //Process lines
@@ -1258,11 +1258,15 @@ Renderer.prototype.draw = function() {
     this.gl.uniform1iv(this.program.uniforms["uCullFace"], cullfaces);
 
     //Texture -- TODO: Switch per object!
-    this.gl.activeTexture(this.gl.TEXTURE0);
     //this.gl.bindTexture(this.gl.TEXTURE_2D, viewer.webgl.textures[0]);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, vis.objects[0].tex);
-    this.gl.uniform1i(this.program.uniforms["uTexture"], 0);
-    this.gl.uniform1i(this.program.uniforms["uTextured"], 0); //Disabled unless texture attached!
+    if (vis.objects[0].tex) {
+      this.gl.activeTexture(this.gl.TEXTURE0);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, vis.objects[0].tex);
+      this.gl.uniform1i(this.program.uniforms["uTexture"], 0);
+      this.gl.uniform1i(this.program.uniforms["uTextured"], 1); //Disabled unless texture attached!
+    } else {
+      this.gl.uniform1i(this.program.uniforms["uTextured"], 0); //Disabled unless texture attached!
+    }
 
     this.gl.uniform1i(this.program.uniforms["uCalcNormal"], 0);
 
@@ -2374,9 +2378,6 @@ Viewer.prototype.reset = function() {
 }
 
 Viewer.prototype.zoom = function(factor) {
-  if (window.navigator.platform.indexOf("Mac") >= 0)
-    factor *= 0.1;
-
   if (this.gl) {
     var adj = factor * this.modelsize;
     if (Math.abs(this.translate[2]) < this.modelsize) adj *= 0.1;
