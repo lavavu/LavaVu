@@ -43,6 +43,36 @@ void main(void)
 </script>
 """
 
+basehtml = """
+<html>
+
+<head>
+<title>LavaVu Interface</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+---SCRIPTS---
+
+</head>
+
+<body onload="initPage();" oncontextmenu="return false;">
+
+  <div id="progress" class="popup" style="display: none; width: 310px; height: 32px;">
+    <span id="progressmessage"></span><span id="progressstatus"></span>
+    <div id="progressbar" style="width: 300px; height: 10px; background: #58f;"></div>
+  </div>
+
+  <canvas id="canvas" class="canvas"></canvas>
+
+  <div id="hidden" style="display: none">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAPCAYAAAA2yOUNAAAAj0lEQVQokWNIjHT8/+zZs//Pnj37/+TJk/9XLp/+f+bEwf9HDm79v2Prqv9aKrz/GUYVEaeoMDMQryJXayWIoi0bFmFV1NWS+z/E1/Q/AwMDA0NVcez/LRsWoSia2luOUAADVcWx/xfO6/1/5fLp/1N7y//HhlmhKoCBgoyA/w3Vyf8jgyyxK4CBUF8zDAUAAJRXY0G1eRgAAAAASUVORK5CYII=" id="slider">
+    <canvas id="gradient" width="2048" height="1"></canvas>
+    <canvas id="palette" width="512" height="24" class="palette checkerboard"></canvas>
+  </div>
+</body>
+
+</html>
+"""
+
 #Static HTML location
 htmlpath = ""
 initialised = False
@@ -95,27 +125,78 @@ def getcontrolvalues(names=None):
                     updates.append([c.elid, value, action.property])
     return updates
 
-def getcss():
-    if not htmlpath: return
-    #Load stylesheet
-    css = '<style>\n'
-    fo = open(os.path.join(htmlpath, "control.css"), 'r')
-    css += fo.read()
-    fo.close()
-    css += '</style>\n'
-    return css
 
-def getjslibs():
-    if not htmlpath: return
-    #Load combined javascript libraries
-    jslibs = '<script>\n'
-    for f in ['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js']:
-        fpath = os.path.join(htmlpath, f)
-        fo = open(fpath, 'r')
-        jslibs += fo.read()
-        fo.close()
-    jslibs += '</script>\n'
-    return jslibs
+_webglboxsrc = None
+_webglviewsrc = None
+
+def _webglboxcode():
+    """
+    Returns WebGL base code for the bounding box interactor window
+    """
+    global _webglboxsrc
+    if _webglboxsrc is None:
+        code = getcss("control.css")
+        code += fragmentShader
+        code += vertexShader
+        code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js'])
+        _webglboxsrc = code
+    return _webglboxsrc
+
+def _webglviewcode(shaderpath):
+    """
+    Returns WebGL base code for an interactive visualisation window
+    """
+    global _webglviewsrc
+    if _webglviewsrc is None:
+        code = getcss("styles.css")
+        code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js', 'control.js'])
+        #code += getjslibs(['gl-matrix-min.js', 'OK.js', 'draw.js', 'control.js'])
+        code += getshaders(shaderpath)
+        _webglviewsrc = code
+    return _webglviewsrc
+
+def getcss(filename="styles.css"):
+    #Load stylesheets to inline tag
+    return _filestohtml([filename], tag="style")
+
+def getjslibs(files):
+    #Load a set of combined javascript libraries in script tags
+    return _filestohtml(files, tag="script")
+
+def _filestohtml(files, tag="script"):
+    #Load a set of files into a string enclosed in specified html tag
+    if not htmlpath: return ""
+    code = '<' + tag + '>\n'
+    for f in files:
+        code += _readfilehtml(f)
+    code += '</' + tag + '>\n'
+    return code
+
+def _readfilehtml(filename):
+    #Read a file from the htmlpath
+    if not htmlpath: return ""
+    return _readfile(os.path.join(htmlpath, filename))
+
+def _readfile(filename):
+    #Read a text file and return contents
+    data = ""
+    with open(filename, 'r') as f:
+        data = f.read()
+        f.close()
+    return data
+
+def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
+    #Load combined shaders
+    src = ''
+    sdict = {'points' : 'point', 'lines' : 'line', 'triangles' : 'tri', 'volume' : 'volume'};
+    for key in shaders:
+        src += '<script id="' + key + '-vs" type="x-shader/x-vertex">\n'
+        src += _readfile(os.path.join(path, sdict[key] + 'Shader.vert'))
+        src += '</script>\n\n'
+        src += '<script id="' + key + '-fs" type="x-shader/x-fragment">\n'
+        src += _readfile(os.path.join(path, sdict[key] + 'Shader.frag'))
+        src += '</script>\n\n'
+    return src
 
 def initialise():
     global initialised, initcell
@@ -159,7 +240,7 @@ def initialise():
             initcell = history[-1][2]
 
             #Insert stylesheet, shaders and combined javascript libraries
-            display(HTML(getcss() + fragmentShader + vertexShader + getjslibs()))
+            display(HTML(_webglboxcode()))
     except (NameError, ImportError):
         pass
 
@@ -219,10 +300,7 @@ class Action(object):
         def writefile(fn):
             hfile = open(fn, "w")
             hfile.write('<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">')
-            hfile.write(getcss())
-            hfile.write(fragmentShader)
-            hfile.write(vertexShader)
-            hfile.write(getjslibs())
+            hfile.write(_webglboxcode())
             hfile.write(actionjs)
             hfile.write('</head>\n<body onload="init();">\n')
             hfile.write(html)

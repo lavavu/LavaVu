@@ -7,20 +7,17 @@ var view = 0; //Active view
 var viewer;
 var params, properties, objectlist;
 var server = false;
-var types = {"triangles" : "triangle", "points" : "particle", "lines" : "line", "volume" : "volume", "border" : "line"};
-var debug_on = false;
-var noui = false;
+var types = ["triangles", "points", "lines", "volume"]
+var noui = true;
 var MAXIDX = 2047;
+/** @const */
+var DEBUG = false;
 
 function initPage(src, fn) {
   var urlq = decodeURI(window.location.href);
   if (urlq.indexOf("?") > 0) {
     var parts = urlq.split("?"); //whole querystring before and after ?
     var query = parts[1]; 
-
-    //Print debugging output?
-    //TODO, this query parser only handles a single arg, fix 
-    if (query.indexOf("debug") > 0) debug_on = true;
 
     if (!src && query.indexOf(".json") > 0) {
       //Passed a json(p) file on URL
@@ -43,7 +40,6 @@ function initPage(src, fn) {
   } else if (!src && urlq.indexOf("#") > 0) {
     //IPython strips out ? args so have to check for this instead
     var parts = urlq.split("#"); //whole querystring before and after #
-    noui = true;
     if (parts[1].indexOf(".json") > 0) {
       //Load filename from url
       ajaxReadFile(parts[1], initPage, false);
@@ -53,6 +49,11 @@ function initPage(src, fn) {
     //Load base64 encoded data from url
     window.location.hash = ""
     src = window.atob(parts[1]);
+  } else {
+    //Load from the data tag if available
+    var dtag = document.getElementById('data');
+    if (dtag && dtag.innerHTML.length > 100)
+      src = dtag.innerHTML;
   }
 
   progress();
@@ -64,6 +65,7 @@ function initPage(src, fn) {
     //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
     //if (!parentEl) parentEl = document.body;
     //parentEl.appendChild(this.canvas);
+    canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
 
     //Canvas event handling
     canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
@@ -118,9 +120,9 @@ function initPage(src, fn) {
     params.show();
     objectlist.show();
   } else {
-    params =     new Toolbox("params", -1, -1);
-    objectlist = new Toolbox("objectlist", -1, -1);
-    properties = new Toolbox("properties", -1, -1);
+    params =     {}
+    objectlist = {}
+    properties = {}
   }
 
   if (src) {
@@ -129,7 +131,7 @@ function initPage(src, fn) {
     var source = getSourceFromElement('source');
     if (source) {
       //Preloaded data
-      document.getElementById('fileupload').style.display = "none";
+      if (!noui) document.getElementById('fileupload').style.display = "none";
       viewer.loadFile(source);
     } else {
       //Demo objects
@@ -170,7 +172,7 @@ function canvasMouseClick(event, mouse) {
     //viewer.reload = true;
     sortTimer();
   }
-  if (document.getElementById("immsort").checked == true) {
+  if (!noui && document.getElementById("immsort").checked == true) {
     //No timers
     viewer.draw();
     viewer.rotated = true; 
@@ -181,7 +183,7 @@ function canvasMouseClick(event, mouse) {
 }
 
 function sortTimer(ifexists) {
-  if (document.getElementById("immsort").checked == true) {
+  if (!noui && document.getElementById("immsort").checked == true) {
     //No timers
     return;
   }
@@ -192,9 +194,12 @@ function sortTimer(ifexists) {
     //No existing timer? Don't start a new one
     return;
   }
-  var element = document.getElementById("sort");
-  element.style.display = 'block';
-  viewer.timer = setTimeout(function() {viewer.rotated = true; element.onclick.apply(element);}, 500);
+
+  if (!noui) {
+    var element = document.getElementById("sort");
+    element.style.display = 'block';
+  }
+  viewer.timer = setTimeout(function() {viewer.rotated = true; if (element) element.onclick.apply(element);}, 500);
 }
 
 function canvasMouseDown(event, mouse) {
@@ -209,7 +214,7 @@ function canvasMouseMove(event, mouse) {
 
   //Switch buttons for translate/rotate
   var button = mouse.button;
-  if (document.getElementById('tmode').checked)
+  if (!noui && document.getElementById('tmode').checked)
     button = Math.abs(button-2);
 
   //console.log(mouse.deltaX + "," + mouse.deltaY);
@@ -238,7 +243,7 @@ function canvasMouseMove(event, mouse) {
     viewer.draw(true);
   //Draw border while interacting (automatically on for models > 500K vertices)
   //Hold shift to switch from default behaviour
-  else if (document.getElementById("interactive").checked == true)
+  else if (viewer.interactive) //document.getElementById("interactive").checked == true)
     viewer.draw();
   else
     viewer.draw(!event.shiftKey);
@@ -260,8 +265,9 @@ function canvasMouseWheel(event, mouse) {
     if (zoomTimer) 
       clearTimeout(zoomTimer);
     zoomSpin += event.spin;
-    zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin); zoomSpin = 0;}, 100 );
-    //zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
+    zoomTimer = setTimeout(function () {viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
+    //Clear the box after a second
+    //setTimeout(function() {viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
@@ -270,6 +276,8 @@ function canvasMousePinch(event, mouse) {
   if (event.distance != 0) {
     var factor = event.distance * 0.0001;
     viewer.zoom(factor);
+    //Clear the box after a second
+    //setTimeout(function() {viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
@@ -377,20 +385,31 @@ function defaultColourMaps() {
 function loadColourMaps() {
   //Load colourmaps
   if (!vis.colourmaps) return;
-  var list = document.getElementById('colourmap-presets');
-  var sel = list.value;
+
+  if (!noui) {
+    var list = document.getElementById('colourmap-presets');
+    var sel = list.value;
+    list.options.length = 1; //Remove all except "None"
+  }
+
   var canvas = document.getElementById('palette');
-  list.options.length = 1; //Remove all except "None"
   for (var i=0; i<vis.colourmaps.length; i++) {
     var palette = new Palette(vis.colourmaps[i].colours);
     vis.colourmaps[i].palette = palette;
-    var option = new Option(vis.colourmaps[i].name || ("ColourMap " + i), i);
-    list.options[list.options.length] = option;
+
+    if (!noui) {
+      var option = new Option(vis.colourmaps[i].name || ("ColourMap " + i), i);
+      list.options[list.options.length] = option;
+    }
 
     paletteLoad(palette);
   }
-  //Restore selection
-  list.value = sel;
+
+  if (!noui) {
+    //Restore selection
+    list.value = sel;
+  }
+
   if (viewer) viewer.setColourMap(sel);
 }
 
@@ -526,7 +545,7 @@ function radix(nbyte, source, dest, N)
 function radix_sort(source, swap, bytes)
 {
    //assert(bytes % 2 == 0);
-   //OK.debug("Radix X sort: %d items %d bytes. Byte: ", N, size);
+   //DEBUG && console.log("Radix X sort: %d items %d bytes. Byte: ", N, size);
    // Sort bytes from least to most significant 
    var N = source.length;
    for (var x = 0; x < bytes; x += 2) 
@@ -642,14 +661,14 @@ function Renderer(gl, type, colour, border) {
   if (colour) this.colour = new Colour(colour);
 
   //Only two options for now, points and triangles
-  if (type == "particle") {
+  if (type == "points") {
     //Particle renderer
     //Vertex3, Colour, Size, Type
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT,
                         Float32Array.BYTES_PER_ELEMENT,
                         Float32Array.BYTES_PER_ELEMENT];
-  } else if (type == "triangle") {
+  } else if (type == "triangles") {
     //Triangle renderer
     //Vertex3, Normal3, Colour, TexCoord2, ObjectId+
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
@@ -657,7 +676,7 @@ function Renderer(gl, type, colour, border) {
                         Int32Array.BYTES_PER_ELEMENT,
                         2 * Float32Array.BYTES_PER_ELEMENT,
                         4 * Uint8Array.BYTES_PER_ELEMENT];
-  } else if (type == "line") {
+  } else if (type == "lines") {
     //Line renderer
     //Vertex3, Colour
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
@@ -674,8 +693,8 @@ function Renderer(gl, type, colour, border) {
 }
 
 Renderer.prototype.init = function() {
-  if (this.type == "triangle" && !viewer.hasTriangles) return false;
-  if (this.type == "particle" && !viewer.hasPoints) return false;
+  if (this.type == "triangles" && !viewer.hasTriangles) return false;
+  if (this.type == "points" && !viewer.hasPoints) return false;
   var fs = this.type + '-fs';
   var vs = this.type + '-vs';
 
@@ -687,8 +706,8 @@ Renderer.prototype.init = function() {
     }
   }
 
-  var fdefines = "#define WEBGL\n#extension GL_OES_standard_derivatives : enable\n";
-  var vdefines = "#define WEBGL\n";
+  var fdefines = "precision highp float;\n#define WEBGL\n#extension GL_OES_standard_derivatives : enable\n";
+  var vdefines = "precision highp float;\n#define WEBGL\n";
 
   if (this.type == "volume" && this.id && this.image) {
     //Setup two-triangle rendering
@@ -731,12 +750,12 @@ Renderer.prototype.init = function() {
   try {
     //Compile the shaders
     this.program = new WebGLProgram(this.gl, vs, fs);
-    if (this.program.errors) OK.debug(this.program.errors);
+    if (this.program.errors) DEBUG && console.log(this.program.errors);
     //Setup attribs/uniforms (flag set to skip enabling attribs)
     this.program.setup(undefined, undefined, true);
   } catch(e) {
-    console.log(fs);
-    console.log(vs);
+    console.log("FRAGMENT SHADER:\n" + fs);
+    console.log("VERTEX SHADER:\n" + vs);
     console.error(e);
     return false;
   }
@@ -750,7 +769,7 @@ function SortIdx(idx, key) {
 
 Renderer.prototype.loadElements = function() {
   if (this.border) return;
-  OK.debug("Loading " + this.type + " elements...");
+  DEBUG && console.log("Loading " + this.type + " elements...");
   var start = new Date();
   var distances = [];
   var indices = [];
@@ -760,18 +779,18 @@ Renderer.prototype.loadElements = function() {
     //Add visible element positions
     for (var id in vis.objects) {
       var name = vis.objects[id].name;
-      var skip = !document.getElementById('object_' + name).checked;
-      if (this.type == "particle") {
+      var skip = !noui && !document.getElementById('object_' + name).checked;
+      if (this.type == "points") {
         if (vis.objects[id].points) {
           for (var e in vis.objects[id].points) {
             var dat = vis.objects[id].points[e];
             var count = dat.vertices.data.length;
-            //OK.debug(name + " " + skip + " : " + count);
+            //DEBUG && console.log(name + " " + skip + " : " + count);
             for (var i=0; i<count; i += 3)
               this.positions.push(skip ? null : [dat.vertices.data[i], dat.vertices.data[i+1], dat.vertices.data[i+2]]);
           }
         }
-      } else if (this.type == "triangle") {
+      } else if (this.type == "triangles") {
         if (vis.objects[id].triangles) {
           for (var e in vis.objects[id].triangles) {
             var dat =  vis.objects[id].triangles[e];
@@ -789,14 +808,14 @@ Renderer.prototype.loadElements = function() {
             }
           }
         }
-      } else if (this.type == "line") {
+      } else if (this.type == "lines") {
         //Write lines directly to indices buffer, no depth sort necessary
         if (skip) continue;
         if (vis.objects[id].lines) {
           for (var e in vis.objects[id].lines) {
             var dat =  vis.objects[id].lines[e];
             var count = dat.indices.data.length;
-            //OK.debug(name + " " + skip + " : " + count);
+            //DEBUG && console.log(name + " " + skip + " : " + count);
             for (var i=0; i<count; i++)
               indices.push(dat.indices.data[i]);
           }
@@ -805,7 +824,7 @@ Renderer.prototype.loadElements = function() {
     }
 
     var time = (new Date() - start) / 1000.0;
-    OK.debug(time + " seconds to update positions ");
+    DEBUG && console.log(this.type + " : " + time + " seconds to update positions " + this.positions.length);
     start = new Date();
   }
 
@@ -845,7 +864,7 @@ Renderer.prototype.loadElements = function() {
     }
 
     var time = (new Date() - start) / 1000.0;
-    OK.debug(time + " seconds to update distances ");
+    DEBUG && console.log(this.type + " : " + time + " seconds to update distances " + distances.length);
 
     if (distances.length > 0) {
       //Sort
@@ -857,16 +876,16 @@ Renderer.prototype.loadElements = function() {
       //if (!this.swap) this.swap = [];
       //radix_sort(distances, this.swap, 2);
       time = (new Date() - start) / 1000.0;
-      OK.debug(time + " seconds to sort");
+      DEBUG && console.log(time + " seconds to sort");
 
       start = new Date();
       //Reload index buffer
-      if (this.type == "particle") {
+      if (this.type == "points") {
         //Process points
         for (var i = 0; i < distances.length; ++i)
           indices.push(distances[i].idx);
           //if (distances[i].idx > this.elements) alert("ERROR: " + i + " - " + distances[i].idx + " > " + this.elements);
-      } else if (this.type == "triangle") {
+      } else if (this.type == "triangles") {
         //Process triangles
         for (var i = 0; i < distances.length; ++i) {
           var i3 = distances[i].idx*3;
@@ -877,7 +896,7 @@ Renderer.prototype.loadElements = function() {
         }
       }
       time = (new Date() - start) / 1000.0;
-      OK.debug(time + " seconds to load index buffers");
+      DEBUG && console.log(time + " seconds to load index buffers");
     }
   }
 
@@ -888,7 +907,7 @@ Renderer.prototype.loadElements = function() {
     //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), this.gl.DYNAMIC_DRAW);
 
     time = (new Date() - start) / 1000.0;
-    OK.debug(time + " seconds to update index buffer object");
+    DEBUG && console.log(this.type + " : " + time + " seconds to update index buffer object " + indices.length);
   }
   //Update count to visible elements...
   this.elements = indices.length;
@@ -906,8 +925,8 @@ function VertexBuffer(elements, size) {
   this.ints = new Int32Array(this.array);
   this.bytes = new Uint8Array(this.array);
   this.offset = 0;
-  OK.debug(elements + " - " + size);
-  OK.debug("Created vertex buffer");
+  DEBUG && console.log(elements + " - " + size);
+  DEBUG && console.log("Created vertex buffer");
 }
 
 VertexBuffer.prototype.loadParticles = function(object) {
@@ -1042,7 +1061,7 @@ VertexBuffer.prototype.update = function(gl) {
   //gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer);
 
   time = (new Date() - start) / 1000.0;
-  OK.debug(time + " seconds to update vertex buffer object");
+  DEBUG && console.log(time + " seconds to update vertex buffer object");
 }
 
 Renderer.prototype.updateBuffers = function() {
@@ -1055,20 +1074,21 @@ Renderer.prototype.updateBuffers = function() {
   //Count vertices
   this.elements = 0;
   for (var id in vis.objects) {
-    if (this.type == "triangle" && vis.objects[id].triangles) {
+    if (this.type == "triangles" && vis.objects[id].triangles) {
       for (var t in vis.objects[id].triangles)
         this.elements += vis.objects[id].triangles[t].indices.data.length;
-    } else if (this.type == "particle" && vis.objects[id].points) {
+    } else if (this.type == "points" && vis.objects[id].points) {
       for (var t in vis.objects[id].points)
         this.elements += vis.objects[id].points[t].vertices.data.length/3;
-    } else if (this.type == "line" && vis.objects[id].lines) {
+    } else if (this.type == "lines" && vis.objects[id].lines) {
       for (var t in vis.objects[id].lines)
         this.elements += vis.objects[id].lines[t].indices.data.length;
     }
   }
 
   if (this.elements == 0) return;
-  OK.debug("Updating " + this.type + " data... (" + this.elements + " elements)");
+  DEBUG && console.log("Updating " + this.type + " data... (" + this.elements + " elements)");
+  console.log("Updating " + this.type + " data... (" + this.elements + " elements)");
 
   //Load vertices and attributes into buffers
   var start = new Date();
@@ -1077,14 +1097,14 @@ Renderer.prototype.updateBuffers = function() {
   var buffer = new VertexBuffer(this.elements, this.elementSize);
 
   //Reload vertex buffers
-  if (this.type == "particle") {
+  if (this.type == "points") {
     //Process points
 
     /*/Auto 50% subsample when > 1M particles
     var subsample = 1;
     if (document.getElementById("subsample").checked == true && newParticles > 1000000) {
       subsample = Math.round(newParticles/1000000 + 0.5);
-      OK.debug("Subsampling at " + (100/subsample) + "% (" + subsample + ") to " + Math.floor(newParticles / subsample));
+      DEBUG && console.log("Subsampling at " + (100/subsample) + "% (" + subsample + ") to " + Math.floor(newParticles / subsample));
     }*/
     //Random subsampling
     //if (subsample > 1 && Math.random() > 1.0/subsample) continue;
@@ -1093,13 +1113,13 @@ Renderer.prototype.updateBuffers = function() {
       if (vis.objects[id].points)
         buffer.loadParticles(vis.objects[id]);
 
-  } else if (this.type == "line") {
+  } else if (this.type == "lines") {
     //Process lines
     for (var id in vis.objects)
       if (vis.objects[id].lines)
         buffer.loadLines(vis.objects[id]);
 
-  } else if (this.type == "triangle") {
+  } else if (this.type == "triangles") {
     //Process triangles
     for (var id in vis.objects)
       if (vis.objects[id].triangles)
@@ -1107,7 +1127,8 @@ Renderer.prototype.updateBuffers = function() {
   }
 
   var time = (new Date() - start) / 1000.0;
-  OK.debug(time + " seconds to load buffers... (elements: " + this.elements + " bytes: " + buffer.bytes.length + ")");
+  DEBUG && console.log(time + " seconds to load buffers... (elements: " + this.elements + " bytes: " + buffer.bytes.length + ")");
+  console.log(time + " seconds to load buffers... (elements: " + this.elements + " bytes: " + buffer.bytes.length + ")");
 
   buffer.update(this.gl);
 }
@@ -1148,7 +1169,7 @@ Renderer.prototype.draw = function() {
     //(This is done here now so we can skip triangle shaders if not required, 
     //due to really slow rendering when doing triangles and points... still to be looked into)
     if (!this.init()) return;
-    OK.debug("Creating " + this.type + " buffers...");
+    DEBUG && console.log("Creating " + this.type + " buffers...");
     this.vertexBuffer = this.gl.createBuffer();
     this.indexBuffer = this.gl.createBuffer();
     //viewer.reload = true;
@@ -1177,7 +1198,7 @@ Renderer.prototype.draw = function() {
     this.gl.enableVertexAttribArray(this.program.attributes[key]);
 
   //General uniform vars
-  this.gl.uniform1i(this.program.uniforms["uLighting"], vis.objects[0].lit);
+  this.gl.uniform1i(this.program.uniforms["uLighting"], 1); //vis.objects[0].lit); //TODO: fix this
   this.gl.uniform1f(this.program.uniforms["uOpacity"], vis.properties.opacity || 1.0);
   this.gl.uniform1f(this.program.uniforms["uBrightness"], vis.properties.brightness || 0.0);
   this.gl.uniform1f(this.program.uniforms["uContrast"], vis.properties.contrast || 1.0);
@@ -1199,7 +1220,7 @@ Renderer.prototype.draw = function() {
   this.gl.uniform3fv(this.program.uniforms["uClipMin"], new Float32Array(cmin));
   this.gl.uniform3fv(this.program.uniforms["uClipMax"], new Float32Array(cmax));
 
-  if (this.type == "particle") {
+  if (this.type == "points") {
 
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, this.elementSize, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]);
@@ -1216,7 +1237,7 @@ Renderer.prototype.draw = function() {
     //this.gl.drawArrays(this.gl.POINTS, 0, this.positions.length);
     desc = this.elements + " points";
 
-  } else if (this.type == "triangle") {
+  } else if (this.type == "triangles") {
 
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, this.elementSize, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexNormal"], 3, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]);
@@ -1257,7 +1278,7 @@ Renderer.prototype.draw = function() {
     this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_SHORT, 0);
     desc = "border";
 
-  } else if (this.type == "line") {
+  } else if (this.type == "lines") {
 
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, this.elementSize, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]);
@@ -1421,7 +1442,7 @@ Renderer.prototype.draw = function() {
   this.gl.useProgram(null);
 
   var time = (new Date() - start) / 1000.0;
-  if (time > 0.01) OK.debug(time + " seconds to draw " + desc);
+  if (time > 0.01) DEBUG && console.log(time + " seconds to draw " + desc);
 }
 
 function minMaxDist()
@@ -1468,7 +1489,7 @@ function Viewer(canvas) {
       this.gl.getExtension('OES_standard_derivatives');
     } catch(e) {
       //No WebGL
-      OK.debug(e);
+      DEBUG && console.log(e);
       if (!this.webgl) document.getElementById('canvas').style.display = 'none';
     }
   }
@@ -1492,18 +1513,21 @@ function Viewer(canvas) {
   this.orientation = 1.0; //1.0 for RH, -1.0 for LH
   this.background = new Colour(0xff404040);
   document.body.style.background = this.background.html();
-  document.getElementById("bgColour").value = '';
-  this.showBorder = document.getElementById("border").checked;
+  this.showBorder = true;
+  if (!noui) {
+    document.getElementById("bgColour").value = '';
+    this.showBorder = document.getElementById("border").checked;
+  }
   this.pointScale = 1.0;
   this.pointType = 0;
 
   //Create the renderers
   this.renderers = [];
   if (this.gl) {
-    this.points = new Renderer(this.gl, 'particle');
-    this.triangles = new Renderer(this.gl, 'triangle');
-    this.lines = new Renderer(this.gl, 'line');
-    this.border = new Renderer(this.gl, 'line', 0xffffffff, true);
+    this.points = new Renderer(this.gl, 'points');
+    this.triangles = new Renderer(this.gl, 'triangles');
+    this.lines = new Renderer(this.gl, 'lines');
+    this.border = new Renderer(this.gl, 'lines', 0xffffffff, true);
 
     //Defines draw order
     this.renderers.push(this.triangles);
@@ -1554,10 +1578,10 @@ Viewer.prototype.loadFile = function(source) {
     alert(e);
   }
   var time = (new Date() - start) / 1000.0;
-  OK.debug(time + " seconds to parse data");
+  DEBUG && console.log(time + " seconds to parse data");
 
   if (source.exported) {
-    if (!vis.views && !vis.views[view]) {OK.debug("Exported settings require loaded model"); return;}
+    if (!vis.views && !vis.views[view]) {DEBUG && console.log("Exported settings require loaded model"); return;}
     var old = this.toString();
     //Copy, overwriting if exists in source
     if (source.views[view].rotate) vis.views[view].rotate = source.views[view].rotate;
@@ -1565,9 +1589,8 @@ Viewer.prototype.loadFile = function(source) {
     if (!source.reload) updated = false;  //No reload necessary
   } else {
     //Clear geometry
-    for (var type in types)
-      if (this[type])
-        this[type].elements = 0;
+    for (var r in this.renderers)
+      this.renderers[r].elements = 0;
 
     //Replace
     vis = source;
@@ -1610,28 +1633,30 @@ Viewer.prototype.loadFile = function(source) {
   }
 
   //Copy global options to controls where applicable..
-  document.getElementById("bgColour").value = this.background.r;
-  document.getElementById("pointScale-out").value = (this.pointScale || 1.0);
-  document.getElementById("pointScale").value = document.getElementById("pointScale-out").value * 10.0;
-  document.getElementById("border").checked = this.showBorder;
-  document.getElementById("axes").checked = this.axes;
-  document.getElementById("globalPointType").value = this.pointType;
+  if (!noui) {
+    document.getElementById("bgColour").value = this.background.r;
+    document.getElementById("pointScale-out").value = (this.pointScale || 1.0);
+    document.getElementById("pointScale").value = document.getElementById("pointScale-out").value * 10.0;
+    document.getElementById("border").checked = this.showBorder;
+    document.getElementById("axes").checked = this.axes;
+    document.getElementById("globalPointType").value = this.pointType;
 
-  document.getElementById("global-opacity").value = document.getElementById("global-opacity-out").value = (vis.properties.opacity || 1.0).toFixed(2);
-  document.getElementById('global-brightness').value = document.getElementById("global-brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
-  document.getElementById('global-contrast').value = document.getElementById("global-contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
-  document.getElementById('global-saturation').value = document.getElementById("global-saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
+    document.getElementById("global-opacity").value = document.getElementById("global-opacity-out").value = (vis.properties.opacity || 1.0).toFixed(2);
+    document.getElementById('global-brightness').value = document.getElementById("global-brightness-out").value = (vis.properties.brightness || 0.0).toFixed(2);
+    document.getElementById('global-contrast').value = document.getElementById("global-contrast-out").value = (vis.properties.contrast || 1.0).toFixed(2);
+    document.getElementById('global-saturation').value = document.getElementById("global-saturation-out").value = (vis.properties.saturation || 1.0).toFixed(2);
 
-  document.getElementById('global-xmin').value = document.getElementById("global-xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
-  document.getElementById('global-xmax').value = document.getElementById("global-xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
-  document.getElementById('global-ymin').value = document.getElementById("global-ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
-  document.getElementById('global-ymax').value = document.getElementById("global-ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
-  document.getElementById('global-zmin').value = document.getElementById("global-zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
-  document.getElementById('global-zmax').value = document.getElementById("global-zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
+    document.getElementById('global-xmin').value = document.getElementById("global-xmin-out").value = (vis.properties.xmin || 0.0).toFixed(2);
+    document.getElementById('global-xmax').value = document.getElementById("global-xmax-out").value = (vis.properties.xmax || 1.0).toFixed(2);
+    document.getElementById('global-ymin').value = document.getElementById("global-ymin-out").value = (vis.properties.ymin || 0.0).toFixed(2);
+    document.getElementById('global-ymax').value = document.getElementById("global-ymax-out").value = (vis.properties.ymax || 1.0).toFixed(2);
+    document.getElementById('global-zmin').value = document.getElementById("global-zmin-out").value = (vis.properties.zmin || 0.0).toFixed(2);
+    document.getElementById('global-zmax').value = document.getElementById("global-zmax-out").value = (vis.properties.zmax || 1.0).toFixed(2);
 
-  //Load objects and add to form
-  var objdiv = document.getElementById("objects");
-  removeChildren(objdiv);
+    //Load objects and add to form
+    var objdiv = document.getElementById("objects");
+    removeChildren(objdiv);
+  }
 
   //Decode into Float buffers and replace original base64 data
   //-Colour lookups: do in shader with a texture?
@@ -1697,7 +1722,7 @@ Viewer.prototype.loadFile = function(source) {
           decodeBase64(id, type, idx, 'indices', 'integer');
 
           if (vis.objects[id][type][idx].vertices) {
-            OK.debug("Loaded " + vis.objects[id][type][idx].vertices.data.length/3 + " vertices from " + name);
+            DEBUG && console.log("Loaded " + vis.objects[id][type][idx].vertices.data.length/3 + " vertices from " + name);
             this.vertexCount += vis.objects[id][type][idx].vertices.data.length/3;
           }
 
@@ -1750,46 +1775,50 @@ Viewer.prototype.loadFile = function(source) {
 
     this.updateDims(vis.views[view]);
 
-    var div= document.createElement('div');
-    div.className = "object-control";
-    objdiv.appendChild(div);
+    if (!noui) {
+      var div= document.createElement('div');
+      div.className = "object-control";
+      objdiv.appendChild(div);
 
-    var check= document.createElement('input');
-    //check.checked = !vis.objects[id].hidden;
-    check.checked = !(vis.objects[id].visible === false);
-    check.setAttribute('type', 'checkbox');
-    check.setAttribute('name', 'object_' + name);
-    check.setAttribute('id', 'object_' + name);
-    check.setAttribute('onchange', 'viewer.action(' + id + ', false, true, this);');
-    div.appendChild(check);
+      var check= document.createElement('input');
+      //check.checked = !vis.objects[id].hidden;
+      check.checked = !(vis.objects[id].visible === false);
+      check.setAttribute('type', 'checkbox');
+      check.setAttribute('name', 'object_' + name);
+      check.setAttribute('id', 'object_' + name);
+      check.setAttribute('onchange', 'viewer.action(' + id + ', false, true, this);');
+      div.appendChild(check);
 
-    var label= document.createElement('label');
-    label.appendChild(label.ownerDocument.createTextNode(name));
-    label.setAttribute("for", 'object_' + name);
-    div.appendChild(label);
+      var label= document.createElement('label');
+      label.appendChild(label.ownerDocument.createTextNode(name));
+      label.setAttribute("for", 'object_' + name);
+      div.appendChild(label);
 
-    var props = document.createElement('input');
-    props.type = "button";
-    props.value = "...";
-    props.id = "props_" + name;
-    props.setAttribute('onclick', 'viewer.properties(' + id + ');');
-    div.appendChild(props);
+      var props = document.createElement('input');
+      props.type = "button";
+      props.value = "...";
+      props.id = "props_" + name;
+      props.setAttribute('onclick', 'viewer.properties(' + id + ');');
+      div.appendChild(props);
+
+    }
   }
   var time = (new Date() - start) / 1000.0;
-  OK.debug(time + " seconds to import data");
+  DEBUG && console.log(time + " seconds to import data");
 
   //Default to interactive render if vertex count < 0.5 M
-  document.getElementById("interactive").checked = (this.vertexCount <= 500000);
+  this.interactive = (this.vertexCount <= 500000);
+  if (!noui) 
+    document.getElementById("interactive").checked = this.interactive;
 
   //TODO: loaded custom shader is not replaced by default when new model loaded...
-  for (var type in types) {
-    if (this[type]) {
-      //Custom shader load
-      if (vis.shaders && vis.shaders[types[type]])
-        this[type].init();
-      //Set update flags
-      this[type].sort = this[type].reload = updated;
-    }
+  for (var r in this.renderers) {
+    var ren = this.renderers[r];
+    //Custom shader load
+    if (vis.shaders && vis.shaders[ren.type])
+      ren.init();
+    //Set update flags
+    ren.sort = ren.reload = updated;
   }
 
   //Defer drawing until textures loaded if necessary
@@ -2050,10 +2079,8 @@ Viewer.prototype.setObjectProperties = function() {
     vis.colourmaps[mapid].logscale = document.getElementById('logscale').checked;
 
   //Flag reload on WebGL objects
-  for (var type in types) {
-    if (vis.objects[id][type] && this[type])
-      this[type].sort = this[type].reload = true;
-  }
+  for (var r in this.renderers)
+    this.renderers[r].sort = this.renderers[r].reload = true;
   viewer.draw();
 
   //Server side...
@@ -2080,11 +2107,9 @@ Viewer.prototype.action = function(id, reload, sort, el) {
 
   document.getElementById('apply').disabled = false;
 
-  for (var type in types) {
-    if (vis.objects[id][type] && this[type]) {
-      this[type].sort = sort;
-      this[type].reload = reload;
-    }
+  for (var r in this.renderers) {
+    this.renderers[r].sort = sort;
+    this.renderers[r].reload = reload;
   }
 }
 
@@ -2349,7 +2374,6 @@ Viewer.prototype.reset = function() {
 }
 
 Viewer.prototype.zoom = function(factor) {
-  factor = 0.01*factor*factor*factor;
   if (window.navigator.platform.indexOf("Mac") >= 0)
     factor *= 0.1;
 
