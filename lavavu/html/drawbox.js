@@ -152,8 +152,6 @@ function Renderer(gl, colour) {
   if (colour) this.colour = colour;
 
     //Line renderer
-    this.attributes = ["aVertexPosition"],
-    this.uniforms = ["uColour"]
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT];
 
   this.elements = 0;
@@ -167,7 +165,7 @@ Renderer.prototype.init = function() {
   this.program = new WebGLProgram(this.gl, "line-vs", "line-fs");
   if (this.program.errors) console.log(this.program.errors);
   //Setup attribs/uniforms (flag set to skip enabling attribs)
-  this.program.setup(this.attributes, this.uniforms, true);
+  this.program.setup(undefined, undefined, true);
 
   return true;
 }
