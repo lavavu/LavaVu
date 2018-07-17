@@ -185,7 +185,7 @@ public:
   void projection(int eye);
   void apply(bool use_fp=true, bool use_rotate=true);
   int switchCoordSystem();
-  void zoomToFit(int margin=-1);
+  void zoomToFit();
   bool scaleSwitch();
 
   //Utility functions

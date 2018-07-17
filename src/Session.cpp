@@ -1235,7 +1235,7 @@ void Session::init()
       {
         json::array(),
         "colourbar",
-        "float[]",
+        "real[]",
         "Values of intermediate tick marks",
         true, 0
       }
@@ -1383,10 +1383,10 @@ void Session::init()
     {
       "margin",
       {
-        20,
+        0.025,
         "view",
-        "integer",
-        "Margin in pixels to leave around edge of model when to applying camera auto-zoom",
+        "real",
+        "Margin in pixels (when >= 1) or ratio of viewport width (when < 1.0) around edges of model when to applying camera auto-zoom",
         true, 0
       }
     },

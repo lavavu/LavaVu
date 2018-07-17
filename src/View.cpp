@@ -674,10 +674,14 @@ int View::switchCoordSystem()
 }
 
 #define ADJUST 0.444444
-void View::zoomToFit(int margin)
+void View::zoomToFit()
 {
-  if (margin < 0) margin = properties["margin"];
-  margin *= session.scale2d; //Multiply by 2d scale factor
+  float margin = properties["margin"];
+  if (margin < 1.0)
+    //Get margin as ratio of viewport width
+    margin = floor(width * margin);
+  else
+    margin *= session.scale2d; //Multiply by 2d scale factor
 
   // The bounding box of model
   GLfloat rect3d[8][3] = {{min[0], min[1], min[2]},
