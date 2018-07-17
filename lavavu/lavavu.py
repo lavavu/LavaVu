@@ -2452,7 +2452,7 @@ class Viewer(dict):
         #Update figure
         self.savefigure()
 
-    def image(self, filename="", resolution=None, transparent=False):
+    def image(self, filename="", resolution=None, transparent=False, quality=95):
         """
         Save or get an image of current display
 
@@ -2465,6 +2465,8 @@ class Viewer(dict):
             Image resolution in pixels [x,y]
         transparent: boolean
             Creates a PNG image with a transparent background
+        quality: integer
+            Quality for JPEG image compression, default 95%
 
         Returns
         -------
@@ -2472,10 +2474,10 @@ class Viewer(dict):
             filename of saved image or encoded image as string data
         """
         if resolution is None:
-            return self.app.image(filename, 0, 0, 0, transparent)
-        return self.app.image(filename, resolution[0], resolution[1], 0, transparent)
+            return self.app.image(filename, 0, 0, quality, transparent)
+        return self.app.image(filename, resolution[0], resolution[1], quality, transparent)
 
-    def frame(self, resolution=None):
+    def frame(self, resolution=None, quality=90):
         """
         Get an image frame, returns current display as base64 encoded jpeg data url
 
@@ -2483,6 +2485,8 @@ class Viewer(dict):
         ----------
         resolution: list, tuple
             Image resolution in pixels [x,y]
+        quality: integer
+            Quality for JPEG image compression, default 90%
 
         Returns
         -------
@@ -2491,7 +2495,7 @@ class Viewer(dict):
         """
         #Jpeg encoded frame data
         if not resolution: resolution = self.resolution
-        return self.app.image("", resolution[0], resolution[1], 90)
+        return self.app.image("", resolution[0], resolution[1], quality)
 
     def display(self, resolution=(0,0), transparent=False):
         """        

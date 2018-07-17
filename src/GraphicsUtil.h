@@ -230,7 +230,7 @@ public:
     return width*height*channels*sizeof(GLubyte);
   }
 
-  std::string write(const std::string& path);
+  std::string write(const std::string& path, int jpegquality=95);
 
   unsigned char* getBytes(unsigned int* outsize, int jpegquality);
   std::string getString(int jpegquality=0);

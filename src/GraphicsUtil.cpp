@@ -1198,7 +1198,7 @@ void ImageData::outflip(bool png)
   }
 }
 
-std::string ImageData::write(const std::string& path)
+std::string ImageData::write(const std::string& path, int jpegquality)
 {
   FilePath filepath(path);
   if (filepath.type == "png")
@@ -1214,7 +1214,7 @@ std::string ImageData::write(const std::string& path)
     // Fill in the compression parameter structure.
     outflip(false);  //Y-flip as necessary
     jpge::params params;
-    params.m_quality = 95;
+    params.m_quality = jpegquality;
     params.m_subsampling = jpge::H1V1;   //H2V2/H2V1/H1V1-none/0-grayscale
     if (!compress_image_to_jpeg_file(filepath.full.c_str(), width, height, channels, pixels, params))
     {

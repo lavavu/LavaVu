@@ -581,7 +581,18 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
 {
   assert(isopen);
   FilePath filepath(path);
-  if ((filepath.type == "jpeg" || filepath.type == "jpg") && jpegquality == 0) jpegquality = 95;
+  if ((filepath.type == "jpeg" || filepath.type == "jpg"))
+  {
+    //Set default quality
+    if (jpegquality == 0)
+      jpegquality = 95;
+  }
+  else
+  {
+    //PNG, clear quality
+    jpegquality = 0;
+  }
+
   bool alphapng = jpegquality == 0 && (transparent || app->session.global("pngalpha"));
   int channels = 3;
   if (alphapng) channels = 4;
@@ -594,7 +605,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
   if (path.length() == 0)
     retImg = image->getURIString(jpegquality);
   else
-    retImg = image->write(path);
+    retImg = image->write(path, jpegquality);
 
   if (image) delete image;
 
