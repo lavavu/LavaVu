@@ -1212,12 +1212,21 @@ Renderer.prototype.draw = function() {
   this.gl.uniform3fv(this.program.uniforms["uLightPos"], new Float32Array(vis.properties.lightpos || [0.1,-0.1,2.0]));
   if (this.colour)
     this.gl.uniform4f(this.program.uniforms["uColour"], this.colour.red/255.0, this.colour.green/255.0, this.colour.blue/255.0, this.colour.alpha);
-  var cmin = [viewer.view.min[0] + viewer.dims[0] * (vis.properties.xmin || 0.0),
-              viewer.view.min[1] + viewer.dims[1] * (vis.properties.ymin || 0.0),
-              viewer.view.min[2] + viewer.dims[2] * (vis.properties.zmin || 0.0)];
-  var cmax = [viewer.view.min[0] + viewer.dims[0] * (vis.properties.xmax || 1.0),
-              viewer.view.min[1] + viewer.dims[1] * (vis.properties.ymax || 1.0),
-              viewer.view.min[2] + viewer.dims[2] * (vis.properties.zmax || 1.0)];
+  var cmin = [vis.properties.xmin || -Infinity,
+              vis.properties.ymin || -Infinity,
+              viewer.view.is3d ? (vis.properties.zmin || -Infinity) : -Infinity];
+  var cmax = [vis.properties.xmax || Infinity,
+              vis.properties.ymax || Infinity,
+              viewer.view.is3d ? (vis.properties.zmax || Infinity) : Infinity];
+  if (vis.properties.clipmap == undefined) vis.properties.clipmap = true;
+  if (vis.properties.clipmap) {
+    cmin = [viewer.view.min[0] + viewer.dims[0] * cmin[0],
+                viewer.view.min[1] + viewer.dims[1] * cmin[1],
+                viewer.view.min[2] + viewer.dims[2] * cmin[2]];
+    cmax = [viewer.view.min[0] + viewer.dims[0] * cmax[0],
+                viewer.view.min[1] + viewer.dims[1] * cmax[1],
+                viewer.view.min[2] + viewer.dims[2] * cmax[2]];
+  }
   this.gl.uniform3fv(this.program.uniforms["uClipMin"], new Float32Array(cmin));
   this.gl.uniform3fv(this.program.uniforms["uClipMax"], new Float32Array(cmax));
 

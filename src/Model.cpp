@@ -2018,6 +2018,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       bounds["min"] = min;
       bounds["max"] = max;
       vprops["bounds"] = bounds;
+      vprops["is3d"] = view->is3d;
     }
 
     //Converts named colours to js readable
