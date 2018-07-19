@@ -143,7 +143,7 @@ void Points::loadVertices()
     Properties& props = geom[s]->draw->properties;
     float psize0 = props["pointsize"];
     float scaling = props["scaling"];
-    //printf("psize %f scaling %f\n", psize0, scaling);
+    //printf("psize %f * scaling %f = %f\n", psize0, scaling, psize0 * scaling);
     psize0 *= scaling;
     float ptype = getPointType(s); //Default (-1) is to use the global (uniform) value
     bool attribs = session.global("pointattribs");

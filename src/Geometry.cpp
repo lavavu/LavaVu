@@ -662,7 +662,7 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
           //Check in values and use if label matches
           for (auto vals : geom[index]->values)
           {
-            std::cout << vals->label << " == " << GeomData::datalabels[data_type] << std::endl;
+            //std::cout << vals->label << " == " << GeomData::datalabels[data_type] << std::endl;
             if (vals->label == GeomData::datalabels[data_type])
             {
               dat = val_ptr = (FloatValues*)vals.get();

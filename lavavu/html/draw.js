@@ -863,7 +863,8 @@ Renderer.prototype.loadElements = function() {
       start = new Date();
       //distances.sort(function(a,b){return a.key - b.key});
       //This is about 10 times faster than above:
-      msb_radix_sort(distances, 0, distances.length, 16);
+      if (viewer.view.is3d)
+        msb_radix_sort(distances, 0, distances.length, 16);
       //Pretty sure msb is still fastest...
       //if (!this.swap) this.swap = [];
       //radix_sort(distances, this.swap, 2);
@@ -937,6 +938,7 @@ VertexBuffer.prototype.loadPoints = function(object) {
 
     var psize = object.pointsize ? object.pointsize : viewer.vis.properties.pointsize;
     if (!psize) psize = 1.0;
+    psize = psize * (object.scaling || 1.0);
 
     for (var i=0; i<dat.vertices.data.length/3; i++) {
       var i3 = i*3;
@@ -946,7 +948,7 @@ VertexBuffer.prototype.loadPoints = function(object) {
       this.floats[this.offset+2] = vert[2];
       this.ints[this.offset+3] = vertexColour(object.colour, object.opacity, map, dat, i)
       this.floats[this.offset+4] = dat.sizes ? dat.sizes.data[i] * psize : psize;
-      this.floats[this.offset+5] = object.pointtype > 0 ? object.pointtype : -1;
+      this.floats[this.offset+5] = object.pointtype >= 0 ? object.pointtype : -1;
       this.offset += this.vertexSizeInFloats;
     }
   }
@@ -1242,7 +1244,7 @@ Renderer.prototype.draw = function() {
     this.gl.vertexAttribPointer(this.program.attributes["aPointType"], 1, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]);
 
     //Set uniforms...
-    this.gl.uniform1i(this.program.uniforms["uPointType"], viewer.pointType || 0);
+    this.gl.uniform1i(this.program.uniforms["uPointType"], viewer.pointType >= 0 ? viewer.pointType : 1);
     this.gl.uniform1f(this.program.uniforms["uPointScale"], viewer.pointScale*viewer.modelsize);
 
     //Draw points
