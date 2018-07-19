@@ -652,6 +652,8 @@ void Geometry::jsonExportAll(DrawingObject* draw, json& obj, bool encode)
       for (int data_type=lucMinDataType; data_type<=lucMaxDataType; data_type++)
       {
         Data_Ptr datp = geom[index]->dataContainer((lucGeometryDataType)data_type);
+        //Quads are not supported by webgl, skip indices and new triangle indices will be generated instead
+        if (type == lucGridType && data_type == lucIndexData) continue;
         DataContainer* dat = datp.get();
         FloatValues* val_ptr = NULL;
         if (!dat)
