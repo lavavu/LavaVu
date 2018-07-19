@@ -75,7 +75,7 @@ def _convert_keys(dictionary):
         return dictionary
     """Recursively converts dictionary keys
        and unicode values to utf-8 strings."""
-    if isinstance(dictionary, list):
+    if isinstance(dictionary, list) or isinstance(dictionary, tuple):
         for i in range(len(dictionary)):
             dictionary[i] = _convert_keys(dictionary[i])
         return dictionary
@@ -1798,7 +1798,7 @@ class Viewer(dict):
             if isinstance(kwargs[key], str):
                 args += [key + '="' + kwargs[key] + '"']
             else:
-                args += [key + '=' + str(kwargs[key])]
+                args += [key + '=' + json.dumps(kwargs[key])]
 
         if verbose:
             print(args)
@@ -1834,7 +1834,7 @@ class Viewer(dict):
         #Set view/global property
         if not key in self.properties:
             raise ValueError(key + " : Invalid property name")
-        self.app.parseProperty(key + '=' + str(item))
+        self.app.parseProperty(key + '=' + json.dumps(item))
         self._get()
 
     def __contains__(self, key):
@@ -2528,7 +2528,7 @@ class Viewer(dict):
         
         Result is saved with default filename "webgl.html" in the current directory
 
-        If IPython is installed, displays the result WebGL content inline in an IFrame
+        If running from IPython, displays the result WebGL content inline in an IFrame
 
         Parameters
         ----------
@@ -2537,7 +2537,7 @@ class Viewer(dict):
         resolution: list, tuple
             Display window resolution in pixels [x,y]
         inline: boolean
-            Display inline in IPython notebook cell, on by default.
+            Display inline when in an IPython notebook cell, on by default.
             Set to false to open a full page viewer in a tab or new window
         """
 
