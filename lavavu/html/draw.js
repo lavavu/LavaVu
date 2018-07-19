@@ -765,12 +765,13 @@ Renderer.prototype.loadElements = function() {
   var indices = [];
   var vis = viewer.vis;
   //Only update the positions array when sorting due to update
-  if (!this.positions || !viewer.rotated || this.type == 'line') {
+  if (!this.positions || !viewer.rotated || this.type == 'lines') {
     this.positions = [];
     //Add visible element positions
     for (var id in vis.objects) {
       var name = vis.objects[id].name;
       var skip = !noui && !document.getElementById('object_' + name).checked;
+
       if (this.type == "points") {
         if (vis.objects[id].points) {
           for (var e in vis.objects[id].points) {
@@ -893,8 +894,8 @@ Renderer.prototype.loadElements = function() {
 
   start = new Date();
   if (indices.length > 0) {
-    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.STATIC_DRAW);
-    //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.DYNAMIC_DRAW);
+    //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.STATIC_DRAW);
+    this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), this.gl.DYNAMIC_DRAW);
     //this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), this.gl.DYNAMIC_DRAW);
 
     time = (new Date() - start) / 1000.0;
@@ -963,11 +964,11 @@ VertexBuffer.prototype.loadTriangles = function(object, id) {
       calcCentroids = true;
       dat.centroids = [];
     }
-    //var vis = viewer.vis;
+
     //if (dat.values)
     //  console.log(object.name + " : " + dat.values.minimum + " -> " + dat.values.maximum);
     //if (object.colourmap >= 0)
-    //  console.log(object.name + " :: " + vis.colourmaps[object.colourmap].range[0] + " -> " + vis.colourmaps[object.colourmap].range[1]);
+    //  console.log(object.name + " :: " + viewer.vis.colourmaps[object.colourmap].range[0] + " -> " + viewer.vis.colourmaps[object.colourmap].range[1]);
 
     var map = viewer.lookupMap(object.colourmap);
 
@@ -1054,8 +1055,8 @@ VertexBuffer.prototype.loadLines = function(object) {
 
 VertexBuffer.prototype.update = function(gl) {
   start = new Date();
-  gl.bufferData(gl.ARRAY_BUFFER, this.array, gl.STATIC_DRAW);
-  //gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.DYNAMIC_DRAW);
+  //gl.bufferData(gl.ARRAY_BUFFER, this.array, gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, this.array, gl.DYNAMIC_DRAW);
   //gl.bufferData(gl.ARRAY_BUFFER, this.vertices * this.elementSize, gl.DYNAMIC_DRAW);
   //gl.bufferSubData(gl.ARRAY_BUFFER, 0, buffer);
 
@@ -1074,6 +1075,9 @@ Renderer.prototype.updateBuffers = function() {
   //Count vertices
   this.elements = 0;
   for (var id in vis.objects) {
+    //Set default colour to black
+    if (!vis.objects[id].colour) vis.objects[id].colour = new Colour('rgba(0,0,0,1)');
+
     if (this.type == "triangles" && vis.objects[id].triangles) {
       for (var t in vis.objects[id].triangles)
         this.elements += vis.objects[id].triangles[t].indices.data.length;
@@ -1287,12 +1291,17 @@ Renderer.prototype.draw = function() {
     desc = (this.elements / 3) + " triangles";
 
   } else if (this.border) {
+    this.gl.lineWidth(viewer.view.border || 1.0);
+
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, 0, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
     this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_SHORT, 0);
     desc = "border";
 
   } else if (this.type == "lines") {
+
+    //Default line width (TODO: per object settings, using first object only here)
+    this.gl.lineWidth(vis.objects[0].linewidth || 1.0);
 
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, this.elementSize, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]);
@@ -1758,6 +1767,7 @@ Viewer.prototype.loadFile = function(source) {
             //Collect indices
             var h = vis.objects[id][type][idx].height;
             var w = vis.objects[id][type][idx].width;
+            DEBUG && console.log("GRID w : " + w + " , h : " + h);
             var buf = new Uint32Array((w-1)*(h-1)*6);
             var i = 0;
             for (var j=0; j < h-1; j++)  //Iterate over h-1 strips
