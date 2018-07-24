@@ -1,6 +1,9 @@
-language: cpp
+language: python
 dist: trusty
 sudo: false
+python:
+  - "2.7"
+  - "3.4"
 notifications:
   slack: cavedev:0TKfIim9KQnrmiKExKFnKT9L
 matrix:
