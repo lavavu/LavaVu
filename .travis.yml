@@ -22,7 +22,7 @@ matrix:
     - os: osx
       language: cpp
       compiler: clang   
-      install: pip install numpy
+      install: pip2 install numpy
 addons:
   apt:
     sources:
