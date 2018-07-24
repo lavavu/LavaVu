@@ -38,7 +38,7 @@ script:
       cd LavaVuTesting;
       python runall.py echo verbose || travis_terminate 1;
       pyenv shell 3.6
-      pip install --user numpy
+      pip3 install --user numpy
       python3 runall.py echo verbose || travis_terminate 1;
       cd ..;
     fi
