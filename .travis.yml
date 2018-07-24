@@ -1,4 +1,4 @@
-language: python
+language: cpp
 dist: trusty
 sudo: false
 notifications:
@@ -6,9 +6,6 @@ notifications:
 matrix:
   include:
     - os: linux
-      python:
-        - "2.7"
-        - "3.4"
       compiler: gcc
       env:
         - DISPLAY=:99.0
@@ -40,6 +37,7 @@ script:
   - if [ -d "LavaVuTesting" ]; then
       cd LavaVuTesting;
       python runall.py echo verbose || travis_terminate 1;
+      python3 runall.py echo verbose || travis_terminate 1;
       cd ..;
     fi
 after_script:
