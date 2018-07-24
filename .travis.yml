@@ -17,9 +17,7 @@ matrix:
         - sh -e /etc/init.d/xvfb start
         #- Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         - sleep 3 # give xvfb some time to start
-      install:
-        - pip install --user numpy
-        - pip3 install --user numpy
+      install: pip install --user numpy
     - os: osx
       compiler: clang   
       install: pip2 install --user numpy
@@ -39,6 +37,8 @@ script:
   - if [ -d "LavaVuTesting" ]; then
       cd LavaVuTesting;
       python runall.py echo verbose || travis_terminate 1;
+      pyenv shell 3.6
+      pip install --user numpy
       python3 runall.py echo verbose || travis_terminate 1;
       cd ..;
     fi
