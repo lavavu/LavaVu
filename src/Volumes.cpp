@@ -50,6 +50,8 @@ void Volumes::close()
 {
   Imposter::close();
 
+  slices.clear();
+
   //Iterate geom and delete textures
   //"gpucache" property allows switching this behaviour off for faster switching
   //(usually set globally but checked per object for volumes)
@@ -132,7 +134,7 @@ void Volumes::sort()
   // depth sort volumes..
 
   tt=clock();
-  if (slices.size() == 0) return;
+  if (slices.size() == 0 || geom.size() == 0) return;
 
   //Lock the update mutex
   std::lock_guard<std::mutex> guard(loadmutex);
