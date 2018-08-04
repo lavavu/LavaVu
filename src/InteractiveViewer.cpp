@@ -2020,38 +2020,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::cerr << ss.str();
     help = ss.str();
   }
-  else if (parsed.exists("reset"))
-  {
-    if (gethelp)
-    {
-      help += "Reset the camera to the default model view\n";
-      return false;
-    }
-
-    aview->reset();     //Reset camera
-    aview->init(true);  //Reset camera to default view of model
-    printMessage("View reset");
-  }
-  else if (parsed.exists("bounds"))
-  {
-    if (gethelp)
-    {
-      help += "Recalculate the model bounding box from geometry\n";
-      return false;
-    }
-
-    //Remove any existing fixed bounds
-    aview->properties.data.erase("min");
-    aview->properties.data.erase("max");
-    session.globals.erase("min");
-    session.globals.erase("max");
-    //Update the viewports and recalc bounding box
-    resetViews();
-    //Update fixed bounds
-    aview->properties.data["min"] = {aview->min[0], aview->min[1], aview->min[2]};
-    aview->properties.data["max"] = {aview->max[0], aview->max[1], aview->max[2]};
-    printMessage("View bounds update");
-  }
   else if (parsed.exists("clear"))
   {
     if (gethelp)
@@ -2085,16 +2053,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     amodel->reload(obj); //Redraw & reload
 
     loadModelStep(model, amodel->step());
-  }
-  else if (parsed.exists("zerocam"))
-  {
-    if (gethelp)
-    {
-      help += "Set the camera postiion to the origin (for scripting, not generally advisable)\n";
-      return false;
-    }
-
-    aview->reset();     //Zero camera
   }
   else if (parsed.exists("colourmap"))
   {
@@ -3230,6 +3188,49 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //TODO: categorise other commands that require GL context in the same way
     queueCommands(cmd);
     return false;
+  }
+  else if (parsed.exists("reset"))
+  {
+    if (gethelp)
+    {
+      help += "Reset the camera to the default model view\n";
+      return false;
+    }
+
+    //if (!aview->initialised) return false;
+    aview->reset();     //Reset camera
+    aview->init(true);  //Reset camera to default view of model
+    printMessage("View reset");
+  }
+  else if (parsed.exists("bounds"))
+  {
+    if (gethelp)
+    {
+      help += "Recalculate the model bounding box from geometry\n";
+      return false;
+    }
+
+    //Remove any existing fixed bounds
+    aview->properties.data.erase("min");
+    aview->properties.data.erase("max");
+    session.globals.erase("min");
+    session.globals.erase("max");
+    //Update the viewports and recalc bounding box
+    resetViews();
+    //Update fixed bounds
+    aview->properties.data["min"] = {aview->min[0], aview->min[1], aview->min[2]};
+    aview->properties.data["max"] = {aview->max[0], aview->max[1], aview->max[2]};
+    printMessage("View bounds update");
+  }
+  else if (parsed.exists("zerocam"))
+  {
+    if (gethelp)
+    {
+      help += "Set the camera postiion to the origin (for scripting, not generally advisable)\n";
+      return false;
+    }
+
+    aview->reset();     //Zero camera
   }
   else if (parsed.exists("image"))
   {
