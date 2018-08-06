@@ -69,11 +69,10 @@ public:
   Session();
   ~Session();
   std::string counterFilename();
-  void reset(std::string& binpath);
+  void reset();
   int parse(Properties* target, const std::string& property, bool validate=true);
   void parseSet(Properties& target, const std::string& properties, bool validate=true);
-  void init();
-  void init(std::vector<std::pair<std::string,json>>& property_data);
+  void init(std::string& binpath);
   json& global(const std::string& key);
   bool has(const std::string& key);
   void cacheCircleCoords(int segment_count);
