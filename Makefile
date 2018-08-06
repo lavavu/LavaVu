@@ -184,7 +184,7 @@ $(LIBRARY): $(ALLOBJS) | paths
 $(OPATH)/mongoose.o : mongoose.c
 	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
-src/sqlite3/sqlite3.c src/sqlite3/sqlite3.h:
+src/sqlite3/sqlite3.c :
 	#Ensure the submodule is checked out
 	git submodule update --init
 
@@ -210,7 +210,7 @@ swig : $(INC) src/LavaVuPython.i | paths
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
 	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) ${PYLIB} -lLavaVu -L$(PREFIX) $(LIBLINK)
 
-$(SWIGOBJ) : $(SWIGSRC)
+$(SWIGOBJ) : $(SWIGSRC) | src/sqlite3/sqlite3.c
 	$(CXX) $(CPPFLAGS) ${PYINC} -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
 
 docs: src/LavaVu.cpp src/Session.h
