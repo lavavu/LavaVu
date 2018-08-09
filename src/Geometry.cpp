@@ -1965,14 +1965,15 @@ Quaternion Geometry::vectorRotation(Vec3d rvector)
 // segment_count: number of primitives to draw circular geometry with, 16 is usually a good default
 void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec3d& vector, bool scale3d, float scale, float radius0, float radius1, float head_scale, int segment_count, Colour* colour)
 {
-  //Setup orientation using alignment vector
-  Quaternion rot = vectorRotation(vector);
-
   //Scale vector
   Vec3d vec = vector * scale;
 
   const Vec3d& scale3 = scale3d ? view->scale : Vec3d(1.0, 1.0, 1.0);
   const Vec3d& iscale = scale3d ? view->iscale : Vec3d(1.0, 1.0, 1.0);
+
+  //Setup orientation using alignment vector
+  Vec3d scaled = vec * scale3;
+  Quaternion rot = vectorRotation(scaled);
 
   // Get circle coords
   session.cacheCircleCoords(segment_count);
@@ -1984,7 +1985,7 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   // Render a 3d arrow, cone with base for head, cylinder for shaft
 
   // Length of the drawn vector = vector magnitude * scaling factor
-  float length = vec.magnitude();
+  float length = scaled.magnitude();
   float halflength = length*0.5;
   if (length < FLT_EPSILON || std::isinf(length)) return;
 
@@ -2217,15 +2218,14 @@ void Geometry::drawTrajectory(DrawingObject *draw, float coord0[3], float coord1
     //if (length > radius1 * 0.30)
     {
       // Join last set of points with this set
-      drawVector(draw, pos.ref(), vector.ref(), true, 1.0, radius0, radius1, 0.0, segment_count, colour);
-//         if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
-//          Vec3d centre(pos);
-//         drawSphere(records, centre, radius, segment_count);
+      drawVector(draw, pos, vector, true, 1.0, radius0, radius1, 0.0, segment_count, colour);
+      //if (segment_count < 3 || radius1 < 1.0e-3 ) return; //Too small for spheres
+      //  drawSphere(draw, pos, true, radius1, segment_count, colour);
     }
     // Finish with sphere, closes gaps in angled joins
-//          Vec3d centre(coord1);
-//      if (length > radius * 0.10)
-//         drawSphere(records, centre, radius, segment_count);
+    //Vec3d centre(coord1);
+    //if (length > radius1 * 0.10)
+    //  drawSphere(draw, centre, true, radius1, segment_count, colour);
   }
 
 }
