@@ -207,12 +207,12 @@ void Session::init(std::string& binpath)
     buffer << ifs.rdbuf();
   else
     std::cerr << "Error opening property dictionary: " << filepath << std::endl;
-  properties = json::parse(buffer.str());
+  properties = json_fifo::parse(buffer.str());
 
   for (auto it = properties.begin(); it != properties.end(); ++it)
   {
     //std::cout << it.key() << " | " << it.value() << "\n";
-    json& entry = it.value();
+    json_fifo& entry = it.value();
     std::string key = it.key();
     //Save view properties
     std::string target = entry["target"];

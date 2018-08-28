@@ -54,7 +54,7 @@ DrawingObject::DrawingObject(Session& session, std::string name, std::string pro
   //All props now lowercase, fix a couple of legacy camelcase values
   if (properties.has("pointSize")) {properties.data["pointsize"] = properties["pointSize"]; properties.data.erase("pointSize");}
 
-  properties.data["visible"] = true;
+  properties.data["visible"] = visible = true;
   colourIdx = 0; //Default colouring data is first value block
   opacityIdx = MAX_DATA_ARRAYS+1;
   colourMap = opacityMap = textureMap = NULL;
@@ -143,6 +143,9 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
 void DrawingObject::setup()
 {
   //Cache values for faster lookups during draw calls
+  visible = properties["visible"];
+  Properties::toArray<float>(properties["dims"], dims, 3);
+  geometry = properties["geometry"];
   colour = properties["colour"];
   opacity = 1.0;
   if (properties.has("opacity"))

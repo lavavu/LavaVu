@@ -60,13 +60,13 @@
 //Preserves order of json keys
 #include "fifo_map.hpp"
 
-// A workaround touse fifo_map as map, we are just ignoring the 'less' compare
+// A workaround to use fifo_map as map, we are just ignoring the 'less' compare
 template<class K, class V, class dummy_compare, class A>
-using my_workaround_fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
+using fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
 
 // for convenience
-//using json = nlohmann::json;
-using json = nlohmann::basic_json<my_workaround_fifo_map>;
+using json = nlohmann::json;
+using json_fifo = nlohmann::basic_json<fifo_map>;
 
 #ifndef _WIN32
 #include <sys/poll.h>

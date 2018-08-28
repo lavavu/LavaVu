@@ -58,9 +58,7 @@ public:
   std::vector<std::string> viewProps;
 
   //Property metadata / documentation
-  json properties;
-  //Requires order of insertion
-  std::vector<std::string> propKeys;
+  json_fifo properties;
 
   // Engines - mersenne twister
   std::mt19937 eng0, eng1;

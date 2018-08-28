@@ -54,6 +54,9 @@ public:
   Shader_Ptr shader; //Custom shader
 
   //Cached values for faster lookup
+  bool visible = true;
+  float dims[3] = {0., 0., 0.};
+  std::string geometry = "";
   float opacity;
   Colour colour;
   unsigned int colourIdx;

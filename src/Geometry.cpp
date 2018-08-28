@@ -1423,7 +1423,7 @@ bool Geometry::drawable(unsigned int idx)
 {
   expandHidden();
   if (idx >= geom.size()) return false;
-  if (!geom[idx]->draw->properties["visible"]) return false;
+  if (!geom[idx]->draw->visible) return false;
   //Within bounds and not hidden
   if (geom[idx]->count() > 0 && !hidden[idx])
   {
@@ -1564,11 +1564,9 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   //Allow spec width/height/depth in properties
   if (!geomdata || geomdata->count() == 0 || geomdata->width * geomdata->height == 0)
   {
-    float dims[3];
-    Properties::toArray<float>(draw->properties["dims"], dims, 3);
-    if (width == 0) width = dims[0];
-    if (height == 0) height = dims[1];
-    if (depth == 0) depth = dims[2];
+    if (width == 0) width = draw->dims[0];
+    if (height == 0) height = draw->dims[1];
+    if (depth == 0) depth = draw->dims[2];
   }
 
   //Create new data store if required, save in drawing object and Geometry list
@@ -1589,8 +1587,8 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
   if (depth) geomdata->depth = depth;
 
   //Update the default type property on first read
-  if (geomdata->count() == 0 && !geomdata->draw->properties.has("geometry"))
-    geomdata->draw->properties.data["geometry"] = GeomData::names[type];
+  if (geomdata->count() == 0 && !geomdata->draw->geometry.length())
+    geomdata->draw->properties.data["geometry"] = geomdata->draw->geometry = GeomData::names[type];
 
   //Read the data
   if (n > 0)
@@ -1720,7 +1718,7 @@ void Geometry::addTriangle(DrawingObject* obj, float* a, float* b, float* c, int
 
 void Geometry::scanDataRange(DrawingObject* draw)
 {
-  //Scan all data for min/max (SLOW! make sure only done once on load)
+  //Scan all data for min/max
   std::map<std::string, Range> ranges;
 
   //if (records.size())
