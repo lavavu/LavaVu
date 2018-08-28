@@ -550,6 +550,8 @@ void Model::reloadRedraw(DrawingObject* obj, bool reload)
       obj->colourMap->calibrated = false;
     if (obj->opacityMap)
       obj->opacityMap->calibrated = false;
+
+    obj->setup();
   }
   else
   {
@@ -566,6 +568,9 @@ void Model::reloadRedraw(DrawingObject* obj, bool reload)
 
     for (unsigned int i = 0; i < colourMaps.size(); i++)
       colourMaps[i]->calibrated = false;
+
+    for (auto o : objects)
+      o->setup();
   }
 }
 
