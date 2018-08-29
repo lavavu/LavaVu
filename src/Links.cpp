@@ -62,6 +62,11 @@ void Links::update()
 
     //Calibrate colour maps on range for this object
     ColourLookup& getColour = geom[i]->colourCalibrate();
+    //Override opacity property temporarily, or will be applied twice
+    geom[i]->draw->opacity = 1.0;
+    //Skip colour lookups for just colour property, will be applied later
+    Colour colour;
+    Colour* cptr = &getColour == &geom[i]->_getColour ? NULL : &colour;
     float limit = props["limit"];
     bool linked = props["link"];
     bool filter = geom[i]->draw->filterCache.size();
@@ -78,7 +83,6 @@ void Links::update()
       //Create a new segment
       if (linked) lines->add(geom[i]->draw);
 
-      Colour colour;
       int count = 0;
       for (unsigned int v=0; v < geom[i]->count(); v++)
       {
@@ -109,10 +113,14 @@ void Links::update()
         //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
         unsigned int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;
-        getColour(colour, cidx);
 
         Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->render->vertices[v][0]);
-        g->_colours->read1(colour.value);
+
+        if (cptr)
+        {
+          getColour(colour, cidx);
+          g->_colours->read1(colour.value);
+        }
 
         //Count of vertices actually plotted
         count++;

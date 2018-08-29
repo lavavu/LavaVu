@@ -77,6 +77,10 @@ void Shapes::update()
 
     Colour colour;
     ColourLookup& getColour = geom[i]->colourCalibrate();
+    //Override opacity property temporarily, or will be applied twice
+    geom[i]->draw->opacity = 1.0;
+    //Skip colour lookups for just colour property, will be applied later
+    Colour* cptr = &getColour == &geom[i]->_getColour ? NULL : &colour;
 
     unsigned int idxW = geom[i]->valuesLookup(geom[i]->draw->properties["widthby"]);
     unsigned int idxH = geom[i]->valuesLookup(geom[i]->draw->properties["heightby"]);
@@ -121,8 +125,11 @@ void Shapes::update()
         tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, true, quality);
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
-      getColour(colour, v);
-      tg->_colours->read1(colour.value);
+      if (cptr)
+      {
+        getColour(colour, v);
+        tg->_colours->read1(colour.value);
+      }
     }
 
     //Adjust bounding box

@@ -107,6 +107,8 @@ void Tracers::update()
     bool timecolour = false;
     //Calibrate colour map on provided value range
     ColourLookup& getColour = geom[i]->colourCalibrate();
+    //Override opacity property temporarily, or will be applied twice
+    geom[i]->draw->opacity = 1.0;
     ColourMap* cmap = geom[i]->draw->colourMap;
     if (cmap && !geom[i]->colourData())
     {

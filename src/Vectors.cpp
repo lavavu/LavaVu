@@ -111,8 +111,11 @@ void Vectors::update()
     float radius = props["thickness"];
 
     ColourLookup& getColour = geom[i]->colourCalibrate();
+    //Override opacity property temporarily, or will be applied twice
+    geom[i]->draw->opacity = 1.0;
+    //Skip colour lookups for just colour property, will be applied later
+    Colour* cptr = &getColour == &geom[i]->_getColour ? NULL : &colour;
     bool flat = props["flat"] || quality < 1;
-
     bool filter = geom[i]->draw->filterCache.size();
     float scaling = vscaling * oscaling;
     if (scaling <= 0) scaling = 1.0;
@@ -121,7 +124,7 @@ void Vectors::update()
       if (!drawable(i) || (filter && geom[i]->filter(v))) continue;
       Vec3d pos(geom[i]->render->vertices[v]);
       Vec3d vec(geom[i]->render->vectors[v]);
-      getColour(colour, v);
+      if (cptr) getColour(colour, v);
 
       //Constant length and normalise enabled
       //scale the vectors by their length multiplied by constant length factor
@@ -136,13 +139,13 @@ void Vectors::update()
           scaling = oscaling * fixedlen;
       }
       //Always draw the lines so when zoomed out shaft visible (prevents visible boundary between 2d/3d renders)
-      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), true, scaling, 0, radius, arrowHead, 0, &colour);
+      lines->drawVector(geom[i]->draw, pos.ref(), vec.ref(), true, scaling, 0, radius, arrowHead, 0, cptr);
       //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
       //lg->_colours->read1(colour.value);
 
       if (!flat)
       {
-        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), true, scaling, 0, radius, arrowHead, quality, &colour);
+        tris->drawVector(geom[i]->draw, pos.ref(), vec.ref(), true, scaling, 0, radius, arrowHead, quality, cptr);
         //Per arrow colours (can do this as long as sub-renderer always outputs same tri count)
         //tg->_colours->read1(colour.value);
       }
