@@ -176,7 +176,7 @@ void TriSurfaces::loadMesh()
       //Unstructured mesh, 1 index per vertex
       triverts = geom[index]->count();
       indices.resize(triverts);
-      calcTriangleNormals(index, verts, normals, optimise);
+      if (vnormals) calcTriangleNormals(index, verts, normals, optimise);
       elements += triverts;
     }
 
