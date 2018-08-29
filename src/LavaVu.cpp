@@ -702,6 +702,7 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     reload = session.parse(&obj->properties, data);
     if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
                            << ", DATA: " << obj->properties.data << std::endl;
+    obj->setup();
   }
   else
   {
@@ -3163,6 +3164,7 @@ void LavaVu::setObject(DrawingObject* target, std::string properties)
   if (!amodel || !target) return;
   //Parse and merge property strings
   session.parseSet(target->properties, properties);
+  target->setup();
 }
 
 DrawingObject* LavaVu::createObject(std::string properties)
