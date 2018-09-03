@@ -51,7 +51,6 @@
 #include "Include.h"
 #include "LavaVu.h"
 #include "Shaders.h"
-#include "tiny_obj_loader.h"
 #include "Util.h"
 #include "Server.h"
 #include "OpenGLViewer.h"
@@ -63,6 +62,7 @@
 #ifdef HAVE_LIBTIFF
 #include <tiffio.h>
 #endif
+#include "tiny_obj_loader.h"
 
 //Viewer class implementation...
 LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpath)
@@ -1390,6 +1390,48 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
   }
 }
 
+void readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, DrawingObject* obj, Geometry* tris, bool verbose)
+{
+  //std::cerr << "Applying material : " << material.name << std::endl;
+
+  //Use the diffuse property as the colour/texture
+  std::string texpath = material.diffuse_texname;
+  if (texpath.length() == 0)
+  {
+    texpath = material.ambient_texname;
+    if (texpath.length() == 0)
+    {
+      texpath = material.specular_texname;
+      if (texpath.length() > 0 && verbose)
+        std::cerr << "Applying specular texture: " << texpath << std::endl;
+    }
+    else if (verbose)
+      std::cerr << "Applying ambient texture: " << texpath << std::endl;
+  }
+  else if (verbose)
+    std::cerr << "Applying diffuse texture: " << texpath << std::endl;
+  if (material.diffuse_texname.length() > 0)
+  {
+    if (fn.path.length() > 0)
+      texpath = fn.path + "/" + texpath;
+
+    //Add per-object texture
+    Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
+    tris->setTexture(obj, texture);
+  }
+  else
+  {
+    Colour c;
+    c.r = material.diffuse[0] * 255;
+    c.g = material.diffuse[1] * 255;
+    c.b = material.diffuse[2] * 255;
+    c.a = material.dissolve * 255;
+    if (c.a == 0.0) c.a = 255;
+    //std::cout << c << std::endl;
+    tris->read(obj, 1, lucRGBAData, &c.value);
+  }
+}
+
 void LavaVu::readOBJ(const FilePath& fn)
 {
   //Use tiny_obj_loader to load a model
@@ -1432,49 +1474,9 @@ void LavaVu::readOBJ(const FilePath& fn)
     //Add new triangles data store to object
     tris->add(tobj);
 
-    if (shapes[i].mesh.material_ids.size() > 0)
-    {
-      //Just take the first id...
-      int id = shapes[i].mesh.material_ids[0];
-      if (id >= 0)
-      {
-        //Use the diffuse property as the colour/texture
-        std::string texpath = materials[id].diffuse_texname;
-        if (texpath.length() == 0)
-        {
-          texpath = materials[id].ambient_texname;
-          if (texpath.length() == 0)
-          {
-            texpath = materials[id].specular_texname;
-            if (texpath.length() > 0 && verbose)
-              std::cerr << "Applying specular texture: " << texpath << std::endl;
-          }
-          else if (verbose)
-            std::cerr << "Applying ambient texture: " << texpath << std::endl;
-        }
-        else if (verbose)
-          std::cerr << "Applying diffuse texture: " << texpath << std::endl;
-        if (materials[id].diffuse_texname.length() > 0)
-        {
-          if (fn.path.length() > 0)
-            texpath = fn.path + "/" + texpath;
-
-          //Add per-object texture
-          Texture_Ptr texture = std::make_shared<ImageLoader>(texpath);
-          tris->setTexture(tobj, texture);
-        }
-        else
-        {
-          Colour c;
-          c.r = materials[id].diffuse[0] * 255;
-          c.g = materials[id].diffuse[1] * 255;
-          c.b = materials[id].diffuse[2] * 255;
-          c.a = materials[id].dissolve * 255;
-          if (c.a == 0.0) c.a = 255;
-          tris->read(tobj, 1, lucRGBAData, &c.value);
-        }
-      }
-    }
+    //Load first material as default for object
+    if (materials.size() > 0 && shapes[i].mesh.material_ids.size() > 0)
+      readOBJ_material(fn, materials[shapes[i].mesh.material_ids[0]], tobj, tris, verbose);
 
     //Default is to load the indexed triangles and provided normals
     //Can be overridden by setting trisplit (-T#)
@@ -1484,12 +1486,36 @@ void LavaVu::readOBJ(const FilePath& fn)
     bool swapY = session.global("swapyz");
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
     int vi;
-    if (trisplit == 0)
+    //Load
+    int voffset = 0;
+    int current_material_id = 0;
+    for (size_t f=0; f < shapes[i].mesh.indices.size()-2; f+=3)
     {
-      //Load, re-index to use indices for this shape only (the global list is for all shapes)
-      int voffset = 0;
-      for (size_t f=0; f < shapes[i].mesh.indices.size()-2; f+=3)
+      //Get the material, if it has changed, load the new data and add an element
+      if (materials.size() > 0 && shapes[i].mesh.material_ids.size() > 1)
       {
+        int material_id = shapes[i].mesh.material_ids[f/3];
+        if (material_id < 0 || material_id >= materials.size())
+        {
+          // Invaid material ID. Use default material.
+          //printf("~~~ !!! Material id %d is invalid\n", material_id);
+          material_id = 0;
+        }
+
+        if (current_material_id != material_id)
+        {
+          //printf("%d current material %d == %d\n", f, current_material_id, material_id);
+          tris->add(tobj); //Start new container
+          readOBJ_material(fn, materials[material_id], tobj, tris, verbose);
+          voffset = 0;
+          current_material_id = material_id;
+        }
+      }
+
+      if (trisplit == 0)
+      {
+        //Use the provided indices
+        //re-index to use indices for this shape only (the global list is for all shapes)
         tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
         for (int c=0; c<3; c++)
         {
@@ -1520,33 +1546,27 @@ void LavaVu::readOBJ(const FilePath& fn)
           }
         }
       }
-    }
-    else
-    {
       //TriSplit enabled, don't use built in index data
-      for (size_t f = 0; f < shapes[i].mesh.indices.size(); f += 3)
+      else if (attrib.texcoords.size())
       {
-        if (attrib.texcoords.size())
-        {
-          float* v0 = &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3];
-          float* v1 = &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3];
-          float* v2 = &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3];
-          float* t0 = &attrib.texcoords[shapes[i].mesh.indices[f].texcoord_index*2];
-          float* t1 = &attrib.texcoords[shapes[i].mesh.indices[f+1].texcoord_index*2];
-          float* t2 = &attrib.texcoords[shapes[i].mesh.indices[f+2].texcoord_index*2];
-          float tv0[5] = {v0[0], v0[1], v0[2], t0[0], t0[1]};
-          float tv1[5] = {v1[0], v1[1], v1[2], t1[0], t1[1]};
-          float tv2[5] = {v2[0], v2[1], v2[2], t2[0], t2[1]};
-          tris->addTriangle(tobj, tv0, tv1, tv2, trisplit, swapY, true);
-        }
-        else
-        {
-          tris->addTriangle(tobj,
-                     &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
-                     &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
-                     &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3],
-                     trisplit, swapY);
-        }
+        float* v0 = &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3];
+        float* v1 = &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3];
+        float* v2 = &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3];
+        float* t0 = &attrib.texcoords[shapes[i].mesh.indices[f].texcoord_index*2];
+        float* t1 = &attrib.texcoords[shapes[i].mesh.indices[f+1].texcoord_index*2];
+        float* t2 = &attrib.texcoords[shapes[i].mesh.indices[f+2].texcoord_index*2];
+        float tv0[5] = {v0[0], v0[1], v0[2], t0[0], t0[1]};
+        float tv1[5] = {v1[0], v1[1], v1[2], t1[0], t1[1]};
+        float tv2[5] = {v2[0], v2[1], v2[2], t2[0], t2[1]};
+        tris->addTriangle(tobj, tv0, tv1, tv2, trisplit, swapY, true);
+      }
+      else
+      {
+        tris->addTriangle(tobj,
+                   &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
+                   &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
+                   &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3],
+                   trisplit, swapY);
       }
     }
   }
