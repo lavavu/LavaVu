@@ -3293,7 +3293,16 @@ void LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lu
 {
   Geometry* container = lookupObjectRenderer(target);
   if (container)
-    container->read(target, len, type, array);
+  {
+    if (type == lucRGBAData)
+    {
+      int len32 = len / 4;
+      assert(len32*4 == len);
+      container->read(target, len32, type, array);
+    }
+    else
+      container->read(target, len, type, array);
+  }
 }
 
 void LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type)
