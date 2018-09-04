@@ -594,6 +594,8 @@ void Model::bake(DrawingObject* obj)
   Triangles* tris = (Triangles*)getRenderer(lucTriangleType);
   Points* points = (Points*)getRenderer(lucPointType);
   int savestep = step();
+  if (timesteps.size() == 0)
+    addTimeStep(0, 0);
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
   {
     //Change the step
@@ -2029,6 +2031,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
     //Converts named colours to js readable
     if (vprops.count("background") > 0)
       vprops["background"] = Colour(vprops["background"]).toString();
+    if (vprops.count("bordercolour") > 0)
+      vprops["bordercolour"] = Colour(vprops["bordercolour"]).toString();
 
     //Add the view
     outviews.push_back(vprops);
