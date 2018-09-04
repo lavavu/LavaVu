@@ -265,7 +265,7 @@ void Points::sort()
 {
   //List not yet loaded, wait
   //if (!sorter.buffer || !total == 0 || elements == 0 || !view->is3d) return;
-  if (!sorter.buffer) return;
+  if (!sorter.buffer || total == 0) return;
 
   clock_t t1,t2;
   t1 = clock();
