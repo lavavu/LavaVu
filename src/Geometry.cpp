@@ -1001,10 +1001,10 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     }
     else if (shaders.size() == 3)
     {
-      std::string g = shaders[0];
-      std::string v = shaders[1];
+      std::string v = shaders[0];
+      std::string g = shaders[1];
       std::string f = shaders[2];
-      draw->shader = std::make_shared<Shader>(g, v, f);
+      draw->shader = std::make_shared<Shader>(v, g, f);
     }
 
     //Get uniforms/attribs

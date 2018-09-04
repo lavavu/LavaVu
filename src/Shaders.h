@@ -7,7 +7,7 @@
 class Shader
 {
 private:
-  std::map<GLuint, GLuint> shaders;
+  std::vector<GLuint> shaders;
   void print_log(const char *action, GLuint obj);
 
 public:
@@ -18,9 +18,9 @@ public:
   Shader();
   Shader(const std::string& fshader);
   Shader(const std::string& vshader, const std::string& fshader);
-  Shader(const std::string& gshader, const std::string& vshader, const std::string& fshader);
+  Shader(const std::string& vshader, const std::string& gshader, const std::string& fshader);
   //Shader(const std::string& shader, GLenum shader_type);
-  void init(std::string gsrc, std::string vsrc, std::string fsrc);
+  void init(std::string vsrc, std::string gsrc, std::string fsrc);
 
   bool version();
   std::string read_file(const std::string& fname);

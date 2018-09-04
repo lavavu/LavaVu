@@ -40,16 +40,16 @@ Shader::Shader(const std::string& vshader, const std::string& fshader)
   //This constructor is for a single vertex and fragment shader only
   std::string vsrc = read_file(vshader);
   std::string fsrc = read_file(fshader);
-  init("", vsrc, fsrc);
+  init(vsrc, "", fsrc);
 }
 
-Shader::Shader(const std::string& gshader, const std::string& vshader, const std::string& fshader)
+Shader::Shader(const std::string& vshader, const std::string& gshader, const std::string& fshader)
 {
   //This constructor is for a geometry, vertex and fragment shader
-  std::string gsrc = read_file(gshader);
   std::string vsrc = read_file(vshader);
+  std::string gsrc = read_file(gshader);
   std::string fsrc = read_file(fshader);
-  init(gsrc, vsrc, fsrc);
+  init(vsrc, gsrc, fsrc);
 }
 /*
 Shader::Shader(const std::string& shader, GLenum shader_type)
@@ -58,7 +58,7 @@ Shader::Shader(const std::string& shader, GLenum shader_type)
   std::string src = read_file(shader);
   program = 0;
   for (auto s : shaders)
-    glDeleteShader(s.second);
+    glDeleteShader(s);
   shaders.clear();
   supported = version();
   if (!supported) return;
@@ -72,11 +72,11 @@ Shader::Shader(const std::string& shader, GLenum shader_type)
 #define GL_GEOMETRY_SHADER GL_VERTEX_SHADER
 #endif
 
-void Shader::init(std::string gsrc, std::string vsrc, std::string fsrc)
+void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
 {
   program = 0;
   for (auto s : shaders)
-    glDeleteShader(s.second);
+    glDeleteShader(s);
   shaders.clear();
   supported = version();
   if (!supported) return;
@@ -87,8 +87,8 @@ void Shader::init(std::string gsrc, std::string vsrc, std::string fsrc)
   if (vsrc.length()) vsrc = "#version 120\n" + vsrc;
   if (fsrc.length()) fsrc = "#version 120\n" + fsrc;
   //Attempts to load and build shader programs
-  if ((gsrc.length() == 0 || compile(gsrc.c_str(), GL_GEOMETRY_SHADER)) &&
-      compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
+  if (compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
+      (gsrc.length() == 0 || compile(gsrc.c_str(), GL_GEOMETRY_SHADER)) &&
       compile(fsrc.c_str(), GL_FRAGMENT_SHADER))
   {
     //Compile succeeded, link program
@@ -135,7 +135,7 @@ bool Shader::compile(const char *src, GLuint type)
   if (!compiled)
     print_log("Shader Compile", shader);
   else
-    shaders[type] = shader;
+    shaders.push_back(shader);
   GL_Error_Check;
   return compiled;
 }
@@ -152,8 +152,8 @@ bool Shader::build()
 
   for (auto s : shaders)
   {
-    if (glIsShader(s.second))
-      glAttachShader(program, s.second);
+    if (glIsShader(s))
+      glAttachShader(program, s);
   }
 
   glLinkProgram(program);
