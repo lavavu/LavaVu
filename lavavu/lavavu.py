@@ -1092,12 +1092,14 @@ class Object(dict):
         cmid = self["colourmap"]
         return self.instance.getcolourmap(cmid, string)
 
-    def isosurface(self, name=None, convert=False, updatedb=False, compress=True, **kwargs):
+    def isosurface(self, isovalues=None, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         """
         Generate an isosurface from a volume data set using the marching cubes algorithm
 
         Parameters
         ----------
+        isovalues: number,list
+            Isovalues to create surfaces for, number or list
         name: str
             Name of the created object, automatically assigned if not provided
         convert: bool
@@ -1111,7 +1113,6 @@ class Object(dict):
             Use zlib compression when writing the geometry data
         **kwargs:
             Initial set of properties passed to the created object
-            (Must include "isovalues=[]")
 
         Returns
         -------
@@ -1120,6 +1121,8 @@ class Object(dict):
         """
         #Generate and return an isosurface object, 
         #pass properties as kwargs (eg: isovalues=[])
+        if isovalues is not None:
+            self["isovalues"] = isovalues
         isobj = self
         if not convert:
             #Create a new object for the surface
