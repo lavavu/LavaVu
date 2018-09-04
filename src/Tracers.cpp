@@ -180,6 +180,16 @@ void Tracers::update()
           getColour.init(geom[rec]->draw, geom[rec]->render, vals, ovals);
           getColour(colour, p);  //Fixed colour value per particle regardless of step
         }
+        //Only first step has colours, use them
+        else if ((unsigned int)geom[0]->colourCount() == particles)
+        {
+          //Need to re-init lookup functor to this data block
+          FloatValues* vals = geom[0]->colourData();
+          FloatValues* ovals = geom[0]->valueData(geom[0]->draw->opacityIdx);
+          getColour.init(geom[0]->draw, geom[0]->render, vals, ovals);
+          getColour(colour, p);  //Fixed colour value per particle regardless of step
+        }
+
 
         //Fade out
         if (fade) colour.a = 255 * (step-start) / (float)(end-start);
