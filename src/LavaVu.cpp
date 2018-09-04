@@ -3472,11 +3472,19 @@ void LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, bool clear
 {
   //Create an isosurface from selected volume object
   //If "clearvol" is true, volume data will be deleted leaving only the surface triangles
-  if (!amodel || !target || !source) return;
+  if (!amodel || !source) return;
+
+  if (!target)
+  {
+    target = new DrawingObject(session, source->name() + "_isosurface");
+    addObject(target);
+  }
+  target->properties.data = source->properties.data;
+
   Volumes* volumes = (Volumes*)amodel->getRenderer(lucVolumeType);
   Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
   if (volumes && tris)
-    volumes->isosurface(tris, target, clearvol);
+    volumes->isosurface(tris, source, target, clearvol);
   target->properties.data["geometry"] = "triangles";
 }
 

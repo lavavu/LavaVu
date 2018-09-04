@@ -37,7 +37,7 @@
 
 // Given a grid dataset and an isovalue, calculate the triangular
 //  facets required to represent the isosurface through the data.
-Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* target, unsigned int subsample)
+Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* draw, DrawingObject* target, Volumes* vol, unsigned int subsample)
   : subsample(subsample), surfaces(tris), target(target)
 {
   //Generate an isosurface from a set of volume slices or a cube
@@ -45,31 +45,16 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
   tt = t1 = clock();
   if (geom.size() == 0) return;
 
-  std::map<DrawingObject*, int> slices;
-  slices.clear();
-  DrawingObject* draw = geom[0]->draw;
-  unsigned int count = 0;
-  for (unsigned int i=0; i<=geom.size(); i++)
+  for (unsigned int i = 0; i < geom.size(); i += vol->slices[geom[i]->draw])
   {
-    if (i==geom.size() || draw != geom[i]->draw)
-    {
-      slices[draw] = count;
-      count = 0;
-      if (i<geom.size()) draw = geom[i]->draw;
-    }
-    count++;
-  }
-
-  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
-  {
-    if (!geom[i]->width) continue;
-    json isovalues = target->properties["isovalues"];
+    if (geom[i]->draw != draw || !geom[i]->width) continue;
+    json isovalues = draw->properties["isovalues"];
     if (!isovalues.size()) continue;
     DrawingObject* current = geom[i]->draw;
-    if (slices[current] == 1)
+    if (vol->slices[current] == 1)
       debug_print("Extracting isosurface from: cube, volume: %s\n", draw->name().c_str());
     else
-      debug_print("Extracting isosurface from: %d slices, volume: %s\n", slices[current], draw->name().c_str());
+      debug_print("Extracting isosurface from: %d vol->slices, volume: %s\n", vol->slices[current], draw->name().c_str());
 
     geom[i]->colourCalibrate();
     if (!geom[i]->height)
@@ -85,7 +70,7 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
     }
 
     int depth = geom[i]->depth;
-    if (slices[current] > depth) depth = slices[current]; 
+    if (vol->slices[current] > depth) depth = vol->slices[current];
 
     nx = geom[i]->width;
     ny = geom[i]->height;
@@ -192,7 +177,7 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
 
       t2 = clock(); debug_print("  Surface extraction (%d triangles) took %.4lf seconds.\n", surfaces->getObjectStore(target)->count()/3, (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
-      if (target->properties["isowalls"])
+      if (draw->properties["isowalls"])
       {
         //Create a new data store for walls
         surfaces->add(target);

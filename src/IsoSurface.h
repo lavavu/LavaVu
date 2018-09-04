@@ -87,7 +87,7 @@ public:
   FloatValues* colourVals;
   vertices* vertex;
 
-  Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* target, unsigned int subsample=1);
+  Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObject* draw, DrawingObject* target, Volumes* vol, unsigned int subsample=1);
 
   void MarchingCubes();
   void DrawWalls();

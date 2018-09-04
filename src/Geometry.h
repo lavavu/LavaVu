@@ -817,6 +817,7 @@ class Volumes : public Imposter
 public:
   GLuint colourTexture;
   std::map<DrawingObject*, unsigned int> slices;
+  void countSlices();
 
   Volumes(Session& session);
   ~Volumes();
@@ -831,7 +832,7 @@ public:
   void getSliceImage(ImageData* image, GeomData* slice, int offset=0);
   void saveSliceImages(DrawingObject* draw, unsigned int index);
   virtual void jsonWrite(DrawingObject* draw, json& obj);
-  void isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol=false);
+  void isosurface(Triangles* surfaces, DrawingObject* source, DrawingObject* target, bool clearvol=false);
 };
 
 //Sorting util functions

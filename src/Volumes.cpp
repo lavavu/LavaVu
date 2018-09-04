@@ -193,6 +193,28 @@ void Volumes::sort()
   t1 = clock();
 }
 
+void Volumes::countSlices()
+{
+  //Count and group 2D slices
+  slices.clear();
+  DrawingObject* draw = geom[0]->draw;
+  unsigned int count = 0;
+  for (unsigned int i=0; i<=geom.size(); i++)
+  {
+    if (i==geom.size() || draw != geom[i]->draw)
+    {
+      slices[draw] = count;
+      if (count == 1)
+        debug_print("Reloading: cube in object %s\n", draw->name().c_str());
+      else
+        debug_print("Reloading: %d slices in object %s\n", count, draw->name().c_str());
+      count = 0;
+      if (i<geom.size()) draw = geom[i]->draw;
+    }
+    count++;
+  }
+}
+
 void Volumes::update()
 {
   //Use triangle renderer for two triangles to display volume shader output
@@ -216,23 +238,7 @@ void Volumes::update()
   //Read all colourvalues, apply filter to each and store in filtered block before loading into texture
 
   //Count and group 2D slices
-  slices.clear();
-  DrawingObject* draw = geom[0]->draw;
-  unsigned int count = 0;
-  for (unsigned int i=0; i<=geom.size(); i++)
-  {
-    if (i==geom.size() || draw != geom[i]->draw)
-    {
-      slices[draw] = count;
-      if (count == 1)
-        debug_print("Reloading: cube in object %s\n", draw->name().c_str());
-      else
-        debug_print("Reloading: %d slices in object %s\n", count, draw->name().c_str());
-      count = 0;
-      if (i<geom.size()) draw = geom[i]->draw;
-    }
-    count++;
-  }
+  countSlices();
 
   for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
   {
@@ -938,18 +944,24 @@ void Volumes::jsonWrite(DrawingObject* draw, json& obj)
   }
 }
 
-void Volumes::isosurface(Triangles* surfaces, DrawingObject* target, bool clearvol)
+void Volumes::isosurface(Triangles* surfaces, DrawingObject* source, DrawingObject* target, bool clearvol)
 {
   //Ensure data is loaded for this step
   setup(view);
+  countSlices();
 
   //Isosurface extract
-  Isosurface iso(geom, surfaces, target);
+  Isosurface iso(geom, surfaces, source, target, this);
 
   //Clear the volume data, allows converting object from a volume to a surface
-  if (clearvol) clear();
+  if (clearvol)
+    clear(true);
+
+  reload = redraw = true;
 
   //Optimise triangle vertices
-  surfaces->loadMesh();
+  surfaces->update();
+  //surfaces->loadMesh();
+  //reload = redraw = true;
 }
 
