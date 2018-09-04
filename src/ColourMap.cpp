@@ -183,11 +183,12 @@ void ColourMap::loadPalette(std::string data)
     }
   }
 
-  if (texture)
-    loadTexture();
-
   //Strip positions
   if (nopos) noValues = true;
+
+  //Load data to texture image
+  if (texture)
+    loadTexture();
 
   //Ensure at least two colours
   while (colours.size() < 2) add(0xff000000);
@@ -774,8 +775,16 @@ void ColourMap::loadTexture(bool repeat)
   texture->mipmaps = false;
   texture->nearest = true;
   texture->repeat = repeat;
+  ImageData* paletteData = toImage(repeat);
+  texture->load(paletteData);
+  delete paletteData;
+}
+
+ImageData* ColourMap::toImage(bool repeat)
+{
   ImageData* paletteData = new ImageData(samples, 1, 4);
   Colour col;
+  if (!calibrated) calibrate();
   for (int i=0; i<samples; i++)
   {
     col = getFromScaled(i / (float)(samples-1));
@@ -783,18 +792,42 @@ void ColourMap::loadTexture(bool repeat)
     memcpy(&paletteData->pixels[i*4], col.rgba, 4);
   }
 
-  //paletteData->write("palette.png");
-  texture->load(paletteData);
-  delete paletteData;
+  return paletteData;
+}
+
+json ColourMap::toJSON()
+{
+  json cmap = properties.data;
+  json cj;
+
+  if (!calibrated)
+    calibrate();
+
+  for (unsigned int c=0; c < colours.size(); c++)
+  {
+    json colour;
+    colour["position"] = colours[c].position;
+    colour["colour"] = colours[c].colour.toString();
+    cj.push_back(colour);
+  }
+
+  cmap["name"] = name;
+  cmap["colours"] = cj;
+
+  return cmap;
+}
+
+std::string ColourMap::toString()
+{
+  std::stringstream ss;
+  for (unsigned int idx = 0; idx < colours.size(); idx++)
+    ss << colours[idx].position << "=" << colours[idx].colour << std::endl;
+  return ss.str();
 }
 
 void ColourMap::print()
 {
-  for (unsigned int idx = 0; idx < colours.size(); idx++)
-  {
-    //Colour colour = getFromScaled(colours[idx].position);
-    std::cout << idx << " : " << colours[idx] << std::endl;
-  }
+  std::cout << toString() << std::endl;
 }
 
 void ColourMap::flip()

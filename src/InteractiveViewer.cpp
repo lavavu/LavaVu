@@ -2100,6 +2100,41 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         cbar->properties.data["align"] = align;
     }
   }
+  else if (parsed.exists("palette"))
+  {
+    if (gethelp)
+    {
+      help += "Export colour data of selected object\n\n"
+              "**Usage:** palette [type]\n\n"
+              "type (string) : type of export (image/json/text) default = text\n";
+      return false;
+    }
+
+    if (aobject)
+    {
+      std::string what = parsed["palette"];
+      ColourMap* cmap = aobject->getColourMap("colourmap");
+      if (!cmap) return false;
+      if (what == "json")
+      {
+        std::ofstream of("palette.json");
+        of << std::setw(2) << cmap->toJSON();
+        of.close();
+      }
+      else if (what == "image")
+      {
+        ImageData* paletteData = cmap->toImage(false);
+        paletteData->write("palette.png");
+        delete paletteData;
+      }
+      else
+      {
+        std::ofstream of("palette.txt");
+        of << cmap->toString();
+        of.close();
+      }
+    }
+  }
   else if (parsed.exists("colour"))
   {
     if (gethelp)
@@ -3366,7 +3401,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "server", "interactive", "display"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
-     "verbose", "toggle", "createvolume", "clearvolume"}
+     "verbose", "toggle", "createvolume", "clearvolume", "palette"}
   };
 
   for (unsigned int i=0; i<categories.size(); i++)

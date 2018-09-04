@@ -121,6 +121,9 @@ public:
   void loadTexture(bool repeat=false);
   void loadPalette(std::string data);
   void loadPaletteJSON(json& data);
+  ImageData* toImage(bool repeat);
+  json toJSON();
+  std::string toString();
   void print();
   void flip();
   void monochrome();

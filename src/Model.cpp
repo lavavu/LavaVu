@@ -2040,23 +2040,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
   {
-    json cmap = colourMaps[i]->properties.data;
-    json colours;
-
-    if (!colourMaps[i]->calibrated)
-      colourMaps[i]->calibrate();
-
-    for (unsigned int c=0; c < colourMaps[i]->colours.size(); c++)
-    {
-      json colour;
-      colour["position"] = colourMaps[i]->colours[c].position;
-      colour["colour"] = colourMaps[i]->colours[c].colour.toString();
-      colours.push_back(colour);
-    }
-
-    cmap["name"] = colourMaps[i]->name;
-    cmap["colours"] = colours;
-
+    json cmap = colourMaps[i]->toJSON();
     cmaps.push_back(cmap);
   }
 
