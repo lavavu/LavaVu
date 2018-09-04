@@ -2312,7 +2312,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         isovals.push_back(fval);
         aobject->properties.data["isovalues"] = isovals;
       }
-      isoSurface(aobject, aobject, false);
+      isoSurface(NULL, aobject, false);
       printMessage("Generating IsoSurface for object: %s", aobject->name().c_str());
     }
   }
