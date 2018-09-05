@@ -48,6 +48,7 @@ version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
 
+geomnames = ["labels", "points", "grid", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "screen"]
 geomtypes = [LavaVuPython.lucLabelType,
              LavaVuPython.lucPointType,
              LavaVuPython.lucGridType,
@@ -541,18 +542,20 @@ class Object(dict):
         self.instance._get() #Ensure in sync
         return len(self["filters"])-1
 
+    @property
     def datasets(self):
         """
-        Retrieve available data sets on this object
+        Retrieve available labelled data sets on this object
 
         Returns
         -------
-        data: str
-            A string representation of the data objects available
+        data: dict
+            A dictionary containing the data objects available by label
         """
-        #Return json data set list
-        #TODO: use Geometry wrapper?
-        return json.dumps(self.dict["data"])
+        #Return data sets dict converted from json string
+        sets = json.loads(self.instance.app.getObjectDataLabels(self.ref))
+        if sets is None or len(sets) == 0: return {}
+        return _convert_keys(sets)
 
     def append(self):
         """
@@ -673,17 +676,12 @@ class Object(dict):
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
 
-    def data(self, filter=None):
+    @property
+    def data(self):
         """
-        Return internal geometry data
+        Return internal geometry data at current timestep
         Returns a Geometry() object that can be iterated through containing all data elements
         Elements contain vertex/normal/value etc. data as numpy arrays
-
-        Parameters
-        ----------
-        filter: str
-            Limit the data returned to this type
-            (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
 
         Returns
         -------
@@ -692,11 +690,10 @@ class Object(dict):
 
         Example
         -------
-        >>> data = obj.data()
-        >>> for el in data:
+        >>> for el in obj.data:
         >>>     print(el)
         """
-        return Geometry(self, filter)
+        return Geometry(self)
 
     def vertices(self, data):
         """
@@ -1664,7 +1661,7 @@ class Viewer(dict):
                 #Check if a method exists already
                 if key in selfdir:
                     existing = getattr(self, key, None)
-                    if existing:
+                    if existing and callable(existing):
                         #Add the lavavu doc entry to the docstring
                         doc = ""
                         if existing.__doc__:
@@ -1722,7 +1719,7 @@ class Viewer(dict):
             print("LavaVu Init error: " + str(e))
             pass
 
-    def _getRendererType(name):
+    def _getRendererType(self, name):
         """
         Return the type index of a given renderer label
         """
@@ -2914,40 +2911,117 @@ class Viewer(dict):
 class Geometry(list):
     """  
     The Geometry class provides an interface to a drawing object's internal data
-    Geometry instances are created internally in the Object class with the data() method
+    Geometry instances are created internally in the Object class with the data property
 
     Example
     -------
         
     Get all object data
 
-    >>> data = obj.data()
+    >>> data = obj.data
     
     Get only triangle data
 
-    >>> data = obj.data("triangles")
+    >>> data = obj.data["triangles"]
+
+    Get data at specific timestep only
+    (default is current step including fixed data)
+
+    >>> data = obj.data["0"]
 
     Loop through data
 
-    >>> data = obj.data()
-    >>> for el in data:
+    >>> for el in obj.data:
     >>>     print(el)
 
     """
-    def __init__(self, obj, filter=None):
-        self.obj = obj
 
+    def __init__(self, obj, timestep=-2, filter=None):
+        self.obj = obj
+        self.timestep = timestep
         #Get a list of geometry data objects for a given drawing object
-        count = self.obj.instance.app.getGeometryCount(self.obj.ref)
-        for idx in range(count):
-            g = self.obj.instance.app.getGeometry(self.obj.ref, idx)
+        if self.timestep < -1:
+            glist = self.obj.instance.app.getGeometry(self.obj.ref)
+        else:
+            glist = self.obj.instance.app.getGeometryAt(self.obj.ref, timestep)
+        sets = self.obj.datasets
+        for g in glist:
             #By default all elements are returned, even if object has multiple types 
             #Filter can be set to a type name to exclude other geometry types
-            if filter is None or g.type == self._getRendererType(filter):
-                self.append(GeomData(g, obj.instance))
+            if filter is None or g.type == self.obj.instance._getRendererType(filter):
+                g = GeomData(g, obj.instance)
+                self.append(g)
+                #Add the value data set labels
+                for s in sets:
+                    g.available[s] = sets[s]["size"]
+
+        #Allows getting data by data type or value labels using Descriptors
+        #Data by type name
+        for key in datatypes:
+            typename = key
+            if key == 'values':
+                #Just use the first available value label as the default .values descriptor
+                if len(sets) == 0: continue
+                typename = sets.keys()[0]
+            #Access by type name to get a view
+            setattr(Geometry, key, GeomDataListView(self.obj, self.timestep, typename))
+            #Access by type name + _copy to get a copy
+            setattr(Geometry, key + '_copy', GeomDataListView(self.obj, self.timestep, typename, copy=True))
+
+        #Data by label
+        for key in sets:
+            setattr(Geometry, key, GeomDataListView(self.obj, self.timestep, key))
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            #Return data filtered by renderer type
+            if key in geomnames:
+                return Geometry(self.obj, timestep=self.timestep, filter=key)
+            #Or data filtered by timestep if a string timestep bumber passed
+            else:
+                ts = int(key)
+                return Geometry(self.obj, timestep=ts)
+        return self[key]
 
     def __str__(self):
         return '[' + ', '.join([str(i) for i in self]) + ']'
+
+class GeomDataListView(object):
+    """A descriptor that provides view/copy/set access to a GeomData list"""
+    def __init__(self, obj, timestep, key, copy=False):
+        self.obj = obj
+        self.timestep = timestep
+        self.key = key
+        self.copy = copy
+
+        #Set docstring
+        if copy:
+            self.__doc__ = "Get a copy of all " + key + " data from visualisation object"
+        else:
+            self.__doc__ = "Get a view of all " + key + " data from visualisation object"
+
+    def __get__(self, instance, owner):
+        # we get here when someone calls x.d, and d is a GeomDataListView instance
+        # instance = x
+        # owner = type(x)
+
+        #Return a copy
+        if self.copy:
+            return [el.copy(self.key) for el in instance]
+        #Return a view
+        return [el.get(self.key) for el in instance]
+
+    def __set__(self, instance, value):
+        # we get here when someone calls x.d = val, and d is a GeomDataListView instance
+        # instance = x
+        # value = val
+        if not isinstance(value, list) or len(value) != len(instance):
+            raise ValueError("Must provide a list of value arrays for each entry, %d entries" % len(instance))
+        #Set each GeomData entry to corrosponding value list entry
+        v = 0
+        for el in instance:
+            el.set(self.key, value[v].ravel())
+            v += 1
 
 #Wrapper class for GeomData geometry object
 class GeomData(object):
@@ -2960,38 +3034,46 @@ class GeomData(object):
     Example
     -------
         
-    Get the most recently used object data element
+    Get the data elements
 
-    >>> data = obj.data()
-    >>> el = data[-1]
+    >>> print(obj.data)
+    [GeomData("points")]
     
-    Get a copy of the rgba colours (if any)
+    Get a copy of the colours (if any)
 
-    >>> colours = el.copy("rgba")
+    >>> colours = obj.data.colours_copy
 
     Get a view of the vertex data
 
-    >>> verts = el.get("vertices")
+    >>> verts = obj.data.vertices
 
     WARNING: this reference may be deleted by other calls, 
-    only use get() if you are processing the data immediately 
-    and not relying on it continuing to exist later
+    use _copy if you are not processing the data immediately 
+    and relying on it continuing to exist later
 
-    Get a copy of some value data by label
-    >>> verts = el.copy("colourvals")
+    Get a some value data by label "myvals"
+    >>> vals = obj.data.myvals
+    >>> print(vals)
+    [array([...])]
 
-    Load some new values for these vertices
+    Load some new values for this data, provided list must match first dimension of existing data list
 
-    >>> el.set("sampledfield", newdata)
+    >>> obj.data.myvals = [newdata]
 
     """
     def __init__(self, data, instance):
         self.data = data
         self.instance = instance
+        self.available = {}
+        #Get available data types
+        for key in datatypes:
+            dat = self.get(key)
+            if len(dat) > 0:
+                self.available[key] = len(dat)
 
     def get(self, typename):
         """
-        Get a data element from a set of geometry data
+        Get a data element from geometry data
 
         Warning... other than for internal use, should always
         immediately make copies of the data
@@ -3009,7 +3091,7 @@ class GeomData(object):
             Numpy array view of the data set requested
         """
         array = None
-        if typename in datatypes:
+        if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
                 #Get uint8 data
                 array = self.instance.app.geometryArrayViewUChar(self.data, datatypes[typename])
@@ -3027,7 +3109,7 @@ class GeomData(object):
 
     def copy(self, typename):
         """
-        Get a copy of a data element from a set of geometry data
+        Get a copy of a data element from geometry data
 
         This is a safe version of get() that copies the data
         before returning so can be assured it will remain valid
@@ -3049,7 +3131,7 @@ class GeomData(object):
 
     def set(self, typename, array):
         """
-        Set a data element in a set of geometry data
+        Set a data element in geometry data
 
         Parameters
         ----------
@@ -3059,22 +3141,23 @@ class GeomData(object):
         array: array
             Numpy array holding the data to be written
         """
-        if typename in datatypes:
+        if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
                 #Set uint8 data
-                self.instance.app.geometryArrayUInt8(self.data, array, datatypes[typename])
+                self.instance.app.geometryArrayUInt8(self.data, array.astype(numpy.uint8), datatypes[typename])
             elif typename in ["indices", "colours"]:
                 #Set uint32 data
-                self.instance.app.geometryArrayUInt32(self.data, array, datatypes[typename])
+                self.instance.app.geometryArrayUInt32(self.data, array.astype(numpy.uint32), datatypes[typename])
             else:
                 #Set float32 data
-                self.instance.app.geometryArrayFloat(self.data, array, datatypes[typename])
+                self.instance.app.geometryArrayFloat(self.data, array.astype(numpy.float32), datatypes[typename])
         else:
             #Set float32 data
-            self.instance.app.geometryArrayFloat(self.data, array, typename)
+            self.instance.app.geometryArrayFloat(self.data, array.astype(numpy.float32), typename)
         
     def __str__(self):
-        return [key for key, value in geomtypes if value == self.data.type][0]
+        renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
+        return ' '.join(['GeomData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
 #Wrapper class for raw image data
 class Image(object):

@@ -226,8 +226,6 @@ public:
   void jsonWriteFile(std::string fn, DrawingObject* obj=NULL, bool jsonp=false, bool objdata=true);
   void jsonReadFile(std::string fn);
 
-  std::vector<Geom_Ptr> getAllGeometry(DrawingObject* target);
-
   //Python interface functions
   void render();
   void init();
@@ -260,6 +258,8 @@ public:
   void clearValues(DrawingObject* target, std::string label="");
   void clearData(DrawingObject* target, lucGeometryDataType type);
 
+  std::string getObjectDataLabels(DrawingObject* target);
+
   //Numpy interface
   void arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type=lucRGBData);
   void arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
@@ -268,14 +268,15 @@ public:
   void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool mipmaps=true, bool bgr=false);
   void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool mipmaps=true, bool bgr=false);
 
-  int getGeometryCount(DrawingObject* target);
-  Geom_Ptr getGeometry(DrawingObject* target, int index);
+  std::vector<Geom_Ptr> getGeometry(DrawingObject* target);
+  std::vector<Geom_Ptr> getGeometryAt(DrawingObject* target, int timestep=-2);
   void geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type);
   void geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::string label);
 
   void geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, float** array, int* len);
+  void geometryArrayViewFloat(Geom_Ptr geom, float** array, int* len, std::string label);
   void geometryArrayViewUInt(Geom_Ptr geom, lucGeometryDataType dtype, unsigned int** array, int* len);
   void geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 

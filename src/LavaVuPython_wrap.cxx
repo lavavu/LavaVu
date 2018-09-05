@@ -3027,17 +3027,19 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_p_unsigned_int swig_types[17]
 #define SWIGTYPE_p_size_type swig_types[18]
 #define SWIGTYPE_p_std__allocatorT_float_t swig_types[19]
-#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[20]
-#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[21]
-#define SWIGTYPE_p_std__invalid_argument swig_types[22]
-#define SWIGTYPE_p_std__shared_ptrT_GeomData_t swig_types[23]
-#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[24]
-#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[25]
-#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[26]
-#define SWIGTYPE_p_swig__SwigPyIterator swig_types[27]
-#define SWIGTYPE_p_value_type swig_types[28]
-static swig_type_info *swig_types[30];
-static swig_module_info swig_module = {swig_types, 29, 0, 0, 0, 0};
+#define SWIGTYPE_p_std__allocatorT_std__shared_ptrT_GeomData_t_t swig_types[20]
+#define SWIGTYPE_p_std__allocatorT_std__string_t swig_types[21]
+#define SWIGTYPE_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t swig_types[22]
+#define SWIGTYPE_p_std__invalid_argument swig_types[23]
+#define SWIGTYPE_p_std__shared_ptrT_GeomData_t swig_types[24]
+#define SWIGTYPE_p_std__vectorT_float_std__allocatorT_float_t_t swig_types[25]
+#define SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t swig_types[26]
+#define SWIGTYPE_p_std__vectorT_std__string_std__allocatorT_std__string_t_t swig_types[27]
+#define SWIGTYPE_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t swig_types[28]
+#define SWIGTYPE_p_swig__SwigPyIterator swig_types[29]
+#define SWIGTYPE_p_value_type swig_types[30]
+static swig_type_info *swig_types[32];
+static swig_module_info swig_module = {swig_types, 31, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -5481,6 +5483,115 @@ SWIGINTERN std::vector< std::string >::iterator std_vector_Sl_std_string_Sg__era
 SWIGINTERN std::vector< std::string >::iterator std_vector_Sl_std_string_Sg__erase__SWIG_1(std::vector< std::string > *self,std::vector< std::string >::iterator first,std::vector< std::string >::iterator last){ return self->erase(first, last); }
 SWIGINTERN std::vector< std::string >::iterator std_vector_Sl_std_string_Sg__insert__SWIG_0(std::vector< std::string > *self,std::vector< std::string >::iterator pos,std::vector< std::string >::value_type const &x){ return self->insert(pos, x); }
 SWIGINTERN void std_vector_Sl_std_string_Sg__insert__SWIG_1(std::vector< std::string > *self,std::vector< std::string >::iterator pos,std::vector< std::string >::size_type n,std::vector< std::string >::value_type const &x){ self->insert(pos, n, x); }
+
+  namespace swig {
+    template <>  struct traits< std::shared_ptr< GeomData > > {
+      typedef pointer_category category;
+      static const char* type_name() { return"std::shared_ptr< GeomData >"; }
+    };
+  }
+
+
+      namespace swig {
+	template <>  struct traits<std::vector< std::shared_ptr< GeomData >, std::allocator< std::shared_ptr< GeomData > > > > {
+	  typedef pointer_category category;
+	  static const char* type_name() {
+	    return "std::vector<" "std::shared_ptr< GeomData >" "," "std::allocator< std::shared_ptr< GeomData > >" " >";
+	  }
+	};
+      }
+    
+SWIGINTERN swig::SwigPyIterator *std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__iterator(std::vector< std::shared_ptr< GeomData > > *self,PyObject **PYTHON_SELF){
+      return swig::make_output_iterator(self->begin(), self->begin(), self->end(), *PYTHON_SELF);
+    }
+SWIGINTERN bool std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____nonzero__(std::vector< std::shared_ptr< GeomData > > const *self){
+      return !(self->empty());
+    }
+SWIGINTERN bool std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____bool__(std::vector< std::shared_ptr< GeomData > > const *self){
+      return !(self->empty());
+    }
+SWIGINTERN std::vector< std::shared_ptr< GeomData > >::size_type std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____len__(std::vector< std::shared_ptr< GeomData > > const *self){
+      return self->size();
+    }
+SWIGINTERN std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getslice__(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i,std::vector< std::shared_ptr< GeomData > >::difference_type j){
+      return swig::getslice(self, i, j, 1);
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setslice____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i,std::vector< std::shared_ptr< GeomData > >::difference_type j){
+      swig::setslice(self, i, j, 1, std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >());
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setslice____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i,std::vector< std::shared_ptr< GeomData > >::difference_type j,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &v){
+      swig::setslice(self, i, j, 1, v);
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delslice__(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i,std::vector< std::shared_ptr< GeomData > >::difference_type j){
+      swig::delslice(self, i, j, 1);
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i){
+      swig::erase(self, swig::getpos(self, i));
+    }
+SWIGINTERN std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice){
+      Py_ssize_t i, j, step;
+      if( !PySlice_Check(slice) ) {
+        SWIG_Error(SWIG_TypeError, "Slice object expected.");
+        return NULL;
+      }
+      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
+      return swig::getslice(self, id, jd, step);
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &v){
+      Py_ssize_t i, j, step;
+      if( !PySlice_Check(slice) ) {
+        SWIG_Error(SWIG_TypeError, "Slice object expected.");
+        return;
+      }
+      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
+      swig::setslice(self, id, jd, step, v);
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice){
+      Py_ssize_t i, j, step;
+      if( !PySlice_Check(slice) ) {
+        SWIG_Error(SWIG_TypeError, "Slice object expected.");
+        return;
+      }
+      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
+      swig::delslice(self, id, jd, step);
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,PySliceObject *slice){
+      Py_ssize_t i, j, step;
+      if( !PySlice_Check(slice) ) {
+        SWIG_Error(SWIG_TypeError, "Slice object expected.");
+        return;
+      }
+      PySlice_GetIndices(SWIGPY_SLICE_ARG(slice), (Py_ssize_t)self->size(), &i, &j, &step);
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type id = i;
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::difference_type jd = j;
+      swig::delslice(self, id, jd, step);
+    }
+SWIGINTERN std::vector< std::shared_ptr< GeomData > >::value_type const &std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getitem____SWIG_1(std::vector< std::shared_ptr< GeomData > > const *self,std::vector< std::shared_ptr< GeomData > >::difference_type i){
+      return *(swig::cgetpos(self, i));
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_2(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::difference_type i,std::vector< std::shared_ptr< GeomData > >::value_type const &x){
+      *(swig::getpos(self,i)) = x;
+    }
+SWIGINTERN std::vector< std::shared_ptr< GeomData > >::value_type std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__pop(std::vector< std::shared_ptr< GeomData > > *self){
+      if (self->size() == 0)
+	throw std::out_of_range("pop from empty container");
+      std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >::value_type x = self->back();
+      self->pop_back();
+      return x;
+    }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__append(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::value_type const &x){
+      self->push_back(x);
+    }
+SWIGINTERN std::vector< std::shared_ptr< GeomData > >::iterator std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__erase__SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::iterator pos){ return self->erase(pos); }
+SWIGINTERN std::vector< std::shared_ptr< GeomData > >::iterator std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__erase__SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::iterator first,std::vector< std::shared_ptr< GeomData > >::iterator last){ return self->erase(first, last); }
+SWIGINTERN std::vector< std::shared_ptr< GeomData > >::iterator std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__insert__SWIG_0(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::iterator pos,std::vector< std::shared_ptr< GeomData > >::value_type const &x){ return self->insert(pos, x); }
+SWIGINTERN void std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__insert__SWIG_1(std::vector< std::shared_ptr< GeomData > > *self,std::vector< std::shared_ptr< GeomData > >::iterator pos,std::vector< std::shared_ptr< GeomData > >::size_type n,std::vector< std::shared_ptr< GeomData > >::value_type const &x){ self->insert(pos, n, x); }
 
 SWIGINTERN int
 SWIG_AsVal_bool (PyObject *obj, bool *val)
@@ -12638,6 +12749,2005 @@ SWIGINTERN PyObject *List_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *arg
   return SWIG_Python_InitShadowInstance(args);
 }
 
+SWIGINTERN PyObject *_wrap_GeomList_iterator(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  PyObject **arg2 = (PyObject **) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  swig::SwigPyIterator *result = 0 ;
+  
+  arg2 = &swig_obj[0];
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_iterator" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (swig::SwigPyIterator *)std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__iterator(arg1,arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_swig__SwigPyIterator, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___nonzero__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___nonzero__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (bool)std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____nonzero__((std::vector< std::shared_ptr< GeomData > > const *)arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___bool__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___bool__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (bool)std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____bool__((std::vector< std::shared_ptr< GeomData > > const *)arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___len__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::size_type result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___len__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____len__((std::vector< std::shared_ptr< GeomData > > const *)arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___getslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  PyObject *swig_obj[3] ;
+  std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *result = 0 ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList___getslice__",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___getslice__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___getslice__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "GeomList___getslice__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val3);
+  {
+    try {
+      try {
+        result = (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *)std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getslice__(arg1,arg2,arg3);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setslice____SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___setslice__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___setslice__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "GeomList___setslice__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val3);
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setslice____SWIG_0(arg1,arg2,arg3);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setslice____SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg3 ;
+  std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *arg4 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  int res4 = SWIG_OLDOBJ ;
+  
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___setslice__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___setslice__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "GeomList___setslice__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val3);
+  {
+    std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *ptr = (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *)0;
+    res4 = swig::asptr(swig_obj[3], &ptr);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "GeomList___setslice__" "', argument " "4"" of type '" "std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "GeomList___setslice__" "', argument " "4"" of type '" "std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &""'"); 
+    }
+    arg4 = ptr;
+  }
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setslice____SWIG_1(arg1,arg2,arg3,(std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &)*arg4);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res4)) delete arg4;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setslice__(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[5] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList___setslice__",0,4,argv))) SWIG_fail;
+  --argc;
+  if (argc == 3) {
+    return _wrap_GeomList___setslice____SWIG_0(self, argc, argv);
+  }
+  if (argc == 4) {
+    return _wrap_GeomList___setslice____SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList___setslice__'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setslice__(std::vector< std::shared_ptr< GeomData > >::difference_type,std::vector< std::shared_ptr< GeomData > >::difference_type)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setslice__(std::vector< std::shared_ptr< GeomData > >::difference_type,std::vector< std::shared_ptr< GeomData > >::difference_type,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___delslice__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  ptrdiff_t val3 ;
+  int ecode3 = 0 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList___delslice__",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___delslice__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___delslice__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  ecode3 = SWIG_AsVal_ptrdiff_t(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "GeomList___delslice__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg3 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val3);
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delslice__(arg1,arg2,arg3);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___delitem____SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___delitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___delitem__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_0(arg1,arg2);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___getitem____SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___getitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    if (!PySlice_Check(swig_obj[1])) {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___getitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+    }
+    arg2 = (PySliceObject *) swig_obj[1];
+  }
+  {
+    try {
+      try {
+        result = (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *)std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getitem____SWIG_0(arg1,arg2);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res3 = SWIG_OLDOBJ ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___setitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    if (!PySlice_Check(swig_obj[1])) {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+    }
+    arg2 = (PySliceObject *) swig_obj[1];
+  }
+  {
+    std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *ptr = (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *)0;
+    res3 = swig::asptr(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "GeomList___setitem__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "GeomList___setitem__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &""'"); 
+    }
+    arg3 = ptr;
+  }
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_0(arg1,arg2,(std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &)*arg3);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res3)) delete arg3;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___setitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    if (!PySlice_Check(swig_obj[1])) {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+    }
+    arg2 = (PySliceObject *) swig_obj[1];
+  }
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_1(arg1,arg2);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___delitem____SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  PySliceObject *arg2 = (PySliceObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___delitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    if (!PySlice_Check(swig_obj[1])) {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList___delitem__" "', argument " "2"" of type '" "PySliceObject *""'");
+    }
+    arg2 = (PySliceObject *) swig_obj[1];
+  }
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____delitem____SWIG_1(arg1,arg2);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      catch(std::invalid_argument &_e) {
+        SWIG_exception_fail(SWIG_ValueError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___delitem__(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList___delitem__",0,2,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    int _v = 0;
+    {
+      {
+        _v = PySlice_Check(argv[1]);
+      }
+    }
+    if (!_v) goto check_1;
+    return _wrap_GeomList___delitem____SWIG_1(self, argc, argv);
+  }
+check_1:
+  
+  if (argc == 2) {
+    return _wrap_GeomList___delitem____SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList___delitem__'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__delitem__(std::vector< std::shared_ptr< GeomData > >::difference_type)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__delitem__(PySliceObject *)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___getitem____SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___getitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___getitem__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  {
+    try {
+      try {
+        result = (std::vector< std::shared_ptr< GeomData > >::value_type *) &std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____getitem____SWIG_1((std::vector< std::shared_ptr< GeomData > > const *)arg1,arg2);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    std::shared_ptr<  GeomData > *smartresult = *result ? new std::shared_ptr<  GeomData >(*result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___getitem__(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList___getitem__",0,2,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    int _v = 0;
+    {
+      {
+        _v = PySlice_Check(argv[1]);
+      }
+    }
+    if (!_v) goto check_1;
+    return _wrap_GeomList___getitem____SWIG_0(self, argc, argv);
+  }
+check_1:
+  
+  if (argc == 2) {
+    return _wrap_GeomList___getitem____SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList___getitem__'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__getitem__(PySliceObject *)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__getitem__(std::vector< std::shared_ptr< GeomData > >::difference_type) const\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setitem____SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::difference_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  ptrdiff_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 ;
+  int res3 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared3 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList___setitem__" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_ptrdiff_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList___setitem__" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::difference_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::difference_type >(val2);
+  {
+    int newmem = 0;
+    res3 = SWIG_ConvertPtrAndOwn(swig_obj[2], &argp3, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "GeomList___setitem__" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp3) tempshared3 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      arg3 = &tempshared3;
+    } else {
+      arg3 = (argp3) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3) : &tempshared3;
+    }
+  }
+  {
+    try {
+      try {
+        std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg____setitem____SWIG_2(arg1,arg2,(std::shared_ptr< GeomData > const &)*arg3);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList___setitem__(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList___setitem__",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    return _wrap_GeomList___setitem____SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    int _v = 0;
+    {
+      {
+        _v = PySlice_Check(argv[1]);
+      }
+    }
+    if (!_v) goto check_2;
+    {
+      int res = swig::asptr(argv[2], (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > >**)(0));
+      _v = SWIG_CheckState(res);
+    }
+    if (!_v) goto check_2;
+    return _wrap_GeomList___setitem____SWIG_0(self, argc, argv);
+  }
+check_2:
+  
+  if (argc == 3) {
+    return _wrap_GeomList___setitem____SWIG_2(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList___setitem__'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(PySliceObject *,std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > const &)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(PySliceObject *)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::__setitem__(std::vector< std::shared_ptr< GeomData > >::difference_type,std::vector< std::shared_ptr< GeomData > >::value_type const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_pop(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::value_type result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_pop" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      try {
+        result = std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__pop(arg1);
+      }
+      catch(std::out_of_range &_e) {
+        SWIG_exception_fail(SWIG_IndexError, (&_e)->what());
+      }
+      
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_append(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared2 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList_append",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_append" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    int newmem = 0;
+    res2 = SWIG_ConvertPtrAndOwn(swig_obj[1], &argp2, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GeomList_append" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp2) tempshared2 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2);
+      arg2 = &tempshared2;
+    } else {
+      arg2 = (argp2) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2) : &tempshared2;
+    }
+  }
+  {
+    try {
+      std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__append(arg1,(std::shared_ptr< GeomData > const &)*arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_GeomList__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **SWIGUNUSEDPARM(swig_obj)) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *result = 0 ;
+  
+  if ((nobjs < 0) || (nobjs > 0)) SWIG_fail;
+  {
+    try {
+      result = (std::vector< std::shared_ptr< GeomData > > *)new std::vector< std::shared_ptr< GeomData > >();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_GeomList__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = 0 ;
+  int res1 = SWIG_OLDOBJ ;
+  std::vector< std::shared_ptr< GeomData > > *result = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  {
+    std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *ptr = (std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *)0;
+    res1 = swig::asptr(swig_obj[0], &ptr);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_GeomList" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const &""'"); 
+    }
+    if (!ptr) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_GeomList" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const &""'"); 
+    }
+    arg1 = ptr;
+  }
+  {
+    try {
+      result = (std::vector< std::shared_ptr< GeomData > > *)new std::vector< std::shared_ptr< GeomData > >((std::vector< std::shared_ptr< GeomData > > const &)*arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_NEW |  0 );
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return resultobj;
+fail:
+  if (SWIG_IsNewObj(res1)) delete arg1;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_empty(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_empty" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (bool)((std::vector< std::shared_ptr< GeomData > > const *)arg1)->empty();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_size(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::size_type result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_size" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = ((std::vector< std::shared_ptr< GeomData > > const *)arg1)->size();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_swap(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > > *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList_swap",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_swap" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2, SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GeomList_swap" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > > &""'"); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "GeomList_swap" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > > &""'"); 
+  }
+  arg2 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp2);
+  {
+    try {
+      (arg1)->swap(*arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_begin(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::iterator result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_begin" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (arg1)->begin();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_end(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::iterator result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_end" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (arg1)->end();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_rbegin(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::reverse_iterator result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_rbegin" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (arg1)->rbegin();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::reverse_iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_rend(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::reverse_iterator result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_rend" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (arg1)->rend();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::reverse_iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_clear(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_clear" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      (arg1)->clear();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_get_allocator(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  SwigValueWrapper< std::allocator< std::shared_ptr< GeomData > > > result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_get_allocator" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = ((std::vector< std::shared_ptr< GeomData > > const *)arg1)->get_allocator();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj((new std::vector< std::shared_ptr< GeomData > >::allocator_type(static_cast< const std::vector< std::shared_ptr< GeomData > >::allocator_type& >(result))), SWIGTYPE_p_std__allocatorT_std__shared_ptrT_GeomData_t_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_GeomList__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg1 ;
+  size_t val1 ;
+  int ecode1 = 0 ;
+  std::vector< std::shared_ptr< GeomData > > *result = 0 ;
+  
+  if ((nobjs < 1) || (nobjs > 1)) SWIG_fail;
+  ecode1 = SWIG_AsVal_size_t(swig_obj[0], &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_GeomList" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg1 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val1);
+  {
+    try {
+      result = (std::vector< std::shared_ptr< GeomData > > *)new std::vector< std::shared_ptr< GeomData > >(arg1);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_pop_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_pop_back" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      (arg1)->pop_back();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_resize__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_resize" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList_resize" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val2);
+  {
+    try {
+      (arg1)->resize(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_erase__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::SwigPyIterator *iter2 = 0 ;
+  int res2 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator result;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_erase" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], SWIG_as_voidptrptr(&iter2), swig::SwigPyIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_erase" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+  } else {
+    swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *iter_t = dynamic_cast<swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_erase" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+    }
+  }
+  {
+    try {
+      result = std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__erase__SWIG_0(arg1,arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_erase__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::SwigPyIterator *iter2 = 0 ;
+  int res2 ;
+  swig::SwigPyIterator *iter3 = 0 ;
+  int res3 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator result;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_erase" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], SWIG_as_voidptrptr(&iter2), swig::SwigPyIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_erase" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+  } else {
+    swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *iter_t = dynamic_cast<swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_erase" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+    }
+  }
+  res3 = SWIG_ConvertPtr(swig_obj[2], SWIG_as_voidptrptr(&iter3), swig::SwigPyIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res3) || !iter3) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_erase" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+  } else {
+    swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *iter_t = dynamic_cast<swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *>(iter3);
+    if (iter_t) {
+      arg3 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_erase" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+    }
+  }
+  {
+    try {
+      result = std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__erase__SWIG_1(arg1,arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_erase(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList_erase",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    return _wrap_GeomList_erase__SWIG_0(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_GeomList_erase__SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList_erase'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::erase(std::vector< std::shared_ptr< GeomData > >::iterator)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::erase(std::vector< std::shared_ptr< GeomData > >::iterator,std::vector< std::shared_ptr< GeomData > >::iterator)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_GeomList__SWIG_3(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg1 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg2 = 0 ;
+  size_t val1 ;
+  int ecode1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared2 ;
+  std::vector< std::shared_ptr< GeomData > > *result = 0 ;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  ecode1 = SWIG_AsVal_size_t(swig_obj[0], &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_GeomList" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg1 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val1);
+  {
+    int newmem = 0;
+    res2 = SWIG_ConvertPtrAndOwn(swig_obj[1], &argp2, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_GeomList" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp2) tempshared2 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2);
+      arg2 = &tempshared2;
+    } else {
+      arg2 = (argp2) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2) : &tempshared2;
+    }
+  }
+  {
+    try {
+      result = (std::vector< std::shared_ptr< GeomData > > *)new std::vector< std::shared_ptr< GeomData > >(arg1,(std::vector< std::shared_ptr< GeomData > >::value_type const &)*arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_GeomList(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[3] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"new_GeomList",0,2,argv))) SWIG_fail;
+  --argc;
+  if (argc == 0) {
+    return _wrap_new_GeomList__SWIG_0(self, argc, argv);
+  }
+  if (argc == 1) {
+    int _v = 0;
+    {
+      {
+        int res = SWIG_AsVal_size_t(argv[0], NULL);
+        _v = SWIG_CheckState(res);
+      }
+    }
+    if (!_v) goto check_2;
+    return _wrap_new_GeomList__SWIG_2(self, argc, argv);
+  }
+check_2:
+  
+  if (argc == 1) {
+    return _wrap_new_GeomList__SWIG_1(self, argc, argv);
+  }
+  if (argc == 2) {
+    return _wrap_new_GeomList__SWIG_3(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_GeomList'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::vector()\n"
+    "    std::vector< std::shared_ptr< GeomData > >::vector(std::vector< std::shared_ptr< GeomData > > const &)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::vector(std::vector< std::shared_ptr< GeomData > >::size_type)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::vector(std::vector< std::shared_ptr< GeomData > >::size_type,std::vector< std::shared_ptr< GeomData > >::value_type const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_push_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared2 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList_push_back",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_push_back" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    int newmem = 0;
+    res2 = SWIG_ConvertPtrAndOwn(swig_obj[1], &argp2, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "GeomList_push_back" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp2) tempshared2 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2);
+      arg2 = &tempshared2;
+    } else {
+      arg2 = (argp2) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp2) : &tempshared2;
+    }
+  }
+  {
+    try {
+      (arg1)->push_back((std::vector< std::shared_ptr< GeomData > >::value_type const &)*arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_front(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_front" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (std::vector< std::shared_ptr< GeomData > >::value_type *) &((std::vector< std::shared_ptr< GeomData > > const *)arg1)->front();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    std::shared_ptr<  GeomData > *smartresult = *result ? new std::shared_ptr<  GeomData >(*result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_back(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *result = 0 ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_back" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = (std::vector< std::shared_ptr< GeomData > >::value_type *) &((std::vector< std::shared_ptr< GeomData > > const *)arg1)->back();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    std::shared_ptr<  GeomData > *smartresult = *result ? new std::shared_ptr<  GeomData >(*result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_assign(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 ;
+  int res3 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared3 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList_assign",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_assign" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList_assign" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val2);
+  {
+    int newmem = 0;
+    res3 = SWIG_ConvertPtrAndOwn(swig_obj[2], &argp3, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "GeomList_assign" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp3) tempshared3 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      arg3 = &tempshared3;
+    } else {
+      arg3 = (argp3) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3) : &tempshared3;
+    }
+  }
+  {
+    try {
+      (arg1)->assign(arg2,(std::vector< std::shared_ptr< GeomData > >::value_type const &)*arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_resize__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  void *argp3 ;
+  int res3 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared3 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_resize" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList_resize" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val2);
+  {
+    int newmem = 0;
+    res3 = SWIG_ConvertPtrAndOwn(swig_obj[2], &argp3, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "GeomList_resize" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp3) tempshared3 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      arg3 = &tempshared3;
+    } else {
+      arg3 = (argp3) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3) : &tempshared3;
+    }
+  }
+  {
+    try {
+      (arg1)->resize(arg2,(std::vector< std::shared_ptr< GeomData > >::value_type const &)*arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_resize(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList_resize",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    return _wrap_GeomList_resize__SWIG_0(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_GeomList_resize__SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList_resize'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::resize(std::vector< std::shared_ptr< GeomData > >::size_type)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::resize(std::vector< std::shared_ptr< GeomData > >::size_type,std::vector< std::shared_ptr< GeomData > >::value_type const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_insert__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg3 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::SwigPyIterator *iter2 = 0 ;
+  int res2 ;
+  void *argp3 ;
+  int res3 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared3 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator result;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_insert" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], SWIG_as_voidptrptr(&iter2), swig::SwigPyIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_insert" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+  } else {
+    swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *iter_t = dynamic_cast<swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_insert" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+    }
+  }
+  {
+    int newmem = 0;
+    res3 = SWIG_ConvertPtrAndOwn(swig_obj[2], &argp3, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "GeomList_insert" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp3) tempshared3 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3);
+      arg3 = &tempshared3;
+    } else {
+      arg3 = (argp3) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp3) : &tempshared3;
+    }
+  }
+  {
+    try {
+      result = std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__insert__SWIG_0(arg1,arg2,(std::shared_ptr< GeomData > const &)*arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(swig::make_output_iterator(static_cast< const std::vector< std::shared_ptr< GeomData > >::iterator & >(result)),
+    swig::SwigPyIterator::descriptor(),SWIG_POINTER_OWN);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_insert__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::iterator arg2 ;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg3 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type *arg4 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  swig::SwigPyIterator *iter2 = 0 ;
+  int res2 ;
+  size_t val3 ;
+  int ecode3 = 0 ;
+  void *argp4 ;
+  int res4 = 0 ;
+  std::vector< std::shared_ptr< GeomData > >::value_type tempshared4 ;
+  
+  if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_insert" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], SWIG_as_voidptrptr(&iter2), swig::SwigPyIterator::descriptor(), 0);
+  if (!SWIG_IsOK(res2) || !iter2) {
+    SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_insert" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+  } else {
+    swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *iter_t = dynamic_cast<swig::SwigPyIterator_T<std::vector< std::shared_ptr< GeomData > >::iterator > *>(iter2);
+    if (iter_t) {
+      arg2 = iter_t->get_current();
+    } else {
+      SWIG_exception_fail(SWIG_ArgError(SWIG_TypeError), "in method '" "GeomList_insert" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::iterator""'");
+    }
+  }
+  ecode3 = SWIG_AsVal_size_t(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "GeomList_insert" "', argument " "3"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg3 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val3);
+  {
+    int newmem = 0;
+    res4 = SWIG_ConvertPtrAndOwn(swig_obj[3], &argp4, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "GeomList_insert" "', argument " "4"" of type '" "std::vector< std::shared_ptr< GeomData > >::value_type const &""'"); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY) {
+      if (argp4) tempshared4 = *reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp4);
+      delete reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp4);
+      arg4 = &tempshared4;
+    } else {
+      arg4 = (argp4) ? reinterpret_cast< std::vector< std::shared_ptr< GeomData > >::value_type * >(argp4) : &tempshared4;
+    }
+  }
+  {
+    try {
+      std_vector_Sl_std_shared_ptr_Sl_GeomData_Sg__Sg__insert__SWIG_1(arg1,arg2,arg3,(std::shared_ptr< GeomData > const &)*arg4);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_insert(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[5] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"GeomList_insert",0,4,argv))) SWIG_fail;
+  --argc;
+  if (argc == 3) {
+    return _wrap_GeomList_insert__SWIG_0(self, argc, argv);
+  }
+  if (argc == 4) {
+    return _wrap_GeomList_insert__SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'GeomList_insert'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    std::vector< std::shared_ptr< GeomData > >::insert(std::vector< std::shared_ptr< GeomData > >::iterator,std::vector< std::shared_ptr< GeomData > >::value_type const &)\n"
+    "    std::vector< std::shared_ptr< GeomData > >::insert(std::vector< std::shared_ptr< GeomData > >::iterator,std::vector< std::shared_ptr< GeomData > >::size_type,std::vector< std::shared_ptr< GeomData > >::value_type const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_reserve(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  std::vector< std::shared_ptr< GeomData > >::size_type arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  size_t val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"GeomList_reserve",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_reserve" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  ecode2 = SWIG_AsVal_size_t(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "GeomList_reserve" "', argument " "2"" of type '" "std::vector< std::shared_ptr< GeomData > >::size_type""'");
+  } 
+  arg2 = static_cast< std::vector< std::shared_ptr< GeomData > >::size_type >(val2);
+  {
+    try {
+      (arg1)->reserve(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_GeomList_capacity(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::vector< std::shared_ptr< GeomData > >::size_type result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GeomList_capacity" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > const *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      result = ((std::vector< std::shared_ptr< GeomData > > const *)arg1)->capacity();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_size_t(static_cast< size_t >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_GeomList(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  std::vector< std::shared_ptr< GeomData > > *arg1 = (std::vector< std::shared_ptr< GeomData > > *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_GeomList" "', argument " "1"" of type '" "std::vector< std::shared_ptr< GeomData > > *""'"); 
+  }
+  arg1 = reinterpret_cast< std::vector< std::shared_ptr< GeomData > > * >(argp1);
+  {
+    try {
+      delete arg1;
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *GeomList_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!SWIG_Python_UnpackTuple(args,(char *)"swigregister", 1, 1,&obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *GeomList_swiginit(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  return SWIG_Python_InitShadowInstance(args);
+}
+
 SWIGINTERN int Swig_var_version_set(PyObject *) {
   SWIG_Error(SWIG_AttributeError,"Variable version is read-only.");
   return 1;
@@ -17349,6 +19459,42 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_getObjectDataLabels(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject *swig_obj[2] ;
+  std::string result;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_getObjectDataLabels",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getObjectDataLabels" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_getObjectDataLabels" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  {
+    try {
+      result = (arg1)->getObjectDataLabels(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_arrayUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -18751,7 +20897,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_getGeometryCount(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_getGeometry(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   DrawingObject *arg2 = (DrawingObject *) 0 ;
@@ -18760,48 +20906,9 @@ SWIGINTERN PyObject *_wrap_LavaVu_getGeometryCount(PyObject *SWIGUNUSEDPARM(self
   void *argp2 = 0 ;
   int res2 = 0 ;
   PyObject *swig_obj[2] ;
-  int result;
+  std::vector< Geom_Ptr,std::allocator< Geom_Ptr > > result;
   
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_getGeometryCount",2,2,swig_obj)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getGeometryCount" "', argument " "1"" of type '" "LavaVu *""'"); 
-  }
-  arg1 = reinterpret_cast< LavaVu * >(argp1);
-  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_getGeometryCount" "', argument " "2"" of type '" "DrawingObject *""'"); 
-  }
-  arg2 = reinterpret_cast< DrawingObject * >(argp2);
-  {
-    try {
-      result = (int)(arg1)->getGeometryCount(arg2);
-    } catch (const std::runtime_error& e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_LavaVu_getGeometry(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  LavaVu *arg1 = (LavaVu *) 0 ;
-  DrawingObject *arg2 = (DrawingObject *) 0 ;
-  int arg3 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
-  int val3 ;
-  int ecode3 = 0 ;
-  PyObject *swig_obj[3] ;
-  Geom_Ptr result;
-  
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_getGeometry",3,3,swig_obj)) SWIG_fail;
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_getGeometry",2,2,swig_obj)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getGeometry" "', argument " "1"" of type '" "LavaVu *""'"); 
@@ -18812,25 +20919,119 @@ SWIGINTERN PyObject *_wrap_LavaVu_getGeometry(PyObject *SWIGUNUSEDPARM(self), Py
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_getGeometry" "', argument " "2"" of type '" "DrawingObject *""'"); 
   }
   arg2 = reinterpret_cast< DrawingObject * >(argp2);
-  ecode3 = SWIG_AsVal_int(swig_obj[2], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_getGeometry" "', argument " "3"" of type '" "int""'");
-  } 
-  arg3 = static_cast< int >(val3);
   {
     try {
-      result = (arg1)->getGeometry(arg2,arg3);
+      result = (arg1)->getGeometry(arg2);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  {
-    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
-    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
-  }
+  resultobj = swig::from(static_cast< std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > >(result));
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_getGeometryAt__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  int arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  std::vector< Geom_Ptr,std::allocator< Geom_Ptr > > result;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getGeometryAt" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_getGeometryAt" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  ecode3 = SWIG_AsVal_int(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "LavaVu_getGeometryAt" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  {
+    try {
+      result = (arg1)->getGeometryAt(arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = swig::from(static_cast< std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_getGeometryAt__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  DrawingObject *arg2 = (DrawingObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  std::vector< Geom_Ptr,std::allocator< Geom_Ptr > > result;
+  
+  if ((nobjs < 2) || (nobjs > 2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_getGeometryAt" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  res2 = SWIG_ConvertPtr(swig_obj[1], &argp2,SWIGTYPE_p_DrawingObject, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_getGeometryAt" "', argument " "2"" of type '" "DrawingObject *""'"); 
+  }
+  arg2 = reinterpret_cast< DrawingObject * >(argp2);
+  {
+    try {
+      result = (arg1)->getGeometryAt(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = swig::from(static_cast< std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_getGeometryAt(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_getGeometryAt",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 2) {
+    return _wrap_LavaVu_getGeometryAt__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
+    return _wrap_LavaVu_getGeometryAt__SWIG_0(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_getGeometryAt'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::getGeometryAt(DrawingObject *,int)\n"
+    "    LavaVu::getGeometryAt(DrawingObject *)\n");
+  return 0;
 }
 
 
@@ -19168,7 +21369,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
   Geom_Ptr arg2 ;
@@ -19183,13 +21384,12 @@ SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat(PyObject *SWIGUNUSEDPAR
   int ecode3 = 0 ;
   float *data_temp4 = NULL ;
   int dim_temp4 ;
-  PyObject *swig_obj[3] ;
   
   {
     arg4 = &data_temp4;
     arg5 = &dim_temp4;
   }
-  if (!SWIG_Python_UnpackTuple(args,"LavaVu_geometryArrayViewFloat",3,3,swig_obj)) SWIG_fail;
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_geometryArrayViewFloat" "', argument " "1"" of type '" "LavaVu *""'"); 
@@ -19230,6 +21430,106 @@ SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat(PyObject *SWIGUNUSEDPAR
   return resultobj;
 fail:
   return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  Geom_Ptr arg2 ;
+  float **arg3 = (float **) 0 ;
+  int *arg4 = (int *) 0 ;
+  std::string arg5 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  float *data_temp3 = NULL ;
+  int dim_temp3 ;
+  
+  {
+    arg3 = &data_temp3;
+    arg4 = &dim_temp3;
+  }
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_geometryArrayViewFloat" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    int newmem = 0;
+    res2 = SWIG_ConvertPtrAndOwn(swig_obj[1], &argp2, SWIGTYPE_p_std__shared_ptrT_GeomData_t,  0 , &newmem);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "LavaVu_geometryArrayViewFloat" "', argument " "2"" of type '" "Geom_Ptr""'"); 
+    }
+    if (argp2) arg2 = *(reinterpret_cast< Geom_Ptr * >(argp2));
+    if (newmem & SWIG_CAST_NEW_MEMORY) delete reinterpret_cast< Geom_Ptr * >(argp2);
+  }
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[2], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_geometryArrayViewFloat" "', argument " "5"" of type '" "std::string""'"); 
+    }
+    arg5 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->geometryArrayViewFloat(arg2,arg3,arg4,arg5);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    npy_intp dims[1] = {
+      *arg4 
+    };
+    PyObject* obj = PyArray_SimpleNewFromData(1, dims, NPY_FLOAT, (void*)(*arg3));
+    PyArrayObject* array = (PyArrayObject*) obj;
+    
+    if (!array) SWIG_fail;
+    resultobj = SWIG_Python_AppendOutput(resultobj,obj);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[4] = {
+    0
+  };
+  
+  if (!(argc = SWIG_Python_UnpackTuple(args,"LavaVu_geometryArrayViewFloat",0,3,argv))) SWIG_fail;
+  --argc;
+  if (argc == 3) {
+    int _v = 0;
+    {
+      {
+        int res = SWIG_AsVal_int(argv[2], NULL);
+        _v = SWIG_CheckState(res);
+      }
+    }
+    if (!_v) goto check_1;
+    return _wrap_LavaVu_geometryArrayViewFloat__SWIG_0(self, argc, argv);
+  }
+check_1:
+  
+  if (argc == 3) {
+    return _wrap_LavaVu_geometryArrayViewFloat__SWIG_1(self, argc, argv);
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'LavaVu_geometryArrayViewFloat'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::geometryArrayViewFloat(Geom_Ptr,lucGeometryDataType,float **,int *)\n"
+    "    LavaVu::geometryArrayViewFloat(Geom_Ptr,float **,int *,std::string)\n");
+  return 0;
 }
 
 
@@ -20899,6 +23199,41 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_List", (PyCFunction)_wrap_delete_List, METH_O, NULL},
 	 { (char *)"List_swigregister", List_swigregister, METH_VARARGS, NULL},
 	 { (char *)"List_swiginit", List_swiginit, METH_VARARGS, NULL},
+	 { (char *)"GeomList_iterator", (PyCFunction)_wrap_GeomList_iterator, METH_O, NULL},
+	 { (char *)"GeomList___nonzero__", (PyCFunction)_wrap_GeomList___nonzero__, METH_O, NULL},
+	 { (char *)"GeomList___bool__", (PyCFunction)_wrap_GeomList___bool__, METH_O, NULL},
+	 { (char *)"GeomList___len__", (PyCFunction)_wrap_GeomList___len__, METH_O, NULL},
+	 { (char *)"GeomList___getslice__", _wrap_GeomList___getslice__, METH_VARARGS, NULL},
+	 { (char *)"GeomList___setslice__", _wrap_GeomList___setslice__, METH_VARARGS, NULL},
+	 { (char *)"GeomList___delslice__", _wrap_GeomList___delslice__, METH_VARARGS, NULL},
+	 { (char *)"GeomList___delitem__", _wrap_GeomList___delitem__, METH_VARARGS, NULL},
+	 { (char *)"GeomList___getitem__", _wrap_GeomList___getitem__, METH_VARARGS, NULL},
+	 { (char *)"GeomList___setitem__", _wrap_GeomList___setitem__, METH_VARARGS, NULL},
+	 { (char *)"GeomList_pop", (PyCFunction)_wrap_GeomList_pop, METH_O, NULL},
+	 { (char *)"GeomList_append", _wrap_GeomList_append, METH_VARARGS, NULL},
+	 { (char *)"GeomList_empty", (PyCFunction)_wrap_GeomList_empty, METH_O, NULL},
+	 { (char *)"GeomList_size", (PyCFunction)_wrap_GeomList_size, METH_O, NULL},
+	 { (char *)"GeomList_swap", _wrap_GeomList_swap, METH_VARARGS, NULL},
+	 { (char *)"GeomList_begin", (PyCFunction)_wrap_GeomList_begin, METH_O, NULL},
+	 { (char *)"GeomList_end", (PyCFunction)_wrap_GeomList_end, METH_O, NULL},
+	 { (char *)"GeomList_rbegin", (PyCFunction)_wrap_GeomList_rbegin, METH_O, NULL},
+	 { (char *)"GeomList_rend", (PyCFunction)_wrap_GeomList_rend, METH_O, NULL},
+	 { (char *)"GeomList_clear", (PyCFunction)_wrap_GeomList_clear, METH_O, NULL},
+	 { (char *)"GeomList_get_allocator", (PyCFunction)_wrap_GeomList_get_allocator, METH_O, NULL},
+	 { (char *)"GeomList_pop_back", (PyCFunction)_wrap_GeomList_pop_back, METH_O, NULL},
+	 { (char *)"GeomList_erase", _wrap_GeomList_erase, METH_VARARGS, NULL},
+	 { (char *)"new_GeomList", _wrap_new_GeomList, METH_VARARGS, NULL},
+	 { (char *)"GeomList_push_back", _wrap_GeomList_push_back, METH_VARARGS, NULL},
+	 { (char *)"GeomList_front", (PyCFunction)_wrap_GeomList_front, METH_O, NULL},
+	 { (char *)"GeomList_back", (PyCFunction)_wrap_GeomList_back, METH_O, NULL},
+	 { (char *)"GeomList_assign", _wrap_GeomList_assign, METH_VARARGS, NULL},
+	 { (char *)"GeomList_resize", _wrap_GeomList_resize, METH_VARARGS, NULL},
+	 { (char *)"GeomList_insert", _wrap_GeomList_insert, METH_VARARGS, NULL},
+	 { (char *)"GeomList_reserve", _wrap_GeomList_reserve, METH_VARARGS, NULL},
+	 { (char *)"GeomList_capacity", (PyCFunction)_wrap_GeomList_capacity, METH_O, NULL},
+	 { (char *)"delete_GeomList", (PyCFunction)_wrap_delete_GeomList, METH_O, NULL},
+	 { (char *)"GeomList_swigregister", GeomList_swigregister, METH_VARARGS, NULL},
+	 { (char *)"GeomList_swiginit", GeomList_swiginit, METH_VARARGS, NULL},
 	 { (char *)"OpenGLViewer_quitProgram_set", _wrap_OpenGLViewer_quitProgram_set, METH_VARARGS, NULL},
 	 { (char *)"OpenGLViewer_quitProgram_get", (PyCFunction)_wrap_OpenGLViewer_quitProgram_get, METH_O, NULL},
 	 { (char *)"OpenGLViewer_port_set", _wrap_OpenGLViewer_port_set, METH_VARARGS, NULL},
@@ -20990,13 +23325,14 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_clearObject", _wrap_LavaVu_clearObject, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearValues", _wrap_LavaVu_clearValues, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_clearData", _wrap_LavaVu_clearData, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_getObjectDataLabels", _wrap_LavaVu_getObjectDataLabels, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_arrayUChar", _wrap_LavaVu_arrayUChar, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_arrayUInt", _wrap_LavaVu_arrayUInt, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_arrayFloat", _wrap_LavaVu_arrayFloat, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_textureUChar", _wrap_LavaVu_textureUChar, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_textureUInt", _wrap_LavaVu_textureUInt, METH_VARARGS, NULL},
-	 { (char *)"LavaVu_getGeometryCount", _wrap_LavaVu_getGeometryCount, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_getGeometry", _wrap_LavaVu_getGeometry, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_getGeometryAt", _wrap_LavaVu_getGeometryAt, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_geometryArrayUChar", _wrap_LavaVu_geometryArrayUChar, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_geometryArrayUInt", _wrap_LavaVu_geometryArrayUInt, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_geometryArrayFloat", _wrap_LavaVu_geometryArrayFloat, METH_VARARGS, NULL},
@@ -21044,11 +23380,13 @@ static swig_type_info _swigt__p_p_unsigned_char = {"_p_p_unsigned_char", "unsign
 static swig_type_info _swigt__p_p_unsigned_int = {"_p_p_unsigned_int", "unsigned int **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_size_type = {"_p_size_type", "size_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__allocatorT_float_t = {"_p_std__allocatorT_float_t", "std::vector< float >::allocator_type *|std::allocator< float > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__allocatorT_std__shared_ptrT_GeomData_t_t = {"_p_std__allocatorT_std__shared_ptrT_GeomData_t_t", "std::allocator< std::shared_ptr< GeomData > > *|std::vector< std::shared_ptr< GeomData > >::allocator_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__allocatorT_std__string_t = {"_p_std__allocatorT_std__string_t", "std::vector< std::string >::allocator_type *|std::allocator< std::string > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t = {"_p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t", "std::allocator< std::vector< float,std::allocator< float > > > *|std::vector< std::vector< float > >::allocator_type *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__invalid_argument = {"_p_std__invalid_argument", "std::invalid_argument *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__shared_ptrT_GeomData_t = {"_p_std__shared_ptrT_GeomData_t", "std::shared_ptr< GeomData > *|Geom_Ptr *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_float_std__allocatorT_float_t_t = {"_p_std__vectorT_float_std__allocatorT_float_t_t", "std::vector< float > *|std::vector< float,std::allocator< float > > *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t = {"_p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t", "std::vector< std::shared_ptr< GeomData > > *|std::vector< std::shared_ptr< GeomData >,std::allocator< std::shared_ptr< GeomData > > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_std__string_std__allocatorT_std__string_t_t = {"_p_std__vectorT_std__string_std__allocatorT_std__string_t_t", "std::vector< std::string,std::allocator< std::string > > *|std::vector< std::string > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t = {"_p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t", "std::vector< std::vector< float,std::allocator< float > >,std::allocator< std::vector< float,std::allocator< float > > > > *|std::vector< std::vector< float,std::allocator< float > > > *|std::vector< std::vector< float > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_swig__SwigPyIterator = {"_p_swig__SwigPyIterator", "swig::SwigPyIterator *", 0, 0, (void*)0, 0};
@@ -21075,11 +23413,13 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_p_unsigned_int,
   &_swigt__p_size_type,
   &_swigt__p_std__allocatorT_float_t,
+  &_swigt__p_std__allocatorT_std__shared_ptrT_GeomData_t_t,
   &_swigt__p_std__allocatorT_std__string_t,
   &_swigt__p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t,
   &_swigt__p_std__invalid_argument,
   &_swigt__p_std__shared_ptrT_GeomData_t,
   &_swigt__p_std__vectorT_float_std__allocatorT_float_t_t,
+  &_swigt__p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t,
   &_swigt__p_std__vectorT_std__string_std__allocatorT_std__string_t_t,
   &_swigt__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t,
   &_swigt__p_swig__SwigPyIterator,
@@ -21106,11 +23446,13 @@ static swig_cast_info _swigc__p_p_unsigned_char[] = {  {&_swigt__p_p_unsigned_ch
 static swig_cast_info _swigc__p_p_unsigned_int[] = {  {&_swigt__p_p_unsigned_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_size_type[] = {  {&_swigt__p_size_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__allocatorT_float_t[] = {  {&_swigt__p_std__allocatorT_float_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__allocatorT_std__shared_ptrT_GeomData_t_t[] = {  {&_swigt__p_std__allocatorT_std__shared_ptrT_GeomData_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__allocatorT_std__string_t[] = {  {&_swigt__p_std__allocatorT_std__string_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t[] = {  {&_swigt__p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__invalid_argument[] = {  {&_swigt__p_std__invalid_argument, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__shared_ptrT_GeomData_t[] = {  {&_swigt__p_std__shared_ptrT_GeomData_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_float_std__allocatorT_float_t_t[] = {  {&_swigt__p_std__vectorT_float_std__allocatorT_float_t_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t[] = {  {&_swigt__p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_std__string_std__allocatorT_std__string_t_t[] = {  {&_swigt__p_std__vectorT_std__string_std__allocatorT_std__string_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t[] = {  {&_swigt__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_swig__SwigPyIterator[] = {  {&_swigt__p_swig__SwigPyIterator, 0, 0, 0},{0, 0, 0, 0}};
@@ -21137,11 +23479,13 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_p_unsigned_int,
   _swigc__p_size_type,
   _swigc__p_std__allocatorT_float_t,
+  _swigc__p_std__allocatorT_std__shared_ptrT_GeomData_t_t,
   _swigc__p_std__allocatorT_std__string_t,
   _swigc__p_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t,
   _swigc__p_std__invalid_argument,
   _swigc__p_std__shared_ptrT_GeomData_t,
   _swigc__p_std__vectorT_float_std__allocatorT_float_t_t,
+  _swigc__p_std__vectorT_std__shared_ptrT_GeomData_t_std__allocatorT_std__shared_ptrT_GeomData_t_t_t,
   _swigc__p_std__vectorT_std__string_std__allocatorT_std__string_t_t,
   _swigc__p_std__vectorT_std__vectorT_float_std__allocatorT_float_t_t_std__allocatorT_std__vectorT_float_std__allocatorT_float_t_t_t_t,
   _swigc__p_swig__SwigPyIterator,

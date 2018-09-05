@@ -1961,6 +1961,27 @@ void Model::deleteObject(DrawingObject* obj)
   redraw();
 }
 
+json Model::objectDataSets(DrawingObject* o)
+{
+  json dict;
+  for (auto g : geometry)
+  {
+    //Flag has data of this type (still necessary? was for old html UI or WebGL?)
+    //std::string name = GeomData::names[g->type];
+    //if (g->getVertexCount(objects[i]) > 0)
+    //  obj[name] = true;
+
+    json list = g->getDataLabels(o);
+    std::string key;
+    for (auto dataobj : list)
+    {
+      key = dataobj["label"];
+      dataobj.erase("label");
+      dict[key] = dataobj;
+    }
+  }
+  return dict;
+}
 
 std::string Model::jsonWrite(bool objdata)
 {
@@ -2074,23 +2095,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       if (!objdata)
       {
         //Data labels
-        json dict;
-        for (auto g : geometry)
-        {
-          //Flag has data of this type (still necessary? was for old html UI or WebGL?)
-          //std::string name = GeomData::names[g->type];
-          //if (g->getVertexCount(objects[i]) > 0)
-          //  obj[name] = true;
-
-          json list = g->getDataLabels(objects[i]);
-          std::string key;
-          for (auto dataobj : list)
-          {
-            key = dataobj["label"];
-            dict[key] = dataobj;
-          }
-        }
-
+        json dict = objectDataSets(objects[i]);
         if (dict.size() > 0)
           obj["data"] = dict;
 

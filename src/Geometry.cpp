@@ -609,7 +609,7 @@ void Geometry::dump(std::ostream& csv, DrawingObject* draw)
         {
           csv << geom[i]->render->vertices[v][0] << ',' <<  geom[i]->render->vertices[v][1] << ',' << geom[i]->render->vertices[v][2];
 
-          if (geom[i]->colourData() && geom[i]->colourData()->size() == geom[i]->count())
+          if (geom[i]->colourData() && geom[i]->colourData()->size() >= geom[i]->count())
             csv << ',' << geom[i]->colourData(v);
           if (geom[i]->render->vectors.size() > v)
             csv << ',' << geom[i]->render->vectors[v][0] << ',' <<  geom[i]->render->vectors[v][1] << ',' << geom[i]->render->vectors[v][2];
@@ -1440,20 +1440,20 @@ bool Geometry::drawable(unsigned int idx)
 
 std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 {
-  //Get passed object's data store
+  //Return all data from active geom list (fixed + current timestep)
   std::vector<Geom_Ptr> geomlist;
-  for (unsigned int i=0; i<records.size(); i++)
-    if (records[i]->draw == draw)
-      geomlist.push_back(records[i]);
+  for (unsigned int i=0; i<geom.size(); i++)
+    if (geom[i]->draw == draw)
+      geomlist.push_back(geom[i]);
   return geomlist;
 }
 
 std::vector<Geom_Ptr> Geometry::getAllObjectsAt(DrawingObject* draw, int step)
 {
-  //Get passed object's data store
+  //Return all data from records list (at specified timestep, or -2 for all)
   std::vector<Geom_Ptr> geomlist;
   for (unsigned int i=0; i<records.size(); i++)
-    if (records[i]->draw == draw && records[i]->step == step)
+    if (records[i]->draw == draw && (step < -1  || records[i]->step == step))
       geomlist.push_back(records[i]);
   return geomlist;
 }
@@ -1620,15 +1620,10 @@ Geom_Ptr Geometry::read(Geom_Ptr geom, unsigned int n, const void* data, std::st
   //Read into given label - for value data only
 
   //Find labelled value store
-  Values_Ptr store = nullptr;
-  for (auto vals : geom->values)
-  {
-    if (vals->label == label)
-      store = vals;
-  }
+  Values_Ptr store = geom->valueContainer(label);
 
   //Create value store if required
-  if (!store)
+  if (store == nullptr)
   {
     store = std::make_shared<FloatValues>();
     geom->values.push_back(store);

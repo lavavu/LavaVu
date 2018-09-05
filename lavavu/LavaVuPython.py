@@ -258,6 +258,49 @@ List.capacity = new_instancemethod(_LavaVuPython.List_capacity, None, List)
 List_swigregister = _LavaVuPython.List_swigregister
 List_swigregister(List)
 
+class GeomList(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    def __iter__(self):
+        return self.iterator()
+
+    def __init__(self, *args):
+        _LavaVuPython.GeomList_swiginit(self, _LavaVuPython.new_GeomList(*args))
+    __swig_destroy__ = _LavaVuPython.delete_GeomList
+GeomList.iterator = new_instancemethod(_LavaVuPython.GeomList_iterator, None, GeomList)
+GeomList.__nonzero__ = new_instancemethod(_LavaVuPython.GeomList___nonzero__, None, GeomList)
+GeomList.__bool__ = new_instancemethod(_LavaVuPython.GeomList___bool__, None, GeomList)
+GeomList.__len__ = new_instancemethod(_LavaVuPython.GeomList___len__, None, GeomList)
+GeomList.__getslice__ = new_instancemethod(_LavaVuPython.GeomList___getslice__, None, GeomList)
+GeomList.__setslice__ = new_instancemethod(_LavaVuPython.GeomList___setslice__, None, GeomList)
+GeomList.__delslice__ = new_instancemethod(_LavaVuPython.GeomList___delslice__, None, GeomList)
+GeomList.__delitem__ = new_instancemethod(_LavaVuPython.GeomList___delitem__, None, GeomList)
+GeomList.__getitem__ = new_instancemethod(_LavaVuPython.GeomList___getitem__, None, GeomList)
+GeomList.__setitem__ = new_instancemethod(_LavaVuPython.GeomList___setitem__, None, GeomList)
+GeomList.pop = new_instancemethod(_LavaVuPython.GeomList_pop, None, GeomList)
+GeomList.append = new_instancemethod(_LavaVuPython.GeomList_append, None, GeomList)
+GeomList.empty = new_instancemethod(_LavaVuPython.GeomList_empty, None, GeomList)
+GeomList.size = new_instancemethod(_LavaVuPython.GeomList_size, None, GeomList)
+GeomList.swap = new_instancemethod(_LavaVuPython.GeomList_swap, None, GeomList)
+GeomList.begin = new_instancemethod(_LavaVuPython.GeomList_begin, None, GeomList)
+GeomList.end = new_instancemethod(_LavaVuPython.GeomList_end, None, GeomList)
+GeomList.rbegin = new_instancemethod(_LavaVuPython.GeomList_rbegin, None, GeomList)
+GeomList.rend = new_instancemethod(_LavaVuPython.GeomList_rend, None, GeomList)
+GeomList.clear = new_instancemethod(_LavaVuPython.GeomList_clear, None, GeomList)
+GeomList.get_allocator = new_instancemethod(_LavaVuPython.GeomList_get_allocator, None, GeomList)
+GeomList.pop_back = new_instancemethod(_LavaVuPython.GeomList_pop_back, None, GeomList)
+GeomList.erase = new_instancemethod(_LavaVuPython.GeomList_erase, None, GeomList)
+GeomList.push_back = new_instancemethod(_LavaVuPython.GeomList_push_back, None, GeomList)
+GeomList.front = new_instancemethod(_LavaVuPython.GeomList_front, None, GeomList)
+GeomList.back = new_instancemethod(_LavaVuPython.GeomList_back, None, GeomList)
+GeomList.assign = new_instancemethod(_LavaVuPython.GeomList_assign, None, GeomList)
+GeomList.resize = new_instancemethod(_LavaVuPython.GeomList_resize, None, GeomList)
+GeomList.insert = new_instancemethod(_LavaVuPython.GeomList_insert, None, GeomList)
+GeomList.reserve = new_instancemethod(_LavaVuPython.GeomList_reserve, None, GeomList)
+GeomList.capacity = new_instancemethod(_LavaVuPython.GeomList_capacity, None, GeomList)
+GeomList_swigregister = _LavaVuPython.GeomList_swigregister
+GeomList_swigregister(GeomList)
+
 lucMinType = _LavaVuPython.lucMinType
 lucLabelType = _LavaVuPython.lucLabelType
 lucPointType = _LavaVuPython.lucPointType
@@ -410,13 +453,14 @@ LavaVu.clearAll = new_instancemethod(_LavaVuPython.LavaVu_clearAll, None, LavaVu
 LavaVu.clearObject = new_instancemethod(_LavaVuPython.LavaVu_clearObject, None, LavaVu)
 LavaVu.clearValues = new_instancemethod(_LavaVuPython.LavaVu_clearValues, None, LavaVu)
 LavaVu.clearData = new_instancemethod(_LavaVuPython.LavaVu_clearData, None, LavaVu)
+LavaVu.getObjectDataLabels = new_instancemethod(_LavaVuPython.LavaVu_getObjectDataLabels, None, LavaVu)
 LavaVu.arrayUChar = new_instancemethod(_LavaVuPython.LavaVu_arrayUChar, None, LavaVu)
 LavaVu.arrayUInt = new_instancemethod(_LavaVuPython.LavaVu_arrayUInt, None, LavaVu)
 LavaVu.arrayFloat = new_instancemethod(_LavaVuPython.LavaVu_arrayFloat, None, LavaVu)
 LavaVu.textureUChar = new_instancemethod(_LavaVuPython.LavaVu_textureUChar, None, LavaVu)
 LavaVu.textureUInt = new_instancemethod(_LavaVuPython.LavaVu_textureUInt, None, LavaVu)
-LavaVu.getGeometryCount = new_instancemethod(_LavaVuPython.LavaVu_getGeometryCount, None, LavaVu)
 LavaVu.getGeometry = new_instancemethod(_LavaVuPython.LavaVu_getGeometry, None, LavaVu)
+LavaVu.getGeometryAt = new_instancemethod(_LavaVuPython.LavaVu_getGeometryAt, None, LavaVu)
 LavaVu.geometryArrayUChar = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUChar, None, LavaVu)
 LavaVu.geometryArrayUInt = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUInt, None, LavaVu)
 LavaVu.geometryArrayFloat = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayFloat, None, LavaVu)

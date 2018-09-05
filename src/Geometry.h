@@ -419,6 +419,18 @@ public:
     }
   }
 
+  //Find labelled value store
+  Values_Ptr valueContainer(const std::string& label)
+  {
+    Values_Ptr store = nullptr;
+    for (auto vals : values)
+    {
+      if (vals->label == label)
+        store = vals;
+    }
+    return store;
+  }
+
   Coord3DValues& vertices()   {return *_vertices;}
   Coord3DValues& vectors()    {return *_vectors;}
   Coord3DValues& normals()    {return *_normals;}

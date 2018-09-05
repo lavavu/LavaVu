@@ -3289,6 +3289,15 @@ void LavaVu::clearData(DrawingObject* target, lucGeometryDataType type)
     g->clearData(target, type);
 }
 
+std::string LavaVu::getObjectDataLabels(DrawingObject* target)
+{
+  if (!amodel || !target) return "";
+  json dict = amodel->objectDataSets(target);
+  std::stringstream ss;
+  ss << dict;
+  return ss.str();
+}
+
 void LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(target);
@@ -3343,9 +3352,9 @@ void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, un
 }
 
 //GeomData interface, for loading/acessing geom store directly
-std::vector<Geom_Ptr> LavaVu::getAllGeometry(DrawingObject* target)
+std::vector<Geom_Ptr> LavaVu::getGeometry(DrawingObject* target)
 {
-  //TODO: filter by timestep?
+  //Gets data from active (geom) - includes fixed data, set timestep first to get time varying
   std::vector<Geom_Ptr> list;
   if (!amodel || !target) return list;
   for (auto g : amodel->geometry)
@@ -3356,34 +3365,37 @@ std::vector<Geom_Ptr> LavaVu::getAllGeometry(DrawingObject* target)
   return list;
 }
 
-int LavaVu::getGeometryCount(DrawingObject* target)
+std::vector<Geom_Ptr> LavaVu::getGeometryAt(DrawingObject* target, int timestep)
 {
-  std::vector<Geom_Ptr> geomlist = getAllGeometry(target);
-  return geomlist.size();
-}
-
-Geom_Ptr LavaVu::getGeometry(DrawingObject* target, int index)
-{
-  std::vector<Geom_Ptr> geomlist = getAllGeometry(target);
-  if ((int)geomlist.size() > index)
+  //Gets data from all entries (records) at specified step
+  std::vector<Geom_Ptr> list;
+  if (!amodel || !target) return list;
+  for (auto g : amodel->geometry)
   {
-    return geomlist[index];
+    std::vector<Geom_Ptr> geomlist = g->getAllObjectsAt(target, timestep);
+    list.insert(std::end(list), std::begin(geomlist), std::end(geomlist));
   }
-  return NULL;
+  return list;
 }
 
 void LavaVu::geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(geom->draw);
   if (container && geom)
+  {
+    geom->dataContainer(type)->clear();
     container->read(geom, len, type, array);
+  }
 }
 
 void LavaVu::geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(geom->draw);
   if (container && geom)
+  {
+    geom->dataContainer(type)->clear();
     container->read(geom, len, type, array);
+  }
 }
 
 void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometryDataType type)
@@ -3392,14 +3404,22 @@ void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometr
   if (type == lucTexCoordData) dsize = 2;
   Geometry* container = lookupObjectRenderer(geom->draw);
   if (container && geom)
+  {
+    geom->dataContainer(type)->clear();
     container->read(geom, len/dsize, type, array);
+  }
 }
 
 void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::string label)
 {
   Geometry* container = lookupObjectRenderer(geom->draw);
   if (container && geom)
+  {
+    for (auto vals : geom->values)
+      if (vals->label == label)
+        vals->clear();
     container->read(geom, len, array, label);
+  }
 }
 
 void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, float** array, int* len)
@@ -3408,6 +3428,18 @@ void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, fl
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Data_Ptr dat = geom->dataContainer(dtype);
+  if (dat == nullptr) return;
+  *array = (float*)dat->ref(0);
+  *len = dat->size();
+}
+
+void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, float** array, int* len, std::string label)
+{
+  //Get a view of internal geom array
+  //(warning, can be released at any time, copy if needed!)
+  if (!geom) return;
+  Values_Ptr dat = geom->valueContainer(label);
+  if (dat == nullptr) return;
   *array = (float*)dat->ref(0);
   *len = dat->size();
 }
