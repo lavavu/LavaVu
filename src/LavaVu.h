@@ -284,7 +284,7 @@ public:
   std::string imageJPEG(int width, int height, int quality=95);
   std::string imagePNG(int width, int height, int depth);
 
-  void isoSurface(DrawingObject* target, DrawingObject* source, bool clearvol=false);
+  DrawingObject* isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);
   void update(DrawingObject* target, lucGeometryType type, bool compress=true);
 

@@ -2341,13 +2341,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     if (aobject)
     {
-      if (parsed.has(fval, "isosurface"))
-      {
-        json isovals = aobject->properties["isovalues"];
-        isovals.push_back(fval);
-        aobject->properties.data["isovalues"] = isovals;
-      }
-      isoSurface(NULL, aobject, false);
+      std::string props = parsed.get("isosurface");
+      if (props.length() > 0)
+        props = "isovalues=" + props;
+      isoSurface(NULL, aobject, props, false);
       printMessage("Generating IsoSurface for object: %s", aobject->name().c_str());
     }
   }

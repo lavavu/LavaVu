@@ -1140,18 +1140,19 @@ class Object(dict):
         #Generate and return an isosurface object, 
         #pass properties as kwargs (eg: isovalues=[])
         if isovalues is not None:
-            self["isovalues"] = isovalues
-        isobj = self
-        if not convert:
-            #Create a new object for the surface
-            if name is None: name = self.name + "_surface"
-            isobj = self.instance.add(name, **kwargs)
-            isobj["geometry"] = "triangles"
-        else:
-            #Convert existing object (self) set properties 
-            self.instance._setupobject(self.ref, **kwargs)
+            kwargs["isovalues"] = isovalues
+
         #Create surface, If requested, write the new data to the database
-        self.instance.app.isoSurface(isobj.ref, self.ref, convert)
+        objref = None
+        if convert: objref = self.ref
+        ref = self.instance.app.isoSurface(objref, self.ref, _convert_args(kwargs), convert)
+
+        #Get the created/updated object
+        if ref == None:
+            print("Error creating isosurface")
+            return ref
+        isobj = self.instance.Object(ref)
+
         #Re-write modified types to the database
         if updatedb:
             self.instance.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
@@ -2080,7 +2081,7 @@ class Viewer(dict):
         else:
             self.app.setObject(ref, _convert_args(kwargs))
 
-        #Get the created/update object
+        #Get the created/updated object
         obj = self.Object(ref)
 
         #Read any property data sets (allows object creation and load with single prop dict)

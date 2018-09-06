@@ -48,8 +48,23 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
   for (unsigned int i = 0; i < geom.size(); i += vol->slices[geom[i]->draw])
   {
     if (geom[i]->draw != draw || !geom[i]->width) continue;
-    json isovalues = draw->properties["isovalues"];
-    if (!isovalues.size()) continue;
+    //Get isovalues array, or scalar, or isovalue property as fallback
+    json isovalues = target->properties["isovalues"];
+    isovalues = target->properties["isovalues"];
+    if (isovalues.is_null() || !isovalues.size())
+      isovalues = target->properties["isovalue"];
+    if (!isovalues.size())
+    {
+      json arr;
+      arr.push_back(isovalues);
+      isovalues = arr;
+    }
+    if (!isovalues.size())
+    {
+      std::cerr << "Invalid isovalues property\n";
+      continue;
+    }
+
     DrawingObject* current = geom[i]->draw;
     if (vol->slices[current] == 1)
       debug_print("Extracting isosurface from: cube, volume: %s\n", draw->name().c_str());
@@ -177,7 +192,7 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
 
       t2 = clock(); debug_print("  Surface extraction (%d triangles) took %.4lf seconds.\n", surfaces->getObjectStore(target)->count()/3, (t2-t1)/(double)CLOCKS_PER_SEC); t1 = clock();
 
-      if (draw->properties["isowalls"])
+      if (target->properties["isowalls"])
       {
         //Create a new data store for walls
         surfaces->add(target);

@@ -3509,24 +3509,29 @@ std::string LavaVu::imagePNG(int width, int height, int depth)
   return retImg;
 }
 
-void LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, bool clearvol)
+DrawingObject* LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol)
 {
   //Create an isosurface from selected volume object
   //If "clearvol" is true, volume data will be deleted leaving only the surface triangles
-  if (!amodel || !source) return;
+  if (!amodel || !source) return NULL;
 
   if (!target)
   {
-    target = new DrawingObject(session, source->name() + "_isosurface");
+    //Create a new object for the surface
+    target = new DrawingObject(session, source->name() + "_isosurface", properties);
     addObject(target);
+    std::vector<std::string> copyprops = {"isovalues", "isovalue", "isowalls", "colour"};
+    for (auto prop : copyprops)
+      if (!target->properties.has(prop) && source->properties.has(prop))
+        target->properties.data[prop] = source->properties[prop];
   }
-  target->properties.data = source->properties.data;
 
   Volumes* volumes = (Volumes*)amodel->getRenderer(lucVolumeType);
   Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
   if (volumes && tris)
     volumes->isosurface(tris, source, target, clearvol);
   target->properties.data["geometry"] = "triangles";
+  return target;
 }
 
 void LavaVu::update(DrawingObject* target, bool compress)
