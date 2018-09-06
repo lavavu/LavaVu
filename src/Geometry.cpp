@@ -1441,6 +1441,7 @@ bool Geometry::drawable(unsigned int idx)
 std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 {
   //Return all data from active geom list (fixed + current timestep)
+  merge(session.now, session.now);
   std::vector<Geom_Ptr> geomlist;
   for (unsigned int i=0; i<geom.size(); i++)
     if (geom[i]->draw == draw)
@@ -1451,6 +1452,7 @@ std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 std::vector<Geom_Ptr> Geometry::getAllObjectsAt(DrawingObject* draw, int step)
 {
   //Return all data from records list (at specified timestep, or -2 for all)
+  merge(session.now, session.now);
   std::vector<Geom_Ptr> geomlist;
   for (unsigned int i=0; i<records.size(); i++)
     if (records[i]->draw == draw && (step < -1  || records[i]->step == step))
