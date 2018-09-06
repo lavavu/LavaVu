@@ -402,8 +402,7 @@ class Object(dict):
     def __str__(self):
         #Default string representation
         self.instance._get() #Ensure in sync
-        return str('\n'.join(['%s=%s' % (k,json.dumps(v)) for k,v in self.dict.items()]))
-        #return '[' + ', '.join(self.dict.keys()) + ']'
+        return '{\n' + str('\n'.join(['  %s=%s' % (k,json.dumps(v)) for k,v in self.dict.items()])) + '\n}\n'
 
     #Interface for setting filters
     def include(self, *args, **kwargs):
@@ -619,16 +618,28 @@ class Object(dict):
         elif data.dtype == numpy.uint8:
             self.instance.app.arrayUChar(self.ref, data.ravel(), geomdtype)
 
-    def _dimsFromShape(self, shape, typefilter):
+    def _dimsFromShape(self, shape, size, typefilter):
         #Volume/quads? Use the shape as dims if not provided
         D = self["dims"]
-        if len(shape) > 2 and D[0] == 0 and D[1] == 0 and self["geometry"] == typefilter:
+
+        #Dims already match provided data?
+        if isinstance(D, int):
+            if D == size: return
+        elif len(D) == 1:
+            if D[0] == size: return
+        elif len(D) == 2:
+            if D[0]*D[1] == size: return
+        elif len(D) == 3:
+            if D[0]*D[1]*D[2] == size: return
+
+        if len(shape) > 2 and self["geometry"] == typefilter:
             if typefilter == 'quads':
                 #Use shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
                 D[0] = shape[1] #columns
                 D[1] = shape[0] #rows
             elif typefilter == 'volume':
-                D = shape[:]
+                #Need to flip for volume?
+                D = (shape[2], shape[1], shape[0])
             self["dims"] = D
 
     def _loadVector(self, data, geomdtype, magnitude=None):
@@ -660,7 +671,7 @@ class Object(dict):
                 data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
 
             #Quads? Use the shape as dims if not provided
-            self._dimsFromShape(shape, 'quads')
+            self._dimsFromShape(shape, data.size, 'quads')
 
         #Convenience option to load magnitude as a value array
         if magnitude is not None:
@@ -744,7 +755,7 @@ class Object(dict):
         data = self._convert(data, numpy.float32)
 
         #Volume? Use the shape as dims if not provided
-        self._dimsFromShape(data.shape, 'volume')
+        self._dimsFromShape(data.shape, data.size, 'volume')
 
         self.instance.app.arrayFloat(self.ref, data.ravel(), label)
 
@@ -760,6 +771,8 @@ class Object(dict):
             if a numpy array is passed, colours are loaded as 4 byte ARGB unsigned integer values
         """
         if isinstance(data, numpy.ndarray):
+            if data.dtype == numpy.uint8:
+                data = data.copy().view(numpy.uint32)
             self._loadScalar(data, LavaVuPython.lucRGBAData)
             return
         #Convert to list of strings
@@ -774,7 +787,7 @@ class Object(dict):
             #Each element will be parsed as a colour string
             self.instance.app.loadColours(self.ref, data)
         else:
-            #Plain list, assume unsigned colour data
+            #Plain list, assume unsigned colour data, either 4*uint8 or 1*uint32 per rgba colour
             data = numpy.asarray(data, dtype=numpy.uint32)
             self.colours(data)
 
@@ -813,6 +826,14 @@ class Object(dict):
 
         #Accepts only uint8 rgb triples
         data = self._convert(data, numpy.uint8)
+
+        #Detection of split r,g,b arrays from shape
+        #If data provided as separate r,g,b columns, re-arrange (Must be > 3 elements to detect correctly)
+        shape = data.shape
+        if len(shape) >= 2 and shape[-1] > 3 and shape[0] == 3:
+            #Re-arrange to array of [r,g,b] triples
+            data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
     def texture(self, data, width, height, channels=4, flip=True, mipmaps=True, bgr=False):
@@ -1189,8 +1210,9 @@ class Objects(dict):
     def __repr__(self):
         rep = '{\n'
         for key in self.keys():
-            rep += '"' + key + '": {},'
+            rep += '  "' + key + '": {},\n'
         rep += '}\n'
+        return rep
 
     def __str__(self):
         #Default string representation is a comma separated list
@@ -1966,7 +1988,7 @@ class Viewer(dict):
         """    
         step (int): Returns current timestep
         """
-        return self.timestep()
+        return self['timestep']
 
     @step.setter
     def step(self, value):
@@ -2401,7 +2423,7 @@ class Viewer(dict):
         timesteps: list
             A list of all available time steps
         """
-        return json.loads(self.app.getTimeSteps())
+        return _convert_keys(json.loads(self.app.getTimeSteps()))
 
     def addstep(self, step=-1, **kwargs):
         """
