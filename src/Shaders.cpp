@@ -5,6 +5,8 @@ std::string Shader::path = "";
 #else
 std::string Shader::path = SHADER_PATH;
 #endif
+std::string Shader::gl_version = "";
+bool Shader::supported = false;
 
 //Default shaders
 const char *vertexShader = R"(
@@ -98,8 +100,9 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
 
 bool Shader::version()
 {
-  gl_version = (const char*)glGetString(GL_VERSION);
-  if (!gl_version) return false;
+  const char* gl_v = (const char*)glGetString(GL_VERSION);
+  if (!gl_v) return false;
+  gl_version = std::string(gl_v);
   return true;
 }
 

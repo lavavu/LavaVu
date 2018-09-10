@@ -125,7 +125,7 @@ public:
   View* aview = NULL;   //Active viewport
   DrawingObject* aobject = NULL; //Selected object
 
-  LavaVu(std::string binpath, bool omegalib=false);
+  LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
   void defaults();
   virtual ~LavaVu();
 
@@ -227,6 +227,7 @@ public:
   void jsonReadFile(std::string fn);
 
   //Python interface functions
+  std::string gl_version();
   void render();
   void init();
   bool event();

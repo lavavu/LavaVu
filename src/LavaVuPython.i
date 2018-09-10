@@ -117,7 +117,7 @@ public:
   DrawingObject* aobject;
   std::string binpath;
 
-  LavaVu(std::string binpath, bool omegalib=false);
+  LavaVu(std::string binpath, bool havecontext=false, bool omegalib=false);
   ~LavaVu();
 
   void run(std::vector<std::string> args={});
@@ -125,6 +125,7 @@ public:
   bool loadFile(const std::string& file);
   bool parseProperty(std::string data, DrawingObject* obj=NULL);
   bool parseCommands(std::string cmd);
+  std::string gl_version();
   void render();
   void init();
   bool event();

@@ -65,13 +65,14 @@
 #include "tiny_obj_loader.h"
 
 //Viewer class implementation...
-LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpath)
+LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp(), binpath(binpath)
 {
   viewer = NULL;
   encoder = NULL;
   verbose = dbpath = false;
   frametime = std::chrono::system_clock::now();
   fps = framecount = 0;
+  session.havecontext = havecontext;
   session.omegalib = omegalib;
   historyline = -1;
   last_cmd = multiline = "";
@@ -90,7 +91,7 @@ LavaVu::LavaVu(std::string binpath, bool omegalib) : ViewerApp(), binpath(binpat
 #endif
 
   //Create viewer window
-  if (!omegalib)
+  if (!omegalib && !havecontext)
   {
 #if defined HAVE_X11
   if (!viewer) viewer = new X11Viewer();
@@ -3047,6 +3048,13 @@ std::string LavaVu::requestData(std::string key)
 }
 
 //Python interface functions
+std::string LavaVu::gl_version()
+{
+  if (!amodel || !viewer->isopen) return "(not initialised)";
+  Shader::version();
+  return Shader::gl_version;
+}
+
 void LavaVu::render()
 {
   if (!amodel || !viewer->isopen) return;

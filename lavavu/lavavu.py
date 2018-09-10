@@ -1632,7 +1632,7 @@ class Viewer(dict):
     def __init__(self, arglist=None, database=None, figure=None, timestep=None, 
          port=0, verbose=False, interactive=False, hidden=True, cache=False,
          quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False,
-         binpath=libpath, omegalib=False, *args, **kwargs):
+         binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
         """
         Create and init viewer instance
 
@@ -1641,6 +1641,8 @@ class Viewer(dict):
         (see Viewer class docs for setup args)
         binpath: str
             Override the executable path
+        havecontext: boolean
+            OpenGL context provided by user, set this if you have already setup the context
         omegalib: boolean
             For use in VR mode, disables some conflicting functionality
             and parsed into the initial set of global properties
@@ -1651,7 +1653,7 @@ class Viewer(dict):
         self._objects = Objects(self)
         self.state = {}
         try:
-            self.app = LavaVuPython.LavaVu(binpath, omegalib)
+            self.app = LavaVuPython.LavaVu(binpath, havecontext, omegalib)
 
             #Get property dict
             self.properties = _convert_keys(json.loads(self.app.propertyList()))

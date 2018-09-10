@@ -16535,6 +16535,51 @@ SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_0(PyObject *SWIGUNUSEDPARM(self), in
   PyObject *resultobj = 0;
   std::string arg1 ;
   bool arg2 ;
+  bool arg3 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  bool val3 ;
+  int ecode3 = 0 ;
+  LavaVu *result = 0 ;
+  
+  if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[0], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "new_LavaVu" "', argument " "1"" of type '" "std::string""'"); 
+    }
+    arg1 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_LavaVu" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  ecode3 = SWIG_AsVal_bool(swig_obj[2], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_LavaVu" "', argument " "3"" of type '" "bool""'");
+  } 
+  arg3 = static_cast< bool >(val3);
+  {
+    try {
+      result = (LavaVu *)new LavaVu(arg1,arg2,arg3);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_LavaVu, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+  PyObject *resultobj = 0;
+  std::string arg1 ;
+  bool arg2 ;
   bool val2 ;
   int ecode2 = 0 ;
   LavaVu *result = 0 ;
@@ -16568,7 +16613,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_1(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
+SWIGINTERN PyObject *_wrap_new_LavaVu__SWIG_2(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   std::string arg1 ;
   LavaVu *result = 0 ;
@@ -16599,22 +16644,26 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_LavaVu(PyObject *self, PyObject *args) {
   Py_ssize_t argc;
-  PyObject *argv[3] = {
+  PyObject *argv[4] = {
     0
   };
   
-  if (!(argc = SWIG_Python_UnpackTuple(args,"new_LavaVu",0,2,argv))) SWIG_fail;
+  if (!(argc = SWIG_Python_UnpackTuple(args,"new_LavaVu",0,3,argv))) SWIG_fail;
   --argc;
   if (argc == 1) {
-    return _wrap_new_LavaVu__SWIG_1(self, argc, argv);
+    return _wrap_new_LavaVu__SWIG_2(self, argc, argv);
   }
   if (argc == 2) {
+    return _wrap_new_LavaVu__SWIG_1(self, argc, argv);
+  }
+  if (argc == 3) {
     return _wrap_new_LavaVu__SWIG_0(self, argc, argv);
   }
   
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_LavaVu'.\n"
     "  Possible C/C++ prototypes are:\n"
+    "    LavaVu::LavaVu(std::string,bool,bool)\n"
     "    LavaVu::LavaVu(std::string,bool)\n"
     "    LavaVu::LavaVu(std::string)\n");
   return 0;
@@ -16916,6 +16965,35 @@ SWIGINTERN PyObject *_wrap_LavaVu_parseCommands(PyObject *SWIGUNUSEDPARM(self), 
     }
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_LavaVu_gl_version(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  std::string result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_gl_version" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    try {
+      result = (arg1)->gl_version();
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_From_std_string(static_cast< std::string >(result));
   return resultobj;
 fail:
   return NULL;
@@ -23318,6 +23396,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"LavaVu_loadFile", _wrap_LavaVu_loadFile, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_parseProperty", _wrap_LavaVu_parseProperty, METH_VARARGS, NULL},
 	 { (char *)"LavaVu_parseCommands", _wrap_LavaVu_parseCommands, METH_VARARGS, NULL},
+	 { (char *)"LavaVu_gl_version", (PyCFunction)_wrap_LavaVu_gl_version, METH_O, NULL},
 	 { (char *)"LavaVu_render", (PyCFunction)_wrap_LavaVu_render, METH_O, NULL},
 	 { (char *)"LavaVu_init", (PyCFunction)_wrap_LavaVu_init, METH_O, NULL},
 	 { (char *)"LavaVu_event", (PyCFunction)_wrap_LavaVu_event, METH_O, NULL},

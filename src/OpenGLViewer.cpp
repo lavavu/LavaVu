@@ -242,6 +242,10 @@ void OpenGLViewer::open(int w, int h)
   width = w > 0 ? w : 1024;
   height = h > 0 ? h : 768;
   debug_print("Window opened %d x %d\n", width, height);
+
+  //If context provided, call init ourselves
+  if (app->session.havecontext)
+    init();
 }
 
 void OpenGLViewer::init()

@@ -12,8 +12,6 @@ private:
 
 public:
   GLuint program;
-  const char* gl_version;
-  bool supported;
 
   Shader();
   Shader(const std::string& fshader);
@@ -22,7 +20,6 @@ public:
   //Shader(const std::string& shader, GLenum shader_type);
   void init(std::string vsrc, std::string gsrc, std::string fsrc);
 
-  bool version();
   std::string read_file(const std::string& fname);
   bool compile(const char *src, GLuint type);
   bool build();
@@ -44,6 +41,10 @@ public:
   std::map<std::string, GLenum> uniform_types;
   std::map<std::string, GLint> attribs;
 
+  static bool version();
+
+  static std::string gl_version;
+  static bool supported;
   static std::string path;
 };
 

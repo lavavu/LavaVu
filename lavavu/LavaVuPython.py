@@ -417,13 +417,14 @@ class LavaVu(object):
     aobject = _swig_property(_LavaVuPython.LavaVu_aobject_get, _LavaVuPython.LavaVu_aobject_set)
     binpath = _swig_property(_LavaVuPython.LavaVu_binpath_get, _LavaVuPython.LavaVu_binpath_set)
 
-    def __init__(self, binpath, omegalib=False):
-        _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, omegalib))
+    def __init__(self, binpath, havecontext=False, omegalib=False):
+        _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext, omegalib))
     __swig_destroy__ = _LavaVuPython.delete_LavaVu
 LavaVu.run = new_instancemethod(_LavaVuPython.LavaVu_run, None, LavaVu)
 LavaVu.loadFile = new_instancemethod(_LavaVuPython.LavaVu_loadFile, None, LavaVu)
 LavaVu.parseProperty = new_instancemethod(_LavaVuPython.LavaVu_parseProperty, None, LavaVu)
 LavaVu.parseCommands = new_instancemethod(_LavaVuPython.LavaVu_parseCommands, None, LavaVu)
+LavaVu.gl_version = new_instancemethod(_LavaVuPython.LavaVu_gl_version, None, LavaVu)
 LavaVu.render = new_instancemethod(_LavaVuPython.LavaVu_render, None, LavaVu)
 LavaVu.init = new_instancemethod(_LavaVuPython.LavaVu_init, None, LavaVu)
 LavaVu.event = new_instancemethod(_LavaVuPython.LavaVu_event, None, LavaVu)
