@@ -130,6 +130,8 @@ bool FBO::create(int w, int h)
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
+    GL_Error_Check;
+    std::cerr << " frame " << frame << " target " << target << " depth " << depth << " dims " << width << " , " << height << std::endl;
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
   }
   else
