@@ -137,7 +137,7 @@ ALLOBJS += $(APPLEOBJ)
 default: install
 
 .PHONY: install
-install: $(PROGRAM) $(SWIGLIB) $(HTMLPATH)/viewer.html
+install: $(PROGRAM) $(SWIGLIB)
 	@if [ $(PREFIX) != "lavavu" ]; then \
 	cp -R lavavu/*.py $(PREFIX); \
 	cp -R lavavu/shaders/*.* $(PREFIX)/shaders; \
@@ -145,17 +145,6 @@ install: $(PROGRAM) $(SWIGLIB) $(HTMLPATH)/viewer.html
 	cp lavavu/font.bin $(PREFIX)/; \
 	cp lavavu/dict.json $(PREFIX)/; \
 	fi
-
-$(HTMLPATH)/viewer.html: lavavu/html/viewer_template.html lavavu/shaders/*.frag lavavu/shaders/*.vert
-	sed -e "/Point vertex shader/    r lavavu/shaders/pointShader.vert"  \
-      -e "/Point fragment shader/  r lavavu/shaders/pointShader.frag"  \
-      -e "/Tri vertex shader/      r lavavu/shaders/triShader.vert"    \
-      -e "/Tri fragment shader/    r lavavu/shaders/triShader.frag"    \
-      -e "/Volume vertex shader/   r lavavu/shaders/volumeShader.vert" \
-      -e "/Volume fragment shader/ r lavavu/shaders/volumeShader.frag" \
-      -e "/Line vertex shader/     r lavavu/shaders/lineShader.vert"   \
-      -e "/Line fragment shader/   r lavavu/shaders/lineShader.frag"   \
-			< lavavu/html/viewer_template.html > $(HTMLPATH)/viewer.html
 
 .PHONY: force
 $(OPATH)/compiler_flags: force | paths

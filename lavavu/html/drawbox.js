@@ -9,10 +9,10 @@ function initBox(el, cmd_callback) {
   canvas.imgtarget = el
   el.parentElement.appendChild(canvas);
   canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: 0px; padding: 0px; top: 0; left: 0; bottom: 0; right: 0; z-index: 11; border: none;"
-  viewer = new Viewer(canvas);
+  viewer = new BoxViewer(canvas);
 
   //Canvas event handling
-  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch));
+  canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasBoxMouseClick, canvasBoxMouseWheel, canvasBoxMouseMove, canvasBoxMouseDown, null, null, canvasBoxMousePinch));
   //Following two settings should probably be defaults?
   canvas.mouse.moveUpdate = true; //Continual update of deltaX/Y
   //canvas.mouse.setDefault();
@@ -34,7 +34,7 @@ function updateBox(viewer, loaderfn) {
   loaderfn(function(data) {viewer.loadFile(data);});
 }
 
-function canvasMouseClick(event, mouse) {
+function canvasBoxMouseClick(event, mouse) {
   if (mouse.element.viewer.rotating)
     mouse.element.viewer.command('' + mouse.element.viewer.getRotationString());
   else
@@ -51,22 +51,22 @@ function canvasMouseClick(event, mouse) {
   return false;
 }
 
-function canvasMouseDown(event, mouse) {
+function canvasBoxMouseDown(event, mouse) {
   return false;
 }
 
-var hideTimer;
+var hideBoxTimer;
 
-function canvasMouseMove(event, mouse) {
+function canvasBoxMouseMove(event, mouse) {
   if (mouse.element && mouse.element.imgtarget) {
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
     y = event.clientY-rect.top;
     if (x >= 0 && y >= 0 && x < rect.width && y < rect.height) {
       mouse.element.imgtarget.nextElementSibling.style.display = "block";
-      if (hideTimer) 
-        clearTimeout(hideTimer);
-      hideTimer = setTimeout(function () {mouse.element.imgtarget.nextElementSibling.style.display = "none";}, 1000 );
+      if (hideBoxTimer) 
+        clearTimeout(hideBoxTimer);
+      hideBoxTimer = setTimeout(function () {mouse.element.imgtarget.nextElementSibling.style.display = "none";}, 1000 );
     }
   }
 
@@ -114,29 +114,27 @@ function canvasMouseMove(event, mouse) {
   return false;
 }
 
-var zoomTimer;
-var zoomClipTimer;
-var zoomSpin = 0;
+var zoomBoxTimer;
+var zoomBoxClipTimer;
+var zoomBoxSpin = 0;
 
-function canvasMouseWheel(event, mouse) {
+function canvasBoxMouseWheel(event, mouse) {
   if (event.shiftKey) {
     var factor = event.spin * 0.01;
-    if (window.navigator.platform.indexOf("Mac") >= 0)
-      factor *= 0.1;
-    if (zoomClipTimer) clearTimeout(zoomClipTimer);
-    zoomClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
+    if (zoomBoxClipTimer) clearTimeout(zoomBoxClipTimer);
+    zoomBoxClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
   } else {
-    if (zoomTimer) 
-      clearTimeout(zoomTimer);
-    zoomSpin += event.spin;
-    zoomTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomSpin*0.01); zoomSpin = 0;}, 100 );
+    if (zoomBoxTimer) 
+      clearTimeout(zoomBoxTimer);
+    zoomBoxSpin += event.spin;
+    zoomBoxTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomBoxSpin*0.01); zoomBoxSpin = 0;}, 100 );
     //Clear the box after a second
     setTimeout(function() {mouse.element.viewer.clear();}, 1000);
   }
   return false; //Prevent default
 }
 
-function canvasMousePinch(event, mouse) {
+function canvasBoxMousePinch(event, mouse) {
   if (event.distance != 0) {
     var factor = event.distance * 0.0001;
     mouse.element.viewer.zoom(factor);
@@ -147,7 +145,7 @@ function canvasMousePinch(event, mouse) {
 }
 
 //This object encapsulates a vertex buffer and shader set
-function Renderer(gl, colour) {
+function BoxRenderer(gl, colour) {
   this.gl = gl;
   if (colour) this.colour = colour;
 
@@ -160,7 +158,7 @@ function Renderer(gl, colour) {
     this.elementSize += this.attribSizes[i];
 }
 
-Renderer.prototype.init = function() {
+BoxRenderer.prototype.init = function() {
   //Compile the shaders
   this.program = new WebGLProgram(this.gl, "line-vs", "line-fs");
   if (this.program.errors) console.log(this.program.errors);
@@ -170,7 +168,7 @@ Renderer.prototype.init = function() {
   return true;
 }
 
-Renderer.prototype.updateBuffers = function(view) {
+BoxRenderer.prototype.updateBuffers = function(view) {
   //Create buffer if not yet allocated
   if (this.vertexBuffer == undefined) {
     //Init shaders etc...
@@ -187,7 +185,7 @@ Renderer.prototype.updateBuffers = function(view) {
   this.elements = 24;
 }
 
-Renderer.prototype.box = function(min, max) {
+BoxRenderer.prototype.box = function(min, max) {
   var vertices = new Float32Array(
         [
           min[0], min[1], max[2],
@@ -211,7 +209,7 @@ Renderer.prototype.box = function(min, max) {
   this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indices, this.gl.STATIC_DRAW);
 }
 
-Renderer.prototype.draw = function(webgl) {
+BoxRenderer.prototype.draw = function(webgl) {
   if (!this.elements) return;
 
   if (this.program.attributes["aVertexPosition"] == undefined) return; //Require vertex buffer
@@ -244,7 +242,7 @@ Renderer.prototype.draw = function(webgl) {
 }
 
 //This object holds the viewer details and calls the renderers
-function Viewer(canvas) {
+function BoxViewer(canvas) {
   this.canvas = canvas;
   if (!canvas) {alert("Invalid Canvas"); return;}
   try {
@@ -278,7 +276,7 @@ function Viewer(canvas) {
   if (!this.gl) return;
 
   //Create the renderers
-  this.border = new Renderer(this.gl, [0.5,0.5,0.5,1]);
+  this.border = new BoxRenderer(this.gl, [0.5,0.5,0.5,1]);
 
   this.gl.enable(this.gl.DEPTH_TEST);
   this.gl.depthFunc(this.gl.LEQUAL);
@@ -289,7 +287,7 @@ function Viewer(canvas) {
   this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
 }
 
-Viewer.prototype.checkPointMinMax = function(coord) {
+BoxViewer.prototype.checkPointMinMax = function(coord) {
   for (var i=0; i<3; i++) {
     this.vis.views[this.view].min[i] = Math.min(coord[i], this.vis.views[this.view].min[i]);
     this.vis.views[this.view].max[i] = Math.max(coord[i], this.vis.views[this.view].max[i]);
@@ -297,7 +295,7 @@ Viewer.prototype.checkPointMinMax = function(coord) {
   //console.log(JSON.stringify(this.vis.views[this.view].min) + " -- " + JSON.stringify(this.vis.views[this.view].max));
 }
 
-Viewer.prototype.loadFile = function(source) {
+BoxViewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
   //if (document.mouse.isdown) return;
 
@@ -350,12 +348,12 @@ Viewer.prototype.loadFile = function(source) {
 }
 
 
-Viewer.prototype.clear = function() {
+BoxViewer.prototype.clear = function() {
   if (!this.gl) return;
   this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 }
 
-Viewer.prototype.draw = function() {
+BoxViewer.prototype.draw = function() {
   if (!this.canvas) return;
 
   //Get the dimensions from the current canvas
@@ -385,19 +383,19 @@ Viewer.prototype.draw = function() {
 
 }
 
-Viewer.prototype.rotateX = function(deg) {
+BoxViewer.prototype.rotateX = function(deg) {
   this.rotation(deg, [1,0,0]);
 }
 
-Viewer.prototype.rotateY = function(deg) {
+BoxViewer.prototype.rotateY = function(deg) {
   this.rotation(deg, [0,1,0]);
 }
 
-Viewer.prototype.rotateZ = function(deg) {
+BoxViewer.prototype.rotateZ = function(deg) {
   this.rotation(deg, [0,0,1]);
 }
 
-Viewer.prototype.rotation = function(deg, axis) {
+BoxViewer.prototype.rotation = function(deg, axis) {
   //Quaterion rotate
   var arad = deg * Math.PI / 180.0;
   var rotation = quat4.fromAngleAxis(arad, axis);
@@ -405,21 +403,21 @@ Viewer.prototype.rotation = function(deg, axis) {
   this.rotate = quat4.multiply(rotation, this.rotate);
 }
 
-Viewer.prototype.getRotation = function() {
+BoxViewer.prototype.getRotation = function() {
   return [this.rotate[0], this.rotate[1], this.rotate[2], this.rotate[3]];
 }
 
-Viewer.prototype.getRotationString = function() {
+BoxViewer.prototype.getRotationString = function() {
   //Return current rotation quaternion as string
   var q = this.getRotation();
   return 'rotation ' + q[0] + ' ' + q[1] + ' ' + q[2] + ' ' + q[3];
 }
 
-Viewer.prototype.getTranslationString = function() {
+BoxViewer.prototype.getTranslationString = function() {
   return 'translation ' + this.translate[0] + ' ' + this.translate[1] + ' ' + this.translate[2];
 }
 
-Viewer.prototype.reset = function() {
+BoxViewer.prototype.reset = function() {
   if (this.gl) {
     this.updateDims(this.vis.views[this.view]);
     this.draw();
@@ -428,7 +426,7 @@ Viewer.prototype.reset = function() {
   this.command('reset');
 }
 
-Viewer.prototype.zoom = function(factor) {
+BoxViewer.prototype.zoom = function(factor) {
   if (this.gl) {
     this.translate[2] += factor * this.modelsize;
     this.draw();
@@ -438,7 +436,7 @@ Viewer.prototype.zoom = function(factor) {
   //this.command('zoom ' + factor);
 }
 
-Viewer.prototype.zoomClip = function(factor) {
+BoxViewer.prototype.zoomClip = function(factor) {
   if (this.gl) {
      var near_clip = this.near_clip + factor * this.modelsize;
      if (near_clip >= this.modelsize * 0.001)
@@ -449,7 +447,7 @@ Viewer.prototype.zoomClip = function(factor) {
   this.command('zoomclip ' + factor);
 }
 
-Viewer.prototype.updateDims = function(view) {
+BoxViewer.prototype.updateDims = function(view) {
   if (!view) return;
   var oldsize = this.modelsize;
   this.dims = [view.max[0] - view.min[0], view.max[1] - view.min[1], view.max[2] - view.min[2]];

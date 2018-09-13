@@ -55,22 +55,36 @@ basehtml = """
 </head>
 
 <body onload="initPage();" oncontextmenu="return false;">
-
-  <div id="progress" class="popup" style="display: none; width: 310px; height: 32px;">
-    <span id="progressmessage"></span><span id="progressstatus"></span>
-    <div id="progressbar" style="width: 300px; height: 10px; background: #58f;"></div>
-  </div>
-
-  <canvas id="canvas" class="canvas"></canvas>
-
-  <div id="hidden" style="display: none">
-    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAPCAYAAAA2yOUNAAAAj0lEQVQokWNIjHT8/+zZs//Pnj37/+TJk/9XLp/+f+bEwf9HDm79v2Prqv9aKrz/GUYVEaeoMDMQryJXayWIoi0bFmFV1NWS+z/E1/Q/AwMDA0NVcez/LRsWoSia2luOUAADVcWx/xfO6/1/5fLp/1N7y//HhlmhKoCBgoyA/w3Vyf8jgyyxK4CBUF8zDAUAAJRXY0G1eRgAAAAASUVORK5CYII=" id="slider">
-    <canvas id="gradient" width="2048" height="1"></canvas>
-    <canvas id="palette" width="512" height="24" class="palette checkerboard"></canvas>
-  </div>
+---HIDDEN---
 </body>
 
 </html>
+"""
+
+inlinehtml = """
+---SCRIPTS---
+<div id = "lavavu_GUI_---ID---" style="position: absolute; top: 0em; right: 0em;"></div>
+<div id="---ID---" style="display: block; width: ---WIDTH---px; height: ---HEIGHT---px;">
+</div>
+---HIDDEN---
+
+<script>
+initPage(null, "---ID---");
+</script>
+"""
+
+#Some common elements (TODO: dynamically create these when not found)
+hiddenhtml = """
+<div id="progress" class="popup" style="display: none; width: 310px; height: 32px;">
+  <span id="progressmessage"></span><span id="progressstatus"></span>
+  <div id="progressbar" style="width: 300px; height: 10px; background: #58f;"></div>
+</div>
+
+<div id="hidden" style="display: none">
+  <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAPCAYAAAA2yOUNAAAAj0lEQVQokWNIjHT8/+zZs//Pnj37/+TJk/9XLp/+f+bEwf9HDm79v2Prqv9aKrz/GUYVEaeoMDMQryJXayWIoi0bFmFV1NWS+z/E1/Q/AwMDA0NVcez/LRsWoSia2luOUAADVcWx/xfO6/1/5fLp/1N7y//HhlmhKoCBgoyA/w3Vyf8jgyyxK4CBUF8zDAUAAJRXY0G1eRgAAAAASUVORK5CYII=" id="slider">
+  <canvas id="gradient" width="2048" height="1"></canvas>
+  <canvas id="palette" width="512" height="24" class="palette checkerboard"></canvas>
+</div>
 """
 
 #Static HTML location
@@ -126,38 +140,51 @@ def getcontrolvalues(names=None):
     return updates
 
 
-_webglboxsrc = None
-_webglviewsrc = None
+_file_cache = dict()
 
 def _webglboxcode():
     """
     Returns WebGL base code for the bounding box interactor window
     """
-    global _webglboxsrc
-    if _webglboxsrc is None:
-        code = getcss("control.css")
-        code += fragmentShader
-        code += vertexShader
-        code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js'])
-        _webglboxsrc = code
-    return _webglboxsrc
+    code = getcss(["control.css"])
+    code += fragmentShader
+    code += vertexShader
+    code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js'])
+    return code
 
-def _webglviewcode(shaderpath):
+def _webglviewcode(shaderpath, menu=True, lighttheme=False):
     """
     Returns WebGL base code for an interactive visualisation window
     """
-    global _webglviewsrc
-    if _webglviewsrc is None:
-        code = getcss("styles.css")
-        code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js', 'control.js'])
-        #code += getjslibs(['gl-matrix-min.js', 'OK.js', 'draw.js', 'control.js'])
-        code += getshaders(shaderpath)
-        _webglviewsrc = code
-    return _webglviewsrc
+    css = ["styles.css"]
+    code = getshaders(shaderpath)
+    code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js'])
+    return code
+    code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js'])
+    #code += getjslibs(['gl-matrix-min.js', 'OK.js', 'draw.js'])
+    if menu:
+        #HACK: Need to disable require.js to load dat.gui from inline script tags
+        code += """
+        <script>
+        _backup_define = window.define
+        window.define = undefined
+        </script>
+        """
+        code += getjslibs(['dat.gui.min.js'])
+        code += """
+        <script>
+        window.define = _backup_define
+        delete _backup_define
+        </script>
+        """
+        if lighttheme:
+            css.append("dat-gui-light-theme.css")
+    code += getcss(css)
+    return code
 
-def getcss(filename="styles.css"):
+def getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
-    return _filestohtml([filename], tag="style")
+    return _filestohtml(files, tag="style")
 
 def getjslibs(files):
     #Load a set of combined javascript libraries in script tags
@@ -169,13 +196,16 @@ def _filestohtml(files, tag="script"):
     code = '<' + tag + '>\n'
     for f in files:
         code += _readfilehtml(f)
-    code += '</' + tag + '>\n'
+    code += '\n</' + tag + '>\n'
     return code
 
 def _readfilehtml(filename):
-    #Read a file from the htmlpath
+    #Read a file from the htmlpath (or cached copy)
     if not htmlpath: return ""
-    return _readfile(os.path.join(htmlpath, filename))
+    global _file_cache
+    if not filename in _file_cache:
+        _file_cache[filename] = _readfile(os.path.join(htmlpath, filename))
+    return _file_cache[filename]
 
 def _readfile(filename):
     #Read a text file and return contents
@@ -185,6 +215,7 @@ def _readfile(filename):
         f.close()
     return data
 
+#def getshaders(path, shaders=['points', 'lines', 'triangles']):
 def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
     #Load combined shaders
     src = ''
@@ -198,7 +229,7 @@ def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
         src += '</script>\n\n'
     return src
 
-def initialise():
+def initialise(initcode):
     global initialised, initcell
     if not htmlpath: return
     try:
@@ -240,7 +271,7 @@ def initialise():
             initcell = history[-1][2]
 
             #Insert stylesheet, shaders and combined javascript libraries
-            display(HTML(_webglboxcode()))
+            display(HTML(initcode))
     except (NameError, ImportError):
         pass
 
@@ -441,13 +472,13 @@ class Window(Container):
         self.align = align
 
     def html(self, wrapper=True, wrapperstyle=""):
-        style = 'min-height: 200px; min-width: 200px; background: #ccc; position: relative; display: inline; '
-        style += 'float: ' + self.align + ';'
+        style = 'min-height: 200px; min-width: 200px; background: #ccc; position: relative; display: inline-block; '
+        #style += 'float: ' + self.align + ';'
         if wrapper:
             style += ' margin-right: 10px;'
         html = ""
         html += '<div style="' + style + '">\n'
-        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa;">\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa; display: inline-block;">\n'
         html += """
            <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
              <select onchange="_wi[---VIEWERID---].box.mode = this.value;">
@@ -464,6 +495,7 @@ class Window(Container):
         html += super(Window, self).html()
         if wrapper:
             html += '</div>\n'
+        html += '<div style="clear: both;">\n'
         return html
 
 class Panel(Container):
@@ -1236,7 +1268,7 @@ class ControlFactory(object):
             if __IPYTHON__:
                 from IPython.display import display,HTML,Javascript
                 #Interaction requires some additional js/css/webgl
-                initialise()
+                initialise(_webglboxcode())
 
                 #Output the controls
                 display(HTML(html))
