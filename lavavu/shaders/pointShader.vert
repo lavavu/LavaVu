@@ -58,6 +58,6 @@ void main(void)
   if (uColour.a > 0.0)
     vColour = uColour;
   else
-    vColour = vec4(aVertexColour.rgb, aVertexColour.a*uOpacity);
+    vColour = vec4(aVertexColour.rgb, aVertexColour.a);
 }
 
