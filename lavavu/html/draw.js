@@ -6,13 +6,18 @@ var MAXIDX = 2047;
 /** @const */
 var DEBUG = false;
 
-function initPage(src, elid) {
+function initPage(elid, src) {
+  //Load from the data tag if available, otherwise URL
+  var dtag = document.getElementById('data');
+  if (!src && dtag && dtag.innerHTML.length > 100)
+    src = dtag.innerHTML;
+
   var urlq = decodeURI(window.location.href);
-  if (urlq.indexOf("?") > 0) {
+  if (!src && urlq.indexOf("?") > 0) {
     var parts = urlq.split("?"); //whole querystring before and after ?
     var query = parts[1]; 
 
-    if (!src && query.indexOf(".json") > 0) {
+    if (query.indexOf(".json") > 0) {
       //Passed a json(p) file on URL
       if (query.indexOf(".jsonp") > 0) {
         //Load jsonp file as a script, useful when opening page as file://
@@ -31,25 +36,18 @@ function initPage(src, elid) {
       }
       return;
     }
-  } else {
-    //Load from the data tag if available, otherwise URL
-    var dtag = document.getElementById('data');
-    if (dtag && dtag.innerHTML.length > 100)
-      src = dtag.innerHTML;
-
-    if (!src && urlq.indexOf("#") > 0) {
-      //IPython strips out ? args so have to check for this instead
-      var parts = urlq.split("#"); //whole querystring before and after #
-      if (parts[1].indexOf(".json") > 0) {
-        //Load filename from url
-        ajaxReadFile(parts[1], initPage, false);
-        return;
-      }
-
-      //Load base64 encoded data from url
-      window.location.hash = ""
-      src = window.atob(parts[1]);
+  } else if (!src && urlq.indexOf("#") > 0) {
+    //IPython strips out ? args so have to check for this instead
+    var parts = urlq.split("#"); //whole querystring before and after #
+    if (parts[1].indexOf(".json") > 0) {
+      //Load filename from url
+      ajaxReadFile(parts[1], initPage, false);
+      return;
     }
+
+    //Load base64 encoded data from url
+    window.location.hash = ""
+    src = window.atob(parts[1]);
   }
 
   progress();

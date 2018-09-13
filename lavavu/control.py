@@ -69,7 +69,7 @@ inlinehtml = """
 ---HIDDEN---
 
 <script>
-initPage(null, "---ID---");
+initPage("---ID---");
 </script>
 """
 
@@ -164,15 +164,15 @@ def _webglviewcode(shaderpath, menu=True, lighttheme=False):
         #HACK: Need to disable require.js to load dat.gui from inline script tags
         code += """
         <script>
-        _backup_define = window.define
-        window.define = undefined
+        _backup_define = window.define;
+        window.define = undefined;
         </script>
         """
         code += getjslibs(['dat.gui.min.js'])
         code += """
         <script>
-        window.define = _backup_define
-        delete _backup_define
+        window.define = _backup_define;
+        delete _backup_define;
         </script>
         """
         if lighttheme:
