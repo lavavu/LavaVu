@@ -183,7 +183,7 @@ public:
   bool hasPixel(int x, int y);
 
   void projection(int eye);
-  void apply(bool use_fp=true, bool use_rotate=true);
+  void apply(bool no_rotate=false, Quaternion* obj_rotation=NULL, Vec3d* obj_translation=NULL);
   int switchCoordSystem();
   void zoomToFit();
   bool scaleSwitch();

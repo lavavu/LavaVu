@@ -68,7 +68,6 @@ float maxslice = slices.x * slices.y - 1.0;
 vec2 cmin = vec2(0.55/(slices.x*slices.y), 0.55/(slices.x*slices.y));
 vec2 cmax = vec2(1.0, 1.0) - cmin;
 
-
 float sample(vec3 pos)
 {
   //Get z slice index and position between two slices
@@ -403,7 +402,7 @@ policies, either expressed or implied.
 
 When using this code in a scientific project, please cite one or all of the
 following papers:
-*  Daniel Ruijters and Philippe Thévenaz,
+*  Daniel Ruijters and Philippe Thevenaz,
    GPU Prefilter for Accurate Cubic B-Spline Interpolation, 
    The Computer Journal, vol. 55, no. 1, pp. 15-20, January 2012.
 *  Daniel Ruijters, Bart M. ter Haar Romeny, and Paul Suetens,

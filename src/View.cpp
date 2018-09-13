@@ -434,6 +434,7 @@ void View::print()
   printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n",
          model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
+  printf("Rotate Centre %f,%f,%f\n", rotate_centre[0], rotate_centre[1], rotate_centre[2]);
   printf("------------------------------\n");
   printf("%s\n", translateString().c_str());
   printf("%s\n", rotateString().c_str());
@@ -502,6 +503,7 @@ void View::projection(int eye)
   fov = properties["aperture"];
   bool ortho = properties["orthographic"];
   checkClip(near, far);
+  //printf("VP %d / %d\nsetPerspective( %f, %f, %f, %f)\n", width, height, fov, aspectRatio, near, far);
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
   //default is to set to distance to model front edge...
@@ -554,7 +556,7 @@ void View::projection(int eye)
   GL_Error_Check;
 }
 
-void View::apply(bool use_fp, bool use_rotate)
+void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translation)
 {
   // Right-handed (GL default) or Left-handed
   int orientation = properties["coordsystem"];
@@ -578,7 +580,6 @@ void View::apply(bool use_fp, bool use_rotate)
     rotation = &localcam->rotation;
   }
 
-  GL_Error_Check;
   // Setup view transforms
   glMatrixMode(GL_MODELVIEW);
   if (!session.omegalib)
@@ -594,16 +595,26 @@ void View::apply(bool use_fp, bool use_rotate)
     //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
     glTranslatef(model_trans[0], model_trans[1], model_trans[2]);
     GL_Error_Check;
+
   }
 
   // Adjust centre of rotation, default is same as focal point so this does nothing...
   float adjust[3] = {(focal_point[0]-rotate_centre[0]), (focal_point[1]-rotate_centre[1]), (focal_point[2]-rotate_centre[2])};
-  if (use_fp) glTranslatef(-adjust[0], -adjust[1], -adjust[2]);
+  glTranslatef(-adjust[0], -adjust[1], -adjust[2]);
   GL_Error_Check;
 
-  // rotate model
-  if (use_rotate)
+  // Rotate model
+  if (!no_rotate)
     rotation->apply();
+
+  // Translate object
+  if (obj_translation)
+    glTranslatef(obj_translation->x, obj_translation->y, obj_translation->z);
+
+  // Rotate object
+  if (obj_rotation)
+    obj_rotation->apply();
+
   GL_Error_Check;
 
   // Apply scaling factors
@@ -615,13 +626,13 @@ void View::apply(bool use_fp, bool use_rotate)
   GL_Error_Check;
 
   // Adjust back for rotation centre
-  if (use_fp) glTranslatef(adjust[0], adjust[1], adjust[2]);
+  glTranslatef(adjust[0], adjust[1], adjust[2]);
   GL_Error_Check;
 
   // Translate to align eye with model centre - view focal point
   //glTranslatef(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
   //if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
-  if (use_fp && !session.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  if (!session.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
   // Switch coordinate system if applicable and set default polygon front faces
@@ -635,6 +646,7 @@ void View::apply(bool use_fp, bool use_rotate)
     glScalef(1.0, 1.0, -1.0);
   }
   GL_Error_Check;
+
   //Store the matrix
   std::lock_guard<std::mutex> guard(matrix_lock);
   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);

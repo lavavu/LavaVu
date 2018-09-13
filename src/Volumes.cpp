@@ -566,45 +566,52 @@ void Volumes::render(int i)
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
   glPushMatrix();
 
-  //Get modelview without focal point / rotation centre adjustment
-  bool rotatable = props["rotatable"]; //Object rotation by view flag
-  if (rotatable)
-    view->apply(false, false);
-  else
-    view->apply(false);
-
   //Object rotation/translation
-  if (props.has("translate"))
-  {
-    float trans[3];
-    Properties::toArray<float>(props["translate"], trans, 3);
-    glTranslatef(trans[0], trans[1], trans[2]);
-  }
-
+  Quaternion* qrot = NULL;
+  Quaternion orot, vrot;
   if (props.has("rotate"))
   {
     float rot[4];
-    Quaternion qrot;
     json jrot = props["rotate"];
     if (jrot.size() == 4)
     {
       Properties::toArray<float>(jrot, rot, 4);
-      qrot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
+      orot = Quaternion(rot[0], rot[1], rot[2], rot[3]);
     }
     else
     {
       Properties::toArray<float>(jrot, rot, 3);
-      qrot.fromEuler(rot[0], rot[1], rot[2]);
+      orot.fromEuler(rot[0], rot[1], rot[2]);
     }
-    qrot.apply();
-  }
-  //Rotate this object with view rotation setting
-  if (rotatable)
-    view->getRotation().apply();
 
-  //printf("DIMS: %f,%f,%f TRANS: %f,%f,%f SCALE: %f,%f,%f\n",
-  //       dims[0], dims[1], dims[2], -dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5, 1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
-  glTranslatef(-dims[0]*0.5, -dims[1]*0.5, -dims[2]*0.5);  //Translate to our origin
+    qrot = &orot;
+  }
+
+  Vec3d translate;
+  if (props.has("translate"))
+  {
+    float trans[3];
+    Properties::toArray<float>(props["translate"], trans, 3);
+    //glTranslatef(trans[0], trans[1], trans[2]);
+    translate = trans;
+  }
+
+  //Get modelview without focal point / rotation centre adjustment
+  bool rotatable = props["rotatable"]; //Object rotation by view flag
+  if (rotatable)
+  {
+    //Rotate this object with view rotation setting as well as its own rotation
+    vrot = view->getRotation() * orot;
+    qrot = &vrot;
+  }
+
+  //Apply model view
+  view->apply(rotatable, qrot, &translate);
+
+  //Translate to our origin
+  glTranslatef(geom[i]->render->vertices[0][0],
+               geom[i]->render->vertices[0][1],
+               geom[i]->render->vertices[0][2]);
 
   //Get the mvMatrix scaled by volume size
   //(used for depth calculations)
