@@ -159,8 +159,6 @@ def _webglviewcode(shaderpath, menu=True, lighttheme=False):
     css = ["styles.css"]
     code = getshaders(shaderpath)
     code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js'])
-    return code
-    code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js'])
     #code += getjslibs(['gl-matrix-min.js', 'OK.js', 'draw.js'])
     if menu:
         #HACK: Need to disable require.js to load dat.gui from inline script tags
