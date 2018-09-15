@@ -34,24 +34,6 @@ div.gap {height: 5px; }
 .right      {float: right}
 .clear      {clear: both;}
 
-#console {width: 800px;}
-
-.toolbox {
-  visibility: hidden; z-index: 20;
-  background: rgba(255,255,255,0.5); color: #000; 
-  cursor: move; 
-  padding: 7px 10px 11px 10px; 
-  position: absolute; 
-  border-radius: 5px; border: 1px solid #444; 
-  user-select: none;
-  min-width: 320px;
-  /*max-height: 400px;*/
-}
-.scroll {
-  overflow-y: auto;
-  max-height: 330px;
-}
-
 input[type="text"] {width: 200px; }
 
 .object-control {position: relative; height: 24px; clear: both;}

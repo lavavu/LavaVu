@@ -66,7 +66,6 @@ function initPage(elid, src) {
     //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
     //if (!parentEl) parentEl = document.body;
     //parentEl.appendChild(this.canvas);
-    canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: 1px solid #aaa; display:block;";
 
     //Canvas event handling
     var handler = new MouseEventHandler(canvasMouseClick, canvasMouseWheel, canvasMouseMove, canvasMouseDown, null, null, canvasMousePinch);
@@ -80,10 +79,17 @@ function initPage(elid, src) {
 
     //Reference to viewer object on canvas for event handling
     canvas.viewer = viewer;
+    window.viewer = viewer; //Only most recent stored on window
 
-    //Resize with window
-    if (canvas.parentElement == document.body)
+    //Enable auto resize for full screen view
+    if (canvas.parentElement == document.body) {
       window.onresize = function() {viewer.drawTimed();};
+      //No border
+      canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
+    } else {
+      //Light border
+      canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: 1px solid #aaa; display:block;";
+    }
   }
 
   //Load dict from tag if available
@@ -208,15 +214,17 @@ function canvasMouseMove(event, mouse) {
   //if (server) serverMouseMove(event, mouse); //Pass to server handler
 
   //GUI elements to show on mouseover
-  if (mouse.element.viewer.gui) {
+  var gui = mouse.element.viewer.gui;
+  if (gui && gui.hidetimer) {
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
     y = event.clientY-rect.top;
     if (x >= 0 && y >= 0 && x < rect.width && y < rect.height) {
-      mouse.element.viewer.gui.domElement.style.display = "block";
+      gui.domElement.style.display = "block";
       if (hideTimer)
         clearTimeout(hideTimer);
-      hideTimer = setTimeout(function () { if (mouse.element.viewer.gui.closed) mouse.element.viewer.gui.domElement.style.display = "none";}, 1000 );
+
+      hideTimer = setTimeout(function () { hideMenu(mouse.element, gui);}, 1000 );
     }
   }
 
@@ -1182,6 +1190,7 @@ Renderer.prototype.draw = function() {
 
     //Setup volume camera
     this.viewer.webgl.modelView.push();
+    this.viewer.webgl.projection.push();
     {
       var props = vis.objects[this.id];
       var scaling = vis.objects[this.id].volume["scale"];
@@ -1195,7 +1204,7 @@ Renderer.prototype.draw = function() {
 
       //TODO: get object rotation & translation and apply them (pass to apply?)
       //Apply the default camera
-      this.viewer.webgl.apply(viewer);
+      //this.viewer.webgl.apply(viewer, rot, trans);
 
       //console.log("DIMS: " + (scaling) + " TRANS: " + [-scaling[0]*0.5, -scaling[1]*0.5, -scaling[2]*0.5] + " SCALE: " + [1.0/scaling[0], 1.0/scaling[1], 1.0/scaling[2]]);
       //For a volume cube other than [0,0,0] - [1,1,1], need to translate/scale here...
@@ -1219,21 +1228,19 @@ Renderer.prototype.draw = function() {
       this.viewer.webgl.setNormalMatrix();
 
       //Perspective matrix
-      this.viewer.webgl.setPerspective(this.viewer.fov, this.gl.viewportWidth / this.gl.viewportHeight, this.viewer.near_clip, this.viewer.far_clip);
-
+      //this.viewer.webgl.setPerspective(this.viewer.fov, this.viewer.webgl.viewport.width / this.viewer.webgl.viewport.height, this.viewer.near_clip, this.viewer.far_clip);
       //Apply model scaling, inverse squared
       this.viewer.webgl.modelView.scale([1.0/(this.viewer.scale[0]*this.viewer.scale[0]), 1.0/(this.viewer.scale[1]*this.viewer.scale[1]), 1.0/(this.viewer.scale[2]*this.viewer.scale[2])]);
 
       //Send default matrices now
       //this.viewer.webgl.setMatrices();  //(can't use this as will overwrite our normal matrix)
       //Model view matrix
-      //this.gl.uniformMatrix4fv(this.program.uniforms["uMVMatrix"], false, this.viewer.webgl.modelView.matrix);
-      this.viewer.webgl.gl.uniformMatrix4fv(this.viewer.webgl.program.mvMatrixUniform, false, this.viewer.webgl.modelView.matrix);
-      //Perspective matrix
-      this.viewer.webgl.gl.uniformMatrix4fv(this.viewer.webgl.program.pMatrixUniform, false, this.viewer.webgl.perspective.matrix);
+      this.gl.uniformMatrix4fv(this.viewer.webgl.program.mvMatrixUniform, false, this.viewer.webgl.modelView.matrix);
+      //Perspective projection matrix
+      this.gl.uniformMatrix4fv(this.viewer.webgl.program.pMatrixUniform, false, this.viewer.webgl.projection.matrix);
 
       //Combined ModelView * Projection
-      var MVPMatrix = mat4.create(this.viewer.webgl.perspective.matrix);
+      var MVPMatrix = mat4.create(this.viewer.webgl.projection.matrix);
       mat4.multiply(MVPMatrix, matrix);
 
       //Transpose of model view
@@ -1241,7 +1248,7 @@ Renderer.prototype.draw = function() {
       mat4.transpose(tMVMatrix);
 
       //Combined InverseProjection * InverseModelView
-      var invPMatrix = mat4.create(this.viewer.webgl.perspective.matrix);
+      var invPMatrix = mat4.create(this.viewer.webgl.projection.matrix);
       mat4.inverse(invPMatrix);
       var invMVPMatrix = mat4.create(this.viewer.webgl.modelView.matrix);
       mat4.transpose(invMVPMatrix);
@@ -1263,7 +1270,7 @@ Renderer.prototype.draw = function() {
     this.gl.uniform1i(this.program.uniforms["uTransferFunction"], 1);
     this.gl.uniform1i(this.program.uniforms["uEnableColour"], props.usecolourmap || 1);
     this.gl.uniform1i(this.program.uniforms["uFilter"], props.tricubicfilter || 0);
-    this.gl.uniform4fv(this.program.uniforms["uViewport"], new Float32Array([0, 0, this.gl.viewportWidth, this.gl.viewportHeight]));
+    this.gl.uniform4fv(this.program.uniforms["uViewport"], this.viewer.webgl.viewport.array);
 
     var bbmin = [props.xmin || 0.0, props.ymin || 0.0, props.zmin || 0.0];
     var bbmax = [props.xmax || 1.0, props.ymax || 1.0, props.zmax || 1.0];
@@ -1447,7 +1454,6 @@ Viewer.prototype.loadFile = function(source) {
       if (source.indexOf("{") < 0) {
         if (server) {
           //Not a json string, assume a command script
-          //TODO: this doesn't seem to work in LavaVR?
           var lines = source.split("\n");
           for (var line in lines) {
             sendCommand('' + lines[line]);
@@ -1676,24 +1682,51 @@ Viewer.prototype.loadFile = function(source) {
     this.draw();
   }
 
+  //VR setup
+  if (navigator.getVRDisplays)
+    setup_VR();
+
   //Create UI - disable by omitting dat.gui.min.js
   this.gui = this.createMenu();
+}
+
+function hideMenu(canvas, gui) {
+  if (!gui.closed) return;
+
+  if (canvas.parentElement != document.body) {
+    var rect0 = canvas.getBoundingClientRect();
+    var rect1 = gui.domElement.getBoundingClientRect();
+    if (rect1.left > rect0.left + rect0.width)
+      //No overlap, don't hide
+      return;
+  }
+
+  //Reached this point? Menu needs hiding
+  gui.domElement.style.display = "none";
+  gui.hidetimer = true;
 }
 
 Viewer.prototype.createMenu = function() {
   if (!dat) return null;
   var gui;
+  //Insert within element rather than whole document
   if (this.canvas.parentElement != document.body) {
     gui = new dat.GUI({ autoPlace: false });
     var el = document.getElementById('lavavu_GUI_' + this.canvas.parentElement.id);
     el.appendChild(gui.domElement);
-  } else
-    gui = new dat.GUI();
 
-  gui.domElement.style.display = "none"; //Start hidden
+  } else {
+    gui = new dat.GUI();
+  }
+
   gui.close();
 
+  //Hide/show on mouseover (only if overlapping)
+  hideMenu(this.canvas, gui);
+
   viewer = this;
+  if (navigator.getVRDisplays)
+    gui.add({"VR Mode" : function() {start_VR();}}, 'VR Mode');
   gui.add({"Export" : function() {window.open('data:application/json;base64,' + window.btoa(viewer.toString()));}}, 'Export');
   //gui.add({"loadFile" : function() {document.getElementById('fileupload').click();}}, 'loadFile'). name('Load Image file');
   //gui.add({"ColourMaps" : function() {window.colourmaps.toggle();}}, 'ColourMaps');
@@ -2075,7 +2108,7 @@ Viewer.prototype.draw = function(borderOnly) {
 }
 
 Viewer.prototype.drawFrame = function(borderOnly) {
-  if (!this.canvas) return;
+  if (!this.canvas || inVR) return;
 
   if (server && !document.mouse.isdown && this.gl) {
     //Don't draw in server mode unless interacting (border view)
@@ -2083,7 +2116,7 @@ Viewer.prototype.drawFrame = function(borderOnly) {
     return;
   }
   
-  //Show screenshot while interacting or if using server
+  /*/Show screenshot while interacting or if using server
   //if (server || borderOnly)
   var frame = document.getElementById('frame');
   if (frame) {
@@ -2096,7 +2129,7 @@ Viewer.prototype.drawFrame = function(borderOnly) {
     } else { 
       frame.style.display = 'none';
     }
-  }
+  }*/
   
   if (!this.gl) return;
 
@@ -2114,21 +2147,17 @@ Viewer.prototype.drawFrame = function(borderOnly) {
   }
 
   if (this.width != this.canvas.width || this.height != this.canvas.height) {
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
+    this.canvas.width = this.canvas.clientWidth = this.width;
+    this.canvas.height = this.canvas.clientHeight = this.height;
     this.canvas.setAttribute("width", this.width);
     this.canvas.setAttribute("height", this.height);
-    if (this.gl) {
-      this.gl.viewportWidth = this.width;
-      this.gl.viewportHeight = this.height;
-      this.webgl.viewport = new Viewport(0, 0, this.width, this.height);      
-    }
+    this.webgl.viewport = new Viewport(0, 0, this.width, this.height);
   }
   this.width = this.height = 0;
 
   var start = new Date();
 
-  this.gl.viewport(0, 0, this.gl.viewportWidth, this.gl.viewportHeight);
+  this.gl.viewport(this.webgl.viewport.x, this.webgl.viewport.y, this.webgl.viewport.width, this.webgl.viewport.height);
   //  console.log(JSON.stringify(this.webgl.viewport));
   //this.gl.clearColor(this.background.red/255, this.background.green/255, this.background.blue/255, server || document.mouse.isdown ? 0 : 1);
   this.gl.clearColor(this.background.red/255, this.background.green/255, this.background.blue/255, server ? 0 : 1);
@@ -2138,7 +2167,7 @@ Viewer.prototype.drawFrame = function(borderOnly) {
 
   //Apply the camera
   this.webgl.view(this);
-  
+
   //Render objects
   for (var r in this.renderers) {
     //if (!document.mouse.isdown && !this.showBorder && type == 'border') continue;
@@ -2296,6 +2325,7 @@ Viewer.prototype.updateDims = function(view) {
   */
 }
 
+/*
 function resizeToWindow() {
   //var canvas = document.getElementById('canvas');
   //if (canvas.width < window.innerWidth || canvas.height < window.innerHeight)
@@ -2311,3 +2341,182 @@ function connectWindow() {
   requestData('/render');
   window.location.reload();
 }
+*/
+
+//https://hacks.mozilla.org/2018/09/converting-a-webgl-application-to-webvr/
+//https://github.com/Manishearth/webgl-to-webvr/
+let vrDisplay;
+let inVR = false;
+
+// This function is triggered when the user clicks the "enter VR" button
+function start_VR() {
+  if (vrDisplay != null) {
+    if (!inVR) {
+      inVR = true;
+      // hand the canvas to the WebVR API
+      vrDisplay.requestPresent([{ source: window.viewer.canvas }]);
+      // requestPresent() will request permission to enter VR mode,
+      // and once the user has done this our `vrdisplaypresentchange`
+      // callback will be triggered
+
+      //Show stats
+      if (!document.getElementById("stats_info")) {
+        var script=document.createElement('script');
+        script.id = "stats_info";
+        script.onload = function() {
+          var stats=new Stats();
+          document.body.appendChild(stats.dom);
+          requestAnimationFrame(function loop() {
+            stats.update();
+            requestAnimationFrame(loop)
+          });
+        };
+        script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';
+        document.head.appendChild(script);
+      }
+
+    } else {
+      stop_VR();
+    }
+  }
+}
+
+function stop_VR() {
+  inVR = false;
+  let viewer = window.viewer;
+  let canvas = window.viewer.canvas;
+  // resize canvas to regular non-VR size if necessary
+  viewer.width = 0; //Auto resize
+  viewer.height = 0;
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+
+  viewer.drawFrame();
+  viewer.draw();
+}
+
+function setup_VR() {
+  if (!navigator.getVRDisplays) {
+    alert("Your browser does not support WebVR");
+    return;
+  }
+
+  function display_setup(displays) {
+    if (displays.length === 0)
+      return;
+    //Use last in list
+    vrDisplay = displays[displays.length-1];
+  }
+
+  navigator.getVRDisplays().then(display_setup);
+
+  function VR_change() {
+    // no VR display, exit
+    if (vrDisplay == null)
+        return;
+
+    let viewer = window.viewer;
+    let canvas = window.viewer.canvas;
+
+    // are we entering or exiting VR?
+    if (vrDisplay.isPresenting) {
+      // optional, but recommended
+      vrDisplay.depthNear = viewer.near_clip;
+      vrDisplay.depthFar = viewer.far_clip;
+
+      // We should make our canvas the size expected
+      // by WebVR
+      const eye = vrDisplay.getEyeParameters("left");
+      // multiply by two since we're rendering both eyes side
+      // by side
+      viewer.width = eye.renderWidth * 2;
+      viewer.height = eye.renderHeight;
+      canvas.style.width = viewer.width + "px";
+      canvas.style.height = viewer.height + "px";
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      const vrCallback = () => {
+        if (vrDisplay == null || !inVR)
+          return;
+
+        // reregister callback if we're still in VR
+        vrDisplay.requestAnimationFrame(vrCallback);
+
+        // render scene
+        renderVR();
+      };
+
+      // register callback
+      vrDisplay.requestAnimationFrame(vrCallback);
+
+    } else {
+      stop_VR();
+    }
+  }
+
+  window.addEventListener('vrdisplaypresentchange', VR_change);
+}
+
+function renderVR() {
+  //Clear full canvas
+  window.viewer.gl.viewport(0, 0, window.viewer.canvas.width, window.viewer.canvas.height);
+  window.viewer.gl.clear(window.viewer.gl.COLOR_BUFFER_BIT | window.viewer.gl.DEPTH_BUFFER_BIT);
+
+  //Left eye
+  renderEye(window.viewer, true);
+
+  //Right eye
+  renderEye(window.viewer, false);
+
+  vrDisplay.submitFrame();
+}
+
+function renderEye(viewer, isLeft) {
+  let projection, mview;
+  let frameData = new VRFrameData();
+  var gl = viewer.webgl.gl;
+  var width = viewer.canvas.width / 2;
+  var height = viewer.canvas.height;
+
+  vrDisplay.getFrameData(frameData);
+
+  // choose which half of the canvas to draw on
+  if (isLeft) {
+    viewer.webgl.viewport = new Viewport(0, 0, width, height);
+    gl.viewport(0, 0, width, height);
+    //Apply the default camera
+    viewer.webgl.apply(viewer);
+
+    projection = frameData.leftProjectionMatrix;
+    mview = frameData.leftViewMatrix;
+  } else {
+    viewer.webgl.viewport = new Viewport(width, 0, width, height);
+    gl.viewport(width, 0, width, height);
+//viewer.webgl.viewport = new Viewport(0, 0, width, height);
+//gl.viewport(0, 0, width, height);
+    projection = frameData.rightProjectionMatrix;
+    mview = frameData.rightViewMatrix;
+  }
+
+  //Apply the default camera
+  viewer.webgl.apply(viewer);
+
+  //Update matrices with VR modified versions
+  //mat4.multiply(mview, viewer.webgl.modelView.matrix);
+  //viewer.webgl.modelView.matrix = mview;
+  mat4.multiply(viewer.webgl.modelView.matrix, mview);
+//console.log(isLeft ? "LEFT " : "RIGHT "); printMatrix(mview);
+  //gl.uniformMatrix4fv(viewer.webgl.program.mvMatrixUniform, false, mview);
+
+  viewer.webgl.projection.matrix = projection;
+
+  //Render objects
+  for (var r in viewer.renderers) {
+    if (viewer.renderers[r].border && !viewer.showBorder) continue;
+    viewer.renderers[r].draw();
+  }
+
+  viewer.rotated = false; //Clear rotation flag
+}
+
