@@ -123,7 +123,7 @@ class Range
   float minimum;
   float maximum;
   Range(const float& min=HUGE_VALF, const float& max=-HUGE_VALF) : minimum(min), maximum(max) {}
-  bool valid() const {return minimum < maximum;}
+  bool valid() const {return minimum <= maximum;}
   float* data() {return &minimum;}
   bool update(const float& min, const float& max);
   friend std::ostream& operator<<(std::ostream& stream, const Range& range);
