@@ -406,7 +406,9 @@ void ColourMap::calibrate(Range* dataRange)
   bool hasRange = properties.has("range");
   Range range;
   Properties::toArray<float>(properties["range"], range.data(), 2);
-  if (!range.valid()) hasRange = false;
+  //Ignore invalid range or where min == max (default for range property)
+  if (!range.valid() || range.minimum == range.maximum)
+    hasRange = false;
 
   //Has values and no fixed range, calibrate to data
   if (dataRange && !hasRange)
