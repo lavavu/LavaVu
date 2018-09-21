@@ -3457,7 +3457,11 @@ void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, fl
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Data_Ptr dat = geom->dataContainer(dtype);
-  if (dat == nullptr) return;
+  if (dat == nullptr)
+  {
+    *len = 0;
+    return;
+  }
   *array = (float*)dat->ref(0);
   *len = dat->size();
 }
@@ -3468,7 +3472,11 @@ void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, float** array, int* len, std:
   //(warning, can be released at any time, copy if needed!)
   if (!geom) return;
   Values_Ptr dat = geom->valueContainer(label);
-  if (dat == nullptr) return;
+  if (dat == nullptr)
+  {
+    *len = 0;
+    return;
+  }
   *array = (float*)dat->ref(0);
   *len = dat->size();
 }
