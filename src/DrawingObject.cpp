@@ -69,7 +69,7 @@ void DrawingObject::updateRange(const std::string& label, const Range& newRange)
 {
   if (!newRange.valid()) return;
 
-  //std::cout << name() << " UPDATE RANGE: " << label << " [" << newRange.minimum << "," << newRange.maximum << "]\n";
+  //std::cout << name() << " UPDATE RANGE: " << label << " " << newRange << std::endl;
 
   //If no existing entry, create default
   auto range = Range();

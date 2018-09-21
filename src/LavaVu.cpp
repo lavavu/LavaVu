@@ -543,7 +543,7 @@ void LavaVu::run(std::vector<std::string> args)
       //  g->merge(startstep, startstep);
       DrawingObject* obj = NULL;
       std::vector<DrawingObject*> objs;
-      if (dumpid > 0) obj = amodel->findObject(dumpid);
+      if (dumpid > 0) obj = amodel->objects[dumpid-1];
       if (obj) objs.push_back(obj);
       exportData(dump, objs);
     }
@@ -3218,8 +3218,9 @@ DrawingObject* LavaVu::createObject(std::string properties)
 
 DrawingObject* LavaVu::getObject(const std::string& name)
 {
+  if (!amodel) return NULL;
   if (name.length())
-    return lookupObject(name, aobject);
+    return amodel->findObject(name, aobject);
   return NULL;
 }
 

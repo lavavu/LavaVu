@@ -358,6 +358,15 @@ bool Model::loadFigure(int fig, bool preserveGlobals)
   figure = fig;
   assert(figure >= 0);
   json globals = session.globals;
+
+  //Hide all existing objects before loading if there are multiple figures
+  //Only objects present in new figure's state data will be shown
+  if (figures.size() > 1)
+  {
+    for (unsigned int i=0; i < objects.size(); i++)
+      objects[i]->properties.data["visible"] = false;
+  }
+
   jsonRead(figures[figure]);
 
   //Set window caption
@@ -504,6 +513,38 @@ DrawingObject* Model::findObject(unsigned int id)
   for (unsigned int i=0; i<objects.size(); i++)
     if (objects[i]->dbid == id) return objects[i];
   return NULL;
+}
+
+DrawingObject* Model::findObject(const std::string& name, DrawingObject* def)
+{
+  //Lookup by name only
+  if (name.length() == 0) return NULL;
+  std::string lname = name;
+  std::transform(lname.begin(), lname.end(), lname.begin(), ::tolower);
+  for (unsigned int i=0; i<objects.size(); i++)
+  {
+    std::string namekey = objects[i]->name();
+    std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
+    if (namekey == lname)
+      return objects[i];
+  }
+  return def;
+}
+
+ColourMap* Model::findColourMap(const std::string& name, ColourMap* def)
+{
+  //Lookup by name only
+  if (name.length() == 0) return NULL;
+  std::string lname = name;
+  std::transform(lname.begin(), lname.end(), lname.begin(), ::tolower);
+  for (unsigned int i=0; i<colourMaps.size(); i++)
+  {
+    std::string namekey = colourMaps[i]->name;
+    std::transform(namekey.begin(), namekey.end(), namekey.begin(), ::tolower);
+    if (namekey == lname)
+      return colourMaps[i];
+  }
+  return def;
 }
 
 void Model::clearObjects(bool fixed)
@@ -2228,47 +2269,38 @@ void Model::jsonRead(std::string data)
   json cmaps = imported["colourmaps"];
   for (unsigned int i=0; i < cmaps.size(); i++)
   {
-    if (i >= colourMaps.size())
-      addColourMap();
+    ColourMap* dest = findColourMap(cmaps[i]["name"]);
+    if (!dest)
+      dest = addColourMap(cmaps[i]["name"]);
 
     //Replace properties with imported
-    colourMaps[i]->properties.data = cmaps[i];
-    colourMaps[i]->properties.checkall();
-    json cmap = colourMaps[i]->properties.data;
+    dest->properties.data = cmaps[i];
+    dest->properties.checkall();
+    json cmap = dest->properties.data;
 
     json colours = cmap["colours"];
-    if (cmap["name"].is_string()) colourMaps[i]->name = cmap["name"];
     //Replace colours
-    colourMaps[i]->colours.clear();
+    dest->colours.clear();
     for (unsigned int c=0; c < colours.size(); c++)
     {
       json colour = colours[c];
       Colour newcolour(colour["colour"]);
-      colourMaps[i]->addAt(newcolour, colour["position"]);
+      dest->addAt(newcolour, colour["position"]);
     }
   }
 
   //Import objects
   json inobjects = imported["objects"];
-  //Before loading state, set all object visibility to hidden
-  //Only objects present in state data will be shown
-  //for (auto g : geometry)
-  //  g->showObj(NULL, false);
-
   unsigned int len = objects.size();
   if (len < inobjects.size()) len = inobjects.size();
-  for (unsigned int i=0; i < objects.size(); i++)
+  for (unsigned int i=0; i < inobjects.size(); i++)
   {
-    /*if (i >= objects.size())
+    std::string name = inobjects[i]["name"];
+    DrawingObject* dest = findObject(name);
+    if (!dest)
     {
-      std::string name = inobjects[i]["name"];
-      addObject(new DrawingObject(session, name));
-    }*/
-
-    if (i >= inobjects.size())
-    {
-      //Not in imported list, assume hidden
-      objects[i]->properties.data["visible"] = false;
+      dest = new DrawingObject(session, name);
+      addObject(dest);
     }
 
     //Convert colourmap to use name
@@ -2276,14 +2308,14 @@ void Model::jsonRead(std::string data)
     if (cm.is_number())
     {
       int cmid = cm;
-      if (cmid >= 0 && cmid < (int)colourMaps.size())
-        inobjects[i]["colourmap"] = colourMaps[cmid]->name;
+      if (cmid >= 0 && cmid < (int)cmaps.size())
+        inobjects[i]["colourmap"] = cmaps[cmid]["name"];
       else
         inobjects[i]["colourmap"] = "";
     }
     
     //Merge properties
-    objects[i]->properties.merge(inobjects[i]);
+    dest->properties.merge(inobjects[i]);
   }
 
   if ((imported["reload"].is_boolean() && imported["reload"]))
