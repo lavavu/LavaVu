@@ -390,7 +390,7 @@ class Object(dict):
                 cmap = self.colourmap(value)
                 value = cmap.name
 
-        self.instance.app.parseProperty(key + '=' + json.dumps(value), self.ref)
+        self.instance.app.parseProperty(key + '=' + _convert_args(value), self.ref)
         self.instance._get() #Ensure in sync
 
     def __contains__(self, key):
@@ -3206,7 +3206,7 @@ class GeomData(object):
             #Set float32 data
             self.instance.app.geometryArrayFloat(self.data, array.astype(numpy.float32), typename)
         
-    def __str__(self):
+    def __repr__(self):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['GeomData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
