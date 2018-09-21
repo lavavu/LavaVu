@@ -142,9 +142,6 @@ void ColourMap::loadPalette(std::string data)
         charPtr = strtok(NULL, breakChars);
       }
       delete[] colourString;
-
-      //Ensure at least two colours
-      while (colours.size() < 2) add(0xff000000);
     }
     else
     {
@@ -191,7 +188,10 @@ void ColourMap::loadPalette(std::string data)
     loadTexture();
 
   //Ensure at least two colours
-  while (colours.size() < 2) add(0xff000000);
+  if (colours.size() == 0)
+    add(0xff000000);
+  if (colours.size() == 1)
+    add(colours[0].colour.value);
 }
 
 void ColourMap::addAt(Colour& colour, float position)

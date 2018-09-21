@@ -285,7 +285,8 @@ def matplotlib_colourmap(name, samples=128):
             colours.append(cmap(pos))
         return colours
     except (Exception) as e:
-        print('Unable to import colourmap ' + str(name) + ' from matplotlib' + str(e))
+        #Assume single colour value, just return it
+        return name
     return []
 
 #Module settings
