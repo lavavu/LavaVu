@@ -3014,7 +3014,7 @@ class Geometry(list):
             if key == 'values':
                 #Just use the first available value label as the default .values descriptor
                 if len(sets) == 0: continue
-                typename = sets.keys()[0]
+                typename = list(sets.keys())[0]
             #Access by type name to get a view
             setattr(Geometry, key, GeomDataListView(self.obj, self.timestep, typename))
             #Access by type name + _copy to get a copy
