@@ -1294,14 +1294,10 @@ int Model::setTimeStep(int stepidx)
     //  return -1;
     if (now < 0 || stepidx != now || session.now != now)
     {
-      //Setting initial step?
-      bool first = (now < 0);
-
       //Create new geometry containers if required
       if (geometry.size() == 0)
       {
         init();
-        loadFixedGeometry();
       }
       else
       {
@@ -1314,6 +1310,10 @@ int Model::setTimeStep(int stepidx)
           g->close();
         }
       }
+
+      //Setting initial step?
+      if (now < 0)
+        loadFixedGeometry();
 
       //Set the new timestep index
       debug_print("===== Model step %d Global step %d Requested step %d =====\n", now, session.now, stepidx);
