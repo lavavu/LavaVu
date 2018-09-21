@@ -200,7 +200,7 @@ function sortTimer(ifexists, viewer) {
     return;
   }
 
-  viewer.timer = setTimeout(function() {viewer.rotated = true; viewer.draw();}, 500);
+  viewer.timer = setTimeout(function() {viewer.rotated = true; viewer.draw();}, 50);
 }
 
 function canvasMouseDown(event, mouse) {
@@ -1687,7 +1687,7 @@ Viewer.prototype.loadFile = function(source) {
     setup_VR();
 
   //Create UI - disable by omitting dat.gui.min.js
-  this.gui = this.createMenu();
+  this.createMenu();
 }
 
 function hideMenu(canvas, gui) {
@@ -1748,7 +1748,7 @@ Viewer.prototype.createMenu = function() {
         if (obj.volume && obj.volume.minimum < obj.volume.maximum)
           range = [obj.volume.minimum, obj.volume.maximum];
         //Or value data range
-        else if (obj.vales && obj.vales.minimum < obj.values.maximum)
+        else if (obj.values && obj.values.minimum < obj.values.maximum)
           range = [obj.values.minimum, obj.values.maximum];
       }
       //console.log(obj.name + " : range = " + range);
@@ -1757,46 +1757,84 @@ Viewer.prototype.createMenu = function() {
     return null;
   }
 
-  addctrls = function(menu, obj, viewer) {
+  addctrl = function(menu, obj, viewer, prop) {
+    //TODO: implement delayed high quality render for faster interaction
+    //var changefn = function(value) {viewer.delayedRender(250);};
+    var changefn = function(value) {viewer.reload(); viewer.draw();};
+    var ctrl = viewer.dict[prop].control;
+
+    //Query prop dict for data type, default, min/max/step etc
+    var dtype = viewer.dict[prop].type;
+    if (prop === 'colourmap') {
+      var maps = ['']
+      for (var i=0; i<viewer.vis.colourmaps.length; i++)
+        maps.push(viewer.vis.colourmaps[i].name);
+      //console.log(JSON.stringify(maps));
+      menu.add(obj, prop, maps).onFinishChange(changefn);
+
+    } else if (ctrl.length > 2 && ctrl[2] != null) {
+      //Select from list of options
+      menu.add(obj, prop, ctrl[2]).onFinishChange(changefn);
+
+    } else if ((dtype.indexOf('real') >= 0 || dtype.indexOf('integer') >= 0) && typeof(obj[prop]) == 'number') {
+      //Ranged?
+      var range = getrange(obj, ctrl);
+      if (range) {
+        //Check value within range
+        if (obj[prop] < range[0]) obj[prop] = range[0];
+        if (obj[prop] > range[1]) obj[prop] = range[1];
+        menu.add(obj, prop, range[0], range[1], ctrl[1][2]).onFinishChange(changefn);
+      } else
+        menu.add(obj, prop).onFinishChange(changefn);
+    } else if (dtype === 'string' || dtype === 'boolean') {
+      menu.add(obj, prop).onFinishChange(changefn);
+    } else if (dtype === 'boolean') {
+      menu.add(obj, prop).onFinishChange(changefn);
+    } else if (dtype === 'colour') {
+      try {
+        menu.addColor(obj, prop).onFinishChange(changefn);
+      } catch(e) {
+        console.log(e);
+      }
+    }
+  }
+
+  addctrls = function(menu, obj, viewer, filter) {
+    var submenu = menu.addFolder(' ... ');
+    var submenus = {};
+    //var typelist = ['all', 'global', 'view', 'object', 'object(point)', 'object(line)', 'object(volume)', 'object(surface)', 'object(vector)', 'object(tracer)', 'object(shape)', 'colourbar', 'colourmap'];
+    var typelist = ['all', 'global', 'view', 'object', 'object(point)', 'object(line)', 'object(volume)', 'object(surface)', 'colourmap'];
+    for (var t in typelist)
+      submenus[typelist[t]] = submenu.addFolder(typelist[t]);
+
     for (var prop in viewer.dict) {
-    //for (var prop in obj) {
-      //console.log(prop);
-      //if (prop in viewer.dict) {
+
+      var ctrl = viewer.dict[prop].control;
+      if (!ctrl || ctrl[0] === false) continue; //Control disabled
+
       if (prop in obj) {
         //console.log(prop + " ==> " + JSON.stringify(viewer.dict[prop]));
-        var ctrl = viewer.dict[prop].control;
-        if (ctrl[0] === false) continue; //Control disabled
+        addctrl(menu, obj, viewer, prop);
 
-        //TODO: implement delayed high quality render for faster interaction
-        //var changefn = function(value) {viewer.delayedRender(250);};
-        var changefn = function(value) {viewer.reload(); viewer.draw();};
-
-        //Query prop dict for data type, default, min/max/step etc
-        var dtype = viewer.dict[prop].type;
-        if (prop === 'colourmap') {
-          var maps = ['']
-          for (var i=0; i<viewer.vis.colourmaps.length; i++)
-            maps.push(viewer.vis.colourmaps[i].name);
-          //console.log(JSON.stringify(maps));
-          menu.add(obj, prop, maps).onFinishChange(changefn);
-
-        } else if (ctrl.length > 2 && ctrl[2] != null) {
-          //Select from list of options
-          menu.add(obj, prop, ctrl[2]).onFinishChange(changefn);
-
-        } else if ((dtype.indexOf('real') >= 0 || dtype.indexOf('integer') >= 0) && typeof(obj[prop]) == 'number') {
-          //Ranged?
-          var range = getrange(obj, ctrl);
-          if (range)
-            menu.add(obj, prop, range[0], range[1], ctrl[1][2]).onFinishChange(changefn);
-          else
-            menu.add(obj, prop).onFinishChange(changefn);
-        } else if (dtype === 'string' || dtype === 'boolean') {
-          menu.add(obj, prop).onFinishChange(changefn);
-        } else if (dtype === 'boolean') {
-          menu.add(obj, prop).onFinishChange(changefn);
-        } else if (dtype === 'colour') {
-          menu.addColor(obj, prop).onFinishChange(changefn);
+      } else {
+        //Add to sub-menu
+        //  obj[prop] = viewer.dict[prop]["default"]; //Have to set to default for dat.gui
+        var mnu = submenus[viewer.dict[prop]["target"]];
+        if (mnu) {
+          //console.log(prop + " ==> " + JSON.stringify(viewer.dict[prop]));
+          var obj2 = {};
+          obj2[prop] = function() {
+            this.ref[this.property] = viewer.dict[this.property]["default"];
+            //Remove this entry
+            this.menu.remove(this.controller);
+            //Add property controller
+            addctrl(this.parentMenu, this.ref, viewer, this.property);
+          };
+          obj2.ref = obj;
+          obj2.property = prop;
+          obj2.menu = mnu;
+          obj2.parentMenu = menu;
+          obj2.controller = mnu.add(obj2, prop);
         }
       }
     }
@@ -1813,16 +1851,28 @@ Viewer.prototype.createMenu = function() {
   v.add({"ZX" : function() {viewer.rotate = quat4.create([ir2, 0, 0, ir2]); viewer.rotated = true; viewer.draw();}}, 'ZX');
   v.add({"YZ" : function() {viewer.rotate = quat4.create([0, -ir2, 0, -ir2]); viewer.rotated = true; viewer.draw();}}, 'YZ');
   v.add({"ZY" : function() {viewer.rotate = quat4.create([0, -ir2, 0, ir2]); viewer.rotated = true; viewer.draw();}}, 'ZY');
-  console.log(JSON.stringify(this.view));
+  //console.log(JSON.stringify(this.view));
   addctrls(v, this.view, this);
 
   var o = gui.addFolder('Objects');
   for (var id in this.vis.objects) {
     var of = o.addFolder(this.vis.objects[id].name)
+    console.log("------------------- " + this.vis.objects[id].name);
     addctrls(of, this.vis.objects[id], this);
   }
 
-  return gui;
+  var c = gui.addFolder('ColourMaps');
+  for (var id in this.vis.colourmaps) {
+    var of = c.addFolder(this.vis.colourmaps[id].name)
+    addctrls(of, this.vis.colourmaps[id], this);
+  }
+
+    for (var type in this.vis.objects[id]) {
+      if (type in types)
+        alert(type);
+    }
+
+  this.gui = gui;
 }
 
 Viewer.prototype.reload = function() {
