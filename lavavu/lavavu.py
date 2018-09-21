@@ -1171,6 +1171,10 @@ class Object(dict):
         """
         self.instance.help(cmd, self)
 
+    def boundingbox(self, allsteps=False):
+        bb = self.instance.app.getBoundingBox(self.ref, allsteps)
+        return [[bb[0], bb[1], bb[2]], [bb[3], bb[4], bb[5]]]
+
 #Wrapper dict+list of objects
 class Objects(dict):
     """  

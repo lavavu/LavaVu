@@ -270,6 +270,7 @@ public:
 
   std::vector<Geom_Ptr> getGeometry(DrawingObject* target);
   std::vector<Geom_Ptr> getGeometryAt(DrawingObject* target, int timestep=-2);
+  std::vector<float> getBoundingBox(DrawingObject* target, bool allsteps=false);
   void geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type);
   void geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometryDataType type);

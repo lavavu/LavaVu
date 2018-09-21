@@ -3387,6 +3387,26 @@ std::vector<Geom_Ptr> LavaVu::getGeometryAt(DrawingObject* target, int timestep)
   return list;
 }
 
+std::vector<float> LavaVu::getBoundingBox(DrawingObject* target, bool allsteps)
+{
+  //Gets data from all entries (records) at specified step
+  std::vector<float> list;
+  if (!amodel || !target) return list;
+
+  float min[3], max[3];
+  for (int i=0; i<3; i++)
+    max[i] = -(min[i] = HUGE_VAL);
+
+  for (auto g : amodel->geometry)
+    g->objectBounds(target, min, max, allsteps);
+
+  for (int i=0; i<3; i++)
+    list.push_back(min[i]);
+  for (int i=0; i<3; i++)
+    list.push_back(max[i]);
+  return list;
+}
+
 void LavaVu::geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(geom->draw);

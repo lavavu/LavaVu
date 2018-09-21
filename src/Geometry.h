@@ -603,7 +603,7 @@ public:
   json getDataLabels(DrawingObject* draw);
   int size() {return records.size();}
   virtual void setup(View* vp, float* min=NULL, float* max=NULL);
-  void objectBounds(DrawingObject* draw, float* min, float* max);
+  void objectBounds(DrawingObject* draw, float* min, float* max, bool allsteps=false);
   void move(Geometry* other);
   void toImage(unsigned int idx);
   void setTexture(DrawingObject* draw, Texture_Ptr tex);

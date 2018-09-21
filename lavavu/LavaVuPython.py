@@ -462,6 +462,7 @@ LavaVu.textureUChar = new_instancemethod(_LavaVuPython.LavaVu_textureUChar, None
 LavaVu.textureUInt = new_instancemethod(_LavaVuPython.LavaVu_textureUInt, None, LavaVu)
 LavaVu.getGeometry = new_instancemethod(_LavaVuPython.LavaVu_getGeometry, None, LavaVu)
 LavaVu.getGeometryAt = new_instancemethod(_LavaVuPython.LavaVu_getGeometryAt, None, LavaVu)
+LavaVu.getBoundingBox = new_instancemethod(_LavaVuPython.LavaVu_getBoundingBox, None, LavaVu)
 LavaVu.geometryArrayUChar = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUChar, None, LavaVu)
 LavaVu.geometryArrayUInt = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUInt, None, LavaVu)
 LavaVu.geometryArrayFloat = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayFloat, None, LavaVu)
