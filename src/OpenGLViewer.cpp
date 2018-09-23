@@ -449,10 +449,11 @@ void OpenGLViewer::display(bool redraw)
       outputs[o]->alloc(width, height);
 
       //Read the pixels
-      if (outputs[o]->width && outputs[o]->height && (outputs[o]->width != width || outputs[o]->height != height))
+      //if (outputs[o]->width && outputs[o]->height && (outputs[o]->width != width || outputs[o]->height != height))
         pixels(outputs[o]->buffer, outputs[o]->width, outputs[o]->height, outputs[o]->channels);
-      else
-        pixels(outputs[o]->buffer, outputs[o]->channels);
+      //else
+      //Was this for speed in server mode? Fails for video output so disabled for now
+      //  pixels(outputs[o]->buffer, outputs[o]->channels);
 
       //Process in output display callback
       outputs[o]->display();
