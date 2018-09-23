@@ -3038,6 +3038,10 @@ class Geometry(list):
     def __str__(self):
         return '[' + ', '.join([str(i) for i in self]) + ']'
 
+    def __call__(self):
+        #For backwards compatibility with old Viewer.data() method (now a property)
+        return self
+
 class GeomDataListView(object):
     """A descriptor that provides view/copy/set access to a GeomData list"""
     def __init__(self, obj, timestep, key, copy=False):
