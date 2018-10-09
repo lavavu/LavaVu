@@ -559,7 +559,7 @@ public:
     return val;
   }
 
-  bool Bool(std::string key, bool def=false, unsigned int idx=0)
+  bool Boolean(std::string key, bool def=false, unsigned int idx=0)
   {
     std::stringstream parsess(get(key, idx));
     bool val;

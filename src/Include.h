@@ -126,6 +126,21 @@ typedef void* (*getProcAddressFN)(const char* procName);
 extern getProcAddressFN GetProcAddress;
 #endif
 
+#if defined HAVE_EGL and not defined HAVE_X11
+//Using libOpenGL instead of libGL, no old functions
+#define glGenRenderbuffersEXT glGenRenderbuffers
+#define glBindRenderbufferEXT glBindRenderbuffer
+#define glRenderbufferStorageEXT glRenderbufferStorage
+#define glGenFramebuffersEXT glGenFramebuffers
+#define glFramebufferRenderbufferEXT glFramebufferRenderbuffer
+#define glFramebufferTexture2DEXT glFramebufferTexture2D
+#define glCheckFramebufferStatusEXT glCheckFramebufferStatus
+#define glBindFramebufferEXT glBindFramebuffer
+#define glDeleteRenderbuffersEXT glDeleteRenderbuffers
+#define glDeleteFramebuffersEXT glDeleteFramebuffers
+#define glGenerateMipmapEXT glGenerateMipmap
+#endif
+
 #include "Extensions.h"
 
 #endif //Include__

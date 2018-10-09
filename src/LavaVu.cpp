@@ -59,6 +59,7 @@
 #include "Main/GlutViewer.h"
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
+#include "Main/EGLViewer.h"
 #ifdef HAVE_LIBTIFF
 #include <tiffio.h>
 #endif
@@ -88,6 +89,8 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
   GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
 #elif defined HAVE_GLUT and not defined __APPLE__
   GetProcAddress = (getProcAddressFN)glXGetProcAddress;
+#elif defined HAVE_EGL
+  GetProcAddress = (getProcAddressFN)eglGetProcAddress;
 #endif
 
   //Create viewer window
@@ -105,6 +108,9 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 #if defined HAVE_CGL
   if (!viewer) viewer = new CocoaViewer();
   if (!viewer) viewer = new CGLViewer();
+#endif
+#if defined HAVE_EGL
+  if (!viewer) viewer = new EGLViewer();
 #endif
   }
   //Assume an OpenGL context is already provided

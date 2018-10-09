@@ -51,23 +51,27 @@ ifeq ($(OS), Darwin)
   LIBINSTALL=-install_name @loader_path/lib$(PROGNAME).$(LIBEXT)
 else
   #Linux 
-  LIBS=-ldl -lpthread -lm -lGL -lz
+  LIBS=-ldl -lpthread -lm -lz
   DEFINES += -DUSE_FONTS
   LIBEXT=so
   LIBBUILD=-shared
   LIBLINK=-Wl,-rpath='$$ORIGIN'
 ifeq ($(GLUT), 1)
   #GLUT optional
-  LIBS+= -lglut
+  LIBS+= -lGL -lglut
   DEFINES += -DHAVE_GLUT
 else ifeq ($(SDL), 1)
   #SDL optional
-  LIBS+= -lSDL
+  LIBS+= -lGL -lSDL
   DEFINES += -DHAVE_SDL
 else ifeq ($(X11), 1)
   #X11 default
-  LIBS+= -lX11
+  LIBS+= -lGL -lX11
   DEFINES += -DHAVE_X11
+else ifeq ($(EGL), 1)
+  #EGL fallback
+  LIBS+= -lEGL -lOpenGL
+  DEFINES += -DHAVE_EGL
 endif
 endif
 

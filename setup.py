@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.52"
+version = "1.2.55"
 
 """
 To release a new verison:
@@ -111,7 +111,7 @@ class LVBuild(build):
         ]
 
         try:
-            cmd.append('-j%d' % cpu_count())
+            cmd.append('-j%d' % int(0.5*cpu_count()+1))
         except:
             pass
 
@@ -126,6 +126,13 @@ class LVBuild(build):
                 ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
                  'libavutil/imgutils.h', 'libswscale/swscale.h'])):
             cmd.append('VIDEO=1')
+
+        #Disable X11 if not found
+        if not find_library('X11') or not check_libraries(['X11'], ['X11/Xlib.h']):
+            cmd.append('X11=0')
+            #EGL for offscreen OpenGL without X
+            if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
+                cmd.append('EGL=1')
 
         #Debug build
         #cmd.append('CONFIG=debug')
