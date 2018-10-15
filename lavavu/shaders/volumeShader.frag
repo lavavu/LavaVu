@@ -247,6 +247,9 @@ void main()
     if (irange <= 0.0) irange = 1.0;
     irange = 1.0 / irange;
   
+    //Map colour over valid density range only
+    float dRange = uDenMinMax[1] - uDenMinMax[0];
+
     //Raymarch, front to back
     vec3 depthHit = rayStart;
     for (int i=0; i < maxSamples; ++i)
@@ -309,6 +312,9 @@ void main()
             pos += step;
             continue;
           }
+
+          //Scale to density range - fits colourmap to only the displayed data range
+          density = density / dRange;
 
           density = pow(density, uPower); //Apply power
 
