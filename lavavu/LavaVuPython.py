@@ -378,12 +378,23 @@ lucMaxDataType = _LavaVuPython.lucMaxDataType
 class OpenGLViewer(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
-    quitProgram = _swig_property(_LavaVuPython.OpenGLViewer_quitProgram_get, _LavaVuPython.OpenGLViewer_quitProgram_set)
     port = _swig_property(_LavaVuPython.OpenGLViewer_port_get, _LavaVuPython.OpenGLViewer_port_set)
+    quitProgram = _swig_property(_LavaVuPython.OpenGLViewer_quitProgram_get, _LavaVuPython.OpenGLViewer_quitProgram_set)
+    isopen = _swig_property(_LavaVuPython.OpenGLViewer_isopen_get, _LavaVuPython.OpenGLViewer_isopen_set)
+    postdisplay = _swig_property(_LavaVuPython.OpenGLViewer_postdisplay_get, _LavaVuPython.OpenGLViewer_postdisplay_set)
 
     def __init__(self):
         _LavaVuPython.OpenGLViewer_swiginit(self, _LavaVuPython.new_OpenGLViewer())
     __swig_destroy__ = _LavaVuPython.delete_OpenGLViewer
+OpenGLViewer.open = new_instancemethod(_LavaVuPython.OpenGLViewer_open, None, OpenGLViewer)
+OpenGLViewer.init = new_instancemethod(_LavaVuPython.OpenGLViewer_init, None, OpenGLViewer)
+OpenGLViewer.display = new_instancemethod(_LavaVuPython.OpenGLViewer_display, None, OpenGLViewer)
+OpenGLViewer.show = new_instancemethod(_LavaVuPython.OpenGLViewer_show, None, OpenGLViewer)
+OpenGLViewer.hide = new_instancemethod(_LavaVuPython.OpenGLViewer_hide, None, OpenGLViewer)
+OpenGLViewer.title = new_instancemethod(_LavaVuPython.OpenGLViewer_title, None, OpenGLViewer)
+OpenGLViewer.execute = new_instancemethod(_LavaVuPython.OpenGLViewer_execute, None, OpenGLViewer)
+OpenGLViewer.events = new_instancemethod(_LavaVuPython.OpenGLViewer_events, None, OpenGLViewer)
+OpenGLViewer.loop = new_instancemethod(_LavaVuPython.OpenGLViewer_loop, None, OpenGLViewer)
 OpenGLViewer_swigregister = _LavaVuPython.OpenGLViewer_swigregister
 OpenGLViewer_swigregister(OpenGLViewer)
 cvar = _LavaVuPython.cvar
@@ -464,13 +475,11 @@ class LavaVu(object):
         _LavaVuPython.LavaVu_swiginit(self, _LavaVuPython.new_LavaVu(binpath, havecontext, omegalib))
     __swig_destroy__ = _LavaVuPython.delete_LavaVu
 LavaVu.run = new_instancemethod(_LavaVuPython.LavaVu_run, None, LavaVu)
+LavaVu.printall = new_instancemethod(_LavaVuPython.LavaVu_printall, None, LavaVu)
 LavaVu.loadFile = new_instancemethod(_LavaVuPython.LavaVu_loadFile, None, LavaVu)
 LavaVu.parseProperty = new_instancemethod(_LavaVuPython.LavaVu_parseProperty, None, LavaVu)
 LavaVu.parseCommands = new_instancemethod(_LavaVuPython.LavaVu_parseCommands, None, LavaVu)
 LavaVu.gl_version = new_instancemethod(_LavaVuPython.LavaVu_gl_version, None, LavaVu)
-LavaVu.render = new_instancemethod(_LavaVuPython.LavaVu_render, None, LavaVu)
-LavaVu.init = new_instancemethod(_LavaVuPython.LavaVu_init, None, LavaVu)
-LavaVu.event = new_instancemethod(_LavaVuPython.LavaVu_event, None, LavaVu)
 LavaVu.image = new_instancemethod(_LavaVuPython.LavaVu_image, None, LavaVu)
 LavaVu.web = new_instancemethod(_LavaVuPython.LavaVu_web, None, LavaVu)
 LavaVu.video = new_instancemethod(_LavaVuPython.LavaVu_video, None, LavaVu)

@@ -2579,6 +2579,18 @@ void LavaVu::printMessage(const char *fmt, ...)
   }
 }
 
+void LavaVu::printall(const std::string& str)
+{
+  //Print string to console and frame, callable from python
+  std::cout << str << std::endl << std::flush;
+  //Multiline?
+  std::size_t pos = str.find("\n");
+  if (pos == std::string::npos)
+    printMessage(str.c_str());
+  else
+    help = str;
+}
+
 void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colour* colour)
 {
   if (!viewer->isopen) return;
@@ -3054,27 +3066,6 @@ std::string LavaVu::gl_version()
   if (!amodel || !viewer->isopen) return "(not initialised)";
   Shader::version();
   return Shader::gl_version;
-}
-
-void LavaVu::render()
-{
-  if (!amodel || !viewer->isopen) return;
-  //Just render a frame
-  viewer->display();
-}
-
-void LavaVu::init()
-{
-  if (viewer->isopen) return;
-  viewer->open();
-  viewer->init(); //Not called from open() in base class viewer
-}
-
-bool LavaVu::event()
-{
-  viewer->execute();
-  viewer->show();
-  return !viewer->quitProgram;
 }
 
 std::string LavaVu::image(std::string filename, int width, int height, int jpegquality, bool transparent)

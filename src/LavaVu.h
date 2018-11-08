@@ -182,6 +182,7 @@ public:
 
   void displayObjectList(bool console=true);
   void printMessage(const char *fmt, ...);
+  void printall(const std::string& str);
   void text(const std::string& str, int xpos=10, int ypos=0, float scale=1.0, Colour* colour=NULL);
   void displayText(const std::string& str, int lineno=1, Colour* colour=NULL);
   void displayMessage();
@@ -221,9 +222,6 @@ public:
 
   //Python interface functions
   std::string gl_version();
-  void render();
-  void init();
-  bool event();
   std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
   ColourMap* addColourMap(std::string name, std::string colours="", std::string properties="");
@@ -287,7 +285,6 @@ public:
   std::vector<float> imageArray(std::string path="", int width=0, int height=0, int channels=4);
   float imageDiff(std::string path1, std::string path2="", int downsample=4);
   void queueCommands(std::string cmds);
-
 };
 
 std::string rawImageWrite(unsigned char* array, int height, int width, int depth, std::string path, int jpegquality=0);

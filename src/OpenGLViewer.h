@@ -167,6 +167,7 @@ public:
   virtual void hide();
   virtual void title(std::string title) {}
   virtual void execute();
+  virtual bool events();
   void loop(bool interactive=true);
 
   virtual void fullScreen() {}

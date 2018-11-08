@@ -2467,13 +2467,15 @@ class Viewer(dict):
         """        
         Render a new frame, explicit display update
         """
-        self.app.render()
+        self.app.viewer.display()
 
     def init(self):
         """        
         Re-initialise the viewer window
         """
-        self.app.init()
+        if self.app.viewer.isopen: return
+        self.app.viewer.open()
+        self.app.viewer.init()
 
     def update(self, filter=None, compress=True):
         """
@@ -2970,7 +2972,9 @@ class Viewer(dict):
         boolean:
             False if user quit program, True otherwise
         """
-        return self.app.event()
+        self.app.viewer.execute();
+        self.app.viewer.show();
+        return not self.app.viewer.quitProgram;
 
     def interact(self, native=False, resolution=None):
         """

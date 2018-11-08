@@ -388,13 +388,21 @@ void OpenGLViewer::execute()
   //Default event processing, sleep for timer_msec milliseconds
 
   //New frame? call display
-  if (postdisplay || pollInput())
+  if (events())
     display();
 #ifdef _WIN32
   Sleep(timer_msec);
 #else
   usleep(timer_msec * 1000);   // usleep takes sleep time in us (1 millionth of a second)
 #endif
+}
+
+bool OpenGLViewer::events()
+{
+  //Default event processing
+  if (postdisplay || pollInput())
+    return true;
+  return false;
 }
 
 void OpenGLViewer::loop(bool interactive)
@@ -464,6 +472,7 @@ void OpenGLViewer::display(bool redraw)
   //Call display on any output interfaces
   for (unsigned int o=0; o<outputs.size(); o++)
   {
+    //printf("OUTPUT %d/%d render == %d\n", o+1, (int)outputs.size(), outputs[o]->render);
     if (outputs[o]->render)
     {
       //Create the frame buffer if not yet created

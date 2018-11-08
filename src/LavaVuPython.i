@@ -65,8 +65,21 @@ const std::string version;
 class OpenGLViewer
 {
 public:
-  bool quitProgram;
   int port;
+  bool quitProgram;
+  bool isopen;
+  bool postdisplay; //Flag to request a frame when animating
+
+  virtual void open(int width=0, int height=0);
+  virtual void init();
+  virtual void display(bool redraw=true);
+
+  virtual void show();
+  virtual void hide();
+  virtual void title(std::string title) {}
+  virtual void execute();
+  bool events();
+  void loop(bool interactive=true);
 };
 
 class DrawingObject
@@ -123,13 +136,11 @@ public:
 
   void run(std::vector<std::string> args={});
 
+  void printall(const std::string& str);
   bool loadFile(const std::string& file);
   bool parseProperty(std::string data, DrawingObject* obj=NULL);
   bool parseCommands(std::string cmd);
   std::string gl_version();
-  void render();
-  void init();
-  bool event();
   std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
   std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
