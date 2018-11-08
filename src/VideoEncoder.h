@@ -28,9 +28,9 @@
 #ifndef VideoEncoder__
 #define VideoEncoder__
 
-#ifdef HAVE_LIBAVCODEC
 #include "OutputInterface.h"
 
+#ifdef HAVE_LIBAVCODEC
 extern "C"
 {
 #ifndef __STDC_CONSTANT_MACROS
@@ -99,16 +99,18 @@ extern "C"
 #define AV_CODEC_ID_H264 CODEC_ID_H264
 #endif
 
+#endif
+
 #define VIDEO_HIGHQ 3
 #define VIDEO_MEDQ 2
 #define VIDEO_LOWQ 1
+
 class VideoEncoder : public OutputInterface
 {
   std::string filename = "";
 public:
   VideoEncoder(const char *filename, int fps, int quality=VIDEO_HIGHQ);
   ~VideoEncoder();
-  AVOutputFormat *defaultCodec(const char *filename);
 
   //OutputInterface
   virtual void open(int w, int h);
@@ -119,6 +121,7 @@ public:
 protected:
   int fps;
   int quality;
+#ifdef HAVE_LIBAVCODEC
   AVFormatContext *oc;
   AVStream *video_st;
   AVCodecContext *video_enc;
@@ -134,7 +137,10 @@ protected:
   void open_video();
   void write_video_frame();
   void close_video();
+  AVOutputFormat *defaultCodec(const char *filename);
+#else
+  int frame = 0;
+#endif //HAVE_LIBAVCODEC
 };
 
-#endif //HAVE_LIBAVCODEC
 #endif //VideoEncoder__

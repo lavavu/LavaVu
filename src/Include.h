@@ -36,6 +36,8 @@
 #include <time.h>
 #include <float.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 //Include the decompression routines
 #if defined HAVE_LIBPNG and not defined USE_ZLIB
@@ -100,6 +102,8 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #include "windows/inc/pthread.h"
 #include "windows/inc/zlib.h"
 #define PAUSE(msecs) Sleep(msecs);
+#define mkdir(dir, mode) _mkdir(dir)
+#define rmdir(dir) _rmdir(dir)
 //Include the libraries -- */
 #pragma comment(lib, "sqlite3.lib")
 #pragma comment(lib, "SDL.lib")

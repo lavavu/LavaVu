@@ -207,9 +207,7 @@ LavaVu::~LavaVu()
   if (viewer->port > 0)
     Server::Delete();
 
-#ifdef HAVE_LIBAVCODEC
   if (encoder) delete encoder;
-#endif
   debug_print("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
   if (viewer) delete viewer;
 }
@@ -2916,9 +2914,6 @@ std::string LavaVu::video(std::string filename, int fps, int width, int height, 
 
 std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
 {
-  //TODO: - make image frame output a default video output
-  //        when libavcodec not available
-#ifdef HAVE_LIBAVCODEC
   if (!encoder)
   {
     if (filename.length() == 0) 
@@ -2928,6 +2923,9 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
       filename += ".mp4"; //Default to mp4
 
     //Enable output just to get the dimensions
+    if (!viewer->outwidth) viewer->outwidth = viewer->width;
+    if (!viewer->outheight) viewer->outheight = viewer->height;
+    //printf("OUTPUT DIMS %d x %d\n", viewer->outwidth, viewer->outheight);
     viewer->outputON(viewer->outwidth, viewer->outheight, 3, true);
     encoder = new VideoEncoder(filename.c_str(), fps, quality);
     encoder->open(viewer->getOutWidth(), viewer->getOutHeight());
@@ -2943,9 +2941,6 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
     viewer->outputOFF();
     viewer->removeOutput(); //Deletes the output attachment
   }
-#else
-  std::cout << "Video output disabled, libavcodec not found!" << std::endl;
-#endif
   return "";
 }
 
@@ -2983,11 +2978,9 @@ void LavaVu::writeSteps(bool images, int start, int end)
         viewer->image(viewer->output_path + filess.str());
       }
 
-#ifdef HAVE_LIBAVCODEC
       //Always output to video encode if it exists
       if (encoder)
         viewer->display();
-#endif
     }
   }
 }

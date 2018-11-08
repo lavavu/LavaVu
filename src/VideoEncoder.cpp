@@ -25,7 +25,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#ifdef HAVE_LIBAVCODEC
 
 #include "VideoEncoder.h"
 #include "GraphicsUtil.h"
@@ -39,6 +38,40 @@ VideoEncoder::~VideoEncoder()
   //If not already closed, close recording
   if (buffer) close();
 }
+
+#ifndef HAVE_LIBAVCODEC
+//Default video encoder is image frame-by-frame output to folder
+void VideoEncoder::open(int w, int h)
+{
+  std::cout << "Video encoding disabled, writing JPEG frames to ./" << filename << std::endl;
+  frame = 0;
+  width = w;
+  height = h;
+  //Create directory for frames
+  mkdir(filename.c_str(), 0755);
+}
+
+void VideoEncoder::close()
+{
+  frame = 0;
+}
+
+void VideoEncoder::resize(int new_width, int new_height)
+{
+  width = new_width;
+  height = new_height;
+}
+
+void VideoEncoder::display()
+{
+  frame++;
+  std::stringstream ss;
+  ss << filename << "/frame_" << std::setfill('0') << std::setw(5) << frame << ".jpg";
+  std::cout << ss.str() << std::endl;
+  buffer->write(ss.str());
+}
+
+#else
 
 /**************************************************************/
 /* video output */
