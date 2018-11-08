@@ -648,7 +648,7 @@ std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> l
           if (results.size() > 0)
           {
             char filename[FILE_PATH_MAX];
-            sprintf(filename, "%s%s_%s.%05d.csv", viewer->output_path.c_str(), amodel->objects[i]->name().c_str(),
+            sprintf(filename, "%s_%s.%05d.csv", amodel->objects[i]->name().c_str(),
                     GeomData::names[g->type].c_str(), amodel->stepInfo());
             std::ofstream csv;
             csv.open(filename, std::ios::out | std::ios::trunc);
@@ -2760,9 +2760,9 @@ bool LavaVu::loadFile(const std::string& file)
     if (initfigure != 0) amodel->loadFigure(initfigure-1);
 
     //Save path of first sucessfully loaded model
-    if (dbpath && viewer->output_path.length() == 0)
+    if (dbpath && viewer->output_path.length() == 0 && fn.path.length() > 0)
     {
-      viewer->output_path = fn.path;
+      viewer->output_path = fn.path + '/';
       debug_print("Output path set to %s\n", viewer->output_path.c_str());
     }
 
@@ -2978,7 +2978,7 @@ void LavaVu::writeSteps(bool images, int start, int end)
         std::string title = session.global("caption");
         std::ostringstream filess;
         filess << title << '-' << std::setw(5) << std::setfill('0') << amodel->step();
-        viewer->image(filess.str());
+        viewer->image(viewer->output_path + filess.str());
       }
 
 #ifdef HAVE_LIBAVCODEC
@@ -2999,10 +2999,10 @@ std::string LavaVu::jsonWriteFile(DrawingObject* obj, bool jsonp, bool objdata)
   strcpy(ext, "jsonp");
   if (!jsonp) ext[4] = '\0';
   if (obj)
-    sprintf(filename, "%s%s_%s_%05d.%s", viewer->output_path.c_str(), name.c_str(),
+    sprintf(filename, "%s_%s_%05d.%s", name.c_str(),
             obj->name().c_str(), amodel->stepInfo(), ext);
   else
-    sprintf(filename, "%s%s_%05d.%s", viewer->output_path.c_str(), name.c_str(), amodel->stepInfo(), ext);
+    sprintf(filename, "%s_%05d.%s", name.c_str(), amodel->stepInfo(), ext);
   jsonWriteFile(filename, obj, jsonp, objdata);
   return std::string(filename);
 }
