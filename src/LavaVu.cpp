@@ -3530,26 +3530,30 @@ void LavaVu::imageBuffer(unsigned char* array, int height, int width, int depth)
   delete buffer;
 }
 
-std::string LavaVu::imageJPEG(int width, int height, int quality)
+std::vector<unsigned char> LavaVu::imageJPEG(int width, int height, int quality)
 {
-  if (!amodel || !viewer->isopen) return "";
+  if (!amodel || !viewer->isopen) return std::vector<unsigned char>();
 
   ImageData* image = viewer->pixels(NULL, width, height, 3);
   //Write JPEG to string
   std::string retImg = image->getString(quality);
   delete image;
-  return retImg;
+  std::vector<unsigned char> d(retImg.length());
+  std::copy(retImg.begin(), retImg.end(), d.data());
+  return d;
 }
 
-std::string LavaVu::imagePNG(int width, int height, int depth)
+std::vector<unsigned char> LavaVu::imagePNG(int width, int height, int depth)
 {
-  if (!amodel || !viewer->isopen) return "";
+  if (!amodel || !viewer->isopen) return std::vector<unsigned char>();
 
   ImageData* image = viewer->pixels(NULL, width, height, depth);
   //Write PNG to string
   std::string retImg = image->getString();
   delete image;
-  return retImg;
+  std::vector<unsigned char> d(retImg.length());
+  std::copy(retImg.begin(), retImg.end(), d.data());
+  return d;
 }
 
 DrawingObject* LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol)

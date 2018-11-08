@@ -301,6 +301,49 @@ GeomList.capacity = new_instancemethod(_LavaVuPython.GeomList_capacity, None, Ge
 GeomList_swigregister = _LavaVuPython.GeomList_swigregister
 GeomList_swigregister(GeomList)
 
+class ByteArray(object):
+    thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
+    __repr__ = _swig_repr
+    def __iter__(self):
+        return self.iterator()
+
+    def __init__(self, *args):
+        _LavaVuPython.ByteArray_swiginit(self, _LavaVuPython.new_ByteArray(*args))
+    __swig_destroy__ = _LavaVuPython.delete_ByteArray
+ByteArray.iterator = new_instancemethod(_LavaVuPython.ByteArray_iterator, None, ByteArray)
+ByteArray.__nonzero__ = new_instancemethod(_LavaVuPython.ByteArray___nonzero__, None, ByteArray)
+ByteArray.__bool__ = new_instancemethod(_LavaVuPython.ByteArray___bool__, None, ByteArray)
+ByteArray.__len__ = new_instancemethod(_LavaVuPython.ByteArray___len__, None, ByteArray)
+ByteArray.__getslice__ = new_instancemethod(_LavaVuPython.ByteArray___getslice__, None, ByteArray)
+ByteArray.__setslice__ = new_instancemethod(_LavaVuPython.ByteArray___setslice__, None, ByteArray)
+ByteArray.__delslice__ = new_instancemethod(_LavaVuPython.ByteArray___delslice__, None, ByteArray)
+ByteArray.__delitem__ = new_instancemethod(_LavaVuPython.ByteArray___delitem__, None, ByteArray)
+ByteArray.__getitem__ = new_instancemethod(_LavaVuPython.ByteArray___getitem__, None, ByteArray)
+ByteArray.__setitem__ = new_instancemethod(_LavaVuPython.ByteArray___setitem__, None, ByteArray)
+ByteArray.pop = new_instancemethod(_LavaVuPython.ByteArray_pop, None, ByteArray)
+ByteArray.append = new_instancemethod(_LavaVuPython.ByteArray_append, None, ByteArray)
+ByteArray.empty = new_instancemethod(_LavaVuPython.ByteArray_empty, None, ByteArray)
+ByteArray.size = new_instancemethod(_LavaVuPython.ByteArray_size, None, ByteArray)
+ByteArray.swap = new_instancemethod(_LavaVuPython.ByteArray_swap, None, ByteArray)
+ByteArray.begin = new_instancemethod(_LavaVuPython.ByteArray_begin, None, ByteArray)
+ByteArray.end = new_instancemethod(_LavaVuPython.ByteArray_end, None, ByteArray)
+ByteArray.rbegin = new_instancemethod(_LavaVuPython.ByteArray_rbegin, None, ByteArray)
+ByteArray.rend = new_instancemethod(_LavaVuPython.ByteArray_rend, None, ByteArray)
+ByteArray.clear = new_instancemethod(_LavaVuPython.ByteArray_clear, None, ByteArray)
+ByteArray.get_allocator = new_instancemethod(_LavaVuPython.ByteArray_get_allocator, None, ByteArray)
+ByteArray.pop_back = new_instancemethod(_LavaVuPython.ByteArray_pop_back, None, ByteArray)
+ByteArray.erase = new_instancemethod(_LavaVuPython.ByteArray_erase, None, ByteArray)
+ByteArray.push_back = new_instancemethod(_LavaVuPython.ByteArray_push_back, None, ByteArray)
+ByteArray.front = new_instancemethod(_LavaVuPython.ByteArray_front, None, ByteArray)
+ByteArray.back = new_instancemethod(_LavaVuPython.ByteArray_back, None, ByteArray)
+ByteArray.assign = new_instancemethod(_LavaVuPython.ByteArray_assign, None, ByteArray)
+ByteArray.resize = new_instancemethod(_LavaVuPython.ByteArray_resize, None, ByteArray)
+ByteArray.insert = new_instancemethod(_LavaVuPython.ByteArray_insert, None, ByteArray)
+ByteArray.reserve = new_instancemethod(_LavaVuPython.ByteArray_reserve, None, ByteArray)
+ByteArray.capacity = new_instancemethod(_LavaVuPython.ByteArray_capacity, None, ByteArray)
+ByteArray_swigregister = _LavaVuPython.ByteArray_swigregister
+ByteArray_swigregister(ByteArray)
+
 lucMinType = _LavaVuPython.lucMinType
 lucLabelType = _LavaVuPython.lucLabelType
 lucPointType = _LavaVuPython.lucPointType

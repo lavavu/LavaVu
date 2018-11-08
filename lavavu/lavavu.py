@@ -837,6 +837,21 @@ class Object(dict):
 
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
+    def luminance(self, data):
+        """
+        Load luminance data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy uint8 array of luminance values
+            values are loaded as 8 bit unsigned integers
+        """
+
+        #Accepts only uint8 luminance values
+        data = self._convert(data, numpy.uint8)
+        self._loadScalar(data, LavaVuPython.lucLuminanceData)
+
     def texture(self, data, width, height, channels=4, flip=True, mipmaps=True, bgr=False):
         """
         Load raw texture data for object
@@ -2529,6 +2544,44 @@ class Viewer(dict):
         if not resolution: resolution = self.resolution
         return self.app.image("", resolution[0], resolution[1], quality)
 
+    def jpeg(self, resolution=None, quality=90):
+        """
+        Get an image frame, returns current display as JPEG data in a bytearray
+
+        Parameters
+        ----------
+        resolution: list, tuple
+            Image resolution in pixels [x,y]
+        quality: integer
+            Quality for JPEG image compression, default 90%
+
+        Returns
+        -------
+        image: bytearray
+            encoded image as byte array
+        """
+        #Jpeg encoded frame data
+        if not resolution: resolution = self.resolution
+        return bytearray(self.app.imageJPEG(resolution[0], resolution[1], quality))
+
+    def png(self, resolution=None):
+        """
+        Get an image frame, returns current display as PNG data in a bytearray
+
+        Parameters
+        ----------
+        resolution: list, tuple
+            Image resolution in pixels [x,y]
+
+        Returns
+        -------
+        image: bytearray
+            encoded image as byte array
+        """
+        #PNG encoded frame data
+        if not resolution: resolution = self.resolution
+        return bytearray(self.app.imagePNG(resolution[0], resolution[1]))
+
     def display(self, resolution=(0,0), transparent=False):
         """        
         Show the current display as inline image within an ipython notebook.
@@ -3226,11 +3279,18 @@ class Image(object):
     >>> img = lv.rawimage()
     >>> img.write('out.png')
     
-    TODO: load functions
+    TODO: expose image loading functions, custom blend equations
 
     """
-    def __init__(self, resolution=(640, 480), channels=3, value=255):
-        self.data = numpy.full(shape=(resolution[1], resolution[0], channels), fill_value=value, dtype=numpy.uint8)
+    def __init__(self, resolution=(640, 480), channels=4, value=[255, 255, 255, 0]):
+        if isinstance(value, int):
+            value = [value, value, value, 255]
+        if isinstance(value, float):
+            value = [value*255, value*255, value*255, 255]
+        while len(value) < channels:
+            value.append(value[-1])
+        fill = numpy.array(value[0:channels], dtype=numpy.uint8)
+        self.data = numpy.tile(fill, (resolution[1], resolution[0], 1))
 
     def paste(self, source, resolution=(640,480), position=(0,0)):
         """
@@ -3250,14 +3310,56 @@ class Image(object):
             source = source.rawimage(resolution, self.data.shape[2]).data
 
         resolution = (source.shape[1], source.shape[0])
-        dest = (resolution[1] + position[1], resolution[0] + position[0])
+        dest = (resolution[0] + position[0], resolution[1] + position[1])
 
-        if self.data.shape[0] < dest[0] or self.data.shape[1] < dest[1]:
+        if self.data.shape[0] < dest[1] or self.data.shape[1] < dest[0]:
             raise ValueError("Base image too small for operation!" + str(self.data.shape) + " < " + str(dest))
         if self.data.shape[2] != source.shape[2]:
             raise ValueError("Base image and pasted image must have same bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
         
-        self.data[position[1]:dest[0], position[0]:dest[1]] = source
+        self.data[position[1]:dest[1], position[0]:dest[0]] = source
+
+    def blend(self, source, resolution=(640,480), position=(0,0)):
+        """
+        Render another image to a specified position with this image with alpha blending
+
+        Parameters
+        ----------
+        source: array or lavavu.Viewer()
+            Numpy array containing raw image data to paste or a Viewer instance to source the frame from
+        resolution: tuple(int,int)
+            Sub-image width and height in pixels, if not provided source must be a numpy array of the correct dimensions
+        position: tuple(int,int)
+            Sub-image x,y offset in pixels
+
+        """
+        if not isinstance(source, numpy.ndarray):
+            source = source.rawimage(resolution, self.data.shape[2]).data
+
+        channels = self.data.shape[2]
+        if channels < 4 and blend is not None:
+            print("Require alpha channel to blend")
+            return
+
+        #Alpha blending, assumes not premultiplied alpha
+        src = source.astype(numpy.float32)
+        dst = self.data[position[1]:resolution[1] + position[1], position[0]:resolution[0] + position[0]].astype(numpy.float32)
+        srcalpha = src[:, :, 3] / 255.0
+        dstalpha = dst[:, :, 3] / 255.0
+        outalpha = srcalpha + dstalpha * (1.0 - srcalpha)
+        #Ignore divide by zero if outalpha is zero
+        with numpy.errstate(divide='ignore',invalid='ignore'):
+            for c in range(3):
+                #Premultiplied blend:
+                #dst[:, :, c] = src[:, :, c] + dst[:, :, c] * (1.0 - srcalpha)
+                #Not premultiplied: premultiply, then blend
+                src[:, :, c] *= srcalpha
+                dst[:, :, c] *= dstalpha
+                dst[:, :, c] = (src[:, :, c] + dst[:, :, c] * (1.0 - srcalpha)) / outalpha
+        dst[:, :, 3] = outalpha * 255
+
+        self.paste(dst, resolution, position)
+        #self.data[position[1]:dest[0], position[0]:dest[1]] = dst
 
     def save(self, filename):
         """

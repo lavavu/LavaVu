@@ -282,8 +282,8 @@ public:
   void geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
   void imageBuffer(unsigned char* array, int height, int width, int depth);
-  std::string imageJPEG(int width, int height, int quality=95);
-  std::string imagePNG(int width, int height, int depth);
+  std::vector<unsigned char> imageJPEG(int width, int height, int quality=95);
+  std::vector<unsigned char> imagePNG(int width, int height, int depth);
 
   DrawingObject* isoSurface(DrawingObject* target, DrawingObject* source, std::string properties, bool clearvol=false);
   void update(DrawingObject* target, bool compress=true);
