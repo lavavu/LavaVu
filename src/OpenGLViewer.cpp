@@ -63,7 +63,35 @@ ImageData* FrameBuffer::pixels(ImageData* image, int channels)
 
 bool FBO::create(int w, int h)
 {
-#ifdef GL_FRAMEBUFFER_EXT
+/* Try to use modern versions of these functions,
+   if not available, use EXT versions */
+#ifndef GL_FRAMEBUFFER
+#define GL_FRAMEBUFFER GL_FRAMEBUFFER_EXT
+#define GL_COLOR_ATTACHMENT0 GL_COLOR_ATTACHMENT0_EXT
+#define GL_RENDERBUFFER GL_RENDERBUFFER_EXT
+#define GL_DEPTH_ATTACHMENT GL_DEPTH_ATTACHMENT_EXT
+#define GL_FRAMEBUFFER_COMPLETE GL_FRAMEBUFFER_COMPLETE_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT
+#define GL_FRAMEBUFFER_UNSUPPORTED GL_FRAMEBUFFER_UNSUPPORTED_EXT
+#define glBindFramebuffer glBindFramebufferEXT
+#define glGenRenderbuffers glGenRenderbuffersEXT
+#define glBindRenderbuffer glBindRenderbufferEXT
+#define glRenderbufferStorage glRenderbufferStorageEXT
+#define glGenFramebuffers glGenFramebuffersEXT
+#define glBindFramebuffer glBindFramebufferEXT
+#define glFramebufferRenderbuffer glFramebufferRenderbufferEXT
+#define glFramebufferTexture2D glFramebufferTexture2DEXT
+#define glCheckFramebufferStatus glCheckFramebufferStatusEXT
+#define glDeleteRenderbuffers glDeleteRenderbuffersEXT
+#define glDeleteFramebuffers glDeleteFramebuffersEXT
+#define glGenerateMipmap glGenerateMipmapEXT
+#endif
+#ifndef GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
+#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
+#endif
+
   //Re-render at specified output size (in a framebuffer object if available)
   if (downsample > 1)
   {
@@ -75,13 +103,14 @@ bool FBO::create(int w, int h)
   //Skip if already created at this size
   if (enabled && frame && texture && depth && width==w && height==h)
   {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame);
-    target = GL_COLOR_ATTACHMENT0_EXT;
+    glBindFramebuffer(GL_FRAMEBUFFER, frame);
+    target = GL_COLOR_ATTACHMENT0;
     glDrawBuffer(target);
     GL_Error_Check;
     debug_print("FBO already exists, enabling %d x %d (downsampling %d)\n", width, height, downsample);
     return false;
   }
+  GL_Error_Check;
 
   width = w;
   height = h;
@@ -101,51 +130,49 @@ bool FBO::create(int w, int h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   // make sure this is the same color format as the screen
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-  // Depth buffer
-  glGenRenderbuffersEXT(1, &depth);
-  glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth);
-  glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT24, width, height);
-
-  // Attach backbuffer texture, depth & stencil
-  glGenFramebuffersEXT(1, &frame);
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame);
-  //Depth attachment
-  glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth);
-  //Image buffer texture attachment
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, texture, 0);
   GL_Error_Check;
 
-  GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-  if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
+  // Depth buffer
+  glGenRenderbuffers(1, &depth);
+  glBindRenderbuffer(GL_RENDERBUFFER, depth);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+
+  // Attach backbuffer texture, depth & stencil
+  glGenFramebuffers(1, &frame);
+  glBindFramebuffer(GL_FRAMEBUFFER, frame);
+  //Depth attachment
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth);
+  //Image buffer texture attachment
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+  GL_Error_Check;
+
+  GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (status != GL_FRAMEBUFFER_COMPLETE)
   {
-    if (status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT)
+    if (status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
       std::cerr << "FBO failed INCOMPLETE_ATTACHMENT" << std::endl;
-    else if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT)
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
       std::cerr << "FBO failed INCOMPLETE_DIMENSIONS" << std::endl;
-    else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT)
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
       std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
-    else if (status == GL_FRAMEBUFFER_UNSUPPORTED_EXT)
+    else if (status == GL_FRAMEBUFFER_UNSUPPORTED)
       std::cerr << "FBO failed UNSUPPORTED" << std::endl;
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
     GL_Error_Check;
     std::cerr << " frame " << frame << " target " << target << " depth " << depth << " dims " << width << " , " << height << std::endl;
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
   else
   {
     // Override buffers
     debug_print("FBO setup completed successfully %d x %d (downsampling %d)\n", width, height, downsample);
     enabled = true;
-    target = GL_COLOR_ATTACHMENT0_EXT;
+    target = GL_COLOR_ATTACHMENT0;
     glDrawBuffer(target);
   }
-#else
-  // Framebuffer objects not supported
-  enabled = false;
-#endif
+
   glBindTexture(GL_TEXTURE_2D, 0);
   GL_Error_Check;
   return enabled;
@@ -153,23 +180,19 @@ bool FBO::create(int w, int h)
 
 void FBO::destroy()
 {
-#ifdef GL_FRAMEBUFFER_EXT
   if (texture) glDeleteTextures(1, &texture);
-  if (depth) glDeleteRenderbuffersEXT(1, &depth);
-  if (frame) glDeleteFramebuffersEXT(1, &frame);
+  if (depth) glDeleteRenderbuffers(1, &depth);
+  if (frame) glDeleteFramebuffers(1, &frame);
   texture = depth = frame = 0;
-#endif
 }
 
 void FBO::disable()
 {
 //Show a previously hidden window
-#ifdef GL_FRAMEBUFFER_EXT
   debug_print("FBO disabled\n");
   enabled = false;
-  glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glDrawBuffer(GL_BACK);
-#endif
 }
 
 ImageData* FBO::pixels(ImageData* image, int channels)
@@ -177,7 +200,6 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   if (!enabled || frame == 0 || downsample < 2)
     return FrameBuffer::pixels(image, channels);
 
-#ifdef GL_FRAMEBUFFER_EXT
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
   //Output width
   float factor = 1.0/downsampleFactor();
@@ -193,7 +215,7 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   assert(channels == 3 || channels == 4);
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
   glBindTexture(GL_TEXTURE_2D, texture);
-  glGenerateMipmapEXT(GL_TEXTURE_2D);
+  glGenerateMipmap(GL_TEXTURE_2D);
 
 #ifdef DEBUG
   //Check size
@@ -211,7 +233,6 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   //OpenGL buffer sourced images are always flipped in the Y axis
   image->flipped = true;
   GL_Error_Check;
-#endif
   return image;
 }
 
