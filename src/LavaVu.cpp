@@ -857,6 +857,7 @@ void LavaVu::readVolumeCube(const FilePath& fn, GLubyte* data, int width, int he
   {
     //Create volume object, or if static volume object exists, use it
     DrawingObject *vobj = volume;
+    if (!vobj) vobj = aobject; //Use active object
     if (!vobj) vobj = new DrawingObject(session, fn.base);
     addObject(vobj);
 
@@ -936,8 +937,9 @@ void LavaVu::readVolumeSlice(const std::string& name, GLubyte* imageData, int wi
   }
 
   //Create volume object, or if static volume object exists, use it
-  DrawingObject *vobj = volume;
+  DrawingObject *vobj = aobject; //Use active object first
   static int count = 0;
+  if (!vobj) vobj = volume; //Use default volume object
   if (!vobj)
   {
     count = 0;
@@ -1101,8 +1103,8 @@ void LavaVu::readVolumeTIFF(const FilePath& fn)
 
 void LavaVu::createDemoVolume(unsigned int width, unsigned int height, unsigned int depth)
 {
-  //Create volume object, or if static volume object exists, use it
-  DrawingObject *vobj = volume;
+  //Create volume object
+  DrawingObject *vobj = NULL;
   Geometry* volumes = amodel->getRenderer(lucVolumeType);
   if (!volumes) return;
   if (!vobj)
