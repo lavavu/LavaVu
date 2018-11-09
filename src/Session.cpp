@@ -91,6 +91,18 @@ int Session::parse(Properties* target, const std::string& property, bool validat
     key = key.substr(0,end);
   }
 
+  //Support array property set, eg: rotate[1]=30
+  int IDX = -1;
+  if (key.back() == ']')
+  {
+    size_t pos0 = property.find("[");
+    std::string idx = key.substr(pos0+1,key.length()-2-pos0);
+    std::stringstream ss(idx);
+    ss >> IDX;
+    key = key.substr(0,pos0);
+    //std::cout << "KEY : " << key << " VALUE : " << value << " IDX : " << IDX << std::endl;
+  }
+
   //Check a valid key provided
   bool strict = false;
   int redraw = 0;
@@ -120,8 +132,16 @@ int Session::parse(Properties* target, const std::string& property, bool validat
 
     try
     {
+      if (IDX >= 0)
+      {
+        //Set to default first
+        if (!dest.count(key))
+          dest[key] = defaults[key];
+        if (dest[key].is_array() and dest[key].size() > IDX)
+          dest[key][IDX] = json::parse(value);
+      }
       //Parse simple increments and decrements
-      if (prev == '+' || prev == '-' || prev == '*')
+      else if (prev == '+' || prev == '-' || prev == '*')
       {
         json parsedval = json::parse(value);
         float val = dest[key];
