@@ -201,8 +201,16 @@ vec2 rayIntersectBox(vec3 rayDirection, vec3 rayOrigin)
 
 void main()
 {
-    bbMin = clamp(uBBMin, vec3(0.0), vec3(1.0));
-    bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
+    if (any(greaterThan(uBBMin, uBBMax)))
+    {
+      bbMin = vec3(0.0);
+      bbMax = vec3(1.0);
+    }
+    else
+    {
+      bbMin = clamp(uBBMin, vec3(0.0), vec3(1.0));
+      bbMax = clamp(uBBMax, vec3(0.0), vec3(1.0));
+    }
 
     //Compute eye space coord from window space to get the ray direction
     //ObjectSpace *[MV] = EyeSpace *[P] = Clip /w = Normalised device coords ->VP-> Window
