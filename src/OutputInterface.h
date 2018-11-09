@@ -42,7 +42,7 @@
 class OutputInterface
 {
 public:
-  bool render = false;
+  bool render = true;
   int width = 0, height = 0;
   ImageData* buffer = NULL;
   int channels = 3;

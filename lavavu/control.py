@@ -19,6 +19,7 @@ vertexShader = """
 precision highp float;
 //Line vertex shader
 attribute vec3 aVertexPosition;
+attribute vec4 aVertexColour;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform vec4 uColour;
@@ -63,9 +64,7 @@ basehtml = """
 
 inlinehtml = """
 ---SCRIPTS---
-<div id = "lavavu_GUI_---ID---" style="position: absolute; top: 0em; right: 0em;"></div>
-<div id="---ID---" style="display: block; width: ---WIDTH---px; height: ---HEIGHT---px;">
-</div>
+<div id="---ID---" style="display: block; width: ---WIDTH---px; height: ---HEIGHT---px;"></div>
 ---HIDDEN---
 
 <script>
@@ -86,6 +85,9 @@ hiddenhtml = """
   <canvas id="palette" width="512" height="24" class="palette checkerboard"></canvas>
 </div>
 """
+
+#Property dict (str json) - set from lavavu
+dictionary = '{}'
 
 #Static HTML location
 htmlpath = ""
@@ -142,25 +144,14 @@ def getcontrolvalues(names=None):
 
 _file_cache = dict()
 
-def _webglboxcode():
+def _webglcode(shaders, css, scripts, menu=True, lighttheme=True):
     """
-    Returns WebGL base code for the bounding box interactor window
+    Returns base WebGL code, by default using full WebGL renderer (draw.js)
+    Pass 'drawbox.js' for box interactor only
     """
-    code = getcss(["control.css"])
-    code += fragmentShader
-    code += vertexShader
-    code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'drawbox.js', 'control.js'])
-    return code
-
-def _webglviewcode(shaderpath, menu=True, lighttheme=False):
-    """
-    Returns WebGL base code for an interactive visualisation window
-    """
-    css = ["styles.css"]
-    code = getshaders(shaderpath)
-    code += getjslibs(['gl-matrix-min.js', 'OK-min.js', 'draw.js'])
-    #code += getjslibs(['gl-matrix-min.js', 'OK.js', 'draw.js'])
+    code = shaders
     if menu:
+        code += getjslibs(scripts + ['menu.js'])
         #HACK: Need to disable require.js to load dat.gui from inline script tags
         code += """
         <script>
@@ -177,8 +168,26 @@ def _webglviewcode(shaderpath, menu=True, lighttheme=False):
         """
         if lighttheme:
             css.append("dat-gui-light-theme.css")
+        #Some css tweaks
+        css.append("gui.css")
+    else:
+        code += getjslibs(scripts)
+
     code += getcss(css)
+    code += '<script id="dictionary" type="application/json">\n' + dictionary + '\n</script>\n'
     return code
+
+def _webglviewcode(shaderpath, menu=True, lighttheme=True):
+    """
+    Returns WebGL base code for an interactive visualisation window
+    """
+    return _webglcode(getshaders(shaderpath), ['styles.css'], ['gl-matrix-min.js', 'OK-min.js', 'draw.js'], menu=menu, lighttheme=lighttheme)
+
+def _webglboxcode(menu=True, lighttheme=True):
+    """
+    Returns WebGL base code for the bounding box interactor window
+    """
+    return _webglcode(fragmentShader + vertexShader, ['control.css'], ['gl-matrix-min.js', 'OK-min.js', 'control.js', 'drawbox.js'], menu=menu, lighttheme=lighttheme)
 
 def getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
@@ -309,11 +318,17 @@ class Action(object):
         return Action.actions[id].run(value)
 
     @staticmethod
-    def export(html):
-        #Dump all output to control.html in current directory & htmlpath
-        if not htmlpath: return
+    def export_actions(viewerid=0, port=0):
+        if not htmlpath: return ""
         #Process actions
-        actionjs = '<script type="text/Javascript">\nvar actions = [\n'
+        actionjs = '<script type="text/Javascript">\n'
+        if port > 0:
+            actionjs += '_wi[---VIEWERID---] = new WindowInteractor(---VIEWERID---, "localhost:{port}");\n'.format(port=port)
+        else:
+            actionjs += '_wi[---VIEWERID---] = new WindowInteractor(---VIEWERID---");\n'
+
+        actionjs += '_wi[---VIEWERID---].actions = [\n'
+
         for act in Action.actions:
             #Default placeholder action
             actscript = act.script()
@@ -322,40 +337,56 @@ class Action(object):
                 pass
             #Add to actions list
             #(Only a single interactor is supported in exported html, so always use id=0)
-            actionjs += '  function(value) {_wi[0].execute("' + actscript + '");},\n'
+            actionjs += '  function(value) {_wi[---VIEWERID---].execute("' + actscript + '");},\n'
         #Add init and finish
-        actionjs += '  null];\nfunction init() {_wi[0] = new WindowInteractor(0);}\n</script>'
+        actionjs += '  null ];\n</script>\n'
+        actionjs = actionjs.replace('---VIEWERID---', str(viewerid))
+        return actionjs
 
-        def writefile(fn):
-            hfile = open(fn, "w")
-            hfile.write('<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">')
-            hfile.write(_webglboxcode())
-            hfile.write(actionjs)
-            hfile.write('</head>\n<body onload="init();">\n')
-            hfile.write(html)
-            hfile.write("\n</body>\n</html>\n")
-            hfile.close()
+    @staticmethod
+    def export(html, filename="control.html", viewerid=0, fullpage=True):
+        #Dump all output to control.html in current directory & htmlpath
+        if not htmlpath: return
+        #Process actions
+        actionjs = Action.export_actions(viewerid)
+
+        full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
+        full_html += _webglboxcode()
+        full_html += actionjs
+        full_html += '</head>\n<body>\n'
+        full_html += html
+        full_html += "\n</body>\n</html>\n"
 
         #Write the file, locally and in htmlpath
-        writefile("control.html")
-        #This will fail if installed to non writable location
-        #writefile(os.path.join(htmlpath, "control.html"))
+        if filename:
+            #This will fail if htmlpath is a non writable location
+            #filename = os.path.join(htmlpath, filename)
+            hfile = open(filename, "w")
+            hfile.write(full_html)
+            hfile.close()
+        else:
+            return full_html
 
 class PropertyAction(Action):
     """Property change action triggered by a control
     """
 
     #actions.append({"type" : "PROPERTY", "args" : [target, property, command]})
-    def __init__(self, target, prop, command=None):
+    def __init__(self, target, prop, command=None, index=None):
         self.property = prop
         #Default action after property set is redraw, can be set to provided
         if command is None:
             command = "redraw"
         self.command = command
+        self.index = index
         super(PropertyAction, self).__init__(target, command)
 
     def run(self, value):
         #Set a property
+        if self.index is not None:
+            value2 = self.target[self.property]
+            value2[self.index] = value
+            value = value2
         self.target[self.property] = value
         #Run any command action after setting
         return self.command
@@ -363,14 +394,18 @@ class PropertyAction(Action):
     def script(self):
         #Return script action for HTML export
         #Set a property
+        #Check for index (3D prop)
+        propset = self.property + '=" + value + "'
+        if self.index is not None:
+            propset = self.property + '[' + str(self.index) + ']=" + value + "'
         # - Globally
         script = ''
         if isviewer(self.target):
-            script = 'select; ' + self.property + '=" + value + "'
+            script = 'select; ' + propset
         #TODO: on an object selector
         # - On an object
         else:
-            script = 'select ' + self.target["name"] + '; ' + self.property + '=" + value + "'
+            script = 'select ' + self.target["name"] + '; ' + propset
         #Add any additional commands
         return script + '; ' + super(PropertyAction, self).script()
 
@@ -470,8 +505,8 @@ class Window(Container):
         self.align = align
 
     def html(self, wrapper=True, wrapperstyle=""):
-        style = 'min-height: 200px; min-width: 200px; background: #ccc; position: relative; display: inline-block; '
-        #style += 'float: ' + self.align + ';'
+        style = 'min-height: 200px; min-width: 200px; position: relative; display: inline-block; '
+        style += 'float: ' + self.align + ';'
         if wrapper:
             style += ' margin-right: 10px;'
         html = ""
@@ -493,7 +528,7 @@ class Window(Container):
         html += super(Window, self).html()
         if wrapper:
             html += '</div>\n'
-        html += '<div style="clear: both;">\n'
+        #html += '<div style="clear: both;">\n'
         return html
 
 class Panel(Container):
@@ -610,7 +645,7 @@ class Control(HTML):
         Property to read control value from on update (but not modified)
     """
 
-    def __init__(self, target, property=None, command=None, value=None, label=None, readproperty=None):
+    def __init__(self, target, property=None, command=None, value=None, label=None, index=None, readproperty=None):
         super(Control, self).__init__()
         self.label = label
 
@@ -619,7 +654,7 @@ class Control(HTML):
 
         #Can either set a property directly or run a command
         if property:
-            action = PropertyAction(target, property, command)
+            action = PropertyAction(target, property, command, index)
             if label is None:
                 self.label = property.capitalize()
         elif command:
@@ -711,8 +746,8 @@ class Range(Control):
     range: list/tuple
         Min/max values for the range
     """
-    def __init__(self, target=None, property=None, command=None, value=None, label=None, range=(0.,1.), step=None, readproperty=None):
-        super(Range, self).__init__(target, property, command, value, label, readproperty)
+    def __init__(self, target=None, property=None, command=None, value=None, label=None, index=None, range=(0.,1.), step=None, readproperty=None):
+        super(Range, self).__init__(target, property, command, value, label, index, readproperty)
 
         self.range = range
         self.step = step
@@ -820,7 +855,7 @@ class Colour(Control):
         <div><div class="colourbg checkerboard">
           <div id="---ELID---" class="colour ---ELID---" onclick="
             var col = new Colour();
-            var offset = findElementPos(this);
+            var offset = [this.getBoundingClientRect().left, this.getBoundingClientRect().top];
             var el = this;
             var savefn = function(val) {
               var col = new Colour(0);
@@ -1016,7 +1051,7 @@ class DualRange(Control):
     range: list/tuple
         Min/max values for the range
     """
-    def __init__(self, target, properties, values, label, range=(0.,1.), step=None):
+    def __init__(self, target, properties, values=[None,None], label=None, range=(0.,1.), step=None):
         self.label = label
 
         self.ctrlmin = Range(target=target, property=properties[0], step=step, value=values[0], range=range, label="")
@@ -1024,6 +1059,26 @@ class DualRange(Control):
 
     def controls(self):
         return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
+
+class Range3D(Control):
+    """A set of three range slider controls for adjusting a 3D value
+
+    Parameters
+    ----------
+    range: list/tuple
+        Min/max values for the ranges
+    """
+    def __init__(self, target, property, label, range=(0.,1.), step=None):
+        self.label = label
+
+        curval = getproperty(target, property)
+
+        self.ctrlX = Range(target=target, property=property, step=step, value=curval[0], range=range, label="", index=0)
+        self.ctrlY = Range(target=target, property=property, step=step, value=curval[1], range=range, label="", index=1)
+        self.ctrlZ = Range(target=target, property=property, step=step, value=curval[2], range=range, label="", index=2)
+
+    def controls(self):
+        return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
 
 class Filter(Control):
     """A set of two range slider controls for adjusting a minimum and maximum filter range
@@ -1260,6 +1315,60 @@ class ControlFactory(object):
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
 
+        #MULTIPLE MODE OUTPUT - SHOULD WORK IN ALL PYTHON CONTEXTS, NOTEBOOKS, COLAB, JUPYTERLAB
+        #Only problem remaining is port access, from docker or cloud instances etc, need to forward extra ports
+        # - Could use lightweight callbacks IPython/Colab style to pass requests on to local server
+        if self._target.server:
+            from IPython.display import display,HTML,Javascript
+            initialise(_webglboxcode())
+            #Pass port from server
+            actionjs = Action.export_actions(viewerid, self._target.server.port)
+            display(HTML(actionjs + html))
+            #Get port from server
+            #port = self._target.server.port
+            #js = '_wi[{0}] = new WindowInteractor({0}, "localhost:{port}");'.format(viewerid, port=port)
+            #display(Javascript(js))
+            return
+
+
+        try:
+            #Google Colab support - notebook cell output is in IFrame
+            from google.colab import output
+            from IPython.display import display,HTML,Javascript,JSON
+
+            lv = self._target
+            def cmd_callback(cmds=None):
+                if cmds: lv.commands(cmds)
+                state = lv.app.getState()
+                return JSON({'state': state})
+
+            def img_callback(cmds=None):
+                if cmds: lv.commands(cmds)
+                imgstr = lv.image()
+                return JSON({'image': imgstr})
+
+            def act_callback(action, val):
+                if cmds: lv.commands(cmds)
+                cmds = Action.do(action, val)
+                if cmds:
+                    windows[viewerid].commands(cmds)
+                imgstr = lv.image()
+                return JSON({'image': imgstr})
+
+            output.register_callback('img_' + str(viewerid), img_callback)
+            output.register_callback('cmd_' + str(viewerid), cmd_callback)
+            output.register_callback('act_' + str(viewerid), act_callback)
+
+            display(HTML(_webglboxcode() + html))
+
+            #Create WindowInteractor instance
+            js = '_wi[{id}] = new WindowInteractor({0});'.format(viewerid)
+            display(Javascript(js))
+            return
+
+        except (ImportError):
+            pass
+
         #Display HTML inline or export
         self.output += html
         try:
@@ -1272,7 +1381,7 @@ class ControlFactory(object):
                 display(HTML(html))
 
                 #Create WindowInteractor instance
-                js = '_wi[' + str(viewerid) + '] = new WindowInteractor(' + str(viewerid) + ');'
+                js = '_wi[{0}] = new WindowInteractor({0});'.format(viewerid)
                 display(Javascript(js))
 
             else:
@@ -1294,7 +1403,7 @@ class ControlFactory(object):
             viewerid = windows.index(self._target)
             if __IPYTHON__:
                 from IPython.display import display,Javascript
-                js = '_wi[' + str(viewerid) + '].redisplay(' + str(viewerid) + ');'
+                js = '_wi[{0}].redisplay({0});'.format(viewerid)
                 display(Javascript(js))
 
         except (NameError, ImportError, ValueError):
@@ -1321,16 +1430,4 @@ class ControlFactory(object):
         self._content = []
         self._containers = []
 
-    def interactive(self, port=8080, resolution=(640,480)):
-        """Display popup interactive viewer window
-        """
-        if not htmlpath: return
-        try:
-            if __IPYTHON__:
-                from IPython.display import display,Javascript
-                js = 'var win = window.open("http://localhost:---PORT---/interactive.html", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width=' + str(resolution[0]) + ',height=' + str(resolution[1]) + '");'
-                js = js.replace('---PORT---', str(port))
-                display(Javascript(js))
-        except (NameError, ImportError):
-            pass
 

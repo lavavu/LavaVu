@@ -336,7 +336,6 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 //OutputInterface
 void VideoEncoder::open(int w, int h)
 {
-  render = true; //Enable output frame rendering
   if (w) width = w;
   if (h) height = h;
 

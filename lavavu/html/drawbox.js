@@ -25,10 +25,18 @@ function initBox(el, cmd_callback) {
   //Command callback function
   viewer.command = cmd_callback;
 
+  //Load dict from tag if available
+  viewer.dict = {};
+  var d = document.getElementById('dictionary');
+  if (d && d.innerHTML.length > 100)
+    viewer.dict = JSON.parse(d.innerHTML);
+
   return viewer;
 }
 
 function updateBox(viewer, loaderfn) {
+  //console.log("updateBox called by " + updateBox.caller);
+  console.log("updateBox called");
   if (!viewer) return;
   //Loader callback
   loaderfn(function(data) {viewer.loadFile(data);});
@@ -114,22 +122,23 @@ function canvasBoxMouseMove(event, mouse) {
   return false;
 }
 
-var zoomBoxTimer;
-var zoomBoxClipTimer;
-var zoomBoxSpin = 0;
-
 function canvasBoxMouseWheel(event, mouse) {
   if (event.shiftKey) {
-    var factor = event.spin * 0.01;
+    /*var factor = event.spin * 0.01;
     if (zoomBoxClipTimer) clearTimeout(zoomBoxClipTimer);
     zoomBoxClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
+    */
+    mouse.element.viewer.zoomClip(event.spin*0.01);
   } else {
-    if (zoomBoxTimer) 
+    /*if (zoomBoxTimer) 
       clearTimeout(zoomBoxTimer);
     zoomBoxSpin += event.spin;
     zoomBoxTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomBoxSpin*0.01); zoomBoxSpin = 0;}, 100 );
     //Clear the box after a second
     setTimeout(function() {mouse.element.viewer.clear();}, 1000);
+*/
+
+    mouse.element.viewer.zoom(event.spin*0.01);
   }
   return false; //Prevent default
 }
@@ -147,10 +156,13 @@ function canvasBoxMousePinch(event, mouse) {
 //This object encapsulates a vertex buffer and shader set
 function BoxRenderer(gl, colour) {
   this.gl = gl;
-  if (colour) this.colour = colour;
+  if (colour)
+    this.colour = colour;
+  else
+    this.colour = [0.5, 0.5, 0.5, 1.0];
 
-    //Line renderer
-    this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT];
+  //Line renderer
+  this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT];
 
   this.elements = 0;
   this.elementSize = 0;
@@ -182,12 +194,15 @@ BoxRenderer.prototype.updateBuffers = function(view) {
   this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
 
   this.box(view.min, view.max);
-  this.elements = 24;
 }
 
 BoxRenderer.prototype.box = function(min, max) {
+  var zero = [min[0]+0.5*(max[0] - min[0]), min[1]+0.5*(max[1] - min[1]), min[2]+0.5*(max[2] - min[2])];
+  var min10 = [min[0] + 0.45*(max[0] - min[0]), min[1]+0.45*(max[1] - min[1]), min[2]+0.45*(max[2] - min[2])];
+  var max10 = [min[0] + 0.55*(max[0] - min[0]), min[1]+0.55*(max[1] - min[1]), min[2]+0.55*(max[2] - min[2])];
   var vertices = new Float32Array(
         [
+          /* Bounding box */
           min[0], min[1], max[2],
           min[0], max[1], max[2],
           max[0], max[1], max[2],
@@ -195,18 +210,44 @@ BoxRenderer.prototype.box = function(min, max) {
           min[0], min[1], min[2],
           min[0], max[1], min[2],
           max[0], max[1], min[2],
-          max[0], min[1], min[2]
+          max[0], min[1], min[2],
+          /* 10% box */
+          min10[0], min10[1], max10[2],
+          min10[0], max10[1], max10[2],
+          max10[0], max10[1], max10[2],
+          max10[0], min10[1], max10[2],
+          min10[0], min10[1], min10[2],
+          min10[0], max10[1], min10[2],
+          max10[0], max10[1], min10[2],
+          max10[0], min10[1], min10[2],
+          /* Axis lines */
+          min[0], zero[1], zero[2],
+          max[0], zero[1], zero[2],
+          zero[0], min[1], zero[2],
+          zero[0], max[1], zero[2],
+          zero[0], zero[1], min[2],
+          zero[0], zero[1], max[2]
         ]);
 
   var indices = new Uint16Array(
         [
+          /* Bounding box */
           0, 1, 1, 2, 2, 3, 3, 0,
           4, 5, 5, 6, 6, 7, 7, 4,
-          0, 4, 3, 7, 1, 5, 2, 6
+          0, 4, 3, 7, 1, 5, 2, 6,
+          /* 10% box */
+          8, 9, 9, 10, 10, 11, 11, 8,
+          12, 13, 13, 14, 14, 15, 15, 12,
+          8, 12, 11, 15, 9, 13, 10, 14,
+          /* Axis lines */
+          16, 17,
+          18, 19,
+          20, 21
         ]
      );
   this.gl.bufferData(this.gl.ARRAY_BUFFER, vertices, this.gl.STATIC_DRAW);
   this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indices, this.gl.STATIC_DRAW);
+  this.elements = 24+24+6;
 }
 
 BoxRenderer.prototype.draw = function(webgl) {
@@ -225,12 +266,21 @@ BoxRenderer.prototype.draw = function(webgl) {
   for (var key in this.program.attributes)
     this.gl.enableVertexAttribArray(this.program.attributes[key]);
 
-  if (this.colour)
-    this.gl.uniform4f(this.program.uniforms["uColour"], this.colour[0], this.colour[1], this.colour[2], this.colour[3]);
  
   //Line box render
   this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, 0, 0);
-  this.gl.drawElements(this.gl.LINES, this.elements, this.gl.UNSIGNED_SHORT, 0);
+  //Bounding box
+  this.gl.uniform4f(this.program.uniforms["uColour"], this.colour[0], this.colour[1], this.colour[2], this.colour[3]);
+  this.gl.drawElements(this.gl.LINES, 24, this.gl.UNSIGNED_SHORT, 0);
+  //10% box
+  this.gl.drawElements(this.gl.LINES, 24, this.gl.UNSIGNED_SHORT, 24 * 2);
+  //Axes (2 bytes per unsigned short)
+  this.gl.uniform4f(this.program.uniforms["uColour"], 1.0, 0.0, 0.0, 1.0);
+  this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24) * 2);
+  this.gl.uniform4f(this.program.uniforms["uColour"], 0.0, 1.0, 0.0, 1.0);
+  this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24+2) * 2);
+  this.gl.uniform4f(this.program.uniforms["uColour"], 0.0, 0.0, 1.0, 1.0);
+  this.gl.drawElements(this.gl.LINES, 2, this.gl.UNSIGNED_SHORT, (24+24+4) * 2);
 
   //Disable attribs
   for (var key in this.program.attributes)
@@ -243,6 +293,7 @@ BoxRenderer.prototype.draw = function(webgl) {
 
 //This object holds the viewer details and calls the renderers
 function BoxViewer(canvas) {
+  this.vis = {};
   this.canvas = canvas;
   if (!canvas) {alert("Invalid Canvas"); return;}
   try {
@@ -258,9 +309,6 @@ function BoxViewer(canvas) {
     console.log("No WebGL: " + e);
   }
 
-  this.vis = {};
-  this.view = 0; //Active view
-
   this.rotating = false;
   this.translate = [0,0,0];
   this.rotate = quat4.create();
@@ -273,6 +321,8 @@ function BoxViewer(canvas) {
   this.scale = [1, 1, 1];
   this.orientation = 1.0; //1.0 for RH, -1.0 for LH
 
+  //Non-persistant settings
+  this.mode = 'Rotate';
   if (!this.gl) return;
 
   //Create the renderers
@@ -287,36 +337,155 @@ function BoxViewer(canvas) {
   this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
 }
 
+BoxViewer.prototype.reload = function() {
+  this.command('reload');
+}
+
 BoxViewer.prototype.checkPointMinMax = function(coord) {
   for (var i=0; i<3; i++) {
-    this.vis.views[this.view].min[i] = Math.min(coord[i], this.vis.views[this.view].min[i]);
-    this.vis.views[this.view].max[i] = Math.max(coord[i], this.vis.views[this.view].max[i]);
+    this.view.min[i] = Math.min(coord[i], this.view.min[i]);
+    this.view.max[i] = Math.max(coord[i], this.view.max[i]);
   }
-  //console.log(JSON.stringify(this.vis.views[this.view].min) + " -- " + JSON.stringify(this.vis.views[this.view].max));
+  //console.log(JSON.stringify(this.view.min) + " -- " + JSON.stringify(this.view.max));
+}
+
+BoxViewer.prototype.sendState = function(reload) {
+  var exp = {"objects"    : this.exportObjects(),
+             "colourmaps" : this.exportColourMaps(),
+             "views"      : this.exportView(),
+             "properties" : this.vis.properties};
+
+  exp.exported = true;
+  exp.reload = reload ? true : false;
+
+  var sdat = window.btoa(JSON.stringify(exp));
+  this.command('_' + sdat);
+}
+
+function Merge(obj1, obj2) {
+  for (var p in obj2) {
+    try {
+      //alert(p + " ==> " + obj2[p].constructor);
+      // Property in destination object set; update its value.
+      if (obj2[p].constructor == Object || obj2[p].constructor == Array) {
+        obj1[p] = Merge(obj1[p], obj2[p]);
+      } else {
+        obj1[p] = obj2[p];
+      }
+    } catch(e) {
+      // Property in destination object not set; create it and set its value.
+      obj1[p] = obj2[p];
+    }
+  }
+  return obj1;
+}
+
+BoxViewer.prototype.toString = function(nocam, reload) {
+  var exp = {"objects"    : this.exportObjects(),
+             /*"colourmaps" : this.exportColourMaps(),*/
+             "views"      : this.exportView(nocam),
+             "properties" : this.vis.properties};
+
+  exp.exported = true;
+  exp.reload = reload ? true : false;
+
+  if (nocam) return JSON.stringify(exp);
+  //Export with 2 space indentation
+  return JSON.stringify(exp, undefined, 2);
+}
+
+BoxViewer.prototype.exportView = function(nocam) {
+  //Update camera settings of current view
+  if (nocam)
+    this.view = {};
+  else {
+    this.view.rotate = this.getRotation();
+    this.view.focus = this.focus;
+    this.view.translate = this.translate;
+    this.view.scale = this.scale;
+  }
+  this.view.aperture = this.fov;
+  this.view.near = this.near_clip;
+  this.view.far = this.far_clip;
+  this.view.border = this.showBorder ? 1 : 0;
+  this.view.axis = this.axes;
+  //this.view.background = this.background.toString();
+
+  return [this.view];
+}
+
+BoxViewer.prototype.exportObjects = function() {
+  objs = [];
+  for (var id in this.vis.objects) {
+    objs[id] = {};
+    //Skip geometry data
+    for (var type in this.vis.objects[id]) {
+      if (type != "triangles" && type != "points" && type != 'lines' && type != "volume") {
+        objs[id][type] = this.vis.objects[id][type];
+      }
+    }
+  }
+  console.log("OBJECTS: " + JSON.stringify(objs));
+
+  return objs;
+}
+
+BoxViewer.prototype.exportColourMaps = function() {
+  cmaps = [];
+  if (this.vis.colourmaps) {
+    for (var i=0; i<this.vis.colourmaps.length; i++) {
+      if (!this.vis.colourmaps[i].palette) continue;
+      cmaps[i] = this.vis.colourmaps[i].palette.get();
+      //Copy additional properties
+      for (var type in this.vis.colourmaps[i]) {
+        if (type != "palette" && type != "colours")
+          cmaps[i][type] = this.vis.colourmaps[i][type];
+      }
+    }
+  }
+  return cmaps;
+}
+
+BoxViewer.prototype.exportFile = function() {
+  window.open('data:text/plain;base64,' + window.btoa(this.toString(false, true)));
 }
 
 BoxViewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
   //if (document.mouse.isdown) return;
+  console.log("LOADFILE: " + source.length);
 
   //Replace data
-  this.vis = JSON.parse(source);
+  var src = {};
+  try {
+    src = JSON.parse(source);
+  } catch(e) {
+    console.log(source);
+    console.log("Parse Error: " + e);
+    return;
+  }
+
+  //Merge keys - preserves original objects for gui access
+  Merge(this.vis, src);
+
+  //Set active view (always first for now)
+  this.view = this.vis.views[0];
 
   //Always set a bounding box, get from objects if not in view
   var objbb = false;
-  if (!this.vis.views[this.view].min || !this.vis.views[this.view].max) {
-    this.vis.views[this.view].min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
-    this.vis.views[this.view].max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
+  if (!this.view.min || !this.view.max) {
+    this.view.min = [Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE];
+    this.view.max = [-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE];
     objbb = true;
   }
-  //console.log(JSON.stringify(this.vis.views[this.view],null, 2));
+  //console.log(JSON.stringify(this.view,null, 2));
 
-  if (this.vis.views[this.view]) {
-    this.fov = this.vis.views[this.view].aperture || 45;
-    this.near_clip = this.vis.views[this.view].near || 0;
-    this.far_clip = this.vis.views[this.view].far || 0;
-    this.orientation = this.vis.views[this.view].orientation || 1;
-    this.axes = this.vis.views[this.view].axis == undefined ? true : this.vis.views[this.view].axis;
+  if (this.view) {
+    this.fov = this.view.aperture || 45;
+    this.near_clip = this.view.near || 0;
+    this.far_clip = this.view.far || 0;
+    this.orientation = this.view.orientation || 1;
+    this.axes = this.view.axis == undefined ? true : this.view.axis;
   }
 
   if (this.vis.properties.resolution && this.vis.properties.resolution[0] && this.vis.properties.resolution[1]) {
@@ -339,14 +508,26 @@ BoxViewer.prototype.loadFile = function(source) {
       this.checkPointMinMax(this.vis.objects[id].max);
   }
 
-  this.updateDims(this.vis.views[this.view]);
+  this.updateDims(this.view);
 
   //Update display
   if (!this.gl) return;
   this.draw();
   this.clear();
-}
 
+  //Create UI - disable by omitting dat.gui.min.js
+  if (!this.gui) {
+    var viewer = this;
+    var changefn = function(value) {
+      //console.log(value);
+      //console.log(JSON.stringify(Object.keys(this)));
+      //console.log(this.property);
+      viewer.sendState(true); //Sync state and reload
+    };
+
+    createMenu(this, changefn);
+  }
+}
 
 BoxViewer.prototype.clear = function() {
   if (!this.gl) return;
@@ -381,6 +562,17 @@ BoxViewer.prototype.draw = function() {
   //Render objects
   this.border.draw(this.webgl);
 
+}
+
+BoxViewer.prototype.syncRotation = function() {
+  this.rotated = true;
+  this.draw();
+  //if (this.command)
+  //  this.command('' + this.getRotationString());
+
+  rstr = '' + this.getRotationString();
+  that = this;
+  window.requestAnimationFrame(function() {that.command(rstr);});
 }
 
 BoxViewer.prototype.rotateX = function(deg) {
@@ -419,12 +611,16 @@ BoxViewer.prototype.getTranslationString = function() {
 
 BoxViewer.prototype.reset = function() {
   if (this.gl) {
-    this.updateDims(this.vis.views[this.view]);
+    this.updateDims(this.view);
     this.draw();
   }
 
   this.command('reset');
 }
+
+var zoomBoxTimer;
+var zoomBoxClipTimer;
+var zoomBoxSpin = 0;
 
 BoxViewer.prototype.zoom = function(factor) {
   if (this.gl) {
@@ -432,7 +628,14 @@ BoxViewer.prototype.zoom = function(factor) {
     this.draw();
   }
 
-  this.command('' + this.getTranslationString());
+  var that = this;
+    if (zoomBoxTimer) 
+      clearTimeout(zoomBoxTimer);
+    zoomBoxTimer = setTimeout(function () {that.command('' + that.getTranslationString());  that.clear();}, 500 );
+    //Clear the box after a second
+    //setTimeout(function() {that.clear();}, 1000);
+
+  //this.command('' + this.getTranslationString());
   //this.command('zoom ' + factor);
 }
 
@@ -444,12 +647,22 @@ BoxViewer.prototype.zoomClip = function(factor) {
     this.draw();
   }
 
-  this.command('zoomclip ' + factor);
+  var that = this;
+    if (zoomBoxClipTimer) clearTimeout(zoomBoxClipTimer);
+    zoomBoxClipTimer = setTimeout(function () {that.command('zoomclip ' + factor);}, 500 );
+  //this.command('zoomclip ' + factor);
 }
 
 BoxViewer.prototype.updateDims = function(view) {
   if (!view) return;
   var oldsize = this.modelsize;
+
+  /*/Check for valid dims
+  for (var i=0; i<3; i++)
+    if (view.max[i] - view.min[i] <= 0.0)
+      {view.max[i] = 1.0; view.min[i] = -1.0;}
+  */
+
   this.dims = [view.max[0] - view.min[0], view.max[1] - view.min[1], view.max[2] - view.min[2]];
   this.modelsize = Math.sqrt(this.dims[0]*this.dims[0] + this.dims[1]*this.dims[1] + this.dims[2]*this.dims[2]);
 
@@ -506,6 +719,6 @@ BoxViewer.prototype.updateDims = function(view) {
   if (!this.gl) return;
  
   //Create the bounding box vertex buffer
-  this.border.updateBuffers(this.vis.views[this.view]);
+  this.border.updateBuffers(this.view);
 }
 

@@ -65,7 +65,6 @@ const std::string version;
 class OpenGLViewer
 {
 public:
-  int port;
   bool quitProgram;
   bool isopen;
   bool postdisplay; //Flag to request a frame when animating

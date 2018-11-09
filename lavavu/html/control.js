@@ -1,7 +1,58 @@
 //IPython kernel object
 var kernel;
-if (parent.IPython) {
-  kernel = parent.IPython.notebook.kernel;
+var gkernel;
+try {
+  if (parent && parent.IPython)
+    kernel = parent.IPython.notebook.kernel;
+
+    function exec_kernel(cmd) {
+      //For debugging:
+      //Run a python command in kernel and log output to console
+      if (kernel) {
+        if (debug_mode) {
+          //Debug callback
+          var callbacks = {'output' : function(out) {
+              if (!out.content.data) {console.log(JSON.stringify(out)); return;}
+              data = out.content.data['text/plain']
+              console.log("CMD: " + cmd + ", RESULT: " + data);
+            }
+          };
+        }
+        kernel.execute(cmd, {iopub: callbacks}, {silent: false});
+      }
+    }
+
+} catch (e) {
+  //Google Colab
+  if (google) {
+    gkernel = google.colab.kernel;
+
+    function g_execute(wi, fn, cmds, callback) {
+      function successCallback(res) {
+        result = res["data"]["application/json"];
+        console.log(fn + 'success ' + wi.id);
+        console.log(("image" in result) + " IMG, " + ("state" in result) + " STATE");
+        if (result["image"] && wi.img) {
+          console.log("Got image: " + result['image'].length);
+          if (wi.img) {
+            //Set onload callback if provided
+            if (callback)
+              wi.img.onload = callback;
+            wi.img.src = result["image"];
+          }
+        } else if (result["state"] && callback) {
+          callback(result["state"]);
+        }
+      }
+
+      function failureCallback(res) {
+        console.log(fn + 'failure: ' + res);
+      }
+
+      promise = gkernel.invokeFunction(fn + wi.id, cmds, {})
+      promise.then(successCallback, failureCallback);
+    }
+  }
 }
 
 //Maintain a list of interactor instances opened by id
@@ -10,32 +61,18 @@ var _wi = window._wi ? window._wi : [];
 var delay = 0;
 var debug_mode = false;
 
-function exec_kernel(cmd) {
-  //For debugging:
-  //Run a python command in kernel and log output to console
-  if (kernel) {
-    if (debug_mode) {
-      //Debug callback
-      var callbacks = {'output' : function(out) {
-          if (!out.content.data) {console.log(JSON.stringify(out)); return;}
-          data = out.content.data['text/plain']
-          console.log("CMD: " + cmd + ", RESULT: " + data);
-        }
-      };
-    }
-    kernel.execute(cmd, {iopub: callbacks}, {silent: false});
-  }
-}
-
-function getUrl() {
-  var loc = window.location;
-  var baseUrl = loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "");
-  return baseUrl;
-}
-
-function WindowInteractor(id) {
+function WindowInteractor(id, baseurl) {
   //Store self in list and save id
   this.id = id;
+  var loc = window.location;
+  if (!baseurl)
+    this.baseurl = loc.hostname + (loc.port ? ":" + loc.port : "");
+  else {
+    this.baseurl = loc.protocol + "//" + baseurl;
+    //Don't use IPython kernel if passed baseurl
+    kernel = null;
+    gkernel = null;
+  }
   
   console.log("New interactor: " + this.id);
   //Interactor class, handles javascript side of window control
@@ -67,26 +104,31 @@ function WindowInteractor(id) {
 var instant = true;
 
 WindowInteractor.prototype.execute = function(cmd, callback) {
-  //console.log("execute: " + cmd);
+console.log("execute: " + cmd);
   if (kernel) {
     exec_kernel('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
     //kernel.execute('lavavu.control.windows[' + this.id + '].commands("' + cmd + '")');
     this.get_image(callback);
+  } else if (gkernel) {
+    //Google Colab
+    //Execute and get image result
+    g_execute(this, 'img_', [cmd], callback);
+
   } else {
     //HTTP interface
     //Replace newlines with semi-colon first
     cmd = cmd.replace(/\n/g,';');
     if (instant && this.img) {
-      var url = getUrl() + "/icommand=" + cmd + "?" + new Date().getTime();
+      var url = this.baseurl + "/icommand=" + cmd + "?" + new Date().getTime();
       this.img.onload = null;
       if (callback)
         this.img.onload = callback;
       this.img.src = url;
     } else {
-      var url = getUrl() + "/command=" + cmd + "?" + new Date().getTime()
-      x = new XMLHttpRequest();
-      x.open('GET', url, true);
-      x.send();
+      var url = this.baseurl + "/command=" + cmd + "?" + new Date().getTime()
+      xhttp = new XMLHttpRequest();
+      xhttp.open('GET', url, true);
+      xhttp.send();
       this.get_image(callback);
     }
 
@@ -120,16 +162,20 @@ WindowInteractor.prototype.do_action = function(id, val) {
     cmd = 'if cmds: lavavu.control.windows[' + this.id + '].commands(cmds)';
     exec_kernel(cmd);
     this.get_image();
+  } else if (gkernel) {
+    //Google Colab
+    g_execute(this, 'act_', [id, value]);
+
   } else {
     //HTML control actions via http
-    actions[id](val);
+    this.actions[id](val);
   }
 
-  //Reload state
+  /*/Reload state - this happens in action execute anyway, so not needed?
   if (this.img) {
     var that = this;
     updateBox(this.box, function(onget) {that.get_state(onget);});
-  }
+  }*/
 }
 
 WindowInteractor.prototype.redisplay = function() {
@@ -165,9 +211,14 @@ WindowInteractor.prototype.get_image = function(onload) {
     };
 
     kernel.execute('lavavu.control.windows[' + this.id + '].frame()', {iopub: callbacks}, {silent: false});
+
+  } else if (gkernel) {
+    //Google Colab
+    g_execute(this, 'img_', [''], onload);
+
   } else {
     //if (!this.img) this.img = document.getElementById('imgtarget_0');
-    var url = getUrl() + "/image?" + new Date().getTime();
+    var url = this.baseurl + "/image?" + new Date().getTime();
     if (this.img) {
       this.img.onload = onload;
       this.img.src = url;
@@ -188,18 +239,20 @@ WindowInteractor.prototype.get_state = function(onget) {
       }
     };
     kernel.execute('lavavu.control.windows[' + this.id + '].app.getState()', {iopub: callbacks}, {silent: false});
-  }
-  else {
-    var url = getUrl() + "/getstate"
-    x = new XMLHttpRequest();
-    x.onload = function() { 
-      if(x.status == 200)
-        onget(x.response);
+  } else if (gkernel) {
+    //Google Colab
+    g_execute(this, 'cmd_', [''], onget);
+  } else {
+    var url = this.baseurl + "/getstate"
+    xhttp = new XMLHttpRequest();
+    xhttp.onload = function() {
+      if(xhttp.status == 200)
+        onget(xhttp.response);
       else  
-        console.log("Ajax Request Error: " + url + ", returned status code " + x.status + " " + x.statusText);
+        console.log("Ajax Request Error: " + url + ", returned status code " + xhttp.status + " " + xhttp.statusText);
     } 
-    x.open('GET', url, true);
-    x.send();
+    xhttp.open('GET', url, true);
+    xhttp.send();
   }
 }
 

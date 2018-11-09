@@ -52,7 +52,6 @@
 #include "LavaVu.h"
 #include "Shaders.h"
 #include "Util.h"
-#include "Server.h"
 #include "OpenGLViewer.h"
 #include "Main/SDLViewer.h"
 #include "Main/X11Viewer.h"
@@ -121,8 +120,6 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
   //Shader path (default to program path if not set)
   if (binpath.back() != '/') binpath += "/";
   if (Shader::path.length() == 0) Shader::path = binpath + "shaders/";
-  //Set default web server path
-  Server::htmlpath = binpath + "html";
 
   //Initialise the session
   session.init(binpath);
@@ -204,9 +201,6 @@ LavaVu::~LavaVu()
 
   close();
 
-  if (viewer->port > 0)
-    Server::Delete();
-
   if (encoder) delete encoder;
   debug_print("LavaVu closing: peak geometry memory usage: %.3f mb\n", mempeak__/1000000.0f);
   if (viewer) delete viewer;
@@ -286,7 +280,7 @@ void LavaVu::arguments(std::vector<std::string> args)
     if (x == '-' && args[i].length() > 1)
     {
       ss >> x;
-      //Unused switches: bklosu, BDEFHKLMOPUXYZ
+      //Unused switches: bklnopqsu, BDEFHKLMOPUXYZ
       switch (x)
       {
       case 'a':
@@ -303,18 +297,6 @@ void LavaVu::arguments(std::vector<std::string> args)
         //Downsample images
         ss >> vars[0];
         viewer->downSample(vars[0]);
-        break;
-      case 'p':
-        //Web server enable
-        ss >> Server::port;
-        break;
-      case 'q':
-        //Web server JPEG quality
-        ss >> Server::quality;
-        break;
-      case 'n':
-        //Web server threads
-        ss >> Server::threads;
         break;
       case 'r':
         ss >> vars[0] >> x >> vars[1];
@@ -439,10 +421,7 @@ void LavaVu::arguments(std::vector<std::string> args)
 
   //Output and exit modes?
   if (writeimage || writemovie || dump > lucExportNone)
-  {
     viewer->visible = false;
-    Server::port = 0;
-  }
 
   //Set default timestep if none specified
   if (startstep < 0) startstep = 0;
@@ -475,21 +454,11 @@ void LavaVu::run(std::vector<std::string> args)
   //App specific argument processing
   arguments(args);
 
-  //Add server attachments to the viewer
-  if (Server::port > 0)
-  {
-    viewer->addOutput(Server::Instance(viewer));
-  }
-
-  //If server running, always stay open (persist flag)
-  bool persist = Server::running();
-
   //Require a model from here on, set a default
   if (!amodel) defaultModel();
 
   if (writeimage || writemovie || dump > lucExportNone)
   {
-    persist = false; //Disable persist
     //Load vis data for each model and write image
     if (!writeimage && !writemovie && dump != lucExportJSON && dump != lucExportJSONP)
       viewer->isopen = true; //Skip open
@@ -574,8 +543,6 @@ void LavaVu::run(std::vector<std::string> args)
   //Start event loop
   if (viewer->visible)
     viewer->loop();
-  else if (persist)
-    viewer->loop(false);  //Enter event loop but remain hidden
   else
   {
     //Read input script from stdin on first timestep

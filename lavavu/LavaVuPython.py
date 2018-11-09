@@ -378,7 +378,6 @@ lucMaxDataType = _LavaVuPython.lucMaxDataType
 class OpenGLViewer(object):
     thisown = _swig_property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc='The membership flag')
     __repr__ = _swig_repr
-    port = _swig_property(_LavaVuPython.OpenGLViewer_port_get, _LavaVuPython.OpenGLViewer_port_set)
     quitProgram = _swig_property(_LavaVuPython.OpenGLViewer_quitProgram_get, _LavaVuPython.OpenGLViewer_quitProgram_set)
     isopen = _swig_property(_LavaVuPython.OpenGLViewer_isopen_get, _LavaVuPython.OpenGLViewer_isopen_set)
     postdisplay = _swig_property(_LavaVuPython.OpenGLViewer_postdisplay_get, _LavaVuPython.OpenGLViewer_postdisplay_set)

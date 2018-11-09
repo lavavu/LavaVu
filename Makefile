@@ -113,7 +113,7 @@ endif
 #Source search paths
 vpath %.cpp src:src/Main:src:src/jpeg:src/png
 vpath %.h src/Main:src:src/jpeg:src/png:src/sqlite3
-vpath %.c src/mongoose:src/sqlite3
+vpath %.c src/sqlite3
 vpath %.cc src
 
 #Always run this script to update version.cpp if git version changes
@@ -134,7 +134,7 @@ OBJS = $(notdir $(OBJ))
 OBJS := $(OBJS:%.o=$(OPATH)/%.o)
 ALLOBJS := $(OBJS)
 #Additional library objects (no cpp extension so not included above)
-ALLOBJS += $(OPATH)/mongoose.o $(OPATH)/sqlite3.o
+ALLOBJS += $(OPATH)/sqlite3.o
 #Mac only
 ALLOBJS += $(APPLEOBJ)
 
@@ -171,9 +171,6 @@ $(PROGRAM): $(LIBRARY) main.cpp | paths
 
 $(LIBRARY): $(ALLOBJS) | paths
 	$(CXX) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
-
-$(OPATH)/mongoose.o : mongoose.c
-	$(CC) $(EXTCFLAGS) -o $@ -c $^ 
 
 src/sqlite3/sqlite3.c :
 	#Ensure the submodule is checked out

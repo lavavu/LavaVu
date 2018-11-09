@@ -35,7 +35,6 @@
 
 #include "LavaVu.h"
 #include "ColourMap.h"
-#include "Server.h"
 
 #define HELP_INTERACTION "\
 \n## User Interface commands\n\n\
@@ -831,30 +830,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       value = fval;
     session.globals[action] = value;
     printMessage("Set global %s to %.2f", action.c_str(), value);
-  }
-  else if (parsed.exists("server"))
-  {
-    if (gethelp)
-    {
-      help += "Start web server\n\n"
-              "**Usage:** server [port]\n\n"
-              "port (integer) : server port, default 8080 or next available\n";
-      return false;
-    }
-
-    //Add server attachment if not running
-    if (viewer->port == 0 || !Server::running())
-    {
-      if (parsed.has(ival, "server"))
-        Server::port = ival;
-      if (Server::port == 0)
-        Server::port = 8080;
-      //Server::render = true;
-      Server* instance = Server::Instance(viewer);
-      viewer->addOutput(instance);
-      instance->open(viewer->width, viewer->height);
-    }
-    return false;
   }
   else if (parsed.exists("interactive"))
   {

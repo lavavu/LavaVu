@@ -19,6 +19,9 @@ import control
 import numpy
 import re
 import copy
+import base64
+import threading
+import time
 
 def is_ipython():
     try:
@@ -47,6 +50,8 @@ libpath = os.path.abspath(os.path.dirname(__file__))
 version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
+TIMER_MAX_FPS = 60
+TIMER_INC = 1.0 / TIMER_MAX_FPS
 
 geomnames = ["labels", "points", "grid", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "screen"]
 geomtypes = [LavaVuPython.lucLabelType,
@@ -1511,7 +1516,12 @@ class ColourMap(dict):
 
 class Fig(dict):
     """  
-    The Fig class wraps a figure
+    The Fig class wraps a set of figure data
+
+    - Figures represent a full set of visualisation settings,
+      including visibility of chosen objects
+    - A single model can contain many objects and multiple figures, all of which work
+      on the same set of objects, but may not use them all (ie: some are hidden)
     """
     def __init__(self, instance, name):
         self.instance = instance
@@ -1583,8 +1593,6 @@ class Viewer(dict):
         initial figure id to display
     timestep: int
         initial timestep to display
-    port: int
-        web server port
     verbose: boolean
         verbose output to command line for debugging
     interactive: boolean
@@ -1648,16 +1656,18 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, arglist=None, database=None, figure=None, timestep=None, 
-         port=0, verbose=False, interactive=False, hidden=True, cache=False,
-         quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False,
-         binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
+    def __init__(self, port=0, threaded=False, *args, **kwargs):
         """
         Create and init viewer instance
 
         Parameters
         ----------
         (see Viewer class docs for setup args)
+        port: int
+            Web server port, to allow server mode, also enables threaded=True (see below)
+        threaded: boolean
+            Set this flag to start the viewer in a thread, all rendering will be done in this thread
+            Default is disabled, creates the viewer in the current(main) thread
         binpath: str
             Override the executable path
         havecontext: boolean
@@ -1671,6 +1681,125 @@ class Viewer(dict):
         self.app = None
         self._objects = Objects(self)
         self.state = {}
+
+        #Launch in thread?
+        self._thread = None
+        self._closing = False
+        if threaded or port:
+            #Exit handler to clean up threads
+            def exitfn():
+                self.server = None
+                self._closing = True
+                #Wait for the render thread to exit
+                self._thread.join()
+                self.app = None #Clear viewer
+
+            import atexit
+            atexit.register(exitfn)
+
+
+            # Create a condition variable to synchronize resource access
+            self._cv = threading.Condition()
+
+            # Create the command queue
+            try:
+                #Python2
+                from Queue import Queue
+            except ImportError:
+                #Python3
+                from queue import Queue
+            self._q = Queue()
+
+            self._thread = threading.Thread(target=self._thread_run)
+            self._thread.daemon = True #Must be put in background as has infinite loop
+
+            self._args = args
+            self._kwargs = kwargs
+
+            self._thread.start()
+            #print("control thread: ", threading.get_ident())
+
+            #Wait for the thread to finish initialising
+            with self._cv:
+                self._cv.wait()
+        else:
+            self._create(*args, **kwargs)
+
+        #Start the web server?
+        self.server = None
+        if port:
+            import server
+            self.server = server.serve(self, port, ipv6=False, retries=20)
+
+    def _thread_run(self):
+        """
+        This function holds the render thread.
+        Used to: create the viewer, handle events, get images
+        All OpenGL calls must be made from here
+        """
+        #Create the viewer
+        self._create(*self._args, **self._kwargs)
+
+        #Add thread safe method overrides
+        threadsafe = ['display', 'image', 'frame', 'jpeg', 'png'] #, 'render']
+        for name in threadsafe:
+            #Use a closure to define a replacement thread safe method
+            def addmethod(name):
+                def method(*args, **kwargs):
+                    return self._thread_safe_call(name, *args, **kwargs)
+                return method
+            method = addmethod(name)
+            #Copy docstring
+            method.__doc__ = getattr(self, name).__doc__
+            #Save the original method
+            self.__setattr__('_orig_' + name, getattr(self, name))
+            #Replace with our patched thread safe version
+            self.__setattr__(name, method)
+
+        #Sync with main thread here to ensure render thread has initialised before it continues
+        with self._cv:
+            self._cv.notifyAll()
+
+        #Render event handling loop!
+        while not self._closing:
+            #Process interactive and timer events
+            if self.app.viewer.events():
+                self.app.viewer.execute()
+                #self.render()
+
+            #Process commands that must be run on the render thread
+            if self._q.qsize():
+                req = self._q.get()
+                method = req[0]
+                #Get the original method
+                method_call = getattr(self, '_orig_' + method)
+                #Save the return value
+                self._returned = method_call(*req[1], **req[2])
+                #Notify waiting main thread result is ready
+                with self._cv:
+                    self._cv.notifyAll()
+
+            time.sleep(TIMER_INC)
+
+    def _thread_safe_call(self, method, *args, **kwargs):
+        """
+        This calls a method on the render thread
+        All args are placed on the queue, along with the method name
+        Wait for the call to be executed with a condition variable lock
+        Returns the saved return data from render thread after woken
+        """
+        #Use the thread queue to pass input args
+        self._q.put([method, args, kwargs])
+        #Wait until the call is completed in render thread
+        with self._cv:
+            self._cv.wait()
+        #Return the saved result data
+        return self._returned
+
+    def _create(self, binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
+        """
+        Create and init the C++ viewer object
+        """
         try:
             self.app = LavaVuPython.LavaVu(binpath, havecontext, omegalib)
 
@@ -1679,11 +1808,12 @@ class Viewer(dict):
             #Init prop dict for tab completion
             super(Viewer, self).__init__(**self.properties)
 
-            self.setup(arglist, database, figure, timestep, port, verbose, interactive, hidden, cache,
-                       quality, writeimage, resolution, script, initscript, usequeue, *args, **kwargs)
+            self.setup(*args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
             control.htmlpath = os.path.join(binpath, "html")
+            control.dictionary = self.app.propertyList()
+
             if not os.path.isdir(control.htmlpath):
                 control.htmlpath = None
                 print("Can't locate html dir, interactive view disabled")
@@ -1775,8 +1905,8 @@ class Viewer(dict):
                 return geomtypes[i]
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
-         port=0, verbose=False, interactive=False, hidden=True, cache=False,
-         quality=2, writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
+         verbose=False, interactive=False, hidden=True, cache=False, quality=2,
+         writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         """
         Execute the viewer, initialising with provided arguments and
         entering event loop if requested
@@ -1809,8 +1939,6 @@ class Viewer(dict):
                 args += ["-" + str(timestep)]
             if isinstance(timestep, (tuple, list)) and len(timestep) > 1:
                 args += ["-" + str(timestep[0]), "-" + str(timestep[1])]
-        #Web server
-        args += ["-p" + str(port)]
         #Database file
         if database:
           args += [database]
@@ -2046,7 +2174,14 @@ class Viewer(dict):
         """
         if isinstance(cmds, list):
             cmds = '\n'.join(cmds)
-        if self.queue: #Thread safe queue requested
+
+        #base64 encoded JSON state?
+        if len(cmds) and cmds[0] == '_':
+            cmds = base64.b64decode(cmds[1:])
+            cmds = str(cmds.decode('ascii'))
+            self.app.setState(cmds)
+            #self.app.setState(cmds.decode('utf-8'))
+        elif self.queue: #Thread safe queue requested
             self.app.queueCommands(cmds)
         else:
             self.app.parseCommands(cmds)
@@ -2632,9 +2767,8 @@ class Viewer(dict):
 
         try:
             data = '<script id="data" type="application/json">\n' + self.app.web() + '\n</script>\n'
-            datadict = '<script id="dictionary" type="application/json">\n' + self.app.propertyList() + '\n</script>\n'
             shaderpath = os.path.join(self.app.binpath, "shaders")
-            html = control._webglviewcode(shaderpath, menu, is_notebook()) + data + datadict
+            html = control._webglviewcode(shaderpath, menu) + data
             if inline:
                 ID = str(len(self.webglviews))
                 template = control.inlinehtml
@@ -2690,6 +2824,25 @@ class Viewer(dict):
 
         try:
             fn = self.app.video(filename, fps, resolution[0], resolution[1])
+            self.player(fn)
+        except (Exception) as e:
+            print("Video output error: " + str(e))
+            pass
+
+    def player(self, filename):
+        """
+        Shows a video inline within an ipython notebook.
+
+        If IPython is not running, just returns
+
+
+        Parameters
+        ----------
+        filename: str
+            Path and name of the file to play
+        """
+
+        try:
             if is_notebook():
                 from IPython.display import display,HTML
                 html = """
@@ -2698,10 +2851,11 @@ class Viewer(dict):
                 </video><br>
                 <a href="---FN---">Download Video</a> 
                 """
+                #Jupyterlab replaces ? with encoded char TODO: fix
                 #Get a UUID based on host ID and current time
                 import uuid
                 uid = uuid.uuid1()
-                html = html.replace('---FN---', fn + "?" + str(uid))
+                html = html.replace('---FN---', filename + "?" + str(uid))
                 display(HTML(html))
         except (Exception) as e:
             print("Video output error: " + str(e))
@@ -2838,25 +2992,6 @@ class Viewer(dict):
                 % (passed, outfile, diff, tolerance))
         return result
 
-    def serve(self):
-        """
-        Run a web server in python (experimental)
-        This uses server.py to launch a simple web server
-        Not threaded like the mongoose server used in C++ to is limited
-
-        Currently recommended to use threaded web server by supplying
-        port=#### argument when creating viewer instead
-        """
-        try:
-            import server
-            server.serve(self)
-        except (Exception) as e:
-            print("LavaVu error: " + str(e))
-            print("Web Server failed to run")
-            import traceback
-            traceback.print_exc()
-            pass
-
     def window(self):
         """
         Create and display an interactive viewer instance
@@ -2976,6 +3111,49 @@ class Viewer(dict):
         self.app.viewer.show();
         return not self.app.viewer.quitProgram;
 
+    def interactive(self):
+        if self._thread:
+            #Triggers an interactive window if available
+            self.animate(1)
+        else:
+            #Opens a modal/blocking interactive viewer
+            self.commands('interactive')
+
+    def serve(self, *args, **kwargs):
+        """
+        Run a web server in python
+        This uses server.py to launch a simple web server
+
+        Parameters:
+        -----------
+        port(9000)
+        ipv6(False)
+        retries(20)
+        """
+        if self.server: return
+        import server
+        self.server = server.serve(self, *args, **kwargs)
+
+    def browser(self, resolution=None, inline=True):
+        """
+        Open web server browser interface
+        """
+        if not self.server: self.serve()
+        #Running outside IPython notebook? Join here to wait for quit
+        filename = 'http://localhost:' + str(self.server.port) + '/control.html'
+        print(filename)
+        if not is_notebook():
+            import webbrowser
+            webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
+        elif inline:
+            from IPython.display import IFrame
+            if resolution is None: resolution = self.resolution
+            display(IFrame(filename, width=resolution[0], height=resolution[1]))
+        else:
+            import webbrowser
+            webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
+
+    #TODO: TEST, on mac and with/without threading
     def interact(self, native=False, resolution=None):
         """
         Opens an external interactive window
@@ -2991,22 +3169,24 @@ class Viewer(dict):
             on MacOS we can't return from the native event loop and this prevents
             further python commands being processed
         """
-        if native:
-            return self.commands("interactive")
+        if native or self._thread:
+            return self.interactive()
         else:
             try:
                 #Start the server if not running
-                if self.app.viewer.port == 0:
-                    self.commands("server")
+                if not self.server:
+                    self.serve()
                 if is_notebook():
                     if resolution is None: resolution = self.resolution
-                    self.control.interactive(self.app.viewer.port, resolution)
+                    from IPython.display import display,Javascript
+                    js = 'var win = window.open("http://localhost:{port}/interactive.html", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width={width},height={height}");'.format(port=self.server.port, width=resolution[0], height=resolution[1])
+                    display(Javascript(js))
                     #Need a small delay to let the injected javascript popup run
                     import time
                     time.sleep(0.1)
                 else:
                     import webbrowser
-                    url = "http://localhost:" + str(self.app.viewer.port) + "/interactive.html"
+                    url = "http://localhost:{port}/interactive.html".format(port=self.server.port)
                     webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
 
                 #Start event loop, without showing viewer window (blocking)
@@ -3608,4 +3788,12 @@ def _markdown(mdstr):
     else:
         #Not in IPython, just print
         print(mdstr)
+
+def lerp(first, second, mu):
+    #Linear Interpolate between values of two lists
+    final = first[:]
+    for i in range(len(first)):
+        diff = second[i] - first[i]
+        final[i] += diff * mu
+    return final
 
