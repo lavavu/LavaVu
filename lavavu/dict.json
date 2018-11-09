@@ -499,7 +499,7 @@
     ]
   },
   "xmin": {
-    "default": -3.4028234663852886e+38,
+    "default": 1.0,
     "target": "object",
     "type": "real [0,1]",
     "desc": "Object clipping, minimum x",
@@ -515,7 +515,7 @@
     ]
   },
   "ymin": {
-    "default": -3.4028234663852886e+38,
+    "default": 1.0,
     "target": "object",
     "type": "real [0,1]",
     "desc": "Object clipping, maximum y",
@@ -531,7 +531,7 @@
     ]
   },
   "zmin": {
-    "default": -3.4028234663852886e+38,
+    "default": 1.0,
     "target": "object",
     "type": "real [0,1]",
     "desc": "Object clipping, minimum z",
@@ -547,7 +547,7 @@
     ]
   },
   "xmax": {
-    "default": 3.4028234663852886e+38,
+    "default": 0.0,
     "target": "object",
     "type": "real [0,1]",
     "desc": "Object clipping, maximum x",
@@ -563,7 +563,7 @@
     ]
   },
   "ymax": {
-    "default": 3.4028234663852886e+38,
+    "default": 0.0,
     "target": "object",
     "type": "real [0,1]",
     "desc": "Object clipping, maximum y",
@@ -579,7 +579,7 @@
     ]
   },
   "zmax": {
-    "default": 3.4028234663852886e+38,
+    "default": 0.0,
     "target": "object",
     "type": "real [0,1]",
     "desc": "Object clipping, maximum z",
@@ -877,7 +877,7 @@
     ]
   },
   "isovalue": {
-    "default": 3.4028234663852886e+38,
+    "default": 0.0,
     "target": "object(volume)",
     "type": "real",
     "desc": "Isovalue for dynamic isosurface",
@@ -1010,7 +1010,7 @@
     "type": "int[3]",
     "desc": "Volume texture size limit (for crop)",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
       false
     ]
@@ -1025,7 +1025,7 @@
     "type": "int[3]",
     "desc": "Volume texture offset (for crop)",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
       false
     ]

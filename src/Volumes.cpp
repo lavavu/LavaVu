@@ -498,9 +498,10 @@ void Volumes::render(int i)
   float opacity = props["opacity"], density = props["density"];
   prog->setUniformf("uDensityFactor", density * opacity);
   Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
+  bool hasiso = props.has("isovalue");
   float isoval = props["isovalue"];
   float isoalpha = props["isoalpha"];
-  if (isoval == FLT_MAX) isoalpha = 0.0; //Skip drawing isosurface if no isovalue set
+  if (!hasiso) isoalpha = 0.0; //Skip drawing isosurface if no isovalue set
   colour.a = 255.0 * isoalpha * (colour.a/255.0);
   prog->setUniform("uIsoColour", colour);
   prog->setUniformf("uIsoSmooth", props["isosmooth"]);

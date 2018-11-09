@@ -1090,6 +1090,7 @@ void Geometry::setState(unsigned int i)
   GL_Error_Check;
   if (geom.size() <= i) return;
   DrawingObject* draw = geom[i]->draw;
+  Properties& props = geom[i]->draw->properties;
 
   //Textured? - can be per element, so always execute
   TextureData* texture = draw->useTexture(geom[i]->texture);
@@ -1109,12 +1110,12 @@ void Geometry::setState(unsigned int i)
   cached = draw;
 
   //printf("SETSTATE %s\n", geom[i]->draw->name().c_str());
-  bool lighting = geom[i]->draw->properties["lit"];
+  bool lighting = props["lit"];
   //Don't light surfaces in 2d models
   if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal) lighting = false;
 
   //Global/Local draw state
-  if (geom[i]->draw->properties["cullface"])
+  if (props["cullface"])
     glEnable(GL_CULL_FACE);
   else
     glDisable(GL_CULL_FACE);
@@ -1124,7 +1125,7 @@ void Geometry::setState(unsigned int i)
   if (TriangleBased(type))
   {
     //Disable lighting and polygon faces in wireframe mode
-    if (geom[i]->draw->properties["wireframe"])
+    if (props["wireframe"])
     {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       lighting = false;
@@ -1132,7 +1133,7 @@ void Geometry::setState(unsigned int i)
     }
 
     //TODO: replace with shader version for gl 3.2+
-    if (geom[i]->draw->properties["flat"])
+    if (props["flat"])
       glShadeModel(GL_FLAT);
     else
       glShadeModel(GL_SMOOTH);
@@ -1140,23 +1141,23 @@ void Geometry::setState(unsigned int i)
   else
   {
     //Flat disables lighting for non surface types
-    if (geom[i]->draw->properties["flat"]) lighting = false;
+    if (props["flat"]) lighting = false;
     glEnable(GL_BLEND);
     glShadeModel(GL_SMOOTH);
   }
 
   //Default line width
-  float lineWidth = (float)geom[i]->draw->properties["linewidth"] * session.scale2d; //Include 2d scale factor
+  float lineWidth = (float)props["linewidth"] * session.scale2d; //Include 2d scale factor
   glLineWidth(lineWidth);
 
   //Disable depth test by default for 2d lines, otherwise enable
   bool depthTestDefault = (view->is3d || type != lucLineType);
-  if (geom[i]->draw->properties.getBool("depthtest", depthTestDefault))
+  if (props.getBool("depthtest", depthTestDefault))
     glEnable(GL_DEPTH_TEST);
   else
     glDisable(GL_DEPTH_TEST);
 
-  if (geom[i]->draw->properties["depthwrite"])
+  if (props["depthwrite"])
     glDepthMask(GL_TRUE);
   else
     glDepthMask(GL_FALSE);
@@ -1205,22 +1206,22 @@ void Geometry::setState(unsigned int i)
 
   //Per-object "opacity" overrides global default if set
   //"alpha" is multiplied to affect all objects
-  float opacity = (float)geom[i]->draw->properties["alpha"];
+  float opacity = (float)props["alpha"];
   //Apply global 'opacity' only if no per-object setting (which is applied with colour)
-  if (!geom[i]->draw->properties.has("opacity"))
+  if (!props.has("opacity"))
     opacity *= (float)session.global("opacity");
   bool allopaque = !session.global("sort");
   if (allopaque) opacity = 1.0;
   prog->setUniformf("uOpacity", opacity);
   prog->setUniformi("uLighting", lighting);
-  prog->setUniformf("uBrightness", geom[i]->draw->properties["brightness"]);
-  prog->setUniformf("uContrast", geom[i]->draw->properties["contrast"]);
-  prog->setUniformf("uSaturation", geom[i]->draw->properties["saturation"]);
-  prog->setUniformf("uAmbient", geom[i]->draw->properties["ambient"]);
-  prog->setUniformf("uDiffuse", geom[i]->draw->properties["diffuse"]);
-  prog->setUniformf("uSpecular", geom[i]->draw->properties["specular"]);
-  prog->setUniformf("uShininess", geom[i]->draw->properties["shininess"]);
-  prog->setUniform("uLightPos", geom[i]->draw->properties["lightpos"]);
+  prog->setUniformf("uBrightness", props["brightness"]);
+  prog->setUniformf("uContrast", props["contrast"]);
+  prog->setUniformf("uSaturation", props["saturation"]);
+  prog->setUniformf("uAmbient", props["ambient"]);
+  prog->setUniformf("uDiffuse", props["diffuse"]);
+  prog->setUniformf("uSpecular", props["specular"]);
+  prog->setUniformf("uShininess", props["shininess"]);
+  prog->setUniform("uLightPos", props["lightpos"]);
   prog->setUniformi("uTextured", texture && texture->unit >= 0);
   prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
   //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
@@ -1237,15 +1238,15 @@ void Geometry::setState(unsigned int i)
   {
     Vec3d clipMin = Vec3d(-HUGE_VALF, -HUGE_VALF, -HUGE_VALF);
     Vec3d clipMax = Vec3d(HUGE_VALF, HUGE_VALF, HUGE_VALF);
-    if (geom[i]->draw->properties["clip"])
+    if (props["clip"])
     {
-      clipMin = Vec3d((float)geom[i]->draw->properties["xmin"],
-                      (float)geom[i]->draw->properties["ymin"],
-                      view->is3d ? (float)geom[i]->draw->properties["zmin"] : -HUGE_VALF);
-      clipMax = Vec3d((float)geom[i]->draw->properties["xmax"],
-                      (float)geom[i]->draw->properties["ymax"],
-                      view->is3d ? (float)geom[i]->draw->properties["zmax"] : HUGE_VALF);
-      if (geom[i]->draw->properties["clipmap"])
+      clipMin = Vec3d(props.has("xmin") ? (float)props["xmin"] : -HUGE_VALF,
+                      props.has("ymin") ? (float)props["ymin"] : -HUGE_VALF,
+                      view->is3d && props.has("zmin") ? (float)props["zmin"] : -HUGE_VALF);
+      clipMax = Vec3d(props.has("xmax") ? (float)props["xmax"] : HUGE_VALF,
+                      props.has("ymax") ? (float)props["ymax"] : HUGE_VALF,
+                      view->is3d && props.has("zmax") ? (float)props["zmax"] : HUGE_VALF);
+      if (props["clipmap"])
       {
         Vec3d dims(session.dims);
         Vec3d dmin(session.min);
@@ -1258,6 +1259,16 @@ void Geometry::setState(unsigned int i)
       //       session.min[2], session.max[0], session.max[1], session.max[2]);
       //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(),
       //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
+    }
+
+    //Setting max < min disables clip
+    for (int i=0; i<3; i++)
+    {
+      if (clipMin[i] > clipMax[i])
+      {
+        clipMin[i] = -HUGE_VALF;
+        clipMax[i] = HUGE_VALF;
+      }
     }
 
     prog->setUniform3f("uClipMin", clipMin.ref());
