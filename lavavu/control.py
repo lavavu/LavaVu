@@ -1362,7 +1362,7 @@ class ControlFactory(object):
             display(HTML(_webglboxcode() + html))
 
             #Create WindowInteractor instance
-            js = '_wi[{id}] = new WindowInteractor({0});'.format(viewerid)
+            js = '_wi[{0}] = new WindowInteractor({0});'.format(viewerid)
             display(Javascript(js))
             return
 
