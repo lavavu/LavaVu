@@ -529,8 +529,8 @@ DrawingObject* LavaVu::lookupObject(PropertyParser& parsed, const std::string& k
   int id = parsed.Int(key, -1, idx);
   if (id > 0 && id <= (int)amodel->objects.size()) return amodel->objects[id-1];
 
-  //Otherwise lookup by name
-  std::string what = parsed.get(key, idx);
+  //Otherwise lookup by name (using getall to allow spaces)
+  std::string what = parsed.getall(key, idx);
   return amodel->findObject(what);
 }
 
