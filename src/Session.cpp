@@ -124,59 +124,56 @@ int Session::parse(Properties* target, const std::string& property, bool validat
   }
 
   value = property.substr(pos+1);
-  if (value.length() > 0)
+  //std::cerr << "Key " << key << " == " << value << std::endl;
+  std::string valuel = value;
+  std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
+
+  try
   {
-    //std::cerr << "Key " << key << " == " << value << std::endl;
-    std::string valuel = value;
-    std::transform(valuel.begin(), valuel.end(), valuel.begin(), ::tolower);
-
-    try
+    if (IDX >= 0)
     {
-      if (IDX >= 0)
-      {
-        //Set to default first
-        if (!dest.count(key))
-          dest[key] = defaults[key];
-        if (dest[key].is_array() and dest[key].size() > IDX)
-          dest[key][IDX] = json::parse(value);
-      }
-      //Parse simple increments and decrements
-      else if (prev == '+' || prev == '-' || prev == '*')
-      {
-        json parsedval = json::parse(value);
-        float val = dest[key];
-        if (prev == '+')
-          val = val + (float)parsedval;
-        else if (prev == '-')
-          val = val - (float)parsedval;
-        else if (prev == '*')
-          val = val * (float)parsedval;
+      //Set to default first
+      if (!dest.count(key))
+        dest[key] = defaults[key];
+      if (dest[key].is_array() and dest[key].size() > IDX)
+        dest[key][IDX] = json::parse(value);
+    }
+    //Parse simple increments and decrements
+    else if (prev == '+' || prev == '-' || prev == '*')
+    {
+      json parsedval = json::parse(value);
+      float val = dest[key];
+      if (prev == '+')
+        val = val + (float)parsedval;
+      else if (prev == '-')
+        val = val - (float)parsedval;
+      else if (prev == '*')
+        val = val * (float)parsedval;
 
-        //Keep as int unless either side is float
-        if (dest[key].is_number_float() || parsedval.is_number_float())
-          dest[key] = val;
-        else
-          dest[key] = (int)val;
-      }
-      else if (valuel == "true")
-      {
-        dest[key] = true;
-      }
-      else if (valuel == "false")
-      {
-        dest[key] = false;
-      }
+      //Keep as int unless either side is float
+      if (dest[key].is_number_float() || parsedval.is_number_float())
+        dest[key] = val;
       else
-      {
-        dest[key] = json::parse(value);
-      }
+        dest[key] = (int)val;
     }
-    catch (std::exception& e)
+    else if (valuel == "true")
     {
-      //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
-      //Treat as a string value
-      dest[key] = value;
+      dest[key] = true;
     }
+    else if (valuel == "false")
+    {
+      dest[key] = false;
+    }
+    else
+    {
+      dest[key] = json::parse(value);
+    }
+  }
+  catch (std::exception& e)
+  {
+    //std::cerr << e.what() << " : '" << key << "' => " << value << std::endl;
+    //Treat as a string value
+    dest[key] = value;
   }
 
   if (!validate)
