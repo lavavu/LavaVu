@@ -23,26 +23,7 @@ import base64
 import threading
 import time
 
-def is_ipython():
-    try:
-        if __IPYTHON__:
-            return True
-        else:
-            return False
-    except:
-        return False
-
-def is_notebook():
-    if 'IPython' not in sys.modules:
-        # IPython hasn't been imported, definitely not
-        return False
-    try:
-        from IPython import get_ipython
-        from IPython.display import display,Image,HTML
-    except:
-        return False
-    # check for `kernel` attribute on the IPython instance
-    return getattr(get_ipython(), 'kernel', None) is not None
+from vutils import is_ipython, is_notebook
 
 #import swig module
 import LavaVuPython
@@ -3716,7 +3697,7 @@ def printH5(h5):
     for item in h5.attrs.keys():
         print(item + ":", h5.attrs[item])
 
-def download(url, filename=None, overwrite=False):
+def download(url, filename=None, overwrite=False, quiet=False):
     """
     Download a file from an internet URL
 
@@ -3732,19 +3713,54 @@ def download(url, filename=None, overwrite=False):
     #Python 3 moved urlretrieve to request submodule
     try:
         from urllib.request import urlretrieve
+        import urllib.parse as parse
     except ImportError:
         from urllib import urlretrieve
+        from urllib import parse
 
     if filename is None:
         filename = url[url.rfind("/")+1:]
 
     if overwrite or not os.path.exists(filename):
-        print("Downloading: " + filename)
+        #Encode url path
+        o = parse.urlparse(url)
+        o = o._replace(path=parse.quote(o.path))
+        url = o.geturl()
+        if not quiet: print("Downloading: " + filename)
         urlretrieve(url, filename)
     else:
-        print(filename + " exists, skipped downloading.")
+        if not quiet: print(filename + " exists, skipped downloading.")
 
     return filename
+
+def style(css):
+    """
+    Inject stylesheet
+    """
+    if not is_notebook():
+        return
+    from IPython.display import display,HTML
+    display(HTML("<style>" + css + "</style>"))
+
+def cellstyle(css):
+    """
+    Override the notebook cell styles
+    """
+    style("""
+    div.container {{
+        {css}
+    }}
+    """.format(css=css))
+
+def cellwidth(width='99%'):
+    """
+    Override the notebook cell width
+    """
+    cellstyle("""
+    width:{width} !important;
+    margin-left:1%;
+    margin-right:auto;
+    """.format(width=width))
 
 def _docmd(doc):
     """Convert a docstring to markdown"""
