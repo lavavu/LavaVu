@@ -103,7 +103,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
   {
     /* h264 settings */
     c->profile = FF_PROFILE_H264_MAIN; //BASELINE;
-    c->flags |= CODEC_FLAG_LOOP_FILTER;
+    c->flags |= AV_CODEC_FLAG_LOOP_FILTER;
 
     c->me_cmp |= 1; // cmp=+chroma, where CHROMA = 1
     c->me_subpel_quality = 7; //9, 7, 0
@@ -177,7 +177,7 @@ AVStream* VideoEncoder::add_video_stream(enum AVCodecID codec_id)
 
   // some formats want stream headers to be separate
   if (oc->oformat->flags & AVFMT_GLOBALHEADER)
-    c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+    c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
   return st;
 }
@@ -233,9 +233,6 @@ void VideoEncoder::open_video()
 #endif
 
   video_outbuf = NULL;
-
-  /* Not supporting this anymore */
-  assert(!(oc->oformat->flags & AVFMT_RAWPICTURE));
 
   /* allocate output buffer */
   /* buffers passed into av* can be allocated any way you prefer,
@@ -347,13 +344,14 @@ void VideoEncoder::open(int w, int h)
   frame_count = 0;
 
   /* initialize libavcodec, and register all codecs and formats */
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58,12,0)
   av_register_all();
+#endif
 
   /* allocate the output media context */
   oc = avformat_alloc_context();
   if (!oc) abort_program("Memory error");
   oc->oformat = defaultCodec(filename.c_str());
-  snprintf(oc->filename, sizeof(oc->filename), "%s", filename.c_str());
 
   /* Codec override, use h264 for mp4 if available */
   if (filename.find(".mp4") != std::string::npos && avcodec_find_encoder(AV_CODEC_ID_H264))
