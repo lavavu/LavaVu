@@ -2803,7 +2803,7 @@ class Viewer(dict):
             print("WebGL output error: " + str(e))
             pass
 
-    def video(self, filename="", fps=10, resolution=(0,0)):
+    def video(self, filename="", fps=10, quality=1, resolution=(0,0)):
         """        
         Shows the generated video inline within an ipython notebook.
         
@@ -2818,12 +2818,15 @@ class Viewer(dict):
             Name of the file to save, if not provided a default will be used
         fps: int
             Frames to output per second of video
+        quality: int
+            Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
+            encoding artifacts at cost of larger file size
         resolution: list, tuple
             Video resolution in pixels [x,y]
         """
 
         try:
-            fn = self.app.video(filename, fps, resolution[0], resolution[1])
+            fn = self.app.video(filename, fps, resolution[0], resolution[1], 0, 0, quality)
             self.player(fn)
         except (Exception) as e:
             print("Video output error: " + str(e))
@@ -2846,17 +2849,17 @@ class Viewer(dict):
             if is_notebook():
                 from IPython.display import display,HTML
                 html = """
-                <video src="---FN---" controls loop>
+                <video src="{fn}" controls loop>
                 Sorry, your browser doesn't support embedded videos, 
                 </video><br>
-                <a href="---FN---">Download Video</a> 
+                <a href="{fn}">Download Video</a> 
                 """
                 #Jupyterlab replaces ? with encoded char TODO: fix
                 #Get a UUID based on host ID and current time
-                import uuid
-                uid = uuid.uuid1()
-                html = html.replace('---FN---', filename + "?" + str(uid))
-                display(HTML(html))
+                #import uuid
+                #uid = uuid.uuid1()
+                #filename = filename + "?" + str(uid)
+                display(HTML(html.format(fn=filename)))
         except (Exception) as e:
             print("Video output error: " + str(e))
             pass

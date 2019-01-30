@@ -350,6 +350,8 @@ bool LavaVu::parseChar(unsigned char key)
     case 'L':
       return parseCommands("scale lines down");
     case ' ':
+      if (encoder)
+        return parseCommands("record"); //Stop recording
       if (viewer->timeloop)
         return parseCommands("stop");
       else
@@ -3280,14 +3282,17 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "(Requires libavcodec)\n\n"
               "**Usage:** record (framerate) (quality)\n\n"
               "framerate (integer): frames per second (default 30)\n"
-              "quality (integer): 1=low/2=medium/3=high (default 3)\n";
+              "quality (integer): 1=low/2=medium/3=high (default 1)\n";
       return false;
     }
 
     //Default to 30 fps
-    if (!parsed.has(ival, "record")) ival = 30;
+    if (!parsed.has(ival, "record"))
+      ival = 30;
+    //Default to low quality (high is actually a bit too high, files are huge! need to fix)
     int quality;
-    if (!parsed.has(quality, "record", 1)) quality = 3;
+    if (!parsed.has(quality, "record", 1))
+      quality = 1;
     encodeVideo("", ival, quality);
   }
   else if (parsed.exists("tiles"))

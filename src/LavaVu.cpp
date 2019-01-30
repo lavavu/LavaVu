@@ -2879,13 +2879,13 @@ bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
   return true;
 }
 
-std::string LavaVu::video(std::string filename, int fps, int width, int height, int start, int end)
+std::string LavaVu::video(std::string filename, int fps, int width, int height, int start, int end, int quality)
 {
   if (width > 0) viewer->outwidth = width;
   if (height > 0) viewer->outheight = height;
   if (end <= 0) end = amodel->lastStep();
   debug_print("VIDEO: w %d h %d fps %d, %d --> %d\n", width, height, fps, start, end);
-  filename = encodeVideo(filename, fps);
+  filename = encodeVideo(filename, fps, quality);
   writeSteps(false, start, end);
   encodeVideo(); //Write final step and stop encoding
   return filename;

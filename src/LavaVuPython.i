@@ -142,7 +142,7 @@ public:
   std::string gl_version();
   std::string image(std::string filename="", int width=0, int height=0, int jpegquality=0, bool transparent=false);
   std::string web(bool tofile=false);
-  std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0);
+  std::string video(std::string filename, int fps=30, int width=0, int height=0, int start=0, int end=0, int quality=1);
   void defaultModel();
   ColourMap* addColourMap(std::string name, std::string colours="", std::string properties="");
   void updateColourMap(ColourMap* colourMap, std::string colours, std::string properties="");
