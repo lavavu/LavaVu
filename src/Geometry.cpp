@@ -1240,12 +1240,19 @@ void Geometry::setState(unsigned int i)
     Vec3d clipMax = Vec3d(HUGE_VALF, HUGE_VALF, HUGE_VALF);
     if (props["clip"])
     {
-      clipMin = Vec3d(props.has("xmin") ? (float)props["xmin"] : -HUGE_VALF,
-                      props.has("ymin") ? (float)props["ymin"] : -HUGE_VALF,
-                      view->is3d && props.has("zmin") ? (float)props["zmin"] : -HUGE_VALF);
-      clipMax = Vec3d(props.has("xmax") ? (float)props["xmax"] : HUGE_VALF,
-                      props.has("ymax") ? (float)props["ymax"] : HUGE_VALF,
-                      view->is3d && props.has("zmax") ? (float)props["zmax"] : HUGE_VALF);
+      bool xminset = props.has("xmin") || props.hasglobal("xmin");
+      bool yminset = props.has("ymin") || props.hasglobal("ymin");
+      bool zminset = props.has("zmin") || props.hasglobal("zmin");
+      bool xmaxset = props.has("xmax") || props.hasglobal("xmax");
+      bool ymaxset = props.has("ymax") || props.hasglobal("ymax");
+      bool zmaxset = props.has("zmax") || props.hasglobal("zmax");
+      clipMin = Vec3d(xminset ? (float)props["xmin"] : -HUGE_VALF,
+                      yminset ? (float)props["ymin"] : -HUGE_VALF,
+                      zminset && view->is3d ? (float)props["zmin"] : -HUGE_VALF);
+      clipMax = Vec3d(xmaxset ? (float)props["xmax"] : HUGE_VALF,
+                      ymaxset ? (float)props["ymax"] : HUGE_VALF,
+                      zmaxset && view->is3d ? (float)props["zmax"] : HUGE_VALF);
+
       if (props["clipmap"])
       {
         Vec3d dims(session.dims);
@@ -1259,16 +1266,6 @@ void Geometry::setState(unsigned int i)
       //       session.min[2], session.max[0], session.max[1], session.max[2]);
       //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(),
       //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
-    }
-
-    //Setting max < min disables clip
-    for (int i=0; i<3; i++)
-    {
-      if (clipMin[i] > clipMax[i])
-      {
-        clipMin[i] = -HUGE_VALF;
-        clipMax[i] = HUGE_VALF;
-      }
     }
 
     prog->setUniform3f("uClipMin", clipMin.ref());

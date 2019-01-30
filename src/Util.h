@@ -342,6 +342,7 @@ public:
   static void mergeJSON(json& dest, json& src);
 
   bool has(const std::string& key);
+  bool hasglobal(const std::string& key);
   json& operator[](const std::string& key);
   Colour getColour(const std::string& key, unsigned char red=0, unsigned char green=0, unsigned char blue=0, unsigned char alpha=255);
   float getFloat(const std::string& key, float def);

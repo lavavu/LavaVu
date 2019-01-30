@@ -151,6 +151,8 @@ void FloatValues::minmax()
 
 bool Properties::has(const std::string& key) {return data.count(key) > 0 && !data[key].is_null();}
 
+bool Properties::hasglobal(const std::string& key) {return globals.count(key) > 0 && !globals[key].is_null();}
+
 json& Properties::operator[](const std::string& key)
 {
   //std::cout << key << " : " << data.count(key) << std::endl;
