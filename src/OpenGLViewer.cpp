@@ -160,6 +160,7 @@ bool FBO::create(int w, int h)
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
+    target = GL_COLOR_ATTACHMENT0;
     GL_Error_Check;
     std::cerr << " frame " << frame << " target " << target << " depth " << depth << " dims " << width << " , " << height << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -247,6 +248,9 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
   visible = true;
 
   output_path = "";
+
+  render_thread = std::this_thread::get_id();
+  debug_print("Render thread: %d\n", render_thread);
 }
 
 OpenGLViewer::~OpenGLViewer()
@@ -273,6 +277,7 @@ void OpenGLViewer::open(int w, int h)
 
 void OpenGLViewer::init()
 {
+  assert(render_thread == std::this_thread::get_id());
   //Init OpenGL (called after context creation)
   GLboolean b;
   GLint i, d, s, u, a, sb, ss;
@@ -346,6 +351,8 @@ void OpenGLViewer::hide()
 
 void OpenGLViewer::setsize(int w, int h)
 {
+  assert(w && h);
+  assert(render_thread == std::this_thread::get_id());
   //Resize fbo
   display(false); //Ensure correct context active
   if (fbo.enabled && fbo.create(w, h))
@@ -354,6 +361,7 @@ void OpenGLViewer::setsize(int w, int h)
 
 void OpenGLViewer::resize(int new_width, int new_height)
 {
+  assert(new_width && new_height);
   if (new_width > 0 && (width != new_width || height != new_height))
   {
     //Call the application resize function
@@ -372,6 +380,7 @@ void OpenGLViewer::resize(int new_width, int new_height)
 void OpenGLViewer::close()
 {
   // cleanup opengl memory - required before resize if context destroyed, then call open after resize
+  assert(render_thread == std::this_thread::get_id());
   fbo.destroy();
 
   //Call the application close function
@@ -407,6 +416,7 @@ bool OpenGLViewer::events()
 
 void OpenGLViewer::loop(bool interactive)
 {
+  assert(render_thread == std::this_thread::get_id());
   //Event loop processing
   if (visible)
     show();
@@ -429,6 +439,7 @@ void OpenGLViewer::loop(bool interactive)
 // Render
 void OpenGLViewer::display(bool redraw)
 {
+  assert(render_thread == std::this_thread::get_id());
   if (!redraw) return;
 
   postdisplay = false;
@@ -493,6 +504,7 @@ void OpenGLViewer::display(bool redraw)
 
 void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
 {
+  assert(render_thread == std::this_thread::get_id());
   //This function switches to the defined output resolution
   //and enables downsampling if possible
   //Used when capturing images and video frames
@@ -566,6 +578,7 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
 
 void OpenGLViewer::outputOFF()
 {
+  assert(render_thread == std::this_thread::get_id());
   //Restore normal viewing dims when output mode is finished
   imagemode = false;
   if (visible)
@@ -584,6 +597,7 @@ void OpenGLViewer::outputOFF()
 
 void OpenGLViewer::disableFBO()
 {
+  assert(render_thread == std::this_thread::get_id());
   if (fbo.enabled)
     fbo.disable();
   //Undo 2d scaling for downsampling
@@ -592,6 +606,7 @@ void OpenGLViewer::disableFBO()
 
 ImageData* OpenGLViewer::pixels(ImageData* image, int channels)
 {
+  assert(render_thread == std::this_thread::get_id());
   assert(isopen);
   if (fbo.enabled)
     return fbo.pixels(image, channels);
@@ -601,6 +616,7 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int channels)
 
 ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels)
 {
+  assert(render_thread == std::this_thread::get_id());
   assert(isopen);
 
   if (!w) w = outwidth;
@@ -616,6 +632,7 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int w, int h, int channels)
 
 std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool transparent, int w, int h)
 {
+  assert(render_thread == std::this_thread::get_id());
   assert(isopen);
   FilePath filepath(path);
   if ((filepath.type == "jpeg" || filepath.type == "jpg"))
@@ -651,6 +668,7 @@ std::string OpenGLViewer::image(const std::string& path, int jpegquality, bool t
 
 void OpenGLViewer::downSample(int q)
 {
+  assert(render_thread == std::this_thread::get_id());
   display(false);
   int ds = q < 1 ? 1 : q;
   if (ds != fbo.downsample)

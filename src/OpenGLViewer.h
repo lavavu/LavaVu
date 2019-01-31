@@ -118,6 +118,7 @@ public:
   bool postdisplay; //Flag to request a frame when animating
   bool quitProgram;
   bool isopen;   //Set when window is first opened
+  std::thread::id render_thread;
 
   int mouseState;
   ShiftState keyState;
