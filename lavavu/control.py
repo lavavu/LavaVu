@@ -5,14 +5,13 @@ import os
 import sys
 import time
 import json
-output = ""
+from vutils import is_ipython, is_notebook
+import weakref
 
 #Register of controls and their actions
 actions = []
 #Register of windows (viewer instances)
 windows = []
-#Register of all control objects
-allcontrols = []
 
 vertexShader = """
 <script id="line-vs" type="x-shader/x-vertex">
@@ -119,29 +118,6 @@ def getproperty(target, propname):
     else:
         return None
 
-def getcontrolvalues(names=None):
-    """Get the property control values from their targets
-    """
-    #Can pass a newline seperated list of props
-    #If not provided, updates all properties
-    if names is not None:
-        names = names.split('\n')
-    #Build a list of controls to update and their values
-    updates = []
-    for c in allcontrols:
-        if hasattr(c, 'id') and c.elid:
-            #print c.elid,c.id
-            action = Action.actions[c.id]
-            #print action
-            if hasattr(action, "property") and (names is None or action.property in names):
-                #print "  ",c.elid,action
-                value = getproperty(action.target, action.property)
-                #print "  = ",value
-                if value is not None:
-                    updates.append([c.elid, value, action.property])
-    return updates
-
-
 _file_cache = dict()
 
 def _webglcode(shaders, css, scripts, menu=True, lighttheme=True):
@@ -188,6 +164,7 @@ def _webglboxcode(menu=True, lighttheme=True):
     Returns WebGL base code for the bounding box interactor window
     """
     return _webglcode(fragmentShader + vertexShader, ['control.css'], ['gl-matrix-min.js', 'OK-min.js', 'control.js', 'drawbox.js'], menu=menu, lighttheme=lighttheme)
+    #return _webglcode(fragmentShader + vertexShader, ['control.css'], ['gl-matrix-min.js', 'OK.js', 'control.js', 'drawbox.js'], menu=menu, lighttheme=lighttheme)
 
 def getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
@@ -199,7 +176,6 @@ def getjslibs(files):
 
 def _filestohtml(files, tag="script"):
     #Load a set of files into a string enclosed in specified html tag
-    if not htmlpath: return ""
     code = '<' + tag + '>\n'
     for f in files:
         code += _readfilehtml(f)
@@ -208,7 +184,6 @@ def _filestohtml(files, tag="script"):
 
 def _readfilehtml(filename):
     #Read a file from the htmlpath (or cached copy)
-    if not htmlpath: return ""
     global _file_cache
     if not filename in _file_cache:
         _file_cache[filename] = _readfile(os.path.join(htmlpath, filename))
@@ -238,49 +213,46 @@ def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
 
 def initialise(initcode):
     global initialised, initcell
-    if not htmlpath: return
-    try:
-        if __IPYTHON__:
-            from IPython.display import display,HTML,Javascript
-            """ Re-import check
-            First check if re-executing the cell init code was inserted from, if so must re-init
-            Then sneakily scans the IPython history for "import lavavu" in cell AFTER the one where
-            the control interface was last initialised, if it is found, assume we need to initialise again!
-            A false positive will add the init code again, which is harmless but bloats the notebook.
-            A false negative will cause the interactive viewer widget to not display the webgl bounding box,
-            as was the previous behaviour after a re-run without restart.
-            """
-            ip = get_ipython()
-            #Returns a list of executed cells and their content
-            history = list(ip.history_manager.get_range())
-            #If init was done in cell with exact same code this check is false positive
-            #(eg: lv.window())
-            if initialised and history[-1][2] != initcell:
-                count = 0
-                found = False
-                #Loop through all the cells in history list
-                for cell in history:
-                    #Skip cells, until we pass the previous init cell
-                    count += 1
-                    if count <= initialised: continue;
-                    #Each cell is tuple, 3rd element contains line
-                    if "import lavavu" in cell[2] or "import glucifer" in cell[2]:
-                        #LavaVu has been re-imported, re-init
-                        found = True
-                        break
+    initialised = False
+    if is_notebook():
+        from IPython.display import display,HTML,Javascript
+        """ Re-import check
+        First check if re-executing the cell init code was inserted from, if so must re-init
+        Then sneakily scans the IPython history for "import lavavu" in cell AFTER the one where
+        the control interface was last initialised, if it is found, assume we need to initialise again!
+        A false positive will add the init code again, which is harmless but bloats the notebook.
+        A false negative will cause the interactive viewer widget to not display the webgl bounding box,
+        as was the previous behaviour after a re-run without restart.
+        """
+        ip = get_ipython()
+        #Returns a list of executed cells and their content
+        history = list(ip.history_manager.get_range())
+        #If init was done in cell with exact same code this check is false positive
+        #(eg: lv.window())
+        if initialised and history[-1][2] != initcell:
+            count = 0
+            found = False
+            #Loop through all the cells in history list
+            for cell in history:
+                #Skip cells, until we pass the previous init cell
+                count += 1
+                if count <= initialised: continue;
+                #Each cell is tuple, 3rd element contains line
+                if "import lavavu" in cell[2] or "import glucifer" in cell[2]:
+                    #LavaVu has been re-imported, re-init
+                    found = True
+                    break
 
-                if not found:
-                    #Viewer was initialised in an earlier cell
-                    return
+            if not found:
+                #Viewer was initialised in an earlier cell
+                return
 
-            #Save cell # and content from history we insert initialisation code at
-            initialised = len(history)
-            initcell = history[-1][2]
+        #Save cell # and content from history we insert initialisation code at
+        initialised = len(history)
+        initcell = history[-1][2]
 
-            #Insert stylesheet, shaders and combined javascript libraries
-            display(HTML(initcode))
-    except (NameError, ImportError):
-        pass
+        #Insert stylesheet, shaders and combined javascript libraries
+        display(HTML(initcode))
 
 class Action(object):
     """Base class for an action triggered by a control
@@ -291,18 +263,13 @@ class Action(object):
     """
     actions = []
 
-    #actions.append({"type" : "COMMAND", "args" : [command]})
     def __init__(self, target, command=None, readproperty=None):
         self.target = target
         self.command = command
         if not hasattr(self, "property"):
             self.property = readproperty
         Action.actions.append(self)
-
-    def run(self, value):
-        #Run a command with a value argument
-        if self.command is None: return ""
-        return self.command + " " + str(value) + "\nredraw"
+        self.lastvalue = 0
 
     def script(self):
         #Return script action for HTML export
@@ -311,23 +278,15 @@ class Action(object):
         return self.command + ' " + value + "'
 
     @staticmethod
-    def do(id, value):
-        #Execute actions from client in IPython
-        if len(Action.actions) <= id:
-            return "#NoAction " + str(id)
-        return Action.actions[id].run(value)
-
-    @staticmethod
-    def export_actions(viewerid=0, port=0):
-        if not htmlpath: return ""
+    def export_actions(port=0, proxy=False):
         #Process actions
         actionjs = '<script type="text/Javascript">\n'
         if port > 0:
-            actionjs += '_wi[---VIEWERID---] = new WindowInteractor(---VIEWERID---, "localhost:{port}");\n'.format(port=port)
+            actionjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {port});\n'.format(port=port)
         else:
-            actionjs += '_wi[---VIEWERID---] = new WindowInteractor(---VIEWERID---");\n'
+            actionjs += 'function init(viewerid) {_wi[viewerid] = new WindowInteractor(viewerid);\n'
 
-        actionjs += '_wi[---VIEWERID---].actions = [\n'
+        actionjs += '_wi[viewerid].actions = [\n'
 
         for act in Action.actions:
             #Default placeholder action
@@ -336,24 +295,21 @@ class Action(object):
                 #No action
                 pass
             #Add to actions list
-            #(Only a single interactor is supported in exported html, so always use id=0)
-            actionjs += '  function(value) {_wi[---VIEWERID---].execute("' + actscript + '");},\n'
+            actionjs += '  function(value) {_wi[viewerid].execute("' + actscript + '");},\n'
         #Add init and finish
-        actionjs += '  null ];\n</script>\n'
-        actionjs = actionjs.replace('---VIEWERID---', str(viewerid))
+        actionjs += '  null ];\n}\n</script>\n'
         return actionjs
 
     @staticmethod
     def export(html, filename="control.html", viewerid=0, fullpage=True):
         #Dump all output to control.html in current directory & htmlpath
-        if not htmlpath: return
         #Process actions
-        actionjs = Action.export_actions(viewerid)
+        actionjs = Action.export_actions()
 
         full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
         full_html += _webglboxcode()
         full_html += actionjs
-        full_html += '</head>\n<body>\n'
+        full_html += '</head>\n<body onload="init({0});">\n'.format(viewerid)
         full_html += html
         full_html += "\n</body>\n</html>\n"
 
@@ -371,7 +327,6 @@ class PropertyAction(Action):
     """Property change action triggered by a control
     """
 
-    #actions.append({"type" : "PROPERTY", "args" : [target, property, command]})
     def __init__(self, target, prop, command=None, index=None):
         self.property = prop
         #Default action after property set is redraw, can be set to provided
@@ -380,16 +335,6 @@ class PropertyAction(Action):
         self.command = command
         self.index = index
         super(PropertyAction, self).__init__(target, command)
-
-    def run(self, value):
-        #Set a property
-        if self.index is not None:
-            value2 = self.target[self.property]
-            value2[self.index] = value
-            value = value2
-        self.target[self.property] = value
-        #Run any command action after setting
-        return self.command
 
     def script(self):
         #Return script action for HTML export
@@ -402,53 +347,56 @@ class PropertyAction(Action):
         script = ''
         if isviewer(self.target):
             script = 'select; ' + propset
-        #TODO: on an object selector
+        # - on an object selector, select the object
+        elif type(self.target).__name__ == 'ObjectSelect':
+            script = propset
         # - On an object
         else:
-            script = 'select ' + self.target["name"] + '; ' + propset
+            script = '<' + self.target["name"] + '>' + propset
         #Add any additional commands
         return script + '; ' + super(PropertyAction, self).script()
+
+
+class CommandAction(Action):
+    """Command action triggered by a control, with object select before command
+    """
+
+    def __init__(self, target, command, readproperty):
+        self.command = command
+        super(CommandAction, self).__init__(target, command, readproperty)
+
+    def script(self):
+        #Return script action for HTML export
+        #Set a property
+        # - Globally
+        script = ''
+        if isviewer(self.target):
+            script = 'select; '
+        # - on an object selector, select the object
+        elif type(self.target).__name__ == 'ObjectSelect':
+            script = ''
+        # - On an object
+        else:
+            script = '<' + self.target["name"] + '>'
+        #Add the commands
+        return script + super(CommandAction, self).script()
 
 class FilterAction(PropertyAction):
     """Filter property change action triggered by a control
     """
-    def __init__(self, target, index, prop, command=None):
-        self.index = index
+    def __init__(self, target, findex, prop, command=None):
+        self.findex = findex
         if command is None: command = "redraw"
         self.command = command
         super(FilterAction, self).__init__(target, prop)
-
-    def run(self, value):
-        #Set a filter range
-        f = self.target["filters"]
-        f[self.index][self.property] = value
-        self.target["filters"] = f
-        return self.command
 
     def script(self):
         #Return script action for HTML export
         #Set a filter range
         cmd = "filtermin" if self.property == "minimum" else "filtermax"
-        return 'select ' + self.target["name"] + '; ' + cmd + ' ' + str(self.index) + ' " + value + "'
-
-class ColourMapAction(Action):
-    """Colourmap change action triggered by a control
-    """
-    def __init__(self, target):
-        super(ColourMapAction, self).__init__(target)
-
-    def run(self, value):
-        #Set a colourmap
-        if self.target.id > 0:
-            self.target.colourmap(value)
-        return self.command
-
-    def script(self):
-        #Return script action for HTML export
-        #Set a colourmap
-        if self.target.id > 0:
-            return 'colourmap ' + str(self.target.id) + ' \\"" + value + "\\"' #Reload?
-        return ""
+        return 'select ' + self.target["name"] + '; ' + cmd + ' ' + str(self.findex) + ' " + value + "'
+        #propset = "filters=" + json.dumps()
+        #script = 'select ' + self.target["name"] + '; ' + propset
 
 class HTML(object):
     """A class to output HTML controls
@@ -547,7 +495,6 @@ class Panel(Container):
             self.win = Window(viewer, align="right")
 
     def html(self):
-        if not htmlpath: return
         html = ""
         if self.win: html = self.win.html(wrapper=False)
         #Add control wrapper
@@ -585,7 +532,6 @@ class Tabs(Container):
         ctrl.tab = len(self.tabs)-1
 
     def html(self):
-        if not htmlpath: return
         html = """
         <script>
         function openTab_---ELID---(el, tabName) {
@@ -653,12 +599,17 @@ class Control(HTML):
         self.id = len(Action.actions)
 
         #Can either set a property directly or run a command
+        self.property = readproperty
+        self.target = target
         if property:
+            #Property set
             action = PropertyAction(target, property, command, index)
             if label is None:
                 self.label = property.capitalize()
+            self.property = property
         elif command:
-            action = Action(target, command, readproperty)
+            #Command only
+            action = CommandAction(target, command, readproperty)
             if label is None:
                 self.label = command.capitalize()
         else:
@@ -672,6 +623,23 @@ class Control(HTML):
         if value is None and property is not None and target:
             value = getproperty(target, property)
         self.value = value
+
+        #Append reload command from prop dict if no command provided
+        if target and property is not None:
+            _lv = getviewer(target)
+            if  property in _lv.properties:
+                prop = _lv.properties[property]
+                #TODO: support higher reload values
+                cmd = ""
+                if prop["redraw"] > 1 and not "reload" in str(command):
+                    cmd = "reload"
+                elif prop["redraw"] > 0 and not "redraw" in str(command):
+                    cmd = "reload"
+                #Append if command exists
+                if command is None:
+                    command = cmd
+                else:
+                   command += " ; " + cmd
 
     def onchange(self):
         return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", this.value, this);"
@@ -697,12 +665,23 @@ class Control(HTML):
         html =  '<input id="---ELID---" class="---ELID---" type="' + type + '" '
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
+        #Set custom attribute for property controls
+        html += self.attribs()
         html += 'value="' + str(self.value) + '" '
         #Onchange event
         onchange += self.onchange()
         html += 'onchange="' + onchange + '" '
         html += '>\n'
         html = html.replace('---ELID---', self.elid)
+        return html
+
+    def attribs(self):
+        html = ""
+        if self.property:
+            #Set custom attribute for property controls
+            if not isviewer(self.target):
+                html += 'data-target="' + str(self.target["name"]) + '" '
+            html += 'data-property="' + self.property + '" '
         return html
 
 class Divider(Control):
@@ -746,17 +725,36 @@ class Range(Control):
     range: list/tuple
         Min/max values for the range
     """
-    def __init__(self, target=None, property=None, command=None, value=None, label=None, index=None, range=(0.,1.), step=None, readproperty=None):
+    def __init__(self, target=None, property=None, command=None, value=None, label=None, index=None, range=None, step=None, readproperty=None):
         super(Range, self).__init__(target, property, command, value, label, index, readproperty)
+
+        #Get range & step defaults from prop dict
+        _lv = getviewer(target)
+        defrange = (0., 1., 0.)
+        if  property is not None and property in _lv.properties:
+            prop = _lv.properties[property]
+            #Check for integer type, set default step to 1
+            typ = prop["type"]
+            if "integer" in typ:
+                defrange[2] = 1
+            ctrl = prop["control"]
+            if len(ctrl) > 1 and len(ctrl[1]) == 3:
+                defrange = ctrl[1]
+
+        if range is None:
+            range = defrange[0:2]
+        if step is None:
+            step = defrange[2]
 
         self.range = range
         self.step = step
         if not step:
-            #Assume a step size of 1 if range max > 1
-            if self.range[1] > 1.0:
+            #Assume a step size of 1 if range max-min > 5 and both are integers
+            r = range[1] - range[0]
+            if r > 5 and range[0] - int(range[0]) == 0 and range[1] - int(range[1]) == 0:
                 self.step = 1
             else:
-                self.step = 0.01
+                self.step = r / 100.0
 
     def controls(self):
         attribs = {"min" : self.range[0], "max" : self.range[1], "step" : self.step}
@@ -791,7 +789,9 @@ class Entry(Control):
     """
     def controls(self):
         html = self.labelhtml()
-        html += '<input class="---ELID---" type="text" value="" onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
+        html += '<input class="---ELID---" type="text" value="" '
+        html += self.attribs()
+        html += ' onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
         html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
@@ -819,18 +819,30 @@ class List(Control):
     options: list
         List of the available value strings
     """
-    def __init__(self, target, options=[], *args, **kwargs):
+    def __init__(self, target, property=None, options=None, *args, **kwargs):
+        #Get default options from prop dict
+        if options is None:
+            defoptions = []
+            _lv = getviewer(target)
+            if  property is not None and property in _lv.properties:
+                prop = _lv.properties[property]
+                ctrl = prop["control"]
+                if len(ctrl) > 2 and len(ctrl[2]):
+                    defoptions = ctrl[2]
+            options = defoptions
         self.options = options
-        super(List, self).__init__(target, *args, **kwargs)
+        super(List, self).__init__(target, property, *args, **kwargs)
 
     def controls(self):
         html = self.labelhtml()
         html += '<select class="---ELID---" id="---ELID---" value="" '
+        html += self.attribs()
         html += 'onchange="' + self.onchange() + '">\n'
         for opt in self.options:
-            #Can be dict {"label" : label, "value" : value, "selected" : True/False}
-            #or list [value, label, selected]
-            #or just: value
+            #Each element of options list can be:
+            # - dict {"label" : label, "value" : value, "selected" : True/False}
+            # - list [value, label, selected]
+            # - value only
             if isinstance(opt, dict):
                 selected = "selected" if opt.selected else ""
                 html += '<option value="' + str(opt["value"]) + '" ' + selected + '>' + opt["label"] + '</option>\n'
@@ -853,20 +865,19 @@ class Colour(Control):
         html = self.labelhtml()
         html += """
         <div><div class="colourbg checkerboard">
-          <div id="---ELID---" class="colour ---ELID---" onclick="
-            var col = new Colour();
+          <div id="---ELID---" ---ATTRIBS--- class="colour ---ELID---" onclick="
+            var col = new Colour(this.style.backgroundColor);
             var offset = [this.getBoundingClientRect().left, this.getBoundingClientRect().top];
             var el = this;
             var savefn = function(val) {
-              var col = new Colour(0);
-              col.setHSV(val);
-              el.style.backgroundColor = col.html();
-              console.log(col.html());
-              _wi[---VIEWERID---].do_action(---ID---, col.html(), el);
+              var c = new Colour(0);
+              c.setHSV(val);
+              el.style.backgroundColor = c.html();
+              _wi[---VIEWERID---].do_action(---ID---, c.html(), el);
             }
             el.picker = new ColourPicker(savefn);
             el.picker.pick(col, offset[0], offset[1]);">
-            </div>
+          </div>
         </div></div>
         <script>
         var el = document.getElementById("---ELID---");
@@ -877,6 +888,7 @@ class Colour(Control):
         """
         html = html.replace('---VALUE---', str(self.value))
         html = html.replace('---ELID---', self.elid)
+        html = html.replace('---ATTRIBS---', self.attribs())
         return html.replace('---ID---', str(self.id))
 
 class Gradient(Control):
@@ -891,46 +903,46 @@ class Gradient(Control):
             if m["name"] == self.value:
                 self.map = m
         self.selected = -1;
-        #Replace action on the control
-        Action.actions[self.id] = ColourMapAction(target)
 
     def controls(self):
         html = self.labelhtml()
         html += """
-        <canvas id="---ELID---" width="512" height="24" class="palette checkerboard">
+        <canvas id="---ELID---" ---ATTRIBS--- width="512" height="24" class="palette checkerboard">
         </canvas>
         <script>
-        var el = document.getElementById("---ELID---");
+        var el = document.getElementById("---ELID---"); //Get the canvas
+        //Store the maps
         el.colourmaps = ---COLOURMAPS---;
+        el.currentmap = ---COLOURMAP---;
         el.selectedIndex = ---SELID---;
         if (!el.gradient) {
           //Create the gradient editor
           el.gradient = new GradientEditor(el, function(obj, id) {
-              //Gradient updated
-              _wi[---VIEWERID---].do_action(---ID---, obj.palette.toString(), el);
+            //Gradient updated
+            //var colours = obj.palette.toJSON()
+            el.currentmap = obj.palette.get(el.currentmap);
+            _wi[---VIEWERID---].do_action(---ID---, JSON.stringify(el.currentmap.colours));
+            //_wi[---VIEWERID---].do_action(---ID---, obj.palette.toJSON(), el);
 
-              //Update stored maps list
-              if (el.selectedIndex >= 0)
-                el.colourmaps[el.selectedIndex] = el.gradient.palette.get().colours;
-            }
+            //Update stored maps list by name
+            if (el.selectedIndex >= 0)
+              el.colourmaps[el.selectedIndex].colours = el.currentmap.colours; //el.gradient.palette.get();
+          }
           , true); //Enable premultiply
-          //Load the initial colourmap
-          el.gradient.read(---COLOURMAP---);
         }
+        //Load the initial colourmap
+        el.gradient.read(el.currentmap.colours);
         </script>
         """
-        mapstr = '['
-        for m in range(len(self.maps)):
-            mapstr += json.dumps(self.maps[m]["colours"])
-            if m < len(self.maps)-1: mapstr += ','
-        mapstr += ']'
+        mapstr = json.dumps(self.maps)
         html = html.replace('---COLOURMAPS---', mapstr)
         if self.map:
-            html = html.replace('---COLOURMAP---', json.dumps(self.map["colours"]))
+            html = html.replace('---COLOURMAP---', json.dumps(self.map))
         else:
             html = html.replace('---COLOURMAP---', '"black white"')
         html = html.replace('---SELID---', str(self.selected))
         html = html.replace('---ELID---', self.elid)
+        html = html.replace('---ATTRIBS---', self.attribs())
         return html.replace('---ID---', str(self.id))
 
 class ColourMapList(List):
@@ -941,11 +953,18 @@ class ColourMapList(List):
         if selection is None:
             selection = target.instance.defaultcolourmaps()
         options = [''] + selection
+        #Also add the matplotlib colourmaps if available
+        try:
+            #Load maps list
+            import matplotlib
+            import matplotlib.pyplot as plt
+            sel = matplotlib.pyplot.colormaps()
+            options += matplotlib.pyplot.colormaps()
+        except:
+            pass
 
-        super(ColourMapList, self).__init__(target, options=options, command="reload", property="colourmap", *args, **kwargs)
-
-        #Replace action on the control
-        Action.actions[self.id] = ColourMapAction(target)
+        #Preceding command with '.' calls via python API, allowing use of matplotlib maps
+        super(ColourMapList, self).__init__(target, options=options, command=".colourmap", label="Load Colourmap", *args, **kwargs)
 
 class ColourMaps(List):
     """A colourmap list selector, populated by the available colour maps,
@@ -976,8 +995,9 @@ class ColourMaps(List):
         var el = document.getElementById('---PALLID---'); 
         var sel = document.getElementById('---ELID---');
         if (sel.selectedIndex > 0) {
-            el.gradient.read(el.colourmaps[sel.selectedIndex-1]);
-            el.selectedIndex = sel.selectedIndex-1;
+          el.selectedIndex = sel.selectedIndex-1;
+          el.currentmap = el.colourmaps[el.selectedIndex];
+          el.gradient.read(el.currentmap.colours);
         }
         """
         return script + super(ColourMaps, self).onchange()
@@ -1004,6 +1024,8 @@ class TimeStepper(Range):
 
     def controls(self):
         html = Range.controls(self)
+        #Note: unicode symbol escape must use double slash to be
+        # passed through to javascript or python will process them
         html += """
         <script>
         var timer_---ELID--- = -1;
@@ -1019,19 +1041,18 @@ class TimeStepper(Range):
           if (el) {
             //Call again on image load - pass callback
             _wi[---VIEWERID---].execute("next", startTimer_---ELID---);
-            getAndUpdateControlValues('timestep');
           }
         }
         function playPause_---ELID---(btn) {
           if (timer_---ELID--- >= 0) {
-            btn.value="\u25BA";
+            btn.value="\\u25BA";
             btn.style.fontSize = "12px"
             window.cancelAnimationFrame(timer_---ELID---);
             timer_---ELID--- = -1;
           } else {
             timer_---ELID--- = 0;
             startTimer_---ELID---();
-            btn.value="\u25ae\u25ae";
+            btn.value="\\u25ae\\u25ae";
             btn.style.fontSize = "10px"
           }
         }
@@ -1133,7 +1154,7 @@ class ObjectList(Control):
             html += ctrl.controls()
         return html
 
-class ObjectSelect(List):
+class ObjectSelect(Container):
     """A list selector of all visualisation objects that can be used to
     choose the target of a set of controls
 
@@ -1151,69 +1172,68 @@ class ObjectSelect(List):
             objects = viewer.objects.list
         
         #Load maps list
-        self.object = 0 #Default to no selection
         options = [(0, "None")]
         for o in range(len(objects)):
             obj = objects[o]
             options += [(o+1, obj["name"])]
 
-        super(ObjectSelect, self).__init__(target=self, label="Objects", options=options, property="object", *args, **kwargs)
+        #The list control
+        self._list = List(target=viewer, label="", options=options, command="select", *args, **kwargs)
+
+        #Init container
+        super(ObjectSelect, self).__init__(viewer) #, label="Objects", options=options, command="select", *args, **kwargs)
+
         #Holds a control factory so controls can be added with this as a target
         self.control = ControlFactory(self)
 
-    def onchange(self):
-        #Update the control values on change
-        return super(ObjectSelect, self).onchange() + "; getAndUpdateControlValues();"
+    #def onchange(self):
+    #    #Update the control values on change
+    #    #return super(ObjectSelect, self).onchange()
+    #    return self._list.onchange()
 
     def __contains__(self, key):
         #print "CONTAINS",key
-        #print "OBJECT == ",self.object,(key in self.instance.objects.list[self.object-1])
-        return key == "object" or self.object > 0 and key in self.instance.objects.list[self.object-1]
+        obj = Action.actions[self._list.id].lastvalue
+        #print "OBJECT == ",obj,(key in self.instance.objects.list[obj-1])
+        return obj > 0 and key in self.instance.objects.list[obj-1]
 
     def __getitem__(self, key):
         #print "GETITEM",key
-        if key == "object":
-            return self.object
-        elif self.object > 0:
-            #Passtrough: Get from selected object
-            return self.instance.objects.list[self.object-1][key]
+        obj = Action.actions[self._list.id].lastvalue
+        if obj > 0:
+            #Passthrough: Get from selected object
+            return self.instance.objects.list[obj-1][key]
         return None
 
     def __setitem__(self, key, value):
+        obj = Action.actions[self._list.id].lastvalue
         #print "SETITEM",key,value
-        if key == "object":
-            self.object = value
-            #Copy object id
-            if self.object > 0:
-                self.id = self.instance.objects.list[self.object-1].id
-            else:
-                self.id = 0
-            #Update controls
-            #self.instance.control.update()
-        elif self.object > 0:
+        if obj > 0:
             #Passtrough: Set on selected object
-            self.instance.objects.list[self.object-1][key] = value
-        else:
-            self.id = 0
+            self.instance.objects.list[obj-1][key] = value
 
-    #Undefined methods supported directly as LavaVu commands
+    #Undefined method call - pass call to target
     def __getattr__(self, key):
         #__getattr__ called if no attrib/method found
         def any_method(*args, **kwargs):
             #If member function exists on target, call it
-            if self.object > 0:
-                method = getattr(self.instance.objects.list[self.object-1], key, None)
+            obj = Action.actions[self._list.id].lastvalue
+            if obj > 0:
+                method = getattr(self.instance.objects.list[obj-1], key, None)
                 if method and callable(method):
                     return method(*args, **kwargs)
-
         return any_method
 
-class ObjectTabs(ObjectSelect):
-    """Object selection with control tabs for each object"""
-    def __init__(self, *args, **kwargs):
-        super(ObjectTabs, self).__init__(target=self, label="Objects", options=options, property="object", *args, **kwargs)
-    #Add predefined controls?
-    #
+    def html(self):
+        html = '<div style="border: #888 1px solid; display: inline-block; padding: 6px;" class="lvctrl">\n'
+        html += self._list.controls()
+        html += '<hr>\n'
+        html += super(ObjectSelect, self).html()
+        html += '</div>\n'
+        return html
+
+    def controls(self):
+        return self.html()
 
 class ControlFactory(object):
     """
@@ -1222,7 +1242,7 @@ class ControlFactory(object):
     """
     #Creates a control factory used to generate controls for a specified target
     def __init__(self, target):
-        self._target = target
+        self._target = weakref.ref(target)
         self.clear()
         self.interactor = False
         self.output = ""
@@ -1237,7 +1257,7 @@ class ControlFactory(object):
         def addmethod(constr):
             def method(*args, **kwargs):
                 #Return the new control and add it to the list
-                newctrl = constr(self._target, *args, **kwargs)
+                newctrl = constr(self._target(), *args, **kwargs)
                 self.add(newctrl)
                 return newctrl
             return method
@@ -1269,21 +1289,18 @@ class ControlFactory(object):
             self._content.append(ctrl)
 
         #Add to viewer instance list too if not already being added
-        if not isviewer(self._target):
-            self._target.instance.control.add(ctrl)
-        else:
-            #Add to master list - not cleared after display
-            allcontrols.append(ctrl)
+        if not isviewer(self._target()):
+            self._target().instance.control.add(ctrl)
 
     def getid(self):
         viewerid = len(windows)
-        if isviewer(self._target):
+        if isviewer(self._target()):
             try:
                 #Find viewer id
-                viewerid = windows.index(self._target)
+                viewerid = windows.index(self._target())
             except (ValueError):
                 #Append the current viewer ref
-                windows.append(self._target)
+                windows.append(self._target())
                 #Use viewer instance just added
                 viewerid = len(windows)-1
         return viewerid
@@ -1296,7 +1313,6 @@ class ControlFactory(object):
             A function which is called in place of the viewer display when run outside IPython
         """
         #Show all controls in container
-        if not htmlpath: return
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
@@ -1314,117 +1330,67 @@ class ControlFactory(object):
 
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
-
-        #MULTIPLE MODE OUTPUT - SHOULD WORK IN ALL PYTHON CONTEXTS, NOTEBOOKS, COLAB, JUPYTERLAB
-        #Only problem remaining is port access, from docker or cloud instances etc, need to forward extra ports
-        # - Could use lightweight callbacks IPython/Colab style to pass requests on to local server
-        if self._target.server:
-            from IPython.display import display,HTML,Javascript
-            initialise(_webglboxcode())
-            #Pass port from server
-            actionjs = Action.export_actions(viewerid, self._target.server.port)
-            display(HTML(actionjs + html))
-            #Get port from server
-            #port = self._target.server.port
-            #js = '_wi[{0}] = new WindowInteractor({0}, "localhost:{port}");'.format(viewerid, port=port)
-            #display(Javascript(js))
-            return
-
-
-        try:
-            #Google Colab support - notebook cell output is in IFrame
-            from google.colab import output
-            from IPython.display import display,HTML,Javascript,JSON
-
-            lv = self._target
-            def cmd_callback(cmds=None):
-                if cmds: lv.commands(cmds)
-                state = lv.app.getState()
-                return JSON({'state': state})
-
-            def img_callback(cmds=None):
-                if cmds: lv.commands(cmds)
-                imgstr = lv.image()
-                return JSON({'image': imgstr})
-
-            def act_callback(action, val):
-                if cmds: lv.commands(cmds)
-                cmds = Action.do(action, val)
-                if cmds:
-                    windows[viewerid].commands(cmds)
-                imgstr = lv.image()
-                return JSON({'image': imgstr})
-
-            output.register_callback('img_' + str(viewerid), img_callback)
-            output.register_callback('cmd_' + str(viewerid), cmd_callback)
-            output.register_callback('act_' + str(viewerid), act_callback)
-
-            display(HTML(_webglboxcode() + html))
-
-            #Create WindowInteractor instance
-            js = '_wi[{0}] = new WindowInteractor({0});'.format(viewerid)
-            display(Javascript(js))
-            return
-
-        except (ImportError):
-            pass
+        self.output += html
 
         #Display HTML inline or export
-        self.output += html
-        try:
-            if __IPYTHON__:
-                from IPython.display import display,HTML,Javascript
-                #Interaction requires some additional js/css/webgl
-                initialise(_webglboxcode())
-
-                #Output the controls
-                display(HTML(html))
-
+        if is_notebook():
+            #Interaction requires some additional js/css/webgl
+            initialise(_webglboxcode())
+            if self._target().server:
+                """
+                HTTP server mode interaction, rendering in separate render thread:
+                 - This should work in all notebook contexts, colab, jupyterlab etc
+                 - Only problem remaining is port access, from docker or cloud instances etc, need to forward port
+                 - Could use lightweight callbacks IPython/Colab style to pass requests on to local server
+                """
+                #Pass port from server
+                actionjs = Action.export_actions(self._target().server.port)
+                html = actionjs + html
+                js = 'init({0});'.format(viewerid)
+            else:
+                """
+                Jupyter notebook kernel mode interaction, renders in main (IPython) thread
+                 - Will not work in JupyterLab or Google Colab
+                """
                 #Create WindowInteractor instance
                 js = '_wi[{0}] = new WindowInteractor({0});'.format(viewerid)
-                display(Javascript(js))
 
-            else:
-                raise NameError()
-        except (NameError, ImportError):
+            #Output the controls and start interactor
+            from IPython.display import display,HTML
+            html += "<script>" + js + "</script>"
+            display(HTML(html))
+        else:
+            #Export html file
             Action.export(self.output)
-            if callable(fallback): fallback(self._target)
+            if callable(fallback): fallback(self._target())
 
         #Auto-clear after show?
         #Prevents doubling up if cell executed again
         self.clear()
 
+        #Pause to let everything catch up
+        #time.sleep(.5)
+
     def redisplay(self):
         """Update the active viewer image if any
         Applies changes made in python to the viewer and forces a redisplay
         """
-        try:
-            #Find viewer id
-            viewerid = windows.index(self._target)
-            if __IPYTHON__:
-                from IPython.display import display,Javascript
-                js = '_wi[{0}].redisplay({0});'.format(viewerid)
-                display(Javascript(js))
-
-        except (NameError, ImportError, ValueError):
-            pass
+        #Find viewer id
+        viewerid = windows.index(self._target())
+        if is_notebook():
+            from IPython.display import display,HTML
+            display(HTML('<script>_wi[{0}].redisplay({0});</script>'.format(viewerid)))
 
     def update(self):
         """Update the control values from current viewer data
         Applies changes made in python to the UI controls
         """
-        try:
-            #Build a list of controls to update and their values
-            #pass it to javascript function to update the page
-            updates = getcontrolvalues()
-            if __IPYTHON__:
-                from IPython.display import display,Javascript
-                jso = json.dumps(updates)
-                js = "updateControlValues(" + jso + ");"
-                display(Javascript(js))
-        except (NameError, ImportError, ValueError) as e:
-            print(str(e))
-            pass
+        #NOTE: to do this now, all we need is to trigger a get_state call from interactor by sending any command
+        if is_notebook() and len(windows):
+            #Find viewer id
+            viewerid = windows.index(self._target())
+            from IPython.display import display,HTML
+            display(HTML('<script>_wi[{0}].execute("");</script>'.format(viewerid)))
         
     def clear(self):
         self._content = []

@@ -9,7 +9,7 @@ function initBox(el, cmd_callback) {
   canvas.imgtarget = el
   el.parentElement.appendChild(canvas);
   canvas.style.cssText = "position: absolute; width: 100%; height: 100%; margin: 0px; padding: 0px; top: 0; left: 0; bottom: 0; right: 0; z-index: 11; border: none;"
-  viewer = new BoxViewer(canvas);
+  var viewer = new BoxViewer(canvas);
 
   //Canvas event handling
   canvas.mouse = new Mouse(canvas, new MouseEventHandler(canvasBoxMouseClick, canvasBoxMouseWheel, canvasBoxMouseMove, canvasBoxMouseDown, null, null, canvasBoxMousePinch));
@@ -32,14 +32,6 @@ function initBox(el, cmd_callback) {
     viewer.dict = JSON.parse(d.innerHTML);
 
   return viewer;
-}
-
-function updateBox(viewer, loaderfn) {
-  //console.log("updateBox called by " + updateBox.caller);
-  console.log("updateBox called");
-  if (!viewer) return;
-  //Loader callback
-  loaderfn(function(data) {viewer.loadFile(data);});
 }
 
 function canvasBoxMouseClick(event, mouse) {
@@ -66,15 +58,22 @@ function canvasBoxMouseDown(event, mouse) {
 var hideBoxTimer;
 
 function canvasBoxMouseMove(event, mouse) {
-  if (mouse.element && mouse.element.imgtarget) {
+  //GUI elements to show on mouseover
+  if (mouse.element) {
+    var gui = mouse.element.viewer.gui;
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
     y = event.clientY-rect.top;
     if (x >= 0 && y >= 0 && x < rect.width && y < rect.height) {
-      mouse.element.imgtarget.nextElementSibling.style.display = "block";
+      if (!gui && mouse.element.imgtarget)
+        mouse.element.imgtarget.nextElementSibling.style.display = "block";
+      if (gui)
+        gui.domElement.style.display = "block";
+
       if (hideBoxTimer) 
         clearTimeout(hideBoxTimer);
-      hideBoxTimer = setTimeout(function () {mouse.element.imgtarget.nextElementSibling.style.display = "none";}, 1000 );
+
+      hideBoxTimer = setTimeout(function () { hideMenu(mouse.element, gui);}, 1000 );
     }
   }
 
@@ -124,20 +123,8 @@ function canvasBoxMouseMove(event, mouse) {
 
 function canvasBoxMouseWheel(event, mouse) {
   if (event.shiftKey) {
-    /*var factor = event.spin * 0.01;
-    if (zoomBoxClipTimer) clearTimeout(zoomBoxClipTimer);
-    zoomBoxClipTimer = setTimeout(function () {mouse.element.viewer.zoomClip(factor);}, 100 );
-    */
     mouse.element.viewer.zoomClip(event.spin*0.01);
   } else {
-    /*if (zoomBoxTimer) 
-      clearTimeout(zoomBoxTimer);
-    zoomBoxSpin += event.spin;
-    zoomBoxTimer = setTimeout(function () {mouse.element.viewer.zoom(zoomBoxSpin*0.01); zoomBoxSpin = 0;}, 100 );
-    //Clear the box after a second
-    setTimeout(function() {mouse.element.viewer.clear();}, 1000);
-*/
-
     mouse.element.viewer.zoom(event.spin*0.01);
   }
   return false; //Prevent default
@@ -356,20 +343,21 @@ BoxViewer.prototype.sendState = function(reload) {
              "properties" : this.vis.properties};
 
   exp.exported = true;
-  exp.reload = reload ? true : false;
+  exp.reload = reload;
 
-  var sdat = window.btoa(JSON.stringify(exp));
-  this.command('_' + sdat);
+  this.command(JSON.stringify(exp));
 }
 
 function Merge(obj1, obj2) {
   for (var p in obj2) {
     try {
-      //alert(p + " ==> " + obj2[p].constructor);
+      //console.log(p + " ==> " + obj2[p].constructor);
       // Property in destination object set; update its value.
+      if (!obj2.hasOwnProperty(p)) continue;
       if (obj2[p].constructor == Object || obj2[p].constructor == Array) {
         obj1[p] = Merge(obj1[p], obj2[p]);
       } else {
+        //Just copy
         obj1[p] = obj2[p];
       }
     } catch(e) {
@@ -382,7 +370,7 @@ function Merge(obj1, obj2) {
 
 BoxViewer.prototype.toString = function(nocam, reload) {
   var exp = {"objects"    : this.exportObjects(),
-             /*"colourmaps" : this.exportColourMaps(),*/
+             "colourmaps" : this.exportColourMaps(),
              "views"      : this.exportView(nocam),
              "properties" : this.vis.properties};
 
@@ -411,7 +399,11 @@ BoxViewer.prototype.exportView = function(nocam) {
   this.view.axis = this.axes;
   //this.view.background = this.background.toString();
 
-  return [this.view];
+  //Never export min/max
+  var V = Object.assign(this.view);
+  V.min = undefined;
+  V.max = undefined;
+  return [V];
 }
 
 BoxViewer.prototype.exportObjects = function() {
@@ -425,15 +417,19 @@ BoxViewer.prototype.exportObjects = function() {
       }
     }
   }
-  console.log("OBJECTS: " + JSON.stringify(objs));
+  //console.log("OBJECTS: " + JSON.stringify(objs));
 
   return objs;
 }
 
 BoxViewer.prototype.exportColourMaps = function() {
+  return this.vis.colourmaps;
+//DEPRECATED
+  //Below extracts map from gui editor, not needed unless editor hasn't updated vis object
   cmaps = [];
   if (this.vis.colourmaps) {
     for (var i=0; i<this.vis.colourmaps.length; i++) {
+      console.log(i + " - " + this.vis.colourmaps[i].palette);
       if (!this.vis.colourmaps[i].palette) continue;
       cmaps[i] = this.vis.colourmaps[i].palette.get();
       //Copy additional properties
@@ -453,9 +449,14 @@ BoxViewer.prototype.exportFile = function() {
 BoxViewer.prototype.loadFile = function(source) {
   //Skip update to rotate/translate etc if in process of updating
   //if (document.mouse.isdown) return;
-  console.log("LOADFILE: " + source.length);
+  if (source.length < 3) {
+    console.log('Invalid source data, ignoring');
+    console.log(source);
+    console.log(BoxViewer.prototype.loadFile.caller);
+    return; //Invalid
+  }
 
-  //Replace data
+  //Parse data
   var src = {};
   try {
     src = JSON.parse(source);
@@ -463,6 +464,21 @@ BoxViewer.prototype.loadFile = function(source) {
     console.log(source);
     console.log("Parse Error: " + e);
     return;
+  }
+
+  //Before merge, delete all colourmap data if changed
+  for (var c in this.vis.colourmaps) {
+    //Name or colour count mismatch? delete so can be recreated
+    if (this.vis.colourmaps[c].name != src.colourmaps[c].name || 
+        this.vis.colourmaps[c].colours.length != src.colourmaps[c].colours.length) {
+      //Delete the colourmap folder for this map, will be re-created
+      if (this.cgui && this.cgui.folders[this.vis.colourmaps[c].name]) {
+        this.cgui.removeFolder(this.cgui.folders[this.vis.colourmaps[c].name]);
+        this.cgui.folders[this.vis.colourmaps[c].name] = undefined;
+      }
+      //Clear all the colours so new data will replace in merge
+      this.vis.colourmaps[c].colours = undefined;
+    }
   }
 
   //Merge keys - preserves original objects for gui access
@@ -516,17 +532,115 @@ BoxViewer.prototype.loadFile = function(source) {
   this.clear();
 
   //Create UI - disable by omitting dat.gui.min.js
-  if (!this.gui) {
-    var viewer = this;
-    var changefn = function(value) {
-      //console.log(value);
-      //console.log(JSON.stringify(Object.keys(this)));
-      //console.log(this.property);
-      viewer.sendState(true); //Sync state and reload
-    };
+  //(If menu doesn't exist or is open, update immediately
+  // otherwise, wait until clicked/opened as update is slow)
+  if (!this.gui || !this.gui.closed)
+    this.menu();
+  else
+    this.reloadgui = true;
 
-    createMenu(this, changefn);
+  //Copy updated values to all generated controls
+  //This allows data changed by other means (ie: through python) to 
+  // be reflected in the HTML control values
+  var pel = this.canvas.parentElement.parentElement;
+  var children = pel.getElementsByTagName('*');
+  for (var i=0; i<children.length; i++) {
+    //Process property controls
+    var id = children[i].id;
+    if (id.indexOf('lvctrl') >= 0) {
+      var target = children[i].getAttribute("data-target");
+      var property = children[i].getAttribute("data-property");
+      //console.log(id + " : " + target + " : " + property);
+      if (property) {
+        if (target) {
+          //Loop through objects, find those whose name matches element target
+          for (var o in this.vis.objects) {
+            var val = this.vis.objects[o][property];
+            if (this.vis.objects[o].name == target) {
+              //console.log("SET " + id + " : ['" + property + "'] VALUE TO " + val);
+              //console.log("TAG: " + children[i].tagName);
+              if (children[i].type == 'checkbox')
+                children[i].checked = val;
+              else if (children[i].tagName == 'SELECT') {
+                //If integer, set by index, otherwise set by value
+                var parsed = parseInt(val);
+                if (isNaN(parsed) || parsed.toString() != val) {
+                  //If the value is in the options, set it, otherwise leave as is
+                  for (var c in children[i].options) {
+                    if (children[i].options[c].value == val) {
+                      children[i].selectedIndex = c;
+                      break;
+                    }
+                  }
+                } else {
+                  children[i].selectedIndex = parsed;
+                }
+              } else if (children[i].tagName == 'DIV') {
+                children[i].style.background = new Colour(val).html();
+              } else if (children[i].tagName == 'CANVAS' && children[i].gradient) {
+                //Store full list of colourmaps
+                var el = children[i]; //canvas element
+                //Ensure we aren't merging the same object
+                el.colourmaps = Merge(JSON.parse(JSON.stringify(el.colourmaps)), this.vis.colourmaps);
+                //Load the initial colourmap
+                if (!el.selectedIndex >= 0) {
+                  //Get the selected index from the property value
+                  for (var c in this.vis.colourmaps) {
+                    if (this.vis.colourmaps[c].name == val) {
+                      el.selectedIndex = c;
+                      //Copy, don't link
+                      el.currentmap = JSON.parse(JSON.stringify(this.vis.colourmaps[c]));
+                      //el.currentmap = Object.assign(this.vis.colourmaps[c]);
+                      break;
+                    }
+                  }
+                }
+                //Can't use gradient.read() here as it triggers another state load,
+                //looping infinitely - so load the palette change directly
+                el.gradient.palette = new Palette(this.vis.colourmaps[el.selectedIndex].colours, true);
+                //el.gradient.reset(); //For some reason this screws up colour editing
+                el.gradient.update(true); //Update without triggering callback that triggers a state reload
+              } else {
+                children[i].value = val;
+              }
+            }
+          }
+        } else if (this.vis.properties[property] != null) {
+          //Global property
+          //console.log("SET " + id + " : ['" + property + "'] GLOBAL VALUE TO " + this.vis.properties[property]);
+          children[i].value = this.vis.properties[property];
+        }
+      }
+    }
   }
+}
+
+BoxViewer.prototype.menu = function() {
+  //Create UI - disable by omitting dat.gui.min.js
+  //This is slow! Don't call while animating
+  var viewer = this;
+  var changefn = function(value) {
+    //console.log(JSON.stringify(Object.keys(this)));
+    //console.log(value);
+    var reload = true;
+    if (this.property && viewer.dict[this.property])
+    {
+      //Get reload level from prop dict
+      //console.log(this.property + " REDRAW: " + viewer.dict[this.property].redraw);
+      reload = viewer.dict[this.property].redraw;
+    }
+
+    //Sync state and reload
+    viewer.sendState(reload);
+  };
+
+  if (!this.gui || this.gui.closed) {
+    //Re-create from scratch if closed or not present
+    createMenu(this, changefn);
+  } else {
+    updateMenu(this, changefn);
+  }
+  this.reloadgui = false;
 }
 
 BoxViewer.prototype.clear = function() {
@@ -618,10 +732,6 @@ BoxViewer.prototype.reset = function() {
   this.command('reset');
 }
 
-var zoomBoxTimer;
-var zoomBoxClipTimer;
-var zoomBoxSpin = 0;
-
 BoxViewer.prototype.zoom = function(factor) {
   if (this.gl) {
     this.translate[2] += factor * this.modelsize;
@@ -629,27 +739,26 @@ BoxViewer.prototype.zoom = function(factor) {
   }
 
   var that = this;
-    if (zoomBoxTimer) 
-      clearTimeout(zoomBoxTimer);
-    zoomBoxTimer = setTimeout(function () {that.command('' + that.getTranslationString());  that.clear();}, 500 );
-    //Clear the box after a second
-    //setTimeout(function() {that.clear();}, 1000);
+  if (this.zoomTimer) 
+    clearTimeout(this.zoomTimer);
+  this.zoomTimer = setTimeout(function () {that.command('' + that.getTranslationString());  that.clear(); that.zoomTimer = null;}, 500 );
 
   //this.command('' + this.getTranslationString());
   //this.command('zoom ' + factor);
 }
 
 BoxViewer.prototype.zoomClip = function(factor) {
-  if (this.gl) {
-     var near_clip = this.near_clip + factor * this.modelsize;
-     if (near_clip >= this.modelsize * 0.001)
-       this.near_clip = near_clip;
-    this.draw();
-  }
+  var near_clip = this.near_clip + factor * this.modelsize;
+  if (near_clip >= this.modelsize * 0.001)
+     this.near_clip = near_clip;
+
+  if (this.gl) this.draw();
 
   var that = this;
-    if (zoomBoxClipTimer) clearTimeout(zoomBoxClipTimer);
-    zoomBoxClipTimer = setTimeout(function () {that.command('zoomclip ' + factor);}, 500 );
+  if (this.zoomTimer) clearTimeout(this.zoomTimer);
+  //this.zoomTimer = setTimeout(function () {that.command('zoomclip ' + factor);  that.clear();}, 500 );
+  this.zoomTimer = setTimeout(function () {that.command('nearclip ' + that.near_clip);  that.clear();}, 500 );
+
   //this.command('zoomclip ' + factor);
 }
 
@@ -712,7 +821,7 @@ BoxViewer.prototype.updateDims = function(view) {
 
   }
 
-  //console.log("DIMS: " + min[0] + " to " + max[0] + "," + min[1] + " to " + max[1] + "," + min[2] + " to " + max[2]);
+  //console.log("DIMS: " + view.min[0] + " to " + view.max[0] + "," + view.min[1] + " to " + view.max[1] + "," + view.min[2] + " to " + view.max[2]);
   //console.log("New model size: " + this.modelsize + ", Focal point: " + this.focus[0] + "," + this.focus[1] + "," + this.focus[2]);
   //console.log("Translate: " + this.translate[0] + "," + this.translate[1] + "," + this.translate[2]);
 

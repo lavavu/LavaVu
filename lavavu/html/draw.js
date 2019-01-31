@@ -218,13 +218,18 @@ function canvasMouseMove(event, mouse) {
   //if (server) serverMouseMove(event, mouse); //Pass to server handler
 
   //GUI elements to show on mouseover
-  var gui = mouse.element.viewer.gui;
-  if (gui && gui.hidetimer) {
+  if (mouse.element) {
+    var gui = mouse.element.viewer.gui;
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
     y = event.clientY-rect.top;
     if (x >= 0 && y >= 0 && x < rect.width && y < rect.height) {
-      gui.domElement.style.display = "block";
+      if (!gui && mouse.element.imgtarget)
+        mouse.element.imgtarget.nextElementSibling.style.display = "block";
+
+      if (gui)
+        gui.domElement.style.display = "block";
+
       if (hideTimer)
         clearTimeout(hideTimer);
 
@@ -1982,7 +1987,7 @@ Viewer.prototype.draw = function(borderOnly) {
 }
 
 Viewer.prototype.drawFrame = function(borderOnly) {
-  if (!this.canvas || inVR) return;
+  if (!this.canvas || this.inVR) return;
 
   if (server && !document.mouse.isdown && this.gl) {
     //Don't draw in server mode unless interacting (border view)
@@ -2224,180 +2229,4 @@ function connectWindow() {
 }
 */
 
-//https://hacks.mozilla.org/2018/09/converting-a-webgl-application-to-webvr/
-//https://github.com/Manishearth/webgl-to-webvr/
-let vrDisplay;
-let inVR = false;
-
-// This function is triggered when the user clicks the "enter VR" button
-function start_VR() {
-  if (vrDisplay != null) {
-    if (!inVR) {
-      inVR = true;
-      // hand the canvas to the WebVR API
-      vrDisplay.requestPresent([{ source: window.viewer.canvas }]);
-      // requestPresent() will request permission to enter VR mode,
-      // and once the user has done this our `vrdisplaypresentchange`
-      // callback will be triggered
-
-      //Show stats
-      if (!document.getElementById("stats_info")) {
-        var script=document.createElement('script');
-        script.id = "stats_info";
-        script.onload = function() {
-          var stats=new Stats();
-          document.body.appendChild(stats.dom);
-          requestAnimationFrame(function loop() {
-            stats.update();
-            requestAnimationFrame(loop)
-          });
-        };
-        script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';
-        document.head.appendChild(script);
-      }
-
-    } else {
-      stop_VR();
-    }
-  }
-}
-
-function stop_VR() {
-  inVR = false;
-  let viewer = window.viewer;
-  let canvas = window.viewer.canvas;
-  // resize canvas to regular non-VR size if necessary
-  viewer.width = 0; //Auto resize
-  viewer.height = 0;
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
-
-  viewer.drawFrame();
-  viewer.draw();
-}
-
-function setup_VR() {
-  if (!navigator.getVRDisplays) {
-    alert("Your browser does not support WebVR");
-    return;
-  }
-
-  function display_setup(displays) {
-    if (displays.length === 0)
-      return;
-    //Use last in list
-    vrDisplay = displays[displays.length-1];
-  }
-
-  navigator.getVRDisplays().then(display_setup);
-
-  function VR_change() {
-    // no VR display, exit
-    if (vrDisplay == null)
-        return;
-
-    let viewer = window.viewer;
-    let canvas = window.viewer.canvas;
-
-    // are we entering or exiting VR?
-    if (vrDisplay.isPresenting) {
-      // optional, but recommended
-      vrDisplay.depthNear = viewer.near_clip;
-      vrDisplay.depthFar = viewer.far_clip;
-
-      // We should make our canvas the size expected
-      // by WebVR
-      const eye = vrDisplay.getEyeParameters("left");
-      // multiply by two since we're rendering both eyes side
-      // by side
-      viewer.width = eye.renderWidth * 2;
-      viewer.height = eye.renderHeight;
-      canvas.style.width = viewer.width + "px";
-      canvas.style.height = viewer.height + "px";
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-
-      const vrCallback = () => {
-        if (vrDisplay == null || !inVR)
-          return;
-
-        // reregister callback if we're still in VR
-        vrDisplay.requestAnimationFrame(vrCallback);
-
-        // render scene
-        renderVR();
-      };
-
-      // register callback
-      vrDisplay.requestAnimationFrame(vrCallback);
-
-    } else {
-      stop_VR();
-    }
-  }
-
-  window.addEventListener('vrdisplaypresentchange', VR_change);
-}
-
-function renderVR() {
-  //Clear full canvas
-  window.viewer.gl.viewport(0, 0, window.viewer.canvas.width, window.viewer.canvas.height);
-  window.viewer.gl.clear(window.viewer.gl.COLOR_BUFFER_BIT | window.viewer.gl.DEPTH_BUFFER_BIT);
-
-  //Left eye
-  renderEye(window.viewer, true);
-
-  //Right eye
-  renderEye(window.viewer, false);
-
-  vrDisplay.submitFrame();
-}
-
-function renderEye(viewer, isLeft) {
-  let projection, mview;
-  let frameData = new VRFrameData();
-  var gl = viewer.webgl.gl;
-  var width = viewer.canvas.width / 2;
-  var height = viewer.canvas.height;
-
-  vrDisplay.getFrameData(frameData);
-
-  // choose which half of the canvas to draw on
-  if (isLeft) {
-    viewer.webgl.viewport = new Viewport(0, 0, width, height);
-    gl.viewport(0, 0, width, height);
-    //Apply the default camera
-    viewer.webgl.apply(viewer);
-
-    projection = frameData.leftProjectionMatrix;
-    mview = frameData.leftViewMatrix;
-  } else {
-    viewer.webgl.viewport = new Viewport(width, 0, width, height);
-    gl.viewport(width, 0, width, height);
-//viewer.webgl.viewport = new Viewport(0, 0, width, height);
-//gl.viewport(0, 0, width, height);
-    projection = frameData.rightProjectionMatrix;
-    mview = frameData.rightViewMatrix;
-  }
-
-  //Apply the default camera
-  viewer.webgl.apply(viewer);
-
-  //Update matrices with VR modified versions
-  //mat4.multiply(mview, viewer.webgl.modelView.matrix);
-  //viewer.webgl.modelView.matrix = mview;
-  mat4.multiply(viewer.webgl.modelView.matrix, mview);
-//console.log(isLeft ? "LEFT " : "RIGHT "); printMatrix(mview);
-  //gl.uniformMatrix4fv(viewer.webgl.program.mvMatrixUniform, false, mview);
-
-  viewer.webgl.projection.matrix = projection;
-
-  //Render objects
-  for (var r in viewer.renderers) {
-    if (viewer.renderers[r].border && !viewer.showBorder) continue;
-    viewer.renderers[r].draw();
-  }
-
-  viewer.rotated = false; //Clear rotation flag
-}
 

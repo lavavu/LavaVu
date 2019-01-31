@@ -18,8 +18,9 @@ select:not([multiple]) {
 }
 
 input, select { 
-  margin: 0;
+  margin: 0px !important;
   font-size: 9pt;
+  line-height: 20px; 
 }
 
 

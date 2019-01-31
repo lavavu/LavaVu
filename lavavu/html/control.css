@@ -1,7 +1,7 @@
 .lvctrl input { display: inline; }
 .lvctrl input[type=range] { width: 200px; }
 .lvctrl input[type=button] { width: 100px; }
-.lvctrl input[type=number] { width: 120px; height: 28px; border-radius: 0; border: 1px dotted #999;}
+.lvctrl input[type=number] { width: 105px; height: 28px; border-radius: 0; border: 1px dotted #999;}
 .lvctrl pre { display: inline; }
 .lvctrl p  { color: gray; margin: 0px}
 

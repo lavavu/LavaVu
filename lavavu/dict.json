@@ -132,7 +132,7 @@
     "type": "boolean",
     "desc": "Set to false to hide object",
     "strict": true,
-    "redraw": 0,
+    "redraw": 1,
     "control": [
       true
     ]
@@ -611,9 +611,18 @@
     "type": "integer [0,n]",
     "desc": "Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
-      true
+      true,
+      null,
+      {
+        "none": 0,
+        "verylow": 1,
+        "low": 2,
+        "medium": 3,
+        "high": 4,
+        "veryhigh": 5
+      }
     ]
   },
   "scaling": {
@@ -622,7 +631,7 @@
     "type": "real",
     "desc": "Object scaling factor",
     "strict": true,
-    "redraw": 0,
+    "redraw": 1,
     "control": [
       true
     ]
@@ -745,7 +754,12 @@
     "strict": true,
     "redraw": 2,
     "control": [
-      true
+      true,
+      [
+        0.1,
+        20.0,
+        0.01
+      ]
     ]
   },
   "pointtype": {
@@ -754,7 +768,7 @@
     "type": "integer/string",
     "desc": "Point type 0/blur, 1/smooth, 2/sphere, 3/shiny, 4/flat",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
       true,
       null,
@@ -1380,7 +1394,7 @@
     "type": "real",
     "desc": "Margin to perpendicular edge in pixels or viewport size ratio, >0=towards left/bottom, 0=centre (horizontal only), <0=towards right/top",
     "strict": true,
-    "redraw": 0,
+    "redraw": 1,
     "control": [
       false
     ]
@@ -1402,7 +1416,7 @@
     "type": "boolean",
     "desc": "Set to true to use log scales",
     "strict": true,
-    "redraw": 0,
+    "redraw": 1,
     "control": [
       true
     ]
@@ -1889,7 +1903,12 @@
     "strict": true,
     "redraw": 0,
     "control": [
-      true
+      true,
+      [
+        0.0,
+        1.0,
+        0.01
+      ]
     ]
   },
   "noload": {

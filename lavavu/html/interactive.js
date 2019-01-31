@@ -2,6 +2,10 @@
 //Server Event handling
 var defaultMouse;
 
+var IMAGE_TIMER = 20
+var MOUSE_TIMER = 5
+var HIDE_TIMER = 1000
+
 function initServerPage() {
   //Use image frame
   img = document.getElementById('frame');
@@ -12,7 +16,7 @@ function initServerPage() {
   //Initiate the server update
   requestData('/connect', parseConnectionRequest);
 
-  window.onbeforeunload = function() {
+  /*window.onbeforeunload = function() {
     //In a popup?
     if (window.opener && window.opener !== window) {
       var http = new XMLHttpRequest();
@@ -24,7 +28,7 @@ function initServerPage() {
       http.send(null);
     }
     window.close();
-  };
+  };*/
 
   //Enable to forward key presses to server directly
   document.onkeypress = keyPress;
@@ -105,7 +109,7 @@ function serverMouseMove(event, mouse) {
   modeDiv.disabled = false;
   if (hideTimer)
     clearTimeout(hideTimer);
-  hideTimer = setTimeout(function () {modeDiv.style.display = "none"; modeDiv.disabled=true; }, 1000 );
+  hideTimer = setTimeout(function () {modeDiv.style.display = "none"; modeDiv.disabled=true; }, HIDE_TIMER );
 
   //Following is for drag action only
   if (!mouse.isdown) return true;
@@ -138,7 +142,7 @@ function serverMouseMove(event, mouse) {
       //serverMouseWheel(event, mouse);
       spincount += Math.sign(mouse.x - mouse.previousX);
       var request = "/mouse=scroll,spin=" + spincount + ",modifiers=C,x=" + document.mouse.x + ",y=" + document.mouse.y;
-      spintimeout = setTimeout("requestData('" + request + "'); spincount = 0;", 5);
+      spintimeout = setTimeout("requestData('" + request + "'); spincount = 0;", MOUSE_TIMER);
     }
     mouse.previousX = mouse.x;
     return false;
@@ -148,7 +152,7 @@ function serverMouseMove(event, mouse) {
   //requestData('/mouse=move,button=' + (mouse.button+1) + ",x=" + mouse.x + ",y=" + mouse.y);
   //document.body.style.cursor = "wait";
   var request = "/mouse=move,button=" + button + ",x=" + document.mouse.x + ",y=" + document.mouse.y;
-  mvtimeout = setTimeout("requestData('" + request + "');", 10);
+  mvtimeout = setTimeout("requestData('" + request + "');", MOUSE_TIMER);
   return false;
 }
 
@@ -157,7 +161,7 @@ function serverMouseWheel(event, mouse) {
   //document.body.style.cursor = "wait";
   spincount += event.spin;
   var request = "/mouse=scroll,spin=" + Math.floor(spincount) + ',modifiers=' + getModifiers(event) + ",x=" + document.mouse.x + ",y=" + document.mouse.y;
-  spintimeout = setTimeout("requestData('" + request + "'); spincount = 0;", 5);
+  spintimeout = setTimeout("requestData('" + request + "'); spincount = 0;", MOUSE_TIMER);
   //requestData('/mouse=scroll,spin=' + event.spin + ',modifiers=' + getModifiers(event) + ",x=" + mouse.x + ",y=" + mouse.y);
 }
 
@@ -212,7 +216,7 @@ function requestImage(target) {
 
       //Request next image frame (after brief timeout so we don't flood the server)
       if (imgtimer) clearTimeout(imgtimer);
-      imgtimer = setTimeout(requestImage(target), 50);
+      imgtimer = setTimeout(requestImage(target), IMAGE_TIMER);
     } else
       console.log("Request Error: " + url + ", returned status code " + http.status + " " + http.statusText);
   }
@@ -230,7 +234,7 @@ function parseConnectionRequest(response) {
   resizeToWindow(0);
 
   //Ensure model open and viewports initialised
-  setTimeout("requestData('/command=open');", 150);
+  setTimeout("requestData('/command=open');", IMAGE_TIMER);
 
   //Get first frame
   var target = document.getElementById('frame');

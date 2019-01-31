@@ -22,6 +22,7 @@ import copy
 import base64
 import threading
 import time
+import weakref
 
 from vutils import is_ipython, is_notebook
 
@@ -31,8 +32,8 @@ libpath = os.path.abspath(os.path.dirname(__file__))
 version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
-TIMER_MAX_FPS = 60
-TIMER_INC = 1.0 / TIMER_MAX_FPS
+TIMER_MAX_FPS = 200   #FPS for frame timer
+TIMER_INC = 1.0 / TIMER_MAX_FPS #Timer increment in milliseconds
 
 geomnames = ["labels", "points", "grid", "triangles", "vectors", "tracers", "lines", "shapes", "volumes", "screen"]
 geomtypes = [LavaVuPython.lucLabelType,
@@ -243,7 +244,7 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
 
     return colours
 
-def matplotlib_colourmap(name, samples=128):
+def matplotlib_colourmap(name, samples=16):
     """
     Import a colourmap from a matplotlib
 
@@ -264,7 +265,7 @@ def matplotlib_colourmap(name, samples=128):
         cmap = plt.get_cmap(name)
         if hasattr(cmap, 'colors'):
             return cmap.colors
-        #Get colour samples, default 128
+        #Get colour samples when no list provided
         colours = []
         for i in range(samples):
             pos = i/float(samples-1)
@@ -320,9 +321,9 @@ class Object(dict):
     >>> obj.help('opacity')
 
     """
-    def __init__(self, instance, *args, **kwargs):
+    def __init__(self, parent, *args, **kwargs):
         self.dict = kwargs
-        self.instance = instance
+        self._parent = weakref.ref(parent)
         if not "filters" in self.dict: self.dict["filters"] = []
 
         #Create a control factory
@@ -330,6 +331,12 @@ class Object(dict):
 
         #Init prop dict for tab completion
         super(Object, self).__init__(**self.instance.properties)
+
+    @property
+    #TODO: rename these properties to "parent"
+    #def parent(self):
+    def instance(self):
+        return self._parent()
 
     @property
     def name(self):
@@ -607,6 +614,10 @@ class Object(dict):
 
     def _dimsFromShape(self, shape, size, typefilter):
         #Volume/quads? Use the shape as dims if not provided
+        if 'dims' in self.dict:
+            #Skip this if dims value already provided by user
+            return
+
         D = self["dims"]
 
         #Dims already match provided data?
@@ -621,9 +632,16 @@ class Object(dict):
 
         if len(shape) > 2 and self["geometry"] == typefilter:
             if typefilter == 'quads':
-                #Use shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
-                D[0] = shape[1] #columns
-                D[1] = shape[0] #rows
+                #Use matching shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
+                if shape[1] * shape[0] == size:
+                    D[0] = shape[1] #columns
+                    D[1] = shape[0] #rows
+                elif shape[2] * shape[0] == size:
+                    D[0] = shape[2] #columns
+                    D[1] = shape[0] #rows
+                elif shape[2] * shape[1] == size:
+                    D[0] = shape[2] #columns
+                    D[1] = shape[1] #rows
             elif typefilter == 'volume':
                 #Need to flip for volume?
                 D = (shape[2], shape[1], shape[0])
@@ -658,7 +676,7 @@ class Object(dict):
                 data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
 
             #Quads? Use the shape as dims if not provided
-            self._dimsFromShape(shape, data.size, 'quads')
+            self._dimsFromShape(shape, data.size/3, 'quads')
 
         #Convenience option to load magnitude as a value array
         if magnitude is not None:
@@ -1147,7 +1165,7 @@ class Object(dict):
         #Create surface, If requested, write the new data to the database
         objref = None
         if convert: objref = self.ref
-        ref = self.instance.app.isoSurface(objref, self.ref, _convert_args(kwargs), convert)
+        ref = self.instance.isosurface(objref, self.ref, _convert_args(kwargs), convert)
 
         #Get the created/updated object
         if ref == None:
@@ -1182,8 +1200,13 @@ class Objects(dict):
     """  
     The Objects class is used internally to manage and synchronise the drawing object list
     """
-    def __init__(self, instance):
-        self.instance = instance
+    def __init__(self, parent):
+        self._parent = weakref.ref(parent)
+
+    @property
+    #def parent(self):
+    def instance(self):
+        return self._parent()
 
     def _sync(self):
         #Sync the object list with the viewer
@@ -1228,18 +1251,18 @@ class _ColourComponents():
     """Class to allow modifying colour components directly as an array
     """
     def __init__(self, key, parent):
-        self.parent = parent
+        self.instance = parent
         self.key = key
-        self.list = self.parent.list[self.key][1]
+        self.list = self.instance.list[self.key][1]
 
     def __getitem__(self, key):
-        self.list = self.parent.list[self.key][1]
+        self.list = self.instance.list[self.key][1]
         return self.list[key]
 
     def __setitem__(self, key, value):
-        self.list = self.parent.list[self.key][1]
+        self.list = self.instance.list[self.key][1]
         self.list[key] = value
-        self.parent[self.key] = self.list
+        self.instance[self.key] = self.list
 
     def __str__(self):
         return str(self.list)
@@ -1248,23 +1271,23 @@ class _ColourList():
     """Class to allow modifying colour list directly as an array
     """
     def __init__(self, parent):
-        self.parent = parent
-        self.list = self.parent.tolist()
+        self.instance = parent
+        self.list = self.instance.tolist()
 
     def __getitem__(self, key):
-        self.parent._get() #Ensure in sync
-        self.list = self.parent.tolist()
+        self.instance._get() #Ensure in sync
+        self.list = self.instance.tolist()
         return _ColourComponents(key, self)
 
     def __setitem__(self, key, value):
-        self.list = self.parent.tolist()
+        self.list = self.instance.tolist()
         self.list[key] = (self.list[key][0], value)
-        self.parent.update(self.list)
+        self.instance.update(self.list)
 
     def __delitem__(self, key):
-        self.list = self.parent.tolist()
+        self.list = self.instance.tolist()
         del self.list[key]
-        self.parent.update(self.list)
+        self.instance.update(self.list)
 
     def __iadd__(self, value):
         self.append(value)
@@ -1273,12 +1296,12 @@ class _ColourList():
         self.append(value)
 
     def append(self, value, position=1.0):
-        self.list = self.parent.tolist()
+        self.list = self.instance.tolist()
         if isinstance(value, tuple):
             self.list.append(value)
         else:
             self.list.append((position, value))
-        self.parent.update(self.list)
+        self.instance.update(self.list)
 
     def __str__(self):
         return str([c[1] for c in self.list])
@@ -1287,18 +1310,18 @@ class _PositionList(_ColourList):
     """Class to allow modifying position list directly as an array
     """
     def __init__(self, parent):
-        self.parent = parent
-        self.list = self.parent.tolist()
+        self.instance = parent
+        self.list = self.instance.tolist()
 
     def __getitem__(self, key):
-        self.parent._get() #Ensure in sync
-        self.list = self.parent.tolist()
+        self.instance._get() #Ensure in sync
+        self.list = self.instance.tolist()
         return self.list[key][0]
 
     def __setitem__(self, key, value):
-        self.list = self.parent.tolist()
+        self.list = self.instance.tolist()
         self.list[key] = (value, self.list[key][1])
-        self.parent.update(self.list)
+        self.instance.update(self.list)
 
     def __str__(self):
         return str([c[0] for c in self.list])
@@ -1319,8 +1342,8 @@ class ColourMap(dict):
         Initial set of properties passed to the created colourmap
 
     """
-    def __init__(self, ref, instance, *args, **kwargs):
-        self.instance = instance
+    def __init__(self, ref, parent, *args, **kwargs):
+        self._parent = weakref.ref(parent)
         if isinstance(ref, LavaVuPython.ColourMap):
             self.ref = ref
         else:
@@ -1331,6 +1354,11 @@ class ColourMap(dict):
 
         #Init prop dict for tab completion
         super(ColourMap, self).__init__(**self.instance.properties)
+
+    @property
+    #def parent(self):
+    def instance(self):
+        return self._parent()
 
     @property
     def name(self):
@@ -1443,7 +1471,7 @@ class ColourMap(dict):
         for c in self["colours"]:
             comp = re.findall(r"[\d\.]+", c["colour"])
             string += "#" + padhex2(comp[0]) + padhex2(comp[1]) + padhex2(comp[2])
-            if comp[3] < 1.0:
+            if float(comp[3]) < 1.0:
                 string += ":" + str(comp[3])
             string += " "
         return string
@@ -1504,11 +1532,16 @@ class Fig(dict):
     - A single model can contain many objects and multiple figures, all of which work
       on the same set of objects, but may not use them all (ie: some are hidden)
     """
-    def __init__(self, instance, name):
-        self.instance = instance
+    def __init__(self, parent, name):
+        self._parent = weakref.ref(parent)
         self.name = name
         #Init prop dict for tab completion
         super(Fig, self).__init__(**self.instance.properties)
+
+    @property
+    #def parent(self):
+    def instance(self):
+        return self._parent()
 
     def __getitem__(self, key):
         if not key in self.instance.properties:
@@ -1558,6 +1591,221 @@ class Fig(dict):
         self.load()
         #Render
         return self.instance.image(*args, **kwargs)
+
+
+class LavaVuThreadSafe(LavaVuPython.LavaVu):
+    def __init__(self, threaded=True, *args, **kwargs):
+        self._threaded = threaded
+        self._closing = False
+
+        if threaded:
+            # Create a condition variable to synchronize resource access
+            self._cv = threading.Condition()
+
+            # Create the command queue
+            from collections import deque
+            self._q = deque()
+
+            #Safe call return value
+            self._returned = None
+
+        super(LavaVuThreadSafe, self).__init__(*args, **kwargs)
+
+    #def __getattr__(self, attr):
+    #    #Lock?
+    #    return self.app[attr]
+
+    #def __setattr__(self, attr, value):
+    #    #Lock?
+    #    self.app[attr] = value
+
+    ####################################
+
+    """
+    These functions must be called on the render thread only
+    as they make OpenGL calls
+    """
+
+    def image(self, *args, **kwargs):
+        return self._lavavu_call('image', True, *args, **kwargs)
+
+    def imageJPEG(self, *args, **kwargs):
+        return self._lavavu_call('imageJPEG', True, *args, **kwargs)
+
+    def imagePNG(self, *args, **kwargs):
+        return self._lavavu_call('imagePNG', True, *args, **kwargs)
+
+    def video(self, *args, **kwargs):
+        return self._lavavu_call('video', True, *args, **kwargs)
+
+    def web(self, *args, **kwargs):
+        return self._lavavu_call('web', True, *args, **kwargs)
+
+    def isoSurface(self, *args, **kwargs):
+        return self._lavavu_call('isoSurface', True, *args, **kwargs)
+
+    #def safegetstate(self, *args, **kwargs):
+    #    return self._lavavu_call('getState', True, *args, **kwargs)
+
+    #def setState(self, *args, **kwargs):
+    #    return self._lavavu_call('setState', True, *args, **kwargs)
+
+    def commands(self, *args, **kwargs):
+        #Parse commands and wait until they are processed
+        return self._lavavu_call('parseCommands', True, *args, **kwargs)
+
+    def qcommands(self, *args, **kwargs):
+        #Queue commands for parsing and return immediately to continue processing
+        self._lavavu_call('parseCommands', False, *args, **kwargs)
+
+    def addTimeStep(self, *args, **kwargs):
+        return self._lavavu_call('addTimeStep', True, *args, **kwargs)
+
+    def imageDiff(self, *args, **kwargs):
+        return self._lavavu_call('imageDiff', True, *args, **kwargs)
+
+    def loadFile(self, *args, **kwargs):
+        return self._lavavu_call('loadFile', True, *args, **kwargs)
+
+    def updateColourMap(self, *args, **kwargs):
+        return self._lavavu_call('updateColourMap', True, *args, **kwargs)
+
+    """
+    #def loadColours(self, *args, **kwargs):
+    #    #print("COLOURS")
+    #    return self._lavavu_call('loadColours', True, *args, **kwargs)
+
+    def arrayFloat(self, *args, **kwargs):
+        return self._lavavu_call('arrayFloat', True, *args, **kwargs)
+        #self._lavavu_call('arrayFloat', False, *args, **kwargs)
+
+    def arrayUInt(self, *args, **kwargs):
+        return self._lavavu_call('arrayUInt', True, *args, **kwargs)
+        #self._lavavu_call('arrayUInt', False, *args, **kwargs)
+
+    def arrayUChar(self, *args, **kwargs):
+        return self._lavavu_call('arrayUChar', True, *args, **kwargs)
+        #self._lavavu_call('arrayUChar', False, *args, **kwargs)
+
+    def clearData(self, *args, **kwargs):
+        return self._lavavu_call('clearData', True, *args, **kwargs)
+
+    def clearValues(self, *args, **kwargs):
+        return self._lavavu_call('clearValues', True, *args, **kwargs)
+    """
+
+    ####################################
+
+    def display(self, *args, **kwargs):
+        #Don't wait for return value
+        self._openglviewer_call('display', False, *args, **kwargs)
+        #return self._openglviewer_call('display', True, *args, **kwargs)
+
+    #def events(self, *args, **kwargs):
+    #    return self._openglviewer_call('events', True, *args, **kwargs)
+
+    def show(self, *args, **kwargs):
+        if not self.viewer.visible:
+            self.viewer.visible = True
+            #This is a bit weird/broken, it shows the window only if visible is true
+            # and does not set the visible flag
+            #TODO: make behaviour of viewer.show/hide consistent
+            self._openglviewer_call('show', False, *args, **kwargs)
+
+    def hide(self, *args, **kwargs):
+        if self.viewer.visible:
+            #Also a bit broken, needs fixing,
+            #This is the opposite of show, clears visible flag
+            # and hides window regardless of flag setting
+            self._openglviewer_call('hide', False, *args, **kwargs)
+
+    def events(self, *args, **kwargs):
+        self.viewer.nodisplay = True #Handle rendering ourselves
+        return self._openglviewer_call('events', True, *args, **kwargs)
+        #self._openglviewer_call('events', False, *args, **kwargs)
+
+        #self._openglviewer_call('execute', False, *args, **kwargs)
+        #Note: no longer calls show() if not visible, need to do manually
+        return not self.viewer.quitProgram
+
+    ####################################
+
+    #Call LavaVu method from render thread
+    def _lavavu_call(self, name, wait_return, *args, **kwargs):
+        method = getattr(super(LavaVuThreadSafe, self), name)
+        return self._thread_call(method, wait_return, *args, **kwargs)
+
+    #Call OpenGLViewer method from render thread
+    def _openglviewer_call(self, name, wait_return, *args, **kwargs):
+        return self._thread_call(getattr(self.viewer, name), wait_return, *args, **kwargs)
+
+    def _thread_call(self, method, wait_return, *args, **kwargs):
+        if not self._threaded:
+            return method(*args, **kwargs)
+        """
+        This calls a method on the render thread
+        All args are placed on the queue, along with the method
+
+        if wait_return is True:
+          Wait for the call to be executed with a condition variable lock
+          Returns the saved return data from render thread after woken
+        Otherwise:
+          Return immediately
+        """
+        #Use the thread queue to pass input args
+        self._q.append([method, wait_return, args, kwargs])
+        #print("THREAD_CALL:",method.__name__,args,kwargs)
+        if wait_return:
+            #Wait until the call is completed in render thread
+            with self._cv:
+                self._cv.wait()
+            #Return the saved result data
+            return self._returned
+
+    def _thread_run(self):
+        """
+        This function manages the render thread.
+        Used to: handle events, get images
+        All OpenGL calls must be made from here
+        """
+        #self._kwargs["usequeue"] = True #Switch on command queuing
+
+        #Render event handling loop!
+        while not self._closing:
+            #Process interactive and timer events
+            self.viewer.events()
+            #if self.viewer.events():
+            #    self.viewer.execute()
+            #    #self.render()
+
+            #Process commands that must be run on the render thread
+            if len(self._q):
+                #if not self.app.viewer.isopen or not self.app.amodel:
+                #    print("NOT OPEN!")
+                #    print('deferring : ' + self.app._q[0])
+                method, wait_return, args, kwargs = self._q.popleft()
+                #If set, must return result and notify waiting thread with condition variable
+                if wait_return:
+                    #print("CALLING:",method.__name__)
+                    self._returned = method(*args, **kwargs)
+                    #Notify waiting thread result is ready
+                    with self._cv:
+                        self._cv.notify()
+                    #print("RETURNED:",type(self._returned))
+                else:
+                    method(*args, **kwargs)
+                method = None
+
+            time.sleep(TIMER_INC)
+
+            #Detect window closed
+            if self.viewer.quitProgram:
+                if is_notebook():
+                    #Just hide the window
+                    self.viewer.hide()
+                    self.viewer.quitProgram = False
+                else:
+                    exit(0)
 
 
 class Viewer(dict):
@@ -1637,7 +1885,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, port=0, threaded=False, *args, **kwargs):
+    def __init__(self, binpath=libpath, havecontext=False, omegalib=False, port=None, *args, **kwargs):
         """
         Create and init viewer instance
 
@@ -1645,10 +1893,9 @@ class Viewer(dict):
         ----------
         (see Viewer class docs for setup args)
         port: int
-            Web server port, to allow server mode, also enables threaded=True (see below)
-        threaded: boolean
-            Set this flag to start the viewer in a thread, all rendering will be done in this thread
-            Default is disabled, creates the viewer in the current(main) thread
+            Web server port, open server on specific port for control/interaction
+            Viewer will be run in a separate thread, all rendering will be done in this thread
+            When disabled (None) creates the viewer in the current(main) thread and disables the server
         binpath: str
             Override the executable path
         havecontext: boolean
@@ -1662,127 +1909,75 @@ class Viewer(dict):
         self.app = None
         self._objects = Objects(self)
         self.state = {}
+        self._managed = False
+        self.server = None
 
         #Launch in thread?
-        self._thread = None
-        self._closing = False
-        if threaded or port:
+        if port is None:
+            #Default to server on when running in notebook
+            #can disable by setting port=0
+            if is_notebook():
+                port = 8080
+            #Otherwise default to server off
+            #can enable by providing default port number
+            else:
+                port = 0
+        self.port = port
+        if self.port > 0:
             #Exit handler to clean up threads
-            def exitfn():
-                self.server = None
-                self._closing = True
-                #Wait for the render thread to exit
-                self._thread.join()
-                self.app = None #Clear viewer
-
+            #(__del__ does not always seem to get called on termination)
+            def exitfn(vref):
+                #Check if the viewer reference is still valid
+                viewer = vref()
+                if viewer:
+                    viewer._shutdown()
             import atexit
-            atexit.register(exitfn)
+            atexit.register(exitfn, weakref.ref(self))
 
-
-            # Create a condition variable to synchronize resource access
             self._cv = threading.Condition()
+            #self.app = LavaVuThreadSafe(binpath, havecontext, omegalib)
+            def _thread_run(viewer, args, kwargs):
+                """
+                This function runs the render thread.
+                Used to: create the viewer, handle events, get images
+                All OpenGL calls must be made from here
+                """
+                #Create the viewer
+                viewer()._create(binpath, havecontext, omegalib, *args, **kwargs)
 
-            # Create the command queue
-            try:
-                #Python2
-                from Queue import Queue
-            except ImportError:
-                #Python3
-                from queue import Queue
-            self._q = Queue()
+                #Sync with main thread here to ensure render thread has initialised before it continues
+                with viewer()._cv:
+                    viewer()._cv.notifyAll()
 
-            self._thread = threading.Thread(target=self._thread_run)
-            self._thread.daemon = True #Must be put in background as has infinite loop
+                #Handle events
+                viewer().app._thread_run()
 
-            self._args = args
-            self._kwargs = kwargs
+                #Closedown/delete must be called from thread to free OpenGL resources!
+                viewer().app = None
 
-            self._thread.start()
-            #print("control thread: ", threading.get_ident())
+            #Thread start
+            self._thread = threading.Thread(target=_thread_run, args=[weakref.ref(self), args, kwargs])
+            #Due to python failing to call __del__ on exit, have to use daemon or thread never quits
+            self._thread.daemon = True
 
-            #Wait for the thread to finish initialising
+            #Start the thread and wait for it to finish initialising
             with self._cv:
+                self._thread.start()
                 self._cv.wait()
-        else:
-            self._create(*args, **kwargs)
 
-        #Start the web server?
-        self.server = None
-        if port:
+            #Start the web server
             import server
-            self.server = server.serve(self, port, ipv6=False, retries=20)
-
-    def _thread_run(self):
-        """
-        This function holds the render thread.
-        Used to: create the viewer, handle events, get images
-        All OpenGL calls must be made from here
-        """
-        #Create the viewer
-        self._create(*self._args, **self._kwargs)
-
-        #Add thread safe method overrides
-        threadsafe = ['display', 'image', 'frame', 'jpeg', 'png'] #, 'render']
-        for name in threadsafe:
-            #Use a closure to define a replacement thread safe method
-            def addmethod(name):
-                def method(*args, **kwargs):
-                    return self._thread_safe_call(name, *args, **kwargs)
-                return method
-            method = addmethod(name)
-            #Copy docstring
-            method.__doc__ = getattr(self, name).__doc__
-            #Save the original method
-            self.__setattr__('_orig_' + name, getattr(self, name))
-            #Replace with our patched thread safe version
-            self.__setattr__(name, method)
-
-        #Sync with main thread here to ensure render thread has initialised before it continues
-        with self._cv:
-            self._cv.notifyAll()
-
-        #Render event handling loop!
-        while not self._closing:
-            #Process interactive and timer events
-            if self.app.viewer.events():
-                self.app.viewer.execute()
-                #self.render()
-
-            #Process commands that must be run on the render thread
-            if self._q.qsize():
-                req = self._q.get()
-                method = req[0]
-                #Get the original method
-                method_call = getattr(self, '_orig_' + method)
-                #Save the return value
-                self._returned = method_call(*req[1], **req[2])
-                #Notify waiting main thread result is ready
-                with self._cv:
-                    self._cv.notifyAll()
-
-            time.sleep(TIMER_INC)
-
-    def _thread_safe_call(self, method, *args, **kwargs):
-        """
-        This calls a method on the render thread
-        All args are placed on the queue, along with the method name
-        Wait for the call to be executed with a condition variable lock
-        Returns the saved return data from render thread after woken
-        """
-        #Use the thread queue to pass input args
-        self._q.put([method, args, kwargs])
-        #Wait until the call is completed in render thread
-        with self._cv:
-            self._cv.wait()
-        #Return the saved result data
-        return self._returned
+            self.server = server.serve(self, self.port, ipv6=False, retries=20)
+            self.port = self.server.port #Get the actual port
+        else:
+            self._create(binpath, havecontext, omegalib, *args, **kwargs)
 
     def _create(self, binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
         """
         Create and init the C++ viewer object
         """
         try:
-            self.app = LavaVuPython.LavaVu(binpath, havecontext, omegalib)
+            self.app = LavaVuThreadSafe(self.port > 0, binpath, havecontext, omegalib)
 
             #Get property dict
             self.properties = _convert_keys(json.loads(self.app.propertyList()))
@@ -1792,11 +1987,11 @@ class Viewer(dict):
             self.setup(*args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
-            control.htmlpath = os.path.join(binpath, "html")
+            control.htmlpath = self.htmlpath = os.path.join(self.app.binpath, "html")
             control.dictionary = self.app.propertyList()
 
             if not os.path.isdir(control.htmlpath):
-                control.htmlpath = None
+                control.htmlpath = self.htmlpath = None
                 print("Can't locate html dir, interactive view disabled")
 
             #Create a control factory
@@ -1832,6 +2027,7 @@ class Viewer(dict):
                 else:
                     #Use a closure to define a new method that runs this command
                     def cmdmethod(name):
+                        _target = weakref.ref(self) #Use a weak ref in the closure
                         def method(*args, **kwargs):
                             arglist = [name]
                             for a in args:
@@ -1839,7 +2035,7 @@ class Viewer(dict):
                                     arglist += [str(b) for b in a]
                                 else:
                                     arglist.append(str(a))
-                            self.commands(' '.join(arglist))
+                            _target().commands(' '.join(arglist))
                         return method
 
                     #Create method that runs this command:
@@ -1865,8 +2061,9 @@ class Viewer(dict):
             for key in [item for sublist in self.renderers for item in sublist]:
                 #Use a closure to define a new method to call addtype with this type
                 def addmethod(name):
+                    _target = weakref.ref(self) #Use a weak ref in the closure
                     def method(*args, **kwargs):
-                        return self._addtype(name, *args, **kwargs)
+                        return _target()._addtype(name, *args, **kwargs)
                     return method
                 method = addmethod(key)
                 #Set docstring
@@ -1876,6 +2073,34 @@ class Viewer(dict):
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
+
+    def _shutdown(self):
+        #Wait for the render thread to exit
+        if self.port and self._thread:
+            #print("---SHUTDOWN-THREAD")
+            self.app._closing = True
+            self._thread.join()
+            self._thread = None
+        #Wait for server thread to exit
+        if self.server:
+            #print("---SHUTDOWN-SERVER")
+            self.server._closing = True
+            self.server.join()
+            self.server = None
+
+    def __del__(self):
+        #print("---DELETING")
+        if not self._managed:
+            self._shutdown()
+
+    def __enter__(self):
+        #Using context manager
+        self._managed = True
+
+    def __exit__(self):
+        #Using context manager
+        if self._managed:
+            self._shutdown()
 
     def _getRendererType(self, name):
         """
@@ -1957,7 +2182,7 @@ class Viewer(dict):
                 args += [key + '=' + json.dumps(kwargs[key])]
 
         if verbose:
-            print(args)
+            print("ARGS:",args)
 
         try:
             self.app.run(args)
@@ -2142,7 +2367,7 @@ class Viewer(dict):
         #self.state["objects"] = [obj.dict for obj in self._objects.list]
         self.app.setState(json.dumps(self.state))
 
-    def commands(self, cmds):
+    def commands(self, cmds, queue=False):
         """
         Execute viewer commands
         https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
@@ -2153,19 +2378,22 @@ class Viewer(dict):
         cmds: list, str
             Command(s) to execute
         """
+        if not len(cmds): return
+        #Split multiple entries
+        if ';' in cmds:
+           cmds = cmds.split(';')
         if isinstance(cmds, list):
             cmds = '\n'.join(cmds)
 
-        #base64 encoded JSON state?
-        if len(cmds) and cmds[0] == '_':
-            cmds = base64.b64decode(cmds[1:])
-            cmds = str(cmds.decode('ascii'))
+        #JSON state?
+        if cmds[0] == '{':
             self.app.setState(cmds)
-            #self.app.setState(cmds.decode('utf-8'))
-        elif self.queue: #Thread safe queue requested
+            #self.app.setState(str(cmds.decode('ascii')))
+        elif queue or self.queue: #Thread safe queue requested
             self.app.queueCommands(cmds)
+            #self.app.qcommands(cmds)
         else:
-            self.app.parseCommands(cmds)
+            self.app.commands(cmds)
 
     def help(self, cmd="", obj=None):
         """
@@ -2583,7 +2811,7 @@ class Viewer(dict):
         """        
         Render a new frame, explicit display update
         """
-        self.app.viewer.display()
+        self.app.display()
 
     def init(self):
         """        
@@ -3076,13 +3304,13 @@ class Viewer(dict):
         self.state["views"][0] = _convert_keys(json.loads(view))
         #self._set() #? sync
 
-    def event(self):
+    def events(self):
         """
         Process input events
         allows running interactive event loop while animating from python
         eg:
 
-        >>> while (lv.event()):
+        >>> while lv.events():
         >>>     #...build next frame here...
         >>>     lv.render()
 
@@ -3091,25 +3319,15 @@ class Viewer(dict):
         boolean:
             False if user quit program, True otherwise
         """
-        self.app.viewer.execute();
-        self.app.viewer.show();
-        return not self.app.viewer.quitProgram;
-
-    def interactive(self):
-        if self._thread:
-            #Triggers an interactive window if available
-            self.animate(1)
-        else:
-            #Opens a modal/blocking interactive viewer
-            self.commands('interactive')
+        return self.app.events()
 
     def serve(self, *args, **kwargs):
         """
         Run a web server in python
         This uses server.py to launch a simple web server
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         port(9000)
         ipv6(False)
         retries(20)
@@ -3124,8 +3342,8 @@ class Viewer(dict):
         """
         if not self.server: self.serve()
         #Running outside IPython notebook? Join here to wait for quit
-        filename = 'http://localhost:' + str(self.server.port) + '/control.html'
-        print(filename)
+        #filename = 'http://localhost:' + str(self.server.port) + '/control.html'
+        filename = 'http://localhost:' + str(self.server.port) + '/interactive.html'
         if not is_notebook():
             import webbrowser
             webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
@@ -3137,8 +3355,15 @@ class Viewer(dict):
             import webbrowser
             webbrowser.open(filename, new=1, autoraise=True) # open in a new window if possible
 
+    def interactive(self):
+        self.app.show() #Need to manually call show now
+        if is_notebook():
+            self.commands("interactive noloop")
+        else:
+            self.commands("interactive")
+
     #TODO: TEST, on mac and with/without threading
-    def interact(self, native=False, resolution=None):
+    def interact(self, resolution=None):
         """
         Opens an external interactive window
         Unless native=True is passed, will open an interactive web window
@@ -3148,37 +3373,47 @@ class Viewer(dict):
 
         Parameters
         ----------
-        native: boolean
-            Set to True to open the native window, disabled by default as
-            on MacOS we can't return from the native event loop and this prevents
-            further python commands being processed
+        resolution: tuple(int,int)
+            Window width and height in pixels, if not provided will use the global default
         """
-        if native or self._thread:
-            return self.interactive()
-        else:
-            try:
-                #Start the server if not running
-                if not self.server:
-                    self.serve()
-                if is_notebook():
-                    if resolution is None: resolution = self.resolution
-                    from IPython.display import display,Javascript
-                    js = 'var win = window.open("http://localhost:{port}/interactive.html", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width={width},height={height}");'.format(port=self.server.port, width=resolution[0], height=resolution[1])
-                    display(Javascript(js))
-                    #Need a small delay to let the injected javascript popup run
-                    import time
-                    time.sleep(0.1)
-                else:
-                    import webbrowser
-                    url = "http://localhost:{port}/interactive.html".format(port=self.server.port)
-                    webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
+        try:
+            #Start the server if not running
+            if not self.server:
+                self.serve()
 
-                #Start event loop, without showing viewer window (blocking)
-                self.commands("interactive noshow")
+            if is_notebook():
+                if resolution is None: resolution = self.resolution
+                from IPython.display import display,Javascript
+                js = 'var win = window.open("http://localhost:{port}/interactive.html", "LavaVu", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=no,width={width},height={height}");'.format(port=self.server.port, width=resolution[0], height=resolution[1])
+                display(Javascript(js))
+                #Need a small delay to let the injected javascript popup run
+                time.sleep(0.1)
+            else:
+                import webbrowser
+                url = "http://localhost:{port}/interactive.html".format(port=self.server.port)
+                #webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
+                #OPEN CONTROL TOO/INSTEAD?
+                #url = "http://localhost:{port}/control.html".format(port=self.server.port)
+                webbrowser.open(url, new=1, autoraise=True) # open in a new window if possible
+                #Handle events until quit - allow interaction without exiting when run from python script
+                while not self.app.viewer.quitProgram:
+                    time.sleep(TIMER_INC)
 
-            except (Exception) as e:
-                print("Interactive launch error: " + str(e))
-                pass
+        except (Exception) as e:
+            print("Interactive launch error: " + str(e))
+            pass
+
+    """
+    Allows use as thread safe functions
+    """
+    def isosurface(self, dstref, srcref, properties, clearvol):
+        return self.app.isoSurface(dstref, srcref, properties, clearvol)
+    #def arrayFloat(self, ref, data, geomdtype):
+    #    return self.app.arrayFloat(ref, data, geomdtype)
+    #def arrayUInt(self, ref, data, geomdtype):
+    #    return self.app.arrayUInt(ref, data, geomdtype)
+    #def arrayUChar(self, ref, data, geomdtype):
+    #    return self.app.arrayUChar(ref, data, geomdtype)
 
 #Wrapper for list of geomdata objects
 class Geometry(list):
@@ -3222,7 +3457,7 @@ class Geometry(list):
             #By default all elements are returned, even if object has multiple types 
             #Filter can be set to a type name to exclude other geometry types
             if filter is None or g.type == self.obj.instance._getRendererType(filter):
-                g = GeomData(g, obj.instance)
+                g = GeomDataWrapper(g, obj.instance)
                 self.append(g)
                 #Add the value data set labels
                 for s in sets:
@@ -3264,7 +3499,7 @@ class Geometry(list):
         return self
 
 class GeomDataListView(object):
-    """A descriptor that provides view/copy/set access to a GeomData list"""
+    """A descriptor that provides view/copy/set access to a GeomDataWrapper list"""
     def __init__(self, obj, timestep, key, copy=False):
         self.obj = obj
         self.timestep = timestep
@@ -3294,17 +3529,17 @@ class GeomDataListView(object):
         # value = val
         if not isinstance(value, list) or len(value) != len(instance):
             raise ValueError("Must provide a list of value arrays for each entry, %d entries" % len(instance))
-        #Set each GeomData entry to corrosponding value list entry
+        #Set each GeomDataWrapper entry to corrosponding value list entry
         v = 0
         for el in instance:
             el.set(self.key, value[v].ravel())
             v += 1
 
 #Wrapper class for GeomData geometry object
-class GeomData(object):
+class GeomDataWrapper(object):
     """  
-    The GeomData class provides an interface to a single object data element
-    GeomData instances are created internally from the Geometry class
+    The GeomDataWrapper class provides an interface to a single object data element
+    GeomDataWrapper instances are created internally from the Geometry class
 
     copy(), get() and set() methods provide access to the data types
 
@@ -3338,15 +3573,20 @@ class GeomData(object):
     >>> obj.data.myvals = [newdata]
 
     """
-    def __init__(self, data, instance):
+    def __init__(self, data, parent):
         self.data = data
-        self.instance = instance
+        self._parent = weakref.ref(parent)
         self.available = {}
         #Get available data types
         for key in datatypes:
             dat = self.get(key)
             if len(dat) > 0:
                 self.available[key] = len(dat)
+
+    @property
+    #def parent(self):
+    def instance(self):
+        return self._parent()
 
     def get(self, typename):
         """
