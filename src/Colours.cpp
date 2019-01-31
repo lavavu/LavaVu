@@ -3,7 +3,7 @@
 
 std::ostream & operator<<(std::ostream &os, const Colour& colour)
 {
-  return os << "rgba(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << (colour.a/255.0) << ")";
+  return os << "rgba(" << (int)colour.r << "," << (int)colour.g << "," << (int)colour.b << "," << _CTOF(colour.a) << ")";
 }
 
 void Colour::invert()
@@ -15,7 +15,9 @@ void Colour::invert()
 json Colour::toJson()
 {
   //Default storage type is simple array [R,G,B,A] [0,1]
-  json array = {r/255.0, g/255.0, b/255.0, a/255.0};
+  json array = {_CTOF(r), _CTOF(g), _CTOF(b), _CTOF(a)};
+  //Default storage type HTML style rgba(R[0,255], G[0,255], B[0,255], A[0,1])
+  //json array = {r, g, b, _CTOF(a)};
   return array;
 }
 
@@ -28,10 +30,10 @@ std::string Colour::toString()
 
 void Colour::toArray(float* array)
 {
-  array[0] = r/255.0;
-  array[1] = g/255.0;
-  array[2] = b/255.0;
-  array[3] = a/255.0;
+  array[0] = _CTOF(r);
+  array[1] = _CTOF(g);
+  array[2] = _CTOF(b);
+  array[3] = _CTOF(a);
 }
 
 Colour::Colour(json& jvalue, GLubyte red, GLubyte grn, GLubyte blu, GLubyte alpha) : r(red), g(grn), b(blu), a(alpha)
@@ -72,9 +74,9 @@ void Colour::fromJSON(json& jvalue)
     if (jvalue.size() > 3) A = jvalue[3];
     if (R <= 1.0 && G <= 1.0 && B <= 1.0)
     {
-      r = R*255.0;
-      g = G*255.0;
-      b = B*255.0;
+      r = _FTOC(R);
+      g = _FTOC(G);
+      b = _FTOC(B);
     }
     else
     {
@@ -84,7 +86,7 @@ void Colour::fromJSON(json& jvalue)
     }
 
     //Parse alpha separately, allows [0-255] RGB + [0,1] A
-    a = A <= 1.0 ? A * 255.0 : A;
+    a = A <= 1.0 ? _FTOC(A) : A;
   }
   else if (jvalue.is_string())
   {

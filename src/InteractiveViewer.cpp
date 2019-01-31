@@ -827,7 +827,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float value = session.global(action);
     if (value == 0.0) value = 1.0;
     if (fval > 1.0)
-      value = fval / 255.0;
+      value = _CTOF(fval);
     else
       value = fval;
     session.globals[action] = value;

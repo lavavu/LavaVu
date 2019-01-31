@@ -120,7 +120,7 @@ ColourMap* DrawingObject::getColourMap(const std::string propname, ColourMap* cu
     //Load the data string
     current->loadPalette(data);
   }
-  else if (prop.is_array())
+  else if (prop.is_array() || prop.is_object())
   {
     if (!current)
     {
@@ -151,7 +151,7 @@ void DrawingObject::setup()
   if (properties.has("opacity"))
     opacity = properties["opacity"];
   //Convert values (1,255] -> [0,1]
-  if (opacity > 1.0) opacity /= 255.0;
+  if (opacity > 1.0) opacity = _CTOF(opacity);
   //Disable opacity if zero or out of range
   if (opacity <= 0.0 || opacity > 1.0) opacity = 1.0; 
 

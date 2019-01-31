@@ -74,4 +74,8 @@ union Colour
 
 #define printColour(c) printf("RGB:A %d,%d,%d:%d\n",c.r,c.g,c.b,c.a)
 
+//Component conversions, char to float and back
+#define _FTOC(c) ((int)round(c*255.f))
+#define _CTOF(c) (round(c/2.55f)/100.f)
+
 #endif //Colours__

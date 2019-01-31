@@ -65,8 +65,19 @@ ColourMap::ColourMap(Session& session, std::string name, std::string props)
 
 void ColourMap::loadPaletteJSON(json& data)
 {
-  //Load from json array
-  if (data.is_array())
+  //Load from json object/array
+  if (data.is_object())
+  {
+    //"background" + "colours"
+    if (data.count("background") > 0)
+    {
+      colours.clear();
+      add(data["background"]);
+      background = colours[0].colour;
+    }
+    loadPaletteJSON(data["colours"]);
+  }
+  else if (data.is_array())
   {
     colours.clear();
     noValues = false;
@@ -91,7 +102,7 @@ void ColourMap::loadPalette(std::string data)
   // d) JSON arrays of [r,g,b(,a)] or [position, [r,g,b(,a)]] values
   colours.clear();
   bool nopos = false;
-  if (data.at(0) == '[')
+  if (data.at(0) == '[' || data.at(0) == '{')
   {
     //Load from json array
     json j = json::parse(data);
@@ -180,14 +191,14 @@ void ColourMap::loadPalette(std::string data)
     }
   }
 
-  //Strip positions
-  if (nopos) noValues = true;
-
   //Ensure at least two colours
   if (colours.size() == 0)
     add(0xff000000);
   if (colours.size() == 1)
     add(colours[0].colour.value);
+
+  //Strip positions
+  if (nopos) noValues = true;
 }
 
 void ColourMap::addAt(Colour& colour, float position)
@@ -236,7 +247,17 @@ void ColourMap::add(unsigned int colour, float pvalue)
 void ColourMap::add(json& entry, float pos)
 {
   //std::cout << pos << " : " << entry << std::endl;
-  if (entry.size() == 1)
+  if (entry.is_object())
+  {
+    float pos = entry["position"];
+    Colour colour;
+    colour.fromJSON(entry["colour"]);
+    if (pos < 0.0)
+      add(colour.value);
+    else
+      addAt(colour, pos);
+  }
+  else if (entry.size() == 1)
   {
     if (entry.is_number())
     {
@@ -262,7 +283,7 @@ void ColourMap::add(json& entry, float pos)
       }
     }
   }
-  if (entry.size() == 2)
+  else if (entry.size() == 2)
   {
     //Position, colour
     float pos = entry[0];
@@ -378,20 +399,21 @@ void ColourMap::calibrate(float min, float max)
     }
   }
 
-  //Calc values now colours have been added
-  calc();
-
-  debug_print("ColourMap %s calibrated min %f, max %f, range %f ==> %d colours\n", name.c_str(), minimum, maximum, range, colours.size());
-
-  //Ensure positions valid
+  //Ensure position data is valid - sorted and ranging [0,1]
   std::sort(colours.begin(), colours.end());
   if (colours[0].position != 0.0)
     colours[0].position = 0.0;
   if (colours.size() > 1 && colours.back().position != 1.0)
     colours.back().position = 1.0;
 
+  //Calc values now colours have been added
+  calc();
+
+  debug_print("ColourMap %s calibrated min %f, max %f, range %f ==> %d colours\n", name.c_str(), minimum, maximum, range, colours.size());
+
   //for (int i=0; i < colours.size(); i++)
-  //   std::cout << " colour " << colours[i].colour << " value " << colours[i].value << " pos " << colours[i].position << std::endl;
+  //  std::cout << " colour " << colours[i].colour << " value " << colours[i].value << " pos " << colours[i].position << std::endl;
+
   calibrated = true;
 }
 
@@ -804,7 +826,10 @@ json ColourMap::toJSON()
   for (unsigned int c=0; c < colours.size(); c++)
   {
     json colour;
-    colour["position"] = colours[c].position;
+    //Hack to clean up unnecessary float precision rubbish in json output of positions
+    std::stringstream ps;
+    ps << colours[c].position;
+    colour["position"] = json::parse(ps.str());
     colour["colour"] = colours[c].colour.toString();
     cj.push_back(colour);
   }
