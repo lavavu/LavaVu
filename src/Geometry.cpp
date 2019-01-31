@@ -795,11 +795,6 @@ void Geometry::redrawObject(DrawingObject* draw, bool reload)
     if (records[i]->draw == draw)
     {
       debug_print("Reloading object: %s\n", draw->name().c_str());
-      //Trigger reload of volume textures (ie: those not loaded from files)
-      if (records[i]->texture->fn.empty())
-      {
-        records[i]->texture->clearTexture();
-      }
       this->reload = reload;
       redraw = true;
       return;

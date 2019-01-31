@@ -252,7 +252,8 @@ void Volumes::update()
     {
       DrawingObject* current = geom[i]->draw;
       bool texcompress = current->properties["compresstextures"];
-      if (geom[i]->texture->empty())
+      //if (geom[i]->texture->empty())
+      if (geom[i]->texture->fn.empty() || geom[i]->texture->empty())
       {
         //Determine type of data then load the texture
         unsigned int bpv = 4;
@@ -275,13 +276,17 @@ void Volumes::update()
         }
         debug_print("volume %d width %d height %d depth %d (bpv %d)\n", i, geom[i]->width, geom[i]->height, geom[i]->depth, bpv);
       }
+
+      ColourMap* cmap = geom[i]->draw->colourMap;
+      if (cmap) cmap->loadTexture();
       continue;
     }
 
     //Collection of 2D slices
     DrawingObject* current = geom[i]->draw;
     bool texcompress = current->properties["compresstextures"];
-    if (geom[i]->texture->empty())
+    //if (geom[i]->texture->empty())
+    if (geom[i]->texture->fn.empty() || geom[i]->texture->empty())
     {
       if (!geom[i]->height)
       {
@@ -533,8 +538,8 @@ void Volumes::render(int i)
       range.update(r[0], r[1]);
       cmap->calibrate(&range);
     }
-    //std::cout << "Range " << range[0] << " : " << range[1] << std::endl;
   }
+  //std::cout << "Range " << range.minimum << " : " << range.maximum << std::endl;
   //Normalise provided isovalue to match data range
   isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
   prog->setUniform2f("uRange", range.data());

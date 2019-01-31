@@ -808,6 +808,7 @@ void View::zoomToFit()
 void View::drawOverlay()
 {
   //2D overlay objects, apply text scaling
+  assert(width && height);
   Viewport2d(width, height);
   glScalef(session.scale2d, session.scale2d, session.scale2d);
   int w = width / session.scale2d;

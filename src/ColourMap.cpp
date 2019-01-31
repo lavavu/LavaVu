@@ -183,10 +183,6 @@ void ColourMap::loadPalette(std::string data)
   //Strip positions
   if (nopos) noValues = true;
 
-  //Load data to texture image
-  if (texture)
-    loadTexture();
-
   //Ensure at least two colours
   if (colours.size() == 0)
     add(0xff000000);
