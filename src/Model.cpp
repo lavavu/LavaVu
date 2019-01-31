@@ -2269,9 +2269,19 @@ int Model::jsonRead(std::string data)
   json cmaps = imported["colourmaps"];
   for (unsigned int i=0; i < cmaps.size(); i++)
   {
-    ColourMap* dest = findColourMap(cmaps[i]["name"]);
-    if (!dest)
-      dest = addColourMap(cmaps[i]["name"]);
+    //Set default name if none provided
+    ColourMap* dest = NULL;
+    if (cmaps[i].count("name") > 0)
+    {
+      dest = findColourMap(cmaps[i]["name"]);
+      if (!dest)
+        dest = addColourMap(cmaps[i]["name"]);
+    }
+    else
+        dest = addColourMap();
+
+    //Replace/set name in case modified
+    cmaps[i]["name"] = dest->name;
 
     //Replace properties with imported
     dest->properties.data = cmaps[i];
