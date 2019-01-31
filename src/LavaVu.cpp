@@ -3494,7 +3494,8 @@ void LavaVu::imageBuffer(unsigned char* array, int height, int width, int depth)
 
 std::vector<unsigned char> LavaVu::imageJPEG(int width, int height, int quality)
 {
-  if (!amodel || !viewer->isopen) return std::vector<unsigned char>();
+  if (!amodel || !viewer->isopen)
+    return std::vector<unsigned char>();
 
   ImageData* image = viewer->pixels(NULL, width, height, 3);
   //Write JPEG to string
@@ -3709,3 +3710,4 @@ void LavaVu::queueCommands(std::string cmds)
   viewer->commands.push_back(cmds);
   viewer->postdisplay = true;
 }
+

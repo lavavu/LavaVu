@@ -51,12 +51,6 @@ int X11_error(Display* Xdisplay, XErrorEvent* error)
 // Create a new X11 window
 X11Viewer::X11Viewer() : OpenGLViewer(), hidden(false), redisplay(true)
 {
-  // Setup display name
-  strcpy(host, "localhost");
-  displayNumber = 0;
-  displayScreen = 0;
-  sprintf(displayName, "%s:%u.%u", host, displayNumber, displayScreen);
-
   XSetErrorHandler(X11_error);
   debug_print("X11 viewer created\n");
   Xdisplay = NULL;
@@ -97,14 +91,8 @@ void X11Viewer::open(int w, int h)
       Xdisplay = XOpenDisplay(displayName);
       if (Xdisplay == NULL)
       {
-        // Third Try
-        debug_print("Failed, trying :0.0\n");
-        Xdisplay = XOpenDisplay(":0.0");
-        if (Xdisplay == NULL)
-        {
-          abort_program("Failed to open X display\n");
-          return;
-        }
+        abort_program("Failed to open X display\n");
+        return;
       }
     }
 
@@ -195,7 +183,7 @@ void X11Viewer::display(bool redraw)
 void X11Viewer::execute()
 {
   //Inside event loop
-  visible = true;
+  //visible = true;
   if (!Xdisplay) open(width, height);
   XEvent event;
   MouseButton button;
@@ -219,7 +207,7 @@ void X11Viewer::execute()
   }
 
   // Event processing
-  if (timer > 0)
+  if (!nodisplay && timer > 0)
   {
     // Wait for X Event or timer
     tv.tv_usec  = timer*1000; //Convert to microseconds
@@ -314,8 +302,8 @@ void X11Viewer::execute()
     }
   }
 
-  //Redisplay if required.®.
-  if (redisplay)
+  //Redisplay if required.
+  if (redisplay && !nodisplay)
   {
     // Redraw Viewer (Call virtual to display)
     display();

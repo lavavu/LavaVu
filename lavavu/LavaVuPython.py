@@ -381,6 +381,10 @@ class OpenGLViewer(object):
     quitProgram = _swig_property(_LavaVuPython.OpenGLViewer_quitProgram_get, _LavaVuPython.OpenGLViewer_quitProgram_set)
     isopen = _swig_property(_LavaVuPython.OpenGLViewer_isopen_get, _LavaVuPython.OpenGLViewer_isopen_set)
     postdisplay = _swig_property(_LavaVuPython.OpenGLViewer_postdisplay_get, _LavaVuPython.OpenGLViewer_postdisplay_set)
+    nodisplay = _swig_property(_LavaVuPython.OpenGLViewer_nodisplay_get, _LavaVuPython.OpenGLViewer_nodisplay_set)
+    visible = _swig_property(_LavaVuPython.OpenGLViewer_visible_get, _LavaVuPython.OpenGLViewer_visible_set)
+    width = _swig_property(_LavaVuPython.OpenGLViewer_width_get, _LavaVuPython.OpenGLViewer_width_set)
+    height = _swig_property(_LavaVuPython.OpenGLViewer_height_get, _LavaVuPython.OpenGLViewer_height_set)
 
     def __init__(self):
         _LavaVuPython.OpenGLViewer_swiginit(self, _LavaVuPython.new_OpenGLViewer())

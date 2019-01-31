@@ -17000,6 +17000,214 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_OpenGLViewer_nodisplay_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_nodisplay_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_nodisplay_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_nodisplay_set" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  if (arg1) (arg1)->nodisplay = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_nodisplay_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_nodisplay_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (bool) ((arg1)->nodisplay);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_visible_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_visible_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_visible_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_bool(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_visible_set" "', argument " "2"" of type '" "bool""'");
+  } 
+  arg2 = static_cast< bool >(val2);
+  if (arg1) (arg1)->visible = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_visible_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  bool result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_visible_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (bool) ((arg1)->visible);
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_width_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_width_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_width_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_width_set" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  if (arg1) (arg1)->width = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_width_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  int result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_width_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (int) ((arg1)->width);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_height_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_height_set",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_height_set" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_height_set" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  if (arg1) (arg1)->height = arg2;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_height_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject *swig_obj[1] ;
+  int result;
+  
+  if (!args) SWIG_fail;
+  swig_obj[0] = args;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_height_get" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  result = (int) ((arg1)->height);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_OpenGLViewer_open__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
@@ -26133,6 +26341,14 @@ static PyMethodDef SwigMethods[] = {
 	 { "OpenGLViewer_isopen_get", _wrap_OpenGLViewer_isopen_get, METH_O, NULL},
 	 { "OpenGLViewer_postdisplay_set", _wrap_OpenGLViewer_postdisplay_set, METH_VARARGS, NULL},
 	 { "OpenGLViewer_postdisplay_get", _wrap_OpenGLViewer_postdisplay_get, METH_O, NULL},
+	 { "OpenGLViewer_nodisplay_set", _wrap_OpenGLViewer_nodisplay_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_nodisplay_get", _wrap_OpenGLViewer_nodisplay_get, METH_O, NULL},
+	 { "OpenGLViewer_visible_set", _wrap_OpenGLViewer_visible_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_visible_get", _wrap_OpenGLViewer_visible_get, METH_O, NULL},
+	 { "OpenGLViewer_width_set", _wrap_OpenGLViewer_width_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_width_get", _wrap_OpenGLViewer_width_get, METH_O, NULL},
+	 { "OpenGLViewer_height_set", _wrap_OpenGLViewer_height_set, METH_VARARGS, NULL},
+	 { "OpenGLViewer_height_get", _wrap_OpenGLViewer_height_get, METH_O, NULL},
 	 { "OpenGLViewer_open", _wrap_OpenGLViewer_open, METH_VARARGS, NULL},
 	 { "OpenGLViewer_init", _wrap_OpenGLViewer_init, METH_O, NULL},
 	 { "OpenGLViewer_display", _wrap_OpenGLViewer_display, METH_VARARGS, NULL},

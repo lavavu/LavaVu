@@ -118,6 +118,8 @@ public:
   bool postdisplay; //Flag to request a frame when animating
   bool quitProgram;
   bool isopen;   //Set when window is first opened
+  bool nodisplay; //Set to disable calling display and timers - when managing render loop externally
+
   std::thread::id render_thread;
 
   int mouseState;

@@ -68,6 +68,9 @@ public:
   bool quitProgram;
   bool isopen;
   bool postdisplay; //Flag to request a frame when animating
+  bool nodisplay; //Flag to manage render loop externally
+  bool visible;
+  int width, height;
 
   virtual void open(int width=0, int height=0);
   virtual void init();

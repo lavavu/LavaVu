@@ -56,6 +56,7 @@ Hold [shift] and use the scroll wheel to move the clip plane in and out.  \n\
 [`]          Full screen ON/OFF\n\
 \n\
 \nHold [ALT] plus:\n\
+[space]      Play/pause animation or stop recording\n\
 [*]          Auto zoom to fit ON/OFF\n\
 [/]          Stereo ON/OFF\n\
 [\\]          Switch coordinate system Right-handed/Left-handed\n\
@@ -314,17 +315,17 @@ bool LavaVu::parseChar(unsigned char key)
       return parseCommands("image");
     case 'j':
       return parseCommands("valuerange");
-    case 'u':
-      return parseCommands("toggle cullface");
-    case 'w':
-      parseCommands("toggle wireframe");
-      return true;
     case 'o':
       return parseCommands("list objects");
     case 'q':
       return parseCommands("quit");
     case 'r':
       return parseCommands("reset");
+    case 'u':
+      return parseCommands("toggle cullface");
+    case 'w':
+      parseCommands("toggle wireframe");
+      return true;
     case 'p':
       return parseCommands("scale points up");
     case 's':
@@ -840,21 +841,29 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Switch to interactive mode, for use in scripts\n\n"
               "**Usage:** interactive [noshow]\n\n"
-              "noshow (literal) : default is to show visible interactive window, set this to activate event loop\n"
-              "without showing window, can use browser interactive mode\n";
+              "options (string) : \"noshow\" default is to show visible interactive window, set this to activate event loop\n"
+              "                   without showing window, can use browser interactive mode\n"
+              "                   \"noloop\" : set this option to show the interactive window only,\n"
+              "                   and handle events outside on returning\n";
       return false;
     }
 
     if (session.omegalib) return false;
     viewer->quitProgram = false;
     bool interactive = true;
-    if (parsed["interactive"] == "noshow")
+    std::string opt = parsed["interactive"];
+    if (opt == "noshow")
       interactive = false;
     viewer->visible = interactive;
-    viewer->loop(interactive);
-    viewer->visible = false;
-    viewer->quitProgram = false;
-
+    if (opt == "noloop")
+        return parseCommands("animate 20");
+    else
+    {
+      //parseCommands("animate 1");
+      viewer->loop(interactive);
+      viewer->visible = false;
+      viewer->quitProgram = false;
+    }
     return false;
   }
   else if (parsed.exists("open"))
@@ -2952,6 +2961,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     aobject = lookupObject(parsed, "select");
+
     if (aobject)
       printMessage("Selected object: %s", aobject->name().c_str());
     else
@@ -3361,7 +3371,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"background", "alpha", "axis", "scaling", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
-    {"next", "play", "stop", "open", "server", "interactive", "display"},
+    {"next", "play", "stop", "open", "interactive", "display"},
     {"shaders", "blend", "props", "defaults", "test", "voltest", "newstep", "filter", "filterout", "filtermin", "filtermax", "clearfilters",
      "verbose", "toggle", "createvolume", "clearvolume", "palette"}
   };

@@ -410,8 +410,8 @@ bool OpenGLViewer::events()
 {
   //Default event processing
   if (postdisplay || pollInput())
-    return true;
-  return false;
+    execute();
+  return !quitProgram;
 }
 
 void OpenGLViewer::loop(bool interactive)
@@ -580,6 +580,9 @@ void OpenGLViewer::outputOFF()
 {
   assert(render_thread == std::this_thread::get_id());
   //Restore normal viewing dims when output mode is finished
+  if (!imagemode)
+    return;
+
   imagemode = false;
   if (visible)
   {
@@ -589,8 +592,11 @@ void OpenGLViewer::outputOFF()
   }
 
   //Restore size
-  width = savewidth;
-  height = saveheight;
+  if (savewidth && saveheight)
+  {
+    width = savewidth;
+    height = saveheight;
+  }
 
   savewidth = saveheight = 0;
 }
