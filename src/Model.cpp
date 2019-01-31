@@ -2183,7 +2183,7 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
   os << std::setw(2) << exported;
 }
 
-void Model::jsonRead(std::string data)
+int Model::jsonRead(std::string data)
 {
   std::lock_guard<std::mutex> guard(session.mutex);
   
@@ -2316,12 +2316,19 @@ void Model::jsonRead(std::string data)
     
     //Merge properties
     dest->properties.merge(inobjects[i]);
+    //reload(dest);
   }
 
-  if ((imported["reload"].is_boolean() && imported["reload"]))
+  //If integer reload code provided, return it, otherwise reload if true, redraw otherwise
+  if (imported["reload"].is_number())
+  {
+    return imported["reload"];
+  }
+  else if ((imported["reload"].is_boolean() && imported["reload"]))
     reload();
   else
     redraw();
+  return 0;
 }
 
 

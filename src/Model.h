@@ -194,7 +194,7 @@ public:
   json objectDataSets(DrawingObject* o);
   std::string jsonWrite(bool objdata=false);
   void jsonWrite(std::ostream& os, DrawingObject* obj=NULL, bool objdata=false);
-  void jsonRead(std::string data);
+  int jsonRead(std::string data);
 };
 
 #endif //Model__

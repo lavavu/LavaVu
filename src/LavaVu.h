@@ -133,6 +133,7 @@ public:
 
   void parseProperties(std::string& properties, DrawingObject* obj=NULL);
   bool parseProperty(std::string data, DrawingObject* obj=NULL);
+  void applyReload(DrawingObject*, int reload);
   void printProperties();
   void printDefaultProperties();
 

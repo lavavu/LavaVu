@@ -683,19 +683,27 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
   }
 
+  applyReload(obj, reload);
+  return true;
+}
+
+void LavaVu::applyReload(DrawingObject* obj, int reload)
+{
   //Reload required for prop set?
   //1 = redraw only
   //2 = full data reload
   //3 = full reload and view reset
   //4 = full reload and view reset with autozoom
   if (amodel && reload > 0)
+  {
     amodel->reloadRedraw(obj, reload > 1);
+    if (reload > 1)
+      loadModelStep(model, amodel->step());
+  }
   if (reload > 2)
     viewset = RESET_YES; //Force bounds check
   if (reload > 3)
     viewset = RESET_ZOOM; //Force check for resize and autozoom
-
-  return true;
 }
 
 void LavaVu::printProperties()
@@ -2625,7 +2633,7 @@ void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
 
 void LavaVu::drawSceneBlended(bool nosort)
 {
-  //Sort requried? (only on first call per frame, by nosort flag)
+  //Sort required? (only on first call per frame, by nosort flag)
   if (!nosort && session.global("sort") && aview && aview->rotated)
   {
     //Immediate sort (when automating and no visible viewer window)
@@ -3001,8 +3009,9 @@ void LavaVu::jsonReadFile(std::string fn)
     printMessage("Loading state: %s", fn.c_str());
     std::stringstream buffer;
     buffer << file.rdbuf();
-    amodel->jsonRead(buffer.str());
+    int r = amodel->jsonRead(buffer.str());
     file.close();
+    applyReload(NULL, r);
   }
   else
     printMessage("Unable to open file: %s", fn.c_str());
@@ -3113,9 +3122,9 @@ DrawingObject* LavaVu::colourBar(DrawingObject* obj)
 void LavaVu::setState(std::string state)
 {
   if (!amodel) return;
-  amodel->jsonRead(state);
-  //Why? This should be explicitly called or we can't set properties without display side effects
-  //display();
+  int r = amodel->jsonRead(state);
+  applyReload(NULL, r);
+  viewer->postdisplay = true;
 }
 
 std::string LavaVu::getState()
