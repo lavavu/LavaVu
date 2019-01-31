@@ -58,7 +58,7 @@ class X11Viewer  : public OpenGLViewer
   XWMHints*      wmHints;
   XSizeHints*    sHints;
   Atom           wmDeleteWindow;
-  char           displayName[256] = ":0.0";
+  char           displayName[256] = {':', '0', '.', '0'};
 
   bool hidden;
   bool redisplay;
