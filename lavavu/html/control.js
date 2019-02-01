@@ -14,7 +14,11 @@ function WindowInteractor(id, port) {
   //Store self in list and save id
   this.id = id;
   var loc = window.location;
-  this.baseurl = loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "");
+  //Detect google colab - always use localhost
+  if (google && google.colab)
+    this.baseurl = loc.protocol + "//localhost:" + port;
+  else
+    this.baseurl = loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "");
   if (port) {
     this.proxyurl = this.baseurl + "/proxy/" + port;
     this.baseurl = loc.protocol + "//" + loc.hostname + ":" + port;
