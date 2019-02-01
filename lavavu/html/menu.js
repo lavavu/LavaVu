@@ -268,15 +268,10 @@ function createMenu(viewer, onchange, webglmode) {
     menu_addctrls(of, viewer.vis.objects[id], viewer, onchange);
   }
 
-    /*for (var type in viewer.vis.objects[id]) {
-      if (type in types)
-        console.log(type);
-    }*/
-
   viewer.gui = gui;
 
-    viewer.cgui = viewer.gui.addFolder('ColourMaps');
-    viewer.cgui.folders = [];
+  viewer.cgui = viewer.gui.addFolder('ColourMaps');
+  viewer.cgui.folders = [];
 
   createColourMapMenu(viewer, onchange);
 
@@ -299,10 +294,8 @@ function updateMenu(viewer, onchange) {
   function updateDisplay(gui) {
     for (var i in gui.__controllers)
       gui.__controllers[i].updateDisplay();
-    for (var f in gui.__folders) {
-      console.log("FOLDER: " + f);
+    for (var f in gui.__folders)
       updateDisplay(gui.__folders[f]);
-    }
   }
   updateDisplay(viewer.gui);
 
@@ -347,18 +340,12 @@ function start_VR(viewer) {
 
       //Show stats
       if (!document.getElementById("stats_info")) {
-        var script=document.createElement('script');
-        script.id = "stats_info";
-        script.onload = function() {
-          var stats=new Stats();
-          document.body.appendChild(stats.dom);
-          requestAnimationFrame(function loop() {
-            stats.update();
-            requestAnimationFrame(loop)
-          });
-        };
-        script.src='//rawgit.com/mrdoob/stats.js/master/build/stats.min.js';
-        document.head.appendChild(script);
+        var stats = new Stats();
+        document.body.appendChild(stats.dom);
+        requestAnimationFrame(function loop() {
+          stats.update();
+          requestAnimationFrame(loop)
+        });
       }
 
     } else {

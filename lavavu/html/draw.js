@@ -148,7 +148,7 @@ function initPage(elid, src) {
 
   //VR setup
   if (navigator.getVRDisplays)
-    setup_VR();
+    setup_VR(viewer);
 }
 
 function loadData(data) {

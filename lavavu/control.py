@@ -120,7 +120,7 @@ def getproperty(target, propname):
 
 _file_cache = dict()
 
-def _webglcode(shaders, css, scripts, menu=True, lighttheme=True):
+def _webglcode(shaders, css, scripts, menu=True, lighttheme=True, stats=False):
     """
     Returns base WebGL code, by default using full WebGL renderer (draw.js)
     Pass 'drawbox.js' for box interactor only
@@ -136,6 +136,9 @@ def _webglcode(shaders, css, scripts, menu=True, lighttheme=True):
         </script>
         """
         code += getjslibs(['dat.gui.min.js'])
+        #Stats module also must be included within hacked section
+        if stats:
+            code += getjslibs(['stats.min.js'])
         code += """
         <script>
         window.define = _backup_define;
@@ -157,7 +160,7 @@ def _webglviewcode(shaderpath, menu=True, lighttheme=True):
     """
     Returns WebGL base code for an interactive visualisation window
     """
-    return _webglcode(getshaders(shaderpath), ['styles.css'], ['gl-matrix-min.js', 'OK-min.js', 'draw.js'], menu=menu, lighttheme=lighttheme)
+    return _webglcode(getshaders(shaderpath), ['styles.css'], ['gl-matrix-min.js', 'OK-min.js', 'draw.js'], menu=menu, lighttheme=lighttheme, stats=True)
 
 def _webglboxcode(menu=True, lighttheme=True):
     """
