@@ -23,7 +23,7 @@ function WindowInteractor(id, port) {
     var xhttp = new XMLHttpRequest();
     xhttp.onload = function() {
       //Success? Use the proxy url
-      if (xhttp.status != 200)
+      if (xhttp.status == 200)
         that.baseurl = that.proxyurl;
       console.log("--- Proxy request attempted, status: " + xhttp.status);
       console.log("--- Connected to LavaVu via " + that.baseurl);
