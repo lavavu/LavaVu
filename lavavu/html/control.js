@@ -3,9 +3,9 @@
 var _wi = window._wi ? window._wi : [];
 var debug_mode = false;
 
-function WindowInteractor(id, port) {
+function WindowInteractor(id, uid, port) {
   //Interactor class, handles javascript side of window control
-  //Takes viewer id, command server port optional
+  //Takes viewer id, viewer python id, command server port optional
   //(otherwise assumes command server same as page server)
   // - set as active target for commands
   // - init webgl bounding box
@@ -13,30 +13,58 @@ function WindowInteractor(id, port) {
 
   //Store self in list and save id
   this.id = id;
+  this.uid = uid;
   var loc = window.location;
-  //Detect google colab - always use localhost
-  if (google && google.colab)
-    this.baseurl = loc.protocol + "//localhost:" + port;
-  else
-    this.baseurl = loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "");
-  if (port) {
-    this.proxyurl = this.baseurl + "/proxy/" + port;
-    this.baseurl = loc.protocol + "//" + loc.hostname + ":" + port;
-    //Check for jupyter-server-proxy support
-    var that = this;
+
+  //Connection attempts via this function, pass url
+  var that = this;
+  var connect = function(url) {
     var xhttp = new XMLHttpRequest();
     xhttp.onload = function() {
-      //Success? Use the proxy url
-      if (xhttp.status == 200)
-        that.baseurl = that.proxyurl;
-      console.log("--- Proxy request attempted, status: " + xhttp.status);
-      console.log("--- Connected to LavaVu via " + that.baseurl);
-
-      //Ready to initialise
-      that.init();
-    } 
-    xhttp.open('GET', this.proxyurl + "/connect?" + new Date().getTime(), true);
+      //Success? Use current url
+      if (xhttp.status == 200) {
+        if (!that.baseurl) {
+          if (that.uid && that.uid != parseInt(xhttp.response)) {
+            console.log("--- Connection OK, but UID does not match! " + url + " : " + that.uid + " != " + xhttp.response);
+          } else {
+            console.log("--- Connected to LavaVu via " + url + " UID: " + that.uid);
+            that.baseurl = url;
+            //Ready to initialise
+            that.init();
+          }
+        } else {
+          console.log("--- Connection OK, but already connected: " + url)
+        }
+      } else {
+        console.log("--- Connection failed on : " + url);
+      }
+    }
+    xhttp.open('GET', url + "/connect?" + new Date().getTime(), true);
     xhttp.send();
+  }
+
+  //Possible connection modes:
+  // 1) No port provided, assume running on same port/address as current page
+  // 2) Port provided, running on this port, accssible via hostname:port
+  // 3) Port provided, running on this port, accssible via hostname/proxy/port (jupyter-server-proxy)
+  // 4) Port provided, running on this port, accessible via localhost:port (google colab auto-translated proxy)
+
+  //Call connect function for each url
+  //First to succeed will be used
+  console.log("Attempting to connect to LavaVu server");
+  if (!port) {
+    //Just use the same address for requests
+    connect(loc);
+  } else {
+    //Several possible modes to try
+    connect(loc.protocol + "//" + loc.hostname + ":" + port);
+    connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/proxy/" + port);
+    if (loc.hostname != "localhost") {
+      connect("https://localhost:" + port);
+      //connect("http://localhost:" + port);
+      connect("http://127.0.0.1:" + port);
+      //connect("https://127.0.0.1:" + port);
+    }
   }
 }
 
@@ -49,7 +77,8 @@ WindowInteractor.prototype.init = function() {
   if (!this.img) return;
 
   //Load frame image and run command in single action
-  this.instant = true;
+  this.instant = true; //false; //true;
+  this.post = false; //Set this to use POST instead of GET
 
   //Initial image
   //(Init WebGL bounding box interaction on load)
@@ -73,33 +102,57 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
     return;
   }
 
-  //HTTP interface
-  //Replace newlines with semi-colon first
-  cmd = cmd.replace(/\n/g,';');
-  var url = "";
-  if (this.instant && this.img) {
-    //Base64 encode to avoid issues with jupyterlab and command urls
-    cmd = '_' + window.btoa(cmd);
-    url = this.baseurl + "/icommand=" + cmd + "?" + new Date().getTime();
-    //this.img.onload = null; //This breaks interact while timestepper animating
-    if (callback)
-      this.img.onload = callback;
-    this.img.src = url;
-  } else {
-    url = this.baseurl + "/command=" + cmd + "?" + new Date().getTime()
-    var xhttp = new XMLHttpRequest();
-    xhttp.open('GET', url, true);
-    xhttp.send();
-    this.get_image(callback);
+  this.img.onload = function() {
+    //Reload state (this seems to get called twice sometimes, with empty response on 2nd)
+    //(skip if interacting)
+    if (!that.box.canvas.mouse.isdown && !that.box.zoomTimer)
+      that.get_state();
   }
-  //console.log("URL: " + url);
 
-  //Reload state (this seems to get called twice sometimes, with empty response on 2nd)
-  //(skip if interacting)
-  if (!this.box.canvas.mouse.isdown && !this.box.zoomTimer)
-    this.get_state();
+  var that = this;
+  var final_callback = function(response) {
+    if (callback)
+      callback(response);
 
-  return false;
+    //Skip state reload while interacting
+    if (!that.box.canvas.mouse.isdown && !that.box.zoomTimer)
+      that.get_state();
+  }
+
+  //Replace newlines with semi-colon first
+  if (cmd.charAt(0) != '{')
+    cmd = cmd.replace(/\n/g,';');
+
+  //Use IMG.SRC to issue the command and retrieve new image in single action
+  if (this.instant && this.img) {
+    cmd = '_' + window.btoa(cmd); //Base64 encode to avoid issues with jupyterlab and command urls
+    var url = this.baseurl + "/icommand=" + cmd + "?" + new Date().getTime();
+    //this.img.onload = null; //This breaks interact while timestepper animating
+    this.img.onload = final_callback;
+    this.img.src = url;
+  //Use HTTP POST or GET to issue command and IMG.SRC to get image
+  } else {
+    var xhttp = new XMLHttpRequest();
+    var url = this.baseurl;
+    var params = undefined;
+    if (this.post) {
+      xhttp.open('POST', url, true);
+      params = cmd;
+      //console.log("POST: " + params);
+    } else {
+      cmd = '_' + window.btoa(cmd); //Base64 encode to avoid issues with jupyterlab and command urls
+      url = this.baseurl + "/icommand=" + cmd + "?" + new Date().getTime()
+      xhttp.open('GET', url, true);
+    }
+    xhttp.onload = function() {
+      if (xhttp.status == 200) {
+        that.get_image();
+        final_callback(xhttp.response);
+      } else
+        console.log("Ajax Error: " + url + ", returned status code " + xhttp.status + " " + xhttp.statusText);
+    }
+    xhttp.send(params);
+  }
 }
 
 WindowInteractor.prototype.set_prop = function(obj, prop, val) {

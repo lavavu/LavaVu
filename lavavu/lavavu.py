@@ -1924,8 +1924,7 @@ class Viewer(dict):
             #can enable by providing default port number
             else:
                 port = 0
-        self.port = port
-        if self.port > 0:
+        if port > 0:
             #Exit handler to clean up threads
             #(__del__ does not always seem to get called on termination)
             def exitfn(vref):
@@ -1945,7 +1944,7 @@ class Viewer(dict):
                 All OpenGL calls must be made from here
                 """
                 #Create the viewer
-                viewer()._create(binpath, havecontext, omegalib, *args, **kwargs)
+                viewer()._create(True, binpath, havecontext, omegalib, *args, **kwargs)
 
                 #Sync with main thread here to ensure render thread has initialised before it continues
                 with viewer()._cv:
@@ -1969,17 +1968,16 @@ class Viewer(dict):
 
             #Start the web server
             import server
-            self.server = server.serve(self, self.port, ipv6=False, retries=20)
-            self.port = self.server.port #Get the actual port
+            self.server = server.serve(self, port, ipv6=True) #ipv6 flag pass through?
         else:
-            self._create(binpath, havecontext, omegalib, *args, **kwargs)
+            self._create(False, binpath, havecontext, omegalib, *args, **kwargs)
 
-    def _create(self, binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
+    def _create(self, threaded, binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
         """
         Create and init the C++ viewer object
         """
         try:
-            self.app = LavaVuThreadSafe(self.port > 0, binpath, havecontext, omegalib)
+            self.app = LavaVuThreadSafe(threaded, binpath, havecontext, omegalib)
 
             #Get property dict
             self.properties = _convert_keys(json.loads(self.app.propertyList()))
@@ -2240,6 +2238,22 @@ class Viewer(dict):
         properties = self.state["properties"]
         properties.update(self.state["views"][0])
         return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.items()]))
+
+    @property
+    def port(self):
+        """
+        HTTP server interface port
+
+        Returns
+        -------
+        port: int
+            Port the HTTP server is running on
+            Will return 0 if server is not running
+        """
+        if self.server:
+            return self.server.port
+        else:
+            return 0
 
     @property
     def objects(self):

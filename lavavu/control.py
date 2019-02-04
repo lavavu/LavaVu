@@ -4,6 +4,7 @@ LavaVu python interface: interactive HTML UI controls library
 import os
 import sys
 import time
+import datetime
 import json
 from vutils import is_ipython, is_notebook
 import weakref
@@ -90,8 +91,6 @@ dictionary = '{}'
 
 #Static HTML location
 htmlpath = ""
-initialised = False
-initcell = ""
 
 def isviewer(target):
     """Return true if target is a viewer"""
@@ -214,49 +213,6 @@ def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
         src += '</script>\n\n'
     return src
 
-def initialise(initcode):
-    global initialised, initcell
-    initialised = False
-    if is_notebook():
-        from IPython.display import display,HTML,Javascript
-        """ Re-import check
-        First check if re-executing the cell init code was inserted from, if so must re-init
-        Then sneakily scans the IPython history for "import lavavu" in cell AFTER the one where
-        the control interface was last initialised, if it is found, assume we need to initialise again!
-        A false positive will add the init code again, which is harmless but bloats the notebook.
-        A false negative will cause the interactive viewer widget to not display the webgl bounding box,
-        as was the previous behaviour after a re-run without restart.
-        """
-        ip = get_ipython()
-        #Returns a list of executed cells and their content
-        history = list(ip.history_manager.get_range())
-        #If init was done in cell with exact same code this check is false positive
-        #(eg: lv.window())
-        if initialised and history[-1][2] != initcell:
-            count = 0
-            found = False
-            #Loop through all the cells in history list
-            for cell in history:
-                #Skip cells, until we pass the previous init cell
-                count += 1
-                if count <= initialised: continue;
-                #Each cell is tuple, 3rd element contains line
-                if "import lavavu" in cell[2] or "import glucifer" in cell[2]:
-                    #LavaVu has been re-imported, re-init
-                    found = True
-                    break
-
-            if not found:
-                #Viewer was initialised in an earlier cell
-                return
-
-        #Save cell # and content from history we insert initialisation code at
-        initialised = len(history)
-        initcell = history[-1][2]
-
-        #Insert stylesheet, shaders and combined javascript libraries
-        display(HTML(initcode))
-
 class Action(object):
     """Base class for an action triggered by a control
 
@@ -281,13 +237,13 @@ class Action(object):
         return self.command + ' " + value + "'
 
     @staticmethod
-    def export_actions(port=0, proxy=False):
+    def export_actions(uid=0, port=0, proxy=False):
         #Process actions
         actionjs = '<script type="text/Javascript">\n'
         if port > 0:
-            actionjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {port});\n'.format(port=port)
+            actionjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {uid}, {port});\n'.format(uid=uid, port=port)
         else:
-            actionjs += 'function init(viewerid) {_wi[viewerid] = new WindowInteractor(viewerid);\n'
+            actionjs += 'function init(viewerid) {_wi[viewerid] = new WindowInteractor(viewerid, {uid});\n'.format(uid=uid)
 
         actionjs += '_wi[viewerid].actions = [\n'
 
@@ -309,6 +265,7 @@ class Action(object):
         #Process actions
         actionjs = Action.export_actions()
 
+        full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
         full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
         full_html += _webglboxcode()
         full_html += actionjs
@@ -1337,31 +1294,30 @@ class ControlFactory(object):
 
         #Display HTML inline or export
         if is_notebook():
-            #Interaction requires some additional js/css/webgl
-            initialise(_webglboxcode())
-            if self._target().server:
-                """
-                HTTP server mode interaction, rendering in separate render thread:
-                 - This should work in all notebook contexts, colab, jupyterlab etc
-                 - Only problem remaining is port access, from docker or cloud instances etc, need to forward port
-                 - Could use lightweight callbacks IPython/Colab style to pass requests on to local server
-                """
-                #Pass port from server
-                actionjs = Action.export_actions(self._target().server.port)
-                html = actionjs + html
-                js = 'init({0});'.format(viewerid)
-            else:
-                """
-                Jupyter notebook kernel mode interaction, renders in main (IPython) thread
-                 - Will not work in JupyterLab or Google Colab
-                """
-                #Create WindowInteractor instance
-                js = '_wi[{0}] = new WindowInteractor({0});'.format(viewerid)
+            obj = self._target()
+            if not obj.server:
+                raise(Exception("LavaVu HTTP Server must be active for interactive controls, set port= parameter to > 0"))
 
-            #Output the controls and start interactor
+            """
+            HTTP server mode interaction, rendering in separate render thread:
+             - This should work in all notebook contexts, colab, jupyterlab etc
+             - Only problem remaining is port access, from docker or cloud instances etc, need to forward port
+             - jupyter-server-proxy packaged (available on pip) supports forwarding port via the jupyter server
+            """
             from IPython.display import display,HTML
-            html += "<script>" + js + "</script>"
-            display(HTML(html))
+            #Interaction requires some additional js/css/webgl
+            #Insert stylesheet, shaders and combined javascript libraries
+            display(HTML(_webglboxcode()))
+
+            #Try and prevent this getting cached
+            timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+            html += "<!-- CREATION TIMESTAMP {0} -->".format(timestamp)
+
+            #Pass port and object id from server
+            actionjs = Action.export_actions(id(obj), obj.server.port)
+            #Output the controls and start interactor
+            html += "<script>init({0});</script>".format(viewerid)
+            display(HTML(actionjs + html))
         else:
             #Export html file
             Action.export(self.output)

@@ -11,20 +11,20 @@ import base64
 try:
     # Python 2.x
     from SocketServer import ThreadingMixIn
-    from SimpleHTTPServer import SimpleHTTPRequestHandler
+    from BaseHTTPServer import BaseHTTPRequestHandler
     #from BaseHTTPServer import HTTPServer
     from SocketServer import TCPServer as HTTPServer
     from urllib import unquote
 except ImportError:
     # Python 3.x
     from socketserver import ThreadingMixIn
-    from http.server import SimpleHTTPRequestHandler, HTTPServer
+    from http.server import BaseHTTPRequestHandler, HTTPServer
     from urllib.parse import unquote
 
 """
 HTTP Server interface
 """
-class LVRequestHandler(SimpleHTTPRequestHandler, object):
+class LVRequestHandler(BaseHTTPRequestHandler, object):
 
     def __init__(self, viewer_weakref, *args, **kwargs):
         #Used with partial() to provide the viewer object
@@ -46,7 +46,8 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('x-colab-notebook-cache-control', 'no-cache') #Colab: disable offline access cache      
             self.end_headers()
-            self.wfile.write(data)
+            if data:
+                self.wfile.write(data)
         except (IOError) as e:
             if e.errno == errno.EPIPE:
                 # EPIPE error, ignore
@@ -54,11 +55,20 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             else:
                 raise e
 
+    def do_HEAD(self):
+        self.serveResponse(None, 'text/html')
+
+    def do_POST(self):
+        #Always interpret post data as commands
+        #(can perform other actions too based on self.path later if we want)
+        data_string = self.rfile.read(int(self.headers['Content-Length']))
+        self.serveResponse(b'', 'text/plain')
+        cmds = str(data_string, 'utf-8')
+        #Run viewer commands
+        self._execute(cmds)
+
     def do_GET(self):
-        lv = self._lv()
-        if not lv:
-            self._closing = True
-            raise(Exception("Viewer not found"))
+        lv = self._get_viewer()
 
         if self.path.find('image') > 0:
             self.serveResponse(lv.jpeg(), 'image/jpeg')
@@ -69,41 +79,8 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             if pos2 < 0: pos2 = len(self.path)
             cmds = unquote(self.path[pos1+1:pos2])
 
-            if len(cmds) and cmds[0] == '_':
-                #base64 encoded commands or JSON state
-                cmds = base64.b64decode(cmds).decode('ascii')
-
-            #Object to select can be provided in preceding angle brackets
-            selobj = None
-            if cmds[0] == '<':
-                pos = cmds.find('>')
-                selobj = lv.objects[cmds[1:pos]]
-                cmds = cmds[pos+1:]
-
-            #Execute commands via python API by preceding with '.'
-            done = False
-            if cmds[0] == '.':
-                attr = cmds.split()[0][1:]
-                pos = cmds.find(' ')
-                params = cmds[pos+1:]
-                if selobj:
-                    #Call on Object
-                    func = getattr(selobj, attr)
-                    if func and callable(func):
-                        func(params)
-                        done = True
-                else:
-                    #Call on Viewer
-                    func = getattr(lv, attr)
-                    if func and callable(func):
-                        func(params)
-                        done = True
-
-            #Default, call via lv.commands() scripting API
-            if not done:
-                if selobj:
-                    selobj.select()
-                lv.commands(cmds)
+            #Run viewer commands
+            self._execute(cmds)
 
             #Serve image or just respond 200
             if self.path.find('icommand=') > 0:
@@ -116,7 +93,8 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             self.serveResponse(bytearray(state, 'utf-8'), 'text/plain; charset=utf-8')
             #self.serveResponse(bytearray(state, 'utf-8'), 'text/plain')
         elif self.path.find('connect') > 0:
-            self.serveResponse(b'1', 'text/plain')
+            uid = id(lv)
+            self.serveResponse(bytearray(str(uid), 'utf-8'), 'text/plain; charset=utf-8')
         elif self.path.find('key=') > 0:
             pos2 = self.path.find('&')
             cmds = unquote(self.path[1:pos2])
@@ -128,14 +106,11 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             lv.commands('mouse ' + cmds, True)
             self.serveResponse(b'', 'text/plain')
         else:
-            return SimpleHTTPRequestHandler.do_GET(self)
+            return BaseHTTPRequestHandler.do_GET(self)
 
     #Serve files from lavavu html dir
     def translate_path(self, path):
-        lv = self._lv()
-        if not lv:
-            self._closing = True
-            raise(Exception("Viewer not found"))
+        lv = self._get_viewer()
         if not os.path.exists(path):
             #print(' - not found in cwd')
             if path[0] == '/': path = path[1:]
@@ -145,13 +120,61 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
                 return path
             else:
                 #print(' - not found in htmlpath')
-                return SimpleHTTPRequestHandler.translate_path(self, self.path)
+                return BaseHTTPRequestHandler.translate_path(self, self.path)
         else:
-            return SimpleHTTPRequestHandler.translate_path(self, path)
+            return BaseHTTPRequestHandler.translate_path(self, path)
 
     #Stifle log output
     def log_message(self, format, *args):
         return
+
+    def _get_viewer(self):
+        #Get from weak reference, if deleted raise exception
+        lv = self._lv()
+        if not lv:
+            self._closing = True
+            raise(Exception("Viewer not found"))
+        return lv
+
+    def _execute(self, cmds):
+        lv = self._get_viewer()
+
+        if len(cmds) and cmds[0] == '_':
+            #base64 encoded commands or JSON state
+            #cmds = base64.b64decode(cmds).decode('ascii')
+            cmds = str(base64.b64decode(cmds), 'utf-8')
+
+        #Object to select can be provided in preceding angle brackets
+        selobj = None
+        if cmds[0] == '<':
+            pos = cmds.find('>')
+            selobj = lv.objects[cmds[1:pos]]
+            cmds = cmds[pos+1:]
+
+        #Execute commands via python API by preceding with '.'
+        done = False
+        if cmds[0] == '.':
+            attr = cmds.split()[0][1:]
+            pos = cmds.find(' ')
+            params = cmds[pos+1:]
+            if selobj:
+                #Call on Object
+                func = getattr(selobj, attr)
+                if func and callable(func):
+                    func(params)
+                    done = True
+            else:
+                #Call on Viewer
+                func = getattr(lv, attr)
+                if func and callable(func):
+                    func(params)
+                    done = True
+
+        #Default, call via lv.commands() scripting API
+        if not done:
+            if selobj:
+                selobj.select()
+            lv.commands(cmds)
 
 #Optional thread per request version:
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
