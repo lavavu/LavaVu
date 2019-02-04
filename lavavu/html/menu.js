@@ -1,15 +1,19 @@
 /* dat.gui menu */
 
 function parseColour(input) {
-  //var div = document.createElement('div');
-  var div = document.getElementById('hidden_style_div');
-  div.style.color = input;
-  c = getComputedStyle(div).color;
-  o = getComputedStyle(div).opacity;
-  C = new Colour(c);
-  //c.alpha = o;
-  //toFixed() / 1 rounds to fixed position and removes trailing zeros
-  c.alpha = parseFloat(o).toFixed(2) / 1;
+  if (typeof(input) != 'object') {
+    //var div = document.createElement('div');
+    var div = document.getElementById('hidden_style_div');
+    div.style.color = input;
+    c = getComputedStyle(div).color;
+    o = getComputedStyle(div).opacity;
+    C = new Colour(c);
+    //c.alpha = o;
+    //toFixed() / 1 rounds to fixed position and removes trailing zeros
+    c.alpha = parseFloat(o).toFixed(2) / 1;
+  } else {
+    C = new Colour(input);
+  }
   return C.html();
 }
 
@@ -232,7 +236,11 @@ function createMenu(viewer, onchange, webglmode) {
     viewer.inVR = false;
     gui.add({"VR Mode" : function() {start_VR(viewer);}}, 'VR Mode');
   }
-  gui.add({"Export" : function() {window.open('data:application/json;base64,' + window.btoa(viewer.toString()));}}, 'Export');
+
+  if (!!window.chrome) //Stupid chrome disabled data URL open
+    gui.add({"Export" : function() {var w = window.open(); w.document.write('<pre>' + viewer.toString()  + '</pre>');}}, 'Export');
+  else
+    gui.add({"Export" : function() {window.open('data:application/json;base64,' + window.btoa(viewer.toString()));}}, 'Export');
   //gui.add({"loadFile" : function() {document.getElementById('fileupload').click();}}, 'loadFile'). name('Load Image file');
   //gui.add({"ColourMaps" : function() {window.colourmaps.toggle();}}, 'ColourMaps');
 

@@ -556,6 +556,7 @@ BoxViewer.prototype.loadFile = function(source) {
           //Loop through objects, find those whose name matches element target
           for (var o in this.vis.objects) {
             var val = this.vis.objects[o][property];
+            if (val === undefined) continue;
             if (this.vis.objects[o].name == target) {
               //console.log("SET " + id + " : ['" + property + "'] VALUE TO " + val);
               //console.log("TAG: " + children[i].tagName);
@@ -601,6 +602,7 @@ BoxViewer.prototype.loadFile = function(source) {
                 //el.gradient.reset(); //For some reason this screws up colour editing
                 el.gradient.update(true); //Update without triggering callback that triggers a state reload
               } else {
+                //console.log(id + " : " + target + " : " + property + " = " + val);
                 children[i].value = val;
               }
             }
