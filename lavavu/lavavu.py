@@ -1728,6 +1728,10 @@ class LavaVuThreadSafe(LavaVuPython.LavaVu):
         #Note: no longer calls show() if not visible, need to do manually
         return not self.viewer.quitProgram
 
+    def execute(self, *args, **kwargs):
+        #self._openglviewer_call('execute', False, *args, **kwargs)
+        return self._openglviewer_call('execute', True, *args, **kwargs)
+
     ####################################
 
     #Call LavaVu method from render thread
@@ -1773,10 +1777,8 @@ class LavaVuThreadSafe(LavaVuPython.LavaVu):
         #Render event handling loop!
         while not self._closing:
             #Process interactive and timer events
-            self.viewer.events()
-            #if self.viewer.events():
-            #    self.viewer.execute()
-            #    #self.render()
+            if self.viewer.events():
+                self.viewer.execute()
 
             #Process commands that must be run on the render thread
             if len(self._q):
@@ -3319,7 +3321,10 @@ class Viewer(dict):
         boolean:
             False if user quit program, True otherwise
         """
-        return self.app.events()
+        if self.app.events():
+            self.app.execute()
+            #self.viewer.render()
+        return not self.app.viewer.quitProgram
 
     def serve(self, *args, **kwargs):
         """

@@ -111,7 +111,17 @@ void EGLViewer::execute()
   show();
 
   // Enter dummy event loop processing
-  OpenGLViewer::execute();
+  //OpenGLViewer::execute();
+}
+
+void EGLViewer::show()
+{
+  //Null function, no visible window
+}
+
+void EGLViewer::hide()
+{
+  //Null function, no visible window
 }
 
 #endif   //HAVE_EGL

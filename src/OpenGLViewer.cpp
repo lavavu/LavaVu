@@ -408,10 +408,8 @@ void OpenGLViewer::execute()
 
 bool OpenGLViewer::events()
 {
-  //Default event processing
-  if (postdisplay || pollInput())
-    execute();
-  return !quitProgram;
+  //Return true if events require processing
+  return postdisplay || pollInput();
 }
 
 void OpenGLViewer::loop(bool interactive)
