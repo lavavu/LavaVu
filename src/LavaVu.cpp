@@ -695,14 +695,10 @@ void LavaVu::applyReload(DrawingObject* obj, int reload)
   //3 = full reload and view reset
   //4 = full reload and view reset with autozoom
   if (amodel && reload > 0)
-  {
     amodel->reloadRedraw(obj, reload > 1);
-    if (reload > 1)
-      loadModelStep(model, amodel->step());
-  }
-  if (reload > 2)
+  if (reload == 3)
     viewset = RESET_YES; //Force bounds check
-  if (reload > 3)
+  if (reload == 4)
     viewset = RESET_ZOOM; //Force check for resize and autozoom
 }
 

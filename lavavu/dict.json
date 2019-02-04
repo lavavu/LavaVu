@@ -306,7 +306,7 @@
     "type": "colour",
     "desc": "Object colour RGB(A)",
     "strict": true,
-    "redraw": 2,
+    "redraw": 3,
     "control": [
       true
     ]
