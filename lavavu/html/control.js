@@ -39,8 +39,13 @@ function WindowInteractor(id, uid, port) {
         console.log("--- Connection failed on : " + url);
       }
     }
-    xhttp.open('GET', url + "/connect?" + new Date().getTime(), true);
-    xhttp.send();
+    //Catch errors, we expect some as not all urls will work
+    try {
+      xhttp.open('GET', url + "/connect?" + new Date().getTime(), true);
+      xhttp.send();
+    } catch (err) {
+      console.log(err.message);
+    }
   }
 
   //Possible connection modes:
@@ -53,12 +58,16 @@ function WindowInteractor(id, uid, port) {
   //First to succeed will be used
   console.log("Attempting to connect to LavaVu server");
   if (!port) {
+    //No port provided? We are the server,
     //Just use the same address for requests
     connect(loc);
   } else {
     //Several possible modes to try
-    connect(loc.protocol + "//" + loc.hostname + ":" + port);
-    connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/proxy/" + port);
+    if (loc.protocol != 'file:') {
+      //(Don't bother for file:// urls)
+      connect(loc.protocol + "//" + loc.hostname + ":" + port);
+      connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/proxy/" + port);
+    }
     if (loc.hostname != "localhost") {
       connect("https://localhost:" + port);
       //connect("http://localhost:" + port);
