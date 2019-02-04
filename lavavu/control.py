@@ -694,8 +694,8 @@ class Range(Control):
         if  property is not None and property in _lv.properties:
             prop = _lv.properties[property]
             #Check for integer type, set default step to 1
-            typ = prop["type"]
-            if "integer" in typ:
+            T = prop["type"]
+            if "integer" in T:
                 defrange[2] = 1
             ctrl = prop["control"]
             if len(ctrl) > 1 and len(ctrl[1]) == 3:
@@ -1233,6 +1233,35 @@ class ControlFactory(object):
             else:
                 method.__doc__ = constr.__doc__
             self.__setattr__(key, method)
+
+    def __call__(self, property):
+        """
+        Calling with a property name creates the default control for that property
+        """
+        _lv = getviewer(self._target())
+        if  property is not None and property in _lv.properties:
+            #Get control info from prop dict
+            prop = _lv.properties[property]
+            T = prop["type"]
+            ctrl = prop["control"]
+            if len(ctrl) > 2 and len(ctrl[2]) > 1:
+                #Has selections
+                return self.List(property)
+            if T == "integer" or T == "real":
+                if len(ctrl) > 1 and len(ctrl[1]) == 3:
+                    #Has range
+                    return self.Range(property)
+                else:
+                    return self.Number(property)
+            elif T == "string":
+                return self.Entry(property)
+            elif T == "boolean":
+                return self.Checkbox(property)
+            elif T == "colour":
+                return self.Colour(property)
+            else:
+                print("Unable to determine control type for property: " + property)
+                print(prop)
 
     def add(self, ctrl):
         """

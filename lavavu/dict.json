@@ -339,7 +339,7 @@
     "type": "real [0,1]",
     "desc": "Opacity of object where 0 is transparent and 1 is opaque",
     "strict": true,
-    "redraw": 2,
+    "redraw": 3,
     "control": [
       true,
       [
