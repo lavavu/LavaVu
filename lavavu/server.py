@@ -11,20 +11,20 @@ import base64
 try:
     # Python 2.x
     from SocketServer import ThreadingMixIn
-    from BaseHTTPServer import BaseHTTPRequestHandler
-    #from BaseHTTPServer import HTTPServer
+    from SimpleHTTPServer import SimpleHTTPRequestHandler
+    #from SimpleHTTPServer import HTTPServer
     from SocketServer import TCPServer as HTTPServer
     from urllib import unquote
 except ImportError:
     # Python 3.x
     from socketserver import ThreadingMixIn
-    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from http.server import SimpleHTTPRequestHandler, HTTPServer
     from urllib.parse import unquote
 
 """
 HTTP Server interface
 """
-class LVRequestHandler(BaseHTTPRequestHandler, object):
+class LVRequestHandler(SimpleHTTPRequestHandler, object):
 
     def __init__(self, viewer_weakref, *args, **kwargs):
         #Used with partial() to provide the viewer object
@@ -106,7 +106,7 @@ class LVRequestHandler(BaseHTTPRequestHandler, object):
             lv.commands('mouse ' + cmds, True)
             self.serveResponse(b'', 'text/plain')
         else:
-            return BaseHTTPRequestHandler.do_GET(self)
+            return SimpleHTTPRequestHandler.do_GET(self)
 
     #Serve files from lavavu html dir
     def translate_path(self, path):
@@ -120,9 +120,9 @@ class LVRequestHandler(BaseHTTPRequestHandler, object):
                 return path
             else:
                 #print(' - not found in htmlpath')
-                return BaseHTTPRequestHandler.translate_path(self, self.path)
+                return SimpleHTTPRequestHandler.translate_path(self, self.path)
         else:
-            return BaseHTTPRequestHandler.translate_path(self, path)
+            return SimpleHTTPRequestHandler.translate_path(self, path)
 
     #Stifle log output
     def log_message(self, format, *args):
