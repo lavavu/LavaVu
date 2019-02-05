@@ -1247,7 +1247,7 @@ class ControlFactory(object):
             if len(ctrl) > 2 and len(ctrl[2]) > 1:
                 #Has selections
                 return self.List(property)
-            if T == "integer" or T == "real":
+            if "integer" in T or "real" in T:
                 if len(ctrl) > 1 and len(ctrl[1]) == 3:
                     #Has range
                     return self.Range(property)
