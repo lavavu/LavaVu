@@ -330,12 +330,10 @@ class Object(dict):
         self.control = control.ControlFactory(self)
 
         #Init prop dict for tab completion
-        super(Object, self).__init__(**self.instance.properties)
+        super(Object, self).__init__(**self.parent.properties)
 
     @property
-    #TODO: rename these properties to "parent"
-    #def parent(self):
-    def instance(self):
+    def parent(self):
         return self._parent()
 
     @property
@@ -357,14 +355,14 @@ class Object(dict):
 
     def _set(self):
         #Send updated props (via ref in case name changed)
-        self.instance._setupobject(self.ref, **self.dict)
+        self.parent._setupobject(self.ref, **self.dict)
 
     def __getitem__(self, key):
-        self.instance._get() #Ensure in sync
+        self.parent._get() #Ensure in sync
         if key in self.dict:
             return self.dict[key]
         #Check for valid key
-        if not key in self.instance.properties:
+        if not key in self.parent.properties:
             raise KeyError(key + " : Invalid property name")
         #Default to the property lookup dict (default value is first element)
         #(allows default values to be returned from prop get)
@@ -374,18 +372,18 @@ class Object(dict):
 
     def __setitem__(self, key, value):
         #Check for valid key
-        if not key in self.instance.properties:
+        if not key in self.parent.properties:
             raise KeyError(key + " : Invalid property name")
         if key == "colourmap":
             if isinstance(value, LavaVuPython.ColourMap) or isinstance(value, ColourMap):
                 value = value.name #Use name instead of object when setting colourmap on object
-            elif not self.instance.app.getColourMap(value):
+            elif not self.parent.app.getColourMap(value):
                 #Not found by passed id/name/ref, use the value to set map data
                 cmap = self.colourmap(value)
                 value = cmap.name
 
-        self.instance.app.parseProperty(key + '=' + _convert_args(value), self.ref)
-        self.instance._get() #Ensure in sync
+        self.parent.app.parseProperty(key + '=' + _convert_args(value), self.ref)
+        self.parent._get() #Ensure in sync
 
     def __contains__(self, key):
         return key in self.dict
@@ -395,7 +393,7 @@ class Object(dict):
 
     def __str__(self):
         #Default string representation
-        self.instance._get() #Ensure in sync
+        self.parent._get() #Ensure in sync
         return '{\n' + str('\n'.join(['  %s=%s' % (k,json.dumps(v)) for k,v in self.dict.items()])) + '\n}\n'
 
     #Interface for setting filters
@@ -518,7 +516,7 @@ class Object(dict):
         #Pass a single value to include/exclude exact value
         #Pass a tuple for exclusive range (min < val < max)
         # list for inclusive range (min <= val <= max)
-        self.instance._get() #Ensure have latest data
+        self.parent._get() #Ensure have latest data
         filterlist = []
         if "filters" in self:
             filterlist = self["filters"]
@@ -531,8 +529,8 @@ class Object(dict):
 
         filterlist.append(newfilter)
 
-        self.instance.app.parseProperty('filters=' + json.dumps(filterlist), self.ref)
-        self.instance._get() #Ensure in sync
+        self.parent.app.parseProperty('filters=' + json.dumps(filterlist), self.ref)
+        self.parent._get() #Ensure in sync
         return len(self["filters"])-1
 
     @property
@@ -546,7 +544,7 @@ class Object(dict):
             A dictionary containing the data objects available by label
         """
         #Return data sets dict converted from json string
-        sets = json.loads(self.instance.app.getObjectDataLabels(self.ref))
+        sets = json.loads(self.parent.app.getObjectDataLabels(self.ref))
         if sets is None or len(sets) == 0: return {}
         return _convert_keys(sets)
 
@@ -559,7 +557,7 @@ class Object(dict):
 
         This allows manually closing the active element so all new data is loaded into a new element
         """
-        self.instance.app.appendToObject(self.ref)
+        self.parent.app.appendToObject(self.ref)
 
     def triangles(self, data, split=0):
         """
@@ -574,7 +572,7 @@ class Object(dict):
             Split triangles this many times on loading
         """
         if split > 1:
-            self.instance.app.loadTriangles(self.ref, data, self.name, split)
+            self.parent.app.loadTriangles(self.ref, data, self.name, split)
         else:
             self.vertices(data)
 
@@ -606,11 +604,11 @@ class Object(dict):
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         if data.dtype == numpy.float32:
-            self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+            self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
         elif data.dtype == numpy.uint32:
-            self.instance.app.arrayUInt(self.ref, data.ravel(), geomdtype)
+            self.parent.app.arrayUInt(self.ref, data.ravel(), geomdtype)
         elif data.dtype == numpy.uint8:
-            self.instance.app.arrayUChar(self.ref, data.ravel(), geomdtype)
+            self.parent.app.arrayUChar(self.ref, data.ravel(), geomdtype)
 
     def _dimsFromShape(self, shape, size, typefilter):
         #Volume/quads? Use the shape as dims if not provided
@@ -686,11 +684,11 @@ class Object(dict):
                 label = magnitude
             else:
                 label = "magnitude"
-            self.instance.app.arrayFloat(self.ref, mag.ravel(), label)
+            self.parent.app.arrayFloat(self.ref, mag.ravel(), label)
 
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
-        self.instance.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+        self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
 
     @property
     def data(self):
@@ -762,7 +760,7 @@ class Object(dict):
         #Volume? Use the shape as dims if not provided
         self._dimsFromShape(data.shape, data.size, 'volume')
 
-        self.instance.app.arrayFloat(self.ref, data.ravel(), label)
+        self.parent.app.arrayFloat(self.ref, data.ravel(), label)
 
     def colours(self, data):
         """
@@ -790,7 +788,7 @@ class Object(dict):
             data = [str(i) for i in data]
         if isinstance(data[0], str):
             #Each element will be parsed as a colour string
-            self.instance.app.loadColours(self.ref, data)
+            self.parent.app.loadColours(self.ref, data)
         else:
             #Plain list, assume unsigned colour data, either 4*uint8 or 1*uint32 per rgba colour
             data = numpy.asarray(data, dtype=numpy.uint32)
@@ -882,9 +880,9 @@ class Object(dict):
         if not isinstance(data, numpy.ndarray):
             data = self._convert(data, numpy.uint32)
         if data.dtype == numpy.uint32:
-            self.instance.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
+            self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
         elif data.dtype == numpy.uint8:
-            self.instance.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
+            self.parent.app.textureUChar(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
 
     def labels(self, data):
         """
@@ -897,7 +895,7 @@ class Object(dict):
         """
         if isinstance(data, str):
             data = [data]
-        self.instance.app.loadLabels(self.ref, data)
+        self.parent.app.loadLabels(self.ref, data)
 
     def colourmap(self, data=None, reverse=False, monochrome=False, **kwargs):
         """
@@ -931,7 +929,7 @@ class Object(dict):
             cmid = self["colourmap"]
             if cmid:
                 #Just return the existing map
-                return ColourMap(cmid, self.instance)
+                return ColourMap(cmid, self.parent)
             else:
                 #Proceeed to create a new map with default data
                 data = cubeHelix()
@@ -943,9 +941,9 @@ class Object(dict):
         else:
             #Load colourmap on this object
             if self.ref.colourMap is None:
-                self.ref.colourMap = self.instance.app.addColourMap(self.name + "_colourmap")
+                self.ref.colourMap = self.parent.app.addColourMap(self.name + "_colourmap")
                 self["colourmap"] = self.ref.colourMap.name
-            cmap = ColourMap(self.ref.colourMap, self.instance)
+            cmap = ColourMap(self.ref.colourMap, self.parent)
 
         #Update with any passed args, colour data etc
         cmap.update(data, reverse, monochrome, **kwargs)
@@ -976,7 +974,7 @@ class Object(dict):
             cmid = self["opacitymap"]
             if cmid:
                 #Just return the existing map
-                return ColourMap(cmid, self.instance)
+                return ColourMap(cmid, self.parent)
             else:
                 #Proceeed to create a new map with default data
                 colours = ["black:0", "black"]
@@ -1000,9 +998,9 @@ class Object(dict):
         #Load opacity map on this object
         ret = None
         if self.ref.opacityMap is None:
-            self.ref.opacityMap = self.instance.app.addColourMap(self.name + "_opacitymap")
+            self.ref.opacityMap = self.parent.app.addColourMap(self.name + "_opacitymap")
             self["opacitymap"] = self.ref.opacityMap.name
-        c = ColourMap(self.ref.opacityMap, self.instance)
+        c = ColourMap(self.ref.opacityMap, self.parent)
         c.update(colours, **kwargs)
         opby = self["opacityby"]
         if len(str(opby)) == 0:
@@ -1015,13 +1013,13 @@ class Object(dict):
         that may be cached on the GPU, required after changing some properties
         so the changes are reflected in the visualisation
         """
-        self.instance.app.reloadObject(self.ref)
+        self.parent.app.reloadObject(self.ref)
 
     def select(self):
         """
         Set this object as the selected object
         """
-        self.instance.app.aobject = self.ref
+        self.parent.app.aobject = self.ref
     
     def file(self, *args, **kwargs):
         """
@@ -1034,8 +1032,8 @@ class Object(dict):
         """
         #Load file with this object selected (import)
         self.select()
-        self.instance.file(*args, obj=self, **kwargs)
-        self.instance.app.aobject = None
+        self.parent.file(*args, obj=self, **kwargs)
+        self.parent.app.aobject = None
 
     def files(self, *args, **kwargs):
         """
@@ -1048,8 +1046,8 @@ class Object(dict):
         """
         #Load file with this object selected (import)
         self.select()
-        self.instance.files(*args, obj=self, **kwargs)
-        self.instance.app.aobject = None
+        self.parent.files(*args, obj=self, **kwargs)
+        self.parent.app.aobject = None
 
     def colourbar(self, **kwargs):
         """
@@ -1061,13 +1059,13 @@ class Object(dict):
             The colourbar object created
         """
         #Create a new colourbar for this object
-        return self.instance.colourbar(self, **kwargs)
+        return self.parent.colourbar(self, **kwargs)
 
     def clear(self):
         """
         Clear all visualisation data from this object
         """
-        self.instance.app.clearObject(self.ref)
+        self.parent.app.clearObject(self.ref)
 
     def cleardata(self, typename=""):
         """
@@ -1084,10 +1082,10 @@ class Object(dict):
         if typename in datatypes:
             #Found data type name
             dtype = datatypes[typename]
-            self.instance.app.clearData(self.ref, dtype)
+            self.parent.app.clearData(self.ref, dtype)
         else:
             #Assume values by label (or all values if blank)
-            self.instance.app.clearValues(self.ref, typename)
+            self.parent.app.clearValues(self.ref, typename)
 
     def update(self, filter=None, compress=True):
         """
@@ -1104,10 +1102,10 @@ class Object(dict):
         #Update object data at current timestep
         if filter is None:
             #Re-writes all data to db for this object
-            self.instance.app.update(self.ref, compress)
+            self.parent.app.update(self.ref, compress)
         else:
             #Re-writes data to db for this object and geom type
-            self.instance.app.update(self.ref, self.instance._getRendererType(filter), compress)
+            self.parent.app.update(self.ref, self.parent._getRendererType(filter), compress)
 
     def getcolourmap(self, string=True):
         """
@@ -1128,7 +1126,7 @@ class Object(dict):
             The formatted colourmap data
         """
         cmid = self["colourmap"]
-        return self.instance.getcolourmap(cmid, string)
+        return self.parent.getcolourmap(cmid, string)
 
     def isosurface(self, isovalues=None, name=None, convert=False, updatedb=False, compress=True, **kwargs):
         """
@@ -1165,18 +1163,18 @@ class Object(dict):
         #Create surface, If requested, write the new data to the database
         objref = None
         if convert: objref = self.ref
-        ref = self.instance.isosurface(objref, self.ref, _convert_args(kwargs), convert)
+        ref = self.parent.isosurface(objref, self.ref, _convert_args(kwargs), convert)
 
         #Get the created/updated object
         if ref == None:
             print("Error creating isosurface")
             return ref
-        isobj = self.instance.Object(ref)
+        isobj = self.parent.Object(ref)
 
         #Re-write modified types to the database
         if updatedb:
-            self.instance.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
-            self.instance.app.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
+            self.parent.app.update(isobj.ref, LavaVuPython.lucVolumeType, compress)
+            self.parent.app.update(isobj.ref, LavaVuPython.lucTriangleType, compress)
         return isobj
 
     def help(self, cmd=""):
@@ -1189,10 +1187,10 @@ class Object(dict):
             Command to get help with, if ommitted displays general introductory help
             If cmd is a property or is preceded with '@' will display property help
         """
-        self.instance.help(cmd, self)
+        self.parent.help(cmd, self)
 
     def boundingbox(self, allsteps=False):
-        bb = self.instance.app.getBoundingBox(self.ref, allsteps)
+        bb = self.parent.app.getBoundingBox(self.ref, allsteps)
         return [[bb[0], bb[1], bb[2]], [bb[3], bb[4], bb[5]]]
 
 #Wrapper dict+list of objects
@@ -1204,15 +1202,14 @@ class Objects(dict):
         self._parent = weakref.ref(parent)
 
     @property
-    #def parent(self):
-    def instance(self):
+    def parent(self):
         return self._parent()
 
     def _sync(self):
         #Sync the object list with the viewer
         self.list = []
         #Loop through retrieved object list
-        for obj in self.instance.state["objects"]:
+        for obj in self.parent.state["objects"]:
             #Exists in our own list?
             if obj["name"] in self:
                 #Update object with new properties
@@ -1220,7 +1217,7 @@ class Objects(dict):
                 self.list.append(self[obj["name"]])
             else:
                 #Create a new object wrapper
-                o = Object(self.instance, **obj)
+                o = Object(self.parent, **obj)
                 self[obj["name"]] = o
                 self.list.append(o)
             #Flag sync
@@ -1228,7 +1225,7 @@ class Objects(dict):
             #Save the object id and reference (use id # to get)
             _id = len(self.list)
             self.list[-1].id = _id
-            self.list[-1].ref = self.instance.app.getObject(_id)
+            self.list[-1].ref = self.parent.app.getObject(_id)
             
         #Delete any objects from stored dict that are no longer present
         for name in list(self):
@@ -1251,18 +1248,18 @@ class _ColourComponents():
     """Class to allow modifying colour components directly as an array
     """
     def __init__(self, key, parent):
-        self.instance = parent
+        self.parent = parent
         self.key = key
-        self.list = self.instance.list[self.key][1]
+        self.list = self.parent.list[self.key][1]
 
     def __getitem__(self, key):
-        self.list = self.instance.list[self.key][1]
+        self.list = self.parent.list[self.key][1]
         return self.list[key]
 
     def __setitem__(self, key, value):
-        self.list = self.instance.list[self.key][1]
+        self.list = self.parent.list[self.key][1]
         self.list[key] = value
-        self.instance[self.key] = self.list
+        self.parent[self.key] = self.list
 
     def __str__(self):
         return str(self.list)
@@ -1271,23 +1268,23 @@ class _ColourList():
     """Class to allow modifying colour list directly as an array
     """
     def __init__(self, parent):
-        self.instance = parent
-        self.list = self.instance.tolist()
+        self.parent = parent
+        self.list = self.parent.tolist()
 
     def __getitem__(self, key):
-        self.instance._get() #Ensure in sync
-        self.list = self.instance.tolist()
+        self.parent._get() #Ensure in sync
+        self.list = self.parent.tolist()
         return _ColourComponents(key, self)
 
     def __setitem__(self, key, value):
-        self.list = self.instance.tolist()
+        self.list = self.parent.tolist()
         self.list[key] = (self.list[key][0], value)
-        self.instance.update(self.list)
+        self.parent.update(self.list)
 
     def __delitem__(self, key):
-        self.list = self.instance.tolist()
+        self.list = self.parent.tolist()
         del self.list[key]
-        self.instance.update(self.list)
+        self.parent.update(self.list)
 
     def __iadd__(self, value):
         self.append(value)
@@ -1296,12 +1293,12 @@ class _ColourList():
         self.append(value)
 
     def append(self, value, position=1.0):
-        self.list = self.instance.tolist()
+        self.list = self.parent.tolist()
         if isinstance(value, tuple):
             self.list.append(value)
         else:
             self.list.append((position, value))
-        self.instance.update(self.list)
+        self.parent.update(self.list)
 
     def __str__(self):
         return str([c[1] for c in self.list])
@@ -1310,18 +1307,18 @@ class _PositionList(_ColourList):
     """Class to allow modifying position list directly as an array
     """
     def __init__(self, parent):
-        self.instance = parent
-        self.list = self.instance.tolist()
+        self.parent = parent
+        self.list = self.parent.tolist()
 
     def __getitem__(self, key):
-        self.instance._get() #Ensure in sync
-        self.list = self.instance.tolist()
+        self.parent._get() #Ensure in sync
+        self.list = self.parent.tolist()
         return self.list[key][0]
 
     def __setitem__(self, key, value):
-        self.list = self.instance.tolist()
+        self.list = self.parent.tolist()
         self.list[key] = (value, self.list[key][1])
-        self.instance.update(self.list)
+        self.parent.update(self.list)
 
     def __str__(self):
         return str([c[0] for c in self.list])
@@ -1347,17 +1344,16 @@ class ColourMap(dict):
         if isinstance(ref, LavaVuPython.ColourMap):
             self.ref = ref
         else:
-            self.ref = self.instance.app.getColourMap(ref)
+            self.ref = self.parent.app.getColourMap(ref)
 
         self.dict = kwargs
         self._get() #Sync
 
         #Init prop dict for tab completion
-        super(ColourMap, self).__init__(**self.instance.properties)
+        super(ColourMap, self).__init__(**self.parent.properties)
 
     @property
-    #def parent(self):
-    def instance(self):
+    def parent(self):
         return self._parent()
 
     @property
@@ -1405,12 +1401,12 @@ class ColourMap(dict):
 
     def _set(self):
         #Send updated props (via ref in case name changed)
-        self.instance.app.setColourMap(self.ref, _convert_args(self.dict))
+        self.parent.app.setColourMap(self.ref, _convert_args(self.dict))
 
     def _get(self):
-        self.instance._get() #Ensure in sync
+        self.parent._get() #Ensure in sync
         #Update prop dict
-        for cm in self.instance.state["colourmaps"]:
+        for cm in self.parent.state["colourmaps"]:
             if cm["name"] == self.ref.name:
                 #self.colours = cm["colours"]
                 self.dict.update(cm)
@@ -1419,7 +1415,7 @@ class ColourMap(dict):
 
     def __getitem__(self, key):
         self._get() #Ensure in sync
-        if not key in self.instance.properties:
+        if not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         if key in self.dict:
             return self.dict[key]
@@ -1429,7 +1425,7 @@ class ColourMap(dict):
         return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
-        if not key in self.instance.properties:
+        if not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         #Set new value and send
         self.dict[key] = value
@@ -1507,7 +1503,7 @@ class ColourMap(dict):
         if data is not None:
             if isinstance(data, str) and re.match('^[\w_]+$', data) is not None:
                 #Single word of alphanumeric characters, if not a built-in map, try matplotlib
-                if data not in self.instance.defaultcolourmaps():
+                if data not in self.parent.defaultcolourmaps():
                     newdata = matplotlib_colourmap(data)
                     if len(newdata) > 0:
                         data = newdata
@@ -1515,7 +1511,7 @@ class ColourMap(dict):
                 data = json.dumps(data)
 
             #Load colourmap data
-            self.instance.app.updateColourMap(self.ref, data, _convert_args(kwargs))
+            self.parent.app.updateColourMap(self.ref, data, _convert_args(kwargs))
 
         if reverse:
             self.ref.flip()
@@ -1536,33 +1532,32 @@ class Fig(dict):
         self._parent = weakref.ref(parent)
         self.name = name
         #Init prop dict for tab completion
-        super(Fig, self).__init__(**self.instance.properties)
+        super(Fig, self).__init__(**self.parent.properties)
 
     @property
-    #def parent(self):
-    def instance(self):
+    def parent(self):
         return self._parent()
 
     def __getitem__(self, key):
-        if not key in self.instance.properties:
+        if not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         #Activate this figure on viewer
         self.load()
         #Return key on viewer instance
-        if key in self.instance:
-            return self.instance[key]
+        if key in self.parent:
+            return self.parent[key]
         #Default to the property lookup dict (default is first element)
         prop = super(Fig, self).__getitem__(key)
         #Must always return a copy to prevent modifying the defaults!
         return copy.copy(prop["default"])
 
     def __setitem__(self, key, value):
-        if not key in self.instance.properties:
+        if not key in self.parent.properties:
             raise ValueError(key + " : Invalid property name")
         #Activate this figure on viewer
         self.load()
         #Set new value
-        self.instance[key] = value
+        self.parent[key] = value
         #Save changes
         self.save()
 
@@ -1574,23 +1569,23 @@ class Fig(dict):
 
     def load(self):
         #Activate this figure on viewer
-        self.instance.figure(self.name)
+        self.parent.figure(self.name)
 
     def save(self):
         #Save changes
-        self.instance.savefigure(self.name)
+        self.parent.savefigure(self.name)
 
     def show(self, *args, **kwargs):
         #Activate this figure on viewer
         self.load()
         #Render
-        self.instance.display(*args, **kwargs)
+        self.parent.display(*args, **kwargs)
 
     def image(self, *args, **kwargs):
         #Activate this figure on viewer
         self.load()
         #Render
-        return self.instance.image(*args, **kwargs)
+        return self.parent.image(*args, **kwargs)
 
 
 class LavaVuThreadSafe(LavaVuPython.LavaVu):
@@ -3468,15 +3463,15 @@ class Geometry(list):
         self.timestep = timestep
         #Get a list of geometry data objects for a given drawing object
         if self.timestep < -1:
-            glist = self.obj.instance.app.getGeometry(self.obj.ref)
+            glist = self.obj.parent.app.getGeometry(self.obj.ref)
         else:
-            glist = self.obj.instance.app.getGeometryAt(self.obj.ref, timestep)
+            glist = self.obj.parent.app.getGeometryAt(self.obj.ref, timestep)
         sets = self.obj.datasets
         for g in glist:
             #By default all elements are returned, even if object has multiple types 
             #Filter can be set to a type name to exclude other geometry types
-            if filter is None or g.type == self.obj.instance._getRendererType(filter):
-                g = GeomDataWrapper(g, obj.instance)
+            if filter is None or g.type == self.obj.parent._getRendererType(filter):
+                g = GeomDataWrapper(g, obj.parent)
                 self.append(g)
                 #Add the value data set labels
                 for s in sets:
@@ -3603,8 +3598,7 @@ class GeomDataWrapper(object):
                 self.available[key] = len(dat)
 
     @property
-    #def parent(self):
-    def instance(self):
+    def parent(self):
         return self._parent()
 
     def get(self, typename):
@@ -3630,16 +3624,16 @@ class GeomDataWrapper(object):
         if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
                 #Get uint8 data
-                array = self.instance.app.geometryArrayViewUChar(self.data, datatypes[typename])
+                array = self.parent.app.geometryArrayViewUChar(self.data, datatypes[typename])
             elif typename in ["indices", "colours"]:
                 #Get uint32 data
-                array = self.instance.app.geometryArrayViewUInt(self.data, datatypes[typename])
+                array = self.parent.app.geometryArrayViewUInt(self.data, datatypes[typename])
             else:
                 #Get float32 data
-                array = self.instance.app.geometryArrayViewFloat(self.data, datatypes[typename])
+                array = self.parent.app.geometryArrayViewFloat(self.data, datatypes[typename])
         else:
             #Get float32 data
-            array = self.instance.app.geometryArrayViewFloat(self.data, typename)
+            array = self.parent.app.geometryArrayViewFloat(self.data, typename)
         
         return array
 
@@ -3680,16 +3674,16 @@ class GeomDataWrapper(object):
         if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
                 #Set uint8 data
-                self.instance.app.geometryArrayUInt8(self.data, array.astype(numpy.uint8), datatypes[typename])
+                self.parent.app.geometryArrayUInt8(self.data, array.astype(numpy.uint8), datatypes[typename])
             elif typename in ["indices", "colours"]:
                 #Set uint32 data
-                self.instance.app.geometryArrayUInt32(self.data, array.astype(numpy.uint32), datatypes[typename])
+                self.parent.app.geometryArrayUInt32(self.data, array.astype(numpy.uint32), datatypes[typename])
             else:
                 #Set float32 data
-                self.instance.app.geometryArrayFloat(self.data, array.astype(numpy.float32), datatypes[typename])
+                self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32), datatypes[typename])
         else:
             #Set float32 data
-            self.instance.app.geometryArrayFloat(self.data, array.astype(numpy.float32), typename)
+            self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32), typename)
         
     def __repr__(self):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]

@@ -94,13 +94,13 @@ htmlpath = ""
 
 def isviewer(target):
     """Return true if target is a viewer"""
-    return not hasattr(target, "instance")
+    return not hasattr(target, "parent")
 
 def getviewer(target):
     """Return its viewer if target is vis object
     otherwise just return target as if is a viewer"""
     if not isviewer(target):
-        return target.instance
+        return target.parent
     return target
 
 def getproperty(target, propname):
@@ -857,7 +857,7 @@ class Gradient(Control):
     def __init__(self, target, *args, **kwargs):
         super(Gradient, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
-        self.maps = target.instance.state["colourmaps"]
+        self.maps = target.parent.state["colourmaps"]
         self.map = None
         for m in self.maps:
             if m["name"] == self.value:
@@ -911,7 +911,7 @@ class ColourMapList(List):
     def __init__(self, target, selection=None, *args, **kwargs):
         #Load maps list
         if selection is None:
-            selection = target.instance.defaultcolourmaps()
+            selection = target.parent.defaultcolourmaps()
         options = [''] + selection
         #Also add the matplotlib colourmaps if available
         try:
@@ -932,7 +932,7 @@ class ColourMaps(List):
     """
     def __init__(self, target, *args, **kwargs):
         #Load maps list
-        self.maps = target.instance.state["colourmaps"]
+        self.maps = target.parent.state["colourmaps"]
         options = [["", "None"]]
         sel = target["colourmap"]
         if sel is None: sel = ""
@@ -1127,7 +1127,7 @@ class ObjectSelect(Container):
         if not isviewer(viewer):
             print("Can't add ObjectSelect control to an Object, must add to Viewer")
             return
-        self.instance = viewer
+        self.parent = viewer
         if objects is None:
             objects = viewer.objects.list
         
@@ -1154,15 +1154,15 @@ class ObjectSelect(Container):
     def __contains__(self, key):
         #print "CONTAINS",key
         obj = Action.actions[self._list.id].lastvalue
-        #print "OBJECT == ",obj,(key in self.instance.objects.list[obj-1])
-        return obj > 0 and key in self.instance.objects.list[obj-1]
+        #print "OBJECT == ",obj,(key in self.parent.objects.list[obj-1])
+        return obj > 0 and key in self.parent.objects.list[obj-1]
 
     def __getitem__(self, key):
         #print "GETITEM",key
         obj = Action.actions[self._list.id].lastvalue
         if obj > 0:
             #Passthrough: Get from selected object
-            return self.instance.objects.list[obj-1][key]
+            return self.parent.objects.list[obj-1][key]
         return None
 
     def __setitem__(self, key, value):
@@ -1170,7 +1170,7 @@ class ObjectSelect(Container):
         #print "SETITEM",key,value
         if obj > 0:
             #Passtrough: Set on selected object
-            self.instance.objects.list[obj-1][key] = value
+            self.parent.objects.list[obj-1][key] = value
 
     #Undefined method call - pass call to target
     def __getattr__(self, key):
@@ -1179,7 +1179,7 @@ class ObjectSelect(Container):
             #If member function exists on target, call it
             obj = Action.actions[self._list.id].lastvalue
             if obj > 0:
-                method = getattr(self.instance.objects.list[obj-1], key, None)
+                method = getattr(self.parent.objects.list[obj-1], key, None)
                 if method and callable(method):
                     return method(*args, **kwargs)
         return any_method
@@ -1279,7 +1279,7 @@ class ControlFactory(object):
 
         #Add to viewer instance list too if not already being added
         if not isviewer(self._target()):
-            self._target().instance.control.add(ctrl)
+            self._target().parent.control.add(ctrl)
 
     def getid(self):
         viewerid = len(windows)
