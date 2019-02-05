@@ -35,6 +35,9 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             if e.errno == errno.EPIPE:
                 # EPIPE error, ignore
                 pass
+            if e.errno == errno.EPROTOTYPE:
+                # MacOS "Protocol wrong type for socket" error, ignore
+                pass
             else:
                 raise e
 
