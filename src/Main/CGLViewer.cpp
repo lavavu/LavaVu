@@ -109,9 +109,20 @@ void CGLViewer::execute()
   show();
 
   // Enter dummy event loop processing
-  OpenGLViewer::execute();
+  //OpenGLViewer::execute();
 
 }
+
+void CGLViewer::show()
+{
+  //Null function, no visible window
+}
+
+void CGLViewer::hide()
+{
+  //Null function, no visible window
+}
+
 
 #endif   //HAVE_CGL
 

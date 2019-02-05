@@ -597,16 +597,20 @@ void CocoaViewer::execute()
   postdisplay = true;
   if (app->session.automate) 
   {
-    app->session.automate = false;
+    //Once CocoaViewer run loop started
+    //we can't leave, so disable for now
+    //when running from python (automate=true)
+    visible = false;
+    /*app->session.automate = false;
     visible = true;
-    open(width, height);
+    open(width, height);*/
   }
 
   //Run event loop
   if (visible) 
     [NSApp run];
   else
-    OpenGLViewer::execute();
+    CGLViewer::execute();
 }
 
 void CocoaViewer::fullScreen()

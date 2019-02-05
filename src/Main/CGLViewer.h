@@ -55,6 +55,8 @@ public:
   void open(int width, int height);
   void display(bool redraw=true);
   void execute();
+  void show();
+  void hide();
 };
 
 #endif //CGLViewer__
