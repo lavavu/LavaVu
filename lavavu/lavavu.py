@@ -3966,18 +3966,20 @@ def download(url, filename=None, overwrite=False, quiet=False):
     #Python 3 moved urlretrieve to request submodule
     try:
         from urllib.request import urlretrieve
-        import urllib.parse as parse
+        from urllib.parse import urlparse
+        from urllib.parse import quote
     except ImportError:
         from urllib import urlretrieve
-        from urllib import parse
+        from urllib import quote
+        from urlparse import urlparse
 
     if filename is None:
         filename = url[url.rfind("/")+1:]
 
     if overwrite or not os.path.exists(filename):
         #Encode url path
-        o = parse.urlparse(url)
-        o = o._replace(path=parse.quote(o.path))
+        o = urlparse(url)
+        o = o._replace(path=quote(o.path))
         url = o.geturl()
         if not quiet: print("Downloading: " + filename)
         urlretrieve(url, filename)
