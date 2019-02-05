@@ -690,13 +690,13 @@ class Range(Control):
 
         #Get range & step defaults from prop dict
         _lv = getviewer(target)
-        defrange = (0., 1., 0.)
+        defrange = [0., 1., 0.]
         if  property is not None and property in _lv.properties:
             prop = _lv.properties[property]
             #Check for integer type, set default step to 1
             T = prop["type"]
             if "integer" in T:
-                defrange[2] = 1
+                defrange[2] = 1.
             ctrl = prop["control"]
             if len(ctrl) > 1 and len(ctrl[1]) == 3:
                 defrange = ctrl[1]
