@@ -580,8 +580,11 @@ class Control(HTML):
             self.label = ""
 
         #Get value from target or default if not provided
-        if value is None and property is not None and target:
-            value = getproperty(target, property)
+        if property is not None and target:
+            if value is None:
+                value = getproperty(target, property)
+            else:
+                target[property] = value #Set the provided value
         self.value = value
 
         #Append reload command from prop dict if no command provided
@@ -696,7 +699,7 @@ class Range(Control):
             #Check for integer type, set default step to 1
             T = prop["type"]
             if "integer" in T:
-                defrange[2] = 1.
+                defrange[2] = 1
             ctrl = prop["control"]
             if len(ctrl) > 1 and len(ctrl[1]) == 3:
                 defrange = ctrl[1]
@@ -1000,7 +1003,11 @@ class TimeStepper(Range):
           el = document.getElementById('---ELID---');
           if (el) {
             //Call again on image load - pass callback
-            _wi[---VIEWERID---].execute("next", startTimer_---ELID---);
+            var V = _wi[---VIEWERID---];
+            if (!V.box.canvas.mouse.isdown && !V.box.zoomTimer && (!V.box.gui || V.box.gui.closed))
+              V.execute("next", startTimer_---ELID---);
+            else
+              setTimeout(nextStep_---ELID---, 100);
           }
         }
         function playPause_---ELID---(btn) {
@@ -1234,7 +1241,7 @@ class ControlFactory(object):
                 method.__doc__ = constr.__doc__
             self.__setattr__(key, method)
 
-    def __call__(self, property):
+    def __call__(self, property, *args, **kwargs):
         """
         Calling with a property name creates the default control for that property
         """
@@ -1246,19 +1253,19 @@ class ControlFactory(object):
             ctrl = prop["control"]
             if len(ctrl) > 2 and len(ctrl[2]) > 1:
                 #Has selections
-                return self.List(property)
+                return self.List(property, *args, **kwargs)
             if "integer" in T or "real" in T:
                 if len(ctrl) > 1 and len(ctrl[1]) == 3:
                     #Has range
-                    return self.Range(property)
+                    return self.Range(property, *args, **kwargs)
                 else:
-                    return self.Number(property)
+                    return self.Number(property, *args, **kwargs)
             elif T == "string":
-                return self.Entry(property)
+                return self.Entry(property, *args, **kwargs)
             elif T == "boolean":
-                return self.Checkbox(property)
+                return self.Checkbox(property, *args, **kwargs)
             elif T == "colour":
-                return self.Colour(property)
+                return self.Colour(property, *args, **kwargs)
             else:
                 print("Unable to determine control type for property: " + property)
                 print(prop)

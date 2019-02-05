@@ -111,21 +111,13 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
     return;
   }
 
-  this.img.onload = function() {
-    //Reload state (this seems to get called twice sometimes, with empty response on 2nd)
-    //(skip if interacting)
-    if (!that.box.canvas.mouse.isdown && !that.box.zoomTimer)
-      that.get_state();
-  }
-
   var that = this;
   var final_callback = function(response) {
     if (callback)
       callback(response);
 
-    //Skip state reload while interacting
-    if (!that.box.canvas.mouse.isdown && !that.box.zoomTimer)
-      that.get_state();
+    //Update state
+    that.get_state();
   }
 
   //Replace newlines with semi-colon first
