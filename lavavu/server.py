@@ -35,7 +35,7 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             if e.errno == errno.EPIPE:
                 # EPIPE error, ignore
                 pass
-            if e.errno == errno.EPROTOTYPE:
+            elif e.errno == errno.EPROTOTYPE:
                 # MacOS "Protocol wrong type for socket" error, ignore
                 pass
             else:
@@ -66,7 +66,8 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
         #(can perform other actions too based on self.path later if we want)
         data_string = self.rfile.read(int(self.headers['Content-Length']))
         self.serveResponse(b'', 'text/plain')
-        cmds = str(data_string, 'utf-8')
+        #cmds = str(data_string, 'utf-8') #python3 only
+        cmds = str(data_string.decode('utf-8'))
         #Run viewer commands
         self._execute(cmds)
 
@@ -144,8 +145,8 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
 
         if len(cmds) and cmds[0] == '_':
             #base64 encoded commands or JSON state
-            #cmds = base64.b64decode(cmds).decode('ascii')
-            cmds = str(base64.b64decode(cmds), 'utf-8')
+            cmds = str(base64.b64decode(cmds).decode('utf-8'))
+            #cmds = str(base64.b64decode(cmds), 'utf-8')
 
         #Object to select can be provided in preceding angle brackets
         selobj = None
