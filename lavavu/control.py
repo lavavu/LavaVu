@@ -419,7 +419,7 @@ class Window(Container):
             style += ' margin-right: 10px;'
         html = ""
         html += '<div style="' + style + '">\n'
-        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa; display: inline-block;">\n'
+        html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa; display: inline-block;" src="iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
         html += """
            <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
              <select onchange="_wi[---VIEWERID---].box.mode = this.value;">
@@ -860,6 +860,8 @@ class Gradient(Control):
     def __init__(self, target, *args, **kwargs):
         super(Gradient, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
+        if isviewer(target):
+            raise(Exception("Gradient control requires an Object target, not Viewer"))
         self.maps = target.parent.state["colourmaps"]
         self.map = None
         for m in self.maps:
@@ -912,6 +914,8 @@ class ColourMapList(List):
     """A colourmap list selector, populated by the default colour maps
     """
     def __init__(self, target, selection=None, *args, **kwargs):
+        if isviewer(target):
+            raise(Exception("ColourMapList control requires an Object target, not Viewer"))
         #Load maps list
         if selection is None:
             selection = target.parent.defaultcolourmaps()
@@ -935,6 +939,8 @@ class ColourMaps(List):
     """
     def __init__(self, target, *args, **kwargs):
         #Load maps list
+        if isviewer(target):
+            raise(Exception("ColourMaps control requires an Object target, not Viewer"))
         self.maps = target.parent.state["colourmaps"]
         options = [["", "None"]]
         sel = target["colourmap"]
@@ -1288,19 +1294,6 @@ class ControlFactory(object):
         if not isviewer(self._target()):
             self._target().parent.control.add(ctrl)
 
-    def getid(self):
-        viewerid = len(windows)
-        if isviewer(self._target()):
-            try:
-                #Find viewer id
-                viewerid = windows.index(self._target())
-            except (ValueError):
-                #Append the current viewer ref
-                windows.append(self._target())
-                #Use viewer instance just added
-                viewerid = len(windows)-1
-        return viewerid
-
     def show(self, fallback=None):
         """
         Displays all added controls including viewer if any
@@ -1312,7 +1305,12 @@ class ControlFactory(object):
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
-        viewerid = self.getid()
+        viewerid = len(windows)
+        if isviewer(self._target()):
+            #Append the current viewer ref
+            windows.append(self._target())
+            #Use viewer instance just added
+            viewerid = len(windows)-1
 
         #Generate the HTML
         html = ""
