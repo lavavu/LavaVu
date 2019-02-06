@@ -839,6 +839,30 @@ class Object(dict):
 
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
+    def rgba(self, data):
+        """
+        Load rgba data for object
+
+        Parameters
+        ----------
+        data: list,array
+            Pass a list or numpy uint8 array of rgba values
+            values are loaded as 8 bit unsigned integer values
+        """
+
+        #Accepts only uint8 rgba
+        data = self._convert(data, numpy.uint8)
+
+        #Detection of split r,g,b arrays from shape
+        #If data provided as separate r,g,b,a columns, re-arrange (Must be > 4 elements to detect correctly)
+        shape = data.shape
+        if len(shape) >= 2 and shape[-1] > 4 and shape[0] == 4:
+            #Re-arrange to array of [r,g,b,a] values
+            data = numpy.vstack((data[0],data[1],data[2],data[3])).reshape([4, -1]).transpose()
+
+        self._loadScalar(data, LavaVuPython.lucRGBAData)
+
+
     def luminance(self, data):
         """
         Load luminance data for object
