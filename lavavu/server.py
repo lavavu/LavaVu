@@ -32,6 +32,7 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
             self._lv = viewer_weakref
             super(LVRequestHandler, self).__init__(*args, **kwargs)
         except (IOError) as e:
+            pass #Just ignore IO errors on server
             if e.errno == errno.EPIPE:
                 # EPIPE error, ignore
                 pass
