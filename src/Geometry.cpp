@@ -317,7 +317,8 @@ unsigned int GeomData::valuesLookup(const json& by)
         break;
       }
     }
-    if (valueIdx > MAX_DATA_ARRAYS) debug_print("Label: %s not found!\n", label.c_str());
+    if (valueIdx > MAX_DATA_ARRAYS)
+      debug_print("Label: %s not found!\n", label.c_str());
   }
   //Numerical index, check in range
   else if (by.is_number() && (int)by < values.size())

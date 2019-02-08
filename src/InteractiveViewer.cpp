@@ -2076,31 +2076,34 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (gethelp)
     {
       help += "Export colour data of selected object\n\n"
-              "**Usage:** palette [type]\n\n"
+              "**Usage:** palette [type] [filename]\n\n"
               "type (string) : type of export (image/json/text) default = text\n";
+              "filename (string) : defaults to palette.[png/json/txt]\n";
       return false;
     }
 
     if (aobject)
     {
       std::string what = parsed["palette"];
+      std::string fn = parsed.get("palette", 1);
+      if (!fn.length()) fn = "palette";
       ColourMap* cmap = aobject->getColourMap("colourmap");
       if (!cmap) return false;
       if (what == "json")
       {
-        std::ofstream of("palette.json");
+        std::ofstream of(fn + ".json");
         of << std::setw(2) << cmap->toJSON();
         of.close();
       }
       else if (what == "image")
       {
         ImageData* paletteData = cmap->toImage(false);
-        paletteData->write("palette.png");
+        paletteData->write(fn + ".png");
         delete paletteData;
       }
       else
       {
-        std::ofstream of("palette.txt");
+        std::ofstream of(fn + ".txt");
         of << cmap->toString();
         of.close();
       }
