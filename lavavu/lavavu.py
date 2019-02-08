@@ -3461,6 +3461,32 @@ class Viewer(dict):
     #def arrayUChar(self, ref, data, geomdtype):
     #    return self.app.arrayUChar(ref, data, geomdtype)
 
+    def get_all_vertices(self, objectlist):
+        """
+        Extract all vertex data from a list of objects
+
+        Returns:
+        --------
+        (pverts, bb_all): tuple
+            pverts: the vertices, numpy array
+            bb_all: the bounding box of the combined data
+        """
+        #Get vertices from a list of lavavu objects
+        pverts = None
+        bb_all = [[float('Inf'), float('Inf'), float('Inf')], [float('-Inf'), float('-Inf'), float('-Inf')]]
+        for o in objectlist:
+            #Concatenate all elements
+            bb = self.objects[o].boundingbox(True)
+            for i in range(3):
+                if bb[0][i] < bb_all[0][i]: bb_all[0][i] = bb[0][i]
+                if bb[1][i] > bb_all[1][i]: bb_all[1][i] = bb[1][i]
+
+            for v in self.objects[o].data.vertices:
+                v = v.reshape((-1,3))
+                pverts = v if pverts is None else numpy.concatenate([pverts, v])
+        return pverts, bb_all
+
+
 #Wrapper for list of geomdata objects
 class Geometry(list):
     """  
