@@ -3531,10 +3531,14 @@ class Geometry(list):
             #Return data filtered by renderer type
             if key in geomnames:
                 return Geometry(self.obj, timestep=self.timestep, filter=key)
-            #Or data filtered by timestep if a string timestep bumber passed
-            else:
+            #Or data filtered by timestep if a string timestep number passed
+            elif isinstance(key,int):
                 ts = int(key)
                 return Geometry(self.obj, timestep=ts)
+            #Or data by type/label
+            else:
+                return getattr(self, key)
+
         return self[key]
 
     def __str__(self):
