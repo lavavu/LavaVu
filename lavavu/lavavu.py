@@ -264,8 +264,16 @@ def matplotlib_colourmap(name, samples=16):
         import matplotlib.pyplot as plt
         cmap = plt.get_cmap(name)
         if hasattr(cmap, 'colors'):
-            return cmap.colors
+            #Reduce length? many MPL maps have 256 samples,
+            #unnecessary since we are already interpolating
+            #Can disable this by setting samples=None
+            data = cmap.colors
+            if len(data) == 256 and samples is not None:
+                subsample = int(256/samples)
+                data = data[0::subsample]
+            return data
         #Get colour samples when no list provided
+        if samples == None: samples = 16
         colours = []
         for i in range(samples):
             pos = i/float(samples-1)
