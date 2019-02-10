@@ -127,15 +127,14 @@ def loadpointcloud(filename, subsample=1):
             B = infile.blue
 
         ss = subsample
-        V = None
-        C
         if ss > 1:
             V = numpy.array([infile.x[::ss], infile.y[::ss], infile.z[::ss]])
             C = numpy.array([R[::ss],G[::ss],B[::ss]])
+            return (V, C)
         else:
             V = numpy.array([infile.x, infile.y, infile.z])
             C = numpy.array([R,G,B])
-        return (V, C)
+            return (V, C)
 
     else:
         print("Unknown point cloud format, extension: ", ext)

@@ -289,8 +289,8 @@ def export_OBJ(filepath, obj):
                     texcoords = (v - numpy.min(v)) / numpy.ptp(v)
                     #Add 2nd dimension (not actually necessary,
                     #tex coords can by 1d but breaks some loaders (meshlab)
-                    #zeros = numpy.zeros((len(texcoords)))
-                    #texcoords = numpy.vstack((texcoords,zeros)).reshape([2, -1]).transpose()
+                    zeros = numpy.zeros((len(texcoords)))
+                    texcoords = numpy.vstack((texcoords,zeros)).reshape([2, -1]).transpose()
 
             print("- Writing vertices:",verts.shape)
             for v in verts:
