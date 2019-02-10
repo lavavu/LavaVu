@@ -768,11 +768,18 @@ BoxViewer.prototype.updateDims = function(view) {
   if (!view) return;
   var oldsize = this.modelsize;
 
-  /*/Check for valid dims
-  for (var i=0; i<3; i++)
-    if (view.max[i] - view.min[i] <= 0.0)
-      {view.max[i] = 1.0; view.min[i] = -1.0;}
-  */
+  //Check for valid dims
+  for (var i=0; i<3; i++) {
+    if (view.bounds && view.max[i] < view.bounds.max[i])
+      view.max[i] = view.bounds.max[i];
+    if (view.bounds && view.min[i] > view.bounds.min[i])
+      view.min[i] = view.bounds.min[i];
+    /*if (view.max[i] <  view.min[i] <= 0.0) {
+        view.max[i] = 1.0;
+        view.min[i] = -1.0;
+      }
+    }*/
+  }
 
   this.dims = [view.max[0] - view.min[0], view.max[1] - view.min[1], view.max[2] - view.min[2]];
   this.modelsize = Math.sqrt(this.dims[0]*this.dims[0] + this.dims[1]*this.dims[1] + this.dims[2]*this.dims[2]);
