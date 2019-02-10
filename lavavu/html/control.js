@@ -106,11 +106,6 @@ WindowInteractor.prototype.init = function() {
 
 WindowInteractor.prototype.execute = function(cmd, callback) {
   //console.log("execute: " + cmd);
-  if (!this.box) {
-    console.log("ABORT, not yet initialised. Skip executing: " + cmd);
-    return;
-  }
-
   var that = this;
   var final_callback = function(response) {
     if (callback)
@@ -193,6 +188,10 @@ WindowInteractor.prototype.get_image = function(onload) {
 
 WindowInteractor.prototype.get_state = function() {
   //Reload state
+  if (!this.box) {
+    console.log("Not yet initialised. Skip get_state");
+    return;
+  }
   //console.log("get_state called by " + this.get_state.caller);
   //if (!this.img) return; //Needed?
   var that = this;
