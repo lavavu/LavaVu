@@ -1697,6 +1697,9 @@ class LavaVuThreadSafe(LavaVuPython.LavaVu):
     def updateColourMap(self, *args, **kwargs):
         return self._lavavu_call('updateColourMap', True, *args, **kwargs)
 
+    def gl_version(self, *args, **kwargs):
+        return self._lavavu_call('gl_version', True, *args, **kwargs)
+
     """
     #def loadColours(self, *args, **kwargs):
     #    #print("COLOURS")
@@ -2265,6 +2268,13 @@ class Viewer(dict):
         properties = self.state["properties"]
         properties.update(self.state["views"][0])
         return str('\n'.join(['    %s=%s' % (k,json.dumps(v)) for k,v in properties.items()]))
+
+    @property
+    def gl(self):
+        """
+        Return GL version string
+        """
+        return self.app.gl_version()
 
     @property
     def port(self):

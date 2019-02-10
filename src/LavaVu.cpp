@@ -3035,7 +3035,7 @@ std::string LavaVu::requestData(std::string key)
 //Python interface functions
 std::string LavaVu::gl_version()
 {
-  if (!amodel || !viewer->isopen) return "(not initialised)";
+  if (!viewer->isopen) return "(not initialised)";
   Shader::version();
   return Shader::gl_version;
 }
