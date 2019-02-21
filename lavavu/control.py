@@ -606,6 +606,7 @@ class Control(HTML):
                 else:
                     target[property] = value #Set the provided value
         self.value = value
+        self._value = value
 
         #Append reload command from prop dict if no command provided
         if target and property is not None:
@@ -645,10 +646,16 @@ class Control(HTML):
 
     def controls(self, type='number', attribs={}, onchange=""):
         #Input control
-        html =  '<input id="---ELID---" class="---ELID---" type="' + type + '" step="any"'
+        html =  '<input id="---ELID---" class="---ELID---" type="' + type + '"'
+        #Set custom attribute for property controls
+        if not "step" in attribs or attribs["step"] is None:
+            attribs["step"] = "any"
+            #if self.value:
+            #    attribs["step"] = abs(self.value) / 100.
+            #else:
+            #    attribs["step"] = "any"
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
-        #Set custom attribute for property controls
         html += self.attribs()
         html += 'value="' + str(self.value) + '" '
         #Onchange event
@@ -679,22 +686,38 @@ class Divider(Control):
 class Number(Control):
     """A basic numerical input control
     """
+    def __init__(self, target=None, property=None, command=None, value=None, label=None, index=None, step=None, readproperty=None):
+        super(Number, self).__init__(target, property, command, value, label, index, readproperty)
+
+        #Get step defaults from prop dict
+        _lv = getviewer(target)
+        if step is None and property is not None and property in _lv.properties:
+            prop = _lv.properties[property]
+            #Check for integer type, set default step to 1
+            T = prop["type"]
+            ctrl = prop["control"]
+            if "integer" in T:
+                step = 1
+            elif len(ctrl) > 1 and len(ctrl[1]) == 3:
+                step = ctrl[1][2]
+
+        self.step = step
 
     def controls(self):
         html = self.labelhtml()
-        html += super(Number, self).controls()
+        attribs = {"step" : self.step}
+        html += super(Number, self).controls('number', attribs)
         return html + '<br>\n'
 
 class Number2D(Control):
     """A set of two numeric controls for adjusting a 2D value
     """
-    def __init__(self, target, property, *args, **kwargs):
-        curval = getproperty(target, property)
-
-        super(Number2D, self).__init__(target, property, *args, **kwargs)
-
-        self.ctrlX = Number(target=target, property=property, value=curval[0], label="", index=0)
-        self.ctrlY = Number(target=target, property=property, value=curval[1], label="", index=1)
+    def __init__(self, target, property, label=None, step=None, *args, **kwargs):
+        super(Number2D, self).__init__(target, property, label=label, *args, **kwargs)
+        if self._value is None:
+            self._value = getproperty(target, property)
+        self.ctrlX = Number(target=target, property=property, value=self._value[0], step=step, label="", index=0)
+        self.ctrlY = Number(target=target, property=property, value=self._value[1], step=step, label="", index=1)
 
     def controls(self):
         html = self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls()
@@ -703,14 +726,13 @@ class Number2D(Control):
 class Number3D(Control):
     """A set of three numeric controls for adjusting a 3D value
     """
-    def __init__(self, target, property, *args, **kwargs):
-        curval = getproperty(target, property)
-
-        super(Number3D, self).__init__(target, property, *args, **kwargs)
-
-        self.ctrlX = Number(target=target, property=property, value=curval[0], label="", index=0)
-        self.ctrlY = Number(target=target, property=property, value=curval[1], label="", index=1)
-        self.ctrlZ = Number(target=target, property=property, value=curval[2], label="", index=2)
+    def __init__(self, target, property, label=None, step=None, *args, **kwargs):
+        super(Number3D, self).__init__(target, property, label=label, *args, **kwargs)
+        if self._value is None:
+            self._value = getproperty(target, property)
+        self.ctrlX = Number(target=target, property=property, value=self._value[0], step=step, label="", index=0)
+        self.ctrlY = Number(target=target, property=property, value=self._value[1], step=step, label="", index=1)
+        self.ctrlZ = Number(target=target, property=property, value=self._value[2], step=step, label="", index=2)
 
     def controls(self):
         html = self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
@@ -721,8 +743,7 @@ class Rotation(Control):
     """
     def __init__(self, target, *args, **kwargs):
         self.label="Rotation"
-        #super(Control, self).__init__(target, *args, **kwargs)
-        #super(Control, self).__init__(target, *args, **kwargs)
+        super(Rotation, self).__init__(target, *args, **kwargs)
 
         self.ctrlX0 = Button(target=target, command="rotate x -1", label="-X")
         self.ctrlX1 = Button(target=target, command="rotate x 1", label="+X")
@@ -767,7 +788,7 @@ class Range(Control):
         #Get range & step defaults from prop dict
         _lv = getviewer(target)
         defrange = [0., 1., 0.]
-        if  property is not None and property in _lv.properties:
+        if property is not None and property in _lv.properties:
             prop = _lv.properties[property]
             #Check for integer type, set default step to 1
             T = prop["type"]
@@ -1178,16 +1199,17 @@ class Range2D(Control):
     range: list/tuple
         Min/max values for the ranges
     """
-    def __init__(self, target, property, label, range=(0.,1.), step=None):
-        self.label = label
+    def __init__(self, target, property, label=None, value=None, range=(0.,1.), step=None, *args, **kwargs):
+        super(Range2D, self).__init__(target, property=property, command=None, value=value, label=label, *args, **kwargs)
 
-        curval = getproperty(target, property)
+        if self._value is None:
+            self._value = getproperty(target, property)
 
-        self.ctrlX = Range(target=target, property=property, step=step, value=curval[0], range=range, label="", index=0)
-        self.ctrlY = Range(target=target, property=property, step=step, value=curval[1], range=range, label="", index=1)
+        self.ctrlX = Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0)
+        self.ctrlY = Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1)
 
     def controls(self):
-        return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
+        return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls()
 
 class Range3D(Control):
     """A set of three range slider controls for adjusting a 3D value
@@ -1197,14 +1219,15 @@ class Range3D(Control):
     range: list/tuple
         Min/max values for the ranges
     """
-    def __init__(self, target, property, label, range=(0.,1.), step=None):
-        self.label = label
+    def __init__(self, target, property, label=None, value=None, range=(0.,1.), step=None, *args, **kwargs):
+        super(Range3D, self).__init__(target, property=property, command=None, value=value, label=label, *args, **kwargs)
 
-        curval = getproperty(target, property)
+        if self._value is None:
+            self._value = getproperty(target, property)
 
-        self.ctrlX = Range(target=target, property=property, step=step, value=curval[0], range=range, label="", index=0)
-        self.ctrlY = Range(target=target, property=property, step=step, value=curval[1], range=range, label="", index=1)
-        self.ctrlZ = Range(target=target, property=property, step=step, value=curval[2], range=range, label="", index=2)
+        self.ctrlX = Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0)
+        self.ctrlY = Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1)
+        self.ctrlZ = Range(target=target, property=property, step=step, value=self._value[2], range=range, label="", index=2)
 
     def controls(self):
         return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
@@ -1453,14 +1476,15 @@ class ControlFactory(object):
         viewerid = len(windows)
 
         #Generate the HTML
-        html = ""
+        html = "<form novalidate>"
         chtml = ""
         for c in self._content:
             chtml += c.html()
         if len(chtml):
-            html = '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
+            html += '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
         for c in self._containers:
             html += c.html()
+        html += "</form>"
 
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
