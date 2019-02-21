@@ -1075,6 +1075,22 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     aview->autoRotate();
   }
+  else if (parsed.exists("spin"))
+  {
+    if (gethelp)
+    {
+      help += "Auto-spin model, animates\n\n"
+              "**Usage:** spin axis degrees\n\n"
+              "axis (x/y/z) : axis of rotation\n"
+              "degrees (number) : degrees of rotation per frame\n\n";
+      return false;
+    }
+
+    std::string rcmd = "rotate " + parsed.getall("spin", 0);
+    parseCommands("animate 1");
+    parseCommands(rcmd);
+    parseCommands("repeat -1");
+  }
   else if (parsed.has(fval, "zoom"))
   {
     if (gethelp)
@@ -3357,7 +3373,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"file", "script", "figure", "savefigure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "export", "csv", "json", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
-     "autorotate", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
+     "autorotate", "spin", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
     {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",
      "vertex", "normal", "vector", "value", "colour", "isosurface"},
