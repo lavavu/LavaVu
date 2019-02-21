@@ -187,7 +187,7 @@
     "type": "boolean",
     "desc": "Calculate dynamic range values per step rather than over full time range",
     "strict": true,
-    "redraw": 3,
+    "redraw": 2,
     "control": [
       true
     ]
@@ -306,7 +306,7 @@
     "type": "colour",
     "desc": "Object colour RGB(A)",
     "strict": true,
-    "redraw": 3,
+    "redraw": 2,
     "control": [
       true
     ]
@@ -339,7 +339,7 @@
     "type": "real [0,1]",
     "desc": "Opacity of object where 0 is transparent and 1 is opaque",
     "strict": true,
-    "redraw": 3,
+    "redraw": 2,
     "control": [
       true,
       [
@@ -1421,7 +1421,7 @@
     "type": "boolean",
     "desc": "Set to true to use log scales",
     "strict": true,
-    "redraw": 1,
+    "redraw": 2,
     "control": [
       true
     ]
@@ -1432,7 +1432,7 @@
     "type": "boolean",
     "desc": "Set to true to apply colours as discrete values rather than gradient",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
       true
     ]
@@ -1443,7 +1443,7 @@
     "type": "colours",
     "desc": "Colour list (or string), see [Colour map lists] for more information",
     "strict": false,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
       false
     ]
@@ -1457,9 +1457,9 @@
     "type": "real[2]",
     "desc": "Fixed scale range, default is to automatically calculate range based on data min/max",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
-      true
+      false
     ]
   },
   "locked": {
@@ -1468,7 +1468,7 @@
     "type": "boolean",
     "desc": "Set to true to lock colourmap ranges to current values",
     "strict": true,
-    "redraw": 0,
+    "redraw": 2,
     "control": [
       true
     ]
@@ -1629,7 +1629,7 @@
       1.0
     ],
     "target": "view",
-    "type": "real[4]",
+    "type": "quaternion",
     "desc": "Camera rotation quaternion [x,y,z,w]",
     "strict": true,
     "redraw": 0,
@@ -1891,7 +1891,7 @@
       0,
       255
     ],
-    "target": "global",
+    "target": "view",
     "type": "colour",
     "desc": "Background colour RGB(A)",
     "strict": true,

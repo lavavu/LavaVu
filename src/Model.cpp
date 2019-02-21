@@ -2049,55 +2049,10 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
 
   for (unsigned int v=0; v < views.size(); v++)
   {
-    View* view = views[v];
-    json& vprops = view->properties.data;
-
-    if (view->initialised)
-    {
-      float rotate[4], rota[3], translate[3], focus[3];
-      view->getCamera(rotate, translate, focus);
-      Quaternion qrot(rotate[0], rotate[1], rotate[2], rotate[3]);
-      qrot.toEuler(rota[0], rota[1], rota[2]);
-      json rot, ra, trans, foc, scale, min, max;
-      for (int i=0; i<4; i++)
-      {
-        rot.push_back(rotate[i]);
-        if (i>2) break;
-        ra.push_back(rota[i]);
-        trans.push_back(translate[i]);
-        foc.push_back(focus[i]);
-        scale.push_back(view->scale[i]);
-        min.push_back(view->min[i]);
-        max.push_back(view->max[i]);
-      }
-
-      vprops["rotate"] = rot;
-      vprops["xyzrotate"] = ra;
-      vprops["translate"] = trans;
-      vprops["focus"] = foc;
-      vprops["scale"] = scale;
-
-      vprops["aperture"] = view->properties["aperture"];
-      vprops["near"] = view->properties["near"];
-      vprops["far"] = view->properties["far"];
-
-      //Can't set min/max properties from auto calc or will override future bounding box calc,
-      //useful to get the calculated bounding box, so export as "bounds"
-      json bounds;
-      bounds["min"] = min;
-      bounds["max"] = max;
-      vprops["bounds"] = bounds;
-      vprops["is3d"] = view->is3d;
-    }
-
-    //Converts named colours to js readable
-    if (vprops.count("background") > 0)
-      vprops["background"] = Colour(vprops["background"]).toString();
-    if (vprops.count("bordercolour") > 0)
-      vprops["bordercolour"] = Colour(vprops["bordercolour"]).toString();
-
     //Add the view
-    outviews.push_back(vprops);
+    View* view = views[v];
+    view->exportProps();
+    outviews.push_back(view->properties.data);
   }
 
   for (unsigned int i = 0; i < colourMaps.size(); i++)
@@ -2228,41 +2183,7 @@ int Model::jsonRead(std::string data)
     //Apply base properties with merge
     view->properties.merge(inviews[v]);
 
-    //TODO: Fix view to use all these properties directly
-    json rot, trans, foc, scale, min, max;
-    //Skip import cam if not provided
-    if (inviews[v].count("rotate") > 0)
-    {
-      rot = view->properties["rotate"];
-      if (rot.size() == 4)
-        view->setRotation(rot[0], rot[1], rot[2], rot[3]);
-      else if (rot.size() == 3)
-        view->setRotation(rot[0], rot[1], rot[2]);
-    }
-    else
-      view->setRotation(0, 0, 0, 1);
-
-    if (inviews[v].count("translate") > 0)
-    {
-      trans = view->properties["translate"];
-      view->setTranslation(trans[0], trans[1], trans[2]);
-    }
-    if (inviews[v].count("focus") > 0)
-    {
-      foc = view->properties["focus"];
-      view->focus(foc[0], foc[1], foc[2]);
-    }
-    if (inviews[v].count("scale") > 0)
-    {
-      scale = view->properties["scale"];
-      view->scale[0] = scale[0];
-      view->scale[1] = scale[1];
-      view->scale[2] = scale[2];
-    }
-    //min = aview->properties["min"];
-    //max = aview->properties["max"];
-    //view->init(false, newmin, newmax);
-    view->setBackground(); //Update background colour
+    view->importProps();
   }
 
   // Import colourmaps

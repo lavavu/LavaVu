@@ -1726,16 +1726,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     session.globals["resolution"] = json::array({viewer->width, viewer->height});
     printMessage("Full-screen is %s", viewer->fullscreen ? "ON":"OFF");
   }
-  else if (parsed.exists("scaling"))
-  {
-    if (gethelp)
-    {
-      help += "Disable/enable scaling, default is on, disable to view model un-scaled\n";
-      return false;
-    }
-
-    printMessage("Scaling is %s", aview->scaleSwitch() ? "ON":"OFF");
-  }
   else if (parsed.exists("fit"))
   {
     if (gethelp)
@@ -3371,7 +3361,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
     {"hide", "show", "delete", "load", "select", "add", "append", "read", "label", "name",
      "vertex", "normal", "vector", "value", "colour", "isosurface"},
-    {"background", "alpha", "axis", "scaling", "rulers",
+    {"background", "alpha", "axis", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
      "pointsample", "border", "title", "scale", "modelscale"},
     {"next", "play", "stop", "open", "interactive", "display"},

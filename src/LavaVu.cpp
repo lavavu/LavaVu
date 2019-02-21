@@ -659,6 +659,14 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
     data = data.substr(pos+1);
     obj = aobject;
   }
+
+  //Extract key name, lowercase, everything before first non-alpha character
+  std::transform(key.begin(), key.end(), key.begin(), ::tolower);
+  std::size_t found = key.find_first_not_of("abcdefghijklmnopqrstuvwxyz");
+  std::string rawkey = key;
+  if (found != std::string::npos)
+    rawkey = key.substr(0,found);
+
   //@prop : temporal property
   if (key.at(0) == '@')
   {
@@ -670,17 +678,35 @@ bool LavaVu::parseProperty(std::string data, DrawingObject* obj)
   }
   else if (obj)
   {
-    //Properties set on object or its colourmap
-    reload = session.parse(&obj->properties, data);
-    if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
-                           << ", DATA: " << obj->properties.data << std::endl;
-    obj->setup();
+    //Properties reserved for colourmaps can be set from any objects that use that map
+    if (obj->colourMap && std::find(session.colourMapProps.begin(), session.colourMapProps.end(), rawkey) != session.colourMapProps.end())
+    {
+      reload = session.parse(&obj->colourMap->properties, data);
+      if (verbose) std::cerr << "COLOURMAP " << std::setw(2) << obj->colourMap->name
+                             << ", DATA: " << obj->colourMap->properties.data << std::endl;
+    }
+    else
+    {
+      reload = session.parse(&obj->properties, data);
+      if (verbose) std::cerr << "OBJECT " << std::setw(2) << obj->name()
+                             << ", DATA: " << obj->properties.data << std::endl;
+      obj->setup();
+    }
   }
   else
   {
     //Properties set globally or on view
-    reload = session.parse(NULL, data);
-    if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
+    if (aview && std::find(session.viewProps.begin(), session.viewProps.end(), rawkey) != session.viewProps.end())
+    {
+      reload = session.parse(&aview->properties, data);
+      if (verbose) std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
+      aview->importProps();
+    }
+    else
+    {
+      reload = session.parse(NULL, data);
+      if (verbose) std::cerr << "GLOBAL: " << std::setw(2) << session.globals << std::endl;
+    }
   }
 
   applyReload(obj, reload);
@@ -692,13 +718,14 @@ void LavaVu::applyReload(DrawingObject* obj, int reload)
   //Reload required for prop set?
   //1 = redraw only
   //2 = full data reload
-  //3 = full reload and view reset
-  //4 = full reload and view reset with autozoom
+  //3 = full reload and view reset with autozoom
   if (amodel && reload > 0)
     amodel->reloadRedraw(obj, reload > 1);
+
+  //Always do a view reset after prop change
+  viewset = RESET_YES; //Force bounds check
+
   if (reload == 3)
-    viewset = RESET_YES; //Force bounds check
-  if (reload == 4)
     viewset = RESET_ZOOM; //Force check for resize and autozoom
 }
 
@@ -1797,6 +1824,8 @@ void LavaVu::resetViews(bool autozoom)
   //Update title
   viewer->title(title.str());
 
+  //Apply any prop changes
+  aview->importProps();
 }
 
 //Called when view changed
@@ -1810,17 +1839,6 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
   if (view >= (int)amodel->views.size()) view = 0;
 
   aview = amodel->views[view];
-
-  //View property pass-through
-  for (auto p : session.viewProps)
-  {
-    if (session.globals.count(p))
-    {
-      if (verbose) std::cerr << "GLOBAL ==> VIEW: " << p << std::endl;
-      aview->properties.data[p] = session.globals[p];
-      session.globals.erase(p); //Delete from global
-    }
-  }
 
   //Called when timestep/model changed (new model data)
   //Set model size from geometry / bounding box and apply auto zoom
@@ -1892,8 +1910,7 @@ void LavaVu::viewSelect(int idx, bool setBounds, bool autozoom)
       g->setup(aview);
   }
 
-  //Update background colour
-  aview->setBackground();
+  aview->setBackground(); //Update background colour
 }
 
 void LavaVu::viewApply(int idx)

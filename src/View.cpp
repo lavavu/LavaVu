@@ -158,6 +158,7 @@ bool View::init(bool force, float* newmin, float* newmax)
   {
     //Only flag correctly initialised after focal point set (have model bounds)
     initialised = true;
+    updated = true;
 
     projection(EYE_CENTRE);
 
@@ -279,9 +280,6 @@ void View::getCamera(float rotate[4], float translate[3], float focus[3])
   rotate[3] = rotation->w;
   memcpy(translate, model_trans, sizeof(float) * 3);
   memcpy(focus, focal_point, sizeof(float) * 3);
-  properties.data["aperture"] = fov;
-  properties.data["near"] = near;
-  properties.data["far"] = far;
 }
 
 std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
@@ -293,7 +291,6 @@ std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
     fov = aperture;
   if (fov < 10) fov = 10;
   if (fov > 170) fov = 170;
-  properties.data["aperture"] = fov;
 
   focal_length_adj += focal_len;
   eye_sep_ratio += eye_sep;
@@ -304,6 +301,7 @@ std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
   if (aperture) ss << "aperture " << fov;
   if (focal_len) ss << "focallength " << focal_len;
   if (eye_sep) ss << "eyeseparation " << eye_sep;
+  updated = true;
   return ss.str();
 }
 
@@ -318,6 +316,7 @@ void View::focus(float x, float y, float z, float aperture, bool setdefault)
   //Set as the default
   if (setdefault)
     memcpy(default_focus, focal_point, sizeof(float)*3);
+  updated = true;
 }
 
 void View::setTranslation(float x, float y, float z)
@@ -325,6 +324,7 @@ void View::setTranslation(float x, float y, float z)
   model_trans[0] = x;
   model_trans[1] = y;
   model_trans[2] = z;
+  updated = true;
 }
 
 void View::translate(float x, float y, float z)
@@ -332,6 +332,7 @@ void View::translate(float x, float y, float z)
   model_trans[0] += x;
   model_trans[1] += y;
   model_trans[2] += z;
+  updated = true;
 }
 
 void View::setRotation(float x, float y, float z, float w)
@@ -341,6 +342,7 @@ void View::setRotation(float x, float y, float z, float w)
   rotation->z = z;
   rotation->w = w;
   rotated = true;
+  updated = true;
 }
 
 void View::setRotation(float x, float y, float z)
@@ -348,6 +350,7 @@ void View::setRotation(float x, float y, float z)
   //Convert from Euler angles
   rotation->fromEuler(x, y, z);
   rotated = true;
+  updated = true;
 }
 
 void View::rotate(float degrees, Vec3d axis)
@@ -386,6 +389,7 @@ void View::setScale(float x, float y, float z, bool replace)
   }
 
   iscale = Vec3d(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
+  updated = true;
 }
 
 std::string View::zoom(float factor)
@@ -396,6 +400,7 @@ std::string View::zoom(float factor)
   if (model_trans[2] > model_size*0.3) model_trans[2] = model_size*0.3;
   std::ostringstream ss;
   ss << "translate z " << adj;
+  updated = true;
   return ss.str();
 }
 
@@ -403,7 +408,7 @@ std::string View::zoomClip(float factor)
 {
   near += factor * model_size;
   checkClip(near, far);
-  properties.data["near"] = near;
+  updated = true;
   //Returns command to set in history
   std::ostringstream ss;
   ss << "nearclip " << near;
@@ -422,6 +427,7 @@ void View::reset()
   }
   rotation->identity();
   rotated = true;   //Flag rotation
+  updated = true;
 }
 
 void View::print()
@@ -650,29 +656,90 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   //Store the matrix
   std::lock_guard<std::mutex> guard(matrix_lock);
   glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
+
+  //Copy updates to properties
+  if (updated)
+  {
+    exportProps();
+    updated = false;
+  }
 }
 
-bool View::scaleSwitch()
+void View::importProps()
 {
-  static float save_scale[3];
-  if (scaled)
+  if (!initialised || updated) return;
+  //Copy view properties to cache
+  //Skip import cam if not provided
+  if (properties.has("rotate"))
   {
-    save_scale[0] = scale[0];
-    save_scale[1] = scale[1];
-    save_scale[2] = scale[2];
-    scale[0] = 1.0;
-    scale[1] = 1.0;
-    scale[2] = 1.0;
-    scaled = false;
+    json rot = properties["rotate"];
+    /*json erot = properties["xyzrotate"];
+    if (erot.size() == 3)
+    {
+      rotation->identity();
+      //setRotation(erot[0], erot[1], erot[2]);
+      rotate(erot[0], 0, 0);
+      rotate(0, erot[1], 0);
+      rotate(0, 0, erot[2]);
+    }
+    else*/
+    if (rot.size() == 4)
+      setRotation(rot[0], rot[1], rot[2], rot[3]);
+    else if (rot.size() == 3)
+      setRotation(rot[0], rot[1], rot[2]);
   }
-  else
+
+  if (properties.has("translate"))
   {
-    scale[0] = save_scale[0];
-    scale[1] = save_scale[1];
-    scale[2] = save_scale[2];
-    scaled = true;
+    json trans = properties["translate"];
+    setTranslation(trans[0], trans[1], trans[2]);
   }
-  return scaled;
+
+  if (properties.has("focus"))
+  {
+    json foc = properties["focus"];
+    focus(foc[0], foc[1], foc[2]);
+  }
+
+  if (properties.has("scale"))
+  {
+    json sc = properties["scale"];
+    scale[0] = sc[0];
+    scale[1] = sc[1];
+    scale[2] = sc[2];
+  }
+  //min = aproperties["min"];
+  //max = aproperties["max"];
+  //init(false, newmin, newmax);
+}
+
+void View::exportProps()
+{
+  if (!initialised) return;
+  float rota[3];
+  rotation->toEuler(rota[0], rota[1], rota[2]);
+  properties.data["rotate"] = json::array({rotation->x, rotation->y, rotation->z, rotation->w});
+  properties.data["xyzrotate"] = json::array({rota[0], rota[1], rota[2]});
+  properties.data["translate"] = json::array({model_trans[0], model_trans[1], model_trans[2]});
+  properties.data["focus"] = json::array({focal_point[0], focal_point[1], focal_point[2]});
+  properties.data["scale"] = json::array({scale[0], scale[1], scale[2]});
+  properties.data["aperture"] = fov;
+  properties.data["near"] = near;
+  properties.data["far"] = far;
+
+  //Can't set min/max properties from auto calc or will override future bounding box calc,
+  //useful to get the calculated bounding box, so export as "bounds"
+  json bounds;
+  bounds["min"] = min;
+  bounds["max"] = max;
+  properties.data["bounds"] = bounds;
+  properties.data["is3d"] = is3d;
+
+  /*/Converts named colours to js readable
+  if (properties.data.count("background") > 0)
+    properties.data["background"] = Colour(properties.data["background"]).toString();
+  if (properties.data.count("bordercolour") > 0)
+    properties.data["bordercolour"] = Colour(properties.data["bordercolour"]).toString();*/
 }
 
 int View::switchCoordSystem()
@@ -803,6 +870,8 @@ void View::zoomToFit()
     //}
     count++;
   }
+
+  updated = true;
 }
 
 void View::drawOverlay()

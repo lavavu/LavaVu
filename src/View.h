@@ -83,6 +83,7 @@ public:
   bool filtered; //Filter objects in view by object list
   bool scaled;
   bool rotated;  //Flags whether view has rotated since last redraw
+  bool updated = false;
 
   // view params
   float x;          // X offset [0,1]
@@ -186,7 +187,8 @@ public:
   void apply(bool no_rotate=false, Quaternion* obj_rotation=NULL, Vec3d* obj_translation=NULL);
   int switchCoordSystem();
   void zoomToFit();
-  bool scaleSwitch();
+  void exportProps();
+  void importProps();
 
   //Utility functions
   void drawOverlay();
