@@ -3452,6 +3452,8 @@ void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::strin
       if (vals->label == label)
         vals->clear();
     container->read(geom, len, array, label);
+    geom->draw->ranges[label] = Range();
+    container->scanDataRange(geom->draw);
   }
 }
 
