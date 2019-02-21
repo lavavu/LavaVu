@@ -307,8 +307,8 @@ class PropertyAction(Action):
         if command is None:
             command = "redraw"
         self.command = command
-        self.index = index
         super(PropertyAction, self).__init__(target, command)
+        self.index = index
 
     def script(self):
         #Return script action for HTML export
