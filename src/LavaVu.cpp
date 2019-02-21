@@ -2035,7 +2035,7 @@ void LavaVu::display(bool redraw)
   }
 
   //View not yet initialised, call resetViews
-  if (!aview->initialised)
+  if (!aview->initialised && amodel->objects.size())
     viewset = RESET_ZOOM;
 
   //Viewport reset flagged
