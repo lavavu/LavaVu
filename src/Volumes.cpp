@@ -520,25 +520,27 @@ void Volumes::render(int i)
   //Field data requires normalisation to [0,1]
   //Pass minimum,maximum in place of colourmap calibrate
   Range range(0, 1);
-  if (geom[i]->colourData())
+  if (cmap && cmap->properties.has("range"))
+  {
+    float r[2] = {0.0, 1.0};
+    Properties::toArray<float>(cmap->properties["range"], r, 2);
+    if (r[0] < r[1])
+    {
+      range = Range(r[0], r[1]);
+      //std::cout << "USING CMAP RANGE: " << range << std::endl;
+    }
+    //cmap->calibrate(&range);
+  }
+  else if (geom[i]->colourData()) // && (!cmap || !cmap->properties.has("range") || cmap->properties["range"].is_null()))
   {
     range = geom[i]->draw->ranges[geom[i]->colourData()->label];
     //For non float type, normalise isovalue to range [0,1] to match data
     //if (geom[i]->texture->type != VOLUME_FLOAT)
     //  isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
-    prog->setUniform2f("uRange", range.data());
+    //prog->setUniform2f("uRange", range.data());
+    //std::cout << "USING DATA RANGE: " << range << std::endl;
   }
-  else
-  {
-    float r[2] = {0.0, 1.0};
-    ColourMap* cmap = geom[i]->draw->colourMap;
-    if (cmap)
-    {
-      Properties::toArray<float>(cmap->properties["range"], r, 2);
-      range.update(r[0], r[1]);
-      cmap->calibrate(&range);
-    }
-  }
+
   //std::cout << "Range " << range.minimum << " : " << range.maximum << std::endl;
   //Normalise provided isovalue to match data range
   isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
