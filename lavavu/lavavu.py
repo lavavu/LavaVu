@@ -2733,7 +2733,7 @@ class Viewer(dict):
         """
         return LavaVuPython.ColourMap.getDefaultMap(name)
 
-    def colourmap(self, name, data=cubeHelix(), reverse=False, monochrome=False, **kwargs):
+    def colourmap(self, data=cubeHelix(), name="", reverse=False, monochrome=False, **kwargs):
         """
         Load or create a colour map
 
