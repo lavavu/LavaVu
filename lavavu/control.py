@@ -852,7 +852,7 @@ class File(Control):
 
     Unfortunately there is no way to get the file path
     """
-    def __init__(self, *args, command="file", directory=False, multiple=False, accept="", **kwargs):
+    def __init__(self, command="file", directory=False, multiple=False, accept="", *args, **kwargs):
         self.options = ""
         if directory:
             self.options += 'webkitdirectory directory '
@@ -862,7 +862,7 @@ class File(Control):
             #Comma separated file types list, eg: image/*,audio/*,video/*,.pdf
             self.options += 'accept="' + accept + '"'
 
-        super(File, self).__init__(*args, command=command, label="Load File", **kwargs)
+        super(File, self).__init__(command=command, label="Load File", *args, **kwargs)
 
     def controls(self):
         html = self.labelhtml()
