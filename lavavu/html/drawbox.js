@@ -281,6 +281,8 @@ BoxRenderer.prototype.draw = function(webgl) {
 //This object holds the viewer details and calls the renderers
 function BoxViewer(canvas) {
   this.vis = {};
+  this.vis.objects = [];
+  this.vis.colourmaps = [];
   this.canvas = canvas;
   if (!canvas) {alert("Invalid Canvas"); return;}
   try {
@@ -542,6 +544,16 @@ BoxViewer.prototype.loadFile = function(source) {
   //Copy updated values to all generated controls
   //This allows data changed by other means (ie: through python) to 
   // be reflected in the HTML control values
+  var that = this;
+  var getValWithIndex = function(prop, val, idx) {
+    if (val === undefined) return;
+    if (idx != null && idx >= 0 && val.length > idx)
+       val = val[idx];
+    //Round off floating point numbers
+    if (that.dict[property].type.indexOf('real') >= 0)
+       return val.toFixed(6) / 1; //toFixed() / 1 rounds to fixed position and removes trailing zeros
+    return val;
+  }
   var pel = this.canvas.parentElement.parentElement;
   var children = pel.getElementsByTagName('*');
   for (var i=0; i<children.length; i++) {
@@ -550,7 +562,8 @@ BoxViewer.prototype.loadFile = function(source) {
     if (id.indexOf('lvctrl') >= 0) {
       var target = children[i].getAttribute("data-target");
       var property = children[i].getAttribute("data-property");
-      //console.log(id + " : " + target + " : " + property);
+      var idx = children[i].getAttribute("data-index");
+      //console.log(id + " : " + target + " : " + property + " [" + idx + "]");
       if (property) {
         if (target) {
           //Loop through objects, find those whose name matches element target
@@ -558,6 +571,8 @@ BoxViewer.prototype.loadFile = function(source) {
             var val = this.vis.objects[o][property];
             if (val === undefined) continue;
             if (this.vis.objects[o].name == target) {
+              if (idx != null && idx >= 0)
+                val = val[idx];
               //console.log("SET " + id + " : ['" + property + "'] VALUE TO " + val);
               //console.log("TAG: " + children[i].tagName);
               if (children[i].type == 'checkbox')
@@ -603,14 +618,20 @@ BoxViewer.prototype.loadFile = function(source) {
                 el.gradient.update(true); //Update without triggering callback that triggers a state reload
               } else {
                 //console.log(id + " : " + target + " : " + property + " = " + val);
-                children[i].value = val;
+                children[i].value = getValWithIndex(property, val, idx);
               }
             }
           }
+        } else if (this.vis.views[0][property] != null) {
+          //View property
+          var val = this.vis.views[0][property];
+          //console.log("SET " + id + " : ['" + property + "'] VIEW PROP VALUE TO " + val);
+          children[i].value = getValWithIndex(property, val, idx);
         } else if (this.vis.properties[property] != null) {
           //Global property
-          //console.log("SET " + id + " : ['" + property + "'] GLOBAL VALUE TO " + this.vis.properties[property]);
-          children[i].value = this.vis.properties[property];
+          var val = this.vis.properties[property];
+          //console.log("SET " + id + " : ['" + property + "'] GLOBAL VALUE TO " + val);
+          children[i].value = getValWithIndex(property, val, idx);
         }
       }
     }
@@ -683,9 +704,6 @@ BoxViewer.prototype.draw = function() {
 BoxViewer.prototype.syncRotation = function() {
   this.rotated = true;
   this.draw();
-  //if (this.command)
-  //  this.command('' + this.getRotationString());
-
   rstr = '' + this.getRotationString();
   that = this;
   window.requestAnimationFrame(function() {that.command(rstr);});

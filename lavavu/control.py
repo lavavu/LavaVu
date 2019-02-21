@@ -159,14 +159,21 @@ def _webglviewcode(shaderpath, menu=True, lighttheme=True):
     """
     Returns WebGL base code for an interactive visualisation window
     """
-    return _webglcode(getshaders(shaderpath), ['styles.css'], ['gl-matrix-min.js', 'OK-min.js', 'draw.js'], menu=menu, lighttheme=lighttheme, stats=True)
+    if menu:
+        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', 'dat.gui.min.js', 'stats.min.js', '!REQUIRE_ON', 'menu.js', 'OK-min.js', 'draw.js']
+    else:
+        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', '!REQUIRE_ON', 'OK-min.js', 'draw.js']
+    return _webglcode(getshaders(shaderpath), ['styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
 
 def _webglboxcode(menu=True, lighttheme=True):
     """
     Returns WebGL base code for the bounding box interactor window
     """
-    return _webglcode(fragmentShader + vertexShader, ['control.css'], ['gl-matrix-min.js', 'OK-min.js', 'control.js', 'drawbox.js'], menu=menu, lighttheme=lighttheme)
-    #return _webglcode(fragmentShader + vertexShader, ['control.css'], ['gl-matrix-min.js', 'OK.js', 'control.js', 'drawbox.js'], menu=menu, lighttheme=lighttheme)
+    if menu:
+        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', 'dat.gui.min.js', 'stats.min.js', '!REQUIRE_ON', 'menu.js', 'OK-min.js', 'control.js', 'drawbox.js']
+    else:
+        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', '!REQUIRE_ON', 'OK-min.js', 'control.js', 'drawbox.js']
+    return _webglcode(fragmentShader + vertexShader, ['control.css'], jslibs, menu=menu, lighttheme=lighttheme)
 
 def getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
@@ -185,6 +192,12 @@ def _filestohtml(files, tag="script"):
     return code
 
 def _readfilehtml(filename):
+    #HACK: Need to disable require.js to load libraries from inline script tags
+    if filename == "!REQUIRE_OFF":
+        return '_backup_define = window.define; window.define = undefined;'
+    elif filename == "!REQUIRE_ON":
+        return 'window.define = _backup_define; delete _backup_define;'
+
     #Read a file from the htmlpath (or cached copy)
     global _file_cache
     if not filename in _file_cache:
@@ -229,6 +242,7 @@ class Action(object):
             self.property = readproperty
         Action.actions.append(self)
         self.lastvalue = 0
+        self.index = None
 
     def script(self):
         #Return script action for HTML export
@@ -239,7 +253,7 @@ class Action(object):
     @staticmethod
     def export_actions(uid=0, port=0, proxy=False):
         #Process actions
-        actionjs = '<script type="text/Javascript">\n'
+        actionjs = '<script type="text/javascript">\n'
         if port > 0:
             actionjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {uid}, {port});\n'.format(uid=uid, port=port)
         else:
@@ -584,7 +598,13 @@ class Control(HTML):
             if value is None:
                 value = getproperty(target, property)
             else:
-                target[property] = value #Set the provided value
+                #2d/3D value?
+                if index is not None:
+                    V = target[property]
+                    V[index] = value
+                    target[property][index] = V #Set the provided value
+                else:
+                    target[property] = value #Set the provided value
         self.value = value
 
         #Append reload command from prop dict if no command provided
@@ -625,7 +645,7 @@ class Control(HTML):
 
     def controls(self, type='number', attribs={}, onchange=""):
         #Input control
-        html =  '<input id="---ELID---" class="---ELID---" type="' + type + '" '
+        html =  '<input id="---ELID---" class="---ELID---" type="' + type + '" step="any"'
         for key in attribs:
             html += key + '="' + str(attribs[key]) + '" '
         #Set custom attribute for property controls
@@ -645,6 +665,8 @@ class Control(HTML):
             if not isviewer(self.target):
                 html += 'data-target="' + str(self.target["name"]) + '" '
             html += 'data-property="' + self.property + '" '
+            if Action.actions[self.id].index is not None:
+                html += 'data-index="' + str(Action.actions[self.id].index) + '" '
         return html
 
 class Divider(Control):
@@ -662,6 +684,57 @@ class Number(Control):
         html = self.labelhtml()
         html += super(Number, self).controls()
         return html + '<br>\n'
+
+class Number2D(Control):
+    """A set of two numeric controls for adjusting a 2D value
+    """
+    def __init__(self, target, property, *args, **kwargs):
+        curval = getproperty(target, property)
+
+        super(Number2D, self).__init__(target, property, *args, **kwargs)
+
+        self.ctrlX = Number(target=target, property=property, value=curval[0], label="", index=0)
+        self.ctrlY = Number(target=target, property=property, value=curval[1], label="", index=1)
+
+    def controls(self):
+        html = self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls()
+        return html.replace('<br>', '') + '<br>'
+
+class Number3D(Control):
+    """A set of three numeric controls for adjusting a 3D value
+    """
+    def __init__(self, target, property, *args, **kwargs):
+        curval = getproperty(target, property)
+
+        super(Number3D, self).__init__(target, property, *args, **kwargs)
+
+        self.ctrlX = Number(target=target, property=property, value=curval[0], label="", index=0)
+        self.ctrlY = Number(target=target, property=property, value=curval[1], label="", index=1)
+        self.ctrlZ = Number(target=target, property=property, value=curval[2], label="", index=2)
+
+    def controls(self):
+        html = self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
+        return html.replace('<br>', '') + '<br>'
+
+class Rotation(Control):
+    """A set of six buttons for adjusting a 3D rotation
+    """
+    def __init__(self, target, *args, **kwargs):
+        self.label="Rotation"
+        #super(Control, self).__init__(target, *args, **kwargs)
+        #super(Control, self).__init__(target, *args, **kwargs)
+
+        self.ctrlX0 = Button(target=target, command="rotate x -1", label="-X")
+        self.ctrlX1 = Button(target=target, command="rotate x 1", label="+X")
+        self.ctrlY0 = Button(target=target, command="rotate y -1", label="-Y")
+        self.ctrlY1 = Button(target=target, command="rotate y 1", label="+Y")
+        self.ctrlZ0 = Button(target=target, command="rotate z -1", label="-Z")
+        self.ctrlZ1 = Button(target=target, command="rotate z 1", label="+Z")
+
+    def controls(self):
+        html = self.labelhtml() + self.ctrlX0.controls() + self.ctrlX1.controls() + self.ctrlY0.controls() + self.ctrlY1.controls() + self.ctrlZ0.controls() + self.ctrlZ1.controls()
+        return html.replace('<br>', '') + '<br>'
+
 
 class Checkbox(Control):
     """A checkbox control for a boolean value
@@ -730,7 +803,7 @@ class Button(Control):
     """A push button control to execute a defined command
     """
     def __init__(self, target, command, label=None):
-        super(Button, self).__init__(target, "", command, "", label)
+        super(Button, self).__init__(target, None, command, None, label)
 
     def onchange(self):
         return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", '', this);"
@@ -772,6 +845,49 @@ class Command(Control):
         _wi[---VIEWERID---].do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
         """
         html = html.replace('---ELID---', self.elid)
+        return html.replace('---ID---', str(self.id))
+
+class File(Control):
+    """A file picker control
+
+    Unfortunately there is no way to get the file path
+    """
+    def __init__(self, *args, command="file", directory=False, multiple=False, accept="", **kwargs):
+        self.options = ""
+        if directory:
+            self.options += 'webkitdirectory directory '
+        elif multiple:
+            self.options += 'multiple '
+        if accept:
+            #Comma separated file types list, eg: image/*,audio/*,video/*,.pdf
+            self.options += 'accept="' + accept + '"'
+
+        super(File, self).__init__(*args, command=command, label="Load File", **kwargs)
+
+    def controls(self):
+        html = self.labelhtml()
+        html += """
+        <div style="border:solid #aaa 1px; padding:10px; margin-bottom: 5px;">
+        <input class="---ELID---" type="file" id="file_selector_---ELID---" ---OPTIONS--- name="files[]"/>
+        <output id="list"></output>
+        </div>
+        <script>
+          function fileSelected_---ELID---(event) {
+            var output = [];
+            for (var i = 0; i < event.target.files.length; i++) {
+              var f = event.target.files.item(i);
+              output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
+                           f.size, ' bytes, last modified: ',
+                           '</li>');
+                _wi[---VIEWERID---].do_action("---ID---", f.name);
+            }
+            document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+          }
+          document.getElementById('file_selector_---ELID---').addEventListener('change', fileSelected_---ELID---, false);            
+        </script>
+        """
+        html = html.replace('---ELID---', self.elid)
+        html = html.replace('---OPTIONS---', self.options)
         return html.replace('---ID---', str(self.id))
 
 class List(Control):
@@ -1054,6 +1170,25 @@ class DualRange(Control):
     def controls(self):
         return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
 
+class Range2D(Control):
+    """A set of two range slider controls for adjusting a 2D value
+
+    Parameters
+    ----------
+    range: list/tuple
+        Min/max values for the ranges
+    """
+    def __init__(self, target, property, label, range=(0.,1.), step=None):
+        self.label = label
+
+        curval = getproperty(target, property)
+
+        self.ctrlX = Range(target=target, property=property, step=step, value=curval[0], range=range, label="", index=0)
+        self.ctrlY = Range(target=target, property=property, step=step, value=curval[1], range=range, label="", index=1)
+
+    def controls(self):
+        return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
+
 class Range3D(Control):
     """A set of three range slider controls for adjusting a 3D value
 
@@ -1265,7 +1400,13 @@ class ControlFactory(object):
                     #Has range
                     return self.Range(property, *args, **kwargs)
                 else:
-                    return self.Number(property, *args, **kwargs)
+                    #Has range
+                    if "[2]" in T:
+                       return self.Number2D(property, *args, **kwargs)
+                    elif "[3]" in T:
+                       return self.Number3D(property, *args, **kwargs)
+                    else:
+                        return self.Number(property, *args, **kwargs)
             elif T == "string":
                 return self.Entry(property, *args, **kwargs)
             elif T == "boolean":
@@ -1305,12 +1446,11 @@ class ControlFactory(object):
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
-        viewerid = len(windows)
         if isviewer(self._target()):
             #Append the current viewer ref
             windows.append(self._target())
-            #Use viewer instance just added
-            viewerid = len(windows)-1
+
+        viewerid = len(windows)
 
         #Generate the HTML
         html = ""
@@ -1369,7 +1509,7 @@ class ControlFactory(object):
         Applies changes made in python to the viewer and forces a redisplay
         """
         #Find viewer id
-        viewerid = windows.index(self._target())
+        viewerid = windows.index(self._target())+1
         if is_notebook():
             from IPython.display import display,HTML
             display(HTML('<script>_wi[{0}].redisplay({0});</script>'.format(viewerid)))
@@ -1381,7 +1521,7 @@ class ControlFactory(object):
         #NOTE: to do this now, all we need is to trigger a get_state call from interactor by sending any command
         if is_notebook() and len(windows):
             #Find viewer id
-            viewerid = windows.index(self._target())
+            viewerid = windows.index(self._target())+1
             from IPython.display import display,HTML
             display(HTML('<script>_wi[{0}].execute("");</script>'.format(viewerid)))
         
