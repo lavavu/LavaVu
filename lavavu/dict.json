@@ -1539,6 +1539,28 @@
       true
     ]
   },
+  "rulerformat": {
+    "default": "%-10.3f",
+    "target": "view",
+    "type": "string",
+    "desc": "Format specifier for ruler tick values, eg: %.3[f/e/g] standard, scientific, both",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "rulerlabels": {
+    "default": [],
+    "target": "view",
+    "type": "string[][]",
+    "desc": "Tick labels to display on rulers, 2d array, one dimension per model axis, replaces rulerticks. If values are numeric, will define the position value, otherwise define the label only.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "rulerwidth": {
     "default": 1.5,
     "target": "view",

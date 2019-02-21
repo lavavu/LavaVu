@@ -2334,7 +2334,10 @@ void LavaVu::drawRulers()
   obj->properties.data["colour"] = aview->textColour.toJson();
 
   int ticks = aview->properties["rulerticks"];
+  json labels = aview->properties["rulerlabels"];
   std::string axes = aview->properties["ruleraxes"];
+  std::string fmt = aview->properties["rulerformat"];
+  if (labels.is_array() && labels.size() > 0) ticks = 0; //Ignore tick settings, use label counts
   
   //Axis rulers
   float shift[3] = {0.01f/aview->scale[0] * aview->model_size,
@@ -2346,37 +2349,43 @@ void LavaVu::drawRulers()
   {
     float sta[3] = {aview->min[0], aview->min[1]-shift[1], aview->max[2]};
     float end[3] = {aview->max[0], aview->min[1]-shift[1], aview->max[2]};
-    drawRuler(obj, sta, end, aview->min[0], aview->max[0], ticks, 0);
+    json l = labels.is_array() && labels.size() > 0 && labels[0].size() ? labels[0] : json::array();
+    drawRuler(obj, sta, end, aview->min[0], aview->max[0], fmt.c_str(), ticks, l, 0);
   }
   if (axes.find_first_of('y') != std::string::npos)
   {
     float sta[3] = {aview->min[0]-shift[0], aview->min[1], aview->max[2]};
     float end[3] = {aview->min[0]-shift[0], aview->max[1], aview->max[2]};
-    drawRuler(obj, sta, end, aview->min[1], aview->max[1], ticks, 1);
+    json l = labels.is_array() && labels.size() > 1 && labels[1].size() ? labels[1] : json::array();
+    drawRuler(obj, sta, end, aview->min[1], aview->max[1], fmt.c_str(), ticks, l, 1);
   }
   if (axes.find_first_of('z') != std::string::npos)
   {
     float sta[3] = {aview->min[0]-shift[0], aview->min[1]-shift[1], aview->min[2]};
     float end[3] = {aview->min[0]-shift[0], aview->min[1]-shift[1], aview->max[2]};
-    drawRuler(obj, sta, end, aview->min[2], aview->max[2], ticks, 2);
+    json l = labels.is_array() && labels.size() > 2 && labels[2].size() ? labels[2] : json::array();
+    drawRuler(obj, sta, end, aview->min[2], aview->max[2], fmt.c_str(), ticks, l, 2);
   }
   if (axes.find_first_of('X') != std::string::npos)
   {
     float sta[3] = {aview->min[0], aview->max[1]+shift[1], aview->max[2]};
     float end[3] = {aview->max[0], aview->max[1]+shift[1], aview->max[2]};
-    drawRuler(obj, sta, end, aview->min[0], aview->max[0], ticks, 0, -1);
+    json l = labels.is_array() && labels.size() > 0 && labels[0].size() ? labels[0] : json::array();
+    drawRuler(obj, sta, end, aview->min[0], aview->max[0], fmt.c_str(), ticks, l, 0, -1);
   }
   if (axes.find_first_of('Y') != std::string::npos)
   {
     float sta[3] = {aview->max[0]+shift[0], aview->min[1], aview->max[2]};
     float end[3] = {aview->max[0]+shift[0], aview->max[1], aview->max[2]};
-    drawRuler(obj, sta, end, aview->min[1], aview->max[1], ticks, 1, -1);
+    json l = labels.is_array() && labels.size() > 1 && labels[1].size() ? labels[1] : json::array();
+    drawRuler(obj, sta, end, aview->min[1], aview->max[1], fmt.c_str(), ticks, l, 1, -1);
   }
   if (axes.find_first_of('Z') != std::string::npos)
   {
     float sta[3] = {aview->max[0]+shift[0], aview->min[1]-shift[1], aview->min[2]};
     float end[3] = {aview->max[0]+shift[0], aview->min[1]-shift[1], aview->max[2]};
-    drawRuler(obj, sta, end, aview->min[2], aview->max[2], ticks, 2, -1);
+    json l = labels.is_array() && labels.size() > 2 && labels[2].size() ? labels[2] : json::array();
+    drawRuler(obj, sta, end, aview->min[2], aview->max[2], fmt.c_str(), ticks, l, 2, -1);
   }
 
   rulers->display(true); //Display with forced data update
@@ -2385,7 +2394,7 @@ void LavaVu::drawRulers()
   if (verbose) infostream = stderr;
 }
 
-void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis, int tickdir)
+void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, const char* fmt, int ticks, json& labels, int axis, int tickdir)
 {
   // Draw rulers with optional tick marks
   float vec[3];
@@ -2397,11 +2406,13 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
   if (length <= FLT_MIN) return;
 
   //Draw ruler line
+  if (!ticks && !labels.size()) return; //Skip this line
   float pos[3] = {start[0] + vec[0] * 0.5f, start[1] + vec[1] * 0.5f, start[2] + vec[2] * 0.5f};
   rulers->drawVector(obj, pos, vec, false, 1.0, 0, 0, 0, 0);
   Geom_Ptr lg = rulers->add(obj); //Add new object for ticks
 
   std::string align = "";
+  if (labels.size()) ticks = labels.size(); //Use custom labels
   for (int i = 0; i < ticks; i++)
   {
     // Get tick value
@@ -2409,12 +2420,17 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     // Calculate pixel position
     float height = -0.01 * aview->model_size;
 
+    //Labels have custom positions?
+    float pos = start[axis] + vec[axis] * scaledPos;
+    if (labels.size() && labels[i].is_number())
+      pos = (float)labels[i];
+
     // Draws the tick
     if (axis == 0)
     {
       height /= aview->scale[1];
       float tvec[3] = {0, tickdir*height, 0};
-      float tpos[3] = {start[0] + vec[0] * scaledPos, start[1] + height*tickdir * 0.5f, start[2]};
+      float tpos[3] = {pos, start[1] + height*tickdir * 0.5f, start[2]};
       rulers->drawVector(obj, tpos, tvec, false, 1.0, 0, 0, 0, 0);
       align = tickdir > 0 ? "|" : "|^"; //Centre (reverse vertical shift if flipped)
     }
@@ -2422,7 +2438,7 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     {
       height /= aview->scale[0];
       float tvec[3] = {tickdir*height, 0, 0};
-      float tpos[3] = {start[0] + height*tickdir * 0.5f, start[1] + vec[1] * scaledPos, start[2]};
+      float tpos[3] = {start[0] + height*tickdir * 0.5f, pos, start[2]};
       rulers->drawVector(obj, tpos, tvec, false, 1.0, 0, 0, 0, 0);
       align = tickdir > 0 ? "!_" : "_"; //Right/Left align no vertical shift
     }
@@ -2430,24 +2446,31 @@ void LavaVu::drawRuler(DrawingObject* obj, float start[3], float end[3], float l
     {
       height /= aview->scale[1];
       float tvec[3] = {0, height, 0};
-      float tpos[3] = {start[0], start[1] + height*tickdir * 0.5f, start[2] + vec[2] * scaledPos};
+      float tpos[3] = {start[0], start[1] + height*tickdir * 0.5f, pos};
       rulers->drawVector(obj, tpos, tvec, false, 1.0, 0, 0, 0, 0);
       align = tickdir > 0 ? "!_" : "_"; //Right/Left align no vertical shift
     }
 
     //Draw a label
-    char label[16];
-    float inc = (labelmax - labelmin) / (float)(ticks-1);
-    sprintf(label, "%-10.3f", labelmin + i * inc);
-
-    // Trim trailing space
-    char* end = label + strlen(label) - 1;
-    while(end > label && isspace(*end)) end--;
-    *(end+1) = 0; //Null terminator
+    std::string labelstr;
+    if (labels.size() && labels[i].is_string())
+    {
+      labelstr = labels[i];
+    }
+    else
+    {
+      char label[16];
+      sprintf(label, fmt, pos);
+      // Trim trailing space
+      char* end = label + strlen(label) - 1;
+      while(end > label && isspace(*end)) end--;
+      *(end+1) = 0; //Null terminator
+      labelstr = label;
+    }
 
     std::string blank = "";
     lg->label(blank);
-    std::string labelstr = align + "  " + label + "  ";
+    labelstr = align + "  " + labelstr + "  ";
     lg->label(labelstr);
   }
 }

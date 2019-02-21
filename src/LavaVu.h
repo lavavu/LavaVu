@@ -192,7 +192,7 @@ public:
   void drawSceneBlended(bool nosort=false);
 
   void drawRulers();
-  void drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, int ticks, int axis, int tickdir=1);
+  void drawRuler(DrawingObject* obj, float start[3], float end[3], float labelmin, float labelmax, const char* fmt, int ticks, json& labels, int axis, int tickdir=1);
   void drawBorder();
   void drawAxis();
 
