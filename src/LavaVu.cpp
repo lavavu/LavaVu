@@ -567,8 +567,9 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
   if (aview)
     aview->clear(objects);
 
-  //Reload
-  loadModelStep(model, amodel->step());
+  //Reload, requires render thread, skip it,
+  //or fix this call to be thread safe from python
+  //loadModelStep(model, amodel->step());
 
   aobject = NULL;
 }

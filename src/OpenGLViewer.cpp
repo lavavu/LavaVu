@@ -61,6 +61,11 @@ ImageData* FrameBuffer::pixels(ImageData* image, int channels)
   return image;
 }
 
+FBO::~FBO()
+{
+  destroy();
+}
+
 bool FBO::create(int w, int h)
 {
 /* Try to use modern versions of these functions,
@@ -75,6 +80,7 @@ bool FBO::create(int w, int h)
 #define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
 #define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT
 #define GL_FRAMEBUFFER_UNSUPPORTED GL_FRAMEBUFFER_UNSUPPORTED_EXT
+#define GL_FRAMEBUFFER_UNDEFINED GL_FRAMEBUFFER_UNDEFINED_EXT
 #define glBindFramebuffer glBindFramebufferEXT
 #define glGenRenderbuffers glGenRenderbuffersEXT
 #define glBindRenderbuffer glBindRenderbufferEXT
@@ -104,6 +110,7 @@ bool FBO::create(int w, int h)
   if (enabled && frame && texture && depth && width==w && height==h)
   {
     glBindFramebuffer(GL_FRAMEBUFFER, frame);
+    GL_Error_Check;
     target = GL_COLOR_ATTACHMENT0;
     glDrawBuffer(target);
     GL_Error_Check;
@@ -157,6 +164,8 @@ bool FBO::create(int w, int h)
       std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
     else if (status == GL_FRAMEBUFFER_UNSUPPORTED)
       std::cerr << "FBO failed UNSUPPORTED" << std::endl;
+    else if (status == GL_FRAMEBUFFER_UNDEFINED)
+      std::cerr << "FBO failed UNDEFINED" << std::endl;
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
@@ -164,6 +173,7 @@ bool FBO::create(int w, int h)
     GL_Error_Check;
     std::cerr << " frame " << frame << " target " << target << " depth " << depth << " dims " << width << " , " << height << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    abort_program("FBO creation failed, can't continue");
   }
   else
   {
@@ -250,7 +260,7 @@ OpenGLViewer::OpenGLViewer() : savewidth(0), saveheight(0), stereo(false), fulls
   output_path = "";
 
   render_thread = std::this_thread::get_id();
-  debug_print("Render thread: %d\n", render_thread);
+  //std::cerr << "Render thread: " << render_thread << std::endl;
 }
 
 OpenGLViewer::~OpenGLViewer()

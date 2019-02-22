@@ -1917,7 +1917,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, binpath=libpath, havecontext=False, omegalib=False, port=None, *args, **kwargs):
+    def __init__(self, binpath=libpath, havecontext=False, omegalib=False, port=8080, *args, **kwargs):
         """
         Create and init viewer instance
 
@@ -1943,17 +1943,10 @@ class Viewer(dict):
         self.state = {}
         self._managed = False
         self.server = None
+        self._thread = None
 
         #Launch in thread?
-        if port is None:
-            #Default to server on when running in notebook
-            #can disable by setting port=0
-            if is_notebook():
-                port = 8080
-            #Otherwise default to server off
-            #can enable by providing default port number
-            else:
-                port = 0
+        #(Can disable by setting port=0)
         if port > 0:
             #Exit handler to clean up threads
             #(__del__ does not always seem to get called on termination)

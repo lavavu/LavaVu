@@ -45,10 +45,10 @@
 class FrameBuffer
 {
 public:
-  int width, height;
+  int width = 0, height = 0;
   GLuint target = 0;
 
-  FrameBuffer() : width(0), height(0) {}
+  FrameBuffer() {}
   virtual ~FrameBuffer() {}
   virtual ImageData* pixels(ImageData* image, int channels=3);
   virtual int getOutWidth() {return width;}
@@ -58,23 +58,15 @@ public:
 class FBO : public FrameBuffer
 {
 public:
-  bool enabled;
-  GLuint frame;
-  GLuint texture;
-  GLuint depth;
-  int downsample;
+  bool enabled = false;
+  GLuint frame = 0;
+  GLuint texture = 0;
+  GLuint depth = 0;
+  int downsample = 1;
 
-  FBO() : FrameBuffer()
-  {
-    enabled = false;
-    texture = depth = frame = 0;
-    downsample = 1;
-  }
+  FBO() : FrameBuffer() {}
 
-  virtual ~FBO()
-  {
-    destroy();
-  }
+  ~FBO();
 
   bool create(int w, int h);
   void destroy();
