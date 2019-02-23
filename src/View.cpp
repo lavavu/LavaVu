@@ -711,6 +711,9 @@ void View::importProps()
   //min = aproperties["min"];
   //max = aproperties["max"];
   //init(false, newmin, newmax);
+  fov = properties["aperture"];
+  near = properties.data["near"];
+  far = properties.data["far"];
 }
 
 void View::exportProps()

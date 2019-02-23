@@ -394,11 +394,15 @@ BoxViewer.prototype.exportView = function(nocam) {
     this.view.translate = this.translate;
     this.view.scale = this.scale;
   }
+  /*
+   * If we overwrite these, changes from menu will not apply
+   *
   this.view.aperture = this.fov;
   this.view.near = this.near_clip;
   this.view.far = this.far_clip;
   this.view.border = this.showBorder ? 1 : 0;
   this.view.axis = this.axes;
+  */
   //this.view.background = this.background.toString();
 
   //Never export min/max
