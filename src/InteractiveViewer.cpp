@@ -682,6 +682,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
   }
 
   //if (!gethelp) std::cout << "CMD: " << cmd << std::endl;
+  if (viewer->render_thread != std::this_thread::get_id())
+    abort_program("FATAL: must call command parse from render thread");
 
   //Parse the line
   PropertyParser parsed = PropertyParser();
@@ -2029,7 +2031,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
 
     amodel->reload(obj); //Redraw & reload
 
-    loadModelStep(model, amodel->step());
+    //View reset is all we need here? If not, must be called on render thread
+    //loadModelStep(model, amodel->step());
+    viewset = RESET_YES;
   }
   else if (parsed.exists("colourmap"))
   {
