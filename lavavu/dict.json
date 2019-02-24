@@ -1779,7 +1779,12 @@
     "strict": true,
     "redraw": 0,
     "control": [
-      true
+      true,
+      [
+        10,
+        170,
+        1
+      ]
     ]
   },
   "orthographic": {
