@@ -96,7 +96,7 @@ WindowInteractor.prototype.init = function() {
     //console.log('In image loaded callback ' + that.id);
     //Init on image load with callback function to execute commands
     that.box = initBox(that.img, function(cmd) {that.execute(cmd);});
-    console.log("Box init on " + that.id);
+    console.log("Window initialised, id: " + that.id);
     //Clear onload
     that.img.onload = null;
     //Update the box size by getting state
@@ -207,5 +207,12 @@ WindowInteractor.prototype.get_state = function() {
   } 
   xhttp.open('GET', url, true);
   xhttp.send();
+
+  //Redisplay interval / keep-alive (10 seconds)
+  //Reset the timer whenever get_state called, should only trigger after idle period
+  var interval = 10;
+  if (this.redisplay_timer)
+    clearTimeout(this.redisplay_timer);
+  this.redisplay_timer = setTimeout(function() { console.log("Redisplay"); that.redisplay(); }, interval*1000);
 }
 
