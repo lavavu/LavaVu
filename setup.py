@@ -11,12 +11,12 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.2.55"
+version = "1.3"
 
 """
 To release a new verison:
 
-    1) Edit the version number above
+    1) Edit the version number above, then commit the change!
 
     2) Tag the release with git
 
