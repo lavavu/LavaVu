@@ -248,12 +248,11 @@ function createMenu(viewer, onchange, webglmode) {
   gui.add(viewer, "mode", ['Rotate', 'Translate', 'Zoom']);
   //var s = gui.addFolder('Settings');
   if (webglmode) {
-    gui.add(viewer, "interactive");
-    gui.add(viewer, "immediatesort");
-    gui.add(viewer, "showBorder").onFinishChange(function() {viewer.draw();});
+    gui.add(viewer, "interactive").name("Interactive Render");
+    gui.add(viewer, "immediatesort").name("Immediate Sort");
+    gui.add(viewer, "sortenabled").name('Sort Enabled');
+    gui.add(viewer, "showBorder").name('Show Border').onFinishChange(function() {viewer.draw();});
   }
-
-
 
   var g = gui.addFolder('Globals/Defaults');
   menu_addctrls(g, viewer.vis.properties, viewer, onchange);

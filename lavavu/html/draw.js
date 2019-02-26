@@ -190,6 +190,12 @@ function canvasMouseClick(event, mouse) {
 }
 
 function sortTimer(ifexists, viewer) {
+  if (viewer.sortenabled == false) {
+    //Sorting disabled
+    viewer.rotated = false;
+    viewer.draw();
+    return;
+  }
   if (viewer.immediatesort == true) {
     //No timers
     viewer.rotated = true; 
@@ -832,9 +838,7 @@ VertexBuffer.prototype.loadTriangles = function(object, id, viewer) {
     var map = viewer.lookupMap(object.colourmap);
 
     for (var i=0; i<tdat.indices.data.length/3; i++) {
-      //Generate tex-coords
-      var texc = texcoords[(i%2+1)*T];
-
+      if (i%10000 == 0) console.log(i);
       //Indices holds references to vertices and other data
       var i3 = i * 3;
       var ids = [tdat.indices.data[i3], tdat.indices.data[i3+1], tdat.indices.data[i3+2]];
@@ -858,13 +862,16 @@ VertexBuffer.prototype.loadTriangles = function(object, id, viewer) {
           this.floats[this.offset+4] = 0.0;
           this.floats[this.offset+5] = 0.0;
         }
-        this.ints[this.offset+6] = vertexColour(object.colour, object.opacity, map, tdat, ids[j])
-        if (tdat.texcoords) {
-          this.floats[this.offset+7] = tdat.texcoords.data[ids[j]*2];
-          this.floats[this.offset+8] = tdat.texcoords.data[ids[j]*2+1];
-        } else {
-          this.floats[this.offset+7] = texc[j][0];
-          this.floats[this.offset+8] = texc[j][1];
+        if (!object.tex)
+          this.ints[this.offset+6] = vertexColour(object.colour, object.opacity, map, tdat, ids[j])
+        else {
+          if (tdat.texcoords) {
+            this.floats[this.offset+7] = tdat.texcoords.data[ids[j]*2];
+            this.floats[this.offset+8] = tdat.texcoords.data[ids[j]*2+1];
+          } else {
+            this.floats[this.offset+7] = texcoords[(i%2+1)*T][j][0];
+            this.floats[this.offset+8] = texcoords[(i%2+1)*T][j][1];
+          }
         }
         this.bytes[this.byteOffset] = id;
         this.offset += this.vertexSizeInFloats;
@@ -1427,6 +1434,7 @@ function Viewer(canvas) {
   this.mode = 'Rotate';
   this.interactive = true;
   this.immediatesort = false;
+  this.sortenabled = true;
 
   //Create the renderers
   this.renderers = [];
