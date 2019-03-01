@@ -1121,11 +1121,13 @@ class TimeStepper(Range):
         super(TimeStepper, self).__init__(target=viewer, label="Timestep", command="timestep", readproperty="timestep", *args, **kwargs)
 
         self.timesteps = viewer.timesteps()
-        self.range = (self.timesteps[0], self.timesteps[-1])
         self.step = 1
-        #Calculate step gap
-        if len(self.timesteps) > 1:
+        if len(self.timesteps):
+            self.range = (self.timesteps[0], self.timesteps[-1])
+            #Calculate step gap
             self.step = self.timesteps[1] - self.timesteps[0]
+        else:
+            self.range = (0,0)
         self.value = 0
 
     def controls(self):
