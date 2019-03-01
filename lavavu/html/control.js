@@ -200,19 +200,22 @@ WindowInteractor.prototype.get_state = function() {
   var url = that.baseurl + "/getstate?" + new Date().getTime();
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
-    if (xhttp.status == 200)
+    if (xhttp.status == 200) {
+      //Success, callback
       onget(xhttp.response);
-    else
+
+      //Redisplay interval / keep-alive (10 seconds)
+      //Reset the timer whenever get_state called, should only trigger after idle period
+      if (that.redisplay_timer)
+        clearTimeout(that.redisplay_timer);
+      that.redisplay_timer = setTimeout(function() { console.log("Redisplay"); that.redisplay(); }, 10000);
+
+    } else
       console.log("Ajax Request Error: " + url + ", returned status code " + xhttp.status + " " + xhttp.statusText);
   } 
   xhttp.open('GET', url, true);
   xhttp.send();
 
-  //Redisplay interval / keep-alive (10 seconds)
-  //Reset the timer whenever get_state called, should only trigger after idle period
-  var interval = 10;
-  if (this.redisplay_timer)
-    clearTimeout(this.redisplay_timer);
-  this.redisplay_timer = setTimeout(function() { console.log("Redisplay"); that.redisplay(); }, interval*1000);
+
 }
 
