@@ -47,8 +47,7 @@ std::ostream & operator<<(std::ostream &os, const ColourVal& cv)
 }
 
 ColourMap::ColourMap(Session& session, std::string name, std::string props)
-  : noValues(false), log(false), discrete(false), name(name), properties(session.globals, session.defaults),
-    minimum(0), maximum(1), calibrated(false), opaque(true), texture(NULL)
+  : name(name), properties(session.globals, session.defaults)
 {
   precalc = new Colour[samples];
   background.value = 0xff000000;
@@ -338,6 +337,7 @@ void ColourMap::calibrate(float min, float max)
   if (max == HUGE_VAL) max = min;
 
   discrete = properties["discrete"];
+  interpolate = properties["interpolate"];
   if (discrete)
   {
     if (max - (int)max != 0.0) max = ceil(max);
@@ -449,6 +449,7 @@ float ColourMap::scalefast(float value)
 
 Colour ColourMap::getfast(float value)
 {
+  return get(value);
   //NOTE: value caching DOES NOT WORK for log scales!
   //If this is causing slow downs in future, need a better method
   int c = 0;
@@ -492,7 +493,7 @@ float ColourMap::scaleValue(float value)
 
 Colour ColourMap::getFromScaled(float scaledValue)
 {
-  //printf(" scaled %f ", scaledValue);
+  //printf(" scaled %f\n", scaledValue);
   if (colours.size() == 0) return Colour();
   if (colours.size() == 1) return colours[0].colour;
   // Check within range
@@ -513,8 +514,21 @@ Colour ColourMap::getFromScaled(float scaledValue)
     if (i==0 || i==colours.size()) 
       abort_program("ColourMap %s (%d) Colour position %f not in range [%f,%f] min %f max %f", name.c_str(), (int)colours.size(), scaledValue, colours[0].position, colours.back().position, minimum, maximum);
 
+    //Just return the nearest colour
+    //if (scaledValue == 0.5) printf("%f -- %d\n", scaledValue, interpolate);
+    if (!interpolate)
+    {
+      //printf("NOT INTERPOLATING for %f\n", scaledValue);
+      float p1 = scaledValue - colours[i-1].position;
+      float p2 = colours[i].position - scaledValue;
+      if (p1 < p2)
+        return colours[i-1].colour;
+      else
+        return colours[i].colour;
+    }
+
     // Calculate interpolation factor [0,1] between colour at index and previous colour
-    float interpolate = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);
+    float mu = (scaledValue - colours[i-1].position) / (colours[i].position - colours[i-1].position);
 
     //Linear interpolation between colours
     //printf(" interpolate %f above %f below %f\n", interpolate, colours[i].position, colours[i-1].position);
@@ -523,7 +537,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
     colour1 = colours[i].colour;
 
     for (int c=0; c<4; c++)
-      colour0.rgba[c] += (colour1.rgba[c] - colour0.rgba[c]) * interpolate;
+      colour0.rgba[c] += (colour1.rgba[c] - colour0.rgba[c]) * mu;
 
     return colour0;
   }

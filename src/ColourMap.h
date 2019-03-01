@@ -75,9 +75,10 @@ class ColourMap
   static int samples;
   Colour* precalc;
 
-  bool noValues; //Use position data only
-  bool log; //Cached logscale setting
-  bool discrete; //Cached discrete setting
+  bool noValues = false; //Use position data only
+  bool log = false; //Cached logscale setting
+  bool discrete = false; //Cached discrete setting
+  bool interpolate = true; //Cached interpolate settings
   float range, irange;
   GLuint vbo = 0;
 
@@ -86,10 +87,10 @@ public:
   Colour background;
   std::string name;
   Properties properties;
-  float minimum;
-  float maximum;
-  bool calibrated;
-  bool opaque;
+  float minimum = 0.0;
+  float maximum = 1.0;
+  bool calibrated = false;
+  bool opaque = true;
   ImageLoader* texture = NULL;
 
   ColourMap(Session& session, std::string name="", std::string props="");

@@ -1437,6 +1437,17 @@
       true
     ]
   },
+  "interpolate": {
+    "default": true,
+    "target": "colourmap",
+    "type": "boolean",
+    "desc": "Set to false to disable interpolation between colours, nearest colour will always be applied",
+    "strict": true,
+    "redraw": 2,
+    "control": [
+      true
+    ]
+  },
   "colours": {
     "default": [],
     "target": "colourmap",

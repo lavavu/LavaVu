@@ -734,7 +734,11 @@ void LavaVu::printProperties()
 {
   //Show properties of selected object or view/globals
   if (aobject)
+  {
     std::cerr << "OBJECT " << aobject->name() << ", DATA: " << std::setw(2) << aobject->properties.data << std::endl;
+    if (aobject->colourMap)
+      std::cerr << "COLOURMAP " << aobject->colourMap->name << ", DATA: " << std::setw(2) << aobject->colourMap->properties.data << std::endl;
+  }
   else
   {
     std::cerr << "VIEW: " << std::setw(2) << aview->properties.data << std::endl;
