@@ -188,7 +188,7 @@ public:
   int switchCoordSystem();
   void zoomToFit();
   void exportProps();
-  void importProps();
+  void importProps(bool force=false);
 
   //Utility functions
   void drawOverlay();

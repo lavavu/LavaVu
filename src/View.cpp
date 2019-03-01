@@ -665,9 +665,11 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   }
 }
 
-void View::importProps()
+void View::importProps(bool force)
 {
-  if (!initialised || updated) return;
+  //Never import if values updated
+  if (!force && (!initialised || updated)) return;
+
   //Copy view properties to cache
   //Skip import cam if not provided
   if (properties.has("rotate"))
@@ -711,9 +713,12 @@ void View::importProps()
   //min = aproperties["min"];
   //max = aproperties["max"];
   //init(false, newmin, newmax);
-  fov = properties["aperture"];
-  near = properties.data["near"];
-  far = properties.data["far"];
+  if (properties.has("aperture"))
+    fov = properties["aperture"];
+  if (properties.has("near"))
+    near = properties.data["near"];
+  if (properties.has("far"))
+    far = properties.data["far"];
 }
 
 void View::exportProps()

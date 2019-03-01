@@ -2183,7 +2183,7 @@ int Model::jsonRead(std::string data)
     //Apply base properties with merge
     view->properties.merge(inviews[v]);
 
-    view->importProps();
+    view->importProps(true);
   }
 
   // Import colourmaps
