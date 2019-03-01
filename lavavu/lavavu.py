@@ -618,40 +618,70 @@ class Object(dict):
         elif data.dtype == numpy.uint8:
             self.parent.app.arrayUChar(self.ref, data.ravel(), geomdtype)
 
-    def _dimsFromShape(self, shape, size, typefilter):
-        #Volume/quads? Use the shape as dims if not provided
+
+    def _checkDims(self, size):
+        #User provided dims value
         if 'dims' in self.dict:
-            #Skip this if dims value already provided by user
-            return
+            D = self["dims"]
+            #Dims match provided data?
+            if isinstance(D, int):
+                if D != size:
+                    print("WARNING: provided 'dims' property doesn't match data size: ", D, size)
+            elif len(D) == 1:
+                if D[0] != size:
+                    print("WARNING: provided 'dims' property doesn't match data size: ", D, size)
+            elif len(D) == 2:
+                if D[0]*D[1] != size:
+                    print("WARNING: provided 'dims' property doesn't match data size: ", D, D[0]*D[1], size)
+            elif len(D) == 3:
+                if D[0]*D[1]*D[2] != size:
+                    print("WARNING: provided 'dims' property doesn't match data size: ", D, D[0]*D[1]*D[2], size)
 
-        D = self["dims"]
+            #As data found, skip auto-calc of dims
+            return True
 
-        #Dims already match provided data?
-        if isinstance(D, int):
-            if D == size: return
-        elif len(D) == 1:
-            if D[0] == size: return
-        elif len(D) == 2:
-            if D[0]*D[1] == size: return
-        elif len(D) == 3:
-            if D[0]*D[1]*D[2] == size: return
+        #No user data, calculate the dims if possible
+        return False
 
-        if len(shape) > 2 and self["geometry"] == typefilter:
-            if typefilter == 'quads':
-                #Use matching shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
-                if shape[1] * shape[0] == size:
-                    D[0] = shape[1] #columns
-                    D[1] = shape[0] #rows
-                elif shape[2] * shape[0] == size:
-                    D[0] = shape[2] #columns
-                    D[1] = shape[0] #rows
-                elif shape[2] * shape[1] == size:
-                    D[0] = shape[2] #columns
-                    D[1] = shape[1] #rows
-            elif typefilter == 'volume':
-                #Need to flip for volume?
-                D = (shape[2], shape[1], shape[0])
+
+    def _volumeDimsFromShape(self, data):
+        #Volume? Use the shape as dims if not provided on value data load
+
+        #If dims not set or don't match provided data?
+        #3D shape required
+        if not self._checkDims(data.size) and len(data.shape) > 2:
+            #Need to flip for volume? (if in expected numpy order of Z,Y,X)
+            self["dims"] = (data.shape[2], data.shape[1], data.shape[0])
+
+
+    def _gridDimsFromShape(self, data):
+        #Quads grid? Use the data.shape as dims if not provided on vertex data load
+
+        #3D shape required [y, x, 3]
+        #Dims set or already match provided data? skip
+        if not self._checkDims(data.size/3) and len(data.shape) > 2:
+            #Use matching shape dimensions, numpy [rows, cols] lavavu [width(cols), height(rows)]
+            D = self["dims"]
+            if data.shape[1] * data.shape[0] == data.size/3:
+                D[0] = data.shape[1] #columns
+                D[1] = data.shape[0] #rows
+            elif data.shape[2] * data.shape[0] == data.size/3:
+                D[0] = data.shape[2] #columns
+                D[1] = data.shape[0] #rows
+            elif data.shape[2] * data.shape[1] == data.size/3:
+                D[0] = data.shape[2] #columns
+                D[1] = data.shape[1] #rows
+                D = (data.shape[2], data.shape[1], data.shape[0])
+
             self["dims"] = D
+
+    def _tracerDimsFromShape(self, data):
+        #Tracers? Use the size if not provided on vertex data load
+
+        #Dims set or already match provided data?
+        if not self._checkDims(data.size/3):
+            #Dims = vertex count
+            self["dims"] = (data.size/3, 0)
 
     def _loadVector(self, data, geomdtype, magnitude=None):
         """
@@ -681,8 +711,14 @@ class Object(dict):
                 #Interpret as 2d data... must add 3rd dimension
                 data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
 
-            #Quads? Use the shape as dims if not provided
-            self._dimsFromShape(shape, data.size/3, 'quads')
+            #Quads or tracers? Use the shape as dims if not provided
+            #Quad/Triangle type?
+            #if self["geometry"] == 'quads' or self["geometry"] == 'grid':
+            if self["geometry"] in self.parent.renderers[LavaVuPython.lucGridType] or self["geometry"] in self.parent.renderers[LavaVuPython.lucTriangleType]:
+                self._gridDimsFromShape(data)
+            if self["geometry"] in self.parent.renderers[LavaVuPython.lucTracerType]:
+            #elif self["geometry"] == 'tracers':
+                self._tracerDimsFromShape(data)
 
         #Convenience option to load magnitude as a value array
         if magnitude is not None:
@@ -766,7 +802,8 @@ class Object(dict):
         data = self._convert(data, numpy.float32)
 
         #Volume? Use the shape as dims if not provided
-        self._dimsFromShape(data.shape, data.size, 'volume')
+        if self["geometry"] == 'volume':
+            self._volumeDimsFromShape(data)
 
         self.parent.app.arrayFloat(self.ref, data.ravel(), label)
 
