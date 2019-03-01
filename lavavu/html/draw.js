@@ -1572,6 +1572,7 @@ Viewer.prototype.loadFile = function(source) {
       if (vis.objects[id].texturefile) {
         this.hasTexture = true;
         vis.objects[id].image = new Image();
+        vis.objects[id].image.crossOrigin = "anonymous";
         vis.objects[id].image.src = vis.objects[id].texturefile;
         viewer = this;
         vis.objects[id].image.onload = function() {
