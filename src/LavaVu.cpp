@@ -736,8 +736,8 @@ void LavaVu::printProperties()
   if (aobject)
   {
     std::cerr << "OBJECT " << aobject->name() << ", DATA: " << std::setw(2) << aobject->properties.data << std::endl;
-    if (aobject->colourMap)
-      std::cerr << "COLOURMAP " << aobject->colourMap->name << ", DATA: " << std::setw(2) << aobject->colourMap->properties.data << std::endl;
+    //if (aobject->colourMap)
+    //  std::cerr << "COLOURMAP " << aobject->colourMap->name << ", DATA: " << std::setw(2) << aobject->colourMap->properties.data << std::endl;
   }
   else
   {
