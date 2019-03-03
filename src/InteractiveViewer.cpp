@@ -2087,7 +2087,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     {
       help += "Export colour data of selected object\n\n"
               "**Usage:** palette [type] [filename]\n\n"
-              "type (string) : type of export (image/json/text) default = text\n";
+              "type (string) : type of export (image/json/text) default = text\n"
               "filename (string) : defaults to palette.[png/json/txt]\n";
       return false;
     }
