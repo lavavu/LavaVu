@@ -164,6 +164,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   //Save the CGL context
   viewer->context = (CGLContextObj)[[self openGLContext] CGLContextObj];
 
+  //std::cout << "INIT:" << viewer->render_thread << " : " <<  std::this_thread::get_id() << std::endl;
+  viewer->render_thread = std::this_thread::get_id();
+
   //Call Viewer OpenGL init
   viewer->init();
 
@@ -389,6 +392,9 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
   CGLContextObj cglContext = (CGLContextObj)[[self openGLContext] CGLContextObj];
   CGLSetParameter(cglContext, kCGLCPSurfaceBackingSize, dim);
 
+  //std::cout << "RESIZE: " << viewer->render_thread << " : " <<  std::this_thread::get_id() << std::endl;
+  viewer->render_thread = std::this_thread::get_id();
+
   viewer->resize(size.width, size.height);
   viewer->postdisplay = true;
  
@@ -588,6 +594,8 @@ void CocoaViewer::display(bool redraw)
 {
   //GL context switch done in CGLViewer
   //TODO: test this
+  //std::cout << "DISPLAY: " << render_thread << " : " <<  std::this_thread::get_id() << std::endl;
+  render_thread = std::this_thread::get_id();
   CGLViewer::display(redraw);
   //Swap not needed as drawing on timer
 }
