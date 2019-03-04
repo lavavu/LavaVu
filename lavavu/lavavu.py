@@ -1689,6 +1689,8 @@ class LavaVuThreadSafe(LavaVuPython.LavaVu):
     These functions must be called on the render thread only
     as they make OpenGL calls
     """
+    def saferun(self, *args, **kwargs):
+        return self._lavavu_call('run', True, *args, **kwargs)
 
     def image(self, *args, **kwargs):
         return self._lavavu_call('image', True, *args, **kwargs)
@@ -2014,7 +2016,8 @@ class Viewer(dict):
                 viewer().app._thread_run()
 
                 #Closedown/delete must be called from thread to free OpenGL resources!
-                viewer().app = None
+                if viewer() is not None:
+                    viewer().app = None
 
             #Thread start
             self._thread = threading.Thread(target=_thread_run, args=[weakref.ref(self), args, kwargs])
@@ -2037,6 +2040,7 @@ class Viewer(dict):
         Create and init the C++ viewer object
         """
         try:
+            self._render_thread = threading.get_ident()
             self.app = LavaVuThreadSafe(threaded, binpath, havecontext, omegalib)
 
             #Get property dict
@@ -2171,7 +2175,7 @@ class Viewer(dict):
                 return geomtypes[i]
 
     def setup(self, arglist=None, database=None, figure=None, timestep=None, 
-         verbose=False, interactive=False, hidden=True, cache=False, quality=2,
+         verbose=False, interactive=False, hidden=True, cache=False, quality=3,
          writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         """
         Execute the viewer, initialising with provided arguments and
@@ -2245,13 +2249,19 @@ class Viewer(dict):
             print("ARGS:",args)
 
         try:
-            self.app.run(args)
+            #Need to call thread safe version if not in render thread
+            if threading.get_ident() != self._render_thread:
+                self.app.saferun(args)
+            else:
+                self.app.run(args)
+            #Load objects/state
             if database:
-                #Load objects/state
                 self._get()
         except (RuntimeError) as e:
             print("LavaVu Run error: " + str(e))
             pass
+
+
 
     #dict methods
     def __getitem__(self, key):
