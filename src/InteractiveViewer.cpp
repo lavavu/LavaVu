@@ -1467,6 +1467,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     std::string what = parsed[action];
     Geometry* active = amodel->getRenderer(what);
     std::vector<DrawingObject*> list = lookupObjects(parsed, action);
+    //Trigger view redraw
+    viewset = RESET_YES;
     //Have selected a geometry type?
     if (active)
     {
