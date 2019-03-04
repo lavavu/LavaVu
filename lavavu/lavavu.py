@@ -681,7 +681,7 @@ class Object(dict):
         #Dims set or already match provided data?
         if not self._checkDims(data.size/3):
             #Dims = vertex count
-            self["dims"] = (data.size/3, 0)
+            self["dims"] = (data.size/3, 1)
 
     def _loadVector(self, data, geomdtype, magnitude=None):
         """
