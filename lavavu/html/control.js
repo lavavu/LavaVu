@@ -105,7 +105,7 @@ WindowInteractor.prototype.init = function() {
 }
 
 WindowInteractor.prototype.execute = function(cmd, callback) {
-  //console.log("execute: " + cmd);
+  //console.log(this.id + " execute: " + cmd);
   var that = this;
   var final_callback = function(response) {
     if (callback)
@@ -189,33 +189,47 @@ WindowInteractor.prototype.get_image = function(onload) {
 WindowInteractor.prototype.get_state = function() {
   //Reload state
   if (!this.box) {
-    console.log("Not yet initialised. Skip get_state");
+    //console.log("Not yet initialised. Skip get_state");
+    //No box interactor
+    //if this interactor has value controls only,
+    //trigger redisplay on matching interactive window if any
+    for (var w in _wi) {
+      if (_wi[w] != this && _wi[w].uid == this.uid) {
+        console.log(this.id + ': Redisplaying on matching controller found: ' + w)
+        _wi[w].redisplay();
+      }
+    }
     return;
   }
   //console.log("get_state called by " + this.get_state.caller);
-  //if (!this.img) return; //Needed?
+  if (!this.img) return; //Skip for control only interator
   var that = this;
-  var box = that.box;
+  var box = this.box;
   var onget = function(data) { box.loadFile(data); };
-  var url = that.baseurl + "/getstate?" + new Date().getTime();
+  var url = this.baseurl + "/getstate?" + new Date().getTime();
   var xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if (xhttp.status == 200) {
       //Success, callback
       onget(xhttp.response);
-
-      //Redisplay interval / keep-alive (10 seconds)
-      //Reset the timer whenever get_state called, should only trigger after idle period
-      if (that.redisplay_timer)
-        clearTimeout(that.redisplay_timer);
-      that.redisplay_timer = setTimeout(function() { console.log("Redisplay"); that.redisplay(); }, 10000);
-
+      that.redisplay_reset();
     } else
       console.log("Ajax Request Error: " + url + ", returned status code " + xhttp.status + " " + xhttp.statusText);
   } 
   xhttp.open('GET', url, true);
   xhttp.send();
+}
 
+WindowInteractor.prototype.redisplay_reset = function() {
+  //Auto redisplay on idle - should be called on successful image load
+  if (!this.img) return;
 
+  //Redisplay interval / keep-alive (10 seconds)
+  //Reset the timer whenever get_state called, should only trigger after idle period
+  //console.log("REDISPLAY RESET " + this.id);
+  var that = this;
+  if (this.redisplay_timer)
+    clearTimeout(this.redisplay_timer);
+  this.redisplay_timer = setTimeout(function() { console.log("Redisplay " + that.id); that.redisplay(); }, 10000);
 }
 

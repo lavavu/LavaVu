@@ -1534,22 +1534,29 @@ class ControlFactory(object):
         """Update the active viewer image if any
         Applies changes made in python to the viewer and forces a redisplay
         """
-        #Find viewer id
-        viewerid = windows.index(self._target())+1
-        if is_notebook():
-            from IPython.display import display,HTML
-            display(HTML('<script>_wi[{0}].redisplay({0});</script>'.format(viewerid)))
+        if not is_notebook():
+            return
+        #Find matching viewer id, redisplay all that match
+        for idx,obj in enumerate(windows):
+            if obj == self._target():
+                viewerid = idx+1
+                from IPython.display import display,HTML
+                display(HTML('<script>_wi[{0}].redisplay({0});</script>'.format(viewerid)))
 
     def update(self):
         """Update the control values from current viewer data
         Applies changes made in python to the UI controls
         """
         #NOTE: to do this now, all we need is to trigger a get_state call from interactor by sending any command
-        if is_notebook() and len(windows):
-            #Find viewer id
-            viewerid = windows.index(self._target())+1
+        #TODO: currently only works for controllers with a window, other controls will not be updated
+        if not is_notebook():
+            return
+        #Find matching viewer id, update all that match
+        for idx,obj in enumerate(windows):
+            #if obj == self._target():
+            viewerid = idx+1
             from IPython.display import display,HTML
-            display(HTML('<script>_wi[{0}].execute("");</script>'.format(viewerid)))
+            display(HTML('<script>_wi[{0}].execute(" ");</script>'.format(viewerid)))
         
     def clear(self):
         self._content = []
