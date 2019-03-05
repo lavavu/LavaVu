@@ -2045,7 +2045,6 @@ class Viewer(dict):
         Create and init the C++ viewer object
         """
         try:
-            self._render_thread = threading.get_ident()
             self.app = LavaVuThreadSafe(threaded, binpath, havecontext, omegalib)
 
             #Get property dict
@@ -2053,7 +2052,7 @@ class Viewer(dict):
             #Init prop dict for tab completion
             super(Viewer, self).__init__(**self.properties)
 
-            self.setup(*args, **kwargs)
+            self.setup(safe=False, *args, **kwargs)
 
             #Control setup, expect html files in same path as viewer binary
             control.htmlpath = self.htmlpath = os.path.join(self.app.binpath, "html")
@@ -2179,7 +2178,7 @@ class Viewer(dict):
             if name in self.renderers[i]:
                 return geomtypes[i]
 
-    def setup(self, arglist=None, database=None, figure=None, timestep=None, 
+    def setup(self, safe=True, arglist=None, database=None, figure=None, timestep=None, 
          verbose=False, interactive=False, hidden=True, cache=False, quality=3,
          writeimage=False, resolution=None, script=None, initscript=False, usequeue=False, **kwargs):
         """
@@ -2255,7 +2254,7 @@ class Viewer(dict):
 
         try:
             #Need to call thread safe version if not in render thread
-            if threading.get_ident() != self._render_thread:
+            if safe:
                 self.app.saferun(args)
             else:
                 self.app.run(args)
