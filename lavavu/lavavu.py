@@ -2138,6 +2138,10 @@ class Viewer(dict):
                 method.__doc__ = "Add a " + key + " visualisation object,\nany data loaded into the object will be plotted as " + key
                 self.__setattr__(key, method)
 
+            #Switch the default background to white if in a browser notebook
+            if is_notebook() and not "background" in self:
+                self["background"] = "white"
+
         except (RuntimeError) as e:
             print("LavaVu Init error: " + str(e))
             pass
@@ -2237,10 +2241,6 @@ class Viewer(dict):
             else:
                 args += [str(arglist)]
         self.queue = usequeue
-
-        #Switch the default background to white if in a browser notebook
-        if is_notebook() and "background" not in kwargs:
-            kwargs["background"] = "white"
 
         #Additional keyword args as property settings
         for key in kwargs:
