@@ -230,6 +230,10 @@ WindowInteractor.prototype.redisplay_reset = function() {
   var that = this;
   if (this.redisplay_timer)
     clearTimeout(this.redisplay_timer);
+
+  //Image element no longer exists? Skip
+  if (!document.getElementById("imgtarget_" + this.id)) return;
+
   this.redisplay_timer = setTimeout(function() { console.log("Redisplay " + that.id); that.redisplay(); }, 10000);
 }
 
