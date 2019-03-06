@@ -11,7 +11,7 @@ from multiprocessing import cpu_count
 from ctypes.util import find_library
 
 #Current version
-version = "1.3.1"
+version = "1.3.2"
 
 """
 To release a new verison:
@@ -174,7 +174,7 @@ if __name__ == "__main__":
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/OKaluza/LavaVu/wiki for more info',
           packages          = ['lavavu'],
-          install_requires  = ['numpy'],
+          install_requires  = ['numpy', 'jupyter-server-proxy'],
           platforms         = ['any'],
           scripts           = ['LV'],
           package_data      = {'lavavu': ['lavavu/shaders/*.*', 'lavavu/html/*.*', 'lavavu/font.bin', 'lavavu/dict.json']},
