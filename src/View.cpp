@@ -719,6 +719,8 @@ void View::importProps(bool force)
     near = properties.data["near"];
   if (properties.has("far"))
     far = properties.data["far"];
+
+  setBackground();
 }
 
 void View::exportProps()

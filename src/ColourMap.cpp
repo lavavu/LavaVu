@@ -449,7 +449,6 @@ float ColourMap::scalefast(float value)
 
 Colour ColourMap::getfast(float value)
 {
-  return get(value);
   //NOTE: value caching DOES NOT WORK for log scales!
   //If this is causing slow downs in future, need a better method
   int c = 0;
@@ -615,10 +614,12 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
   int count = colours.size();
   int idx, xpos;
   int discretevals = 0;
+  float midpos;
   if (discrete)
   {
     discretevals =  maximum - minimum + 1;
     xpos = startx;
+    colour = getFromScaled(0);
     VERT2D(xpos, starty, colour, vertical);
     VERT2D(xpos, starty + breadth, colour, vertical);
     for (idx = 0; idx < discretevals+1; idx++)
@@ -630,6 +631,27 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
       VERT2D(oldx + (xpos - oldx), starty, colour, vertical);
       VERT2D(oldx + (xpos - oldx), starty + breadth, colour, vertical);
     }
+  }
+  else if (!interpolate)
+  {
+    colour = getFromScaled(0);
+    VERT2D(startx, starty, colour, vertical);
+    VERT2D(startx, starty + breadth, colour, vertical);
+    for (idx = 1; idx < count; idx++)
+    {
+      midpos = (colours[idx-1].position + 0.5 * (colours[idx].position - colours[idx-1].position));
+      xpos = startx + length * midpos;
+      colour = colours[idx-1].colour;
+      VERT2D(xpos, starty, colour, vertical);
+      VERT2D(xpos, starty + breadth, colour, vertical);
+
+      colour = colours[idx].colour;
+      VERT2D(xpos+1, starty, colour, vertical);
+      VERT2D(xpos+1, starty + breadth, colour, vertical);
+    }
+    colour = getFromScaled(1);
+    VERT2D(startx+length, starty, colour, vertical);
+    VERT2D(startx+length, starty + breadth, colour, vertical);
   }
   else
   {
