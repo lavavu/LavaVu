@@ -1486,7 +1486,7 @@
   },
   "title": {
     "default": "",
-    "target": "view",
+    "target": "global",
     "type": "string",
     "desc": "Title to display at top centre of view",
     "strict": true,
@@ -1519,7 +1519,7 @@
   },
   "rulers": {
     "default": false,
-    "target": "view",
+    "target": "global",
     "type": "boolean",
     "desc": "Draw rulers around object axes",
     "strict": true,
@@ -1530,7 +1530,7 @@
   },
   "ruleraxes": {
     "default": "xyz",
-    "target": "view",
+    "target": "global",
     "type": "string",
     "desc": "Which figure axes to draw rulers beside (xyzXYZ) lowercase = min, capital = max ",
     "strict": true,
@@ -1541,7 +1541,7 @@
   },
   "rulerticks": {
     "default": 5,
-    "target": "view",
+    "target": "global",
     "type": "integer",
     "desc": "Number of tick marks to display on rulers",
     "strict": true,
@@ -1552,7 +1552,7 @@
   },
   "rulerformat": {
     "default": "%-10.3f",
-    "target": "view",
+    "target": "global",
     "type": "string",
     "desc": "Format specifier for ruler tick values, eg: %.3[f/e/g] standard, scientific, both",
     "strict": true,
@@ -1563,7 +1563,7 @@
   },
   "rulerlabels": {
     "default": [],
-    "target": "view",
+    "target": "global",
     "type": "string[][]",
     "desc": "Tick labels to display on rulers, 2d array, one dimension per model axis, replaces rulerticks. If values are numeric, will define the position value, otherwise define the label only.",
     "strict": true,
@@ -1574,7 +1574,7 @@
   },
   "rulerwidth": {
     "default": 1.5,
-    "target": "view",
+    "target": "global",
     "type": "real",
     "desc": "Width of ruler lines",
     "strict": true,
@@ -1585,7 +1585,7 @@
   },
   "border": {
     "default": 1.0,
-    "target": "view",
+    "target": "global",
     "type": "integer",
     "desc": "Border width around model boundary, 0=disabled",
     "strict": true,
@@ -1596,7 +1596,7 @@
   },
   "fillborder": {
     "default": false,
-    "target": "view",
+    "target": "global",
     "type": "boolean",
     "desc": "Draw filled background box around model boundary",
     "strict": true,
@@ -1607,7 +1607,7 @@
   },
   "bordercolour": {
     "default": "grey",
-    "target": "view",
+    "target": "global",
     "type": "colour",
     "desc": "Colour of model boundary border",
     "strict": true,
@@ -1618,7 +1618,7 @@
   },
   "axis": {
     "default": true,
-    "target": "view",
+    "target": "global",
     "type": "boolean",
     "desc": "Draw X/Y/Z legend showing model axes orientation",
     "strict": true,
@@ -1629,7 +1629,7 @@
   },
   "axislength": {
     "default": 0.1,
-    "target": "view",
+    "target": "global",
     "type": "real",
     "desc": "Axis legend scaling factor",
     "strict": true,
@@ -1645,7 +1645,7 @@
       0,
       0
     ],
-    "target": "view",
+    "target": "global",
     "type": "real[4]",
     "desc": "Custom dimensions of viewport for drawing the axis (x, y, width, height) proportional to main viewport size",
     "strict": true,
@@ -1736,7 +1736,7 @@
       0,
       0
     ],
-    "target": "view",
+    "target": "global",
     "type": "real[3]",
     "desc": "Global model minimum bounds [x,y,z]",
     "strict": true,
@@ -1751,7 +1751,7 @@
       0,
       0
     ],
-    "target": "view",
+    "target": "global",
     "type": "real[3]",
     "desc": "Global model maximum bounds [x,y,z]",
     "strict": true,
@@ -1929,7 +1929,7 @@
       0,
       255
     ],
-    "target": "view",
+    "target": "global",
     "type": "colour",
     "desc": "Background colour RGB(A)",
     "strict": true,
