@@ -1484,17 +1484,6 @@
       true
     ]
   },
-  "title": {
-    "default": "",
-    "target": "global",
-    "type": "string",
-    "desc": "Title to display at top centre of view",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
-    ]
-  },
   "zoomstep": {
     "default": -1,
     "target": "view",
@@ -1517,6 +1506,195 @@
       false
     ]
   },
+  "rotate": {
+    "default": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "target": "view",
+    "type": "quaternion",
+    "desc": "Camera rotation quaternion [x,y,z,w]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "xyzrotate": {
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "target": "view",
+    "type": "real[3]",
+    "desc": "Camera rotation as Euler angles [x,y,z] - output only",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "translate": {
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "target": "view",
+    "type": "real[3]",
+    "desc": "Camera translation [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "focus": {
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "target": "view",
+    "type": "real[3]",
+    "desc": "Camera focal point [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "scale": {
+    "default": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "target": "view",
+    "type": "real[3]",
+    "desc": "Global model scaling factors [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "near": {
+    "default": 0.0,
+    "target": "view",
+    "type": "real",
+    "desc": "Near clipping plane position, adjusts where geometry close to the camera is clipped",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "far": {
+    "default": 0.0,
+    "target": "view",
+    "type": "real",
+    "desc": "Far clip plane position, adjusts where far geometry is clipped",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "aperture": {
+    "default": 45.0,
+    "target": "view",
+    "type": "real",
+    "desc": "Aperture or Field-Of-View in degrees",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true,
+      [
+        10,
+        170,
+        1
+      ]
+    ]
+  },
+  "orthographic": {
+    "default": false,
+    "target": "view",
+    "type": "boolean",
+    "desc": "Enable to switch to an orthographic projection instead of the default perspective projection",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "coordsystem": {
+    "default": 1,
+    "target": "view",
+    "type": "integer",
+    "desc": "Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "follow": {
+    "default": false,
+    "target": "view",
+    "type": "boolean",
+    "desc": "Enable to follow the model bounding box centre with camera as it changes",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "min": {
+    "default": [
+      0,
+      0,
+      0
+    ],
+    "target": "global",
+    "type": "real[3]",
+    "desc": "Global model minimum bounds [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "max": {
+    "default": [
+      0,
+      0,
+      0
+    ],
+    "target": "global",
+    "type": "real[3]",
+    "desc": "Global model maximum bounds [x,y,z]",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "title": {
+    "default": "",
+    "target": "global",
+    "type": "string",
+    "desc": "Title to display at top centre of view",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+
   "rulers": {
     "default": false,
     "target": "global",
@@ -1652,183 +1830,6 @@
     "redraw": 0,
     "control": [
       false
-    ]
-  },
-  "rotate": {
-    "default": [
-      0.0,
-      0.0,
-      0.0,
-      1.0
-    ],
-    "target": "view",
-    "type": "quaternion",
-    "desc": "Camera rotation quaternion [x,y,z,w]",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "xyzrotate": {
-    "default": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "target": "view",
-    "type": "real[3]",
-    "desc": "Camera rotation as Euler angles [x,y,z] - output only",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "translate": {
-    "default": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "target": "view",
-    "type": "real[3]",
-    "desc": "Camera translation [x,y,z]",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "focus": {
-    "default": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "target": "view",
-    "type": "real[3]",
-    "desc": "Camera focal point [x,y,z]",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "scale": {
-    "default": [
-      1.0,
-      1.0,
-      1.0
-    ],
-    "target": "view",
-    "type": "real[3]",
-    "desc": "Global model scaling factors [x,y,z]",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "min": {
-    "default": [
-      0,
-      0,
-      0
-    ],
-    "target": "global",
-    "type": "real[3]",
-    "desc": "Global model minimum bounds [x,y,z]",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "max": {
-    "default": [
-      0,
-      0,
-      0
-    ],
-    "target": "global",
-    "type": "real[3]",
-    "desc": "Global model maximum bounds [x,y,z]",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      false
-    ]
-  },
-  "near": {
-    "default": 0.0,
-    "target": "view",
-    "type": "real",
-    "desc": "Near clipping plane position, adjusts where geometry close to the camera is clipped",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
-    ]
-  },
-  "far": {
-    "default": 0.0,
-    "target": "view",
-    "type": "real",
-    "desc": "Far clip plane position, adjusts where far geometry is clipped",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
-    ]
-  },
-  "aperture": {
-    "default": 45.0,
-    "target": "view",
-    "type": "real",
-    "desc": "Aperture or Field-Of-View in degrees",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true,
-      [
-        10,
-        170,
-        1
-      ]
-    ]
-  },
-  "orthographic": {
-    "default": false,
-    "target": "view",
-    "type": "boolean",
-    "desc": "Enable to switch to an orthographic projection instead of the default perspective projection",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
-    ]
-  },
-  "coordsystem": {
-    "default": 1,
-    "target": "view",
-    "type": "integer",
-    "desc": "Set to determine coordinate system, 1=Right-handed (OpenGL default) -1=Left-handed",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
-    ]
-  },
-  "follow": {
-    "default": false,
-    "target": "view",
-    "type": "boolean",
-    "desc": "Enable to follow the model bounding box centre with camera as it changes",
-    "strict": true,
-    "redraw": 0,
-    "control": [
-      true
     ]
   },
   "quality": {
