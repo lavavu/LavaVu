@@ -1,6 +1,7 @@
 ![# logo](http://owen.kaluza.id.au/Slides/2017-08-15/LavaVu.png)
 
 [![Build Status](https://travis-ci.org/OKaluza/LavaVu.svg?branch=master)](https://travis-ci.org/OKaluza/LavaVu)
+[![DOI](https://zenodo.org/badge/45163055.svg)](https://zenodo.org/badge/latestdoi/45163055)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
