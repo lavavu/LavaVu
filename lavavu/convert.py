@@ -49,15 +49,13 @@ def points_to_volume(verts, res=8, kdtree=False, normed=False, clamp=None, bound
 
     TODO: support colour data too, converted density field becomes alpha channel
 
-    Returns:
-    --------
-    3tuple containing (values, vmin, vmax):
-
+    Returns
+    -------
     values: numpy array of float32
         The converted density field
-    vmin:
+    vmin
         the minimum 3d vertex of the bounding box
-    vmax:
+    vmax
         the maximum 3d vertex of the bounding box
 
     """

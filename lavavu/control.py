@@ -1,5 +1,6 @@
 """
-LavaVu python interface: interactive HTML UI controls library
+LavaVu python interface
+    interactive HTML UI controls library
 """
 import os
 import sys
@@ -396,7 +397,7 @@ class Container(HTML):
     """
     #Parent class for container types
     def __init__(self, viewer):
-        self.viewer = viewer
+        self.viewer = viewer #WEAKREF?
         self._content = []
         super(Container, self).__init__()
 
@@ -419,7 +420,7 @@ class Window(Container):
 
     Parameters
     ----------
-    align: str
+    align : str
         Set to "left/right" to align viewer window, default is left
     """
     def __init__(self, viewer, align="left"):
@@ -459,7 +460,7 @@ class Panel(Container):
 
     Parameters
     ----------
-    showwin: boolean
+    showwin : boolean
         Set to False to exclude the interactive window
     """
     def __init__(self, viewer, showwin=True):
@@ -483,7 +484,7 @@ class Tabs(Container):
 
     Parameters
     ----------
-    buttons: boolean
+    buttons : boolean
         Display the tab buttons for switching tabs
     """
     def __init__(self, target, buttons=True):
@@ -495,7 +496,7 @@ class Tabs(Container):
         """Add a new tab, any controls appending will appear in the new tab
         Parameters
         ----------
-        label: str
+        label : str
             Label for the tab, if omitted will be blank
         """
         self.tabs.append(label)
@@ -550,18 +551,18 @@ class Control(HTML):
 
     Parameters
     ----------
-    target: Obj or Viewer
+    target : Obj or Viewer
         Add a control to an object to control object properties
         Add a control to a viewer to control global proerties and run commands
-    property: str
+    property : str
         Property to modify
-    command: str
+    command : str
         Command to run
-    value: any type
+    value : any type
         Initial value of the controls
-    label: str
+    label : str
         Descriptive label for the control
-    readproperty: str
+    readproperty : str
         Property to read control value from on update (but not modified)
     """
 
@@ -779,7 +780,7 @@ class Range(Control):
 
     Parameters
     ----------
-    range: list/tuple
+    range : list or tuple
         Min/max values for the range
     """
     def __init__(self, target=None, property=None, command=None, value=None, label=None, index=None, range=None, step=None, readproperty=None):
@@ -1181,7 +1182,7 @@ class DualRange(Control):
 
     Parameters
     ----------
-    range: list/tuple
+    range : list or tuple
         Min/max values for the range
     """
     def __init__(self, target, properties, values=[None,None], label=None, range=(0.,1.), step=None):
@@ -1198,7 +1199,7 @@ class Range2D(Control):
 
     Parameters
     ----------
-    range: list/tuple
+    range : list or tuple
         Min/max values for the ranges
     """
     def __init__(self, target, property, label=None, value=None, range=(0.,1.), step=None, *args, **kwargs):
@@ -1218,7 +1219,7 @@ class Range3D(Control):
 
     Parameters
     ----------
-    range: list/tuple
+    range : list or tuple
         Min/max values for the ranges
     """
     def __init__(self, target, property, label=None, value=None, range=(0.,1.), step=None, *args, **kwargs):
@@ -1239,7 +1240,7 @@ class Filter(Control):
 
     Parameters
     ----------
-    range: list/tuple
+    range : list or tuple
         Min/max values for the filter range
     """
     def __init__(self, target, filteridx, label=None, range=None, step=None):
@@ -1293,7 +1294,7 @@ class ObjectSelect(Container):
 
     Parameters
     ----------
-    objects: list
+    objects : list
         A list of objects to display, by default all available objects are added
     """
     def __init__(self, viewer, objects=None, *args, **kwargs):

@@ -21,11 +21,12 @@ def loadpointcloud(filename, subsample=1):
     Attempt to load the passed point cloud file based
     Pick loader based on extension
 
-    Returns:
-    --------
-    tuple: (vertices, colours)
-        vertices: numpy array x,y,z
-        colours: numpy array r,g,b or r,g,b,a
+    Returns
+    -------
+    vertices : array
+        numpy array x,y,z
+    colours : array
+        numpy array r,g,b or r,g,b,a
     """
     fn, ext = os.path.splitext(filename)
     ext = ext.lower()

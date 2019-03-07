@@ -35,6 +35,35 @@ def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0,
         - multiply position by velocity vector
      - otherwise:
         - generate a new start position for tracer
+
+    Parameters
+    ----------
+    state : TracerState
+        Object returned from first call, pass None on first pass
+    verts : array or list
+        vertices of the vector field
+    vecs : array or list
+        vector values of the vector field
+    N : int
+        Number of particles to seed
+    limit : float
+        Distance limit over which tracers are not connected,
+        For example if using a periodic boundary, setting limit to
+        half the bounding box size will prevent tracer lines being
+        connected when passing through the boundary
+    speed : float
+        Speed multiplier, scaling factor for the velocity taken from the vector values
+    noise : float
+        A noise factor, if set a random value is generated, multiplied by noise factor
+        and added to each new position
+    height : float
+        A fixed height value, all positions will be given this height as their Z component
+
+    Returns
+    -------
+    TracerState
+        Object to hold the tracer state and track particles
+        Pass this as first paramter on subsequent calls
     """
 
     #KDstate.tree for finding nearest velocity grid point

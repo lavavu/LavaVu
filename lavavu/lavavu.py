@@ -1,15 +1,17 @@
 """
 LavaVu python interface: viewer utils & wrapper
 
-NOTE: regarding sync of state between python and library
-- sync from python to lavavu is immediate,
-    property setting must always trigger a sync to lavavu
-- sync from lavavu to python is lazy, always need to call _get()
-    before using state data
-#TODO:
- - zoom to fit in automated image output broken, initial timestep differs, margins out
- - translation setting different if window aspect ratio changes
+TODO:
+    Documentation intro / header
+
 """
+
+#NOTE: regarding sync of state between python and library
+#- sync from python to lavavu is immediate,
+#    property setting must always trigger a sync to lavavu
+#- sync from lavavu to python is lazy, always need to call _get()
+#    before using state data
+
 import json
 import math
 import sys
@@ -74,7 +76,7 @@ def _convert_keys(dictionary):
     return dict((k.encode('utf-8'), _convert_keys(v))
         for k, v in dictionary.items())
 
-class CustomEncoder(json.JSONEncoder):
+class _CustomEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, numpy.integer):
             return int(obj)
@@ -89,7 +91,7 @@ def _convert_args(dictionary):
     """Convert a kwargs dict to a json string argument list
        Ensure all elements can be converted by using custom encoder
     """
-    return str(json.dumps(dictionary, cls=CustomEncoder))
+    return str(json.dumps(dictionary, cls=_CustomEncoder))
 
 def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
     """
@@ -97,14 +99,14 @@ def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
 
     Parameters
     ----------
-    corners: tuple/list
+    corners : tuple or list
         top left and bottom right corner vertices (2d)
-    dims: tuple/list
+    dims : tuple or list
         dimensions of grid nodes, number of vertices to generate in each direction
 
     Returns
     -------
-    vertices: np array
+    vertices : array
         The 2d vertices of the generated grid
     """
     x = numpy.linspace(corners[0][0], corners[1][0], dims[0], dtype='float32')
@@ -119,14 +121,14 @@ def grid3d(corners=((0.,1.,0.), (1.,1.,0.), (0.,0.,0.), (1.,0.,0.)), dims=[2,2])
 
     Parameters
     ----------
-    corners: tuple/list
+    corners : tuple or list
         3 or 4 corner vertices (3d)
-    dims: tuple/list
+    dims : tuple or list
         dimensions of grid nodes, number of vertices to generate in each direction
 
     Returns
     -------
-    vertices: np array
+    vertices : array
         The 3d vertices of the generated 2d grid
     """
     if len(dims) < 2:
@@ -198,22 +200,22 @@ def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
 
     Parameters
     ----------
-    samples: int
+    samples : int
         Number of colour samples to produce
-    start: float
+    start : float
         Start colour [0,3] 1=red,2=green,3=blue
-    rot: float
+    rot : float
         Rotations through spectrum, negative to reverse direction
-    sat: float
+    sat : float
         Colour saturation grayscale to full [0,1], >1 to oversaturate
-    gamma: float
+    gamma : float
         Gamma correction [0,1]
-    alpha: list,tuple
+    alpha : list or tuple
         Alpha [min,max] for transparency ramp
 
     Returns
     -------
-    colours: list
+    list
         List of colours ready to be loaded by colourmap()
     """
 
@@ -250,14 +252,14 @@ def matplotlib_colourmap(name, samples=16):
 
     Parameters
     ----------
-    name: str
+    name : str
         Name of the matplotlib colourmap preset to import
-    samples: int
+    samples : int
         Number of samples to take for LinearSegmentedColormap type
 
     Returns
     -------
-    colours: list
+    list
         List of colours ready to be loaded by colourmap()
     """
     try:
@@ -305,7 +307,7 @@ class Object(dict):
     
     Parameters
     ----------
-    **kwargs:
+    **kwargs
         Initial set of properties passed to the created object
 
     Example
@@ -413,9 +415,9 @@ class Object(dict):
 
         Parameters
         ----------
-        label: str
+        label : str
             Data label to filter on
-        values: number,list,tuple
+        values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
             if a list  eg: [0,1] range is inclusive 0 <= x <= 1
@@ -423,7 +425,7 @@ class Object(dict):
 
         Returns
         -------
-        filter: int
+        int
             The filter id created
         """
         return self.filter(*args, out=False, **kwargs)
@@ -436,9 +438,9 @@ class Object(dict):
 
         Parameters
         ----------
-        label: str
+        label : str
             Data label to filter on
-        values: number,list,tuple
+        values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
             if a list  eg: [0,1] range is inclusive 0 <= x <= 1
@@ -446,7 +448,7 @@ class Object(dict):
 
         Returns
         -------
-        filter: int
+        int
             The filter id created
         """
         return self.filter(*args, out=False, map=True, **kwargs)
@@ -459,9 +461,9 @@ class Object(dict):
 
         Parameters
         ----------
-        label: str
+        label : str
             Data label to filter on
-        values: number,list,tuple
+        values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
             if a list  eg: [0,1] range is inclusive 0 <= x <= 1
@@ -469,7 +471,7 @@ class Object(dict):
 
         Returns
         -------
-        filter: int
+        int
             The filter id created
         """
         return self.filter(*args, out=True, **kwargs)
@@ -482,9 +484,9 @@ class Object(dict):
 
         Parameters
         ----------
-        label: str
+        label : str
             Data label to filter on
-        values: number,list,tuple
+        values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
             if a list  eg: [0,1] range is inclusive 0 <= x <= 1
@@ -492,7 +494,7 @@ class Object(dict):
 
         Returns
         -------
-        filter: int
+        int
             The filter id created
         """
         return self.filter(*args, out=True, map=True, **kwargs)
@@ -503,22 +505,22 @@ class Object(dict):
 
         Parameters
         ----------
-        label: str
+        label : str
             Data label to filter on
-        values: number,list,tuple
+        values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
             if a list  eg: [0,1] range is inclusive 0 <= x <= 1
             if a tuple eg: (0,1) range is exclusive 0 < x < 1
-        out: boolean
+        out : boolean
             Set this flag to filter out values instead of including them
-        map: boolean
+        map : boolean
             Set this flag to filter by normalised values mapped to [0,1]
             instead of actual min/max of the data range
 
         Returns
         -------
-        filter: int
+        int
             The filter id created
         """
         #Pass a single value to include/exclude exact value
@@ -548,7 +550,7 @@ class Object(dict):
 
         Returns
         -------
-        data: dict
+        dict
             A dictionary containing the data objects available by label
         """
         #Return data sets dict converted from json string
@@ -576,7 +578,7 @@ class Object(dict):
 
         Parameters
         ----------
-        split: int
+        split : int
             Split triangles this many times on loading
         """
         if split > 1:
@@ -743,7 +745,7 @@ class Object(dict):
 
         Returns
         -------
-        data: Geometry
+        Geometry
             An object holding the data elements retrieved
 
         Example
@@ -759,7 +761,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy float32 3d array of vertices
         """
         self._loadVector(data, LavaVuPython.lucVertexData)
@@ -770,7 +772,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy float32 3d array of normals
         """
         self._loadVector(data, LavaVuPython.lucNormalData)
@@ -781,9 +783,9 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy float32 3d array of vectors
-        magnitude: str
+        magnitude : str
             Pass a label to calculate the magnitude and save under provided name (for use in colouring etc)
         """
         self._loadVector(data, LavaVuPython.lucVectorData, magnitude)
@@ -794,9 +796,9 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy float32 array of values
-        label: str
+        label : str
             Label for this data set
         """
         data = self._convert(data, numpy.float32)
@@ -813,7 +815,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: str,list,array
+        data : str or list or array
             Pass a list or numpy uint32 array of colours
             if a string or list of strings is provided, colours are parsed as html colour string values
             if a numpy array is passed, colours are loaded as 4 byte ARGB unsigned integer values
@@ -845,10 +847,10 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy uint32 array of indices
             indices are loaded as 32 bit unsigned integer values
-        offset: integer
+        offset : int
             Specify an initial index offset, for 1-based indices pass offset=1
             Default is zero-based
         """
@@ -867,7 +869,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy uint8 array of rgb values
             values are loaded as 8 bit unsigned integer values
         """
@@ -890,7 +892,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy uint8 array of rgba values
             values are loaded as 8 bit unsigned integer values
         """
@@ -914,7 +916,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy uint8 array of luminance values
             values are loaded as 8 bit unsigned integers
         """
@@ -929,21 +931,21 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,array
+        data : list or array
             Pass a list or numpy uint32 or uint8 array
             texture data is loaded as raw image data
-        width: int
+        width : int
             image width in pixels
-        height: int
+        height : int
             image height in pixels
-        channels: int
+        channels : int
             colour channels/depth in bytes (1=luminance, 3=RGB, 4=RGBA)
-        flip: boolean
+        flip : boolean
             flip the texture vertically after loading
             (default is enabled as usually required for OpenGL but can be disabled)
-        mipmaps: boolean
+        mipmaps : boolean
             generate mipmaps (slow)
-        bgr: boolean
+        bgr : boolean
             rgb data is in BGR/BGRA format instead of RGB/RGBA
         """
         if not isinstance(data, numpy.ndarray):
@@ -959,7 +961,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,str
+        data : list or str
             Pass a label or list of labels to be applied, one per vertex
         """
         if isinstance(data, str):
@@ -972,7 +974,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,str,ColourMap
+        data : list or str or ColourMap
             If not provided, just returns the colourmap
             (A default is created if none exists)
             Provided colourmap data can be
@@ -983,14 +985,14 @@ class Object(dict):
             - An existing ColourMap object
             Creates a colourmap named objectname_colourmap if object
             doesn't already have a colourmap
-        reverse: boolean
+        reverse : boolean
             Reverse the order of the colours after loading
-        monochrome: boolean
+        monochrome : boolean
             Convert to greyscale
 
         Returns
         -------
-        colourmap: ColourMap(dict)
+        ColourMap(dict)
             The wrapper object of the colourmap loaded/created
         """
         cmap = None
@@ -1024,7 +1026,7 @@ class Object(dict):
 
         Parameters
         ----------
-        data: list,str
+        data : list or str
             If not provided, just returns the opacity map
             (A default is created if none exists)
             Provided opacity map data can be
@@ -1035,7 +1037,7 @@ class Object(dict):
 
         Returns
         -------
-        opacitymap: ColourMap(dict)
+        ColourMap(dict)
             The wrapper object of the opacity map loaded/created
         """
         colours = []
@@ -1096,7 +1098,7 @@ class Object(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Name of the file to load
         """
         #Load file with this object selected (import)
@@ -1110,7 +1112,7 @@ class Object(dict):
 
         Parameters
         ----------
-        files: str
+        files : str
             Specification of the files to load
         """
         #Load file with this object selected (import)
@@ -1124,7 +1126,7 @@ class Object(dict):
 
         Returns
         -------
-        colourbar: Object
+        colourbar : Object
             The colourbar object created
         """
         #Create a new colourbar for this object
@@ -1142,10 +1144,9 @@ class Object(dict):
 
         Parameters
         ----------
-        typename: str
+        typename : str
             Optional filter naming type of data to be cleared,
-            Either a built in type:
-              (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
+            Either a built in type: (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
             or a user defined data label
         """
         if typename in datatypes:
@@ -1162,10 +1163,10 @@ class Object(dict):
 
         Parameters
         ----------
-        filter: str
+        filter : str
             Optional filter to type of geometry to be updated, if omitted all will be written
             (eg: labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
-        compress: boolean
+        compress : boolean
             Use zlib compression when writing the geometry data
         """
         #Update object data at current timestep
@@ -1184,14 +1185,14 @@ class Object(dict):
 
         Parameters
         ----------
-        string: boolean
+        string : boolean
             The default is to return the data as a string of colours separated by semi-colons
             To instead return a list of (position,[R,G,B,A]) tuples for easier automated processing in python,
             set this to False
 
         Returns
         -------
-        mapdata: str/list
+        mapdata : str/list
             The formatted colourmap data
         """
         cmid = self["colourmap"]
@@ -1203,25 +1204,25 @@ class Object(dict):
 
         Parameters
         ----------
-        isovalues: number,list
+        isovalues : number,list
             Isovalues to create surfaces for, number or list
-        name: str
+        name : str
             Name of the created object, automatically assigned if not provided
-        convert: bool
+        convert : bool
             Setting this flag to True will replace the existing volume object with the
             newly created isosurface by deleting the volume data and loading the mesh
             data into the preexisting object
-        updatedb: bool
+        updatedb : bool
             Setting this flag to True will write the newly created/modified data
             to the database when done
-        compress: boolean
+        compress : boolean
             Use zlib compression when writing the geometry data
-        **kwargs:
+        **kwargs :
             Initial set of properties passed to the created object
 
         Returns
         -------
-        obj: Object
+        obj : Object
             The isosurface object created/converted
         """
         #Generate and return an isosurface object, 
@@ -1252,7 +1253,7 @@ class Object(dict):
 
         Parameters
         ----------
-        cmd: str
+        cmd : str
             Command to get help with, if ommitted displays general introductory help
             If cmd is a property or is preceded with '@' will display property help
         """
@@ -1404,7 +1405,7 @@ class ColourMap(dict):
 
     Parameters
     ----------
-    **kwargs:
+    **kwargs
         Initial set of properties passed to the created colourmap
 
     """
@@ -1432,7 +1433,7 @@ class ColourMap(dict):
 
         Returns
         -------
-        name: str
+        name : str
             The name of the colourmap
         """
         return self.ref.name
@@ -1444,7 +1445,7 @@ class ColourMap(dict):
 
         Returns
         -------
-        colours: (list)
+        colours : list
             A list of colours
          """
         self._get()
@@ -1462,7 +1463,7 @@ class ColourMap(dict):
 
         Returns
         -------
-        positions: (list)
+        positions : list
             A list of colour positions [0,1]
          """
         self._get()
@@ -1509,7 +1510,7 @@ class ColourMap(dict):
 
         Returns
         -------
-        list:
+        list
             The colour and position data which can be used to re-create the colourmap
         """
         arr = []
@@ -1526,7 +1527,7 @@ class ColourMap(dict):
 
         Returns
         -------
-        str:
+        str
             The colour data which can be used to re-create the colourmap
         """
         def padhex2(i):
@@ -1558,15 +1559,15 @@ class ColourMap(dict):
 
         Parameters
         ----------
-        data: list,str
+        data : list,str
             Provided colourmap data can be
             - a string,
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
-        reverse: boolean
+        reverse : boolean
             Reverse the order of the colours after loading
-        monochrome: boolean
+        monochrome : boolean
             Convert to greyscale
         """
         if data is not None:
@@ -1888,38 +1889,38 @@ class Viewer(dict):
     
     Parameters
     ----------
-    arglist: list
+    arglist : list
         list of additional init arguments to pass
-    database: str
+    database : str
         initial database (or model) file to load
-    figure: int
+    figure : int
         initial figure id to display
-    timestep: int
+    timestep : int
         initial timestep to display
-    verbose: boolean
+    verbose : boolean
         verbose output to command line for debugging
-    interactive: boolean
+    interactive : boolean
         begin in interactive mode, opens gui window and passes control to event loop immediately
-    hidden: boolean
+    hidden : boolean
         begin hidden, for offscreen rendering or web browser control
-    cache: boolean
+    cache : boolean
         cache all model timesteps in loaded database, everything loaded into memory on startup
         (assumes enough memory is available)
-    quality: integer
+    quality : int
         Render sampling quality, render 2^N times larger image and downsample output
         For anti-aliasing image rendering where GPU multisample anti-aliasing is not available
-    writeimage: boolean
+    writeimage : boolean
         Write images and quit, create images for all figures/timesteps in loaded database then exit
-    resolution: list, tuple
+    resolution : list, tuple
         Window/image resolution in pixels [x,y]
-    script: list
+    script : list
         List of script commands to run after initialising
-    initscript: boolean
+    initscript : boolean
         Set to False to disable loading any "init.script" file found in current directory
-    usequeue: boolean
+    usequeue : boolean
         Set to True to add all commands to a background queue for processing rather than
         immediate execution
-    **kwargs:
+    **kwargs
         Remaining keyword args will be  passed to the created viewer
         and parsed into the initial set of global properties
             
@@ -1966,15 +1967,15 @@ class Viewer(dict):
         Parameters
         ----------
         (see Viewer class docs for setup args)
-        port: int
+        port : int
             Web server port, open server on specific port for control/interaction
             Viewer will be run in a separate thread, all rendering will be done in this thread
             When disabled (None) creates the viewer in the current(main) thread and disables the server
-        binpath: str
+        binpath : str
             Override the executable path
-        havecontext: boolean
+        havecontext : boolean
             OpenGL context provided by user, set this if you have already setup the context
-        omegalib: boolean
+        omegalib : boolean
             For use in VR mode, disables some conflicting functionality
             and parsed into the initial set of global properties
         """
@@ -2189,9 +2190,7 @@ class Viewer(dict):
         Execute the viewer, initialising with provided arguments and
         entering event loop if requested
 
-        Parameters
-        ----------
-        see __init__ docs
+        Parameters: see __init__ docs
 
         """
         #Convert options to args
@@ -2327,7 +2326,7 @@ class Viewer(dict):
 
         Returns
         -------
-        port: int
+        port : int
             Port the HTTP server is running on
             Will return 0 if server is not running
         """
@@ -2343,7 +2342,7 @@ class Viewer(dict):
 
         Returns
         -------
-        objects: Objects(dict)
+        objects : Objects(dict)
             A dictionary wrapper containing the list of available visualisation objects
             Can be printed, iterated or accessed as a dictionary by object name
         """
@@ -2357,7 +2356,7 @@ class Viewer(dict):
 
         Returns
         -------
-        colourmaps: (dict)
+        colourmaps : dict
             A dictionary containing the available colourmaps as ColourMap() wrapper objects
          """
         self._get()
@@ -2374,7 +2373,7 @@ class Viewer(dict):
 
         Returns
         -------
-        figures: dict
+        figures : dict
             A dictionary of all available figures by name
         """
         if not self.app.amodel:
@@ -2392,7 +2391,7 @@ class Viewer(dict):
 
         Returns
         -------
-        timesteps: list
+        timesteps : list
             A list of all available time steps
         """
         return self.timesteps()
@@ -2403,14 +2402,14 @@ class Viewer(dict):
 
         Parameters
         ----------
-        name: str
+        name : str
             Name of the figure
-        objects: list
+        objects : list
             List of objects or object names to include in the figure, others will be hidden
 
         Returns
         -------
-        figure: Figure
+        figure : Figure
             Figure object
         """
         #Show only objects in list
@@ -2442,14 +2441,16 @@ class Viewer(dict):
     @property
     def step(self):
         """    
-        step (int): Returns current timestep
+        step : int
+            Returns current timestep
         """
         return self['timestep']
 
     @step.setter
     def step(self, value):
         """    
-        step (int): Sets current timestep
+        step : int
+            Sets current timestep
         """
         self.timestep(value)
 
@@ -2472,7 +2473,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        cmds: list, str
+        cmds : list or str
             Command(s) to execute
         """
         if not len(cmds): return
@@ -2498,7 +2499,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        cmd: str
+        cmd : str
             Command to get help with, if ommitted displays general introductory help
             If cmd is a property or is preceded with '@' will display property help
         """
@@ -2520,7 +2521,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        cmds: str
+        cmds : str
             String containing commands to run, separate commands with semi-colons"
 
         Example
@@ -2568,13 +2569,13 @@ class Viewer(dict):
 
         Parameters
         ----------
-        name: str
+        name : str
             Name to apply to the created object
             If an object of this name exists, it will be returned instead of created
 
         Returns
         -------
-        obj: Object
+        obj : Object
             The object created
         """
         if isinstance(self._objects, Objects) and name in self._objects:
@@ -2603,18 +2604,18 @@ class Viewer(dict):
 
         Parameters
         ----------
-        identifier: str,int,Object (Optional)
+        identifier : str or int or Object, optional
             If a string, lookup an object by name
             If a number, lookup object by index
             If an object reference, lookup the Object by reference
             If omitted, return the last object in the list
             If no matching object found and string identifier provided, creates an empty object
-        **kwargs:
+        **kwargs
             Set of properties passed to the object
 
         Returns
         -------
-        obj: Object
+        obj : Object
             The object located/created
         """
         #Return object by name/ref or last in list if none provided
@@ -2660,18 +2661,18 @@ class Viewer(dict):
 
         Parameters
         ----------
-        identifier: str,int,Object (Optional)
+        identifier : str or int or Object, optional
             If a string, lookup an object by name
             If a number, lookup object by index
             If an object reference, lookup the Object by reference
             If omitted, return the last object in the list
             If no matching object found and string identifier provided, creates an empty object
-        **kwargs:
+        **kwargs
             Set of properties passed to the object
 
         Returns
         -------
-        obj: Object
+        obj : Object
             The object located
         """
 
@@ -2681,9 +2682,9 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Name of the file to load
-        obj: Object
+        obj : Object
             Vis object to load the file data into,
             if not provided a default will be created
         """
@@ -2708,9 +2709,9 @@ class Viewer(dict):
 
         Parameters
         ----------
-        files: str
+        files : str
             Specification of the files to load, either a list of full paths or a file spec string such as *.gldb
-        obj: Object
+        obj : Object
             Vis object to load the data into,
             if not provided a default will be created
         """
@@ -2731,12 +2732,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        obj: Object (optional)
+        obj : Object, optional
             Vis object the colour bar applies to
 
         Returns
         -------
-        colourbar: Object
+        colourbar : Object
             The colourbar object created
         """
         #Create a new colourbar
@@ -2756,7 +2757,7 @@ class Viewer(dict):
 
         Returns
         -------
-        colourmaps: list of str
+        colourmaps : list of str
             Names of all predefined colour maps
         """
         return list(LavaVuPython.ColourMap.getDefaultMapNames())
@@ -2767,12 +2768,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        name: str
+        name : str
             Name of the built in colourmap to return
 
         Returns
         -------
-        data: str
+        str
             Colourmap data formatted as a string
         """
         return LavaVuPython.ColourMap.getDefaultMap(name)
@@ -2783,24 +2784,24 @@ class Viewer(dict):
 
         Parameters
         ----------
-        name: str
+        name : str
             Name of the colourmap, if this colourmap name is found
             the data will replace the existing colourmap, otherwise
             a new colourmap will be created
-        data: list,str
+        data : list or str
             Provided colourmap data can be
             - a string,
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
-        reverse: boolean
+        reverse : boolean
             Reverse the order of the colours after loading
-        monochrome: boolean
+        monochrome : boolean
             Convert to greyscale
 
         Returns
         -------
-        colourmap: ColourMap(dict)
+        ColourMap(dict)
             The wrapper object of the colourmap loaded/created
         """
         c = ColourMap(self.app.addColourMap(name), self)
@@ -2815,16 +2816,16 @@ class Viewer(dict):
 
         Parameters
         ----------
-        mapid: string/int
+        mapid : str or int
             Name or index of the colourmap to retrieve
-        string: boolean
+        string : boolean
             The default is to return the data as a string of colours separated by semi-colons
             To instead return a list of (position,[R,G,B,A]) tuples for easier automated processing in python,
             set this to False
 
         Returns
         -------
-        mapdata: str/list
+        mapdata : str or list
             The formatted colourmap data
         """
         c = ColourMap(mapid, self)
@@ -2840,10 +2841,10 @@ class Viewer(dict):
 
         Parameters
         ----------
-        objects: boolean
+        objects : boolean
             including all objects, if set to False will clear the objects
             but not delete them
-        colourmaps: boolean
+        colourmaps : boolean
             including all colourmaps
 
         """
@@ -2857,7 +2858,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Name of the file to save
 
         """
@@ -2871,7 +2872,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Name of the file to load
 
         """
@@ -2886,7 +2887,7 @@ class Viewer(dict):
 
         Returns
         -------
-        timesteps: list
+        timesteps : list
             A list of all available time steps
         """
         return _convert_keys(json.loads(self.app.getTimeSteps()))
@@ -2897,9 +2898,9 @@ class Viewer(dict):
 
         Parameters
         ----------
-        step: int (Optional)
+        step : int, optional
             Time step number, default is current + 1
-        **kwargs:
+        **kwargs
             Timestep specific properties passed to the created object
         """
         self.app.addTimeStep(step, _convert_args(kwargs))
@@ -2924,10 +2925,10 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filter: str
+        filter : str
             Optional filter to type of geometry to be updated, if omitted all will be written
             (labels, points, grid, triangles, vectors, tracers, lines, shapes, volume)
-        compress: boolean
+        compress : boolean
             Use zlib compression when writing the geometry data
         """
         for obj in self._objects.list:
@@ -2948,19 +2949,19 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Name of the file to save (should be .jpg or .png),
             if not provided the image will be returned as a base64 encoded data url
-        resolution: list, tuple
+        resolution : list or tuple
             Image resolution in pixels [x,y]
-        transparent: boolean
+        transparent : boolean
             Creates a PNG image with a transparent background
-        quality: integer
+        quality : int
             Quality for JPEG image compression, default 95%
 
         Returns
         -------
-        image: str
+        image : str
             filename of saved image or encoded image as string data
         """
         if resolution is None:
@@ -2973,14 +2974,14 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution: list, tuple
+        resolution : list or tuple
             Image resolution in pixels [x,y]
-        quality: integer
+        quality : int
             Quality for JPEG image compression, default 90%
 
         Returns
         -------
-        image: str
+        image : str
             encoded image as string data
         """
         #Jpeg encoded frame data
@@ -2993,14 +2994,14 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution: list, tuple
+        resolution : list or tuple
             Image resolution in pixels [x,y]
-        quality: integer
+        quality : int
             Quality for JPEG image compression, default 90%
 
         Returns
         -------
-        image: bytearray
+        image : bytearray
             encoded image as byte array
         """
         #Jpeg encoded frame data
@@ -3013,12 +3014,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution: list, tuple
+        resolution : list or tuple
             Image resolution in pixels [x,y]
 
         Returns
         -------
-        image: bytearray
+        image : bytearray
             encoded image as byte array
         """
         #PNG encoded frame data
@@ -3036,9 +3037,9 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution: list, tuple
+        resolution : list or tuple
             Image resolution in pixels [x,y]
-        transparent: boolean
+        transparent : boolean
             Creates a PNG image with a transparent background
         """
         if is_notebook():
@@ -3060,15 +3061,20 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
-            Filename to save generated HTML page, default: webgl.html
-        resolution: list, tuple
+        filename : str
+            Filename to save generated HTML page, default : webgl.html
+        resolution : list or tuple
             Display window resolution in pixels [x,y]
-        inline: boolean
+        inline : boolean
             Display inline when in an IPython notebook cell, on by default.
             Set to false to open a full page viewer in a tab or new window
-        menu: boolean
+        menu : boolean
             Include and interactive menu for controlling visualisation appearance, on by default
+
+        Returns
+        -------
+        str or obj
+            filename as string if inline=False, or the inline object otherwise
         """
 
         try:
@@ -3120,14 +3126,14 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Name of the file to save, if not provided a default will be used
-        fps: int
+        fps : int
             Frames to output per second of video
-        quality: int
+        quality : int
             Encoding quality, 1=low(default), 2=medium, 3=high, higher quality reduces
             encoding artifacts at cost of larger file size
-        resolution: list, tuple
+        resolution : list or tuple
             Video resolution in pixels [x,y]
         """
 
@@ -3147,7 +3153,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Path and name of the file to play
         """
 
@@ -3176,14 +3182,14 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution: tuple(int,int)
+        resolution : tuple(int,int)
             Image width and height in pixels
-        channels: int
+        channels : int
             colour channels/depth in bytes (1=luminance, 3=RGB(default), 4=RGBA)
 
         Returns
         -------
-        image: array
+        image : array
             Numpy array of the image data requested
         """
         img = Image(resolution, channels)
@@ -3196,16 +3202,16 @@ class Viewer(dict):
 
         Parameters
         ----------
-        imagelist: list
+        imagelist : list
             List of test images to compare with expected results
             If not provided, will process all jpg and png images in working directory
-        tolerance: float
+        tolerance : float
             Tolerance level of difference before a comparison fails, default 0.0001
-        expectedPath: str
+        expectedPath : str
             Where to find the expected result images (should have the same filenames as output images)
-        outputPath: str
+        outputPath : str
             Where to find the output images
-        clear: boolean
+        clear : boolean
             If the test passes the output images will be deleted, set to False to disable deletion
         """
         results = []
@@ -3253,16 +3259,16 @@ class Viewer(dict):
 
         Parameters
         ----------
-        expfile: str
+        expfile : str
             Expected result image
-        outfile: str
+        outfile : str
             Test output image
-        tolerance: float
+        tolerance : float
             Tolerance level of difference before a comparison fails, default 0.0001
 
         Returns
         -------
-        result: boolean
+        result : boolean
             True if test passes, difference <= tolerance
             False if test fails, difference > tolerance
         """
@@ -3335,12 +3341,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        data: dict
+        data : dict
             Camera view to apply if any
 
         Returns
         -------
-        result: dict
+        result : dict
             Current camera view or previous if applying a new view
         """
         self._get()
@@ -3383,7 +3389,7 @@ class Viewer(dict):
 
         Returns
         -------
-        view: str
+        view : str
             json string containing saved view settings
         """
         self._get()
@@ -3395,7 +3401,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        view: str
+        view : str
             json string containing saved view settings
         """
         self.state["views"][0] = _convert_keys(json.loads(view))
@@ -3413,7 +3419,7 @@ class Viewer(dict):
 
         Returns
         -------
-        boolean:
+        boolean :
             False if user quit program, True otherwise
         """
         if self.app.events():
@@ -3428,9 +3434,12 @@ class Viewer(dict):
 
         Parameters
         ----------
-        port(9000)
-        ipv6(False)
-        retries(20)
+        port : int
+            port to run on
+        ipv6 : boolean
+            use ipv6 if True, ipv4 if False
+        retries : int
+            Number of attempts to open a port, incrementing the port number each time
         """
         if self.server: return
         import server
@@ -3473,7 +3482,7 @@ class Viewer(dict):
 
         Parameters
         ----------
-        resolution: tuple(int,int)
+        resolution : tuple(int,int)
             Window width and height in pixels, if not provided will use the global default
         """
         try:
@@ -3521,9 +3530,10 @@ class Viewer(dict):
 
         Returns:
         --------
-        (pverts, bb_all): tuple
-            pverts: the vertices, numpy array
-            bb_all: the bounding box of the combined data
+        pverts : array
+            the vertices, numpy array
+        bb_all : tuple
+            the bounding box of the combined data
         """
         #Get vertices from a list of lavavu objects
         pverts = None
@@ -3727,13 +3737,13 @@ class GeomDataWrapper(object):
 
         Parameters
         ----------
-        typename: str
+        typename : str
             Type of data to be retrieved
             (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
 
         Returns
         -------
-        data: array
+        data : array
             Numpy array view of the data set requested
         """
         array = None
@@ -3762,13 +3772,13 @@ class GeomDataWrapper(object):
 
         Parameters
         ----------
-        typename: str
+        typename : str
             Type of data to be retrieved
             (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
 
         Returns
         -------
-        data: array
+        data : array
             Numpy array containing a copy of the data set requested
         """
         #Safer data access, makes a copy to ensure we still have access 
@@ -3781,10 +3791,10 @@ class GeomDataWrapper(object):
 
         Parameters
         ----------
-        typename: str
+        typename : str
             Type of data to set
             (vertices/normals/vectors/indices/colours/texcoords/luminance/rgb/values)
-        array: array
+        array : array
             Numpy array holding the data to be written
         """
         if typename in datatypes and typename != 'values':
@@ -3835,11 +3845,11 @@ class Image(object):
 
         Parameters
         ----------
-        source: array or lavavu.Viewer()
+        source : array or lavavu.Viewer
             Numpy array containing raw image data to paste or a Viewer instance to source the frame from
-        resolution: tuple(int,int)
+        resolution : tuple(int,int)
             Sub-image width and height in pixels, if not provided source must be a numpy array of the correct dimensions
-        position: tuple(int,int)
+        position : tuple(int,int)
             Sub-image x,y offset in pixels
 
         """
@@ -3862,11 +3872,11 @@ class Image(object):
 
         Parameters
         ----------
-        source: array or lavavu.Viewer()
+        source : array or lavavu.Viewer
             Numpy array containing raw image data to paste or a Viewer instance to source the frame from
-        resolution: tuple(int,int)
+        resolution : tuple(int,int)
             Sub-image width and height in pixels, if not provided source must be a numpy array of the correct dimensions
-        position: tuple(int,int)
+        position : tuple(int,int)
             Sub-image x,y offset in pixels
 
         """
@@ -3904,12 +3914,12 @@ class Image(object):
 
         Parameters
         ----------
-        filename: str
+        filename : str
             Output filename (png/jpg supported, default is png if no extension)
 
         Returns
         -------
-        path: str
+        path : str
             Path to the output image
         """
         return LavaVuPython.rawImageWrite(self.data, filename)
@@ -3930,13 +3940,13 @@ def loadCPT(fn, positions=True):
 
     Parameters
     ----------
-    positions: boolean
+    positions : boolean
         Set this to false to ignore any positional data and
         load only the colours from the file
 
     Returns
     -------
-    colours: string
+    colours : string
         Colour string ready to be loaded by colourmap()
     """
     result = ""
@@ -4035,12 +4045,12 @@ def getVariableName(var):
 
     Parameters
     ----------
-    var: object
+    var
         The variable in question
 
     Returns
     -------
-    name: str
+    name : str
         Name of the variable
     """
     import __main__ as main_mod
@@ -4056,7 +4066,7 @@ def printH5(h5):
 
     Parameters
     ----------
-    h5: hdf5 object
+    h5
         HDF5 Dataset loaded with h5py
     """
     print("------ ",h5.filename," ------")
@@ -4072,12 +4082,17 @@ def download(url, filename=None, overwrite=False, quiet=False):
 
     Parameters
     ----------
-    url: str
+    url : str
         URL to request the file from
-    filename: str
+    filename : str
         Filename to save, default is to keep the same name in current directory
-    overwrite: boolean
+    overwrite : boolean
         Always overwrite file if it exists, default is to never overwrite
+
+    Returns
+    -------
+    filename : str
+        Actual filename written to local filesystem
     """
     #Python 3 moved urlretrieve to request submodule
     try:
