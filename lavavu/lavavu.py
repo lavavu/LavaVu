@@ -4197,7 +4197,23 @@ def _markdown(mdstr):
         print(mdstr)
 
 def lerp(first, second, mu):
-    #Linear Interpolate between values of two lists
+    """Linear Interpolation between values of two lists
+
+    Parameters
+    ----------
+    first : tuple or list
+        first list of values
+    second : tuple or list
+        second list of values
+    mu : float
+        Interpolation factor [0,1]
+
+    Returns
+    -------
+    list
+        A list of the interpolated values
+    """
+    #
     final = first[:]
     for i in range(len(first)):
         diff = second[i] - first[i]
