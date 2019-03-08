@@ -179,7 +179,10 @@ function createMenu(viewer, onchange, webglmode) {
   //Insert within element rather than whole document
   var el = null;
   if (viewer.canvas.parentElement != document.body && viewer.canvas.parentElement.parentElement != document.body) {
-    pel = viewer.canvas.parentElement.parentElement;
+    var pel = viewer.canvas.parentElement;
+    //A bit of a hack to detect converted HTML output and skip going up two parent elements
+    if (pel.parentElement.className != 'section')
+      pel = pel.parentElement;
     pel.style.position = 'relative'; //Parent element relative prevents menu escaping wrapper div
     var id = 'dat_gui_menu_' + viewer.canvas.id;
     el = document.getElementById(id)

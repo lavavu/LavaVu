@@ -30,7 +30,6 @@ from vutils import is_ipython, is_notebook
 
 #import swig module
 import LavaVuPython
-libpath = os.path.abspath(os.path.dirname(__file__))
 version = LavaVuPython.version
 
 TOL_DEFAULT = 0.0001 #Default error tolerance for image tests
@@ -337,7 +336,7 @@ class Object(dict):
         if not "filters" in self.dict: self.dict["filters"] = []
 
         #Create a control factory
-        self.control = control.ControlFactory(self)
+        self.control = control._ControlFactory(self)
 
         #Init prop dict for tab completion
         super(Object, self).__init__(**self.parent.properties)
@@ -410,8 +409,7 @@ class Object(dict):
     def include(self, *args, **kwargs):
         """
         Filter data by including a range of values
-        shortcut for:
-            filter(... , out=False)
+        shortcut for: filter(... , out=False)
 
         Parameters
         ----------
@@ -433,8 +431,7 @@ class Object(dict):
     def includemap(self, *args, **kwargs):
         """
         Filter data by including a range of mapped values
-        shortcut for:
-            filter(... , out=False, map=True)
+        shortcut for: filter(... , out=False, map=True)
 
         Parameters
         ----------
@@ -456,8 +453,7 @@ class Object(dict):
     def exclude(self, *args, **kwargs):
         """
         Filter data by excluding a range of values
-        shortcut for:
-            filter(... , out=True)
+        shortcut for: filter(... , out=True)
 
         Parameters
         ----------
@@ -479,8 +475,7 @@ class Object(dict):
     def excludemap(self, *args, **kwargs):
         """
         Filter data by excluding a range of mapped values
-        shortcut for:
-            filter(... , out=True, map=True)
+        shortcut for: filter(... , out=True, map=True)
 
         Parameters
         ----------
@@ -1264,7 +1259,7 @@ class Object(dict):
         return [[bb[0], bb[1], bb[2]], [bb[3], bb[4], bb[5]]]
 
 #Wrapper dict+list of objects
-class Objects(dict):
+class _Objects(dict):
     """  
     The Objects class is used internally to manage and synchronise the drawing object list
     """
@@ -1658,7 +1653,7 @@ class Fig(dict):
         return self.parent.image(*args, **kwargs)
 
 
-class LavaVuThreadSafe(LavaVuPython.LavaVu):
+class _LavaVuThreadSafe(LavaVuPython.LavaVu):
     def __init__(self, threaded=True, *args, **kwargs):
         self._threaded = threaded
         self._closing = False
@@ -1674,7 +1669,7 @@ class LavaVuThreadSafe(LavaVuPython.LavaVu):
             #Safe call return value
             self._returned = None
 
-        super(LavaVuThreadSafe, self).__init__(*args, **kwargs)
+        super(_LavaVuThreadSafe, self).__init__(*args, **kwargs)
 
     #def __getattr__(self, attr):
     #    #Lock?
@@ -1809,7 +1804,7 @@ class LavaVuThreadSafe(LavaVuPython.LavaVu):
 
     #Call LavaVu method from render thread
     def _lavavu_call(self, name, wait_return, *args, **kwargs):
-        method = getattr(super(LavaVuThreadSafe, self), name)
+        method = getattr(super(_LavaVuThreadSafe, self), name)
         return self._thread_call(method, wait_return, *args, **kwargs)
 
     #Call OpenGLViewer method from render thread
@@ -1949,9 +1944,10 @@ class Viewer(dict):
 
     >>> lv["background"] = "grey50"
 
-    A list of available commands and properties can be found in the wiki:
-    https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
-    https://github.com/OKaluza/LavaVu/wiki/Property-Reference
+    A list of available commands and properties can be found in the wiki
+
+     - https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
+     - https://github.com/OKaluza/LavaVu/wiki/Property-Reference
 
     or by using the online help:
 
@@ -1960,7 +1956,7 @@ class Viewer(dict):
 
     """
 
-    def __init__(self, binpath=libpath, havecontext=False, omegalib=False, port=8080, *args, **kwargs):
+    def __init__(self, binpath=None, havecontext=False, omegalib=False, port=8080, *args, **kwargs):
         """
         Create and init viewer instance
 
@@ -1982,7 +1978,7 @@ class Viewer(dict):
         self.resolution = (640,480)
         self._ctr = 0
         self.app = None
-        self._objects = Objects(self)
+        self._objects = _Objects(self)
         self.state = {}
         self._managed = False
         self.server = None
@@ -2002,7 +1998,7 @@ class Viewer(dict):
             atexit.register(exitfn, weakref.ref(self))
 
             self._cv = threading.Condition()
-            #self.app = LavaVuThreadSafe(binpath, havecontext, omegalib)
+            #self.app = _LavaVuThreadSafe(binpath, havecontext, omegalib)
             def _thread_run(viewer, args, kwargs):
                 """
                 This function runs the render thread.
@@ -2041,12 +2037,16 @@ class Viewer(dict):
         else:
             self._create(False, binpath, havecontext, omegalib, *args, **kwargs)
 
-    def _create(self, threaded, binpath=libpath, havecontext=False, omegalib=False, *args, **kwargs):
+    def _create(self, threaded, binpath=None, havecontext=False, omegalib=False, *args, **kwargs):
         """
         Create and init the C++ viewer object
         """
         try:
-            self.app = LavaVuThreadSafe(threaded, binpath, havecontext, omegalib)
+            #Get the binary path if not provided
+            if binpath is None:
+                binpath = os.path.abspath(os.path.dirname(__file__))
+
+            self.app = _LavaVuThreadSafe(threaded, binpath, havecontext, omegalib)
 
             #Get property dict
             self.properties = _convert_keys(json.loads(self.app.propertyList()))
@@ -2064,7 +2064,7 @@ class Viewer(dict):
                 print("Can't locate html dir, interactive view disabled")
 
             #Create a control factory
-            self.control = control.ControlFactory(self)
+            self.control = control._ControlFactory(self)
 
             #List of inline WebGL viewers
             self.webglviews = []
@@ -2342,7 +2342,7 @@ class Viewer(dict):
 
         Returns
         -------
-        objects : Objects(dict)
+        objects : _Objects(dict)
             A dictionary wrapper containing the list of available visualisation objects
             Can be printed, iterated or accessed as a dictionary by object name
         """
@@ -2578,7 +2578,7 @@ class Viewer(dict):
         obj : Object
             The object created
         """
-        if isinstance(self._objects, Objects) and name in self._objects:
+        if isinstance(self._objects, _Objects) and name in self._objects:
             print("Object exists: " + name)
             return self._objects[name]
 
@@ -2710,10 +2710,9 @@ class Viewer(dict):
         Parameters
         ----------
         files : str
-            Specification of the files to load, either a list of full paths or a file spec string such as *.gldb
+            Specification of the files to load, either a list of full paths or a file spec string such as `*.gldb`
         obj : Object
-            Vis object to load the data into,
-            if not provided a default will be created
+            Vis object to load the data into, if not provided a default will be created
         """
         #Load list of files with glob
         filelist = []
@@ -2778,7 +2777,7 @@ class Viewer(dict):
         """
         return LavaVuPython.ColourMap.getDefaultMap(name)
 
-    def colourmap(self, data=cubeHelix(), name="", reverse=False, monochrome=False, **kwargs):
+    def colourmap(self, data=None, name="", reverse=False, monochrome=False, **kwargs):
         """
         Load or create a colour map
 
@@ -2794,6 +2793,7 @@ class Viewer(dict):
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
+            If none provided, a default colourmap will be loaded from lavavu.cubeHelix()
         reverse : boolean
             Reverse the order of the colours after loading
         monochrome : boolean
@@ -2805,6 +2805,8 @@ class Viewer(dict):
             The wrapper object of the colourmap loaded/created
         """
         c = ColourMap(self.app.addColourMap(name), self)
+        if data is None:
+            data = cubeHelix()
         c.update(data, reverse, monochrome, **kwargs)
         return c
 
@@ -3317,9 +3319,7 @@ class Viewer(dict):
         that can be controlled with the mouse or html widgets
 
         """
-        #if self in control.windows:
-        #    print("Viewer window exists, only one instance per Viewer permitted")
-        #    return
+        #TODO: support resolution set / full size of div, requires updating viewer frame size
         self.control.Window()
         self.control.show()
 
@@ -3352,7 +3352,7 @@ class Viewer(dict):
             Current camera view or previous if applying a new view
         """
         self._get()
-        me = getVariableName(self)
+        me = _getVariableName(self)
         if not me: me = "lv"
         #Also print in terminal for debugging
         self.commands("camera")
@@ -3595,7 +3595,7 @@ class Geometry(list):
             #By default all elements are returned, even if object has multiple types 
             #Filter can be set to a type name to exclude other geometry types
             if filter is None or g.type == self.obj.parent._getRendererType(filter):
-                g = GeomDataWrapper(g, obj.parent)
+                g = DrawData(g, obj.parent)
                 self.append(g)
                 #Add the value data set labels
                 for s in sets:
@@ -3610,13 +3610,13 @@ class Geometry(list):
                 if len(sets) == 0: continue
                 typename = list(sets.keys())[0]
             #Access by type name to get a view
-            setattr(Geometry, key, GeomDataListView(self.obj, self.timestep, typename))
+            setattr(Geometry, key, _GeomDataListView(self.obj, self.timestep, typename))
             #Access by type name + _copy to get a copy
-            setattr(Geometry, key + '_copy', GeomDataListView(self.obj, self.timestep, typename, copy=True))
+            setattr(Geometry, key + '_copy', _GeomDataListView(self.obj, self.timestep, typename, copy=True))
 
         #Data by label
         for key in sets:
-            setattr(Geometry, key, GeomDataListView(self.obj, self.timestep, key))
+            setattr(Geometry, key, _GeomDataListView(self.obj, self.timestep, key))
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -3640,8 +3640,8 @@ class Geometry(list):
         #For backwards compatibility with old Viewer.data() method (now a property)
         return self
 
-class GeomDataListView(object):
-    """A descriptor that provides view/copy/set access to a GeomDataWrapper list"""
+class _GeomDataListView(object):
+    """A descriptor that provides view/copy/set access to a DrawData list"""
     def __init__(self, obj, timestep, key, copy=False):
         self.obj = obj
         self.timestep = timestep
@@ -3671,17 +3671,17 @@ class GeomDataListView(object):
         # value = val
         if not isinstance(value, list) or len(value) != len(instance):
             raise ValueError("Must provide a list of value arrays for each entry, %d entries" % len(instance))
-        #Set each GeomDataWrapper entry to corrosponding value list entry
+        #Set each DrawData entry to corrosponding value list entry
         v = 0
         for el in instance:
             el.set(self.key, value[v].ravel())
             v += 1
 
 #Wrapper class for GeomData geometry object
-class GeomDataWrapper(object):
+class DrawData(object):
     """  
-    The GeomDataWrapper class provides an interface to a single object data element
-    GeomDataWrapper instances are created internally from the Geometry class
+    The DrawData class provides an interface to a single object data element
+    DrawData instances are created internally from the Geometry class
 
     copy(), get() and set() methods provide access to the data types
 
@@ -4041,7 +4041,7 @@ def loadCPT(fn, positions=True):
 
     return result
 
-def getVariableName(var):
+def _getVariableName(var):
     """
     Attempt to find the name of a variable from the main module namespace
 

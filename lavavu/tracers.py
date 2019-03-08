@@ -8,7 +8,7 @@ Uses a KDTree to find nearest vector to advect the particles
 
 - Requires scipy.spatial
 """
-import numpy as np
+import numpy
 import os
 import sys
 import random
@@ -76,9 +76,9 @@ def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0,
         lastid = random.randint(0, len(verts)-1)
         pos = verts[lastid]
         #Generate some random noise to offset
-        noise3 = np.array((0.,0.,0.))
+        noise3 = numpy.array((0.,0.,0.))
         if noise > 0.0:
-            noise3 = np.random.rand(3) * noise
+            noise3 = numpy.random.rand(3) * noise
         #Fixed height?
         if height:
             noise3[2] = height
@@ -86,12 +86,12 @@ def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0,
         return pos + noise3
 
     if state.positions is None:
-        state.positions = np.zeros(shape=(N,3))
-        state.values = np.zeros(shape=(N))
+        state.positions = numpy.zeros(shape=(N,3))
+        state.values = numpy.zeros(shape=(N))
         for i in range(N):
             state.positions[i] = rand_vert()
             state.steps[i] = 0
-            state.values[i] = np.linalg.norm(vecs[lastid])
+            state.values[i] = numpy.linalg.norm(vecs[lastid])
 
     #Query all tracer state.positions
     q = state.tree.query(state.positions, k=1)
@@ -103,20 +103,20 @@ def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0,
         if random.randint(0,state.steps[r]) > 5:
             #Pick a new random grid vertex to start from
             #(Must be farther away than distance criteria)
-            old = np.array(state.positions[r])
+            old = numpy.array(state.positions[r])
             while True:
                 state.positions[r] = rand_vert() 
-                if np.linalg.norm(state.positions[r]-old) > limit:
+                if numpy.linalg.norm(state.positions[r]-old) > limit:
                     break
             state.steps[r] = 0
-            state.values[r] = np.linalg.norm(vecs[lastid])
+            state.values[r] = numpy.linalg.norm(vecs[lastid])
         else:
             #Index of nearest grid point is in q[1][r]
             #Lookup vector at this index, multiply by position to get delta and add
             state.positions[r] += speed * vecs[q[1][r]]
             #Increment step tracking
             state.steps[r] += 1
-            state.values[r] = np.linalg.norm(vecs[q[1][r]])
+            state.values[r] = numpy.linalg.norm(vecs[q[1][r]])
 
     return state
 

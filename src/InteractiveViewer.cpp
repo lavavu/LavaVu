@@ -3477,8 +3477,8 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
         anchor.erase(std::remove_if(anchor.begin(), anchor.end(), &isspace), anchor.end());
         TOC += " * [" + target + "](#" + anchor + ")\n";
         content << "\n### " << target << "\n\n";
-        content << "| Property         | Type       | Default        | Description                               |\n";
-        content << "| ---------------- | ---------- | -------------- | ----------------------------------------- |\n";
+        content << "| Property         | Type       | Default            | Description                               |\n";
+        content << "| ---------------- | ---------- | ------------------ | ----------------------------------------- |\n";
         last = target;
       }
       content << "|" << std::left << std::setw(18) << ("*" + name + "*");

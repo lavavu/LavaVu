@@ -1,6 +1,8 @@
 """
 LavaVu python interface
-    interactive HTML UI controls library
+
+Interactive HTML UI controls library
+
 """
 import os
 import sys
@@ -93,22 +95,22 @@ dictionary = '{}'
 #Static HTML location
 htmlpath = ""
 
-def isviewer(target):
+def _isviewer(target):
     """Return true if target is a viewer"""
     return not hasattr(target, "parent")
 
-def getviewer(target):
+def _getviewer(target):
     """Return its viewer if target is vis object
     otherwise just return target as if is a viewer"""
-    if not isviewer(target):
+    if not _isviewer(target):
         return target.parent
     return target
 
-def getproperty(target, propname):
+def _getproperty(target, propname):
     """Return value of property from target
     if not defined, return the default value for this property
     """
-    _lv = getviewer(target)
+    _lv = _getviewer(target)
     if propname in target:
         return target[propname]
     elif propname in _lv.properties:
@@ -139,9 +141,9 @@ def _webglcode(shaders, css, scripts, menu=True, lighttheme=True, stats=False):
         css.append("gui.css")
 
     #First scripts list needs require.js disabled
-    code += getjslibs(['!REQUIRE_OFF'] + scripts[0] + ['!REQUIRE_ON'] + scripts[1])
+    code += _getjslibs(['!REQUIRE_OFF'] + scripts[0] + ['!REQUIRE_ON'] + scripts[1])
 
-    code += getcss(css)
+    code += _getcss(css)
     code += '<script id="dictionary" type="application/json">\n' + dictionary + '\n</script>\n'
     return code
 
@@ -196,8 +198,7 @@ def _readfile(filename):
         f.close()
     return data
 
-#def getshaders(path, shaders=['points', 'lines', 'triangles']):
-def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
+def _getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
     #Load combined shaders
     src = ''
     sdict = {'points' : 'point', 'lines' : 'line', 'triangles' : 'tri', 'volume' : 'volume'};
@@ -210,7 +211,7 @@ def getshaders(path, shaders=['points', 'lines', 'triangles', 'volume']):
         src += '</script>\n\n'
     return src
 
-class Action(object):
+class _Action(object):
     """Base class for an action triggered by a control
 
     Default action is to run a command
@@ -224,7 +225,7 @@ class Action(object):
         self.command = command
         if not hasattr(self, "property"):
             self.property = readproperty
-        Action.actions.append(self)
+        _Action.actions.append(self)
         self.lastvalue = 0
         self.index = None
 
@@ -245,7 +246,7 @@ class Action(object):
 
         actionjs += '_wi[viewerid].actions = [\n'
 
-        for act in Action.actions:
+        for act in _Action.actions:
             #Default placeholder action
             actscript = act.script()
             if len(actscript) == 0:
@@ -261,7 +262,7 @@ class Action(object):
     def export(html, filename="control.html", viewerid=0, fullpage=True):
         #Dump all output to control.html in current directory & htmlpath
         #Process actions
-        actionjs = Action.export_actions()
+        actionjs = _Action.export_actions()
 
         full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
         full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
@@ -281,7 +282,7 @@ class Action(object):
         else:
             return full_html
 
-class PropertyAction(Action):
+class _PropertyAction(_Action):
     """Property change action triggered by a control
     """
 
@@ -291,7 +292,7 @@ class PropertyAction(Action):
         if command is None:
             command = "redraw"
         self.command = command
-        super(PropertyAction, self).__init__(target, command)
+        super(_PropertyAction, self).__init__(target, command)
         self.index = index
 
     def script(self):
@@ -303,7 +304,7 @@ class PropertyAction(Action):
             propset = self.property + '[' + str(self.index) + ']=" + value + "'
         # - Globally
         script = ''
-        if isviewer(self.target):
+        if _isviewer(self.target):
             script = 'select; ' + propset
         # - on an object selector, select the object
         elif type(self.target).__name__ == 'ObjectSelect':
@@ -312,23 +313,23 @@ class PropertyAction(Action):
         else:
             script = '<' + self.target["name"] + '>' + propset
         #Add any additional commands
-        return script + '; ' + super(PropertyAction, self).script()
+        return script + '; ' + super(_PropertyAction, self).script()
 
 
-class CommandAction(Action):
+class _CommandAction(_Action):
     """Command action triggered by a control, with object select before command
     """
 
     def __init__(self, target, command, readproperty):
         self.command = command
-        super(CommandAction, self).__init__(target, command, readproperty)
+        super(_CommandAction, self).__init__(target, command, readproperty)
 
     def script(self):
         #Return script action for HTML export
         #Set a property
         # - Globally
         script = ''
-        if isviewer(self.target):
+        if _isviewer(self.target):
             script = 'select; '
         # - on an object selector, select the object
         elif type(self.target).__name__ == 'ObjectSelect':
@@ -337,16 +338,16 @@ class CommandAction(Action):
         else:
             script = '<' + self.target["name"] + '>'
         #Add the commands
-        return script + super(CommandAction, self).script()
+        return script + super(_CommandAction, self).script()
 
-class FilterAction(PropertyAction):
+class _FilterAction(_PropertyAction):
     """Filter property change action triggered by a control
     """
     def __init__(self, target, findex, prop, command=None):
         self.findex = findex
         if command is None: command = "redraw"
         self.command = command
-        super(FilterAction, self).__init__(target, prop)
+        super(_FilterAction, self).__init__(target, prop)
 
     def script(self):
         #Return script action for HTML export
@@ -554,25 +555,25 @@ class Control(HTML):
         self.label = label
 
         #Get id and add to register
-        self.id = len(Action.actions)
+        self.id = len(_Action.actions)
 
         #Can either set a property directly or run a command
         self.property = readproperty
         self.target = target
         if property:
             #Property set
-            action = PropertyAction(target, property, command, index)
+            action = _PropertyAction(target, property, command, index)
             if label is None:
                 self.label = property.capitalize()
             self.property = property
         elif command:
             #Command only
-            action = CommandAction(target, command, readproperty)
+            action = _CommandAction(target, command, readproperty)
             if label is None:
                 self.label = command.capitalize()
         else:
             #Assume derived class will fill out the action, this is just a placeholder
-            action = Action(target)
+            action = _Action(target)
 
         if not self.label:
             self.label = ""
@@ -580,7 +581,7 @@ class Control(HTML):
         #Get value from target or default if not provided
         if property is not None and target:
             if value is None:
-                value = getproperty(target, property)
+                value = _getproperty(target, property)
             else:
                 #2d/3D value?
                 if index is not None:
@@ -594,7 +595,7 @@ class Control(HTML):
 
         #Append reload command from prop dict if no command provided
         if target and property is not None:
-            _lv = getviewer(target)
+            _lv = _getviewer(target)
             if  property in _lv.properties:
                 prop = _lv.properties[property]
                 #TODO: support higher reload values
@@ -653,11 +654,11 @@ class Control(HTML):
         html = ""
         if self.property:
             #Set custom attribute for property controls
-            if not isviewer(self.target):
+            if not _isviewer(self.target):
                 html += 'data-target="' + str(self.target["name"]) + '" '
             html += 'data-property="' + self.property + '" '
-            if Action.actions[self.id].index is not None:
-                html += 'data-index="' + str(Action.actions[self.id].index) + '" '
+            if _Action.actions[self.id].index is not None:
+                html += 'data-index="' + str(_Action.actions[self.id].index) + '" '
         return html
 
 class Divider(Control):
@@ -674,7 +675,7 @@ class Number(Control):
         super(Number, self).__init__(target, property, command, value, label, index, readproperty)
 
         #Get step defaults from prop dict
-        _lv = getviewer(target)
+        _lv = _getviewer(target)
         if step is None and property is not None and property in _lv.properties:
             prop = _lv.properties[property]
             #Check for integer type, set default step to 1
@@ -699,7 +700,7 @@ class Number2D(Control):
     def __init__(self, target, property, label=None, step=None, *args, **kwargs):
         super(Number2D, self).__init__(target, property, label=label, *args, **kwargs)
         if self._value is None:
-            self._value = getproperty(target, property)
+            self._value = _getproperty(target, property)
         self.ctrlX = Number(target=target, property=property, value=self._value[0], step=step, label="", index=0)
         self.ctrlY = Number(target=target, property=property, value=self._value[1], step=step, label="", index=1)
 
@@ -713,7 +714,7 @@ class Number3D(Control):
     def __init__(self, target, property, label=None, step=None, *args, **kwargs):
         super(Number3D, self).__init__(target, property, label=label, *args, **kwargs)
         if self._value is None:
-            self._value = getproperty(target, property)
+            self._value = _getproperty(target, property)
         self.ctrlX = Number(target=target, property=property, value=self._value[0], step=step, label="", index=0)
         self.ctrlY = Number(target=target, property=property, value=self._value[1], step=step, label="", index=1)
         self.ctrlZ = Number(target=target, property=property, value=self._value[2], step=step, label="", index=2)
@@ -770,7 +771,7 @@ class Range(Control):
         super(Range, self).__init__(target, property, command, value, label, index, readproperty)
 
         #Get range & step defaults from prop dict
-        _lv = getviewer(target)
+        _lv = _getviewer(target)
         defrange = [0., 1., 0.]
         if property is not None and property in _lv.properties:
             prop = _lv.properties[property]
@@ -907,7 +908,7 @@ class List(Control):
         #Get default options from prop dict
         if options is None:
             defoptions = []
-            _lv = getviewer(target)
+            _lv = _getviewer(target)
             if  property is not None and property in _lv.properties:
                 prop = _lv.properties[property]
                 ctrl = prop["control"]
@@ -981,7 +982,7 @@ class Gradient(Control):
     def __init__(self, target, *args, **kwargs):
         super(Gradient, self).__init__(target, property="colourmap", command="", *args, **kwargs)
         #Get and save the map id of target object
-        if isviewer(target):
+        if _isviewer(target):
             raise(Exception("Gradient control requires an Object target, not Viewer"))
         self.maps = target.parent.state["colourmaps"]
         self.map = None
@@ -1035,7 +1036,7 @@ class ColourMapList(List):
     """A colourmap list selector, populated by the default colour maps
     """
     def __init__(self, target, selection=None, *args, **kwargs):
-        if isviewer(target):
+        if _isviewer(target):
             raise(Exception("ColourMapList control requires an Object target, not Viewer"))
         #Load maps list
         if selection is None:
@@ -1060,7 +1061,7 @@ class ColourMaps(List):
     """
     def __init__(self, target, *args, **kwargs):
         #Load maps list
-        if isviewer(target):
+        if _isviewer(target):
             raise(Exception("ColourMaps control requires an Object target, not Viewer"))
         self.maps = target.parent.state["colourmaps"]
         options = [["", "None"]]
@@ -1189,7 +1190,7 @@ class Range2D(Control):
         super(Range2D, self).__init__(target, property=property, command=None, value=value, label=label, *args, **kwargs)
 
         if self._value is None:
-            self._value = getproperty(target, property)
+            self._value = _getproperty(target, property)
 
         self.ctrlX = Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0)
         self.ctrlY = Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1)
@@ -1209,7 +1210,7 @@ class Range3D(Control):
         super(Range3D, self).__init__(target, property=property, command=None, value=value, label=label, *args, **kwargs)
 
         if self._value is None:
-            self._value = getproperty(target, property)
+            self._value = _getproperty(target, property)
 
         self.ctrlX = Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0)
         self.ctrlY = Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1)
@@ -1250,8 +1251,8 @@ class Filter(Control):
         self.ctrlmax = Range(step=step, range=range, value=self.filter["maximum"])
 
         #Replace actions on the controls
-        Action.actions[self.ctrlmin.id] = FilterAction(target, filteridx, "minimum")
-        Action.actions[self.ctrlmax.id] = FilterAction(target, filteridx, "maximum")
+        _Action.actions[self.ctrlmin.id] = _FilterAction(target, filteridx, "minimum")
+        _Action.actions[self.ctrlmax.id] = _FilterAction(target, filteridx, "maximum")
 
     def controls(self):
         return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
@@ -1281,7 +1282,7 @@ class ObjectSelect(Container):
         A list of objects to display, by default all available objects are added
     """
     def __init__(self, viewer, objects=None, *args, **kwargs):
-        if not isviewer(viewer):
+        if not _isviewer(viewer):
             print("Can't add ObjectSelect control to an Object, must add to Viewer")
             return
         self.parent = viewer
@@ -1301,7 +1302,7 @@ class ObjectSelect(Container):
         super(ObjectSelect, self).__init__(viewer) #, label="Objects", options=options, command="select", *args, **kwargs)
 
         #Holds a control factory so controls can be added with this as a target
-        self.control = ControlFactory(self)
+        self.control = _ControlFactory(self)
 
     #def onchange(self):
     #    #Update the control values on change
@@ -1310,20 +1311,20 @@ class ObjectSelect(Container):
 
     def __contains__(self, key):
         #print "CONTAINS",key
-        obj = Action.actions[self._list.id].lastvalue
+        obj = _Action.actions[self._list.id].lastvalue
         #print "OBJECT == ",obj,(key in self.parent.objects.list[obj-1])
         return obj > 0 and key in self.parent.objects.list[obj-1]
 
     def __getitem__(self, key):
         #print "GETITEM",key
-        obj = Action.actions[self._list.id].lastvalue
+        obj = _Action.actions[self._list.id].lastvalue
         if obj > 0:
             #Passthrough: Get from selected object
             return self.parent.objects.list[obj-1][key]
         return None
 
     def __setitem__(self, key, value):
-        obj = Action.actions[self._list.id].lastvalue
+        obj = _Action.actions[self._list.id].lastvalue
         #print "SETITEM",key,value
         if obj > 0:
             #Passtrough: Set on selected object
@@ -1334,7 +1335,7 @@ class ObjectSelect(Container):
         #__getattr__ called if no attrib/method found
         def any_method(*args, **kwargs):
             #If member function exists on target, call it
-            obj = Action.actions[self._list.id].lastvalue
+            obj = _Action.actions[self._list.id].lastvalue
             if obj > 0:
                 method = getattr(self.parent.objects.list[obj-1], key, None)
                 if method and callable(method):
@@ -1352,7 +1353,7 @@ class ObjectSelect(Container):
     def controls(self):
         return self.html()
 
-class ControlFactory(object):
+class _ControlFactory(object):
     """
     Create and manage sets of controls for interaction with a Viewer or Object
     Controls can run commands or change properties
@@ -1395,7 +1396,7 @@ class ControlFactory(object):
         """
         Calling with a property name creates the default control for that property
         """
-        _lv = getviewer(self._target())
+        _lv = _getviewer(self._target())
         if  property is not None and property in _lv.properties:
             #Get control info from prop dict
             prop = _lv.properties[property]
@@ -1441,7 +1442,7 @@ class ControlFactory(object):
             self._content.append(ctrl)
 
         #Add to viewer instance list too if not already being added
-        if not isviewer(self._target()):
+        if not _isviewer(self._target()):
             self._target().parent.control.add(ctrl)
 
     def show(self, fallback=None):
@@ -1455,7 +1456,7 @@ class ControlFactory(object):
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
-        if isviewer(self._target()):
+        if _isviewer(self._target()):
             #Append the current viewer ref
             windows.append(self._target())
 
@@ -1498,13 +1499,13 @@ class ControlFactory(object):
             html += "<!-- CREATION TIMESTAMP {0} -->".format(timestamp)
 
             #Pass port and object id from server
-            actionjs = Action.export_actions(id(obj), obj.server.port)
+            actionjs = _Action.export_actions(id(obj), obj.server.port)
             #Output the controls and start interactor
             html += "<script>init({0});</script>".format(viewerid)
             display(HTML(actionjs + html))
         else:
             #Export html file
-            Action.export(self.output)
+            _Action.export(self.output)
             if callable(fallback): fallback(self._target())
 
         #Auto-clear after show?

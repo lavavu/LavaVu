@@ -230,7 +230,6 @@ def export_OBJ(filepath, obj):
     Export a given object to an OBJ file
     Supports only triangle mesh objects
 
-    TODO: support colour texture by writing palette as png
     """
     mtl_line = ""
     mtl_line2 = ""
