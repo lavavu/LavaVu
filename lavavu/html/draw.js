@@ -6,7 +6,7 @@ var MAXIDX = 2047;
 /** @const */
 var DEBUG = false;
 
-function initPage(elid, src) {
+function initPage(elid, menu, src) {
   //Load from the data tag if available, otherwise URL
   var dtag = document.getElementById('data');
   if (!src && dtag && dtag.innerHTML.length > 100)
@@ -61,6 +61,7 @@ function initPage(elid, src) {
   canvas.id = "canvas_" + container.id;
   container.appendChild(canvas);
   var viewer =  new Viewer(canvas);
+  viewer.menu = menu; //GUI menu flag
   if (canvas) {
     //this.canvas = document.createElement("canvas");
     //this.canvas.style.cssText = "width: 100%; height: 100%; z-index: 0; margin: 0px; padding: 0px; background: black; border: none; display:block;";
@@ -1710,7 +1711,10 @@ Viewer.prototype.loadFile = function(source) {
     viewer.reload();
     viewer.draw();
   };
-  createMenu(this, changefn, true);
+
+  //Create GUI menu if enabled
+  if (this.menu)
+    createMenu(this, changefn, true);
 }
 
 Viewer.prototype.reload = function() {

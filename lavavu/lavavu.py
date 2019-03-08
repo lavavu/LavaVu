@@ -3085,6 +3085,7 @@ class Viewer(dict):
                 ID = str(len(self.webglviews))
                 template = control.inlinehtml
                 template = template.replace('---ID---', ID)
+                template = template.replace('---MENU---', 'true' if menu else 'false')
                 template = template.replace('---HIDDEN---', control.hiddenhtml)
                 template = template.replace('---WIDTH---', str(resolution[0]))
                 template = template.replace('---HEIGHT---', str(resolution[1]))
@@ -3092,6 +3093,7 @@ class Viewer(dict):
                 self.webglviews.append(ID)
             else:
                 template = control.basehtml
+                template = template.replace('---MENU---', 'true' if menu else 'false')
                 template = template.replace('---HIDDEN---', control.hiddenhtml)
                 html = template.replace('---SCRIPTS---', html)
                 if not filename.lower().endswith('.html'):

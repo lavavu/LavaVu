@@ -56,7 +56,7 @@ basehtml = """
 
 </head>
 
-<body onload="initPage();" oncontextmenu="return false;">
+<body onload="initPage(null, ---MENU---);" oncontextmenu="return false;">
 ---HIDDEN---
 </body>
 
@@ -69,7 +69,7 @@ inlinehtml = """
 ---HIDDEN---
 
 <script>
-initPage("---ID---");
+initPage("---ID---", ---MENU---);
 </script>
 """
 
@@ -127,30 +127,19 @@ def _webglcode(shaders, css, scripts, menu=True, lighttheme=True, stats=False):
     """
     code = shaders
     if menu:
-        code += getjslibs(scripts + ['menu.js'])
-        #HACK: Need to disable require.js to load dat.gui from inline script tags
-        code += """
-        <script>
-        _backup_define = window.define;
-        window.define = undefined;
-        </script>
-        """
-        code += getjslibs(['dat.gui.min.js'])
-        #Stats module also must be included within hacked section
+        scripts[1] += ['menu.js']
+        #Following scripts need require disabled
+        scripts[0] += ['dat.gui.min.js']
+        #Stats module for WebVR
         if stats:
-            code += getjslibs(['stats.min.js'])
-        code += """
-        <script>
-        window.define = _backup_define;
-        delete _backup_define;
-        </script>
-        """
+            scripts[0] += ['stats.min.js']
         if lighttheme:
             css.append("dat-gui-light-theme.css")
         #Some css tweaks
         css.append("gui.css")
-    else:
-        code += getjslibs(scripts)
+
+    #First scripts list needs require.js disabled
+    code += getjslibs(['!REQUIRE_OFF'] + scripts[0] + ['!REQUIRE_ON'] + scripts[1])
 
     code += getcss(css)
     code += '<script id="dictionary" type="application/json">\n' + dictionary + '\n</script>\n'
@@ -160,27 +149,21 @@ def _webglviewcode(shaderpath, menu=True, lighttheme=True):
     """
     Returns WebGL base code for an interactive visualisation window
     """
-    if menu:
-        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', 'dat.gui.min.js', 'stats.min.js', '!REQUIRE_ON', 'menu.js', 'OK-min.js', 'draw.js']
-    else:
-        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', '!REQUIRE_ON', 'OK-min.js', 'draw.js']
-    return _webglcode(getshaders(shaderpath), ['styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
+    jslibs = [['gl-matrix-min.js'], ['OK-min.js', 'draw.js']]
+    return _webglcode(_getshaders(shaderpath), ['styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
 
 def _webglboxcode(menu=True, lighttheme=True):
     """
     Returns WebGL base code for the bounding box interactor window
     """
-    if menu:
-        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', 'dat.gui.min.js', 'stats.min.js', '!REQUIRE_ON', 'menu.js', 'OK-min.js', 'control.js', 'drawbox.js']
-    else:
-        jslibs = ['!REQUIRE_OFF', 'gl-matrix-min.js', '!REQUIRE_ON', 'OK-min.js', 'control.js', 'drawbox.js']
+    jslibs = [['gl-matrix-min.js'], ['OK-min.js', 'control.js', 'drawbox.js']]
     return _webglcode(fragmentShader + vertexShader, ['control.css'], jslibs, menu=menu, lighttheme=lighttheme)
 
-def getcss(files=["styles.css"]):
+def _getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
     return _filestohtml(files, tag="style")
 
-def getjslibs(files):
+def _getjslibs(files):
     #Load a set of combined javascript libraries in script tags
     return _filestohtml(files, tag="script")
 
