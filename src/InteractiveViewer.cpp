@@ -3426,7 +3426,7 @@ std::string LavaVu::helpCommand(std::string cmd, bool heading)
     {
       std::string anchor = categories[i] + "-commands";
       std::transform(anchor.begin(), anchor.end(), anchor.begin(), ::tolower);
-      markdown <<  " - **[" << categories[i] << "](#" << anchor << ")**  \n";
+      markdown <<  " - **[" << categories[i] << "](#" << anchor << ")**  \n\n";
       std::vector<std::string> cmds = commandList(categories[i]);
       for (unsigned int j=0; j<cmds.size(); j++)
       {

@@ -211,6 +211,9 @@ add_module_names = False
 # Add/Update "html_theme_options" like this on your conf.py
 html_theme_options = {'body_max_width': '80%'}
 
+#OK: don't sort API doc output alphabetically (has no effect)
+#autodoc_member_order = 'bysource'
+
 # setup mock classes so no building is required
 
 # generate rst files
@@ -219,7 +222,7 @@ import sys
 # add current directory for `generate_api_documentation`
 sys.path.append(os.path.dirname(__name__))
 # add top project directory as well
-sys.path.append(os.path.join(os.path.dirname(__name__),'../../../lavavu'))
+sys.path.insert(0, os.path.join(os.path.dirname(__name__),'../../lavavu'))
 
 try:
     import lavavu
@@ -238,30 +241,7 @@ except (Exception) as e:
 
 import generate_api_documentation
 import subprocess
-print("1",os.getcwd())
 subprocess.call("./run-nb-to-rst.sh", shell=True)
-print("2",os.getcwd())
-
-def process_build_finished(app, exception):
-    if exception is not None:
-        return
-
-    # target_files = []
-    #for doc in app.env.found_docs:
-    #    print("FOUND",doc)
-    #     target_uri        = app.builder.get_target_uri(doc)
-    #     target_uri_wpath  = os.path.join(app.outdir, target_uri)
-    #     target_uri_wapath = os.path.abspath(target_uri_wpath)
-    #     target_files.append(target_uri_wapath)
-    # print(target_files)
-    # print(app.outdir)
-
-    #subprocess.call("./add_scripts_to_html.sh " + app.outdir, shell=True)
-
 
 html_static_path = ['_static']
-def setup(app):
-    # app.add_stylesheet('css/material.css')
-    # app.add_javascript('juniper.min.js')
-    app.connect('build-finished', process_build_finished)
 

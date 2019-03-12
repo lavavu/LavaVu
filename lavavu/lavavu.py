@@ -1,8 +1,15 @@
 """
 LavaVu python interface: viewer utils & wrapper
 
-TODO:
-    Documentation intro / header
+This module provides an interface to the LavaVu library allowing
+loading of data, rendering of static images, animation and interactive visualisation
+
+To create an instance of the LavaVu rendering engine, use the Viewer() class, e.g.
+
+>>> import lavavu
+>>> lv = lavavu.Viewer()
+
+See the :any:`lavavu.Viewer` class documentation for more information.
 
 """
 
@@ -11,6 +18,10 @@ TODO:
 #    property setting must always trigger a sync to lavavu
 #- sync from lavavu to python is lazy, always need to call _get()
 #    before using state data
+
+__all__ = ['Viewer', 'Object', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
+           'download', 'grid2d', 'grid3d', 'cubeHelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
+           'version']
 
 import json
 import math
@@ -418,8 +429,8 @@ class Object(dict):
         values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
-            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
-            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+            if a list  e.g. [0,1] range is inclusive 0 <= x <= 1
+            if a tuple e.g. (0,1) range is exclusive 0 < x < 1
 
         Returns
         -------
@@ -440,8 +451,8 @@ class Object(dict):
         values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
-            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
-            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+            if a list  e.g. [0,1] range is inclusive 0 <= x <= 1
+            if a tuple e.g. (0,1) range is exclusive 0 < x < 1
 
         Returns
         -------
@@ -462,8 +473,8 @@ class Object(dict):
         values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
-            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
-            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+            if a list  e.g. [0,1] range is inclusive 0 <= x <= 1
+            if a tuple e.g. (0,1) range is exclusive 0 < x < 1
 
         Returns
         -------
@@ -484,8 +495,8 @@ class Object(dict):
         values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
-            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
-            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+            if a list  e.g. [0,1] range is inclusive 0 <= x <= 1
+            if a tuple e.g. (0,1) range is exclusive 0 < x < 1
 
         Returns
         -------
@@ -505,8 +516,8 @@ class Object(dict):
         values : number or list or tuple
             value range single value, list or tuple
             if a single value the filter applies to only this value: x == value
-            if a list  eg: [0,1] range is inclusive 0 <= x <= 1
-            if a tuple eg: (0,1) range is exclusive 0 < x < 1
+            if a list  e.g. [0,1] range is inclusive 0 <= x <= 1
+            if a tuple e.g. (0,1) range is exclusive 0 < x < 1
         out : boolean
             Set this flag to filter out values instead of including them
         map : boolean
@@ -558,7 +569,7 @@ class Object(dict):
         Append a new data element to the object
 
         Object data is sometimes dependant on individual elements to
-        determine where one part ends and another starts, eg: line segments, grids
+        determine where one part ends and another starts, e.g. line segments, grids
 
         This allows manually closing the active element so all new data is loaded into a new element
         """
@@ -1584,20 +1595,23 @@ class ColourMap(dict):
             self.ref.monochrome()
         self._get() #Ensure in sync
 
-class Fig(dict):
+class Figure(dict):
     """  
-    The Fig class wraps a set of figure data
+    The Figure class wraps a set of visualisation state data, providing a way
+    of managing a collection of preset visualisations or "figures" of a single model
 
     - Figures represent a full set of visualisation settings,
       including visibility of chosen objects
     - A single model can contain many objects and multiple figures, all of which work
       on the same set of objects, but may not use them all (ie: some are hidden)
+    - A figure object encapsulates the same data that can be stored on disk in a JSON file with
+      Viewer.store(filename) and restored with Viewer.restore(filename)
     """
     def __init__(self, parent, name):
         self._parent = weakref.ref(parent)
         self.name = name
         #Init prop dict for tab completion
-        super(Fig, self).__init__(**self.parent.properties)
+        super(Figure, self).__init__(**self.parent.properties)
 
     @property
     def parent(self):
@@ -1612,7 +1626,7 @@ class Fig(dict):
         if key in self.parent:
             return self.parent[key]
         #Default to the property lookup dict (default is first element)
-        prop = super(Fig, self).__getitem__(key)
+        prop = super(Figure, self).__getitem__(key)
         #Must always return a copy to prevent modifying the defaults!
         return copy.copy(prop["default"])
 
@@ -1633,20 +1647,38 @@ class Fig(dict):
         return self.name
 
     def load(self):
+        """
+        Load this figure's state into the Viewer
+        """
         #Activate this figure on viewer
         self.parent.figure(self.name)
 
     def save(self):
+        """
+        Save the Viewer state to this figure
+        """
         #Save changes
         self.parent.savefigure(self.name)
 
     def show(self, *args, **kwargs):
+        """
+        Render this figure
+
+        - Load the figure state into the Viewer,
+        - Call Viewer.display(args, kwargs) to render
+        """
         #Activate this figure on viewer
         self.load()
         #Render
         self.parent.display(*args, **kwargs)
 
     def image(self, *args, **kwargs):
+        """
+        Render this figure to an image file:
+
+        - Load the figure state into the Viewer,
+        - Call Viewer.image(args, kwargs) to render an image to file
+        """
         #Activate this figure on viewer
         self.load()
         #Render
@@ -1880,7 +1912,7 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
 
 class Viewer(dict):
     """  
-    *The Viewer class provides an interface to a LavaVu session*
+    The Viewer class provides an interface to a LavaVu session
     
     Parameters
     ----------
@@ -2125,7 +2157,7 @@ class Viewer(dict):
                     self.__setattr__(name, element)
 
             #Add object by geom type shortcut methods
-            #(allows calling add by geometry type, eg: obj = lavavu.lines())
+            #(allows calling add by geometry type, e.g. obj = lavavu.lines())
             self.renderers = self.properties["renderers"]["default"]
             for key in [item for sublist in self.renderers for item in sublist]:
                 #Use a closure to define a new method to call addtype with this type
@@ -2369,7 +2401,7 @@ class Viewer(dict):
     def figures(self):
         """
         Retrieve the saved figures from loaded model
-        Dict returned contains Fig objects which can be used to modify the figure
+        Dict returned contains Figure objects which can be used to modify the figure
 
         Returns
         -------
@@ -2381,7 +2413,7 @@ class Viewer(dict):
         figs = self.app.amodel.fignames
         figures = {}
         for fig in figs:
-            figures[fig] = Fig(self, name=fig)
+            figures[fig] = Figure(self, name=fig)
         return figures
 
     @property
@@ -3413,7 +3445,7 @@ class Viewer(dict):
         """
         Process input events
         allows running interactive event loop while animating from python
-        eg:
+        e.g.
 
         >>> while lv.events():
         >>>     #...build next frame here...
@@ -3530,8 +3562,8 @@ class Viewer(dict):
         """
         Extract all vertex data from a list of objects
 
-        Returns:
-        --------
+        Returns
+        -------
         pverts : array
             the vertices, numpy array
         bb_all : tuple

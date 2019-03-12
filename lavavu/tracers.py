@@ -29,12 +29,11 @@ class TracerState(object):
 def trace_particles(state, verts, vecs, N=5000, limit=0.5, speed=1.0, noise=0.0, height=None):
     """
     Take a list of tracer vertices and matching velocity grid points (verts) & vectors (vecs)
-    For each tracer:
-     - find the nearest velocity grid point
-     - if within max dist: (1 degree?)
-        - multiply position by velocity vector
-     - otherwise:
-        - generate a new start position for tracer
+    For each tracer
+
+    - find the nearest velocity grid point
+    - if within max dist: Multiply position by velocity vector
+    - otherwise: Generate a new start position for tracer
 
     Parameters
     ----------

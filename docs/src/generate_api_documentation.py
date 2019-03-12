@@ -1,14 +1,21 @@
-ignorelist = ['json', 'os', 'glob', 'numpy', 'scipy', 'sys', 'os', 'time', 'control', 'LavaVuPython', 're', 'base64', 'unittest', 'threading', 'weakref', 'copy', 'math', 'datetime', 'random', 'lavavu', 'vutils']
+ignorelist = ['json', 'os', 'glob', 'numpy', 'scipy', 'sys', 'os', 'time', 'control', 'LavaVuPython', 're', 'base64', 'unittest', 'threading', 'weakref', 'copy', 'math', 'datetime', 'random', 'vutils']
 
 def doc_module(module, modname):
     filename = modname+'.rst'
     print("Generating {} for module {}".format(filename,modname))
     import inspect
     # first gather info
-    modules = {}
-    classes = {}
-    functions = {}
-    for guy in dir(module):
+    from collections import OrderedDict
+    modules = OrderedDict()
+    classes = OrderedDict()
+    functions = OrderedDict()
+    exports = None
+    #Use list of exports if provided
+    if hasattr(module, '__all__'):
+        exports = module.__all__
+    else:
+        exports = dir(module)
+    for guy in exports:
         if guy[0] != "_":  # don't grab private guys
             if guy not in ignorelist:  # don't grab these
                 obj = getattr(module,guy)

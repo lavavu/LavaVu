@@ -106,7 +106,8 @@ def points_to_volume_tree(verts, res=8):
     """
     Using scipy.spatial.KDTree to find nearest points on grid
 
-    - Much slower, but more control
+    Much slower, but more control
+
     TODO: control parameters
     """
     #Reshape to 3d vertices

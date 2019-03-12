@@ -206,7 +206,7 @@ docs: src/LavaVu.cpp src/Session.h src/version.cpp
 	$(PROGRAM) -S -h -p0 : docs:interaction quit > docs/src/Interaction.md
 	$(PROGRAM) -S -h -p0 : docs:scripting quit > docs/src/Scripting-Commands-Reference.md
 	$(PROGRAM) -? > docs/src/Commandline-Arguments.md
-	pip install -r docs/src/requirements.txt
+	#pip install -r docs/src/requirements.txt
 	sphinx-build docs/src docs/
 
 clean:

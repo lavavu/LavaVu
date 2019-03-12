@@ -2,8 +2,39 @@
 LavaVu python interface
 
 Interactive HTML UI controls library
+These functions can be called from the ControlFactory provided on
 
+- lavavu.Viewer()
+- lavavu.Object()
+
+Some work only on the viewer and some only to objects and some to both.
+Each will provide a control that allows modifying visualisation properties or executing commands interactively
+in an IPython notebook environment
+
+Example
+-------
+
+Create a Button control to execute a rotation command:
+
+>>> lv = lavavu.Viewer()
+>>> lv.control.Button('rotate x 1')
+
+Create a Range control to adjust the pointsize property:
+
+>>> lv = lavavu.Viewer()
+>>> pts = lv.points()
+>>> pts.control.Range('pointsize', range=[1, 10])
+
+For convenience, controls to set visualisation properties can often be created by calling control directly with the property name
+This will create a control of the default type for for that property if one is defined, e.g.
+
+>>> lv = lavavu.Viewer()
+>>> pts = lv.points()
+>>> pts.control('pointsize')
 """
+
+__all__ = ['Button', 'Checkbox', 'Colour', 'ColourMapList', 'ColourMaps', 'Command', 'Container', 'Control', 'Divider', 'DualRange', 'Entry', 'File', 'Filter', 'Gradient', 'HTML', 'List', 'Number', 'Number2D', 'Number3D', 'ObjectList', 'ObjectSelect', 'Panel', 'Range', 'Range2D', 'Range3D', 'Rotation', 'Tabs', 'TimeStepper', 'Window']
+
 import os
 import sys
 import time
@@ -865,7 +896,7 @@ class File(Control):
         elif multiple:
             self.options += 'multiple '
         if accept:
-            #Comma separated file types list, eg: image/*,audio/*,video/*,.pdf
+            #Comma separated file types list, e.g. image/*,audio/*,video/*,.pdf
             self.options += 'accept="' + accept + '"'
 
         super(File, self).__init__(command=command, label="Load File", *args, **kwargs)
