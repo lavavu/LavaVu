@@ -69,11 +69,17 @@ bool FileExists(const std::string& name)
 std::string GetBinaryPath(const char* argv0, const char* progname)
 {
   std::string bpath = "";
-  char result[FILE_PATH_MAX] = "\0";
   FilePath xpath;
+#ifdef _WIN32
+  TCHAR dest[MAX_PATH];
+  DWORD length = GetModuleFileName(NULL, dest, MAX_PATH);
+  std::wstring ws(&dest[0]);
+  xpath.parse(std::string(ws.begin(), ws.end()));
+  bpath = xpath.path;
+#else
+  char result[FILE_PATH_MAX] = "\0";
 
-  //Get from /proc on Linux
-  ssize_t count = readlink("/proc/self/exe", result, FILE_PATH_MAX);
+  //Get from /proc on Linux  ssize_t count = readlink("/proc/self/exe", result, FILE_PATH_MAX);
   if (count > 0)
   {
     xpath.parse(result);
@@ -87,10 +93,7 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
     while (std::getline(path, pathentry, ':'))
     {
       std::string pstr = pathentry + "/" + progname;
-#ifdef _WIN32
-      pstr += ".exe";
-#endif
-      if (access(pstr.c_str(), X_OK) == 0)
+	  if (access(pstr.c_str(), X_OK) == 0)
       {
         //Need to make sure it's a regular file, not directory
         struct stat st_buf;
@@ -117,6 +120,7 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
     bpath = real_path;
     free(real_path);
   }
+#endif
   return bpath;
 }
 

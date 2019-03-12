@@ -244,11 +244,11 @@ void Lines::render()
       if (indices > 0)
       {
         //Create the index list, adding offset from previous element vertices
-        unsigned int indexlist[indices];
-        for(unsigned int i=0; i<indices; i++)
+        std::vector<unsigned int> indexlist(indices);
+        for (unsigned int i=0; i<indices; i++)
           indexlist[i] = voffset + geom[index]->render->indices[i];
 
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), indexlist.data());
         //printf("%d upload %d indices, voffset %d\n", index, indices, voffset);
         counts[index] = indices;
         offset += indices;

@@ -280,7 +280,7 @@ void FontManager::init(std::string& path)
 #ifdef USE_FONTS
   // Load fonts
   std::vector<float> vertices;
-  GenerateFontCharacters(vertices, path + "/font.bin");
+  GenerateFontCharacters(vertices, path + "font.bin");
   //Initialise vertex buffer
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -620,7 +620,9 @@ void FontManager::rasterSetupFonts()
 void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx)
 {
   // Build font buffers
-  GLfloat buffer[stopidx][4][2][2]; //character, 4 vertices, vertex + texcoord, 2d(x,y)
+  //GLfloat buffer[stopidx][4][2][2]; //character, 4 vertices, vertex + texcoord, 2d(x,y)
+  GLfloat buffer[384][4][2][2]; //character, 4 vertices, vertex + texcoord, 2d(x,y)
+
   int i;
   float divX = IMAGE_WIDTH / (float)glyphsize;
   float divY = IMAGE_HEIGHT / (float)glyphsize;
@@ -666,6 +668,7 @@ void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int 
 
 
 #else //USE_FONTS
+void FontManager::init(std::string& binpath) {}
 Colour FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return Colour();}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}

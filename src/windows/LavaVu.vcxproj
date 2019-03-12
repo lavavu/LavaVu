@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -14,18 +14,19 @@
     <ProjectGuid>{C37BF90D-1B85-47C6-AD29-1050D38180E0}</ProjectGuid>
     <RootNamespace>SDL</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -45,8 +46,9 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>USE_FONTS;USE_ZLIB;SHADER_PATH="..\\shaders\\";WIN32;_DEBUG;_WINDOWS;PNG_USE_DLL;PNG_NO_GLOBAL_ARRAYS;HAVE_SDL;HAVE_SQLITE3;HAVE_LIBPNG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
+      <PreprocessorDefinitions>USE_FFFONTS;USE_ZLIB;WIN32;_DEBUG;_WINDOWS;PNG_USE_DLL;PNG_NO_GLOBAL_ARRAYS;HAVE_SDL;HAVE_SQLITE3;HAVE_LIBPNG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>
+      </MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -76,6 +78,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
+      <MinimalRebuild />
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -98,28 +101,29 @@
     <ClInclude Include="..\Colours.h" />
     <ClInclude Include="..\DrawingObject.h" />
     <ClInclude Include="..\Extensions.h" />
+    <ClInclude Include="..\fifo_map.hpp" />
     <ClInclude Include="..\font.h" />
     <ClInclude Include="..\FontSans.h" />
     <ClInclude Include="..\Geometry.h" />
-    <ClInclude Include="..\Server.h" />
+    <ClInclude Include="..\json.hpp" />
     <ClInclude Include="..\LavaVu.h" />
     <ClInclude Include="..\GraphicsUtil.h" />
     <ClInclude Include="..\Include.h" />
     <ClInclude Include="..\jpeg\jpgd.h" />
     <ClInclude Include="..\jpeg\jpge.h" />
-    <ClInclude Include="..\json.h" />
     <ClInclude Include="..\Main\SDLViewer.h" />
     <ClInclude Include="..\Model.h" />
-    <ClInclude Include="..\mongoose\mongoose.h" />
     <ClInclude Include="..\OpenGLViewer.h" />
+    <ClInclude Include="..\Session.h" />
     <ClInclude Include="..\Shaders.h" />
     <ClInclude Include="..\TimeStep.h" />
     <ClInclude Include="..\tiny_obj_loader.h" />
     <ClInclude Include="..\Types.h" />
+    <ClInclude Include="..\Util.h" />
+    <ClInclude Include="..\version.h" />
     <ClInclude Include="..\VideoEncoder.h" />
     <ClInclude Include="..\View.h" />
     <ClInclude Include="..\ViewerApp.h" />
-    <ClInclude Include="..\Win.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\base64.cpp" />
@@ -127,33 +131,34 @@
     <ClCompile Include="..\Colours.cpp" />
     <ClCompile Include="..\DrawingObject.cpp" />
     <ClCompile Include="..\Extensions.cpp" />
-    <ClCompile Include="..\FontSans.cpp" />
     <ClCompile Include="..\Geometry.cpp" />
-    <ClCompile Include="..\Server.cpp" />
+    <ClCompile Include="..\IsoSurface.cpp" />
     <ClCompile Include="..\LavaVu.cpp" />
     <ClCompile Include="..\GraphicsUtil.cpp" />
     <ClCompile Include="..\InteractiveViewer.cpp" />
     <ClCompile Include="..\jpeg\jpgd.cpp" />
     <ClCompile Include="..\jpeg\jpge.cpp" />
-    <ClCompile Include="..\json.cpp" />
     <ClCompile Include="..\Lines.cpp" />
+    <ClCompile Include="..\LinesSorted.cpp" />
+    <ClCompile Include="..\Links.cpp" />
     <ClCompile Include="..\Main\main.cpp" />
     <ClCompile Include="..\Main\SDLViewer.cpp" />
     <ClCompile Include="..\Model.cpp" />
-    <ClCompile Include="..\mongoose\mongoose.c" />
     <ClCompile Include="..\OpenGLViewer.cpp" />
     <ClCompile Include="..\Points.cpp" />
     <ClCompile Include="..\QuadSurfaces.cpp" />
+    <ClCompile Include="..\Session.cpp" />
     <ClCompile Include="..\Shaders.cpp" />
     <ClCompile Include="..\Shapes.cpp" />
-    <ClCompile Include="..\tiny_obj_loader.cc" />
     <ClCompile Include="..\Tracers.cpp" />
+    <ClCompile Include="..\Triangles.cpp" />
     <ClCompile Include="..\TriSurfaces.cpp" />
+    <ClCompile Include="..\Util.cpp" />
     <ClCompile Include="..\Vectors.cpp" />
     <ClCompile Include="..\VideoEncoder.cpp" />
     <ClCompile Include="..\View.cpp" />
     <ClCompile Include="..\Volumes.cpp" />
-    <ClCompile Include="..\Win.cpp" />
+    <ClCompile Include="version.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

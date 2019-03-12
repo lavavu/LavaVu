@@ -36,7 +36,9 @@
 #ifndef InputInterface__
 #define InputInterface__
 
+#ifndef _WIN32
 #include <poll.h>
+#endif
 
 //Interface for input devices
 class InputInterface

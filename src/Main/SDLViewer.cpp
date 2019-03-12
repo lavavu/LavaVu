@@ -122,7 +122,7 @@ void SDLViewer::setsize(int width, int height)
   open(width, height);
 }
 
-void SDLViewer::setTimer(int msec)
+void SDLViewer::animate(int msec)
 {
   if (timer_id)
     SDL_RemoveTimer(timer_id);

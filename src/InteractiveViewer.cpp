@@ -3357,7 +3357,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else
     {
-      if (verbose) std::cerr << "# Unrecognised command or file not found: \"" << cmd << "\"" << std::endl;
+      debug_print("# Unrecognised command or file not found: %s\n", cmd.c_str());
       return false;  //Invalid
     }
   }

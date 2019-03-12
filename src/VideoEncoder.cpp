@@ -48,7 +48,11 @@ void VideoEncoder::open(int w, int h)
   width = w;
   height = h;
   //Create directory for frames
+#if defined(_WIN32)
+  _mkdir(filename.c_str());
+#else
   mkdir(filename.c_str(), 0755);
+#endif
 }
 
 void VideoEncoder::close()

@@ -80,7 +80,6 @@ bool FBO::create(int w, int h)
 #define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
 #define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT
 #define GL_FRAMEBUFFER_UNSUPPORTED GL_FRAMEBUFFER_UNSUPPORTED_EXT
-#define GL_FRAMEBUFFER_UNDEFINED GL_FRAMEBUFFER_UNDEFINED_EXT
 #define glBindFramebuffer glBindFramebufferEXT
 #define glGenRenderbuffers glGenRenderbuffersEXT
 #define glBindRenderbuffer glBindRenderbufferEXT
@@ -164,8 +163,10 @@ bool FBO::create(int w, int h)
       std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
     else if (status == GL_FRAMEBUFFER_UNSUPPORTED)
       std::cerr << "FBO failed UNSUPPORTED" << std::endl;
+#ifdef GL_FRAMEBUFFER_UNDEFINED
     else if (status == GL_FRAMEBUFFER_UNDEFINED)
       std::cerr << "FBO failed UNDEFINED" << std::endl;
+#endif
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
@@ -303,7 +304,9 @@ void OpenGLViewer::init()
   glGetBooleanv(GL_STEREO, &stereoBuffer);
   glGetBooleanv(GL_DOUBLEBUFFER, &doubleBuffer);
 
-  debug_print("Stereo %d Double-buffer %d RGBA Mode = %d, Alpha bits = %d, Depth bits = %d, Stencil bits = %d, Accum bits = %d, Texture units %d, SampleBuffers %d, Samples %d\n", stereoBuffer, doubleBuffer, b, i, d, s, a, u, sb, ss);
+  const char* gl_v = (const char*)glGetString(GL_VERSION);
+  
+  debug_print("%s Stereo %d Double-buffer %d RGBA Mode = %d, Alpha bits = %d, Depth bits = %d, Stencil bits = %d, Accum bits = %d, Texture units %d, SampleBuffers %d, Samples %d\n", gl_v, stereoBuffer, doubleBuffer, b, i, d, s, a, u, sb, ss);
 
   //Load OpenGL extensions
   OpenGL_Extensions_Init();

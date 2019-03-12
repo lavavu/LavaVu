@@ -4,7 +4,6 @@
 #define Include__
 
 //Handles compatibility on Linux, Windows, Mac OS X
-
 #define __STDC_CONSTANT_MACROS
 #include <stdint.h>
 
@@ -95,10 +94,14 @@ using json_fifo = nlohmann::basic_json<fifo_map>;
 
 /* WINDOWS */
 #define GL_R32F 0x822E
+#define GL_COMPRESSED_RED 0x8225
+
 static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define HUGE_VALF _X_huge_valf
 #define snprintf sprintf_s
 #include <conio.h>
+#include <direct.h>
+#define HAVE_STRUCT_TIMESPEC
 #include "windows/inc/pthread.h"
 #include "windows/inc/zlib.h"
 #define PAUSE(msecs) Sleep(msecs);
@@ -114,6 +117,7 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #pragma comment(lib, "zlib.lib")
 #pragma comment(lib, "wsock32.lib")
 #pragma comment(lib, "pthreadVCE2.lib")
+
 
 //#include "windows/inc/SDL.h"
 #include <SDL/SDL_opengl.h>

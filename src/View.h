@@ -129,7 +129,7 @@ private:
   bool  auto_stereo;         // Auto-adjust focal-len & eye-separation?
   float focal_length_adj;    // User adjust to focal length
 
-  float near, far;
+  float nearclip, farclip;
 
   std::mutex matrix_lock;
 

@@ -45,8 +45,8 @@ View::View(Session& session, float xf, float yf, float nearc, float farc) : prop
   scene_shift = 0.0;      //Stereo projection shift
   rotated = false;
 
-  near = nearc;
-  far = farc;
+  nearclip = nearc;
+  farclip = farc;
 
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
@@ -144,14 +144,14 @@ bool View::init(bool force, float* newmin, float* newmax)
   }
 
   //Check and calculate near/far clip planes
-  near = properties["near"];
-  far = properties["far"];
-  checkClip(near, far);
+  nearclip = properties["near"];
+  farclip = properties["far"];
+  checkClip(nearclip, farclip);
 
   if (max[2] > min[2]+FLT_EPSILON) is3d = true;
   else is3d = false;
   debug_print("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f) 3d? %s CLIP %f : %f\n",
-              model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"), near, far);
+              model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2], (is3d ? "yes" : "no"), nearclip, farclip);
 
   //Auto-cam etc should only be processed once... and only when viewport size has been set
   if ((force || !initialised) && width > 0 && height > 0)
@@ -406,12 +406,12 @@ std::string View::zoom(float factor)
 
 std::string View::zoomClip(float factor)
 {
-  near += factor * model_size;
-  checkClip(near, far);
+  nearclip += factor * model_size;
+  checkClip(nearclip, farclip);
   updated = true;
   //Returns command to set in history
   std::ostringstream ss;
-  ss << "nearclip " << near;
+  ss << "nearclip " << nearclip;
   return ss.str();
 }
 
@@ -436,7 +436,7 @@ void View::print()
   rotation->toEuler(xrot, yrot, zrot);
   printf("------------------------------\n");
   printf("Viewport %d,%d %d x %d\n", xpos, ypos, width, height);
-  printf("Clip planes: near %f far %f\n", near, far);
+  printf("Clip planes: near %f far %f\n", nearclip, farclip);
   printf("Model size %f dims: %f,%f,%f - %f,%f,%f (scale %f,%f,%f)\n",
          model_size, min[0], min[1], min[2], max[0], max[1], max[2], scale[0], scale[1], scale[2]);
   printf("Focal Point %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -504,11 +504,11 @@ void View::projection(int eye)
   float eye_separation, frustum_shift;
 
   //Ensure clip planes valid, calculate if not provided in properties
-  near = properties["near"];
-  far = properties["far"];
+  nearclip = properties["near"];
+  farclip = properties["far"];
   fov = properties["aperture"];
   bool ortho = properties["orthographic"];
-  checkClip(near, far);
+  checkClip(nearclip, farclip);
   //printf("VP %d / %d\nsetPerspective( %f, %f, %f, %f)\n", width, height, fov, aspectRatio, near, far);
 
   //This is zero parallax distance, objects closer than this will appear in front of the screen,
@@ -522,14 +522,14 @@ void View::projection(int eye)
 
   // Build the viewing frustum
   // Top of frustum calculated from field of view (aperture) and near clipping plane, camera->aperture = fov in degrees
-  top = tan(0.5f * DEG2RAD * fov) * near;
+  top = tan(0.5f * DEG2RAD * fov) * nearclip;
   bottom = -top;
   // Account for aspect ratio (width/height) to get right edge of frustum
   right = aspectRatio * top;
   left = -right;
 
   //Shift frustum to the left/right to account for right/left eye viewpoint
-  frustum_shift = eye * 0.5 * eye_separation * fabs(near / focal_length);  //Mutiply by eye (-1 left, 0 none, 1 right)
+  frustum_shift = eye * 0.5 * eye_separation * fabs(nearclip / focal_length);  //Mutiply by eye (-1 left, 0 none, 1 right)
   //Viewport eye shift in pixels => for raycasting shader
   eye_shift = eye * eye_sep_ratio * height * 0.6 / tan(DEG2RAD * fov);
 
@@ -552,10 +552,10 @@ void View::projection(int eye)
   {
     float x = aspectRatio * focal_length;
     float y = focal_length;
-    glOrtho(-x, x, -y, y, near, far);
+    glOrtho(-x, x, -y, y, nearclip, farclip);
   }
   else
-    glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, near, far);
+    glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, nearclip, farclip);
 
   // Return to model view
   glMatrixMode(GL_MODELVIEW);
@@ -716,9 +716,9 @@ void View::importProps(bool force)
   if (properties.has("aperture"))
     fov = properties["aperture"];
   if (properties.has("near"))
-    near = properties.data["near"];
+    nearclip = properties.data["near"];
   if (properties.has("far"))
-    far = properties.data["far"];
+    farclip = properties.data["far"];
 
   setBackground();
 }
@@ -734,8 +734,8 @@ void View::exportProps()
   properties.data["focus"] = json::array({focal_point[0], focal_point[1], focal_point[2]});
   properties.data["scale"] = json::array({scale[0], scale[1], scale[2]});
   properties.data["aperture"] = fov;
-  properties.data["near"] = near;
-  properties.data["far"] = far;
+  properties.data["near"] = nearclip;
+  properties.data["far"] = farclip;
 
   //Can't set min/max properties from auto calc or will override future bounding box calc,
   //useful to get the calculated bounding box, so export as "bounds"
