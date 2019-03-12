@@ -77,9 +77,9 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
   xpath.parse(std::string(ws.begin(), ws.end()));
   bpath = xpath.path;
 #else
+  //Get from /proc on Linux
   char result[FILE_PATH_MAX] = "\0";
-
-  //Get from /proc on Linux  ssize_t count = readlink("/proc/self/exe", result, FILE_PATH_MAX);
+  ssize_t count = readlink("/proc/self/exe", result, FILE_PATH_MAX);
   if (count > 0)
   {
     xpath.parse(result);

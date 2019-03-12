@@ -668,7 +668,7 @@ void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int 
 
 
 #else //USE_FONTS
-void FontManager::init(std::string& binpath) {}
+void FontManager::init(std::string& path) {}
 Colour FontManager::setFont(Properties& properties, std::string def, float scaling, float multiplier2d) {return Colour();}
 void FontManager::printString(const char* str) {}
 void FontManager::printf(int x, int y, const char *fmt, ...) {}

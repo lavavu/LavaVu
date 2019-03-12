@@ -65,7 +65,7 @@
 #include "tiny_obj_loader.h"
 
 //Viewer class implementation...
-LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp(), binpath(binpath)
+LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp()
 {
   viewer = NULL;
   encoder = NULL;
@@ -118,7 +118,12 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
   viewer->app = (ApplicationInterface*)this;
 
   //Shader path (default to program path if not set)
+#if defined _WIN32
+  if (binpath.back() != '\\') binpath += "\\";
+#else
   if (binpath.back() != '/') binpath += "/";
+#endif
+  this->binpath = binpath;
   if (Shader::path.length() == 0) Shader::path = binpath + "shaders/";
 
   //Initialise the session

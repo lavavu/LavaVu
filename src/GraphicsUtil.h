@@ -713,7 +713,7 @@ public:
     vbo = ibo = r_vbo = r_ibo = 0;
   }
 
-  void init(std::string& binpath);
+  void init(std::string& path);
 
   //3d fonts
   Colour setFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
