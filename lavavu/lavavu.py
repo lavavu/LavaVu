@@ -21,7 +21,16 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 
 __all__ = ['Viewer', 'Object', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
            'download', 'grid2d', 'grid3d', 'cubeHelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
-           'version']
+           'version', 'settings']
+
+#Module settings
+#must be an object or won't be referenced from __init__.py import
+#(enures values are passed on when set externally)
+settings = {}
+#Default arguments for viewer creation
+settings["default_args"] = []
+#Dump base64 encoded images on test failure for debugging
+settings["echo_fails"] = False
 
 import json
 import math
@@ -295,15 +304,6 @@ def matplotlib_colourmap(name, samples=16):
         #Assume single colour value, just return it
         return name
     return []
-
-#Module settings
-#must be an object or won't be referenced from __init__.py import
-#(enures values are passed on when set externally)
-settings = {}
-#Default arguments for viewer creation
-settings["default_args"] = []
-#Dump base64 encoded images on test failure for debugging
-settings["echo_fails"] = False
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
