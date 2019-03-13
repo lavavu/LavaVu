@@ -65,9 +65,9 @@ function WindowInteractor(id, uid, port) {
 
     //Several possible modes to try
     if (loc.hostname == 'hub.mybinder.org') {
-      var p = loc.pathname;
-      var p = p.substr(0,p.lastIndexOf('/notebooks/'));
-      connect(loc.protocol + "//hub.mybinder.org" + p + "/proxy/" + port);
+      var regex = /\/user/[a-z0-9-]+\//i;
+      var base = regex.exec(loc.pathname)[0];
+      connect(loc.protocol + "//hub.mybinder.org" + base + "/proxy/" + port);
       return;
     }
     if (loc.protocol != 'file:') {
