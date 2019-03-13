@@ -65,7 +65,7 @@ function WindowInteractor(id, uid, port) {
 
     //Several possible modes to try
     if (loc.hostname == 'hub.mybinder.org') {
-      var regex = /\/user/[a-z0-9-]+\//i;
+      var regex = /\/user\/[a-z0-9-]+\//i;
       var base = regex.exec(loc.pathname)[0];
       connect(loc.protocol + "//hub.mybinder.org" + base + "/proxy/" + port);
       return;
