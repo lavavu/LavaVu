@@ -62,7 +62,14 @@ function WindowInteractor(id, uid, port) {
     //Just use the same address for requests
     connect(loc);
   } else {
+
     //Several possible modes to try
+    if (loc.hostname == 'hub.mybinder.org') {
+      var p = loc.pathname;
+      var p = p.substr(0,p.lastIndexOf('/notebooks/'));
+      connect(loc.protocol + "//hub.mybinder.org" + p + "/proxy/" + port);
+      return;
+    }
     if (loc.protocol != 'file:') {
       //(Don't bother for file:// urls)
       connect(loc.protocol + "//" + loc.hostname + ":" + port);
