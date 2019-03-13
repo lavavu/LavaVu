@@ -16,6 +16,10 @@ function WindowInteractor(id, uid, port) {
   this.uid = uid;
   var loc = window.location;
 
+  //Request type settings
+  this.instant = true; //false; //Use image.src to issue commands, combines into single request;
+  this.post = false; //Set this to use POST instead of GET
+
   //Connection attempts via this function, pass url
   var that = this;
   var connect = function(url) {
@@ -67,7 +71,8 @@ function WindowInteractor(id, uid, port) {
     if (loc.hostname == 'hub.mybinder.org') {
       var regex = /\/user\/[a-z0-9-]+\//i;
       var base = regex.exec(loc.pathname)[0];
-      connect(loc.protocol + "//hub.mybinder.org" + base + "/proxy/" + port);
+      this.instant = false; //Disable using img.src, seems to time out too quickly
+      connect(loc.protocol + "//hub.mybinder.org" + base + "proxy/" + port);
       return;
     }
     if (loc.protocol != 'file:') {
@@ -93,8 +98,6 @@ WindowInteractor.prototype.init = function() {
   if (!this.img) return;
 
   //Load frame image and run command in single action
-  this.instant = true; //false; //true;
-  this.post = false; //Set this to use POST instead of GET
 
   //Initial image
   //(Init WebGL bounding box interaction on load)
