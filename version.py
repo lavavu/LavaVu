@@ -6,8 +6,10 @@ if len(version) == 0:
     #Just report the current release version
     import setup
     version = setup.version
-    print(version)
-    exit()
+    #Still need to write if file doesn't exist
+    if os.path.exists('src/version.cpp'):
+        print(version)
+        exit()
 
 #Strip trailing newline
 version = version.rstrip('\r\n')
