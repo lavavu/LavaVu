@@ -71,7 +71,6 @@ function WindowInteractor(id, uid, port) {
     if (loc.hostname == 'hub.mybinder.org') {
       var regex = /\/user\/[a-z0-9-]+\//i;
       var base = regex.exec(loc.pathname)[0];
-      this.instant = false; //Disable using img.src, seems to time out too quickly
       connect(loc.protocol + "//hub.mybinder.org" + base + "proxy/" + port);
       return;
     }
