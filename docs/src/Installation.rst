@@ -180,14 +180,17 @@ a binary build for the platform is attached to each release:
 Docker
 ------
 
-TODO : update docker image and add instructions here
+A base dockerfile is provided in the repository root.
 
+You can try it out on binder
+
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/OKaluza/LavaVu/master?urlpath=lab
 
 Windows
 -------
 
-Currently the windows build is very out of date, I have not had any requests to build it but let me know if you are interested
-It will be updated sometime in the near future regardless
+Currently the windows build is very out of date, bringing it up to date, including building a windows version of the python interface is a work in progress.
 
 TODO : update windows build and add binary release
 
