@@ -185,7 +185,7 @@ A base dockerfile is provided in the repository root.
 You can try it out on binder
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/OKaluza/LavaVu/master?urlpath=tree/notebooks
+ :target: https://mybinder.org/v2/gh/OKaluza/LavaVu/1.3.3?filepath=notebooks
 
 Windows
 -------
