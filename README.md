@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/OKaluza/LavaVu.svg?branch=master)](https://travis-ci.org/OKaluza/LavaVu)
 [![DOI](https://zenodo.org/badge/45163055.svg)](https://zenodo.org/badge/latestdoi/45163055)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/OKaluza/LavaVu/master?urlpath=lab)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
