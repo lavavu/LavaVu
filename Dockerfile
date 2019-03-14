@@ -87,10 +87,13 @@ USER ${NB_USER}
 # setup environment
 ENV PYTHONPATH $PYTHONPATH:${HOME}
 
-# Compile, delete some unnecessary files, trust notebooks
+# Compile, delete some unnecessary files
 RUN cd ~ && \
     make LIBPNG=1 TIFF=1 VIDEO=1 -j$(nproc) && \
-    rm -fr tmp && \
+    rm -fr tmp
+
+#Trust included notebooks
+RUN cd ~ && \
     find notebooks -name \*.ipynb  -print0 | xargs -0 jupyter trust
 
 # Add a notebook profile.
