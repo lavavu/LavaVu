@@ -1906,8 +1906,6 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
                     #Just hide the window
                     self.viewer.hide()
                     self.viewer.quitProgram = False
-                else:
-                    exit(0)
 
 
 class Viewer(dict):
