@@ -6,8 +6,9 @@
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
-![examplevis](http://owen.kaluza.id.au/Slides/2017-08-15/combined.png)
+Documentation available here [LavaVu Documentation](https://mivp.github.io/LavaVu-Documentation/)
 
+![examplevis](http://owen.kaluza.id.au/Slides/2017-08-15/combined.png)
 
 LavaVu development is supported by the [Monash Immersive Visualisation Plaform](http://monash.edu.au/mivp) and the Simulation, Analysis & Modelling component of the [NCRIS AuScope](http://www.auscope.org.au/ncris/) capability.
 
