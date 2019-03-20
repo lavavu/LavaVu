@@ -41,4 +41,25 @@ def is_notebook():
     # check for `kernel` attribute on the IPython instance
     return getattr(get_ipython(), 'kernel', None) is not None
 
+def getname(var):
+    """
+    Attempt to find the name of a variable from the main module namespace
+
+    Parameters
+    ----------
+    var
+        The variable in question
+
+    Returns
+    -------
+    name : str
+        Name of the variable
+    """
+    import __main__ as main_mod
+    for name in dir(main_mod):
+        val = getattr(main_mod, name)
+        if val is var:
+            return name
+    return None
+
 

@@ -21,7 +21,7 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 
 __all__ = ['Viewer', 'Object', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
            'download', 'grid2d', 'grid3d', 'cubeHelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
-           'version', 'settings']
+           'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
 #Module settings
 #must be an object or won't be referenced from __init__.py import
@@ -46,7 +46,7 @@ import threading
 import time
 import weakref
 
-from vutils import is_ipython, is_notebook
+from vutils import is_ipython, is_notebook, getname
 
 #import swig module
 import LavaVuPython
@@ -3382,7 +3382,7 @@ class Viewer(dict):
             Current camera view or previous if applying a new view
         """
         self._get()
-        me = _getVariableName(self)
+        me = getname(self)
         if not me: me = "lv"
         #Also print in terminal for debugging
         self.commands("camera")
@@ -4070,27 +4070,6 @@ def loadCPT(fn, positions=True):
             result += hexcolours[v] + " "
 
     return result
-
-def _getVariableName(var):
-    """
-    Attempt to find the name of a variable from the main module namespace
-
-    Parameters
-    ----------
-    var
-        The variable in question
-
-    Returns
-    -------
-    name : str
-        Name of the variable
-    """
-    import __main__ as main_mod
-    for name in dir(main_mod):
-        val = getattr(main_mod, name)
-        if val is var:
-            return name
-    return None
 
 def printH5(h5):
     """
