@@ -19,7 +19,7 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 #- sync from lavavu to python is lazy, always need to call _get()
 #    before using state data
 
-__all__ = ['Viewer', 'Object', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
+__all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
            'download', 'grid2d', 'grid3d', 'cubeHelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
@@ -304,6 +304,55 @@ def matplotlib_colourmap(name, samples=16):
         #Assume single colour value, just return it
         return name
     return []
+
+#Wrapper class for a set of properties
+#handles property updating via internal dict
+class Properties(dict):
+    """
+    The Properties class provides an interface to a collection of properties with a control factory,
+    allowing controls to be created to manipulate their values interactively
+    Properties can be passed in when created or set by using as a dictionary:
+
+    Parameters
+    ----------
+    callback : function
+        Optional function to call whenever a property in this
+        collection is changed by an interactive control
+        The function should take one argument,
+        the collection of type lavavu.Properties() and will be called, with
+        the new values whenever the control value is updated.
+    **kwargs
+        Set of initial properties to store in the collection
+
+    Example
+    -------
+
+    Create a property set, load some test data
+
+    >>> import lavavu
+    >>> props = lavavu.Properties(floatprop=1.0)
+    >>> props["boolprop"] = True
+    >>> print(props)
+
+    Now create some controls to manipulate them
+
+    >>> props.control.Range('floatprop', range=(0,1))
+    >>> props.control.Checkbox('boolprop')
+
+    """
+    def __init__(self, parent, callback=None, **kwargs):
+        self._parent = weakref.ref(parent)
+        self.callback = callback
+        super(Properties, self).__init__(**kwargs)
+
+        #Need to store with id on parent to match when new data sent from client
+        parent._collections[str(id(self))] = weakref.ref(self)
+
+        self.control = control._ControlFactory(self)
+
+    @property
+    def parent(self):
+        return self._parent()
 
 #Wrapper class for drawing object
 #handles property updating via internal dict
@@ -2013,6 +2062,7 @@ class Viewer(dict):
         self._managed = False
         self.server = None
         self._thread = None
+        self._collections = {}
 
         #Launch in thread?
         #(Can disable by setting port=0)
@@ -2705,6 +2755,29 @@ class Viewer(dict):
         obj : Object
             The object located
         """
+
+    def Properties(self, callback=None, **kwargs):
+        """
+        Create a property collection, essentially a dict() but with a
+        control factory that allows creation of interactive controls to edit the properties
+
+        Parameters
+        ----------
+        callback : function
+            Optional function to call whenever a property in this
+            collection is changed by an interactive control
+            The function should take one argument,
+            the collection of type lavavu.Properties() and will be called, with
+            the new values whenever the control value is updated.
+        **kwargs
+            Set of initial properties to store in the collection
+
+        Returns
+        -------
+        props : Properties
+            The collection created
+        """
+        return Properties(self, callback, **kwargs)
 
     def file(self, filename, obj=None, **kwargs):
         """

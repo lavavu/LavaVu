@@ -128,7 +128,12 @@ htmlpath = ""
 
 def _isviewer(target):
     """Return true if target is a viewer"""
-    return not hasattr(target, "parent")
+    #return not hasattr(target, "parent")
+    return target.__class__.__name__ == 'Viewer'
+
+def _isobject(target):
+    """Return true if target is a lavavu object"""
+    return target.__class__.__name__ == 'Object'
 
 def _getviewer(target):
     """Return its viewer if target is vis object
@@ -340,6 +345,9 @@ class _PropertyAction(_Action):
         # - on an object selector, select the object
         elif type(self.target).__name__ == 'ObjectSelect':
             script = propset
+        # - on a properties collection
+        elif type(self.target).__name__ == 'Properties':
+            script = '$' + str(id(self.target)) + ' ' + self.property + ' " + value + " '
         # - On an object
         else:
             script = '<' + self.target["name"] + '>' + propset
@@ -610,7 +618,7 @@ class Control(HTML):
             self.label = ""
 
         #Get value from target or default if not provided
-        if property is not None and target:
+        if property is not None:
             if value is None:
                 value = _getproperty(target, property)
             else:
@@ -621,13 +629,10 @@ class Control(HTML):
                     target[property][index] = V #Set the provided value
                 else:
                     target[property] = value #Set the provided value
-        self.value = value
-        self._value = value
 
-        #Append reload command from prop dict if no command provided
-        if target and property is not None:
+            #Append reload command from prop dict if no command provided
             _lv = _getviewer(target)
-            if  property in _lv.properties:
+            if property in _lv.properties:
                 prop = _lv.properties[property]
                 #TODO: support higher reload values
                 cmd = ""
@@ -640,6 +645,9 @@ class Control(HTML):
                     command = cmd
                 else:
                    command += " ; " + cmd
+
+        self.value = value
+        self._value = value #Store passed initial value
 
     def onchange(self):
         return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", this.value, this);"
@@ -685,7 +693,7 @@ class Control(HTML):
         html = ""
         if self.property:
             #Set custom attribute for property controls
-            if not _isviewer(self.target):
+            if _isobject(self.target):
                 html += 'data-target="' + str(self.target["name"]) + '" '
             html += 'data-property="' + self.property + '" '
             if _Action.actions[self.id].index is not None:
@@ -940,7 +948,7 @@ class List(Control):
         if options is None:
             defoptions = []
             _lv = _getviewer(target)
-            if  property is not None and property in _lv.properties:
+            if property is not None and property in _lv.properties:
                 prop = _lv.properties[property]
                 ctrl = prop["control"]
                 if len(ctrl) > 2 and len(ctrl[2]):
@@ -1428,7 +1436,7 @@ class _ControlFactory(object):
         Calling with a property name creates the default control for that property
         """
         _lv = _getviewer(self._target())
-        if  property is not None and property in _lv.properties:
+        if property is not None and property in _lv.properties:
             #Get control info from prop dict
             prop = _lv.properties[property]
             T = prop["type"]
@@ -1498,6 +1506,7 @@ class _ControlFactory(object):
         chtml = ""
         for c in self._content:
             chtml += c.html()
+
         if len(chtml):
             html += '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
         for c in self._containers:
@@ -1510,10 +1519,9 @@ class _ControlFactory(object):
 
         #Display HTML inline or export
         if is_notebook():
-            obj = self._target()
-            if not obj.server:
+            _lv = _getviewer(self._target())
+            if not _lv.server:
                 raise(Exception("LavaVu HTTP Server must be active for interactive controls, set port= parameter to > 0"))
-
             """
             HTTP server mode interaction, rendering in separate render thread:
              - This should work in all notebook contexts, colab, jupyterlab etc
@@ -1530,7 +1538,7 @@ class _ControlFactory(object):
             html += "<!-- CREATION TIMESTAMP {0} -->".format(timestamp)
 
             #Pass port and object id from server
-            actionjs = _Action.export_actions(id(obj), obj.server.port)
+            actionjs = _Action.export_actions(id(_lv), _lv.server.port)
             #Output the controls and start interactor
             html += "<script>init({0});</script>".format(viewerid)
             display(HTML(actionjs + html))

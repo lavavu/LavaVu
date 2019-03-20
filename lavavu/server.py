@@ -6,6 +6,7 @@ import errno
 from functools import partial
 import weakref
 import base64
+import json
 
 #Python2/3 compatibility hacks
 try:
@@ -174,6 +175,25 @@ class LVRequestHandler(SimpleHTTPRequestHandler, object):
                 if func and callable(func):
                     func(params)
                     done = True
+        elif cmds[0] == '$':
+            #Requests prefixed by '$' are sent
+            #from property collection controls
+            #format is $ID KEY VALUE
+            # - ID is the python id() of the properties object
+            #    All properties collections are stored on their parent
+            #    object using this id in the _collections dict
+            # - KEY is the property name key to set
+            # - VALUE is a json string containing the value to set
+            S = cmds.split()
+            target = S[0][1:]
+            if target in lv._collections:
+                #Get from _collections by id (weakref)
+                props = lv._collections[target]()
+                props[S[1]] = json.loads(S[2])
+                #Check for callback - if provided, call with updated props
+                func = getattr(props, 'callback')
+                if func and callable(func):
+                    func(props)
 
         #Default, call via lv.commands() scripting API
         if not done:
