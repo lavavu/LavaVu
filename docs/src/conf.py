@@ -17,6 +17,10 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import os, sys
+from os.path import dirname, join, abspath
+sys.path.insert(0, abspath(join(dirname(__file__), '..')))
+import setup as lsetup
 
 # -- Project information -----------------------------------------------------
 
@@ -27,8 +31,7 @@ author = 'Owen Kaluza, Monash University'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '1.3.2'
-
+release = lsetup.version
 
 # -- General configuration ---------------------------------------------------
 
