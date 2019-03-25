@@ -3222,6 +3222,32 @@ class Viewer(dict):
             print("WebGL output error: " + str(e))
             pass
 
+    def exec_webgl(self, code, ID=None):
+        """
+        Runs code to act on the active (last) webgl viewer object
+
+        The viewer will be available in the variable 'viewer' by inserting code before the
+        provided JavaScript, allowing execution of viewer functions in the following script
+
+        Parameters
+        ----------
+        code : str
+            A JavaScript string to execute after getting the viewer object
+        ID : int
+            A specific webgl ID number, if multiple are active this allows specifying which
+            to execute code with, the first being ID=0
+        """
+        if ID is None:
+            #Get the last added viewer
+            ID = len(self.webglviews)-1
+            if ID < 0: return
+        js = """
+        var canvas = document.getElementById('canvas_---ID---');
+        var viewer = canvas.viewer;
+        """.replace('---ID---', str(ID))
+        from IPython.display import display,HTML,Javascript
+        display(Javascript(js + code))
+
     def video(self, filename="", fps=10, quality=1, resolution=(0,0)):
         """        
         Shows the generated video inline within an ipython notebook.
