@@ -254,7 +254,6 @@ function createMenu(viewer, onchange, webglmode) {
     gui.add(viewer, "interactive").name("Interactive Render");
     gui.add(viewer, "immediatesort").name("Immediate Sort");
     gui.add(viewer, "sortenabled").name('Sort Enabled');
-    gui.add(viewer, "showBorder").name('Show Border').onFinishChange(function() {viewer.draw();});
   }
 
   var g = gui.addFolder('Globals/Defaults');

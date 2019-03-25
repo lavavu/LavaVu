@@ -1170,7 +1170,7 @@ Renderer.prototype.draw = function() {
     desc = (this.elements / 3) + " triangles";
 
   } else if (this.border) {
-    this.gl.lineWidth(this.viewer.view.border || 1.0);
+    this.gl.lineWidth(vis.properties.border >= 0 ? vis.properties.border : 1.0);
 
     this.gl.vertexAttribPointer(this.program.attributes["aVertexPosition"], 3, this.gl.FLOAT, false, 0, 0);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
@@ -1431,7 +1431,7 @@ function Viewer(canvas) {
   this.pointType = 0;
 
   //Non-persistant settings
-  this.showBorder = true;
+  this.border = 0;
   this.mode = 'Rotate';
   this.interactive = true;
   this.immediatesort = false;
@@ -1538,8 +1538,7 @@ Viewer.prototype.loadFile = function(source) {
     this.near_clip = this.view.near || 0;
     this.far_clip = this.view.far || 0;
     this.orientation = this.view.orientation || 1;
-    this.showBorder = this.view.border == undefined ? true : this.view.border > 0;
-    this.axes = this.view.axis == undefined ? true : this.view.axis;
+    //this.axes = this.view.axis == undefined ? true : this.view.axis;
   }
 
   this.pointScale = vis.properties.scalepoints || 1.0;
@@ -1569,22 +1568,6 @@ Viewer.prototype.loadFile = function(source) {
     var name = vis.objects[id].name;
     //Process points/triangles
     if (!source.exported) {
-      //Texure loading
-      if (vis.objects[id].texturefile) {
-        this.hasTexture = true;
-        vis.objects[id].image = new Image();
-        vis.objects[id].image.crossOrigin = "anonymous";
-        vis.objects[id].image.src = vis.objects[id].texturefile;
-        viewer = this;
-        vis.objects[id].image.onload = function() {
-          // Flip the image's Y axis to match the WebGL texture coordinate space.
-          viewer.webgl.gl.activeTexture(viewer.webgl.gl.TEXTURE0);
-          vis.objects[id].tex = viewer.webgl.loadTexture(vis.objects[id].image, viewer.gl.LINEAR, viewer.gl.RGBA, true); //Flipped
-          viewer.drawFrame();
-          viewer.draw();
-        };
-      }
-
       //Set default colour if not yet set
       if (!vis.objects[id].colour) {
         if ("volume" in vis.objects[id]) //Use a different default for volume (isosurface) colour
@@ -1607,7 +1590,7 @@ Viewer.prototype.loadFile = function(source) {
           this.renderers.push(vren);
           vren.image = new Image();
           vren.image.src = vis.objects[id][type].url;
-          viewer = this;
+          var viewer = this;
           vren.image.onload = function(){ viewer.drawFrame(); viewer.draw(); };
         }
 
@@ -1686,6 +1669,9 @@ Viewer.prototype.loadFile = function(source) {
   var time = (new Date() - start) / 1000.0;
   DEBUG && console.log(time + " seconds to import data");
 
+  //Load texture images
+  this.loadTextures();
+
   //Default to interactive render if vertex count < 0.5 M
   this.interactive = (this.vertexCount <= 500000);
 
@@ -1715,6 +1701,29 @@ Viewer.prototype.loadFile = function(source) {
   //Create GUI menu if enabled
   if (this.menu)
     createMenu(this, changefn, true);
+}
+
+Viewer.prototype.loadTextures = function() {
+  //Load/reload textures for all objects
+  var vis = this.vis;
+  for (var id in vis.objects) {
+    //Texure loading
+    if (vis.objects[id].texture) {
+      this.hasTexture = true;
+      vis.objects[id].image = new Image();
+      vis.objects[id].image.crossOrigin = "anonymous";
+      vis.objects[id].image.src = vis.objects[id].texture + '?_' + new Date().getTime(); //Prevent caching
+      var viewer = this;
+      vis.objects[id].image.onload = function() {
+        // Flip the image's Y axis to match the WebGL texture coordinate space.
+        viewer.webgl.gl.activeTexture(viewer.webgl.gl.TEXTURE0);
+        //vis.objects[id].tex = viewer.webgl.loadTexture(vis.objects[id].image, viewer.gl.LINEAR, viewer.gl.RGBA, true); //Flipped - jpeg
+        vis.objects[id].tex = viewer.webgl.loadTexture(vis.objects[id].image, viewer.gl.LINEAR, viewer.gl.RGBA); //Not-flipped - png
+        viewer.drawFrame();
+        viewer.draw();
+      };
+    }
+  }
 }
 
 Viewer.prototype.reload = function() {
@@ -1780,8 +1789,8 @@ Viewer.prototype.exportView = function(nocam) {
   this.view.aperture = this.fov;
   this.view.near = this.near_clip;
   this.view.far = this.far_clip;
-  this.view.border = this.showBorder ? 1 : 0;
-  this.view.axis = this.axes;
+  //this.properties.border = this.border ? 1 : 0;
+  //this.properties.axis = this.axes;
   //this.view.background = this.background.toString();
 
   return [this.view];
@@ -1988,7 +1997,7 @@ paletteLoad = function(palette) {
 Viewer.prototype.drawTimed = function() {
   if (this.drawTimer)
     clearTimeout(this.drawTimer);
-  viewer = this;
+  var viewer = this;
   this.drawTimer = setTimeout(function () {viewer.drawFrame();}, 100 );
 }
 
@@ -2062,9 +2071,8 @@ Viewer.prototype.drawFrame = function(borderOnly) {
 
   //Render objects
   for (var r in this.renderers) {
-    //if (!document.mouse.isdown && !this.showBorder && type == 'border') continue;
     if (this.renderers[r].border) {
-      if (!borderOnly && !this.showBorder) continue;
+      if (!borderOnly && !this.vis.border) continue;
     } else {
       if (borderOnly) continue;
     }
