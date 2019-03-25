@@ -1286,8 +1286,8 @@ class Filter(Control):
             else:
                 range = (self.data["minimum"], self.data["maximum"])
 
-        self.ctrlmin = Range(step=step, range=range, value=self.filter["minimum"])
-        self.ctrlmax = Range(step=step, range=range, value=self.filter["maximum"])
+        self.ctrlmin = Range(target, step=step, range=range, value=self.filter["minimum"])
+        self.ctrlmax = Range(target, step=step, range=range, value=self.filter["maximum"])
 
         #Replace actions on the controls
         _Action.actions[self.ctrlmin.id] = _FilterAction(target, filteridx, "minimum")
