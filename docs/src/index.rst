@@ -36,6 +36,7 @@ AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
 
     LavaVu Github <https://github.com/OKaluza/LavaVu>
     LavaVu Wiki   <https://github.com/OKaluza/LavaVu/wiki>
+    LavaVu Issue Tracker   <https://github.com/OKaluza/LavaVu/issues>
 
 .. image:: https://travis-ci.org/OKaluza/LavaVu.svg?branch=master
     :target: https://travis-ci.org/OKaluza/LavaVu

@@ -79,8 +79,8 @@ If all goes well the viewer will be built, try running with:
 * Report bugs/issues here on github: https://github.com/OKaluza/LavaVu/issues
 * Contact developer: Owen Kaluza (at) monash.edu
 
-For further documentation / examples, see the Wiki
-* https://github.com/OKaluza/LavaVu/wiki
+For further documentation / examples, see the online documentation
+* https://mivp.github.io/LavaVu-Documentation
 
 ### Included libraries ###
 In order to avoid as many external dependencies as possible, the LavaVu sources include files from the following public domain or open source libraries, many thanks to the authors for making their code available!

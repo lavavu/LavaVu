@@ -246,5 +246,3 @@ import generate_api_documentation
 import subprocess
 subprocess.call("./run-nb-to-rst.sh", shell=True)
 
-html_static_path = ['_static']
-

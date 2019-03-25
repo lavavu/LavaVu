@@ -384,7 +384,7 @@ class Object(dict):
     >>> obj = lv.points(pointtype="sphere")
     >>> obj["pointsize"] = 5
 
-    A list of available properties can be found here: https://github.com/OKaluza/LavaVu/wiki/Property-Reference
+    A list of available properties can be found here: https://mivp.github.io/LavaVu-Documentation/Property-Reference
     or by using the online help:
 
     >>> obj.help('opacity')
@@ -2023,10 +2023,10 @@ class Viewer(dict):
 
     >>> lv["background"] = "grey50"
 
-    A list of available commands and properties can be found in the wiki
+    A list of available commands and properties can be found in the docs
 
-     - https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
-     - https://github.com/OKaluza/LavaVu/wiki/Property-Reference
+     - https://mivp.github.io/LavaVu-Documentation/Scripting-Commands-Reference
+     - https://mivp.github.io/LavaVu-Documentation/Property-Reference
 
     or by using the online help:
 
@@ -2548,7 +2548,7 @@ class Viewer(dict):
     def commands(self, cmds, queue=False):
         """
         Execute viewer commands
-        https://github.com/OKaluza/LavaVu/wiki/Scripting-Commands-Reference
+        https://mivp.github.io/LavaVu-Documentation/Scripting-Commands-Reference
         These commands can also be executed individually by calling them as methods of the viewer object
 
         Parameters
