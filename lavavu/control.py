@@ -1480,7 +1480,7 @@ class _ControlFactory(object):
             #Add to global list
             self._content.append(ctrl)
 
-        #Add to viewer instance list too if not already being added
+        #Add to viewer instance list too, unless we are one
         if not _isviewer(self._target()):
             self._target().parent.control.add(ctrl)
 
@@ -1492,12 +1492,13 @@ class _ControlFactory(object):
             A function which is called in place of the viewer display when run outside IPython
         """
         #Show all controls in container
+        target = self._target()
 
         #Creates an interactor to connect javascript/html controls to IPython and viewer
         #if no viewer Window() created, it will be a windowless interactor
-        if _isviewer(self._target()):
+        if _isviewer(target):
             #Append the current viewer ref
-            windows.append(self._target())
+            windows.append(target)
 
         viewerid = len(windows)
 
@@ -1506,6 +1507,22 @@ class _ControlFactory(object):
         chtml = ""
         for c in self._content:
             chtml += c.html()
+
+        #Two ways to display controls in sub containers, call show() directly
+        # and call show() on parent viewer, in each case we need to clear from
+        # the alternate lists so they won't be displayed twice
+        if _isviewer(target):
+            #Iterate Object and Property lists and clear them when viewer.control.show() is called
+            for o in target.objects:
+                target.objects[o].control.clear()
+            for o in target._collections:
+                target._collections[o]().control.clear()
+        else:
+            #Object/Property.control.show() called...
+            # Clear from parent viewer list as already displayed
+            _lv = _getviewer(target)
+            for c in self._content:
+               _lv.control._content.remove(c)
 
         if len(chtml):
             html += '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
@@ -1519,7 +1536,7 @@ class _ControlFactory(object):
 
         #Display HTML inline or export
         if is_notebook():
-            _lv = _getviewer(self._target())
+            _lv = _getviewer(target)
             if not _lv.server:
                 raise(Exception("LavaVu HTTP Server must be active for interactive controls, set port= parameter to > 0"))
             """
@@ -1545,7 +1562,7 @@ class _ControlFactory(object):
         else:
             #Export html file
             _Action.export(self.output)
-            if callable(fallback): fallback(self._target())
+            if callable(fallback): fallback(target)
 
         #Auto-clear after show?
         #Prevents doubling up if cell executed again
@@ -1564,8 +1581,8 @@ class _ControlFactory(object):
         for idx,obj in enumerate(windows):
             if obj == self._target():
                 viewerid = idx+1
-                from IPython.display import display,HTML
-                display(HTML('<script>_wi[{0}].redisplay({0});</script>'.format(viewerid)))
+                from IPython.display import display,HTML,Javascript
+                display(Javascript('_wi[{0}].redisplay({0});'.format(viewerid)))
 
     def update(self):
         """Update the control values from current viewer data
@@ -1585,5 +1602,4 @@ class _ControlFactory(object):
     def clear(self):
         self._content = []
         self._containers = []
-
 
