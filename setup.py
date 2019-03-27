@@ -9,6 +9,9 @@ import distutils
 import subprocess
 from multiprocessing import cpu_count
 from ctypes.util import find_library
+from setuptools import Extension
+import platform
+import glob
 
 #Current version
 version = "1.3.4"
@@ -33,6 +36,10 @@ To release a new verison:
     >>> python setup.py publish
 
     (If this fails, check ~/.pypirc and try upgrading pip: pip install -U pip setuptools)
+
+TODO:
+    Move to twine for uploads https://pypi.org/project/twine/
+    Build and upload wheels for major platforms
 """
 
 #Run with "tag" arg to create a release tag
@@ -93,75 +100,58 @@ def check_libraries(libraries, headers):
     shutil.rmtree(tmp_dir)
     return ret_val
 
-#Class to do the custom library build with make
-class LVBuild(build):
-    def run(self):
-        # Run original build code
-        build.run(self)
+_debug = False
+defines = [('USE_FONTS', '1'), ('USE_ZLIB', '1')]
+cflags = ['-std=c++0x']
+srcs = ['src/LavaVuPython_wrap.cxx'] + glob.glob('src/*.cpp') + glob.glob('src/Main/*.cpp') + glob.glob('src/jpeg/*.cpp') + glob.glob('src/png/*.cpp') + glob.glob('src/sqlite3/*.c')
+libs = []
+ldflags = []
+inc_dirs = []
+lib_dirs = []
 
-        # Build with make
-        installdir = os.path.join(self.build_lib, 'lavavu')
-        cmd = [
-            'make',
-            'OPATH=' + os.path.abspath(self.build_temp),
-            'PREFIX=' + installdir,
-            'PYTHON=' + sys.executable,
-            'PYINC=-I' + distutils.sysconfig.get_python_inc(),
-            'PYLIB=-L' + distutils.sysconfig.get_python_lib(),
-        ]
+if _debug:
+    defines += [('CONFIG', 'debug')]
+# Optional external libraries - check if installed
+if find_library('png') and check_libraries(['png'], ['png.h']):
+    defines += [('LIBPNG', 1)]
+if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
+    defines += [('TIFF', 1)]
+if (find_library('avcodec') and find_library('avformat')
+    and find_library('avutil') and find_library('swscale')
+    and check_libraries(['avcodec', 'avformat', 'avutil', 'swscale'],
+        ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
+         'libavutil/imgutils.h', 'libswscale/swscale.h'])):
+    defines += [('VIDEO', 1)]
 
-        try:
-            cmd.append('-j%d' % int(0.5*cpu_count()+1))
-        except:
-            pass
+#OS Specific
+P = platform.system()
+if P == 'Linux':
+    #Linux X11 or EGL
+    defines += [('HAVE_X11', '1')]
+    libs += ['GL', 'dl', 'pthread', 'm', 'z', 'X11']
+    #EGL for offscreen OpenGL without X11/GLX
+    #if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
+    #    defines += [('EGL', 1)]
+elif P == 'Darwin':
+    #Mac OS X with Cocoa + CGL
+    defines += [('HAVE_CGL', '1')]
+    srcs += ['src/Main/CocoaViewer.mm']
+    cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
+    cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
+    cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
+    libs += ['c++', 'dl', 'pthread',  'objc', 'm', 'z']
+    ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
+elif P == 'Windows':
+    defines += [('HAVE_SDL', '1')]
 
-        # Optional external libraries
-        if find_library('png') and check_libraries(['png'], ['png.h']):
-            cmd.append('LIBPNG=1')
-        if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
-            cmd.append('TIFF=1')
-        if (find_library('avcodec') and find_library('avformat')
-            and find_library('avutil') and find_library('swscale')
-            and check_libraries(['avcodec', 'avformat', 'avutil', 'swscale'],
-                ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
-                 'libavutil/imgutils.h', 'libswscale/swscale.h'])):
-            cmd.append('VIDEO=1')
-
-        #Disable X11 if not found
-        if not find_library('X11') or not check_libraries(['X11'], ['X11/Xlib.h']):
-            cmd.append('X11=0')
-            #EGL for offscreen OpenGL without X
-            if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
-                cmd.append('EGL=1')
-
-        #Debug build
-        #cmd.append('CONFIG=debug')
-
-        def compile():
-            try:
-                output = subprocess.check_output(cmd, cwd=os.path.dirname(os.path.abspath(__file__)),
-                                                 stderr=subprocess.STDOUT, universal_newlines=True)
-            except subprocess.CalledProcessError as e:
-                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-                print("Build Failed!\n")
-                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-                print("{}\n".format(e.output))
-                print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-                raise e
-
-        self.execute(compile, [], 'Compiling LavaVu')
-
-class LVInstall(install):
-    def run(self):
-        install.run(self)
-
-class LVDevelop(develop):
-    def run(self):
-        develop.run(self)
-
-class LVEggInfo(egg_info):
-    def run(self):
-        egg_info.run(self)
+lv = Extension('_LavaVuPython',
+                define_macros = defines,
+                include_dirs = inc_dirs,
+                libraries = libs,
+                library_dirs = lib_dirs,
+                extra_compile_args = cflags,
+                extra_link_args = ldflags,
+                sources = srcs)
 
 if __name__ == "__main__":
 
@@ -174,11 +164,12 @@ if __name__ == "__main__":
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/OKaluza/LavaVu/wiki for more info',
           packages          = ['lavavu'],
-          install_requires  = ['numpy', 'jupyter-server-proxy'],
+          install_requires  = ['numpy', 'jupyter-server-proxy;python_version>"2.7"'],
           platforms         = ['any'],
           scripts           = ['LV'],
-          package_data      = {'lavavu': ['lavavu/shaders/*.*', 'lavavu/html/*.*', 'lavavu/font.bin', 'lavavu/dict.json']},
+          package_data      = {'lavavu': glob.glob('lavavu/shaders/*.*') + glob.glob('lavavu/html/*.*') + ['lavavu/font.bin', 'lavavu/dict.json']},
           data_files        = [('lavavu', ['lavavu/font.bin', 'lavavu/dict.json'])],
+          include_package_data = True,
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
@@ -198,6 +189,6 @@ if __name__ == "__main__":
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
           ],
-          cmdclass = {'build': LVBuild, 'install': LVInstall, 'develop': LVDevelop, 'egg_info': LVEggInfo},
+          ext_modules = [lv]
           )
 
