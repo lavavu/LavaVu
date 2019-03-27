@@ -2469,7 +2469,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       else
         aview->background.value = 0xff000000;
     }
-    aview->properties.data["background"] = aview->background.toString();
+    session.globals["background"] = aview->background.toString();
     aview->setBackground();
     printMessage("Background colour set");
   }
