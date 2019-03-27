@@ -2593,6 +2593,9 @@ class Viewer(dict):
         else:
             if cmd[0] != '@': cmd = '@' + cmd
             md = self.app.helpCommand(cmd)
+        #Add docs search link
+        if len(cmd):
+            md += "\n[Search for '" + cmd + "' in documentation](https://mivp.github.io/LavaVu-Documentation/search.html?q=" + cmd + ")"
         _markdown(md)
 
     def __call__(self, cmds):
