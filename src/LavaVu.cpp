@@ -53,9 +53,8 @@
 #include "Shaders.h"
 #include "Util.h"
 #include "OpenGLViewer.h"
-#include "Main/SDLViewer.h"
 #include "Main/X11Viewer.h"
-#include "Main/GlutViewer.h"
+#include "Main/GLFWViewer.h"
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 #include "Main/EGLViewer.h"
@@ -98,11 +97,8 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 #if defined HAVE_X11
   if (!viewer) viewer = new X11Viewer();
 #endif
-#if defined HAVE_GLUT
-  if (!viewer) viewer = new GlutViewer();
-#endif
-#if defined HAVE_SDL || defined _WIN32
-  if (!viewer) viewer = new SDLViewer();
+#if defined HAVE_GLFW
+  if (!viewer) viewer = new GLFWViewer();
 #endif
 #if defined HAVE_CGL
   if (!viewer) viewer = new CocoaViewer();

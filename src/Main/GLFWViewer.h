@@ -33,42 +33,41 @@
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
-#if defined HAVE_SDL
+#ifdef HAVE_GLFW
 
-#ifndef SDLViewer__
-#define SDLViewer__
+#ifndef GLFWViewer__
+#define GLFWViewer__
 
 #include "../GraphicsUtil.h"
 #include "../OpenGLViewer.h"
 
-#include <SDL/SDL.h>
+#include <GLFW/glfw3.h>
 
-//Derived from window class
-class SDLViewer : public OpenGLViewer
+//Derived from interactive window class
+class GLFWViewer  : public OpenGLViewer
 {
-  bool resized;
-public:
-  int savewidth;
-  int saveheight;
-  SDL_Surface* screen;
-  SDL_TimerID timer_id;
+  GLFWwindow *window = NULL;
 
-  SDLViewer();
-  ~SDLViewer();
+public:
+  bool redisplay = true;
+
+  GLFWViewer();
+  ~GLFWViewer();
 
   //Function implementations
-  void open(int width, int height);
-  void title(std::string title);
+  void open(int w, int h);
   void setsize(int width, int height);
+  void show();
+  void hide();
+  void title(std::string title);
   void display(bool redraw=true);
   void execute();
   void fullScreen();
   void animate(int msec);
-
-  void createWindow(int width, int height);
+  void get_modifiers(int modifiers);
 };
 
-#endif //SDLViewer__
+#endif //GLFWViewer__
 
-#endif //HAVE_SDL
+#endif //HAVE_GLFW
 

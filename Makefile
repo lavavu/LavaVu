@@ -56,14 +56,10 @@ else
   LIBEXT=so
   LIBBUILD=-shared
   LIBLINK=-Wl,-rpath='$$ORIGIN'
-ifeq ($(GLUT), 1)
-  #GLUT optional
-  LIBS+= -lGL -lglut
-  DEFINES += -DHAVE_GLUT
-else ifeq ($(SDL), 1)
-  #SDL optional
-  LIBS+= -lGL -lSDL
-  DEFINES += -DHAVE_SDL
+ifeq ($(GLFW), 1)
+  #GLFW optional
+  LIBS+= -lGL -lglfw
+  DEFINES += -DHAVE_GLFW
 else ifeq ($(X11), 1)
   #X11 default
   LIBS+= -lGL -lX11
