@@ -6,6 +6,7 @@ These functions can be called from the ControlFactory provided on
 
 - lavavu.Viewer()
 - lavavu.Object()
+- lavavu.Properties()
 
 Some work only on the viewer and some only to objects and some to both.
 Each will provide a control that allows modifying visualisation properties or executing commands interactively
@@ -33,7 +34,7 @@ This will create a control of the default type for for that property if one is d
 >>> pts.control('pointsize')
 """
 
-__all__ = ['Button', 'Checkbox', 'Colour', 'ColourMapList', 'ColourMaps', 'Command', 'Container', 'Control', 'Divider', 'DualRange', 'Entry', 'File', 'Filter', 'Gradient', 'HTML', 'List', 'Number', 'Number2D', 'Number3D', 'ObjectList', 'ObjectSelect', 'Panel', 'Range', 'Range2D', 'Range3D', 'Rotation', 'Tabs', 'TimeStepper', 'Window']
+__all__ = ['Button', 'Checkbox', 'Colour', 'ColourMapList', 'ColourMaps', 'Command', 'Divider', 'DualRange', 'Entry', 'File', 'Filter', 'Gradient', 'List', 'Number', 'Number2D', 'Number3D', 'ObjectList', 'ObjectSelect', 'Panel', 'Range', 'Range2D', 'Range3D', 'Rotation', 'Tabs', 'TimeStepper', 'Window']
 
 import os
 import sys
@@ -43,8 +44,6 @@ import json
 from vutils import is_ipython, is_notebook
 import weakref
 
-#Register of controls and their actions
-actions = []
 #Register of windows (viewer instances)
 windows = []
 
@@ -195,7 +194,7 @@ def _webglboxcode(menu=True, lighttheme=True):
     Returns WebGL base code for the bounding box interactor window
     """
     jslibs = [['gl-matrix-min.js'], ['OK-min.js', 'control.js', 'drawbox.js']]
-    return _webglcode(fragmentShader + vertexShader, ['control.css'], jslibs, menu=menu, lighttheme=lighttheme)
+    return _webglcode(fragmentShader + vertexShader, ['control.css', 'styles.css'], jslibs, menu=menu, lighttheme=lighttheme)
 
 def _getcss(files=["styles.css"]):
     #Load stylesheets to inline tag
@@ -251,72 +250,21 @@ class _Action(object):
     """Base class for an action triggered by a control
 
     Default action is to run a command
-
-    also holds the global action list
     """
-    actions = []
 
     def __init__(self, target, command=None, readproperty=None):
         self.target = target
         self.command = command
         if not hasattr(self, "property"):
             self.property = readproperty
-        _Action.actions.append(self)
         self.lastvalue = 0
         self.index = None
 
     def script(self):
         #Return script action for HTML export
-        if self.command is None: return ""
+        if self.command is None or not len(self.command): return ""
         #Run a command with a value argument
-        return self.command + ' " + value + "'
-
-    @staticmethod
-    def export_actions(uid=0, port=0, proxy=False):
-        #Process actions
-        actionjs = '<script type="text/javascript">\n'
-        if port > 0:
-            actionjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {uid}, {port});\n'.format(uid=uid, port=port)
-        else:
-            actionjs += 'function init(viewerid) {_wi[viewerid] = new WindowInteractor(viewerid, {uid});\n'.format(uid=uid)
-
-        actionjs += '_wi[viewerid].actions = [\n'
-
-        for act in _Action.actions:
-            #Default placeholder action
-            actscript = act.script()
-            if len(actscript) == 0:
-                #No action
-                pass
-            #Add to actions list
-            actionjs += '  function(value) {_wi[viewerid].execute("' + actscript + '");},\n'
-        #Add init and finish
-        actionjs += '  null ];\n}\n</script>\n'
-        return actionjs
-
-    @staticmethod
-    def export(html, filename="control.html", viewerid=0, fullpage=True):
-        #Dump all output to control.html in current directory & htmlpath
-        #Process actions
-        actionjs = _Action.export_actions()
-
-        full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
-        full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
-        full_html += _webglboxcode()
-        full_html += actionjs
-        full_html += '</head>\n<body onload="init({0});">\n'.format(viewerid)
-        full_html += html
-        full_html += "\n</body>\n</html>\n"
-
-        #Write the file, locally and in htmlpath
-        if filename:
-            #This will fail if htmlpath is a non writable location
-            #filename = os.path.join(htmlpath, filename)
-            hfile = open(filename, "w")
-            hfile.write(full_html)
-            hfile.close()
-        else:
-            return full_html
+        return self.command + ' ---VAL---'
 
 class _PropertyAction(_Action):
     """Property change action triggered by a control
@@ -325,8 +273,8 @@ class _PropertyAction(_Action):
     def __init__(self, target, prop, command=None, index=None):
         self.property = prop
         #Default action after property set is redraw, can be set to provided
-        if command is None:
-            command = "redraw"
+        #if command is None:
+        #    command = "redraw"
         self.command = command
         super(_PropertyAction, self).__init__(target, command)
         self.index = index
@@ -335,9 +283,9 @@ class _PropertyAction(_Action):
         #Return script action for HTML export
         #Set a property
         #Check for index (3D prop)
-        propset = self.property + '=" + value + "'
+        propset = self.property + '=---VAL---'
         if self.index is not None:
-            propset = self.property + '[' + str(self.index) + ']=" + value + "'
+            propset = self.property + '[' + str(self.index) + ']=---VAL---'
         # - Globally
         script = ''
         if _isviewer(self.target):
@@ -347,7 +295,7 @@ class _PropertyAction(_Action):
             script = propset
         # - on a properties collection
         elif type(self.target).__name__ == 'Properties':
-            script = '$' + str(id(self.target)) + ' ' + self.property + ' " + value + " '
+            script = '$' + str(id(self.target)) + ' ' + self.property + ' ---VAL--- '
         # - On an object
         else:
             script = '<' + self.target["name"] + '>' + propset
@@ -392,17 +340,18 @@ class _FilterAction(_PropertyAction):
         #Return script action for HTML export
         #Set a filter range
         cmd = "filtermin" if self.property == "minimum" else "filtermax"
-        return 'select ' + self.target["name"] + '; ' + cmd + ' ' + str(self.findex) + ' " + value + "'
+        return 'select ' + self.target["name"] + '; ' + cmd + ' ' + str(self.findex) + ' ---VAL---'
         #propset = "filters=" + json.dumps()
         #script = 'select ' + self.target["name"] + '; ' + propset
 
-class HTML(object):
+class _HTML(object):
     """A class to output HTML controls
     """
-    lastid = 0
+    nextid = 0
 
     #Parent class for container types
-    def __init__(self):
+    def __init__(self, label):
+        self.label = label
         self.uniqueid()
 
     def html(self):
@@ -411,32 +360,64 @@ class HTML(object):
 
     def uniqueid(self):
         #Get a unique control identifier
-        HTML.lastid += 1
-        self.elid = "lvctrl_" + str(HTML.lastid)
-        return self.elid
+        self.id = _HTML.nextid
+        _HTML.nextid += 1
+        self.elid = "lvctrl_" + str(self.id)
 
-class Container(HTML):
+    def labelhtml(self):
+        #Default label
+        html = ""
+        if self.label:
+            html += '<p>' + self.label + ':</p>\n'
+        return html
+
+
+class _Container(_HTML):
     """A container for a set of controls
     """
     #Parent class for container types
-    def __init__(self, viewer):
-        self.viewer = viewer #WEAKREF?
+    def __init__(self, viewer, label=""):
+        self.viewer = viewer
         self._content = []
-        super(Container, self).__init__()
+        self._current = 0
+        super(_Container, self).__init__(label)
 
     def add(self, ctrl):
         self._content.append(ctrl)
+        return ctrl
 
     def controls(self):
         return self.html()
 
+    def __iter__(self):
+        return self
+
+    def __next__(self): # Python 3
+        return self.next()
+
+    def next(self):
+        if self._current > len(self._content)-1:
+            raise StopIteration
+        else:
+            self._current += 1
+            return self._content[self._current-1]
+
     def html(self):
-        html = ''
+        html = self.labelhtml()
+        html += '<div style="padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
         for i in range(len(self._content)):
             html += self._content[i].controls()
+        html += '</div>\n'
         return html
 
-class Window(Container):
+    def scripts(self):
+        #Returns script dictionary
+        d = {}
+        for i in range(len(self._content)):
+            d.update(self._content[i].scripts())
+        return d
+
+class Window(_Container):
     """
     Creates an interaction window with an image of the viewer frame 
     and webgl controller for rotation/translation
@@ -445,15 +426,19 @@ class Window(Container):
     ----------
     align : str
         Set to "left/right" to align viewer window, default is left
+    wrapper : str
+        Set the style of the wrapper div, default is empty string so wrapper is enabled with no custom style
+        Set to None to disable wrapper
     """
-    def __init__(self, viewer, align="left"):
+    def __init__(self, viewer, align="left", wrapper=""):
         super(Window, self).__init__(viewer)
         self.align = align
+        self.wrapper = wrapper
 
-    def html(self, wrapper=True, wrapperstyle=""):
+    def html(self):
         style = 'min-height: 200px; min-width: 200px; position: relative; display: inline-block; '
         style += 'float: ' + self.align + ';'
-        if wrapper:
+        if self.wrapper is not None:
             style += ' margin-right: 10px;'
         html = ""
         html += '<div style="' + style + '">\n'
@@ -468,41 +453,24 @@ class Window(Container):
              <input type="button" value="Reset" onclick="_wi[---VIEWERID---].execute('reset');">
            </div>"""
         html += '</div>\n'
+
         #Display any contained controls
-        if wrapper:
-            html += '<div style="' + wrapperstyle + '" class="lvctrl">\n'
+        if self.wrapper is not None:
+            html += '<div style="' + self.wrapper + '" class="lvctrl">\n'
         html += super(Window, self).html()
-        if wrapper:
+        if self.wrapper is not None:
             html += '</div>\n'
         #html += '<div style="clear: both;">\n'
         return html
 
-class Panel(Container):
+class Panel(Window):
     """Creates a control panel with an interactive viewer window and a set of controls
-    By default the controls will be placed to the left with the viewer aligned to the right
-
-    Parameters
-    ----------
-    showwin : boolean
-        Set to False to exclude the interactive window
+    placed to the left with the viewer aligned to the right
     """
-    def __init__(self, viewer, showwin=True):
-        super(Panel, self).__init__(viewer)
-        self.win = None
-        if showwin:
-            self.win = Window(viewer, align="right")
+    def __init__(self, *args, **kwargs):
+        super(Panel, self).__init__(*args, align="right", wrapper=None, **kwargs)
 
-    def html(self):
-        html = ""
-        if self.win: html = self.win.html(wrapper=False)
-        #Add control wrapper
-        html += '<div style="padding:0px; margin: 0px; position: relative;" class="lvctrl">\n'
-        html += super(Panel, self).html()
-        html += '</div>\n'
-        #if self.win: html += self.win.html(wrapperstyle="float: left; padding:0px; margin: 0px; position: relative;")
-        return html
-
-class Tabs(Container):
+class Tabs(_Container):
     """Creates a group of controls with tabs that can be shown or hidden
 
     Parameters
@@ -552,7 +520,7 @@ class Tabs(Container):
                 #Add header items
                 classes = 'lvbutton lvctrl tab_---ELID---'
                 if t == 0: classes += ' lvseltab'
-                html += '<button class="' + classes + '" onclick="openTab_---ELID---(this, this.innerHTML)">---LABEL---</button>'
+                html += '<a class="' + classes + '" onclick="openTab_---ELID---(this, this.innerHTML)">---LABEL---</a>'
                 html = html.replace('---LABEL---', self.tabs[t])
             html += "</div>\n"
         for t in range(len(self.tabs)):
@@ -568,9 +536,9 @@ class Tabs(Container):
         html = html.replace('---ELID---', self.elid)
         return html
 
-class Control(HTML):
+class _Control(_HTML):
     """
-    Control object
+    _Control object
 
     Parameters
     ----------
@@ -590,29 +558,27 @@ class Control(HTML):
     """
 
     def __init__(self, target, property=None, command=None, value=None, label=None, index=None, readproperty=None):
-        super(Control, self).__init__()
+        super(_Control, self).__init__(label)
         self.label = label
-
-        #Get id and add to register
-        self.id = len(_Action.actions)
 
         #Can either set a property directly or run a command
         self.property = readproperty
         self.target = target
+        self.action = None
         if property:
             #Property set
-            action = _PropertyAction(target, property, command, index)
+            self.action = _PropertyAction(target, property, command, index)
             if label is None:
                 self.label = property.capitalize()
             self.property = property
         elif command:
             #Command only
-            action = _CommandAction(target, command, readproperty)
+            self.action = _CommandAction(target, command, readproperty)
             if label is None:
                 self.label = command.capitalize()
         else:
             #Assume derived class will fill out the action, this is just a placeholder
-            action = _Action(target)
+            self.action = _Action(target)
 
         if not self.label:
             self.label = ""
@@ -644,7 +610,8 @@ class Control(HTML):
                 if command is None:
                     command = cmd
                 else:
-                   command += " ; " + cmd
+                   #Pass the value to command if provided
+                   command += " ---VAL--- ; " + cmd
 
         self.value = value
         self._value = value #Store passed initial value
@@ -661,16 +628,9 @@ class Control(HTML):
     def html(self):
         return self.controls()
 
-    def labelhtml(self):
-        #Default label
-        html = ""
-        if len(self.label):
-            html += '<p>' + self.label + ':</p>\n'
-        return html
-
     def controls(self, type='number', attribs={}, onchange=""):
         #Input control
-        html =  '<input id="---ELID---" class="---ELID---" type="' + type + '"'
+        html =  '<input id="---ELID---_{0}" class="---ELID---" type="{0}"'.format(type)
         #Set custom attribute for property controls
         if not "step" in attribs or attribs["step"] is None:
             attribs["step"] = "any"
@@ -696,18 +656,65 @@ class Control(HTML):
             if _isobject(self.target):
                 html += 'data-target="' + str(self.target["name"]) + '" '
             html += 'data-property="' + self.property + '" '
-            if _Action.actions[self.id].index is not None:
-                html += 'data-index="' + str(_Action.actions[self.id].index) + '" '
+            if self.action.index is not None:
+                html += 'data-index="' + str(self.action.index) + '" '
         return html
 
-class Divider(Control):
+    def scripts(self):
+        #Returns script dictionary
+        return {self.id : self.action.script()}
+
+class _MultiControl(_Control):
+    """
+    _Control object that holds multiple integrated Controls
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(_MultiControl, self).__init__(*args, **kwargs)
+        self._content = []
+        self._current = 0
+
+    def add(self, ctrl):
+        self._content.append(ctrl)
+        return ctrl
+
+    def controls(self):
+        return self.html()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self): # Python 3
+        return self.next()
+
+    def next(self):
+        if self._current > len(self._content)-1:
+            raise StopIteration
+        else:
+            self._current += 1
+            return self._content[self._current-1]
+
+    def html(self):
+        html = self.labelhtml()
+        for i in range(len(self._content)):
+            html += self._content[i].controls()
+        return html
+
+    def scripts(self):
+        #Returns script dictionary
+        d = {}
+        for i in range(len(self._content)):
+            d[self._content[i].id] = self._content[i].action.script()
+        return d
+
+class Divider(_Control):
     """A divider element
     """
 
     def controls(self):
         return '<hr style="clear: both;">\n'
 
-class Number(Control):
+class Number(_Control):
     """A basic numerical input control
     """
     def __init__(self, target=None, property=None, command=None, value=None, label=None, index=None, step=None, readproperty=None):
@@ -720,10 +727,17 @@ class Number(Control):
             #Check for integer type, set default step to 1
             T = prop["type"]
             ctrl = prop["control"]
+            #Whole number step size?
             if "integer" in T:
                 step = 1
             elif len(ctrl) > 1 and len(ctrl[1]) == 3:
                 step = ctrl[1][2]
+            elif "real" in T:
+                r = 1.0
+                #Use given range if any provided
+                if len(ctrl) > 1 and len(ctrl[1]) > 1:
+                    r = ctrl[1][1] - ctrl[1][0]
+                step = r / 100.0
 
         self.step = step
 
@@ -733,55 +747,55 @@ class Number(Control):
         html += super(Number, self).controls('number', attribs)
         return html + '<br>\n'
 
-class Number2D(Control):
+class Number2D(_MultiControl):
     """A set of two numeric controls for adjusting a 2D value
     """
     def __init__(self, target, property, label=None, step=None, *args, **kwargs):
         super(Number2D, self).__init__(target, property, label=label, *args, **kwargs)
         if self._value is None:
             self._value = _getproperty(target, property)
-        self.ctrlX = Number(target=target, property=property, value=self._value[0], step=step, label="", index=0)
-        self.ctrlY = Number(target=target, property=property, value=self._value[1], step=step, label="", index=1)
+        self.ctrlX = self.add(Number(target=target, property=property, value=self._value[0], step=step, label="", index=0))
+        self.ctrlY = self.add(Number(target=target, property=property, value=self._value[1], step=step, label="", index=1))
 
     def controls(self):
         html = self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls()
         return html.replace('<br>', '') + '<br>'
 
-class Number3D(Control):
+class Number3D(_MultiControl):
     """A set of three numeric controls for adjusting a 3D value
     """
     def __init__(self, target, property, label=None, step=None, *args, **kwargs):
         super(Number3D, self).__init__(target, property, label=label, *args, **kwargs)
         if self._value is None:
             self._value = _getproperty(target, property)
-        self.ctrlX = Number(target=target, property=property, value=self._value[0], step=step, label="", index=0)
-        self.ctrlY = Number(target=target, property=property, value=self._value[1], step=step, label="", index=1)
-        self.ctrlZ = Number(target=target, property=property, value=self._value[2], step=step, label="", index=2)
+        self.ctrlX = self.add(Number(target=target, property=property, value=self._value[0], step=step, label="", index=0))
+        self.ctrlY = self.add(Number(target=target, property=property, value=self._value[1], step=step, label="", index=1))
+        self.ctrlZ = self.add(Number(target=target, property=property, value=self._value[2], step=step, label="", index=2))
 
     def controls(self):
         html = self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
         return html.replace('<br>', '') + '<br>'
 
-class Rotation(Control):
+class Rotation(_MultiControl):
     """A set of six buttons for adjusting a 3D rotation
     """
     def __init__(self, target, *args, **kwargs):
         self.label="Rotation"
         super(Rotation, self).__init__(target, *args, **kwargs)
 
-        self.ctrlX0 = Button(target=target, command="rotate x -1", label="-X")
-        self.ctrlX1 = Button(target=target, command="rotate x 1", label="+X")
-        self.ctrlY0 = Button(target=target, command="rotate y -1", label="-Y")
-        self.ctrlY1 = Button(target=target, command="rotate y 1", label="+Y")
-        self.ctrlZ0 = Button(target=target, command="rotate z -1", label="-Z")
-        self.ctrlZ1 = Button(target=target, command="rotate z 1", label="+Z")
+        self.ctrlX0 = self.add(Button(target=target, command="rotate x -1", label="-X"))
+        self.ctrlX1 = self.add(Button(target=target, command="rotate x 1", label="+X"))
+        self.ctrlY0 = self.add(Button(target=target, command="rotate y -1", label="-Y"))
+        self.ctrlY1 = self.add(Button(target=target, command="rotate y 1", label="+Y"))
+        self.ctrlZ0 = self.add(Button(target=target, command="rotate z -1", label="-Z"))
+        self.ctrlZ1 = self.add(Button(target=target, command="rotate z 1", label="+Z"))
 
     def controls(self):
         html = self.labelhtml() + self.ctrlX0.controls() + self.ctrlX1.controls() + self.ctrlY0.controls() + self.ctrlY1.controls() + self.ctrlZ0.controls() + self.ctrlZ1.controls()
         return html.replace('<br>', '') + '<br>'
 
 
-class Checkbox(Control):
+class Checkbox(_Control):
     """A checkbox control for a boolean value
     """
     def labelhtml(self):
@@ -798,7 +812,7 @@ class Checkbox(Control):
     def onchange(self):
         return "; _wi[---VIEWERID---].do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
 
-class Range(Control):
+class Range(_Control):
     """A slider control for a range of values
 
     Parameters
@@ -812,6 +826,7 @@ class Range(Control):
         #Get range & step defaults from prop dict
         _lv = _getviewer(target)
         defrange = [0., 1., 0.]
+        T = None
         if property is not None and property in _lv.properties:
             prop = _lv.properties[property]
             #Check for integer type, set default step to 1
@@ -830,10 +845,12 @@ class Range(Control):
         self.range = range
         self.step = step
         if not step:
-            #Assume a step size of 1 if range max-min > 5 and both are integers
+            #Whole number step size?
             r = range[1] - range[0]
-            if r > 5 and range[0] - int(range[0]) == 0 and range[1] - int(range[1]) == 0:
+            #Has no type from property, or type is not real: Assume a step size of 1 if range max-min > 5 and both are integers
+            if (T is None or not "real" in T) and (r >= 5 and range[0] - int(range[0]) == 0 and range[1] - int(range[1]) == 0):
                 self.step = 1
+            #Range is less than 5 or range values indicate real numbers
             else:
                 self.step = r / 100.0
 
@@ -844,7 +861,7 @@ class Range(Control):
         html += super(Range, self).controls('range', attribs, onchange='this.previousElementSibling.value=this.value; ')
         return html + '<br>\n'
 
-class Button(Control):
+class Button(_Control):
     """A push button control to execute a defined command
     """
     def __init__(self, target, command, label=None):
@@ -865,7 +882,7 @@ class Button(Control):
         html = html.replace('---ELID---', self.elid)
         return html
 
-class Entry(Control):
+class Entry(_Control):
     """A generic input control for string values
     """
     def controls(self):
@@ -876,7 +893,7 @@ class Entry(Control):
         html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
-class Command(Control):
+class Command(_Control):
     """A generic input control for executing command strings
     """
     def __init__(self, *args, **kwargs):
@@ -892,7 +909,7 @@ class Command(Control):
         html = html.replace('---ELID---', self.elid)
         return html.replace('---ID---', str(self.id))
 
-class File(Control):
+class File(_Control):
     """A file picker control
 
     Unfortunately there is no way to get the file path
@@ -935,7 +952,7 @@ class File(Control):
         html = html.replace('---OPTIONS---', self.options)
         return html.replace('---ID---', str(self.id))
 
-class List(Control):
+class List(_Control):
     """A list of predefined input values to set properties or run commands
 
     Parameters
@@ -979,7 +996,7 @@ class List(Control):
         html = html.replace('---ELID---', self.elid)
         return html
 
-class Colour(Control):
+class Colour(_Control):
     """A colour picker for setting colour properties
     """
     def __init__(self, *args, **kwargs):
@@ -1015,7 +1032,7 @@ class Colour(Control):
         html = html.replace('---ATTRIBS---', self.attribs())
         return html.replace('---ID---', str(self.id))
 
-class Gradient(Control):
+class Gradient(_Control):
     """A colourmap editor
     """
     def __init__(self, target, *args, **kwargs):
@@ -1033,10 +1050,10 @@ class Gradient(Control):
     def controls(self):
         html = self.labelhtml()
         html += """
-        <canvas id="---ELID---" ---ATTRIBS--- width="512" height="24" class="palette checkerboard">
+        <canvas id="---ELID---_canvas" ---ATTRIBS--- width="512" height="24" class="palette checkerboard">
         </canvas>
         <script>
-        var el = document.getElementById("---ELID---"); //Get the canvas
+        var el = document.getElementById("---ELID---_canvas"); //Get the canvas
         //Store the maps
         el.colourmaps = ---COLOURMAPS---;
         el.currentmap = ---COLOURMAP---;
@@ -1094,7 +1111,7 @@ class ColourMapList(List):
         #Preceding command with '.' calls via python API, allowing use of matplotlib maps
         super(ColourMapList, self).__init__(target, options=options, command=".colourmap", label="Load Colourmap", *args, **kwargs)
 
-class ColourMaps(List):
+class ColourMaps(_MultiControl):
     """A colourmap list selector, populated by the available colour maps,
     combined with a colourmap editor for the selected colour map
     """
@@ -1113,16 +1130,18 @@ class ColourMaps(List):
                 options[-1].append(True)
                 sel = m
 
+        super(ColourMaps, self).__init__(target, *args, **kwargs)
+        self.list = self.add(List(target, options=options, command="", property="colourmap", label="", *args, **kwargs))
+
         self.gradient = Gradient(target)
         self.gradient.selected = sel #gradient editor needs to know selection index
-        self.gradient.label = "" #Clear label
-
-        super(ColourMaps, self).__init__(target, options=options, command="", property="colourmap", *args, **kwargs)
+        self.gradient.label = self.label
+        self.add(self.gradient) #Add control list
 
     def onchange(self):
         #Find the saved palette entry and load it
         script = """
-        var el = document.getElementById('---PALLID---'); 
+        var el = document.getElementById('---PALLID---_canvas'); 
         var sel = document.getElementById('---ELID---');
         if (sel.selectedIndex > 0) {
           el.selectedIndex = sel.selectedIndex-1;
@@ -1133,9 +1152,9 @@ class ColourMaps(List):
         return script + super(ColourMaps, self).onchange()
 
     def controls(self):
-        html = super(ColourMaps, self).controls() + self.gradient.controls()
+        html = self.list.controls() + self.gradient.controls()
         html = html.replace('---PALLID---', str(self.gradient.elid))
-        return html
+        return html + '<br>'
 
 class TimeStepper(Range):
     """A time step selection range control with up/down buttons
@@ -1169,7 +1188,7 @@ class TimeStepper(Range):
           }
         }
         function nextStep_---ELID---() {
-          el = document.getElementById('---ELID---');
+          el = document.getElementById('---ELID---_number');
           if (el) {
             //Call again on image load - pass callback
             var V = _wi[---VIEWERID---];
@@ -1200,7 +1219,7 @@ class TimeStepper(Range):
         html = html.replace('---ELID---', self.elid)
         return html
 
-class DualRange(Control):
+class DualRange(_MultiControl):
     """A set of two range slider controls for adjusting a minimum and maximum range
 
     Parameters
@@ -1209,15 +1228,13 @@ class DualRange(Control):
         Min/max values for the range
     """
     def __init__(self, target, properties, values=[None,None], label=None, range=(0.,1.), step=None):
+        super(DualRange, self).__init__(target)
         self.label = label
 
-        self.ctrlmin = Range(target=target, property=properties[0], step=step, value=values[0], range=range, label="")
-        self.ctrlmax = Range(target=target, property=properties[1], step=step, value=values[1], range=range, label="")
+        self.ctrlmin = self.add(Range(target=target, property=properties[0], step=step, value=values[0], range=range, label=""))
+        self.ctrlmax = self.add(Range(target=target, property=properties[1], step=step, value=values[1], range=range, label=""))
 
-    def controls(self):
-        return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
-
-class Range2D(Control):
+class Range2D(_MultiControl):
     """A set of two range slider controls for adjusting a 2D value
 
     Parameters
@@ -1231,13 +1248,10 @@ class Range2D(Control):
         if self._value is None:
             self._value = _getproperty(target, property)
 
-        self.ctrlX = Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0)
-        self.ctrlY = Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1)
+        self.ctrlX = self.add(Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0))
+        self.ctrlY = self.add(Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1))
 
-    def controls(self):
-        return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls()
-
-class Range3D(Control):
+class Range3D(_MultiControl):
     """A set of three range slider controls for adjusting a 3D value
 
     Parameters
@@ -1251,14 +1265,11 @@ class Range3D(Control):
         if self._value is None:
             self._value = _getproperty(target, property)
 
-        self.ctrlX = Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0)
-        self.ctrlY = Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1)
-        self.ctrlZ = Range(target=target, property=property, step=step, value=self._value[2], range=range, label="", index=2)
+        self.ctrlX = self.add(Range(target=target, property=property, step=step, value=self._value[0], range=range, label="", index=0))
+        self.ctrlY = self.add(Range(target=target, property=property, step=step, value=self._value[1], range=range, label="", index=1))
+        self.ctrlZ = self.add(Range(target=target, property=property, step=step, value=self._value[2], range=range, label="", index=2))
 
-    def controls(self):
-        return self.labelhtml() + self.ctrlX.controls() + self.ctrlY.controls() + self.ctrlZ.controls()
-
-class Filter(Control):
+class Filter(DualRange):
     """A set of two range slider controls for adjusting a minimum and maximum filter range
 
     Parameters
@@ -1275,7 +1286,7 @@ class Filter(Control):
 
         #Default label - data set name
         if label is None:
-            self.label = self.filter['by'].capitalize()
+            label = self.filter['by'].capitalize()
 
         #Get the default range limits from the matching data source
         self.data = target["data"][self.filter['by']]
@@ -1286,32 +1297,23 @@ class Filter(Control):
             else:
                 range = (self.data["minimum"], self.data["maximum"])
 
-        self.ctrlmin = Range(target, step=step, range=range, value=self.filter["minimum"])
-        self.ctrlmax = Range(target, step=step, range=range, value=self.filter["maximum"])
+        #Setup DualRange using filter min/max
+        super(Filter, self).__init__(_getviewer(target), properties=[None, None], values=[self.filter["minimum"], self.filter["maximum"]], label=label, range=range)
 
         #Replace actions on the controls
-        _Action.actions[self.ctrlmin.id] = _FilterAction(target, filteridx, "minimum")
-        _Action.actions[self.ctrlmax.id] = _FilterAction(target, filteridx, "maximum")
+        self.ctrlmin.action = _FilterAction(target, filteridx, "minimum")
+        self.ctrlmax.action = _FilterAction(target, filteridx, "maximum")
 
-    def controls(self):
-        return self.labelhtml() + self.ctrlmin.controls() + self.ctrlmax.controls()
-
-class ObjectList(Control):
+class ObjectList(_MultiControl):
     """A set of checkbox controls for controlling visibility of all visualisation objects
     """
     def __init__(self, viewer, *args, **kwargs):
-        super(ObjectList, self).__init__(target=viewer, label="Objects", *args, **kwargs)
-        self.objctrls = []
+        super(ObjectList, self).__init__(viewer, label="Objects", *args, **kwargs)
         for obj in viewer.objects.list:
-            self.objctrls.append(Checkbox(obj, "visible", label=obj["name"])) 
+            self.add(Checkbox(obj, "visible", label=obj["name"])) 
 
-    def controls(self):
-        html = self.labelhtml()
-        for ctrl in self.objctrls:
-            html += ctrl.controls()
-        return html
-
-class ObjectSelect(Container):
+#TODO: broken
+class ObjectSelect(_Container):
     """A list selector of all visualisation objects that can be used to
     choose the target of a set of controls
 
@@ -1350,20 +1352,20 @@ class ObjectSelect(Container):
 
     def __contains__(self, key):
         #print "CONTAINS",key
-        obj = _Action.actions[self._list.id].lastvalue
+        obj = self._list.action.lastvalue
         #print "OBJECT == ",obj,(key in self.parent.objects.list[obj-1])
         return obj > 0 and key in self.parent.objects.list[obj-1]
 
     def __getitem__(self, key):
         #print "GETITEM",key
-        obj = _Action.actions[self._list.id].lastvalue
+        obj = self._list.action.lastvalue
         if obj > 0:
             #Passthrough: Get from selected object
             return self.parent.objects.list[obj-1][key]
         return None
 
     def __setitem__(self, key, value):
-        obj = _Action.actions[self._list.id].lastvalue
+        obj = self._list.action.lastvalue
         #print "SETITEM",key,value
         if obj > 0:
             #Passtrough: Set on selected object
@@ -1374,7 +1376,7 @@ class ObjectSelect(Container):
         #__getattr__ called if no attrib/method found
         def any_method(*args, **kwargs):
             #If member function exists on target, call it
-            obj = _Action.actions[self._list.id].lastvalue
+            obj = self._list.action.lastvalue
             if obj > 0:
                 method = getattr(self.parent.objects.list[obj-1], key, None)
                 if method and callable(method):
@@ -1408,7 +1410,7 @@ class _ControlFactory(object):
         def all_subclasses(cls):
             return cls.__subclasses__() + [g for s in cls.__subclasses__() for g in all_subclasses(s)]
 
-        #Control contructor shortcut methods
+        #_Control contructor shortcut methods
         #(allows constructing controls directly from the factory object)
         #Use a closure to define a new method to call constructor and add to controls
         def addmethod(constr):
@@ -1419,14 +1421,14 @@ class _ControlFactory(object):
                 return newctrl
             return method
 
-        self._control_types = all_subclasses(Control)
-        self._container_types = all_subclasses(Container)
+        self._control_types = all_subclasses(_Control)
+        self._container_types = all_subclasses(_Container)
         for constr in self._control_types + self._container_types:
             key = constr.__name__
             method = addmethod(constr)
-            #Set docstring (+ Control docs)
+            #Set docstring (+ _Control docs)
             if constr in self._control_types:
-                method.__doc__ = constr.__doc__ + Control.__doc__
+                method.__doc__ = constr.__doc__ + _Control.__doc__
             else:
                 method.__doc__ = constr.__doc__
             self.__setattr__(key, method)
@@ -1470,26 +1472,31 @@ class _ControlFactory(object):
         """
         Add a control
         """
-        if type(ctrl) in self._container_types:
-            #Save new container, further controls will be added to it
-            self._containers.append(ctrl)
-        elif len(self._containers):
-            #Add to existing container
-            self._containers[-1].add(ctrl)
-        else:
-            #Add to global list
-            self._content.append(ctrl)
-
-        #Add to viewer instance list too, unless we are one
+        #Just add to the parent lists if not a viewer
         if not _isviewer(self._target()):
             self._target().parent.control.add(ctrl)
+        else:
+            if type(ctrl) in self._container_types:
+                #New container, further controls will be added to it
+                self._containers.append(ctrl)
+            else:
+                #Normal control: add to active container
+                self._containers[-1].add(ctrl)
 
-    def show(self, fallback=None):
+        return ctrl
+
+    def show(self, filename=None, fallback=None):
         """
         Displays all added controls including viewer if any
 
-        fallback: function
-            A function which is called in place of the viewer display when run outside IPython
+        Parameters
+        ----------
+        filename : str
+            Filename to write output HTML
+            If in a notebook this is not necessary as content is displayed inline
+            If not provided and run outside IPython, defaults to "control.html"
+        fallback : function
+            A function which is called in place of the viewer display method when run outside IPython
         """
         #Show all controls in container
         target = self._target()
@@ -1499,45 +1506,29 @@ class _ControlFactory(object):
         if _isviewer(target):
             #Append the current viewer ref
             windows.append(target)
+        else:
+            target.parent.control.show()
+            return
 
         viewerid = len(windows)
 
-        #Generate the HTML
+        #Generate the HTML and associated action JS
         html = "<form novalidate>"
         chtml = ""
-        for c in self._content:
-            chtml += c.html()
-
-        #Two ways to display controls in sub containers, call show() directly
-        # and call show() on parent viewer, in each case we need to clear from
-        # the alternate lists so they won't be displayed twice
-        if _isviewer(target):
-            #Iterate Object and Property lists and clear them when viewer.control.show() is called
-            for o in target.objects:
-                target.objects[o].control.clear()
-            for o in target._collections:
-                target._collections[o]().control.clear()
-        else:
-            #Object/Property.control.show() called...
-            # Clear from parent viewer list as already displayed
-            _lv = _getviewer(target)
-            for c in self._content:
-               _lv.control._content.remove(c)
-
-        if len(chtml):
-            html += '<div style="" class="lvctrl">\n' + chtml + '</div>\n'
-        for c in self._containers:
-            html += c.html()
+        actions = {}
+        for con in self._containers:
+            html += con.html()
+            actions.update(con.scripts())
         html += "</form>"
+        #print('\n'.join([str(a)+":"+actions[a] for a in actions]))
 
         #Set viewer id
         html = html.replace('---VIEWERID---', str(viewerid))
         self.output += html
 
         #Display HTML inline or export
-        if is_notebook():
-            _lv = _getviewer(target)
-            if not _lv.server:
+        if is_notebook() and filename is None:
+            if not target.server:
                 raise(Exception("LavaVu HTTP Server must be active for interactive controls, set port= parameter to > 0"))
             """
             HTTP server mode interaction, rendering in separate render thread:
@@ -1555,21 +1546,53 @@ class _ControlFactory(object):
             html += "<!-- CREATION TIMESTAMP {0} -->".format(timestamp)
 
             #Pass port and object id from server
-            actionjs = _Action.export_actions(id(_lv), _lv.server.port)
+            actionjs = self.export_actions(actions, id(target), target.server.port)
             #Output the controls and start interactor
             html += "<script>init({0});</script>".format(viewerid)
             display(HTML(actionjs + html))
         else:
             #Export html file
-            _Action.export(self.output)
-            if callable(fallback): fallback(target)
+            #Dump all output to control.html in current directory & htmlpath
+            full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
+            full_html += _webglboxcode()
+            full_html += self.export_actions(actions) #Process actions
+            full_html += '</head>\n<body onload="init({0});">\n'.format(viewerid)
+            full_html += html
+            full_html += "\n</body>\n</html>\n"
 
-        #Auto-clear after show?
+            #Write the file, locally and in htmlpath
+            if filename is None:
+                filename = "control.html"
+            hfile = open(filename, "w")
+            hfile.write(full_html)
+            hfile.close()
+
+            if callable(fallback):
+                fallback(target)
+
+        #Auto-clear after show
         #Prevents doubling up if cell executed again
         self.clear()
 
-        #Pause to let everything catch up
-        #time.sleep(.5)
+    def export_actions(self, actions, uid=0, port=0, proxy=False):
+        #Process actions
+        topjs = '<script type="text/javascript">\n'
+        if port > 0:
+            topjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {uid}, {port});\n'.format(uid=uid, port=port)
+        else:
+            topjs += 'function init(viewerid) {{_wi[viewerid] = new WindowInteractor(viewerid, {uid});\n'.format(uid=uid)
+
+        topjs += '_wi[viewerid].actions = {\n'
+
+        actionjs = ''
+        for act in actions:
+            #Add to action functions to list, each takes the value of the control when called
+            if len(actionjs):
+                actionjs += ',\n'
+            actionjs += '  "' + str(act) + '" : "' + actions[act] + '"'; 
+
+        #Add init and finish
+        return topjs + actionjs + '};\n}\n</script>\n'
 
     def redisplay(self):
         """Update the active viewer image if any
@@ -1600,6 +1623,6 @@ class _ControlFactory(object):
             display(HTML('<script>_wi[{0}].execute(" ");</script>'.format(viewerid)))
         
     def clear(self):
-        self._content = []
-        self._containers = []
+        #Initialise with a default control wrapper
+        self._containers = [_Container(self)]
 

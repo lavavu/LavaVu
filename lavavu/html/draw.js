@@ -225,7 +225,7 @@ function canvasMouseMove(event, mouse) {
   //if (server) serverMouseMove(event, mouse); //Pass to server handler
 
   //GUI elements to show on mouseover
-  if (mouse.element) {
+  if (mouse.element && mouse.element.viewer) {
     var gui = mouse.element.viewer.gui;
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
@@ -234,8 +234,10 @@ function canvasMouseMove(event, mouse) {
       if (!gui && mouse.element.imgtarget)
         mouse.element.imgtarget.nextElementSibling.style.display = "block";
 
-      if (gui)
+      if (gui) {
+        if (mouse.element.imgtarget) mouse.element.imgtarget.nextElementSibling.style.display = "none";
         gui.domElement.style.display = "block";
+      }
 
       if (hideTimer)
         clearTimeout(hideTimer);

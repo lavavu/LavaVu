@@ -59,7 +59,7 @@ var hideBoxTimer;
 
 function canvasBoxMouseMove(event, mouse) {
   //GUI elements to show on mouseover
-  if (mouse.element) {
+  if (mouse.element && mouse.element.viewer) {
     var gui = mouse.element.viewer.gui;
     var rect = mouse.element.getBoundingClientRect();
     x = event.clientX-rect.left;
@@ -67,8 +67,11 @@ function canvasBoxMouseMove(event, mouse) {
     if (x >= 0 && y >= 0 && x < rect.width && y < rect.height) {
       if (!gui && mouse.element.imgtarget)
         mouse.element.imgtarget.nextElementSibling.style.display = "block";
-      if (gui)
+
+      if (gui) {
+        if (mouse.element.imgtarget) mouse.element.imgtarget.nextElementSibling.style.display = "none";
         gui.domElement.style.display = "block";
+      }
 
       if (hideBoxTimer) 
         clearTimeout(hideBoxTimer);

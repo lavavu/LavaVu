@@ -160,15 +160,12 @@ WindowInteractor.prototype.execute = function(cmd, callback) {
   }
 }
 
-WindowInteractor.prototype.set_prop = function(obj, prop, val) {
-  this.execute("select " + obj + "; " + prop + "=" + val);
-  this.get_image();
-}
-
-WindowInteractor.prototype.do_action = function(id, val) {
-  //HTML control actions via http
-  this.actions[id](val);
-
+WindowInteractor.prototype.do_action = function(id, val, el) {
+  //HTML control actions via http, replace value first
+  var script = this.actions[id];
+  //console.log(id + " : " + val);
+  script = script.replace(/---VAL---/g, val);
+  this.execute(script);
   //Reload state - this happens in action execute anyway, so not needed?
   //this.get_state();
 }

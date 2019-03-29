@@ -1,7 +1,8 @@
 html, body, table { 
-  padding: 0; margin: 0;
+  padding: 0; margin: 5;
   border: none; 
   font-size: 9pt;
+  font-family: sans-serif;
 }
 
 input, select { 
@@ -33,20 +34,14 @@ canvas {
   border: none; 
 }
 
-.palette {
+/*.palette {
   margin: 3px;
   border:1px solid #000;
   border-radius: 4px;
 }
+*/
 
 .checkerboard {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4jWP4TwAcOHAAL2YYNWBYGEBIASEwasCwMAAALvidroqDalkAAAAASUVORK5CYII=");}
-
-/* Background colour */
-#backgroundBG { float: left; margin: 0px 2px 0px 0px; width: 24px; height: 24px;}
-#backgroundCUR { float: left; width: 24px; height: 24px;}
-/* Colour select */
-.colourbg {display: inline-block; margin:5px 0px; width: 100px; height: 20px; border: solid 1px; border-radius: 4px;}
-.colour {display: inline-block; width: 100%; height: 100%; border-radius: 4px; margin: 0px; padding: 0px; border: none;}
 
 /* Popup div */
 .popup {
