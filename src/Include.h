@@ -111,8 +111,7 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define mkdir(dir, mode) _mkdir(dir)
 #define rmdir(dir) _rmdir(dir)
 
-#GL extensions
-//#include <SDL/SDL_opengl.h>
+//GL extensions
 #include <glext.h>
 
 //Define pointers to required gl 2.0 functions
