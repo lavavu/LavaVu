@@ -35,10 +35,14 @@ build_script:
   - python setup.py install
   - python setup.py bdist_wheel
 
+#Looks like graphical testing is out...
+#https://help.appveyor.com/discussions/problems/6946-opengl
 test_script:
-  - git clone --depth 1 https://github.com/mivp/LavaVuTesting
-  - cd LavaVuTesting
-  - python runall.py
+  #Just run the doctests
+  - python lavavu/lavavu.py
+#  - git clone --depth 1 https://github.com/mivp/LavaVuTesting
+#  - cd LavaVuTesting
+#  - python runall.py
 
 after_test:
   # This step builds your wheels.
