@@ -73,8 +73,7 @@ std::string GetBinaryPath(const char* argv0, const char* progname)
 #ifdef _WIN32
   TCHAR dest[MAX_PATH];
   DWORD length = GetModuleFileName(NULL, dest, MAX_PATH);
-  std::wstring ws(&dest[0]);
-  xpath.parse(std::string(ws.begin(), ws.end()));
+  xpath.parse(std::string(dest));
   bpath = xpath.path;
 #else
   //Get from /proc on Linux
