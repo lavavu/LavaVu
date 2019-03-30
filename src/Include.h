@@ -111,6 +111,7 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define mkdir(dir, mode) _mkdir(dir)
 #define rmdir(dir) _rmdir(dir)
 
+#define NOMINMAX
 #include <windows.h>
 #include <GL/gl.h>
 #include <glext.h>
