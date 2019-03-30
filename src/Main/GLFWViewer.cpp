@@ -219,7 +219,8 @@ void GLFWViewer::open(int w, int h)
   if (!window)
   {
     glfwTerminate();
-    abort_program("Window creation failed");
+    //abort_program("Window creation failed");
+    return;
   }
 
   glfwMakeContextCurrent(window);
