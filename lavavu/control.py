@@ -397,6 +397,7 @@ class _Container(_HTML):
 
     def next(self):
         if self._current > len(self._content)-1:
+            self._current = 0
             raise StopIteration
         else:
             self._current += 1
@@ -689,6 +690,7 @@ class _MultiControl(_Control):
 
     def next(self):
         if self._current > len(self._content)-1:
+            self._current = 0
             raise StopIteration
         else:
             self._current += 1
