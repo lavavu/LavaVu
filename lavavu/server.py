@@ -265,9 +265,9 @@ def serve(viewer, port=None, ipv6=False, retries=100):
     s.start()
     return s
 
-#Ignore SIGPIPE altogether
-from signal import signal, SIGPIPE, SIG_IGN
-signal(SIGPIPE, SIG_IGN)
+#Ignore SIGPIPE altogether (does not work on windows)
+#from signal import signal, SIGPIPE, SIG_IGN
+#signal(SIGPIPE, SIG_IGN)
 
 """
 Main entry point - run server and open browser interface

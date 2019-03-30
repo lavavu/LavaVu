@@ -1,5 +1,5 @@
-//Global includes file for gLucifer Viewer
-//
+//Global includes file for LavaVu
+
 #ifndef Include__
 #define Include__
 
@@ -53,9 +53,6 @@
 //Utils
 #include "jpeg/jpge.h"
 #include "jpeg/jpgd.h"
-#if not defined HAVE_LIBPNG
-#include "png/lodepng.h"
-#endif
 #include "json.hpp"
 
 //Preserves order of json keys
@@ -69,7 +66,11 @@ using fifo_map = nlohmann::fifo_map<K, V, nlohmann::fifo_map_compare<K>, A>;
 using json = nlohmann::json;
 using json_fifo = nlohmann::basic_json<fifo_map>;
 
+typedef void* (*getProcAddressFN)(const char* procName);
+
 #ifndef _WIN32
+//POSIX
+extern getProcAddressFN GetProcAddress;
 #include <sys/poll.h>
 #include <unistd.h>
 
@@ -90,49 +91,33 @@ using json_fifo = nlohmann::basic_json<fifo_map>;
 #include <GL/gl.h>
 #endif
 
-#else
+#else //_WIN32
 
-/* WINDOWS */
+// WINDOWS
 #define GL_R32F 0x822E
 #define GL_COMPRESSED_RED 0x8225
 
+#ifndef HUGE_VALF
 static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define HUGE_VALF _X_huge_valf
+#endif
 #define snprintf sprintf_s
 #include <conio.h>
 #include <direct.h>
 #define HAVE_STRUCT_TIMESPEC
 #include "windows/inc/pthread.h"
-#include "windows/inc/zlib.h"
+//#include "windows/inc/zlib.h"
 #define PAUSE(msecs) Sleep(msecs);
 #define mkdir(dir, mode) _mkdir(dir)
 #define rmdir(dir) _rmdir(dir)
-//Include the libraries -- */
-#pragma comment(lib, "sqlite3.lib")
-#pragma comment(lib, "SDL.lib")
-#pragma comment(lib, "SDLmain.lib")
-#pragma comment(lib, "OPENGL32.LIB")
-#pragma comment(lib, "glu32.lib")
-#pragma comment(lib, "libpng.lib")
-#pragma comment(lib, "zlib.lib")
-#pragma comment(lib, "wsock32.lib")
-#pragma comment(lib, "pthreadVCE2.lib")
 
-
-//#include "windows/inc/SDL.h"
-#include <SDL/SDL_opengl.h>
-
-#endif
+#GL extensions
+//#include <SDL/SDL_opengl.h>
+#include <glext.h>
 
 //Define pointers to required gl 2.0 functions
-#if defined _WIN32
 #define EXTENSION_POINTERS
-#endif
-
-typedef void* (*getProcAddressFN)(const char* procName);
-#if not defined _WIN32
-extern getProcAddressFN GetProcAddress;
-#endif
+#endif //_WIN32
 
 #if defined HAVE_EGL and not defined HAVE_X11
 //Using libOpenGL instead of libGL, no old functions

@@ -40,6 +40,9 @@ To release a new verison:
 TODO:
     Move to twine for uploads https://pypi.org/project/twine/
     Build and upload wheels for major platforms
+    Review possible dependencies to support image/video libraries
+    - imageio or pillow for libpng, libtiff
+    - ffmpeg-python or opencv-python for libavcodec
 """
 
 #Run with "tag" arg to create a release tag
@@ -52,6 +55,23 @@ if sys.argv[-1] == 'tag':
 if sys.argv[-1] == 'publish':
     os.system("python setup.py sdist upload")
     sys.exit()
+
+def write_version():
+    """
+    Writes version info to version.cpp
+    """
+    f = open('src/version.cpp', 'a+')
+    content = f.read()
+
+    if not version in content:
+        f.close()
+        f = open('src/version.cpp', 'w')
+        print("Writing new version: " + version)
+        f.write('#include "version.h"\nconst std::string version = "%s";\n' % version)
+    else:
+        print("Version matches: " + version)
+
+    f.close()
 
 #From https://stackoverflow.com/a/28949827/866759
 def check_libraries(libraries, headers):
@@ -100,60 +120,92 @@ def check_libraries(libraries, headers):
     shutil.rmtree(tmp_dir)
     return ret_val
 
-_debug = False
-defines = [('USE_FONTS', '1'), ('USE_ZLIB', '1')]
-cflags = ['-std=c++0x']
-srcs = ['src/LavaVuPython_wrap.cxx'] + glob.glob('src/*.cpp') + glob.glob('src/Main/*.cpp') + glob.glob('src/jpeg/*.cpp') + glob.glob('src/png/*.cpp') + glob.glob('src/sqlite3/*.c')
-libs = []
-ldflags = []
-inc_dirs = []
-lib_dirs = []
-
-if _debug:
-    defines += [('CONFIG', 'debug')]
-# Optional external libraries - check if installed
-if find_library('png') and check_libraries(['png'], ['png.h']):
-    defines += [('LIBPNG', 1)]
-if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
-    defines += [('TIFF', 1)]
-if (find_library('avcodec') and find_library('avformat')
-    and find_library('avutil') and find_library('swscale')
-    and check_libraries(['avcodec', 'avformat', 'avutil', 'swscale'],
-        ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
-         'libavutil/imgutils.h', 'libswscale/swscale.h'])):
-    defines += [('VIDEO', 1)]
-
-#OS Specific
-P = platform.system()
-if P == 'Linux':
-    #Linux X11 or EGL
-    defines += [('HAVE_X11', '1')]
-    libs += ['GL', 'dl', 'pthread', 'm', 'z', 'X11']
-    #EGL for offscreen OpenGL without X11/GLX
-    #if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
-    #    defines += [('EGL', 1)]
-elif P == 'Darwin':
-    #Mac OS X with Cocoa + CGL
-    defines += [('HAVE_CGL', '1')]
-    srcs += ['src/Main/CocoaViewer.mm']
-    cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
-    cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
-    cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
-    libs += ['c++', 'dl', 'pthread',  'objc', 'm', 'z']
-    ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
-elif P == 'Windows':
-    defines += [('HAVE_SDL', '1')]
-
-lv = Extension('_LavaVuPython',
-                define_macros = defines,
-                include_dirs = inc_dirs,
-                libraries = libs,
-                library_dirs = lib_dirs,
-                extra_compile_args = cflags,
-                extra_link_args = ldflags,
-                sources = srcs)
-
 if __name__ == "__main__":
+    #Update version.cpp
+    write_version()
+
+    _debug = False
+    srcs = ['src/LavaVuPython_wrap.cxx']
+    srcs += glob.glob('src/*.cpp')
+    srcs += glob.glob('src/Main/*.cpp')
+    srcs += glob.glob('src/jpeg/*.cpp')
+    srcs += glob.glob('src/png/*.cpp')
+    srcs += glob.glob('src/sqlite3/*.c')
+    defines = [('USE_FONTS', '1')]
+    cflags = []
+    libs = []
+    ldflags = []
+    inc_dirs = []
+    import numpy
+    inc_dirs += [numpy.get_include()]
+    lib_dirs = []
+    install = [] #Extra files to install in package root
+
+    if _debug:
+        defines += [('CONFIG', 'debug')]
+
+    #OS Specific
+    P = platform.system()
+    if P == 'Windows':
+        #Windows - includes all dependencies, (TODO: ffmpeg)
+        srcs += ['src/png/lodepng.cpp']
+        srcs += ['src/miniz/miniz.c']
+        defines += [('HAVE_GLFW', '1')]
+        #defines += [('HAVE_LIBPNG', 1)]
+        inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
+        #32 or 64 bit python interpreter?
+        if sys.maxsize > 2**32
+            LIBS = 'lib64'
+        else:
+            LIBS = 'lib32'
+        lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
+        ldflags += ['/LIBPATH:' + os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
+        libs += ['opengl32', 'pthreadVC2', 'glfw3dll']
+        install += [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll')]
+        install += [os.path.join('src', 'windows', LIBS, 'glfw3.dll')]
+    else:
+        #POSIX only - find external dependencies
+        cflags += ['-std=c++0x']
+        defines += [('USE_ZLIB', '1')]
+        # Optional external libraries - check if installed
+        if find_library('png') and check_libraries(['png'], ['png.h']):
+            defines += [('HAVE_LIBPNG', 1)]
+        else:
+            srcs += ['src/png/loadpng.cpp']
+        if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
+            defines += [('HAVE_LIBTIFF', 1)]
+        if (find_library('avcodec') and find_library('avformat')
+            and find_library('avutil') and find_library('swscale')
+            and check_libraries(['avcodec', 'avformat', 'avutil', 'swscale'],
+                ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
+                 'libavutil/imgutils.h', 'libswscale/swscale.h'])):
+            defines += [('HAVE_LIBAVCODEC', 1)]
+
+        if P == 'Linux':
+            #Linux X11 or EGL
+            defines += [('HAVE_X11', '1')]
+            libs += ['GL', 'dl', 'pthread', 'm', 'z', 'X11']
+            #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
+            #if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
+            #    defines += [('EGL', 1)]
+        elif P == 'Darwin':
+            #Mac OS X with Cocoa + CGL
+            srcs += ['src/Main/CocoaViewer.mm']
+            defines += [('HAVE_CGL', '1')]
+            cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
+            cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
+            cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
+            libs += ['c++', 'dl', 'pthread',  'objc', 'm', 'z']
+            ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
+
+    lv = Extension('_LavaVuPython',
+                    define_macros = defines,
+                    include_dirs = inc_dirs,
+                    libraries = libs,
+                    library_dirs = lib_dirs,
+                    extra_compile_args = cflags,
+                    extra_link_args = ldflags,
+                    sources = srcs)
 
     setup(name = 'lavavu',
           author            = "Owen Kaluza",
@@ -168,26 +220,31 @@ if __name__ == "__main__":
           platforms         = ['any'],
           scripts           = ['LV'],
           package_data      = {'lavavu': glob.glob('lavavu/shaders/*.*') + glob.glob('lavavu/html/*.*') + ['lavavu/font.bin', 'lavavu/dict.json']},
-          data_files        = [('lavavu', ['lavavu/font.bin', 'lavavu/dict.json'])],
+          data_files        = [('lavavu', ['lavavu/font.bin', 'lavavu/dict.json']), ('', install)],
           include_package_data = True,
           classifiers = [
             'Intended Audience :: Developers',
             'Intended Audience :: Science/Research',
             'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
-            'Operating System :: Unix',
             'Operating System :: POSIX :: Linux',
             'Operating System :: MacOS',
+            'Operating System :: Microsoft :: Windows',
             'Environment :: X11 Applications',
             'Environment :: MacOS X :: Cocoa',
+            'Environment :: Win32 (MS Windows)',
             'Programming Language :: C++',
             'Topic :: Multimedia :: Graphics :: 3D Rendering',
             'Topic :: Scientific/Engineering :: Visualization',
             'Development Status :: 4 - Beta',
+            #'Development Status :: 5 - Production/Stable',
+            'Programming Language :: C++',
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Framework :: Jupyter',
+            'Framework :: IPython',
           ],
           ext_modules = [lv]
           )

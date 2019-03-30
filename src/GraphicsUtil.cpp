@@ -32,9 +32,11 @@
 *%  http://www.underworldproject.org/aboutus.html
 **
 **~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
-#if defined HAVE_LIBPNG or defined _WIN32
+#if defined HAVE_LIBPNG
 #include <png.h>
 #include <zlib.h>
+#else
+#include "png/lodepng.h"
 #endif
 
 #include "GraphicsUtil.h"
