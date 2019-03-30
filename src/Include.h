@@ -114,6 +114,8 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define NOMINMAX
 #include <windows.h>
 #include <GL/gl.h>
+//If we enable this can we remove GetProcAddress on windows?
+//#define GL_GLEXT_PROTOTYPES
 #include <glext.h>
 
 //Define pointers to required gl 2.0 functions
