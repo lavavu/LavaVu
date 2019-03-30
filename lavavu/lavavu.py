@@ -330,14 +330,16 @@ class Properties(dict):
     Create a property set, load some test data
 
     >>> import lavavu
-    >>> props = lavavu.Properties(floatprop=1.0)
+    >>> lv = lavavu.Viewer()
+    >>> props = lv.Properties(floatprop=1.0)
     >>> props["boolprop"] = True
     >>> print(props)
+    {'floatprop': 1.0, 'boolprop': True}
 
     Now create some controls to manipulate them
 
-    >>> props.control.Range('floatprop', range=(0,1))
-    >>> props.control.Checkbox('boolprop')
+    >>> f = props.control.Range('floatprop', range=(0,1))
+    >>> b = props.control.Checkbox('boolprop')
 
     """
     def __init__(self, parent, callback=None, **kwargs):
@@ -378,6 +380,7 @@ class Object(dict):
     >>> lv = lavavu.Viewer()
     >>> lv.test()
     >>> print(lv.objects)
+    dict_keys(['particles', 'particles_colourbar', 'line-segments', 'Z-cross-section', 'Y-cross-section', 'X-cross-section'])
 
     Object properties can be passed in when created or set by using as a dictionary:
 
@@ -387,7 +390,7 @@ class Object(dict):
     A list of available properties can be found here: https://mivp.github.io/LavaVu-Documentation/Property-Reference
     or by using the online help:
 
-    >>> obj.help('opacity')
+    >>> obj.help('opacity') # doctest: +SKIP
 
     """
     def __init__(self, parent, *args, **kwargs):
@@ -805,8 +808,12 @@ class Object(dict):
 
         Example
         -------
+        >>> import lavavu
+        >>> lv = lavavu.Viewer()
+        >>> obj = lv.points(vertices=[[0,1], [1,0]])
         >>> for el in obj.data:
-        >>>     print(el)
+        ...     print(el)
+        GeomData("points") ==> {'vertices': 6}
         """
         return Geometry(self)
 
@@ -2007,13 +2014,15 @@ class Viewer(dict):
     >>> lv = lavavu.Viewer(background="white")
 
     Objects can be added by loading files:
+    #>>> lavavu.download(source + 'Mandible.obj') # doctest: +ELLIPSIS
 
-    >>> obj = lv.file('model.obj')
+    >>> import lavavu
+    >>> obj = lv.file('model.obj') # doctest: +SKIP
 
     Or creating empty objects and loading data:
 
     >>> obj = lv.points('mypoints')
-    >>> obj.vertices([0,0,0], [1,1,1])
+    >>> obj.vertices([[0,0,0], [1,1,1]])
 
     Viewer commands can be called as methods on the viewer object:
 
@@ -2030,8 +2039,9 @@ class Viewer(dict):
 
     or by using the online help:
 
-    >>> lv.help('rotate')
-    >>> lv.help('opacity')
+    >>> lv.help('rotate') # doctest: +SKIP
+    >>> lv.help('opacity') # doctest: +SKIP
+    (...)
 
     """
 
@@ -2609,6 +2619,9 @@ class Viewer(dict):
 
         Example
         -------
+        >>> import lavavu
+        >>> lv = lavavu.Viewer()
+        >>> lv.test()
         >>> lv('reset; translate -2')
 
         """
@@ -3547,9 +3560,13 @@ class Viewer(dict):
         allows running interactive event loop while animating from python
         e.g.
 
-        >>> while lv.events():
-        >>>     #...build next frame here...
-        >>>     lv.render()
+        >>> import lavavu
+        >>> lv = lavavu.Viewer()
+        >>> def event_loop():
+        ...     while lv.events():
+        ...         #...build next frame here...
+        ...         lv.render()
+        ... event_loop() # doctest: +SKIP
 
         Returns
         -------
@@ -3696,22 +3713,43 @@ class Geometry(list):
         
     Get all object data
 
-    >>> data = obj.data
+    >>> import lavavu
+    >>> lv = lavavu.Viewer()
+    >>> obj = lv.triangles()
+    >>> lv.addstep()
+    >>> print(lv.steps)
+    [0]
+    >>> obj.vertices([[0,1], [1,1], [1,0]])
+    >>> obj.append()
+    >>> obj.vertices([[2,2], [2,3], [3,2]])
+    >>> lv.addstep()
+    >>> print(lv.steps)
+    [0, 1]
+    >>> obj.vertices([[0.5,1], [1.5,1], [1.5,0]])
     
     Get only triangle data
 
     >>> data = obj.data["triangles"]
+    >>> print(data)
+    [GeomData("triangles") ==> {'vertices': 9}]
+    >>> print(data.vertices)
+    [array([0.5, 1. , 0. , 1.5, 1. , 0. , 1.5, 0. , 0. ], dtype=float32)]
 
     Get data at specific timestep only
     (default is current step including fixed data)
 
     >>> data = obj.data["0"]
+    >>> print(data)
+    [GeomData("triangles") ==> {'vertices': 9}, GeomData("triangles") ==> {'vertices': 9}]
+    >>> print(data.vertices)
+    [array([0., 1., 0., 1., 1., 0., 1., 0., 0.], dtype=float32), array([2., 2., 0., 2., 3., 0., 3., 2., 0.], dtype=float32)]
 
-    Loop through data
+    Loop through data elements
 
-    >>> for el in obj.data:
-    >>>     print(el)
-
+    >>> for el in data:
+    ...     print(el)
+    GeomData("triangles") ==> {'vertices': 9}
+    GeomData("triangles") ==> {'vertices': 9}
     """
 
     def __init__(self, obj, timestep=-2, filter=None):
@@ -3755,15 +3793,17 @@ class Geometry(list):
             #Return data filtered by renderer type
             if key in geomnames:
                 return Geometry(self.obj, timestep=self.timestep, filter=key)
-            #Or data filtered by timestep if a string timestep number passed
-            elif isinstance(key,int):
-                ts = int(key)
-                return Geometry(self.obj, timestep=ts)
-            #Or data by type/label
             else:
-                return getattr(self, key)
+                try:
+                    #Or data by type/label
+                    val = getattr(self, key)
+                    return val
+                except:
+                    #Or data filtered by timestep if a string timestep number passed
+                    ts = int(key)
+                    return Geometry(self.obj, timestep=ts)
 
-        return self[key]
+        return super(Geometry, self).__getitem__(key)
 
     def __str__(self):
         return '[' + ', '.join([str(i) for i in self]) + ']'
@@ -3806,7 +3846,9 @@ class _GeomDataListView(object):
         #Set each DrawData entry to corrosponding value list entry
         v = 0
         for el in instance:
-            el.set(self.key, value[v].ravel())
+            #Convert to numpy
+            data = self.obj._convert(value[v], numpy.float32)
+            el.set(self.key, data.ravel())
             v += 1
 
 #Wrapper class for GeomData geometry object
@@ -3819,11 +3861,16 @@ class DrawData(object):
 
     Example
     -------
+
+    >>> import lavavu
+    >>> lv = lavavu.Viewer()
+    >>> obj = lv.points(vertices=[[0,1], [1,0]], colours="red blue")
+    >>> obj.values([2, 3], "myvals")
         
     Get the data elements
 
     >>> print(obj.data)
-    [GeomData("points")]
+    [GeomData("points") ==> {'vertices': 6, 'colours': 2, 'myvals': 2}]
     
     Get a copy of the colours (if any)
 
@@ -3840,11 +3887,15 @@ class DrawData(object):
     Get a some value data by label "myvals"
     >>> vals = obj.data.myvals
     >>> print(vals)
-    [array([...])]
+    [array([2., 3.], dtype=float32)]
 
     Load some new values for this data, provided list must match first dimension of existing data list
 
-    >>> obj.data.myvals = [newdata]
+    >>> print(obj.data.myvals)
+    [array([2., 3.], dtype=float32)]
+    >>> obj.data.myvals = [[4,5]]
+    >>> print(obj.data.myvals)
+    [array([4., 5.], dtype=float32)]
 
     """
     def __init__(self, data, parent):
@@ -3944,7 +3995,7 @@ class DrawData(object):
         else:
             #Set float32 data
             self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32), typename)
-        
+
     def __repr__(self):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
         return ' '.join(['GeomData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
@@ -3957,8 +4008,11 @@ class Image(object):
     Example
     -------
         
-    >>> img = lv.rawimage()
-    >>> img.write('out.png')
+    >>> import lavavu
+    >>> lv = lavavu.Viewer()
+    >>> lv.test()
+    >>> img = lv.rawimage() # doctest: +SKIP
+    >>> img.save('out.png') # doctest: +SKIP
     
     TODO: expose image loading functions, custom blend equations
 
@@ -4330,4 +4384,9 @@ def lerp(first, second, mu):
         diff = second[i] - first[i]
         final[i] += diff * mu
     return final
+
+if __name__ == '__main__':
+    #Run doctests
+    import doctest
+    doctest.testmod()
 
