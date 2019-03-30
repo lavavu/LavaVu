@@ -33,7 +33,6 @@ install:
 
 build_script:
   - python setup.py install
-  - python setup.py bdist_wheel
 
 #Looks like graphical testing is out...
 #https://help.appveyor.com/discussions/problems/6946-opengl
@@ -46,7 +45,7 @@ test_script:
 
 after_test:
   # This step builds your wheels.
-  - "%PYTHON%\\python.exe setup.py bdist_wheel"
+  - python setup.py bdist_wheel
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
