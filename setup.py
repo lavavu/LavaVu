@@ -154,7 +154,7 @@ if __name__ == "__main__":
         #defines += [('HAVE_LIBPNG', 1)]
         inc_dirs += [os.path.join(os.getcwd(), 'src', 'windows', 'inc')]
         #32 or 64 bit python interpreter?
-        if sys.maxsize > 2**32
+        if sys.maxsize > 2**32:
             LIBS = 'lib64'
         else:
             LIBS = 'lib32'
