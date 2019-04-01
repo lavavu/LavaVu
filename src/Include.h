@@ -114,28 +114,13 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define NOMINMAX
 #include <windows.h>
 #include <GL/gl.h>
-//If we enable this can we remove GetProcAddress on windows?
+//Don't include extension prototypes as we are getting them with GetProcAddress
 //#define GL_GLEXT_PROTOTYPES
 #include <glext.h>
 
 //Define pointers to required gl 2.0 functions
 #define EXTENSION_POINTERS
 #endif //_WIN32
-
-#if defined HAVE_EGL and not defined HAVE_X11
-//Using libOpenGL instead of libGL, no old functions
-#define glGenRenderbuffersEXT glGenRenderbuffers
-#define glBindRenderbufferEXT glBindRenderbuffer
-#define glRenderbufferStorageEXT glRenderbufferStorage
-#define glGenFramebuffersEXT glGenFramebuffers
-#define glFramebufferRenderbufferEXT glFramebufferRenderbuffer
-#define glFramebufferTexture2DEXT glFramebufferTexture2D
-#define glCheckFramebufferStatusEXT glCheckFramebufferStatus
-#define glBindFramebufferEXT glBindFramebuffer
-#define glDeleteRenderbuffersEXT glDeleteRenderbuffers
-#define glDeleteFramebuffersEXT glDeleteFramebuffers
-#define glGenerateMipmapEXT glGenerateMipmap
-#endif
 
 #include "Extensions.h"
 
