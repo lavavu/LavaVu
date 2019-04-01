@@ -166,25 +166,35 @@ if __name__ == "__main__":
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
-        defines += [('USE_ZLIB', '1')]
         # Optional external libraries - check if installed
-        if find_library('png') and check_libraries(['png'], ['png.h']):
-            defines += [('HAVE_LIBPNG', 1)]
+        if find_library('png') and check_libraries(['png', 'z'], ['png.h', 'zlib.h']):
+            defines += [('HAVE_LIBPNG', 1), ('USE_ZLIB', '1')]
+            libs += ['png', 'z']
         else:
-            srcs += ['src/png/loadpng.cpp']
+            srcs += ['src/png/lodepng.cpp']
+            if find_library('z') and check_libraries(['z'], ['zlib.h']):
+                defines += [('USE_ZLIB', '1')]
+                libs += ['z']
+            else:
+                srcs += ['src/miniz/miniz.c']
         if find_library('tiff') and check_libraries(['tiff'], ['tiffio.h']):
             defines += [('HAVE_LIBTIFF', 1)]
+            libs += ['tiff']
         if (find_library('avcodec') and find_library('avformat')
-            and find_library('avutil') and find_library('swscale')
-            and check_libraries(['avcodec', 'avformat', 'avutil', 'swscale'],
+            and find_library('avutil')
+            and check_libraries(['avcodec', 'avformat', 'avutil'],
                 ['libavformat/avformat.h', 'libavcodec/avcodec.h', 'libavutil/mathematics.h',
-                 'libavutil/imgutils.h', 'libswscale/swscale.h'])):
+                 'libavutil/imgutils.h'])):
             defines += [('HAVE_LIBAVCODEC', 1)]
+            libs += ['avcodec', 'avformat', 'avutil']
+            if find_library('swscale') and check_libraries(['swscale'], ['libswscale/swscale.h']):
+                defines += [('HAVE_SWSCALE', 1)]
+                libs += ['swscale']
 
         if P == 'Linux':
             #Linux X11 or EGL
             defines += [('HAVE_X11', '1')]
-            libs += ['GL', 'dl', 'pthread', 'm', 'z', 'X11']
+            libs += ['GL', 'dl', 'pthread', 'm', 'X11']
             #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
             #if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
             #    defines += [('EGL', 1)]
@@ -195,7 +205,7 @@ if __name__ == "__main__":
             cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
             cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
-            libs += ['c++', 'dl', 'pthread',  'objc', 'm', 'z']
+            libs += ['c++', 'dl', 'pthread',  'objc', 'm']
             ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
 
     lv = Extension('_LavaVuPython',
