@@ -228,7 +228,12 @@ if __name__ == "__main__":
           packages          = ['lavavu'],
           install_requires  = ['numpy', 'jupyter-server-proxy;python_version>"2.7"'],
           platforms         = ['any'],
-          scripts           = ['LV'],
+          entry_points      = {
+              'gui_scripts': [
+                  'LV = lavavu.__main__:main',
+                  'LavaVu = lavavu.__main__:main'
+              ]
+          },
           package_data      = {'lavavu': glob.glob('lavavu/shaders/*.*') + glob.glob('lavavu/html/*.*') + ['lavavu/font.bin', 'lavavu/dict.json']},
           data_files        = [('lavavu', ['lavavu/font.bin', 'lavavu/dict.json']), ('', install)],
           include_package_data = True,
