@@ -3,14 +3,10 @@ build: false
 
 clone_depth: 10
 
+#Just build one version for regular testing
+# distribution/release repo will do the rest of the builds
 environment:
   matrix:
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3
-    - PYTHON_VERSION: 3.6
-      MINICONDA: C:\Miniconda3-x64
-    - PYTHON_VERSION: 3.7
-      MINICONDA: C:\Miniconda3
     - PYTHON_VERSION: 3.7
       MINICONDA: C:\Miniconda3-x64
 
