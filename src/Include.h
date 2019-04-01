@@ -39,15 +39,10 @@
 #include <sys/stat.h>
 
 //Include the decompression routines
-#if defined HAVE_LIBPNG and not defined USE_ZLIB
-#define USE_ZLIB
-#endif
-
 #ifdef USE_ZLIB
 #include <zlib.h>
 #else
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz/miniz.c"
+#include "miniz/miniz.h"
 #endif
 
 //Utils

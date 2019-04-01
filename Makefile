@@ -19,6 +19,7 @@ CXX ?= g++
 CC ?= gcc
 
 #Default flags
+DEFINES = -DUSE_ZLIB
 CFLAGS = $(FLAGS) -fPIC -Isrc
 CPPFLAGS = $(CFLAGS) -std=c++0x
 #For external dependencies
@@ -98,8 +99,6 @@ LIBPNG ?= 0
 ifeq ($(LIBPNG), 1)
   CFLAGS += -DHAVE_LIBPNG
   LIBS += -lpng
-else
-  CFLAGS += -DUSE_ZLIB
 endif
 ifeq ($(TIFF), 1)
   CFLAGS += -DHAVE_LIBTIFF
