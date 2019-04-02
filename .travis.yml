@@ -29,6 +29,7 @@ addons:
     - libgl1-mesa-dev
 script:
   - python setup.py install
+  - python lavavu/lavavu.py;
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       git clone --depth 1 https://github.com/mivp/LavaVuTesting;
       cd LavaVuTesting;
