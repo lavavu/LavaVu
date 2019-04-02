@@ -1,5 +1,5 @@
 language: python
-dist: trusty
+dist: xenial
 sudo: false
 notifications:
   slack: cavedev:0TKfIim9KQnrmiKExKFnKT9L
@@ -8,16 +8,10 @@ matrix:
     - python: "2.7"
       os: linux
       compiler: gcc
-      before_script:
-        - export CXX="g++-4.9";
-        - export CC="gcc-4.9";
       install: pip install numpy
     - python: "3.7"
       os: linux
       compiler: gcc
-      before_script:
-        - export CXX="g++-4.9";
-        - export CC="gcc-4.9";
       install: pip install numpy
     - os: osx
       language: cpp
@@ -28,8 +22,6 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
-    - gcc-4.9
-    - g++-4.9
     - libgl1-mesa-dri
     - libgl1-mesa-glx
     - libgl1-mesa-dev

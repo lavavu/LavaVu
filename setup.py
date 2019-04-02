@@ -218,7 +218,8 @@ if __name__ == "__main__":
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
             cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
             libs += ['c++', 'dl', 'pthread',  'objc', 'm']
-            ldflags = ['-framework Cocoa', '-framework Quartz', '-framework OpenGL'] + ldflags
+            os.environ['LDFLAGS'] = ['-framework Cocoa -framework Quartz -framework OpenGL']
+            #ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
 
     lv = Extension('_LavaVuPython',
                     define_macros = defines,
