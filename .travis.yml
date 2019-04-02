@@ -3,6 +3,8 @@ dist: xenial
 sudo: false
 notifications:
   slack: cavedev:0TKfIim9KQnrmiKExKFnKT9L
+services:
+  - xvfb
 matrix:
   include:
     - python: "2.7"
@@ -29,12 +31,9 @@ script:
   - python setup.py install
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       git clone --depth 1 https://github.com/mivp/LavaVuTesting;
-      sh -e /etc/init.d/xvfb start;
-      sleep 3;
       cd LavaVuTesting;
-      export DISPLAY=:99.0;
       export GALLIUM_DRIVER="llvmpipe";
-      python runall.py echo verbose || travis_terminate 1;
+      xvfb-run python runall.py echo verbose || travis_terminate 1;
       cd ..;
     fi
 after_script:
