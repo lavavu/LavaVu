@@ -140,7 +140,7 @@ if __name__ == "__main__":
     srcs += glob.glob('src/png/*.cpp')
     defines = [('USE_FONTS', '1')]
     cflags = []
-    libs = ['sqlite3']
+    libs = [] #['sqlite3']
     ldflags = []
     inc_dirs = [sqlite3_path]
     import numpy
@@ -218,7 +218,7 @@ if __name__ == "__main__":
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
             cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
             libs += ['c++', 'dl', 'pthread',  'objc', 'm']
-            ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
+            ldflags = ['-framework Cocoa', '-framework Quartz', '-framework OpenGL'] + ldflags
 
     lv = Extension('_LavaVuPython',
                     define_macros = defines,

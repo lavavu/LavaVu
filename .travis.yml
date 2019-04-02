@@ -12,7 +12,7 @@ matrix:
         - export CXX="g++-4.9";
         - export CC="gcc-4.9";
       install: pip install numpy
-    - python: "3.6"
+    - python: "3.7"
       os: linux
       compiler: gcc
       before_script:
