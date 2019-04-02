@@ -29,8 +29,8 @@ addons:
     - libgl1-mesa-dev
 script:
   - python setup.py install
-  - python lavavu/lavavu.py;
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      python lavavu/lavavu.py;
       git clone --depth 1 https://github.com/mivp/LavaVuTesting;
       cd LavaVuTesting;
       export GALLIUM_DRIVER="llvmpipe";
