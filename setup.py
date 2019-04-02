@@ -124,18 +124,25 @@ if __name__ == "__main__":
     #Update version.cpp
     write_version()
 
+    sqlite3_path = 'src/sqlite3'
+    sqlite3_lib = [['sqlite3', {
+                   'sources': [os.path.join(sqlite3_path, 'sqlite3.c')],
+                   'include_dirs': [sqlite3_path],
+                   'macros': None,
+                   }
+                  ]]
+
     _debug = False
     srcs = ['src/LavaVuPython_wrap.cxx']
     srcs += glob.glob('src/*.cpp')
     srcs += glob.glob('src/Main/*.cpp')
     srcs += glob.glob('src/jpeg/*.cpp')
     srcs += glob.glob('src/png/*.cpp')
-    srcs += glob.glob('src/sqlite3/*.c')
     defines = [('USE_FONTS', '1')]
     cflags = []
-    libs = []
+    libs = ['sqlite3']
     ldflags = []
-    inc_dirs = []
+    inc_dirs = [sqlite3_path]
     import numpy
     inc_dirs += [numpy.get_include()]
     lib_dirs = []
@@ -266,6 +273,6 @@ if __name__ == "__main__":
             'Framework :: Jupyter',
             'Framework :: IPython',
           ],
-          ext_modules = [lv]
+          ext_modules = [lv], libraries=sqlite3_lib
           )
 
