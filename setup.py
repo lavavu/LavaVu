@@ -200,7 +200,12 @@ if __name__ == "__main__":
             #    defines += [('EGL', 1)]
         elif P == 'Darwin':
             #Mac OS X with Cocoa + CGL
-            srcs += ['src/Main/CocoaViewer.mm']
+            #srcs += ['src/Main/CocoaViewer.mm']
+            #This hack is because setuptools can't handle .mm extension
+            from shutil import copyfile
+            copyfile('src/Main/CocoaViewer.mm', 'src/Main/CocoaViewer.m')
+            srcs += ['src/Main/CocoaViewer.m']
+            cflags += ['-ObjC++'] #Now have to tell compiler it's objective c++ as .m file indicates objective c
             defines += [('HAVE_CGL', '1')]
             cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
