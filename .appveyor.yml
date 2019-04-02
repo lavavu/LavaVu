@@ -51,17 +51,14 @@ test_script:
 
 after_test:
   # This step builds your wheels.
+  - cmd: "echo [pypi] > %USERPROFILE%\\.pypirc"
+  - cmd: "echo username: OwKal >> %USERPROFILE%\\.pypirc"
+  - cmd: "echo password: %pypipw% >> %USERPROFILE%\\.pypirc"
   - python setup.py bdist_wheel
 
 artifacts:
   # bdist_wheel puts your built wheel in the dist directory
   - path: dist\*
-
-after_test:
-  - cmd: "echo [pypi] > %USERPROFILE%\\.pypirc"
-  - cmd: "echo username: OwKal >> %USERPROFILE%\\.pypirc"
-  - cmd: "echo password: %pypipw% >> %USERPROFILE%\\.pypirc"
-  - python setup.py bdist_wheel
 
 on_success:
   #Upload tagged version with twine
