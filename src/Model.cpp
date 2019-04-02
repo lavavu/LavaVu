@@ -2085,8 +2085,8 @@ void Model::jsonWrite(std::ostream& os, DrawingObject* o, bool objdata)
       //TODO: export geom textures
       //Texture ? Export first only, as external file for now
       //TODO: dataurl using getImageUrlString(image, iw, ih, channels)
-      //if (objects[i]->textures.size() > 0 && obj.count("texturefile") == 0)
-      //  obj["texturefile"] = objects[i]->textures[0]->fn.full;
+      //if (objects[i]->textures.size() > 0 && obj.count("texture") == 0)
+      //  obj["texture"] = objects[i]->textures[0]->fn.full;
 
       if (!objdata)
       {

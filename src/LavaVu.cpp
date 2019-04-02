@@ -1801,6 +1801,8 @@ void LavaVu::close()
 //Called when model loaded/changed, updates all views settings
 void LavaVu::resetViews(bool autozoom)
 {
+  //Copy active view state props to dictionary
+  aview->exportProps();
   viewset = RESET_NO;
 
   //Setup view(s) for new model dimensions
@@ -1830,7 +1832,7 @@ void LavaVu::resetViews(bool autozoom)
   //Update title
   viewer->title(title.str());
 
-  //Apply any prop changes
+  //Apply any prop changes to active view state
   aview->importProps();
 }
 

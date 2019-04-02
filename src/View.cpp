@@ -668,6 +668,7 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
 void View::importProps(bool force)
 {
   //Never import if values updated
+  //printf("IMPORT %d %d %d\n", force, initialised, updated);
   if (!force && (!initialised || updated)) return;
 
   //Copy view properties to cache
@@ -725,6 +726,7 @@ void View::importProps(bool force)
 
 void View::exportProps()
 {
+  //printf("EXPORT %d\n", initialised);
   if (!initialised) return;
   float rota[3];
   rotation->toEuler(rota[0], rota[1], rota[2]);
