@@ -33,7 +33,7 @@ script:
       git clone --depth 1 https://github.com/mivp/LavaVuTesting;
       cd LavaVuTesting;
       export GALLIUM_DRIVER="llvmpipe";
-      xvfb-run python runall.py echo verbose || travis_terminate 1;
+      python runall.py echo verbose || travis_terminate 1;
       cd ..;
     fi
 after_script:
