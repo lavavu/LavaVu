@@ -649,13 +649,19 @@ class Object(dict):
         if not isinstance(data, numpy.ndarray):
             #Convert to numpy array first
             data = numpy.asarray(data)
-        #Transform to requested data type if provided
-        if dtype != None and data.dtype != dtype:
-            data = data.astype(dtype)
 
         #Always convert float64 to float32
         if data.dtype == numpy.float64:
             data = data.astype(numpy.float32)
+
+        #Transform to requested data type if provided
+        if data.dtype == numpy.float32 and dtype == numpy.uint8:
+            #Convert float[0,1] to uint8 * 255
+            #TODO: test
+            data *= 255.0
+            data = data.astype(numpy.uint8)
+        elif dtype != None and data.dtype != dtype:
+            data = data.astype(dtype)
 
         #Masked array? Set fill value to NaN
         if numpy.ma.is_masked(data):
@@ -813,7 +819,7 @@ class Object(dict):
         >>> obj = lv.points(vertices=[[0,1], [1,0]])
         >>> for el in obj.data:
         ...     print(el)
-        GeomData("points") ==> {'vertices': 6}
+        DrawData("points") ==> {'vertices': 6}
         """
         return Geometry(self)
 
@@ -883,8 +889,8 @@ class Object(dict):
             if a numpy array is passed, colours are loaded as 4 byte ARGB unsigned integer values
         """
         if isinstance(data, numpy.ndarray):
-            if data.dtype == numpy.uint8:
-                data = data.copy().view(numpy.uint32)
+            if data.dtype != numpy.uint32:
+                return self.rgba(data)
             self._loadScalar(data, LavaVuPython.lucRGBAData)
             return
         #Convert to list of strings
@@ -2649,8 +2655,10 @@ class Viewer(dict):
         #Read any property data sets (allows object creation and load with single prop dict)
         for key in datasets:
             #Get the load function matching the data set (eg: vertices() ) and call on data
+            data = datasets[key]
+            if data is None or len(data) < 1: continue
             func = getattr(obj, key)
-            func(datasets[key])
+            func(data)
 
         #Set the colourmap, so python colourmap setting features can be used
         if cmapdata is not None:
@@ -3731,7 +3739,7 @@ class Geometry(list):
 
     >>> data = obj.data["triangles"]
     >>> print(data)
-    [GeomData("triangles") ==> {'vertices': 9}]
+    [DrawData("triangles") ==> {'vertices': 9}]
     >>> print(data.vertices)
     [array([0.5, 1. , 0. , 1.5, 1. , 0. , 1.5, 0. , 0. ], dtype=float32)]
 
@@ -3740,7 +3748,7 @@ class Geometry(list):
 
     >>> data = obj.data["0"]
     >>> print(data)
-    [GeomData("triangles") ==> {'vertices': 9}, GeomData("triangles") ==> {'vertices': 9}]
+    [DrawData("triangles") ==> {'vertices': 9}, DrawData("triangles") ==> {'vertices': 9}]
     >>> print(data.vertices)
     [array([0., 1., 0., 1., 1., 0., 1., 0., 0.], dtype=float32), array([2., 2., 0., 2., 3., 0., 3., 2., 0.], dtype=float32)]
 
@@ -3748,8 +3756,8 @@ class Geometry(list):
 
     >>> for el in data:
     ...     print(el)
-    GeomData("triangles") ==> {'vertices': 9}
-    GeomData("triangles") ==> {'vertices': 9}
+    DrawData("triangles") ==> {'vertices': 9}
+    DrawData("triangles") ==> {'vertices': 9}
     """
 
     def __init__(self, obj, timestep=-2, filter=None):
@@ -3870,7 +3878,7 @@ class DrawData(object):
     Get the data elements
 
     >>> print(obj.data)
-    [GeomData("points") ==> {'vertices': 6, 'colours': 2, 'myvals': 2}]
+    [DrawData("points") ==> {'vertices': 6, 'colours': 2, 'myvals': 2}]
     
     Get a copy of the colours (if any)
 
@@ -3911,6 +3919,10 @@ class DrawData(object):
     @property
     def parent(self):
         return self._parent()
+
+    @property
+    def type(self):
+        return geomnames[self.data.type]
 
     def get(self, typename):
         """
@@ -3998,7 +4010,7 @@ class DrawData(object):
 
     def __repr__(self):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
-        return ' '.join(['GeomData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
+        return ' '.join(['DrawData("' + r + '")' for r in renderlist]) + ' ==> ' + str(self.available)
 
 #Wrapper class for raw image data
 class Image(object):

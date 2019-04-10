@@ -15,6 +15,7 @@ More tools can be found there, including a ptx reader which handles transformati
 """
 import numpy
 import os
+import convert
 
 def loadpointcloud(filename, subsample=1):
     """
@@ -35,16 +36,14 @@ def loadpointcloud(filename, subsample=1):
         import pywavefront
         scene = pywavefront.Wavefront(filename)
         V = numpy.array(scene.vertices)
-        print(V.shape)
 
         #SubSample
         if subsample > 1:
-            V = V[::ss]
+            V = V[::subsample]
             print("Subsampled:",V.shape)
 
         verts = V[:,0:3]
         colours = V[:,3:] * 255
-        print(verts.shape,colours.shape)
 
         #Load positions and RGB
         print("Creating visualisation ")
@@ -54,53 +53,27 @@ def loadpointcloud(filename, subsample=1):
         print("Loading PLY")
         from plyfile import PlyData, PlyElement       
         plydata = PlyData.read(filename)
-
         if plydata:
-            #SubSample
-            #if subsample > 1:
-            #    V = V[::ss]
-            #   print(V.shape)
-
-            #print("NAME:",plydata.elements[0].name)
-            #print("PROPS:",plydata.elements[0].properties)
-            #print("DATA:",plydata.elements[0].data[0])
-            #print(plydata.elements[0].data['x'])
-            #print(plydata['face'].data['vertex_indices'][0])
-            #print(plydata['vertex']['x'])
-            #print(plydata['vertex'][0])
-            #print(plydata.elements[0].ply_property('x'))
-
-            rl = None
-            gl = None
-            bl = None
-            al = None
-            for prop in plydata.elements[0].properties:
-                #print(prop,prop.name,prop.dtype)
-                if 'red' in prop.name: rl = prop.name
-                if 'green' in prop.name: gl = prop.name
-                if 'blue' in prop.name: bl = prop.name
-                if 'alpha' in prop.name: al = prop.name
-
             x = plydata['vertex']['x']
             y = plydata['vertex']['y']
             z = plydata['vertex']['z']
+            V = numpy.vstack((x,y,z)).reshape([3, -1]).transpose()
 
-            if rl and gl and bl:
-                r = plydata['vertex'][rl]
-                g = plydata['vertex'][gl]
-                b = plydata['vertex'][bl]
-                if al:
-                    a = plydata['vertex'][al]
-                    return (numpy.array([x, y, z]), numpy.array([r, g, b, a]))
-                else:
-                    return (numpy.array([x, y, z]), numpy.array([r, g, b]))
-            else:
-                return (numpy.array([x, y, z]), None)
+            C = convert._get_PLY_colours(plydata.elements[0])
+
+            #SubSample
+            if subsample > 1:
+                V = V[::subsample]
+                if C is not None:
+                    C = C[::subsample]
+
+            return (V, C)
 
     elif ext == '.las':
         print("Loading LAS")
         import laspy
         infile = laspy.file.File(filename, mode="r")
+        '''
         print(infile)
         print(infile.point_format)
         for spec in infile.point_format:
@@ -110,6 +83,7 @@ def loadpointcloud(filename, subsample=1):
 
         print(infile.header.offset)
         print(infile.header.scale)
+        '''
 
         #Grab all of the points from the file.
         #point_records = infile.points
@@ -117,7 +91,6 @@ def loadpointcloud(filename, subsample=1):
         #print(point_records.shape)
 
         #Convert colours from short to uchar
-        print(infile.red.dtype)
         if infile.red.dtype == numpy.uint16:
             R = (infile.red / 255).astype(numpy.uint8)
             G = (infile.green / 255).astype(numpy.uint8)
