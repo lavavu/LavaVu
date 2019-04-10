@@ -2406,6 +2406,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
   unsigned int voffset = g->count();
+  bool hasTex = draw->properties.has("texture") && draw->properties["texture"] != "colourmap";
 
   for (j=0; j<segment_count/2; j++)
   {
@@ -2423,9 +2424,10 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
-      normal = rot * -edge * scale3;
+      normal = rot * edge * scale3;
       g->_normals->read(1, normal.ref());
-      g->_texCoords->read(1, tex);
+      if (hasTex)
+        g->_texCoords->read(1, tex);
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
       circ_index = ((int)(j + 0.75 * segment_count) % segment_count);
@@ -2437,21 +2439,22 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
 
       //Read triangle vertex, normal, texcoord
       g->readVertex(pos.ref());
-      normal = rot * -edge * scale3;
+      normal = rot * edge * scale3;
       g->_normals->read(1, normal.ref());
-      g->_texCoords->read(1, tex);
+      if (hasTex)
+        g->_texCoords->read(1, tex);
 
       //Triangle strip indices
       if (i > 0)
       {
         //First tri
         g->_indices->read1(vertex_index-2);
-        g->_indices->read1(vertex_index-1);
         g->_indices->read1(vertex_index);
+        g->_indices->read1(vertex_index-1);
         //Second tri
         g->_indices->read1(vertex_index-1);
-        g->_indices->read1(vertex_index+1);
         g->_indices->read1(vertex_index);
+        g->_indices->read1(vertex_index+1);
       }
     }
   }
