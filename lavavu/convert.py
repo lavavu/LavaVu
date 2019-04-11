@@ -288,8 +288,8 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         colourdict = {}
         import matplotlib
         print("Creating palette")
-        for o in range(len(obj.data.colours)):
-            for c in obj.data.colours[o]:
+        for data in obj:
+            for c in data.colours:
                 rgb = colour2rgb(c)
                 cs = colour2hex(rgb)
                 colourdict[cs] = rgb
@@ -301,32 +301,33 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
             m.write("illum 0\n\n")
         mtl_line = "mtllib " + os.path.basename(filepath) + ".mtl\n"
 
-    for o in range(len(obj.data.vertices)):
+    for o,data in enumerate(obj):
         print("[%s] element %d of %d" % (obj.name, o+1, len(obj.data.vertices)))
         f.write("o Surface_%d\n" % o)
         #f.write("o %s\n" % obj.name)
         f.write(mtl_line) #After this?
-        verts = obj.data.vertices[o].reshape((-1,3))
+        verts = data.vertices.reshape((-1,3))
+        print(verts,len(verts))
         if len(verts) == 0:
             print("No vertices")
             continue
-        indices = obj.data.indices[o].reshape((-1,3))
-        normals = obj.data.normals[o].reshape((-1,3))
-        texcoords = obj.data.texcoords[o].reshape((-1,2))
+        indices = data.indices.reshape((-1,3))
+        normals = data.normals.reshape((-1,3))
+        texcoords = data.texcoords.reshape((-1,2))
         #Calculate texcoords from colour values?
         if len(texcoords) == 0 and obj["texture"] == 'colourmap':
             label = obj["colourby"]
             if isinstance(label,int):
                 #Use the given label index
-                sets = list(obj.datasets.keys())
+                sets = list(datasets.keys())
                 label = sets[label]
             elif len(label) == 0:
                 #Use the default label
                 label = 'values'
-            valdata = obj.data[label]
+            valdata = data[label]
             if len(valdata) >= o+1:
                 #Found matching value array
-                v = valdata[o]
+                v = valdata
                 #Normalise [0,1]
                 texcoords = (v - numpy.min(v)) / numpy.ptp(v)
                 #Add 2nd dimension (not actually necessary,
@@ -358,21 +359,25 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
             print("- Writing faces (v//n):",indices.shape)
         else:
             print("- Writing faces (v):",indices.shape)
-        print("- Colours :",obj.data.colours[o].shape)
+        print("- Colours :",data.colours.shape)
         print("- Indices :",indices.shape)
 
         cs0 = ""
-        cperv = int(verts.shape[0] / len(obj.data.colours[o]))
-        #print("VERTS PER COLOUR ",cperv)
+        vperc = int(verts.shape[0] / len(data.colours))
+        #print("VERTS PER COLOUR ",vperc)
 
-        for i in indices:
+        print("INDICES:",indices.shape)
+        for n,i in enumerate(indices):
+            if n%1000==0: print(".", end='', flush=True)
             i0 = i[0]+offset
             i1 = i[1]+offset
             i2 = i[2]+offset
             if colourdict:
-                ci = int(i[0] / cperv)
-                #print(i0,cperv,ci)
-                c = obj.data.colours[o][ci]
+                ci = int(i[0] / vperc)
+                #print(i0,vperc,ci)
+                #print(data.colours)
+                #c = data.colours[ci]
+                c = data.colours[ci]
                 rgb = colour2rgb(c)
                 cs = colour2hex(rgb)
                 cs1 = cs[1:]
@@ -382,6 +387,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                     #print(mtl_line2)
                     f.write(mtl_line2)
                     cs0 = cs1
+
             if len(normals) and len(texcoords):
                 f.write("f %d/%d/%d %d/%d/%d %d/%d/%d\n" % (i0, i0, i0, i1, i1, i1, i2, i2, i2))
             elif len(texcoords):
@@ -390,6 +396,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 f.write("f %d//%d %d//%d %d//%d\n" % (i0, i0, i1, i1, i2, i2))
             else:
                 f.write("f %d %d %d\n" % (i0, i1, i2))
+        print()
 
         offset += verts.shape[0]
         return offset
@@ -419,61 +426,54 @@ def export_PLY(filepath, source, binary=True):
         fc = 0
         vc = 0
         for obj in objects:
-            for o in range(len(obj.data.vertices)):
-                vc += len(obj.data.vertices[o]) // 3
-                fc += len(obj.data.indices[o]) // 3
+            for o,data in enumerate(obj):
+                vc += len(data.vertices) // 3
+                fc += len(data.indices) // 3
 
         #Pass the counts first
         vertex = None
         face = None
         print(vc, " vertices, ", fc, " faces")
         for obj in objects:
-            #TODO: use this to get type, write vertices only for points objects?
-            #for d in obj.data: #range(len(obj.data.vertices)):
-            #    #print(d.type)
-            #    print(d)
-            #    print(d.type)
-            for o in range(len(obj.data.vertices)):
-                #vertex, face, voffset, foffset = _gen_PLY(obj, o, voffset, foffset, vertex, face)
-                #print("Error concatenating object data, objects differ to much to write as single PLY")
-                #print(e)
-                print("[%s] element %d of %d" % (obj.name, o+1, len(obj.data.vertices)))
+            for o,data in enumerate(obj):
+                print("[%s] element %d of %d, type %s" % (obj.name, o+1, len(obj.data), data.type))
                 #print("OFFSETS:",voffset,foffset)
-                verts = obj.data.vertices[o].reshape((-1,3))
+                verts = data.vertices.reshape((-1,3))
                 if len(verts) == 0:
                     print("No vertices")
                     return
-                indices = obj.data.indices[o].reshape((-1,3))
-                normals = obj.data.normals[o].reshape((-1,3))
-                texcoords = obj.data.texcoords[o].reshape((-1,2))
+                indices = data.indices.reshape((-1,3))
+                normals = data.normals.reshape((-1,3))
+                texcoords = data.texcoords.reshape((-1,2))
 
-                cperv = 0
+                vperc = 0
                 cperf = 0
-                if len(obj.data.colours[o]):
-                    cperv = int(verts.shape[0] / len(obj.data.colours[o]))
-                    C = obj.data.colours[o]
-                    #print("COLOURS:",len(C),C.shape, verts.shape[0], verts.shape[0] / len(obj.data.colours[o]), cperv)
+                if len(data.colours):
+                    vperc = int(verts.shape[0] / len(data.colours))
+                    C = data.colours
+                    #print("COLOURS:",len(C),C.shape, verts.shape[0], verts.shape[0] / len(data.colours), vperc)
 
-                #Per face colours, or less
-                if face is None:
-                    if cperv and cperv < len(verts):
-                        #cperf = int(indices.shape[0] / len(obj.data.colours[o]))
-                        face = numpy.zeros(shape=(fc), dtype=[('vertex_indices', 'i4', (3,)), ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')])
-                    else:
-                        face = numpy.zeros(shape=(fc), dtype=[('vertex_indices', 'i4', (3,))])
-                    #print("FACE:",face.dtype)
+                if data.type != 'points':
+                    #Per face colours, or less
+                    if face is None:
+                        if vperc and vperc < len(verts):
+                            #cperf = int(indices.shape[0] / len(data.colours))
+                            face = numpy.zeros(shape=(fc), dtype=[('vertex_indices', 'i4', (3,)), ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')])
+                        else:
+                            face = numpy.zeros(shape=(fc), dtype=[('vertex_indices', 'i4', (3,))])
+                        print("FACE:",face.dtype)
 
-                for i,idx in enumerate(indices):
-                    if i%1000==0:
-                        print("face index",i)
-                    if cperv and cperv < len(verts):
-                        #Have colour, but less than vertices, apply to faces
-                        ci = idx[0] // cperv
-                        c = obj.data.colours[o][ci]
-                        rgb = colour2rgb(c)
-                        face[i+foffset] = ([idx[0]+voffset, idx[1]+voffset, idx[2]+voffset], rgb[0], rgb[1], rgb[2])
-                    else:
-                        face[i+foffset] = ([idx[0]+voffset, idx[1]+voffset, idx[2]+voffset])
+                    for i,idx in enumerate(indices):
+                        if i%1000==0: print(".", end='', flush=True)
+                        if vperc and vperc < len(verts):
+                            #Have colour, but less than vertices, apply to faces
+                            ci = idx[0] // vperc
+                            c = data.colours[ci]
+                            rgb = colour2rgb(c)
+                            face[i+foffset] = ([idx[0]+voffset, idx[1]+voffset, idx[2]+voffset], rgb[0], rgb[1], rgb[2])
+                        else:
+                            face[i+foffset] = ([idx[0]+voffset, idx[1]+voffset, idx[2]+voffset])
+                    print()
 
                 #Construct and write vertex elements
                 if vertex is None:
@@ -483,14 +483,15 @@ def export_PLY(filepath, source, binary=True):
                         D += [('nx', 'f4'), ('ny', 'f4'), ('nz', 'f4')]
                     if texcoords.shape[0] == verts.shape[0]:
                         D += [('s', 'f4'), ('t', 'f4')]
-                    if cperv and cperv == len(verts):
+                    if vperc and vperc == 1:
                         D += [('red', 'u1'), ('green', 'u1'), ('blue', 'u1')]
-                    #print("VERTEX:",D)
+                    print("VERTEX:",D)
                     vertex = numpy.zeros(shape=(vc), dtype=D)
 
                 for i,v in enumerate(verts):
-                    if i%1000==0:
-                        print("vert index",i)
+                    #if i%1000==0:
+                    #    print("vert index",i,vperc)
+                    if i%1000==0: print(".", end='', flush=True)
                     E = [v[0], v[1], v[2]]
                     if normals.shape[0] == verts.shape[0]:
                         N = normals[i]
@@ -498,11 +499,12 @@ def export_PLY(filepath, source, binary=True):
                     if texcoords.shape[0] == verts.shape[0]:
                         T = texcoords[i]
                         E += [T[0], T[1]]
-                    if cperv and cperv == len(verts):
-                        c = obj.data.colours[o][i]
+                    if vperc and vperc == 1:
+                        c = data.colours[i]
                         rgb = colour2rgb(c)
                         E += [rgb[0], rgb[1], rgb[2]]
                     vertex[i+voffset] = tuple(E)
+                print()
 
                 #Update offsets : number of vertices / faces added
                 voffset += verts.shape[0]
@@ -510,16 +512,18 @@ def export_PLY(filepath, source, binary=True):
 
         import plyfile
         #vertex = numpy.array(vertex, dtype=vertex.dtype)
-        el1 = plyfile.PlyElement.describe(vertex, 'vertex')
-        el2 = plyfile.PlyElement.describe(face, 'face')
+        els = []
+        els.append(plyfile.PlyElement.describe(vertex, 'vertex'))
+        if face is not None:
+            els.append(plyfile.PlyElement.describe(face, 'face'))
 
         #Write, text or binary
         if binary:
             print("Writing binary PLY data")
-            plyfile.PlyData([el1, el2]).write(f)
+            plyfile.PlyData(els).write(f)
         else:
             print("Writing ascii PLY data")
-            plyfile.PlyData([el1, el2], text=True).write(f)
+            plyfile.PlyData(els, text=True).write(f)
 
 def _get_PLY_colours(element):
     """
