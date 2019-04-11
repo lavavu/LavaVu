@@ -396,6 +396,8 @@ class Object(dict):
     def __init__(self, parent, *args, **kwargs):
         self.dict = kwargs
         self._parent = weakref.ref(parent)
+        self._current = 0
+        self._geom = None
         if not "filters" in self.dict: self.dict["filters"] = []
 
         #Create a control factory
@@ -822,6 +824,22 @@ class Object(dict):
         DrawData("points") ==> {'vertices': 6}
         """
         return Geometry(self)
+
+    #Iterating an object iterates the internal geometry
+    def __iter__(self):
+        self._geom = self.data
+        return self._geom.__iter__()
+
+    def __next__(self): # Python 3
+        return self.next()
+
+    def next(self):
+        if self._current > len(self._geom)-1:
+            self._current = 0
+            raise StopIteration
+        else:
+            self._current += 1
+            return self._geom[self._current-1]
 
     def vertices(self, data):
         """
@@ -3773,7 +3791,7 @@ class Geometry(list):
             #By default all elements are returned, even if object has multiple types 
             #Filter can be set to a type name to exclude other geometry types
             if filter is None or g.type == self.obj.parent._getRendererType(filter):
-                g = DrawData(g, obj.parent)
+                g = DrawData(g, obj)
                 self.append(g)
                 #Add the value data set labels
                 for s in sets:
@@ -3906,15 +3924,30 @@ class DrawData(object):
     [array([4., 5.], dtype=float32)]
 
     """
-    def __init__(self, data, parent):
+    def __init__(self, data, obj):
         self.data = data
-        self._parent = weakref.ref(parent)
+        self._obj = obj
+        self._parent = weakref.ref(obj.parent)
         self.available = {}
         #Get available data types
         for key in datatypes:
             dat = self.get(key)
             if len(dat) > 0:
                 self.available[key] = len(dat)
+
+        #Allows getting data by data type or value labels using Descriptors
+        sets = obj.datasets
+        #Data by type name
+        for key in datatypes:
+            typename = key
+            if key == 'values':
+                #Just use the first available value label as the default .values descriptor
+                if len(sets) == 0: continue
+                typename = list(sets.keys())[0]
+            #Access by type name to get a view
+            setattr(DrawData, key, self.get(typename))
+            #Access by type name + _copy to get a copy
+            setattr(DrawData, key + '_copy', self.copy(typename))
 
     @property
     def parent(self):
