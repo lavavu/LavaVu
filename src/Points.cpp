@@ -97,30 +97,11 @@ void Points::loadVertices()
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
-  if (!vbo) glGenBuffers(1, &vbo);
-
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  //Initialise point buffer
-  if (glIsBuffer(vbo))
-  {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, total * datasize, NULL, GL_DYNAMIC_DRAW);
-    debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
-  }
-  else
-    debug_print("  VBO creation failed!\n");
-
-  GL_Error_Check;
-
   unsigned char *p = NULL, *ptr = NULL;
-  if (glIsBuffer(vbo))
-  {
-    ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    GL_Error_Check;
-    if (!p) abort_program("glMapBuffer failed");
-  }
-  else ptr = NULL;
-  //else abort_program("vbo fail");
+
+  //Create intermediate buffer
+  unsigned char* buffer = new unsigned char[total * datasize];
+  p = ptr = buffer;
 
 //////////////////////////////////////////////////
   t1 = clock();
@@ -187,7 +168,27 @@ void Points::loadVertices()
   debug_print("  %.4lf seconds to update %d particles into vbo\n", total, (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
-  if (ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
+  if (!vbo)
+    glGenBuffers(1, &vbo);
+
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  //Initialise point buffer
+  if (glIsBuffer(vbo))
+  {
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, total * datasize, buffer, GL_DYNAMIC_DRAW);
+    debug_print("  %d byte VBO created, for %d vertices\n", (int)(total * datasize), total);
+  }
+  else
+    debug_print("  VBO creation failed!\n");
+
+  GL_Error_Check;
+
+  delete[] buffer;
+
+  if (!glIsBuffer(vbo))
+    abort_program("VBO load failed");
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
   GL_Error_Check;
 }
 

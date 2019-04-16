@@ -24,10 +24,8 @@ extern PFNGLPOINTPARAMETERFPROC glPointParameterf;
 extern PFNGLBINDBUFFERPROC glBindBuffer;
 extern PFNGLGENBUFFERSPROC glGenBuffers;
 extern PFNGLISBUFFERPROC glIsBuffer;
-extern PFNGLMAPBUFFERPROC glMapBuffer;
 extern PFNGLBUFFERDATAPROC glBufferData;
 extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
-extern PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 extern PFNGLCREATESHADERPROC glCreateShader;
 extern PFNGLDELETESHADERPROC glDeleteShader;
@@ -73,7 +71,6 @@ extern PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
 extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
-extern PFNGLVERTEXATTRIB1FPROC glVertexAttrib1f;
 extern PFNGLISPROGRAMPROC glIsProgram;
 #endif
 

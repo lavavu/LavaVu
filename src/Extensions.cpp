@@ -20,10 +20,8 @@ PFNGLPOINTPARAMETERFPROC glPointParameterf;
 PFNGLBINDBUFFERPROC glBindBuffer;
 PFNGLGENBUFFERSPROC glGenBuffers;
 PFNGLISBUFFERPROC glIsBuffer;
-PFNGLMAPBUFFERPROC glMapBuffer;
 PFNGLBUFFERDATAPROC glBufferData;
 PFNGLBUFFERSUBDATAPROC glBufferSubData;
-PFNGLUNMAPBUFFERPROC glUnmapBuffer;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers;
 PFNGLCREATESHADERPROC glCreateShader;
 PFNGLDELETESHADERPROC glDeleteShader;
@@ -69,7 +67,6 @@ PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
-PFNGLVERTEXATTRIB1FPROC glVertexAttrib1f;
 PFNGLISPROGRAMPROC glIsProgram;
 #endif
 
@@ -88,10 +85,8 @@ void OpenGL_Extensions_Init()
   glBindBuffer = (PFNGLBINDBUFFERPROC) GetProcAddress("glBindBuffer");
   glGenBuffers = (PFNGLGENBUFFERSPROC) GetProcAddress("glGenBuffers");
   glIsBuffer = (PFNGLISBUFFERPROC) GetProcAddress("glIsBuffer");
-  glMapBuffer = (PFNGLMAPBUFFERPROC) GetProcAddress("glMapBuffer");
   glBufferData = (PFNGLBUFFERDATAPROC) GetProcAddress("glBufferData");
   glBufferSubData = (PFNGLBUFFERSUBDATAPROC) GetProcAddress("glBufferSubData");
-  glUnmapBuffer = (PFNGLUNMAPBUFFERPROC) GetProcAddress("glUnmapBuffer");
   glDeleteBuffers = (PFNGLDELETEBUFFERSPROC) GetProcAddress("glDeleteBuffers");
   glCreateShader = (PFNGLCREATESHADERPROC) GetProcAddress("glCreateShader");
   glDeleteShader = (PFNGLDELETESHADERPROC) GetProcAddress("glDeleteShader");
@@ -137,7 +132,6 @@ void OpenGL_Extensions_Init()
   glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glEnableVertexAttribArray");
   glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) GetProcAddress("glVertexAttribPointer");
   glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glDisableVertexAttribArray");
-  glVertexAttrib1f = (PFNGLVERTEXATTRIB1FPROC) GetProcAddress("glVertexAttrib1f");
   glIsProgram = (PFNGLISPROGRAMPROC) GetProcAddress("glIsProgram");
 #endif
 }

@@ -148,17 +148,9 @@ void Triangles::loadBuffers()
     vcount += geom[index]->count();
   unsigned int bsize = vcount * datasize;
 
-  //Initialise vertex buffer
-  if (!vbo) glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  if (glIsBuffer(vbo))
-  {
-    glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_DYNAMIC_DRAW);
-    debug_print("  %d byte VBO created, holds %d vertices\n", bsize, bsize/datasize);
-    ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    GL_Error_Check;
-  }
-  if (!p) abort_program("VBO setup failed");
+  //Create intermediate buffer
+  unsigned char* buffer = new unsigned char[bsize];
+  p = ptr = buffer;
 
   //Buffer data for all vertices
   for (unsigned int index = 0; index < geom.size(); index++)
@@ -237,7 +229,19 @@ void Triangles::loadBuffers()
     debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[index]->count());
   }
 
-  glUnmapBuffer(GL_ARRAY_BUFFER);
+  //Initialise vertex buffer
+  if (!vbo) glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  if (glIsBuffer(vbo))
+  {
+    glBufferData(GL_ARRAY_BUFFER, bsize, buffer, GL_DYNAMIC_DRAW);
+    debug_print("  %d byte VBO created, holds %d vertices\n", bsize, bsize/datasize);
+    //ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    GL_Error_Check;
+  }
+  if (!p) abort_program("VBO setup failed");
+
+  delete[] buffer;
   GL_Error_Check;
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 

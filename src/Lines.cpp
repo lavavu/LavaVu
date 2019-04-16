@@ -117,17 +117,11 @@ void Lines::loadBuffers()
   ptr = p = NULL;
   int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
   int bsize = total * datasize;
-  //Initialise vertex buffer
-  if (!vbo) glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  if (glIsBuffer(vbo))
-  {
-    glBufferData(GL_ARRAY_BUFFER, bsize, NULL, GL_STATIC_DRAW);
-    debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
-    ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    GL_Error_Check;
-  }
-  if (!p) abort_program("VBO setup failed");
+
+
+  //Create intermediate buffer
+  unsigned char* buffer = new unsigned char[bsize];
+  p = ptr = buffer;
 
   clock_t t1,t2,tt;
   tt=clock();
@@ -199,7 +193,19 @@ void Lines::loadBuffers()
       elements += counts[i]; //geom[i]->count();
   }
 
-  glUnmapBuffer(GL_ARRAY_BUFFER);
+  //Initialise vertex buffer
+  if (!vbo) glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  if (glIsBuffer(vbo))
+  {
+    glBufferData(GL_ARRAY_BUFFER, bsize, buffer, GL_STATIC_DRAW);
+    debug_print("  %d byte VBO created for LINES, holds %d vertices\n", bsize, bsize/datasize);
+    //ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    GL_Error_Check;
+  }
+  if (!p) abort_program("VBO setup failed");
+
+  delete[] buffer;
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   GL_Error_Check;
 
