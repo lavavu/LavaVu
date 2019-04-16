@@ -578,7 +578,8 @@ public:
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
   void merge(int start, int end);
-  Shader_Ptr getShader(DrawingObject* draw);
+  Shader_Ptr getShader(DrawingObject* draw=NULL);
+  Shader_Ptr getShader(lucGeometryType type);
   void setState(unsigned int i);
   void updateBoundingBox();
   virtual void display(bool refresh=false); //Display saved geometry

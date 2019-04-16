@@ -121,7 +121,6 @@ void Volumes::draw()
     GL_Error_Check;
   }
 
-  glUseProgram(0);
   glBindTexture(GL_TEXTURE_3D, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
   //t2 = clock(); debug_print("  Draw %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
@@ -145,7 +144,8 @@ void Volumes::sort()
 
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
-  float distanceRange[2], modelView[16];
+  float distanceRange[2];
+  mat4 modelView;
   view->getMinMaxDistance(min, max, distanceRange, modelView);
 
   unsigned int index = 0;
@@ -231,7 +231,6 @@ void Volumes::update()
   debug_print("Volume slices: %d, Max 3D texture size %d\n", geom.size(), maxtex);
 
   //Padding!
-  glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   //TODO: filtering
@@ -425,7 +424,7 @@ void Volumes::update()
   }
 
   //Restore padding
-  glPopClientAttrib();
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
   GL_Error_Check;
   t2 = clock();
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
@@ -447,6 +446,7 @@ void Volumes::update()
 
 void Volumes::render(int i)
 {
+  session.context.push();
   Properties& props = geom[i]->draw->properties;
 
   float dims[3] = {geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0],
@@ -562,17 +562,16 @@ void Volumes::render(int i)
   GL_Error_Check;
 
   //Get the matrices to send as uniform data
-  float mvMatrix[16];
-  float nMatrix[16];
-  float pMatrix[16];
-  float invPMatrix[16];
-  float tmvMatrix[16];
-  float matrix[16];
-  float mvpMatrix[16];
-  float invMVPMatrix[16];
+  mat4 mvMatrix;
+  mat4 nMatrix;
+  mat4 pMatrix;
+  mat4 invPMatrix;
+  mat4 tmvMatrix;
+  mat4 matrix;
+  mat4 mvpMatrix;
+  mat4 invMVPMatrix;
 
   //Apply scaling to fit bounding box (maps volume dimensions to [0,1] cube)
-  glPushMatrix();
 
   //Object rotation/translation
   Quaternion* qrot = NULL;
@@ -600,7 +599,6 @@ void Volumes::render(int i)
   {
     float trans[3];
     Properties::toArray<float>(props["translate"], trans, 3);
-    //glTranslatef(trans[0], trans[1], trans[2]);
     translate = trans;
   }
 
@@ -617,56 +615,46 @@ void Volumes::render(int i)
   view->apply(rotatable, qrot, &translate);
 
   //Translate to our origin
-  glTranslatef(geom[i]->render->vertices[0][0],
-               geom[i]->render->vertices[0][1],
-               geom[i]->render->vertices[0][2]);
+  session.context.translate3(geom[i]->render->vertices[0][0],
+                             geom[i]->render->vertices[0][1],
+                             geom[i]->render->vertices[0][2]);
 
   //Get the mvMatrix scaled by volume size
   //(used for depth calculations)
-  glPushMatrix();
-    glScalef(dims[0], dims[1], dims[2]);
-    glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
-  glPopMatrix();
+  matrix = linalg::mul(session.context.MV, linalg::scaling_matrix(vec3(dims[0], dims[1], dims[2])));
 
   //Invert the scaling for raymarching
-  glScalef(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
+  session.context.scale3(1.0/dims[0], 1.0/dims[1], 1.0/dims[2]);
 
   //Get the normal matrix
-  glGetFloatv(GL_MODELVIEW_MATRIX, nMatrix);
   //Invert and transpose to get correct normal matrix even when non-uniform scaling used
-  if (!gluInvertMatrixf(nMatrix, nMatrix)) abort_program("Uninvertable matrix!");
-  transposeMatrixf(nMatrix);
+  nMatrix = linalg::transpose(linalg::inverse(session.context.MV));
 
   //Apply model scaling, inverse squared
-  glScalef(1.0/(view->scale[0]*view->scale[0]), 1.0/(view->scale[1]*view->scale[1]), 1.0/(view->scale[2]*view->scale[2]));
+  session.context.scale3(1.0/(view->scale[0]*view->scale[0]), 1.0/(view->scale[1]*view->scale[1]), 1.0/(view->scale[2]*view->scale[2]));
 
   //Get the mv matrix used for ray marching at this point
-  glGetFloatv(GL_MODELVIEW_MATRIX, mvMatrix);
-
-  //Restore matrix
-  glPopMatrix();
+  mvMatrix = session.context.MV;
 
   //Get the projection matrix and invert
-  glGetFloatv(GL_PROJECTION_MATRIX, pMatrix);
+  pMatrix = session.context.P;
   GL_Error_Check;
 
   //Raymarching modelview and normal matrices
   prog->setUniformMatrixf("uMVMatrix", mvMatrix);
 
   //Pass transpose too
-  copyMatrixf(mvMatrix, tmvMatrix);
-  transposeMatrixf(tmvMatrix);
+  tmvMatrix = linalg::transpose(mvMatrix);
   prog->setUniformMatrixf("uTMVMatrix", tmvMatrix);
 
   prog->setUniformMatrixf("uNMatrix", nMatrix);
 
   //Calculate the combined modelview projection matrix
-  multMatrixf(mvpMatrix, pMatrix, matrix);
+  mvpMatrix = linalg::mul(pMatrix, matrix);
 
   //Calculate the combined inverse modelview projection matrix
-  if (!gluInvertMatrixf(pMatrix, invPMatrix)) abort_program("Uninvertable matrix!");
-  transposeMatrixf(mvMatrix);
-  multMatrixf(invMVPMatrix, mvMatrix, invPMatrix);
+  invPMatrix = linalg::inverse(session.context.P);
+  invMVPMatrix = linalg::mul(linalg::transpose(session.context.MV), invPMatrix);
 
   //Combined projection and modelview matrices and inverses
   prog->setUniformMatrixf("uInvMVPMatrix", invMVPMatrix);
@@ -674,7 +662,6 @@ void Volumes::render(int i)
   GL_Error_Check;
 
   //State...
-  glPushAttrib(GL_ENABLE_BIT);
   glEnable(GL_BLEND);
   //Blending for premultiplied alpha
   glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -682,7 +669,6 @@ void Volumes::render(int i)
   //Draw two triangles to fill screen
   Imposter::draw();
 
-  glPopAttrib();
   GL_Error_Check;
   glActiveTexture(GL_TEXTURE0);
   //Restore default blending mode
@@ -690,6 +676,7 @@ void Volumes::render(int i)
 
   //Calibrate colourmap on data now so if colour bar drawn it will have correct range
   geom[i]->colourCalibrate();
+  session.context.pop();
 }
 
 ImageData* Volumes::getTiledImage(DrawingObject* draw, unsigned int index, unsigned int& iw, unsigned int& ih, unsigned int& channels, int xtiles)

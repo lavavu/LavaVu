@@ -1,27 +1,17 @@
-#ifdef WEBGL
 attribute vec3 aVertexPosition;
 attribute vec3 aVertexNormal;
 attribute vec4 aVertexColour;
 attribute vec2 aVertexTexCoord;
+#ifdef WEBGL
 attribute float aVertexObjectID;
+varying float vObjectID;
+#else
+flat varying vec4 vFlatColour;
+#endif
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform mat4 uNMatrix;
-
-varying float vObjectID;
-
-#else
-#define aVertexPosition gl_Vertex.xyz
-#define aVertexNormal gl_Normal
-#define aVertexColour gl_Color
-#define aVertexTexCoord gl_MultiTexCoord0.st;
-
-#define uMVMatrix gl_ModelViewMatrix
-#define uPMatrix gl_ProjectionMatrix
-#define uNMatrix gl_NormalMatrix
-
-#endif
 
 uniform vec4 uColour;
 
@@ -47,6 +37,8 @@ void main(void)
   vTexCoord = aVertexTexCoord;
 #ifdef WEBGL
   vObjectID = aVertexObjectID;
+#else
+  vFlatColour = vColour;
 #endif
   vVertex = aVertexPosition;
 }

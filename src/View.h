@@ -139,7 +139,7 @@ public:
   bool is3d;
   float eye_shift;           // Stereo eye shift factor
   float eye_sep_ratio;       // Eye separation ratio to focal length
-  float modelView[16];
+  mat4 modelView;
 
   View(Session& session, float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
 
@@ -157,7 +157,7 @@ public:
 
   bool init(bool force=false, float* newmin=NULL, float* newmax=NULL);
   void checkClip(float& near_clip, float& far_clip);
-  void getMinMaxDistance(float* min, float* max, float range[2], float modelView[16], bool eyePlane=false);
+  void getMinMaxDistance(float* min, float* max, float range[2], mat4& modelView, bool eyePlane=false);
   void autoRotate();
   std::string rotateString();
   std::string translateString();
@@ -171,7 +171,7 @@ public:
   Quaternion getRotation() {return *rotation;}
   void rotate(float degrees, Vec3d axis);
   void rotate(float degreesX, float degreesY, float degreesZ);
-  void applyRotation() {rotation->apply();}
+  void applyRotation();
 
   void setScale(float x, float y, float z, bool replace=true);
   std::string zoom(float factor);
@@ -194,11 +194,11 @@ public:
   void drawOverlay();
   void setBackground();
 
-  inline float eyeDistance(const float modelView[16], const Vec3d& vec)
+  inline float eyeDistance(const mat4& modelView, const Vec3d& vec)
   {
-    float rX = -(modelView[0] * vec.x + modelView[4] * vec.y + modelView[8] * vec.z + modelView[12]);
-    float rY = -(modelView[1] * vec.x + modelView[5] * vec.y + modelView[9] * vec.z + modelView[13]);
-    float rZ = -(modelView[2] * vec.x + modelView[6] * vec.y + modelView[10] * vec.z + modelView[14]);
+    float rX = -(modelView[0][0] * vec.x + modelView[1][0] * vec.y + modelView[2][0] * vec.z + modelView[3][0]);
+    float rY = -(modelView[0][1] * vec.x + modelView[1][1] * vec.y + modelView[2][1] * vec.z + modelView[3][1]);
+    float rZ = -(modelView[0][2] * vec.x + modelView[1][2] * vec.y + modelView[2][2] * vec.z + modelView[3][2]);
     return sqrt(rX*rX+rY*rY+rZ*rZ);
   }
 };

@@ -1,12 +1,5 @@
-#ifdef WEBGL
-attribute vec3 aVertexPosition;
+attribute vec4 aVertexPosition;
 void main(void)
 {
-  gl_Position = vec4(aVertexPosition, 1.0);
+  gl_Position = aVertexPosition;
 }
-#else
-void main(void)
-{
-  gl_Position = gl_Vertex;
-}
-#endif

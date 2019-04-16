@@ -87,6 +87,7 @@ For further documentation / examples, see the online documentation
 In order to avoid as many external dependencies as possible, the LavaVu sources include files from the following public domain or open source libraries, many thanks to the authors for making their code available!
 * SQLite3 https://www.sqlite.org
 * JSON for Modern C++ https://github.com/nlohmann/json
+* linalg https://github.com/sgorsten/linalg
 * Tiny OBJ Loader https://github.com/syoyo/tinyobjloader
 * LodePNG https://github.com/lvandeve/lodepng
 * jpeg-compressor https://github.com/richgel999/jpeg-compressor

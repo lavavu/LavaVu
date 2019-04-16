@@ -38,29 +38,8 @@
 #include "Include.h"
 #include "Util.h"
 #include "Colours.h"
-
-#ifdef DEBUG
-#define GL_Error_Check_(fatal) \
-  { \
-    char buffer[2048]; \
-    GLenum error = GL_NO_ERROR; \
-    while ((error = glGetError()) != GL_NO_ERROR) { \
-      sprintf(buffer, "OpenGL error [ %s : %d ] \"%s\".\n",  \
-            __FILE__, __LINE__, glErrorString(error)); \
-      if (fatal)  \
-        throw std::runtime_error(buffer); \
-      else \
-        std::cerr << buffer; \
-    } \
-  }
-
-#define GL_Error_Check GL_Error_Check_(true)
-#define GL_Error_Print GL_Error_Check_(false)
-
-#else
-#define GL_Error_Check
-#define GL_Error_Print
-#endif
+#include "RenderContext.h"
+#include "GLUtils.h"
 
 #define BLEND_NORMAL 0
 #define BLEND_PNG 1
@@ -107,19 +86,19 @@
 #define vectorMagnitude(v) sqrt(dotProduct(v,v));
 
 //Get eye pos vector z by multiplying vertex by modelview matrix
-#define eyePlaneDistance(M,V) -(M[2] * V[0] + M[6] * V[1] + M[10] * V[2] + M[14]);
+#define eyePlaneDistance(M,V) -(M[0][2] * V[0] + M[1][2] * V[1] + M[2][2] * V[2] + M[3][2]);
 
 #define printVertex(v) printf("%9f,%9f,%9f\n",v[0],v[1],v[2]);
 // Print out a matrix
-#define M_idx(row,col) (col*4+row)
 #define printMatrix(mat) {              \
         int r, p;                       \
         fprintf(stderr, "--------- --------- --------- ---------\n"); \
         for (r=0; r<4; r++) {           \
             for (p=0; p<4; p++)         \
-                fprintf(stderr, "(%2d) %9f ", M_idx(r,p), mat[M_idx(r,p)]); \
+                fprintf(stderr, "[%d][%d] %9f ", p, r, mat[p][r]); \
             fprintf(stderr, "\n");               \
         } fprintf(stderr, "--------- --------- --------- ---------\n"); }
+
 
 #define identityMatrix {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
 
@@ -609,9 +588,9 @@ public:
     return matrix;
   }
 
-  void apply()
+  void apply(mat4& M)
   {
-    glMultMatrixf(getMatrix());
+    M = linalg::mul(M, mat4(getMatrix()));
   }
 
   //Convert to/from Euler angles
@@ -659,16 +638,6 @@ public:
   friend std::ostream& operator<<(std::ostream& stream, const Quaternion& q);
 };
 
-const char* glErrorString(GLenum errorCode);
-int gluProjectf(float objx, float objy, float objz, float *windowCoordinate);
-int gluProjectf(float objx, float objy, float objz, float* modelview, float*projection, int* viewport, float *windowCoordinate);
-bool gluInvertMatrixf(const float m[16], float invOut[16]);
-void transposeMatrixf(float m[16]);
-void copyMatrixf(const float in[16], float out[16]);
-void multMatrixf(float r[16], const float a[16], const float b[16]);
-
-void Viewport2d(int width, int height);
-
 class FontManager
 {
   GLuint fonttexture;
@@ -677,10 +646,13 @@ class FontManager
   GLuint vbo = 0;
   GLuint ibo = 0;
   char buffer[4096];
+  RenderContext* context;
 
 public:
+
   int charset;
   float fontscale;
+  Colour colour;
 
   FontManager()
   {
@@ -713,37 +685,29 @@ public:
     vbo = ibo = r_vbo = r_ibo = 0;
   }
 
-  void init(std::string& path);
+  void init(std::string& path, RenderContext* context);
 
   //3d fonts
   Colour setFont(Properties& properties, std::string def="default", float scaling=1.0, float multiplier2d=1.0);
   void printString(const char* str);
   void printf(int x, int y, const char *fmt, ...);
-  void print(int x, int y, const char *str);
+  void print(int x, int y, const char *str, bool scale2d=true);
   void print3d(float x, float y, float z, const char *str);
   void print3dBillboard(float x, float y, float z, const char *str, int align=-1, float* scale=NULL);
   int printWidth(const char *string);
 
   //Bitmap texture fonts
   void rasterPrintString(const char* str);
-  void rasterPrint(int x, int y, const char* str);
+  void rasterPrint(int x, int y, const char* str, bool scale2d=true);
   void rasterPrint3d(float x, float y, float z, const char *str, bool alignRight=false);
   int rasterPrintWidth(const char *string);
   void rasterSetupFonts();
   void rasterBuildFont(int glyphsize, int columns, int startidx, int stopidx);
 };
 
-void drawCuboid(float pos[3], float width, float height, float depth, bool filled=true, float linewidth=1.0f);
-void drawCuboid(float min[3], float max[3], bool filled=true, float linewidth=1.0f);
-void drawNormalVector( float pos[3], float vector[3], float scale);
 void vectorNormalise(float vector[3]);
 void normalToPlane( float normal[3], float pos0[3], float pos1[3], float pos2[3]);
 float triAngle(float v0[3], float v1[3], float v2[3]);
-
-void drawSphere_(float centre[3], float radius, int segment_count, Colour* colour);
-void drawEllipsoid_(float centre[3], float radiusX, float radiusY, float radiusZ, int segment_count, Colour* colour);
-void drawVector3d_( float pos[3], float vector[3], float scale, float radius, float head_scale, int segment_count, Colour *colour0, Colour *colour1);
-void drawTrajectory_(float coord0[3], float coord1[3], float radius, float arrowHeadSize, int segment_count, float scale[3], Colour *colour0, Colour *colour1, float maxLength=HUGE_VAL);
 
 GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outwidth, int outheight, int offsetx=0, int offsety=0);
 

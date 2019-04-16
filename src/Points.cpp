@@ -272,7 +272,8 @@ void Points::sort()
   t1 = clock();
 
   //Calculate min/max distances from view plane
-  float distanceRange[2], modelView[16];
+  float distanceRange[2];
+  mat4 modelView;
   view->getMinMaxDistance(min, max, distanceRange, modelView, true);
 
   //Update eye distances, clamping distance to integer between 0 and USHRT_MAX-1
@@ -399,6 +400,7 @@ void Points::draw()
   GL_Error_Check;
 
   setState(0); //Set global draw state (using first object)
+  Shader_Ptr prog = session.shaders[lucPointType];
 
   //Re-render the particles if view has rotated
   if (sorter.changed) render();
@@ -412,8 +414,7 @@ void Points::draw()
   GL_Error_Check;
 
   //Point size distance attenuation (disabled for 2d models)
-  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * session.scale2d; //Include 2d scale factor
-  Shader_Ptr prog = session.shaders[lucPointType];
+  float scale0 = (float)geom[0]->draw->properties["scalepoints"] * session.context.scale2d; //Include 2d scale factor
   if (view->is3d && session.global("pointattenuate")) //Adjust scaling by model size when using distance size attenuation
   {
     prog->setUniform("uPointScale", scale0 * view->model_size);
@@ -438,11 +439,13 @@ void Points::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (sorter.size > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    //Built in attributes gl_Vertex & gl_Color (Note: for OpenGL 3.0 onwards, should define our own generic attributes)
-    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
+    //Setup vertex attributes
+    GLint aPosition = prog->attribs["aVertexPosition"];
+    GLint aColour = prog->attribs["aVertexColour"];
+    glEnableVertexAttribArray(aPosition);
+    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
+    glEnableVertexAttribArray(aColour);
+    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(3*sizeof(float)));   // rgba, offset 3 float
 
     GLint aSize = 0, aPointType = 0;
     aSize = prog->attribs["aSize"];
@@ -498,8 +501,8 @@ void Points::draw()
       if (aPointType >= 0) glDisableVertexAttribArray(aPointType);
     }
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableVertexAttribArray(aPosition);
+    glDisableVertexAttribArray(aColour);
   }
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);

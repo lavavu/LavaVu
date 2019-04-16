@@ -317,9 +317,6 @@ void OpenGLViewer::init()
   //Transparency
   glEnable(GL_BLEND);
 
-  //Smooth shading
-  glShadeModel(GL_SMOOTH);
-
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
 
@@ -580,7 +577,7 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
     height = fbo.height;
 
     //Scale text and 2d elements when downsampling output image
-    app->session.scale2d = fbo.downsampleFactor();
+    app->session.context.scale2d = fbo.downsampleFactor();
   }
 
   //Re-render frame first
@@ -618,7 +615,7 @@ void OpenGLViewer::disableFBO()
   if (fbo.enabled)
     fbo.disable();
   //Undo 2d scaling for downsampling
-  app->session.scale2d = 1.0;
+  app->session.context.scale2d = 1.0;
 }
 
 ImageData* OpenGLViewer::pixels(ImageData* image, int channels)

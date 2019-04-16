@@ -57,7 +57,7 @@ void Session::reset()
 
   now = -1;
   gap = 1;
-  scale2d = 1.0;
+  context.scale2d = 1.0;
 
   for (int i=0; i<3; i++)
   {

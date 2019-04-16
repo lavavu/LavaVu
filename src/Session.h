@@ -8,6 +8,7 @@ class Session;
 #include "Util.h"
 #include "Shaders.h"
 #include "View.h"
+#include "RenderContext.h"
 
 //Class to hold global draw state
 class Session
@@ -47,7 +48,9 @@ public:
 
   //View
   Camera* globalcam = NULL;
-  float scale2d = 1.0;
+
+  //Render state
+  RenderContext context;
 
   //Fonts
   FontManager fonts;
@@ -79,7 +82,6 @@ public:
 
   float random() {return dist(eng0);}
   float random_d() {return dist(eng1);}
-
 };
 
 #endif // Session__

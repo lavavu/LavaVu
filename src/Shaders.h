@@ -2,7 +2,7 @@
 #define Shaders__
 
 #include "Util.h"
-#include "GraphicsUtil.h"
+#include "GLUtils.h"
 
 class Shader
 {
@@ -35,7 +35,7 @@ public:
   void setUniform2f(const std::string& name, float value[2]);
   void setUniform3f(const std::string& name, float value[3]);
   void setUniform4f(const std::string& name, float value[4]);
-  void setUniformMatrixf(const std::string& name, float matrix[16], bool transpose=false);
+  void setUniformMatrixf(const std::string& name, mat4& matrix, bool transpose=false);
 
   std::map<std::string, GLint> uniforms;
   std::map<std::string, GLenum> uniform_types;

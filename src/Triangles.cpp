@@ -318,6 +318,9 @@ void Triangles::draw()
   if (counts.size() == 0)
     render();
 
+  setState(0); //Set global draw state (using first object)
+  Shader_Ptr prog = session.shaders[lucTriangleType];
+
   // Draw using vertex buffer object
   clock_t t0 = clock();
   clock_t t1 = clock();
@@ -329,24 +332,23 @@ void Triangles::draw()
   {
     intptr_t vstart = 0; //Vertex buffer offset
     unsigned int start = 0;
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
+    //Setup vertex attributes
+    GLint aPosition = prog->attribs["aVertexPosition"];
+    GLint aNormal = prog->attribs["aVertexNormal"];
+    GLint aColour = prog->attribs["aVertexColour"];
+    GLint aTexCoord = prog->attribs["aVertexTexCoord"];
+    glEnableVertexAttribArray(aPosition);
+    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
+    glEnableVertexAttribArray(aNormal);
+    glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float))); // Normal x,y,z
+    glEnableVertexAttribArray(aTexCoord);
+    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6*sizeof(float))); //Tex coord s,t
+    glEnableVertexAttribArray(aColour);
+    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
     for (unsigned int index = 0; index < geom.size(); index++)
     {
       if (counts[index] > 0)
       {
-        unsigned int offset = 0;
-        glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)vstart); // Load vertex x,y,z only
-        offset += 3;
-        glNormalPointer(GL_FLOAT, stride, (GLvoid*)(vstart + offset*sizeof(float))); // Load normal x,y,z, offset 3 float
-        offset += 3;
-        glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(vstart + offset*sizeof(float))); // Load texcoord x,y
-        offset += 2;
-        glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(vstart + offset*sizeof(float)));   // Load rgba, offset 6 float
-
-
         setState(index); //Set draw state settings for this object
         if (geom[index]->render->indices.size() > 0)
         {
@@ -371,10 +373,10 @@ void Triangles::draw()
     if (time > 0.005) debug_print("  %.4lf seconds to draw opaque triangles\n", time);
     t1 = clock();
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableVertexAttribArray(aPosition);
+    glDisableVertexAttribArray(aNormal);
+    glDisableVertexAttribArray(aTexCoord);
+    glDisableVertexAttribArray(aColour);
   }
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);

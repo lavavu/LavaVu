@@ -115,9 +115,9 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 
   //Shader path (default to program path if not set)
 #if defined _WIN32
-  if (binpath.back() != '\\') binpath += "\\";
+  if (binpath.length() && binpath.back() != '\\') binpath += "\\";
 #else
-  if (binpath.back() != '/') binpath += "/";
+  if (binpath.length() && binpath.back() != '/') binpath += "/";
 #endif
   this->binpath = binpath;
   if (Shader::path.length() == 0) Shader::path = binpath + "shaders/";
@@ -1726,7 +1726,7 @@ void LavaVu::open(int width, int height)
   reloadShaders();
 
   //Load fonts
-  session.fonts.init(binpath);
+  session.fonts.init(binpath, &session.context);
 }
 
 void LavaVu::reloadShaders()
@@ -1742,6 +1742,8 @@ void LavaVu::reloadShaders()
     if (amodel->objects[i]->shader)
       amodel->objects[i]->shader = nullptr;
   }
+
+  session.context.init();
 
   resetViews();
   amodel->redraw();
@@ -1945,7 +1947,7 @@ void LavaVu::viewApply(int idx)
 
   //Set GL colours
   glClearColor(aview->background.r/255.0, aview->background.g/255.0, aview->background.b/255.0, 0);
-  glColor3ubv(aview->textColour.rgba);
+  session.fonts.colour = aview->textColour;
 
   // Clear viewport
   GL_Error_Check;
@@ -2196,20 +2198,17 @@ void LavaVu::drawAxis()
   if (!doaxis) return;
   infostream = NULL;
 
-  glPushAttrib(GL_ENABLE_BIT);
   glEnable(GL_LIGHTING);
   //Clear depth buffer
   glClear(GL_DEPTH_BUFFER_BIT);
 
   //Setup the projection
-  glMatrixMode(GL_PROJECTION);
-  glPushMatrix();
-  glLoadIdentity();
+  session.context.push();
   // Build the viewing frustum - fixed near/far
   float nearc = 0.01, farc = 10.0, right, top;
   top = tan(0.5f * DEG2RAD * 45) * nearc;
   right = top;
-  glFrustum(-right, right, -top, top, nearc, farc);
+  session.context.P = linalg::frustum_matrix(-right, right, -top, top, nearc, farc);
 
   //Square viewport in lower left corner
   float size = aview->properties["axislength"];
@@ -2238,19 +2237,17 @@ void LavaVu::drawAxis()
   }
 
   //Modelview (rotation only)
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
+  session.context.MV = linalg::identity;
   //Offset from centre for an angled view in 3d
   if (aview->is3d)
-    glTranslatef(-0.225, -0.225, -1.0);
+    session.context.translate3(-0.225, -0.225, -1.0);
   else
-    glTranslatef(-0.35, -0.35, -1.0);
+    session.context.translate3(-0.35, -0.35, -1.0);
   //Apply model rotation
   aview->applyRotation();
   GL_Error_Check;
   // Switch coordinate system if applicable
-  glScalef(1.0, 1.0, 1.0 * (int)aview->properties["coordsystem"]);
+  session.context.scale3(1.0, 1.0, 1.0 * (int)aview->properties["coordsystem"]);
 
   //Use a fixed size to fill the viewport,
   //actual size determined by viewport dimensions
@@ -2293,13 +2290,12 @@ void LavaVu::drawAxis()
   axis->display(true); //Display with forced data update
 
   //Labels
-  glUseProgram(0);
   glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
   session.fonts.charset = FONT_VECTOR;
   session.fonts.fontscale = length*6.0;
-  glColor3ubv(aview->textColour.rgba);
+  session.fonts.colour = aview->textColour;
   float pos = length/2;
   float LH = length * 0.1;
   session.fonts.print3dBillboard(pos, -LH, 0, "X");
@@ -2307,13 +2303,8 @@ void LavaVu::drawAxis()
   if (aview->is3d)
     session.fonts.print3dBillboard(-LH, -LH, pos, "Z");
 
-  glPopAttrib();
-
   //Restore
-  glMatrixMode(GL_PROJECTION);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  glPopMatrix();
+  session.context.pop();
   GL_Error_Check;
 
   //Restore viewport
@@ -2618,7 +2609,7 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   scol.invert();
 
   //Shadow
-  glColor3ubv(scol.rgba);
+  session.fonts.colour = scol;
   session.fonts.charset = FONT_VECTOR;
   session.fonts.fontscale = scale;
 
@@ -2626,14 +2617,14 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
 
   //Use provided text colour or calculated
   if (colour)
-    glColor3ubv(colour->rgba);
+    session.fonts.colour = *colour;
   else
-    glColor3ubv(aview->textColour.rgba);
+    session.fonts.colour = aview->textColour;
 
-  session.fonts.print(xpos, ypos, str.c_str());
+  session.fonts.print(xpos, ypos, str.c_str(), false); //Disable 2d scaling
 
   //Revert to normal colour
-  glColor3ubv(aview->textColour.rgba);
+  session.fonts.colour = aview->textColour;
 }
 
 void LavaVu::displayMessage()
@@ -2644,12 +2635,12 @@ void LavaVu::displayMessage()
   {
     //Set viewport to entire window
     aview->port(0, 0, viewer->width, viewer->height);
-    Viewport2d(viewer->width, viewer->height);
+    session.context.viewport2d(viewer->width, viewer->height);
 
     //Print current message
     text(message, 10, 10, 1.0);
 
-    Viewport2d(0, 0);
+    session.context.viewport2d(0, 0);
   }
 }
 
@@ -2658,7 +2649,7 @@ void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
   if (!viewer->isopen) return;
   //Set viewport to entire window
   aview->port(0, 0, viewer->width, viewer->height);
-  Viewport2d(viewer->width, viewer->height);
+  session.context.viewport2d(viewer->width, viewer->height);
 
   float size = viewer->height / 1250.0;
   if (size < 0.5) size = 0.5;
@@ -2672,7 +2663,7 @@ void LavaVu::displayText(const std::string& str, int lineno, Colour* colour)
     lineno++;
   }
 
-  Viewport2d(0, 0);
+  session.context.viewport2d(0, 0);
 }
 
 void LavaVu::drawSceneBlended(bool nosort)
@@ -2725,6 +2716,8 @@ void LavaVu::drawSceneBlended(bool nosort)
   if (!session.omegalib)
   {
     drawAxis();
+
+    session.context.useDefaultShader();
     aview->drawOverlay();
   }
 }
@@ -2741,8 +2734,6 @@ void LavaVu::drawScene()
   glEnable(GL_LIGHTING);
   glDisable(GL_CULL_FACE);
   glDisable(GL_TEXTURE_2D);
-  glShadeModel(GL_SMOOTH);
-  glPushAttrib(GL_ENABLE_BIT);
 
   //Run the renderers
   for (auto g : amodel->geometry)
@@ -2753,9 +2744,7 @@ void LavaVu::drawScene()
   drawRulers();
 
   //Restore default state
-  glPopAttrib();
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glUseProgram(0);
 }
 
 bool LavaVu::loadFile(const std::string& file)

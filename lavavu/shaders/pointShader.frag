@@ -13,12 +13,7 @@ uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform vec3 uLightPos;
 
-#ifdef WEBGL
 varying vec4 vColour;
-#else
-#define vColour gl_Color
-#endif
-
 varying vec3 vVertex;
 varying float vPointSize;
 varying vec3 vPosEye;

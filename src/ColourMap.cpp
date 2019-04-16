@@ -549,26 +549,19 @@ Colour ColourMap::getFromScaled(float scaledValue)
 #define VERT2D(x, y, c, swap) if (swap) vertices.push_back(ColourVert2d(y, x, c)); else vertices.push_back(ColourVert2d(x, y, c));
 #define RECT2D(x0, y0, x1, y1, c, s) {VERT2D(x0, y0, c, s); VERT2D(x1, y0, c, s); VERT2D(x1, y1, c, s); VERT2D(x0, y1, c, s);}
 
-void ColourMap::drawVertices(std::vector<ColourVert2d>& vertices, GLenum primitive)
+void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat)
 {
   if (!vbo) glGenBuffers(1, &vbo);
   int stride = 2 * sizeof(float) + sizeof(Colour);   //2d vertices + 32-bit colour
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  session.context.useDefaultShader(true, flat);
   if (glIsBuffer(vbo))
   {
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * stride, vertices.data(), GL_DYNAMIC_DRAW);
-
-    glVertexPointer(2, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y only
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(2*sizeof(float)));   // Load rgba, offset 3 float
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-
     glDrawArrays(primitive, 0, vertices.size());
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
+  GL_Error_Check;
 
   //Reset
   vertices.clear();
@@ -576,7 +569,8 @@ void ColourMap::drawVertices(std::vector<ColourVert2d>& vertices, GLenum primiti
 
 void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
 {
-  glPushAttrib(GL_ENABLE_BIT);
+  session.context.push();
+  if (!vbo) glGenBuffers(1, &vbo);
   glDisable(GL_MULTISAMPLE);
   glDisable(GL_CULL_FACE);
 
@@ -608,7 +602,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
     }
   }
 
-  drawVertices(vertices, GL_QUADS);
+  drawVertices(session, vertices, GL_QUADS);
 
   // Draw Colour Bar
   int count = colours.size();
@@ -665,14 +659,12 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
   }
 
   //Send the buffer
-  glShadeModel(discrete ? GL_FLAT : GL_SMOOTH); //Core profile will require a shader for this...
-  drawVertices(vertices, GL_QUAD_STRIP);
-  glShadeModel(GL_SMOOTH);
+  drawVertices(session, vertices, GL_QUAD_STRIP, discrete);
 
   //Labels / tick marks
   colour = session.fonts.setFont(colourbarprops);
   if (colour.a == 0.0) colour = printColour; //Use the user defined font colour if valid, otherwise default print colour
-  glColor4ubv(colour.rgba);
+  session.fonts.colour = colour;
   float tickValue;
   unsigned int ticks = colourbarprops["ticks"];
   json tickValues = colourbarprops["tickvalues"];
@@ -792,6 +784,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
         sprintf(string, format.c_str(), tickValue);
       }
 
+      session.context.push();
       if (session.fonts.charset > FONT_VECTOR)
       {
         if (vertical)
@@ -808,13 +801,15 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
           session.fonts.print(xpos - (int) (0.5 * (float)session.fonts.printWidth(string)),  starty - 5 - session.fonts.printWidth("W"), string);
         glDisable(GL_MULTISAMPLE);
       }
+      session.context.pop();
     }
   }
 
-  drawVertices(vertices, GL_QUADS);
+  drawVertices(session, vertices, GL_QUADS);
 
   glEnable(GL_MULTISAMPLE);
-  glPopAttrib();
+
+  session.context.pop();
 }
 
 void ColourMap::setComponent(int component_index)

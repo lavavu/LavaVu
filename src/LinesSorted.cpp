@@ -229,7 +229,8 @@ void LinesSorted::sort()
   assert(sorter.buffer);
 
   //Calculate min/max distances from view plane
-  float distanceRange[2], modelView[16];
+  float distanceRange[2];
+  mat4 modelView;
   view->getMinMaxDistance(min, max, distanceRange, modelView, true);
 
   //Update eye distances, clamping int distance to integer between 1 and 65534
@@ -345,6 +346,9 @@ void LinesSorted::draw()
   if (sorter.changed)
     render();
 
+  setState(0); //Set global draw state (using first object)
+  Shader_Ptr prog = session.shaders[lucLineType];
+
   // Draw using vertex buffer object
   clock_t t0 = clock();
   clock_t t1 = clock();
@@ -354,12 +358,13 @@ void LinesSorted::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    int offset = 0;
-    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-    glEnableClientState(GL_VERTEX_ARRAY);
-    offset += 3;
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(offset*sizeof(float)));   // Load rgba
-    glEnableClientState(GL_COLOR_ARRAY);
+    //Setup vertex attributes
+    GLint aPosition = prog->attribs["aVertexPosition"];
+    GLint aColour = prog->attribs["aVertexColour"];
+    glEnableVertexAttribArray(aPosition);
+    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
+    glEnableVertexAttribArray(aColour);
+    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(3*sizeof(float)));   // rgba, offset 3 float
 
     unsigned int start = 0;
     int lnidx = 0;
@@ -396,8 +401,8 @@ void LinesSorted::draw()
       if (time > 0.005) debug_print("  %.4lf seconds to draw %d transparent lines\n", time, (elements-start)/2);
     }
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableVertexAttribArray(aPosition);
+    glDisableVertexAttribArray(aColour);
   }
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);

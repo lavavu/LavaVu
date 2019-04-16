@@ -975,11 +975,11 @@ void Geometry::merge(int start, int end)
 Shader_Ptr Geometry::getShader(DrawingObject* draw)
 {
   //Use existing custom shader if found
-  if (draw->shader)
+  if (draw && draw->shader)
     return draw->shader;
 
   //Uses a custom shader?
-  if (draw->properties.has("shaders"))
+  if (draw && draw->properties.has("shaders"))
   {
     //Init from property
     json shaders = draw->properties["shaders"];
@@ -1010,6 +1010,12 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
     return draw->shader;
   }
 
+  //Get the default shader by type
+  return getShader(type);
+}
+
+Shader_Ptr Geometry::getShader(lucGeometryType type)
+{
   //Get the base type for default shader
   lucGeometryType btype;
   switch (type)
@@ -1040,41 +1046,27 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
 
   //Not found? init the default
   if (btype == lucPointType)
-  {
     //Point shaders
     session.shaders[lucPointType] = std::make_shared<Shader>("pointShader.vert", "pointShader.frag");
-    session.shaders[lucPointType]->loadUniforms();
-    session.shaders[lucPointType]->loadAttribs();
-  }
-
-  if (btype == lucLineType)
-  {
+  else if (btype == lucLineType)
     //Line shaders
     session.shaders[lucLineType] = std::make_shared<Shader>("lineShader.vert", "lineShader.frag");
-    session.shaders[lucLineType]->loadUniforms();
-  }
-
-  if (btype == lucTriangleType)
-  {
+  else if (btype == lucTriangleType)
     //Triangle shaders
     session.shaders[lucTriangleType] = std::make_shared<Shader>("triShader.vert", "triShader.frag");
-    session.shaders[lucTriangleType]->loadUniforms();
-  }
-
-  if (btype == lucVolumeType)
-  {
+  else if (btype == lucVolumeType)
     //Volume ray marching shaders
     session.shaders[lucVolumeType] = std::make_shared<Shader>("volumeShader.vert", "volumeShader.frag");
-    session.shaders[lucVolumeType]->loadUniforms();
-    session.shaders[lucVolumeType]->loadAttribs();
+
+  else if (btype == lucMinType) // || btype == lucVolumeType)
+  {
+    session.context.useDefaultShader();
+    return session.context.defaultshader;
   }
 
-  if (btype == lucMinType)
-  {
-    //Default colour only shader
-    session.shaders[lucMinType] = std::make_shared<Shader>("default.vert", "default.frag");
-    session.shaders[lucMinType]->loadUniforms();
-  }
+  //Get uniform and attribute locations
+  session.shaders[btype]->loadUniforms();
+  session.shaders[btype]->loadAttribs();
 
   return session.shaders[btype];
 }
@@ -1118,6 +1110,7 @@ void Geometry::setState(unsigned int i)
 
   //Surface specific options
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  bool flat = false;
   if (TriangleBased(type))
   {
     //Disable lighting and polygon faces in wireframe mode
@@ -1127,23 +1120,18 @@ void Geometry::setState(unsigned int i)
       lighting = false;
       glDisable(GL_CULL_FACE);
     }
-
-    //TODO: replace with shader version for gl 3.2+
-    if (props["flat"])
-      glShadeModel(GL_FLAT);
-    else
-      glShadeModel(GL_SMOOTH);
+    //Disable colour interpolation (flat shading)
+    flat = props["flat"];
   }
   else
   {
     //Flat disables lighting for non surface types
     if (props["flat"]) lighting = false;
     glEnable(GL_BLEND);
-    glShadeModel(GL_SMOOTH);
   }
 
   //Default line width
-  float lineWidth = (float)props["linewidth"] * session.scale2d; //Include 2d scale factor
+  float lineWidth = (float)props["linewidth"] * session.context.scale2d; //Include 2d scale factor
   glLineWidth(lineWidth);
 
   //Disable depth test by default for 2d lines, otherwise enable
@@ -1220,6 +1208,7 @@ void Geometry::setState(unsigned int i)
   prog->setUniform("uLightPos", props["lightpos"]);
   prog->setUniformi("uTextured", texture && texture->unit >= 0);
   prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
+  prog->setUniformf("uFlat", flat);
   //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
 
   if (texture)
@@ -1268,6 +1257,12 @@ void Geometry::setState(unsigned int i)
     prog->setUniform3f("uClipMax", clipMax.ref());
   }
   GL_Error_Check;
+
+  //Send the matrix uniforms
+  mat4 nMatrix = linalg::transpose(linalg::inverse(session.context.MV));
+  prog->setUniformMatrixf("uMVMatrix", session.context.MV);
+  prog->setUniformMatrixf("uNMatrix", nMatrix);
+  prog->setUniformMatrixf("uPMatrix", session.context.P);
 }
 
 
@@ -1309,9 +1304,11 @@ void Geometry::display(bool refresh)
     timestep = session.now;
   }
 
-  //Default to no shaders
+  //Default to triangle shader
   GL_Error_Check;
-  glUseProgram(0);
+  Shader_Ptr prog = getShader();
+  assert(prog && prog->program > 0); //Should always get a shader now
+  prog->use();
 
   //Clear cached object
   cached = NULL;
@@ -1363,27 +1360,26 @@ void Geometry::sort()
 void Geometry::labels()
 {
   //Print labels
-  glPushAttrib(GL_ENABLE_BIT);
   glDisable(GL_DEPTH_TEST);  //No depth testing
   glDisable(GL_LIGHTING);  //No lighting
-  glUseProgram(0);
+  Shader_Ptr prog = getShader(lucTriangleType);
   for (unsigned int i=0; i < geom.size(); i++)
   {
     if (drawable(i) && geom[i]->labels.size() > 0)
     {
       std::string font = geom[i]->draw->properties["font"];
-      if (session.scale2d != 1.0 && font != "vector")
+      if (session.context.scale2d != 1.0 && font != "vector")
         geom[i]->draw->properties.data["font"] = "vector"; //Force vector if downsampling
       //Default to object colour (if fontcolour provided will replace)
       Colour colour;
       ColourLookup& getColour = geom[i]->colourCalibrate();
-      session.fonts.setFont(geom[i]->draw->properties, "small", 1.0, session.scale2d);
+      session.fonts.setFont(geom[i]->draw->properties, "small", 1.0, session.context.scale2d);
 
       for (unsigned int j=0; j < geom[i]->labels.size(); j++)
       {
         float* p = geom[i]->render->vertices[j];
         getColour(colour, j);
-        glColor3ubv(colour.rgba);
+        session.fonts.colour = colour;
         //debug_print("Labels for %d - %d : %s\n", i, j, geom[i]->labels[j].c_str());
         std::string labstr = geom[i]->labels[j];
         if (labstr.length() == 0) continue;
@@ -1418,7 +1414,8 @@ void Geometry::labels()
       }
     }
   }
-  glPopAttrib();
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_LIGHTING);
 }
 
 //Returns true if passed geometry element index is drawable
@@ -2644,18 +2641,34 @@ void Imposter::draw()
   glDisable(GL_MULTISAMPLE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+  Shader_Ptr prog = getShader(type);
+
   //Draw two triangles to fill screen
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glVertexPointer(3, GL_FLOAT, 5 * sizeof(float), (GLvoid*)0); // Load vertex x,y,z only
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glTexCoordPointer(2, GL_FLOAT, 5 * sizeof(float), (GLvoid*)(3*sizeof(float))); // Load texcoord x,y
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-  glDisableClientState(GL_VERTEX_ARRAY);
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  //Setup vertex attributes
+  int stride = 4 * sizeof(float);
+  GLint aPosition = prog->attribs["aVertexPosition"];
+  glEnableVertexAttribArray(aPosition);
+  glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y
+  try
+  {
+    //Only use texcoord if attrib exists
+    GLint aTexCoord = prog->attribs.at("aVertexTexCoord");
+    glEnableVertexAttribArray(aTexCoord);
+    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(2*sizeof(float))); //Tex coord s,t
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDisableVertexAttribArray(aTexCoord);
+  }
+  catch (std::out_of_range& e)
+  {
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  }
+
   GL_Error_Check;
-  
+  glDisableVertexAttribArray(aPosition);
+
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
   glEnable(GL_MULTISAMPLE);
   GL_Error_Check;
 }
@@ -2666,15 +2679,17 @@ void Imposter::update()
   if (!vbo)
   {
     //Load 2 fullscreen triangles
-    float verts_texcoords[20] = {1,1,0,  1,0,
-                                -1,1,0,  0,0,
-                                 1,-1,0, 1,1,
-                                -1,-1,0, 0,1};
+    float verts_texcoords[16] = {1,1,  1,0,
+                                -1,1,  0,0,
+                                 1,-1, 1,1,
+                                -1,-1, 0,1};
     //Initialise vertex buffer
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     if (glIsBuffer(vbo))
       glBufferData(GL_ARRAY_BUFFER, sizeof(verts_texcoords), verts_texcoords, GL_STATIC_DRAW);
+    else
+      abort_program("VBO creation failed");
   }
 }
 

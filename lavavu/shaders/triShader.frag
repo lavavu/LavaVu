@@ -24,8 +24,10 @@ uniform vec3 uLightPos;
 #ifdef WEBGL
 varying float vObjectID;
 uniform int uCullFace[64];
+#else
+flat varying vec4 vFlatColour;
+uniform bool uFlat;
 #endif
-
 
 uniform bool uCalcNormal;
 
@@ -58,6 +60,10 @@ void main(void)
   if (any(lessThan(vVertex, uClipMin)) || any(greaterThan(vVertex, uClipMax))) discard;
 
   vec4 fColour = vColour;
+#ifndef WEBGL
+  if (uFlat)
+    fColour = vFlatColour;
+#endif
   if (uTextured) 
     fColour = texture2D(uTexture, vTexCoord);
 

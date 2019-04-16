@@ -1,17 +1,18 @@
 attribute vec4 aVertexPosition;
-attribute vec4 aVertexColour;
+attribute vec2 aVertexTexCoord;
+
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
+
+uniform vec4 uColour;
+
 varying vec4 vColour;
-#ifndef WEBGL
-flat varying vec4 vFlatColour;
-#endif
+varying vec2 vTexCoord;
+
 void main(void)
 {
   gl_Position = uPMatrix * uMVMatrix * aVertexPosition;
-  vColour = aVertexColour;
-#ifndef WEBGL
-  vFlatColour = aVertexColour;
-#endif
+  vColour = uColour;
+  vTexCoord = aVertexTexCoord;
 }
 

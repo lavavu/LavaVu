@@ -281,20 +281,25 @@ void Lines::draw()
   //Re-render if count changes
   if (idxcount != elements) render();
 
+  setState(0); //Set global draw state (using first object)
+  Shader_Ptr prog = session.shaders[lucLineType];
+
   // Draw using vertex buffer object
-  glPushAttrib(GL_ENABLE_BIT);
   clock_t t0 = clock();
   double time;
-  int stride = 3 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
+  int stride = 3 * sizeof(float) + sizeof(Colour);   //3d vertices + 32-bit colour
   int offset = 0;
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo))
   {
-    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(3*sizeof(float)));   // Load rgba, offset 3 float
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
+    //Setup vertex attributes
+    GLint aPosition = prog->attribs["aVertexPosition"];
+    GLint aColour = prog->attribs["aVertexColour"];
+    glEnableVertexAttribArray(aPosition);
+    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
+    glEnableVertexAttribArray(aColour);
+    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(3*sizeof(float)));   // rgba, offset 3 float
 
     for (unsigned int i=0; i<geom.size(); i++)
     {
@@ -308,7 +313,7 @@ void Lines::draw()
         float scaling = props["scalelines"];
         //Don't apply object scaling to internal lines objects
         if (!internal) scaling *= (float)props["scaling"];
-        float lineWidth = (float)props["linewidth"] * scaling * session.scale2d; //Include 2d scale factor
+        float lineWidth = (float)props["linewidth"] * scaling * session.context.scale2d; //Include 2d scale factor
         if (lineWidth <= 0) lineWidth = scaling;
         glLineWidth(lineWidth);
 
@@ -332,16 +337,13 @@ void Lines::draw()
 
       offset += counts[i];
     }
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableVertexAttribArray(aPosition);
+    glDisableVertexAttribArray(aColour);
   }
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   GL_Error_Check;
 
-  //Restore state
-  glPopAttrib();
   glBindTexture(GL_TEXTURE_2D, 0);
 
   time = ((clock()-t0)/(double)CLOCKS_PER_SEC);

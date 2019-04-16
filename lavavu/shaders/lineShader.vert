@@ -1,17 +1,9 @@
-#ifdef WEBGL
 attribute vec3 aVertexPosition;
 attribute vec4 aVertexColour;
-
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
-#else
-#define aVertexPosition gl_Vertex.xyz
-#define aVertexColour gl_Color
-
-#define uMVMatrix gl_ModelViewMatrix
-#define uPMatrix gl_ProjectionMatrix
-
+#ifndef WEBGL
 uniform int uPointDist;   // Scale by distance
 #endif
 

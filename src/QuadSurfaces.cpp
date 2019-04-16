@@ -61,7 +61,8 @@ void QuadSurfaces::update()
 
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
-  float distanceRange[2], modelView[16];
+  float distanceRange[2];
+  mat4 modelView;
   view->getMinMaxDistance(min, max, distanceRange, modelView);
 
   unsigned int quadverts = 0;
@@ -298,6 +299,8 @@ void QuadSurfaces::draw()
 {
   GL_Error_Check;
   // Draw using vertex buffer object
+  setState(0); //Set global draw state (using first object)
+  Shader_Ptr prog = session.shaders[lucTriangleType];
   clock_t t0 = clock();
   double time;
   int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
@@ -305,14 +308,19 @@ void QuadSurfaces::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    glVertexPointer(3, GL_FLOAT, stride, (GLvoid*)0); // Load vertex x,y,z only
-    glNormalPointer(GL_FLOAT, stride, (GLvoid*)(3*sizeof(float))); // Load normal x,y,z, offset 3 float
-    glTexCoordPointer(2, GL_FLOAT, stride, (GLvoid*)(6*sizeof(float))); // Load texcoord x,y
-    glColorPointer(4, GL_UNSIGNED_BYTE, stride, (GLvoid*)(8*sizeof(float)));   // Load rgba, offset 6 float
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
+    //Setup vertex attributes
+    GLint aPosition = prog->attribs["aVertexPosition"];
+    GLint aNormal = prog->attribs["aVertexNormal"];
+    GLint aColour = prog->attribs["aVertexColour"];
+    GLint aTexCoord = prog->attribs["aVertexTexCoord"];
+    glEnableVertexAttribArray(aPosition);
+    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
+    glEnableVertexAttribArray(aNormal);
+    glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float))); // Normal x,y,z
+    glEnableVertexAttribArray(aTexCoord);
+    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6*sizeof(float))); //Tex coord s,t
+    glEnableVertexAttribArray(aColour);
+    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
 
     //Render in reverse sorted order
     for (int i=geom.size()-1; i>=0; i--)
@@ -359,10 +367,10 @@ void QuadSurfaces::draw()
       }
     }
 
-    glDisableClientState(GL_VERTEX_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableVertexAttribArray(aPosition);
+    glDisableVertexAttribArray(aNormal);
+    glDisableVertexAttribArray(aTexCoord);
+    glDisableVertexAttribArray(aColour);
   }
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -206,12 +206,12 @@ void View::checkClip(float& near_clip, float& far_clip)
   if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
 }
 
-void View::getMinMaxDistance(float* min, float* max, float range[2], float mv[16], bool eyePlane)
+void View::getMinMaxDistance(float* min, float* max, float range[2], mat4& mv, bool eyePlane)
 {
   //Preserve the modelView at time of calculations
   {
     std::lock_guard<std::mutex> guard(matrix_lock);
-    memcpy(mv, &modelView, sizeof(float)*16);
+    mv = modelView;
   }
 
   //Save min/max distance
@@ -370,6 +370,11 @@ void View::rotate(float degreesX, float degreesY, float degreesZ)
   rotate(degreesZ, Vec3d(0,0,1));
 }
 
+void View::applyRotation()
+{
+  rotation->apply(session.context.MV);
+}
+
 void View::setScale(float x, float y, float z, bool replace)
 {
   if (x <= 0.0) x = 1.0;
@@ -446,9 +451,7 @@ void View::print()
   printf("%s\n", rotateString().c_str());
   printf("------------------------------\n");
 #ifdef DEBUG
-  GLfloat modelview[16];
-  glGetFloatv(GL_MODELVIEW_MATRIX, modelview);
-  printMatrix(modelview);
+  printMatrix(session.context.MV);
 #endif
 }
 
@@ -507,7 +510,7 @@ void View::projection(int eye)
   nearclip = properties["near"];
   farclip = properties["far"];
   fov = properties["aperture"];
-  bool ortho = properties["orthographic"];
+  bool ortho_mode = properties["orthographic"];
   checkClip(nearclip, farclip);
   //printf("VP %d / %d\nsetPerspective( %f, %f, %f, %f)\n", width, height, fov, aspectRatio, near, far);
 
@@ -544,21 +547,18 @@ void View::projection(int eye)
   //         aspectRatio, left, right, bottom, top, near, far);
 
   // Set up our projection transform
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
+  session.context.P = linalg::identity;
 
   //Orthographic mode?
-  if (ortho)
+  if (ortho_mode)
   {
     float x = aspectRatio * focal_length;
     float y = focal_length;
-    glOrtho(-x, x, -y, y, nearclip, farclip);
+    session.context.P = session.context.ortho(-x, x, -y, y, nearclip, farclip);
   }
   else
-    glFrustum(left - frustum_shift, right - frustum_shift, bottom, top, nearclip, farclip);
+    session.context.P = linalg::frustum_matrix(left - frustum_shift, right - frustum_shift, bottom, top, nearclip, farclip);
 
-  // Return to model view
-  glMatrixMode(GL_MODELVIEW);
   GL_Error_Check;
 }
 
@@ -587,58 +587,57 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   }
 
   // Setup view transforms
-  glMatrixMode(GL_MODELVIEW);
   if (!session.omegalib)
   {
-    glLoadIdentity();
+    session.context.MV = linalg::identity;
     GL_Error_Check;
 
     // Translate to cancel stereo parallax
-    glTranslatef(scene_shift, 0.0, 0.0);
+    session.context.translate3(scene_shift, 0.0, 0.0);
     GL_Error_Check;
 
     // Translate model away from eye by camera zoom/pan translation
-    //debug_print("APPLYING VIEW '%s': trans %f,%f,%f\n", title.c_str(), model_trans[0], model_trans[1], model_trans[2]);
-    glTranslatef(model_trans[0], model_trans[1], model_trans[2]);
+    //debug_print("APPLYING VIEW : trans %f,%f,%f\n", model_trans[0], model_trans[1], model_trans[2]);
+    session.context.translate3(model_trans[0], model_trans[1], model_trans[2]);
     GL_Error_Check;
-
   }
 
   // Adjust centre of rotation, default is same as focal point so this does nothing...
   float adjust[3] = {(focal_point[0]-rotate_centre[0]), (focal_point[1]-rotate_centre[1]), (focal_point[2]-rotate_centre[2])};
-  glTranslatef(-adjust[0], -adjust[1], -adjust[2]);
+  session.context.translate3(-adjust[0], -adjust[1], -adjust[2]);
   GL_Error_Check;
 
   // Rotate model
   if (!no_rotate)
-    rotation->apply();
+    rotation->apply(session.context.MV);
 
   // Translate object
   if (obj_translation)
-    glTranslatef(obj_translation->x, obj_translation->y, obj_translation->z);
+    session.context.translate3(obj_translation->x, obj_translation->y, obj_translation->z);
 
   // Rotate object
   if (obj_rotation)
-    obj_rotation->apply();
+    obj_rotation->apply(session.context.MV);
 
   GL_Error_Check;
 
   // Apply scaling factors
   if (scale[0] != 1.0 || scale[1] != 1.0 || scale[2] != 1.0)
   {
-    glScalef(scale[0], scale[1], scale[2]);
+    session.context.scale3(scale[0], scale[1], scale[2]);
     iscale = Vec3d(1.0/scale[0], 1.0/scale[1], 1.0/scale[2]);
   }
   GL_Error_Check;
 
   // Adjust back for rotation centre
-  glTranslatef(adjust[0], adjust[1], adjust[2]);
+  session.context.translate3(adjust[0], adjust[1], adjust[2]);
   GL_Error_Check;
 
   // Translate to align eye with model centre - view focal point
-  //glTranslatef(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
-  //if (use_fp) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
-  if (!session.omegalib) glTranslatef(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  //session.context.translate3(-rotate_centre[0], -rotate_centre[1], -rotate_centre[2]);
+  //if (use_fp) session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
+  if (!session.omegalib)
+    session.context.translate3(-focal_point[0], -focal_point[1], orientation * -focal_point[2]);
   GL_Error_Check;
 
   // Switch coordinate system if applicable and set default polygon front faces
@@ -649,13 +648,13 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   else
   {
     glFrontFace(GL_CW);
-    glScalef(1.0, 1.0, -1.0);
+    session.context.scale3(1.0, 1.0, -1.0);
   }
   GL_Error_Check;
 
   //Store the matrix
   std::lock_guard<std::mutex> guard(matrix_lock);
-  glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
+  modelView = session.context.MV;
 
   //Copy updates to properties
   if (updated)
@@ -772,7 +771,7 @@ void View::zoomToFit()
     //Get margin as ratio of viewport width
     margin = floor(width * margin);
   else
-    margin *= session.scale2d; //Multiply by 2d scale factor
+    margin *= session.context.scale2d; //Multiply by 2d scale factor
 
   // The bounding box of model
   GLfloat rect3d[8][3] = {{min[0], min[1], min[2]},
@@ -792,7 +791,7 @@ void View::zoomToFit()
   int count = 0;
   double error = 1, scalerect, adjust = ADJUST;
   glGetIntegerv(GL_VIEWPORT, viewport);
-  glGetFloatv(GL_PROJECTION_MATRIX, projection);
+  memcpy(projection, &session.context.P[0][0], sizeof(float)*16);
 
   // Continue scaling adjustments until within tolerance
   while (count < 30 && fabs(error) > 0.005)
@@ -803,7 +802,7 @@ void View::zoomToFit()
 
     // Set camera and get modelview matrix defined by viewpoint
     apply();
-    glGetFloatv(GL_MODELVIEW_MATRIX, modelview);
+    memcpy(modelview, &session.context.MV[0][0], sizeof(float)*16);
     for (i = 0; i < 8; i++)
     {
       gluProjectf(rect3d[i][0], rect3d[i][1], rect3d[i][2],
@@ -890,11 +889,12 @@ void View::drawOverlay()
 {
   //2D overlay objects, apply text scaling
   assert(width && height);
-  Viewport2d(width, height);
-  glScalef(session.scale2d, session.scale2d, session.scale2d);
-  int w = width / session.scale2d;
-  int h = height / session.scale2d;
+  session.context.viewport2d(width, height);
+  session.context.scale3(session.context.scale2d, session.context.scale2d, session.context.scale2d);
+  int w = width / session.context.scale2d;
+  int h = height / session.context.scale2d;
   GL_Error_Check;
+  //session.context.push();
 
   //Colour bars
   int last_B[4] = {0, 0, 0, 0};
@@ -944,7 +944,7 @@ void View::drawOverlay()
 
     //Default to vector font if downsampling and no other font requested
     Properties cbprops(session.globals, session.defaults);
-    if (session.scale2d != 1.0 && !objects[i]->properties.has("font"))
+    if (session.context.scale2d != 1.0 && !objects[i]->properties.has("font"))
     {
       cbprops.data["font"] = "vector";
       cbprops.data["fontscale"] = 0.4*adjust;
@@ -983,6 +983,7 @@ void View::drawOverlay()
     cmap->draw(session, cbprops, start_A, start_B, length, breadth, textColour, vertical);
     GL_Error_Check;
   }
+  //session.context.pop();
 
   GL_Error_Check;
 
@@ -995,8 +996,9 @@ void View::drawOverlay()
     if (pos != std::string::npos && session.now >= 0 && (int)session.timesteps.size() >= session.now)
       title.replace(pos, 2, std::to_string(session.timesteps[session.now]->step));
 
-    glColor3ubv(textColour.rgba);
-    session.fonts.setFont(properties, "vector", 1.0);
+    Colour colour = session.fonts.setFont(properties, "vector", 1.0);
+    if (colour.a == 0.0) colour = textColour; //Use the user defined font colour if valid, otherwise default print colour
+    session.fonts.colour = colour;
     if (session.fonts.charset == FONT_VECTOR)
       session.fonts.fontscale *= 0.6*adjust; //Scale down vector font slightly for title
     session.fonts.print(0.5 * (w - session.fonts.printWidth(title.c_str())), h - 3 - session.fonts.printWidth("W"), title.c_str());
@@ -1004,7 +1006,7 @@ void View::drawOverlay()
 
   GL_Error_Check;
   //Restore 3d
-  Viewport2d(0, 0);
+  session.context.viewport2d(0, 0);
   GL_Error_Check;
 }
 

@@ -10,18 +10,27 @@ bool Shader::supported = false;
 
 //Default shaders
 const char *vertexShader = R"(
+attribute vec4 aVertexPosition;
+attribute vec4 aVertexTexCoord;
+attribute vec4 aVertexColour;
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+varying vec4 vColour;
+varying vec2 vTexCoord;
 void main(void)
 {
-  gl_TexCoord[0] = gl_MultiTexCoord0;
-  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-  gl_FrontColor = gl_Color;
+  gl_Position = uPMatrix * uMVMatrix * aVertexPosition;
+  vColour = aVertexColour;
+  vTexCoord= aVertexTexCoord;
 }
 )";
 
 const char *fragmentShader = R"(
+varying vec4 vColour;
+varying vec2 vTexCoord;
 void main(void)
 {
-  gl_FragColor = gl_Color;
+  gl_FragColor = vColour;
 }
 )";
 
@@ -389,7 +398,7 @@ void Shader::setUniform4f(const std::string& name, float value[4])
   }
 }
 
-void Shader::setUniformMatrixf(const std::string& name, float matrix[16], bool transpose)
+void Shader::setUniformMatrixf(const std::string& name, mat4& matrix, bool transpose)
 {
   if (!supported || !program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
@@ -397,7 +406,7 @@ void Shader::setUniformMatrixf(const std::string& name, float matrix[16], bool t
   {
     GLint loc = uniforms[name];
     if (loc >= 0)
-      glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, matrix);
+      glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, &matrix[0][0]);
     GL_Error_Check;
   }
 }
