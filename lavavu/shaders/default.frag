@@ -1,4 +1,4 @@
-varying vec4 vColour;
+in vec4 vColour;
 #ifndef WEBGL
 flat in vec4 vFlatColour;
 uniform bool uFlat;

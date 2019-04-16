@@ -13,11 +13,11 @@ uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform vec3 uLightPos;
 
-varying vec4 vColour;
-varying vec3 vVertex;
-varying float vPointSize;
-varying vec3 vPosEye;
-varying float vPointType;
+in vec4 vColour;
+in vec3 vVertex;
+in float vPointSize;
+in vec3 vPosEye;
+in float vPointType;
 
 
 void calcColour(vec3 colour, float alpha)

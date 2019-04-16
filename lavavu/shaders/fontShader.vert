@@ -1,13 +1,13 @@
-attribute vec4 aVertexPosition;
-attribute vec2 aVertexTexCoord;
+in vec4 aVertexPosition;
+in vec2 aVertexTexCoord;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
 uniform vec4 uColour;
 
-varying vec4 vColour;
-varying vec2 vTexCoord;
+out vec4 vColour;
+out vec2 vTexCoord;
 
 void main(void)
 {

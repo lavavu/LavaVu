@@ -598,8 +598,8 @@ Renderer.prototype.init = function() {
       fdefines += "#define ENABLE_TRICUBIC\n";
   }
 
-  vs = vdefines + getSourceFromElement(vs);
-  fs = fdefines + getSourceFromElement(fs);
+  vs = vdefines + getSourceFromElement(vs).replace(/^out /gm, 'varying ').replace(/^in /gm, 'attribute ');
+  fs = fdefines + getSourceFromElement(fs).replace(/^in /gm, 'varying ');
 
   try {
     //Compile the shaders

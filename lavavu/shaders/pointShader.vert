@@ -1,10 +1,10 @@
-attribute vec3 aVertexPosition;
-attribute vec4 aVertexColour;
+in vec3 aVertexPosition;
+in vec4 aVertexColour;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
-varying vec4 vColour;
+out vec4 vColour;
 
 #ifdef WEBGL
 const int uPointDist = 1;   // Scale by distance
@@ -12,18 +12,18 @@ const int uPointDist = 1;   // Scale by distance
 uniform int uPointDist;   // Scale by distance
 #endif
 
-attribute float aSize;
-attribute float aPointType;
+in float aSize;
+in float aPointType;
 
 uniform float uPointScale;   // scale to calculate size in pixels
 
 uniform vec4 uColour;
 uniform float uOpacity;
 
-varying vec3 vVertex;
-varying float vPointSize;
-varying vec3 vPosEye;
-varying float vPointType;
+out vec3 vVertex;
+out float vPointSize;
+out vec3 vPosEye;
+out float vPointType;
 
 void main(void)
 {

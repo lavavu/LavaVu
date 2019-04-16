@@ -1,5 +1,5 @@
-attribute vec3 aVertexPosition;
-attribute vec4 aVertexColour;
+in vec3 aVertexPosition;
+in vec4 aVertexColour;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 
@@ -10,8 +10,8 @@ uniform int uPointDist;   // Scale by distance
 uniform vec4 uColour;
 uniform float uOpacity;
 
-varying vec4 vColour;
-varying vec3 vVertex;
+out vec4 vColour;
+out vec3 vVertex;
 
 void main(void)
 {

@@ -1,5 +1,5 @@
-varying vec4 vColour;
-varying vec3 vVertex;
+in vec4 vColour;
+in vec3 vVertex;
 
 uniform float uOpacity;
 uniform float uBrightness;

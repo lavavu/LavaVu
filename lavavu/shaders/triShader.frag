@@ -1,8 +1,8 @@
-varying vec4 vColour;
-varying vec3 vNormal;
-varying vec3 vPosEye;
-varying vec3 vVertex;
-varying vec2 vTexCoord;
+in vec4 vColour;
+in vec3 vNormal;
+in vec3 vPosEye;
+in vec3 vVertex;
+in vec2 vTexCoord;
 
 uniform float uOpacity;
 uniform bool uLighting;
@@ -22,10 +22,10 @@ uniform bool uOpaque;
 uniform vec3 uLightPos;
 
 #ifdef WEBGL
-varying float vObjectID;
+in float vObjectID;
 uniform int uCullFace[64];
 #else
-flat varying vec4 vFlatColour;
+flat in vec4 vFlatColour;
 uniform bool uFlat;
 #endif
 
@@ -96,7 +96,9 @@ void main(void)
     N = normalize(cross(fdx,fdy)); 
   }
 
+  //Two-sided lighting with abs()
   float diffuse = abs(dot(N, lightDir));
+  //float diffuse = dot(N, lightDir);
 
   //Compute the specular term
   vec3 specular = vec3(0.0,0.0,0.0);

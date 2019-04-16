@@ -1,5 +1,5 @@
-varying vec4 vColour;
-varying vec2 vTexCoord;
+in vec4 vColour;
+in vec2 vTexCoord;
 
 uniform bool uTextured;
 uniform sampler2D uTexture;

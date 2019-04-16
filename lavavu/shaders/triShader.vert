@@ -1,12 +1,12 @@
-attribute vec3 aVertexPosition;
-attribute vec3 aVertexNormal;
-attribute vec4 aVertexColour;
-attribute vec2 aVertexTexCoord;
+in vec3 aVertexPosition;
+in vec3 aVertexNormal;
+in vec4 aVertexColour;
+in vec2 aVertexTexCoord;
 #ifdef WEBGL
-attribute float aVertexObjectID;
-varying float vObjectID;
+in float aVertexObjectID;
+out float vObjectID;
 #else
-flat varying vec4 vFlatColour;
+flat out vec4 vFlatColour;
 #endif
 
 uniform mat4 uMVMatrix;
@@ -15,11 +15,11 @@ uniform mat4 uNMatrix;
 
 uniform vec4 uColour;
 
-varying vec4 vColour;
-varying vec3 vNormal;
-varying vec3 vPosEye;
-varying vec2 vTexCoord;
-varying vec3 vVertex;
+out vec4 vColour;
+out vec3 vNormal;
+out vec3 vPosEye;
+out vec2 vTexCoord;
+out vec3 vVertex;
 
 void main(void)
 {

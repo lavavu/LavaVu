@@ -1,10 +1,10 @@
-attribute vec4 aVertexPosition;
-attribute vec4 aVertexColour;
+in vec4 aVertexPosition;
+in vec4 aVertexColour;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
-varying vec4 vColour;
+out vec4 vColour;
 #ifndef WEBGL
-flat varying vec4 vFlatColour;
+flat out vec4 vFlatColour;
 #endif
 void main(void)
 {
