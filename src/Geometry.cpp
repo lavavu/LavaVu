@@ -1083,15 +1083,6 @@ void Geometry::setState(unsigned int i)
   //Textured? - can be per element, so always execute
   TextureData* texture = draw->useTexture(geom[i]->texture);
   GL_Error_Check;
-  if (texture)
-  {
-    //Combine texture with colourmap: Requires modulate mode
-    //GL_MODULATE/BLEND/REPLACE/DECAL
-    if (geom[i]->colourCount() > 0)
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    else
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  }
 
   //Only set rest of object state when object changes
   if (draw == cached) return;
