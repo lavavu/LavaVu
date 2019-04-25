@@ -100,8 +100,6 @@ void RenderContext::viewport2d(int width, int height)
     P = ortho(0.0, (float)width, 0.0, (float)height, -1.0f, 1.0f);
     MV = linalg::identity;
 
-    // Disable lighting
-    glDisable(GL_LIGHTING);
     // Disable line smoothing in 2d mode
     glDisable(GL_LINE_SMOOTH);
   }

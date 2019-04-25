@@ -110,7 +110,6 @@ void FontManager::printString(const char* str)
 {
   glDisable(GL_CULL_FACE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glDisable(GL_TEXTURE_2D);
 
   //Render the characters in loop
   //1) Create index buffer data for each char
@@ -252,14 +251,12 @@ void FontManager::rasterPrintString(const char* str)
     charset = FONT_FIXED;
 
   // First save state of enable flags
-  glDisable(GL_LIGHTING);
   glDisable(GL_CULL_FACE);
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_BLEND);
 
-  glEnable(GL_TEXTURE_2D);  // Enable Texture Mapping
   glBindTexture(GL_TEXTURE_2D, fonttexture);
   if (fontscale >= 1.0) //Don't allow downscaling bitmap fonts
     context->scale3(fontscale, fontscale, fontscale);
@@ -315,10 +312,8 @@ void FontManager::rasterPrintString(const char* str)
   glDisableVertexAttribArray(aTexCoord);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glDisable(GL_TEXTURE_2D);                           /* Disable Texture Mapping */
   GL_Error_Check;
 
-  glEnable(GL_LIGHTING);
   //glDisable(GL_CULL_FACE);
 }
 
@@ -342,9 +337,9 @@ void FontManager::rasterPrint3d(float x, float y, float z, const char *str, bool
   /* Switch to ortho view with 1 unit = 1 pixel and print using calculated screen coords */
   context->viewport2d(viewportArray[2], viewportArray[3]);
 
+  GL_Error_Check;
   glDepthFunc(GL_ALWAYS);
-  glAlphaFunc(GL_GREATER, 0.25);
-  glEnable(GL_ALPHA_TEST);
+  GL_Error_Check;
 
   /* FontManager::print at calculated position, compensating for viewport offset */
   int xs, ys;
@@ -357,7 +352,7 @@ void FontManager::rasterPrint3d(float x, float y, float z, const char *str, bool
   context->viewport2d(0, 0);
   /* Put back settings */
   glDepthFunc(GL_LESS);
-  glDisable(GL_ALPHA_TEST);
+  GL_Error_Check;
 }
 
 /* String width calc */
@@ -386,6 +381,7 @@ void FontManager::rasterSetupFonts()
     for (j = 0; j < IMAGE_WIDTH; j++)
       fontdata[ i ][ j ] = 255 - pixel_data[ IMAGE_BYTES_PER_PIXEL * (IMAGE_WIDTH * i + j) ];
 
+  GL_Error_Check;
   /* create and bind texture */
   glGenTextures(1, &fonttexture);
   glBindTexture(GL_TEXTURE_2D, fonttexture);
@@ -394,7 +390,8 @@ void FontManager::rasterSetupFonts()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   /* generate the texture from bitmap alpha data */
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, IMAGE_WIDTH, IMAGE_HEIGHT, 0, GL_ALPHA, GL_UNSIGNED_BYTE, fontdata);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, IMAGE_WIDTH, IMAGE_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, fontdata);
+  GL_Error_Check;
 
   /* Build font data */
   rasterBuildFont(16, 16, 0, 384);      /* 16x16 glyphs, 16 columns - 4 fonts */
@@ -628,17 +625,21 @@ GLubyte* RawImageCrop(void* image, int width, int height, int channels, int outw
 TextureData* ImageLoader::use()
 {
   //If have data but texture not loaded, load it
+    GL_Error_Check;
   if (empty() && source)
     build();
+    GL_Error_Check;
 
   if (!empty())
   {
+    GL_Error_Check;
     GLenum ttype = GL_TEXTURE_2D;
     if (texture->depth > 0)
       ttype = GL_TEXTURE_3D;
 
-    glEnable(ttype);
+    GL_Error_Check;
     glActiveTexture(GL_TEXTURE0 + texture->unit);
+    GL_Error_Check;
     glBindTexture(ttype, texture->id);
     GL_Error_Check;
     //printf("USE TEXTURE: (id %d unit %d)\n", texture->id, texture->unit);
@@ -657,9 +658,6 @@ TextureData* ImageLoader::use()
     return texture;
   }
 
-  //No texture:
-  glDisable(GL_TEXTURE_2D);
-  glDisable(GL_TEXTURE_3D);
   return NULL;
 }
 
@@ -889,17 +887,19 @@ int ImageLoader::build(ImageData* image)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   }
+  GL_Error_Check;
 
   //Load the texture data based on bits per pixel
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+  GL_Error_Check;
   switch (image->channels)
   {
   case 1:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, image->width, image->height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, image->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_RED, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 2:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, image->width, image->height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 3:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, bgr ? GL_BGR : GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
@@ -950,11 +950,10 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
   switch (type)
   {
   case VOLUME_FLOAT:
-    //glTexImage3D(GL_TEXTURE_3D, 0, GL_INTENSITY, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, GL_LUMINANCE, GL_FLOAT, data);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, width, height, depth, 0, GL_RED, GL_FLOAT, data);
     break;
   case VOLUME_BYTE:
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_RED, GL_UNSIGNED_BYTE, data);
     break;
   case VOLUME_BYTE_COMPRESSED:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_COMPRESSED_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);

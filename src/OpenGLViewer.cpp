@@ -123,7 +123,7 @@ bool FBO::create(int w, int h)
   destroy();
 
   // create a texture to use as the backbuffer
-  glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+  GL_Error_Check;
   //glActiveTexture(GL_TEXTURE2);
   glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
@@ -134,6 +134,7 @@ bool FBO::create(int w, int h)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   else
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  GL_Error_Check;
   // make sure this is the same color format as the screen
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   GL_Error_Check;

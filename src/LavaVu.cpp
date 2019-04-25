@@ -2198,7 +2198,6 @@ void LavaVu::drawAxis()
   if (!doaxis) return;
   infostream = NULL;
 
-  glEnable(GL_LIGHTING);
   //Clear depth buffer
   glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -2290,7 +2289,6 @@ void LavaVu::drawAxis()
   axis->display(true); //Display with forced data update
 
   //Labels
-  glDisable(GL_LIGHTING);
   glDisable(GL_DEPTH_TEST);
 
   session.fonts.charset = FONT_VECTOR;
@@ -2723,16 +2721,18 @@ void LavaVu::drawSceneBlended(bool nosort)
 
 void LavaVu::drawScene()
 {
+  GL_Error_Check;
   if (session.global("antialias"))
     glEnable(GL_MULTISAMPLE);
   else
     glDisable(GL_MULTISAMPLE);
+  GL_Error_Check;
 
   // Setup default state
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  glEnable(GL_LIGHTING);
+  GL_Error_Check;
   glDisable(GL_CULL_FACE);
-  glDisable(GL_TEXTURE_2D);
+  GL_Error_Check;
 
   //Run the renderers
   for (auto g : amodel->geometry)

@@ -810,7 +810,6 @@ void TriSurfaces::draw()
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   //Restore state
-  //glEnable(GL_LIGHTING);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   //glDisable(GL_CULL_FACE);
   glBindTexture(GL_TEXTURE_2D, 0);

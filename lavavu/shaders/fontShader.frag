@@ -10,8 +10,8 @@ void main(void)
   if (uTextured)
   {
     vec4 tColour = texture2D(uTexture, vTexCoord);
-    //Just use the alpha component
-    fColour.a = tColour.a;
+    //Just use the alpha component (red in single component texture)
+    fColour.a = tColour.r;
   }
   gl_FragColor = fColour;
 }

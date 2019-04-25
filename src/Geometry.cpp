@@ -1366,7 +1366,6 @@ void Geometry::labels()
 {
   //Print labels
   glDisable(GL_DEPTH_TEST);  //No depth testing
-  glDisable(GL_LIGHTING);  //No lighting
   Shader_Ptr prog = getShader(lucTriangleType);
   for (unsigned int i=0; i < geom.size(); i++)
   {
@@ -1420,7 +1419,6 @@ void Geometry::labels()
     }
   }
   glEnable(GL_DEPTH_TEST);
-  glEnable(GL_LIGHTING);
 }
 
 //Returns true if passed geometry element index is drawable
