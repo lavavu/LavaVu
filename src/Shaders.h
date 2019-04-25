@@ -46,6 +46,7 @@ public:
   static std::string gl_version;
   static bool supported;
   static std::string path;
+  static GLint major, minor, core;
 };
 
 typedef std::shared_ptr<Shader> Shader_Ptr;

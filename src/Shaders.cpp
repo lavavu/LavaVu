@@ -7,6 +7,9 @@ std::string Shader::path = SHADER_PATH;
 #endif
 std::string Shader::gl_version = "";
 bool Shader::supported = false;
+GLint Shader::major = 0;
+GLint Shader::minor = 0;
+GLint Shader::core = 0;
 
 //Default shaders
 const char *vertexShader = R"(
@@ -109,9 +112,16 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
 
 bool Shader::version()
 {
+  glGetIntegerv(GL_MAJOR_VERSION, &major);
+  glGetIntegerv(GL_MINOR_VERSION, &minor);
+  glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &core);
   const char* gl_v = (const char*)glGetString(GL_VERSION);
   if (!gl_v) return false;
-  gl_version = std::string(gl_v);
+  if (!gl_version.length())
+  {
+    gl_version = std::string(gl_v);
+    printf("OpenGL %d.%d (core %d)\n", major, minor, core);
+  }
   return true;
 }
 

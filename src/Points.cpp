@@ -402,12 +402,14 @@ void Points::draw()
   if (sorter.changed) render();
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
-  glEnable(GL_POINT_SPRITE);
+  //Required for OpenGL < 3.2 or compatibility mode
+  if (!Shader::core)
+  {
+    glEnable(GL_POINT_SPRITE);
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+  }
   GL_Error_Check;
 
-  //Gen TexCoords for point sprites (for GLSL < 1.3 where gl_PointCoord not available)
-  glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE);
-  GL_Error_Check;
 
   //Point size distance attenuation (disabled for 2d models)
   float scale0 = (float)geom[0]->draw->properties["scalepoints"] * session.context.scale2d; //Include 2d scale factor
@@ -422,9 +424,6 @@ void Points::draw()
     prog->setUniform("uPointDist", 0);
   }
   prog->setUniformi("uPointType", getPointType());
-
-  glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-  GL_Error_Check;
 
   // Draw using vertex buffer object
   int stride = 3 * sizeof(float) + sizeof(Colour);
@@ -501,15 +500,18 @@ void Points::draw()
     glDisableVertexAttribArray(aPosition);
     glDisableVertexAttribArray(aColour);
   }
+  GL_Error_Check;
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+  GL_Error_Check;
   //Restore state
   glBindTexture(GL_TEXTURE_2D, 0);
-  glDisable(GL_POINT_SPRITE);
-  glDisable(GL_ALPHA_TEST);
-  glDisable(GL_TEXTURE_2D);
+  if (!Shader::core)
+    glDisable(GL_POINT_SPRITE);
+  GL_Error_Check;
   glDepthFunc(GL_LESS);
+  GL_Error_Check;
 
   time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
   if (time > 0.05)
