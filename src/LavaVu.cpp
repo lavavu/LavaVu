@@ -2717,7 +2717,6 @@ void LavaVu::drawSceneBlended(bool nosort)
   {
     drawAxis();
 
-    session.context.useDefaultShader();
     aview->drawOverlay();
   }
 }

@@ -1074,7 +1074,7 @@ Shader_Ptr Geometry::getShader(lucGeometryType type)
 
   else if (btype == lucMinType) // || btype == lucVolumeType)
   {
-    session.context.useDefaultShader();
+    //session.context.useDefaultShader();
     return session.context.defaultshader;
   }
 
