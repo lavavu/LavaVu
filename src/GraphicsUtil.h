@@ -641,8 +641,10 @@ public:
 class FontManager
 {
   GLuint fonttexture;
+  GLuint r_vao = 0;
   GLuint r_vbo = 0;
   GLuint r_ibo = 0;
+  GLuint vao = 0;
   GLuint vbo = 0;
   GLuint ibo = 0;
   char buffer[4096];
@@ -675,14 +677,16 @@ public:
 
 #ifdef USE_FONTS
     // Delete fonts
+    if (vao) glDeleteVertexArrays(1, &vao);
     if (vbo) glDeleteBuffers(1, &vbo);
     if (ibo) glDeleteBuffers(1, &ibo);
+    if (r_vao) glDeleteVertexArrays(1, &r_vao);
     if (r_vbo) glDeleteBuffers(1, &r_vbo);
     if (r_ibo) glDeleteBuffers(1, &r_ibo);
     if (fonttexture) glDeleteTextures(1, &fonttexture);
 #endif
 
-    vbo = ibo = r_vbo = r_ibo = 0;
+    vbo = ibo = r_vbo = r_ibo = vao = r_vao = 0;
   }
 
   void init(std::string& path, RenderContext* context);

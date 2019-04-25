@@ -528,6 +528,7 @@ class Geometry
 {
   friend class Model; //Allow private access from Model
 protected:
+  GLuint indexvbo, vbo, vao;
   View* view;
   std::vector<Geom_Ptr> records;
   std::vector<Geom_Ptr> geom;
@@ -636,8 +637,6 @@ public:
 
 class Triangles : public Geometry
 {
-protected:
-  GLuint indexvbo, vbo;
 public:
   Triangles(Session& session);
   virtual ~Triangles();
@@ -683,7 +682,6 @@ class Lines : public Geometry
 {
 protected:
   unsigned int idxcount;
-  GLuint indexvbo, vbo;
 public:
   Lines(Session& session);
   virtual ~Lines();
@@ -716,7 +714,6 @@ public:
 class Points : public Geometry
 {
   SortData<PIndex> sorter;
-  GLuint indexvbo, vbo;
 public:
   Points(Session& session);
   virtual ~Points();
@@ -808,7 +805,6 @@ public:
 
 class Imposter : public Geometry
 {
-  GLuint vbo;
 public:
   Imposter(Session& session);
   virtual ~Imposter();

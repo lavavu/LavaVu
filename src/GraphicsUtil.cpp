@@ -58,6 +58,9 @@ void FontManager::init(std::string& path, RenderContext* context)
   // Load fonts
   std::vector<float> vertices;
   GenerateFontCharacters(vertices, path + "font.bin");
+  //Initialise vertex array object for OpenGL 3.2+
+  glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
   //Initialise vertex buffer
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -115,6 +118,7 @@ void FontManager::printString(const char* str)
   //3) Translate by char width
   GLuint buffer[4];
   if (!ibo) glGenBuffers(1, &ibo);
+  glBindVertexArray(vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
@@ -261,6 +265,7 @@ void FontManager::rasterPrintString(const char* str)
     context->scale3(fontscale, fontscale, fontscale);
 
   if (!r_ibo) glGenBuffers(1, &r_ibo);
+  glBindVertexArray(r_vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, r_ibo);
   glBindBuffer(GL_ARRAY_BUFFER, r_vbo);
 
@@ -434,6 +439,10 @@ void FontManager::rasterBuildFont(int glyphsize, int columns, int startidx, int 
 
   }
 
+  GL_Error_Check;
+  //Initialise vertex array object for OpenGL 3.2+
+  glGenVertexArrays(1, &r_vao);
+  glBindVertexArray(r_vao);
   //Initialise vertex buffer
   glGenBuffers(1, &r_vbo);
   glBindBuffer(GL_ARRAY_BUFFER, r_vbo);

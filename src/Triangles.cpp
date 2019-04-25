@@ -38,24 +38,16 @@
 Triangles::Triangles(Session& session) : Geometry(session)
 {
   type = lucTriangleType;
-  vbo = 0;
-  indexvbo = 0;
 }
 
 Triangles::~Triangles()
 {
-  if (vbo)
-    glDeleteBuffers(1, &vbo);
-  if (indexvbo)
-    glDeleteBuffers(1, &indexvbo);
-  vbo = 0;
-  indexvbo = 0;
 }
-
 
 void Triangles::close()
 {
   reload = true;
+  Geometry::close();
 }
 
 unsigned int Triangles::triCount()
@@ -229,6 +221,9 @@ void Triangles::loadBuffers()
     debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, geom[index]->count());
   }
 
+  //Initialise vertex array object for OpenGL 3.2+
+  if (!vao) glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
   //Initialise vertex buffer
   if (!vbo) glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -260,6 +255,7 @@ void Triangles::render()
     glGenBuffers(1, &indexvbo);
 
   //Always set data size again in case changed
+  glBindVertexArray(vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
@@ -326,6 +322,7 @@ void Triangles::draw()
   clock_t t1 = clock();
   double time;
   int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
+  glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))

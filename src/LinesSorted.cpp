@@ -316,6 +316,7 @@ void LinesSorted::render()
     glGenBuffers(1, &indexvbo);
 
   //Always set data size again in case changed
+  glBindVertexArray(vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
@@ -354,6 +355,7 @@ void LinesSorted::draw()
   clock_t t1 = clock();
   double time;
   int stride = 3 * sizeof(float) + sizeof(Colour);   //3 vertices, + 32-bit colour
+  glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))

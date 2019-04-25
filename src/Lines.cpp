@@ -39,23 +39,16 @@ Lines::Lines(Session& session) : Geometry(session)
 {
   type = lucLineType;
   idxcount = 0;
-  vbo = 0;
-  indexvbo = 0;
   total = 0;
 }
 
 Lines::~Lines()
 {
-  if (vbo)
-    glDeleteBuffers(1, &vbo);
-  if (indexvbo)
-    glDeleteBuffers(1, &indexvbo);
-  vbo = 0;
-  indexvbo = 0;
 }
 
 void Lines::close()
 {
+  Geometry::close();
 }
 
 unsigned int Lines::lineCount()
@@ -193,6 +186,9 @@ void Lines::loadBuffers()
       elements += counts[i]; //geom[i]->count();
   }
 
+  //Initialise vertex array object for OpenGL 3.2+
+  if (!vao) glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
   //Initialise vertex buffer
   if (!vbo) glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -225,6 +221,7 @@ void Lines::render()
     glGenBuffers(1, &indexvbo);
 
   //Always set data size again in case changed
+  glBindVertexArray(vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   GL_Error_Check;
   if (glIsBuffer(indexvbo))
@@ -289,6 +286,7 @@ void Lines::draw()
   double time;
   int stride = 3 * sizeof(float) + sizeof(Colour);   //3d vertices + 32-bit colour
   int offset = 0;
+  glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo))

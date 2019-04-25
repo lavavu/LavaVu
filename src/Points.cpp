@@ -39,24 +39,16 @@
 Points::Points(Session& session) : Geometry(session)
 {
   type = lucPointType;
-  indexvbo = 0;
-  vbo = 0;
 }
 
 Points::~Points()
 {
-  if (vbo)
-    glDeleteBuffers(1, &vbo);
-  if (indexvbo)
-    glDeleteBuffers(1, &indexvbo);
-  vbo = 0;
-  indexvbo = 0;
-
   sorter.clear();
 }
 
 void Points::close()
 {
+  Geometry::close();
 }
 
 void Points::update()
@@ -168,6 +160,9 @@ void Points::loadVertices()
   debug_print("  %.4lf seconds to update %d particles into vbo\n", total, (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
+  //Initialise vertex array object for OpenGL 3.2+
+  if (!vao) glGenVertexArrays(1, &vao);
+  glBindVertexArray(vao);
   if (!vbo)
     glGenBuffers(1, &vbo);
 
@@ -358,6 +353,7 @@ void Points::render()
   tt = t1 = clock();
 
   // Index buffer object for quick display
+  glBindVertexArray(vao);
   if (!indexvbo)
     glGenBuffers(1, &indexvbo);
 
@@ -435,6 +431,7 @@ void Points::draw()
   bool attribs = session.global("pointattribs");
   if (attribs)
     stride += 2 * sizeof(float);
+  glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (sorter.size > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))

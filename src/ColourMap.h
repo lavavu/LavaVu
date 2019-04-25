@@ -80,6 +80,7 @@ class ColourMap
   bool discrete = false; //Cached discrete setting
   bool interpolate = true; //Cached interpolate settings
   float range, irange;
+  GLuint vao = 0;
   GLuint vbo = 0;
 
 public:

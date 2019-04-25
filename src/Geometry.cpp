@@ -477,10 +477,24 @@ Geometry::Geometry(Session& session) : view(NULL), elements(0),
 {
   drawcount = 0;
   type = lucMinType;
+  vao = 0;
+  vbo = 0;
+  indexvbo = 0;
 }
 
 Geometry::~Geometry()
 {
+  if (vao)
+    glDeleteVertexArrays(1, &vao);
+  if (vbo)
+    glDeleteBuffers(1, &vbo);
+  if (indexvbo)
+    glDeleteBuffers(1, &indexvbo);
+
+  vao = 0;
+  vbo = 0;
+  indexvbo = 0;
+
   //Free GeomData elements
   clear(true);
 }
@@ -2610,7 +2624,6 @@ void Glyphs::jsonWrite(DrawingObject* draw, json& obj)
 
 Imposter::Imposter(Session& session) : Geometry(session)
 {
-  vbo = 0;
   type = lucScreenType;
 }
 
@@ -2621,9 +2634,7 @@ Imposter::~Imposter()
 
 void Imposter::close()
 {
-  if (vbo)
-    glDeleteBuffers(1, &vbo);
-  vbo = 0;
+  Geometry::close();
 }
 
 void Imposter::draw()
@@ -2635,6 +2646,7 @@ void Imposter::draw()
   Shader_Ptr prog = getShader(type);
 
   //Draw two triangles to fill screen
+  glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
   //Setup vertex attributes
@@ -2674,6 +2686,9 @@ void Imposter::update()
                                 -1,1,  0,0,
                                  1,-1, 1,1,
                                 -1,-1, 0,1};
+    //Initialise vertex array object for OpenGL 3.2+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
     //Initialise vertex buffer
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);

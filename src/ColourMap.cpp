@@ -551,6 +551,11 @@ Colour ColourMap::getFromScaled(float scaledValue)
 
 void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat)
 {
+  //Initialise vertex array object for OpenGL 3.2+
+  GL_Error_Check;
+  if (!vao) glGenVertexArrays(1, &vao);
+  GL_Error_Check;
+  glBindVertexArray(vao);
   if (!vbo) glGenBuffers(1, &vbo);
   int stride = 2 * sizeof(float) + sizeof(Colour);   //2d vertices + 32-bit colour
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -570,7 +575,6 @@ void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertic
 void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, int starty, int length, int breadth, Colour& printColour, bool vertical)
 {
   session.context.push();
-  if (!vbo) glGenBuffers(1, &vbo);
   glDisable(GL_MULTISAMPLE);
   glDisable(GL_CULL_FACE);
 
