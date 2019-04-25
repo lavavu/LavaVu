@@ -12,12 +12,10 @@ const char* glErrorString(GLenum errorCode)
     return "Invalid value";
   case GL_INVALID_OPERATION:
     return "Invalid operation";
-  case GL_STACK_OVERFLOW:
-    return "Stack overflow";
-  case GL_STACK_UNDERFLOW:
-    return "Stack underflow";
   case GL_OUT_OF_MEMORY:
     return "Out of memory";
+  case GL_INVALID_FRAMEBUFFER_OPERATION:
+    return "Invalid Framebuffer Operation";
   }
   return "Unknown error";
 }
