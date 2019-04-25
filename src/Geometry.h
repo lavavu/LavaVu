@@ -544,6 +544,7 @@ public:
   int timestep = -2;
   Session& session;
   std::string custom = "";
+  GLenum primitive = GL_TRIANGLES; //Some renderers allow custom primitive
 
   //Maximum bounding box of all content
   float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};

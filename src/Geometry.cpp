@@ -2273,103 +2273,47 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
 
   unsigned int vertex_index = g->count();
 
-  if (type == lucGridType)
+  std::vector<unsigned int> indices;
+  if (primitive == GL_QUADS) //Legacy
   {
-    //Front
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+1);
-    g->_indices->read1(vertex_index+2);
-    g->_indices->read1(vertex_index+3);
-
-    //Back
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index+7);
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+5);
-
-    //Bottom
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+1);
-
-    //Top
-    g->_indices->read1(vertex_index+3);
-    g->_indices->read1(vertex_index+2);
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+7);
-
-    //Left
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+3);
-    g->_indices->read1(vertex_index+7);
-
-    //Right
-    g->_indices->read1(vertex_index+1);
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+2);
+    indices = {0, 1, 2, 3,  //Front
+               4, 7, 6, 5,  //Back
+               0, 4, 5, 1,  //Bottom
+               3, 2, 6, 7,  //Top
+               4, 0, 3, 7,  //Left
+               1, 5, 6, 2}; //Right
   }
-  else
+  else if (primitive == GL_LINE_LOOP)
+  {
+    //Hilbert curve traversal of cube nodes
+    indices = {6, 5, 4, 7,
+               6, 2, 6, 7,
+               3, 2, 1, 0,
+               3, 7, 4, 0,
+               4, 5, 1, 5};
+  }
+  else if (primitive == GL_TRIANGLES)
   {
     //Triangle indices
-
-    //Front
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+1);
-    g->_indices->read1(vertex_index+2);
-
-    g->_indices->read1(vertex_index+2);
-    g->_indices->read1(vertex_index+3);
-    g->_indices->read1(vertex_index);
-
-    //Back
-    g->_indices->read1(vertex_index+7);
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+5);
-
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index+7);
-
-    //Bottom
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+1);
-
-    g->_indices->read1(vertex_index+1);
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+4);
-
-    //Top
-    g->_indices->read1(vertex_index+3);
-    g->_indices->read1(vertex_index+2);
-    g->_indices->read1(vertex_index+6);
-
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+7);
-    g->_indices->read1(vertex_index+3);
-
-    //Left
-    g->_indices->read1(vertex_index+4);
-    g->_indices->read1(vertex_index);
-    g->_indices->read1(vertex_index+3);
-
-    g->_indices->read1(vertex_index+3);
-    g->_indices->read1(vertex_index+7);
-    g->_indices->read1(vertex_index+4);
-
-    //Right
-    g->_indices->read1(vertex_index+1);
-    g->_indices->read1(vertex_index+5);
-    g->_indices->read1(vertex_index+6);
-
-    g->_indices->read1(vertex_index+6);
-    g->_indices->read1(vertex_index+2);
-    g->_indices->read1(vertex_index+1);
-
+    indices = {0, 1, 2, 2, 3, 0,  //Front
+               7, 6, 5, 5, 3, 7,  //Back
+               4, 5, 1, 1, 0, 4,  //Bottom
+               3, 2, 6, 6, 7, 3,  //Top
+               4, 0, 3, 3, 7, 4,  //Left
+               1, 5, 6, 6, 2, 1}; //Right
   }
+  else if (primitive == GL_TRIANGLE_STRIP)
+  {
+    //Triangle strip indices
+    //https://stackoverflow.com/questions/28375338/cube-using-single-gl-triangle-strip
+    indices = {6, 5, 7, 4,
+               0, 5, 1, 6,
+               2, 7, 3, 0,
+               2, 1};
+  }
+
+  for (auto i : indices)
+    g->_indices->read1(vertex_index+i);
 
   g->_vertices->read(8, verts[0].ref());
 

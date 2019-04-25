@@ -350,13 +350,13 @@ void Triangles::draw()
         if (geom[index]->render->indices.size() > 0)
         {
           //Draw with index buffer
-          glDrawElements(GL_TRIANGLES, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+          glDrawElements(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
           //printf("DRAW %d from %d by INDEX vs %d\n", counts[index], start, vstart);
         }
         else
         {
           //Draw directly from vertex buffer
-          glDrawArrays(GL_TRIANGLES, start, geom[index]->count());
+          glDrawArrays(primitive, start, geom[index]->count());
           //printf("DRAW %d from %d by VERTEX vs %d\n", geom[index]->count(), start, vstart);
         }
         start += counts[index];

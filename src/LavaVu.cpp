@@ -152,7 +152,7 @@ void LavaVu::defaults()
 
   axis = new Triangles(session);
   rulers = new Lines(session);
-  border = new QuadSurfaces(session);
+  border = new Triangles(session);
 
   initfigure = 0;
   viewset = RESET_NO;
@@ -2494,18 +2494,18 @@ void LavaVu::drawBorder()
   infostream = NULL; //Disable debug output while drawing this
   bool filled = aview->properties["fillborder"];
 
-  if (!filled)
+  if (!filled || !aview->is3d)
   {
     obj->properties.data["lit"] = false;
-    obj->properties.data["wireframe"] = true;
-    obj->properties.data["cullface"] = false;
     obj->properties.data["linewidth"] = bordersize - 0.5;
+    border->primitive = GL_LINE_LOOP;
   }
   else
   {
     obj->properties.data["lit"] = true;
     obj->properties.data["wireframe"] = false;
     obj->properties.data["cullface"] = true;
+    border->primitive = GL_TRIANGLE_STRIP;
   }
 
   Vec3d minvert = Vec3d(aview->min);

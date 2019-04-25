@@ -547,7 +547,7 @@ Colour ColourMap::getFromScaled(float scaledValue)
 }
 
 #define VERT2D(x, y, c, swap) if (swap) vertices.push_back(ColourVert2d(y, x, c)); else vertices.push_back(ColourVert2d(x, y, c));
-#define RECT2D(x0, y0, x1, y1, c, s) {VERT2D(x0, y0, c, s); VERT2D(x1, y0, c, s); VERT2D(x1, y1, c, s); VERT2D(x0, y1, c, s);}
+#define RECT2D(x0, y0, x1, y1, c, s) { VERT2D(x0, y1, c, s); VERT2D(x0, y0, c, s); VERT2D(x1, y1, c, s); VERT2D(x0, y0, c, s); VERT2D(x1, y0, c, s); VERT2D(x1, y1, c, s);}
 
 void ColourMap::drawVertices(Session& session, std::vector<ColourVert2d>& vertices, GLenum primitive, bool flat)
 {
@@ -606,7 +606,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
     }
   }
 
-  drawVertices(session, vertices, GL_QUADS);
+  drawVertices(session, vertices, GL_TRIANGLES);
 
   // Draw Colour Bar
   int count = colours.size();
@@ -663,7 +663,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
   }
 
   //Send the buffer
-  drawVertices(session, vertices, GL_QUAD_STRIP, discrete);
+  drawVertices(session, vertices, GL_TRIANGLE_STRIP, discrete);
 
   //Labels / tick marks
   colour = session.fonts.setFont(colourbarprops);
@@ -809,7 +809,7 @@ void ColourMap::draw(Session& session, Properties& colourbarprops, int startx, i
     }
   }
 
-  drawVertices(session, vertices, GL_QUADS);
+  drawVertices(session, vertices, GL_TRIANGLES);
 
   glEnable(GL_MULTISAMPLE);
 

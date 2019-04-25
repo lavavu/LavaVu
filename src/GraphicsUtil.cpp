@@ -295,15 +295,16 @@ void FontManager::rasterPrintString(const char* str)
     int stopidx = 384;
     unsigned int i = (unsigned int)(str[c] - 32 + (96 * charset));      // Choose the font and charset
     assert(4 * i + 3 < stopidx * 4 * 2 * 2);
-    GLuint buffer[4] = {4 * i, 4 * i + 1, 4 * i + 2, 4 * i + 3};
+    GLuint buffer[4] = {4 * i, 4 * i + 1, 4 * i + 3, 4 * i + 2};
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * sizeof(GLuint), buffer, GL_DYNAMIC_DRAW);
     GL_Error_Check;
-    glDrawElements(GL_QUADS, 4, GL_UNSIGNED_INT, (GLvoid*)0);
+    glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, (GLvoid*)0);
     GL_Error_Check;
     
     // Shift right width of character + 1
     context->translate3(bmpfont_charwidths[startidx + i]+1, 0, 0);
     context->fontshader->setUniformMatrixf("uMVMatrix", context->MV);
+    GL_Error_Check;
   }
 
   GL_Error_Check;
