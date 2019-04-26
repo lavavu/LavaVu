@@ -273,9 +273,9 @@ void OpenGLViewer::init()
   glGetIntegerv(GL_STENCIL_BITS, &s);
   glGetIntegerv(GL_DEPTH_BITS, &d);
   glGetIntegerv(GL_ACCUM_RED_BITS, &a);
+  glGetIntegerv(GL_MAX_TEXTURE_UNITS, &u);
   GL_Error_Check;
   */
-  glGetIntegerv(GL_MAX_TEXTURE_UNITS, &u);
   glGetIntegerv(GL_SAMPLE_BUFFERS, &sb);
   glGetIntegerv(GL_SAMPLES, &ss);
   glGetBooleanv(GL_STEREO, &stereoBuffer);
