@@ -876,7 +876,6 @@ int ImageLoader::build(ImageData* image)
   if (mipmaps)
   {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);    //set so texImage2d will gen mipmaps
   }
   else if (nearest)
   {
@@ -900,7 +899,7 @@ int ImageLoader::build(ImageData* image)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_RED, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 2:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_RG, GL_UNSIGNED_BYTE, image->pixels);
     break;
   case 3:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, bgr ? GL_BGR : GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
@@ -915,6 +914,8 @@ int ImageLoader::build(ImageData* image)
   texture->height = image->height;
   texture->channels = image->channels;
 
+  if (mipmaps)
+    glGenerateMipmap(GL_TEXTURE_2D);
   return 1;
 }
 
@@ -957,7 +958,7 @@ void ImageLoader::load3D(int width, int height, int depth, void* data, int volty
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, width, height, depth, 0, GL_RED, GL_UNSIGNED_BYTE, data);
     break;
   case VOLUME_BYTE_COMPRESSED:
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_COMPRESSED_RED, width, height, depth, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_COMPRESSED_RED, width, height, depth, 0, GL_RED, GL_UNSIGNED_BYTE, data);
     break;
   case VOLUME_RGB:
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB8, width, height, depth, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -982,12 +983,12 @@ void ImageLoader::load3Dslice(int slice, void* data)
   {
   case VOLUME_FLOAT:
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
-                    GL_LUMINANCE, GL_FLOAT, data);
+                    GL_RED, GL_FLOAT, data);
     break;
   case VOLUME_BYTE:
   case VOLUME_BYTE_COMPRESSED:
     glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, slice, texture->width, texture->height, 1, 
-                    GL_LUMINANCE, GL_UNSIGNED_BYTE, data);
+                    GL_RED, GL_UNSIGNED_BYTE, data);
     break;
   case VOLUME_RGB:
   case VOLUME_RGB_COMPRESSED:

@@ -120,4 +120,33 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 
 #include "Extensions.h"
 
+/* Try to use modern versions of these functions,
+   if not available, use EXT versions */
+#ifndef GL_FRAMEBUFFER
+#define GL_FRAMEBUFFER GL_FRAMEBUFFER_EXT
+#define GL_COLOR_ATTACHMENT0 GL_COLOR_ATTACHMENT0_EXT
+#define GL_RENDERBUFFER GL_RENDERBUFFER_EXT
+#define GL_DEPTH_ATTACHMENT GL_DEPTH_ATTACHMENT_EXT
+#define GL_FRAMEBUFFER_COMPLETE GL_FRAMEBUFFER_COMPLETE_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
+#define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT
+#define GL_FRAMEBUFFER_UNSUPPORTED GL_FRAMEBUFFER_UNSUPPORTED_EXT
+#define glBindFramebuffer glBindFramebufferEXT
+#define glGenRenderbuffers glGenRenderbuffersEXT
+#define glBindRenderbuffer glBindRenderbufferEXT
+#define glRenderbufferStorage glRenderbufferStorageEXT
+#define glGenFramebuffers glGenFramebuffersEXT
+#define glBindFramebuffer glBindFramebufferEXT
+#define glFramebufferRenderbuffer glFramebufferRenderbufferEXT
+#define glFramebufferTexture2D glFramebufferTexture2DEXT
+#define glCheckFramebufferStatus glCheckFramebufferStatusEXT
+#define glDeleteRenderbuffers glDeleteRenderbuffersEXT
+#define glDeleteFramebuffers glDeleteFramebuffersEXT
+#define glGenerateMipmap glGenerateMipmapEXT
+#endif
+#ifndef GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
+#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
+#endif
+
 #endif //Include__

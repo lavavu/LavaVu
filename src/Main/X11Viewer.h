@@ -43,6 +43,7 @@
 
 #define GLX_GLXEXT_PROTOTYPES
 #include <GL/glx.h>
+#include "GL/glxext.h"
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
