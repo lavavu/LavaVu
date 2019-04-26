@@ -1,15 +1,20 @@
 in vec4 vColour;
-#ifndef WEBGL
+
+#ifdef WEBGL
+#define outColour gl_FragColor
+#else
 flat in vec4 vFlatColour;
 uniform bool uFlat;
+out vec4 outColour;
 #endif
+
 void main(void)
 {
 #ifndef WEBGL
   if (uFlat)
-    gl_FragColor = vFlatColour;
+    outColour = vFlatColour;
   else
 #endif
-    gl_FragColor = vColour;
+    outColour = vColour;
 }
 

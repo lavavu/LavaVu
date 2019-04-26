@@ -19,6 +19,11 @@ in float vPointSize;
 in vec3 vPosEye;
 in float vPointType;
 
+#ifdef WEBGL
+#define outColour gl_FragColor
+#else
+out vec4 outColour;
+#endif
 
 void calcColour(vec3 colour, float alpha)
 {
@@ -34,7 +39,7 @@ void calcColour(vec3 colour, float alpha)
   if (uOpaque)
     alpha = 1.0;
 
-  gl_FragColor = vec4(colour, alpha);
+  outColour = vec4(colour, alpha);
 }
 
 void main(void)
@@ -44,19 +49,19 @@ void main(void)
 
   float alpha = vColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
-  gl_FragColor = vColour;
+  outColour = vColour;
 
   int pointType = uPointType;
   if (vPointType >= 0.0) pointType = int(floor(vPointType + 0.5)); //Round back to nearest int
 
   //Textured?
   //if (uTextured)
-  //   gl_FragColor = texture2D(uTexture, gl_PointCoord);
+  //   outColour = texture2D(uTexture, gl_PointCoord);
 
   //Flat, square points, fastest, skip lighting
   if (pointType == 4)
   {
-    calcColour(gl_FragColor.rgb, alpha);
+    calcColour(outColour.rgb, alpha);
     return;
   }
 
@@ -86,7 +91,7 @@ void main(void)
     else //TODO: allow disable blur for circular points
       alpha *= 1.0-R;       //Linear
 
-    calcColour(gl_FragColor.rgb, alpha);
+    calcColour(outColour.rgb, alpha);
     return;
   }
 
@@ -108,8 +113,8 @@ void main(void)
     //Compute cosine (dot product) with the normal
     float NdotHV = max(dot(N, halfVector), 0.0);
     specular = specolour * pow(NdotHV, shininess);
-    calcColour(gl_FragColor.rgb * diffuse + specular, alpha);
+    calcColour(outColour.rgb * diffuse + specular, alpha);
   }
   else
-    calcColour(gl_FragColor.rgb * diffuse, alpha);
+    calcColour(outColour.rgb * diffuse, alpha);
 }

@@ -9,11 +9,14 @@
 #ifdef WEBGL
 uniform sampler2D uVolume;
 #define NO_DEPTH_WRITE
-
+#define TEX texture3D
+#define outColour gl_FragColor
 #else
 //Included dynamically before compile in WebGL mode...
 const int maxSamples = 2048;
 uniform sampler3D uVolume;
+#define TEX texture
+out vec4 outColour;
 #endif
 
 const float depthT = 0.99; //Transmissivity threshold below which depth write applied
@@ -125,7 +128,7 @@ float tex3D(vec3 pos)
 
 #else
 
-#define sample(pos) texture3D(uVolume, pos).x
+#define sample(pos) TEX(uVolume, pos).x
 
 float tex3D(vec3 pos)
 {
@@ -135,7 +138,7 @@ float tex3D(vec3 pos)
     density = interpolate_tricubic_fast(pos);
   else
 #endif
-    density = texture3D(uVolume, pos).x;
+    density = TEX(uVolume, pos).x;
 
   //Normalise the density over provided range
   //(used for float textures only, all other formats are already [0,1])
@@ -355,7 +358,7 @@ void main()
 
     //TODO: alpha threshold uniform?
     //if (T > depthT) discard;
-    gl_FragColor = vec4(colour, 1.0 - T);
+    outColour = vec4(colour, 1.0 - T);
 
 #ifndef NO_DEPTH_WRITE
     // Write the depth (!Not supported in WebGL without extension)

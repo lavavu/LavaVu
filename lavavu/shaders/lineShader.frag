@@ -9,6 +9,12 @@ uniform vec3 uClipMin;
 uniform vec3 uClipMax;
 uniform bool uOpaque;
 
+#ifdef WEBGL
+#define outColour gl_FragColor
+#else
+out vec4 outColour;
+#endif
+
 void main(void)
 {
   //Clip planes in X/Y/Z
@@ -33,5 +39,5 @@ void main(void)
   if (uOpaque)
     colour.a = 1.0;
 
-  gl_FragColor = colour;
+  outColour = colour;
 }

@@ -24,9 +24,11 @@ uniform vec3 uLightPos;
 #ifdef WEBGL
 in float vObjectID;
 uniform int uCullFace[64];
+#define outColour gl_FragColor
 #else
 flat in vec4 vFlatColour;
 uniform bool uFlat;
+out vec4 outColour;
 #endif
 
 uniform bool uCalcNormal;
@@ -42,7 +44,7 @@ void calcColour(vec3 colour, float alpha)
   colour = mix(intensity, colour, uSaturation);
   colour = mix(AvgLumin, colour, uContrast);
 
-  gl_FragColor = vec4(colour, alpha);
+  outColour = vec4(colour, alpha);
 }
 
 //Until we can use OpenGL 3+ we need our own isnan function
