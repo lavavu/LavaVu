@@ -47,6 +47,7 @@
 class GLFWViewer  : public OpenGLViewer
 {
   GLFWwindow *window = NULL;
+  static int window_count;
 
 public:
   bool redisplay = true;

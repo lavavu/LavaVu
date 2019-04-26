@@ -37,6 +37,8 @@
 
 #include "GLFWViewer.h"
 
+int GLFWViewer::window_count = 0;
+
 static void error_callback(int error, const char *description)
 {
   fputs(description, stderr);
@@ -187,8 +189,13 @@ GLFWViewer::~GLFWViewer()
   if (window)
   {
     glfwDestroyWindow(window);
+    window = NULL;
+    window_count--;
   }
-  glfwTerminate();
+
+  //Only call terminate when all windows closed
+  if (window_count == 0)
+    glfwTerminate();
 }
 
 void GLFWViewer::open(int w, int h)
@@ -204,6 +211,8 @@ void GLFWViewer::open(int w, int h)
 
   if (!glfwInit())
     abort_program("GLFW init failed");
+  else
+    window_count++;
 
   //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
