@@ -404,8 +404,10 @@ void Points::draw()
   //Required for OpenGL < 3.2 or compatibility mode
   if (!Shader::core)
   {
+#ifdef GL_POINT_SPRITE
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+#endif
   }
   else
   {
@@ -511,9 +513,15 @@ void Points::draw()
   //Restore state
   glBindTexture(GL_TEXTURE_2D, 0);
   if (!Shader::core)
+  {
+#ifdef GL_POINT_SPRITE
     glDisable(GL_POINT_SPRITE);
+#endif
+  }
   else
-    glEnable(GL_PROGRAM_POINT_SIZE);
+  {
+    glDisable(GL_PROGRAM_POINT_SIZE);
+  }
   GL_Error_Check;
   glDepthFunc(GL_LESS);
   GL_Error_Check;
