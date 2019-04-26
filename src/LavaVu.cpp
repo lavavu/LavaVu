@@ -2142,6 +2142,9 @@ void LavaVu::display(bool redraw)
         viewApply(v);
         GL_Error_Check;
 
+        //Require reload of object data for multiple viewports
+        amodel->reloadRedraw(NULL, true);
+
         // Default non-stereo render
         aview->projection(EYE_CENTRE);
         drawSceneBlended(v > 0);
