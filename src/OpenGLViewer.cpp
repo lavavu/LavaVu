@@ -130,8 +130,6 @@ bool FBO::create(int w, int h)
   {
     if (status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
       std::cerr << "FBO failed INCOMPLETE_ATTACHMENT" << std::endl;
-    else if (status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS)
-      std::cerr << "FBO failed INCOMPLETE_DIMENSIONS" << std::endl;
     else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
       std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
     else if (status == GL_FRAMEBUFFER_UNSUPPORTED)

@@ -145,8 +145,5 @@ static float _X_huge_valf = std::numeric_limits<float>::infinity();
 #define glDeleteFramebuffers glDeleteFramebuffersEXT
 #define glGenerateMipmap glGenerateMipmapEXT
 #endif
-#ifndef GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS
-#define GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT
-#endif
 
 #endif //Include__
