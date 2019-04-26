@@ -106,15 +106,12 @@ void Lines::loadBuffers()
 
   //Copy data to Vertex Buffer Object
   // VBO - copy normals/colours/positions to buffer object
-  unsigned char *p, *ptr;
-  ptr = p = NULL;
   int datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3), and 32-bit colour
   int bsize = total * datasize;
 
-
   //Create intermediate buffer
   unsigned char* buffer = new unsigned char[bsize];
-  p = ptr = buffer;
+  unsigned char *ptr = buffer;
 
   clock_t t1,t2,tt;
   tt=clock();
@@ -165,7 +162,7 @@ void Lines::loadBuffers()
       //if (cidx%100 ==0) printf("COLOUR %d => %d,%d,%d\n", cidx, colour.r, colour.g, colour.b);
 
       //Write vertex data to vbo
-      assert((int)(ptr-p) < bsize);
+      assert((int)(ptr-buffer) < bsize);
       //Copies vertex bytes
       memcpy(ptr, &geom[i]->render->vertices[v][0], sizeof(float) * 3);
       ptr += sizeof(float) * 3;
@@ -199,7 +196,6 @@ void Lines::loadBuffers()
     //ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     GL_Error_Check;
   }
-  if (!p) abort_program("VBO setup failed");
 
   delete[] buffer;
   glBindBuffer(GL_ARRAY_BUFFER, 0);

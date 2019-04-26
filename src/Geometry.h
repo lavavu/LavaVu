@@ -325,7 +325,7 @@ public:
   ColourLookupRGBOpacityMapped _getColourRGBOpacityMapped;
   ColourLookupLuminanceOpacityMapped _getColourLuminanceOpacityMapped;
 
-  float distance;
+  float distance; //For depth sorting
 
   //Bounding box of content
   float min[3] = {HUGE_VALF, HUGE_VALF, HUGE_VALF};
@@ -470,15 +470,15 @@ public:
   bool opaqueCheck(); //Return true if object does not require transparency
 };
 
-class Distance
+//Shared pointer for GeomData
+typedef std::shared_ptr<GeomData> Geom_Ptr;
+
+class GeomPtrCompare
 {
 public:
-  int id;
-  float distance;
-  Distance(int i, float d) : id(i), distance(d) {}
-  bool operator<(const Distance& rhs) const
+  bool operator()(const Geom_Ptr& l, const Geom_Ptr& r) const
   {
-    return distance < rhs.distance;
+    return l->distance < r->distance;
   }
 };
 
@@ -519,9 +519,6 @@ struct vertexIdSort
     return (a.id < b.id);
   }
 };
-
-//Shared pointer for GeomData
-typedef std::shared_ptr<GeomData> Geom_Ptr;
 
 //Container class for a list of geometry objects
 class Geometry
@@ -638,14 +635,21 @@ public:
 
 class Triangles : public Geometry
 {
+protected:
+  unsigned int tricount;
 public:
   Triangles(Session& session);
   virtual ~Triangles();
   virtual void close();
+  unsigned int triCount(unsigned int index);
   unsigned int triCount();
   virtual void update();
   virtual void loadMesh() {}
   void loadBuffers();
+  void calcTriangleNormals(unsigned int index);
+  void calcGridNormals(unsigned int i);
+  void calcGridIndices(unsigned int i);
+  void calcGridVertices(unsigned int i);
   virtual void render();
   virtual void draw();
   virtual void jsonWrite(DrawingObject* draw, json& obj);
@@ -659,9 +663,7 @@ public:
 
 class TriSurfaces : public Triangles
 {
-  friend class QuadSurfaces; //Allow private access from QuadSurfaces
   SortData<TIndex> sorter;
-  unsigned int tricount;
   std::vector<Vec3d> centroids;
 public:
   TriSurfaces(Session& session);
@@ -669,12 +671,10 @@ public:
   virtual void close();
   virtual void update();
   virtual void loadMesh();
+  void calcSmoothTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise=true);
+  void calcCentroids();
   virtual void sort();    //Threaded sort function
   void loadList();
-  void calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise=true);
-  void calcTriangleNormalsWithIndices(int index);
-  void calcGridNormals(int i, std::vector<Vec3d> &normals);
-  void calcGridIndices(int i, std::vector<GLuint> &indices);
   virtual void render();
   virtual void draw();
 };
@@ -783,17 +783,13 @@ public:
   virtual void update();
 };
 
-class QuadSurfaces : public TriSurfaces
+class QuadSurfaces : public Triangles
 {
-  std::vector<Distance> surf_sort;
 public:
   QuadSurfaces(Session& session);
   virtual ~QuadSurfaces();
   virtual void update();
   virtual void sort();    //Threaded sort function
-  virtual void render();
-  void calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset);
-  void calcGridVertices(int i, std::vector<Vec3d> &vertices);
   virtual void draw();
 };
 
@@ -823,7 +819,6 @@ public:
 
 class Volumes : public Imposter
 {
-  std::vector<Distance> vol_sort;
 public:
   GLuint colourTexture;
   std::map<DrawingObject*, unsigned int> slices;

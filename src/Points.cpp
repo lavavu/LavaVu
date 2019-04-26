@@ -89,11 +89,10 @@ void Points::loadVertices()
     datasize = sizeof(float) * 5 + sizeof(Colour);   //Vertex(3), two flags and 32-bit colour
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
-  unsigned char *p = NULL, *ptr = NULL;
 
   //Create intermediate buffer
   unsigned char* buffer = new unsigned char[total * datasize];
-  p = ptr = buffer;
+  unsigned char *ptr = buffer;
 
 //////////////////////////////////////////////////
   t1 = clock();
@@ -130,7 +129,7 @@ void Points::loadVertices()
       //Copy data to VBO entry
       if (ptr)
       {
-        assert((unsigned int)(ptr-p) < total * datasize);
+        assert((unsigned int)(ptr-buffer) < total * datasize);
         //Copies vertex bytes
         memcpy(ptr, geom[s]->render->vertices[i], sizeof(float) * 3);
         ptr += sizeof(float) * 3;
@@ -408,6 +407,10 @@ void Points::draw()
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
   }
+  else
+  {
+    glEnable(GL_PROGRAM_POINT_SIZE);
+  }
   GL_Error_Check;
 
 
@@ -509,6 +512,8 @@ void Points::draw()
   glBindTexture(GL_TEXTURE_2D, 0);
   if (!Shader::core)
     glDisable(GL_POINT_SPRITE);
+  else
+    glEnable(GL_PROGRAM_POINT_SIZE);
   GL_Error_Check;
   glDepthFunc(GL_LESS);
   GL_Error_Check;

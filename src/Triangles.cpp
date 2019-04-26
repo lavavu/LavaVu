@@ -50,40 +50,46 @@ void Triangles::close()
   Geometry::close();
 }
 
+unsigned int Triangles::triCount(unsigned int index)
+{
+  //Get triangle count for element
+  unsigned int tris;
+  //Indexed
+  if (geom[index]->render->indices.size() > 0)
+  {
+    //Un-structured tri indices
+    tris = geom[index]->render->indices.size() / 3;
+    if (tris * 3 != geom[index]->render->indices.size()) // || geom[index]->draw->properties["tristrip"])
+      //Tri-strip indices
+      tris = geom[index]->render->indices.size() - 2;
+    debug_print("Surface (indexed) %d", index);
+  }
+  //Grid
+  else if (geom[index]->width > 0 && geom[index]->height > 0)
+  {
+    tris = 2 * (geom[index]->width-1) * (geom[index]->height-1);
+    debug_print("Grid Surface %d (%d x %d)", index, geom[index]->width, geom[index]->height);
+  }
+  else
+  {
+    //Un-structured tri vertices
+    tris = geom[index]->count() / 3;
+    if (tris * 3 != geom[index]->count()) // || geom[index]->draw->properties["tristrip"])
+      //Tri-strip vertices
+      tris =  geom[index]->count() - 2;
+    debug_print("Surface %d ", index);
+  }
+  return tris;
+}
+
 unsigned int Triangles::triCount()
 {
-  //Get triangle count
+  //Get total triangle count
   total = 0;
   unsigned int drawelements = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
-    unsigned int tris;
-    //Indexed
-    if (geom[index]->render->indices.size() > 0)
-    {
-      //Un-structured tri indices
-      tris = geom[index]->render->indices.size() / 3;
-      if (tris * 3 != geom[index]->render->indices.size()) // || geom[index]->draw->properties["tristrip"])
-        //Tri-strip indices
-        tris = geom[index]->render->indices.size() - 2;
-      debug_print("Surface (indexed) %d", index);
-    }
-    //Grid
-    else if (geom[index]->width > 0 && geom[index]->height > 0)
-    {
-      tris = 2 * (geom[index]->width-1) * (geom[index]->height-1);
-      debug_print("Grid Surface %d (%d x %d)", index, geom[index]->width, geom[index]->height);
-    }
-    else
-    {
-      //Un-structured tri vertices
-      tris = geom[index]->count() / 3;
-      if (tris * 3 != geom[index]->count()) // || geom[index]->draw->properties["tristrip"])
-        //Tri-strip vertices
-        tris =  geom[index]->count() - 2;
-      debug_print("Surface %d ", index);
-    }
-
+    unsigned int tris = triCount(index);
     total += tris*3;
     bool hidden = !drawable(index);
     if (!hidden) drawelements += tris*3; //Count drawable
@@ -131,9 +137,35 @@ void Triangles::loadBuffers()
   //Update VBO...
   debug_print("Reloading %d elements...\n", elements);
 
+  //Transform grids to triangles...
+  for (unsigned int index = 0; index < geom.size(); index++)
+  {
+    debug_print("Mesh %d/%d has normals? %d == %d\n", index, geom.size(), geom[index]->render->normals.size(), geom[index]->render->vertices.size());
+    bool grid = (geom[index]->width * geom[index]->height == geom[index]->count());
+    bool vnormals = geom[index]->draw->properties["vertexnormals"];
+    bool flat = geom[index]->draw->properties["flat"];
+    if (grid)
+    {
+      //Structured mesh grid, 2 triangles per element, 3 indices per tri
+      if (vnormals && geom[index]->render->normals.size() == 0)
+        calcGridNormals(index);
+
+      //For flat colouring, don't use shared vertices (with index array)
+      if (flat)
+        calcGridVertices(index);
+      //Otherwise calculate indices using existing grid vertices
+      else if (geom[index]->render->indices.size() == 0)
+        calcGridIndices(index);
+    }
+    else
+    {
+      //Calculate normals for irregular mesh
+      if (vnormals && geom[index]->render->normals.size() != geom[index]->render->vertices.size())
+        calcTriangleNormals(index);
+    }
+  }
+
   // VBO - copy normals/colours/positions to buffer object
-  unsigned char *p, *ptr;
-  ptr = p = NULL;
   unsigned int datasize = sizeof(float) * 8 + sizeof(Colour);   //Vertex(3), normal(3), texCoord(2) and 32-bit colour
   unsigned int vcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
@@ -142,16 +174,15 @@ void Triangles::loadBuffers()
 
   //Create intermediate buffer
   unsigned char* buffer = new unsigned char[bsize];
-  p = ptr = buffer;
+  unsigned char *ptr = buffer;
 
   //Buffer data for all vertices
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     t1=tt=clock();
 
-    //Calculate vertex normals?
+    //Have vertex normals?
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
-    debug_print("Mesh %d/%d has normals? %d == %d\n", index, geom.size(), geom[index]->render->normals.size(), geom[index]->render->vertices.size());
     if (geom[index]->render->normals.size() != geom[index]->render->vertices.size()) vnormals = false;
 
     //Colour values to texture coords
@@ -174,6 +205,8 @@ void Triangles::loadBuffers()
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
     shift *= 0.0001 * view->model_size;
     std::array<float,3> shiftvert;
+    //TODO: instead of writing blank normal, skip normal and texcoord if no data
+    //      will require adjustment to draw() code, attrib pointers etc
     float texCoord[2] = {0.0, 0.0};
     for (unsigned int v=0; v < geom[index]->count(); v++)
     {
@@ -192,7 +225,7 @@ void Triangles::loadBuffers()
       }
 
       //Write vertex data to vbo
-      assert((unsigned int)(ptr-p) < bsize);
+      assert((unsigned int)(ptr-buffer) < bsize);
       //Copies vertex bytes
       memcpy(ptr, vert, sizeof(float) * 3);
       ptr += sizeof(float) * 3;
@@ -234,7 +267,6 @@ void Triangles::loadBuffers()
     //ptr = p = (unsigned char*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     GL_Error_Check;
   }
-  if (!p) abort_program("VBO setup failed");
 
   delete[] buffer;
   GL_Error_Check;
@@ -276,13 +308,14 @@ void Triangles::render()
   unsigned int idxcount = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
+    //printf("%d triCount %d drawable %d\n", index, triCount(index), drawable(index));
     unsigned int indices = geom[index]->render->indices.size();
     if (drawable(index))
     {
       if (indices > 0)
       {
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), geom[index]->render->indices.ref());
-        //printf("%d upload %d indices\n", index, indices);
+        //printf("%d upload %d indices, offset %d\n", index, indices, offset);
         counts[index] = indices;
         offset += indices;
         GL_Error_Check;
@@ -327,7 +360,7 @@ void Triangles::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    intptr_t vstart = 0; //Vertex buffer offset
+    //intptr_t vstart = 0; //Vertex buffer offset
     unsigned int start = 0;
     //Setup vertex attributes
     GLint aPosition = prog->attribs["aVertexPosition"];
@@ -342,6 +375,7 @@ void Triangles::draw()
     glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6*sizeof(float))); //Tex coord s,t
     glEnableVertexAttribArray(aColour);
     glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
+    GLint voffset = 0;
     for (unsigned int index = 0; index < geom.size(); index++)
     {
       if (counts[index] > 0)
@@ -350,20 +384,23 @@ void Triangles::draw()
         if (geom[index]->render->indices.size() > 0)
         {
           //Draw with index buffer
-          glDrawElements(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
-          //printf("DRAW %d from %d by INDEX vs %d\n", counts[index], start, vstart);
+          //glDrawElements(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
+          glDrawElementsBaseVertex(primitive, counts[index], GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)), voffset);
+          //printf("  DRAW %d from %d by INDEX (voffset %d)\n", counts[index], start, voffset);
         }
         else
         {
           //Draw directly from vertex buffer
           glDrawArrays(primitive, start, geom[index]->count());
-          //printf("DRAW %d from %d by VERTEX vs %d\n", geom[index]->count(), start, vstart);
+          //printf("  DRAW %d from %d by VERTEX (vstart %d)\n", geom[index]->count(), start, (int)vstart);
         }
         start += counts[index];
       }
+      voffset += geom[index]->count();
 
       //Vertex buffer offset (bytes) required because indices per object are zero based
-      vstart += stride * geom[index]->count();
+      //vstart += stride * geom[index]->count();
+      //vstart += stride * counts[index];
     }
 
     time = ((clock()-t1)/(double)CLOCKS_PER_SEC);
@@ -389,3 +426,238 @@ void Triangles::jsonWrite(DrawingObject* draw, json& obj)
 {
   jsonExportAll(draw, obj);
 }
+
+void Triangles::calcTriangleNormals(unsigned int index)
+{
+  clock_t t1,t2;
+  t1 = clock();
+  std::vector<Vec3d> normals(geom[index]->count());
+  Vec3d normal;
+
+  //Has index data, simply load the triangles
+  if (geom[index]->render->indices.size() > 0)
+  {
+    //TODO: this doesn't appear to be working, normals not smoothed
+    debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->render->indices.size()/3);
+    //Calculate face normals for each triangle and copy to each face vertex
+    for (unsigned int i=0; i<geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; i += 3)
+    {
+      //Copies for each vertex
+      GLuint i1 = geom[index]->render->indices[i];
+      GLuint i2 = geom[index]->render->indices[i+1];
+      GLuint i3 = geom[index]->render->indices[i+2];
+
+      normal = vectorNormalToPlane(geom[index]->render->vertices[i1],
+                                   geom[index]->render->vertices[i2],
+                                   geom[index]->render->vertices[i3]);
+
+      normals[i1] += normal;
+      normals[i2] += normal;
+      normals[i3] += normal;
+    }
+  }
+  else
+  {
+    //Calculate face normals for each triangle and copy to each face vertex
+    debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->count());
+    for (unsigned int v=0; v<geom[index]->count()-2; v += 3)
+    {
+      //Copies for each vertex
+      normal = vectorNormalToPlane(geom[index]->render->vertices[v],
+                                   geom[index]->render->vertices[v+1],
+                                   geom[index]->render->vertices[v+2]);
+      normals[v] += normal;
+      normals[v+1] += normal;
+      normals[v+2] += normal;
+    }
+  }
+
+  t2 = clock();
+  debug_print("  %.4lf seconds to calc normals\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+
+  //Normalise to combine and load normal data
+  //geom[index]->render->normals.clear();
+  for (unsigned int n=0; n<normals.size(); n++)
+    normals[n].normalise();
+
+  geom[index]->_normals = std::make_shared<Coord3DValues>();
+  read(geom[index], normals.size(), lucNormalData, &normals[0]);
+
+  //Update the rendering references as some containers have been replaced
+  geom[index]->setRenderData();
+
+  t2 = clock();
+  debug_print("  %.4lf seconds to normalise (%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, (int)normals.size());
+}
+
+void Triangles::calcGridNormals(unsigned int i)
+{
+  //Normals: calculate from surface geometry
+  std::vector<Vec3d> normals(geom[i]->count());
+  clock_t t1,t2;
+  t1 = clock();
+  debug_print("Calculating normals for grid surface %d... ", i);
+  bool genTexCoords = (geom[i]->draw->useTexture(geom[i]->texture) && geom[i]->render->texCoords.size() == 0);
+
+  // Calc per-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
+  int n = 0;
+  for (unsigned int j = 0 ; j < geom[i]->height; j++ )
+  {
+    for (unsigned int k = 0 ; k < geom[i]->width; k++ )
+    {
+      //Tex coords
+      if (genTexCoords)
+      {
+        float texCoord[2] = {k / (float)(geom[i]->width-1), j / (float)(geom[i]->height-1)};
+        read(geom[i], 1, lucTexCoordData, texCoord);
+      }
+
+      // Get sum of normal vectors
+      if (j > 0)
+      {
+        if (k > 0)
+        {
+          // Look back
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
+                                            geom[i]->render->vertices[geom[i]->width * (j-1) + k],
+                                            geom[i]->render->vertices[geom[i]->width * j + k-1]);
+        }
+
+        if (k < geom[i]->width - 1)
+        {
+          // Look back in x, forward in y
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
+                                            geom[i]->render->vertices[geom[i]->width * j + k+1],
+                                            geom[i]->render->vertices[geom[i]->width * (j-1) + k]);
+        }
+      }
+
+      if (j <  geom[i]->height - 1)
+      {
+        if (k > 0)
+        {
+          // Look forward in x, back in y
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
+                                            geom[i]->render->vertices[geom[i]->width * j + k-1],
+                                            geom[i]->render->vertices[geom[i]->width * (j+1) + k]);
+        }
+
+        if (k < geom[i]->width - 1)
+        {
+          // Look forward
+          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
+                                            geom[i]->render->vertices[geom[i]->width * (j+1) + k],
+                                            geom[i]->render->vertices[geom[i]->width * j + k+1]);
+        }
+      }
+
+      //Normalise to average
+      normals[n].normalise();
+      //Copy directly into normal block
+      //memcpy(geom[i]->render->normals[j * geom[i]->width + k], normal.ref(), sizeof(float) * 3);
+      n++;
+    }
+  }
+  t2 = clock();
+  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+
+  geom[i]->_normals = std::make_shared<Coord3DValues>();
+  read(geom[i], normals.size(), lucNormalData, &normals[0]);
+  //Update the rendering references as some containers have been replaced
+  geom[i]->setRenderData();
+}
+
+void Triangles::calcGridIndices(unsigned int i)
+{
+  int els = geom[i]->gridElements2d();
+  int triverts = els * 6;
+  if (triverts < 3) return;
+  std::vector<GLuint> indices(triverts);
+  clock_t t1,t2;
+  t1=clock();
+  debug_print("Calculating indices for grid tri surface %d... ", i);
+  bool flip = geom[i]->draw->properties["flip"];
+
+  unsigned int o = 0;
+  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
+  {
+    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
+    {
+      //Add indices for two triangles per grid element
+      unsigned int j0 = flip ? j+1 : j;
+      unsigned int j1 = flip ? j : j+1;
+      unsigned int offset0 = j0 * geom[i]->width + k;
+      unsigned int offset1 = j1 * geom[i]->width + k;
+      unsigned int offset2 = j0 * geom[i]->width + k + 1;
+      unsigned int offset3 = j1 * geom[i]->width + k + 1;
+      assert(o <= indices.size()-6);
+      //Tri 1
+      indices[o++] = offset0;
+      indices[o++] = offset1;
+      indices[o++] = offset2;
+      //Tri 2
+      indices[o++] = offset1;
+      indices[o++] = offset3;
+      indices[o++] = offset2;
+    }
+  }
+
+  //geom[i]->_indices = std::make_shared<UIntValues>();
+  geom[i]->render->indices.read(indices.size(), &indices[0]);
+  //Update the rendering references as some containers have been replaced
+  geom[i]->setRenderData();
+
+  t2 = clock();
+  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+}
+
+void Triangles::calcGridVertices(unsigned int i)
+{
+  int els = geom[i]->gridElements2d();
+  int triverts = els * 6;
+  std::vector<Vec3d> vertices(triverts);
+  clock_t t1,t2;
+  t1=clock();
+  debug_print("Calculating vertices for grid tri surface %d... ", i);
+  bool flip = geom[i]->draw->properties["flip"];
+
+  unsigned int o = 0;
+  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
+  {
+    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
+    {
+      //Add vertices for two triangles per grid element
+      unsigned int j0 = flip ? j+1 : j;
+      unsigned int j1 = flip ? j : j+1;
+      unsigned int offset0 = j0 * geom[i]->width + k;
+      unsigned int offset1 = j1 * geom[i]->width + k;
+      unsigned int offset2 = j0 * geom[i]->width + k + 1;
+      unsigned int offset3 = j1 * geom[i]->width + k + 1;
+      assert(o <= vertices.size()-6);
+      //Tri 1
+      vertices[o++] = geom[i]->render->vertices[offset0];
+      vertices[o++] = geom[i]->render->vertices[offset1];
+      vertices[o++] = geom[i]->render->vertices[offset2];
+      //Tri 2
+      vertices[o++] = geom[i]->render->vertices[offset1];
+      vertices[o++] = geom[i]->render->vertices[offset3];
+      vertices[o++] = geom[i]->render->vertices[offset2];
+    }
+  }
+
+  geom[i]->_indices = std::make_shared<UIntValues>(); //Clear any indices
+  geom[i]->_vertices = std::make_shared<Coord3DValues>();
+  read(geom[i], vertices.size(), lucVertexData, &vertices[0]);
+  //Update the rendering references as some containers have been replaced
+  geom[i]->setRenderData();
+
+  t2 = clock();
+  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+  t1 = clock();
+}
+
+
+

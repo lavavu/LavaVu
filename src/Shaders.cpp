@@ -120,7 +120,7 @@ bool Shader::version()
   if (!gl_version.length())
   {
     gl_version = std::string(gl_v);
-    printf("OpenGL %d.%d (core %d)\n", major, minor, core);
+    debug_print("OpenGL %d.%d (%s)\n", major, minor, core ? "core" : "compatibility");
   }
   return true;
 }

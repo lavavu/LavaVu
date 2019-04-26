@@ -98,25 +98,23 @@ void Volumes::draw()
 
   //Lock the update mutex and copy the sorted vector
   //Allows further sorting to continue in background while rendering
-  std::vector<Distance> vol_sorted;
+  std::vector<Geom_Ptr> geom_sorted;
   {
-    if (vol_sort.size() == 0)
-      sort();
     std::lock_guard<std::mutex> guard(loadmutex);
-    vol_sorted = vol_sort;
+    geom_sorted = geom;
   }
 
   //Each object can only have one volume,
   //but each volume can consist of separate slices or a single cube
 
-  //Render in reverse sorted order
-  for (int i=vol_sorted.size()-1; i>=0; i--)
+  //Render in sorted order
+  for (int i=0; i<geom_sorted.size(); i++)
   {
-    unsigned int id = vol_sorted[i].id;
-    if (!drawable(id)) continue;
+    if (!drawable(i) || slices[geom[i]->draw] == 0) continue;
+    //printf("DRAWING Volume %d slices %d, %p\n", i, slices[geom[i]->draw], geom[i].get());
 
-    setState(id); //Set draw state settings for this object
-    render(id);
+    setState(i); //Set draw state settings for this object
+    render(i);
 
     GL_Error_Check;
   }
@@ -140,7 +138,6 @@ void Volumes::sort()
 
   //Get element/quad count
   debug_print("Sorting %lu volume entries...\n", geom.size());
-  vol_sort.clear();
 
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
@@ -155,8 +152,6 @@ void Volumes::sort()
     if (geom[index]->count() == 0) continue;
     float* posmin = geom[index]->render->vertices[0];
     float* posmax = geom[index]->render->vertices[1];
-
-
 
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
@@ -177,17 +172,16 @@ void Volumes::sort()
     geom[index]->distance = view->eyeDistance(modelView, pos);
     if (geom[index]->distance < distanceRange[0]) distanceRange[0] = geom[index]->distance;
     if (geom[index]->distance > distanceRange[1]) distanceRange[1] = geom[index]->distance;
-    //printf("%d)  %f %f %f distance = %f (min %f, max %f)\n", i, pos[0], pos[1], pos[2], geom[index]->distance, distanceRange[0], distanceRange[1]);
-    vol_sort.push_back(Distance(index, geom[index]->distance));
-
+    //printf("Volume %d, %p\n", index, geom[index].get());
+    //printf("%d)  %f %f %f distance = %f (min %f, max %f)\n", index, pos[0], pos[1], pos[2], geom[index]->distance, distanceRange[0], distanceRange[1]);
     index += slices[geom[i]->draw];
   }
   t2 = clock();
   debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
-  //Sort
-  std::sort(vol_sort.begin(), vol_sort.end());
+  //Sort (descending)
+  std::sort(geom.begin(), geom.end(), GeomPtrCompare());
   t2 = clock();
   debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
@@ -228,7 +222,7 @@ void Volumes::update()
 
   int maxtex;
   glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &maxtex);
-  debug_print("Volume slices: %d, Max 3D texture size %d\n", geom.size(), maxtex);
+  debug_print("Volume slices: %d, Max 3D texture size %d\n", (int)geom.size(), maxtex);
 
   //Padding!
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -429,18 +423,7 @@ void Volumes::update()
   t2 = clock();
   debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 
-  if (!session.global("sort"))
-  {
-    vol_sort.clear();
-    //Create the default un-sorted list
-    unsigned int index = 0;
-    for (unsigned int i=0; i<slices.size(); i++)
-    {
-      vol_sort.push_back(Distance(index, 0));
-      index += slices[geom[i]->draw];
-    }
-  }
-  else
+  if (session.global("sort"))
     sort();
 }
 

@@ -66,6 +66,7 @@ void TriSurfaces::update()
     //Load & optimise the mesh data (including updating centroids)
     tricount = 0;
     loadMesh();
+    calcCentroids();
     redraw = true;
   }
 
@@ -97,9 +98,6 @@ void TriSurfaces::loadMesh()
   //Calculate normals, delete duplicate verts, calc indices
   GLuint unique = 0;
   elements = 0;
-  //Reset triangle centroid data
-  centroids.clear();
-  centroids.reserve(total/3);
   for (unsigned int index = 0; index < geom.size(); index++)
   {
     bool vnormals = geom[index]->draw->properties["vertexnormals"];
@@ -108,26 +106,14 @@ void TriSurfaces::loadMesh()
     //Has index data, simply load the triangles
     if (geom[index]->render->indices.size() > 0)
     {
-      unsigned i1, i2, i3;
-      for (unsigned int j=0; j < geom[index]->render->indices.size()-2; j += 3)
-      {
-        i1 = geom[index]->render->indices[j];
-        i2 = geom[index]->render->indices[j+1];
-        i3 = geom[index]->render->indices[j+2];
-
-        centroid(geom[index]->render->vertices[i1],
-                 geom[index]->render->vertices[i2],
-                 geom[index]->render->vertices[i3]);
-
-        elements += 3;
-      }
+      elements = geom[index]->render->indices.size();
 
       //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
       //elements += counts[index]; //geom[index]->render->indices.size();
       unique += geom[index]->render->vertices.size() / 3;
 
       if (vnormals && geom[index]->render->normals.size() == 0)
-        calcTriangleNormalsWithIndices(index);
+        calcTriangleNormals(index);
       continue;
     }
 
@@ -139,18 +125,6 @@ void TriSurfaces::loadMesh()
     bool vertColour = hasColours && (hasColours >= geom[index]->count());
     t1=tt=clock();
 
-    //Add vertices to vector
-    std::vector<Vertex> verts(geom[index]->count());
-    std::vector<Vec3d> normals(vnormals ? geom[index]->count() : 0);
-    std::vector<GLuint> indices;
-    for (unsigned int j=0; j < geom[index]->count(); j++)
-    {
-      verts[j].id = verts[j].ref = j;
-      verts[j].vert = geom[index]->render->vertices[j];
-    }
-    t2 = clock();
-    debug_print("  %.4lf seconds to add to sort vector\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-
     int triverts = 0;
     bool grid = (geom[index]->width * geom[index]->height == geom[index]->count());
 
@@ -158,42 +132,39 @@ void TriSurfaces::loadMesh()
     //(Vertices may be shared by triangles, but each needs it's own texcoord and texcoords are stored with vertices)
     bool hasTexCoords = geom[index]->render->texCoords.size()/2 == geom[index]->count();
     bool optimise = !hasTexCoords && vnormals && geom[index]->draw->properties["optimise"];
-
     if (grid)
     {
       //Structured mesh grid, 2 triangles per element, 3 indices per tri
-      int els = geom[index]->gridElements2d();
-      triverts = els * 6;
-      indices.resize(triverts);
       if (vnormals && geom[index]->render->normals.size() == 0)
-        calcGridNormals(index, normals);
-      calcGridIndices(index, indices);
+        calcGridNormals(index);
+      calcGridIndices(index);
       unique += geom[index]->count(); //For calculating index offset (voffset)
       elements += triverts;
     }
     else
     {
       //Unstructured mesh, 1 index per vertex
+
+      //Add vertices to vector
+      std::vector<Vertex> verts(geom[index]->count());
+      std::vector<Vec3d> normals(vnormals ? geom[index]->count() : 0);
+      std::vector<GLuint> indices;
+      for (unsigned int j=0; j < geom[index]->count(); j++)
+      {
+        verts[j].id = verts[j].ref = j;
+        verts[j].vert = geom[index]->render->vertices[j];
+      }
+      t2 = clock();
+      debug_print("  %.4lf seconds to add to sort vector\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+
       triverts = geom[index]->count();
       indices.resize(triverts);
-      if (vnormals) calcTriangleNormals(index, verts, normals, optimise);
+      if (vnormals) calcSmoothTriangleNormals(index, verts, normals, optimise);
       elements += triverts;
-    }
 
-    //Now have list of vertices sorted by vertex pos with summed normals and references of duplicates replaced
-    t1 = clock();
+      //Now have list of vertices sorted by vertex pos with summed normals and references of duplicates replaced
+      t1 = clock();
 
-    if (grid)
-    {
-      //Replace normals
-      if (vnormals)
-      {
-        geom[index]->_normals = std::make_shared<Coord3DValues>();
-        read(geom[index], normals.size(), lucNormalData, &normals[0]);
-      }
-    }
-    else
-    {
       //Switch out the optimised vertices and normals with the old data stores
       // - must maintain a copy of old containers to read from in optimisation
       //   otherwise will get destroyed when new containers replace them
@@ -220,7 +191,7 @@ void TriSurfaces::loadMesh()
       //Recreate value data as optimised version is smaller, re-load necessary values
       FloatValues* oldvalues = geom[index]->colourData();
       Values_Ptr newvalues = NULL;
-      if (optimise && oldvalues)
+      if (optimise && oldvalues && vertColour)
       {
         newvalues = Values_Ptr(new FloatValues());
         newvalues->label = oldvalues->label;
@@ -265,6 +236,13 @@ void TriSurfaces::loadMesh()
 
       if (newvalues)
         geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
+
+      t1 = clock();
+      //Read the indices for loading sort list and later use (json export etc)
+      geom[index]->render->indices.read(indices.size(), &indices[0]);
+
+      t2 = clock();
+      debug_print("  %.4lf seconds to load indices\n", (t2-t1)/(double)CLOCKS_PER_SEC);
     }
 
     //Update the rendering references as some containers have been replaced
@@ -272,13 +250,6 @@ void TriSurfaces::loadMesh()
 
     t2 = clock();
     debug_print("  %.4lf seconds to normalise (and re-buffer)\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-    t1 = clock();
-
-    //Read the indices for loading sort list and later use (json export etc)
-    geom[index]->render->indices.read(indices.size(), &indices[0]);
-
-    t2 = clock();
-    debug_print("  %.4lf seconds to reload & clean up\n", (t2-t1)/(double)CLOCKS_PER_SEC);
     t1 = clock();
     debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
   }
@@ -288,89 +259,7 @@ void TriSurfaces::loadMesh()
   debug_print("  %.4lf seconds to optimise triangle mesh\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
-void TriSurfaces::loadList()
-{
-  assert(view);
-  clock_t t2,tt;
-  tt=clock();
-
-  debug_print("Loading up to %d triangles into list...\n", total/3);
-
-  //Create sorting array
-  sorter.allocate(total/3, 3);
-
-  //Element counts to actually plot (exclude filtered/hidden) per geom entry
-  counts.clear();
-  counts.resize(geom.size());
-
-  //Index data for all vertices
-  unsigned int voffset = 0;
-  unsigned int offset = 0; //Offset into centroid list, include all hidden/filtered
-  tricount = 0;
-  for (unsigned int index = 0; index < geom.size(); voffset += geom[index]->count(), index++)
-  {
-    counts[index] = 0;
-    if (!drawable(index)) 
-    {
-      offset += geom[index]->render->indices.size()/3; //Need to include hidden in centroid offset
-      continue;
-    }
-
-    //Calibrate colour maps on range for this surface
-    //(also required for filtering by map)
-    geom[index]->colourCalibrate();
-
-    bool filter = geom[index]->draw->filterCache.size();
-    bool opaque = geom[index]->opaqueCheck();
-    for (unsigned int t = 0; t < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; t+=3, offset++)
-    {
-      //voffset is offset of the last vertex added to the vbo from the previous object
-      assert(offset < total/3);
-      if (!internal && filter)
-      {
-        //If any vertex filtered, skip whole tri
-        if (geom[index]->filter(geom[index]->render->indices[t]) ||
-            geom[index]->filter(geom[index]->render->indices[t+1]) ||
-            geom[index]->filter(geom[index]->render->indices[t+2]))
-          continue;
-      }
-      sorter.buffer[tricount].index[0] = geom[index]->render->indices[t] + voffset;
-      sorter.buffer[tricount].index[1] = geom[index]->render->indices[t+1] + voffset;
-      sorter.buffer[tricount].index[2] = geom[index]->render->indices[t+2] + voffset;
-      sorter.buffer[tricount].distance = 0;
-
-      //Create the default un-sorted index list
-      memcpy(&sorter.indices[tricount*3], &sorter.buffer[tricount].index, sizeof(GLuint) * 3);
-
-      //All opaque triangles at start
-      if (opaque)
-      {
-        sorter.buffer[tricount].distance = USHRT_MAX;
-        sorter.buffer[tricount].vertex = NULL;
-      }
-      else
-      {
-        //Triangle centroid for depth sorting
-        assert(offset < centroids.size());
-        sorter.buffer[tricount].vertex = centroids[offset].ref();
-      }
-      tricount++;
-      counts[index] += 3; //Element count
-
-    }
-    //printf("INDEX %d TRIS %d ELS %d offset = %d, tricount = %d VOFFSET = %d\n", index, counts[index]/3, counts[index], offset, tricount, voffset);
-  }
-
-  t2 = clock();
-  debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
-
-  updateBoundingBox();
-
-  if (session.global("sort"))
-    sort();
-}
-
-void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise)
+void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise)
 {
   clock_t t1,t2;
   t1 = clock();
@@ -379,7 +268,7 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
   // if less colour values provided, must precalc own indices to skip this step 
   unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours >= geom[index]->render->vertices.size()/3);
-  if (hasColours && !vertColour) debug_print("WARNING: Not enough colour values for per-vertex normalisation! %d < %d\n", hasColours, geom[index]->render->vertices.size()/3);
+  if (hasColours && !vertColour) debug_print("Not enough colour values for per-vertex normalisation %d < %d\n", hasColours, geom[index]->render->vertices.size()/3);
   bool normal = geom[index]->draw->properties["vertexnormals"];
   //Calculate face normals for each triangle and copy to each face vertex
   for (unsigned int v=0; v<verts.size()-2 && verts.size() > 2; v += 3)
@@ -391,9 +280,6 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
       normals[v+1] = Vec3d(normals[v]);
       normals[v+2] = Vec3d(normals[v]);
     }
-
-    //Calc triangle centroid for sorting
-    centroid(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
   }
   t2 = clock();
   debug_print("  %.4lf seconds to calc facet normals\n", (t2-t1)/(double)CLOCKS_PER_SEC);
@@ -461,155 +347,115 @@ void TriSurfaces::calcTriangleNormals(int index, std::vector<Vertex> &verts, std
 
   t2 = clock();
   debug_print("  %.4lf seconds to normalise\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-
-
 }
 
-void TriSurfaces::calcTriangleNormalsWithIndices(int index)
+void TriSurfaces::calcCentroids()
 {
-  clock_t t1,t2;
-  t1 = clock();
-  debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->render->indices.size()/3);
-  //Calculate face normals for each triangle and copy to each face vertex
-  std::vector<Vec3d> normals(geom[index]->count());
-  for (unsigned int i=0; i<geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; i += 3)
+  clock_t t1, tt = clock();
+  //Reset and recalculate triangle centroid data for sorting
+  //if (session.global("sort"))
+  centroids.clear();
+  centroids.reserve(total/3);
+  for (unsigned int index = 0; index < geom.size(); index++)
   {
-    //Copies for each vertex
-    GLuint i1 = geom[index]->render->indices[i];
-    GLuint i2 = geom[index]->render->indices[i+1];
-    GLuint i3 = geom[index]->render->indices[i+2];
-
-    Vec3d normal = vectorNormalToPlane(geom[index]->render->vertices[i1], 
-                                       geom[index]->render->vertices[i2],
-                                       geom[index]->render->vertices[i3]);
-
-    normals[i1] += normal;
-    normals[i2] += normal;
-    normals[i3] += normal;
-  }
-  t2 = clock();
-  debug_print("  %.4lf seconds to calc facet normals\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-  t1 = clock();
-
-  //Normalise to combine and load normal data
-  for (unsigned int n=0; n<normals.size(); n++)
-  {
-    normals[n].normalise();
-    read(geom[index], 1, lucNormalData, normals[n].ref());
-  }
-  t2 = clock();
-  debug_print("  %.4lf seconds to normalise (%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, normals.size());
-}
-
-void TriSurfaces::calcGridNormals(int i, std::vector<Vec3d> &normals)
-{
-  //Normals: calculate from surface geometry
-  clock_t t1,t2;
-  t1=clock();
-  debug_print("Calculating normals for grid surface %d... ", i);
-  bool genTexCoords = (geom[i]->draw->useTexture(geom[i]->texture) && geom[i]->render->texCoords.size() == 0);
-
-  // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
-  int n = 0;
-  for (unsigned int j = 0 ; j < geom[i]->height; j++ )
-  {
-    for (unsigned int k = 0 ; k < geom[i]->width; k++ )
+    unsigned i1, i2, i3;
+    for (unsigned int j=0; j < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; j += 3)
     {
-      //Tex coords
-      if (genTexCoords)
-      {
-        float texCoord[2] = {k / (float)(geom[i]->width-1), j / (float)(geom[i]->height-1)};
-        read(geom[i], 1, lucTexCoordData, texCoord);
-      }
+      assert(j <= geom[index]->render->indices.size()-3);
+      i1 = geom[index]->render->indices[j];
+      i2 = geom[index]->render->indices[j+1];
+      i3 = geom[index]->render->indices[j+2];
 
-      // Get sum of normal vectors
-      if (j > 0)
-      {
-        if (k > 0)
-        {
-          // Look back
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * (j-1) + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k-1]);
-        }
-
-        if (k < geom[i]->width - 1)
-        {
-          // Look back in x, forward in y
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k+1],
-                                            geom[i]->render->vertices[geom[i]->width * (j-1) + k]);
-        }
-      }
-
-      if (j <  geom[i]->height - 1)
-      {
-        if (k > 0)
-        {
-          // Look forward in x, back in y
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k-1],
-                                            geom[i]->render->vertices[geom[i]->width * (j+1) + k]);
-        }
-
-        if (k < geom[i]->width - 1)
-        {
-          // Look forward
-          normals[n] += vectorNormalToPlane(geom[i]->render->vertices[geom[i]->width * j + k],
-                                            geom[i]->render->vertices[geom[i]->width * (j+1) + k],
-                                            geom[i]->render->vertices[geom[i]->width * j + k+1]);
-        }
-      }
-
-      //Normalise to average
-      normals[n].normalise();
-      //Copy directly into normal block
-      //memcpy(geom[i]->render->normals[j * geom[i]->width + k], normal.ref(), sizeof(float) * 3);
-      n++;
+      centroid(geom[index]->render->vertices[i1],
+               geom[index]->render->vertices[i2],
+               geom[index]->render->vertices[i3]);
     }
   }
-  t2 = clock();
-  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
+  debug_print("  %.4lf seconds to calculate centroids\n", (t1-tt)/(double)CLOCKS_PER_SEC);
+
 }
 
-void TriSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices)
+void TriSurfaces::loadList()
 {
-  //Normals: calculate from surface geometry
-  clock_t t1,t2;
-  t1=clock();
-  debug_print("Calculating indices for grid tri surface %d... ", i);
-  bool flip = geom[i]->draw->properties["flip"];
+  assert(view);
+  clock_t t2,tt;
+  tt=clock();
 
-  // Calc pre-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
-  unsigned int o = 0;
-  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
+  debug_print("Loading up to %d triangles into list...\n", total/3);
+
+  //Create sorting array
+  sorter.allocate(total/3, 3);
+
+  //Element counts to actually plot (exclude filtered/hidden) per geom entry
+  counts.clear();
+  counts.resize(geom.size());
+
+  //Index data for all vertices
+  unsigned int voffset = 0;
+  unsigned int offset = 0; //Offset into centroid list, include all hidden/filtered
+  tricount = 0;
+  for (unsigned int index = 0; index < geom.size(); voffset += geom[index]->count(), index++)
   {
-    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
+    counts[index] = 0;
+    if (!drawable(index))
     {
-      //Add indices for two triangles per grid element
-      unsigned int j0 = flip ? j+1 : j;
-      unsigned int j1 = flip ? j : j+1;
-      unsigned int offset0 = j0 * geom[i]->width + k;
-      unsigned int offset1 = j1 * geom[i]->width + k;
-      unsigned int offset2 = j0 * geom[i]->width + k + 1;
-      unsigned int offset3 = j1 * geom[i]->width + k + 1;
-      assert(o <= indices.size()-6);
-      //Tri 1
-      centroid(geom[i]->render->vertices[offset0], geom[i]->render->vertices[offset1], geom[i]->render->vertices[offset2]);
-      indices[o++] = offset0;
-      indices[o++] = offset1;
-      indices[o++] = offset2;
-      //Tri 2
-      centroid(geom[i]->render->vertices[offset1], geom[i]->render->vertices[offset3], geom[i]->render->vertices[offset2]);
-      indices[o++] = offset1;
-      indices[o++] = offset3;
-      indices[o++] = offset2;
+      offset += geom[index]->render->indices.size()/3; //Need to include hidden in centroid offset
+      continue;
     }
+
+    //Calibrate colour maps on range for this surface
+    //(also required for filtering by map)
+    geom[index]->colourCalibrate();
+
+    bool filter = geom[index]->draw->filterCache.size();
+    bool opaque = geom[index]->opaqueCheck();
+    for (unsigned int t = 0; t < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; t+=3, offset++)
+    {
+      //voffset is offset of the last vertex added to the vbo from the previous object
+      assert(offset < total/3);
+      if (!internal && filter)
+      {
+        //If any vertex filtered, skip whole tri
+        if (geom[index]->filter(geom[index]->render->indices[t]) ||
+            geom[index]->filter(geom[index]->render->indices[t+1]) ||
+            geom[index]->filter(geom[index]->render->indices[t+2]))
+          continue;
+      }
+      sorter.buffer[tricount].index[0] = geom[index]->render->indices[t] + voffset;
+      sorter.buffer[tricount].index[1] = geom[index]->render->indices[t+1] + voffset;
+      sorter.buffer[tricount].index[2] = geom[index]->render->indices[t+2] + voffset;
+      sorter.buffer[tricount].distance = 0;
+
+      //Create the default un-sorted index list
+      memcpy(&sorter.indices[tricount*3], &sorter.buffer[tricount].index, sizeof(GLuint) * 3);
+
+      //All opaque triangles at start
+      if (opaque)
+      {
+        sorter.buffer[tricount].distance = USHRT_MAX;
+        sorter.buffer[tricount].vertex = NULL;
+      }
+      else
+      {
+        //Triangle centroid for depth sorting
+        assert(offset < centroids.size());
+        sorter.buffer[tricount].vertex = centroids[offset].ref();
+      }
+      tricount++;
+      counts[index] += 3; //Element count
+
+    }
+    //printf("INDEX %d TRIS %d ELS %d offset = %d, tricount = %d VOFFSET = %d\n", index, counts[index]/3, counts[index], offset, tricount, voffset);
   }
+
   t2 = clock();
-  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-  t1 = clock();
+  debug_print("  %.4lf seconds to load triangle list (%d)\n", (t2-tt)/(double)CLOCKS_PER_SEC, tricount);
+
+  updateBoundingBox();
+
+  if (session.global("sort"))
+    sort();
 }
 
 //Depth sort the triangles before drawing, called whenever the viewing angle has changed

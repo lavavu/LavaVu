@@ -35,29 +35,33 @@
 
 #include "Geometry.h"
 
-QuadSurfaces::QuadSurfaces(Session& session) : TriSurfaces(session)
+QuadSurfaces::QuadSurfaces(Session& session) : Triangles(session)
 {
   type = lucGridType;
+  primitive = GL_TRIANGLES;
 }
 
 QuadSurfaces::~QuadSurfaces()
 {
-  TriSurfaces::close();
+  Triangles::close();
 }
 
 void QuadSurfaces::update()
 {
+  // Actual quads can no longer be rendered in modern OpenGL
+  // This renderer now just replaces the per-triangle sorting in TriSurfaces
+  // with simpler version that sorts by centre of each geometry element
+  //
+  // Functions to turn grid vertices into triangles are already provided by Triangles() class
   clock_t t1,t2,tt;
   t1 = tt = clock();
   // Update and depth sort surfaces..
-
   tt=clock();
   if (geom.size() == 0) return;
 
   //Get element/quad count
   debug_print("Reloading and sorting %d quad surfaces...\n", geom.size());
   total = 0;
-  surf_sort.clear();
 
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
@@ -76,7 +80,7 @@ void QuadSurfaces::update()
     total += v; //Actual vertices
 
     bool hidden = !drawable(i); //Save flags
-    debug_print("Surface %d, quads %d hidden? %s\n", i, quadverts/4, (hidden ? "yes" : "no"));
+    debug_print("Surface %d, quads %d hidden? %s\n", i, quads, (hidden ? "yes" : "no"));
 
     //Get corners of strip
     float* posmin = geom[i]->render->vertices[0];
@@ -90,32 +94,21 @@ void QuadSurfaces::update()
     geom[i]->distance = view->eyeDistance(modelView, pos);
     if (geom[i]->distance < distanceRange[0]) distanceRange[0] = geom[i]->distance;
     if (geom[i]->distance > distanceRange[1]) distanceRange[1] = geom[i]->distance;
-    //printf("%d)  %f %f %f distance = %f\n", i, pos[0], pos[1], pos[2], geom[i]->distance);
-    surf_sort.push_back(Distance(i, geom[i]->distance));
+    //printf("%d) %p %f %f %f distance = %f\n", i, geom[i].get(), pos[0], pos[1], pos[2], geom[i]->distance);
   }
   if (total == 0) return;
   t2 = clock();
   debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
-  //Sort
-  std::sort(surf_sort.begin(), surf_sort.end());
+  //Sort (descending)
+  std::sort(geom.begin(), geom.end(), GeomPtrCompare());
   t2 = clock();
   debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
-  //Only reload the vbo data when required
-  //Not needed when objects hidden/shown but required if colours changed
-  //To force, set geometry->reload = true
-  if (reload || elements != quadverts)
-  {
-    elements = quadverts;
-    //Load & optimise the mesh data
-    if (sorter.size != total || !allVertsFixed || counts.size() != geom.size())
-      render();
-    //Send the data to the GPU via VBO
-    loadBuffers();
-  }
+  // Update triangles...
+  Triangles::update();
 }
 
 void QuadSurfaces::sort()
@@ -124,266 +117,11 @@ void QuadSurfaces::sort()
     redraw = true; //Recalc cross section order
 }
 
-void QuadSurfaces::render()
-{
-  //Update quad index buffer
-  clock_t t1,t2;
-
-  //Prepare the Index buffer
-  if (!indexvbo)
-    glGenBuffers(1, &indexvbo);
-
-  //Always set data size again in case changed
-  glBindVertexArray(vao);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-  GL_Error_Check;
-  if (glIsBuffer(indexvbo))
-  {
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements * sizeof(GLuint), NULL, GL_STATIC_DRAW);
-    debug_print("  %d byte IBO created for %d indices\n", elements * sizeof(GLuint), elements);
-  }
-  else
-    abort_program("IBO creation failed!\n");
-  GL_Error_Check;
-
-  elements = 0;
-  int offset = 0;
-  int voffset = 0;
-  for (unsigned int index = 0; index < geom.size(); index++)
-  {
-    t1=clock();
-
-    std::vector<Vec3d> normals(geom[index]->count());
-    std::vector<GLuint> indices;
-
-    //Quad indices
-    unsigned int quads = geom[index]->gridElements2d();
-    tricount += quads; //For debug messages
-    bool vnormals = geom[index]->draw->properties["vertexnormals"];
-    debug_print("%d x %d grid, quads %d, offset %d\n", geom[index]->width, geom[index]->height, quads, elements);
-    if (vnormals && geom[index]->render->normals.size()/3 < geom[index]->count())
-    {
-      calcGridNormals(index, normals);
-      geom[index]->render->normals.clear();
-      geom[index]->render->normals.read(normals.size(), normals[0].ref());
-    }
-
-    //Special case: colour count == grid elements
-    unsigned int vcount = geom[index]->count();
-    unsigned int cc = geom[index]->colourCount();
-    if (quads == 0)
-    {
-      //printf("Using existing indices/vertices %d/%d\n", geom[index]->render->indices.size(), geom[index]->count());
-      quads = geom[index]->elementCount() / 4;
-    }
-    else if (cc > 0 && cc == (geom[index]->width-1) * (geom[index]->height-1))
-    {
-      if (vcount < quads*4)
-      {
-        //Re-vertex to separate elements - required to plot colours per grid quad
-        std::vector<Vec3d> vertices(quads*4);
-        calcGridVertices(index, vertices);
-        geom[index]->render->vertices.clear();
-        geom[index]->render->vertices.read(vertices.size(), &vertices[0]);
-        //Wipe any indices as we have generated full vertex list
-        geom[index]->render->indices.clear();
-      }
-    }
-    //Require calculated indices if using shared vertices (grid order rather than anti-clockwise per-quad order)
-    else if (quads && geom[index]->render->indices.size() == 0)
-    //else if ((vcount < 4 || vcount < quads*4) && geom[index]->render->indices.size() != quads*4)
-    {
-      indices.resize(quads*4);
-      calcGridIndices(index, indices, voffset);
-      //Read new data and continue
-      geom[index]->render->indices.clear();
-      geom[index]->render->indices.read(indices.size(), &indices[0]);
-    }
-
-    //Vertex index offset
-    voffset += vcount;
-    //Index offset
-    elements += quads*4;
-
-    t1 = clock();
-    unsigned int isize = geom[index]->render->indices.size();
-    unsigned int bytes = isize*sizeof(GLuint);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, bytes, geom[index]->render->indices.ref());
-    t2 = clock();
-    debug_print("  %.4lf seconds to upload %d quad indices (%d - %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, isize, offset, bytes);
-    t1 = clock();
-    offset += bytes;
-    GL_Error_Check;
-  }
-}
-
-void QuadSurfaces::calcGridIndices(int i, std::vector<GLuint> &indices, unsigned int vertoffset)
-{
-  //Converts a set of grid vertices into quad indices
-  if (geom[i]->height == 0 || geom[i]->width == 0) return;
-  clock_t t1,t2;
-  t1=clock();
-  debug_print("Calculating indices for grid quad surface %d... ", i);
-  bool flip = geom[i]->draw->properties["flip"];
-
-  unsigned int o = 0;
-  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
-  {
-    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
-    {
-      //Add indices for quad per grid element
-      //Asssumes vertices arranged in a grid, top down, left-right (row 0 : 0,1,2... row 1 : 0,1,2 )
-      //Counter-clockwise travel order to define face (U shape)
-      unsigned int j0 = flip ? j+1 : j;
-      unsigned int j1 = flip ? j : j+1;
-      unsigned int offset0 = j0 * geom[i]->width + k;
-      unsigned int offset1 = j1 * geom[i]->width + k;
-      unsigned int offset2 = j1 * geom[i]->width + k + 1;
-      unsigned int offset3 = j0 * geom[i]->width + k + 1;
-
-      assert(offset2 + vertoffset < total);
-      assert(o <= indices.size()-4);
-
-      indices[o++] = offset0 + vertoffset;
-      indices[o++] = offset1 + vertoffset;
-      indices[o++] = offset2 + vertoffset;
-      indices[o++] = offset3 + vertoffset;
-    }
-  }
-  t2 = clock();
-  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-  t1 = clock();
-}
-
-void QuadSurfaces::calcGridVertices(int i, std::vector<Vec3d> &vertices)
-{
-  //Converts a set of grid vertices into quad vertices
-  if (geom[i]->height == 0 || geom[i]->width == 0) return;
-  clock_t t1,t2;
-  t1=clock();
-  debug_print("Calculating non-shared vertices for grid quad surface %d... ", i);
-  bool flip = geom[i]->draw->properties["flip"];
-
-  // Calculate vertices to render each grid element without shared vertices
-  unsigned int o = 0;
-  for (unsigned int j = 0 ; j < geom[i]->height-1; j++ )
-  {
-    for (unsigned int k = 0 ; k < geom[i]->width-1; k++ )
-    {
-      //Add vertices for quad per grid element
-      //Asssumes vertices arranged in a grid, top down, left-right (row 0 : 0,1,2... row 1 : 0,1,2 )
-      //Counter-clockwise travel order to define face (U shape)
-      unsigned int j0 = flip ? j+1 : j;
-      unsigned int j1 = flip ? j : j+1;
-      unsigned int offset0 = j0 * geom[i]->width + k;
-      unsigned int offset1 = j1 * geom[i]->width + k;
-      unsigned int offset2 = j1 * geom[i]->width + k + 1;
-      unsigned int offset3 = j0 * geom[i]->width + k + 1;
-
-      //assert(offset2 + vertoffset < total);
-      assert(o <= vertices.size()-4);
-
-      //Quads...
-      vertices[o++] = geom[i]->render->vertices[offset0];
-      vertices[o++] = geom[i]->render->vertices[offset1];
-      vertices[o++] = geom[i]->render->vertices[offset2];
-      vertices[o++] = geom[i]->render->vertices[offset3];
-    }
-  }
-  t2 = clock();
-  debug_print("  %.4lf seconds\n", (t2-t1)/(double)CLOCKS_PER_SEC);
-  t1 = clock();
-}
-
 void QuadSurfaces::draw()
 {
-  GL_Error_Check;
-  // Draw using vertex buffer object
-  setState(0); //Set global draw state (using first object)
-  Shader_Ptr prog = session.shaders[lucTriangleType];
-  clock_t t0 = clock();
-  double time;
-  int stride = 8 * sizeof(float) + sizeof(Colour);   //3+3+2 vertices, normals, texCoord + 32-bit colour
-  glBindVertexArray(vao);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
-  GL_Error_Check;
-  if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
-  {
-    //Setup vertex attributes
-    GLint aPosition = prog->attribs["aVertexPosition"];
-    GLint aNormal = prog->attribs["aVertexNormal"];
-    GLint aColour = prog->attribs["aVertexColour"];
-    GLint aTexCoord = prog->attribs["aVertexTexCoord"];
-    glEnableVertexAttribArray(aPosition);
-    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
-    glEnableVertexAttribArray(aNormal);
-    glVertexAttribPointer(aNormal, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float))); // Normal x,y,z
-    glEnableVertexAttribArray(aTexCoord);
-    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6*sizeof(float))); //Tex coord s,t
-    glEnableVertexAttribArray(aColour);
-    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
-
-    //Render in reverse sorted order
-    for (int i=geom.size()-1; i>=0; i--)
-    {
-      unsigned int id = surf_sort[i].id;
-      //if (!drawable(id)) continue;
-      if (!drawable(id)) continue;
-      unsigned int els = 0;
-      //Get the offset
-      unsigned int vstart = 0;
-      unsigned int estart = 0;
-      for (unsigned int g=0; g<geom.size(); g++)
-      {
-        els = geom[g]->gridElements2d() * 4;
-        if (!els) els = geom[g]->elementCount();
-        if (g == id) break;
-        //Calculate offsets
-        if (geom[g]->render->indices.size() > 0)
-        {
-          estart += els;                //Element index offset
-          vstart += geom[g]->count();  //Vertex index offset
-        }
-        else
-          vstart += els;                //Vertex index offset
-      }
-
-      //int id = i; //Sorting disabled
-      setState(id); //Set draw state settings for this object
-
-      //fprintf(stderr, "(%d, %s) DRAWING QUADS: %d (%d to %d) elements: %d\n", i, geom[i]->draw->name().c_str(), geom[i]->render->indices.size()/4, start/4, (start+geom[i]->render->indices.size())/4, elements);
-      //printf("%d) rendered, distance = %f (%f)\n", id, geom[id]->distance, surf_sort[i].distance);
-
-      if (geom[id]->render->indices.size() > 0)
-      {
-        //Draw with index buffer
-        glDrawElements(GL_QUADS, els, GL_UNSIGNED_INT, (GLvoid*)(estart*sizeof(GLuint)));
-        //printf("DRAW %d from %d by INDEX\n", els, estart);
-      }
-      else
-      {
-        //Draw directly from vertex buffer
-        glDrawArrays(GL_QUADS, vstart, els);
-        //printf("DRAW %d from %d by VERTEX\n", els, vstart);
-      }
-    }
-
-    glDisableVertexAttribArray(aPosition);
-    glDisableVertexAttribArray(aNormal);
-    glDisableVertexAttribArray(aTexCoord);
-    glDisableVertexAttribArray(aColour);
-  }
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  GL_Error_Check;
-
-  glBindTexture(GL_TEXTURE_2D, 0);
-
-  time = ((clock()-t0)/(double)CLOCKS_PER_SEC);
-  if (time > 0.05)
-    debug_print("  %.4lf seconds to draw quads\n", time);
-  GL_Error_Check;
+  //Elements at same depth: draw both
+  //(mainly for backwards compatibility)
+  glDepthFunc(GL_LEQUAL);
+  Triangles::draw();
+  glDepthFunc(GL_LESS);
 }
-

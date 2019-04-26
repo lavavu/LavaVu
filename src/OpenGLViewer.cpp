@@ -130,6 +130,7 @@ bool FBO::create(int w, int h)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  GL_Error_Check;
   if (downsample > 1)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   else
@@ -294,11 +295,15 @@ void OpenGLViewer::init()
   GLboolean b;
   GLint i, d, s, u, a, sb, ss;
 
+  GL_Error_Check;
+  /* legacy
   glGetBooleanv(GL_RGBA_MODE, &b);
   glGetIntegerv(GL_ALPHA_BITS, &i);
   glGetIntegerv(GL_STENCIL_BITS, &s);
   glGetIntegerv(GL_DEPTH_BITS, &d);
   glGetIntegerv(GL_ACCUM_RED_BITS, &a);
+  GL_Error_Check;
+  */
   glGetIntegerv(GL_MAX_TEXTURE_UNITS, &u);
   glGetIntegerv(GL_SAMPLE_BUFFERS, &sb);
   glGetIntegerv(GL_SAMPLES, &ss);
