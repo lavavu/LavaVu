@@ -53,13 +53,19 @@ void resize_callback(GLFWwindow* window, int width, int height)
 
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-  if (action == GLFW_RELEASE)
-    return;
-
   GLFWViewer* self = (GLFWViewer*)glfwGetWindowUserPointer(window);
 
   //Save shift states
   self->get_modifiers(mods);
+
+  if (action != GLFW_PRESS)
+  {
+    //GLFW modifier key handling is utterly stupid, thus this hack, and below manual setting of modifiers
+    //(shift key status flags when pressed are off, on when released, really?)
+    if (key >= GLFW_KEY_LEFT_SHIFT && key <= GLFW_KEY_RIGHT_SUPER)
+      self->keyState.shift = self->keyState.ctrl = self->keyState.alt = 0;
+    return;
+  }
 
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
@@ -112,10 +118,23 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
   case GLFW_KEY_END:
     self->keyPress(KEY_END, (int)xpos, (int)ypos);
     break;
+  case GLFW_KEY_LEFT_SHIFT:
+  case GLFW_KEY_RIGHT_SHIFT:
+    self->keyState.shift = 1;
+    break;
+  case GLFW_KEY_LEFT_CONTROL:
+  case GLFW_KEY_RIGHT_CONTROL:
+    self->keyState.ctrl = 1;
+    break;
+  case GLFW_KEY_LEFT_ALT:
+  case GLFW_KEY_RIGHT_ALT:
+    self->keyState.alt = 1;
+    break;
   default:
     return;
   }
   //printf("KEY: %d %c\n", key, (char)key);
+
   self->redisplay = true;
 }
 
@@ -214,13 +233,11 @@ void GLFWViewer::open(int w, int h)
   else
     window_count++;
 
-  //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+  //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   glfwWindowHint(GLFW_SAMPLES, 4);
   glfwWindowHint(GLFW_VISIBLE, 0);
 
@@ -242,9 +259,6 @@ void GLFWViewer::open(int w, int h)
   glfwSetScrollCallback(window, mousescroll_callback);
   glfwSetKeyCallback(window, key_callback);
   glfwSetCharModsCallback(window, character_callback);
-
-  //glewExperimental = GL_TRUE;
-  //glewInit();
 
   //Call OpenGL init
   OpenGLViewer::init();
@@ -341,7 +355,7 @@ void GLFWViewer::get_modifiers(int modifiers)
   keyState.shift = (modifiers & GLFW_MOD_SHIFT);
   keyState.ctrl = (modifiers & GLFW_MOD_CONTROL);
   keyState.alt = (modifiers & GLFW_MOD_ALT);
-  //self->keyState.super = (modifiers & GLFW_MOD_SUPER);;
+  //keyState.super = (modifiers & GLFW_MOD_SUPER);;
 }
 #endif
 
