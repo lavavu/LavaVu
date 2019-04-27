@@ -42,6 +42,16 @@
 #include "OutputInterface.h"
 #include "InputInterface.h"
 
+#ifdef DEBUG
+#define GL_Check_Thread(thread) \
+{ \
+  if (thread != std::this_thread::get_id()) \
+    abort_program("FATAL: must call GL functions from render thread"); \
+}
+#else
+#define GL_Check_Thread(thread)
+#endif //DEBUG
+
 class FrameBuffer
 {
 public:

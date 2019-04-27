@@ -135,6 +135,7 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 
 void LavaVu::defaults()
 {
+  GL_Check_Thread(viewer->render_thread);
   //Set all values/state to defaults
   if (viewer) 
   {
@@ -199,6 +200,8 @@ LavaVu::~LavaVu()
     sortcv.notify_one();
     sort_thread.join();
   }
+
+  GL_Check_Thread(viewer->render_thread);
 
   close();
 
@@ -449,6 +452,8 @@ void LavaVu::arguments(std::vector<std::string> args)
 
 void LavaVu::run(std::vector<std::string> args)
 {
+  GL_Check_Thread(viewer->render_thread);
+
   //Reset defaults
   defaults();
 
@@ -577,6 +582,9 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
 
 std::string LavaVu::exportData(lucExportType type, std::vector<DrawingObject*> list, std::string filename)
 {
+  //Not yet opened or resized?
+  GL_Check_Thread(viewer->render_thread);
+
   //Export data
   viewer->display();
 
@@ -1777,6 +1785,8 @@ void LavaVu::close()
       std::lock_guard<std::mutex> guard(g->sortmutex);
   }
 
+  GL_Check_Thread(viewer->render_thread);
+
   //Need to call display to switch contexts before freeing OpenGL resources
   if (viewer)
     viewer->display(false);
@@ -2876,8 +2886,7 @@ void LavaVu::defaultModel()
 //Load model data at specified timestep
 bool LavaVu::loadModelStep(int model_idx, int at_timestep, bool autozoom)
 {
-  if (viewer->render_thread != std::this_thread::get_id())
-    abort_program("FATAL: must call model load from render thread");
+  GL_Check_Thread(viewer->render_thread);
   if (models.size() == 0) defaultModel();
   if (model_idx == model && at_timestep >= 0 && at_timestep == session.now) return false; //No change
   if (model_idx < 0 || model_idx >= (int)models.size()) return false;
@@ -2970,6 +2979,7 @@ std::string LavaVu::encodeVideo(std::string filename, int fps, int quality)
 
 void LavaVu::writeSteps(bool images, int start, int end)
 {
+  GL_Check_Thread(viewer->render_thread);
   //Default to last available step
   if (end < 0)
   {
