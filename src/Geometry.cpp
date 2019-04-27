@@ -1276,6 +1276,36 @@ void Geometry::setState(unsigned int i)
   GL_Error_Check;
 }
 
+void Geometry::convertColours()
+{
+  //Convert colour-mapped value data to RGBA per vertex
+  debug_print("Colouring %d elements...\n", elements);
+  for (unsigned int index = 0; index < geom.size(); index++)
+  {
+    ColourMap* cmap = geom[index]->draw->colourMap;
+    FloatValues* vals = geom[index]->colourData();
+    if (geom[index]->render->colours.size() == 0 and cmap and vals)
+    {
+      //Calibrate colour maps on range for this surface
+      ColourLookup& getColour = geom[index]->colourCalibrate();
+      unsigned int hasColours = geom[index]->colourCount();
+      if (hasColours > geom[index]->count()) hasColours = geom[index]->count(); //Limit to vertices
+      unsigned int colrange = hasColours ? geom[index]->count() / hasColours : 1;
+      if (colrange < 1) colrange = 1;
+      Colour colour;
+      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count(), hasColours);
+      std::vector<unsigned int> colours(geom[index]->count());
+      for (unsigned int v=0; v < geom[index]->count(); v++)
+      {
+        //Have colour values but not enough for per-vertex, spread over range
+        unsigned int cidx = v / colrange;
+        getColour(colour, cidx);
+        colours[v] = colour.value;
+      }
+      read(geom[index], colours.size(), lucRGBAData, colours.data());
+    }
+  }
+}
 
 void Geometry::updateBoundingBox()
 {

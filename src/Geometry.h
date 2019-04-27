@@ -580,6 +580,7 @@ public:
   Shader_Ptr getShader(DrawingObject* draw=NULL);
   Shader_Ptr getShader(lucGeometryType type);
   void setState(unsigned int i);
+  void convertColours();
   void updateBoundingBox();
   virtual void display(bool refresh=false); //Display saved geometry
   virtual void update();  //Implementation should create geometry here...

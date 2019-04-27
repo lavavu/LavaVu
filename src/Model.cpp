@@ -646,10 +646,11 @@ void Model::bake(DrawingObject* obj)
     //Re-calc data ranges
     setup();
 
-    //TODO: also bake in colour info to RGBA?
-
     for (auto g : geometry)
     {
+      //Convert and colourmap+value data into rgba
+      g->convertColours();
+
       //dynamic_cast only works if a valid descendant class
       Glyphs* glyphs = dynamic_cast<Glyphs*>(g);
       if (glyphs)
