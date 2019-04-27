@@ -101,7 +101,7 @@ void Volumes::draw()
   std::vector<Geom_Ptr> geom_sorted;
   {
     std::lock_guard<std::mutex> guard(loadmutex);
-    geom_sorted = geom;
+    geom_sorted = sorted;
   }
 
   //Each object can only have one volume,
@@ -110,11 +110,11 @@ void Volumes::draw()
   //Render in sorted order
   for (int i=0; i<geom_sorted.size(); i++)
   {
-    if (!drawable(i) || slices[geom[i]->draw] == 0) continue;
+    //if (!drawable(i)) continue;
     //printf("DRAWING Volume %d slices %d, %p\n", i, slices[geom[i]->draw], geom[i].get());
 
-    setState(i); //Set draw state settings for this object
-    render(i);
+    setState(geom_sorted[i]); //Set draw state settings for this object
+    render(geom_sorted[i]);
 
     GL_Error_Check;
   }
@@ -136,6 +136,12 @@ void Volumes::sort()
   //Lock the update mutex
   std::lock_guard<std::mutex> guard(loadmutex);
 
+  //Add key elements to sort list
+  sorted.clear();
+  for (int i=0; i<geom.size(); i++)
+    if (geom[i]->count() && slices[geom[i]->draw] && drawable(i))
+      sorted.push_back(geom[i]);
+
   //Get element/quad count
   debug_print("Sorting %lu volume entries...\n", geom.size());
 
@@ -145,13 +151,15 @@ void Volumes::sort()
   mat4 modelView;
   view->getMinMaxDistance(min, max, distanceRange, modelView);
 
-  unsigned int index = 0;
-  for (unsigned int i=0; i<slices.size(); i++)
+  float distance = 0;
+  for (auto g : sorted) //unsigned int i=0; i<slices.size(); i++)
   {
     //Get corners of cube
-    if (geom[index]->count() == 0) continue;
-    float* posmin = geom[index]->render->vertices[0];
-    float* posmax = geom[index]->render->vertices[1];
+    if (g->count() == 0)
+      continue;
+
+    float* posmin = g->render->vertices[0];
+    float* posmax = g->render->vertices[1];
 
     float pos[3] = {posmin[0] + (posmax[0] - posmin[0]) * 0.5f,
                     posmin[1] + (posmax[1] - posmin[1]) * 0.5f,
@@ -159,29 +167,29 @@ void Volumes::sort()
                    };
 
     //Object rotation/translation
-    if (geom[index]->draw->properties.has("translate"))
+    if (g->draw->properties.has("translate"))
     {
       float trans[3];
-      Properties::toArray<float>(geom[index]->draw->properties["translate"], trans, 3);
+      Properties::toArray<float>(g->draw->properties["translate"], trans, 3);
       pos[0] += trans[0];
       pos[1] += trans[1];
       pos[2] += trans[2];
     }
 
     //Calculate distance from viewing plane
-    geom[index]->distance = view->eyeDistance(modelView, pos);
-    if (geom[index]->distance < distanceRange[0]) distanceRange[0] = geom[index]->distance;
-    if (geom[index]->distance > distanceRange[1]) distanceRange[1] = geom[index]->distance;
-    //printf("Volume %d, %p\n", index, geom[index].get());
-    //printf("%d)  %f %f %f distance = %f (min %f, max %f)\n", index, pos[0], pos[1], pos[2], geom[index]->distance, distanceRange[0], distanceRange[1]);
-    index += slices[geom[i]->draw];
+    distance = view->eyeDistance(modelView, pos);
+    if (distance < distanceRange[0]) distanceRange[0] = distance;
+    if (distance > distanceRange[1]) distanceRange[1] = distance;
+    g->distance = distance;
+    //printf("Volume %p\n", g.get());
+    //printf("%f %f %f distance = %f (min %f, max %f)\n", pos[0], pos[1], pos[2], g->distance, distanceRange[0], distanceRange[1]);
   }
   t2 = clock();
   debug_print("  %.4lf seconds to calculate distances\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
   //Sort (descending)
-  std::sort(geom.begin(), geom.end(), GeomPtrCompare());
+  std::sort(sorted.begin(), sorted.end(), GeomPtrCompare());
   t2 = clock();
   debug_print("  %.4lf seconds to sort\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
@@ -427,14 +435,14 @@ void Volumes::update()
     sort();
 }
 
-void Volumes::render(int i)
+void Volumes::render(Geom_Ptr g)
 {
   session.context.push();
-  Properties& props = geom[i]->draw->properties;
+  Properties& props = g->draw->properties;
 
-  float dims[3] = {geom[i]->render->vertices[1][0] - geom[i]->render->vertices[0][0],
-                   geom[i]->render->vertices[1][1] - geom[i]->render->vertices[0][1],
-                   geom[i]->render->vertices[1][2] - geom[i]->render->vertices[0][2]
+  float dims[3] = {g->render->vertices[1][0] - g->render->vertices[0][0],
+                   g->render->vertices[1][1] - g->render->vertices[0][1],
+                   g->render->vertices[1][2] - g->render->vertices[0][2]
                   };
 
   //Object scaling
@@ -453,10 +461,10 @@ void Volumes::render(int i)
   //Uniform variables
   float viewport[4];
   glGetFloatv(GL_VIEWPORT, viewport);
-  TextureData* voltexture = geom[i]->draw->useTexture(geom[i]->texture);
+  TextureData* voltexture = g->draw->useTexture(g->texture);
   if (!voltexture) 
   {
-    fprintf(stderr, "No volume texture loaded for %s : %d!\n", geom[i]->draw->name().c_str(), i);
+    fprintf(stderr, "No volume texture loaded for %s!\n", g->draw->name().c_str());
     return;
   }
   float res[3] = {(float)voltexture->width, (float)voltexture->height, (float)voltexture->depth};
@@ -464,7 +472,7 @@ void Volumes::render(int i)
   prog->setUniform4f("uViewport", viewport);
 
   //User settings
-  ColourMap* cmap = geom[i]->draw->colourMap;
+  ColourMap* cmap = g->draw->colourMap;
   //if (cmap) cmap->calibrate(0, 1);
   //Setup gradient texture from colourmap if not yet loaded
   if (cmap && !cmap->texture) cmap->loadTexture();
@@ -485,7 +493,7 @@ void Volumes::render(int i)
   prog->setUniformi("uSamples", props["samples"]);
   float opacity = props["opacity"], density = props["density"];
   prog->setUniformf("uDensityFactor", density * opacity);
-  Colour colour = geom[i]->draw->properties.getColour("colour", 220, 220, 200, 255);
+  Colour colour = g->draw->properties.getColour("colour", 220, 220, 200, 255);
   bool hasiso = props.has("isovalue");
   float isoval = props["isovalue"];
   float isoalpha = props["isoalpha"];
@@ -514,11 +522,11 @@ void Volumes::render(int i)
     }
     //cmap->calibrate(&range);
   }
-  else if (geom[i]->colourData()) // && (!cmap || !cmap->properties.has("range") || cmap->properties["range"].is_null()))
+  else if (g->colourData()) // && (!cmap || !cmap->properties.has("range") || cmap->properties["range"].is_null()))
   {
-    range = geom[i]->draw->ranges[geom[i]->colourData()->label];
+    range = g->draw->ranges[g->colourData()->label];
     //For non float type, normalise isovalue to range [0,1] to match data
-    //if (geom[i]->texture->type != VOLUME_FLOAT)
+    //if (g->texture->type != VOLUME_FLOAT)
     //  isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
     //prog->setUniform2f("uRange", range.data());
     //std::cout << "USING DATA RANGE: " << range << std::endl;
@@ -598,9 +606,9 @@ void Volumes::render(int i)
   view->apply(rotatable, qrot, &translate);
 
   //Translate to our origin
-  session.context.translate3(geom[i]->render->vertices[0][0],
-                             geom[i]->render->vertices[0][1],
-                             geom[i]->render->vertices[0][2]);
+  session.context.translate3(g->render->vertices[0][0],
+                             g->render->vertices[0][1],
+                             g->render->vertices[0][2]);
 
   //Get the mvMatrix scaled by volume size
   //(used for depth calculations)
@@ -658,7 +666,7 @@ void Volumes::render(int i)
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   //Calibrate colourmap on data now so if colour bar drawn it will have correct range
-  geom[i]->colourCalibrate();
+  g->colourCalibrate();
   session.context.pop();
 }
 

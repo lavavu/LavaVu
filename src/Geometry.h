@@ -580,6 +580,7 @@ public:
   Shader_Ptr getShader(DrawingObject* draw=NULL);
   Shader_Ptr getShader(lucGeometryType type);
   void setState(unsigned int i);
+  void setState(Geom_Ptr g);
   void convertColours();
   void updateBoundingBox();
   virtual void display(bool refresh=false); //Display saved geometry
@@ -820,6 +821,7 @@ public:
 
 class Volumes : public Imposter
 {
+  std::vector<Geom_Ptr> sorted;
 public:
   GLuint colourTexture;
   std::map<DrawingObject*, unsigned int> slices;
@@ -832,7 +834,7 @@ public:
   virtual void update();
   virtual void sort();    //Threaded sort function
   virtual void draw();
-  void render(int i);
+  void render(Geom_Ptr g);
   ImageData* getTiledImage(DrawingObject* draw, unsigned int index, unsigned int& iw, unsigned int& ih, unsigned int& channels, int xtiles=16);
   void saveTiledImage(DrawingObject* draw, int xtiles=16);
   void getSliceImage(ImageData* image, GeomData* slice, int offset=0);

@@ -1089,22 +1089,27 @@ Shader_Ptr Geometry::getShader(lucGeometryType type)
 
 void Geometry::setState(unsigned int i)
 {
-  //NOTE: Transparent triangle surfaces/points are drawn as a single object so 
+  if (geom.size() <= i) return;
+  setState(geom[i]);
+}
+
+void Geometry::setState(Geom_Ptr g)
+{
+  //NOTE: Transparent triangle surfaces/points are drawn as a single object so
   //      no per-object state settings work, state applied is that of first in list
   GL_Error_Check;
-  if (geom.size() <= i) return;
-  DrawingObject* draw = geom[i]->draw;
-  Properties& props = geom[i]->draw->properties;
+  DrawingObject* draw = g->draw;
+  Properties& props = g->draw->properties;
 
   //Textured? - can be per element, so always execute
-  TextureData* texture = draw->useTexture(geom[i]->texture);
+  TextureData* texture = draw->useTexture(g->texture);
   GL_Error_Check;
 
   //Only set rest of object state when object changes
   if (draw == cached) return;
   cached = draw;
 
-  //printf("SETSTATE %s\n", geom[i]->draw->name().c_str());
+  //printf("SETSTATE %s\n", g->draw->name().c_str());
   bool lighting = props["lit"];
   //Don't light surfaces in 2d models
   if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal) lighting = false;
@@ -1159,7 +1164,7 @@ void Geometry::setState(unsigned int i)
 
   //Uniforms for shader programs
   GL_Error_Check;
-  Shader_Ptr prog = getShader(geom[i]->draw);
+  Shader_Ptr prog = getShader(g->draw);
   assert(prog && prog->program > 0); //Should always get a shader now
   prog->use();
   GL_Error_Check;
@@ -1183,10 +1188,10 @@ void Geometry::setState(unsigned int i)
       //Special case: string data -> treat as colourmap!
       if (prop.is_string())
       {
-        if (geom[i]->draw->textureMap && geom[i]->draw->textureMap->texture)
+        if (g->draw->textureMap && g->draw->textureMap->texture)
         {
-          prog->setUniformi(label, geom[i]->draw->textureMap->texture->texture->unit);
-          //std::cerr << label << " : Colourmap texture available on unit " << geom[i]->draw->colourMap->texture->texture->unit << std::endl;
+          prog->setUniformi(label, g->draw->textureMap->texture->texture->unit);
+          //std::cerr << label << " : Colourmap texture available on unit " << g->draw->colourMap->texture->texture->unit << std::endl;
         }
         else
           std::cerr << label << " : No colourmap texture available! " << prop << std::endl;
@@ -1217,14 +1222,14 @@ void Geometry::setState(unsigned int i)
   prog->setUniformf("uShininess", props["shininess"]);
   prog->setUniform("uLightPos", props["lightpos"]);
   prog->setUniformi("uTextured", texture && texture->unit >= 0);
-  prog->setUniformf("uOpaque", allopaque || geom[i]->opaque);
+  prog->setUniformf("uOpaque", allopaque || g->opaque);
   prog->setUniformf("uFlat", flat);
-  //std::cout << i << " OPAQUE: " << allopaque << " || " << geom[i]->opaque << std::endl;
+  //std::cout << i << " OPAQUE: " << allopaque << " || " << g->opaque << std::endl;
 
   if (texture)
     prog->setUniform("uTexture", (int)texture->unit);
 
-  if (geom[i]->render->normals.size() == 0 && TriangleBased(type))
+  if (g->render->normals.size() == 0 && TriangleBased(type))
     prog->setUniform("uCalcNormal", 1);
   else
     prog->setUniform("uCalcNormal", 0);
@@ -1259,7 +1264,7 @@ void Geometry::setState(unsigned int i)
       }
       //printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1],
       //       session.min[2], session.max[0], session.max[1], session.max[2]);
-      //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", geom[i]->draw->name().c_str(),
+      //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(),
       //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
     }
 
