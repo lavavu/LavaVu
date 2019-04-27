@@ -120,23 +120,8 @@ ColourLookup& GeomData::colourCalibrate()
 
   ColourMap* cmap = draw->colourMap;
   FloatValues* vals = colourData();
-  if (cmap && vals)
-  {
-    //Calibrate the colour map
-    auto range = draw->ranges[vals->label];
-    cmap->calibrate(&range);
 
-    if (mappedOpacity)
-    {
-      _getColourMappedOpacityMapped.init(draw, render, vals, ovals);
-      _getColourMappedOpacityMapped(draw->colour, 0); //Cache a representative colour
-      return _getColourMappedOpacityMapped;
-    }
-    _getColourMapped.init(draw, render, vals, NULL);
-    _getColourMapped(draw->colour, 0); //Cache a representative colour
-    return _getColourMapped;
-  }
-  else if (render->colours.size() > 0)
+  if (render->colours.size() > 0)
   {
     if (mappedOpacity)
     {
@@ -171,6 +156,22 @@ ColourLookup& GeomData::colourCalibrate()
     _getColourLuminance.init(draw, render, NULL, NULL);
     _getColourLuminance(draw->colour, 0); //Cache a representative colour
     return _getColourLuminance;
+  }
+  else if (cmap && vals)
+  {
+    //Calibrate the colour map
+    auto range = draw->ranges[vals->label];
+    cmap->calibrate(&range);
+
+    if (mappedOpacity)
+    {
+      _getColourMappedOpacityMapped.init(draw, render, vals, ovals);
+      _getColourMappedOpacityMapped(draw->colour, 0); //Cache a representative colour
+      return _getColourMappedOpacityMapped;
+    }
+    _getColourMapped.init(draw, render, vals, NULL);
+    _getColourMapped(draw->colour, 0); //Cache a representative colour
+    return _getColourMapped;
   }
   else
   {
@@ -988,6 +989,7 @@ void Geometry::merge(int start, int end)
 
 Shader_Ptr Geometry::getShader(DrawingObject* draw)
 {
+  GL_Error_Check;
   //Use existing custom shader if found
   if (draw && draw->shader)
     return draw->shader;
@@ -1138,6 +1140,7 @@ void Geometry::setState(unsigned int i)
   //Default line width
   float lineWidth = (float)props["linewidth"] * session.context.scale2d; //Include 2d scale factor
   glLineWidth(lineWidth);
+  GL_Error_Check;
 
   //Disable depth test by default for 2d lines, otherwise enable
   bool depthTestDefault = (view->is3d || type != lucLineType);
@@ -1155,9 +1158,11 @@ void Geometry::setState(unsigned int i)
   draw->colour = draw->properties.getColour("colour", draw->colour.r, draw->colour.g, draw->colour.b, draw->colour.a);
 
   //Uniforms for shader programs
+  GL_Error_Check;
   Shader_Ptr prog = getShader(geom[i]->draw);
   assert(prog && prog->program > 0); //Should always get a shader now
   prog->use();
+  GL_Error_Check;
 
   //Custom uniforms?
   if (draw->properties.has("uniforms"))
@@ -1268,6 +1273,7 @@ void Geometry::setState(unsigned int i)
   prog->setUniformMatrixf("uMVMatrix", session.context.MV);
   prog->setUniformMatrixf("uNMatrix", nMatrix);
   prog->setUniformMatrixf("uPMatrix", session.context.P);
+  GL_Error_Check;
 }
 
 
