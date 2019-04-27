@@ -1412,6 +1412,11 @@ void LavaVu::readHeightMapImage(const FilePath& fn)
 void readOBJ_material(const FilePath& fn, const tinyobj::material_t& material, DrawingObject* obj, Geometry* tris, bool verbose)
 {
   //std::cerr << "Applying material : " << material.name << std::endl;
+  if (material.name.length() == 0)
+  {
+    std::cerr << "Skipping invalid material\n";
+    return;
+  }
 
   //Use the diffuse property as the colour/texture
   std::string texpath = material.diffuse_texname;
