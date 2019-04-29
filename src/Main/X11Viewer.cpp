@@ -334,58 +334,62 @@ void X11Viewer::fullScreen()
 bool X11Viewer::chooseVisual()
 {
   int scrnum = DefaultScreen(Xdisplay);
-  int i, count = 7;
-  static int configuration[] = { GLX_STEREO, GLX_SAMPLE_BUFFERS, 1, GLX_SAMPLES, 4,
-                                 GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 8,
+  static int configuration[] = { GLX_STEREO, 1, GLX_DOUBLEBUFFER, 1, GLX_DEPTH_SIZE, 8,
                                  GLX_ALPHA_SIZE, 8, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8,
                                  None
                                };
-  const char* configStrings[] = {"Stereo", "4 x MultisampleSample", "Double-buffered", "Depth", "Stencil", "Alpha", "RGB"};
-  int configs[] = {0, 1, 5, 6, 8, 10, 12};
+  const char* configStrings[] = {"Stereo", "Double-buffered"};
 
   // find an OpenGL-capable display - trying different configurations if nessesary
   // Note: only attempt to get stereo and double buffered visuals when in interactive mode
   //Updated for 3.0+ https://www.khronos.org/opengl/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
   vi = NULL;
-  for (i = stereo ? 0 : 1; i < count; i += 1)
+  for (int i = stereo ? 0 : 2; i < 4; i += 2)
   {
-    int j;
-    debug_print("Attempting config %d: (", i+1);
-    for (j = i; j < 7; j++)
-      debug_print("%s%s", (j==i) ? "" : ", ", configStrings[j]);
-    debug_print(") ");
+    debug_print("Attempting config %d: ( ", (i/2)+1);
+    for (int j = i/2; j < 2; j++)
+      debug_print("%s ", configStrings[j]);
+    debug_print(")\n");
 
     //OpenGL3+
-    fbcfg = glXChooseFBConfig(Xdisplay, scrnum, &configuration[configs[i]], &fbcount);
+    fbcfg = glXChooseFBConfig(Xdisplay, scrnum, &configuration[i], &fbcount);
     if (fbcount == 0) continue;
 
     // Pick the FB config/visual with the most samples per pixel
     debug_print( "Getting XVisualInfos\n" );
-    int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+    int best_fbc = -1, best_num_samp = -1;
     for (fbcidx = 0; fbcidx<fbcount; fbcidx++)
     {
       vi = glXGetVisualFromFBConfig(Xdisplay, fbcfg[fbcidx]);
       if (vi)
       {
-        int samp_buf, samples;
+        int samp_buf, samples, depth, db;
         glXGetFBConfigAttrib(Xdisplay, fbcfg[fbcidx], GLX_SAMPLE_BUFFERS, &samp_buf);
         glXGetFBConfigAttrib(Xdisplay, fbcfg[fbcidx], GLX_SAMPLES, &samples);
+        glXGetFBConfigAttrib(Xdisplay, fbcfg[fbcidx], GLX_DEPTH_SIZE, &depth);
+        glXGetFBConfigAttrib(Xdisplay, fbcfg[fbcidx], GLX_DOUBLEBUFFER, &db);
 
-        debug_print("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d\n",
-                    fbcidx, (unsigned int)vi->visualid, samp_buf, samples);
+        debug_print("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d DEPTH %d DB %d\n",
+                    fbcidx, (unsigned int)vi->visualid, samp_buf, samples, depth, db);
 
         if ( best_fbc < 0 || samp_buf && samples > best_num_samp )
           best_fbc = fbcidx, best_num_samp = samples;
+        //4 x Multisample is fine
+        if (samples == 4)
+        {
+          best_fbc = fbcidx;
+          break;
+        }
       }
       XFree(vi);
     }
-    //Use the best
+    //Use the best or first with 4xMSAA
     fbcidx = best_fbc;
     vi = glXGetVisualFromFBConfig(Xdisplay, fbcfg[fbcidx]);
 
     if (vi && fbcfg && fbcount > 0)
     {
-      debug_printf("Success, Got %d FB configs (Using %d)\n", fbcount, fbcidx);
+      debug_print("Success, Got %d FB configs (Using %d)\n", fbcount, fbcidx);
       break;
     }
     debug_print("Failed\n");
