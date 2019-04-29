@@ -448,6 +448,12 @@ bool X11Viewer::createWindow(int width, int height)
       None
     };
 
+    // NOTE: It is not necessary to create or make current to a context before
+    // calling glXGetProcAddressARB
+    typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+    glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
+    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
+
     assert(fbcount > 0);
     glxcontext = glXCreateContextAttribsARB(Xdisplay, fbcfg[fbcidx], NULL, true, attribs);
 
