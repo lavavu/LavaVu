@@ -56,6 +56,8 @@ X11Viewer::X11Viewer() : OpenGLViewer(), hidden(false), redisplay(true)
   Xdisplay = NULL;
   sHints = NULL;
   wmHints = NULL;
+  vi = NULL;
+  fbcfg = NULL;
 
   x11_fd = -1; //Initial unset flag value
 }
@@ -67,8 +69,9 @@ X11Viewer::~X11Viewer()
     if (sHints) XFree(sHints);
     if (wmHints) XFree(wmHints);
     XDestroyWindow(Xdisplay ,win);
-    XFree(vi);
     if (glxcontext) glXDestroyContext(Xdisplay, glxcontext);
+    if (vi) XFree(vi);
+    if (fbcfg) XFree(fbcfg);
     XSetCloseDownMode(Xdisplay, DestroyAll);
     XCloseDisplay(Xdisplay);
   }
@@ -330,17 +333,19 @@ void X11Viewer::fullScreen()
 
 bool X11Viewer::chooseVisual()
 {
+  int scrnum = DefaultScreen(Xdisplay);
   int i, count = 7;
   static int configuration[] = { GLX_STEREO, GLX_SAMPLE_BUFFERS, 1, GLX_SAMPLES, 4,
-                                 GLX_DOUBLEBUFFER, GLX_STENCIL_SIZE, 1, GLX_DEPTH_SIZE, 8,
+                                 GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 8,
                                  GLX_ALPHA_SIZE, 8, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8,
-                                 GLX_RGBA, None
+                                 None
                                };
   const char* configStrings[] = {"Stereo", "4 x MultisampleSample", "Double-buffered", "Depth", "Stencil", "Alpha", "RGB"};
   int configs[] = {0, 1, 5, 6, 8, 10, 12};
 
   // find an OpenGL-capable display - trying different configurations if nessesary
   // Note: only attempt to get stereo and double buffered visuals when in interactive mode
+  //Updated for 3.0+ https://www.khronos.org/opengl/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
   vi = NULL;
   for (i = stereo ? 0 : 1; i < count; i += 1)
   {
@@ -350,11 +355,38 @@ bool X11Viewer::chooseVisual()
       debug_print("%s%s", (j==i) ? "" : ", ", configStrings[j]);
     debug_print(") ");
 
-    vi = glXChooseVisual(Xdisplay, DefaultScreen(Xdisplay), &configuration[configs[i]]);
-    if (vi)
+    //OpenGL3+
+    fbcfg = glXChooseFBConfig(Xdisplay, scrnum, &configuration[configs[i]], &fbcount);
+    if (fbcount == 0) continue;
+
+    // Pick the FB config/visual with the most samples per pixel
+    debug_print( "Getting XVisualInfos\n" );
+    int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+    for (fbcidx = 0; fbcidx<fbcount; fbcidx++)
     {
-      debug_print("Success!\n");
-      break; // Success?
+      vi = glXGetVisualFromFBConfig(Xdisplay, fbcfg[fbcidx]);
+      if (vi)
+      {
+        int samp_buf, samples;
+        glXGetFBConfigAttrib(Xdisplay, fbcfg[fbcidx], GLX_SAMPLE_BUFFERS, &samp_buf);
+        glXGetFBConfigAttrib(Xdisplay, fbcfg[fbcidx], GLX_SAMPLES, &samples);
+
+        debug_print("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d\n",
+                    fbcidx, (unsigned int)vi->visualid, samp_buf, samples);
+
+        if ( best_fbc < 0 || samp_buf && samples > best_num_samp )
+          best_fbc = fbcidx, best_num_samp = samples;
+      }
+      XFree(vi);
+    }
+    //Use the best
+    fbcidx = best_fbc;
+    vi = glXGetVisualFromFBConfig(Xdisplay, fbcfg[fbcidx]);
+
+    if (vi && fbcfg && fbcount > 0)
+    {
+      debug_printf("Success, Got %d FB configs (Using %d)\n", fbcount, fbcidx);
+      break;
     }
     debug_print("Failed\n");
   }
@@ -404,10 +436,16 @@ bool X11Viewer::createWindow(int width, int height)
     wmDeleteWindow = XInternAtom(Xdisplay, "WM_DELETE_WINDOW", 1);
     XSetWMProtocols(Xdisplay, win, &wmDeleteWindow, 1);
 
-    // Create an OpenGL rendering context
-    glxcontext = glXCreateContext(Xdisplay, vi, 0, 1);
-    if (!glxcontext) // Failed? Try an indirect context
-      glxcontext = glXCreateContext(Xdisplay, vi, 0, 0);
+    // OpenGL 3.2
+    int attribs[] = {
+      GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+      GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+      None
+    };
+
+    assert(fbcount > 0);
+    glxcontext = glXCreateContextAttribsARB(Xdisplay, fbcfg[fbcidx], NULL, true, attribs);
 
     if (glxcontext)
     {
@@ -421,7 +459,9 @@ bool X11Viewer::createWindow(int width, int height)
 
       glXMakeCurrent(Xdisplay, win, glxcontext);
 
-      //XFlush(Xdisplay);  // Flush output buffer
+      //printf("OpenGL:\n\tvendor %s\n\trenderer %s\n\tversion %s\n\tshader language %s\n\n",
+      //  glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION),
+      //  glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
     else
       fprintf(stderr, "In func %s: Could not create GLX rendering context.\n", __func__);

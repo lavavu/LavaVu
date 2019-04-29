@@ -57,6 +57,8 @@ class X11Viewer  : public OpenGLViewer
   Window         win;
   XVisualInfo*   vi;
   XWMHints*      wmHints;
+  GLXFBConfig*   fbcfg;
+  int            fbcount, fbcidx;
   XSizeHints*    sHints;
   Atom           wmDeleteWindow;
   char           displayName[256] = {':', '0', '.', '0'};
