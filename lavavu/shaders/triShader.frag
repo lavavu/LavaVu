@@ -25,7 +25,19 @@ uniform vec3 uLightPos;
 in float vObjectID;
 uniform int uCullFace[64];
 #define outColour gl_FragColor
+#define texture(a,b) texture2D(a,b)
+
+//Before OpenGL 3+ we need our own isnan function
+bool isnan3(vec3 val)
+{
+  if (!(val.x < 0.0 || 0.0 < val.x || val.x == 0.0)) return true;
+  if (!(val.y < 0.0 || 0.0 < val.y || val.y == 0.0)) return true;
+  if (!(val.z < 0.0 || 0.0 < val.z || val.z == 0.0)) return true;
+  return false;
+}
+
 #else
+#define isnan3(v) any(isnan(v))
 flat in vec4 vFlatColour;
 uniform bool uFlat;
 out vec4 outColour;
@@ -47,15 +59,6 @@ void calcColour(vec3 colour, float alpha)
   outColour = vec4(colour, alpha);
 }
 
-//Until we can use OpenGL 3+ we need our own isnan function
-bool isnan(vec3 val)
-{
-  if (!(val.x < 0.0 || 0.0 < val.x || val.x == 0.0)) return true;
-  if (!(val.y < 0.0 || 0.0 < val.y || val.y == 0.0)) return true;
-  if (!(val.z < 0.0 || 0.0 < val.z || val.z == 0.0)) return true;
-  return false;
-}
-
 void main(void)
 {
   //Clip planes in X/Y/Z
@@ -67,7 +70,7 @@ void main(void)
     fColour = vFlatColour;
 #endif
   if (uTextured) 
-    fColour = texture2D(uTexture, vTexCoord);
+    fColour = texture(uTexture, vTexCoord);
 
   float alpha = fColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
@@ -89,8 +92,7 @@ void main(void)
   vec3 N = normalize(vNormal);
 
   //Default normal...
-  if (uCalcNormal || dot(N,N) < 0.01 || isnan(N))
-  //if (uCalcNormal || dot(N,N) < 0.01 || any(isnan(N)))
+  if (uCalcNormal || dot(N,N) < 0.01 || isnan3(N))
   {
     //Requires extension in WebGL: OES_standard_derivatives
     vec3 fdx = vec3(dFdx(vPosEye.x),dFdx(vPosEye.y),dFdx(vPosEye.z));    

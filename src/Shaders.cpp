@@ -97,9 +97,9 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
   //Default shaders
   if (fsrc.length() == 0) fsrc = std::string(fragmentShader);
   if (vsrc.length() == 0) vsrc = std::string(vertexShader);
-  //Prepend GLSL version
-  if (vsrc.length()) vsrc = "#version 130\n" + vsrc;
-  if (fsrc.length()) fsrc = "#version 130\n" + fsrc;
+  //Prepend GLSL version GL 3.2 ==> GLSL 1.5
+  if (vsrc.length()) vsrc = "#version 150\n" + vsrc;
+  if (fsrc.length()) fsrc = "#version 150\n" + fsrc;
   //Attempts to load and build shader programs
   if (compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
       (gsrc.length() == 0 || compile(gsrc.c_str(), GL_GEOMETRY_SHADER)) &&

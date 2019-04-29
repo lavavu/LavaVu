@@ -11,6 +11,7 @@ uniform sampler2D uVolume;
 #define NO_DEPTH_WRITE
 #define TEX texture3D
 #define outColour gl_FragColor
+#define texture(a,b) texture2D(a,b)
 #else
 //Included dynamically before compile in WebGL mode...
 const int maxSamples = 2048;
@@ -331,7 +332,7 @@ void main()
 
           vec4 value;
           if (uEnableColour)
-            value = texture2D(uTransferFunction, vec2(density, 0.5));
+            value = texture(uTransferFunction, vec2(density, 0.5));
           else
             value = vec4(density);
 

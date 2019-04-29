@@ -21,6 +21,7 @@ in float vPointType;
 
 #ifdef WEBGL
 #define outColour gl_FragColor
+#define texture(a,b) texture2D(a,b)
 #else
 out vec4 outColour;
 #endif
@@ -56,7 +57,7 @@ void main(void)
 
   //Textured?
   //if (uTextured)
-  //   outColour = texture2D(uTexture, gl_PointCoord);
+  //   outColour = texture(uTexture, gl_PointCoord);
 
   //Flat, square points, fastest, skip lighting
   if (pointType == 4)
