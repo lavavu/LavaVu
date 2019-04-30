@@ -372,7 +372,7 @@ bool X11Viewer::chooseVisual()
         debug_print("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d DEPTH %d DB %d\n",
                     fbcidx, (unsigned int)vi->visualid, samp_buf, samples, depth, db);
 
-        if ( best_fbc < 0 || samp_buf && samples > best_num_samp )
+        if ( best_fbc < 0 || (samp_buf && samples > best_num_samp))
           best_fbc = fbcidx, best_num_samp = samples;
         //4 x Multisample is fine
         if (samples == 4)
@@ -444,7 +444,7 @@ bool X11Viewer::createWindow(int width, int height)
     int attribs[] = {
       GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
       GLX_CONTEXT_MINOR_VERSION_ARB, 2,
-      GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+      //GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
       None
     };
 
