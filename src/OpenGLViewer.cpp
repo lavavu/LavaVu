@@ -260,20 +260,9 @@ void OpenGLViewer::open(int w, int h)
 void OpenGLViewer::init()
 {
   GL_Check_Thread(render_thread);
+  GL_Error_Check;
   //Init OpenGL (called after context creation)
-  GLboolean b;
-  GLint i, d, s, u, a, sb, ss;
-
-  GL_Error_Check;
-  /* legacy
-  glGetBooleanv(GL_RGBA_MODE, &b);
-  glGetIntegerv(GL_ALPHA_BITS, &i);
-  glGetIntegerv(GL_STENCIL_BITS, &s);
-  glGetIntegerv(GL_DEPTH_BITS, &d);
-  glGetIntegerv(GL_ACCUM_RED_BITS, &a);
-  glGetIntegerv(GL_MAX_TEXTURE_UNITS, &u);
-  GL_Error_Check;
-  */
+  GLint sb, ss;
   glGetIntegerv(GL_SAMPLE_BUFFERS, &sb);
   glGetIntegerv(GL_SAMPLES, &ss);
   glGetBooleanv(GL_STEREO, &stereoBuffer);
@@ -281,7 +270,7 @@ void OpenGLViewer::init()
 
   const char* gl_v = (const char*)glGetString(GL_VERSION);
   
-  debug_print("%s Stereo %d Double-buffer %d RGBA Mode = %d, Alpha bits = %d, Depth bits = %d, Stencil bits = %d, Accum bits = %d, Texture units %d, SampleBuffers %d, Samples %d\n", gl_v, stereoBuffer, doubleBuffer, b, i, d, s, a, u, sb, ss);
+  debug_print("%s Stereo %d Double-buffer %d, SampleBuffers %d, Samples %d\n", gl_v, stereoBuffer, doubleBuffer, sb, ss);
 
   //Load OpenGL extensions
   OpenGL_Extensions_Init();
