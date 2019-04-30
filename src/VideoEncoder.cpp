@@ -335,7 +335,7 @@ AVOutputFormat *VideoEncoder::defaultCodec(const char *filename)
 }
 
 //OutputInterface
-void VideoEncoder::open(int w, int h)
+void VideoEncoder::open(unsigned int w, unsigned int h)
 {
   if (w) width = w;
   if (h) height = h;
@@ -445,7 +445,7 @@ void VideoEncoder::close()
   av_free(oc);
 }
 
-void VideoEncoder::resize(int new_width, int new_height)
+void VideoEncoder::resize(unsigned int new_width, unsigned int new_height)
 {
   std::cerr << "Cannot resize video encoder output while encoding\n";
 }
@@ -456,7 +456,7 @@ void VideoEncoder::display()
   buffer->flip();
 #ifdef HAVE_SWSCALE
   uint8_t * inData[1] = { buffer->pixels }; // RGB24 have one plane
-  int inLinesize[1] = { 3*width }; // RGB stride
+  int inLinesize[1] = { 3*(int)width }; // RGB stride
   sws_scale(ctx, inData, inLinesize, 0, height, picture->data, picture->linesize);
 #else
   /* YUV420P encoded frame */
