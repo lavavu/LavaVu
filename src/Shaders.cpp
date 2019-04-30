@@ -5,11 +5,6 @@ std::string Shader::path = "";
 #else
 std::string Shader::path = SHADER_PATH;
 #endif
-std::string Shader::gl_version = "";
-bool Shader::supported = false;
-GLint Shader::major = 0;
-GLint Shader::minor = 0;
-GLint Shader::core = 0;
 
 //Default shaders
 const char *vertexShader = R"(
@@ -74,17 +69,10 @@ Shader::Shader(const std::string& shader, GLenum shader_type)
   for (auto s : shaders)
     glDeleteShader(s);
   shaders.clear();
-  supported = version();
-  if (!supported) return;
   //Attempts to load and build shader programs
   if (compile(src.c_str(), shader_type)) build();
 }
 */
-
-//Hack for no geom shader support
-#ifndef GL_GEOMETRY_SHADER
-#define GL_GEOMETRY_SHADER GL_VERTEX_SHADER
-#endif
 
 void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
 {
@@ -92,8 +80,6 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
   for (auto s : shaders)
     glDeleteShader(s);
   shaders.clear();
-  supported = version();
-  if (!supported) return;
   //Default shaders
   if (fsrc.length() == 0) fsrc = std::string(fragmentShader);
   if (vsrc.length() == 0) vsrc = std::string(vertexShader);
@@ -108,21 +94,6 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
     //Compile succeeded, link program
     build();
   }
-}
-
-bool Shader::version()
-{
-  glGetIntegerv(GL_MAJOR_VERSION, &major);
-  glGetIntegerv(GL_MINOR_VERSION, &minor);
-  glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &core);
-  const char* gl_v = (const char*)glGetString(GL_VERSION);
-  if (!gl_v) return false;
-  if (!gl_version.length())
-  {
-    gl_version = std::string(gl_v);
-    debug_print("OpenGL %d.%d (%s)\n", major, minor, core ? "core" : "compatibility");
-  }
-  return true;
 }
 
 //Read a fragment or vertex shader from a file into a shader object
@@ -166,8 +137,6 @@ bool Shader::compile(const char *src, GLuint type)
 bool Shader::build()
 {
   GLint linked;
-  if (!supported) return false;
-
   if (program) glDeleteProgram(program);
   program = glCreateProgram();
   assert(glIsProgram(program));
@@ -191,7 +160,6 @@ bool Shader::build()
 //Report shader compile/link errors
 void Shader::print_log(const char *action, GLuint obj)
 {
-  if (!supported) return;
   int infologLength = 0;
   int maxLength;
 
@@ -215,14 +183,14 @@ void Shader::print_log(const char *action, GLuint obj)
 
 void Shader::use()
 {
-  if (!supported || !program) return;
+  if (!program) return;
   glUseProgram(program);
   GL_Error_Check;
 }
 
 void Shader::loadUniforms()
 {
-  if (!supported || !program) return;
+  if (!program) return;
   GLint uniform_count;
   glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniform_count);
   GLsizei len;
@@ -244,7 +212,7 @@ void Shader::loadUniforms()
 
 void Shader::loadAttribs()
 {
-  if (!supported || !program) return;
+  if (!program) return;
   GLint attrib_count;
   glGetProgramiv(program, GL_ACTIVE_ATTRIBUTES, &attrib_count);
   GLsizei len;
@@ -263,7 +231,7 @@ void Shader::loadAttribs()
 
 void Shader::setUniform(const std::string& name, json& value)
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it == uniforms.end()) return;
 
@@ -347,7 +315,7 @@ void Shader::setUniform(const std::string& name, Colour& colour)
 
 void Shader::setUniformi(const std::string& name, int value)
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it != uniforms.end())
   {
@@ -359,7 +327,7 @@ void Shader::setUniformi(const std::string& name, int value)
 
 void Shader::setUniformf(const std::string& name, float value)
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it != uniforms.end())
   {
@@ -371,7 +339,7 @@ void Shader::setUniformf(const std::string& name, float value)
 
 void Shader::setUniform2f(const std::string& name, float value[2])
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it != uniforms.end())
   {
@@ -384,7 +352,7 @@ void Shader::setUniform2f(const std::string& name, float value[2])
 
 void Shader::setUniform3f(const std::string& name, float value[3])
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it != uniforms.end())
   {
@@ -397,7 +365,7 @@ void Shader::setUniform3f(const std::string& name, float value[3])
 
 void Shader::setUniform4f(const std::string& name, float value[4])
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it != uniforms.end())
   {
@@ -410,7 +378,7 @@ void Shader::setUniform4f(const std::string& name, float value[4])
 
 void Shader::setUniformMatrixf(const std::string& name, mat4& matrix, bool transpose)
 {
-  if (!supported || !program) return;
+  if (!program) return;
   std::map<std::string,int>::iterator it = uniforms.find(name);
   if (it != uniforms.end())
   {

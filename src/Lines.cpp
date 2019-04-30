@@ -309,7 +309,7 @@ void Lines::draw()
         if (!internal) scaling *= (float)props["scaling"];
         float lineWidth = (float)props["linewidth"] * scaling * session.context.scale2d; //Include 2d scale factor
         if (lineWidth <= 0) lineWidth = scaling;
-        if (Shader::core && lineWidth > 1.0) lineWidth = 1.0;
+        if (session.context.core && lineWidth > 1.0) lineWidth = 1.0;
         glLineWidth(lineWidth);
 
         if (geom[i]->render->indices.size() > 0)

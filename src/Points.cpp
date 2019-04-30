@@ -402,7 +402,7 @@ void Points::draw()
 
   glDepthFunc(GL_LEQUAL); //Ensure points at same depth both get drawn
   //Required for OpenGL < 3.2 or compatibility mode
-  if (!Shader::core)
+  if (!session.context.core)
   {
 #ifdef GL_POINT_SPRITE
     glEnable(GL_POINT_SPRITE);
@@ -512,7 +512,7 @@ void Points::draw()
   GL_Error_Check;
   //Restore state
   glBindTexture(GL_TEXTURE_2D, 0);
-  if (!Shader::core)
+  if (!session.context.core)
   {
 #ifdef GL_POINT_SPRITE
     glDisable(GL_POINT_SPRITE);

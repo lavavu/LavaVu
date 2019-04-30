@@ -1144,7 +1144,7 @@ void Geometry::setState(Geom_Ptr g)
 
   //Default line width
   float lineWidth = (float)props["linewidth"] * session.context.scale2d; //Include 2d scale factor
-  if (Shader::core && lineWidth > 1.0) lineWidth = 1.0;
+  if (session.context.core && lineWidth > 1.0) lineWidth = 1.0;
   glLineWidth(lineWidth);
   GL_Error_Check;
 

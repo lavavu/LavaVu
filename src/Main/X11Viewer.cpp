@@ -336,6 +336,7 @@ bool X11Viewer::chooseVisual()
   int scrnum = DefaultScreen(Xdisplay);
   static int configuration[] = { GLX_STEREO, 1, GLX_DOUBLEBUFFER, 1, GLX_DEPTH_SIZE, 8,
                                  GLX_ALPHA_SIZE, 8, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8,
+                                 GLX_RENDER_TYPE, GLX_RGBA_BIT,
                                  None
                                };
   const char* configStrings[] = {"Stereo", "Double-buffered"};
@@ -444,6 +445,7 @@ bool X11Viewer::createWindow(int width, int height)
     int attribs[] = {
       GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
       GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+      //GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
       //GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
       None
     };

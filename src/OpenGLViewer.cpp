@@ -270,6 +270,13 @@ void OpenGLViewer::init()
 
   const char* gl_v = (const char*)glGetString(GL_VERSION);
   
+  glGetIntegerv(GL_MAJOR_VERSION, &app->session.context.major);
+  glGetIntegerv(GL_MINOR_VERSION, &app->session.context.minor);
+  GLint profile;
+  glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &profile);
+  app->session.context.core = profile & GL_CONTEXT_CORE_PROFILE_BIT;
+  app->session.context.gl_version = std::string(gl_v);
+  debug_print("OpenGL %d.%d (%s)\n", app->session.context.major, app->session.context.minor, app->session.context.core ? "core" : "compatibility");
   debug_print("%s Stereo %d Double-buffer %d, SampleBuffers %d, Samples %d\n", gl_v, stereoBuffer, doubleBuffer, sb, ss);
 
   //Load OpenGL extensions

@@ -47,6 +47,9 @@ public:
   Shader_Ptr fontshader;
   Shader_Ptr defaultshader;
 
+  std::string gl_version = "";
+  GLint major = 0, minor = 0, core = 0;
+
   //Matrices
   mat4 MV;
   mat4 N;

@@ -3092,8 +3092,7 @@ std::string LavaVu::requestData(std::string key)
 std::string LavaVu::gl_version()
 {
   if (!viewer->isopen) return "(not initialised)";
-  Shader::version();
-  return Shader::gl_version;
+  return session.context.gl_version;
 }
 
 std::string LavaVu::image(std::string filename, int width, int height, int jpegquality, bool transparent)
