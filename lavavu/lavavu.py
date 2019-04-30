@@ -24,18 +24,23 @@ __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
 #Module settings
+import os
 #must be an object or won't be referenced from __init__.py import
 #(enures values are passed on when set externally)
 settings = {}
 #Default arguments for viewer creation
-settings["default_args"] = []
+settings["default_args"] = os.environ.get('LV_ARGS')
+if settings["default_args"] is None:
+  settings["default_args"] = []
 #Dump base64 encoded images on test failure for debugging
-settings["echo_fails"] = False
+settings["echo_fails"] = os.environ.get('LV_ECHO_FAIL')
+#Quality override - ignore passed quality setting
+settings["quality_override"] = os.environ.get('LV_QUALITY')
+print(settings)
 
 import json
 import math
 import sys
-import os
 import glob
 import control
 import numpy
@@ -2323,6 +2328,9 @@ class Viewer(dict):
         if cache:
           args += ["-c1"]
         #Subsample anti-aliasing for image output
+        if settings["quality_override"]:
+            #Override provided setting with global setting
+            quality = int(settings["quality_override"])
         args += ["-z" + str(quality)]
         #Timestep range
         if timestep != None:
