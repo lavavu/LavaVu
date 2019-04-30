@@ -78,9 +78,9 @@ void GenerateFontCharacters(std::vector<float>& vertices, std::string fontfile)
 
     unsigned offset = 0;
     font_offsets.push_back(offset);
-    for (int g=0; g<font_tricounts.size(); g++)
+    for (unsigned int g=0; g<font_tricounts.size(); g++)
     {
-      for (int t=0; t<font_tricounts[g]; t++)
+      for (unsigned int t=0; t<font_tricounts[g]; t++)
         offset += 3; //3 vertices per tri
       font_offsets.push_back(offset);
     }

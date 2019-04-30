@@ -121,9 +121,9 @@ public:
   ~VideoEncoder();
 
   //OutputInterface
-  virtual void open(int w, int h);
+  virtual void open(unsigned int w, unsigned int h);
   virtual void close();
-  virtual void resize(int new_width, int new_height);
+  virtual void resize(unsigned int new_width, unsigned int new_height);
   virtual void display();
 
 protected:

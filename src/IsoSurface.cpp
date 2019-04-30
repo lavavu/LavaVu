@@ -84,7 +84,7 @@ Isosurface::Isosurface(std::vector<Geom_Ptr>& geom, Triangles* tris, DrawingObje
         geom[i]->height = geom[i]->render->colours.size() / geom[i]->width;
     }
 
-    int depth = geom[i]->depth;
+    unsigned int depth = geom[i]->depth;
     if (vol->slices[current] > depth) depth = vol->slices[current];
 
     nx = geom[i]->width;

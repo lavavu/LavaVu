@@ -115,7 +115,6 @@ void FontManager::printString(const char* str)
   //1) Create index buffer data for each char
   //2) Load and render index buffer
   //3) Translate by char width
-  GLuint buffer[4];
   if (!ibo) glGenBuffers(1, &ibo);
   glBindVertexArray(vao);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
@@ -137,16 +136,16 @@ void FontManager::printString(const char* str)
   glVertexAttribPointer(aPosition, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y
   GL_Error_Check;
 
-  for (char c=0; c<strlen(str); c++)
+  for (unsigned int c=0; c<strlen(str); c++)
   {
     //Render character
     int i = (int)str[c] - 32;
     std::vector<unsigned int> indices;
     unsigned int offset = font_offsets[i]; //Vertex offsets of 2d vertices
     //Load the tris
-    for (int t=0; t<font_tricounts[i]; t++)
+    for (unsigned int t=0; t<font_tricounts[i]; t++)
     {
-      assert(offset + t*3+2 < font_vertex_total);
+      assert(offset + t*3+2 < (unsigned int)font_vertex_total);
       //Tri: 3 * vertex indices
       indices.push_back(offset + t*3);
       indices.push_back(offset + t*3 + 1);
@@ -288,11 +287,11 @@ void FontManager::rasterPrintString(const char* str)
   context->fontshader->setUniform("uColour", colour);
   context->fontshader->setUniformi("uTextured", 1);
 
-  for (char c=0; c<strlen(str); c++)
+  for (unsigned int c=0; c<strlen(str); c++)
   {
     //Render character
-    int startidx = 0;
-    int stopidx = 384;
+    unsigned int startidx = 0;
+    unsigned int stopidx = 384;
     unsigned int i = (unsigned int)(str[c] - 32 + (96 * charset));      // Choose the font and charset
     assert(4 * i + 3 < stopidx * 4 * 2 * 2);
     GLuint buffer[4] = {4 * i, 4 * i + 1, 4 * i + 3, 4 * i + 2};

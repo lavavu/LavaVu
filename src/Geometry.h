@@ -383,7 +383,7 @@ public:
   void vertexColours(Colour* colour, unsigned int startcount)
   {
     //Load per vertex colours given initial count before vertices generated
-    unsigned int diff = count() - startcount;
+    int diff = count() - startcount;
     for (int c=0; c<diff; c++)
       _colours->read1(colour->value);
   }

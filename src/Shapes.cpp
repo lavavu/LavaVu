@@ -107,7 +107,7 @@ void Shapes::update()
       }
 
       //Scale position & vector manually (global scaling is disabled to avoid distorting glyphs)
-      Vec3d scale = Vec3d(view->scale);
+      //Vec3d scale = Vec3d(view->scale);
       Vec3d pos = Vec3d(geom[i]->render->vertices[v]);
 
       //Setup orientation using alignment vector

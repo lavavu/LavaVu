@@ -1968,7 +1968,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else if (parsed["list"] == "colourmaps")
     {
-      int offset = 0;
       ss << "ColourMaps:\n===========\n";
       for (unsigned int i=0; i < amodel->colourMaps.size(); i++)
         if (amodel->colourMaps[i])
@@ -1976,7 +1975,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
     else if (parsed["list"] == "data")
     {
-      int offset = 0;
       if (aobject)
         ss << ("Data sets for: " + aobject->name()) << std::endl;
       ss << "-----------------------------------------" << std::endl;

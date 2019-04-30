@@ -108,7 +108,7 @@ void Volumes::draw()
   //but each volume can consist of separate slices or a single cube
 
   //Render in sorted order
-  for (int i=0; i<geom_sorted.size(); i++)
+  for (unsigned int i=0; i<geom_sorted.size(); i++)
   {
     //if (!drawable(i)) continue;
     //printf("DRAWING Volume %d slices %d, %p\n", i, slices[geom[i]->draw], geom[i].get());
@@ -138,7 +138,7 @@ void Volumes::sort()
 
   //Add key elements to sort list
   sorted.clear();
-  for (int i=0; i<geom.size(); i++)
+  for (unsigned int i=0; i<geom.size(); i++)
     if (geom[i]->count() && slices[geom[i]->draw] && drawable(i))
       sorted.push_back(geom[i]);
 

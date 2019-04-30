@@ -43,19 +43,19 @@ class OutputInterface
 {
 public:
   bool render = true;
-  int width = 0, height = 0;
+  unsigned int width = 0, height = 0;
   ImageData* buffer = NULL;
-  int channels = 3;
+  unsigned int channels = 3;
 
-  virtual void open(int width, int height) = 0;
+  virtual void open(unsigned int width, unsigned int height) = 0;
   virtual void close() = 0;
-  virtual void resize(int new_width, int new_height) = 0;
+  virtual void resize(unsigned int new_width, unsigned int new_height) = 0;
   virtual void display() = 0;
 
   OutputInterface() {}
-  ~OutputInterface() { if (buffer) delete buffer; }
+  virtual ~OutputInterface() { if (buffer) delete buffer; }
 
-  void alloc(int w=0, int h=0)
+  void alloc(unsigned int w=0, unsigned int h=0)
   {
     if (width == 0) width = w;
     if (height == 0) height = w;

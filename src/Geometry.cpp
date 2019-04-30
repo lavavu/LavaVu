@@ -322,7 +322,7 @@ unsigned int GeomData::valuesLookup(const json& by)
       debug_print("Label: %s not found!\n", label.c_str());
   }
   //Numerical index, check in range
-  else if (by.is_number() && (int)by < values.size())
+  else if (by.is_number() && (unsigned int)by < values.size())
     valueIdx = by;
 
   return valueIdx;
@@ -1582,7 +1582,7 @@ Geom_Ptr Geometry::read(DrawingObject* draw, unsigned int n, lucGeometryDataType
   geomdata = getObjectStore(draw);
 
   //Convert older tracer databases, where all data is in a single fixed timestep block
-  if (geomdata && type == lucTracerType && width > 0 && width != n && n%width == 0 && n > 1)
+  if (geomdata && type == lucTracerType && width > 0 && (unsigned int)width != n && n%width == 0 && n > 1)
   {
     Data_Ptr container = geomdata->dataContainer(dtype);
     int steps = n / width;
@@ -2685,7 +2685,7 @@ void Imposter::update()
 
 void FullScreen::draw()
 {
-  for (int i=0; i<geom.size(); i++)
+  for (unsigned int i=0; i<geom.size(); i++)
   {
     if (!drawable(i)) continue;
 

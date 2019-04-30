@@ -20,7 +20,7 @@ CC ?= gcc
 
 #Default flags
 DEFINES = -DUSE_ZLIB
-CFLAGS = $(FLAGS) -fPIC -Isrc
+CFLAGS = $(FLAGS) -fPIC -Isrc -Wall
 CPPFLAGS = $(CFLAGS) -std=c++0x
 #For external dependencies
 EXTCFLAGS = -O3 -DNDEBUG -fPIC -Isrc

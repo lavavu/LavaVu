@@ -48,8 +48,8 @@ public:
   Properties properties;
   bool loaded = false;
 
-  TimeStep(json& globals, json& defaults, int step, float time, const std::string& path="") : properties(globals, defaults), step(step), time(time), path(path) {}
-  TimeStep(json& globals, json& defaults) : properties(globals, defaults), step(0), time(0) {}
+  TimeStep(json& globals, json& defaults, int step, float time, const std::string& path="") : step(step), time(time), path(path), properties(globals, defaults) {}
+  TimeStep(json& globals, json& defaults) : step(0), time(0), properties(globals, defaults) {}
 };
 
 #endif

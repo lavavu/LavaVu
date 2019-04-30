@@ -315,26 +315,26 @@ void Points::sort()
   //Lock the update mutex, to allow updating the indexlist and prevent access while drawing
   std::lock_guard<std::mutex> guard(loadmutex);
   //Reverse order farthest to nearest
-  int distSample = session.global("pointdistsample");
-  uint32_t SEED;
+  //int distSample = session.global("pointdistsample");
+  //uint32_t SEED;
   int idxcount = 0;
   for(int i=elements-1; i>=0; i--)
   {
-    //Distance based sub-sampling
+    /*/Distance based sub-sampling - disabled
     if (distSample > 0)
     {
       SEED = sorter.buffer[i].index; //Reset the seed for determinism based on index
       int subSample = 1 + distSample * sorter.buffer[i].distance / (USHRT_MAX-1.0); //[1,distSample]
-      //if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
-    }
+      if (subSample > 1 && SHR3(SEED) % subSample > 0) continue;
+    }*/
     sorter.indices[idxcount] = sorter.buffer[i].index;
     idxcount ++;
   }
 
   t2 = clock();
-  if (distSample)
-    debug_print("  %.4lf seconds to load %d indices (dist-sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, distSample);
-  else
+  //if (distSample)
+  //  debug_print("  %.4lf seconds to load %d indices (dist-sub-sampled %d)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount, distSample);
+  //else
     debug_print("  %.4lf seconds to load %d indices)\n", (t2-t1)/(double)CLOCKS_PER_SEC, idxcount);
   t1 = clock();
 

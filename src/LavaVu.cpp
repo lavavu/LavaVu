@@ -1512,13 +1512,13 @@ void LavaVu::readOBJ(const FilePath& fn)
     int vi;
     //Load
     int voffset = 0;
-    int current_material_id = 0;
+    unsigned int current_material_id = 0;
     for (size_t f=0; f < shapes[i].mesh.indices.size()-2; f+=3)
     {
       //Get the material, if it has changed, load the new data and add an element
       if (materials.size() > 0 && shapes[i].mesh.material_ids.size() > 1)
       {
-        int material_id = shapes[i].mesh.material_ids[f/3];
+        unsigned int material_id = shapes[i].mesh.material_ids[f/3];
         if (material_id < 0 || material_id >= materials.size())
         {
           // Invaid material ID. Use default material.

@@ -41,7 +41,7 @@ VideoEncoder::~VideoEncoder()
 
 #ifndef HAVE_LIBAVCODEC
 //Default video encoder is image frame-by-frame output to folder
-void VideoEncoder::open(int w, int h)
+void VideoEncoder::open(unsigned int w, unsigned int h)
 {
   std::cout << "Video encoding disabled, writing JPEG frames to ./" << filename << std::endl;
   frame = 0;
@@ -60,7 +60,7 @@ void VideoEncoder::close()
   frame = 0;
 }
 
-void VideoEncoder::resize(int new_width, int new_height)
+void VideoEncoder::resize(unsigned int new_width, unsigned int new_height)
 {
   width = new_width;
   height = new_height;

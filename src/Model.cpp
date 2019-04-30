@@ -245,7 +245,7 @@ Geometry* Model::getRenderer(const std::string& what)
 
   //Default/base types: use the default renderer for the type name
   json renderers = session.global("renderers");
-  for (int i=0; i<renderers.size(); i++)
+  for (unsigned int i=0; i<renderers.size(); i++)
     for (std::string s : renderers[i])
       if (what == s)
         return getRenderer((lucGeometryType)i);

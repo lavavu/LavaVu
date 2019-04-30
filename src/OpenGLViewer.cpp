@@ -427,7 +427,6 @@ void OpenGLViewer::display(bool redraw)
 
   postdisplay = false;
   //Parse stored commands first...
-  bool idling = false;
   while (commands.size() > 0)
   {
     //Critical section
@@ -437,9 +436,6 @@ void OpenGLViewer::display(bool redraw)
       cmd = commands.front();
       commands.pop_front();
     }
-
-    //Idle posted?
-    idling = cmd.find("idle") != std::string::npos;
 
     if (cmd == "\n")
     {

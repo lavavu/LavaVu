@@ -48,7 +48,7 @@ void Tracers::update()
 
   //Enumerate steps and elements
   int laststep = -2;
-  int t = 0;
+  unsigned int t = 0;
   for (unsigned int i=0; i<geom.size(); i++)
   {
     //printf("-- EL %d/%d STEP %d\n", i, geom.size(), geom[i]->step);
@@ -58,8 +58,8 @@ void Tracers::update()
     t++;
   }
 
-  int datasteps = geom.size() / t;
-  debug_print("Tracer records %d elements %d stride %d\n", (int)geom.size(), t, datasteps);
+  unsigned int datasteps = geom.size() / t;
+  debug_print("Tracer records %d elements %u stride %u\n", (int)geom.size(), t, datasteps);
 
   //Convert tracers to triangles/lines
   lines->clear(true);
@@ -143,7 +143,7 @@ void Tracers::update()
         if (taper && step > start) size += factor;
 
         //Current record, interleaved elements and timesteps
-        int rec = i + step*t;
+        unsigned int rec = i + step*t;
         if (rec >= geom.size())
         {
           printf("WARNING: Step %d out of range %d\n", rec, (int)geom.size());

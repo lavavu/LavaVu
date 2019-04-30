@@ -369,8 +369,8 @@ void LinesSorted::draw()
     glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(3*sizeof(float)));   // rgba, offset 3 float
 
     unsigned int start = 0;
-    int lnidx = 0;
-    for (int index = 0; index<geom.size(); index++)
+    unsigned int lnidx = 0;
+    for (unsigned int index = 0; index<geom.size(); index++)
     {
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)

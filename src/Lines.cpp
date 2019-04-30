@@ -80,7 +80,7 @@ unsigned int Lines::lineCount()
 void Lines::update()
 {
   unsigned int lastcount = total;
-  unsigned int drawelements = lineCount();
+  //unsigned int drawelements = lineCount();
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed

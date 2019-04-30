@@ -613,8 +613,8 @@ void TriSurfaces::draw()
     glEnableVertexAttribArray(aColour);
     glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
     unsigned int start = 0;
-    int tridx = 0;
-    for (int index = 0; index<geom.size(); index++)
+    unsigned int tridx = 0;
+    for (unsigned int index = 0; index<geom.size(); index++)
     {
       if (counts[index] == 0) continue;
       if (geom[index]->opaque)
