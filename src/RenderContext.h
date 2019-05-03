@@ -49,6 +49,7 @@ public:
 
   std::string gl_version = "";
   GLint major = 0, minor = 0, core = 0;
+  int samples = 1;
 
   //Matrices
   mat4 MV;

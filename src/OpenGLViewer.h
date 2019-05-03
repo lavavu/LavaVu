@@ -72,13 +72,15 @@ public:
   GLuint frame = 0;
   GLuint texture = 0;
   GLuint depth = 0;
+  GLuint rgba = 0;
   int downsample = 1;
+  int msaa = 1;
 
   FBO() : FrameBuffer() {}
 
   ~FBO();
 
-  bool create(int w, int h);
+  bool create(int w, int h, int samples=1);
   void destroy();
   void disable();
   ImageData* pixels(ImageData* image, int channels=3);
@@ -100,6 +102,7 @@ protected:
   std::vector<OutputInterface*> outputs; //Additional output attachments
   std::vector<InputInterface*> inputs; //Additional input attachments
   FBO fbo;
+  FBO fbo_blit; //Non-multisampled fbo to blit to
   int savewidth, saveheight;
 
 public:
@@ -143,6 +146,7 @@ public:
   //Window app management - called by derived classes, in turn call application interface virtuals
   virtual void open(int width=0, int height=0);
   virtual void init();
+  bool useFBO(int width=0, int height=0);
   virtual void setsize(int width, int height);
   virtual void resize(int new_width, int new_height);
   virtual void display(bool redraw=true);
@@ -183,6 +187,7 @@ public:
   std::string image(const std::string& path="", int jpegquality=0, bool transparent=false, int w=0, int h=0);
 
   void downSample(int q);
+  void multiSample(int q);
 
   void animateTimer(int msec=-1);
 

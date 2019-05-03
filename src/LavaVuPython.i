@@ -82,6 +82,8 @@ public:
   virtual void execute();
   bool events();
   void loop(bool interactive=true);
+  void downSample(int q);
+  void multiSample(int q);
 };
 
 class DrawingObject

@@ -398,6 +398,8 @@ OpenGLViewer.title = new_instancemethod(_LavaVuPython.OpenGLViewer_title, None, 
 OpenGLViewer.execute = new_instancemethod(_LavaVuPython.OpenGLViewer_execute, None, OpenGLViewer)
 OpenGLViewer.events = new_instancemethod(_LavaVuPython.OpenGLViewer_events, None, OpenGLViewer)
 OpenGLViewer.loop = new_instancemethod(_LavaVuPython.OpenGLViewer_loop, None, OpenGLViewer)
+OpenGLViewer.downSample = new_instancemethod(_LavaVuPython.OpenGLViewer_downSample, None, OpenGLViewer)
+OpenGLViewer.multiSample = new_instancemethod(_LavaVuPython.OpenGLViewer_multiSample, None, OpenGLViewer)
 OpenGLViewer_swigregister = _LavaVuPython.OpenGLViewer_swigregister
 OpenGLViewer_swigregister(OpenGLViewer)
 cvar = _LavaVuPython.cvar

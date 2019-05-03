@@ -66,7 +66,7 @@ FBO::~FBO()
   destroy();
 }
 
-bool FBO::create(int w, int h)
+bool FBO::create(int w, int h, int samples)
 {
   //Re-render at specified output size (in a framebuffer object if available)
   if (downsample > 1)
@@ -77,7 +77,7 @@ bool FBO::create(int w, int h)
   }
 
   //Skip if already created at this size
-  if (enabled && frame && texture && depth && width==w && height==h)
+  if (enabled && frame && texture && depth && width==w && height==h && samples==msaa)
   {
     glBindFramebuffer(GL_FRAMEBUFFER, frame);
     GL_Error_Check;
@@ -91,13 +91,17 @@ bool FBO::create(int w, int h)
 
   width = w;
   height = h;
+  msaa = samples;
   destroy();
 
   // create a texture to use as the backbuffer
   GL_Error_Check;
   //glActiveTexture(GL_TEXTURE2);
   glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
+  if (samples > 1)
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+  else
+    glBindTexture(GL_TEXTURE_2D, texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -107,22 +111,49 @@ bool FBO::create(int w, int h)
   else
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   GL_Error_Check;
+
   // make sure this is the same color format as the screen
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  if (samples > 1)
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA, width, height, GL_TRUE);
+  else
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   GL_Error_Check;
 
   // Depth buffer
   glGenRenderbuffers(1, &depth);
   glBindRenderbuffer(GL_RENDERBUFFER, depth);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+  if (samples > 1)
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24, width, height);
+  else
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 
-  // Attach backbuffer texture, depth & stencil
+  if (samples > 1)
+  {
+    // Colour buffer
+    glGenRenderbuffers(1, &rgba);
+    glBindRenderbuffer(GL_RENDERBUFFER, rgba);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+  }
+  //else
+  //  glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, width, height);
+
+  // Attach backbuffer texture, depth & rgba
   glGenFramebuffers(1, &frame);
   glBindFramebuffer(GL_FRAMEBUFFER, frame);
+
+  //Image buffer texture attachment
+  if (samples > 1)
+  {
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texture, 0);
+    //Colour attachment
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rgba);
+  }
+  else
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+  GL_Error_Check;
+  GL_Error_Check;
   //Depth attachment
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth);
-  //Image buffer texture attachment
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
   GL_Error_Check;
 
   GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -130,14 +161,18 @@ bool FBO::create(int w, int h)
   {
     if (status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT)
       std::cerr << "FBO failed INCOMPLETE_ATTACHMENT" << std::endl;
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER)
+      std::cerr << "FBO failed INCOMPLETE_DRAW_BUFFER" << std::endl;
     else if (status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT)
       std::cerr << "FBO failed MISSING_ATTACHMENT" << std::endl;
     else if (status == GL_FRAMEBUFFER_UNSUPPORTED)
       std::cerr << "FBO failed UNSUPPORTED" << std::endl;
-#ifdef GL_FRAMEBUFFER_UNDEFINED
     else if (status == GL_FRAMEBUFFER_UNDEFINED)
       std::cerr << "FBO failed UNDEFINED" << std::endl;
-#endif
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER)
+      std::cerr << "FBO failed INCOMPLETE_READ_BUFFER" << std::endl;
+    else if (status == GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE)
+      std::cerr << "FBO failed INCOMPLETE_MULTISAMPLE" << std::endl;
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
@@ -157,6 +192,7 @@ bool FBO::create(int w, int h)
   }
 
   glBindTexture(GL_TEXTURE_2D, 0);
+  glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
   GL_Error_Check;
   return enabled;
 }
@@ -165,8 +201,9 @@ void FBO::destroy()
 {
   if (texture) glDeleteTextures(1, &texture);
   if (depth) glDeleteRenderbuffers(1, &depth);
+  if (rgba) glDeleteRenderbuffers(1, &rgba);
   if (frame) glDeleteFramebuffers(1, &frame);
-  texture = depth = frame = 0;
+  texture = depth = frame = rgba = 0;
 }
 
 void FBO::disable()
@@ -208,6 +245,7 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   assert(w==(unsigned int)outw && h==(unsigned int)outh);
   debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
 #endif
+  //printf("DOWNSAMPLE GET %d %dx%d (%dx%d) samples %d\n", channels, w, h, width, height, downsample);
 
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
   GL_Error_Check;
@@ -292,8 +330,7 @@ void OpenGLViewer::init()
   glEnable(GL_SCISSOR_TEST);
 
   //Create and use fbo at this point if enabled
-  if (fbo.enabled)
-    fbo.create(width, height);
+  useFBO();
 
   // Clear full window buffer
   glViewport(0, 0, width, height);
@@ -316,6 +353,20 @@ void OpenGLViewer::init()
     outputs[o]->open(width, height);
 }
 
+bool OpenGLViewer::useFBO(int w, int h)
+{
+  //Create and use fbo at this point if enabled
+  if (!fbo.enabled)
+    return false;
+  if (w == 0) w = width;
+  if (h == 0) h = height;
+  assert(w && h);
+  bool status = false;
+  status = fbo_blit.create(w, h);
+  status = fbo.create(w, h, app->session.context.samples);
+  return status;
+}
+
 void OpenGLViewer::show()
 {
   if (!isopen || !visible) return;
@@ -336,7 +387,7 @@ void OpenGLViewer::setsize(int w, int h)
   GL_Check_Thread(render_thread);
   //Resize fbo
   display(false); //Ensure correct context active
-  if (fbo.enabled && fbo.create(w, h))
+  if (useFBO(w, h))
     resize(fbo.width, fbo.height);  //Reset the viewer size
 }
 
@@ -363,6 +414,7 @@ void OpenGLViewer::close()
   // cleanup opengl memory - required before resize if context destroyed, then call open after resize
   GL_Check_Thread(render_thread);
   fbo.destroy();
+  fbo_blit.destroy();
 
   //Call the application close function
   app->close();
@@ -521,13 +573,12 @@ void OpenGLViewer::outputON(int w, int h, int channels, bool vid)
   blend_mode = BLEND_NORMAL;
   if (channels == 4) blend_mode = BLEND_PNG;
 
-  //Enable FBO for image output
+  //Enable FBO for image output even while visible if dimensions don't match
   if (visible && (fbo.downsample > 1 || w != width || h != height))
     fbo.enabled = true;
 
   //Activate fbo if enabled
-  if (fbo.enabled)
-    fbo.create(w, h);
+  useFBO(w, h);
 
   if (!fbo.enabled)
   {
@@ -589,7 +640,32 @@ ImageData* OpenGLViewer::pixels(ImageData* image, int channels)
 {
   GL_Check_Thread(render_thread);
   assert(isopen);
-  if (fbo.enabled)
+  if (app->session.context.samples > 1 && fbo.enabled)
+  {
+    assert(fbo.downsample < 2);
+    //printf("MULTISAMPLE GET %d %dx%d samples %d\n", channels, width, height, app->session.context.samples);
+    assert(width && height);
+    if (!image)
+      image = new ImageData(width, height, channels);
+
+    //After rendering scene, blit multisample fbo to normal fbo and read the pixels
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo.frame);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo_blit.frame);
+    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_blit.frame);
+
+    //Read pixels from the specified render target
+    assert(image->width == (unsigned int)width && image->height == (unsigned int)height && image->channels == (unsigned int)channels);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
+    GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
+    glReadPixels(0, 0, width, height, type, GL_UNSIGNED_BYTE, image->pixels);
+
+    //OpenGL buffer sourced images are always flipped in the Y axis
+    image->flipped = true;
+    GL_Error_Check;
+    return image;
+  }
+  else if (fbo.enabled)
     return fbo.pixels(image, channels);
   else
     return FrameBuffer::pixels(image, channels);
@@ -651,12 +727,31 @@ void OpenGLViewer::downSample(int q)
 {
   GL_Check_Thread(render_thread);
   display(false);
+
+  fbo.destroy();
+
+  //Disable MSAA when using FSAA
+  if (q > 1 && fbo.msaa > 1)
+    app->session.context.samples = 1;
+
   int ds = q < 1 ? 1 : q;
   if (ds != fbo.downsample)
-  {
-    fbo.destroy();
     fbo.downsample = ds;
-  }
+}
+
+void OpenGLViewer::multiSample(int q)
+{
+  GL_Check_Thread(render_thread);
+  display(false);
+  fbo.destroy();
+
+  //Disable FSAA when using MSAA
+  if (q > 1 && fbo.downsample > 1)
+    fbo.downsample = 1;
+
+  int ms = q < 1 ? 1 : q;
+  if (ms != app->session.context.samples)
+    app->session.context.samples = ms;
 }
 
 void OpenGLViewer::animateTimer(int msec)

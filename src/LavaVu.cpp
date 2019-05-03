@@ -78,19 +78,6 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 
   defaultScript = "init.script";
 
-  //Create the viewer window
-  //(Evil platform specific extension handling stuff)
-#if defined _WIN32
-  //GetProcAddress = (getProcAddressFN)wglGetProcAddress;
-#elif defined HAVE_X11  //not defined __APPLE__
-  //GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-  GetProcAddress = (getProcAddressFN)glXGetProcAddressARB;
-#elif defined HAVE_GLUT and not defined __APPLE__
-  GetProcAddress = (getProcAddressFN)glXGetProcAddress;
-#elif defined HAVE_EGL
-  GetProcAddress = (getProcAddressFN)eglGetProcAddress;
-#endif
-
   //Create viewer window
   if (!omegalib && !havecontext)
   {

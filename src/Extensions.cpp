@@ -40,6 +40,8 @@ PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
 PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers;
 PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer;
 PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
+PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC glRenderbufferStorageMultisample;
+PFNGLTEXIMAGE2DMULTISAMPLEPROC glTexImage2DMultisample;
 PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer;
 PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
@@ -47,6 +49,7 @@ PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
 PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
 PFNGLDELETERENDERBUFFERSPROC glDeleteRenderbuffers;
 PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
+PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
 PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
 PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
 PFNGLUNIFORM1FPROC glUniform1f;
@@ -67,6 +70,10 @@ PFNGLGETATTRIBLOCATIONPROC glGetAttribLocation;
 PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
+PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
+PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
+PFNGLDRAWELEMENTSBASEVERTEXPROC glDrawElementsBaseVertex;
 PFNGLISPROGRAMPROC glIsProgram;
 #endif
 
@@ -105,6 +112,8 @@ void OpenGL_Extensions_Init()
   glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC) GetProcAddress("glGenRenderbuffers");
   glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC) GetProcAddress("glBindRenderbuffer");
   glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC) GetProcAddress("glRenderbufferStorage");
+  glRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC) GetProcAddress("glRenderbufferStorageMultisample");
+  glTexImage2DMultisample = (PFNGLTEXIMAGE2DMULTISAMPLEPROC) GetProcAddress("glTexImage2DMultisample");
   glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC) GetProcAddress("glGenFramebuffers");
   glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC) GetProcAddress("glFramebufferRenderbuffer");
   glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC) GetProcAddress("glFramebufferTexture2D");
@@ -112,6 +121,7 @@ void OpenGL_Extensions_Init()
   glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC) GetProcAddress("glBindFramebuffer");
   glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC) GetProcAddress("glDeleteRenderbuffers");
   glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC) GetProcAddress("glDeleteFramebuffers");
+  glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC) GetProcAddress("glBlitFramebuffer");
   glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC) GetProcAddress("glGenerateMipmap");
   glGetUniformLocation = (PFNGLGETUNIFORMLOCATIONPROC) GetProcAddress("glGetUniformLocation");
   glUniform1f = (PFNGLUNIFORM1FPROC) GetProcAddress("glUniform1f");
@@ -132,6 +142,10 @@ void OpenGL_Extensions_Init()
   glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glEnableVertexAttribArray");
   glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) GetProcAddress("glVertexAttribPointer");
   glDisableVertexAttribArray = (PFNGLDISABLEVERTEXATTRIBARRAYPROC) GetProcAddress("glDisableVertexAttribArray");
+  glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC) GetProcAddress("glGenVertexArrays");
+  glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC) GetProcAddress("glDeleteVertexArrays");
+  glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC) GetProcAddress("glBindVertexArray");
+  glDrawElementsBaseVertex = (PFNGLDRAWELEMENTSBASEVERTEXPROC) GetProcAddress("glDrawElementsBaseVertex");
   glIsProgram = (PFNGLISPROGRAMPROC) GetProcAddress("glIsProgram");
 #endif
 }

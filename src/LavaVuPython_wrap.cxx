@@ -17684,6 +17684,76 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_OpenGLViewer_downSample(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_downSample",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_downSample" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_downSample" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      (arg1)->downSample(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_OpenGLViewer_multiSample(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  OpenGLViewer *arg1 = (OpenGLViewer *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject *swig_obj[2] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"OpenGLViewer_multiSample",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_OpenGLViewer, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "OpenGLViewer_multiSample" "', argument " "1"" of type '" "OpenGLViewer *""'"); 
+  }
+  arg1 = reinterpret_cast< OpenGLViewer * >(argp1);
+  ecode2 = SWIG_AsVal_int(swig_obj[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "OpenGLViewer_multiSample" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      (arg1)->multiSample(arg2);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_new_OpenGLViewer(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   OpenGLViewer *result = 0 ;
@@ -26358,6 +26428,8 @@ static PyMethodDef SwigMethods[] = {
 	 { "OpenGLViewer_execute", _wrap_OpenGLViewer_execute, METH_O, NULL},
 	 { "OpenGLViewer_events", _wrap_OpenGLViewer_events, METH_O, NULL},
 	 { "OpenGLViewer_loop", _wrap_OpenGLViewer_loop, METH_VARARGS, NULL},
+	 { "OpenGLViewer_downSample", _wrap_OpenGLViewer_downSample, METH_VARARGS, NULL},
+	 { "OpenGLViewer_multiSample", _wrap_OpenGLViewer_multiSample, METH_VARARGS, NULL},
 	 { "new_OpenGLViewer", _wrap_new_OpenGLViewer, METH_NOARGS, NULL},
 	 { "delete_OpenGLViewer", _wrap_delete_OpenGLViewer, METH_O, NULL},
 	 { "OpenGLViewer_swigregister", OpenGLViewer_swigregister, METH_VARARGS, NULL},

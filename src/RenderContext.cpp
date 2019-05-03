@@ -44,6 +44,9 @@ void RenderContext::init()
   fontshader = std::make_shared<Shader>("fontShader.vert", "fontShader.frag");
   fontshader->loadUniforms();
   fontshader->loadAttribs();
+
+  //Default MSAA level for off-screen FBO render
+  samples = 1; //8;
 }
 
 void RenderContext::push()
@@ -150,5 +153,4 @@ mat4 RenderContext::ortho(float left, float right, float bottom, float top, floa
 	M[3][2] = - (far + near) / (far - near);
   return M;
 }
-
 
