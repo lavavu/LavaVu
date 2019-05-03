@@ -40,6 +40,7 @@ Lines::Lines(Session& session) : Geometry(session)
   type = lucLineType;
   idxcount = 0;
   total = 0;
+  primitive = GL_LINES;
 }
 
 Lines::~Lines()
@@ -312,21 +313,20 @@ void Lines::draw()
         if (session.context.core && lineWidth > 1.0) lineWidth = 1.0;
         glLineWidth(lineWidth);
 
+        if (props["loop"])
+          primitive = GL_LINE_LOOP;
+        else if (props["link"])
+          primitive = GL_LINE_STRIP;
+
         if (geom[i]->render->indices.size() > 0)
         {
           //Draw with index buffer
-          if (props["link"])
-            glDrawElements(GL_LINE_STRIP, counts[i], GL_UNSIGNED_INT, (GLvoid*)(offset*sizeof(GLuint)));
-          else
-            glDrawElements(GL_LINES, counts[i], GL_UNSIGNED_INT, (GLvoid*)(offset*sizeof(GLuint)));
+          glDrawElements(primitive, counts[i], GL_UNSIGNED_INT, (GLvoid*)(offset*sizeof(GLuint)));
         }
         else
         {
           //Draw directly from vertex buffer
-          if (props["link"])
-            glDrawArrays(GL_LINE_STRIP, offset, counts[i]);
-          else
-            glDrawArrays(GL_LINES, offset, counts[i]);
+          glDrawArrays(primitive, offset, counts[i]);
         }
       }
 

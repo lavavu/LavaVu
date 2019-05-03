@@ -39,6 +39,7 @@ Links::Links(Session& session) : Glyphs(session)
 {
   type = lucLineType;
   any3d = false;
+  primitive = GL_LINES;
 }
 
 void Links::update()
@@ -69,11 +70,14 @@ void Links::update()
     Colour* cptr = &getColour == &geom[i]->_getColour ? NULL : &colour;
     float limit = props["limit"];
     bool linked = props["link"];
+    bool looped = props["loop"];
+    float lineWidth = (float)props["linewidth"];
     bool filter = geom[i]->draw->filterCache.size();
 
     //Draw simple 2d lines if flat=true and tubes=false
     //(ie: enable 3d by switching either flag)
-    if (props.getBool("flat", true) && !props["tubes"])
+    unsigned int VC = geom[i]->render->indices.size() ? geom[i]->render->indices.size() : geom[i]->count();
+    if (props["flat"] && !props["tubes"] && lineWidth == 1.0 && session.context.scale2d == 1.0)
     {
       unsigned int hasColours = geom[i]->colourCount();
       unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
@@ -84,16 +88,20 @@ void Links::update()
       if (linked) lines->add(geom[i]->draw);
 
       int count = 0;
-      for (unsigned int v=0; v < geom[i]->count(); v++)
+      //Use indices if available
+      for (unsigned int v=0; v < VC; v++)
       {
         if (filter && geom[i]->filter(v)) continue;
 
+        float* V = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[v]][0] : &geom[i]->render->vertices[v][0]);
+
         //Check length limit if applied (used for periodic boundary conditions)
         //NOTE: will not work with linked lines, require separated segments
-        if (limit > 0.f && v%2 == 0 && v < geom[i]->count()-1)
+        if (limit > 0.f && v%2 == 0 && v < VC-1)
         {
           Vec3d line;
-          vectorSubtract(line, geom[i]->render->vertices[v+1], geom[i]->render->vertices[v]);
+          float* V1 = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[v+1]][0] : &geom[i]->render->vertices[v+1][0]);
+          vectorSubtract(line, V1, V);
           if (line.magnitude() > limit) 
           {
             if (linked)
@@ -114,7 +122,7 @@ void Links::update()
         unsigned int cidx = v / colrange;
         if (cidx >= hasColours) cidx = hasColours - 1;
 
-        Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, &geom[i]->render->vertices[v][0]);
+        Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, V);
 
         if (cptr)
         {
@@ -125,6 +133,22 @@ void Links::update()
         //Count of vertices actually plotted
         count++;
       }
+
+      //Plot start vertex again
+      if (linked && looped)
+      {
+        //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
+        float* V0 = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[0]][0] : &geom[i]->render->vertices[0][0]);
+        Geom_Ptr g = lines->read(geom[i]->draw, 1, lucVertexData, V0);
+        if (cptr)
+        {
+          getColour(colour, 0);
+          g->_colours->read1(colour.value);
+        }
+        //Count of vertices actually plotted
+        count++;
+      }
+
       elements += linked ? count - 1 : count * 0.5;
       t2 = clock();
       debug_print("  %.4lf seconds to reload %d vertices\n", (t2-t1)/(double)CLOCKS_PER_SEC, count);
@@ -138,22 +162,33 @@ void Links::update()
       Geom_Ptr g = tris->add(geom[i]->draw);
 
       //3d lines - using triangle sub-renderer
-      geom[i]->draw->properties.data["lit"] = true; //Override lit
+      //geom[i]->draw->properties.data["lit"] = true; //Override lit
       //Draw as 3d cylinder sections
       int quality = 4 * (int)props["glyphs"];
       float scaling = props["scalelines"];
       scaling *= (float)props["scaling"];
-      float lineWidth = (float)props["linewidth"];
-      float radius = scaling*0.01*lineWidth;
+      lineWidth = lineWidth * scaling; // * session.context.scale2d; //Include 2d scale factor
+      if (lineWidth <= 0) lineWidth = scaling;
+
+      float line_scale_factor = 0.25*view->model_size;
+      if (!view->is3d) line_scale_factor *= 2;
+
+      float radius = 0.0015 * lineWidth * line_scale_factor;
+      //printf("LINEWIDTH %f RADIUS %f\n", lineWidth, radius);
+      if (!props["tubes"] || props["flat"])
+      {
+        //Thick lines only mode - use minimum quality
+        quality = 4;
+      }
       float* oldpos = NULL;
       Colour colour;
       int count = 0;
-      for (unsigned int v=0; v < geom[i]->count(); v++)
+      for (unsigned int v=0; v < VC; v++)
       {
         if (filter && geom[i]->filter(v)) continue;
         
         if (v%2 == 0 && !linked) oldpos = NULL;
-        float* pos = geom[i]->render->vertices[v];
+        float* pos = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[v]][0] : &geom[i]->render->vertices[v][0]);
         if (oldpos)
         {
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
@@ -163,6 +198,22 @@ void Links::update()
         }
         oldpos = pos;
 
+        //Count of vertices actually plotted
+        count++;
+      }
+
+      //Plot start vertex again
+      if (linked && looped)
+      {
+        //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
+        float* pos = (geom[i]->render->indices.size() ? &geom[i]->render->vertices[geom[i]->render->indices[0]][0] : &geom[i]->render->vertices[0][0]);
+        if (oldpos)
+        {
+          tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
+          //Per line colours (can do this as long as sub-renderer always outputs same tri count)
+          getColour(colour, 0);
+          g->_colours->read1(colour.value);
+        }
         //Count of vertices actually plotted
         count++;
       }

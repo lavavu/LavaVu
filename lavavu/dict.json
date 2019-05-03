@@ -713,6 +713,17 @@
       true
     ]
   },
+  "loop": {
+    "default": false,
+    "target": "object(line)",
+    "type": "boolean",
+    "desc": "To join the start and end of linked lines set to true",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
   "scalelines": {
     "default": 1.0,
     "target": "object(line)",
