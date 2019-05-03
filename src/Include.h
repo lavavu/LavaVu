@@ -4,7 +4,7 @@
 #define Include__
 
 #if defined _WIN32
-#define GetProcAddress(arg) wglGetProcAddress((LPCSTR)arg)
+//#define GetProcAddress(arg) wglGetProcAddress((LPCSTR)arg)
 #elif defined __APPLE__
 #undef EXTENSION_POINTERS //Don't support extension pointers on MacOS
 #elif defined HAVE_X11

@@ -141,16 +141,16 @@ int RenderContext::project(float x, float y, float z, int* viewport, float *wind
   return 1;
 }
 
-mat4 RenderContext::ortho(float left, float right, float bottom, float top, float near, float far)
+mat4 RenderContext::ortho(float left, float right, float bottom, float top, float nearc, float farc)
 {
   //Return orthographic projection matrix
   mat4 M = linalg::identity;
 	M[0][0] = 2.f / (right - left);
 	M[1][1] = 2.f / (top - bottom);
-	M[2][2] = -2.f / (far - near);
+	M[2][2] = -2.f / (farc - nearc);
 	M[3][0] = - (right + left) / (right - left);
 	M[3][1] = - (top + bottom) / (top - bottom);
-	M[3][2] = - (far + near) / (far - near);
+	M[3][2] = - (farc + nearc) / (farc - nearc);
   return M;
 }
 

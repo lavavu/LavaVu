@@ -80,7 +80,7 @@ public:
   void viewport2d(int width, int height);
   int project(float objx, float objy, float objz, float *windowCoordinate);
   int project(float x, float y, float z, int* viewport, float* windowCoordinate);
-  mat4 ortho(float left, float right, float bottom, float top, float near, float far);
+  mat4 ortho(float left, float right, float bottom, float top, float nearc, float farc);
 };
 
 #endif //RenderContext__
