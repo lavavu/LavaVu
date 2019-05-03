@@ -3,6 +3,7 @@
 #include "linalg.h"
 
 #define vec3 linalg::aliases::float3
+#define vec4 linalg::aliases::float4
 #define mat4 linalg::aliases::float4x4
 
 #ifdef DEBUG
@@ -29,7 +30,6 @@
 #endif //DEBUG
 
 const char* glErrorString(GLenum errorCode);
-int gluProjectf(float objx, float objy, float objz, float* modelview, float*projection, int* viewport, float *windowCoordinate);
 
 #endif //GL_Error_Check
 

@@ -785,13 +785,10 @@ void View::zoomToFit()
   };
 
   //3d rect vertices, object and window coords
-  GLfloat modelview[16];
-  GLfloat projection[16];
   int viewport[4];
   int count = 0;
   double error = 1, scalerect, adjust = ADJUST;
   glGetIntegerv(GL_VIEWPORT, viewport);
-  memcpy(projection, &session.context.P[0][0], sizeof(float)*16);
 
   // Continue scaling adjustments until within tolerance
   while (count < 30 && fabs(error) > 0.005)
@@ -802,12 +799,11 @@ void View::zoomToFit()
 
     // Set camera and get modelview matrix defined by viewpoint
     apply();
-    memcpy(modelview, &session.context.MV[0][0], sizeof(float)*16);
     for (i = 0; i < 8; i++)
     {
-      gluProjectf(rect3d[i][0], rect3d[i][1], rect3d[i][2],
-                  modelview, projection, viewport, &win3d[i][0]);
+      session.context.project(rect3d[i][0], rect3d[i][1], rect3d[i][2], viewport, &win3d[i][0]);
       //Save max/min x and y - define bounding 2d rectangle
+      //printf("min %f,%f max %f,%f\n", min_x, min_y, max_x, max_y);
       if (win3d[i][0] < min_x) min_x = win3d[i][0];
       if (win3d[i][0] > max_x) max_x = win3d[i][0];
       if (win3d[i][1] < min_y) min_y = win3d[i][1];
@@ -848,9 +844,9 @@ void View::zoomToFit()
       else scalerect = yscale;
     }
 
-    // debug_print("BB new_min_x %f new_max_x %f === ", new_min_x, new_max_x);
-    //   debug_print("Bounding rect: %f,%f - %f,%f === ",  min_x, min_y, max_x, max_y);
-    //   debug_print(" Min rect: 0,0 - %f,%f\n", max_x - min_x, max_y - min_y);
+    //printf("BB new_min_x %f new_max_x %f === ", new_min_x, new_max_x);
+    //  printf("Bounding rect: %f,%f - %f,%f === ",  min_x, min_y, max_x, max_y);
+    //printf("SCALE RECT %f Min rect: 0,0 - %f,%f\n", scalerect, max_x - min_x, max_y - min_y);
 
     //Self-adjusting: did we overshoot aim? - compare last error to current 2d scale
     if (count > 0)
@@ -876,8 +872,8 @@ void View::zoomToFit()
     //float oldz = model_trans[2];
     model_trans[2] -= (model_trans[2] * error * adjust);
     //if (count > 4) {
-    //   debug_print("[%d iterations] ... 2D Scaling factor %f ", count, scalerect);
-    //   debug_print(" --> error: %f (adjust %f) zoom from %f to %f\n", error, adjust, oldz, model_trans[2]);
+    //   printf("[%d iterations] ... 2D Scaling factor %f ", count, scalerect);
+    //   printf(" --> error: %f (adjust %f) zoom from %f to %f\n", error, adjust, oldz, model_trans[2]);
     //}
     count++;
   }

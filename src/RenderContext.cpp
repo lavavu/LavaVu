@@ -114,11 +114,28 @@ void RenderContext::viewport2d(int width, int height)
 int RenderContext::project(float objx, float objy, float objz, float *windowCoordinate)
 {
   int viewport[4];
-  float projection[16], modelview[16];
   glGetIntegerv(GL_VIEWPORT, viewport);
-  memcpy(projection, &P[0][0], sizeof(float)*16);
-  memcpy(modelview, &MV[0][0], sizeof(float)*16);
-  return gluProjectf(objx, objy, objz, modelview, projection, viewport, windowCoordinate);
+  return project(objx, objy, objz, viewport, windowCoordinate);
+}
+
+int RenderContext::project(float x, float y, float z, int* viewport, float *windowCoordinate)
+{
+  vec4 in(x, y, z, 1.0);
+  //Modelview transform
+  vec4 a = linalg::mul(MV, in);
+  //Projection transform
+  vec4 b = linalg::mul(P, a);
+  //The result normalizes between -1 and 1
+  if (b.w == 0.0) return 0;
+  //Perspective division
+  b.x /= b.w;
+  b.y /= b.w;
+  b.z /= b.w;
+  //Window coordinates - map to range [0,1] and map x,y to viewport
+  windowCoordinate[0] = (b.x * 0.5 + 0.5) * viewport[2] + viewport[0];
+  windowCoordinate[1] = (b.y * 0.5 + 0.5) * viewport[3] + viewport[1];
+  windowCoordinate[2] = b.z * 0.5 + 0.5; //This is only correct when glDepthRange(0.0, 1.0)
+  return 1;
 }
 
 mat4 RenderContext::ortho(float left, float right, float bottom, float top, float near, float far)
