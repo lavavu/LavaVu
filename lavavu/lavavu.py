@@ -3398,22 +3398,15 @@ class Viewer(dict):
             If the test passes the output images will be deleted, set to False to disable deletion
         """
         results = []
-        if not os.path.isdir(expectedPath):
-            print("No expected data, copying found images to expected folder...")
-            os.makedirs(expectedPath)
-            from shutil import copyfile
-            if not imagelist:
-                #Get all images in cwd
-                imagelist = glob.glob("*.png")
-                imagelist += glob.glob("*.jpg")
-            print(imagelist)
-            for image in imagelist:
-                copyfile(image, os.path.join(expectedPath, image))
-
         if not imagelist:
             #Default to all png images in expected dir
             cwd = os.getcwd()
-            os.chdir(expectedPath)
+            try:
+                os.chdir(expectedPath)
+            except:
+                #No expected images yet, just get images in cwd
+                #will be copied in to expected in testimage()
+                pass
             imagelist = glob.glob("*.png")
             imagelist += glob.glob("*.jpg")
             imagelist.sort(key=os.path.getmtime)
@@ -3457,7 +3450,15 @@ class Viewer(dict):
         """
         if not os.path.exists(expfile):
             print("Test skipped, Reference image '%s' not found!" % expfile)
-            return 0
+            print("No expected data, copying generated image to expected...")
+            expectedPath = os.path.abspath(os.path.dirname(expfile))
+            if not os.path.exists(expectedPath):
+                os.makedirs(expectedPath)
+            from shutil import copyfile
+            if outfile:
+                copyfile(outfile, expfile)
+            else:
+                self.app.image(expfile)
         if len(outfile) and not os.path.exists(outfile):
             raise RuntimeError("Generated image '%s' not found!" % outfile)
 
