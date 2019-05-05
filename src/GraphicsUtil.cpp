@@ -837,7 +837,6 @@ void ImageLoader::loadTIFF()
   TIFF* tif = TIFFOpen(fn.full.c_str(), "r");
   if (tif)
   {
-    size_t npixels;
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &source->width);
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &source->height);
     TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &source->channels);
