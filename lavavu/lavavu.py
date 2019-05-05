@@ -27,16 +27,19 @@ __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 
 import os
 #must be an object or won't be referenced from __init__.py import
 #(enures values are passed on when set externally)
-settings = {}
+settings = {"default_args" : [], "echo_fails" : False, "quality_override" : None}
 #Default arguments for viewer creation
-settings["default_args"] = os.environ.get('LV_ARGS')
-if settings["default_args"] is None:
-  settings["default_args"] = []
+_val = os.environ.get('LV_ARGS')
+if _val:
+  settings["default_args"] = _val.split()
 #Dump base64 encoded images on test failure for debugging
-settings["echo_fails"] = os.environ.get('LV_ECHO_FAIL')
+_val = os.environ.get('LV_ECHO_FAIL')
+if _val:
+    settings["echo_fails"] = bool(_val)
 #Quality override - ignore passed quality setting
-settings["quality_override"] = os.environ.get('LV_QUALITY')
-print(settings)
+_val = os.environ.get('LV_QUALITY')
+if _val:
+    settings["quality_override"] = int(_val)
 
 import json
 import math
@@ -2330,7 +2333,7 @@ class Viewer(dict):
         #Subsample anti-aliasing for image output
         if settings["quality_override"]:
             #Override provided setting with global setting
-            quality = int(settings["quality_override"])
+            quality = settings["quality_override"]
         args += ["-z" + str(quality)]
         #Timestep range
         if timestep != None:
