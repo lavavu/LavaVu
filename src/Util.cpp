@@ -306,6 +306,17 @@ bool Properties::typecheck(json& val, json& defaults, const std::string& key, bo
   return false;
 }
 
+
+void Properties::clear()
+{
+  data = json();
+}
+
+void Properties::replace(json src)
+{
+  data = src;
+}
+
 void debug_print(const char *fmt, ...)
 {
   if (fmt == NULL || infostream == NULL) return;

@@ -139,8 +139,7 @@ void LavaVu::defaults()
   viewer->commands.clear();
 
   axis = new Triangles(session);
-  rulers = new Lines(session);
-  border = new Triangles(session);
+  rulers = new Links(session);
 
   initfigure = 0;
   viewset = RESET_NO;
@@ -1935,10 +1934,7 @@ void LavaVu::viewApply(int idx)
   //       aview->xpos, aview->ypos, aview->width, aview->height, aview->x, aview->y, aview->w, aview->h);
 
   if (aview->autozoom)
-  {
-    aview->projection(EYE_CENTRE);
     aview->zoomToFit();
-  }
   else
     aview->apply();
   GL_Error_Check;
@@ -2324,10 +2320,11 @@ void LavaVu::drawRulers()
   DrawingObject* obj = session.rulerobj;
   rulers->clear(true);
   rulers->setup(aview);
-  if (!obj) obj = new DrawingObject(session, "", "wireframe=false\nclip=false\nlit=false\nopacity=1.0\nalpha=1.0\n");
+  if (!obj) obj = new DrawingObject(session, "", "tubes=true\nopacity=1.0\nalpha=1.0\nglyphs=1\nlit=0\nwireframe=false\nflat=1\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
+  obj->properties.data["scalelines"] = 1.0;
   float font_scale_factor = 0.25*aview->model_size;
   if (!aview->is3d) font_scale_factor *= 2;
   obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * font_scale_factor;
@@ -2489,53 +2486,116 @@ void LavaVu::drawBorder()
   if (bordersize <= 0.0) return;
 
   DrawingObject* obj = session.borderobj;
-  border->clear(true);
-  border->setup(aview);
-  if (!obj) obj = session.borderobj = new DrawingObject(session, "", "clip=false\nopacity=1.0\nalpha=1.0\n");
+  if (border)
+  {
+    border->clear(true);
+    border->setup(aview);
+  }
+  if (!obj) obj = session.borderobj = new DrawingObject(session);
   if (!aview->hasObject(obj)) aview->addObject(obj);
-  obj->properties.data["colour"] = aview->properties["bordercolour"];
-  obj->properties.data["depthtest"] = aview->is3d;
 
   infostream = NULL; //Disable debug output while drawing this
   bool filled = aview->properties["fillborder"];
 
-  if (!filled || !aview->is3d)
+  Vec3d minvert = Vec3d(aview->min);
+  Vec3d maxvert = Vec3d(aview->max);
+
+  if (!aview->is3d)
   {
-    obj->properties.data["lit"] = false;
-    obj->properties.data["linewidth"] = bordersize - 0.5;
-    border->primitive = GL_LINE_LOOP;
+    //Draw 2d bounding box in screen coord space
+    if (!border || border->type == lucTriangleType || obj->properties["depthtest"] == true)
+    {
+      if (border) delete border;
+      border = new Lines(session);
+      border->setup(aview);
+      obj->properties.replace({{"clip" , false}, {"opacity" , 1.0}, {"alpha" , 1.0},
+                               {"link" , true}, {"loop" , true}, {"depthtest" , false},
+                               {"linewidth" , 1.0}});
+    }
+    obj->properties.data["colour"] = aview->properties["bordercolour"];
+    // The 2d bounding box of model
+    GLfloat minw[3], maxw[3];
+    int viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    //Get Z in case not zero
+    float z = aview->min[2];
+    if (std::isinf(z) || std::isnan(z)) z = 0.0f;
+    //Get 2D bounding box by projecting corners into screen space
+    session.context.project(aview->min[0], aview->min[1], z, viewport, &minw[0]);
+    session.context.project(aview->max[0], aview->max[1], z, viewport, &maxw[0]);
+    minw[2] = maxw[2] = z; //Replace z, project sets it to the depth value
+    //Round up pixels, subtract viewport offset
+    minw[0] = ceil(minw[0]) - aview->xpos;
+    maxw[0] = ceil(maxw[0]) - aview->xpos;
+    minw[1] = ceil(minw[1]) - aview->ypos;
+    maxw[1] = ceil(maxw[1]) - aview->ypos;
+    //loop over border width drawing multiple edges
+    int linewidth = (int)(bordersize * session.context.scale2d) + 0.5;
+    for (int w=0; w<linewidth; w++)
+    {
+      if (w > 0) border->add(obj);
+      //printf("BB2D min %f,%f max %f,%f (z : %f)\n", minw[0], minw[1], maxw[0], maxw[1], z);
+      Vec3d vert1 = Vec3d(maxw[0], minw[1], z);
+      Vec3d vert2 = Vec3d(minw[0], maxw[1], z);
+      border->read(obj, 1, lucVertexData, minw);
+      border->read(obj, 1, lucVertexData, vert1.ref());
+      border->read(obj, 1, lucVertexData, maxw);
+      border->read(obj, 1, lucVertexData, vert2.ref());
+      minw[0] -= 1.0;
+      minw[1] -= 1.0;
+      maxw[0] += 1.0;
+      maxw[1] += 1.0;
+    }
+
+    //Draw in 2d viewport
+    session.context.viewport2d(aview->width, aview->height);
+    border->display(true); //Display with forced data update
+    session.context.viewport2d(0, 0);
   }
   else
   {
-    obj->properties.data["lit"] = true;
-    obj->properties.data["wireframe"] = false;
-    obj->properties.data["cullface"] = true;
-    border->primitive = GL_TRIANGLE_STRIP;
-  }
+    //Draw using 3d geometry
+    if (!filled)
+    {
+      //Filled border: reverse face box with cullface enabled
+      if (!border || border->type == lucTriangleType || obj->properties["depthtest"] == false)
+      {
+        if (border) delete border;
+        border = new Links(session);
+        border->setup(aview);
+      }
 
-  Vec3d minvert = Vec3d(aview->min);
-  Vec3d maxvert = Vec3d(aview->max);
-  if (aview->is3d)
-  {
+      obj->properties.replace({{"clip" , false}, {"opacity" , 1.0}, {"alpha" , 1.0},
+                               {"flat" , true}, {"cullface" , true}, {"depthtest" , true},
+                               {"link" , true}, {"loop" , true},
+                               {"flat" , true}, {"tubes" , true}});
+      border->primitive = GL_LINE_LOOP; //Has no effect except changing the vertices generated by drawCuboid
+    }
+    else
+    {
+      //Normal border, lines, or triangle strip links for thick border
+      if (!border || border->type == lucLineType)
+      {
+        if (border) delete border;
+        border = new Triangles(session);
+        border->setup(aview);
+        obj->properties.replace({{"clip" , false}, {"opacity" , 1.0}, {"alpha" , 1.0},
+                                 {"depthtest", true}});
+      }
+      //obj->properties.data["lit"] = true;
+      border->primitive = GL_TRIANGLE_STRIP;
+    }
+
+    obj->properties.data["colour"] = aview->properties["bordercolour"];
+    obj->properties.data["linewidth"] = bordersize;
+
     // Draw model bounding box with optional filled background surface
     Quaternion qrot;
     //Min/max swapped to draw inverted box, see through to back walls
     border->drawCuboid(obj, maxvert, minvert, qrot, false);
-  }
-  else
-  {
-    float z = aview->min[2];
-    if (std::isinf(z) || std::isnan(z)) z = 0.0f;
-    minvert.z = maxvert.z = z;
-    Vec3d vert1 = Vec3d(aview->max[0], aview->min[1], z);
-    Vec3d vert2 = Vec3d(aview->min[0], aview->max[1], z);
-    border->read(obj, 1, lucVertexData, minvert.ref());
-    border->read(obj, 1, lucVertexData, vert1.ref());
-    border->read(obj, 1, lucVertexData, maxvert.ref());
-    border->read(obj, 1, lucVertexData, vert2.ref());
-  }
 
-  border->display(true); //Display with forced data update
+    border->display(true); //Display with forced data update
+  }
 
   //Restore info/error stream
   if (verbose) infostream = stderr;

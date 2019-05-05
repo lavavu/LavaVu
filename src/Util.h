@@ -350,6 +350,8 @@ public:
   bool getBool(const std::string& key, bool def);
   void merge(json& other);
   void checkall(bool strict=true);
+  void clear();
+  void replace(json src);
   static void check(json& props, json& defaults, bool strict=true);
   static bool typecheck(json& val, json& defaults, const std::string& key, bool strict=true);
 

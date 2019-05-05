@@ -56,7 +56,7 @@
     ]
   },
   "renderlist": {
-    "default": "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume screen",
+    "default": "sortedtriangles quads vectors tracers shapes sortedpoints labels links volume screen",
     "target": "all",
     "type": "string",
     "desc": "List of default renderers created and order they are displayed. For valid types see \"renderers\" property.",
@@ -1775,7 +1775,7 @@
   "border": {
     "default": 1.0,
     "target": "global",
-    "type": "integer",
+    "type": "real",
     "desc": "Border width around model boundary, 0=disabled",
     "strict": true,
     "redraw": 0,
