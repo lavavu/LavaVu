@@ -168,7 +168,8 @@ bool View::init(bool force, float* newmin, float* newmax)
 
     // Initial zoom to fit
     // NOTE without (int) cast properties["zoomstep"] == 0 here always evaluated to false!
-    if ((int)properties["zoomstep"] == 0) zoomToFit();
+    if ((int)properties["zoomstep"] == 0)
+      zoomToFit();
 
     debug_print("   Auto cam: (Viewport %d x %d) (Model: %f x %f x %f)\n", width, height, dims[0], dims[1], dims[2]);
     debug_print("   Looking At: %f,%f,%f\n", focal_point[0], focal_point[1], focal_point[2]);
@@ -608,7 +609,7 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   GL_Error_Check;
 
   // Rotate model
-  if (!no_rotate)
+  if (!no_rotate && is3d)
     rotation->apply(session.context.MV);
 
   // Translate object
@@ -616,7 +617,7 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
     session.context.translate3(obj_translation->x, obj_translation->y, obj_translation->z);
 
   // Rotate object
-  if (obj_rotation)
+  if (obj_rotation && is3d)
     obj_rotation->apply(session.context.MV);
 
   GL_Error_Check;
@@ -789,17 +790,18 @@ void View::zoomToFit()
   int count = 0;
   double error = 1, scalerect, adjust = ADJUST;
   glGetIntegerv(GL_VIEWPORT, viewport);
+  bool ortho_mode = properties["orthographic"];
 
   // Continue scaling adjustments until within tolerance
   while (count < 30 && fabs(error) > 0.005)
   {
     float min_x = 10000, min_y = 10000, max_x = -10000, max_y = -10000;
     GLfloat win3d[8][3];
-    int i;
 
     // Set camera and get modelview matrix defined by viewpoint
     apply();
-    for (i = 0; i < 8; i++)
+    if (ortho_mode) projection(EYE_CENTRE); //Must update projection in ortho mode
+    for (int i = 0; i < 8; i++)
     {
       session.context.project(rect3d[i][0], rect3d[i][1], rect3d[i][2], viewport, &win3d[i][0]);
       //Save max/min x and y - define bounding 2d rectangle
