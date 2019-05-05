@@ -170,10 +170,10 @@ void Links::update()
       lineWidth = lineWidth * scaling; // * session.context.scale2d; //Include 2d scale factor
       if (lineWidth <= 0) lineWidth = scaling;
 
-      float line_scale_factor = 0.25*view->model_size;
-      if (!view->is3d) line_scale_factor *= 2;
+      float line_scale_factor = 0.2*view->model_size;
+      if (!view->is3d) line_scale_factor *= 1.5;
 
-      float radius = 0.0015 * lineWidth * line_scale_factor;
+      float radius = 0.0025 * lineWidth * line_scale_factor;
       //printf("LINEWIDTH %f RADIUS %f\n", lineWidth, radius);
       if (!props["tubes"] || props["flat"])
       {
