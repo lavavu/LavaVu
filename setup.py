@@ -137,7 +137,6 @@ if __name__ == "__main__":
     srcs += glob.glob('src/*.cpp')
     srcs += glob.glob('src/Main/*.cpp')
     srcs += glob.glob('src/jpeg/*.cpp')
-    srcs += glob.glob('src/png/*.cpp')
     defines = [('USE_FONTS', '1')]
     cflags = []
     libs = [] #['sqlite3']
