@@ -44,6 +44,9 @@ after_script:
 - ls -la ./build
 
 #Deploy to PyPi on tags (releases)
+#This is used for the MacOS builds only
+#Linux - using manylinux in the wheels branch
+#Windows - using appveyor
 deploy:
   provider: pypi
   user: OwKal
@@ -51,6 +54,7 @@ deploy:
     secure: GV42b9YQoZwYpjiU3APq65gqSOb4rnTW7SFmBTWlJDMr20eskhQixbG7MIwrQ2ibI71v8inMBq7x7FjbbBpIX1FBgu7ItqHuE5+IxCq6v1IdrlNhUlQ5uJP6JHcqeIqgXtlYfe4zLx4m6acW95zi2ueRl+2ZMfV2jYarnWO6v3xyUmMFG7Tibcars7/mQP5M2Q2PkLhXKdoE/VE4jYF1Iby+hdArjZF+7429lJEXBCOgIFlDMMAdcQy9MxJVznZOvr9oEGPmSFA+XopwR7YtupPgmmmBYj4BRxg59XQL18XBpIa43JoApPymBdw6n4PHlpd/4oi9nJsH78RZe62ywm4tGShvzcYwpAuglY6jIuQ0675DktgJNKfu+c5kmxjP6SWVdu0bMFRGueYqNcysSf/CcB5/QfIaLNaBmGCQuYAQL6gsS7eATeyw3fh1vHbHwdZSnxpQ7mby0V4J64gP+AWLN9DKsy69UrSeFERg8vQPgCWA8odwUhmiTR8UtJo2vawQR5z6nxWkVlBcAbwEiA8k2nPUggHTg38CHOf7I1L0tlxcYuJuTI6A4HW3NCwotVMUjzUnGZnOJV4d7w+FjSUkcQ2YYHF6EyI+Jm6iDn65gr0L6osAvdde6a5U+acmfYQb0xlu5TW6J1uTRQM85V3GjHqs/FAaA9CT9m8uEok=
   on:
     tags: true
+    condition: os == osx
   skip_existing: true
-  distributions: "sdist bdist_wheel" # Your distributions here
+  distributions: "bdist_wheel" # Your distributions here
 

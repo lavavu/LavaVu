@@ -1,7 +1,5 @@
-include LV
 include Makefile
 include version.py
 recursive-include lavavu shaders/*
 recursive-include lavavu html/*
 recursive-include src *.cpp *.c *.cxx *.h *.hpp *.mm
-recursive-exclude src/windows *.*
