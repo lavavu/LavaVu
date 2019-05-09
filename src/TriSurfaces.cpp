@@ -285,8 +285,9 @@ void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &vert
   debug_print("  %.4lf seconds to calc facet normals\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
-  //Sort by vertex
-  std::sort(verts.begin(), verts.end());
+  //Sort by vertex (no need if optimisation disabled)
+  if (optimise)
+    std::sort(verts.begin(), verts.end());
   t2 = clock();
   debug_print("  %.4lf seconds to sort %d verts\n", (t2-t1)/(double)CLOCKS_PER_SEC, verts.size());
   t1 = clock();
