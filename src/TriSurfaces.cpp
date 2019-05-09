@@ -88,8 +88,8 @@ void TriSurfaces::update()
 void TriSurfaces::loadMesh()
 {
   // Load & optimise triangle meshes...
-  // If indices & normals provided, this simply calcs triangle centroids
-  // If not, also optimises the mesh, removes duplicate vertices, calcs vertex normals and colours
+  // If no normals, calculate them
+  // If no indices, optimises the mesh, removes duplicate vertices, calcs vertex normals and colours
   clock_t t1,t2,tt;
   tt=clock();
 
@@ -106,7 +106,7 @@ void TriSurfaces::loadMesh()
     //Has index data, simply load the triangles
     if (geom[index]->render->indices.size() > 0)
     {
-      elements = geom[index]->render->indices.size();
+      elements += geom[index]->render->indices.size();
 
       //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
       //elements += counts[index]; //geom[index]->render->indices.size();
@@ -139,6 +139,8 @@ void TriSurfaces::loadMesh()
         calcGridNormals(index);
       calcGridIndices(index);
       unique += geom[index]->count(); //For calculating index offset (voffset)
+      int els = geom[index]->gridElements2d();
+      triverts = els * 6;
       elements += triverts;
     }
     else
@@ -379,6 +381,7 @@ void TriSurfaces::calcCentroids()
 
 void TriSurfaces::loadList()
 {
+  if (centroids.size() == 0) return;
   assert(view);
   clock_t t2,tt;
   tt=clock();
