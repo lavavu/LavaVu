@@ -548,6 +548,7 @@ void LavaVu::clearAll(bool objects, bool colourmaps)
   //Clear all data
   if (!amodel) return;
   amodel->clearObjects(true);
+  amodel->init(); //Re-initialise
 
   //Delete all objects? only works for active view/model
   if (objects)
