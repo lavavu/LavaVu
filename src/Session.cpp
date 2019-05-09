@@ -69,7 +69,7 @@ void Session::reset()
   colourMaps = NULL;
 }
 
-int Session::parse(Properties* target, const std::string& property, bool validate)
+int Session::parse(Properties* target, const std::string& property)
 {
   //Parse a key=value property where value is a json object
   if (property.length() < 2) return 0; //Require at least "x="
@@ -111,7 +111,7 @@ int Session::parse(Properties* target, const std::string& property, bool validat
   int redraw = 0;
   if (properties.count(key) == 0)
   {
-    //Strict validation of names, ensures typos etc cause errors
+    //Validation of names, ensures typos etc cause errors
     if (validate)
     {
       std::cerr << key << " : Invalid property name" << std::endl;
@@ -195,7 +195,7 @@ int Session::parse(Properties* target, const std::string& property, bool validat
 }
 
 //Parse multi-line string
-void Session::parseSet(Properties& target, const std::string& properties, bool validate)
+void Session::parseSet(Properties& target, const std::string& properties)
 {
   //Properties can be provided as valid json object {...}
   //in which case, parse directly
@@ -211,7 +211,7 @@ void Session::parseSet(Properties& target, const std::string& properties, bool v
     std::stringstream ss(properties);
     std::string line;
     while (std::getline(ss, line))
-      parse(&target, line, validate);
+      parse(&target, line);
   }
 }
 

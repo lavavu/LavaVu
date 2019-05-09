@@ -23,6 +23,8 @@ public:
   bool havecontext;
   //Set when called from omegalib, camera handled externally
   bool omegalib;
+  //Flag to enable validation of all property names from dictionary
+  bool validate = true;
 
   //Model
   int now;
@@ -73,8 +75,8 @@ public:
   ~Session();
   std::string counterFilename();
   void reset();
-  int parse(Properties* target, const std::string& property, bool validate=true);
-  void parseSet(Properties& target, const std::string& properties, bool validate=true);
+  int parse(Properties* target, const std::string& property);
+  void parseSet(Properties& target, const std::string& properties);
   void init(std::string& binpath);
   json& global(const std::string& key);
   bool has(const std::string& key);
