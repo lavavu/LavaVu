@@ -2141,7 +2141,8 @@ void LavaVu::display(bool redraw)
         GL_Error_Check;
 
         //Require reload of object data for multiple viewports
-        amodel->reloadRedraw(NULL, true);
+        if (v > 0)
+          amodel->reloadRedraw(NULL, true);
 
         // Default non-stereo render
         aview->projection(EYE_CENTRE);
