@@ -2675,7 +2675,7 @@ void LavaVu::text(const std::string& str, int xpos, int ypos, float scale, Colou
   session.fonts.charset = FONT_VECTOR;
   session.fonts.fontscale = scale;
 
-  session.fonts.print(xpos+1, ypos-1, str.c_str());
+  session.fonts.print(xpos+session.context.scale2d, ypos-session.context.scale2d, str.c_str(), false);
 
   //Use provided text colour or calculated
   if (colour)
