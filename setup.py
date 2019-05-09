@@ -38,8 +38,6 @@ To release a new verison:
     (If this fails, check ~/.pypirc and try upgrading pip: pip install -U pip setuptools)
 
 TODO:
-    Move to twine for uploads https://pypi.org/project/twine/
-    Build and upload wheels for major platforms
     Review possible dependencies to support image/video libraries
     - imageio or pillow for libpng, libtiff
     - ffmpeg-python or opencv-python for libavcodec
@@ -53,7 +51,7 @@ if sys.argv[-1] == 'tag':
 
 #Run with "publish" arg to upload the release
 if sys.argv[-1] == 'publish':
-    os.system("python setup.py sdist upload")
+    os.system("twine upload dist/*")
     sys.exit()
 
 def write_version():
