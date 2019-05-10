@@ -1038,7 +1038,7 @@ class Object(dict):
         data = self._convert(data, numpy.uint8)
         self._loadScalar(data, LavaVuPython.lucLuminanceData)
 
-    def texture(self, data, width, height, channels=4, flip=True, mipmaps=True, bgr=False):
+    def texture(self, data, flip=True, mipmaps=True, bgr=False):
         """
         Load raw texture data for object
 
@@ -1047,12 +1047,9 @@ class Object(dict):
         data : list or array
             Pass a list or numpy uint32 or uint8 array
             texture data is loaded as raw image data
-        width : int
-            image width in pixels
-        height : int
-            image height in pixels
-        channels : int
-            colour channels/depth in bytes (1=luminance, 3=RGB, 4=RGBA)
+            shape of array must be 2d or 3d,
+            either (height, width, channels) for RGB(A) image
+            or (height, width) for single channel grayscale image
         flip : boolean
             flip the texture vertically after loading
             (default is enabled as usually required for OpenGL but can be disabled)
@@ -1063,6 +1060,14 @@ class Object(dict):
         """
         if not isinstance(data, numpy.ndarray):
             data = self._convert(data, numpy.uint32)
+        if len(data.shape) < 2:
+            raise ValueError(data.shape + " : Must pass a 2D or 3D data set")
+        if len(data.shape) < 3:
+            height, width = data.shape
+            channels = 1
+        else:
+            height, width, channels = data.shape
+
         if data.dtype == numpy.uint32:
             self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
         elif data.dtype == numpy.uint8:
