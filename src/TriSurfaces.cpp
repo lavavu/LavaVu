@@ -56,12 +56,13 @@ void TriSurfaces::close()
 void TriSurfaces::update()
 {
   // Update triangles...
+  unsigned int lastcount = total/3;
   unsigned int drawelements = triCount();
   if (drawelements == 0) return;
 
   //Only reload the vbo data when required
   //Not needed when objects hidden/shown but required if colours changed
-  if (centroids.size() != total/3 || vbo == 0 || (reload && (!allVertsFixed || internal)))
+  if (lastcount != total/3 || vbo == 0 || (reload && (!allVertsFixed || internal)))
   {
     //Load & optimise the mesh data (including updating centroids)
     tricount = 0;
