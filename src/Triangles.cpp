@@ -62,13 +62,13 @@ unsigned int Triangles::triCount(unsigned int index)
     if (tris * 3 != geom[index]->render->indices.size()) // || geom[index]->draw->properties["tristrip"])
       //Tri-strip indices
       tris = geom[index]->render->indices.size() - 2;
-    debug_print("Surface (indexed) %d", index);
+    debug_print("Surface (indexed) %d\n", index);
   }
   //Grid
   else if (geom[index]->width > 0 && geom[index]->height > 0)
   {
     tris = 2 * (geom[index]->width-1) * (geom[index]->height-1);
-    debug_print("Grid Surface %d (%d x %d)", index, geom[index]->width, geom[index]->height);
+    debug_print("Grid Surface %d (%d x %d)\n", index, geom[index]->width, geom[index]->height);
   }
   else
   {
@@ -77,7 +77,7 @@ unsigned int Triangles::triCount(unsigned int index)
     if (tris * 3 != geom[index]->count()) // || geom[index]->draw->properties["tristrip"])
       //Tri-strip vertices
       tris =  geom[index]->count() - 2;
-    debug_print("Surface %d ", index);
+    debug_print("Surface %d \n", index);
   }
   return tris;
 }
@@ -124,8 +124,8 @@ void Triangles::update()
     //render();
   }
 
-  if (reload)
-    counts.clear();
+  //Always trigger re-render (load indices) in case elements hidden/shown
+  counts.clear();
 }
 
 void Triangles::loadBuffers()
