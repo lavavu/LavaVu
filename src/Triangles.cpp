@@ -237,12 +237,22 @@ void Triangles::loadBuffers()
       ptr += sizeof(float) * 3;
       //Copies texCoord bytes
       if (geom[index]->render->texCoords.size() > v)
+      {
         memcpy(ptr, &geom[index]->render->texCoords[v][0], sizeof(float) * 2);
+      }
       else if (texmap && vals)
       {
         texCoord[0] = texmap->scalefast(geom[index]->colourData(v));
         //if (v%100==0 || texCoord[0] <= 0.0) printf("(%f - %f) %f ==> %f\n", texmap->minimum, texmap->maximum, geom[index]->colourData(v), texCoord[0]);
         memcpy(ptr, texCoord, sizeof(float) * 2);
+      }
+      else if (texture)
+      {
+        //Auto texcoord : take objects largest dimensions, texture over that range
+        texCoord[0] = (vert[i0] - geom[index]->min[i0]) / dims[i0];
+        texCoord[1] = (vert[i1] - geom[index]->min[i1]) / dims[i1];
+        memcpy(ptr, texCoord, sizeof(float) * 2);
+        //printf("Autotexcoord %d %f,%f (i0 %d, i1 %d)\n", v, texCoord[0], texCoord[1], i0, i1);
       }
 
       ptr += sizeof(float) * 2;
