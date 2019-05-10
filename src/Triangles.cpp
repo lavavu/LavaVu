@@ -205,7 +205,7 @@ void Triangles::loadBuffers()
                      geom[index]->max[1] - geom[index]->min[1],
                      geom[index]->max[2] - geom[index]->min[2]
                     };
-    bool texture = geom[index]->draw->properties.has("texture");
+    bool hasTexture = geom[index]->texture || geom[index]->draw->properties.has("texture");
     //Get the indices of the two largest dimensions
     int i0 = 0, i1 = 1;
     if (dims[2] > dims[0] || dims[2] > dims[1])
@@ -261,7 +261,7 @@ void Triangles::loadBuffers()
         //if (v%100==0 || texCoord[0] <= 0.0) printf("(%f - %f) %f ==> %f\n", texmap->minimum, texmap->maximum, geom[index]->colourData(v), texCoord[0]);
         memcpy(ptr, texCoord, sizeof(float) * 2);
       }
-      else if (texture)
+      else if (hasTexture)
       {
         //Auto texcoord : take objects largest dimensions, texture over that range
         texCoord[0] = (vert[i0] - geom[index]->min[i0]) / dims[i0];
@@ -523,7 +523,8 @@ void Triangles::calcGridNormals(unsigned int i)
   clock_t t1,t2;
   t1 = clock();
   debug_print("Calculating normals for grid surface %d... ", i);
-  bool genTexCoords = (geom[i]->draw->useTexture(geom[i]->texture) && geom[i]->render->texCoords.size() == 0);
+  bool hasTexture = geom[i]->texture || geom[i]->draw->properties.has("texture");
+  bool genTexCoords = hasTexture && geom[i]->render->texCoords.size() == 0;
 
   // Calc per-vertex normals for irregular meshes by averaging four surrounding triangle facet normals
   int n = 0;

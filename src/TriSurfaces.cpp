@@ -131,10 +131,10 @@ void TriSurfaces::loadMesh()
 
     //Mesh optimisation (duplicate vertex replacement) must be disabled with tex coords
     //(Vertices may be shared by triangles, but each needs it's own texcoord and texcoords are stored with vertices)
-    bool hasTexture = geom[index]->draw->properties.has("texture");
+    bool hasTexture = geom[index]->texture || geom[index]->draw->properties.has("texture");
     bool hasTexCoords =  geom[index]->render->texCoords.size()/2 == geom[index]->count();
     bool optimise = !hasTexture && !hasTexCoords && vnormals && geom[index]->draw->properties["optimise"];
-    //printf("Has texCoords %d optimise %d (%d == %d)\n", hasTexCoords, optimise, geom[index]->render->texCoords.size()/2, geom[index]->count());
+    //printf("Has texture %d Has texCoords %d optimise %d (%d == %d)\n", hasTexture, hasTexCoords, optimise, geom[index]->render->texCoords.size()/2, geom[index]->count());
     if (grid)
     {
       //Structured mesh grid, 2 triangles per element, 3 indices per tri

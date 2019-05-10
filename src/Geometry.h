@@ -615,8 +615,8 @@ public:
   void drawTrajectory(DrawingObject *draw, float coord0[3], float coord1[3], float radius0, float radius1, float arrowHeadSize, float scale[3], float maxLength=0.f, int segment_count=24, Colour* colour=NULL);
   void drawCuboid(DrawingObject *draw, Vec3d& min, Vec3d& max, Quaternion& rot, bool scale3d=false, Colour* colour=NULL);
   void drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quaternion& rot, bool scale3d=false, Colour* colour=NULL);
-  void drawSphere(DrawingObject *draw, Vec3d& centre, bool scale3d=false, float radius=1.0f, int segment_count=24, Colour* colour=NULL);
-  void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, bool scale3d=false, int segment_count=24, Colour* colour=NULL);
+  void drawSphere(DrawingObject *draw, Vec3d& centre, bool scale3d=false, float radius=1.0f, bool texCoords=false, int segment_count=24, Colour* colour=NULL);
+  void drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, bool scale3d=false, bool texCoords=false, int segment_count=24, Colour* colour=NULL);
 
   //Return total vertex count
   unsigned int getVertexCount(DrawingObject* draw)

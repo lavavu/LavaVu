@@ -2362,19 +2362,19 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
   if (colour) g->vertexColours(colour, voffset);
 }
 
-void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, bool scale3d, float radius, int segment_count, Colour* colour)
+void Geometry::drawSphere(DrawingObject *draw, Vec3d& centre, bool scale3d, float radius, bool texCoords, int segment_count, Colour* colour)
 {
   //Case of ellipsoid where all 3 radii are equal
   Vec3d radii = Vec3d(radius, radius, radius);
   Quaternion qrot;
-  drawEllipsoid(draw, centre, radii, qrot, scale3d, segment_count, colour);
+  drawEllipsoid(draw, centre, radii, qrot, scale3d, texCoords, segment_count, colour);
 }
 
 // Create a 3d ellipsoid given centre point, 3 radii and number of triangle segments to use
 // Based on algorithm and equations from:
 // http://local.wasp.uwa.edu.au/~pbourke/texture_colour/texturemap/index.html
 // http://paulbourke.net/geometry/sphere/
-void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, bool scale3d, int segment_count, Colour* colour)
+void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Quaternion& rot, bool scale3d, bool texCoords, int segment_count, Colour* colour)
 {
   int i,j;
   Vec3d edge, pos, normal;
@@ -2392,8 +2392,6 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
   //Get the geom ptr
   Geom_Ptr g = read(draw, 0, lucVertexData, NULL);
   unsigned int voffset = g->count();
-  bool hasTex = draw->properties.has("texture") && draw->properties["texture"] != "colourmap";
-
   for (j=0; j<segment_count/2; j++)
   {
     //Triangle strip vertices
@@ -2412,7 +2410,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       g->readVertex(pos.ref());
       normal = rot * edge * scale3;
       g->_normals->read(1, normal.ref());
-      if (hasTex)
+      if (texCoords)
         g->_texCoords->read(1, tex);
 
       // Get index from pre-calculated coords which is back 1/4 circle from j (same as forward 3/4circle)
@@ -2427,7 +2425,7 @@ void Geometry::drawEllipsoid(DrawingObject *draw, Vec3d& centre, Vec3d& radii, Q
       g->readVertex(pos.ref());
       normal = rot * edge * scale3;
       g->_normals->read(1, normal.ref());
-      if (hasTex)
+      if (texCoords)
         g->_texCoords->read(1, tex);
 
       //Triangle strip indices
