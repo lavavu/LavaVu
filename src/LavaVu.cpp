@@ -3317,8 +3317,11 @@ void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <floa
 {
   Geometry* container = lookupObjectRenderer(target);
   if (container)
+  {
     for (unsigned int i=0; i < array.size(); i += 3)
       container->addTriangle(target, &array[i+0][0], &array[i+1][0], &array[i+2][0], split);
+    reloadObject(target);
+  }
 }
 
 void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
@@ -3332,6 +3335,7 @@ void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
       Colour c(item);
       container->read(target, 1, lucRGBAData, &c);
     }
+    reloadObject(target);
   }
 }
 
@@ -3385,6 +3389,7 @@ void LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lu
     }
     else
       container->read(target, len, type, array);
+    reloadObject(target);
   }
 }
 
@@ -3392,7 +3397,10 @@ void LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucG
 {
   Geometry* container = lookupObjectRenderer(target);
   if (container)
+  {
     container->read(target, len, type, array);
+    reloadObject(target);
+  }
 }
 
 void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type)
@@ -3401,28 +3409,40 @@ void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometr
   int dsize = 3;
   if (type == lucTexCoordData) dsize = 2;
   if (container)
+  {
     container->read(target, len/dsize, type, array);
+    reloadObject(target);
+  }
 }
 
 void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label)
 {
   Geometry* container = lookupObjectRenderer(target);
   if (container)
+  {
     container->read(target, len, array, label);
+    reloadObject(target);
+  }
 }
 
 void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool mipmaps, bool bgr)
 {
   Geometry* container = lookupObjectRenderer(target);
   if (container)
+  {
     container->loadTexture(target, array, width, height, channels, flip, mipmaps, bgr);
+    reloadObject(target);
+  }
 }
 
 void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool mipmaps, bool bgr)
 {
   Geometry* container = lookupObjectRenderer(target);
   if (container)
+  {
     container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, mipmaps, bgr);
+    reloadObject(target);
+  }
 }
 
 //GeomData interface, for loading/acessing geom store directly
