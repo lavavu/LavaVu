@@ -667,8 +667,8 @@ class Object(dict):
         #Transform to requested data type if provided
         if data.dtype == numpy.float32 and dtype == numpy.uint8:
             #Convert float[0,1] to uint8 * 255
-            #TODO: test
-            data *= 255.0
+            if numpy.amin(data) >= 0.0 and numpy.amax(data) <= 1.0:
+                data *= 255.0
             data = data.astype(numpy.uint8)
         elif dtype != None and data.dtype != dtype:
             data = data.astype(dtype)
@@ -1058,8 +1058,7 @@ class Object(dict):
         bgr : boolean
             rgb data is in BGR/BGRA format instead of RGB/RGBA
         """
-        if not isinstance(data, numpy.ndarray):
-            data = self._convert(data, numpy.uint32)
+        data = self._convert(data)
         if len(data.shape) < 2:
             raise ValueError(data.shape + " : Must pass a 2D or 3D data set")
         if len(data.shape) < 3:
@@ -1068,6 +1067,9 @@ class Object(dict):
         else:
             height, width, channels = data.shape
 
+        #Convert floating point data
+        if data.dtype == numpy.float32:
+            data = self._convert(data, numpy.uint8)
         if data.dtype == numpy.uint32:
             self.parent.app.textureUInt(self.ref, data.ravel(), width, height, channels, flip, mipmaps, bgr)
         elif data.dtype == numpy.uint8:
