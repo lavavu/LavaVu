@@ -91,7 +91,7 @@ static CVReturn GlobalDisplayLinkCallback(CVDisplayLinkRef, const CVTimeStamp*, 
     NSOpenGLPFAColorSize, 32,
     NSOpenGLPFADepthSize, 24,
     NSOpenGLPFAAlphaSize, 8,
-    NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_3Core,
+    NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
     0
   };
 

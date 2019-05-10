@@ -897,6 +897,12 @@ int ImageLoader::build(ImageData* image)
     //Luminance using ARB_texture_swizzle (core in 3.3)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_RED, GL_UNSIGNED_BYTE, image->pixels);
     //All components take the value from red, no alpha
+#ifndef GL_TEXTURE_SWIZZLE_R
+#define GL_TEXTURE_SWIZZLE_R  GL_TEXTURE_SWIZZLE_R_EXT
+#define GL_TEXTURE_SWIZZLE_G  GL_TEXTURE_SWIZZLE_G_EXT
+#define GL_TEXTURE_SWIZZLE_B  GL_TEXTURE_SWIZZLE_B_EXT
+#define GL_TEXTURE_SWIZZLE_A  GL_TEXTURE_SWIZZLE_A_EXT
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
