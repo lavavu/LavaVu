@@ -2142,7 +2142,7 @@ void LavaVu::display(bool redraw)
         GL_Error_Check;
 
         //Require reload of object data for multiple viewports
-        if (v > 0)
+        if (amodel->views.size() > 1)
           amodel->reloadRedraw(NULL, true);
 
         // Default non-stereo render
