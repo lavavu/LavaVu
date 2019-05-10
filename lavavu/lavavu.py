@@ -3640,9 +3640,14 @@ class Viewer(dict):
         boolean :
             False if user quit program, True otherwise
         """
+        #Requires a visible window with animation enabled
+        if not self.app.viewer.visible:
+            self.app.show()
+            self.animate(1)
+
         if self.app.events():
             self.app.execute()
-            #self.viewer.render()
+
         return not self.app.viewer.quitProgram
 
     def serve(self, *args, **kwargs):

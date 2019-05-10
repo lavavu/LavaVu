@@ -706,10 +706,10 @@ void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint ch
     newSource();
     source->allocate(width, height, channels);
   }
-  this->flip = flip;
   this->mipmaps = mipmaps;
   this->bgr = bgr;
   source->copy(data);
+  if (flip) source->flip();
 }
 
 void ImageLoader::read()

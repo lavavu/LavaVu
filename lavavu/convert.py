@@ -10,6 +10,7 @@ Tools for converting between 3D data types
 """
 import numpy
 import os
+from __future__ import print_function
 
 def min_max_range(verts):
     """
