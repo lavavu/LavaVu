@@ -759,14 +759,16 @@ class Object(dict):
             #Dims = vertex count
             self["dims"] = (data.size/3, 1)
 
-    def _loadVector(self, data, geomdtype, magnitude=None):
+    def _loadVector(self, data, geomdtype, D=3):
         """
         Accepts 2d or 3d data as a list of vertices [[x,y,z]...] or [[x,y]...]
-         - If the last dimension is 2, a zero 3rd element is added to all vertices
+         - If the last dimension is 2 and D==3 (target dimensions), a zero 3rd element is added to all vertices
         Also accepts 2d or 3d data as columns [[x...], [y...], [z...]]
          - In this case, there must be > 3 elements or cannot autodetect!
          - If the last dimenion is not 3 (or 2) and the first is 3 (or 2)
            the data will be re-arranged automatically
+
+        Set D=2 to load 2d data (eg: tex coords) all steps except adding the 3rd dimension are the same
         """
         #Passes a vector dataset (float)
         data = self._convert(data, numpy.float32)
@@ -782,29 +784,20 @@ class Object(dict):
                 #Re-arrange to array of [x,y] pairs
                 data = numpy.vstack((data[0],data[1])).reshape([2, -1]).transpose()
 
-            #Now check for 2d vertices
-            if data.shape[-1] == 2:
+            #Now check for 2d vertices with 3d target
+            if D==3 and data.shape[-1] == 2:
                 #Interpret as 2d data... must add 3rd dimension
                 data = numpy.insert(data, 2, values=0, axis=len(shape)-1)
 
             #Quads or tracers? Use the shape as dims if not provided
-            #Quad/Triangle type?
-            #if self["geometry"] == 'quads' or self["geometry"] == 'grid':
-            if self["geometry"] in self.parent.renderers[LavaVuPython.lucGridType] or self["geometry"] in self.parent.renderers[LavaVuPython.lucTriangleType]:
-                self._gridDimsFromShape(data)
-            if self["geometry"] in self.parent.renderers[LavaVuPython.lucTracerType]:
-            #elif self["geometry"] == 'tracers':
-                self._tracerDimsFromShape(data)
-
-        #Convenience option to load magnitude as a value array
-        if magnitude is not None:
-            axis = len(data.shape)-1
-            mag = numpy.linalg.norm(data,axis=axis)
-            if isinstance(magnitude, str):
-                label = magnitude
-            else:
-                label = "magnitude"
-            self.parent.app.arrayFloat(self.ref, mag.ravel(), label)
+            if D==3:
+                #Quad/Triangle type?
+                #if self["geometry"] == 'quads' or self["geometry"] == 'grid':
+                if self["geometry"] in self.parent.renderers[LavaVuPython.lucGridType] or self["geometry"] in self.parent.renderers[LavaVuPython.lucTriangleType]:
+                    self._gridDimsFromShape(data)
+                if self["geometry"] in self.parent.renderers[LavaVuPython.lucTracerType]:
+                #elif self["geometry"] == 'tracers':
+                    self._tracerDimsFromShape(data)
 
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
@@ -871,6 +864,17 @@ class Object(dict):
         """
         self._loadVector(data, LavaVuPython.lucNormalData)
 
+    def texcoords(self, data):
+        """
+        Load 2d texture coordinate data for object
+
+        Parameters
+        ----------
+        data : list or array
+            Pass a list or numpy float32 2d array of coordinates
+        """
+        self._loadVector(data, LavaVuPython.lucTexCoordData, 2)
+
     def vectors(self, data, magnitude=None):
         """
         Load 3d vector data for object
@@ -902,6 +906,21 @@ class Object(dict):
             self._volumeDimsFromShape(data)
 
         self.parent.app.arrayFloat(self.ref, data.ravel(), label)
+
+    def magnitude(self, data, label="magnitude"):
+        """
+        Load magnitude of a vector array as value data for an object
+
+        Parameters
+        ----------
+        data : list or array
+            Pass a list or numpy float32 3d array of vertices
+        label : str
+            Label for this data set, default="magnitude"
+        """
+        axis = len(data.shape)-1
+        mag = numpy.linalg.norm(data, axis=axis)
+        self.parent.app.arrayFloat(self.ref, mag.ravel(), label)
 
     def colours(self, data):
         """
@@ -2667,7 +2686,7 @@ class Viewer(dict):
         datasets = {}
         cmapdata = None
         for key in list(kwargs):
-            if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels"]:
+            if key in ["vertices", "normals", "vectors", "colours", "indices", "values", "labels", "texcoords"]:
                 datasets[key] = kwargs.pop(key, None)
             if key == "colourmap":
                 cmapdata = kwargs.pop(key, None)
