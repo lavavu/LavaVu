@@ -200,6 +200,21 @@ void Triangles::loadBuffers()
     debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count(), hasColours);
 
     Colour colour;
+    //Get largest dimension for auto-texcoord calculation
+    float dims[3] = {geom[index]->max[0] - geom[index]->min[0],
+                     geom[index]->max[1] - geom[index]->min[1],
+                     geom[index]->max[2] - geom[index]->min[2]
+                    };
+    bool texture = geom[index]->draw->properties.has("texture");
+    //Get the indices of the two largest dimensions
+    int i0 = 0, i1 = 1;
+    if (dims[2] > dims[0] || dims[2] > dims[1])
+    {
+      i1 = 2;
+      if (dims[1] > dims[0])
+        i0 = 1;
+    }
+
     float zero[3] = {0,0,0};
     float shift = geom[index]->draw->properties["shift"];
     if (geom[index]->draw->name().length() == 0) shift = 0.0; //Skip shift for built in objects
