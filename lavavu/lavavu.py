@@ -1884,6 +1884,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
     def gl_version(self, *args, **kwargs):
         return self._lavavu_call('gl_version', True, *args, **kwargs)
 
+    def clearAll(self, *args, **kwargs):
+        return self._lavavu_call('clearAll', True, *args, **kwargs)
+
     """
     #def loadColours(self, *args, **kwargs):
     #    #print("COLOURS")

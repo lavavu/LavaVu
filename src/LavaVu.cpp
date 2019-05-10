@@ -545,6 +545,7 @@ void LavaVu::run(std::vector<std::string> args)
 
 void LavaVu::clearAll(bool objects, bool colourmaps)
 {
+  GL_Check_Thread(viewer->render_thread); //Textures will be deleted, need to check thread
   //Clear all data
   if (!amodel) return;
   amodel->clearObjects(true);
