@@ -441,10 +441,10 @@ bool X11Viewer::createWindow(int width, int height)
     wmDeleteWindow = XInternAtom(Xdisplay, "WM_DELETE_WINDOW", 1);
     XSetWMProtocols(Xdisplay, win, &wmDeleteWindow, 1);
 
-    // OpenGL 3.2
+    // OpenGL 3.3
     int attribs[] = {
       GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-      GLX_CONTEXT_MINOR_VERSION_ARB, 2,
+      GLX_CONTEXT_MINOR_VERSION_ARB, 3,
       //GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
       //GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
       None

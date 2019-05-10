@@ -894,10 +894,22 @@ int ImageLoader::build(ImageData* image)
   switch (image->channels)
   {
   case 1:
+    //Luminance using ARB_texture_swizzle (core in 3.3)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_RED, GL_UNSIGNED_BYTE, image->pixels);
+    //All components take the value from red, no alpha
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ONE);
     break;
   case 2:
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, image->width, image->height, 0, GL_RG, GL_UNSIGNED_BYTE, image->pixels);
+    //Luminance+Alpha using ARB_texture_swizzle (core in 3.3)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG, image->width, image->height, 0, GL_RG, GL_UNSIGNED_BYTE, image->pixels);
+    //Colour components take the value from red, alpha from green
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_GREEN);
     break;
   case 3:
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, bgr ? GL_BGR : GL_RGB, GL_UNSIGNED_BYTE, image->pixels);

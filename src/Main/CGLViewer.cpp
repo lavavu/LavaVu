@@ -64,7 +64,7 @@ void CGLViewer::open(int w, int h)
       kCGLPFAAlphaSize,     (CGLPixelFormatAttribute)8,
       kCGLPFAAccelerated,
       kCGLPFAOpenGLProfile,
-      (CGLPixelFormatAttribute) kCGLOGLPVersion_3_2_Core,
+      (CGLPixelFormatAttribute) kCGLOGLPVersion_3_3_Core,
       (CGLPixelFormatAttribute) 0
     };
 
