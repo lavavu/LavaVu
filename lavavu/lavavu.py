@@ -1949,6 +1949,12 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         #self._openglviewer_call('execute', False, *args, **kwargs)
         return self._openglviewer_call('execute', True, *args, **kwargs)
 
+    def fsaa(self, *args, **kwargs):
+        return self._openglviewer_call('downSample', True, *args, **kwargs)
+
+    def msaa(self, *args, **kwargs):
+        return self._openglviewer_call('multiSample', True, *args, **kwargs)
+
     ####################################
 
     #Call LavaVu method from render thread
