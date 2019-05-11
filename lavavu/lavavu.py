@@ -20,7 +20,7 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 #    before using state data
 
 __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
-           'download', 'grid2d', 'grid3d', 'cubeHelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
+           'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
 #Module settings
@@ -217,7 +217,7 @@ def grid3d(corners=((0.,1.,0.), (1.,1.,0.), (0.,0.,0.), (1.,0.,0.)), dims=[2,2])
             lines[j,i] = line[j]
     return lines
 
-def cubeHelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
+def cubehelix(samples=16, start=0.5, rot=-0.9, sat=1.0, gamma=1., alpha=None):
     """
     Create CubeHelix spectrum colourmap with monotonically increasing/descreasing intensity
 
@@ -1123,7 +1123,7 @@ class Object(dict):
                 return ColourMap(cmid, self.parent)
             else:
                 #Proceeed to create a new map with default data
-                data = cubeHelix()
+                data = cubehelix()
         elif isinstance(data, ColourMap):
             #Passed a colourmap object
             cmap = data
@@ -2978,7 +2978,7 @@ class Viewer(dict):
             - list of colour strings,
             - list of position,value tuples
             - or a built in colourmap name
-            If none provided, a default colourmap will be loaded from lavavu.cubeHelix()
+            If none provided, a default colourmap will be loaded from lavavu.cubehelix()
         reverse : boolean
             Reverse the order of the colours after loading
         monochrome : boolean
@@ -2991,7 +2991,7 @@ class Viewer(dict):
         """
         c = ColourMap(self.app.addColourMap(name), self)
         if data is None:
-            data = cubeHelix()
+            data = cubehelix()
         c.update(data, reverse, monochrome, **kwargs)
         return c
 
