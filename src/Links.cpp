@@ -74,16 +74,16 @@ void Links::update()
     float lineWidth = (float)props["linewidth"];
     bool filter = geom[i]->draw->filterCache.size();
 
+    unsigned int hasColours = geom[i]->colourCount();
+    unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
+    if (colrange < 1) colrange = 1;
+    debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count(), hasColours);
+
     //Draw simple 2d lines if flat=true and tubes=false
     //(ie: enable 3d by switching either flag)
     unsigned int VC = geom[i]->render->indices.size() ? geom[i]->render->indices.size() : geom[i]->count();
     if (props["flat"] && !props["tubes"] && lineWidth == 1.0 && session.context.scale2d == 1.0)
     {
-      unsigned int hasColours = geom[i]->colourCount();
-      unsigned int colrange = hasColours ? geom[i]->count() / hasColours : 1;
-      if (colrange < 1) colrange = 1;
-      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[i]->count(), hasColours);
-
       //Create a new segment
       if (linked) lines->add(geom[i]->draw);
 
@@ -192,8 +192,13 @@ void Links::update()
         if (oldpos)
         {
           tris->drawTrajectory(geom[i]->draw, oldpos, pos, radius, radius, -1, view->scale, limit, quality);
+
+          //Have colour values but not enough for per-vertex, spread over range (eg: per segment)
+          unsigned int cidx = v / colrange;
+          if (cidx >= hasColours) cidx = hasColours - 1;
+
           //Per line colours (can do this as long as sub-renderer always outputs same tri count)
-          getColour(colour, v);
+          getColour(colour, cidx);
           g->_colours->read1(colour.value);
         }
         oldpos = pos;
