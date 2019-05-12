@@ -251,9 +251,9 @@ function createMenu(viewer, onchange, webglmode) {
   gui.add(viewer, "mode", ['Rotate', 'Translate', 'Zoom']);
   //var s = gui.addFolder('Settings');
   if (webglmode) {
-    gui.add(viewer, "interactive").name("Interactive Render");
-    gui.add(viewer, "immediatesort").name("Immediate Sort");
-    gui.add(viewer, "sortenabled").name('Sort Enabled');
+    gui.add(viewer.vis, "interactive").name("Interactive Render");
+    gui.add(viewer.vis, "immediatesort").name("Immediate Sort");
+    gui.add(viewer.vis, "sortenabled").name('Sort Enabled');
   }
 
   var g = gui.addFolder('Globals/Defaults');

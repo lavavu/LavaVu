@@ -191,13 +191,13 @@ function canvasMouseClick(event, mouse) {
 }
 
 function sortTimer(ifexists, viewer) {
-  if (viewer.sortenabled == false) {
+  if (viewer.vis.sortenabled == false) {
     //Sorting disabled
     viewer.rotated = false;
     viewer.draw();
     return;
   }
-  if (viewer.immediatesort == true) {
+  if (viewer.vis.immediatesort == true) {
     //No timers
     viewer.rotated = true; 
     viewer.draw();
@@ -291,7 +291,7 @@ function canvasMouseMove(event, mouse) {
     mouse.element.viewer.draw(true);
   //Draw border while interacting (automatically on for models > 500K vertices)
   //Hold shift to switch from default behaviour
-  else if (mouse.element.viewer.interactive)
+  else if (mouse.element.viewer.vis.interactive)
     mouse.element.viewer.draw();
   else
     mouse.element.viewer.draw(!event.shiftKey);
@@ -1435,9 +1435,6 @@ function Viewer(canvas) {
   //Non-persistant settings
   this.border = 0;
   this.mode = 'Rotate';
-  this.interactive = true;
-  this.immediatesort = false;
-  this.sortenabled = true;
 
   //Create the renderers
   this.renderers = [];
@@ -1674,8 +1671,11 @@ Viewer.prototype.loadFile = function(source) {
   //Load texture images
   this.loadTextures();
 
-  //Default to interactive render if vertex count < 0.5 M
-  this.interactive = (this.vertexCount <= 500000);
+  //Defaults for interaction flags
+  //(Default to interactive render if vertex count < 0.5 M)
+  if (vis.interactive == undefined) vis.interactive = (this.vertexCount <= 500000);
+  if (vis.immediatesort == undefined) vis.immediatesort = false;
+  if (vis.sortenabled == undefined) vis.sortenabled = true;
 
   //TODO: loaded custom shader is not replaced by default when new model loaded...
   for (var r in this.renderers) {
