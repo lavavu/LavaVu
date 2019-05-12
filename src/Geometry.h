@@ -469,7 +469,16 @@ public:
 
   bool opaqueCheck(); //Return true if object does not require transparency
 
-  bool hasTexture() {return texture->loaded || ((std::string)draw->properties["texture"]).length() > 0;}
+  bool hasTexture()
+  {
+    if (texture->loaded) return true;
+    if (draw->properties.has("texture"))
+    {
+      std::string tex = draw->properties["texture"];
+      return tex.length() > 0;
+    }
+    return false;
+  }
 };
 
 //Shared pointer for GeomData
