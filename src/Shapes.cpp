@@ -86,7 +86,7 @@ void Shapes::update()
     unsigned int idxH = geom[i]->valuesLookup(geom[i]->draw->properties["heightby"]);
     unsigned int idxL = geom[i]->valuesLookup(geom[i]->draw->properties["lengthby"]);
 
-    bool hasTexture = geom[i]->texture || geom[i]->draw->properties.has("texture");
+    bool hasTexture = geom[i]->hasTexture();
     bool filter = geom[i]->draw->filterCache.size();
     for (unsigned int v=0; v < geom[i]->count(); v++)
     {

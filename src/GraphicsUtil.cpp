@@ -664,6 +664,7 @@ TextureData* ImageLoader::use()
 void ImageLoader::load()
 {
   //Load texture from internal data
+  loaded = true;
 
   //Already loaded
   if (texture) return;
@@ -685,6 +686,7 @@ void ImageLoader::load(ImageData* image)
 {
   //Load image from provided external data
   if (!image) abort_program("NULL image data\n");
+  loaded = true;
 
   //Requires flip on load for OpenGL
   if (flip) image->flip();
@@ -696,6 +698,7 @@ void ImageLoader::load(ImageData* image)
 void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
 {
   //Load new raw data
+  loaded = true;
   if (texture)
     texture->width = 0; //Flag empty rather than delete, avoids OpenGL calls for use in other threads
 

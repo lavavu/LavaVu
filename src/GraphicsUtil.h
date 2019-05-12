@@ -752,17 +752,18 @@ class ImageLoader
 {
 public:
   FilePath fn;
-  bool mipmaps;
-  bool bgr;
-  bool nearest;
-  bool repeat;
-  bool flip;
+  bool mipmaps = true;
+  bool bgr = false;
+  bool nearest = false;
+  bool repeat = true;
+  bool flip = true;
   TextureData* texture = NULL;
   ImageData* source = NULL;
-  int type;
+  int type = VOLUME_NONE;
+  bool loaded = false;
 
-  ImageLoader(bool flip=true) : mipmaps(true), bgr(false), nearest(false), repeat(true), flip(flip), type(VOLUME_NONE) {}
-  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), mipmaps(true), bgr(false), nearest(false), repeat(true), flip(flip), type(VOLUME_NONE) {}
+  ImageLoader(bool flip=true) : flip(flip) {}
+  ImageLoader(const std::string& texfn, bool flip=true) : fn(texfn), flip(flip) {}
 
   TextureData* use();
   void load();
