@@ -44,7 +44,6 @@
 //Shader based cross sections of volume data sets
 //
 //Value data types independent from geometry types?
-//Merge WebGL/standard shader code
 
 //Viewer class
 #include "version.h"

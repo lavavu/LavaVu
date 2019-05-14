@@ -2,10 +2,7 @@ in vec3 aVertexPosition;
 in vec3 aVertexNormal;
 in vec4 aVertexColour;
 in vec2 aVertexTexCoord;
-#ifdef WEBGL
-in float aVertexObjectID;
-out float vObjectID;
-#else
+#ifndef WEBGL
 flat out vec4 vFlatColour;
 #endif
 
@@ -35,9 +32,7 @@ void main(void)
     vColour = aVertexColour;
 
   vTexCoord = aVertexTexCoord;
-#ifdef WEBGL
-  vObjectID = aVertexObjectID;
-#else
+#ifndef WEBGL
   vFlatColour = vColour;
 #endif
   vVertex = aVertexPosition;

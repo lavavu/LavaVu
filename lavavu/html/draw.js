@@ -524,12 +524,11 @@ function Renderer(viewer, type, colour, border) {
                         Float32Array.BYTES_PER_ELEMENT];
   } else if (type == "triangles") {
     //Triangle renderer
-    //Vertex3, Normal3, Colour, TexCoord2, ObjectId+
+    //Vertex3, Normal3, Colour, TexCoord2
     this.attribSizes = [3 * Float32Array.BYTES_PER_ELEMENT,
                         3 * Float32Array.BYTES_PER_ELEMENT,
                         Int32Array.BYTES_PER_ELEMENT,
-                        2 * Float32Array.BYTES_PER_ELEMENT,
-                        4 * Uint8Array.BYTES_PER_ELEMENT];
+                        2 * Float32Array.BYTES_PER_ELEMENT];
   } else if (type == "lines") {
     //Line renderer
     //Vertex3, Colour
@@ -876,7 +875,6 @@ VertexBuffer.prototype.loadTriangles = function(object, id, viewer) {
             this.floats[this.offset+8] = texcoords[(i%2+1)*T][j][1];
           }
         }
-        this.bytes[this.byteOffset] = id;
         this.offset += this.vertexSizeInFloats;
         this.byteOffset += this.size;
       }
@@ -1027,16 +1025,22 @@ Renderer.prototype.box = function(min, max) {
   this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indices, this.gl.STATIC_DRAW);
 }
 
-Renderer.prototype.getprop = function(prop) {
-//Lookup prop on object (or renderer if not set) first, then global, then use default
-  //console.log(prop + " getprop " + this.id);
-  var object = this;
-  if (this.id != undefined) object = this.viewer.vis.objects[this.id];
-  if (object[prop] != undefined)
-    return object[prop];
+Renderer.prototype.getglobal = function(prop) {
+//Lookup global prop, then use default if not found
   if (this.viewer.vis.properties[prop] != undefined)
     return this.viewer.vis.properties[prop];
   return this.viewer.dict[prop].default;
+}
+
+Renderer.prototype.getprop = function(prop, id) {
+//Lookup prop on object (or renderer if not set) first, then global, then use default
+  //console.log(prop + " getprop " + this.id);
+  var object = this;
+  if (id == undefined) id = this.id;
+  if (id != undefined) object = this.viewer.vis.objects[id];
+  if (object[prop] != undefined)
+    return object[prop];
+  return this.getglobal(prop);
 }
 
 Renderer.prototype.draw = function() {
@@ -1138,20 +1142,11 @@ Renderer.prototype.draw = function() {
     this.gl.vertexAttribPointer(this.program.attributes["aVertexNormal"], 3, this.gl.FLOAT, false, this.elementSize, this.attribSizes[0]);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexColour"], 4, this.gl.UNSIGNED_BYTE, true, this.elementSize, this.attribSizes[0]+this.attribSizes[1]);
     this.gl.vertexAttribPointer(this.program.attributes["aVertexTexCoord"], 2, this.gl.FLOAT, true, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]);
-    if (this.program.attributes["aVertexObjectID"] != undefined)
-      this.gl.vertexAttribPointer(this.program.attributes["aVertexObjectID"], 1, this.gl.UNSIGNED_BYTE, false, this.elementSize, this.attribSizes[0]+this.attribSizes[1]+this.attribSizes[2]+this.attribSizes[3]);
 
     //Set uniforms...
     //this.gl.enable(this.gl.CULL_FACE);
     //this.gl.cullFace(this.gl.BACK_FACE);
     
-    //Per-object uniform arrays
-    var cullfaces = [];
-    for (var id in vis.objects)
-      cullfaces.push(vis.objects[id].cullface ? 1 : 0);
-
-    this.gl.uniform1iv(this.program.uniforms["uCullFace"], cullfaces);
-
     //Texture -- TODO: Switch per object!
     //this.gl.bindTexture(this.gl.TEXTURE_2D, this.viewer.webgl.textures[0]);
     if (vis.objects[0].tex) {

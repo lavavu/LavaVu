@@ -22,8 +22,6 @@ uniform bool uOpaque;
 uniform vec3 uLightPos;
 
 #ifdef WEBGL
-in float vObjectID;
-uniform int uCullFace[64];
 #define outColour gl_FragColor
 #define texture(a,b) texture2D(a,b)
 

@@ -19,7 +19,7 @@ void main(void)
 {
   gl_Position = uPMatrix * uMVMatrix * aVertexPosition;
   vColour = aVertexColour;
-  vTexCoord= aVertexTexCoord;
+  vTexCoord = aVertexTexCoord;
 }
 )";
 

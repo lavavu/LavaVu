@@ -1139,7 +1139,6 @@ void Geometry::setState(Geom_Ptr g)
   {
     //Flat disables lighting for non surface types
     if (props["flat"]) lighting = false;
-    glEnable(GL_BLEND);
   }
 
   //Default line width
