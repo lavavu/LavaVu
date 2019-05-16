@@ -243,10 +243,18 @@ void TriSurfaces::loadMesh()
 
       t1 = clock();
       //Read the indices for loading sort list and later use (json export etc)
-      geom[index]->render->indices.read(indices.size(), &indices[0]);
+      //... now with check for degenerate triangles
+      //(TODO: make this a separate library function so can be run on any mesh)
+      for (unsigned int i=0; i<indices.size(); i+=3)
+      {
+        if (indices[i] != indices[i+1] && indices[i] != indices[i+2] && indices[i+1] != indices[i+2])
+          geom[index]->render->indices.read(3, &indices[i]);
+      }
+      //geom[index]->render->indices.read(indices.size(), &indices[0]);
 
       t2 = clock();
       debug_print("  %.4lf seconds to load indices\n", (t2-t1)/(double)CLOCKS_PER_SEC);
+      debug_print("  (discarded %d degenerate triangles)\n", (int)(indices.size() - geom[index]->render->indices.size()) / 3);
     }
 
     //Update the rendering references as some containers have been replaced
