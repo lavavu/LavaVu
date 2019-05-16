@@ -832,15 +832,10 @@ class Object(dict):
         return self._geom.__iter__()
 
     def __next__(self): # Python 3
-        return self.next()
+        return self._geom.__next__()
 
     def next(self):
-        if self._current > len(self._geom)-1:
-            self._current = 0
-            raise StopIteration
-        else:
-            self._current += 1
-            return self._geom[self._current-1]
+        return self._geom.next()
 
     def vertices(self, data):
         """
@@ -3805,7 +3800,11 @@ class Geometry(list):
 
     >>> import lavavu
     >>> lv = lavavu.Viewer()
-    >>> obj = lv.triangles()
+    >>> obj = lv.points()
+    >>> #Fixed points, always plotted regardless of timestep
+    >>> obj.vertices([[-1,-1], [0,0], [1,1]])
+    >>> #Add triangles to same object, switch the geometry type:
+    >>> obj["geometry"] = "triangles"
     >>> lv.addstep()
     >>> print(lv.steps)
     [0]
@@ -3817,6 +3816,16 @@ class Geometry(list):
     [0, 1]
     >>> obj.vertices([[0.5,1], [1.5,1], [1.5,0]])
     
+    Loop through all elements of an object (at current timestep)
+
+    >>> for i,el in enumerate(obj):
+    ...     print(i,el)
+    ...     print(el.vertices)
+    0 DrawData("triangles") ==> {'vertices': 9}
+    [0.5 1.  0.  1.5 1.  0.  1.5 0.  0. ]
+    1 DrawData("points") ==> {'vertices': 9}
+    [-1. -1.  0.  0.  0.  0.  1.  1.  0.]
+
     Get only triangle data
 
     >>> data = obj.data["triangles"]
@@ -3840,9 +3849,18 @@ class Geometry(list):
     ...     print(el)
     DrawData("triangles") ==> {'vertices': 9}
     DrawData("triangles") ==> {'vertices': 9}
+
+    Show the fixed data (timestep -1)
+
+    >>> print(obj.data["-1"])
+    [DrawData("points") ==> {'vertices': 9}]
+
     """
 
     def __init__(self, obj, timestep=-2, filter=None):
+        #Init list
+        super(Geometry, self).__init__()
+
         self.obj = obj
         self.timestep = timestep
         #Get a list of geometry data objects for a given drawing object
@@ -3965,10 +3983,14 @@ class DrawData(object):
     Get a copy of the colours (if any)
 
     >>> colours = obj.data.colours_copy
+    >>> print(colours)
+    [array([4278190335, 4294901760], dtype=uint32)]
 
     Get a view of the vertex data
 
     >>> verts = obj.data.vertices
+    >>> print(verts)
+    [array([0., 1., 0., 1., 0., 0.], dtype=float32)]
 
     WARNING: this reference may be deleted by other calls, 
     use _copy if you are not processing the data immediately 
@@ -3999,20 +4021,6 @@ class DrawData(object):
             if len(dat) > 0:
                 self.available[key] = len(dat)
 
-        #Allows getting data by data type or value labels using Descriptors
-        sets = obj.datasets
-        #Data by type name
-        for key in datatypes:
-            typename = key
-            if key == 'values':
-                #Just use the first available value label as the default .values descriptor
-                if len(sets) == 0: continue
-                typename = list(sets.keys())[0]
-            #Access by type name to get a view
-            setattr(DrawData, key, self.get(typename))
-            #Access by type name + _copy to get a copy
-            setattr(DrawData, key + '_copy', self.copy(typename))
-
     @property
     def parent(self):
         return self._parent()
@@ -4020,6 +4028,23 @@ class DrawData(object):
     @property
     def type(self):
         return geomnames[self.data.type]
+
+    def __getattr__(self, attr):
+        #Allows getting data by data type or value labels using Descriptors
+        if attr == 'values':
+            #Just use the first available value label as the default .values descriptor
+            sets = self._obj.datasets
+            if len(sets) == 0:
+                raise AttributeError(attr)
+            attr = list(sets.keys())[0]
+
+        if attr in datatypes:
+            # Fetch a data type here and return it (by reference)
+            return self.get(attr)
+        if '_copy' in attr and attr[:-5] in datatypes:
+            # Fetch a data type here and return it (copy)
+            return self.copy(attr[:-5])
+        return self.__dict__[attr]
 
     def get(self, typename):
         """
