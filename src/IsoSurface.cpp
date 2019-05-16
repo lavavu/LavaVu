@@ -607,14 +607,15 @@ void Isosurface::VertexInterp(IVertex* point, IVertex* vertex1, IVertex* vertex2
 
 void Isosurface::CreateTriangle(IVertex* point1, IVertex* point2, IVertex* point3)
 {
+  //Read in order 1,3,2 for counter-clockwise winding
   surfaces->read(target, 1, lucVertexData, &point1->pos);
-  surfaces->read(target, 1, lucVertexData, &point2->pos);
   surfaces->read(target, 1, lucVertexData, &point3->pos);
+  surfaces->read(target, 1, lucVertexData, &point2->pos);
   if (colourVals)
   {
     surfaces->read(target, 1, &point1->colourval, colourVals->label);
-    surfaces->read(target, 1, &point2->colourval, colourVals->label);
     surfaces->read(target, 1, &point3->colourval, colourVals->label);
+    surfaces->read(target, 1, &point2->colourval, colourVals->label);
   }
 }
 
