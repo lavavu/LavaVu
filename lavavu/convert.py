@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Warning! EXPERIMENTAL:
  these features and functions are under development, will have bugs,
@@ -10,7 +11,6 @@ Tools for converting between 3D data types
 """
 import numpy
 import os
-from __future__ import print_function
 
 def min_max_range(verts):
     """
@@ -364,7 +364,9 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         print("- Indices :",indices.shape)
 
         cs0 = ""
-        vperc = int(verts.shape[0] / len(data.colours))
+        vperc = 1
+        if colourdict:
+            vperc = int(verts.shape[0] / len(data.colours))
         #print("VERTS PER COLOUR ",vperc)
 
         print("INDICES:",indices.shape)
@@ -400,7 +402,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         print()
 
         offset += verts.shape[0]
-        return offset
+    return offset
 
 def export_PLY(filepath, source, binary=True):
     """
