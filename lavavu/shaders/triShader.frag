@@ -67,10 +67,15 @@ void main(void)
   if (uFlat)
     fColour = vFlatColour;
 #endif
-  if (uTextured)
+  if (uTextured && vTexCoord.x >= 0.0)
   {
     vec4 tColour = texture(uTexture, vTexCoord);
-    fColour = mix(tColour, fColour, 1.0-tColour.a); //Blend with colour
+    //If colour provided too (with alpha > 0),
+    //blend using the texture opacity (1.0 - src.alpha)
+    if (fColour.a > 0.0)
+      fColour = mix(tColour, fColour, 1.0 - tColour.a);
+    else
+      fColour = tColour;
   }
 
   float alpha = fColour.a;

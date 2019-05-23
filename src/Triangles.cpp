@@ -223,6 +223,7 @@ void Triangles::loadBuffers()
     //TODO: instead of writing blank normal, skip normal and texcoord if no data
     //      will require adjustment to draw() code, attrib pointers etc
     float texCoord[2] = {0.0, 0.0};
+    float nullTexCoord[2] = {-1.0, -1.0};
     for (unsigned int v=0; v < geom[index]->count(); v++)
     {
       //Have colour values but not enough for per-vertex, spread over range (eg: per triangle)
@@ -268,6 +269,11 @@ void Triangles::loadBuffers()
         texCoord[1] = (vert[i1] - geom[index]->min[i1]) / dims[i1];
         memcpy(ptr, texCoord, sizeof(float) * 2);
         //printf("Autotexcoord %d %f,%f (i0 %d, i1 %d)\n", v, texCoord[0], texCoord[1], i0, i1);
+      }
+      else
+      {
+        //No texcoord: -1,-1 ==> don't use texture!
+        memcpy(ptr, nullTexCoord, sizeof(float) * 2);
       }
 
       ptr += sizeof(float) * 2;
