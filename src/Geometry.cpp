@@ -35,6 +35,8 @@
 
 #include "Geometry.h"
 
+float Vertex::VERT_EPSILON = 0.001; //Minimum distance before vertices will be merged
+
 //Init static, names list
 std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
 

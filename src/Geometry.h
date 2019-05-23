@@ -494,7 +494,6 @@ public:
 };
 
 //Class for surface vertices, sorting, collating & averaging normals
-#define VERT_EPSILON 0.001
 class Vertex
 {
 public:
@@ -520,6 +519,8 @@ public:
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const Vertex& v);
+
+  static float VERT_EPSILON; //Minimum distance before vertices will be merged
 };
 
 //Comparison for sort by id
