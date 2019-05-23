@@ -669,6 +669,17 @@
       false
     ]
   },
+  "texturefilter": {
+    "default": 2,
+    "target": "object",
+    "type": "integer",
+    "desc": "Type of texture filtering, 0=nearest, 1=linear, 2=mipmap (default)",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
   "colourby": {
     "default": 0,
     "target": "object",

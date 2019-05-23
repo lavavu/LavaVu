@@ -752,10 +752,9 @@ class ImageLoader
 {
 public:
   FilePath fn;
-  bool mipmaps = true;
+  int filter=2; //0=nearest, 1=linear, 2=mipmap
   bool bgr = false;
-  bool nearest = false;
-  bool repeat = true;
+  bool repeat = false;
   bool flip = true;
   TextureData* texture = NULL;
   ImageData* source = NULL;
@@ -777,7 +776,7 @@ public:
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);
   void load3Dslice(int slice, void* data);
   bool empty() {return !texture || !texture->width;}
-  void loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true, bool mipmaps=true, bool bgr=false);
+  void loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip=true);
 
   void clear()
   {

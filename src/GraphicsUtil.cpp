@@ -695,7 +695,7 @@ void ImageLoader::load(ImageData* image)
   build(image);
 }
 
-void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
+void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip)
 {
   //Load new raw data
   loaded = true;
@@ -709,8 +709,6 @@ void ImageLoader::loadData(GLubyte* data, GLuint width, GLuint height, GLuint ch
     newSource();
     source->allocate(width, height, channels);
   }
-  this->mipmaps = mipmaps;
-  this->bgr = bgr;
   source->copy(data);
   if (flip) source->flip();
 }
@@ -872,21 +870,20 @@ int ImageLoader::build(ImageData* image)
   glActiveTexture(GL_TEXTURE0 + texture->unit);
   glBindTexture(GL_TEXTURE_2D, texture->id);
 
-  // use linear filtering
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  if (mipmaps)
+  if (filter == 2)
   {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   }
-  else if (nearest)
-  {
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  }
-  else
+  else if (filter == 1)
   {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  }
+  else
+  {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   }
   GL_Error_Check;
 
@@ -933,7 +930,7 @@ int ImageLoader::build(ImageData* image)
   texture->height = image->height;
   texture->channels = image->channels;
 
-  if (mipmaps)
+  if (filter == 2)
     glGenerateMipmap(GL_TEXTURE_2D);
   return 1;
 }

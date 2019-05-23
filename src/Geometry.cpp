@@ -1223,7 +1223,7 @@ void Geometry::setState(Geom_Ptr g)
   prog->setUniformf("uSpecular", props["specular"]);
   prog->setUniformf("uShininess", props["shininess"]);
   prog->setUniform("uLightPos", props["lightpos"]);
-  prog->setUniformi("uTextured", texture && texture->unit >= 0);
+  prog->setUniformi("uTextured", texture && texture->unit >= 0 && g->hasTexture());
   prog->setUniformf("uOpaque", allopaque || g->opaque);
   prog->setUniformf("uFlat", flat);
   //std::cout << i << " OPAQUE: " << allopaque << " || " << g->opaque << std::endl;
@@ -1939,14 +1939,16 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
   }
 }
 
-void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, bool mipmaps, bool bgr)
+void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLuint height, GLuint channels, bool flip, int filter, bool bgr)
 {
   Geom_Ptr geomdata = getObjectStore(draw);
   if (geomdata)
   {
     //std::cout << "LOAD TEXTURE " << width << " x " << height << " x " << channels << " ON " << draw->name() << std::endl;
     //NOTE: must only load the data here, can't make OpenGL calls as can be called async
-    geomdata->texture->loadData(data, width, height, channels, flip, mipmaps, bgr);
+    geomdata->texture->filter = filter;
+    geomdata->texture->bgr = bgr;
+    geomdata->texture->loadData(data, width, height, channels, flip);
     //Must be opaque to draw with own texture (TODO: obj properties in shader)
     geomdata->opaque = true;
   }

@@ -827,8 +827,7 @@ void ColourMap::setComponent(int component_index)
 void ColourMap::loadTexture(bool repeat)
 {
   if (!texture) texture = new ImageLoader();
-  texture->mipmaps = false;
-  texture->nearest = true;
+  texture->filter = 0; //Nearest neighbour filtering
   texture->repeat = repeat;
   ImageData* paletteData = toImage(repeat);
   texture->load(paletteData);

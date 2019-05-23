@@ -184,8 +184,8 @@ public:
   void arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type=lucRGBAData);
   void arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type=lucVertexData);
   void arrayFloat(DrawingObject* target, float* array, int len, std::string label);
-  void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool mipmaps=true, bool bgr=false);
-  void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool mipmaps=true, bool bgr=false);
+  void textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool bgr=false);
+  void textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip=true, bool bgr=false);
 
   std::vector<Geom_Ptr> getGeometry(DrawingObject* target);
   std::vector<Geom_Ptr> getGeometryAt(DrawingObject* target, int timestep=-2);
