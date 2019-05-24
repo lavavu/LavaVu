@@ -5,6 +5,7 @@ function parseColour(input) {
     //var div = document.createElement('div');
     var div = document.getElementById('hidden_style_div');
     div.style.color = input;
+    //This triggers a full layout calc - can slow things down
     c = getComputedStyle(div).color;
     o = getComputedStyle(div).opacity;
     C = new Colour(c);
@@ -87,15 +88,10 @@ function menu_addctrl(menu, obj, viewer, prop, changefn) {
 }
 
 function menu_addctrls(menu, obj, viewer, onchange) {
-  var submenu = menu.addFolder(' ... ');
   var submenus = {};
-  //var typelist = ['all', 'global', 'view', 'object', 'object(point)', 'object(line)', 'object(volume)', 'object(surface)', 
-  //'object(vector)', 'object(tracer)', 'object(shape)', 'colourbar', 'colourmap'];
-  var typelist = ['all', 'global', 'view', 'object', 'object(point)', 'object(line)', 'object(volume)', 'object(surface)', 'colourmap'];
-  for (var t in typelist)
-    submenus[typelist[t]] = submenu.addFolder(typelist[t]);
 
   //Loop through every available property
+  var extras = [];
   for (var prop in viewer.dict) {
 
     //Check if it is enabled in GUI
@@ -107,36 +103,41 @@ function menu_addctrls(menu, obj, viewer, onchange) {
       //console.log(prop + " ==> " + JSON.stringify(viewer.dict[prop]));
       menu_addctrl(menu, obj, viewer, prop, onchange);
 
-    //If not, add to a sub-menu that lists all unused properties for all objects
-    //When clicked, the property wil lbe moved to the object and activated for editing
     } else {
-      //Add to sub-menu
-      //  obj[prop] = viewer.dict[prop]["default"]; //Have to set to default for dat.gui
-      var mnu = submenus[viewer.dict[prop]["target"]];
-      if (mnu) {
-        //console.log(prop + " ==> " + JSON.stringify(viewer.dict[prop]));
-        var obj2 = {};
-        obj2[prop] = function() {
-          this.ref[this.property] = viewer.dict[this.property]["default"];
-          //Remove this entry
-          this.menu.remove(this.controller);
-          //Add property controller
-          menu_addctrl(this.parentMenu, this.ref, viewer, this.property, onchange);
-        };
-        obj2.ref = obj;
-        obj2.property = prop;
-        obj2.menu = mnu;
-        obj2.parentMenu = menu;
-        obj2.controller = mnu.add(obj2, prop);
-      }
+      //Save list of properties without controls
+      extras.push(prop);
+      continue;
     }
   }
+
+  //Add the extra properties to a dropdown list
+  //Selecting a property will add a controller for it
+  var propadd = {"properties" : ""};
+  var propselfn = function(prop) {
+    //Set the property to the default value
+    propadd.ref[prop] = viewer.dict[prop]["default"];
+    //Add new property controller
+    menu_addctrl(propadd.menu, propadd.ref, viewer, prop, onchange);
+    //Remove, then add the props list back at the bottom, minus new prop
+    propadd.menu.remove(propadd.controller);
+    var newopts = extras.filter(word => word != prop);
+    propadd.controller = propadd.menu.add(propadd, "properties", newopts).name("More properties").onFinishChange(propadd.fn);
+  }
+  propadd.controller = menu.add(propadd, "properties", extras).name("More properties").onFinishChange(propselfn);
+  propadd.ref = obj;
+  propadd.menu = menu;
+  propadd.fn = propselfn;
 }
 
 
 function menu_addcmaps(menu, obj, viewer, onchange) {
   //Colourmap editing menu
-
+  if (viewer.cgui.prmenu) viewer.cgui.removeFolder(viewer.cgui.prmenu);
+  if (viewer.cgui.cmenu) viewer.cgui.removeFolder(viewer.cgui.cmenu);
+  if (viewer.cgui.pomenu) viewer.cgui.removeFolder(viewer.cgui.pomenu);
+  viewer.cgui.prmenu = viewer.cgui.addFolder("Properties");
+  viewer.cgui.cmenu = viewer.cgui.addFolder("Colours");
+  viewer.cgui.pomenu = viewer.cgui.addFolder("Positions");
   //Loop through every available property
   for (var prop in viewer.dict) {
     //Check if it is enabled in GUI
@@ -149,36 +150,35 @@ function menu_addcmaps(menu, obj, viewer, onchange) {
       //Need to add property default if not set
       if (!obj[prop])
         obj[prop] = viewer.dict[prop].default;
-      menu_addctrl(menu, obj, viewer, prop, onchange);
+      menu_addctrl(menu.prmenu, obj, viewer, prop, onchange);
     }
   }
 
   //Loop through colours
-  var sm1 = menu.addFolder("Colours");
-  sm1.add({"Add Colour" : function() {obj.colours.unshift({"colour" : "rgba(0,0,0,1)", "position" : 0.0}); viewer.gui.close(); onchange(); }}, "Add Colour");
-  var sm2 = menu.addFolder("Positions");
+  menu.cmenu.add({"Add Colour" : function() {obj.colours.unshift({"colour" : "rgba(0,0,0,1)", "position" : 0.0}); viewer.gui.close(); onchange(); }}, "Add Colour");
   //Need to add delete buttons in closure to get correct pos/index
-  function del_btn(pos) {sm2.add({"Delete" : function() {obj.colours.splice(pos, 1); viewer.gui.close(); onchange(); }}, 'Delete').name('Delete ' + pos);}
+  function del_btn(pos) {menu.pomenu.add({"Delete" : function() {obj.colours.splice(pos, 1); viewer.gui.close(); onchange(); }}, 'Delete').name('Delete ' + pos);}
   for (var c in obj.colours) {
     var o = obj.colours[c];
     //Convert to html colour first
     o.colour = parseColour(o.colour);
-    sm1.addColor(o, 'colour').onChange(onchange).name('Colour ' + c);
-    sm2.add(o, 'position', 0.0, 1.0, 0.01).onFinishChange(onchange).name('Position ' + c);
+    menu.cmenu.addColor(o, 'colour').onChange(onchange).name('Colour ' + c);
+    menu.pomenu.add(o, 'position', 0.0, 1.0, 0.01).onFinishChange(onchange).name('Position ' + c);
     del_btn(c);
   }
 }
 
-function createMenu(viewer, onchange, webglmode) {
+function createMenu(viewer, onchange, webglmode, global) {
   if (!dat) return null;
+  //var t0 = performance.now();
 
   //Exists? Destroy
   if (viewer.gui)
     viewer.gui.destroy();
 
-  //Insert within element rather than whole document
   var el = null;
-  if (viewer.canvas.parentElement != document.body && viewer.canvas.parentElement.parentElement != document.body) {
+  //Insert within element rather than whole document
+  if (!global && viewer.canvas.parentElement != document.body && viewer.canvas.parentElement.parentElement != document.body) {
     var pel = viewer.canvas.parentElement;
     //A bit of a hack to detect converted HTML output and skip going up two parent elements
     if (pel.parentElement.className != 'section')
@@ -206,7 +206,6 @@ function createMenu(viewer, onchange, webglmode) {
   //Re-create menu on element mouse down if we need to reload
   //(Instead of calling whenever state changes, re-creation is slow!)
   gui.domElement.onmousedown = function() {
-    //console.log("mouse down");
     if (viewer.reloadgui)
       viewer.menu();
     return true;
@@ -273,29 +272,47 @@ function createMenu(viewer, onchange, webglmode) {
 
   var o = gui.addFolder('Objects');
   for (var id in viewer.vis.objects) {
-    var of = o.addFolder(viewer.vis.objects[id].name)
+    var of = o.addFolder(viewer.vis.objects[id].name);
     menu_addctrls(of, viewer.vis.objects[id], viewer, onchange);
   }
 
   viewer.gui = gui;
-
+  if (!viewer.selectedcolourmap)
+    viewer.selectedcolourmap = "";
   viewer.cgui = viewer.gui.addFolder('ColourMaps');
-  viewer.cgui.folders = [];
 
   createColourMapMenu(viewer, onchange);
 
+  //var t1 = performance.now();
+  //console.log("Call to menu() took " + (t1 - t0) + " milliseconds.")
 }
 
-
 function createColourMapMenu(viewer, onchange) {
-  //Re-create colourmap menu entries if not found
-  for (var id in viewer.vis.colourmaps) {
-    if (!viewer.cgui.folders[viewer.vis.colourmaps[id].name]) {
-      var of = viewer.cgui.addFolder(viewer.vis.colourmaps[id].name)
-      menu_addcmaps(of, viewer.vis.colourmaps[id], viewer, onchange);
-      viewer.cgui.folders[viewer.vis.colourmaps[id].name] = of;
+  //Remove existing entries
+  for (var i in viewer.cgui.__controllers)
+    viewer.cgui.__controllers[i].remove();
+
+  var cms = [];
+
+  //Dropdown to select a colourmap, when selected the editing menu will be populated
+  for (var id in viewer.vis.colourmaps)
+    cms.push(viewer.vis.colourmaps[id].name);
+  if (cms.length == 0) return;
+
+  //When selected, populate the Colours & Positions menus
+  cmapselfn = function(value) {
+    if (!value) return;
+    for (var id in viewer.vis.colourmaps) {
+      if (value == viewer.vis.colourmaps[id].name)
+        menu_addcmaps(viewer.cgui, viewer.vis.colourmaps[id], viewer, onchange);
     }
-  }
+  };
+
+  viewer.cgui.cmap = viewer.cgui.add(viewer, "selectedcolourmap", cms).onFinishChange(cmapselfn).name("colourmap");
+
+  //Re-select if previous value if any
+  if (viewer.selectedcolourmap)
+  cmapselfn(viewer.selectedcolourmap);
 }
 
 function updateMenu(viewer, onchange) {
@@ -307,8 +324,7 @@ function updateMenu(viewer, onchange) {
       updateDisplay(gui.__folders[f]);
   }
   updateDisplay(viewer.gui);
-
-  createColourMapMenu(viewer, onchange);
+  updateDisplay(viewer.cgui);
 }
 
 function hideMenu(canvas, gui) {

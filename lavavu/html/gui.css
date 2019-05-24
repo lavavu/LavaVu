@@ -14,13 +14,14 @@ select:not([multiple]) {
 }
 
 .dg li input {
-    line-height: 16px;
+    line-height: 17px;
 }
 
-input, select { 
-  margin: 0px !important;
-  font-size: 9pt;
+.dg input, select {
+  margin: 1px 0px !important;
   line-height: 20px; 
+  font-size: 9pt;
+  float: right;
 }
 
 

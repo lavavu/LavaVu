@@ -52,6 +52,8 @@ function canvasBoxMouseClick(event, mouse) {
 }
 
 function canvasBoxMouseDown(event, mouse) {
+  //Just draw so the box appears
+  mouse.element.viewer.draw();
   return false;
 }
 
