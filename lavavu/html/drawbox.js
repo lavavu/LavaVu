@@ -22,6 +22,9 @@ function initBox(el, cmd_callback) {
   //Attach viewer object to canvas
   canvas.viewer = viewer;
 
+  //Disable context menu and prevent bubbling
+  canvas.addEventListener('contextmenu', e => {e.preventDefault(); e.stopPropagation();});
+
   //Command callback function
   viewer.command = cmd_callback;
 
@@ -651,15 +654,17 @@ BoxViewer.prototype.menu = function() {
   //Create UI - disable by omitting dat.gui.min.js
   //This is slow! Don't call while animating
   var viewer = this;
-  var changefn = function(value) {
+  var changefn = function(value, reload) {
     //console.log(JSON.stringify(Object.keys(this)));
     //console.log(value);
-    var reload = true;
-    if (this.property && viewer.dict[this.property])
-    {
-      //Get reload level from prop dict
-      //console.log(this.property + " REDRAW: " + viewer.dict[this.property].redraw);
-      reload = viewer.dict[this.property].redraw;
+    if (reload == undefined) {
+      reload = true;
+      if (this.property && viewer.dict[this.property])
+      {
+        //Get reload level from prop dict
+        //console.log(this.property + " REDRAW: " + viewer.dict[this.property].redraw);
+        reload = viewer.dict[this.property].redraw;
+      }
     }
 
     //Sync state and reload

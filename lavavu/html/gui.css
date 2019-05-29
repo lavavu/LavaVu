@@ -21,7 +21,19 @@ select:not([multiple]) {
   margin: 1px 0px !important;
   line-height: 20px; 
   font-size: 9pt;
+}
+
+.dg select {
   float: right;
 }
 
+.dg {cursor: default !important;}
+
+/* Classic notebook - allows menu to escape cell */
+div .output_subarea.output_html.rendered_html.pgui { overflow: visible;}
+
+/* Jupyterlab notebook - allows menu to escape cell */
+.p-Widget.jp-OutputArea.jp-Cell-outputArea.pgui { overflow: visible;}
+.p-Widget.jp-OutputArea-output.pgui { overflow: visible;}
+.p-Widget.p-Panel.jp-OutputArea-child.pgui { overflow: visible; }
 

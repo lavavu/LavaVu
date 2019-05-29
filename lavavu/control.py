@@ -437,7 +437,7 @@ class Window(_Container):
         self.wrapper = wrapper
 
     def html(self):
-        style = 'min-height: 200px; min-width: 200px; position: relative; display: inline-block; '
+        style = 'min-height: 50px; min-width: 50px; position: relative; display: inline-block; '
         style += 'float: ' + self.align + ';'
         if self.wrapper is not None:
             style += ' margin-right: 10px;'

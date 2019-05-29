@@ -110,6 +110,9 @@ function menu_addctrls(menu, obj, viewer, onchange) {
     }
   }
 
+  //Sort into alphabetical order
+  extras.sort();
+
   //Add the extra properties to a dropdown list
   //Selecting a property will add a controller for it
   var propadd = {"properties" : ""};
@@ -120,13 +123,15 @@ function menu_addctrls(menu, obj, viewer, onchange) {
     menu_addctrl(propadd.menu, propadd.ref, viewer, prop, onchange);
     //Remove, then add the props list back at the bottom, minus new prop
     propadd.menu.remove(propadd.controller);
-    var newopts = extras.filter(word => word != prop);
-    propadd.controller = propadd.menu.add(propadd, "properties", newopts).name("More properties").onFinishChange(propadd.fn);
+    //Save the new filtered list
+    propadd.list = propadd.list.filter(word => word != prop);
+    propadd.controller = propadd.menu.add(propadd, "properties", propadd.list).name("More properties").onFinishChange(propadd.fn);
   }
   propadd.controller = menu.add(propadd, "properties", extras).name("More properties").onFinishChange(propselfn);
   propadd.ref = obj;
   propadd.menu = menu;
   propadd.fn = propselfn;
+  propadd.list = extras;
 }
 
 
@@ -154,16 +159,19 @@ function menu_addcmaps(menu, obj, viewer, onchange) {
     }
   }
 
+  var reload_onchange = function() {onchange("", true);};
+
   //Loop through colours
-  menu.cmenu.add({"Add Colour" : function() {obj.colours.unshift({"colour" : "rgba(0,0,0,1)", "position" : 0.0}); viewer.gui.close(); onchange(); }}, "Add Colour");
+  menu.cmenu.add({"Add Colour" : function() {obj.colours.unshift({"colour" : "rgba(0,0,0,1)", "position" : 0.0}); viewer.gui.close(); reload_onchange(); }}, "Add Colour");
   //Need to add delete buttons in closure to get correct pos/index
-  function del_btn(pos) {menu.pomenu.add({"Delete" : function() {obj.colours.splice(pos, 1); viewer.gui.close(); onchange(); }}, 'Delete').name('Delete ' + pos);}
+  function del_btn(pos) {menu.pomenu.add({"Delete" : function() {obj.colours.splice(pos, 1); viewer.gui.close(); reload_onchange(); }}, 'Delete').name('Delete ' + pos);}
   for (var c in obj.colours) {
     var o = obj.colours[c];
     //Convert to html colour first
     o.colour = parseColour(o.colour);
-    menu.cmenu.addColor(o, 'colour').onChange(onchange).name('Colour ' + c);
-    menu.pomenu.add(o, 'position', 0.0, 1.0, 0.01).onFinishChange(onchange).name('Position ' + c);
+    o.opacity = 1.0;
+    menu.cmenu.addColor(o, 'colour').onChange(reload_onchange).name('Colour ' + c);
+    menu.pomenu.add(o, 'position', 0.0, 1.0, 0.01).onFinishChange(reload_onchange).name('Position ' + c);
     del_btn(c);
   }
 }
@@ -184,6 +192,16 @@ function createMenu(viewer, onchange, webglmode, global) {
     if (pel.parentElement.className != 'section')
       pel = pel.parentElement;
     pel.style.position = 'relative'; //Parent element relative prevents menu escaping wrapper div
+    //Jupyter notebook overflow hacks (allows gui to be larger than cell)
+    var e = pel;
+    //These parent elements need 'overflow: visible' to prevent scrolling or cut-off of menu
+    //Add the "pgui" class to all the parent containers 
+    while (e != document.body) {
+      e.classList.add("pgui");
+      e = e.parentElement;
+    }
+    //pel.style.overflow = 'visible'; //Parent element relative prevents menu escaping wrapper div
+    //pel.parentElement.style.overflow = 'visible'; //Parent element relative prevents menu escaping wrapper div
     var id = 'dat_gui_menu_' + viewer.canvas.id;
     el = document.getElementById(id)
     if (el)
@@ -205,11 +223,26 @@ function createMenu(viewer, onchange, webglmode, global) {
 
   //Re-create menu on element mouse down if we need to reload
   //(Instead of calling whenever state changes, re-creation is slow!)
-  gui.domElement.onmousedown = function() {
+  gui.domElement.onmousedown = function(e) {
     if (viewer.reloadgui)
       viewer.menu();
     return true;
   }
+
+  //Horrible hack to stop codemirror stealing events when menu is over an editor element
+  gui.domElement.onmouseenter = function(e) {
+    //console.log('mouseenter');
+    var stylesheet = document.styleSheets[0];
+    stylesheet.insertRule('.CodeMirror-code { pointer-events: none;}', 0);
+  };
+
+  gui.domElement.onmouseleave = function(e) {
+    //console.log('mouseleave');
+    var stylesheet = document.styleSheets[0];
+    console.log(stylesheet.cssRules[0].cssText);
+    if (stylesheet.cssRules[0].cssText.indexOf('CodeMirror') >= 0)
+      stylesheet.deleteRule(0);
+  };
 
   //Hidden element for style compute, required to be on page for chrome, can't just use createElement
   var elem = document.getElementById('hidden_style_div');
