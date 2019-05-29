@@ -1215,8 +1215,8 @@ class TimeStepper(Range):
         }
         </script>
         """
-        html += '<input type="button" style="width: 50px;" onclick="var el = document.getElementById(\'---ELID---\'); el.stepDown(); el.onchange()" value="&larr;" />'
-        html += '<input type="button" style="width: 50px;" onclick="var el = document.getElementById(\'---ELID---\'); el.stepUp(); el.onchange()" value="&rarr;" />'
+        html += '<input type="button" style="width: 50px;" onclick="var el = document.getElementById(\'---ELID---_range\'); el.stepDown(); el.onchange()" value="&larr;" />'
+        html += '<input type="button" style="width: 50px;" onclick="var el = document.getElementById(\'---ELID---_range\'); el.stepUp(); el.onchange()" value="&rarr;" />'
         html += '<input type="button" style="width: 60px;" onclick="playPause_---ELID---(this);" value="&#9658;" />'
         html = html.replace('---ELID---', self.elid)
         return html
