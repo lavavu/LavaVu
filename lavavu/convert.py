@@ -266,52 +266,61 @@ def export_OBJ(filepath, source):
 
 def _write_OBJ(f, m, filepath, obj, offset=1):
     mtl_line = ""
-    mtl_line2 = ""
     cmaptexcoords = []
     colourdict = None
+    import re
+    name = re.sub(r"\s+", "", obj["name"])
     if m and obj["texture"] == 'colourmap':
         #Write palette.png
         obj.parent.palette('image', 'texture')
-        mtl = ("# Create as many materials as desired\n"
-        "# Each is referenced by name before the faces it applies to in the obj file\n"
-        "newmtl material0\n"
+        mtl = ("newmtl material-%s\n"
         "Ka 1.000000 1.000000 1.000000\n"
         "Kd 1.000000 1.000000 1.000000\n"
         "Ks 0.000000 0.000000 0.000000\n"
-        "Tr 1.000000\n"
+        "Tr %f\n"
         "illum 1\n"
         "Ns 0.000000\n"
-        "map_Kd texture.png\n\n")
+        "map_Kd texture.png\n\n" % (name, obj["opacity"]))
+        mtl_line = "usemtl material-%s\n" % name
         m.write(mtl)
-        mtl_line = "mtllib " + os.path.basename(filepath) + ".mtl\n"
-        mtl_line2 = "usemtl material0\n"
-    elif len(obj.data.colours) > 0:
+
+    elif m and "colour" in obj:
+        print("Writing mtl lib (default colour)")
         colourdict = {}
+        c = obj.parent.parse_colour(obj["colour"])
+        mtl = "newmtl default-%s\n" % name
+        mtl += "Kd %f %f %f\n" % (c[0], c[1], c[2])
+        mtl += "Tr %f\n" % obj["opacity"]
+        mtl += "illum 1\n\n"
+        mtl_line = "usemtl default-%s\n" % name
+        m.write(mtl)
+
+    if m and len(obj.data.colours) > 0:
         import matplotlib
         print("Creating palette")
+        colourdict = {}
         for data in obj:
             for c in data.colours:
                 rgb = colour2rgb(c)
                 cs = colour2hex(rgb)
                 colourdict[cs] = rgb
-        print("Writing mtl lib")
+        print("Writing mtl lib (colour list)")
         for c in colourdict:
             rgb = colourdict[c]
-            m.write("newmtl %s\n" % c[1:])
-            m.write("Kd %f %f %f\n" % (rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0))
-            m.write("illum 0\n\n")
-        mtl_line = "mtllib " + os.path.basename(filepath) + ".mtl\n"
+            mtl = "newmtl %s\n" % c[1:]
+            mtl += "Kd %f %f %f\n" % (rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0)
+            mtl += "illum 1\n\n"
+            m.write(mtl)
 
     for o,data in enumerate(obj):
         print("[%s] element %d of %d" % (obj.name, o+1, len(obj.data.vertices)))
-        f.write("o Surface_%d\n" % o)
-        #f.write("o %s\n" % obj.name)
-        f.write(mtl_line) #After this?
         verts = data.vertices.reshape((-1,3))
-        print(verts,len(verts))
         if len(verts) == 0:
             print("No vertices")
             continue
+        f.write("o Surface_%d\n" % o)
+        #f.write("o %s\n" % obj.name)
+        if m: f.write("mtllib " + os.path.basename(filepath) + ".mtl\n")
         indices = data.indices.reshape((-1,3))
         normals = data.normals.reshape((-1,3))
         texcoords = data.texcoords.reshape((-1,2))
@@ -351,7 +360,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 f.write("vt %.6f\n" % t)
 
         #Face elements v/t/n v/t v//n
-        f.write(mtl_line2)
+        f.write(mtl_line)
         if len(normals) and len(texcoords):
             print("- Writing faces (v/t/n):",indices.shape)
         elif len(texcoords):
@@ -367,9 +376,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
         vperc = 1
         if colourdict:
             vperc = int(verts.shape[0] / len(data.colours))
-        #print("VERTS PER COLOUR ",vperc)
 
-        print("INDICES:",indices.shape)
         for n,i in enumerate(indices):
             if n%1000==0: print(".", end='', flush=True)
             i0 = i[0]+offset
@@ -386,9 +393,7 @@ def _write_OBJ(f, m, filepath, obj, offset=1):
                 cs1 = cs[1:]
                 #if i[0]%100==0: print(ci,c,rgb,cs,mtl_line2)
                 if cs0 != cs1 and cs in colourdict:
-                    mtl_line2 = "usemtl " + cs1 + "\n"
-                    #print(mtl_line2)
-                    f.write(mtl_line2)
+                    f.write("usemtl " + cs1 + "\n")
                     cs0 = cs1
 
             if len(normals) and len(texcoords):
