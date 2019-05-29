@@ -893,7 +893,6 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     float w = 0, h = 0;
     if (parsed.has(w, "resize", 0) && parsed.has(h, "resize", 1))
     {
-      session.globals["resolution"] = json::array({w, h});
       viewer->setsize(w, h);
       viewset = RESET_ZOOM; //Force check for resize and autozoom
     }

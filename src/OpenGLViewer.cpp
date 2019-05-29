@@ -222,14 +222,23 @@ ImageData* FBO::pixels(ImageData* image, int channels)
 
   glPixelStorei(GL_PACK_ALIGNMENT, 1); //No row padding required
   //Output width
-  float factor = 1.0/downsampleFactor();
   unsigned int w = getOutWidth();
   unsigned int h = getOutHeight();
   if (!image)
     image = new ImageData(w, h, channels);
 
-  // Read the pixels from mipmap image
   //printf("(%d, %f) Bounds check %d x %d (%d) == %d x %d (%d)\n", downsample, factor, image->width, image->height, image->channels, w, h, channels);
+#ifdef DEBUG
+  //Check size
+  float factor = 1.0/downsampleFactor();
+  int outw, outh;
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
+  assert(w==(unsigned int)outw && h==(unsigned int)outh);
+  debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
+#endif
+
+  // Read the pixels from mipmap image
   assert(image->width == w && image->height == h && image->channels == (unsigned int)channels);
   assert(w/factor == width && h/factor == height);
   assert(channels == 3 || channels == 4);
@@ -237,14 +246,6 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   glBindTexture(GL_TEXTURE_2D, texture);
   glGenerateMipmap(GL_TEXTURE_2D);
 
-#ifdef DEBUG
-  //Check size
-  int outw, outh;
-  glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_WIDTH, &outw);
-  glGetTexLevelParameteriv(GL_TEXTURE_2D, downsample-1,  GL_TEXTURE_HEIGHT, &outh);
-  assert(w==(unsigned int)outw && h==(unsigned int)outh);
-  debug_print("Get image %d : %d %d ==> %d %d\n", downsample-1, w, h, outw, outh);
-#endif
   //printf("DOWNSAMPLE GET %d %dx%d (%dx%d) samples %d\n", channels, w, h, width, height, downsample);
 
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
@@ -389,6 +390,8 @@ void OpenGLViewer::setsize(int w, int h)
   display(false); //Ensure correct context active
   if (useFBO(w, h))
     resize(fbo.width, fbo.height);  //Reset the viewer size
+  //Ensure the res property matches actual dims after resize
+  app->session.globals["resolution"] = json::array({width, height});
 }
 
 void OpenGLViewer::resize(int new_width, int new_height)
