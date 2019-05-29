@@ -953,8 +953,8 @@ void Volumes::isosurface(Triangles* surfaces, DrawingObject* source, DrawingObje
   reload = redraw = true;
 
   //Optimise triangle vertices
+  surfaces->merge();
+  surfaces->reload = true;
   surfaces->update();
-  //surfaces->loadMesh();
-  //reload = redraw = true;
 }
 
