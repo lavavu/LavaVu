@@ -572,7 +572,7 @@ public:
 
   void clear(bool fixed=false); //Called before new data loaded
   virtual void remove(DrawingObject* draw);
-  void clearValues(DrawingObject* draw, std::string label="");
+  void clearValues(DrawingObject* draw=NULL, std::string label="");
   void clearData(DrawingObject* draw, lucGeometryDataType dtype);
   virtual void close(); //Called on quit & before gl context recreated
 

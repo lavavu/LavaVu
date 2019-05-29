@@ -557,7 +557,7 @@ void Geometry::clearValues(DrawingObject* draw, std::string label)
   reload = true;
   for (auto g : records)
   {
-    if (draw == g->draw)
+    if (!draw || draw == g->draw)
     {
       if (label == "labels")
       {
