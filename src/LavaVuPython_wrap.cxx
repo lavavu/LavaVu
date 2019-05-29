@@ -24255,6 +24255,71 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_colourArrayFloat(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  std::string arg2 ;
+  float *arg3 = (float *) 0 ;
+  int arg4 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyArrayObject *array3 = NULL ;
+  int is_new_object3 = 0 ;
+  PyObject *swig_obj[3] ;
+  
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_colourArrayFloat",3,3,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_colourArrayFloat" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_colourArrayFloat" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    npy_intp size[1] = {
+      -1 
+    };
+    array3 = obj_to_array_contiguous_allow_conversion(swig_obj[2],
+      NPY_FLOAT,
+      &is_new_object3);
+    if (!array3 || !require_dimensions(array3, 1) ||
+      !require_size(array3, size, 1)) SWIG_fail;
+    arg3 = (float*) array_data(array3);
+    arg4 = (int) array_size(array3,0);
+  }
+  {
+    try {
+      (arg1)->colourArrayFloat(arg2,arg3,arg4);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    if (is_new_object3 && array3)
+    {
+      Py_DECREF(array3); 
+    }
+  }
+  return resultobj;
+fail:
+  {
+    if (is_new_object3 && array3)
+    {
+      Py_DECREF(array3); 
+    }
+  }
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_geometryArrayViewFloat__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -26300,6 +26365,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_geometryArrayUChar", _wrap_LavaVu_geometryArrayUChar, METH_VARARGS, NULL},
 	 { "LavaVu_geometryArrayUInt", _wrap_LavaVu_geometryArrayUInt, METH_VARARGS, NULL},
 	 { "LavaVu_geometryArrayFloat", _wrap_LavaVu_geometryArrayFloat, METH_VARARGS, NULL},
+	 { "LavaVu_colourArrayFloat", _wrap_LavaVu_colourArrayFloat, METH_VARARGS, NULL},
 	 { "LavaVu_geometryArrayViewFloat", _wrap_LavaVu_geometryArrayViewFloat, METH_VARARGS, NULL},
 	 { "LavaVu_geometryArrayViewUInt", _wrap_LavaVu_geometryArrayViewUInt, METH_VARARGS, NULL},
 	 { "LavaVu_geometryArrayViewUChar", _wrap_LavaVu_geometryArrayViewUChar, METH_VARARGS, NULL},

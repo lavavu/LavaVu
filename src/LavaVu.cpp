@@ -3538,6 +3538,15 @@ void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::strin
   }
 }
 
+void LavaVu::colourArrayFloat(std::string colour, float* array, int len)
+{
+  Colour c(colour);
+  if (len >= 4)
+    c.toArray(array);
+  else
+    throw(std::runtime_error("Colour array must be 4 elements or more!\n"));
+}
+
 void LavaVu::geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, float** array, int* len)
 {
   //Get a view of internal geom array

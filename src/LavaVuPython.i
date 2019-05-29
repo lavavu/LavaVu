@@ -194,6 +194,7 @@ public:
   void geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometryDataType type);
   void geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::string label);
+  void colourArrayFloat(std::string colour, float* array, int len);
 
   void geometryArrayViewFloat(Geom_Ptr geom, lucGeometryDataType dtype, float** array, int* len);
   void geometryArrayViewFloat(Geom_Ptr geom, float** array, int* len, std::string label);

@@ -3751,6 +3751,7 @@ class Viewer(dict):
     """
     def isosurface(self, dstref, srcref, properties, clearvol):
         return self.app.isoSurface(dstref, srcref, properties, clearvol)
+
     #def arrayFloat(self, ref, data, geomdtype):
     #    return self.app.arrayFloat(ref, data, geomdtype)
     #def arrayUInt(self, ref, data, geomdtype):
@@ -3784,6 +3785,34 @@ class Viewer(dict):
                 pverts = v if pverts is None else numpy.concatenate([pverts, v])
         return pverts, bb_all
 
+    def parse_colour(self, colour):
+        """
+        Parse a colour string and return a numpy RGBA array
+
+        Parameters
+        ----------
+        colour : str
+            Colour string, accepts html formats and X11 colour names or JSON string RGBA array
+
+        Returns
+        -------
+        rgba : array
+            the colour data as RGBA float array
+
+        Example
+        -------
+        Get all object data
+
+        >>> import lavavu
+        >>> lv = lavavu.Viewer()
+        >>> lv.parse_colour('rgba(255,24,128,1.0)')
+        array([1.  , 0.09, 0.5 , 1.  ], dtype=float32)
+        """
+
+        #Colour string parse
+        array = numpy.array([0.0, 0.0, 0.0, 0.0], dtype=numpy.float32)
+        self.app.colourArrayFloat(colour, array)
+        return array
 
 #Wrapper for list of geomdata objects
 class Geometry(list):

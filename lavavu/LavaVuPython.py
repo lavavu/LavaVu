@@ -523,6 +523,7 @@ LavaVu.getBoundingBox = new_instancemethod(_LavaVuPython.LavaVu_getBoundingBox, 
 LavaVu.geometryArrayUChar = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUChar, None, LavaVu)
 LavaVu.geometryArrayUInt = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayUInt, None, LavaVu)
 LavaVu.geometryArrayFloat = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayFloat, None, LavaVu)
+LavaVu.colourArrayFloat = new_instancemethod(_LavaVuPython.LavaVu_colourArrayFloat, None, LavaVu)
 LavaVu.geometryArrayViewFloat = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayViewFloat, None, LavaVu)
 LavaVu.geometryArrayViewUInt = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayViewUInt, None, LavaVu)
 LavaVu.geometryArrayViewUChar = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayViewUChar, None, LavaVu)
