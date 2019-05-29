@@ -827,6 +827,12 @@ void Geometry::init() //Called on GL init
 
 void Geometry::merge(int start, int end)
 {
+  if (start == -2 && end == -2)
+  {
+    //Default to current timestep
+    start = end = session.now;
+  }
+
   if (type == lucTracerType)
   {
     start = 0;
@@ -1348,7 +1354,7 @@ void Geometry::display(bool refresh)
   //TimeStep changed or step refresh requested
   if (refresh || timestep != session.now || (geom.size() == 0 && records.size() > 0))
   {
-    merge(session.now, session.now);
+    merge();
     timestep = session.now;
   }
 
@@ -1488,7 +1494,7 @@ bool Geometry::drawable(unsigned int idx)
 std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 {
   //Return all data from active geom list (fixed + current timestep)
-  merge(session.now, session.now);
+  merge();
   std::vector<Geom_Ptr> geomlist;
   for (unsigned int i=0; i<geom.size(); i++)
     if (geom[i]->draw == draw)
@@ -1499,7 +1505,7 @@ std::vector<Geom_Ptr> Geometry::getAllObjects(DrawingObject* draw)
 std::vector<Geom_Ptr> Geometry::getAllObjectsAt(DrawingObject* draw, int step)
 {
   //Return all data from records list (at specified timestep, or -2 for all)
-  merge(session.now, session.now);
+  merge();
   std::vector<Geom_Ptr> geomlist;
   for (unsigned int i=0; i<records.size(); i++)
     if (records[i]->draw == draw && (step < -1  || records[i]->step == step))
@@ -1873,7 +1879,7 @@ json Geometry::getDataLabels(DrawingObject* draw)
   //(used for colouring and filtering)
   json list = json::array();
   if (geom.size() == 0)
-    merge(session.now, session.now);
+    merge();
   int laststep = -1;
   for (unsigned int i = 0; i < geom.size(); i++)
   {
@@ -2579,9 +2585,9 @@ void Glyphs::display(bool refresh)
 void Glyphs::update()
 {
   //No fixed or time varying support
-  tris->merge(session.now, session.now);
-  lines->merge(session.now, session.now);
-  points->merge(session.now, session.now);
+  tris->merge();
+  lines->merge();
+  points->merge();
 
   tris->update();
   lines->update();

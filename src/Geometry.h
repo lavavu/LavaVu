@@ -588,7 +588,7 @@ public:
   void setValueRange(DrawingObject* draw);
   bool drawable(unsigned int idx);
   virtual void init(); //Called on GL init
-  void merge(int start, int end);
+  void merge(int start=-2, int end=-2);
   Shader_Ptr getShader(DrawingObject* draw=NULL);
   Shader_Ptr getShader(lucGeometryType type);
   void setState(unsigned int i);
