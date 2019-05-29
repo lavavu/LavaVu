@@ -72,7 +72,6 @@ class ColourVert2d
 //ColourMap class
 class ColourMap
 {
-  static int samples;
   Colour* precalc;
 
   bool noValues = false; //Use position data only
@@ -84,6 +83,7 @@ class ColourMap
   GLuint vbo = 0;
 
 public:
+  static int samples;
   std::vector<ColourVal> colours;
   Colour background;
   std::string name;
