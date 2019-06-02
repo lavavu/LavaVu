@@ -121,6 +121,9 @@ typedef std::shared_ptr<GeomData> Geom_Ptr;
 class GeomData
 {
 public:
+  unsigned int width;
+  unsigned int height;
+  unsigned int depth;
   int step; //Timestep
   lucGeometryType type;   //Holds the object type
   GeomData(DrawingObject* draw, lucGeometryType type);

@@ -3801,7 +3801,7 @@ class Viewer(dict):
 
         Example
         -------
-        Get all object data
+        Parse a colour string
 
         >>> import lavavu
         >>> lv = lavavu.Viewer()
@@ -3981,9 +3981,7 @@ class _GeomDataListView(object):
         #Set each DrawData entry to corrosponding value list entry
         v = 0
         for el in instance:
-            #Convert to numpy
-            data = self.obj._convert(value[v], numpy.float32)
-            el.set(self.key, data.ravel())
+            el.set(self.key, value[v])
             v += 1
 
 #Wrapper class for GeomData geometry object
@@ -4106,6 +4104,17 @@ class DrawData(object):
         else:
             #Get float32 data
             array = self.parent.app.geometryArrayViewFloat(self.data, typename)
+
+        #Attempt to return an array with the correct shape
+        if not "dims" in self._obj and self.data.width*self.data.height*self.data.depth > 1:
+            self._obj["dims"] = [self.data.width, self.data.height, self.data.depth]
+
+        dims = self._obj["dims"]
+        length = numpy.prod(dims)
+        if length == array.size:
+            #Need to reverse dims for numpy shape
+            shape = dims[::-1]
+            array = array.reshape(shape)
         
         return array
 
@@ -4143,19 +4152,33 @@ class DrawData(object):
         array : array
             Numpy array holding the data to be written
         """
+
+        #Convert to numpy
+        array = self._obj._convert(array)
+
+        #Attempt to set the dims based on the provided array shape
+        if "dims" in self._obj and len(array.shape) > 0:
+            length = numpy.prod(self._obj["dims"])
+            if length != array.size:
+                #Need to reverse dims for numpy shape
+                self._obj["dims"] = array.shape[::-1]
+                self.data.width = array.shape[2]
+                self.data.height = array.shape[1]
+                self.data.depth = array.shape[0]
+
         if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
                 #Set uint8 data
-                self.parent.app.geometryArrayUInt8(self.data, array.astype(numpy.uint8), datatypes[typename])
+                self.parent.app.geometryArrayUChar(self.data, array.astype(numpy.uint8).ravel(), datatypes[typename])
             elif typename in ["indices", "colours"]:
                 #Set uint32 data
-                self.parent.app.geometryArrayUInt32(self.data, array.astype(numpy.uint32), datatypes[typename])
+                self.parent.app.geometryArrayUInt(self.data, array.astype(numpy.uint32).ravel(), datatypes[typename])
             else:
                 #Set float32 data
-                self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32), datatypes[typename])
+                self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32).ravel(), datatypes[typename])
         else:
             #Set float32 data
-            self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32), typename)
+            self.parent.app.geometryArrayFloat(self.data, array.astype(numpy.float32).ravel(), typename)
 
     def __repr__(self):
         renderlist = [geomnames[value] for value in geomtypes if value == self.data.type]
