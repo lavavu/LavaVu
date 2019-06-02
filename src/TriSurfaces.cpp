@@ -65,7 +65,6 @@ void TriSurfaces::update()
   if (lastcount != total/3 || vbo == 0 || (reload && (!allVertsFixed || internal)))
   {
     //Load & optimise the mesh data (including updating centroids)
-    tricount = 0;
     loadMesh();
     calcCentroids();
     redraw = true;
@@ -268,7 +267,7 @@ void TriSurfaces::loadMesh()
 
   //debug_print("  *** There were %d unique vertices out of %d total.\n", unique, total);
   t2 = clock();
-  debug_print("  %.4lf seconds to optimise triangle mesh\n", (t2-tt)/(double)CLOCKS_PER_SEC);
+  debug_print("  ... %.4lf seconds to optimise triangle meshes\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
 void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise)
@@ -501,7 +500,7 @@ void TriSurfaces::sort()
       //fdistance = view->eyeDistance(modelView, sorter.buffer[i].vertex);
       fdistance = std::min(distanceRange[1], std::max(distanceRange[0], fdistance)); //Clamp to range
       sorter.buffer[i].distance = (unsigned short)(multiplier * (fdistance - distanceRange[0]));
-      //if (i%10000==0) printf("%d : centroid %f %f %f\n", i, sorter.buffer[i].vertex[0], sorter.buffer[i].vertex[1], sorter.buffer[i].vertex[2]);
+      //if (i%10000==0) printf("%d : centroid %f %f %f distance %f %d\n", i, sorter.buffer[i].vertex[0], sorter.buffer[i].vertex[1], sorter.buffer[i].vertex[2], fdistance, sorter.buffer[i].distance);
       //Reverse as radix sort is ascending and we want to draw by distance descending
       //sorter.buffer[i].distance = USHRT_MAX - (unsigned short)(multiplier * (fdistance - mindist));
       //assert(sorter.buffer[i].distance >= 1 && sorter.buffer[i].distance <= USHRT_MAX);
