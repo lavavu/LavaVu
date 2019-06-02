@@ -67,18 +67,30 @@ void main(void)
   if (uFlat)
     fColour = vFlatColour;
 #endif
+  float alpha = fColour.a;
   if (uTextured && vTexCoord.x >= 0.0)
   {
+    //With this blending mode, texture is blended over base colour,
+    //and colour opacity has no effect on texture opacity
+    //All desired texture opacity must be built in to the texture data
+    //(Could add another blend mode if we want a dynamic texture opacity)
     vec4 tColour = texture(uTexture, vTexCoord);
-    //If colour provided too (with alpha > 0),
-    //blend using the texture opacity (1.0 - src.alpha)
-    if (fColour.a > 0.0)
-      fColour = mix(tColour, fColour, 1.0 - tColour.a);
+    if (fColour.a > 0.01)
+    {
+      //Additive blend alpha channel
+      alpha = fColour.a + tColour.a * (1.0 - fColour.a);
+
+      //Blend the texure colour with the fragment colour using texture alpha
+      fColour.rgb = vec3(mix(fColour.rgb, tColour.rgb, tColour.a));
+    }
     else
+    {
+      //Disable all blending if the base colour opacity <= 0.01
       fColour = tColour;
+      alpha = tColour.a;
+    }
   }
 
-  float alpha = fColour.a;
   if (uOpacity > 0.0) alpha *= uOpacity;
   if (uOpaque) alpha = 1.0;
   if (alpha < 0.01) discard;
