@@ -228,6 +228,8 @@ ImageData* FBO::pixels(ImageData* image, int channels)
     image = new ImageData(w, h, channels);
 
   //printf("(%d, %f) Bounds check %d x %d (%d) == %d x %d (%d)\n", downsample, factor, image->width, image->height, image->channels, w, h, channels);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glGenerateMipmap(GL_TEXTURE_2D);
 #ifdef DEBUG
   //Check size
   float factor = 1.0/downsampleFactor();
@@ -243,8 +245,6 @@ ImageData* FBO::pixels(ImageData* image, int channels)
   assert(w/factor == width && h/factor == height);
   assert(channels == 3 || channels == 4);
   GLint type = (channels == 4 ? GL_RGBA : GL_RGB);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  glGenerateMipmap(GL_TEXTURE_2D);
 
   //printf("DOWNSAMPLE GET %d %dx%d (%dx%d) samples %d\n", channels, w, h, width, height, downsample);
 
