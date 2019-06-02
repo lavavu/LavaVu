@@ -2527,12 +2527,34 @@ void Glyphs::remove(DrawingObject* draw)
 
 void Glyphs::setup(View* vp, float* min, float* max)
 {
-  //Only pass min/max to the master object,
-  //otherwise sub-renderer geometry will expand bounding box
   Geometry::setup(vp, min, max);
-  lines->setup(vp);
-  tris->setup(vp);
-  points->setup(vp);
+
+  //Do we have a valid bounding box?
+  bool expandSub = false;
+  if (min && max && records.size())
+  {
+    //Only check x/y (z dims can be zero)
+    if (std::isinf(max[0]) || std::isinf(min[0]) || min[0] >= max[0])
+      expandSub = true;
+    if (std::isinf(max[1]) || std::isinf(min[1]) || min[1] >= max[1])
+      expandSub = true;
+  }
+
+  //If we pass min/max to the sub-renderers object,
+  //their geometry will also expand bounding box,
+  //don't want this by default, only if the parent bounding box is invalid
+  if (expandSub)
+  {
+    lines->setup(vp, min, max);
+    tris->setup(vp, min, max);
+    points->setup(vp, min, max);
+  }
+  else
+  {
+    lines->setup(vp);
+    tris->setup(vp);
+    points->setup(vp);
+  }
 }
 
 void Glyphs::sort()
