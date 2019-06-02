@@ -281,6 +281,8 @@ function createMenu(viewer, onchange, webglmode, global) {
 
   //Non-persistent settings
   gui.add(viewer, "mode", ['Rotate', 'Translate', 'Zoom']);
+  viewer.cmd = '';
+  gui.add(viewer, "cmd").onFinishChange(function(cmd) {if (cmd.length) {viewer.command(cmd); viewer.cmd = '';}}).name('Command');
   //var s = gui.addFolder('Settings');
   if (webglmode) {
     gui.add(viewer.vis, "interactive").name("Interactive Render");
