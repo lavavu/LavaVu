@@ -175,6 +175,10 @@ def _webglcode(shaders, css, scripts, menu=True, lighttheme=True, stats=False):
         #Some css tweaks
         css.append("gui.css")
 
+    else:
+        #DAT.gui disabled
+        scripts[0] += ['!GUI_OFF']
+
     #First scripts list needs require.js disabled
     code += _getjslibs(['!REQUIRE_OFF'] + scripts[0] + ['!REQUIRE_ON'] + scripts[1])
 
@@ -218,6 +222,8 @@ def _readfilehtml(filename):
         return '_backup_define = window.define; window.define = undefined;'
     elif filename == "!REQUIRE_ON":
         return 'window.define = _backup_define; delete _backup_define;'
+    elif filename == "!GUI_OFF":
+        return 'window.dat = undefined;'
 
     #Read a file from the htmlpath (or cached copy)
     global _file_cache
@@ -1487,7 +1493,7 @@ class _ControlFactory(object):
 
         return ctrl
 
-    def show(self, filename=None, fallback=None):
+    def show(self, menu=True, filename=None, fallback=None):
         """
         Displays all added controls including viewer if any
 
@@ -1541,7 +1547,7 @@ class _ControlFactory(object):
             from IPython.display import display,HTML
             #Interaction requires some additional js/css/webgl
             #Insert stylesheet, shaders and combined javascript libraries
-            display(HTML(_webglboxcode()))
+            display(HTML(_webglboxcode(menu)))
 
             #Try and prevent this getting cached
             timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
@@ -1556,7 +1562,7 @@ class _ControlFactory(object):
             #Export html file
             #Dump all output to control.html in current directory & htmlpath
             full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
-            full_html += _webglboxcode()
+            full_html += _webglboxcode(menu)
             full_html += self.export_actions(actions) #Process actions
             full_html += '</head>\n<body onload="init({0});">\n'.format(viewerid)
             full_html += html
