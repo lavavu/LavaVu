@@ -220,6 +220,7 @@ class Server(threading.Thread):
         self.ipv6 = ipv6
         super(Server, self).__init__()
         self.daemon = True #Place in background so will be closed on program exit
+        self._cv = threading.Condition()
 
     def handle(self):
         httpd.handle_request()
@@ -239,7 +240,12 @@ class Server(threading.Thread):
                 httpd = HTTPServer(('0.0.0.0', self.port), handler)
                 #httpd = ThreadingHTTPServer(('0.0.0.0', self.port), handler)
 
+            #Sync with starting thread here to ensure server thread has initialised before it continues
+            with self._cv:
+                self._cv.notifyAll()
+
             # Handle requests
+            #print("Using port: ", self.port)
             # A timeout is needed for server to check periodically if closing
             httpd.timeout = 0.05 #50 millisecond timeout
             while self.viewer() is not None and not self._closing:
@@ -262,7 +268,10 @@ class Server(threading.Thread):
 
 def serve(viewer, port=None, ipv6=False, retries=100):
     s = Server(viewer, port, ipv6, retries)
-    s.start()
+    #Start the thread and wait for it to finish initialising
+    with s._cv:
+        s.start()
+        s._cv.wait()
     return s
 
 #Ignore SIGPIPE altogether (does not work on windows)
