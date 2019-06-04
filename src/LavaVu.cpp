@@ -3376,53 +3376,61 @@ std::string LavaVu::getObjectDataLabels(DrawingObject* target)
   return ss.str();
 }
 
-void LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
+Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(target);
+  Geom_Ptr p = nullptr;
   if (container)
   {
     if (type == lucRGBAData)
     {
       int len32 = len / 4;
       assert(len32*4 == len);
-      container->read(target, len32, type, array);
+      p = container->read(target, len32, type, array);
     }
     else
-      container->read(target, len, type, array);
+      p = container->read(target, len, type, array);
     reloadObject(target);
   }
+  return p;
 }
 
-void LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type)
+Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(target);
+  Geom_Ptr p = nullptr;
   if (container)
   {
-    container->read(target, len, type, array);
+    p = container->read(target, len, type, array);
     reloadObject(target);
   }
+  return p;
 }
 
-void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type)
+Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type)
 {
   Geometry* container = lookupObjectRenderer(target);
   int dsize = 3;
   if (type == lucTexCoordData) dsize = 2;
+  Geom_Ptr p = nullptr;
   if (container)
   {
-    container->read(target, len/dsize, type, array);
+    p = container->read(target, len/dsize, type, array);
     reloadObject(target);
   }
+  return p;
 }
 
-void LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label)
+Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label)
 {
   Geometry* container = lookupObjectRenderer(target);
+  Geom_Ptr p = nullptr;
   if (container)
   {
-    container->read(target, len, array, label);
+    p = container->read(target, len, array, label);
     reloadObject(target);
   }
+  return p;
 }
 
 void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool bgr)

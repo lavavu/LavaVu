@@ -22757,6 +22757,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(se
   int is_new_object3 = 0 ;
   int val5 ;
   int ecode5 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -22788,12 +22789,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUChar__SWIG_0(PyObject *SWIGUNUSEDPARM(se
   arg5 = static_cast< lucGeometryDataType >(val5);
   {
     try {
-      (arg1)->arrayUChar(arg2,arg3,arg4,arg5);
+      result = (arg1)->arrayUChar(arg2,arg3,arg4,arg5);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {
@@ -22824,6 +22828,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUChar__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   int res2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -22850,12 +22855,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUChar__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   }
   {
     try {
-      (arg1)->arrayUChar(arg2,arg3,arg4);
+      result = (arg1)->arrayUChar(arg2,arg3,arg4);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {
@@ -22913,6 +22921,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUInt__SWIG_0(PyObject *SWIGUNUSEDPARM(sel
   int is_new_object3 = 0 ;
   int val5 ;
   int ecode5 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -22944,12 +22953,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUInt__SWIG_0(PyObject *SWIGUNUSEDPARM(sel
   arg5 = static_cast< lucGeometryDataType >(val5);
   {
     try {
-      (arg1)->arrayUInt(arg2,arg3,arg4,arg5);
+      result = (arg1)->arrayUInt(arg2,arg3,arg4,arg5);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {
@@ -22980,6 +22992,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUInt__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
   int res2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -23006,12 +23019,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayUInt__SWIG_1(PyObject *SWIGUNUSEDPARM(sel
   }
   {
     try {
-      (arg1)->arrayUInt(arg2,arg3,arg4);
+      result = (arg1)->arrayUInt(arg2,arg3,arg4);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {
@@ -23069,6 +23085,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayFloat__SWIG_0(PyObject *SWIGUNUSEDPARM(se
   int is_new_object3 = 0 ;
   int val5 ;
   int ecode5 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -23100,12 +23117,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayFloat__SWIG_0(PyObject *SWIGUNUSEDPARM(se
   arg5 = static_cast< lucGeometryDataType >(val5);
   {
     try {
-      (arg1)->arrayFloat(arg2,arg3,arg4,arg5);
+      result = (arg1)->arrayFloat(arg2,arg3,arg4,arg5);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {
@@ -23136,6 +23156,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayFloat__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   int res2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 3) || (nobjs > 3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -23162,12 +23183,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayFloat__SWIG_1(PyObject *SWIGUNUSEDPARM(se
   }
   {
     try {
-      (arg1)->arrayFloat(arg2,arg3,arg4);
+      result = (arg1)->arrayFloat(arg2,arg3,arg4);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {
@@ -23199,6 +23223,7 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayFloat__SWIG_2(PyObject *SWIGUNUSEDPARM(se
   int res2 = 0 ;
   PyArrayObject *array3 = NULL ;
   int is_new_object3 = 0 ;
+  Geom_Ptr result;
   
   if ((nobjs < 4) || (nobjs > 4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
@@ -23234,12 +23259,15 @@ SWIGINTERN PyObject *_wrap_LavaVu_arrayFloat__SWIG_2(PyObject *SWIGUNUSEDPARM(se
   }
   {
     try {
-      (arg1)->arrayFloat(arg2,arg3,arg4,arg5);
+      result = (arg1)->arrayFloat(arg2,arg3,arg4,arg5);
     } catch (const std::runtime_error& e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  resultobj = SWIG_Py_Void();
+  {
+    std::shared_ptr<  GeomData > *smartresult = result ? new std::shared_ptr<  GeomData >(result) : 0;
+    resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(smartresult), SWIGTYPE_p_std__shared_ptrT_GeomData_t, SWIG_POINTER_OWN);
+  }
   {
     if (is_new_object3 && array3)
     {

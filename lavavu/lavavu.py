@@ -689,11 +689,11 @@ class Object(dict):
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
         if data.dtype == numpy.float32:
-            self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+            return self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
         elif data.dtype == numpy.uint32:
-            self.parent.app.arrayUInt(self.ref, data.ravel(), geomdtype)
+            return self.parent.app.arrayUInt(self.ref, data.ravel(), geomdtype)
         elif data.dtype == numpy.uint8:
-            self.parent.app.arrayUChar(self.ref, data.ravel(), geomdtype)
+            return self.parent.app.arrayUChar(self.ref, data.ravel(), geomdtype)
 
 
     def _checkDims(self, size):
@@ -802,7 +802,7 @@ class Object(dict):
 
         #Load as flattened 1d array
         #(ravel() returns view rather than copy if possible, flatten() always copies)
-        self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
+        return self.parent.app.arrayFloat(self.ref, data.ravel(), geomdtype)
 
     @property
     def data(self):
@@ -901,7 +901,7 @@ class Object(dict):
         if self["geometry"] == 'volume':
             self._volumeDimsFromShape(data)
 
-        self.parent.app.arrayFloat(self.ref, data.ravel(), label)
+        return self.parent.app.arrayFloat(self.ref, data.ravel(), label)
 
     def magnitude(self, data, label="magnitude"):
         """
@@ -916,7 +916,7 @@ class Object(dict):
         """
         axis = len(data.shape)-1
         mag = numpy.linalg.norm(data, axis=axis)
-        self.parent.app.arrayFloat(self.ref, mag.ravel(), label)
+        return self.parent.app.arrayFloat(self.ref, mag.ravel(), label)
 
     def colours(self, data):
         """
