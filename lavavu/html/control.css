@@ -1,25 +1,10 @@
-input, select {
-  margin: 1px 0px;
-  font-size: 9pt;
-}
-
-input[type="text"] {width: 200px; }
-input[type="range"] {width: 148px; }
-
+/* Notebook control stylesheet */
 .lvctrl input { display: inline; }
 .lvctrl input[type=range] { width: 200px; }
 .lvctrl input[type=button] { width: 100px; }
 .lvctrl input[type=number] { width: 105px; height: 26px; border-radius: 0; border: 1px dotted #999;}
 .lvctrl pre { display: inline; }
 .lvctrl p  { color: gray; margin: 0px}
-
-/* Colour select */
-.colourbg {display: inline-block; margin:5px 0px; width: 100px; height: 20px; border: 1px dotted #999; }
-.colour {display: inline-block; width: 100%; height: 100%; margin: 0px; padding: 0px; border: none;}
-
-.checkerboard {background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4jWP4TwAcOHAAL2YYNWBYGEBIASEwasCwMAAALvidroqDalkAAAAASUVORK5CYII=");}
-
-.palette { margin: 3px 0px; border:1px solid #000; border: 1px dotted #000;}
 
 .lvtab    { border: 1px solid #999; padding: 5px; }
 .lvtabbar { width:100%; overflow:hidden; margin-top: 5px; }

@@ -84,6 +84,26 @@ basehtml = """
 <title>LavaVu Interface</title>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 
+<style>
+html, body, table {
+  padding: 0; margin: 5;
+  border: none;
+  font-size: 9pt;
+  font-family: sans-serif;
+}
+p {margin: 0px 2px; }
+
+.canvas {
+  width: 100%; height: 100%;
+}
+
+canvas {
+  z-index: 0; margin: 0px; padding:0px;
+  border: none;
+}
+
+</style>
+
 ---SCRIPTS---
 
 </head>
