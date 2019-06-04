@@ -20,7 +20,8 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 #    before using state data
 
 __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
-           'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp', 'style', 'cellstyle', 'cellwidth',
+           'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp',
+           'inject', 'hidecode', 'style', 'cellstyle', 'cellwidth',
            'version', 'settings', 'is_ipython', 'is_notebook', 'getname']
 
 #Module settings
@@ -4472,14 +4473,44 @@ def download(url, filename=None, overwrite=False, quiet=False):
 
     return filename
 
-def style(css):
+def inject(html):
     """
-    Inject stylesheet
+    Inject HTML into a notebook cell
     """
     if not is_notebook():
         return
     from IPython.display import display,HTML
-    display(HTML("<style>" + css + "</style>"))
+    display(HTML(html))
+
+def hidecode():
+    """
+    Allow toggle of code cells
+    """
+    #http://blog.nextgenetics.net/?e=102
+    #https://pastebin.com/H77xP2vN
+    inject('''<script>
+    code_show = true;
+    menu_edited = false;
+    function code_toggle() {
+      if (code_show)
+        $('div.input').hide();
+      else
+        $('div.input').show();
+      code_show = !code_show
+    }
+    if (!menu_edited) {
+      menu_edited = true;
+      $("#view_menu").append("<li id='toggle_toolbar' title='Show/Hide code cells'><a href='javascript:code_toggle()'>Toggle Code Cells</a></li>");
+    }
+    $(document).ready(code_toggle);
+    </script>
+    The code for this notebook is hidden <a href="javascript:code_toggle()">Click here</a> to show/hide code.''')
+
+def style(css):
+    """
+    Inject stylesheet
+    """
+    inject("<style>" + css + "</style>")
 
 def cellstyle(css):
     """
