@@ -2061,6 +2061,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       //Now uses single execution path for setting colourmaps via property set
       parseProperty("colourmap=" + parsed.getall("colourmap", next), obj);
     }
+    else
+    {
+      std::string name = parsed["colourmap"];
+      std::string data = parsed.get("colourmap", 1);
+      //Just add a colormap without an object
+      LavaVu::addColourMap(name, data);
+    }
   }
   else if (parsed.exists("colourbar"))
   {

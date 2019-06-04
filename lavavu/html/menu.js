@@ -239,7 +239,6 @@ function createMenu(viewer, onchange, webglmode, global) {
   gui.domElement.onmouseleave = function(e) {
     //console.log('mouseleave');
     var stylesheet = document.styleSheets[0];
-    console.log(stylesheet.cssRules[0].cssText);
     if (stylesheet.cssRules[0].cssText.indexOf('CodeMirror') >= 0)
       stylesheet.deleteRule(0);
   };
@@ -277,7 +276,6 @@ function createMenu(viewer, onchange, webglmode, global) {
   else
     gui.add({"Export" : function() {window.open('data:application/json;base64,' + window.btoa(viewer.toString()));}}, 'Export');
   //gui.add({"loadFile" : function() {document.getElementById('fileupload').click();}}, 'loadFile'). name('Load Image file');
-  //gui.add({"ColourMaps" : function() {window.colourmaps.toggle();}}, 'ColourMaps');
 
   //Non-persistent settings
   gui.add(viewer, "mode", ['Rotate', 'Translate', 'Zoom']);
@@ -312,8 +310,10 @@ function createMenu(viewer, onchange, webglmode, global) {
   }
 
   viewer.gui = gui;
-  if (!viewer.selectedcolourmap)
+  if (!viewer.selectedcolourmap) {
     viewer.selectedcolourmap = "";
+    viewer.newcolourmap = "";
+  }
   viewer.cgui = viewer.gui.addFolder('ColourMaps');
 
   createColourMapMenu(viewer, onchange);
@@ -343,7 +343,16 @@ function createColourMapMenu(viewer, onchange) {
     }
   };
 
-  viewer.cgui.cmap = viewer.cgui.add(viewer, "selectedcolourmap", cms).onFinishChange(cmapselfn).name("colourmap");
+  //Add a colourmap from list of defaults
+  cmapaddfn = function(value) {
+    if (!value || !value.length) return;
+    viewer.command("colourmap " + value + " " + value);
+    viewer.gui.close();
+  };
+
+  console.log(JSON.stringify(viewer.defaultcolourmaps));
+  viewer.cgui.cmap = viewer.cgui.add(viewer, "selectedcolourmap", cms).onFinishChange(cmapselfn).name("Colourmap");
+  viewer.cgui.newcmap = viewer.cgui.add(viewer, "newcolourmap", viewer.defaultcolourmaps).onFinishChange(cmapaddfn).name("Add");
 
   //Re-select if previous value if any
   if (viewer.selectedcolourmap)

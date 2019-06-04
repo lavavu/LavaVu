@@ -28,11 +28,9 @@ function initBox(el, cmd_callback) {
   //Command callback function
   viewer.command = cmd_callback;
 
-  //Load dict from tag if available
-  viewer.dict = {};
-  var d = document.getElementById('dictionary');
-  if (d && d.innerHTML.length > 100)
-    viewer.dict = JSON.parse(d.innerHTML);
+  //Data dict and colourmap names stored in globals
+  viewer.dict = window.dictionary;
+  viewer.defaultcolourmaps = window.defaultcolourmaps;
 
   return viewer;
 }

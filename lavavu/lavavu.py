@@ -2207,7 +2207,9 @@ class Viewer(dict):
 
             #Control setup, expect html files in same path as viewer binary
             control.htmlpath = self.htmlpath = os.path.join(self.app.binpath, "html")
-            control.dictionary = self.app.propertyList()
+            #Some global data, should not change so doesn't matter if duplicated/shared
+            control.jsglobals = 'var dictionary = ' + self.app.propertyList() + '\n'
+            control.jsglobals += 'var defaultcolourmaps = ' + json.dumps(self.defaultcolourmaps()) + '\n'
 
             if not os.path.isdir(control.htmlpath):
                 control.htmlpath = self.htmlpath = None

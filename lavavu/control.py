@@ -139,8 +139,8 @@ hiddenhtml = """
 </div>
 """
 
-#Property dict (str json) - set from lavavu
-dictionary = '{}'
+#Global data (script) - set from lavavu
+jsglobals = ''
 
 #Static HTML location
 htmlpath = ""
@@ -203,7 +203,7 @@ def _webglcode(shaders, css, scripts, menu=True, lighttheme=True, stats=False):
     code += _getjslibs(['!REQUIRE_OFF'] + scripts[0] + ['!REQUIRE_ON'] + scripts[1])
 
     code += _getcss(css)
-    code += '<script id="dictionary" type="application/json">\n' + dictionary + '\n</script>\n'
+    code += '<script>\n' + jsglobals + '\n</script>\n'
     return code
 
 def _webglviewcode(shaderpath, menu=True, lighttheme=True):
