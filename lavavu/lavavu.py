@@ -825,7 +825,7 @@ class Object(dict):
         >>> obj = lv.points(vertices=[[0,1], [1,0]])
         >>> for el in obj.data:
         ...     print(el)
-        DrawData("points") ==> {'vertices': 6}
+        DrawData("points") ==> {'vertices': (2, 3)}
         """
         return Geometry(self)
 
@@ -903,7 +903,7 @@ class Object(dict):
         if self["geometry"] == 'volume':
             self._volumeDimsFromShape(data)
 
-        return self.parent.app.arrayFloat(self.ref, data.ravel(), label)
+        self.parent.app.arrayFloat(self.ref, data.ravel(), label)
 
     def magnitude(self, data, label="magnitude"):
         """
@@ -3856,39 +3856,49 @@ class Geometry(list):
     >>> for i,el in enumerate(obj):
     ...     print(i,el)
     ...     print(el.vertices)
-    0 DrawData("triangles") ==> {'vertices': 9}
-    [0.5 1.  0.  1.5 1.  0.  1.5 0.  0. ]
-    1 DrawData("points") ==> {'vertices': 9}
-    [-1. -1.  0.  0.  0.  0.  1.  1.  0.]
+    0 DrawData("triangles") ==> {'vertices': (3, 3)}
+    [[0.5 1.  0. ]
+     [1.5 1.  0. ]
+     [1.5 0.  0. ]]
+    1 DrawData("points") ==> {'vertices': (3, 3)}
+    [[-1. -1.  0.]
+     [ 0.  0.  0.]
+     [ 1.  1.  0.]]
 
     Get only triangle data
 
     >>> data = obj.data["triangles"]
     >>> print(data)
-    [DrawData("triangles") ==> {'vertices': 9}]
+    [DrawData("triangles") ==> {'vertices': (3, 3)}]
     >>> print(data.vertices)
-    [array([0.5, 1. , 0. , 1.5, 1. , 0. , 1.5, 0. , 0. ], dtype=float32)]
+    [array([[0.5, 1. , 0. ],
+           [1.5, 1. , 0. ],
+           [1.5, 0. , 0. ]], dtype=float32)]
 
     Get data at specific timestep only
     (default is current step including fixed data)
 
     >>> data = obj.data["0"]
     >>> print(data)
-    [DrawData("triangles") ==> {'vertices': 9}, DrawData("triangles") ==> {'vertices': 9}]
+    [DrawData("triangles") ==> {'vertices': (3, 3)}, DrawData("triangles") ==> {'vertices': (3, 3)}]
     >>> print(data.vertices)
-    [array([0., 1., 0., 1., 1., 0., 1., 0., 0.], dtype=float32), array([2., 2., 0., 2., 3., 0., 3., 2., 0.], dtype=float32)]
+    [array([[0., 1., 0.],
+           [1., 1., 0.],
+           [1., 0., 0.]], dtype=float32), array([[2., 2., 0.],
+           [2., 3., 0.],
+           [3., 2., 0.]], dtype=float32)]
 
     Loop through data elements
 
     >>> for el in data:
     ...     print(el)
-    DrawData("triangles") ==> {'vertices': 9}
-    DrawData("triangles") ==> {'vertices': 9}
+    DrawData("triangles") ==> {'vertices': (3, 3)}
+    DrawData("triangles") ==> {'vertices': (3, 3)}
 
     Show the fixed data (timestep -1)
 
     >>> print(obj.data["-1"])
-    [DrawData("points") ==> {'vertices': 9}]
+    [DrawData("points") ==> {'vertices': (3, 3)}]
 
     """
 
@@ -3912,7 +3922,7 @@ class Geometry(list):
                 self.append(g)
                 #Add the value data set labels
                 for s in sets:
-                    g.available[s] = sets[s]["size"]
+                    g.available[s] = g.get(s).shape
 
         #Allows getting data by data type or value labels using Descriptors
         #Data by type name
@@ -4011,7 +4021,7 @@ class DrawData(object):
     Get the data elements
 
     >>> print(obj.data)
-    [DrawData("points") ==> {'vertices': 6, 'colours': 2, 'myvals': 2}]
+    [DrawData("points") ==> {'vertices': (2, 3), 'colours': (2,), 'myvals': (2,)}]
     
     Get a copy of the colours (if any)
 
@@ -4023,7 +4033,8 @@ class DrawData(object):
 
     >>> verts = obj.data.vertices
     >>> print(verts)
-    [array([0., 1., 0., 1., 0., 0.], dtype=float32)]
+    [array([[0., 1., 0.],
+           [1., 0., 0.]], dtype=float32)]
 
     WARNING: this reference may be deleted by other calls, 
     use _copy if you are not processing the data immediately 
