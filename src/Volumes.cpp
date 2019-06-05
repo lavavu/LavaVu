@@ -110,7 +110,6 @@ void Volumes::draw()
   //Render in sorted order
   for (unsigned int i=0; i<geom_sorted.size(); i++)
   {
-    //if (!drawable(i)) continue;
     //printf("DRAWING Volume %d slices %d, %p\n", i, slices[geom[i]->draw], geom[i].get());
 
     setState(geom_sorted[i]); //Set draw state settings for this object
@@ -138,12 +137,15 @@ void Volumes::sort()
 
   //Add key elements to sort list
   sorted.clear();
-  for (unsigned int i=0; i<geom.size(); i++)
+  for (unsigned int i = 0; i < geom.size(); i += slices[geom[i]->draw])
+  {
+    //printf("i %d count %d slices %d\n", i, geom[i]->count(), slices[geom[i]->draw]);
     if (geom[i]->count() && slices[geom[i]->draw] && drawable(i))
       sorted.push_back(geom[i]);
+  }
 
   //Get element/quad count
-  debug_print("Sorting %lu volume entries...\n", geom.size());
+  debug_print("Sorting %lu volume entries...\n", sorted.size());
 
   //Calculate min/max distances from viewer
   if (reload) updateBoundingBox();
@@ -234,9 +236,6 @@ void Volumes::update()
 
   //Padding!
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-  //TODO: filtering
-  //Read all colourvalues, apply filter to each and store in filtered block before loading into texture
 
   //Count and group 2D slices
   countSlices();
@@ -529,12 +528,13 @@ void Volumes::render(Geom_Ptr g)
     //if (g->texture->type != VOLUME_FLOAT)
     //  isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
     //prog->setUniform2f("uRange", range.data());
-    //std::cout << "USING DATA RANGE: " << range << std::endl;
   }
 
-  //std::cout << "Range " << range.minimum << " : " << range.maximum << std::endl;
+  //std::cout << "Range " << range << std::endl;
   //Normalise provided isovalue to match data range
-  isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
+  //THIS IS BROKEN - unless the controls are aware of the ranges we can't do this, stick with [0,1] until fixed
+  //isoval = (isoval - range.minimum) / (range.maximum - range.minimum);
+  //std::cout << "ISOVALUE (mapped) : " << isoval << std::endl;
   prog->setUniform2f("uRange", range.data());
   prog->setUniformf("uIsoValue", isoval);
   GL_Error_Check;
