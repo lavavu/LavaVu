@@ -1711,11 +1711,13 @@ Viewer.prototype.loadTextures = function() {
       vis.objects[id].image.crossOrigin = "anonymous";
       vis.objects[id].image.src = vis.objects[id].texture + '?_' + new Date().getTime(); //Prevent caching
       var viewer = this;
+      var i = id; //Variable for closure
       vis.objects[id].image.onload = function() {
         // Flip the image's Y axis to match the WebGL texture coordinate space.
         viewer.webgl.gl.activeTexture(viewer.webgl.gl.TEXTURE0);
-        //vis.objects[id].tex = viewer.webgl.loadTexture(vis.objects[id].image, viewer.gl.LINEAR, viewer.gl.RGBA, true); //Flipped - jpeg
-        vis.objects[id].tex = viewer.webgl.loadTexture(vis.objects[id].image, viewer.gl.LINEAR, viewer.gl.RGBA); //Not-flipped - png
+        //Flip jpegs
+        var flip = vis.objects[i].image.src.slice(0,1024).toLowerCase().indexOf('png') < 0;
+        vis.objects[i].tex = viewer.webgl.loadTexture(vis.objects[i].image, viewer.gl.LINEAR, viewer.gl.RGBA, flip);
         viewer.drawFrame();
         viewer.draw();
       };
@@ -1835,6 +1837,7 @@ Viewer.prototype.applyBackground = function(bg) {
 }
 
 Viewer.prototype.addColourMap = function() {
+  var properties = this.vis.properties;
   if (properties.id == undefined) return;
   var name = prompt("Enter colourmap name:");
   //New colourmap on active object
@@ -1853,6 +1856,7 @@ Viewer.prototype.addColourMap = function() {
 }
 
 Viewer.prototype.setColourMap = function(id) {
+  var properties = this.vis.properties;
   if (properties.id == undefined) return;
   this.vis.objects[properties.id].colourmap = parseInt(id);
   if (id === undefined) id = -1;

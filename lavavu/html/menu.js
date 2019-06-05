@@ -316,13 +316,13 @@ function createMenu(viewer, onchange, webglmode, global) {
   }
   viewer.cgui = viewer.gui.addFolder('ColourMaps');
 
-  createColourMapMenu(viewer, onchange);
+  createColourMapMenu(viewer, onchange, webglmode);
 
   //var t1 = performance.now();
   //console.log("Call to menu() took " + (t1 - t0) + " milliseconds.")
 }
 
-function createColourMapMenu(viewer, onchange) {
+function createColourMapMenu(viewer, onchange, webglmode) {
   //Remove existing entries
   for (var i in viewer.cgui.__controllers)
     viewer.cgui.__controllers[i].remove();
@@ -332,6 +332,22 @@ function createColourMapMenu(viewer, onchange) {
   //Dropdown to select a colourmap, when selected the editing menu will be populated
   for (var id in viewer.vis.colourmaps)
     cms.push(viewer.vis.colourmaps[id].name);
+
+  if (webglmode) {
+    //Add a default colourmap
+    viewer.cgui.add({"Add" : function() {viewer.addColourMap(); viewer.gui.close();}}, 'Add');
+  } else {
+    //Add a colourmap from list of defaults
+    cmapaddfn = function(value) {
+      if (!value || !value.length) return;
+      viewer.command("colourmap " + value + " " + value);
+      viewer.gui.close();
+    };
+
+    viewer.cgui.add(viewer, "newcolourmap", viewer.defaultcolourmaps).onFinishChange(cmapaddfn).name("Add");
+  }
+
+  //Do the rest only if colourmaps exist...
   if (cms.length == 0) return;
 
   //When selected, populate the Colours & Positions menus
@@ -343,16 +359,7 @@ function createColourMapMenu(viewer, onchange) {
     }
   };
 
-  //Add a colourmap from list of defaults
-  cmapaddfn = function(value) {
-    if (!value || !value.length) return;
-    viewer.command("colourmap " + value + " " + value);
-    viewer.gui.close();
-  };
-
-  console.log(JSON.stringify(viewer.defaultcolourmaps));
   viewer.cgui.cmap = viewer.cgui.add(viewer, "selectedcolourmap", cms).onFinishChange(cmapselfn).name("Colourmap");
-  viewer.cgui.newcmap = viewer.cgui.add(viewer, "newcolourmap", viewer.defaultcolourmaps).onFinishChange(cmapaddfn).name("Add");
 
   //Re-select if previous value if any
   if (viewer.selectedcolourmap)
