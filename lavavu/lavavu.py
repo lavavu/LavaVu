@@ -3542,7 +3542,7 @@ class Viewer(dict):
                 % (passed, outfile, diff, tolerance))
         return result
 
-    def window(self):
+    def window(self, menu=True):
         """
         Create and display an interactive viewer instance
 
@@ -3552,7 +3552,7 @@ class Viewer(dict):
         """
         #TODO: support resolution set / full size of div, requires updating viewer frame size
         self.control.Window()
-        self.control.show()
+        self.control.show(menu)
 
     def redisplay(self):
         """
