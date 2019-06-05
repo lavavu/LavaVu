@@ -189,8 +189,6 @@ void DrawingObject::setup()
       filterCache[i].maximum = max;
     }
     //For tracer filtering
-    float dims[3];
-    Properties::toArray<float>(properties["dims"], dims, 3);
     if (dims[0] > 0 && dims[1] == 0 && dims[2] == 0)
       filterCache[i].elements = dims[0];
   }

@@ -1516,7 +1516,7 @@ std::vector<Geom_Ptr> Geometry::getAllObjectsAt(DrawingObject* draw, int step)
 Geom_Ptr Geometry::getObjectStore(DrawingObject* draw)
 {
   //Get passed object's most recently added data store (iff timestep matches or all fixed)
-  for (int i=records.size()-1; i>=0; i--)
+  for (int i=records.size()-1; i>=0 && records.size() > 0; i--)
     if (records[i]->draw == draw && (draw->fixed || records[i]->step == session.now))
       return records[i];
   return nullptr;
