@@ -374,7 +374,8 @@ function updateMenu(viewer, onchange) {
 function hideMenu(canvas, gui) {
   //No menu, but hide the mode controls
   if (!gui) {
-    canvas.imgtarget.nextElementSibling.style.display = "none";
+    if (canvas.imgtarget)
+      canvas.imgtarget.nextElementSibling.style.display = "none";
     return;
   }
 

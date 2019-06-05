@@ -93,11 +93,9 @@ function initPage(elid, menu, src) {
     }
   }
 
-  //Load dict from tag if available
-  viewer.dict = {};
-  var d = document.getElementById('dictionary');
-  if (d && d.innerHTML.length > 100)
-    viewer.dict = JSON.parse(d.innerHTML);
+  //Data dict and colourmap names stored in globals
+  viewer.dict = window.dictionary;
+  viewer.defaultcolourmaps = window.defaultcolourmaps;
 
   if (query && query.indexOf("server") >= 0) {
     //Switch to image frame
@@ -1512,6 +1510,8 @@ Viewer.prototype.loadFile = function(source) {
   }
 
   var vis = this.vis;
+  if (!vis.properties) vis.properties = {}; //Ensure valid object even if no properties
+
   //Set active view (always first for now)
   this.view = vis.views[0];
 
