@@ -16,7 +16,7 @@ select:not([multiple]) {
     line-height: 17px;
 }
 
-.dg input, select {
+.dg input, .dg select {
   margin: 1px 0px !important;
   line-height: 20px; 
   font-size: 9pt;
