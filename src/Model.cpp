@@ -629,7 +629,7 @@ void Model::reload(DrawingObject* obj)
   reloadRedraw(obj, true);
 }
 
-void Model::bake(DrawingObject* obj)
+void Model::bake(DrawingObject* obj, bool colours, bool texture)
 {
   //Convert all Glyphs type elements into their primitives (triangles/lines/points)
   //Will no longer be able to be scaled etc but can be cached and loaded much faster
@@ -650,8 +650,12 @@ void Model::bake(DrawingObject* obj)
 
     for (auto g : geometry)
     {
-      //Convert and colourmap+value data into rgba
-      g->convertColours();
+      if (texture)
+        //Converts colourmap to textures
+        g->colourMapTexture();
+      else if (colours)
+        //Convert colourmap + value data into rgba
+        g->convertColours(now);
 
       //dynamic_cast only works if a valid descendant class
       Glyphs* glyphs = dynamic_cast<Glyphs*>(g);

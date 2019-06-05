@@ -1869,7 +1869,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       amodel->reload(aobject);
     }
   }
-  else if (parsed.exists("bake"))
+  else if (parsed.exists("bake") || parsed.exists("bakecolour") || parsed.exists("glaze"))
   {
     if (gethelp)
     {
@@ -1878,12 +1878,30 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "This removes the ability to change the glyph properties used to create primitives,\n"
               "but makes the meshes render much faster in animations as they don't need to be regenerated\n\n"
               "**Usage:** bake [object]\n\n"
-              "object (integer/string) : the index or name of object to bake, defaults to all (see: \"list objects\")\n";
+              "object (integer/string) : the index or name of object to bake, defaults to all (see: \"list objects\")\n\n"
+              "**Usage:** bakecolour [object]\n\n"
+              "As above, but also convert colourmap + value data into calculated RGBA values\n\n"
+              "**Usage:** glaze [object]\n\n"
+              "As above, but also convert colourmap + value data into a texture image and associated texcoords\n\n";
       return false;
     }
 
-    DrawingObject* obj = lookupObject(parsed, "bake");
-    amodel->bake(obj);
+    DrawingObject* obj = NULL;
+    if (parsed.exists("bakecolour"))
+    {
+      lookupObject(parsed, "bakecolour");
+      amodel->bake(obj, true, false);
+    }
+    else if (parsed.exists("glaze"))
+    {
+      lookupObject(parsed, "glaze");
+      amodel->bake(obj, false, true);
+    }
+    else
+    {
+      lookupObject(parsed, "bake");
+      amodel->bake(obj, false, false);
+    }
     printMessage("Model baked");
   }
   else if (parsed.exists("export"))
@@ -3381,7 +3399,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
   std::vector<std::vector<std::string> > cmdlist = {
     {"quit", "repeat", "animate", "history", "clearhistory", "pause", "list", "step", "timestep", "jump", "model", "reload", "redraw", "clear"},
     {"file", "script", "figure", "savefigure", "view", "scan"},
-    {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "export", "csv", "json", "save", "tiles"},
+    {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "bakecolour", "glaze", "export", "csv", "json", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "spin", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},

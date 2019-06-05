@@ -1289,33 +1289,139 @@ void Geometry::setState(Geom_Ptr g)
   GL_Error_Check;
 }
 
-void Geometry::convertColours()
+void Geometry::convertColours(int step)
 {
   //Convert colour-mapped value data to RGBA per vertex
   debug_print("Colouring %d elements...\n", elements);
-  for (unsigned int index = 0; index < geom.size(); index++)
+  for (unsigned int index = 0; index < records.size(); index++)
   {
-    ColourMap* cmap = geom[index]->draw->colourMap;
-    FloatValues* vals = geom[index]->colourData();
-    if (geom[index]->render->colours.size() == 0 and cmap and vals)
+    if (step >= 0  && records[index]->step != step)
+      continue;
+    ColourMap* cmap = records[index]->draw->colourMap;
+    FloatValues* vals = records[index]->colourData();
+    if (records[index]->render->colours.size() == 0 and cmap and vals)
     {
       //Calibrate colour maps on range for this surface
-      ColourLookup& getColour = geom[index]->colourCalibrate();
-      unsigned int hasColours = geom[index]->colourCount();
-      if (hasColours > geom[index]->count()) hasColours = geom[index]->count(); //Limit to vertices
-      unsigned int colrange = hasColours ? geom[index]->count() / hasColours : 1;
+      ColourLookup& getColour = records[index]->colourCalibrate();
+      unsigned int hasColours = records[index]->colourCount();
+      if (hasColours > records[index]->count()) hasColours = records[index]->count(); //Limit to vertices
+      unsigned int colrange = hasColours ? records[index]->count() / hasColours : 1;
       if (colrange < 1) colrange = 1;
       Colour colour;
-      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, geom[index]->count(), hasColours);
-      std::vector<unsigned int> colours(geom[index]->count());
-      for (unsigned int v=0; v < geom[index]->count(); v++)
+      debug_print("Using 1 colour per %d vertices (%d : %d)\n", colrange, records[index]->count(), hasColours);
+      std::vector<unsigned int> colours(records[index]->count());
+      for (unsigned int v=0; v < records[index]->count(); v++)
       {
         //Have colour values but not enough for per-vertex, spread over range
         unsigned int cidx = v / colrange;
         getColour(colour, cidx);
         colours[v] = colour.value;
       }
-      read(geom[index], colours.size(), lucRGBAData, colours.data());
+      read(records[index], colours.size(), lucRGBAData, colours.data());
+      //Remove the value data
+      //vals->clear();
+      records[index]->values.clear();
+    }
+  }
+}
+
+void Geometry::colourMapTexture()
+{
+  //Convert colour-mapped value data to use a texture map - "glaze" the geometry, bakes in the colour data
+  // - All colourmaps used by this renderer's objects written to a single texture
+  // - Generate texcoords for each object -> (x=value,y=mapindex)
+  // - Delete all colour values
+  debug_print("TextureColouring %d elements...\n", elements);
+
+  //First enumerate all drawing objects
+  std::vector<DrawingObject*> objlist;
+  std::map<DrawingObject*, unsigned int> objects;
+  std::pair<std::map<DrawingObject*, unsigned int>::iterator,bool> ret;
+  for (unsigned int index = 0; index < records.size(); index++)
+  {
+    if (!records[index]->draw->colourMap) continue;
+    std::cout << records[index]->draw->name() << std::endl;
+    //objects[records[index]->draw] = objects.size();
+    ret = objects.insert(std::pair<DrawingObject*, unsigned int>(records[index]->draw, objlist.size()));
+    if (ret.second != false)
+    {
+      objlist.push_back(records[index]->draw);
+    }
+  }
+
+  if (objlist.size() == 0)
+  {
+    //printf("No colourmaps applied\n");
+    return;
+  }
+
+  //Create the texture
+  ImageData* combinedData = new ImageData(ColourMap::samples, objects.size(), 4);
+  unsigned char* ptr = combinedData->pixels;
+  for (unsigned int o=0; o<objlist.size(); o++)
+  {
+    ColourMap* cmap = objlist[o]->colourMap;
+    ImageData* paletteData = cmap->toImage(false);
+    //Copy to current line and move pointer to next line
+    paletteData->paste(ptr);
+    ptr += ColourMap::samples * 4;
+    delete paletteData;
+  }
+  Texture_Ptr texture = std::make_shared<ImageLoader>(); //Add a new empty texture container
+  texture->filter = 0;
+  texture->repeat = false;
+  //If using directly, disable
+  //texture->flip = false;
+  texture->load(combinedData);
+  //TODO: need a way to store texture in GLDB
+  {
+    //combinedData->flip(); //Flip it
+    combinedData->write("palettes.png");
+  }
+  delete combinedData;
+
+  //Texture coord Y offset and increment
+  float yinc = 1.0f / (float)objects.size();
+  float yoffset = yinc * 0.5;
+
+  for (unsigned int index = 0; index < records.size(); index++)
+  {
+    ColourMap* cmap = records[index]->draw->colourMap;
+    //Calibrate on current data
+    records[index]->colourCalibrate();
+    FloatValues* vals = records[index]->colourData();
+    if (records[index]->count() && records[index]->render->texCoords.size() == 0 and cmap and vals)
+    {
+      //Apply the texture
+      //records[index]->texture = texture;
+      //TODO: need a way to store geom texture in GLDB
+      records[index]->draw->properties.data["texture"] = "palettes.png";
+      records[index]->draw->properties.data["texturefilter"] = 0;
+      records[index]->draw->properties.data["fliptexture"] = false;
+      records[index]->draw->properties.data["repeat"] = false;
+
+      //Calibrate colour maps on range for this object
+      unsigned int hasColours = records[index]->colourCount();
+      if (hasColours > records[index]->count()) hasColours = records[index]->count(); //Limit to vertices
+      unsigned int colrange = hasColours ? records[index]->count() / hasColours : 1;
+      if (colrange < 1) colrange = 1;
+      std::vector<float> texCoords(records[index]->count()*2);
+      unsigned int tc = 0;
+      float texY = yoffset + yinc * (float)objects[records[index]->draw];
+      for (unsigned int v=0; v < records[index]->count(); v++)
+      {
+        //Have colour values but not enough for per-vertex, spread over range
+        unsigned int cidx = v / colrange;
+        texCoords[tc] = cmap->scalefast(records[index]->colourData(cidx));
+        assert(texCoords[tc] <= 1.0);
+        texCoords[tc+1] = texY;
+        //if (texY == 0.5) std::cout << v << " : texcoord " << tc << " == " << texCoords[tc] << "," << texCoords[tc+1] << std::endl;
+        tc += 2;
+      }
+      read(records[index], texCoords.size() / 2, lucTexCoordData, texCoords.data());
+      //Remove the value data
+      records[index]->values.clear();
+
     }
   }
 }

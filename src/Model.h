@@ -116,7 +116,7 @@ public:
   void reload(DrawingObject* obj=NULL);
   void redraw(DrawingObject* obj=NULL);
   void reloadRedraw(DrawingObject* obj, bool reload);
-  void bake(DrawingObject* obj);
+  void bake(DrawingObject* obj, bool colours, bool texture);
 
   void loadWindows();
   void loadLinks(float* min, float* max);
