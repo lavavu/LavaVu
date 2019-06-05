@@ -240,6 +240,8 @@ Geometry* Model::getRenderer(const std::string& what)
     return getRendererOfType<Links>();
   if (what == "spheres")
     return getRendererOfType<Spheres>();
+  if (what == "cuboids")
+    return getRendererOfType<Cuboids>();
   if (what == "mesh")
     return getRendererOfType<Mesh>();
 

@@ -59,19 +59,25 @@ void Shapes::update()
     dims[1] = props["shapeheight"];
     dims[2] = props["shapelength"];
     int shape = props["shape"];
-    //Disable vertex normals for cuboids...
-    props.data["vertexnormals"] = (shape != 1);
-    int quality = 4 * props.getInt("glyphs", 3);
+    int segments = (int)props["segments"];
     //Points drawn as shapes?
-    if (!geom[i]->draw->properties.has("shape") || type == lucPointType)
+    if (!props.has("shape") || type == lucPointType)
     {
-      //Plotting points as spheres, set some defaults
-      dims[0] = dims[1] = dims[2] = (float)props["pointsize"] / 8.0;
-      //Higher default sphere quality
-      quality = 4 * props.getInt("glyphs", 6);
+      //Plotting points as spheres/cuboids, set some defaults
+      float diam = (float)props["pointsize"] / 8.0;
+      if (props.has("radius")) diam = 2.0 * (float)props["radius"];
+      dims[0] = dims[1] = dims[2] = diam;
+      //Lower default sphere quality
+      //quality = props.getInt("segments", 16);
       if ((int)props["pointtype"] > 2 && !props.has("specular"))
         props.data["specular"] = 1.0;
+      //Plot cuboids?
+      if (dynamic_cast<Cuboids*>(this))
+        shape = 1;
     }
+
+    //Disable vertex normals for cuboids...
+    props.data["vertexnormals"] = (shape != 1);
 
     if (scaling <= 0) scaling = 1.0;
 
@@ -123,7 +129,7 @@ void Shapes::update()
       if (shape == 1)
         tris->drawCuboidAt(geom[i]->draw, pos, sdims, rot, true);
       else
-        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, true, hasTexture, quality);
+        tris->drawEllipsoid(geom[i]->draw, pos, sdims, rot, true, hasTexture, segments);
 
       //Per shape colours (can do this as long as sub-renderer always outputs same tri count per shape)
       if (cptr)

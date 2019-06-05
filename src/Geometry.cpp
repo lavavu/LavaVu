@@ -2347,7 +2347,7 @@ void Geometry::drawCuboidAt(DrawingObject *draw, Vec3d& pos, Vec3d& dims, Quater
   {
     //Triangle indices
     indices = {0, 1, 2, 2, 3, 0,  //Front
-               7, 6, 5, 5, 3, 7,  //Back
+               7, 6, 5, 5, 4, 7,  //Back
                4, 5, 1, 1, 0, 4,  //Bottom
                3, 2, 6, 6, 7, 3,  //Top
                4, 0, 3, 3, 7, 4,  //Left
@@ -2733,6 +2733,8 @@ Geometry* createRenderer(Session& session, const std::string& what)
     return new Points(session);
   if (what == "spheres")
     return new Spheres(session);
+  if (what == "cuboids")
+    return new Cuboids(session);
   if (what == "labels")
     return new Geometry(session);
   if (what == "vectors" || what == "arrows")

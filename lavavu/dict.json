@@ -8,7 +8,8 @@
         "points",
         "sortedpoints",
         "particles",
-        "spheres"
+        "spheres",
+        "cuboids"
       ],
       [
         "quads",
@@ -625,6 +626,17 @@
       }
     ]
   },
+  "segments": {
+    "default": 32,
+    "target": "object(shapes)",
+    "type": "integer [4,n]",
+    "desc": "Triangulation quality for spheres, number of segments to draw (minimum 4)",
+    "strict": true,
+    "redraw": 2,
+    "control": [
+      true
+    ]
+  },
   "scaling": {
     "default": 1.0,
     "target": "object",
@@ -1106,9 +1118,9 @@
   },
   "radius": {
     "default": 0.02,
-    "target": "object(vector)",
+    "target": "object(vector/shapes)",
     "type": "real",
-    "desc": "Arrow shaft radius as ratio of vector length",
+    "desc": "When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.",
     "strict": true,
     "redraw": 1,
     "control": [

@@ -814,6 +814,13 @@ public:
   Spheres(Session& session) : Shapes(session) {type = lucPointType;}
 };
 
+class Cuboids : public Shapes
+{
+  //Render points as cuboids
+public:
+  Cuboids(Session& session) : Shapes(session) {type = lucPointType;}
+};
+
 class Imposter : public Geometry
 {
 public:
