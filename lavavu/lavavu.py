@@ -87,6 +87,8 @@ datatypes = {"vertices":  LavaVuPython.lucVertexData,
              "rgb":       LavaVuPython.lucRGBData,
              "values":    LavaVuPython.lucMaxDataType}
 
+dimensions = {"vertices":  3, "normals": 3, "vectors": 3, "indices": 1, "colours": 1, "texcoords": 2, "luminance": 1, "rgb": 1, "values": 1}
+
 def _convert_keys(dictionary):
     if (sys.version_info > (3, 0)):
         #Not necessary in python3...
@@ -1032,6 +1034,11 @@ class Object(dict):
 
         #Accepts only uint8 luminance values
         data = self._convert(data, numpy.uint8)
+
+        #Volume? Use the shape as dims if not provided
+        if self["geometry"] == 'volume':
+            self._volumeDimsFromShape(data)
+
         self._loadScalar(data, LavaVuPython.lucLuminanceData)
 
     def texture(self, data, flip=True, bgr=False):
@@ -4044,8 +4051,8 @@ class DrawData(object):
         #Get available data types
         for key in datatypes:
             dat = self.get(key)
-            if len(dat) > 0:
-                self.available[key] = len(dat)
+            if len(dat):
+                self.available[key] = dat.shape
 
     @property
     def parent(self):
@@ -4092,7 +4099,13 @@ class DrawData(object):
             Numpy array view of the data set requested
         """
         array = None
+        #Attempt to return an array with the correct shape
+        if not "dims" in self._obj and self.data.width*self.data.height*self.data.depth > 1:
+            self._obj["dims"] = [self.data.width, self.data.height, self.data.depth]
+        dims = self._obj["dims"]
+
         if typename in datatypes and typename != 'values':
+            dims += [dimensions[typename]]
             if typename in ["luminance", "rgb"]:
                 #Get uint8 data
                 array = self.parent.app.geometryArrayViewUChar(self.data, datatypes[typename])
@@ -4106,16 +4119,21 @@ class DrawData(object):
             #Get float32 data
             array = self.parent.app.geometryArrayViewFloat(self.data, typename)
 
-        #Attempt to return an array with the correct shape
-        if not "dims" in self._obj and self.data.width*self.data.height*self.data.depth > 1:
-            self._obj["dims"] = [self.data.width, self.data.height, self.data.depth]
+        if array.size > 0:
+            #Remove any dims <= 1
+            dims = [d for d in dims if d > 1]
 
-        dims = self._obj["dims"]
-        length = numpy.prod(dims)
-        if length == array.size:
-            #Need to reverse dims for numpy shape
-            shape = dims[::-1]
-            array = array.reshape(shape)
+            if len(dims):
+                #Shape the array to match object dims, and data element dims as final dimension
+                length = int(numpy.prod(dims))
+                #print(typename,"DIMS:",dims,"SIZE:",array.size, length)
+                if length == array.size:
+                    #Need to reverse dims for numpy shape
+                    shape = dims[::-1]
+                    array = array.reshape(shape)
+                elif array.shape[0] == array.size and dims[-1] <= 3:
+                    array = array.reshape((-1, dims[-1]))
+                #print(typename,"DIMS:",dims,"SHAPE:",array.shape)
         
         return array
 
@@ -4159,13 +4177,26 @@ class DrawData(object):
 
         #Attempt to set the dims based on the provided array shape
         if "dims" in self._obj and len(array.shape) > 0:
-            length = numpy.prod(self._obj["dims"])
+            dims = self._obj["dims"]
+            #Need to reverse dims from numpy shape
+            newdims = array.shape[::-1]
+            length = numpy.prod(dims)
+
+            #If the expected data is 2d/3d?
+            if typename in datatypes and typename != 'values' and dimensions[typename] > 1:
+                #Adjust expected length
+                length *= dimensions[typename]
+                #Ignore element dims in provided data shape
+                if len(newdims) > 1 and dimensions[typename] == newdims[-1]:
+                    #Remove last element
+                    newdims = newdims[:-1]
+
+            #Specified "dims" does not match data size, adjust the properties
             if length != array.size:
-                #Need to reverse dims for numpy shape
-                self._obj["dims"] = array.shape[::-1]
-                self.data.width = array.shape[2]
-                self.data.height = array.shape[1]
-                self.data.depth = array.shape[0]
+                self._obj["dims"] = newdims
+                self.data.width = newdims[0]
+                self.data.height = newdims[1]
+                self.data.depth = newdims[2]
 
         if typename in datatypes and typename != 'values':
             if typename in ["luminance", "rgb"]:
