@@ -9,7 +9,7 @@
 [file](#file), [script](#script), [figure](#figure), [savefigure](#savefigure), [view](#view), [scan](#scan)
  - **[Output](#output-commands)**  
 
-[image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [bake](#bake), [export](#export), [csv](#csv), [json](#json), [save](#save), [tiles](#tiles)
+[image](#image), [images](#images), [outwidth](#outwidth), [outheight](#outheight), [movie](#movie), [record](#record), [bake](#bake), [bakecolour](#bakecolour), [glaze](#glaze), [export](#export), [csv](#csv), [json](#json), [save](#save), [tiles](#tiles)
  - **[View](#view-commands)**  
 
 [rotate](#rotate), [rotatex](#rotatex), [rotatey](#rotatey), [rotatez](#rotatez), [rotation](#rotation), [zoom](#zoom), [translate](#translate), [translatex](#translatex), [translatey](#translatey), [translatez](#translatez), [translation](#translation), [autorotate](#autorotate), [spin](#spin), [focus](#focus), [aperture](#aperture), [focallength](#focallength), [eyeseparation](#eyeseparation), [nearclip](#nearclip), [farclip](#farclip), [zoomclip](#zoomclip), [zerocam](#zerocam), [reset](#reset), [bounds](#bounds), [camera](#camera), [resize](#resize), [fullscreen](#fullscreen), [fit](#fit), [autozoom](#autozoom), [stereo](#stereo), [coordsystem](#coordsystem), [sort](#sort)
@@ -296,6 +296,57 @@
  > **Usage:** bake [object]  
  >   
  > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
+ >   
+ > **Usage:** bakecolour [object]  
+ >   
+ > As above, but also convert colourmap + value data into calculated RGBA values  
+ >   
+ > **Usage:** glaze [object]  
+ >   
+ > As above, but also convert colourmap + value data into a texture image and associated texcoords  
+ >   
+
+
+### bakecolour
+
+ > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
+ > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
+ > This removes the ability to change the glyph properties used to create primitives,  
+ > but makes the meshes render much faster in animations as they don't need to be regenerated  
+ >   
+ > **Usage:** bake [object]  
+ >   
+ > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
+ >   
+ > **Usage:** bakecolour [object]  
+ >   
+ > As above, but also convert colourmap + value data into calculated RGBA values  
+ >   
+ > **Usage:** glaze [object]  
+ >   
+ > As above, but also convert colourmap + value data into a texture image and associated texcoords  
+ >   
+
+
+### glaze
+
+ > 'Bake' model geometry, turns dynamic meshes into static by permanently replacing higher level  
+ > glyph types (vector/tracer/shape) with generated low-level primitives (point/line/triangle)  
+ > This removes the ability to change the glyph properties used to create primitives,  
+ > but makes the meshes render much faster in animations as they don't need to be regenerated  
+ >   
+ > **Usage:** bake [object]  
+ >   
+ > object (integer/string) : the index or name of object to bake, defaults to all (see: "list objects")  
+ >   
+ > **Usage:** bakecolour [object]  
+ >   
+ > As above, but also convert colourmap + value data into calculated RGBA values  
+ >   
+ > **Usage:** glaze [object]  
+ >   
+ > As above, but also convert colourmap + value data into a texture image and associated texcoords  
+ >   
 
 
 ### export

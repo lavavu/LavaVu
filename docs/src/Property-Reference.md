@@ -3,10 +3,14 @@
 
  * [all](#all)
  * [object](#object)
+ * [object(shapes)](#objectshapes)
+ * [object](#object)
  * [object(line)](#objectline)
  * [object(point)](#objectpoint)
  * [object(surface)](#objectsurface)
  * [object(volume)](#objectvolume)
+ * [object(vector)](#objectvector)
+ * [object(vector/shapes)](#objectvectorshapes)
  * [object(vector)](#objectvector)
  * [object(tracer)](#objecttracer)
  * [object(shape)](#objectshape)
@@ -19,8 +23,8 @@
 
 | Property         | Type       | Default            | Description                               |
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
-|*renderers*       | object     | [["labels"],["points","sortedpoints","particles","spheres"],["quads","grid"],["triangles","sortedtriangles","mesh","surface"],["vectors","arrows"],["tracers","streamlines"],["lines","sortedlines","links","tubes"],["shapes"],["volume","volumes"],["screen","fullscreen"]] | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
-|*renderlist*      | string     | "sortedtriangles quads vectors tracers shapes sortedpoints labels lines volume screen" | List of default renderers created and order they are displayed. For valid types see "renderers" property.|
+|*renderers*       | object     | [["labels"],["points","sortedpoints","particles","spheres","cuboids"],["quads","grid"],["triangles","sortedtriangles","mesh","surface"],["vectors","arrows"],["tracers","streamlines"],["lines","sortedlines","links","tubes"],["shapes"],["volume","volumes"],["screen","fullscreen"]] | Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.|
+|*renderlist*      | string     | "sortedtriangles quads vectors tracers shapes sortedpoints labels links volume screen" | List of default renderers created and order they are displayed. For valid types see "renderers" property.|
 |*glyphrenderlist* | string     | "sortedtriangles points lines" | List of renderers created for glyph rendering and order they are displayed.|
 |*font*            | string     | "vector"       | Font typeface vector/small/fixed/sans/serif|
 |*fontscale*       | real       | 1.0            | Font scaling, note that only the 'vector' font scales well|
@@ -68,10 +72,22 @@
 |*zmax*            | real [0,1] | 0.0            | Object clipping, maximum z|
 |*filters*         | object     | []             | Filter list|
 |*glyphs*          | integer [0,n] | 2              | Glyph quality 0=none, 1=low, higher=increasing triangulation detail (arrows/shapes etc)|
+
+### object(shapes)
+
+| Property         | Type       | Default            | Description                               |
+| ---------------- | ---------- | ------------------ | ----------------------------------------- |
+|*segments*        | integer [4,n] | 32             | Triangulation quality for spheres, number of segments to draw (minimum 4)|
+
+### object
+
+| Property         | Type       | Default            | Description                               |
+| ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*scaling*         | real       | 1.0            | Object scaling factor|
 |*texture*         | string     | ""             | Apply a texture, either external texture image file path to load or colourmap|
 |*fliptexture*     | boolean    | true           | Flip texture image after loading, usually required|
 |*repeat*          | boolean    | false          | Repeat texture image enabled, default is clamp to edges|
+|*texturefilter*   | integer    | 2              | Type of texture filtering, 0=nearest, 1=linear, 2=mipmap (default)|
 |*colourby*        | string or integer | 0              | Index or label of data set to colour object by (requires colour map)|
 |*opacityby*       | string or integer | ""             | Index or label of data set to apply transparency to object by (requires opacity map)|
 
@@ -81,6 +97,7 @@
 | ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*limit*           | real       | 0              | Line length limit, can be used to skip drawing line segments that cross periodic boundary|
 |*link*            | boolean    | false          | To chain line vertices into longer lines set to true|
+|*loop*            | boolean    | false          | To join the start and end of linked lines set to true|
 |*scalelines*      | real       | 1.0            | Line scaling multiplier, applies to all line objects|
 |*linewidth*       | real       | 1.0            | Line width scaling|
 |*tubes*           | boolean    | false          | Draw lines as 3D tubes|
@@ -129,7 +146,17 @@
 |*scalemax*        | real       | 0.0            | Length scaling maximum, sets the range over which vectors will be scaled [0,scalemax]. Default automatically calculated based on data max|
 |*arrowhead*       | real       | 5.0            | Arrow head size as a multiple of length or radius, if < 1.0 is multiple of length, if > 1.0 is multiple of radius|
 |*scalevectors*    | real       | 1.0            | Vector scaling multiplier, applies to all vector objects|
-|*radius*          | real       | 0.02           | Arrow shaft radius as ratio of vector length|
+
+### object(vector/shapes)
+
+| Property         | Type       | Default            | Description                               |
+| ---------------- | ---------- | ------------------ | ----------------------------------------- |
+|*radius*          | real       | 0.02           | When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.|
+
+### object(vector)
+
+| Property         | Type       | Default            | Description                               |
+| ---------------- | ---------- | ------------------ | ----------------------------------------- |
 |*thickness*       | real       | 0.0            | Arrow shaft thickness as fixed value (overrides "radius")|
 |*length*          | real       | 0.0            | Arrow fixed length, default is to use vector magnitude|
 |*normalise*       | real       | 1.0            | Normalisation factor to adjust between vector arrows scaled to their vector length or all arrows having a constant length. If 0.0 vectors are scaled to their vector length, if 1.0 vectors are all scaled to the constant "length" property (if property length=0.0, this is ignored).|
@@ -217,7 +244,7 @@
 |*rulerformat*     | string     | "%-10.3f"      | Format specifier for ruler tick values, eg: %.3[f/e/g] standard, scientific, both|
 |*rulerlabels*     | string[][] | []             | Tick labels to display on rulers, 2d array, one dimension per model axis, replaces rulerticks. If values are numeric, will define the position value, otherwise define the label only.|
 |*rulerwidth*      | real       | 1.5            | Width of ruler lines|
-|*border*          | integer    | 1.0            | Border width around model boundary, 0=disabled|
+|*border*          | real       | 1.0            | Border width around model boundary, 0=disabled|
 |*fillborder*      | boolean    | false          | Draw filled background box around model boundary|
 |*bordercolour*    | colour     | "grey"         | Colour of model boundary border|
 |*axis*            | boolean    | true           | Draw X/Y/Z legend showing model axes orientation|
