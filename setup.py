@@ -14,7 +14,7 @@ import platform
 import glob
 
 #Current version
-version = "1.3.4"
+version = "1.4.0"
 
 """
 To release a new verison:
@@ -51,6 +51,7 @@ if sys.argv[-1] == 'tag':
 
 #Run with "publish" arg to upload the release
 if sys.argv[-1] == 'publish':
+    os.system("python setup.py sdist")
     os.system("twine upload dist/*")
     sys.exit()
 
