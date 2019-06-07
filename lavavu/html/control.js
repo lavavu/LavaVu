@@ -68,12 +68,11 @@ function WindowInteractor(id, uid, port) {
   } else {
 
     //Several possible modes to try
-    if (loc.hostname == 'hub.mybinder.org') {
-      var regex = /\/user\/[a-z0-9-]+\//i;
-      var base = regex.exec(loc.pathname)[0];
-      connect(loc.protocol + "//hub.mybinder.org" + base + "proxy/" + port);
-      return;
-    }
+    //JupyterHub URL
+    var regex = /\/user\/[a-z0-9-]+\//i;
+    var base = regex.exec(loc.pathname)[0];
+    connect(loc.protocol + "//" + loc.hostname + base + "proxy/" + port);
+
     if (loc.protocol != 'file:') {
       //(Don't bother for file:// urls)
       connect(loc.protocol + "//" + loc.hostname + ":" + port);
