@@ -70,8 +70,11 @@ function WindowInteractor(id, uid, port) {
     //Several possible modes to try
     //JupyterHub URL
     var regex = /\/user\/[a-z0-9-]+\//i;
-    var base = regex.exec(loc.pathname)[0];
-    connect(loc.protocol + "//" + loc.hostname + base + "proxy/" + port);
+    var parsed = regex.exec(loc.pathname);
+    if (parsed && parsed.length > 0) {
+      var base = parsed[0];
+      connect(loc.protocol + "//" + loc.hostname + base + "proxy/" + port);
+    }
 
     if (loc.protocol != 'file:') {
       //(Don't bother for file:// urls)
