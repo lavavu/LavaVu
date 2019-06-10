@@ -227,7 +227,7 @@ class Server(threading.Thread):
 
     def run(self):
         httpd = None
-        HTTPServer.allow_reuse_address = True
+        HTTPServer.allow_reuse_address = False
         try:
             # We "partially apply" our first argument to get the viewer object into LVRequestHandler
             handler = partial(LVRequestHandler, self.viewer)
@@ -264,7 +264,6 @@ class Server(threading.Thread):
                 self.run()
             else:
                 print("Server start failed: ",e, e.errno, self.port)
-                return
 
 def serve(viewer, port=None, ipv6=False, retries=100):
     s = Server(viewer, port, ipv6, retries)
