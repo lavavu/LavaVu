@@ -43,9 +43,18 @@ import datetime
 import json
 from vutils import is_ipython, is_notebook
 import weakref
+import string
+from random import Random
 
 #Register of windows (viewer instances)
 windows = []
+#Window unique ids
+winids = []
+#Generate unique strings for controls and windows
+id_random = Random() #Ensure we use our own default seed in case set in notebook
+def gen_id():
+    alphabet = string.ascii_letters + string.digits
+    return ''.join(id_random.choices(alphabet, k=10))
 
 vertexShader = """
 <script id="line-vs" type="x-shader/x-vertex">
@@ -373,7 +382,6 @@ class _FilterAction(_PropertyAction):
 class _HTML(object):
     """A class to output HTML controls
     """
-    nextid = 0
 
     #Parent class for container types
     def __init__(self, label):
@@ -386,9 +394,8 @@ class _HTML(object):
 
     def uniqueid(self):
         #Get a unique control identifier
-        self.id = _HTML.nextid
-        _HTML.nextid += 1
-        self.elid = "lvctrl_" + str(self.id)
+        self.id = gen_id()
+        self.elid = "lvctrl_" + self.id
 
     def labelhtml(self):
         #Default label
@@ -472,12 +479,12 @@ class Window(_Container):
         html += '<img id="imgtarget_---VIEWERID---" draggable=false style="margin: 0px; border: 1px solid #aaa; display: inline-block;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAQAAAAAYLlVAAAAPUlEQVR42u3OMQEAAAgDINe/iSU1xh5IQPamKgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgLtwAMBsGqBDct9xQAAAABJRU5ErkJggg==">\n'
         html += """
            <div style="display: none; z-index: 200; position: absolute; top: 5px; right: 5px;">
-             <select onchange="_wi[---VIEWERID---].box.mode = this.value;">
+             <select onchange="_wi['---VIEWERID---'].box.mode = this.value;">
                <option>Rotate</option>
                <option>Translate</option>
                <option>Zoom</option>
              </select>
-             <input type="button" value="Reset" onclick="_wi[---VIEWERID---].execute('reset');">
+             <input type="button" value="Reset" onclick="_wi['---VIEWERID---'].execute('reset');">
            </div>"""
         html += '</div>\n'
 
@@ -644,7 +651,7 @@ class _Control(_HTML):
         self._value = value #Store passed initial value
 
     def onchange(self):
-        return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", this.value, this);"
+        return "_wi['---VIEWERID---'].do_action('" + str(self.id) + "', this.value, this);"
 
     def show(self):
         #Show only this control
@@ -838,7 +845,7 @@ class Checkbox(_Control):
         return html
 
     def onchange(self):
-        return "; _wi[---VIEWERID---].do_action(" + str(self.id) + ", this.checked ? 1 : 0, this);"
+        return "; _wi['---VIEWERID---'].do_action('" + str(self.id) + "', this.checked ? 1 : 0, this);"
 
 class Range(_Control):
     """A slider control for a range of values
@@ -896,7 +903,7 @@ class Button(_Control):
         super(Button, self).__init__(target, None, command, None, label)
 
     def onchange(self):
-        return "_wi[---VIEWERID---].do_action(" + str(self.id) + ", '', this);"
+        return "_wi['---VIEWERID---'].do_action('" + str(self.id) + "', '', this);"
 
     def labelhtml(self):
         return ''
@@ -917,9 +924,9 @@ class Entry(_Control):
         html = self.labelhtml()
         html += '<input class="---ELID---" type="text" value="" '
         html += self.attribs()
-        html += ' onkeypress="if (event.keyCode == 13) { _wi[---VIEWERID---].do_action(---ID---, this.value.trim(), this); };"><br>\n'
+        html += ' onkeypress="if (event.keyCode == 13) { _wi[\'---VIEWERID---\'].do_action(\'---ID---\', this.value.trim(), this); };"><br>\n'
         html = html.replace('---ELID---', self.elid)
-        return html.replace('---ID---', str(self.id))
+        return html.replace('---ID---', self.id)
 
 class Command(_Control):
     """A generic input control for executing command strings
@@ -932,10 +939,10 @@ class Command(_Control):
         html += """
         <input class="---ELID---" type="text" value="" 
         onkeypress="if (event.keyCode == 13) { var cmd=this.value.trim(); 
-        _wi[---VIEWERID---].do_action(---ID---, cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
+        _wi['---VIEWERID---'].do_action('---ID---', cmd ? cmd : 'repeat', this); this.value=''; };"><br>\n
         """
         html = html.replace('---ELID---', self.elid)
-        return html.replace('---ID---', str(self.id))
+        return html.replace('---ID---', self.id)
 
 class File(_Control):
     """A file picker control
@@ -969,7 +976,7 @@ class File(_Control):
               output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ',
                            f.size, ' bytes, last modified: ',
                            '</li>');
-                _wi[---VIEWERID---].do_action("---ID---", f.name);
+                _wi['---VIEWERID---'].do_action("---ID---", f.name);
             }
             document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
           }
@@ -978,7 +985,7 @@ class File(_Control):
         """
         html = html.replace('---ELID---', self.elid)
         html = html.replace('---OPTIONS---', self.options)
-        return html.replace('---ID---', str(self.id))
+        return html.replace('---ID---', self.id)
 
 class List(_Control):
     """A list of predefined input values to set properties or run commands
@@ -1042,7 +1049,7 @@ class Colour(_Control):
               var c = new Colour(0);
               c.setHSV(val);
               el.style.backgroundColor = c.html();
-              _wi[---VIEWERID---].do_action(---ID---, c.html(), el);
+              _wi['---VIEWERID---'].do_action('---ID---', c.html(), el);
             }
             el.picker = new ColourPicker(savefn);
             el.picker.pick(col, offset[0], offset[1]);">
@@ -1058,7 +1065,7 @@ class Colour(_Control):
         html = html.replace('---VALUE---', str(self.value))
         html = html.replace('---ELID---', self.elid)
         html = html.replace('---ATTRIBS---', self.attribs())
-        return html.replace('---ID---', str(self.id))
+        return html.replace('---ID---', self.id)
 
 class Gradient(_Control):
     """A colourmap editor
@@ -1092,8 +1099,8 @@ class Gradient(_Control):
             //Gradient updated
             //var colours = obj.palette.toJSON()
             el.currentmap = obj.palette.get(el.currentmap);
-            _wi[---VIEWERID---].do_action(---ID---, JSON.stringify(el.currentmap.colours));
-            //_wi[---VIEWERID---].do_action(---ID---, obj.palette.toJSON(), el);
+            _wi['---VIEWERID---'].do_action('---ID---', JSON.stringify(el.currentmap.colours));
+            //_wi['---VIEWERID---'].do_action('---ID---', obj.palette.toJSON(), el);
 
             //Update stored maps list by name
             if (el.selectedIndex >= 0)
@@ -1114,7 +1121,7 @@ class Gradient(_Control):
         html = html.replace('---SELID---', str(self.selected))
         html = html.replace('---ELID---', self.elid)
         html = html.replace('---ATTRIBS---', self.attribs())
-        return html.replace('---ID---', str(self.id))
+        return html.replace('---ID---', self.id)
 
 class ColourMapList(List):
     """A colourmap list selector, populated by the default colour maps
@@ -1219,7 +1226,7 @@ class TimeStepper(Range):
           el = document.getElementById('---ELID---_number');
           if (el) {
             //Call again on image load - pass callback
-            var V = _wi[---VIEWERID---];
+            var V = _wi['---VIEWERID---'];
             if (!V.box.canvas.mouse.isdown && !V.box.zoomTimer && (!V.box.gui || V.box.gui.closed))
               V.execute("next", startTimer_---ELID---);
             else
@@ -1534,11 +1541,13 @@ class _ControlFactory(object):
         if _isviewer(target):
             #Append the current viewer ref
             windows.append(target)
+            #Get unique ID
+            winids.append(gen_id())
         else:
             target.parent.control.show()
             return
 
-        viewerid = len(windows)
+        viewerid = winids[-1]
 
         #Generate the HTML and associated action JS
         html = "<form novalidate>"
@@ -1576,7 +1585,7 @@ class _ControlFactory(object):
             #Pass port and object id from server
             actionjs = self.export_actions(actions, id(target), target.server.port)
             #Output the controls and start interactor
-            html += "<script>init({0});</script>".format(viewerid)
+            html += "<script>init('{0}');</script>".format(viewerid)
             display(HTML(actionjs + html))
         else:
             #Export html file
@@ -1584,7 +1593,7 @@ class _ControlFactory(object):
             full_html = '<html>\n<head>\n<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">'
             full_html += _webglboxcode(menu)
             full_html += self.export_actions(actions) #Process actions
-            full_html += '</head>\n<body onload="init({0});">\n'.format(viewerid)
+            full_html += '</head>\n<body onload="init(\'{0}\');">\n'.format(viewerid)
             full_html += html
             full_html += "\n</body>\n</html>\n"
 
@@ -1631,9 +1640,9 @@ class _ControlFactory(object):
         #Find matching viewer id, redisplay all that match
         for idx,obj in enumerate(windows):
             if obj == self._target():
-                viewerid = idx+1
+                viewerid = winids[idx]
                 from IPython.display import display,HTML,Javascript
-                display(Javascript('_wi[{0}].redisplay({0});'.format(viewerid)))
+                display(Javascript('_wi["{0}"].redisplay();'.format(viewerid)))
 
     def update(self):
         """Update the control values from current viewer data
@@ -1646,9 +1655,9 @@ class _ControlFactory(object):
         #Find matching viewer id, update all that match
         for idx,obj in enumerate(windows):
             #if obj == self._target():
-            viewerid = idx+1
+            viewerid = winids[idx]
             from IPython.display import display,HTML
-            display(HTML('<script>_wi[{0}].execute(" ");</script>'.format(viewerid)))
+            display(HTML('<script>_wi["{0}"].execute(" ");</script>'.format(viewerid)))
         
     def clear(self):
         #Initialise with a default control wrapper

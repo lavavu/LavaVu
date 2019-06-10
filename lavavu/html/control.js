@@ -1,6 +1,6 @@
 //Maintain a list of interactor instances opened by id
 //(check in case this script imported twice, don't overwrite previous)
-var _wi = window._wi ? window._wi : [];
+var _wi = window._wi ? window._wi : {};
 var debug_mode = false;
 
 function WindowInteractor(id, uid, port) {
