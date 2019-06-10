@@ -1,7 +1,7 @@
 /* Notebook control stylesheet */
 .lvctrl input { display: inline; }
 .lvctrl input[type=range] { width: 200px; }
-.lvctrl input[type=button] { width: 100px; }
+.lvctrl input[type=button] { width: 100px; border: 1px solid #999; border-radius: 3px; background: transparent; margin-right: 3px; height: 20px;}
 .lvctrl input[type=number] { width: 105px; height: 26px; border-radius: 0; border: 1px dotted #999;}
 .lvctrl pre { display: inline; }
 .lvctrl p  { color: gray; margin: 0px}

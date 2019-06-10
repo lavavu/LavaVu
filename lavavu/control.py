@@ -1236,14 +1236,12 @@ class TimeStepper(Range):
         function playPause_---ELID---(btn) {
           if (timer_---ELID--- >= 0) {
             btn.value="\\u25BA";
-            btn.style.fontSize = "12px"
             window.cancelAnimationFrame(timer_---ELID---);
             timer_---ELID--- = -1;
           } else {
             timer_---ELID--- = 0;
             startTimer_---ELID---();
-            btn.value="\\u25ae\\u25ae";
-            btn.style.fontSize = "10px"
+            btn.value="\\u2759\\u2759";
           }
         }
         </script>
