@@ -52,9 +52,12 @@ windows = []
 winids = []
 #Generate unique strings for controls and windows
 id_random = Random() #Ensure we use our own default seed in case set in notebook
-def gen_id():
+def gen_id(length=10):
     alphabet = string.ascii_letters + string.digits
-    return ''.join(id_random.choices(alphabet, k=10))
+    if not hasattr(id_random, 'choices'):
+        #For Python 2.7
+        return ''.join(id_random.choice(alphabet) for i in range(length))
+    return ''.join(id_random.choices(alphabet, k=length))
 
 vertexShader = """
 <script id="line-vs" type="x-shader/x-vertex">
