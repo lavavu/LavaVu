@@ -1450,10 +1450,10 @@ void LavaVu::readOBJ(const FilePath& fn)
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string err;
-  tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), fn.path.c_str());
+  tinyobj::LoadObj(&attrib, &shapes, &materials, &err, fn.full.c_str(), fn.path.c_str(), true, false);
   if (!err.empty())
   {
-    std::cerr << "Error loading OBJ file: " << fn.full << " - " << err << std::endl;
+    std::cerr << "While loading OBJ file: " << fn.full << " - " << err << std::endl;
     //return; //Could just be a warning, continue anyway
   }
 
@@ -1496,7 +1496,6 @@ void LavaVu::readOBJ(const FilePath& fn)
     int trisplit = session.global("trisplit");
     bool swapY = session.global("swapyz");
     debug_print("Loading: shape[%ld].indices: %ld\n", i, shapes[i].mesh.indices.size());
-    int vi;
     //Load
     int voffset = 0;
     unsigned int current_material_id = 0;
@@ -1516,6 +1515,7 @@ void LavaVu::readOBJ(const FilePath& fn)
         if (current_material_id != material_id)
         {
           //printf("%d current material %d == %d\n", f, current_material_id, material_id);
+          //TODO: only add new container if a new texture is loaded?
           tris->add(tobj); //Start new container
           readOBJ_material(fn, materials[material_id], tobj, tris, verbose);
           voffset = 0;
@@ -1523,21 +1523,23 @@ void LavaVu::readOBJ(const FilePath& fn)
         }
       }
 
+      tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
+      int vi[3] = {3*ids[0].vertex_index, 3*ids[1].vertex_index, 3*ids[2].vertex_index};
+
       if (trisplit == 0)
       {
         //Use the provided indices
         //re-index to use indices for this shape only (the global list is for all shapes)
-        tinyobj::index_t ids[3] = {shapes[i].mesh.indices[f], shapes[i].mesh.indices[f+1], shapes[i].mesh.indices[f+2]};
+        //printf("%d %d %d\n", ids[0].vertex_index, ids[1].vertex_index, ids[2].vertex_index);
         for (int c=0; c<3; c++)
         {
-          vi = 3*ids[c].vertex_index;
           if (swapY)
           {
-            float vert[3] = {attrib.vertices[vi], attrib.vertices[vi+2], attrib.vertices[vi+1]};
+            float vert[3] = {attrib.vertices[vi[c]], attrib.vertices[vi[c]+2], attrib.vertices[vi[c]+1]};
             tris->read(tobj, 1, lucVertexData, vert);
           }
           else
-            tris->read(tobj, 1, lucVertexData, &attrib.vertices[vi]);
+            tris->read(tobj, 1, lucVertexData, &attrib.vertices[vi[c]]);
           tris->read(tobj, 1, lucIndexData, &voffset);
           voffset++;
           if (attrib.texcoords.size())
@@ -1555,17 +1557,26 @@ void LavaVu::readOBJ(const FilePath& fn)
             else
               tris->read(tobj, 1, lucNormalData, &attrib.normals[nidx]);
           }
+
+          //Extended vertex spec with colour (R,G,B float)
+          //(TODO: support where trisplit > 0)
+          if (attrib.colors.size())
+          {
+            Colour C(_FTOC(attrib.colors[vi[c]]), _FTOC(attrib.colors[vi[c]+1]), _FTOC(attrib.colors[vi[c]+2]));
+            tris->read(tobj, 1, lucRGBAData, &C.value);
+          }
         }
       }
       //TriSplit enabled, don't use built in index data
+      //(allows mesh optimisation and smooth normal calculation etc)
       else if (attrib.texcoords.size())
       {
-        float* v0 = &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3];
-        float* v1 = &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3];
-        float* v2 = &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3];
-        float* t0 = &attrib.texcoords[shapes[i].mesh.indices[f].texcoord_index*2];
-        float* t1 = &attrib.texcoords[shapes[i].mesh.indices[f+1].texcoord_index*2];
-        float* t2 = &attrib.texcoords[shapes[i].mesh.indices[f+2].texcoord_index*2];
+        float* v0 = &attrib.vertices[vi[0]];
+        float* v1 = &attrib.vertices[vi[1]];
+        float* v2 = &attrib.vertices[vi[2]];
+        float* t0 = &attrib.texcoords[ids[0].texcoord_index*2];
+        float* t1 = &attrib.texcoords[ids[1].texcoord_index*2];
+        float* t2 = &attrib.texcoords[ids[2].texcoord_index*2];
         float tv0[5] = {v0[0], v0[1], v0[2], t0[0], t0[1]};
         float tv1[5] = {v1[0], v1[1], v1[2], t1[0], t1[1]};
         float tv2[5] = {v2[0], v2[1], v2[2], t2[0], t2[1]};
@@ -1574,35 +1585,13 @@ void LavaVu::readOBJ(const FilePath& fn)
       else
       {
         tris->addTriangle(tobj,
-                   &attrib.vertices[shapes[i].mesh.indices[f].vertex_index*3],
-                   &attrib.vertices[shapes[i].mesh.indices[f+1].vertex_index*3],
-                   &attrib.vertices[shapes[i].mesh.indices[f+2].vertex_index*3],
+                   &attrib.vertices[vi[0]],
+                   &attrib.vertices[vi[1]],
+                   &attrib.vertices[vi[2]],
                    trisplit, swapY);
       }
-    }
-  }
-  return;
 
-  for (size_t i = 0; i < materials.size(); i++)
-  {
-    printf("material[%ld].name = %s\n", i, materials[i].name.c_str());
-    printf("  material.Ka = (%f, %f ,%f)\n", materials[i].ambient[0], materials[i].ambient[1], materials[i].ambient[2]);
-    printf("  material.Kd = (%f, %f ,%f)\n", materials[i].diffuse[0], materials[i].diffuse[1], materials[i].diffuse[2]);
-    printf("  material.Ks = (%f, %f ,%f)\n", materials[i].specular[0], materials[i].specular[1], materials[i].specular[2]);
-    printf("  material.Tr = (%f, %f ,%f)\n", materials[i].transmittance[0], materials[i].transmittance[1], materials[i].transmittance[2]);
-    printf("  material.Ke = (%f, %f ,%f)\n", materials[i].emission[0], materials[i].emission[1], materials[i].emission[2]);
-    printf("  material.Ns = %f\n", materials[i].shininess);
-    printf("  material.Ni = %f\n", materials[i].ior);
-    printf("  material.dissolve = %f\n", materials[i].dissolve);
-    printf("  material.illum = %d\n", materials[i].illum);
-    printf("  material.map_Ka = %s\n", materials[i].ambient_texname.c_str());
-    printf("  material.map_Kd = %s\n", materials[i].diffuse_texname.c_str());
-    printf("  material.map_Ks = %s\n", materials[i].specular_texname.c_str());
-    std::map<std::string, std::string>::const_iterator it(materials[i].unknown_parameter.begin());
-    std::map<std::string, std::string>::const_iterator itEnd(materials[i].unknown_parameter.end());
-    for (; it != itEnd; it++)
-      printf("  material.%s = %s\n", it->first.c_str(), it->second.c_str());
-    printf("\n");
+    }
   }
 }
 
