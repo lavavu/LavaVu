@@ -17,10 +17,21 @@ import numpy
 import os
 import convert
 
-def loadpointcloud(filename, subsample=1):
+def loadpointcloud(filename, subsample=1, dtype=numpy.float32, components=['x', 'y', 'z', 'red', 'green', 'blue', 'alpha']):
     """
     Attempt to load the passed point cloud file based
     Pick loader based on extension
+
+    Parameters
+    ----------
+    filename, str
+        Full path to file to load
+    subsample, int
+        Subsample factor, sample every Nth point
+    dtype, numpy.dtype
+        Type of data
+    components, list
+        List of components per point
 
     Returns
     -------
@@ -31,7 +42,72 @@ def loadpointcloud(filename, subsample=1):
     """
     fn, ext = os.path.splitext(filename)
     ext = ext.lower()
-    if ext == '.obj':
+    if ext == '.xyz':
+        #Loop over lines in input file
+        count = 0
+        V = []
+        C = []
+        with open(filename, 'r') as file:
+            for line in file:
+                #Subsample?
+                count += 1
+                if subsample > 1 and count % subsample != 1: continue
+
+                if count % 10000 == 0:
+                  print(count)
+                  sys.stdout.flush()
+
+                #Read particle position
+                data = re.split(r'[,;\s]+', line.rstrip())
+                if len(data) < 3: continue
+                x = float(data[0])
+                y = float(data[1])
+                z = float(data[2])
+
+                V.append((x, y, z))
+
+                #R,G,B[,A] colour if provided
+                if len(data) >= 7:
+                    C.append((int(data[3]), int(data[4]), int(data[5]), int(data[6])))
+                elif len(data) == 6:
+                    C.append((int(data[3]), int(data[4]), int(data[5]), 255))
+
+        V = numpy.array(V)
+        C = numpy.array(C)
+
+    elif ext == '.xyzb':
+        inbytes = os.path.getsize(filename)
+        #All floats
+        #num = inbytes / (4 * 6) # x y z r g b
+        #All floats, rgba
+        #num = inbytes / (4 * 7) # x y z r g b a
+        #All doubles, rgba
+        #num = inbytes / (8 * 7) # x y z r g b a
+        #Float vert, byte colour
+        #num = inbytes / (4 * 3 + 4) # x y z r g b a
+        sz = numpy.dtype(dtype).itemsize
+        num = inbytes // (sz * len(components))
+
+        with open(filename, 'rb') as infile:
+            print("Importing " + str(num//subsample) + " points")
+            arr = numpy.fromfile(infile, dtype='float64')
+            infile.close()
+
+            arr = arr.astype(dtype).reshape(len(arr)//len(components), len(components))
+            if subsample > 1:
+                arr = arr[::subsample]
+
+            #Convert float rgba to uint32 colour
+            colours = None
+            if len(components) > 6:
+                colours = arr[:,3:len(components)]
+                colours *= 255
+                colours = colours.astype('uint8').ravel()
+                colours = colours.view(dtype='uint32')
+
+            return (arr[:,0:3], colours)
+
+    elif ext == '.obj':
         print("Loading OBJ")
         import pywavefront
         scene = pywavefront.Wavefront(filename)
