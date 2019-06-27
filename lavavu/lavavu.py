@@ -4526,7 +4526,7 @@ def hidecode():
     """
     Allow toggle of code cells
     """
-    lavavu.inject('''<script>
+    inject('''<script>
     var code_show = '';
     var menu_edited = false;
     function code_toggle() {
