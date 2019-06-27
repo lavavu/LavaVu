@@ -198,7 +198,13 @@ Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& rende
       break;
     }
   }
-  std::cout << "RENDERER NOT FOUND: " << GeomData::names[type] << std::endl;
+
+  //Return the point renderer
+  //(Allows rendering other types as points if no renderer created)
+  if (type != lucPointType)
+    return getRenderer(lucPointType, renderers);
+
+  //std::cout << "RENDERER NOT FOUND: " << GeomData::names[type] << std::endl;
   return NULL;
 }
 
