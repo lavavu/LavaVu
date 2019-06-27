@@ -13,12 +13,6 @@ See the :any:`lavavu.Viewer` class documentation for more information.
 
 """
 
-#NOTE: regarding sync of state between python and library
-#- sync from python to lavavu is immediate,
-#    property setting must always trigger a sync to lavavu
-#- sync from lavavu to python is lazy, always need to call _get()
-#    before using state data
-
 __all__ = ['Viewer', 'Object', 'Properties', 'ColourMap', 'DrawData', 'Figure', 'Geometry', 'Image',
            'download', 'grid2d', 'grid3d', 'cubehelix', 'loadCPT', 'matplotlib_colourmap', 'printH5', 'lerp',
            'inject', 'hidecode', 'style', 'cellstyle', 'cellwidth',
@@ -4522,29 +4516,62 @@ def inject(html):
     from IPython.display import display,HTML
     display(HTML(html))
 
+def injectjs(js):
+    """
+    Inject Javascript into a notebook cell
+    """
+    inject('<script>' + js + '</script>')
+
 def hidecode():
     """
     Allow toggle of code cells
     """
-    #http://blog.nextgenetics.net/?e=102
-    #https://pastebin.com/H77xP2vN
-    inject('''<script>
-    code_show = true;
-    menu_edited = false;
+    lavavu.inject('''<script>
+    var code_show = '';
+    var menu_edited = false;
     function code_toggle() {
-      if (code_show)
-        $('div.input').hide();
+      var code_cells = document.getElementsByClassName('CodeMirror');
+      if (code_cells.length == 0) return;
+
+      if (code_show == 'none')
+        code_show = '';
       else
-        $('div.input').show();
-      code_show = !code_show
+        code_show = 'none';
+
+      for (var x=0; x<code_cells.length; x++) {
+        var el = code_cells[x].parentElement;
+        el.style.display = code_show;
+
+        //Show cell code on double click
+        var p = el.parentElement.parentElement;
+        p.ondblclick = function() {
+          var pel = this.parentElement;
+          var all = pel.getElementsByTagName('*');
+          for (var i = 0; i < all.length; i++) {
+            if (all[i].classList.contains('CodeMirror')) {
+              all[i].parentElement.style.display = '';
+              break;
+            }
+          }
+        }
+      }
     }
+
     if (!menu_edited) {
       menu_edited = true;
-      $("#view_menu").append("<li id='toggle_toolbar' title='Show/Hide code cells'><a href='javascript:code_toggle()'>Toggle Code Cells</a></li>");
+      var mnu = document.getElementById("view_menu");
+      console.log(mnu)
+      if (mnu) {
+        var element = document.createElement('li');
+        element.id = 'toggle_toolbar';
+        element.title = 'Show/Hide code cells'
+        element.innerHTML = "<a href='javascript:code_toggle()'>Toggle Code Cells</a>"
+        mnu.appendChild(element);
+      }
     }
-    $(document).ready(code_toggle);
+    code_toggle();
     </script>
-    The code for this notebook is hidden <a href="javascript:code_toggle()">Click here</a> to show/hide code.''')
+    The code for this notebook is hidden <a href="#" onclick="code_toggle()">Click here</a> to show/hide code.''')
 
 def style(css):
     """
