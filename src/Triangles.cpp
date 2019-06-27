@@ -466,10 +466,10 @@ void Triangles::calcTriangleNormals(unsigned int index)
   Vec3d normal;
 
   //Has index data, simply load the triangles
-  if (geom[index]->render->indices.size() > 0)
+  if (geom[index]->render->indices.size() > 2)
   {
     //TODO: this doesn't appear to be working, normals not smoothed
-    debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->render->indices.size()/3);
+    debug_print("Calculating normals (indexed) for triangle surface %d size %d\n", index, geom[index]->render->indices.size()/3);
     //Calculate face normals for each triangle and copy to each face vertex
     for (unsigned int i=0; i<geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; i += 3)
     {
@@ -487,7 +487,7 @@ void Triangles::calcTriangleNormals(unsigned int index)
       normals[i3] += normal;
     }
   }
-  else
+  else if (geom[index]->count() > 2)
   {
     //Calculate face normals for each triangle and copy to each face vertex
     debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->count());

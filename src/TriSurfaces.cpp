@@ -96,7 +96,6 @@ void TriSurfaces::loadMesh()
   debug_print("Loading %d triangles...\n", total/3);
 
   //Calculate normals, delete duplicate verts, calc indices
-  GLuint unique = 0;
   elements = 0;
   for (unsigned int index = 0; index < geom.size(); index++)
   {
@@ -110,7 +109,6 @@ void TriSurfaces::loadMesh()
 
       //Increment by vertex count (all vertices are unique as mesh is pre-optimised)
       //elements += counts[index]; //geom[index]->render->indices.size();
-      unique += geom[index]->render->vertices.size() / 3;
 
       if (vnormals && geom[index]->render->normals.size() == 0)
         calcTriangleNormals(index);
@@ -139,19 +137,20 @@ void TriSurfaces::loadMesh()
       if (vnormals && geom[index]->render->normals.size() == 0)
         calcGridNormals(index);
       calcGridIndices(index);
-      unique += geom[index]->count(); //For calculating index offset (voffset)
       int els = geom[index]->gridElements2d();
       triverts = els * 6;
       elements += triverts;
     }
     else
     {
-      //Unstructured mesh, 1 index per vertex
+      //Unstructured mesh
+      std::vector<GLuint> indices;
+      triverts = geom[index]->count();
+      indices.resize(triverts);
 
       //Add vertices to vector
       std::vector<Vertex> verts(geom[index]->count());
       std::vector<Vec3d> normals(vnormals ? geom[index]->count() : 0);
-      std::vector<GLuint> indices;
       for (unsigned int j=0; j < geom[index]->count(); j++)
       {
         verts[j].id = verts[j].ref = j;
@@ -160,85 +159,114 @@ void TriSurfaces::loadMesh()
       t2 = clock();
       debug_print("  %.4lf seconds to add to sort vector\n", (t2-t1)/(double)CLOCKS_PER_SEC);
 
-      triverts = geom[index]->count();
-      indices.resize(triverts);
-      if (vnormals) calcSmoothTriangleNormals(index, verts, normals, optimise);
+      //Sums normals + colours for shared vertices
+      smoothMesh(index, verts, normals, optimise);
+
       elements += triverts;
 
       //Now have list of vertices sorted by vertex pos with summed normals and references of duplicates replaced
       t1 = clock();
 
-      //Switch out the optimised vertices and normals with the old data stores
-      // - must maintain a copy of old containers to read from in optimisation
-      //   otherwise will get destroyed when new containers replace them
-      Float3_Ptr old_vertices = geom[index]->_vertices;
-      Float3_Ptr old_normals = geom[index]->_normals;
-      Float2_Ptr old_texCoords = geom[index]->_texCoords;
-      UInt_Ptr old_indices = geom[index]->_indices;
-
-      //Create a new stores for replaced values
-      geom[index]->_vertices = std::make_shared<Coord3DValues>();
-      geom[index]->_indices = std::make_shared<UIntValues>();
-
-      if (hasTexCoords)
-        geom[index]->_texCoords = std::make_shared<Coord2DValues>();
-
-      //Vertices, normals, indices (and colour values) may be replaced
-      //Rest just get copied over
-      if (vnormals)
-        geom[index]->_normals = std::make_shared<Coord3DValues>();
-
-      //Update references
-      geom[index]->setRenderData();
-
-      //Recreate value data as optimised version is smaller, re-load necessary values
-      FloatValues* oldvalues = geom[index]->colourData();
-      Values_Ptr newvalues = NULL;
-      if (optimise && oldvalues && vertColour)
+      //If not optimising the vertices (usually to preserve texture)
+      // - we still want to use the smooth normals calculated from the optimised mesh
+      if (!optimise)
       {
-        newvalues = Values_Ptr(new FloatValues());
-        newvalues->label = oldvalues->label;
-        newvalues->minimum = oldvalues->minimum;
-        newvalues->maximum = oldvalues->maximum;
-      }
-
-      for (unsigned int v=0; v<verts.size(); v++)
-      {
-        //Re-write optimised data with unique vertices only
-        if (!optimise || verts[v].id == verts[v].ref)
+        //Load smooth normals
+        if (vnormals)
         {
-          //Reference id == self, not a duplicate
+          geom[index]->_normals = std::make_shared<Coord3DValues>();
+          //Just copy in raw data to ensure array large enough
+          read(geom[index], normals.size(), lucNormalData, &normals[0]);
+          //Update the rendering references as some containers have been replaced
+          geom[index]->setRenderData();
+          //Order is wrong for original vertices, re-copy in order
+          for (unsigned int v=0; v<verts.size(); v++)
+            memcpy(geom[index]->render->normals[verts[v].id], normals[verts[v].ref].ref(), sizeof(float) * 3);
+        }
 
-          //Average final colour value
-          if (vertColour && newvalues)
+        //Load default indices
+        if (geom[index]->render->indices.size() == 0)
+        {
+          unsigned int ind = 0;
+          for (unsigned int i=0; i<geom[index]->count(); i++)
+            indices[i] = ind++;
+        }
+      }
+      else
+      {
+        //Optimised mesh with duplicate vertices removed
+
+        //Switch out the optimised vertices and normals with the old data stores
+        // - must maintain a copy of old containers to read from in optimisation
+        //   otherwise will get destroyed as soon as new containers replace them
+        Float3_Ptr old_vertices = geom[index]->_vertices;
+        Float3_Ptr old_normals = geom[index]->_normals;
+        Float2_Ptr old_texCoords = geom[index]->_texCoords;
+        UInt_Ptr old_indices = geom[index]->_indices;
+
+        //Create a new stores for replaced values
+        geom[index]->_vertices = std::make_shared<Coord3DValues>();
+        geom[index]->_indices = std::make_shared<UIntValues>();
+
+        if (hasTexCoords)
+          geom[index]->_texCoords = std::make_shared<Coord2DValues>();
+
+        //Vertices, normals, indices (and colour values) may be replaced
+        //Rest just get copied over
+        if (vnormals)
+          geom[index]->_normals = std::make_shared<Coord3DValues>();
+
+        //Update references
+        geom[index]->setRenderData();
+
+        //Recreate value data as optimised version is smaller, re-load necessary values
+        FloatValues* oldvalues = geom[index]->colourData();
+        Values_Ptr newvalues = NULL;
+        if (oldvalues && vertColour)
+        {
+          newvalues = Values_Ptr(new FloatValues());
+          newvalues->label = oldvalues->label;
+          newvalues->minimum = oldvalues->minimum;
+          newvalues->maximum = oldvalues->maximum;
+        }
+
+        for (unsigned int v=0; v<verts.size(); v++)
+        {
+          //Re-write optimised data with unique vertices only
+          if (verts[v].id == verts[v].ref)
           {
-            if (verts[v].vcount > 1)
-              oldvalues->value[verts[v].id] /= verts[v].vcount;
-            newvalues->read(1, &oldvalues->value[verts[v].id]);
+            //Reference id == self, not a duplicate
+
+            //Average final colour value
+            if (vertColour && newvalues)
+            {
+              if (verts[v].vcount > 1)
+                oldvalues->value[verts[v].id] /= verts[v].vcount;
+              newvalues->read(1, &oldvalues->value[verts[v].id]);
+            }
+
+            //Save an index lookup entry (Grid indices loaded in previous step)
+            indices[verts[v].id] = geom[index]->count();
+
+            //Replace verts & normals
+            read(geom[index], 1, lucVertexData, verts[v].vert);
+            if (vnormals)
+              read(geom[index], 1, lucNormalData, normals[verts[v].ref].ref());
+
+            if (hasTexCoords)
+              read(geom[index], 1, lucTexCoordData, (*old_texCoords)[verts[v].id]);
           }
-
-          //Save an index lookup entry (Grid indices loaded in previous step)
-          indices[verts[v].id] = geom[index]->count();
-
-          //Replace verts & normals
-          read(geom[index], 1, lucVertexData, verts[v].vert);
-          if (vnormals)
-            read(geom[index], 1, lucNormalData, normals[verts[v].ref].ref());
-
-          if (hasTexCoords)
-            read(geom[index], 1, lucTexCoordData, &((*old_texCoords)[verts[v].id][0]));
-
-          unique++;
+          else
+          {
+            //Duplicate vertex, use index reference
+            indices[verts[v].id] = indices[verts[v].ref];
+          }
         }
-        else
-        {
-          //Duplicate vertex, use index reference
-          indices[verts[v].id] = indices[verts[v].ref];
-        }
+
+        if (newvalues)
+          geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
+
       }
-
-      if (newvalues)
-        geom[index]->values[geom[index]->draw->colourIdx] = newvalues;
 
       t1 = clock();
       //Read the indices for loading sort list and later use (json export etc)
@@ -265,13 +293,13 @@ void TriSurfaces::loadMesh()
     debug_print("  Total %.4lf seconds.\n", (t2-tt)/(double)CLOCKS_PER_SEC);
   }
 
-  //debug_print("  *** There were %d unique vertices out of %d total.\n", unique, total);
   t2 = clock();
   debug_print("  ... %.4lf seconds to optimise triangle meshes\n", (t2-tt)/(double)CLOCKS_PER_SEC);
 }
 
-void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise)
+void TriSurfaces::smoothMesh(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise)
 {
+  //Calculates smoothed vertex normals (unless disabled) and smoothed colours for shared vertices
   clock_t t1,t2;
   t1 = clock();
   debug_print("Calculating normals for triangle surface %d size %d\n", index, geom[index]->render->vertices.size()/3);
@@ -280,13 +308,13 @@ void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &vert
   unsigned int hasColours = geom[index]->colourCount();
   bool vertColour = (hasColours && hasColours >= geom[index]->render->vertices.size()/3);
   if (hasColours && !vertColour) debug_print("Not enough colour values for per-vertex normalisation %d < %d\n", hasColours, geom[index]->render->vertices.size()/3);
-  bool normal = geom[index]->draw->properties["vertexnormals"];
+  bool vnormals = geom[index]->draw->properties["vertexnormals"];
   //Calculate face normals for each triangle and copy to each face vertex
-  for (unsigned int v=0; v<verts.size()-2 && verts.size() > 2; v += 3)
+  if (vnormals)
   {
-    //Copies for each vertex
-    if (normal)
+    for (unsigned int v=0; v<verts.size()-2 && verts.size() > 2; v += 3)
     {
+      //Copies for each vertex
       normals[v] = vectorNormalToPlane(verts[v].vert, verts[v+1].vert, verts[v+2].vert);
       normals[v+1] = Vec3d(normals[v]);
       normals[v+2] = Vec3d(normals[v]);
@@ -296,9 +324,8 @@ void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &vert
   debug_print("  %.4lf seconds to calc facet normals\n", (t2-t1)/(double)CLOCKS_PER_SEC);
   t1 = clock();
 
-  //Sort by vertex (no need if optimisation disabled)
-  if (optimise)
-    std::sort(verts.begin(), verts.end());
+  //Sort by vertex
+  std::sort(verts.begin(), verts.end());
   t2 = clock();
   debug_print("  %.4lf seconds to sort %d verts\n", (t2-t1)/(double)CLOCKS_PER_SEC, verts.size());
   t1 = clock();
@@ -319,7 +346,7 @@ void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &vert
       // use depends on the model, but 90 degrees is usually a good start.
 
       // cosine of angle between vectors = (v1 . v2) / |v1|.|v2|
-      float angle = normal ? RAD2DEG * normals[verts[v].id].angle(normals[verts[match].id]) : 0;
+      float angle = vnormals ? RAD2DEG * normals[verts[v].id].angle(normals[verts[match].id]) : 0;
       //debug_print("angle %f ", angle);
       //Don't include vertices in the sum if angle between normals too sharp
       if (angle < 90)
@@ -329,7 +356,7 @@ void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &vert
         dupcount++;
 
         //Add this normal to matched normal
-        if (normal)
+        if (vnormals)
           normals[verts[match].id] += normals[verts[v].id];
 
         //Colour value, add to matched
@@ -350,11 +377,14 @@ void TriSurfaces::calcSmoothTriangleNormals(int index, std::vector<Vertex> &vert
   debug_print("  %.4lf seconds to replace duplicates (%d/%d) \n", (t2-t1)/(double)CLOCKS_PER_SEC, dupcount, verts.size());
   t1 = clock();
 
-  for (unsigned int v=0; v<verts.size(); v++)
+  if (vnormals)
   {
-    //Normalise final vectors
-    if (verts[v].id == verts[v].ref)
-      normals[verts[v].id].normalise();
+    for (unsigned int v=0; v<verts.size(); v++)
+    {
+      //Normalise final vectors
+      if (verts[v].id == verts[v].ref)
+        normals[verts[v].id].normalise();
+    }
   }
 
   t2 = clock();

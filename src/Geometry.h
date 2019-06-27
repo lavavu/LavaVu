@@ -686,7 +686,7 @@ public:
   virtual void close();
   virtual void update();
   virtual void loadMesh();
-  void calcSmoothTriangleNormals(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise=true);
+  void smoothMesh(int index, std::vector<Vertex> &verts, std::vector<Vec3d> &normals, bool optimise=true);
   void calcCentroids();
   virtual void sort();    //Threaded sort function
   void loadList();
