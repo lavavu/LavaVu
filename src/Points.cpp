@@ -90,6 +90,13 @@ void Points::loadVertices()
   else
     datasize = sizeof(float) * 3 + sizeof(Colour);   //Vertex(3) and 32-bit colour
 
+  //Check first entry for texture
+  if (geom.size() == 0) return;
+  bool hasTexture = geom[0]->hasTexture();
+  bool hasTexCoords = geom[0]->render->texCoords.size()/2 == geom[0]->count();
+  if (hasTexture && hasTexCoords)
+    datasize += 2 * sizeof(float); //TexCoord 2 * float
+
   //Create intermediate buffer
   unsigned char* buffer = new unsigned char[total * datasize];
   unsigned char *ptr = buffer;
@@ -123,7 +130,8 @@ void Points::loadVertices()
     bool usesize = geom[s]->valueData(sizeidx) != NULL;
     //std::cout << geom[s]->draw->properties["sizeby"] << " : " << sizeidx << " : " << usesize << std::endl;
     Colour colour;
-
+    bool hasTexture = geom[s]->hasTexture();
+    bool hasTexCoords = geom[s]->render->texCoords.size()/2 == geom[s]->count();
     for (unsigned int i = 0; i < geom[s]->count(); i ++)
     {
       //Copy data to VBO entry
@@ -140,6 +148,12 @@ void Points::loadVertices()
           getColour(colour, cidx);
         memcpy(ptr, &colour, sizeof(Colour));
         ptr += sizeof(Colour);
+        //Optional texcoord
+        if (hasTexture && hasTexCoords)
+        {
+          memcpy(ptr, geom[s]->render->texCoords[i], sizeof(float) * 2);
+          ptr += sizeof(float) * 2;
+        }
         //Optional per-object size/type
         if (attribs)
         {
@@ -431,39 +445,62 @@ void Points::draw()
   prog->setUniformi("uPointType", getPointType());
 
   // Draw using vertex buffer object
-  int stride = 3 * sizeof(float) + sizeof(Colour);
-  bool attribs = session.global("pointattribs");
-  if (attribs)
-    stride += 2 * sizeof(float);
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (sorter.size > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
     //Setup vertex attributes
+    long offset = 0;
     GLint aPosition = prog->attribs["aVertexPosition"];
     GLint aColour = prog->attribs["aVertexColour"];
-    glEnableVertexAttribArray(aPosition);
-    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)0); // Vertex x,y,z
-    glEnableVertexAttribArray(aColour);
-    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(3*sizeof(float)));   // rgba, offset 3 float
+    GLint aTexCoord = prog->attribs["aVertexTexCoord"];
+    GLint aSize = prog->attribs["aSize"];
+    GLint aPointType = prog->attribs["aPointType"];
 
-    GLint aSize = 0, aPointType = 0;
-    aSize = prog->attribs["aSize"];
-    aPointType = prog->attribs["aPointType"];
-    //Generic vertex attributes, "aSize", "aPointType"
+    int stride = 3 * sizeof(float) + sizeof(Colour);
+    //Just check first element - assume all using same texture (ie: colourmap texture)
+    bool hasTexture = geom[0]->hasTexture();
+    bool hasTexCoords = geom[0]->render->texCoords.size()/2 == geom[0]->count();
+    if (hasTexture && hasTexCoords)
+      stride += 2 * sizeof(float);
+    bool attribs = session.global("pointattribs");
+    if (attribs)
+      stride += 2 * sizeof(float);
+
+    glEnableVertexAttribArray(aPosition);
+    glVertexAttribPointer(aPosition, 3, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(offset)); // Vertex x,y,z
+    offset += 3*sizeof(float);
+    glEnableVertexAttribArray(aColour);
+    glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(offset));   // rgba, offset 3 float
+    offset += sizeof(Colour);
+
+    //Generic vertex attributes, "aTexCoord", "aSize", "aPointType"
+    if (hasTexture && hasTexCoords)
+    {
+      glEnableVertexAttribArray(aTexCoord);
+      glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_TRUE, stride, (GLvoid*)(offset));
+      offset += 2*sizeof(float);
+    }
+    else
+    {
+      //Flag unused tex coord
+      glVertexAttrib2f(aTexCoord, -1.0f, 0.0f);
+    }
+
     if (attribs)
     {
-      if (aSize >= 0)
-      {
-        glEnableVertexAttribArray(aSize);
-        glVertexAttribPointer(aSize, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(3*sizeof(float)+sizeof(Colour)));
-      }
-      if (aPointType >= 0)
-      {
-        glEnableVertexAttribArray(aPointType);
-        glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(4*sizeof(float)+sizeof(Colour)));
-      }
+      glEnableVertexAttribArray(aSize);
+      glVertexAttribPointer(aSize, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(offset));
+      offset += 1*sizeof(float);
+      glEnableVertexAttribArray(aPointType);
+      glVertexAttribPointer(aPointType, 1, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(offset));
+      offset += 1*sizeof(float);
+    }
+    else
+    {
+      glVertexAttrib1f(aSize, 1.0f);
+      glVertexAttrib1f(aPointType, getPointType());
     }
     GL_Error_Check;
 
@@ -496,6 +533,7 @@ void Points::draw()
       glDrawElements(GL_POINTS, elements-start, GL_UNSIGNED_INT, (GLvoid*)(start*sizeof(GLuint)));
     }
 
+    if (aTexCoord >= 0) glDisableVertexAttribArray(aTexCoord);
     if (attribs)
     {
       if (aSize >= 0) glDisableVertexAttribArray(aSize);

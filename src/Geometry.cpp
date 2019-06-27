@@ -1327,7 +1327,7 @@ void Geometry::convertColours(int step)
 
 void Geometry::colourMapTexture()
 {
-  //Convert colour-mapped value data to use a texture map - "glaze" the geometry, bakes in the colour data
+  //Convert colour-mapped value data to use a texture map
   // - All colourmaps used by this renderer's objects written to a single texture
   // - Generate texcoords for each object -> (x=value,y=mapindex)
   // - Delete all colour values

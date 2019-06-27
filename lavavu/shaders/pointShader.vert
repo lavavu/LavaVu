@@ -1,5 +1,6 @@
 in vec3 aVertexPosition;
 in vec4 aVertexColour;
+in vec2 aVertexTexCoord;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
@@ -21,6 +22,7 @@ uniform vec4 uColour;
 uniform float uOpacity;
 
 out vec3 vVertex;
+out vec2 vTexCoord;
 out float vPointSize;
 out vec3 vPosEye;
 out float vPointType;
@@ -45,6 +47,7 @@ void main(void)
   vPointType = aPointType;
   vPointSize = gl_PointSize;
   vVertex = aVertexPosition.xyz;
+  vTexCoord = aVertexTexCoord;
 
   if (uColour.a > 0.0)
     vColour = uColour;

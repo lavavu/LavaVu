@@ -6,8 +6,8 @@ uniform float uSaturation;
 uniform float uAmbient;
 uniform float uDiffuse;
 uniform float uSpecular;
-uniform bool uTextured;
 uniform bool uOpaque;
+uniform bool uTextured;
 uniform sampler2D uTexture;
 uniform vec3 uClipMin;
 uniform vec3 uClipMax;
@@ -15,6 +15,7 @@ uniform vec3 uLightPos;
 
 in vec4 vColour;
 in vec3 vVertex;
+in vec2 vTexCoord;
 in float vPointSize;
 in vec3 vPosEye;
 in float vPointType;
@@ -56,8 +57,18 @@ void main(void)
   if (vPointType >= 0.0) pointType = int(floor(vPointType + 0.5)); //Round back to nearest int
 
   //Textured?
-  //if (uTextured)
-  //   outColour = texture(uTexture, gl_PointCoord);
+  if (uTextured)
+  {
+    vec4 tColour;
+    if (vTexCoord.x < 0.0)
+      tColour = texture(uTexture, gl_PointCoord); //Point sprite mode
+    else
+      tColour = texture(uTexture, vTexCoord);
+
+    //Blend with colour
+    outColour = mix(tColour, outColour, 1.0-tColour.a);
+    alpha = outColour.a;
+  }
 
   //Flat, square points, fastest, skip lighting
   if (pointType == 4)
