@@ -471,7 +471,7 @@ public:
 
   bool hasTexture()
   {
-    if (texture->loaded) return true;
+    if (texture->loaded || texture->source || !texture->fn.empty()) return true;
     if (draw->properties.has("texture"))
     {
       std::string tex = draw->properties["texture"];
