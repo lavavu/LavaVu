@@ -1244,7 +1244,7 @@ class TimeStepper(Range):
           } else {
             timer_---ELID--- = 0;
             startTimer_---ELID---();
-            btn.value="\\u2759\\u2759";
+            btn.value="\\u23F9";
           }
         }
         </script>
@@ -1643,7 +1643,8 @@ class _ControlFactory(object):
             if obj == self._target():
                 viewerid = winids[idx]
                 from IPython.display import display,HTML,Javascript
-                display(Javascript('_wi["{0}"].redisplay();'.format(viewerid)))
+                #display(Javascript('_wi["{0}"].redisplay();'.format(viewerid)))
+                display(HTML('<script>_wi["{0}"].redisplay();</script>'.format(viewerid)))
 
     def update(self):
         """Update the control values from current viewer data
