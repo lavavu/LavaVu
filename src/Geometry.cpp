@@ -1524,7 +1524,7 @@ void Geometry::labels()
   Shader_Ptr prog = getShader(lucTriangleType);
   for (unsigned int i=0; i < geom.size(); i++)
   {
-    if (drawable(i) && geom[i]->labels.size() > 0)
+    if (geom[i]->labels.size() > 0 && drawable(i))
     {
       std::string font = geom[i]->draw->properties["font"];
       //if (session.context.scale2d != 1.0 && font != "vector")
