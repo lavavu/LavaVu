@@ -224,9 +224,9 @@ if __name__ == "__main__":
             #ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
 
     #Check for OPENGL_LIB and OPENGL_INC
-    if os.environ['OPENGL_LIB']:
+    if 'OPENGL_LIB' in os.environ:
         lib_dirs += [os.environ['OPENGL_LIB']]
-    if os.environ['OPENGL_INC']:
+    if 'OPENGL_INC' in os.environ:
         inc_dirs += [os.environ['OPENGL_LIB']]
 
     lv = Extension('_LavaVuPython',
