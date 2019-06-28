@@ -59,18 +59,18 @@ def write_version():
     """
     Writes version info to version.cpp
     """
-    f = open('src/version.cpp', 'a+')
-    content = f.read()
-
+    content = ""
+    try:
+        with open('src/version.cpp', 'r') as f:
+            content = f.read()
+    except:
+        pass
     if not version in content:
-        f.close()
-        f = open('src/version.cpp', 'w')
-        print("Writing new version: " + version)
-        f.write('#include "version.h"\nconst std::string version = "%s";\n' % version)
+        with open('src/version.cpp', 'w') as f:
+            print("Writing new version: " + version)
+            f.write('#include "version.h"\nconst std::string version = "%s";\n' % version)
     else:
         print("Version matches: " + version)
-
-    f.close()
 
 #From https://stackoverflow.com/a/28949827/866759
 def check_libraries(libraries, headers):

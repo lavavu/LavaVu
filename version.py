@@ -18,4 +18,5 @@ version = version.rstrip('\r\n')
 version = version.replace('-', '.', 1)
 
 if __name__ == "__main__":
+    setup.version = version
     setup.write_version()
