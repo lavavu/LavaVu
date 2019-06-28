@@ -198,11 +198,15 @@ if __name__ == "__main__":
 
         if P == 'Linux':
             #Linux X11 or EGL
-            defines += [('HAVE_X11', '1')]
-            libs += ['GL', 'dl', 'pthread', 'm', 'X11']
-            #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
-            #if find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
-            #    defines += [('EGL', 1)]
+            if not "DISPLAY" in os.environ and find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
+                #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
+                defines += [('HAVE_EGL', '1')]
+                libs += ['OpenGL', 'dl', 'pthread', 'm', 'EGL']
+            else:
+                #Default - X11
+                defines += [('HAVE_X11', '1')]
+                libs += ['GL', 'dl', 'pthread', 'm', 'X11']
+
         elif P == 'Darwin':
             #Mac OS X with Cocoa + CGL
             #srcs += ['src/Main/CocoaViewer.mm']
@@ -218,6 +222,12 @@ if __name__ == "__main__":
             libs += ['c++', 'dl', 'pthread',  'objc', 'm']
             os.environ['LDFLAGS'] = '-framework Cocoa -framework Quartz -framework OpenGL'
             #ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
+
+    #Check for OPENGL_LIB and OPENGL_INC
+    if os.environ['OPENGL_LIB']:
+        lib_dirs += [os.environ['OPENGL_LIB']]
+    if os.environ['OPENGL_INC']:
+        inc_dirs += [os.environ['OPENGL_LIB']]
 
     lv = Extension('_LavaVuPython',
                     define_macros = defines,
