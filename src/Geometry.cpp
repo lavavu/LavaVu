@@ -1483,6 +1483,42 @@ void Geometry::display(bool refresh)
 
   if (reload || redraw || newcount != drawcount)
   {
+    if (reload)
+    {
+      //Update opacity flags
+
+      //First texture used (only one is allowed for transparent sorted objects)
+      Texture_Ptr firstTexture;
+
+      //Update opacity flags
+      for (unsigned int index = 0; index < geom.size(); index++)
+      {
+        if (geom[index]->draw->name().length() == 0) continue;
+
+        geom[index]->opaque = geom[index]->opaqueCheck();
+        //printf("GEOM INDEX %d (%s)  OPAQUE? %d\n", index, geom[index]->draw->name().c_str(), geom[index]->opaque);
+
+        //Override if textured, and texture is not the first used by a transparent object
+        TextureData* td = geom[index]->draw->useTexture(geom[index]->texture);
+        if (!geom[index]->opaque && td && td->unit >= 0 && geom[index]->hasTexture())
+        {
+          if (firstTexture == nullptr)
+          {
+            //Save first texture encountered
+            if (firstTexture == nullptr)
+              firstTexture = geom[index]->texture;
+            if (firstTexture == nullptr)
+              firstTexture = geom[index]->draw->texture;
+          }
+          else if (geom[index]->texture != firstTexture)
+          {
+            geom[index]->opaque = true;
+          }
+
+        }
+      }
+    }
+
     //Prevent update while sorting
     std::lock_guard<std::mutex> guard(sortmutex);
     update();
@@ -2046,8 +2082,6 @@ void Geometry::setTexture(DrawingObject* draw, Texture_Ptr tex)
   {
     //printf("Set texture on %p to %s\n", geomdata.get(), tex->fn.full.c_str());
     geomdata->texture = tex;
-    //Must be opaque to draw with own texture
-    geomdata->opaque = true;
   }
 }
 
@@ -2061,8 +2095,6 @@ void Geometry::loadTexture(DrawingObject* draw, GLubyte* data, GLuint width, GLu
     geomdata->texture->filter = filter;
     geomdata->texture->bgr = bgr;
     geomdata->texture->loadData(data, width, height, channels, flip);
-    //Must be opaque to draw with own texture (TODO: obj properties in shader)
-    geomdata->opaque = true;
   }
 }
 

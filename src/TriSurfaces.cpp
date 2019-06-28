@@ -452,7 +452,6 @@ void TriSurfaces::loadList()
     geom[index]->colourCalibrate();
 
     bool filter = geom[index]->draw->filterCache.size();
-    bool opaque = geom[index]->opaqueCheck();
     for (unsigned int t = 0; t < geom[index]->render->indices.size()-2 && geom[index]->render->indices.size() > 2; t+=3, offset++)
     {
       //voffset is offset of the last vertex added to the vbo from the previous object
@@ -474,7 +473,7 @@ void TriSurfaces::loadList()
       memcpy(&sorter.indices[tricount*3], &sorter.buffer[tricount].index, sizeof(GLuint) * 3);
 
       //All opaque triangles at start
-      if (opaque)
+      if (geom[index]->opaque)
       {
         sorter.buffer[tricount].distance = USHRT_MAX;
         sorter.buffer[tricount].vertex = NULL;
