@@ -141,7 +141,11 @@ if __name__ == "__main__":
     libs = [] #['sqlite3']
     ldflags = []
     inc_dirs = [sqlite3_path]
-    import numpy
+    try:
+        import numpy
+    except:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'numpy>=1.11.0'])
+        import numpy
     inc_dirs += [numpy.get_include()]
     lib_dirs = []
     install = [] #Extra files to install in package root
@@ -198,7 +202,8 @@ if __name__ == "__main__":
 
         if P == 'Linux':
             #Linux X11 or EGL
-            if not "DISPLAY" in os.environ and find_library('OpenGL') and find_library('EGL') and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h']):
+            if not "DISPLAY" in os.environ and find_library('OpenGL') and find_library('EGL')
+               and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
                 #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
                 defines += [('HAVE_EGL', '1')]
                 libs += ['OpenGL', 'dl', 'pthread', 'm', 'EGL']
@@ -238,6 +243,9 @@ if __name__ == "__main__":
                     extra_link_args = ldflags,
                     sources = srcs)
 
+    with open('requirements.txt') as f:
+        requirements = f.read().splitlines()
+
     setup(name = 'lavavu',
           author            = "Owen Kaluza",
           author_email      = "owen.kaluza@monash.edu",
@@ -247,7 +255,7 @@ if __name__ == "__main__":
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
           long_description  = 'See https://github.com/OKaluza/LavaVu/wiki for more info',
           packages          = ['lavavu'],
-          install_requires  = ['numpy', 'jupyter-server-proxy;python_version>"2.7"'],
+          install_requires  = requirements,
           platforms         = ['any'],
           entry_points      = {
               'gui_scripts': [
