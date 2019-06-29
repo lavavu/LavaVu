@@ -202,8 +202,8 @@ if __name__ == "__main__":
 
         if P == 'Linux':
             #Linux X11 or EGL
-            if not "DISPLAY" in os.environ and find_library('OpenGL') and find_library('EGL')
-               and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h']):
+            if (not "DISPLAY" in os.environ and find_library('OpenGL') and find_library('EGL')
+                and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
                 #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
                 defines += [('HAVE_EGL', '1')]
                 libs += ['OpenGL', 'dl', 'pthread', 'm', 'EGL']
