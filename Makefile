@@ -57,16 +57,14 @@ else
   LIBEXT=so
   LIBBUILD=-shared
   LIBLINK=-Wl,-rpath='$$ORIGIN'
+#Which window type?
 ifeq ($(GLFW), 1)
   #GLFW optional
   LIBS+= -lGL -lglfw
   DEFINES += -DHAVE_GLFW
-else ifeq ($(X11), 1)
-  #X11 default
-  LIBS+= -lGL -lX11
-  DEFINES += -DHAVE_X11
 else ifeq ($(EGL), 1)
-  #EGL fallback (optionally with GLESv2)
+
+#EGL (optionally with GLESv2)
 ifeq ($(GLES2), 1)
   LIBS+= -lEGL -lGLESv2
   DEFINES += -DHAVE_EGL -DGLES2
@@ -74,7 +72,16 @@ else
   LIBS+= -lEGL -lOpenGL
   DEFINES += -DHAVE_EGL
 endif #GLES2
-endif #EGL
+
+else ifeq ($(OSMESA), 1)
+  #OSMesa
+  LIBS+= -lOSMesa
+  DEFINES += -DHAVE_OSMESA
+else ifeq ($(X11), 1)
+  #X11
+  LIBS+= -lGL -lX11
+  DEFINES += -DHAVE_X11
+endif
 endif #Linux
 
 #Extra defines passed

@@ -57,6 +57,7 @@
 #include "Main/CGLViewer.h"
 #include "Main/CocoaViewer.h"
 #include "Main/EGLViewer.h"
+#include "Main/OSMesaViewer.h"
 #ifdef HAVE_LIBTIFF
 #include <tiffio.h>
 #endif
@@ -92,6 +93,9 @@ LavaVu::LavaVu(std::string binpath, bool havecontext, bool omegalib) : ViewerApp
 #endif
 #if defined HAVE_EGL
   if (!viewer) viewer = new EGLViewer();
+#endif
+#if defined HAVE_OSMESA
+  if (!viewer) viewer = new OSMesaViewer();
 #endif
   }
   //Assume an OpenGL context is already provided
