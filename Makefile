@@ -66,11 +66,16 @@ else ifeq ($(X11), 1)
   LIBS+= -lGL -lX11
   DEFINES += -DHAVE_X11
 else ifeq ($(EGL), 1)
-  #EGL fallback
+  #EGL fallback (optionally with GLESv2)
+ifeq ($(GLES2), 1)
+  LIBS+= -lEGL -lGLESv2
+  DEFINES += -DHAVE_EGL -DGLES2
+else
   LIBS+= -lEGL -lOpenGL
   DEFINES += -DHAVE_EGL
-endif
-endif
+endif #GLES2
+endif #EGL
+endif #Linux
 
 #Extra defines passed
 DEFINES += $(DEFS)

@@ -93,6 +93,7 @@ In order to avoid as many external dependencies as possible, the LavaVu sources 
 * jpeg-compressor https://github.com/richgel999/jpeg-compressor
 * miniz  https://github.com/richgel999/miniz
 * GPU Cubic B-Spline Interpolation (optional) in volume shader http://www.dannyruijters.nl/cubicinterpolation/ <sup>2</sup>
+* stb_image_resize http://github.com/nothings/stb
 
 ---
 <sup>1</sup> [Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, *gLucifer: Next Generation Visualization Framework for High performance computational geodynamics*, 2008, Visual Geosciences](http://dx.doi.org/10.1007/s10069-008-0010-2)  

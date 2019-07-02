@@ -1129,14 +1129,18 @@ void Geometry::setState(Geom_Ptr g)
     glDisable(GL_CULL_FACE);
 
   //Surface specific options
+#ifndef GLES2
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
   bool flat = false;
   if (TriangleBased(type))
   {
     //Disable lighting and polygon faces in wireframe mode
     if (props["wireframe"])
     {
+#ifndef GLES2
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+#endif
       lighting = false;
       glDisable(GL_CULL_FACE);
     }
@@ -1536,6 +1540,11 @@ void Geometry::display(bool refresh)
   drawcount = newcount;
   redraw = false;
   GL_Error_Check;
+
+#ifndef GLES2
+  //Restore default polygon mode
+  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
 }
 
 void Geometry::update()
@@ -2792,7 +2801,6 @@ void Imposter::draw()
 {
   //State...
   glDisable(GL_MULTISAMPLE);
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   Shader_Ptr prog = getShader(type);
 

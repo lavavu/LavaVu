@@ -41,6 +41,8 @@
 #include "RenderContext.h"
 #include "GLUtils.h"
 
+#include "stb_image_resize.h"
+
 #define BLEND_NORMAL 0
 #define BLEND_PNG 1
 #define BLEND_ADD 2

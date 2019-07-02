@@ -2060,6 +2060,7 @@ void LavaVu::display(bool redraw)
   }
   else
   {
+#ifndef GLES2
     if (aview->stereo)
     {
       viewApply(view);
@@ -2122,6 +2123,7 @@ void LavaVu::display(bool redraw)
       //glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
     else
+#endif
     {
       //Loop through all viewports and display each
       int selview = view;
@@ -2782,7 +2784,6 @@ void LavaVu::drawScene()
   GL_Error_Check;
 
   // Setup default state
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   GL_Error_Check;
   glDisable(GL_CULL_FACE);
   GL_Error_Check;
@@ -2794,9 +2795,6 @@ void LavaVu::drawScene()
   if (!session.omegalib)
     drawBorder();
   drawRulers();
-
-  //Restore default state
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 bool LavaVu::loadFile(const std::string& file)

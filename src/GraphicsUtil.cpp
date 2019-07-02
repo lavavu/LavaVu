@@ -52,6 +52,9 @@
 #include  "font.h"
 #include  "FontSans.h"
 
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.h"
+
 void FontManager::init(std::string& path, RenderContext* context)
 {
   this->context = context;
@@ -109,7 +112,6 @@ Colour FontManager::setFont(Properties& properties, std::string def, float scali
 void FontManager::printString(const char* str)
 {
   glDisable(GL_CULL_FACE);
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   //Render the characters in loop
   //1) Create index buffer data for each char
@@ -251,7 +253,6 @@ void FontManager::rasterPrintString(const char* str)
 
   // First save state of enable flags
   glDisable(GL_CULL_FACE);
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glEnable(GL_BLEND);

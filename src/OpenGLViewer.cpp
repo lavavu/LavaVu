@@ -82,7 +82,9 @@ bool FBO::create(int w, int h, int samples)
     glBindFramebuffer(GL_FRAMEBUFFER, frame);
     GL_Error_Check;
     target = GL_COLOR_ATTACHMENT0;
+#ifndef GLES2
     glDrawBuffer(target);
+#endif
     GL_Error_Check;
     debug_print("FBO already exists, enabling %d x %d (downsampling %d)\n", width, height, downsample);
     return false;
@@ -113,9 +115,11 @@ bool FBO::create(int w, int h, int samples)
   GL_Error_Check;
 
   // make sure this is the same color format as the screen
+#ifndef GLES2
   if (samples > 1)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGBA, width, height, GL_TRUE);
   else
+#endif
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
   GL_Error_Check;
 
@@ -176,9 +180,8 @@ bool FBO::create(int w, int h, int samples)
     else
       std::cerr << "FBO failed UNKNOWN ERROR: " << status << std::endl;
     enabled = false;
-    target = GL_COLOR_ATTACHMENT0;
     GL_Error_Check;
-    std::cerr << " frame " << frame << " target " << target << " depth " << depth << " dims " << width << " , " << height << std::endl;
+    std::cerr << " frame " << frame << " depth " << depth << " dims " << width << " , " << height << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     abort_program("FBO creation failed, can't continue");
   }
@@ -188,7 +191,9 @@ bool FBO::create(int w, int h, int samples)
     debug_print("FBO setup completed successfully %d x %d (downsampling %d)\n", width, height, downsample);
     enabled = true;
     target = GL_COLOR_ATTACHMENT0;
+#ifndef GLES2
     glDrawBuffer(target);
+#endif
   }
 
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -212,7 +217,9 @@ void FBO::disable()
   debug_print("FBO disabled\n");
   enabled = false;
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#ifndef GLES2
   glDrawBuffer(GL_BACK);
+#endif
 }
 
 ImageData* FBO::pixels(ImageData* image, int channels)
@@ -248,7 +255,16 @@ ImageData* FBO::pixels(ImageData* image, int channels)
 
   //printf("DOWNSAMPLE GET %d %dx%d (%dx%d) samples %d\n", channels, w, h, width, height, downsample);
 
+#ifndef GLES2
   glGetTexImage(GL_TEXTURE_2D, downsample-1, type, GL_UNSIGNED_BYTE, image->pixels);
+#else
+  //Need to read the texture from the framebuffer at original size, then downsample ourselves
+  ImageData* fullpixels = FrameBuffer::pixels(NULL, channels);
+  //Default downsample filter is STBIR_FILTER_MITCHELL
+  stbir_resize_uint8(fullpixels->pixels, fullpixels->width, fullpixels->height, 0,
+                     image->pixels, image->width, image->height, 0, channels);
+  delete fullpixels;
+#endif
   GL_Error_Check;
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -733,8 +749,10 @@ void OpenGLViewer::downSample(int q)
 
   fbo.destroy();
 
-  //Disable MSAA when using FSAA
+  //Disable MSAA when using FSAA (or in GLES2)
+#ifndef GLES2
   if (q > 1 && fbo.msaa > 1)
+#endif
     app->session.context.samples = 1;
 
   int ds = q < 1 ? 1 : q;
