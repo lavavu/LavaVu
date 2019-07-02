@@ -64,24 +64,30 @@ void EGLViewer::open(int w, int h)
     EGL_RED_SIZE, 8,
     EGL_DEPTH_SIZE, 8,
     EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+    //EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+    //EGL_CONFORMANT, EGL_OPENGL_ES2_BIT,
     EGL_NONE
   };
 
   // Initialize EGL
   eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
   if (!eglDisplay)
-    abort_program("Error creating GL context");
+    abort_program("Error creating EGL context");
 
-  EGLint major, minor;
-  eglInitialize(eglDisplay, &major, &minor);
+  EGLint major = 0, minor = 0;
+  if (eglInitialize(eglDisplay, &major, &minor) == EGL_FALSE)
+    abort_program("Error initializing EGL context");
 
   // Select configuration
-  EGLint numConfigs;
+  EGLint numConfigs = 0;
   EGLConfig eglConfig;
   eglChooseConfig(eglDisplay, configAttribs, &eglConfig, 1, &numConfigs);
+  if (!numConfigs)
+    abort_program("No valid EGL config found");
 
   // Bind the API
   eglBindAPI(EGL_OPENGL_API);
+  //eglBindAPI(EGL_OPENGL_ES_API);
 
   // Create a context and make it current
   eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, NULL);

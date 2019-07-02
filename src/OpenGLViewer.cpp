@@ -333,9 +333,11 @@ void OpenGLViewer::init()
   app->session.context.gl_version = std::string(gl_v);
   debug_print("OpenGL %d.%d (%s)\n", app->session.context.major, app->session.context.minor, app->session.context.core ? "core" : "compatibility");
   debug_print("%s Stereo %d Double-buffer %d, SampleBuffers %d, Samples %d\n", gl_v, stereoBuffer, doubleBuffer, sb, ss);
+  GL_Error_Check;
 
   //Load OpenGL extensions
   OpenGL_Extensions_Init();
+  GL_Error_Check;
 
   //Depth testing
   glEnable(GL_DEPTH_TEST);
@@ -345,6 +347,7 @@ void OpenGLViewer::init()
 
   //Enable scissor test
   glEnable(GL_SCISSOR_TEST);
+  GL_Error_Check;
 
   //Create and use fbo at this point if enabled
   useFBO();

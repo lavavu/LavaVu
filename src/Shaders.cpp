@@ -84,9 +84,14 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
   if (fsrc.length() == 0) fsrc = std::string(fragmentShader);
   if (vsrc.length() == 0) vsrc = std::string(vertexShader);
   //Prepend GLSL version GL 3.3 ==> GLSL 3.3
-  if (vsrc.length()) vsrc = "#version 330\n" + vsrc;
-  if (fsrc.length()) fsrc = "#version 330\n" + fsrc;
-  if (gsrc.length()) gsrc = "#version 330\n" + gsrc;
+#ifdef GLES2
+  std::string ver = "#version 140\n";
+#else
+  std::string ver = "#version 330\n";
+#endif
+  if (vsrc.length()) vsrc = ver + vsrc;
+  if (fsrc.length()) fsrc = ver + fsrc;
+  if (gsrc.length()) gsrc = ver + gsrc;
   //Attempts to load and build shader programs
   if (compile(vsrc.c_str(), GL_VERTEX_SHADER) &&
       (gsrc.length() == 0 || compile(gsrc.c_str(), GL_GEOMETRY_SHADER)) &&
