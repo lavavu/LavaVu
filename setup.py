@@ -41,6 +41,11 @@ TODO:
     Review possible dependencies to support image/video libraries
     - imageio or pillow for libpng, libtiff
     - ffmpeg-python or opencv-python for libavcodec
+
+NOTE:
+    To use particular libraries, set LV_LIB_DIRS and LV_INC_DIRS on command line before running, eg:
+    LV_LIB_DIRS=${MESA_PATH/lib/x86_64-linux-gnu LV_INC_DIRS=${MESA_PATH}/include python setup.py install
+
 """
 
 #Run with "tag" arg to create a release tag
@@ -72,6 +77,14 @@ def write_version():
     else:
         print("Version matches: " + version)
 
+#Get extra lib and include dirs
+inc_dirs = []
+lib_dirs = []
+if 'LV_LIB_DIRS' in os.environ:
+    lib_dirs += os.environ['LV_LIB_DIRS'].split(':')
+if 'LV_INC_DIRS' in os.environ:
+    inc_dirs += os.environ['LV_INC_DIRS'].split(':')
+
 #From https://stackoverflow.com/a/28949827/866759
 def check_libraries(libraries, headers):
     """check if the C module can be built by trying to compile a small
@@ -100,6 +113,12 @@ def check_libraries(libraries, headers):
     compiler = distutils.ccompiler.new_compiler()
     assert isinstance(compiler, distutils.ccompiler.CCompiler)
     distutils.sysconfig.customize_compiler(compiler)
+
+    #Add any extra library or include dirs
+    for l in lib_dirs:
+        compiler.add_library_dir(l)
+    for p in inc_dirs:
+        compiler.add_include_dir(p)
 
     try:
         compiler.link_executable(
@@ -140,18 +159,24 @@ if __name__ == "__main__":
     cflags = []
     libs = [] #['sqlite3']
     ldflags = []
-    inc_dirs = [sqlite3_path]
+    inc_dirs += [sqlite3_path]
     try:
         import numpy
     except:
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'numpy>=1.11.0'])
         import numpy
     inc_dirs += [numpy.get_include()]
-    lib_dirs = []
-    install = [] #Extra files to install in package root
+    install = []  #Extra files to install in package root
 
     if _debug:
         defines += [('CONFIG', 'debug')]
+
+    try:
+        from numpy.distutils.ccompiler import CCompiler_compile
+        import distutils.ccompiler
+        distutils.ccompiler.CCompiler.compile = CCompiler_compile
+    except ImportError:
+        print("Numpy not found, parallel compile not available")
 
     #OS Specific
     P = platform.system()
@@ -201,16 +226,22 @@ if __name__ == "__main__":
                 libs += ['swscale']
 
         if P == 'Linux':
-            #Linux X11 or EGL
-            if (not "DISPLAY" in os.environ and find_library('OpenGL') and find_library('EGL')
-                and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
+            #Linux X11, EGL or OSMesa
+            #To force EGL or OSMesa, set LV_EGL=1 or LV_OSMESA=1
+            if ("LV_EGL" in os.environ and find_library('OpenGL') and find_library('EGL')
+            and check_libraries(['OpenGL', 'EGL'], ['GL/gl.h', 'EGL/egl.h'])):
                 #EGL for offscreen OpenGL without X11/GLX - works only with NVidia currently
                 defines += [('HAVE_EGL', '1')]
-                libs += ['OpenGL', 'dl', 'pthread', 'm', 'EGL']
+                libs += ['OpenGL', 'EGL']
+            elif ("LV_OSMESA" in os.environ and find_library('OSMesa')
+            and check_libraries(['OSMesa'], ['GL/osmesa.h'])):
+                #OSMesa for software rendered offscreen OpenGL
+                defines += [('HAVE_OSMESA', '1')]
+                libs += ['OSMesa']
             else:
                 #Default - X11
                 defines += [('HAVE_X11', '1')]
-                libs += ['GL', 'dl', 'pthread', 'm', 'X11']
+                libs += ['GL', 'X11']
 
         elif P == 'Darwin':
             #Mac OS X with Cocoa + CGL
@@ -224,21 +255,22 @@ if __name__ == "__main__":
             cflags += ['-undefined suppress', '-flat_namespace'] #Swig, necessary?
             cflags += ['-Wno-unknown-warning-option', '-Wno-c++14-extensions', '-Wno-shift-negative-value']
             cflags += ['-FCocoa', '-FOpenGL', '-stdlib=libc++']
-            libs += ['c++', 'dl', 'pthread',  'objc', 'm']
+            libs += ['c++', 'objc']
+            #Can't use extra_link_args because they are appended by setuptools but frameworks must come first
             os.environ['LDFLAGS'] = '-framework Cocoa -framework Quartz -framework OpenGL'
-            #ldflags += ['-framework Cocoa', '-framework Quartz', '-framework OpenGL']
+            #Runtime library dirs doesn't work on mac, so set rpath manually
+            for l in lib_dirs:
+                ldflags.append('-Wl,-rpath,'+l)
 
-    #Check for OPENGL_LIB and OPENGL_INC
-    if 'OPENGL_LIB' in os.environ:
-        lib_dirs += [os.environ['OPENGL_LIB']]
-    if 'OPENGL_INC' in os.environ:
-        inc_dirs += [os.environ['OPENGL_LIB']]
+        #Other posix libs
+        libs += ['dl', 'pthread', 'm']
 
     lv = Extension('_LavaVuPython',
                     define_macros = defines,
                     include_dirs = inc_dirs,
                     libraries = libs,
                     library_dirs = lib_dirs,
+                    runtime_library_dirs = lib_dirs,
                     extra_compile_args = cflags,
                     extra_link_args = ldflags,
                     sources = srcs)
