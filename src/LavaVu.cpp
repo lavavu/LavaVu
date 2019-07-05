@@ -1758,6 +1758,9 @@ void LavaVu::resize(int new_width, int new_height)
   //Set resolution
   session.globals["resolution"] = {new_width, new_height};
 
+  //Call resize on any output interfaces
+  viewer->resizeOutputs(new_width, new_height);
+
   amodel->redraw();
 }
 

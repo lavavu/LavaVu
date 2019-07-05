@@ -407,9 +407,19 @@ void OpenGLViewer::setsize(int w, int h)
   GL_Check_Thread(render_thread);
   //Resize fbo
   display(false); //Ensure correct context active
-  if (useFBO(w, h))
-    resize(fbo.width, fbo.height);  //Reset the viewer size
-  //Ensure the res property matches actual dims after resize
+  if (useFBO(w, h) && fbo.downsample > 1)
+  {
+    //Must set app size and attached outputs,
+    //BUT NOT CHANGE viewer->width/height
+    //Call the application resize function
+    app->resize(fbo.width, fbo.height);
+  }
+
+  //Actual dimensions changed, full resize
+  if (w != width || h != height)
+    resize(w, h);
+
+  //Ensure the res property matches viewer dims after resize (not fbo dims)
   app->session.globals["resolution"] = json::array({width, height});
 }
 
@@ -424,11 +434,14 @@ void OpenGLViewer::resize(int new_width, int new_height)
     width = new_width;
     height = new_height;
     debug_print("%d x %d resized \n", width, height);
-
-    //Call resize on any output interfaces
-    for (unsigned int o=0; o<outputs.size(); o++)
-      outputs[o]->resize(width, height);
   }
+}
+
+void OpenGLViewer::resizeOutputs(int w, int h)
+{
+  //Call resize on any output interfaces
+  for (unsigned int o=0; o<outputs.size(); o++)
+    outputs[o]->resize(w, h);
 }
 
 void OpenGLViewer::close()

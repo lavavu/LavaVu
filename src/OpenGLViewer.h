@@ -149,6 +149,7 @@ public:
   bool useFBO(int width=0, int height=0);
   virtual void setsize(int width, int height);
   virtual void resize(int new_width, int new_height);
+  virtual void resizeOutputs(int w, int h);
   virtual void display(bool redraw=true);
   virtual void close();
   virtual void setTimer(int msec);
