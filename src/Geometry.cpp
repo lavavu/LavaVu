@@ -2211,11 +2211,11 @@ void Geometry::drawVector(DrawingObject *draw, const Vec3d& translate, const Vec
   {
     // Draw Line
     Vec3d vertex0 = Vec3d(0,0,-halflength);
-    Vec3d vertex = translate + rot * vertex0;
+    Vec3d vertex = translate + rot * vertex0 * iscale;
     if (!view->is3d && scale3d) vertex.z += 0.75*radius1; //Ensure has same 3d properties for depth testing
     g->readVertex(vertex.ref());
     vertex0.z = halflength;
-    vertex = translate + rot * vertex0;
+    vertex = translate + rot * vertex0 * iscale;
     if (!view->is3d && scale3d) vertex.z += 0.75*radius1; //Ensure has same 3d properties for depth testing
     g->readVertex(vertex.ref());
     segment_count = 0;
