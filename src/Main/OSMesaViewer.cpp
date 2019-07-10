@@ -37,8 +37,6 @@
 
 #include "OSMesaViewer.h"
 
-typedef OSMesaContext GLAPIENTRY (*OSMesaCreateContextAttribs_func)( const int *attribList, OSMesaContext sharelist );
-
 OSMesaViewer::OSMesaViewer() : OpenGLViewer()
 {
   visible = false;
@@ -64,7 +62,6 @@ void OSMesaViewer::open(int w, int h)
 
   // Init OSMesa display buffer
   pixelBuffer = new GLubyte[width * height * 4];
-  // 24 bit depth, 1 bit stencil, no accum, no shared display lists
 
   static const int attribs[] = {
      OSMESA_FORMAT,                 OSMESA_RGBA,
@@ -77,11 +74,13 @@ void OSMesaViewer::open(int w, int h)
      0
   };
 
-  OSMesaCreateContextAttribs_func OSMesaCreateContextAttribs =
-     (OSMesaCreateContextAttribs_func)OSMesaGetProcAddress("OSMesaCreateContextAttribs");
-  assert(OSMesaCreateContextAttribs);
-
   osMesaContext = OSMesaCreateContextAttribs(attribs, NULL);
+
+  //Post-processing: only work in the frame buffer, not in FBO so no use unless we write texture back
+  //OSMesaPostprocess(osMesaContext, "pp_jimenezmlaa", 8);
+  //OSMesaPostprocess(osMesaContext, "pp_jimenezmlaa_color", 8);
+  //OSMesaPostprocess(osMesaContext, "pp_celshade", 1);
+  //OSMesaPostprocess(osMesaContext, "pp_nored", 1);
 
   OSMesaMakeCurrent(osMesaContext, pixelBuffer, GL_UNSIGNED_BYTE, width, height);
   debug_print("OSMesa viewer created\n");
