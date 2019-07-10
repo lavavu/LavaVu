@@ -1,0 +1,39 @@
+{
+  "description": "<p><a href=\"https://github.com/OKaluza/LavaVu\">LavaVu</a> is a scientific visualisation library with a python interface built for interactive visual analysis and collaborative work within IPython Notebook environments while utilising local or remote hardware.</p>\n\n<p>Emphasis is on 4D datasets and was developed for working with geophysical simulation data.</p>\n\n<p>Rendering is done in OpenGL and C++ with a python interface wrapper.</p>\n\n<p>Interactive visualisations in IPython are supported via a threaded web interface that allows leveraging of remote GPU resources on the same hardware the data is stored while sending only image frames back to the client. Jupyter, JupyterLab, Nteract and Google Colab environments are all supported.</p>\n\n<p>Output can be completely scripted in python and from these scripts, animations and video output produced from models.</p>\n\n<p>WebGL output can also be generated to produce client side, single .html file 3D visualisations and WebVR support allows use with virtual reality devices.</p>\n\n<p>LavaVu development is supported by the <a href=\"http://monash.edu.au/mivp\">Monash Immersive Visualisation Plaform</a> and the Simulation, Analysis &amp; Modelling component of the <a href=\"http://www.auscope.org.au/ncris/\">NCRIS AuScope</a> capability.</p>", 
+  "license": {
+    "id": "LGPL-3.0"
+  }, 
+  "language": "eng", 
+  "references": [
+    "Stegman, D.R., Moresi, L., Turnbull, R., Giordani, J., Sunter, P., Lo, A. and S. Quenette, gLucifer: Next Generation Visualization Framework for High performance computational geodynamics, 2008, Visual Geosciences", 
+    "Ruijters, Daniel & ter Haar Romeny, Bart & Suetens, Paul. (2008). Efficient GPU-Based Texture Interpolation using Uniform B-Splines. J. Graphics Tools. 13. 61-69."
+  ], 
+  "keywords": [
+    "Scientific Visualisation", 
+    "3D visualisation", 
+    "OpenGL", 
+    "IPython", 
+    "Python"
+  ], 
+  "creators": [
+    {
+      "orcid": "0000-0001-6303-5671", 
+      "affiliation": "Monash University", 
+      "name": "Owen Kaluza"
+    }, 
+    {
+      "orcid": "0000-0003-3685-174X", 
+      "affiliation": "Australian National University", 
+      "name": "Louis Moresi"
+    }, 
+    {
+      "affiliation": "Monash University", 
+      "name": "John Mansour"
+    }, 
+    {
+      "affiliation": "Monash University", 
+      "name": "David G Barnes"
+    }
+  ], 
+  "access_right": "open"
+}
