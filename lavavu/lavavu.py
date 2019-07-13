@@ -4116,6 +4116,9 @@ class DrawData(object):
         if array.size > 0:
             #Remove any dims <= 1
             dims = [d for d in dims if d > 1]
+            #Special case where only a single element returned
+            if len(dims) == 1 and dims[0] == array.size and dims[0] > 1:
+                dims = [dims[0], 1]
 
             if len(dims):
                 #Shape the array to match object dims, and data element dims as final dimension
