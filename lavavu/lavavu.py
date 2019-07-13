@@ -1913,31 +1913,20 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         self._openglviewer_call('display', False, *args, **kwargs)
         #return self._openglviewer_call('display', True, *args, **kwargs)
 
-    #def events(self, *args, **kwargs):
-    #    return self._openglviewer_call('events', True, *args, **kwargs)
-
     def show(self, *args, **kwargs):
         if not self.viewer.visible:
-            self.viewer.visible = True
-            #This is a bit weird/broken, it shows the window only if visible is true
-            # and does not set the visible flag
-            #TODO: make behaviour of viewer.show/hide consistent
             self._openglviewer_call('show', False, *args, **kwargs)
 
     def hide(self, *args, **kwargs):
         if self.viewer.visible:
-            #Also a bit broken, needs fixing,
-            #This is the opposite of show, clears visible flag
-            # and hides window regardless of flag setting
             self._openglviewer_call('hide', False, *args, **kwargs)
 
     def events(self, *args, **kwargs):
+        self.show()
         self.viewer.nodisplay = True #Handle rendering ourselves
         return self._openglviewer_call('events', True, *args, **kwargs)
         #self._openglviewer_call('events', False, *args, **kwargs)
-
         #self._openglviewer_call('execute', False, *args, **kwargs)
-        #Note: no longer calls show() if not visible, need to do manually
         return not self.viewer.quitProgram
 
     def execute(self, *args, **kwargs):

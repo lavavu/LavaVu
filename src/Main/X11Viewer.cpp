@@ -140,7 +140,7 @@ void X11Viewer::setsize(int w, int h)
 
 void X11Viewer::show()
 {
-  if (!visible || !Xdisplay) return;
+  if (!Xdisplay) return;
   OpenGLViewer::show();
 
   //Notify active window, raises window even if already mapped
@@ -168,7 +168,7 @@ void X11Viewer::title(std::string title)
 
 void X11Viewer::hide()
 {
-  if (!visible || !Xdisplay) return;
+  if (!Xdisplay) return;
   OpenGLViewer::hide();
   XUnmapWindow( Xdisplay, win ); // Hide the window
 }
@@ -203,10 +203,6 @@ void X11Viewer::execute()
     //Create a File Description Set containing x11_fd
     FD_ZERO(&in_fds);
     FD_SET(x11_fd, &in_fds);
-
-    //Ensure window visible for interaction
-    //fbo.downsample = 1; //Disable any downsampled output mode
-    show();
   }
 
   // Event processing

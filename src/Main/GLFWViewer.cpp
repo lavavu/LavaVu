@@ -276,7 +276,7 @@ void GLFWViewer::setsize(int w, int h)
 
 void GLFWViewer::show()
 {
-  if (!visible || !window) return;
+  if (!window) return;
   OpenGLViewer::show();
 
   glfwShowWindow(window);
@@ -291,7 +291,7 @@ void GLFWViewer::title(std::string title)
 
 void GLFWViewer::hide()
 {
-  if (!visible || !window) return;
+  if (!window) return;
   OpenGLViewer::hide();
   glfwHideWindow(window);
 }

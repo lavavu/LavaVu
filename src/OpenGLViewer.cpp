@@ -389,10 +389,11 @@ bool OpenGLViewer::useFBO(int w, int h)
 
 void OpenGLViewer::show()
 {
-  if (!isopen || !visible) return;
+  if (!isopen) return;
 
   //Show a previously hidden window
   disableFBO();
+  visible = true;
 }
 
 void OpenGLViewer::hide()
