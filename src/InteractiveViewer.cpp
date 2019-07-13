@@ -3239,8 +3239,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     //if (!aview->initialised) return false;
-    aview->reset();     //Reset camera
-    aview->init(true);  //Reset camera to default view of model
+    //Reset camera
+    aview->reset();
+    //Force the model dimensions to be re-checked
+    viewSelect(view, true, true);
+    //Reset camera to default view of model
+    aview->init(true);
     printMessage("View reset");
   }
   else if (parsed.exists("bounds"))

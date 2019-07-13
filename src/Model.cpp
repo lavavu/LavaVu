@@ -928,8 +928,10 @@ void Model::loadLinks(float* min, float* max)
       last_viewport = viewport_id;
       last_object = 0;  //Reset required, in case of single object which is shared between viewports
       //Set the view bounds, passed from window
-      view->properties.data["min"] = {min[0], min[1], min[2]};
-      view->properties.data["max"] = {max[0], max[1], max[2]};
+      //view->properties.data["min"] = {min[0], min[1], min[2]};
+      //view->properties.data["max"] = {max[0], max[1], max[2]};
+      session.globals["min"] = {min[0], min[1], min[2]};
+      session.globals["max"] = {max[0], max[1], max[2]};
     }
 
     //Get drawing object
@@ -1963,6 +1965,15 @@ void Model::calculateBounds(View* aview, float* default_min, float* default_max)
       if (max[i]-min[i] <= EPSILON) max[i] = -(min[i] = HUGE_VAL);
     }
   }
+  /*
+  else
+  {
+    for (int i=0; i<3; i++)
+    {
+      min[i] = HUGE_VAL;
+      max[i] = -HUGE_VAL;
+    }
+  }*/
 
   //Expand bounds by all geometry objects
   for (auto g : geometry)

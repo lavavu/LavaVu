@@ -130,7 +130,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     dims[i] = fabs(max[i] - min[i]);
 
     //Fallback focal point and rotation centre = model bounding box centre point
-    if (focal_point[i] == FLT_MIN) focal_point[i] = min[i] + dims[i] / 2.0f;
+    if (force || focal_point[i] == FLT_MIN) focal_point[i] = min[i] + dims[i] / 2.0f;
     rotate_centre[i] = focal_point[i];
   }
 
@@ -163,7 +163,7 @@ bool View::init(bool force, float* newmin, float* newmax)
     projection(EYE_CENTRE);
 
     //Default translation by model size
-    if (model_trans[2] == 0)
+    if (force || model_trans[2] == 0)
       model_trans[2] = -model_size;
 
     // Initial zoom to fit
@@ -711,9 +711,13 @@ void View::importProps(bool force)
     scale[1] = sc[1];
     scale[2] = sc[2];
   }
-  //min = aproperties["min"];
-  //max = aproperties["max"];
+
+  //float newmin[3];
+  //float newmax[3];
+  //Properties::toArray<float>(properties["min"], newmin, 3);
+  //Properties::toArray<float>(properties["max"], newmax, 3);
   //init(false, newmin, newmax);
+
   if (properties.has("aperture"))
     fov = properties["aperture"];
   if (properties.has("near"))
