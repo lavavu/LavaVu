@@ -768,7 +768,7 @@ void Model::loadViewports()
   views.clear();
 
   sqlite3_stmt* statement;
-  statement = database.select("SELECT id,x,y,near,far FROM viewport ORDER BY y,x");
+  statement = database.select("SELECT id,x,y FROM viewport ORDER BY y,x");
 
   //viewport:
   //(id, title, x, y, near, far, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
@@ -776,11 +776,9 @@ void Model::loadViewports()
   {
     float x = (float)sqlite3_column_double(statement, 1);
     float y = (float)sqlite3_column_double(statement, 2);
-    float nearc = (float)sqlite3_column_double(statement, 3);
-    float farc = (float)sqlite3_column_double(statement, 4);
 
     //Create the view object and add to list
-    views.push_back(new View(session, x, y, nearc, farc));
+    views.push_back(new View(session, x, y));
   }
   sqlite3_finalize(statement);
 

@@ -141,7 +141,7 @@ public:
   float eye_sep_ratio;       // Eye separation ratio to focal length
   mat4 modelView;
 
-  View(Session& session, float xf = 0, float yf = 0, float nearc = 0.0f, float farc = 0.0f);
+  View(Session& session, float xf = 0, float yf = 0);
 
   ~View();
 

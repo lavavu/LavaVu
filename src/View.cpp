@@ -36,7 +36,7 @@
 #include "View.h"
 #include "Model.h"
 
-View::View(Session& session, float xf, float yf, float nearc, float farc) : properties(session.globals, session.defaults), session(session)
+View::View(Session& session, float xf, float yf) : properties(session.globals, session.defaults), session(session)
 {
   // default view params
   eye_sep_ratio = 0.03f;  //Eye separation ratio to focal length
@@ -45,8 +45,8 @@ View::View(Session& session, float xf, float yf, float nearc, float farc) : prop
   scene_shift = 0.0;      //Stereo projection shift
   rotated = false;
 
-  nearclip = nearc;
-  farclip = farc;
+  nearclip = 0.0f;
+  farclip = 0.0f;
 
   model_size = 0.0;       //Scalar magnitude of model dimensions
   width = 0;              //Viewport width
@@ -204,7 +204,11 @@ void View::checkClip(float& near_clip, float& far_clip)
     assert(near_clip > 0.0 && far_clip > 0.0);
   }
 
-  if (near_clip < model_size * 0.001) near_clip = model_size * 0.001; //Bounds check
+  if (near_clip < model_size * 0.001 || near_clip > model_size)
+  {
+    near_clip = model_size * 0.001; //Bounds sanity check
+    far_clip = model_size * 20.0;
+  }
 }
 
 void View::getMinMaxDistance(float* min, float* max, float range[2], mat4& mv, bool eyePlane)
