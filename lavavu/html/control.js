@@ -80,6 +80,9 @@ function WindowInteractor(id, uid, port) {
       //(Don't bother for file:// urls)
       connect(loc.protocol + "//" + loc.hostname + ":" + port);
       connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/proxy/" + port);
+      // In an authenticated setting, user-redirect is used to tell the hub to
+      // make a link with the correct path for the user. jupyter-server-proxy
+      // documentation tells us to use a link of this form.
       connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/user-redirect/proxy/" + port);
     }
     if (loc.hostname != "localhost") {
