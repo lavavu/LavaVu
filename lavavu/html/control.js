@@ -80,6 +80,7 @@ function WindowInteractor(id, uid, port) {
       //(Don't bother for file:// urls)
       connect(loc.protocol + "//" + loc.hostname + ":" + port);
       connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/proxy/" + port);
+      connect(loc.protocol + "//" + loc.hostname + (loc.port ? ":" + loc.port : "") + "/user-redirect/proxy/" + port);
     }
     if (loc.hostname != "localhost") {
       connect("https://localhost:" + port);
@@ -223,7 +224,7 @@ WindowInteractor.prototype.get_state = function() {
       that.redisplay_reset();
     } else
       console.log("Ajax Request Error: " + url + ", returned status code " + xhttp.status + " " + xhttp.statusText);
-  } 
+  }
   xhttp.open('GET', url, true);
   xhttp.send();
 }
@@ -244,4 +245,3 @@ WindowInteractor.prototype.redisplay_reset = function() {
 
   this.redisplay_timer = setTimeout(function() { console.log("Redisplay " + that.id); that.redisplay(); }, 10000);
 }
-
