@@ -722,7 +722,7 @@ void Model::loadWindows()
   else //Old db uses window structure
   {
     //Load windows list from database and insert into models
-    statement = database.select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ from window");
+    statement = database.select("SELECT id,name,width,height,colour from window");
     //sqlite3_stmt* statement = model->select("SELECT id,name,width,height,colour,minX,minY,minZ,maxX,maxY,maxZ,properties from window");
     //window (id, name, width, height, colour, minX, minY, minZ, maxX, maxY, maxZ, properties)
     //Single window only supported now, use viewports for multiple
@@ -733,19 +733,6 @@ void Model::loadWindows()
       int height = sqlite3_column_int(statement, 3);
       Colour colour;
       colour.value = sqlite3_column_int(statement, 4);
-      float min[3], max[3];
-      for (int i=0; i<3; i++)
-      {
-        if (sqlite3_column_type(statement, 5+i) != SQLITE_NULL)
-          min[i] = (float)sqlite3_column_double(statement, 5+i);
-        else
-          min[i] = FLT_MAX;
-        if (sqlite3_column_type(statement, 8+i) != SQLITE_NULL)
-          max[i] = (float)sqlite3_column_double(statement, 8+i);
-        else
-          max[i] = -FLT_MAX;
-      }
-
       session.globals["caption"] = wtitle;
       session.globals["resolution"] = {width, height};
       //Support legacy colour field
@@ -753,7 +740,7 @@ void Model::loadWindows()
         session.globals["background"] = colour.toJson();
 
       //Link the window viewports, objects & colourmaps
-      loadLinks(min, max);
+      loadLinks();
     }
   }
   sqlite3_finalize(statement);
@@ -895,7 +882,7 @@ void Model::loadObjects()
 }
 
 //Load viewports in current window, objects in each viewport, colourmaps for each object
-void Model::loadLinks(float* min, float* max)
+void Model::loadLinks()
 {
   //Select statment to get all viewports in window and all objects in viewports
   //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
@@ -925,11 +912,6 @@ void Model::loadLinks(float* min, float* max)
       loadViewCamera(viewport_id);
       last_viewport = viewport_id;
       last_object = 0;  //Reset required, in case of single object which is shared between viewports
-      //Set the view bounds, passed from window
-      //view->properties.data["min"] = {min[0], min[1], min[2]};
-      //view->properties.data["max"] = {max[0], max[1], max[2]};
-      session.globals["min"] = {min[0], min[1], min[2]};
-      session.globals["max"] = {max[0], max[1], max[2]};
     }
 
     //Get drawing object
