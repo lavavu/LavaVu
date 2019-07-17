@@ -3256,6 +3256,10 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       return false;
     }
 
+    //Reset bounds per object
+    for (auto g : amodel->geometry)
+      g->clearBounds();
+
     //Remove any existing fixed bounds
     aview->properties.data.erase("min");
     aview->properties.data.erase("max");

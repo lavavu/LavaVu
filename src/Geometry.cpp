@@ -1708,6 +1708,26 @@ void Geometry::setup(View* vp, float* min, float* max)
   //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
 }
 
+void Geometry::clearBounds(DrawingObject* draw, bool allsteps)
+{
+  //Clear/reset geometry bounds from all object data
+  for (auto g : records)
+  {
+    if (!g->count()) continue;
+    if (!allsteps && g->step >= 0 && g->step != session.now) continue;
+
+    if (!draw || g->draw == draw)
+    {
+      //If no range, must calculate
+      for (int i=0; i<3; i++)
+      {
+        g->max[i] = -(g->min[i] = HUGE_VAL);
+        g->calcBounds();
+      }
+    }
+  }
+}
+
 void Geometry::objectBounds(DrawingObject* draw, float* min, float* max, bool allsteps)
 {
   if (!min || !max) return;
