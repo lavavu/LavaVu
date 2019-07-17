@@ -1471,7 +1471,7 @@ void Geometry::display(bool refresh)
   if (!view || !view->width) return;
 
   //TimeStep changed or step refresh requested
-  if (refresh || timestep != session.now || (geom.size() == 0 && records.size() > 0))
+  if (refresh || reload || timestep != session.now || (geom.size() == 0 && records.size() > 0))
   {
     merge();
     timestep = session.now;
