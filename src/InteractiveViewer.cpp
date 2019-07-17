@@ -2000,11 +2000,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         json list = g->getDataLabels(aobject);
         for (unsigned int l=0; l < list.size(); l++)
         {
+          std::string name = list[l]["name"];
           ss << "[" << l << "] " << list[l]["label"]
              << " (range: " << list[l]["minimum"]
              << " to " << list[l]["maximum"] << ")"
              << " -- " << list[l]["size"]
-             << " (" + (std::string)list[l]["name"] << ")" << std::endl;
+             << " (" + name << ")" << std::endl;
         }
       }
       ss << "-----------------------------------------" << std::endl;
