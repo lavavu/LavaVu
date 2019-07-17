@@ -1274,10 +1274,19 @@ void Geometry::setState(Geom_Ptr g)
         clipMax *= dims;
         clipMax += dmin;
       }
-      //printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1],
-      //       session.min[2], session.max[0], session.max[1], session.max[2]);
-      //printf("Clipping %s %f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(),
-      //       clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
+
+      /*/Fix if any values NaN
+      for (int i=0; i<3; i++)
+      {
+        if (std::isnan(clipMin[i])) clipMin[i] = -HUGE_VALF;
+        if (std::isnan(clipMax[i])) clipMax[i] = HUGE_VALF;
+      }
+      printf("Dimensions %f,%f,%f - %f,%f,%f\n", session.min[0], session.min[1],
+             session.min[2], session.max[0], session.max[1], session.max[2]);
+      printf("Clipping %s %f,%f,%f - %f,%f,%f\n", g->draw->name().c_str(),
+             clipMin[0], clipMin[1], clipMin[2], clipMax[0], clipMax[1], clipMax[2]);
+      printf("  -- min "); printVertex(g->min);
+      printf("  -- max "); printVertex(g->max);*/
     }
 
     prog->setUniform3f("uClipMin", clipMin.ref());
@@ -2048,6 +2057,7 @@ json Geometry::getDataLabels(DrawingObject* draw)
         entry["minimum"] = range.minimum;
         entry["maximum"] = range.maximum;
         entry["size"] = geom[i]->values[v]->size();
+        entry["name"] = geom[i]->draw->name();
         list.push_back(entry);
       }
     }

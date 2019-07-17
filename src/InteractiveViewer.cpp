@@ -2003,7 +2003,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
           ss << "[" << l << "] " << list[l]["label"]
              << " (range: " << list[l]["minimum"]
              << " to " << list[l]["maximum"] << ")"
-             << " -- " << list[l]["size"] << std::endl;
+             << " -- " << list[l]["size"]
+             << " (" + (std::string)list[l]["name"] << ")" << std::endl;
         }
       }
       ss << "-----------------------------------------" << std::endl;
