@@ -2320,7 +2320,7 @@ void LavaVu::drawRulers()
   DrawingObject* obj = session.rulerobj;
   rulers->clear(true);
   rulers->setup(aview);
-  if (!obj) obj = new DrawingObject(session, "", "tubes=true\nopacity=1.0\nalpha=1.0\nglyphs=1\nlit=0\nwireframe=false\nflat=1\n");
+  if (!obj) obj = new DrawingObject(session, "", "tubes=true\nopacity=1.0\nalpha=1.0\nglyphs=1\nlit=0\nwireframe=false\nflat=1\nclip=false\n");
   if (!aview->hasObject(obj)) aview->addObject(obj);
   rulers->add(obj);
   obj->properties.data["linewidth"] = (float)aview->properties["rulerwidth"];
