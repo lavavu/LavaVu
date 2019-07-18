@@ -79,6 +79,8 @@ extern PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
 extern PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
 extern PFNGLDRAWELEMENTSBASEVERTEXPROC glDrawElementsBaseVertex;
 extern PFNGLISPROGRAMPROC glIsProgram;
+extern PFNGLVERTEXATTRIB1FPROC glVertexAttrib1f;
+extern PFNGLVERTEXATTRIB2FPROC glVertexAttrib2f;
 #endif
 
 void OpenGL_Extensions_Init();

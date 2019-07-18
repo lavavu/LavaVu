@@ -66,6 +66,8 @@ functions = [
 "glBindVertexArray",
 "glDrawElementsBaseVertex",
 "glIsProgram",
+"glVertexAttrib1f",
+"glVertexAttrib2f",
 #"glUniform1d",
 #"glUniform1dv",
 #"glUniform2d",

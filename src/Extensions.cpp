@@ -75,6 +75,8 @@ PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
 PFNGLBINDVERTEXARRAYPROC glBindVertexArray;
 PFNGLDRAWELEMENTSBASEVERTEXPROC glDrawElementsBaseVertex;
 PFNGLISPROGRAMPROC glIsProgram;
+PFNGLVERTEXATTRIB1FPROC glVertexAttrib1f;
+PFNGLVERTEXATTRIB2FPROC glVertexAttrib2f;
 #endif
 
 void OpenGL_Extensions_Init()
@@ -147,6 +149,8 @@ void OpenGL_Extensions_Init()
   glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC) GetProcAddress("glBindVertexArray");
   glDrawElementsBaseVertex = (PFNGLDRAWELEMENTSBASEVERTEXPROC) GetProcAddress("glDrawElementsBaseVertex");
   glIsProgram = (PFNGLISPROGRAMPROC) GetProcAddress("glIsProgram");
+  glVertexAttrib1f = (PFNGLVERTEXATTRIB1FPROC) GetProcAddress("glVertexAttrib1f");
+  glVertexAttrib2f = (PFNGLVERTEXATTRIB2FPROC) GetProcAddress("glVertexAttrib2f");
 #endif
 }
 
