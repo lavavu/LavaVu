@@ -160,6 +160,7 @@ if __name__ == "__main__":
     libs = [] #['sqlite3']
     ldflags = []
     inc_dirs += [sqlite3_path]
+    rt_lib_dirs = []
     try:
         import numpy
     except:
@@ -243,6 +244,9 @@ if __name__ == "__main__":
                 defines += [('HAVE_X11', '1')]
                 libs += ['GL', 'X11']
 
+            #Runtime libraries: set rpath:
+            rt_lib_dirs = lib_dirs
+
         elif P == 'Darwin':
             #Mac OS X with Cocoa + CGL
             #srcs += ['src/Main/CocoaViewer.mm']
@@ -270,7 +274,7 @@ if __name__ == "__main__":
                     include_dirs = inc_dirs,
                     libraries = libs,
                     library_dirs = lib_dirs,
-                    runtime_library_dirs = lib_dirs,
+                    runtime_library_dirs = rt_lib_dirs,
                     extra_compile_args = cflags,
                     extra_link_args = ldflags,
                     sources = srcs)
