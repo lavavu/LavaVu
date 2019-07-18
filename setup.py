@@ -14,14 +14,14 @@ import platform
 import glob
 
 #Current version
-version = "1.4.0"
+version = "1.4.1"
 
 """
 To release a new verison:
 
     1) Edit the version number above, then commit the change!
 
-    2) Tag the release with git
+    2) Tag the release with git (this will push changes and tags)
 
     >>> python setup.py tag
 
@@ -51,7 +51,7 @@ NOTE:
 #Run with "tag" arg to create a release tag
 if sys.argv[-1] == 'tag':
     os.system("git tag -a %s -m 'version %s'" % (version, version))
-    os.system("git push --tags")
+    os.system("git push origin %s" % version)
     sys.exit()
 
 #Run with "publish" arg to upload the release
