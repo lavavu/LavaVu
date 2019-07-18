@@ -1,5 +1,6 @@
 include Makefile
 include version.py
+include requirements.txt
 recursive-include lavavu shaders/*
 recursive-include lavavu html/*
 recursive-include src *.cpp *.c *.cxx *.h *.hpp *.mm

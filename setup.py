@@ -14,21 +14,23 @@ import platform
 import glob
 
 #Current version
-version = "1.4.1"
+version = "1.4.2"
 
 """
 To release a new verison:
 
-    1) Edit the version number above, then commit the change!
+    1) Edit the version number above, then commit the change
 
-    2) Tag the release with git (this will push changes and tags)
+    2) Tag the release with git using below command (this will push changes and tags)
 
     >>> python setup.py tag
 
     3) Rebuild to update version in library and rebuild docs
+       (may need to reset notebooks to documentation versions)
+       (docs repo is at: git@github.com:mivp/LavaVu-Documentation.git)
 
     >>> make
-    >>> make docs
+    >>> make docs -B
 
     4) Publish the release to PyPi,
     ensure this is done in a clean checkout with no other source changes!
@@ -36,6 +38,7 @@ To release a new verison:
     >>> python setup.py publish
 
     (If this fails, check ~/.pypirc and try upgrading pip: pip install -U pip setuptools)
+    (also rm -rf dist)
 
 TODO:
     Review possible dependencies to support image/video libraries
