@@ -24,7 +24,6 @@ CFLAGS = $(FLAGS) -fPIC -Isrc -Wall
 CPPFLAGS = $(CFLAGS) -std=c++0x
 #For external dependencies
 EXTCFLAGS = -O3 -DNDEBUG -fPIC -Isrc
-EXTCPPFLAGS = $(EXTCFLAGS) -std=c++0x
 SWIGFLAGS=
 
 #Default to X11 enabled unless explicitly disabled
@@ -32,18 +31,18 @@ X11 ?= 1
 
 # Separate compile options per configuration
 ifeq ($(CONFIG),debug)
-  CFLAGS += -g -O0 -DDEBUG
+  CPPFLAGS += -g -O0 -DDEBUG
 else
-  CFLAGS += -O3 -DNDEBUG
+  CPPFLAGS += -O3 -DNDEBUG
 endif
 
 #Linux/Mac specific libraries/flags for offscreen & interactive
 OS := $(shell uname)
 ifeq ($(OS), Darwin)
   SWIGFLAGS= -undefined suppress -flat_namespace
-  CFLAGS += -Wno-unknown-warning-option -Wno-c++14-extensions -Wno-shift-negative-value
+  CPPFLAGS += -Wno-unknown-warning-option -Wno-c++14-extensions -Wno-shift-negative-value
   #Mac OS X with Cocoa + CGL
-  CFLAGS += -FCocoa -FOpenGL -stdlib=libc++
+  CPPFLAGS += -FCocoa -FOpenGL -stdlib=libc++
   LIBS=-lc++ -ldl -lpthread -framework Cocoa -framework Quartz -framework OpenGL -lobjc -lm -lz
   DEFINES += -DUSE_FONTS -DHAVE_CGL
   APPLEOBJ=$(OPATH)/CocoaViewer.o
@@ -97,22 +96,22 @@ LIBS += -L$(subst :, -L,${LV_LIB_DIRS})
 LIBS += ${RP}$(subst :, ${RP},${LV_LIB_DIRS})
 endif
 ifdef LV_INC_DIRS
-CFLAGS += -I$(subst :, -I,${LV_INC_DIRS})
+CPPFLAGS += -I$(subst :, -I,${LV_INC_DIRS})
 endif
 
 #Other optional components
 ifeq ($(VIDEO), 1)
-  CFLAGS += -DHAVE_LIBAVCODEC -DHAVE_SWSCALE
+  CPPFLAGS += -DHAVE_LIBAVCODEC -DHAVE_SWSCALE
   LIBS += -lavcodec -lavutil -lavformat -lswscale
 endif
 #Default libpng disabled, use built in png support
 LIBPNG ?= 0
 ifeq ($(LIBPNG), 1)
-  CFLAGS += -DHAVE_LIBPNG
+  CPPFLAGS += -DHAVE_LIBPNG
   LIBS += -lpng
 endif
 ifeq ($(TIFF), 1)
-  CFLAGS += -DHAVE_LIBTIFF
+  CPPFLAGS += -DHAVE_LIBTIFF
   LIBS += -ltiff
 endif
 
@@ -173,7 +172,7 @@ $(OBJS): $(OPATH)/%.o : %.cpp $(OPATH)/compiler_flags $(INC) | src/sqlite3/sqlit
 
 $(PROGRAM): $(LIBRARY) main.cpp | paths
 	$(CXX) $(CPPFLAGS) $(DEFINES) -c src/Main/main.cpp -o $(OPATH)/main.o
-	$(CXX) -o $(PROGRAM) $(OPATH)/main.o $(LIBS) -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) -o $(PROGRAM) $(OPATH)/main.o $(LIBS) -l$(PROGNAME) -L$(PREFIX) $(LIBLINK)
 
 $(LIBRARY): $(ALLOBJS) | paths
 	$(CXX) -o $(LIBRARY) $(LIBBUILD) $(LIBINSTALL) $(ALLOBJS) $(LIBS)
@@ -202,7 +201,7 @@ swig : $(INC) src/LavaVuPython.i | paths
 	swig -v -Wextra -python -ignoremissing -O -c++ -DSWIG_DO_NOT_WRAP -outdir $(PREFIX) src/LavaVuPython.i
 
 $(SWIGLIB) : $(LIBRARY) $(SWIGOBJ)
-	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) ${PYLIB} -lLavaVu -L$(PREFIX) $(LIBLINK)
+	$(CXX) -o $(SWIGLIB) $(LIBBUILD) $(SWIGOBJ) $(SWIGFLAGS) ${PYLIB} -l$(PROGNAME) -L$(PREFIX) $(LIBLINK)
 
 $(SWIGOBJ) : $(SWIGSRC) | src/sqlite3/sqlite3.c
 	$(CXX) $(CPPFLAGS) ${PYINC} -c $(SWIGSRC) -o $(SWIGOBJ) -I$(NUMPYINC)
@@ -218,7 +217,7 @@ docs: src/LavaVu.cpp src/Session.h src/version.cpp
 clean:
 	-rm -f *~ $(OPATH)/*.o
 	-rm -f $(PREFIX)/*.so
-	-rm -f $(PREFIX)/LavaVu
+	-rm -f $(PREFIX)/$(PROGNAME)
 	@if [ $(PREFIX) != "lavavu" ]; then \
 	-rm -rf $(PREFIX)/html; \
 	-rm -rf $(PREFIX)/shaders; \
