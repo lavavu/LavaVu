@@ -105,10 +105,8 @@ void OSMesaViewer::execute()
   if (context != osMesaContext)
     OSMesaMakeCurrent(osMesaContext, pixelBuffer, GL_UNSIGNED_BYTE, width, height);
 
-  show();
-
   // Enter dummy event loop processing
-  //OpenGLViewer::execute();
+  OpenGLViewer::execute();
 }
 
 void OSMesaViewer::show()

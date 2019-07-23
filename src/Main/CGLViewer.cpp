@@ -101,11 +101,8 @@ void CGLViewer::execute()
   // Set the current window's context as active
   CGLSetCurrentContext(context);
 
-  show();
-
   // Enter dummy event loop processing
-  //OpenGLViewer::execute();
-
+  OpenGLViewer::execute();
 }
 
 void CGLViewer::show()

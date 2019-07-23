@@ -114,10 +114,8 @@ void EGLViewer::execute()
   // Set the current window's context as active
   eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, eglContext);
 
-  show();
-
   // Enter dummy event loop processing
-  //OpenGLViewer::execute();
+  OpenGLViewer::execute();
 }
 
 void EGLViewer::show()
