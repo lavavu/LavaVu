@@ -38,7 +38,6 @@ To release a new verison:
     >>> python setup.py publish
 
     (If this fails, check ~/.pypirc and try upgrading pip: pip install -U pip setuptools)
-    (also rm -rf dist)
 
 TODO:
     Review possible dependencies to support image/video libraries
@@ -55,12 +54,13 @@ NOTE:
 if sys.argv[-1] == 'tag':
     os.system("git tag -a %s -m 'version %s'" % (version, version))
     os.system("git push origin %s" % version)
+    os.system("git push")
     sys.exit()
 
 #Run with "publish" arg to upload the release
 if sys.argv[-1] == 'publish':
     os.system("python setup.py sdist")
-    os.system("twine upload dist/*")
+    os.system("twine upload dist/lavavu-%s.tar.gz" % version)
     sys.exit()
 
 def write_version():
