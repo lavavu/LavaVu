@@ -37,6 +37,8 @@
 
 #include "OSMesaViewer.h"
 
+typedef OSMesaContext GLAPIENTRY (*OSMesaCreateContextAttribs_func)(const int *attribList, OSMesaContext sharelist);
+
 OSMesaViewer::OSMesaViewer() : OpenGLViewer()
 {
   visible = false;
@@ -73,6 +75,11 @@ void OSMesaViewer::open(int w, int h)
      OSMESA_CONTEXT_MINOR_VERSION,  3,
      0
   };
+
+  //Must get function pointer for Mesa version < 12
+  OSMesaCreateContextAttribs_func OSMesaCreateContextAttribs =
+     (OSMesaCreateContextAttribs_func)OSMesaGetProcAddress("OSMesaCreateContextAttribs");
+  assert(OSMesaCreateContextAttribs);
 
   osMesaContext = OSMesaCreateContextAttribs(attribs, NULL);
 
