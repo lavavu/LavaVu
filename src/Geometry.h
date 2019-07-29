@@ -604,7 +604,7 @@ public:
   void labels();  //Draw labels
   std::vector<Geom_Ptr> getAllObjects(DrawingObject* draw);
   std::vector<Geom_Ptr> getAllObjectsAt(DrawingObject* draw, int step);
-  Geom_Ptr getObjectStore(DrawingObject* draw);
+  Geom_Ptr getObjectStore(DrawingObject* draw, bool stepfilter=true);
   Geom_Ptr add(DrawingObject* draw);
   Geom_Ptr read(DrawingObject* draw, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);
   void read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype, const void* data, int width=0, int height=0, int depth=0);

@@ -50,7 +50,6 @@ class DrawingObject
 public:
   unsigned int dbid;
   bool skip;
-  bool fixed = false;
   Shader_Ptr shader; //Custom shader
 
   //Cached values for faster lookup

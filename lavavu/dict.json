@@ -138,6 +138,17 @@
       true
     ]
   },
+  "fixed": {
+    "default": false,
+    "target": "object",
+    "type": "boolean",
+    "desc": "Set to true to make all data fixed, not time varying, for this object",
+    "strict": true,
+    "redraw": 1,
+    "control": [
+      false
+    ]
+  },
   "geometry": {
     "default": "points",
     "target": "object",

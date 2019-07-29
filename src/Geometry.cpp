@@ -1673,11 +1673,13 @@ std::vector<Geom_Ptr> Geometry::getAllObjectsAt(DrawingObject* draw, int step)
   return geomlist;
 }
 
-Geom_Ptr Geometry::getObjectStore(DrawingObject* draw)
+Geom_Ptr Geometry::getObjectStore(DrawingObject* draw, bool stepfilter)
 {
-  //Get passed object's most recently added data store (iff timestep matches or all fixed)
+  //Get passed object's most recently added data store at current timestep
+  //(Fixed objects always use timestep=-1)
+  int timestep = draw->properties["fixed"] ? -1 : session.now;
   for (int i=records.size()-1; i>=0 && records.size() > 0; i--)
-    if (records[i]->draw == draw && (draw->fixed || records[i]->step == session.now))
+    if (records[i]->draw == draw && (!stepfilter || records[i]->step == timestep))
       return records[i];
   return nullptr;
 }
@@ -1685,7 +1687,7 @@ Geom_Ptr Geometry::getObjectStore(DrawingObject* draw)
 Geom_Ptr Geometry::add(DrawingObject* draw)
 {
   int timestep = session.now;
-  if (draw->fixed) timestep = -1;
+  if (draw->properties["fixed"]) timestep = -1;
   Geom_Ptr geomdata = std::make_shared<GeomData>(draw, type, timestep);
   records.push_back(geomdata);
   //if (allhidden) draw->properties.data["visible"] = false;
