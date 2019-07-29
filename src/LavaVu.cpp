@@ -3240,9 +3240,7 @@ std::string LavaVu::getTimeSteps()
 
 void LavaVu::addTimeStep(int step, std::string properties)
 {
-  if (step < 0)
-    step = amodel->step()+1;
-  amodel->addTimeStep(step, step, properties);
+  step = amodel->addTimeStep(step, step, properties);
   amodel->setTimeStep(step);
 }
 

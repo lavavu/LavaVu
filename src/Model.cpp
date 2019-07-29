@@ -1249,8 +1249,17 @@ int Model::nearestTimeStep(int requested)
   return idx;
 }
 
-void Model::addTimeStep(int step, double time, const std::string& props, const std::string& path)
+int Model::addTimeStep(int step, double time, const std::string& props, const std::string& path)
 {
+  //Always add to final step with increment of gap if no step index provided
+  if (step < 0)
+  {
+    if (timesteps.size())
+      step = lastStep() + session.gap;
+    else
+      step = 0;
+  }
+
   if (time == -HUGE_VAL) time = step;
   timesteps.push_back(new TimeStep(session.globals, session.defaults, step, time, path));
   int tlen = timesteps.size();
@@ -1263,6 +1272,8 @@ void Model::addTimeStep(int step, double time, const std::string& props, const s
     if (diff > session.gap)
       session.gap = diff;
   }
+
+  return step;
 }
 
 //Load data at specified timestep
