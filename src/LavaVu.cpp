@@ -2516,7 +2516,7 @@ void LavaVu::drawBorder()
       obj->properties.replace({{"clip", false}, {"opacity", 1.0}, {"alpha", 1.0},
                                {"fixed", true},
                                {"link", true}, {"loop", true}, {"depthtest", false},
-                               {"linewidth" , 1.0}});
+                               {"linewidth" , 1.0}, {"scalelines" , 1.0}});
     }
     obj->properties.data["colour"] = aview->properties["bordercolour"];
     // The 2d bounding box of model
@@ -2571,7 +2571,7 @@ void LavaVu::drawBorder()
         border->setup(aview);
       }
 
-      obj->properties.replace({{"clip", false}, {"opacity", 1.0}, {"alpha", 1.0},
+      obj->properties.replace({{"clip", false}, {"opacity", 1.0}, {"alpha", 1.0}, {"scalelines" , 1.0},
                                {"fixed", true},
                                {"flat", true}, {"cullface", true}, {"wireframe", false}, {"depthtest", true},
                                {"link", true}, {"loop", true}, {"tubes", true}, {"lit", false}});
