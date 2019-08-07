@@ -392,7 +392,7 @@ class Object(dict):
     >>> obj = lv.points(pointtype="sphere")
     >>> obj["pointsize"] = 5
 
-    A list of available properties can be found here: https://mivp.github.io/LavaVu-Documentation/Property-Reference
+    A list of available properties can be found here: https://lavavu.github.io/Documentation/Property-Reference
     or by using the online help:
 
     >>> obj.help('opacity') # doctest: +SKIP
@@ -2083,8 +2083,8 @@ class Viewer(dict):
 
     A list of available commands and properties can be found in the docs
 
-     - https://mivp.github.io/LavaVu-Documentation/Scripting-Commands-Reference
-     - https://mivp.github.io/LavaVu-Documentation/Property-Reference
+     - https://lavavu.github.io/Documentation/Scripting-Commands-Reference
+     - https://lavavu.github.io/Documentation/Property-Reference
 
     or by using the online help:
 
@@ -2615,7 +2615,7 @@ class Viewer(dict):
     def commands(self, cmds, queue=False):
         """
         Execute viewer commands
-        https://mivp.github.io/LavaVu-Documentation/Scripting-Commands-Reference
+        https://lavavu.github.io/Documentation/Scripting-Commands-Reference
         These commands can also be executed individually by calling them as methods of the viewer object
 
         Parameters
@@ -2662,7 +2662,7 @@ class Viewer(dict):
             md = self.app.helpCommand(cmd)
         #Add docs search link
         if len(cmd):
-            md += "\n[Search for '" + cmd + "' in documentation](https://mivp.github.io/LavaVu-Documentation/search.html?q=" + cmd + ")"
+            md += "\n[Search for '" + cmd + "' in documentation](https://lavavu.github.io/Documentation/search.html?q=" + cmd + ")"
         _markdown(md)
 
     def __call__(self, cmds):

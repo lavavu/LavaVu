@@ -108,7 +108,7 @@ Alternatively, clone the repository with *git* and build from source:
 
 ::
 
-  git clone https://github.com/OKaluza/LavaVu
+  git clone https://github.com/lavavu/LavaVu
   cd LavaVu
   make -j4
 
@@ -174,7 +174,7 @@ a binary build for the platform is attached to each release:
 
   #Install LavaVu
   %%bash
-  wget https://github.com/OKaluza/LavaVu/releases/latest/download/lavavu-colab-gpu.tar.gz
+  wget https://github.com/lavavu/LavaVu/releases/latest/download/lavavu-colab-gpu.tar.gz
   tar xzf lavavu-colab-gpu.tar.gz
 
 Docker
@@ -185,7 +185,7 @@ A base dockerfile is provided in the repository root.
 You can try it out on binder
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/OKaluza/LavaVu/1.3.3?filepath=notebooks
+ :target: https://mybinder.org/v2/gh/lavavu/LavaVu/1.4.3?filepath=notebooks
 
 Windows
 -------

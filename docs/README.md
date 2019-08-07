@@ -20,5 +20,5 @@ The following python packages are required to build the documentation:
 A requirements.txt file is provided, install them with
 
 ```bash
-   pip -r requirements.txt
+   pip install -r requirements.txt
 ```

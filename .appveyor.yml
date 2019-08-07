@@ -47,8 +47,8 @@ build_script:
 test_script:
   #Just run the doctests
   - python lavavu/lavavu.py
-#  - git clone --depth 1 https://github.com/mivp/LavaVuTesting
-#  - cd LavaVuTesting
+#  - git clone --depth 1 https://github.com/lavavu/Testing
+#  - cd Testing
 #  - python runall.py
 
 after_test:

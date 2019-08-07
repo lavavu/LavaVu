@@ -27,7 +27,7 @@ To release a new verison:
 
     3) Rebuild to update version in library and rebuild docs
        (may need to reset notebooks to documentation versions)
-       (docs repo is at: git@github.com:mivp/LavaVu-Documentation.git)
+       (docs repo is at: git@github.com:lavavu/Documentation.git)
 
     >>> make
     >>> make docs -B
@@ -288,11 +288,11 @@ if __name__ == "__main__":
     setup(name = 'lavavu',
           author            = "Owen Kaluza",
           author_email      = "owen.kaluza@monash.edu",
-          url               = "https://github.com/OKaluza/LavaVu",
+          url               = "https://github.com/lavavu/LavaVu",
           version           = version,
           license           = "LGPL-3",
           description       = "Python interface to LavaVu OpenGL 3D scientific visualisation utilities",
-          long_description  = 'See https://github.com/OKaluza/LavaVu/wiki for more info',
+          long_description  = 'See https://github.com/lavavu/LavaVu for more info',
           packages          = ['lavavu'],
           install_requires  = requirements,
           platforms         = ['any'],

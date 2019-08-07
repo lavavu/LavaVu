@@ -30,8 +30,8 @@ addons:
 script:
   - python setup.py install
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      git clone --depth 1 https://github.com/mivp/LavaVuTesting;
-      cd LavaVuTesting;
+      git clone --depth 1 https://github.com/lavavu/Testing;
+      cd Testing;
       export GALLIUM_DRIVER="llvmpipe";
       export LV_ECHO_FAIL=1;
       export LV_ARGS="-v";

@@ -34,9 +34,9 @@ AuScope <http://www.auscope.org.au/simulation-analysis-modelling>`__ capability.
     Setting Properties <Setting-Properties>
     GLDB File Format <GLDB-file-format>
 
-    LavaVu Github <https://github.com/OKaluza/LavaVu>
-    LavaVu Wiki   <https://github.com/OKaluza/LavaVu/wiki>
-    LavaVu Issue Tracker   <https://github.com/OKaluza/LavaVu/issues>
+    LavaVu Github <https://github.com/lavavu/LavaVu>
+    LavaVu Wiki   <https://github.com/lavavu/LavaVu/wiki>
+    LavaVu Issue Tracker   <https://github.com/lavavu/LavaVu/issues>
 
 .. image:: https://travis-ci.org/OKaluza/LavaVu.svg?branch=master
     :target: https://travis-ci.org/OKaluza/LavaVu
@@ -142,7 +142,7 @@ Who do I talk to?
 ~~~~~~~~~~~~~~~~~
 
 -  Report bugs or request help on the github issue tracker:
-   https://github.com/OKaluza/LavaVu/issues
+   https://github.com/lavavu/LavaVu/issues
 -  Contact developers: Owen Kaluza (at) monash.edu
 
 Included libraries

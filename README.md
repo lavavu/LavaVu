@@ -3,11 +3,11 @@
 [![Build Status](https://travis-ci.org/OKaluza/LavaVu.svg?branch=master)](https://travis-ci.org/OKaluza/LavaVu)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/jqtqu320bo8sphbd?svg=true)](https://ci.appveyor.com/project/OKaluza/lavavu)
 [![DOI](https://zenodo.org/badge/45163055.svg)](https://zenodo.org/badge/latestdoi/45163055)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/OKaluza/LavaVu/1.3.3?filepath=notebooks)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lavavu/LavaVu/1.4.3?filepath=notebooks)
 
 A scientific visualisation tool with a python interface for fast and flexible visual analysis.
 
-Documentation available here [LavaVu Documentation](https://mivp.github.io/LavaVu-Documentation/)
+Documentation available here [LavaVu Documentation](https://lavavu.github.io/Documentation/)
 
 ![examplevis](http://owen.kaluza.id.au/Slides/2017-08-15/combined.png)
 
@@ -60,7 +60,7 @@ python
 Alternatively, clone this repository with *git* and build from source:
 
 ```
-  git clone https://github.com/OKaluza/LavaVu
+  git clone https://github.com/lavavu/LavaVu
   cd LavaVu
   make -j4
 ```
@@ -77,11 +77,11 @@ If all goes well the viewer will be built, try running with:
 
 ### Who do I talk to? ###
 
-* Report bugs/issues here on github: https://github.com/OKaluza/LavaVu/issues
+* Report bugs/issues here on github: https://github.com/lavavu/LavaVu/issues
 * Contact developer: Owen Kaluza (at) monash.edu
 
 For further documentation / examples, see the online documentation
-* https://mivp.github.io/LavaVu-Documentation
+* https://lavavu.github.io/Documentation
 
 ### Included libraries ###
 In order to avoid as many external dependencies as possible, the LavaVu sources include files from the following public domain or open source libraries, many thanks to the authors for making their code available!

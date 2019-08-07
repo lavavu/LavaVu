@@ -1,7 +1,7 @@
 FROM python:3.7-slim
 
 LABEL maintainer="owen.kaluza@monash.edu"
-LABEL repo="https://github.com/OKaluza/LavaVu"
+LABEL repo="https://github.com/lavavu/LavaVu"
 
 # install things
 RUN apt-get update -qq && \
