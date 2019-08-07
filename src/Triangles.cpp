@@ -74,6 +74,7 @@ unsigned int Triangles::triCount(unsigned int index)
   {
     //Un-structured tri vertices
     tris = geom[index]->count() / 3;
+    if (tris < 1) return 0;
     if (tris * 3 != geom[index]->count()) // || geom[index]->draw->properties["tristrip"])
       //Tri-strip vertices
       tris =  geom[index]->count() - 2;
@@ -345,6 +346,8 @@ void Triangles::render()
     {
       if (indices > 0)
       {
+        GL_Error_Check;
+        assert(offset+indices <= elements);
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * sizeof(GLuint), indices * sizeof(GLuint), geom[index]->render->indices.ref());
         //printf("%d upload %d indices, offset %d\n", index, indices, offset);
         counts[index] = indices;
@@ -391,7 +394,6 @@ void Triangles::draw()
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexvbo);
   if (geom.size() > 0 && elements > 0 && glIsBuffer(vbo) && glIsBuffer(indexvbo))
   {
-    //intptr_t vstart = 0; //Vertex buffer offset
     unsigned int start = 0;
     //Setup vertex attributes
     GLint aPosition = prog->attribs["aVertexPosition"];
@@ -406,7 +408,7 @@ void Triangles::draw()
     glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, stride, (GLvoid*)(6*sizeof(float))); //Tex coord s,t
     glEnableVertexAttribArray(aColour);
     glVertexAttribPointer(aColour, 4, GL_UNSIGNED_BYTE, GL_TRUE, stride, (GLvoid*)(8*sizeof(float)));   // rgba, offset 3 float
-    GLint voffset = 0;
+    GLint voffset = 0; //Vertex buffer offset
     for (unsigned int index = 0; index < geom.size(); index++)
     {
       if (counts[index] > 0)
@@ -422,8 +424,8 @@ void Triangles::draw()
         else
         {
           //Draw directly from vertex buffer
-          glDrawArrays(primitive, start, geom[index]->count());
-          //printf("  DRAW %d from %d by VERTEX (vstart %d)\n", geom[index]->count(), start, (int)vstart);
+          glDrawArrays(primitive, voffset, geom[index]->count());
+          //printf("  DRAW %d from %d by VERTEX\n", geom[index]->count(), voffset);
         }
         start += counts[index];
       }

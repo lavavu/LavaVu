@@ -272,7 +272,7 @@ void TriSurfaces::loadMesh()
       //Read the indices for loading sort list and later use (json export etc)
       //... now with check for degenerate triangles
       //(TODO: make this a separate library function so can be run on any mesh)
-      for (unsigned int i=0; i<indices.size(); i+=3)
+      for (unsigned int i=0; i<indices.size()-2 && indices.size() > 2; i+=3)
       {
         if (indices[i] != indices[i+1] && indices[i] != indices[i+2] && indices[i+1] != indices[i+2])
           geom[index]->render->indices.read(3, &indices[i]);
@@ -677,7 +677,7 @@ void TriSurfaces::draw()
     //Draw remaining elements (transparent, depth sorted)
     if (start < (unsigned int)elements)
     {
-      //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d\n", (elements-start)/3);
+      //fprintf(stderr, "(*) DRAWING TRANSPARENT TRIANGLES: %d (%d %d)\n", (elements-start)/3, elements, start);
       //Set draw state settings for first non-opaque object
       //NOTE: per-object textures do not work with transparency!
       setState(tridx);
