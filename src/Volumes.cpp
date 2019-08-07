@@ -493,7 +493,7 @@ void Volumes::render(Geom_Ptr g)
   float opacity = props["opacity"], density = props["density"];
   prog->setUniformf("uDensityFactor", density * opacity);
   Colour colour = g->draw->properties.getColour("colour", 220, 220, 200, 255);
-  bool hasiso = props.has("isovalue");
+  bool hasiso = props.has("isovalue") || props.hasglobal("isovalue");
   float isoval = props["isovalue"];
   float isoalpha = props["isoalpha"];
   if (!hasiso) isoalpha = 0.0; //Skip drawing isosurface if no isovalue set
