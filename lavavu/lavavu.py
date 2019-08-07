@@ -4673,5 +4673,5 @@ def lerp(first, second, mu):
 if __name__ == '__main__':
     #Run doctests
     import doctest
-    doctest.testmod(raise_on_error=True)
+    doctest.testmod()
 
