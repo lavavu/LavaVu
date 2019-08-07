@@ -279,7 +279,7 @@ bool Properties::typecheck(json& val, json& defaults, const std::string& key, bo
       else if (sval == "shiny")
         val = 3;
       else if (sval == "flat")
-        val = 0;
+        val = 4;
       else
       {
         std::stringstream ss;
