@@ -3071,7 +3071,21 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     aview->properties.data["min"] = {aview->min[0], aview->min[1], aview->min[2]};
     aview->properties.data["max"] = {aview->max[0], aview->max[1], aview->max[2]};
 
-    printMessage("View bounds update");
+    printMessage("View bounds updated");
+  }
+  else if (parsed.exists("fixbb"))
+  {
+    if (gethelp)
+    {
+      help += "Fix the model bounding box to it's current size, will no longer be elastic\n";
+      return false;
+    }
+
+    //Update fixed bounds
+    session.globals["min"] = {aview->min[0], aview->min[1], aview->min[2]};
+    session.globals["max"] = {aview->max[0], aview->max[1], aview->max[2]};
+
+    printMessage("Set fixed bounding box");
   }
   else if (parsed.exists("zerocam"))
   {
@@ -3212,7 +3226,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "bakecolour", "glaze", "export", "csv", "json", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
      "autorotate", "spin", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
-     "zerocam", "reset", "bounds", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
+     "zerocam", "reset", "bounds", "fixbb", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
     {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface"},
     {"background", "alpha", "axis", "rulers",
      "antialias", "valuerange", "colourmap", "colourbar", "pointtype",
