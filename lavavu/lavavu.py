@@ -3848,14 +3848,14 @@ class Geometry(list):
     >>> for i,el in enumerate(obj):
     ...     print(i,el)
     ...     print(el.vertices)
-    0 DrawData("triangles") ==> {'vertices': (3, 3)}
-    [[0.5 1.  0. ]
-     [1.5 1.  0. ]
-     [1.5 0.  0. ]]
-    1 DrawData("points") ==> {'vertices': (3, 3)}
+    0 DrawData("points") ==> {'vertices': (3, 3)}
     [[-1. -1.  0.]
      [ 0.  0.  0.]
      [ 1.  1.  0.]]
+    1 DrawData("triangles") ==> {'vertices': (3, 3)}
+    [[0.5 1.  0. ]
+     [1.5 1.  0. ]
+     [1.5 0.  0. ]]
 
     Get only triangle data
 
@@ -4673,5 +4673,5 @@ def lerp(first, second, mu):
 if __name__ == '__main__':
     #Run doctests
     import doctest
-    doctest.testmod()
+    doctest.testmod(raise_on_error=True)
 
