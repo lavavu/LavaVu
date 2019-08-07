@@ -153,6 +153,17 @@
       true
     ]
   },
+  "inview": {
+    "default": true,
+    "target": "object",
+    "type": "boolean",
+    "desc": "Set to false to exclude object from bounding box calculation and the default camera view",
+    "strict": true,
+    "redraw": 1,
+    "control": [
+      true
+    ]
+  },
   "fixed": {
     "default": false,
     "target": "object",

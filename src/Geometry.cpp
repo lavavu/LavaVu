@@ -1708,8 +1708,9 @@ void Geometry::setup(View* vp, float* min, float* max)
 
   //Iterate the selected viewport's drawing objects
   //Apply geometry bounds from all object data within this viewport
+  //(includes only visible objects where the "inview" property is true)
   for (unsigned int o=0; o<view->objects.size(); o++)
-    if (view->objects[o]->properties["visible"])
+    if (view->objects[o]->properties["visible"] && view->objects[o]->properties["inview"])
       objectBounds(view->objects[o], min, max);
 
   //printf("(%s) Final bounding dims...%f,%f,%f - %f,%f,%f\n", GeomData::names[type].c_str(), min[0], min[1], min[2], max[0], max[1], max[2]);
