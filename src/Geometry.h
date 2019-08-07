@@ -562,7 +562,8 @@ public:
   float max[3] = {-HUGE_VALF, -HUGE_VALF, -HUGE_VALF};
 
   bool allhidden, internal;
-  lucGeometryType type;   //Holds the object type
+  lucGeometryType type;   //Holds the renderer type
+  lucGeometryType parentType = lucMinType;   //Holds the parent renderer type
   unsigned int total;     //Total vertices renderable of all objects in container at current step
   bool redraw;    //Redraw flag
   bool reload;    //Reload and redraw flag

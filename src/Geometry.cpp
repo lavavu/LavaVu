@@ -1148,6 +1148,10 @@ void Geometry::setState(Geom_Ptr g)
     }
     //Disable colour interpolation (flat shading)
     flat = props["flat"];
+
+    //For line sub-rendering, disable lighting by default (unless "lit" was set)
+    if (parentType == lucLineType && !props.has("lit") && !props["tubes"])
+      lighting = false;
   }
   else
   {
@@ -2700,6 +2704,9 @@ void Glyphs::remove(DrawingObject* draw)
 
 void Glyphs::setup(View* vp, float* min, float* max)
 {
+  //Set the parentType
+  tris->parentType = lines->parentType = points->parentType = type;
+
   Geometry::setup(vp, min, max);
 
   //Do we have a valid bounding box?
