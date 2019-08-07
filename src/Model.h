@@ -108,8 +108,8 @@ public:
 
   Geometry* getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers);
   Geometry* getRenderer(lucGeometryType type);
-  template <typename T>  Geometry* getRendererOfType();
-  Geometry* getRenderer(const std::string& what);
+  std::vector<Geometry*> getRenderersByTypeName(const std::string& typestr);
+  Geometry* lookupObjectRenderer(DrawingObject* obj, lucGeometryType type=lucPointType);
 
   void clearObjects(bool fixed=false);
   void setup();
@@ -133,8 +133,8 @@ public:
   void setColourMapProps(Properties& properties, float  minimum, float maximum, bool logscale, bool discrete);
 
   Model(Session& session);
+  void init(bool clear=true);
   void load(const FilePath& fn);
-  void init();
   ~Model();
 
   bool loadFigure(int fig, bool preserveGlobals=false);
@@ -171,7 +171,7 @@ public:
 
   bool hasTimeStep(int ts);
   int nearestTimeStep(int requested);
-  int addTimeStep(int step=0, double time=-HUGE_VAL, const std::string& props="", const std::string& path="");
+  int addTimeStep(int step=0, const std::string& props="", const std::string& path="");
   int setTimeStep(int stepidx);
   int loadGeometry(int obj_id=0, int time_start=-1, int time_stop=-1);
   int loadFixedGeometry();

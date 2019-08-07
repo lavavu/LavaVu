@@ -1,53 +1,57 @@
 {
   "renderers": {
     "default": [
-      [
-        "labels"
-      ],
-      [
-        "points",
-        "sortedpoints",
-        "particles",
-        "spheres",
-        "cuboids"
-      ],
-      [
-        "quads",
-        "grid"
-      ],
-      [
-        "triangles",
-        "sortedtriangles",
-        "mesh",
-        "surface"
-      ],
-      [
-        "vectors",
-        "arrows"
-      ],
-      [
-        "tracers",
-        "streamlines"
-      ],
-      [
-        "lines",
-        "sortedlines",
-        "links",
-        "tubes"
-      ],
-      [
-        "shapes"
-      ],
-      [
-        "volume",
-        "volumes"
-      ],
-      [
-        "screen",
-        "fullscreen"
-      ]
+      {
+        "labels" : "labels"
+      },
+      {
+        "points" : "points",
+        "sortedpoints" : "points",
+        "particles" : "points",
+        "pointspheres" : "spheres",
+        "pointcubes" : "cuboids"
+      },
+      {
+        "quads" : "quads",
+        "grid" : "quads"
+      },
+      {
+        "triangles" : "sortedtriangles",
+        "sortedtriangles" : "sortedtriangles",
+        "basictriangles" : "basictriangles",
+        "mesh" : "basictriangles",
+        "surface" : "basictriangles"
+      },
+      {
+        "vectors" : "vectors",
+        "arrows" : "vectors"
+      },
+      {
+        "tracers" : "tracers",
+        "streamlines" : "tracers"
+      },
+      {
+        "lines" : "lines",
+        "links" : "lines",
+        "sortedlines" : "sortedlines",
+        "simplelines" : "simplelines"
+      },
+      {
+        "shapes" :  "shapes",
+        "spheres" : "spheres",
+        "cuboids" : "cuboids",
+        "cubes" : "cuboids"
+      },
+      {
+        "volume" : "volume",
+        "volumes" : "volume"
+      },
+      {
+        "screen" : "screen",
+        "fullscreen" : "screen"
+      }
     ],
-    "target": "all",
+    "target": "global",
     "type": "object",
     "desc": "Holds list of available renderer types that can be created and their aliases, grouped in order of base types (label/point/grid/tri/vector/tracer/line/shape/volume/screen) read only.",
     "strict": true,
@@ -57,21 +61,32 @@
     ]
   },
   "renderlist": {
-    "default": "sortedtriangles quads vectors tracers shapes sortedpoints labels links volume screen",
-    "target": "all",
+    "default": "",
+    "target": "global",
     "type": "string",
-    "desc": "List of default renderers created and order they are displayed. For valid types see \"renderers\" property.",
+    "desc": "Sets a list of renderers to create and order they are displayed. This allows overriding the default renderer order, defined by the object order. For valid types see \"renderers\" property.",
     "strict": true,
     "redraw": 0,
     "control": [
       false
     ]
   },
-  "glyphrenderlist": {
-    "default": "sortedtriangles points lines",
+  "subrenderers": {
+    "default": "sortedtriangles points simplelines",
     "target": "all",
     "type": "string",
-    "desc": "List of renderers created for glyph rendering and order they are displayed.",
+    "desc": "List of renderers created for rendering primitives (points, lines, triangles) from more complex renderers (eg: vectors). Allows selection of different primitive rendering modes, globally or per object.",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      false
+    ]
+  },
+  "time": {
+    "default": 0.0,
+    "target": "timestep",
+    "type": "real",
+    "desc": "Time value for timestep",
     "strict": true,
     "redraw": 0,
     "control": [
@@ -145,17 +160,6 @@
     "desc": "Set to true to make all data fixed, not time varying, for this object",
     "strict": true,
     "redraw": 1,
-    "control": [
-      false
-    ]
-  },
-  "geometry": {
-    "default": "points",
-    "target": "object",
-    "type": "string",
-    "desc": "Geometry renderer type to load into when adding new data",
-    "strict": true,
-    "redraw": 0,
     "control": [
       false
     ]

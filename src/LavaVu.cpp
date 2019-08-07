@@ -1472,8 +1472,8 @@ void LavaVu::readOBJ(const FilePath& fn)
 
   //Add single drawing object per file, if one is already active append to it
   DrawingObject* tobj = aobject;
-  if (!tobj) tobj = addObject(new DrawingObject(session, fn.base, "geometry=triangles\ncolour=[128,128,128]\n"));
-  Geometry* tris = lookupObjectRenderer(tobj);
+  if (!tobj) tobj = addObject(new DrawingObject(session, fn.base, "renderer=triangles\ncolour=[128,128,128]\n"));
+  Geometry* tris = amodel->lookupObjectRenderer(tobj);
   if (!tris) return;
 
   for (size_t i = 0; i < shapes.size(); i++)
@@ -2804,7 +2804,7 @@ void LavaVu::drawScene()
   glDisable(GL_CULL_FACE);
   GL_Error_Check;
 
-  //Run the renderers
+  //Call the renderers
   for (auto g : amodel->geometry)
     g->display();
 
@@ -3249,7 +3249,8 @@ std::string LavaVu::getTimeSteps()
 
 void LavaVu::addTimeStep(int step, std::string properties)
 {
-  step = amodel->addTimeStep(step, step, properties);
+  if (!amodel) return;
+  step = amodel->addTimeStep(step, properties);
   amodel->setTimeStep(step);
 }
 
@@ -3309,14 +3310,15 @@ void LavaVu::appendToObject(DrawingObject* target)
 {
   //Append data container to specified object
   if (!amodel || !target) return;
-  Geometry* container = lookupObjectRenderer(target);
+  Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
     container->add(target);
 }
 
 void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <float> > array, int split)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
     for (unsigned int i=0; i < array.size(); i += 3)
@@ -3327,7 +3329,8 @@ void LavaVu::loadTriangles(DrawingObject* target, std::vector< std::vector <floa
 
 void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
     for (auto item : list)
@@ -3342,7 +3345,8 @@ void LavaVu::loadColours(DrawingObject* target, std::vector <std::string> list)
 
 void LavaVu::loadLabels(DrawingObject* target, std::vector <std::string> labels)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
     container->label(target, labels);
 }
@@ -3379,7 +3383,8 @@ std::string LavaVu::getObjectDataLabels(DrawingObject* target)
 
 Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len, lucGeometryDataType type)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return nullptr;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   Geom_Ptr p = nullptr;
   if (container)
   {
@@ -3398,7 +3403,8 @@ Geom_Ptr LavaVu::arrayUChar(DrawingObject* target, unsigned char* array, int len
 
 Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, lucGeometryDataType type)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return nullptr;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   Geom_Ptr p = nullptr;
   if (container)
   {
@@ -3410,7 +3416,8 @@ Geom_Ptr LavaVu::arrayUInt(DrawingObject* target, unsigned int* array, int len, 
 
 Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeometryDataType type)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return nullptr;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   int dsize = 3;
   if (type == lucTexCoordData) dsize = 2;
   Geom_Ptr p = nullptr;
@@ -3424,7 +3431,8 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, lucGeo
 
 Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::string label)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return nullptr;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   Geom_Ptr p = nullptr;
   if (container)
   {
@@ -3436,7 +3444,8 @@ Geom_Ptr LavaVu::arrayFloat(DrawingObject* target, float* array, int len, std::s
 
 void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool bgr)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
     container->loadTexture(target, array, width, height, channels, flip, bgr);
@@ -3446,7 +3455,8 @@ void LavaVu::textureUChar(DrawingObject* target, unsigned char* array, int len, 
 
 void LavaVu::textureUInt(DrawingObject* target, unsigned int* array, int len, unsigned int width, unsigned int height, unsigned int channels, bool flip, bool bgr)
 {
-  Geometry* container = lookupObjectRenderer(target);
+  if (!amodel || !target) return;
+  Geometry* container = amodel->lookupObjectRenderer(target);
   if (container)
   {
     container->loadTexture(target, (GLubyte*)array, width, height, channels, flip, bgr);
@@ -3503,7 +3513,8 @@ std::vector<float> LavaVu::getBoundingBox(DrawingObject* target, bool allsteps)
 
 void LavaVu::geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lucGeometryDataType type)
 {
-  Geometry* container = lookupObjectRenderer(geom->draw);
+  if (!amodel) return;
+  Geometry* container = amodel->lookupObjectRenderer(geom->draw);
   if (container && geom)
   {
     geom->dataContainer(type)->clear();
@@ -3513,7 +3524,8 @@ void LavaVu::geometryArrayUChar(Geom_Ptr geom, unsigned char* array, int len, lu
 
 void LavaVu::geometryArrayUInt(Geom_Ptr geom, unsigned int* array, int len, lucGeometryDataType type)
 {
-  Geometry* container = lookupObjectRenderer(geom->draw);
+  if (!amodel) return;
+  Geometry* container = amodel->lookupObjectRenderer(geom->draw);
   if (container && geom)
   {
     geom->dataContainer(type)->clear();
@@ -3525,7 +3537,8 @@ void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometr
 {
   int dsize = 3;
   if (type == lucTexCoordData) dsize = 2;
-  Geometry* container = lookupObjectRenderer(geom->draw);
+  if (!amodel) return;
+  Geometry* container = amodel->lookupObjectRenderer(geom->draw);
   if (container && geom)
   {
     geom->dataContainer(type)->clear();
@@ -3535,7 +3548,8 @@ void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, lucGeometr
 
 void LavaVu::geometryArrayFloat(Geom_Ptr geom, float* array, int len, std::string label)
 {
-  Geometry* container = lookupObjectRenderer(geom->draw);
+  if (!amodel) return;
+  Geometry* container = amodel->lookupObjectRenderer(geom->draw);
   if (container && geom)
   {
     for (auto vals : geom->values)
@@ -3677,7 +3691,7 @@ DrawingObject* LavaVu::isoSurface(DrawingObject* target, DrawingObject* source, 
   Triangles* tris = (Triangles*)amodel->getRenderer(lucTriangleType);
   if (volumes && tris)
     volumes->isosurface(tris, source, target, clearvol);
-  target->properties.data["geometry"] = "triangles";
+  target->properties.data["renderer"] = "triangles";
   return target;
 }
 

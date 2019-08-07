@@ -8,13 +8,13 @@ std::string Shader::path = SHADER_PATH;
 
 //Default shaders
 const char *vertexShader = R"(
-attribute vec4 aVertexPosition;
-attribute vec4 aVertexTexCoord;
-attribute vec4 aVertexColour;
+in vec4 aVertexPosition;
+in vec4 aVertexTexCoord;
+in vec4 aVertexColour;
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
-varying vec4 vColour;
-varying vec2 vTexCoord;
+out vec4 vColour;
+out vec2 vTexCoord;
 void main(void)
 {
   gl_Position = uPMatrix * uMVMatrix * aVertexPosition;
@@ -24,8 +24,8 @@ void main(void)
 )";
 
 const char *fragmentShader = R"(
-varying vec4 vColour;
-varying vec2 vTexCoord;
+in vec4 vColour;
+in vec2 vTexCoord;
 void main(void)
 {
   gl_FragColor = vColour;
@@ -106,6 +106,10 @@ void Shader::init(std::string vsrc, std::string gsrc, std::string fsrc)
 std::string Shader::read_file(const std::string& fname)
 {
   if (!fname.length()) return std::string("");
+
+  //Detect shader source provided, just return it
+  if (fname.find("void main(void)") != std::string::npos)
+    return fname;
 
   //If shader found locally in working directory, use it instead
   std::string filepath;

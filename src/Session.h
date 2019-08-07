@@ -64,6 +64,9 @@ public:
   std::vector<std::string> colourMapProps;
   std::vector<std::string> viewProps;
 
+  std::map<std::string, std::string> classMap;
+  std::map<std::string, lucGeometryType> typeMap;
+
   //Property metadata / documentation
   json_fifo properties;
 

@@ -145,7 +145,7 @@ void DrawingObject::setup()
   //Cache values for faster lookups during draw calls
   visible = properties["visible"];
   Properties::toArray<float>(properties["dims"], dims, 3);
-  geometry = properties["geometry"];
+  renderer = properties["renderer"];
   colour = properties["colour"];
   opacity = 1.0;
   if (properties.has("opacity"))

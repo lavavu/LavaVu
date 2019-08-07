@@ -58,13 +58,16 @@ void Shapes::update()
     dims[0] = props["shapewidth"];
     dims[1] = props["shapeheight"];
     dims[2] = props["shapelength"];
-    int shape = props["shape"];
+    int shape = defaultshape;
+    if (props.has("shape") || props.hasglobal("shape"))
+      shape = props["shape"];
     int segments = (int)props["segments"];
     //Points drawn as shapes?
-    if (!props.has("shape") || type == lucPointType)
+    if (props.has("pointsize") || type == lucPointType)
     {
       //Plotting points as spheres/cuboids, set some defaults
-      float diam = (float)props["pointsize"] / 8.0;
+      float scale0 = (float)props["scalepoints"];
+      float diam = (float)props["pointsize"] / 8.0 * scale0;
       if (props.has("radius")) diam = 2.0 * (float)props["radius"];
       dims[0] = dims[1] = dims[2] = diam;
       //Lower default sphere quality

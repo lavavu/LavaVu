@@ -42,14 +42,20 @@ class TimeStep
 {
 public:
   int step;
-  float time;
   std::string path;
   //Timestep properties data...
   Properties properties;
   bool loaded = false;
 
-  TimeStep(json& globals, json& defaults, int step, float time, const std::string& path="") : step(step), time(time), path(path), properties(globals, defaults) {}
-  TimeStep(json& globals, json& defaults) : step(0), time(0), properties(globals, defaults) {}
+  TimeStep(json& globals, json& defaults, int step, const std::string& path="") : step(step), path(path), properties(globals, defaults) {}
+  TimeStep(json& globals, json& defaults) : step(0), properties(globals, defaults) {}
+
+  float time()
+  {
+    if (properties.has("time"))
+      return properties["time"];
+    return (float)step;
+  }
 };
 
 #endif

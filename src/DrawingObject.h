@@ -55,7 +55,7 @@ public:
   //Cached values for faster lookup
   bool visible = true;
   float dims[3] = {0., 0., 0.};
-  std::string geometry = "";
+  std::string renderer = "";
   float opacity;
   Colour colour;
   unsigned int colourIdx;

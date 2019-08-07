@@ -113,7 +113,7 @@ void Tracers::update()
     if (cmap && !geom[i]->colourData())
     {
       timecolour = true;
-      cmap->calibrate(session.timesteps[start]->time, session.timesteps[end]->time);
+      cmap->calibrate(session.timesteps[start]->time(), session.timesteps[end]->time());
     }
 
     //Get properties
@@ -171,7 +171,7 @@ void Tracers::update()
 
         //Get colour either from supplied colour values or time step
         if (timecolour)
-          colour = cmap->getfast(session.timesteps[step]->time);
+          colour = cmap->getfast(session.timesteps[step]->time());
         else if ((unsigned int)geom[rec]->colourCount() == particles)
         {
           //Need to re-init lookup functor to this data block

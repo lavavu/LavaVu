@@ -789,11 +789,12 @@ class Object(dict):
             #Quads or tracers? Use the shape as dims if not provided
             if D==3:
                 #Quad/Triangle type?
-                #if self["geometry"] == 'quads' or self["geometry"] == 'grid':
-                if self["geometry"] in self.parent.renderers[LavaVuPython.lucGridType] or self["geometry"] in self.parent.renderers[LavaVuPython.lucTriangleType]:
+                renderer = self["renderer"]
+                if ':' in renderer:
+                    renderer = renderer[renderer.index(':')+1:]
+                if renderer in self.parent.renderers[LavaVuPython.lucGridType] or renderer in self.parent.renderers[LavaVuPython.lucTriangleType]:
                     self._gridDimsFromShape(data)
-                if self["geometry"] in self.parent.renderers[LavaVuPython.lucTracerType]:
-                #elif self["geometry"] == 'tracers':
+                if renderer in self.parent.renderers[LavaVuPython.lucTracerType]:
                     self._tracerDimsFromShape(data)
 
         #Load as flattened 1d array
@@ -894,7 +895,7 @@ class Object(dict):
         data = self._convert(data, numpy.float32)
 
         #Volume? Use the shape as dims if not provided
-        if self["geometry"] == 'volume':
+        if 'volume' in self["renderer"]:
             self._volumeDimsFromShape(data)
 
         self.parent.app.arrayFloat(self.ref, data.ravel(), label)
@@ -1030,7 +1031,7 @@ class Object(dict):
         data = self._convert(data, numpy.uint8)
 
         #Volume? Use the shape as dims if not provided
-        if self["geometry"] == 'volume':
+        if 'volume' in self["renderer"]:
             self._volumeDimsFromShape(data)
 
         self._loadScalar(data, LavaVuPython.lucLuminanceData)
@@ -1864,9 +1865,6 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
         #Queue commands for parsing and return immediately to continue processing
         self._lavavu_call('parseCommands', False, *args, **kwargs)
 
-    def addTimeStep(self, *args, **kwargs):
-        return self._lavavu_call('addTimeStep', True, *args, **kwargs)
-
     def imageDiff(self, *args, **kwargs):
         return self._lavavu_call('imageDiff', True, *args, **kwargs)
 
@@ -2270,7 +2268,10 @@ class Viewer(dict):
             #Add object by geom type shortcut methods
             #(allows calling add by geometry type, e.g. obj = lavavu.lines())
             self.renderers = self.properties["renderers"]["default"]
-            for key in [item for sublist in self.renderers for item in sublist]:
+            self.renderlist = [item for sublist in self.renderers for item in sublist]
+            #print(self.renderlist)
+            #print(self.renderers)
+            for key in self.renderlist:
                 #Use a closure to define a new method to call addtype with this type
                 def addmethod(name):
                     _target = weakref.ref(self) #Use a weak ref in the closure
@@ -2745,11 +2746,19 @@ class Viewer(dict):
 
     #Shortcut for adding specific geometry types
     def _addtype(self, typename, name=None, **kwargs):
+        #Is renderer specified?
+        if "renderer" in kwargs:
+            r = kwargs["renderer"]
+            #Custom renderer without specified type needs the default type appended
+            if not r in self.renderlist and not ':' in r:
+                kwargs["renderer"] = r + ':' + typename
+        else:
+            #Otherwise, use the default
+            kwargs["renderer"] = typename
         #Set name to typename if none provided
         if not name: 
             self._ctr += 1
             name = typename + str(self._ctr)
-        kwargs["geometry"] = typename
         return self.add(name, **kwargs)
 
     def Object(self, identifier=None, **kwargs):
@@ -3822,7 +3831,7 @@ class Geometry(list):
     >>> #Fixed points, always plotted regardless of timestep
     >>> obj.vertices([[-1,-1], [0,0], [1,1]])
     >>> #Add triangles to same object, switch the geometry type:
-    >>> obj["geometry"] = "triangles"
+    >>> obj["renderer"] = "triangles"
     >>> lv.addstep()
     >>> print(lv.steps)
     [0]

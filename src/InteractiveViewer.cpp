@@ -251,10 +251,11 @@ bool LavaVu::keyPress(unsigned char key, int x, int y)
 
 bool LavaVu::toggleType(const std::string& name)
 {
-  Geometry* g = amodel->getRenderer(name);
-  if (g)
+  std::vector<Geometry*> activelist = amodel->getRenderersByTypeName(name);
+  //Just use the first valid to check current state for toggle
+  if (activelist.size() > 0)
   {
-    if (g->allhidden)
+    if (activelist[0]->allhidden)
       return parseCommands("show " + name);
     else
       return parseCommands("hide " + name);
@@ -386,11 +387,11 @@ bool LavaVu::parseChar(unsigned char key)
     if (entry.length() == 1)
     {
       char ck = entry.at(0);
+      entry = "";
       //Digit? (9 == ascii 57)
       if (ck > 47 && ck < 58)
       {
         response = parseCommands(entry);
-        entry = "";
         return response;
       }
       switch (ck)
@@ -547,29 +548,6 @@ std::vector<DrawingObject*> LavaVu::lookupObjects(PropertyParser& parsed, const 
       list.push_back(obj);
   }
   return list;
-}
-
-Geometry* LavaVu::lookupObjectRenderer(DrawingObject* obj)
-{
-  if (!obj) return NULL;
-  //Get the container type to load into from property (defaults to points)
-  std::string gtype = obj->properties["geometry"];
-  std::string custom = obj->properties["renderer"];
-  Geometry* renderer = NULL;
-  if (custom.length())
-  {
-    renderer = amodel->getRenderer(custom);
-    if (!renderer)
-    {
-      //std::cout << "CREATING CUSTOM RENDERER " << gtype << " : " << custom << std::endl;
-      renderer = createRenderer(session, gtype);
-      renderer->custom = custom;
-      amodel->geometry.push_back(renderer);
-    }
-  }
-  else
-    renderer = amodel->getRenderer(gtype);
-  return renderer;
 }
 
 float LavaVu::parseCoord(const json& val)
@@ -1458,18 +1436,18 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
               "**Usage:** " + action + " geometry_type id\n\n"
               "geometry_type : points/labels/vectors/tracers/triangles/quads/shapes/lines/volumes\n"
               "id (integer, optional) : id of geometry to " + action + "\n"
-              "eg: 'hide points' will " + action + " all objects containing point data\n"
+              "eg: 'hide points' will " + action + " all point data\n"
               "note: 'hide all' will " + action + " all objects\n";
       return false;
     }
 
     std::string what = parsed[action];
-    Geometry* active = amodel->getRenderer(what);
+    std::vector<Geometry*> activelist = amodel->getRenderersByTypeName(what);
     std::vector<DrawingObject*> list = lookupObjects(parsed, action);
     //Trigger view redraw
     viewset = RESET_YES;
     //Have selected a geometry type?
-    if (active)
+    if (activelist.size())
     {
       int id;
       std::string range = parsed.get(action, 1);
@@ -1481,27 +1459,34 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         rangess >> start >> delim >> end;
         for (int i=start; i<=end; i++)
         {
-          if (action == "hide") active->hide(i);
-          else active->show(i);
-          printMessage("%s %s range %s", action.c_str(), what.c_str(), range.c_str());
+          for (auto active : activelist)
+          {
+            if (action == "hide") active->hide(i);
+            else active->show(i);
+            printMessage("%s %s range %s", action.c_str(), what.c_str(), range.c_str());
+          }
         }
       }
       else if (parsed.has(id, action, 1))
       {
         parsed.has(id, action, 1);
-        if (action == "hide")
+        for (auto active : activelist)
         {
-          if (!active->hide(id)) return false; //Invalid
-        }
-        else
-        {
-          if (!active->show(id)) return false; //Invalid
+          if (action == "hide")
+          {
+            if (!active->hide(id)) return false; //Invalid
+          }
+          else
+          {
+            if (!active->show(id)) return false; //Invalid
+          }
         }
         printMessage("%s %s %d", action.c_str(), what.c_str(), id);
       }
       else
       {
-        active->hideShowAll(action == "hide");
+        for (auto active : activelist)
+          active->hideShowAll(action == "hide");
         printMessage("%s all %s", action.c_str(), what.c_str());
       }
     }
@@ -2010,6 +1995,13 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       }
       ss << "-----------------------------------------" << std::endl;
     }
+    else if (parsed["list"] == "render")
+    {
+      ss << "Renderers:\n===========\n";
+      for (unsigned int i=0; i < amodel->geometry.size(); i++)
+        if (amodel->geometry[i])
+          ss << std::setw(5) << (i+1) << " : (" << amodel->geometry[i]->name << ") " << amodel->geometry[i]->renderer << " - base: " << GeomData::names[amodel->geometry[i]->type] << std::endl;
+    }
     else
     {
       objectlist = !objectlist;
@@ -2232,8 +2224,9 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     else if (parsed["pointsample"] == "down")
       session.globals["pointsubsample"] = (int)session.global("pointsubsample") * 2;
     if ((int)session.global("pointsubsample") < 1) session.globals["pointsubsample"] = 1;
-    Geometry* pts = amodel->getRenderer("points");
-    if (pts) pts->redraw = true;
+    std::vector<Geometry*> activelist = amodel->getRenderersByTypeName("points");
+    for (auto active : activelist)
+      active->redraw = true;
     printMessage("Point sampling %d", (int)session.global("pointsubsample"));
   }
   else if (parsed.has(ival, "outwidth"))
@@ -2395,8 +2388,8 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     }
 
     std::string what = parsed["scale"];
-    Geometry* active = amodel->getRenderer(what);
-    if (active)
+    std::vector<Geometry*> activelist = amodel->getRenderersByTypeName(what);
+    if (activelist.size())
     {
       std::string key = "scale" + what;
       float scale = session.global(key);
@@ -2406,8 +2399,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
         session.globals[key] = scale * 1.5;
       else if (parsed.get("scale", 1) == "down")
         session.globals[key] = scale / 1.5;
-      //No need to redraw points when scaled
-      if (active->type != lucPointType)
+      for (auto active : activelist)
         active->redraw = true;
       printMessage("%s scaling set to %f", what.c_str(), (float)session.globals[key]);
     }
@@ -2766,7 +2758,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     if (aobject)
     {
       std::string type = parsed.get("add", 1);
-      if (type.length() > 0) aobject->properties.data["geometry"] = type;
+      if (type.length() > 0) aobject->properties.data["renderer"] = type;
       printMessage("Added object: %s", aobject->name().c_str());
     }
   }
@@ -3078,6 +3070,7 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
     //Update fixed bounds
     aview->properties.data["min"] = {aview->min[0], aview->min[1], aview->min[2]};
     aview->properties.data["max"] = {aview->max[0], aview->max[1], aview->max[2]};
+
     printMessage("View bounds update");
   }
   else if (parsed.exists("zerocam"))

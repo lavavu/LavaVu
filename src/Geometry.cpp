@@ -38,7 +38,7 @@
 float Vertex::VERT_EPSILON = 0.001; //Minimum distance before vertices will be merged
 
 //Init static, names list
-std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume"};
+std::string GeomData::names[lucMaxType] = {"labels", "points", "quads", "triangles", "vectors", "tracers", "lines", "shapes", "volume", "screen"};
 
 std::string GeomData::datalabels[lucMaxDataType+1] = {"vertices", "normals", "vectors",
                                           "values", "opacities", "red", "green", "blue",
@@ -832,6 +832,7 @@ void Geometry::merge(int start, int end)
     //Default to current timestep
     start = end = session.now;
   }
+  //printf("--- MERGE @ %d -- %d -------------------------------------------------------\n", start, end);
 
   if (type == lucTracerType)
   {
@@ -905,6 +906,7 @@ void Geometry::merge(int start, int end)
             {
               //Use as source and copy records to varying entry
               merge_source = fixed[pos];
+              //printf(" - SET SOURCE %s %d\n", fixed[pos]->draw->name().c_str(), pos);
             }
 
             //Erase from fixed list
@@ -1007,7 +1009,6 @@ Shader_Ptr Geometry::getShader(DrawingObject* draw)
   {
     //Init from property
     json shaders = draw->properties["shaders"];
-    std::cout << shaders << std::endl;
     if (shaders.size() == 1)
     {
       std::string f = shaders[0];
@@ -1120,7 +1121,8 @@ void Geometry::setState(Geom_Ptr g)
   //printf("SETSTATE %s\n", g->draw->name().c_str());
   bool lighting = props["lit"];
   //Don't light surfaces in 2d models
-  if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal) lighting = false;
+  if ((type == lucTriangleType || type == lucGridType) && !view->is3d && !internal)
+    lighting = false;
 
   //Global/Local draw state
   if (props["cullface"])
@@ -1150,7 +1152,8 @@ void Geometry::setState(Geom_Ptr g)
   else
   {
     //Flat disables lighting for non surface types
-    if (props["flat"]) lighting = false;
+    if (props["flat"])
+      lighting = false;
   }
 
   //Default line width
@@ -1469,6 +1472,8 @@ void Geometry::display(bool refresh)
 {
   //Skip if view not open or nothing to draw
   if (!view || !view->width) return;
+
+  //std::cout << type << " (" << GeomData::names[type] << ") : " << name << " ==> " << records.size() << std::endl;
 
   //TimeStep changed or step refresh requested
   if (refresh || reload || timestep != session.now || (geom.size() == 0 && records.size() > 0))
@@ -1822,10 +1827,6 @@ void Geometry::read(Geom_Ptr geomdata, unsigned int n, lucGeometryDataType dtype
   if (width) geomdata->width = width;
   if (height) geomdata->height = height;
   if (depth) geomdata->depth = depth;
-
-  //Update the default type property on first read
-  if (geomdata->count() == 0 && !geomdata->draw->geometry.length())
-    geomdata->draw->properties.data["geometry"] = geomdata->draw->geometry = GeomData::names[type];
 
   //Read the data
   if (n > 0)
@@ -2640,29 +2641,21 @@ Glyphs::Glyphs(Session& session) : Geometry(session)
 {
   //Create sub-renderers
   //All renderers are switchable and user defined based on "glyphrenderlist" global property
-  std::string renderlist = session.global("glyphrenderlist");
+  std::string renderlist = session.global("subrenderers");
   std::istringstream iss(renderlist);
   std::string s;
   while (getline(iss, s, ' '))
   {
+    //Only support line/triangle/point primitive renderers)
+    //(NOTE: Attempting to create a Glyphs renderer as sub-renderer will cause an infinite loop)
     //std::cout << "CREATING: " << s << std::endl;
-    Geometry* renderer = createRenderer(session, s);
-    renderer->internal = true;
-
-    switch (renderer->type)
-    {
-      case lucLineType:
-        lines = (Lines*)renderer;
-        break;
-      case lucTriangleType:
-        tris = (Triangles*)renderer;
-        break;
-      case lucPointType:
-        points = (Points*)renderer;
-        break;
-      default:
-        delete renderer;
-    }
+    lucGeometryType prim = session.typeMap[s];
+    if (prim == lucTriangleType)
+      tris = (Triangles*)createRenderer(session, s);
+    else if (prim == lucLineType)
+      lines = (Lines*)createRenderer(session, s);
+    else if (prim == lucPointType)
+      points = (Points*)createRenderer(session, s);
   }
 
   //Placeholder null renderers
@@ -2905,40 +2898,70 @@ void FullScreen::draw()
 
 Geometry* createRenderer(Session& session, const std::string& what)
 {
-  if (what == "points") //TODO: unsorted points base class
-    return new Points(session);
-  if (what == "sortedpoints" || what == "particles")
-    return new Points(session);
-  if (what == "spheres")
-    return new Spheres(session);
-  if (what == "cuboids")
-    return new Cuboids(session);
-  if (what == "labels")
-    return new Geometry(session);
-  if (what == "vectors" || what == "arrows")
-    return new Vectors(session);
-  if (what == "tracers" || what == "streamlines")
-    return new Tracers(session);
-  if (what == "mesh" || what == "surface")
-    return new Triangles(session);
-  if (what == "triangles" || what == "sortedtriangles") //NOTE: default is sorted, but will use any triangle renderer
-    return new TriSurfaces(session);
-  if (what == "quads" || what == "grid")
-    return new QuadSurfaces(session);
-  if (what == "shapes")
-    return new Shapes(session);
-  if (what == "lines")
-    return new Lines(session);
-  if (what == "sortedlines")
-    return new LinesSorted(session);
-  if (what == "links" || what == "tubes")
-    return new Links(session);
-  if (what == "volume" || what == "volumes")
-    return new Volumes(session);
-  if (what == "screen" || what == "fullscreen")
-    return new FullScreen(session);
-  //Default renderer, can just plot labels etc
-  return new Geometry(session);
+  //Custom named renderer? syntax is "label:basetype"
+  std::size_t pos = what.find(":");
+  std::string type = what;
+  if (pos != std::string::npos)
+  {
+    type = what.substr(pos+1);
+    //std::cout << "CREATING CUSTOM RENDERER " << what << " : " << type << std::endl;
+  }
+
+  //Many to one mapping of renderer strings to one of the available renderers
+  Geometry* g = NULL;
+  std::string basetype = session.classMap[type];
+  if (basetype == "points") //TODO: unsorted points base class
+    g = new Points(session);
+  else if (basetype == "spheres")
+    g = new Spheres(session);
+  else if (basetype == "cuboids")
+    g = new Cuboids(session);
+  else if (basetype == "labels")
+    g = new Geometry(session);
+  else if (basetype == "vectors")
+    g = new Vectors(session);
+  else if (basetype == "tracers")
+    g = new Tracers(session);
+  else if (basetype == "basictriangles")
+    g = new Triangles(session);
+  else if (basetype == "sortedtriangles") //NOTE: default is sorted, but will use any triangle renderer
+    g = new TriSurfaces(session);
+  else if (basetype == "quads")
+    g = new QuadSurfaces(session);
+  else if (basetype == "shapes")
+    g = new Shapes(session);
+  else if (basetype == "simplelines")
+    g = new Lines(session);
+  else if (basetype == "sortedlines")
+    g = new LinesSorted(session);
+  else if (basetype == "lines")
+    g = new Links(session);
+  else if (basetype == "volume")
+    g = new Volumes(session);
+  else if (basetype == "screen")
+    g = new FullScreen(session);
+  else
+    //Default null renderer, can just plot labels etc
+    g = new Geometry(session);
+
+  //Set the base renderer label
+  g->renderer = basetype;
+
+  //Modify the primitive type (for pointcubes etc)
+  g->type = session.typeMap[type];
+
+  //Set any custom name/label
+  if (pos != std::string::npos)
+    g->name = what;
+
+  //std::cout << "CREATED RENDERER " << what << " : " << type << " (base: " << g->renderer << ") " << g->type << std::endl;
+
+  //Set initial hidden state
+  bool hideall = session.global("hideall");
+  if (hideall)
+    g->hideShowAll(true);
+
+  return g;
 }
 
 

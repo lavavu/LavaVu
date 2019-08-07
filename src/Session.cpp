@@ -254,6 +254,20 @@ void Session::init(std::string& binpath)
     defaults[key] = entry["default"];
   }
 
+  //Load the geometry class map
+  json r = properties["renderers"]["default"];
+  lucGeometryType t = lucMinType;
+  for (auto g : r)
+  {
+    for (auto it = g.begin(); it != g.end(); ++it)
+    {
+      classMap[it.key()] = it.value();
+      typeMap[it.key()] = t;
+    }
+    t = (lucGeometryType)((int)t + 1); //Next type
+  }
+
+
 #ifdef DEBUG
   //std::cerr << std::setw(2) << properties << std::endl;
   //std::cerr << std::setw(2) << defaults << std::endl;

@@ -553,7 +553,8 @@ protected:
 public:
   int timestep = -2;
   Session& session;
-  std::string custom = "";
+  std::string name = "";
+  std::string renderer = "";
   GLenum primitive = GL_TRIANGLES; //Some renderers allow custom primitive
 
   //Maximum bounding box of all content
@@ -795,6 +796,8 @@ public:
 
 class Shapes : public Glyphs
 {
+protected:
+  int defaultshape = 0;
 public:
   Shapes(Session& session);
   virtual void update();
@@ -814,14 +817,14 @@ class Spheres : public Shapes
 {
   //Render points as spheres
 public:
-  Spheres(Session& session) : Shapes(session) {type = lucPointType;}
+  Spheres(Session& session) : Shapes(session) {defaultshape = 0;}
 };
 
 class Cuboids : public Shapes
 {
   //Render points as cuboids
 public:
-  Cuboids(Session& session) : Shapes(session) {type = lucPointType;}
+  Cuboids(Session& session) : Shapes(session) {defaultshape = 1;}
 };
 
 class Imposter : public Geometry

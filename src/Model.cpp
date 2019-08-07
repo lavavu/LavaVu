@@ -184,28 +184,49 @@ Model::Model(Session& session) : now(-1), session(session), figure(-1)
 {
 }
 
+void Model::init(bool clear)
+{
+  //Clear existing renderers
+  if (clear)
+    geometry.clear();
+  else if (geometry.size() > 0)
+    return; //Renderers already exist
+
+  //All renderers are switchable and user defined based on either object order or "renderlist" global property
+  std::string renderlist = session.global("renderlist");
+  if (renderlist.length())
+  {
+    std::istringstream iss(renderlist);
+    std::string s;
+    while (getline(iss, s, ' '))
+      geometry.push_back(createRenderer(session, s));
+  }
+
+  debug_print("Created %d new geometry containers from \"renderlist\": %s\n", (int)geometry.size(), renderlist.c_str());
+}
+
+
 Geometry* Model::getRenderer(lucGeometryType type, std::vector<Geometry*>& renderers)
 {
-  //Create new geometry containers if required
-  if (geometry.size() == 0) init();
+  //Create default geometry containers if required
+  init(false);
 
   //Return first renderer for primitive type specified if found
   for (auto g : renderers)
   {
-    if (g->type == type)
+    //Only returns default base renderers, not custom, they must be explicitly used
+    if (g->type == type && g->name.length() == 0)
     {
       return g;
       break;
     }
   }
 
-  //Return the point renderer
-  //(Allows rendering other types as points if no renderer created)
-  if (type != lucPointType)
-    return getRenderer(lucPointType, renderers);
-
-  //std::cout << "RENDERER NOT FOUND: " << GeomData::names[type] << std::endl;
-  return NULL;
+  //Create a renderer if none found...
+  //std::cout << "DEFAULT RENDERER NOT FOUND: (so create) " << GeomData::names[type] << std::endl;
+  Geometry* g = createRenderer(session, GeomData::names[type]);
+  geometry.push_back(g);
+  return g;
 }
 
 Geometry* Model::getRenderer(lucGeometryType type)
@@ -213,62 +234,81 @@ Geometry* Model::getRenderer(lucGeometryType type)
   return getRenderer(type, geometry);
 }
 
-template <typename T>
-Geometry* Model::getRendererOfType()
+std::vector<Geometry*> Model::getRenderersByTypeName(const std::string& typestr)
 {
-  //Create new geometry containers if required
-  if (geometry.size() == 0) init();
-
-  //Return first renderer of type specified (or derived) if found
+  //Returns list of all renderers that render data matching given type string
+  std::vector<Geometry*> list;
   for (auto g : geometry)
   {
-    //dynamic_cast only works if a valid descendant class
-    T* obj = dynamic_cast<T*>(g);
-    if (obj)
-    {
-      return g;
-      break;
-    }
+    std::cout << "  " << g->type << " : " << GeomData::names[g->type] << " -- " << g->renderer << std::endl;
+    if (GeomData::names[g->type] == typestr)
+      list.push_back(g);
   }
-
-  //Create and add one then
-  Geometry* g = new T(session);
-  geometry.push_back(g);
-  return g;
+  //std::cout << "Search for renderers by type: " << typestr << " : found " << list.size() << std::endl;
+  return list;
 }
 
-Geometry* Model::getRenderer(const std::string& what)
+Geometry* Model::lookupObjectRenderer(DrawingObject* obj, lucGeometryType type)
 {
-  //Define the renderers to use for all labeled geometry types
+  //Create default geometry containers if required
+  init(false);
 
-  //Specific types: require exact renderer if available, create one if not
-  if (what == "links")
-    return getRendererOfType<Links>();
-  if (what == "spheres")
-    return getRendererOfType<Spheres>();
-  if (what == "cuboids")
-    return getRendererOfType<Cuboids>();
-  if (what == "mesh")
-    return getRendererOfType<Mesh>();
-
-  //Default/base types: use the default renderer for the type name
-  json renderers = session.global("renderers");
-  for (unsigned int i=0; i<renderers.size(); i++)
-    for (std::string s : renderers[i])
-      if (what == s)
-        return getRenderer((lucGeometryType)i);
-
-  //Must be a custom type, find by label if exists
-  for (auto g : geometry)
+  //When loading new data into an object
+  // - use the "renderer" property if available
+  // - otherwise, find existing renderer with matching type and use that (most recently accessed)
+  // - if not found, create based on "renderer" property, falling back to default for type
+  if (!obj) return NULL;
+  //If "renderer" not set, use the most recently accessed container
+  if (!obj->properties.has("renderer"))
   {
-    if (g->custom == what)
+    for (Geometry* g : geometry)
     {
-      return g;
-      break;
+      Geom_Ptr p = g->getObjectStore(obj);
+      //Without the renderer property, must use the type filter
+      if (p != nullptr && p->type == type)
+      {
+        return g;
+        break;
+      }
     }
   }
 
-  return NULL;
+  //Have to find / create by "renderer" property
+  std::string name = obj->properties["renderer"];
+  //Use the default passed in
+  if (name.length() == 0) name = GeomData::names[type];
+
+  //Default/base types: use the default renderer for the base class
+  std::string baseClass = session.classMap[name];
+  //std::cout << "Search for renderer: " << name << " : " << baseClass << std::endl;
+  if (baseClass.length() > 0)
+  {
+    for (auto g : geometry)
+    {
+      //Return only if no custom name and base type matches
+      if (g->name.length() == 0 && g->renderer == baseClass)
+      {
+        //std::cout << "Found standard renderer: " << g->renderer << std::endl;
+        return g;
+      }
+    }
+  }
+  else
+  {
+    for (auto g : geometry)
+    {
+      if (g->name == name)
+      {
+        //std::cout << "Found custom renderer: " << g->name << std::endl;
+        return g;
+      }
+    }
+  }
+
+  //std::cout << "RENDERER NOT FOUND: (will create to use) " << name << std::endl;
+  Geometry* g = createRenderer(session, name);
+  geometry.push_back(g);
+  return g;
 }
 
 void Model::load(const FilePath& fn)
@@ -315,26 +355,6 @@ View* Model::defaultView(Properties* properties)
 
   //Return first
   return views[0];
-}
-
-void Model::init()
-{
-  //All renderers are switchable and user defined based on "renderlist" global property
-  geometry.clear();
-  std::string renderlist = session.global("renderlist");
-  std::istringstream iss(renderlist);
-  std::string s;
-  while (getline(iss, s, ' '))
-    geometry.push_back(createRenderer(session, s));
-
-  debug_print("Created %d new geometry containers: %s\n", (int)geometry.size(), renderlist.c_str());
-
-  for (auto g : geometry)
-  {
-    bool hideall = session.global("hideall");
-    if (hideall)
-      g->hideShowAll(true);
-  }
 }
 
 Model::~Model()
@@ -644,7 +664,7 @@ void Model::bake(DrawingObject* obj, bool colours, bool texture)
   Points* points = (Points*)getRenderer(lucPointType);
   int savestep = step();
   if (timesteps.size() == 0)
-    addTimeStep(0, 0);
+    addTimeStep(0);
   for (unsigned int idx=0; idx < timesteps.size(); idx++)
   {
     //Change the step
@@ -694,7 +714,6 @@ void Model::bake(DrawingObject* obj, bool colours, bool texture)
     if (glyphs)
       glyphs->clear(true);
   }
-
 }
 
 void Model::loadWindows()
@@ -998,7 +1017,6 @@ int Model::loadTimeSteps(bool scan)
     while (sqlite3_step(statement) == SQLITE_ROW)
     {
       int step = sqlite3_column_int(statement, 0);
-      double time = sqlite3_column_double(statement, 1);
       sqlite3_stmt* statement2 = database.select("SELECT count(id) from geometry where timestep = %d", step);
       int geomcount = sqlite3_column_int(statement2, 0);
       sqlite3_finalize(statement2);
@@ -1006,7 +1024,17 @@ int Model::loadTimeSteps(bool scan)
       std::string props = "";
       if (sqlite3_column_type(statement, 4) != SQLITE_NULL)
         props = std::string((char*)sqlite3_column_text(statement, 4));
-      addTimeStep(step, time, props);
+
+      //Create the timestep
+      addTimeStep(step, props);
+
+      //Set time property if provided
+      if (sqlite3_column_type(statement, 1) != SQLITE_NULL)
+      {
+        float time = sqlite3_column_double(statement, 1);
+        int tlen = timesteps.size();
+        timesteps[tlen-1]->properties.data["time"] = time;
+      }
 
       //No geometry in current db? Check for attachment db
       if (geomcount == 0)
@@ -1048,7 +1076,7 @@ int Model::loadTimeSteps(bool scan)
           timesteps[0]->path = path;
         }
         else
-          addTimeStep(ts, 0.0, "", path);
+          addTimeStep(ts, "", path);
       }
     }
     debug_print("Scanning complete, found %d steps.\n", timesteps.size());
@@ -1249,7 +1277,7 @@ int Model::nearestTimeStep(int requested)
   return idx;
 }
 
-int Model::addTimeStep(int step, double time, const std::string& props, const std::string& path)
+int Model::addTimeStep(int step, const std::string& props, const std::string& path)
 {
   //Always add to final step with increment of gap if no step index provided
   if (step < 0)
@@ -1260,8 +1288,7 @@ int Model::addTimeStep(int step, double time, const std::string& props, const st
       step = 0;
   }
 
-  if (time == -HUGE_VAL) time = step;
-  timesteps.push_back(new TimeStep(session.globals, session.defaults, step, time, path));
+  timesteps.push_back(new TimeStep(session.globals, session.defaults, step, path));
   int tlen = timesteps.size();
   //Parse temporal properties
   session.parseSet(timesteps[tlen-1]->properties, props);
@@ -1301,20 +1328,14 @@ int Model::setTimeStep(int stepidx)
     if (now < 0 || stepidx != now || session.now != now)
     {
       //Create new geometry containers if required
-      if (geometry.size() == 0)
+      init(false);
+      //Clear and tell all geometry objects they need to reload data
+      for (auto g : geometry)
       {
-        init();
-      }
-      else
-      {
-        //Clear and tell all geometry objects they need to reload data
-        for (auto g : geometry)
-        {
-          //Wait until all sort threads done
-          std::lock_guard<std::mutex> guard(g->sortmutex);
-          //Release any graphics memory and clear
-          g->close();
-        }
+        //Wait until all sort threads done
+        std::lock_guard<std::mutex> guard(g->sortmutex);
+        //Release any graphics memory and clear
+        g->close();
       }
 
       //Setting initial step?
@@ -1513,13 +1534,8 @@ int Model::readGeometryRecords(sqlite3_stmt* statement, bool cache)
       }
 
       //Create object and set parameters
-      /* Convert grid to tris
-       * - need to skip index/normal data as it is setup for tri strips
-      if (type == lucGridType) {
-        type = lucTriangleType;
-        if (data_type == lucIndexData || data_type == lucNormalData) continue;
-      }*/
-      active = getRenderer(type);
+      active = lookupObjectRenderer(obj, type);
+
       if (!active) continue; //Can't render this data
 
       unsigned char* buffer = NULL;
@@ -1738,7 +1754,7 @@ void Model::writeDatabase(const char* path, DrawingObject* obj, bool compress)
   {
     outdb.issue("delete from timestep where id == '%d'", i);
     outdb.issue("insert into timestep (id, time, properties) values (%d, %g, '%s');", 
-                i, timesteps[i]->time,  timesteps[i]->properties.data.dump().c_str());
+                i, timesteps[i]->time(),  timesteps[i]->properties.data.dump().c_str());
 
     //Get data at this timestep
     //(Only required to support writing database from another database without caching enabled)
@@ -1810,10 +1826,15 @@ void Model::deleteGeometry(Database& outdb, lucGeometryType type, DrawingObject*
 
 void Model::writeGeometry(Database& outdb, Geometry* g, DrawingObject* obj, int step, bool compressdata)
 {
+  //Get data
+  std::vector<Geom_Ptr> data = g->getAllObjectsAt(obj, step);
+
+  //Nothing found?
+  if (data.size() < 1) return;
+
   //Clear existing data of this type before writing, allows object data updates to db
   deleteGeometry(outdb, g->type, obj, step);
 
-  std::vector<Geom_Ptr> data = g->getAllObjectsAt(obj, step);
   //Loop through and write out all object data
   for (unsigned int i=0; i<data.size(); i++)
   {
