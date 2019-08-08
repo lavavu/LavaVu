@@ -1842,6 +1842,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
     def imagePNG(self, *args, **kwargs):
         return self._lavavu_call('imagePNG', True, *args, **kwargs)
 
+    def imageBuffer(self, *args, **kwargs):
+        return self._lavavu_call('imageBuffer', True, *args, **kwargs)
+
     def video(self, *args, **kwargs):
         return self._lavavu_call('video', True, *args, **kwargs)
 
