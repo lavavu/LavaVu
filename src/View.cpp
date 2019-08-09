@@ -902,9 +902,11 @@ void View::drawOverlay()
   GL_Error_Check;
   //session.context.push();
 
+  //Default font scaling based on view dimensions
+  float viewAdjust = cbrt(w*h)/65.0;
+
   //Colour bars
   int last_B[4] = {0, 0, 0, 0};
-  float adjust = cbrt(w*h)/65.0;
   for (unsigned int i=0; i<objects.size(); i++)
   {
     //Only when flagged as colour bar
@@ -951,12 +953,20 @@ void View::drawOverlay()
     //Default to vector font if downsampling and no other font requested
     Properties cbprops(session.globals, session.defaults);
     if (session.context.scale2d != 1.0 && !objects[i]->properties.has("font"))
-    {
       cbprops.data["font"] = "vector";
-      cbprops.data["fontscale"] = 0.4*adjust;
-    }
     //Update to overwrite defaults if any set by user
     Properties::mergeJSON(cbprops.data, objects[i]->properties.data);
+
+    //Default colourbar font scale is 0.4
+    session.fonts.setFont(cbprops);
+    if (session.fonts.charset == FONT_VECTOR)
+    {
+      //Scale down vector font slightly for colourbar legend
+      bool hasfontscale = objects[i]->properties.has("fontscale") || objects[i]->properties.hasglobal("fontscale");
+      float adjust = 0.4 * (hasfontscale ? 1.0 : viewAdjust);
+      session.fonts.fontscale *= adjust;
+      cbprops.data["fontscale"] = session.fonts.fontscale;
+    }
 
     //Margin offset
     float margin = objects[i]->properties["offset"];
@@ -1002,11 +1012,12 @@ void View::drawOverlay()
     if (pos != std::string::npos && session.now >= 0 && (int)session.timesteps.size() >= session.now)
       title.replace(pos, 2, std::to_string(session.timesteps[session.now]->step));
 
-    Colour colour = session.fonts.setFont(properties, "vector", 1.0);
+    bool hasfontscale = properties.has("fontscale") || properties.hasglobal("fontscale");
+    //Scale down vector font slightly for title
+    float adjust = 0.6 * (hasfontscale ? 1.0 : viewAdjust);
+    Colour colour = session.fonts.setFont(properties, "vector", adjust);
     if (colour.a == 0.0) colour = textColour; //Use the user defined font colour if valid, otherwise default print colour
     session.fonts.colour = colour;
-    if (session.fonts.charset == FONT_VECTOR)
-      session.fonts.fontscale *= 0.6*adjust; //Scale down vector font slightly for title
     session.fonts.print(0.5 * (w - session.fonts.printWidth(title.c_str())), h - 3 - session.fonts.printWidth("W"), title.c_str());
   }
 

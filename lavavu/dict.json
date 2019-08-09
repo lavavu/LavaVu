@@ -1142,17 +1142,6 @@
       true
     ]
   },
-  "radius": {
-    "default": 0.02,
-    "target": "object(vector/shapes)",
-    "type": "real",
-    "desc": "When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.",
-    "strict": true,
-    "redraw": 1,
-    "control": [
-      true
-    ]
-  },
   "thickness": {
     "default": 0.0,
     "target": "object(vector)",
@@ -1191,6 +1180,17 @@
     "target": "object(vector)",
     "type": "boolean",
     "desc": "Automatically scale vectors based on maximum magnitude",
+    "strict": true,
+    "redraw": 1,
+    "control": [
+      true
+    ]
+  },
+  "radius": {
+    "default": 0.02,
+    "target": "object(vector/shapes)",
+    "type": "real",
+    "desc": "When applied to Vector Arrows: Arrow shaft radius as ratio of vector length. When applied to shapes: radius of spheres.",
     "strict": true,
     "redraw": 1,
     "control": [
@@ -1815,6 +1815,17 @@
     "target": "global",
     "type": "real",
     "desc": "Width of ruler lines",
+    "strict": true,
+    "redraw": 0,
+    "control": [
+      true
+    ]
+  },
+  "rulerscale": {
+    "default": 1.0,
+    "target": "global",
+    "type": "real",
+    "desc": "Scaling of ruler label text",
     "strict": true,
     "redraw": 0,
     "control": [

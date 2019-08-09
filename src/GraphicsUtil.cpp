@@ -104,7 +104,14 @@ Colour FontManager::setFont(Properties& properties, std::string def, float scali
 
   //For non-vector fonts
   if (charset > FONT_VECTOR)
+  {
     fontscale *= multiplier2d;
+  }
+  else if (fontscale < 0.3)
+  {
+    //Minimum readable vector font size
+    fontscale = 0.3;
+  }
 
   return colour;
 }

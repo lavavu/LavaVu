@@ -2195,7 +2195,7 @@ void LavaVu::display(bool redraw)
 void LavaVu::drawAxis()
 {
   bool doaxis = aview->properties["axis"];
-  if (!aview->is3d) doaxis &= aview->properties.has("axis");
+  if (!aview->is3d) doaxis &= (aview->properties.has("axis") || aview->properties.hasglobal("axis"));
   if (!doaxis) return;
   infostream = NULL;
 
@@ -2212,7 +2212,7 @@ void LavaVu::drawAxis()
 
   //Square viewport in lower left corner
   float size = aview->properties["axislength"];
-  if (aview->properties.has("axisbox"))
+  if (aview->properties.has("axisbox") || aview->properties.hasglobal("axisbox"))
   {
     float vp[4];
     Properties::toArray<float>(aview->properties["axisbox"], vp, 4);
@@ -2333,7 +2333,7 @@ void LavaVu::drawRulers()
   obj->properties.data["scalelines"] = 1.0;
   float font_scale_factor = 0.25*aview->model_size;
   if (!aview->is3d) font_scale_factor *= 2;
-  obj->properties.data["fontscale"] = (float)aview->properties["fontscale"] * font_scale_factor;
+  obj->properties.data["fontscale"] = (float)aview->properties["rulerscale"] * font_scale_factor;
   obj->properties.data["font"] = "vector";
   //Colour for labels
   obj->properties.data["colour"] = aview->textColour.toJson();
