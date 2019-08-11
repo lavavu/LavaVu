@@ -2148,23 +2148,21 @@ class Viewer(dict):
                 All OpenGL calls must be made from here
                 """
                 #Create the viewer
-                viewer._create(True, binpath, havecontext, omegalib, *args, **kwargs)
+                viewer()._create(True, binpath, havecontext, omegalib, *args, **kwargs)
 
                 #Sync with main thread here to ensure render thread has initialised before it continues
-                with viewer._cv:
-                    viewer._cv.notifyAll()
+                with viewer()._cv:
+                    viewer()._cv.notifyAll()
 
                 #Handle events
-                viewer.app._thread_run()
+                viewer().app._thread_run()
 
                 #Closedown/delete must be called from thread to free OpenGL resources!
-                viewer.app = None
-                viewer = None
-                import gc
-                gc.collect()
+                if viewer() is not None:
+                    viewer().app = None
 
             #Thread start
-            self._thread = threading.Thread(target=_thread_run, args=[self, args, kwargs])
+            self._thread = threading.Thread(target=_thread_run, args=[weakref.ref(self), args, kwargs])
             #Due to python failing to call __del__ on exit, have to use daemon or thread never quits
             self._thread.daemon = True
 
