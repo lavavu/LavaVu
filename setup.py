@@ -145,15 +145,16 @@ if __name__ == "__main__":
     #Update version.cpp
     write_version()
 
-    sqlite3_path = 'src/sqlite3'
+    sqlite3_path = os.path.join('src', 'sqlite3')
     sqlite3_lib = [['sqlite3', {
                    'sources': [os.path.join(sqlite3_path, 'sqlite3.c')],
                    'include_dirs': [sqlite3_path],
-                   'macros': None,
+                   'macros': None
                    }
                   ]]
 
     _debug = False
+    #_debug = True
     srcs = ['src/LavaVuPython_wrap.cxx']
     srcs += glob.glob('src/*.cpp')
     srcs += glob.glob('src/Main/*.cpp')
@@ -172,8 +173,15 @@ if __name__ == "__main__":
     inc_dirs += [numpy.get_include()]
     install = []  #Extra files to install in package root
 
+    P = platform.system()
     if _debug:
-        defines += [('CONFIG', 'debug')]
+        print("DEBUG BUILD ENABLED")
+        defines += [('DEBUG', '1')]
+        if P == 'Windows':
+            cflags += ['/Zi']
+            ldflags += ['/DEBUG']
+        else:
+            cflags += ['-g', '-O0']
 
     try:
         from numpy.distutils.ccompiler import CCompiler_compile
@@ -183,7 +191,6 @@ if __name__ == "__main__":
         print("Numpy not found, parallel compile not available")
 
     #OS Specific
-    P = platform.system()
     if P == 'Windows':
         #Windows - includes all dependencies, (TODO: ffmpeg)
         srcs += ['src/png/lodepng.cpp']
@@ -329,6 +336,7 @@ if __name__ == "__main__":
             'Framework :: Jupyter',
             'Framework :: IPython',
           ],
-          ext_modules = [lv], libraries=sqlite3_lib
+          ext_modules = [lv],
+          libraries=sqlite3_lib
           )
 
