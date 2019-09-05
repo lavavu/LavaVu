@@ -206,8 +206,9 @@ if __name__ == "__main__":
         lib_dirs += [os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
         ldflags += ['/LIBPATH:' + os.path.join(os.getcwd(), 'src', 'windows', LIBS)]
         libs += ['opengl32', 'pthreadVC2', 'glfw3dll']
-        install += [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll')]
-        install += [os.path.join('src', 'windows', LIBS, 'glfw3.dll')]
+        dlls = [os.path.join('src', 'windows', LIBS, 'pthreadVC2.dll'),
+                os.path.join('src', 'windows', LIBS, 'glfw3.dll')]
+        install = [('', dlls)]
     else:
         #POSIX only - find external dependencies
         cflags += ['-std=c++0x']
@@ -310,7 +311,7 @@ if __name__ == "__main__":
               ]
           },
           package_data      = {'lavavu': glob.glob('lavavu/shaders/*.*') + glob.glob('lavavu/html/*.*') + ['lavavu/font.bin', 'lavavu/dict.json']},
-          data_files        = [('lavavu', ['lavavu/font.bin', 'lavavu/dict.json']), ('', install)],
+          data_files        = install,
           include_package_data = True,
           classifiers = [
             'Intended Audience :: Developers',
