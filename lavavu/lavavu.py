@@ -3423,6 +3423,23 @@ class Viewer(dict):
         self.app.imageBuffer(img.data)
         return img
 
+    def loadimage(self, filename):
+        """
+        Return raw image data from file
+
+        Parameters
+        ----------
+        filename : str
+            Source image file (jpeg/png, tiff if libtiff supported)
+
+        Returns
+        -------
+        image : array
+            Numpy array of the image data loaded
+        """
+        #This is thread safe as doesn't load texture
+        return self.app.imageFromFile(filename)
+
     def testimages(self, imagelist=None, tolerance=TOL_DEFAULT, expectedPath='expected/', outputPath='./', clear=True):
         """
         Compare a list of images to expected images for testing
@@ -4250,6 +4267,50 @@ class Image(object):
         fill = numpy.array(value[0:channels], dtype=numpy.uint8)
         self.data = numpy.tile(fill, (resolution[1], resolution[0], 1))
 
+    def convert(self, source):
+        """
+        Attempts to convert an image to the same pixel format as this image
+
+        Parameters
+        ----------
+        source : array
+            Numpy array containing raw image data to convert
+
+        Returns
+        -------
+        result : array
+            Numpy array containing converted raw image data if successful, or original data otherwise
+        """
+        if self.data.shape[2] != source.shape[2]:
+            #Attempt conversion
+            if self.data.shape[2] < source.shape[2] == 4:
+                #Take only first N channels
+                N = self.data.shape[2]
+                source = source[:,:,:N]
+            elif self.data.shape[2] == 4 and source.shape[2] == 3:
+                #Add alpha channel
+                source = numpy.dstack((source, numpy.full(source.shape[:-1], 255)))
+            elif self.data.shape[2] == 3 and source.shape[2] == 1:
+                #Greyscale to RGB
+                source = numpy.dstack((source, source, source))
+            elif self.data.shape[2] == 4 and source.shape[2] == 1:
+                #Greyscale to RGBA
+                source = numpy.dstack((source, source, source, numpy.full(source.shape[:-1], 255)))
+            elif self.data.shape[2] == 3 and source.shape[2] == 2:
+                #Greyscale+Alpha to RGB
+                L = source[:,:,0]
+                source = numpy.dstack((L, L, L))
+            elif self.data.shape[2] == 4 and source.shape[2] == 2:
+                #Greyscale+Alpha to RGBA
+                L = source[:,:,0]
+                A = source[:,:,1]
+                print(source.shape, L.shape, A.shape)
+                source = numpy.dstack((L, L, L, A))
+                print(source.shape, L.shape, A.shape)
+            else:
+                print("Base image and source image have incompatible bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
+        return source
+
     def paste(self, source, resolution=(640,480), position=(0,0)):
         """
         Render another image to a specified position with this image
@@ -4273,11 +4334,14 @@ class Image(object):
         if self.data.shape[0] < dest[1] or self.data.shape[1] < dest[0]:
             raise ValueError("Base image too small for operation!" + str(self.data.shape) + " < " + str(dest))
         if self.data.shape[2] != source.shape[2]:
-            raise ValueError("Base image and pasted image must have same bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
+            #Attempt conversion
+            source = self.convert(source)
+        if self.data.shape[2] != source.shape[2]:
+            raise ValueError("Base image and pasted image have incompatible bit depth!" + str(self.data.shape[2]) + " < " + str(source.shape[2]))
         
         self.data[position[1]:dest[1], position[0]:dest[0]] = source
 
-    def blend(self, source, resolution=(640,480), position=(0,0)):
+    def blend(self, source, resolution=None, position=(0,0)):
         """
         Render another image to a specified position with this image with alpha blending
 
@@ -4298,6 +4362,14 @@ class Image(object):
         if channels < 4 and blend is not None:
             print("Require alpha channel to blend")
             return
+
+        if len(source.shape) == 3:
+            if resolution is None:
+                resolution = (source.shape[1], source.shape[0])
+
+            if self.data.shape[2] != source.shape[2]:
+                #Attempt conversion
+                source = self.convert(source)
 
         #Alpha blending, assumes not premultiplied alpha
         src = source.astype(numpy.float32)

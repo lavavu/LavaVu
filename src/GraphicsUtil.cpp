@@ -827,15 +827,15 @@ void ImageLoader::loadPNG()
   file.close();
 }
 
-void ImageLoader::loadJPEG(int req_channels)
+void ImageLoader::loadJPEG(int reqChannels)
 {
   newSource();
   int width, height, channels;
-  source->pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, req_channels);
+  source->pixels = (GLubyte*)jpgd::decompress_jpeg_image_from_file(fn.full.c_str(), &width, &height, &channels, reqChannels);
 
   source->width = width;
   source->height = height;
-  source->channels = req_channels ? req_channels : channels;
+  source->channels = reqChannels ? reqChannels : channels;
   source->allocated = true; //Allocated by decompress_jpeg_image_from_file()
 }
 

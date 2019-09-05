@@ -772,7 +772,7 @@ public:
   void read();
   void loadPPM();
   void loadPNG();
-  void loadJPEG(int req_channels=0);
+  void loadJPEG(int reqChannels=0);
   void loadTIFF();
   int build(ImageData* image=NULL);
   void load3D(int width, int height, int depth, void* data=NULL, int voltype=VOLUME_FLOAT);

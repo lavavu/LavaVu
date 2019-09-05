@@ -3643,6 +3643,26 @@ void LavaVu::imageBuffer(unsigned char* array, int height, int width, int depth)
   delete buffer;
 }
 
+void LavaVu::imageFromFile(std::string filename, unsigned char** array, int* height, int* width, int* depth)
+{
+  if (!amodel || !viewer->isopen) return;
+  // Read an image file into provided buffer
+  ImageLoader* imfile = new ImageLoader(filename, false); //Don't flip
+  imfile->read();
+  ImageData* im = imfile->source;
+  if (im)
+  {
+    //Create the output array, memory will be managed in python
+    unsigned char* data = new unsigned char[im->size()];
+    im->paste(data);
+    *array = data;
+    *width = im->width;
+    *height = im->height;
+    *depth = im->channels;
+  }
+  delete imfile;
+}
+
 std::vector<unsigned char> LavaVu::imageJPEG(int width, int height, int quality)
 {
   if (!amodel || !viewer->isopen)

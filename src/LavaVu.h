@@ -275,6 +275,7 @@ public:
   void geometryArrayViewUChar(Geom_Ptr geom, lucGeometryDataType dtype, unsigned char** array, int* len);
 
   void imageBuffer(unsigned char* array, int height, int width, int depth);
+  void imageFromFile(std::string filename, unsigned char** array, int* height, int* width, int* depth);
   std::vector<unsigned char> imageJPEG(int width, int height, int quality=95);
   std::vector<unsigned char> imagePNG(int width, int height, int depth);
 

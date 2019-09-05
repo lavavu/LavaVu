@@ -24918,6 +24918,80 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_LavaVu_imageFromFile(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  LavaVu *arg1 = (LavaVu *) 0 ;
+  std::string arg2 ;
+  unsigned char **arg3 = (unsigned char **) 0 ;
+  int *arg4 = (int *) 0 ;
+  int *arg5 = (int *) 0 ;
+  int *arg6 = (int *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned char *data_temp3 = NULL ;
+  int dim1_temp3 ;
+  int dim2_temp3 ;
+  int dim3_temp3 ;
+  PyObject *swig_obj[2] ;
+  
+  {
+    arg3 = &data_temp3;
+    arg4 = &dim1_temp3;
+    arg5 = &dim2_temp3;
+    arg6 = &dim3_temp3;
+  }
+  if (!SWIG_Python_UnpackTuple(args,"LavaVu_imageFromFile",2,2,swig_obj)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(swig_obj[0], &argp1,SWIGTYPE_p_LavaVu, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "LavaVu_imageFromFile" "', argument " "1"" of type '" "LavaVu *""'"); 
+  }
+  arg1 = reinterpret_cast< LavaVu * >(argp1);
+  {
+    std::string *ptr = (std::string *)0;
+    int res = SWIG_AsPtr_std_string(swig_obj[1], &ptr);
+    if (!SWIG_IsOK(res) || !ptr) {
+      SWIG_exception_fail(SWIG_ArgError((ptr ? res : SWIG_TypeError)), "in method '" "LavaVu_imageFromFile" "', argument " "2"" of type '" "std::string""'"); 
+    }
+    arg2 = *ptr;
+    if (SWIG_IsNewObj(res)) delete ptr;
+  }
+  {
+    try {
+      (arg1)->imageFromFile(arg2,arg3,arg4,arg5,arg6);
+    } catch (const std::runtime_error& e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  resultobj = SWIG_Py_Void();
+  {
+    npy_intp dims[3] = {
+      *arg4, *arg5, *arg6 
+    };
+    PyObject* obj = PyArray_SimpleNewFromData(3, dims, NPY_UBYTE, (void*)(*arg3));
+    PyArrayObject* array = (PyArrayObject*) obj;
+    
+    if (!array) SWIG_fail;
+    
+#ifdef SWIGPY_USE_CAPSULE
+    PyObject* cap = PyCapsule_New((void*)(*arg3), SWIGPY_CAPSULE_NAME, free_cap);
+#else
+    PyObject* cap = PyCObject_FromVoidPtr((void*)(*arg3), free);
+#endif
+    
+#if NPY_API_VERSION < 0x00000007
+    PyArray_BASE(array) = cap;
+#else
+    PyArray_SetBaseObject(array,cap);
+#endif
+    
+    resultobj = SWIG_Python_AppendOutput(resultobj,obj);
+  }
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_LavaVu_imageJPEG__SWIG_0(PyObject *SWIGUNUSEDPARM(self), int nobjs, PyObject **swig_obj) {
   PyObject *resultobj = 0;
   LavaVu *arg1 = (LavaVu *) 0 ;
@@ -26639,6 +26713,7 @@ static PyMethodDef SwigMethods[] = {
 	 { "LavaVu_geometryArrayViewUInt", _wrap_LavaVu_geometryArrayViewUInt, METH_VARARGS, NULL},
 	 { "LavaVu_geometryArrayViewUChar", _wrap_LavaVu_geometryArrayViewUChar, METH_VARARGS, NULL},
 	 { "LavaVu_imageBuffer", _wrap_LavaVu_imageBuffer, METH_VARARGS, NULL},
+	 { "LavaVu_imageFromFile", _wrap_LavaVu_imageFromFile, METH_VARARGS, NULL},
 	 { "LavaVu_imageJPEG", _wrap_LavaVu_imageJPEG, METH_VARARGS, NULL},
 	 { "LavaVu_imagePNG", _wrap_LavaVu_imagePNG, METH_VARARGS, NULL},
 	 { "LavaVu_isoSurface", _wrap_LavaVu_isoSurface, METH_VARARGS, NULL},

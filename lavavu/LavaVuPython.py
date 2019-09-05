@@ -531,6 +531,7 @@ LavaVu.geometryArrayViewFloat = new_instancemethod(_LavaVuPython.LavaVu_geometry
 LavaVu.geometryArrayViewUInt = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayViewUInt, None, LavaVu)
 LavaVu.geometryArrayViewUChar = new_instancemethod(_LavaVuPython.LavaVu_geometryArrayViewUChar, None, LavaVu)
 LavaVu.imageBuffer = new_instancemethod(_LavaVuPython.LavaVu_imageBuffer, None, LavaVu)
+LavaVu.imageFromFile = new_instancemethod(_LavaVuPython.LavaVu_imageFromFile, None, LavaVu)
 LavaVu.imageJPEG = new_instancemethod(_LavaVuPython.LavaVu_imageJPEG, None, LavaVu)
 LavaVu.imagePNG = new_instancemethod(_LavaVuPython.LavaVu_imagePNG, None, LavaVu)
 LavaVu.isoSurface = new_instancemethod(_LavaVuPython.LavaVu_isoSurface, None, LavaVu)
