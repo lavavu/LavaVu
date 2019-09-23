@@ -77,7 +77,6 @@ void X11Viewer::cleanup()
   //with the caveat that the cleanup flag must be set before exiting
   if (Xdisplay)
   {
-    printf("X11 CLEANUP!\n");
     if (vi) XFree(vi);
     vi = NULL;
     XSetCloseDownMode(Xdisplay, DestroyAll);
