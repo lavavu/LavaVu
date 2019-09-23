@@ -408,6 +408,11 @@ public:
     return w;
   }
 
+  operator bool()
+  {
+    return !(x == 0.0f && y == 0.0f && z == 0.0f);
+  }
+
   void identity()
   {
     x = y = z = 0.0f;

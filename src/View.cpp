@@ -613,16 +613,22 @@ void View::apply(bool no_rotate, Quaternion* obj_rotation, Vec3d* obj_translatio
   GL_Error_Check;
 
   // Rotate model
-  if (!no_rotate && is3d)
+  if (rotation && !no_rotate)
+  {
     rotation->apply(session.context.MV);
+    is3d = true; //Applying rotation requires 3d mode
+  }
 
   // Translate object
   if (obj_translation)
     session.context.translate3(obj_translation->x, obj_translation->y, obj_translation->z);
 
   // Rotate object
-  if (obj_rotation && is3d)
+  if (obj_rotation && *obj_rotation)
+  {
     obj_rotation->apply(session.context.MV);
+    is3d = true; //Applying rotation requires 3d mode
+  }
 
   GL_Error_Check;
 
