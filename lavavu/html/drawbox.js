@@ -403,7 +403,7 @@ BoxViewer.prototype.exportView = function(nocam) {
   /*
    * If we overwrite these, changes from menu will not apply
    *
-  this.view.aperture = this.fov;
+  this.view.fov = this.fov;
   this.view.near = this.near_clip;
   this.view.far = this.far_clip;
   this.view.border = this.showBorder ? 1 : 0;
@@ -509,7 +509,7 @@ BoxViewer.prototype.loadFile = function(source) {
   //console.log(JSON.stringify(this.view,null, 2));
 
   if (this.view) {
-    this.fov = this.view.aperture || 45;
+    this.fov = this.view.fov || 45;
     this.near_clip = this.view.near || 0;
     this.far_clip = this.view.far || 0;
     this.orientation = this.view.orientation || 1;

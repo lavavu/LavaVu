@@ -823,15 +823,15 @@ void Model::loadViewCamera(int viewport_id)
   }
 
   //viewport:
-  //(aperture, orientation, focalPointX,Y,Z, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
+  //(fov, orientation, focalPointX,Y,Z, translateX,Y,Z, rotateX,Y,Z, scaleX,Y,Z, properties
   if (sqlite3_step(statement) == SQLITE_ROW)
   {
     View* v = views[viewport_id-1];
-    float aperture = 45.0;
+    float fov = 45.0;
     int orientation = RIGHT_HANDED;
     if (adj == 0)
     {
-      aperture = (float)sqlite3_column_double(statement, 0);
+      fov = (float)sqlite3_column_double(statement, 0);
       orientation = sqlite3_column_int(statement, 1);
     }
     float focus[3] = {0,0,0}, rotate[3], translate[3], scale[3] = {1,1,1};
@@ -852,7 +852,7 @@ void Model::loadViewCamera(int viewport_id)
 
     const char *vprops = adj == 0 ? (char*)sqlite3_column_text(statement, 14) : "";
 
-    if (adj == 0) v->focus(focus[0], focus[1], focus[2], aperture, true);
+    if (adj == 0) v->focus(focus[0], focus[1], focus[2], fov, true);
     v->translate(translate[0], translate[1], translate[2]);
     v->rotate(rotate[0], rotate[1], rotate[2]);
     v->setScale(scale[0], scale[1], scale[2]);
@@ -904,7 +904,7 @@ void Model::loadObjects()
 void Model::loadLinks()
 {
   //Select statment to get all viewports in window and all objects in viewports
-  //sprintf(SQL, "SELECT id,title,x,y,near,far,aperture,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
+  //sprintf(SQL, "SELECT id,title,x,y,near,far,fov,orientation,focalPointX,focalPointY,focalPointZ,translateX,translateY,translateZ,rotateX,rotateY,rotateZ,scaleX,scaleY,scaleZ,properties FROM viewport WHERE id=%d;", win->id);
   sqlite3_stmt* statement = database.select("SELECT viewport.id,object.id,object.colourmap_id,object_colourmap.colourmap_id,object_colourmap.data_type FROM window_viewport,viewport,viewport_object,object LEFT OUTER JOIN object_colourmap ON object_colourmap.object_id=object.id WHERE viewport_object.viewport_id=viewport.id AND object.id=viewport_object.object_id"); //Don't report errors as these tables are allowed to not exist
 
   int last_viewport = 0, last_object = 0;

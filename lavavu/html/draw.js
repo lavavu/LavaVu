@@ -1528,7 +1528,7 @@ Viewer.prototype.loadFile = function(source) {
   loadColourMaps(this.vis);
 
   if (this.view) {
-    this.fov = this.view.aperture || 45;
+    this.fov = this.view.fov || 45;
     this.near_clip = this.view.near || 0;
     this.far_clip = this.view.far || 0;
     this.orientation = this.view.orientation || 1;
@@ -1785,7 +1785,7 @@ Viewer.prototype.exportView = function(nocam) {
     this.view.translate = this.translate;
     this.view.scale = this.scale;
   }
-  this.view.aperture = this.fov;
+  this.view.fov = this.fov;
   this.view.near = this.near_clip;
   this.view.far = this.far_clip;
   //this.properties.border = this.border ? 1 : 0;

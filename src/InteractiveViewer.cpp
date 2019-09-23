@@ -227,7 +227,7 @@ bool LavaVu::mouseScroll(float scroll)
   //SHIFT = move near clip-plane
   else if (viewer->keyState.shift)
     history.push_back(aview->zoomClip(scroll * 0.01));
-  //ALT = adjust field of view (aperture)
+  //ALT = adjust field of view
   else if (viewer->keyState.alt)
     history.push_back(aview->adjustStereo(scroll, 0, 0));
   else if (viewer->keyState.ctrl)
@@ -1171,12 +1171,12 @@ bool LavaVu::parseCommand(std::string cmd, bool gethelp)
       aview->focus(xf, yf, zf);
     }
   }
-  else if (parsed.has(fval, "aperture"))
+  else if (parsed.has(fval, "fov"))
   {
     if (gethelp)
     {
-      help += "Set camera aperture (field-of-view)\n\n"
-              "**Usage:** aperture degrees\n\n"
+      help += "Set camera fov (field-of-view)\n\n"
+              "**Usage:** fov degrees\n\n"
               "degrees (number) : degrees of viewing range\n";
       return false;
     }
@@ -3225,7 +3225,7 @@ std::vector<std::string> LavaVu::commandList(std::string category)
     {"file", "script", "figure", "savefigure", "view", "scan"},
     {"image", "images", "outwidth", "outheight", "movie", "record", "bake", "bakecolour", "glaze", "export", "csv", "json", "save", "tiles"},
     {"rotate", "rotatex", "rotatey", "rotatez", "rotation", "zoom", "translate", "translatex", "translatey", "translatez", "translation",
-     "autorotate", "spin", "focus", "aperture", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
+     "autorotate", "spin", "focus", "fov", "focallength", "eyeseparation", "nearclip", "farclip", "zoomclip",
      "zerocam", "reset", "bounds", "fixbb", "camera", "resize", "fullscreen", "fit", "autozoom", "stereo", "coordsystem", "sort"},
     {"hide", "show", "delete", "load", "select", "add", "append", "name", "isosurface"},
     {"background", "alpha", "axis", "rulers",

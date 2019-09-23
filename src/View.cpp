@@ -287,13 +287,13 @@ void View::getCamera(float rotate[4], float translate[3], float focus[3])
   memcpy(focus, focal_point, sizeof(float) * 3);
 }
 
-std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
+std::string View::adjustStereo(float fov, float focal_len, float eye_sep)
 {
-  fov = properties["aperture"];
-  if (aperture < 10)
-    fov += aperture;
+  fov = properties["fov"];
+  if (fov < 10)
+    fov += fov;
   else
-    fov = aperture;
+    fov = fov;
   if (fov < 10) fov = 10;
   if (fov > 170) fov = 170;
 
@@ -303,20 +303,20 @@ std::string View::adjustStereo(float aperture, float focal_len, float eye_sep)
   //if (eye_sep_ratio < 0) eye_sep_ratio = 0;
   debug_print("STEREO: Aperture %f Focal Length Adj %f Eye Separation %f\n", fov, focal_length_adj, eye_sep_ratio);
   std::ostringstream ss;
-  if (aperture) ss << "aperture " << fov;
+  if (fov) ss << "fov " << fov;
   if (focal_len) ss << "focallength " << focal_len;
   if (eye_sep) ss << "eyeseparation " << eye_sep;
   updated = true;
   return ss.str();
 }
 
-void View::focus(float x, float y, float z, float aperture, bool setdefault)
+void View::focus(float x, float y, float z, float fov, bool setdefault)
 {
   focal_point[0] = rotate_centre[0] = x;
   focal_point[1] = rotate_centre[1] = y;
   focal_point[2] = rotate_centre[2] = z;
-  if (aperture > 0)
-    fov = aperture;
+  if (fov > 0)
+    fov = fov;
   //reset(); //reset view
   //Set as the default
   if (setdefault)
@@ -514,7 +514,7 @@ void View::projection(int eye)
   //Ensure clip planes valid, calculate if not provided in properties
   nearclip = properties["near"];
   farclip = properties["far"];
-  fov = properties["aperture"];
+  fov = properties["fov"];
   bool ortho_mode = properties["orthographic"];
   checkClip(nearclip, farclip);
   //printf("VP %d / %d\nsetPerspective( %f, %f, %f, %f)\n", width, height, fov, aspectRatio, near, far);
@@ -529,7 +529,7 @@ void View::projection(int eye)
   eye_separation = focal_length * eye_sep_ratio;
 
   // Build the viewing frustum
-  // Top of frustum calculated from field of view (aperture) and near clipping plane, camera->aperture = fov in degrees
+  // Top of frustum calculated from field of view and near clipping plane, camera->fov = fov in degrees
   top = tan(0.5f * DEG2RAD * fov) * nearclip;
   bottom = -top;
   // Account for aspect ratio (width/height) to get right edge of frustum
@@ -722,8 +722,8 @@ void View::importProps(bool force)
   //Properties::toArray<float>(properties["max"], newmax, 3);
   //init(false, newmin, newmax);
 
-  if (properties.has("aperture"))
-    fov = properties["aperture"];
+  if (properties.has("fov"))
+    fov = properties["fov"];
   if (properties.has("near"))
     nearclip = properties.data["near"];
   if (properties.has("far"))
@@ -743,7 +743,7 @@ void View::exportProps()
   properties.data["translate"] = json::array({model_trans[0], model_trans[1], model_trans[2]});
   properties.data["focus"] = json::array({focal_point[0], focal_point[1], focal_point[2]});
   properties.data["scale"] = json::array({scale[0], scale[1], scale[2]});
-  properties.data["aperture"] = fov;
+  properties.data["fov"] = fov;
   properties.data["near"] = nearclip;
   properties.data["far"] = farclip;
 

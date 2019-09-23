@@ -1664,11 +1664,11 @@
       true
     ]
   },
-  "aperture": {
+  "fov": {
     "default": 45.0,
     "target": "view",
     "type": "real",
-    "desc": "Aperture or Field-Of-View in degrees",
+    "desc": "Field-Of-View (horizontal) in degrees",
     "strict": true,
     "redraw": 0,
     "control": [
