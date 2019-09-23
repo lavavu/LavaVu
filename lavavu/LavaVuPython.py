@@ -491,6 +491,7 @@ LavaVu.gl_version = new_instancemethod(_LavaVuPython.LavaVu_gl_version, None, La
 LavaVu.image = new_instancemethod(_LavaVuPython.LavaVu_image, None, LavaVu)
 LavaVu.web = new_instancemethod(_LavaVuPython.LavaVu_web, None, LavaVu)
 LavaVu.video = new_instancemethod(_LavaVuPython.LavaVu_video, None, LavaVu)
+LavaVu.encodeVideo = new_instancemethod(_LavaVuPython.LavaVu_encodeVideo, None, LavaVu)
 LavaVu.defaultModel = new_instancemethod(_LavaVuPython.LavaVu_defaultModel, None, LavaVu)
 LavaVu.addColourMap = new_instancemethod(_LavaVuPython.LavaVu_addColourMap, None, LavaVu)
 LavaVu.updateColourMap = new_instancemethod(_LavaVuPython.LavaVu_updateColourMap, None, LavaVu)

@@ -1848,6 +1848,9 @@ class _LavaVuThreadSafe(LavaVuPython.LavaVu):
     def video(self, *args, **kwargs):
         return self._lavavu_call('video', True, *args, **kwargs)
 
+    def encodeVideo(self, *args, **kwargs):
+        return self._lavavu_call('encodeVideo', True, *args, **kwargs)
+
     def web(self, *args, **kwargs):
         return self._lavavu_call('web', True, *args, **kwargs)
 
