@@ -410,7 +410,7 @@ public:
 
   operator bool()
   {
-    return !(x == 0.0f && y == 0.0f && z == 0.0f);
+    return (fabs(x) > EPSILON || fabs(y) > EPSILON || fabs(z) > EPSILON);
   }
 
   void identity()
