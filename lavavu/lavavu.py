@@ -136,7 +136,7 @@ def grid2d(corners=((0.,1.), (1.,0.)), dims=[2,2]):
     x = numpy.linspace(corners[0][0], corners[1][0], dims[0], dtype='float32')
     y = numpy.linspace(corners[0][1], corners[1][1], dims[1], dtype='float32')
     xx, yy = numpy.meshgrid(x, y)
-    vertices = numpy.vstack((xx,yy)).reshape([2, -1]).transpose()
+    vertices = numpy.dstack((xx,yy))
     return vertices.reshape(dims[1],dims[0],2)
 
 def grid3d(corners=((0.,1.,0.), (1.,1.,0.), (0.,0.,0.), (1.,0.,0.)), dims=[2,2]):
@@ -776,10 +776,10 @@ class Object(dict):
             #Data provided as separate x,y,z columns? (Must be > 3 elements)
             if shape[-1] > 3 and shape[0] == 3:
                 #Re-arrange to array of [x,y,z] triples
-                data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+                data = numpy.dstack((data[0],data[1],data[2]))
             elif shape[-1] > 3 and shape[0] == 2:
                 #Re-arrange to array of [x,y] pairs
-                data = numpy.vstack((data[0],data[1])).reshape([2, -1]).transpose()
+                data = numpy.dstack((data[0],data[1]))
 
             #Now check for 2d vertices with 3d target
             if D==3 and data.shape[-1] == 2:
@@ -988,7 +988,7 @@ class Object(dict):
         shape = data.shape
         if len(shape) >= 2 and shape[-1] > 3 and shape[0] == 3:
             #Re-arrange to array of [r,g,b] triples
-            data = numpy.vstack((data[0],data[1],data[2])).reshape([3, -1]).transpose()
+            data = numpy.dstack((data[0],data[1],data[2]))
 
         self._loadScalar(data, LavaVuPython.lucRGBData)
 
@@ -1011,7 +1011,7 @@ class Object(dict):
         shape = data.shape
         if len(shape) >= 2 and shape[-1] > 4 and shape[0] == 4:
             #Re-arrange to array of [r,g,b,a] values
-            data = numpy.vstack((data[0],data[1],data[2],data[3])).reshape([4, -1]).transpose()
+            data = numpy.dstack((data[0],data[1],data[2]))
 
         self._loadScalar(data, LavaVuPython.lucRGBAData)
 
