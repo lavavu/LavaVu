@@ -2436,7 +2436,7 @@ class Viewer(dict):
         #Set view/global property
         if not key in self.properties:
             raise ValueError(key + " : Invalid property name")
-        self.app.parseProperty(key + '=' + json.dumps(item))
+        self.app.parseProperty(key + '=' + _convert_args(item))
         self._get()
 
     def __contains__(self, key):
