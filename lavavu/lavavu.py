@@ -3601,7 +3601,7 @@ class Viewer(dict):
         vdat = {}
         if len(self.state["views"]) and self.state["views"][0]:
             def copyview(dst, src):
-                for key in ["translate", "rotate", "xyzrotate", "aperture"]:
+                for key in ["translate", "rotate", "xyzrotate", "fov"]:
                     if key in src:
                         dst[key] = copy.copy(src[key])
                         #Round down arrays to max 3 decimal places
