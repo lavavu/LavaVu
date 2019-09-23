@@ -2877,14 +2877,15 @@ class Viewer(dict):
         """
 
         #Load a new object from file
+        ll = len(self.objects.list) #Save list length before load
         self.app.loadFile(filename)
 
-        #Get last object added if none provided
-        if obj is None:
-            obj = self.Object()
+        #Get first object added if none provided
+        if obj is None and ll < len(self.objects):
+            obj = self.objects.list[ll]
         if obj is None:
             if not "json" in filename and not "script" in filename:
-                print("WARNING: No objects exist after file load: " + filename)
+                print("WARNING: No objects added after file load: " + filename)
             return None
 
         #Setups up new object, all other args passed to properties dict
